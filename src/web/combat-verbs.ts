@@ -1608,7 +1608,7 @@ export const combatVerbs = {
 
         return {
             died: wrote.died,
-            theirPeople: wrote.handoff?.heirs ?? [],
+            theirPeople: wrote.theyLeft,
             opens: wrote.opens,
             lines: wrote.lines,
             calls

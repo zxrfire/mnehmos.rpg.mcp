@@ -34,10 +34,65 @@ import { obligationFromRow } from '../../src/storage/repos/obligation.repo';
 import { whatTheWorldHoldsAbout } from '../../src/web/personal-record';
 import { makeGameInWorld } from './harness';
 
-/** The rung the cultivator is stood at. Their victims stand around twelve. */
-const AMONG_PEERS = 12;
+/** High enough to be seen and dealt with, before anybody is stood level with. */
+const IN_PLAIN_SIGHT = 12;
 /** Far enough above the province that nothing in it could answer. */
 const PAST_ANYBODY_HERE = 40;
+
+/**
+ * The rung to stand at so the people here can answer for what is done to them.
+ *
+ * A pinned number pinned a coincidence. The square this seed opens on holds
+ * people at ordinals two to five, and a cultivator stood at twelve among them
+ * reads `overmatched` on every account they open, so a whole career of wrongs
+ * produced a ledger nobody in it was in a position to act on. Level with the
+ * strongest of them is the question these tests are actually asking, and it is
+ * read off the world rather than declared.
+ */
+async function levelWith(names: readonly string[]): Promise<number> {
+    const world = await activeWorld();
+    const rungs = names.map(name =>
+        world.state.npcs.find(npc => npc.name === name)?.cultivation.realmOrdinal ?? 0);
+    return Math.max(1, ...rungs);
+}
+
+/**
+ * Somewhere the world holds people who would be missed, and who they are.
+ *
+ * The square a run opens on is not that. This seed stands three people there
+ * with no house, no family and no tie of any kind, and killing all three of
+ * them correctly leaves the ledger empty - *still leaves nothing where the dead
+ * left nobody*, below, is that same rule asserted directly. An account needs
+ * somebody left to hold it, so a test about the account goes where there is
+ * somebody, and takes the world's own answer for who that is.
+ */
+async function whereSomebodyWouldBeMissed(): Promise<{ locationId: string; victims: string[] }> {
+    const world = await activeWorld();
+    const alive = new Set(world.state.npcs.filter(n => n.status === 'alive').map(n => n.id));
+    const missed = world.state.npcs.filter(npc =>
+        alive.has(npc.id)
+        && npc.relationships.some(tie => WOULD_MISS_THEM.has(tie.kind) && alive.has(tie.targetId)));
+
+    const byPlace = new Map<string, string[]>();
+    for (const npc of missed) {
+        byPlace.set(npc.locationId, [...(byPlace.get(npc.locationId) ?? []), npc.name]);
+    }
+    const [locationId, names] = [...byPlace].sort(
+        (a, b) => (b[1].length - a[1].length) || a[0].localeCompare(b[0])
+    )[0] ?? ['', []];
+    return { locationId, victims: names };
+}
+
+/** Ties that leave somebody holding it. The engine's set, not a second one. */
+const WOULD_MISS_THEM = new Set(['kin', 'spouse', 'parent', 'child']);
+
+/** Who is standing here, and the rung that puts the cultivator among them. */
+async function standingAmongThem(
+    game: { act(text: string): Promise<{ narration: string }> }
+): Promise<{ neighbours: string[]; rung: number }> {
+    const neighbours = await whoIsHere(game);
+    return { neighbours, rung: await levelWith(neighbours) };
+}
 
 /** Four ordinary verbs, none of which is a special case anywhere. */
 const WHAT_THEY_DID = ['rob', 'threaten', 'deceive', 'interrogate'];
@@ -120,13 +175,14 @@ describe('becoming something by acting', () => {
             seed: 'record', worldSeed: 'world-align', adminMode: true
         });
         const { cultivator } = await game.newRun('Taker');
-        await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
-        const neighbours = await whoIsHere(game);
+        await game.act(`ADMIN set_realm ${IN_PLAIN_SIGHT}`);
+        const { neighbours, rung } = await standingAmongThem(game);
         expect(neighbours.length, 'nobody was standing here to wrong').toBeGreaterThanOrEqual(3);
+        await game.act(`ADMIN set_realm ${rung}`);
 
         const before = whatTheWorldHoldsAbout({
             db: db as never,
-            person: { id: cultivator.id, ordinal: AMONG_PEERS, backing: 'none' },
+            person: { id: cultivator.id, ordinal: rung, backing: 'none' },
             lookUpHolder: await rosterLookup()
         });
         expect(before.is.alignment).toBe('neutral');
@@ -136,13 +192,13 @@ describe('becoming something by acting', () => {
                 await game.act(`ADMIN interact I ${verb} ${who}`);
                 // The reprisals cost the body, and a dead cultivator cannot go
                 // on being anything. Arranging, not deciding.
-                await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+                await game.act(`ADMIN set_realm ${rung}`);
             }
         }
 
         const after = whatTheWorldHoldsAbout({
             db: db as never,
-            person: { id: cultivator.id, ordinal: AMONG_PEERS, backing: 'none' },
+            person: { id: cultivator.id, ordinal: rung, backing: 'none' },
             lookUpHolder: await rosterLookup()
         });
 
@@ -179,18 +235,20 @@ describe('and what the people holding it can do about it', () => {
             seed: 'record', worldSeed: 'world-align', adminMode: true
         });
         const { cultivator } = await game.newRun('Taker');
-        await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
-        for (const who of await whoIsHere(game)) {
+        await game.act(`ADMIN set_realm ${IN_PLAIN_SIGHT}`);
+        const { neighbours, rung } = await standingAmongThem(game);
+        await game.act(`ADMIN set_realm ${rung}`);
+        for (const who of neighbours) {
             for (const verb of WHAT_THEY_DID) {
                 await game.act(`ADMIN interact I ${verb} ${who}`);
-                await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+                await game.act(`ADMIN set_realm ${rung}`);
             }
         }
 
         const lookUpHolder = await rosterLookup();
         const amongThem = whatTheWorldHoldsAbout({
             db: db as never,
-            person: { id: cultivator.id, ordinal: AMONG_PEERS, backing: 'none' },
+            person: { id: cultivator.id, ordinal: rung, backing: 'none' },
             lookUpHolder
         });
         const pastThem = whatTheWorldHoldsAbout({
@@ -254,10 +312,10 @@ describe('practising an art makes you nothing', () => {
             seed: 'record', worldSeed: 'world-align', adminMode: true
         });
         const { cultivator } = await game.newRun('Student');
-        await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+        await game.act(`ADMIN set_realm ${IN_PLAIN_SIGHT}`);
 
         const lookUpHolder = await rosterLookup();
-        const person = { id: cultivator.id, ordinal: AMONG_PEERS, backing: 'none' as const };
+        const person = { id: cultivator.id, ordinal: IN_PLAIN_SIGHT, backing: 'none' as const };
         const before = whatTheWorldHoldsAbout({ db: db as never, person, lookUpHolder });
 
         // Arrange the precondition: they are now carrying somebody else's road.
@@ -286,12 +344,14 @@ describe('and it binds anybody', () => {
             seed: 'record', worldSeed: 'world-align', adminMode: true
         });
         const { cultivator } = await game.newRun('Taker');
-        await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
-        const theOneTheyPicked = (await whoIsHere(game))[0];
+        await game.act(`ADMIN set_realm ${IN_PLAIN_SIGHT}`);
+        const { neighbours, rung } = await standingAmongThem(game);
+        const theOneTheyPicked = neighbours[0];
         expect(theOneTheyPicked, 'nobody was standing here').toBeDefined();
+        await game.act(`ADMIN set_realm ${rung}`);
         for (const verb of WHAT_THEY_DID) {
             await game.act(`ADMIN interact I ${verb} ${theOneTheyPicked}`);
-            await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+            await game.act(`ADMIN set_realm ${rung}`);
         }
 
         const lookUpHolder = await rosterLookup();
@@ -319,7 +379,7 @@ describe('and it binds anybody', () => {
         // And the person who did it reads off the very same rows.
         const mine = whatTheWorldHoldsAbout({
             db: db as never,
-            person: { id: cultivator.id, ordinal: AMONG_PEERS, backing: 'none' },
+            person: { id: cultivator.id, ordinal: rung, backing: 'none' },
             lookUpHolder
         });
         expect(mine.is.wrongs).toBeGreaterThan(0);
@@ -345,10 +405,13 @@ describe('the dead hold nothing, so the people they left do', () => {
         const { cultivator } = await game.newRun('Taker');
         // Far enough above them that the killing is not in doubt. Arranging.
         await game.act('ADMIN set_realm 30');
-        const standingHere = await whoIsHere(game);
-        expect(standingHere.length).toBeGreaterThanOrEqual(3);
+        const { locationId, victims } = await whereSomebodyWouldBeMissed();
+        expect(victims.length, 'nobody in this world has anybody').toBeGreaterThanOrEqual(3);
+        await game.act(`ADMIN grant_knowledge kind=place name=${locationId}`);
+        await game.act(`ADMIN set_location ${locationId}`);
 
-        for (const who of standingHere) await game.act(`I kill ${who}`);
+        const theDead = victims.slice(0, 3);
+        for (const who of theDead) await game.act(`I kill ${who}`);
 
         const lookUpHolder = await rosterLookup();
         const read = whatTheWorldHoldsAbout({
@@ -376,7 +439,7 @@ describe('the dead hold nothing, so the people they left do', () => {
         // Three killings is a method, and it does not matter that one victim
         // had two sons: the copies collapse onto the deed behind them.
         expect(read.is.alignment).toBe('demonic');
-        expect(read.is.wrongs).toBe(standingHere.length);
+        expect(read.is.wrongs).toBe(theDead.length);
     }, 300_000);
 
     /**
@@ -439,14 +502,16 @@ describe('the sheet finally says something true', () => {
             seed: 'record', worldSeed: 'world-align', adminMode: true
         });
         await game.newRun('Taker');
-        await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+        await game.act(`ADMIN set_realm ${IN_PLAIN_SIGHT}`);
 
         expect(game.state().cultivator.feuds).toEqual([]);
 
-        for (const who of await whoIsHere(game)) {
+        const { neighbours, rung } = await standingAmongThem(game);
+        await game.act(`ADMIN set_realm ${rung}`);
+        for (const who of neighbours) {
             for (const verb of WHAT_THEY_DID) {
                 await game.act(`ADMIN interact I ${verb} ${who}`);
-                await game.act(`ADMIN set_realm ${AMONG_PEERS}`);
+                await game.act(`ADMIN set_realm ${rung}`);
             }
         }
 

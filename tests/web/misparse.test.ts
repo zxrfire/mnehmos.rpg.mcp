@@ -1846,6 +1846,18 @@ describe('institutions acting on each other', () => {
      * under all of this is real: without them every one of these resolves to
      * nothing, which is correct behaviour and is not what these tests are for.
      */
+    /**
+     * The rung that speaks for the house, whichever house it is.
+     *
+     * Was a hardcoded 5, which was the seat until `Grand Mountain Elder` was
+     * inserted below `Order Patriarch` and moved it to 6. A test that pins the
+     * INDEX of the seat fails every time a house gains a rung, and it fails by
+     * quietly installing the rank below - which reads as the verb being broken
+     * rather than as the test being stale.
+     */
+    const theSeatOf = (houseId: string = HOUSE) =>
+        (SECTS.find(s => s.id === houseId)?.ranks.length ?? 1) - 1;
+
     async function standing(
         rank: number | null,
         options: { house?: string; seed?: string; knows?: string[]; worldEnabled?: boolean } = {}
@@ -2052,7 +2064,7 @@ describe('institutions acting on each other', () => {
     });
 
     it('lets the seat declare, records it, and prices it in the same breath', async () => {
-        const { game, db, cultivator, houseId } = await standing(5);
+        const { game, db, cultivator, houseId } = await standing(theSeatOf());
         const result = await game.act('I declare war on the Nine Abyss Flame Sect');
 
         // State, not vocabulary. The posture is keyed on both parties so a
@@ -2078,7 +2090,7 @@ describe('institutions acting on each other', () => {
     });
 
     it('lets the seat wake their own, and the power ordinal moves', async () => {
-        const { game, db, cultivator, houseId } = await standing(5);
+        const { game, db, cultivator, houseId } = await standing(theSeatOf());
         const before = powerOrdinalOf(db, houseId);
         const sealed = sectThreat(houseId)!;
         expect(sealed.ceiling, 'fixture: this house must hold a ceiling above its acting head')
@@ -2096,7 +2108,7 @@ describe('institutions acting on each other', () => {
     });
 
     it('spends the seal once, and refuses the second time', async () => {
-        const { game, db, cultivator, houseId } = await standing(5);
+        const { game, db, cultivator, houseId } = await standing(theSeatOf());
         await game.act('I wake our sealed ancestor');
         const after = powerOrdinalOf(db, houseId);
 
@@ -2109,7 +2121,7 @@ describe('institutions acting on each other', () => {
     });
 
     it('is not a decision at all when the mountain belongs to somebody else', async () => {
-        const { game, db, cultivator } = await standing(5, {
+        const { game, db, cultivator } = await standing(theSeatOf(), {
             knows: ['sect-frostmirror-court'], seed: 'seal-elsewhere'
         });
         const result = await game.act('I wake the sealed ancestor at the Frostmirror Court');
@@ -2124,7 +2136,7 @@ describe('institutions acting on each other', () => {
     // ── the offering ─────────────────────────────────────────────────────
 
     it('lets the seat send one up, charges the principal, and produces the silence', async () => {
-        const { game, db, cultivator, houseId } = await standing(5, {
+        const { game, db, cultivator, houseId } = await standing(theSeatOf(WITH_A_LINE), {
             house: WITH_A_LINE, seed: 'offering-seat'
         });
         const result = await game.act('I make an offering to our ascended ancestor');
@@ -2149,7 +2161,7 @@ describe('institutions acting on each other', () => {
     // ── the form ─────────────────────────────────────────────────────────
 
     it('answers a Requisition in the terms the form itself uses, and refuses', async () => {
-        const { game } = await standing(5, {
+        const { game } = await standing(theSeatOf(), {
             knows: ['apex-deep-survey'], seed: 'requisition'
         });
         const result = await game.act(
@@ -2164,7 +2176,7 @@ describe('institutions acting on each other', () => {
     });
 
     it('never discloses what is on the standing stock, in either direction', async () => {
-        const { game } = await standing(5, {
+        const { game } = await standing(theSeatOf(), {
             knows: ['apex-deep-survey'], seed: 'requisition-counts'
         });
         const result = await game.act('I ask the Deep Survey for one of its pills');
@@ -2176,7 +2188,7 @@ describe('institutions acting on each other', () => {
     // ── the knowledge gate, which none of this may weaken ────────────────
 
     it('answers an unheard house and an invented one identically', async () => {
-        const { game } = await standing(5, { seed: 'gate-a' });
+        const { game } = await standing(theSeatOf(), { seed: 'gate-a' });
         // A real house this cultivator has never been told about.
         const unheard = await game.act('I declare war on the Bone Lantern Cult');
         // A house that does not exist at all.
@@ -2203,7 +2215,7 @@ describe('institutions acting on each other', () => {
      * like an answer to theirs.
      */
     it('refuses when a body is named and does not resolve, rather than substituting one', async () => {
-        const { game, db, cultivator } = await standing(5, { seed: 'addressee' });
+        const { game, db, cultivator } = await standing(theSeatOf(), { seed: 'addressee' });
 
         // The player's own house is right there and must not be used instead.
         const petition = await game.act('I petition the Emerald Nothing Court for a grant');
@@ -2999,9 +3011,16 @@ describe('a site can be named the way the game named it', () => {
      * specific substring rather than a bag of common words.
      */
     it('accepts the name the listing prints, with or without the article', () => {
-        expect(siteNamed('i approach the gate frame with no gate in it')).toBeDefined();
-        expect(siteNamed('i approach gate frame with no gate in it')).toBeDefined();
-        expect(siteNamed('i go into the cave that checks the work')).toBeDefined();
+        // Read off the catalog rather than typed here. These were three long
+        // sentence-names when this was written; a naming pass shortened them,
+        // and the test failed on the old strings while the behaviour it is
+        // about - a printed name is a typeable name - never changed.
+        for (const site of SITES.slice(0, 6)) {
+            const printed = site.name.toLowerCase();
+            const bare = printed.replace(/^the /, '');
+            expect(siteNamed(`i approach ${printed}`), printed).toBeDefined();
+            expect(siteNamed(`i approach ${bare}`), bare).toBeDefined();
+        }
     });
 
     /** The id slug kept working. It is the short form people actually type. */
