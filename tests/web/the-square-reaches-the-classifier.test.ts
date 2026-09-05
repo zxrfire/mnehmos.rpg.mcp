@@ -22,7 +22,10 @@ const WORLD = 'probe-world';
 describe('who is standing here', () => {
     it('names the people the cultivator can name', () => {
         const company: Company = {
-            named: [{ name: 'Han Cikuan', ordinal: 9 }, { name: 'He Cihe', ordinal: 3 }],
+            named: [
+                { name: 'Han Cikuan', ordinal: 9, sex: 'male', age: 61, rank: 'Sword Elder' },
+                { name: 'He Cihe', ordinal: 3, sex: 'female', age: 22, rank: null }
+            ],
             strangers: [],
             total: 2
         };
@@ -33,6 +36,26 @@ describe('who is standing here', () => {
         expect(lines).toContain('He Cihe');
         expect(lines).toContain('3 rungs below them');
         expect(lines).toContain('2 people here in total');
+    });
+
+    /**
+     * The design owner, on why resolving a description is only half of it:
+     * *this should fall out of making names but also characteristics visible to
+     * the LLM*. A reader shown only names can only write a name, so every
+     * sentence that picks somebody out by what they are was one the phase-1
+     * reader had no grounds to produce.
+     */
+    it('shows what a description reads, and says a description may be written', () => {
+        const lines = describeWhoIsHere({
+            named: [{ name: 'Han Cikuan', ordinal: 9, sex: 'male', age: 61, rank: 'Sword Elder' }],
+            strangers: [],
+            total: 1
+        }, 6).join(String.fromCharCode(10));
+
+        expect(lines).toContain('male');
+        expect(lines).toContain('about 61');
+        expect(lines).toContain('Sword Elder');
+        expect(lines).toContain('DESCRIPTION');
     });
 
     it('counts a stranger at a height and never gives them a name', () => {
@@ -56,7 +79,9 @@ describe('who is standing here', () => {
     });
 
     it('states what it cut rather than reading complete', () => {
-        const many = Array.from({ length: 20 }, (_, i) => ({ name: `Person ${i}`, ordinal: 5 }));
+        const many = Array.from({ length: 20 }, (_, i) => ({
+            name: `Person ${i}`, ordinal: 5, sex: 'female', age: 30, rank: null
+        }));
         const lines = describeWhoIsHere({ named: many, strangers: [], total: 20 }, 6).join('\n');
 
         expect(lines).toContain('8 more this cultivator can name');

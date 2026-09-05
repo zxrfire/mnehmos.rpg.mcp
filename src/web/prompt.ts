@@ -709,9 +709,21 @@ export function describeWhoIsHere(company: Company, yourOrdinal: number): string
     }
 
     const named = company.named.slice(0, PEOPLE_NAMED_TO_THE_CLASSIFIER);
-    const lines = named.map(person =>
-        `  ${person.name} - ${rankName(person.ordinal)}, `
-        + `${howTheyStand(person.ordinal, yourOrdinal)}`);
+    // NAMES ARE NOT ENOUGH. A player types "the youngest woman here" and a
+    // reader shown only names has no grounds to write that target: it does not
+    // know which of them is a woman and it does not know which is young. Every
+    // field here is one `a-target-can-be-a-description.ts` reads back, so a
+    // phrase the reader can see the grounds for is a phrase the engine can
+    // resolve - and nothing in it is anything somebody standing in the square
+    // could not see for themselves.
+    const lines = named.map(person => [
+        `  ${person.name} - ${rankName(person.ordinal)}`,
+        howTheyStand(person.ordinal, yourOrdinal),
+        person.sex,
+        Number.isFinite(person.age) ? `about ${Math.round(person.age)}` : null,
+        person.rank
+    ].filter((part): part is string =>
+        typeof part === 'string' && part.length > 0).join(', '));
 
     const unlisted = company.named.length - named.length;
     if (unlisted > 0) {
@@ -733,6 +745,16 @@ export function describeWhoIsHere(company: Company, yourOrdinal: number): string
     }
 
     lines.push(`  ${company.total} people here in total.`);
+    // AND WHAT MAY BE SAID ABOUT THEM. A target is a description in this
+    // engine, so the reader is told it may write one rather than being left to
+    // guess whether a name is the only address it is allowed.
+    lines.push(
+        '  A target may be a DESCRIPTION as well as a name, and the fields above are what a '
+        + 'description reads: "the youngest woman here", "the oldest man", "the one nearest to '
+        + 'me", "the elder", "senior brother", "you, void refinement cultivator", "a demonic '
+        + 'cultivator". Pass the phrase the player used through as the target. Do not turn a '
+        + 'description into a name and do not invent one.'
+    );
     return lines;
 }
 
