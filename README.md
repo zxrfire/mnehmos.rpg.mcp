@@ -65,7 +65,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 It installs dependencies if they are missing, **fetches the sentence model if it is
 absent** (see below), checks Ollama is answering and that the model you asked for is
-actually pulled — listing what *is* installed when it is not — builds, and opens the
+actually pulled - listing what *is* installed when it is not - builds, and opens the
 browser.
 
 ```powershell
@@ -84,7 +84,7 @@ things it does are: `npm install`, `npm run models:fetch`, `npm run build`, then
 ### The sentence model, which is not in the repository
 
 The game reads your sentences in tiers, and the last of them is a local embedding model
-that is **fetched, never committed** — it is large, and this is a fork:
+that is **fetched, never committed** - it is large, and this is a fork:
 
 ```bash
 npm run models:fetch    # ~180 MB, once

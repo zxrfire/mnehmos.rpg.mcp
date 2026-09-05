@@ -466,7 +466,7 @@ not.
 
 **Measured, once the pairing existed.** Four of the six at 29 or above cannot end up beside
 a house, and each for a reason the catalog already stated rather than one written for this:
-the Leviathan and the Sleeper are `sealed_only` and a compound is not inside closed ground;
+the Leviathan and the sealed ancestor are `sealed_only` and a compound is not inside closed ground;
 the Reader is `indifferent` to veins, which is the catalog saying it never ends up beside
 anybody; and the Thing Under Nine Peaks is `demonic` - it is drinking the Ascetic Order's
 vein, which is why the ground is contested rather than why it is held. That leaves the White

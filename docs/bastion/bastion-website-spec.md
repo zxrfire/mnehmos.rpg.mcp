@@ -1,4 +1,4 @@
-# Bastion — Website Specification
+# Bastion - Website Specification
 
 *The publishing surface for Bastion biographies. A static site (GitHub Pages, served from the repo) that presents agent-generated lives as a reader-first product, with the engine as an opt-in trust layer.*
 
@@ -8,12 +8,12 @@
 
 ## 0. Thesis
 
-**Naruto5e is the engine demo. Bastion is the publishable product.** Same engine, same "every die rolled by the engine" trust spine — but Bastion sells the *biography*, not the machinery. The reader should feel they are reading lives; the engine is the moat, and the moat is visible as a *feature*, never as the foreground.
+**Naruto5e is the engine demo. Bastion is the publishable product.** Same engine, same "every die rolled by the engine" trust spine - but Bastion sells the *biography*, not the machinery. The reader should feel they are reading lives; the engine is the moat, and the moat is visible as a *feature*, never as the foreground.
 
 Public pitch (above the fold, never the backend):
 > **Bastion is the last city. It summons heroes from every kind of world. Their powers arrive intact. Nothing is balanced. The city only records what survives.**
 
-**Genre & crunch.** Bastion is **LitRPG** — stat boxes and rolls run inline, marked `[OOC]` (§6.4) — with Progression-Fantasy / GameLit DNA (multiverse clash, intact powers, steady scaling). The differentiator is not *how much* crunch but *that the crunch is honest*: every number is real, committed, and verifiable, and the inline rolls are pulled from the same ledger as the audit trail — neither typed by hand. The cover claim is the one no LitRPG author can make: **every number is real; the dice are honest; the protagonist can actually lose — and did. Read it as a novel, or check the math yourself.** That honesty is the moat; competitors cannot copy it without building the engine.
+**Genre & crunch.** Bastion is **LitRPG** - stat boxes and rolls run inline, marked `[OOC]` (§6.4) - with Progression-Fantasy / GameLit DNA (multiverse clash, intact powers, steady scaling). The differentiator is not *how much* crunch but *that the crunch is honest*: every number is real, committed, and verifiable, and the inline rolls are pulled from the same ledger as the audit trail - neither typed by hand. The cover claim is the one no LitRPG author can make: **every number is real; the dice are honest; the protagonist can actually lose - and did. Read it as a novel, or check the math yourself.** That honesty is the moat; competitors cannot copy it without building the engine.
 
 The unit of production is **committed-world-state change per author-hour** (spec §5). One committed event fans out into many surfaces: an Operator chapter, a cohort-member chapter, an antagonist interlude, the Mnehmos devlog, a ledger appendix, a recap, TTS. The website is where that fan-out lands.
 
@@ -23,39 +23,39 @@ The unit of production is **committed-world-state change per author-hour** (spec
 
 These work. Carry them forward:
 
-1. **Prose-first, engine-as-collapsible-audit.** Story chapters are the reading experience; each chapter's *Engine Log* is a collapsible audit trail — "the deterministic state behind the prose." A debrief explains how the engine constrained the AI. This is the **engine-as-feature** position, already correct.
-2. **"Every die rolled by the engine" as the spine — and the loss as the proof.** Naruto leads with Iwao *losing* the finals to an honest failed save. That single fact ("the protagonist did not win his own tournament; the engine wouldn't let him") is the most persuasive thing on the site. Bastion must preserve the same: when a biography's agent loses honestly, that is a *headline*, not an embarrassment.
-3. **The HUD character sheet.** Engine-validated stats (HP/chakra/AC/renown bars, jutsu chips, motif) rendered as a living sheet — literally `character_manage` state made visible. Keep per-biography.
+1. **Prose-first, engine-as-collapsible-audit.** Story chapters are the reading experience; each chapter's *Engine Log* is a collapsible audit trail - "the deterministic state behind the prose." A debrief explains how the engine constrained the AI. This is the **engine-as-feature** position, already correct.
+2. **"Every die rolled by the engine" as the spine - and the loss as the proof.** Naruto leads with Iwao *losing* the finals to an honest failed save. That single fact ("the protagonist did not win his own tournament; the engine wouldn't let him") is the most persuasive thing on the site. Bastion must preserve the same: when a biography's agent loses honestly, that is a *headline*, not an embarrassment.
+3. **The HUD character sheet.** Engine-validated stats (HP/chakra/AC/renown bars, jutsu chips, motif) rendered as a living sheet - literally `character_manage` state made visible. Keep per-biography.
 4. **The "Behind the X" development timeline.** Naruto's "Behind the Dust" turns *the bug-find-and-fix loop* into content (commits, what broke, what it became). This is the devlog instinct shipping. In Bastion this becomes Mnehmos's biography surface (§4) and a per-world engineering log.
-5. **Craft-grade art direction.** Real type pairing, hand-tuned palette, a thematic generative background (Naruto: a Three.js particle field as Dust Release). Bastion matches this bar — but per biography (§3).
+5. **Craft-grade art direction.** Real type pairing, hand-tuned palette, a thematic generative background (Naruto: a Three.js particle field as Dust Release). Bastion matches this bar - but per biography (§3).
 6. **Three-level reader funnel:** `index` (the hero / journey / character sheet / behind-the-scenes) → `story` (the chapter index / ToC) → `chapters/*` (the chapters themselves). Keep the funnel; generate it (§2).
-7. **Per-chapter audio narration.** Naruto ships one `.mp3` per chapter (slug-matched, in `docs/audio/`) with a `.hashes.json` so narration is regenerated incrementally — only when the chapter text changed. Keep this exact pattern; it is the right architecture for paid API synthesis (don't re-render what didn't change). Bastion makes it OpenAI TTS, per-biography voice (§5.5).
+7. **Per-chapter audio narration.** Naruto ships one `.mp3` per chapter (slug-matched, in `docs/audio/`) with a `.hashes.json` so narration is regenerated incrementally - only when the chapter text changed. Keep this exact pattern; it is the right architecture for paid API synthesis (don't re-render what didn't change). Bastion makes it OpenAI TTS, per-biography voice (§5.5).
 
 ---
 
 ## 2. What we fix for scale (the "plan ahead" deltas)
 
-### 2.1 Content model + generator — NOT hand-authored HTML
+### 2.1 Content model + generator - NOT hand-authored HTML
 **Naruto's limit:** every chapter is a bespoke hand-written `.html`; the index is one giant hand-built file with each chapter's panels inline. Fine for ONE ~40-chapter biography. Bastion runs MANY concurrent biographies, each generating chapters continuously. Hand-authoring does not survive that.
 
-**Bastion:** chapters are **structured content** (front-matter + body) rendered to HTML by a **generator script**. Author/agent produces content; the build produces pages. Add a biography, add a chapter, rebuild — never hand-edit a `<div class="panel">`.
+**Bastion:** chapters are **structured content** (front-matter + body) rendered to HTML by a **generator script**. Author/agent produces content; the build produces pages. Add a biography, add a chapter, rebuild - never hand-edit a `<div class="panel">`.
 
-- **Source of truth for content:** `bastion/biographies/<slug>/chapters/*.md` (front-matter + prose, optionally with panel markup as a light DSL — see §6).
+- **Source of truth for content:** `bastion/biographies/<slug>/chapters/*.md` (front-matter + prose, optionally with panel markup as a light DSL - see §6).
 - **Source of truth for state:** the rpg-mcp ledger / `narrative_manage` export per biography (the Engine Log content).
 - **Build:** `scripts/build-site.mjs` renders content + ledger → `docs/` (the published Pages site). This is the publishing step that must be documented (§7).
 
 ### 2.2 Per-biography theming off a shared frame
-**Naruto's limit:** the whole palette (ember/gold/stone + a Dust particle field) *is* Iwao's bloodline. Bastion is a melting pot — every biography is a different source-universe with different physics. One fixed theme flattens the exact thing that makes Bastion Bastion.
+**Naruto's limit:** the whole palette (ember/gold/stone + a Dust particle field) *is* Iwao's bloodline. Bastion is a melting pot - every biography is a different source-universe with different physics. One fixed theme flattens the exact thing that makes Bastion Bastion.
 
-**Bastion:** a **shared structural frame** (layout, funnel, components, the manga-panel system, the HUD sheet, the collapsible Engine Log) + a **per-biography theme token set** (palette, type pairing, background motif, sigil). The Operator's pages read industrial/desert/load-bearing; a different cohort member reads however their world reads. Theme is data, applied at build (§6). This is the website expression of "powers arrive intact, nothing is balanced" — each life looks like where it came from.
+**Bastion:** a **shared structural frame** (layout, funnel, components, the manga-panel system, the HUD sheet, the collapsible Engine Log) + a **per-biography theme token set** (palette, type pairing, background motif, sigil). The Operator's pages read industrial/desert/load-bearing; a different cohort member reads however their world reads. Theme is data, applied at build (§6). This is the website expression of "powers arrive intact, nothing is balanced" - each life looks like where it came from.
 
 ### 2.3 Cross-biography / shared-event model (convergence)
 **Naruto's limit:** one protagonist, one linear timeline. No concept of two lives sharing an event.
 
 **Bastion:** the data model has **biographies** AND **events**, and an event can belong to multiple biographies. The site must render:
-- a **convergence chapter** — one committed event shown from two (or more) interiors, cross-linked, neither account contradicting the other (because both read the same committed ledger entry);
-- a **city timeline** — the shared clock, on which all biographies are positioned, so a reader can see that the Operator's arrival and Mnehmos's first rite are the *same day* (the convergence card from the opening prompts);
-- **cohort links** — the souls summoned together, surfaced as related lives (future series).
+- a **convergence chapter** - one committed event shown from two (or more) interiors, cross-linked, neither account contradicting the other (because both read the same committed ledger entry);
+- a **city timeline** - the shared clock, on which all biographies are positioned, so a reader can see that the Operator's arrival and Mnehmos's first rite are the *same day* (the convergence card from the opening prompts);
+- **cohort links** - the souls summoned together, surfaced as related lives (future series).
 
 ### 2.4 Documented publishing workflow
 **Naruto's limit:** the pipeline exists but isn't written down anywhere.
@@ -69,7 +69,7 @@ These work. Carry them forward:
 ```
 SITE ROOT (docs/)
 │
-├── index.html ........... Bastion landing — the city, the pitch, the line of biographies,
+├── index.html ........... Bastion landing - the city, the pitch, the line of biographies,
 │                          the shared city-timeline, "how this is made" (engine-as-feature)
 │
 ├── biographies/
@@ -90,7 +90,7 @@ SITE ROOT (docs/)
 └── about.html ........... the thesis + "every event committed by the System" + the method
 ```
 
-**Routing principle:** biography-scoped. A reader lands on the city, picks a life, and reads it end-to-end without leaving that biography's theme — except at *convergence*, where a cross-link carries them into the other life's account of the shared event and back.
+**Routing principle:** biography-scoped. A reader lands on the city, picks a life, and reads it end-to-end without leaving that biography's theme - except at *convergence*, where a cross-link carries them into the other life's account of the shared event and back.
 
 ---
 
@@ -99,9 +99,9 @@ SITE ROOT (docs/)
 Mnehmos's biography (Biography #1) is the **making-of**, rendered as a life. This is the Naruto "Behind the Dust" timeline, elevated: the summoner-priest's logged acts (each summoning, each subsystem installed, each ruling) ARE the build acts. Two registers, one surface:
 
 - **In-fiction layer (default view):** the rite, the cathedral, the choosing of cohorts, the weight. Reads as a biography like any other.
-- **Engineering layer (opt-in toggle):** the same events as commits — what was built, what the engine did, the ledger entries. The "ceremony is the commit, liturgy is the changelog" made literal and *viewable*.
+- **Engineering layer (opt-in toggle):** the same events as commits - what was built, what the engine did, the ledger entries. The "ceremony is the commit, liturgy is the changelog" made literal and *viewable*.
 
-A reader who wants the story gets the priest. A reader who wants the machine flips the toggle and sees the build. Same page. This is where the moat becomes the most explicit selling point on the whole site — and it stays optional.
+A reader who wants the story gets the priest. A reader who wants the machine flips the toggle and sees the build. Same page. This is where the moat becomes the most explicit selling point on the whole site - and it stays optional.
 
 ---
 
@@ -109,23 +109,23 @@ A reader who wants the story gets the priest. A reader who wants the machine fli
 
 The differentiator is an honest, committed, verifiable world. Surface it as a *feature the reader can opt into*, never as foreground:
 
-- **Per-chapter collapsible Engine Log** (from Naruto): the deterministic state behind the prose — rolls, HP deltas, slot spends, the committed result. Collapsed by default.
+- **Per-chapter collapsible Engine Log** (from Naruto): the deterministic state behind the prose - rolls, HP deltas, slot spends, the committed result. Collapsed by default.
 - **"Committed by the System" marks** on consequential events: a small, consistent sigil that says *this happened in the ledger, it was not authored after the fact.* Hover/expand → the ledger entry.
 - **The loss-as-proof callout:** when an agent loses or fails honestly, the site can flag it ("the dice, honestly: …") the way Naruto flags Iwao's finals loss. This is the trust spine; give it a recognizable component.
 - **The ledger/appendix page** (`city/ledger.html`): the full committed record, for the reader who wants to audit. The deep end of the opt-in.
-- **The debrief / about page:** the thesis — how the engine constrains the AI, why the story is trustworthy.
+- **The debrief / about page:** the thesis - how the engine constrains the AI, why the story is trustworthy.
 
 Design rule: a reader who never clicks any of this gets a clean novel. A reader who clicks all of it gets a verifiable simulation. Both are first-class.
 
-### 5.5 Narration (the audiobook layer) — OpenAI TTS
-Audio is a **first-class output**, not an afterthought — the product is "audiobook-style episodes," and the fan-out math (one committed event → chapter + interlude + devlog + **narration** + shorts) depends on it. The proven Naruto pattern is the contract:
+### 5.5 Narration (the audiobook layer) - OpenAI TTS
+Audio is a **first-class output**, not an afterthought - the product is "audiobook-style episodes," and the fan-out math (one committed event → chapter + interlude + devlog + **narration** + shorts) depends on it. The proven Naruto pattern is the contract:
 
 - **One `.mp3` per chapter**, filename = chapter slug (so `ch01-the-arrival.html` ↔ `ch01-the-arrival.mp3`), under the biography's `audio/`.
-- **Hash-gated regeneration** via `audio/.hashes.json`: the narrator hashes each chapter's narration text and re-synthesizes ONLY when it changed. Unchanged chapters are a no-op. This is non-negotiable — TTS calls cost money and time; the pipeline must never re-voice an untouched chapter.
-- **Synthesis: OpenAI TTS.** The narrator script (`scripts/narrate.mjs`) takes the narration-ready text (panel markup stripped, captions/bubbles flattened to read aloud naturally — see the engine-side "chapter → narration text" export) and calls the OpenAI TTS API.
-- **Per-biography voice.** The voice is a `voice` field in each biography's `theme.yaml` (§6.3) — so each life *sounds* like itself, the audio counterpart to per-biography theming. (Open question to settle in play: does the Operator's narration use one voice throughout, or does dialogue get distinct voices? Start with one narrator voice per biography; revisit only if it earns its complexity.)
-- **Player UI.** An inline audio player on each chapter page, plus a "listen" affordance on the biography ToC. Part of the shared frame. Missing audio degrades gracefully — no broken player when a chapter isn't voiced yet.
-- **Cost discipline.** Because synthesis is paid and irreversible-ish (you don't want to burn re-renders), narration runs as its OWN build step, after prose is final for a chapter — not on every site rebuild. `build-site.mjs` renders pages every time; `narrate.mjs` only touches changed chapters and only when invoked.
+- **Hash-gated regeneration** via `audio/.hashes.json`: the narrator hashes each chapter's narration text and re-synthesizes ONLY when it changed. Unchanged chapters are a no-op. This is non-negotiable - TTS calls cost money and time; the pipeline must never re-voice an untouched chapter.
+- **Synthesis: OpenAI TTS.** The narrator script (`scripts/narrate.mjs`) takes the narration-ready text (panel markup stripped, captions/bubbles flattened to read aloud naturally - see the engine-side "chapter → narration text" export) and calls the OpenAI TTS API.
+- **Per-biography voice.** The voice is a `voice` field in each biography's `theme.yaml` (§6.3) - so each life *sounds* like itself, the audio counterpart to per-biography theming. (Open question to settle in play: does the Operator's narration use one voice throughout, or does dialogue get distinct voices? Start with one narrator voice per biography; revisit only if it earns its complexity.)
+- **Player UI.** An inline audio player on each chapter page, plus a "listen" affordance on the biography ToC. Part of the shared frame. Missing audio degrades gracefully - no broken player when a chapter isn't voiced yet.
+- **Cost discipline.** Because synthesis is paid and irreversible-ish (you don't want to burn re-renders), narration runs as its OWN build step, after prose is final for a chapter - not on every site rebuild. `build-site.mjs` renders pages every time; `narrate.mjs` only touches changed chapters and only when invoked.
 
 Design rule for audio: the read is primary; narration is an enhancement a reader opts into, generated cheaply and incrementally, voiced per life.
 
@@ -138,7 +138,7 @@ Design rule for audio: the read is primary; narration is an enhancement a reader
 ---
 biography: the-operator
 id: ch01-the-arrival
-act: "Arc I — The Summoning"
+act: "Arc I - The Summoning"
 title: "The Arrival"
 when: "Day 1 · the cathedral at Sebastopyr"
 teaser: "One second in the cab; the next, a room that smells wrong and a voice that knew his name."
@@ -149,11 +149,11 @@ status: published
 ---
 ```
 
-### 6.2 Body — a light panel DSL (so prose isn't raw HTML)
+### 6.2 Body - a light panel DSL (so prose isn't raw HTML)
 Keep Naruto's manga-panel vocabulary, but as authorable markup the generator expands, not hand-written divs. Indicative:
 ```
 :::panel tone
-The room is wrong in a way only he can feel — a structure under load, somewhere above.
+The room is wrong in a way only he can feel - a structure under load, somewhere above.
 :::
 
 :::bubble who="System"
@@ -161,11 +161,11 @@ Query received. Ask precisely.
 :::
 
 :::sfx
-GROAN—
+GROAN-
 :::
 
 [OOC] :::roll
-Constraint Read — WIS (Hazard Sense) — DC 14 — rolled 17 (+5) = 22. SUCCESS.
+Constraint Read - WIS (Hazard Sense) - DC 14 - rolled 17 (+5) = 22. SUCCESS.
 The east arch is bearing what three should. Committed.
 :::
 
@@ -176,23 +176,23 @@ New read unlocked: "load path." Charges 1/1.
 ```
 The generator maps `panel/bubble/sfx/cap` to the in-character manga components, and the **`[OOC]` block types** (`roll`, `statbox`, and any mechanical readout) to a visually distinct out-of-character treatment (see §6.4). Authors (and agents emitting chapter content) write the DSL; the build owns the HTML.
 
-### 6.4 Inline crunch — the `[OOC]` convention (the LitRPG layer)
+### 6.4 Inline crunch - the `[OOC]` convention (the LitRPG layer)
 Bastion is **LitRPG**: stat boxes and rolls appear **inline, in the chapter**, not only in an appendix. The mechanical layer is marked out-of-character with an **`[OOC]`** label so the reader's eye learns the register in one chapter: unmarked text is the world (in-character prose); `[OOC]` is the engine speaking (the numbers).
 
-- **What `[OOC]` carries:** the stat box when it matters, the roll as it happens, the committed result. The blue-box experience hardcore readers expect — on the page, not behind a click.
-- **Why this preserves the oracle design:** the System still doesn't narrate the character's interiority. The character lives in the prose; the numbers live in `[OOC]` blocks. The register separator is what lets both share one column of text without confusion — the same move actual-play transcripts use, and LitRPG readers are fluent in it.
-- **The honesty edge (exploit this):** an inline `[OOC]` roll is **pulled from the committed ledger** — the SAME value that's in the chapter's Engine Log (§5), because both read the same committed state. Neither was typed by hand. So a reader can cross-check the inline roll against the audit trail and find they match, every time. Ordinary LitRPG inline crunch is the author typing a number; Bastion's is a window onto real committed state placed in the prose. "The dice are honest" becomes checkable at the sentence level.
+- **What `[OOC]` carries:** the stat box when it matters, the roll as it happens, the committed result. The blue-box experience hardcore readers expect - on the page, not behind a click.
+- **Why this preserves the oracle design:** the System still doesn't narrate the character's interiority. The character lives in the prose; the numbers live in `[OOC]` blocks. The register separator is what lets both share one column of text without confusion - the same move actual-play transcripts use, and LitRPG readers are fluent in it.
+- **The honesty edge (exploit this):** an inline `[OOC]` roll is **pulled from the committed ledger** - the SAME value that's in the chapter's Engine Log (§5), because both read the same committed state. Neither was typed by hand. So a reader can cross-check the inline roll against the audit trail and find they match, every time. Ordinary LitRPG inline crunch is the author typing a number; Bastion's is a window onto real committed state placed in the prose. "The dice are honest" becomes checkable at the sentence level.
 - **Two tiers, distinct jobs (do not make them redundant):**
-  - **Inline `[OOC]`** = *reading-level* crunch: the curated, narratively-placed mechanics — the beats that matter, in flow, part of the chapter you read.
+  - **Inline `[OOC]`** = *reading-level* crunch: the curated, narratively-placed mechanics - the beats that matter, in flow, part of the chapter you read.
   - **Collapsible Engine Log** (§5) = *audit-level* crunch: the exhaustive deterministic trace behind the whole chapter, for the reader who wants to verify everything, not just the surfaced beats.
-  One is for reading; one is for auditing. They show consistent numbers because they read the same ledger — and that consistency is itself a verifiable claim.
-- **Styling:** `[OOC]` blocks render in the biography's theme but visually set apart from the prose (a system-panel treatment — the "blue box," themed) so the eye sorts them instantly. They are NOT hidden and NOT collapsed; they are part of the read.
+  One is for reading; one is for auditing. They show consistent numbers because they read the same ledger - and that consistency is itself a verifiable claim.
+- **Styling:** `[OOC]` blocks render in the biography's theme but visually set apart from the prose (a system-panel treatment - the "blue box," themed) so the eye sorts them instantly. They are NOT hidden and NOT collapsed; they are part of the read.
 
 ### 6.3 Biography theme token set (per biography)
 ```yaml
 # bastion/biographies/the-operator/theme.yaml
 name: The Operator
-source_world: "contemporary Earth — an Arizona copper mine"
+source_world: "contemporary Earth - an Arizona copper mine"
 palette:
   night:  "#0d0f10"
   paper:  "#e8e4dc"
@@ -226,13 +226,13 @@ The shared frame reads these tokens at build. Add a biography → drop a `theme.
                  OpenAI TTS → docs/<...>/audio/<slug>.mp3, hash-gated;
                  unchanged chapters skipped. Runs as its own step, not every build.
 4. REVIEW      open docs/ locally; verify the chapter, its Engine Log, convergence links,
-                 and — if voiced — its narration player.
+                 and - if voiced - its narration player.
 5. SHIP        commit docs/ + source; push to main. GitHub Pages serves docs/.
-                 (continuation of the existing push pattern — see CLAUDE.md git-pulse.)
+                 (continuation of the existing push pattern - see CLAUDE.md git-pulse.)
 ```
 
 Convention notes:
-- `docs/` is **generated** — never hand-edit a file under `docs/`; edit content/theme/templates and rebuild. (This is the fix for Naruto's hand-authored drift.)
+- `docs/` is **generated** - never hand-edit a file under `docs/`; edit content/theme/templates and rebuild. (This is the fix for Naruto's hand-authored drift.)
 - One biography update = one build = one commit, so the git history reads as a publishing log.
 - The build is idempotent: rebuilding without content changes produces no diff.
 
@@ -240,15 +240,15 @@ Convention notes:
 
 ## 8. Day-one scope (given no chapters exist yet)
 
-Build the **front door now, structured so the rest grows out of it** — same lesson as everything else in this project: ship the entrance, let the rooms fill as the rite runs.
+Build the **front door now, structured so the rest grows out of it** - same lesson as everything else in this project: ship the entrance, let the rooms fill as the rite runs.
 
-**Phase 0 — the frame + landing (ship now):**
-- `docs/index.html` — the Bastion landing: the pitch, the premise, the (initially short) line of biographies, a "first lives incoming" state, and the "how this is made" section. Looks intentional while nearly empty.
-- The **shared component frame**: layout, manga-panel CSS, HUD-sheet component, collapsible Engine Log component, the "committed by the System" mark — all built once, theme-driven.
+**Phase 0 - the frame + landing (ship now):**
+- `docs/index.html` - the Bastion landing: the pitch, the premise, the (initially short) line of biographies, a "first lives incoming" state, and the "how this is made" section. Looks intentional while nearly empty.
+- The **shared component frame**: layout, manga-panel CSS, HUD-sheet component, collapsible Engine Log component, the "committed by the System" mark - all built once, theme-driven.
 - The **generator skeleton** (`scripts/build-site.mjs`) reading the content/theme formats from §6, even if only one biography stub exists.
 - `bastion/biographies/the-operator/theme.yaml` + `bastion/biographies/mnehmos/theme.yaml` as the first two theme sets.
 
-**Phase 1 — the first lives (when Chapter 1 commits):**
+**Phase 1 - the first lives (when Chapter 1 commits):**
 - The Operator's biography (hero + HUD + Arc I chapters) and Mnehmos's devlog, both generated from real committed content.
 - The **first convergence**: the Operator's arrival and Mnehmos's first rite as the same committed event, cross-linked from two interiors, positioned on `city/timeline.html`. This is the structural promise paying off on the first published page.
 
@@ -258,14 +258,14 @@ Build the **front door now, structured so the rest grows out of it** — same le
 
 ## 9. Non-negotiables (carried from the project's spine)
 
-- **LitRPG with honest crunch.** Stat boxes and rolls run inline, marked `[OOC]` (§6.4) — the blue-box experience is on the page, not opt-in. Two registers share one column: prose is the world, `[OOC]` is the engine. The read still flows for someone skimming the `[OOC]` blocks, but the crunch is present, not hidden.
-- **The crunch is real, and that is the differentiator.** Inline rolls and stat boxes are pulled from the committed ledger — the same numbers as the Engine Log, neither typed by hand. The selling claim is the one no LitRPG author can make: every number is real, the dice are honest, the protagonist can actually lose — and the reader can check.
-- **The story is the transcript.** Site content is generated from committed state, not authored ahead of it. "Narrate from state, never ahead of it" (Naruto's law) applies to the website too — a chapter cannot claim an outcome the ledger didn't commit, and an inline `[OOC]` roll cannot show a number the engine didn't roll.
+- **LitRPG with honest crunch.** Stat boxes and rolls run inline, marked `[OOC]` (§6.4) - the blue-box experience is on the page, not opt-in. Two registers share one column: prose is the world, `[OOC]` is the engine. The read still flows for someone skimming the `[OOC]` blocks, but the crunch is present, not hidden.
+- **The crunch is real, and that is the differentiator.** Inline rolls and stat boxes are pulled from the committed ledger - the same numbers as the Engine Log, neither typed by hand. The selling claim is the one no LitRPG author can make: every number is real, the dice are honest, the protagonist can actually lose - and the reader can check.
+- **The story is the transcript.** Site content is generated from committed state, not authored ahead of it. "Narrate from state, never ahead of it" (Naruto's law) applies to the website too - a chapter cannot claim an outcome the ledger didn't commit, and an inline `[OOC]` roll cannot show a number the engine didn't roll.
 - **Generated, not hand-built.** `docs/` is build output. Content + theme + templates are the editable surface.
 - **Per-biography skin, shared bones.** Every life looks (§3) and sounds (§5.5) like its source-world; every life runs on the same frame.
 - **Convergence is structural, not bolted on.** The data model knows that events can belong to many biographies, from the start.
 - **Two tiers of crunch, distinct jobs.** Inline `[OOC]` = reading-level (curated, in-flow). Engine Log = audit-level (exhaustive, collapsible). Same ledger → consistent numbers → a verifiable claim.
-- **Audio is first-class but cheap.** Narration is a primary output (audiobook episodes), voiced per biography via OpenAI TTS — but generated incrementally and hash-gated so it never re-renders an unchanged chapter. The read never depends on the audio; the audio never blocks the build.
+- **Audio is first-class but cheap.** Narration is a primary output (audiobook episodes), voiced per biography via OpenAI TTS - but generated incrementally and hash-gated so it never re-renders an unchanged chapter. The read never depends on the audio; the audio never blocks the build.
 
 ---
 

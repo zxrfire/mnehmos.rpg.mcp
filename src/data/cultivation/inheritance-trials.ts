@@ -1163,7 +1163,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
     {
         id: 'trial-the-oath-with-no-party',
         kind: 'trial',
-        name: 'The Dyer\'s Vault',
+        name: 'The Dyer\'s Cellar',
         character: 'archive',
         origin: 'abandoned_by_a_house',
         scale: 'a_building',

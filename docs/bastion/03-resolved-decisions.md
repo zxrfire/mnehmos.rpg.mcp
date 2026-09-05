@@ -1,4 +1,4 @@
-# Bastion — Resolved Decisions (PD 606 author log)
+# Bastion - Resolved Decisions (PD 606 author log)
 
 *Four architectural beats locked in by the maker. These were open in
 the deliverables manifest; they are no longer open. Subsequent design
@@ -33,7 +33,7 @@ work must honor them.*
 ## III. Operator = Mnehmos (hidden + arbitrary)
 
 - **Canonical fact:** the Operator (biography #2, Arizona-mine
-  heavy-equipment operator) IS another version of Mnehmos —
+  heavy-equipment operator) IS another version of Mnehmos -
   literally another Mnehmos summoned by the summoner-priest avatar.
   Not a parallel, not an analog.
 - **Hidden knowledge:** concealed from every in-world adjudicator,
@@ -50,13 +50,13 @@ work must honor them.*
   that cannot meet. The convergence chapter, when it comes, is the
   Operator failing to recognize himself.
 
-## IV. Mnehmos selection weight — writing-determined
+## IV. Mnehmos selection weight - writing-determined
 
 - **The question:** does the reader learn early *why* Mnehmos chose the
   Operator out of the cohort, or is the reason withheld until later (or
   forever)?
 - **The resolution:** not a spec decision. **Writing-determined.** The
-  prose of Chapter 1 itself decides — and Chapter 1 is written by
+  prose of Chapter 1 itself decides - and Chapter 1 is written by
   running the rite, not by pre-authoring a reveal schedule. This belongs
   in the same drawer as SPEC §11's deliberately-open questions:
   discovered by running, not specified.
