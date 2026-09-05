@@ -685,7 +685,10 @@ import {
     type WhatTheLastTurnDid
 } from './last-turn-memory.js';
 import { announceMode } from './which-mode-this-session-is-playing-in.js';
-import { composeStateSummary } from './prompt.js';
+import {
+    composeStateSummary,
+    LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
+} from './prompt.js';
 import {
     handleAdminManage,
     isAdminModeEnabled,
@@ -1704,6 +1707,7 @@ export class GameService {
                     cultivator,
                     run,
                     ambient,
+                    said: trimmed,
                     sectName: this.sectNameFor(cultivator),
                     knownTechniques: this.knownTechniqueNames(cultivator),
                     awareness: this.awarenessOf(cultivator),
@@ -1711,7 +1715,22 @@ export class GameService {
                     // bind "everyone here" against a list of every name in the
                     // cultivator's world with no mark on which are in front of
                     // them. See `describeWhoIsHere`.
-                    present: this.company(cultivator)
+                    present: this.company(cultivator),
+                    // AND WHAT THIS SQUARE IS HOLDING OUT.
+                    //
+                    // The same reader the player gets when they ask what to do,
+                    // and it had exactly one consumer: the player. So the
+                    // engine knew a manual was on a shelf here, or that this
+                    // body was three turns from starving, and the one party
+                    // that had to turn a sentence into an action was told
+                    // neither. See `describeWhatIsLive` for why the list is
+                    // capped and why it is explicitly not a menu.
+                    liveHere: theMostPressing(
+                        whatIsWorthDoingStandingHere(
+                            this.whatIsLiveHere(cultivator, ambient, run)
+                        ),
+                        LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER
+                    )
                 }),
                 describeTheLastTurn(before)
             );

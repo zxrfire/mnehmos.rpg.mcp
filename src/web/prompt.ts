@@ -648,6 +648,66 @@ export interface StateSummaryInput {
      * Everybody standing in the square, right now.
      */
     present: Company;
+    /**
+     * What the world currently considers particularly actionable.
+     *
+     * NOT A MENU, AND THE BLOCK SAYS SO IN THE PROMPT. The design owner:
+     *
+     *   > get_affordances() doesn't mean "here are the only things you are
+     *   > allowed to do." It means "here are the things the world currently
+     *   > considers particularly actionable." The LLM still has a
+     *   > general-purpose attempt_action.
+     *
+     * The universal verbs are already in the system prompt as `ACTION_NAMES`
+     * and stay available whatever is in here - a cultivator standing in front
+     * of a blacksmith may still try to assassinate him, and may still try to
+     * fold space to the capital without knowing how. Whether either lands is
+     * the engine's question and never this list's.
+     *
+     * Capped, because the reason this was not here already is real: a state
+     * summary that grows without a bound is a classifier that reads less of it.
+     */
+    liveHere?: readonly AnAffordance[];
+    /**
+     * What the player typed, so the blocks that have to be capped can put what
+     * this turn is about at the top of themselves and cut from the bottom.
+     */
+    said?: string;
+}
+
+/** One live thing, as much of it as the classifier needs. */
+export interface AnAffordance {
+    say: string;
+    because: string;
+    routesTo: string;
+}
+
+/**
+ * The most live things the classifier is shown.
+ *
+ * Small on purpose, and separate from what a PLAYER is shown when they ask what
+ * to do. A person reading a list picks from it; a classifier reading a list
+ * starts writing sentences out of it, and a long one crowds out the sentence
+ * that was actually typed.
+ */
+export const LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER = 6;
+
+/**
+ * What the world is holding out, said as what it is: an offer, not a menu.
+ */
+export function describeWhatIsLive(live: readonly AnAffordance[]): string[] {
+    if (live.length === 0) return [];
+    return [
+        '',
+        'LIVE HERE (what this square and this body are currently holding out). '
+            + 'THIS IS NOT A MENU AND IT IS NOT A LIMIT. Every action listed at the top of this '
+            + 'prompt stays available wherever the cultivator is standing, and an action on '
+            + 'neither list is still worth attempting - whether somebody can fold space, or kill '
+            + 'a man five realms above them, is a question for the engine and not for you. What '
+            + 'these are is what the world would answer FIRST:',
+        ...live.slice(0, LIVE_THINGS_SHOWN_TO_THE_CLASSIFIER).map(one =>
+            `  "${one.say}" (${one.routesTo}) - ${one.because}`)
+    ];
 }
 
 export function composeStateSummary(input: StateSummaryInput): string {
@@ -689,7 +749,8 @@ export function composeStateSummary(input: StateSummaryInput): string {
         ...describeWhoIsHere(input.present, cultivator.realmOrdinal),
         '',
         'HAS HEARD OF (the whole of this cultivator\'s world; everything else is unheard of):',
-        ...describeAwareness(input.awareness ?? [])
+        ...describeAwareness(input.awareness ?? [], input.said ?? ''),
+        ...describeWhatIsLive(input.liveHere ?? [])
     ].join('\n');
 }
 
@@ -768,15 +829,65 @@ function howTheyStand(theirs: number, yours: number): string {
 /**
  * The awareness list, one line each, with provenance.
  */
-export function describeAwareness(rows: readonly AwarenessRow[]): string[] {
+export function describeAwareness(
+    rows: readonly AwarenessRow[],
+    /** What the player typed. Anything they named is never cut. */
+    said = ''
+): string[] {
     if (rows.length === 0) {
         return ['  nothing at all. This cultivator has heard of no person, faction or place.'];
     }
-    return rows.map(row =>
+
+    const ordered = byWhatThisTurnIsAbout(rows, said);
+    const shown = ordered.slice(0, AWARENESS_SHOWN_TO_THE_CLASSIFIER);
+    const lines = shown.map(row =>
         `  ${row.name} (${row.kind}; ${row.stance}, ${row.sourceKind}` +
         `${row.sourceKind === 'overheard' ? ', CANNOT BE ADMITTED TO' : ''}` +
         `${row.sourceNote ? `: ${row.sourceNote}` : ''})`
     );
+
+    const cut = ordered.length - shown.length;
+    if (cut > 0) {
+        // SAID, NOT SWALLOWED. The block above this one claims to be the whole
+        // of what can be named, and a silent truncation would make that claim
+        // false in the one direction that costs a turn - the classifier
+        // refusing to bind a name the player actually holds.
+        lines.push(`  and ${cut} more this cultivator can name, not listed here. A name they `
+            + 'typed is always in the list above; anything else absent from it is absent for '
+            + 'room and not because they have never heard of it.');
+    }
+    return lines;
+}
+
+/**
+ * The most rows the classifier is shown.
+ *
+ * This list was UNBOUNDED, and it is the one block in the prompt that grows for
+ * as long as a run lasts: every person, house and place a cultivator has ever
+ * heard of, each with a provenance sentence. Measured at turn one it was
+ * already the largest part of the state summary, and nothing capped it.
+ */
+export const AWARENESS_SHOWN_TO_THE_CLASSIFIER = 40;
+
+/**
+ * Awareness in the order this turn actually needs it.
+ *
+ * Whatever the player named comes first and is never cut, which is what makes
+ * a cap safe at all. After that, most recently learned - what somebody heard
+ * about this week is what they are likeliest to be typing about, and it needs
+ * no relevance model to say so.
+ */
+function byWhatThisTurnIsAbout(
+    rows: readonly AwarenessRow[],
+    said: string
+): AwarenessRow[] {
+    const sentence = said.toLowerCase();
+    const named = (row: AwarenessRow) =>
+        row.name.length >= 3 && sentence.includes(row.name.toLowerCase());
+    return [...rows].sort((a, b) =>
+        (named(b) ? 1 : 0) - (named(a) ? 1 : 0)
+        || b.acquiredOnDay - a.acquiredOnDay
+        || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
 /** Proper nouns the narrator is permitted to use, drawn only from awareness. */
