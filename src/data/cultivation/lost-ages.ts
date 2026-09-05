@@ -43,7 +43,7 @@ export const MODERN_AND_ANCIENT = {
  */
 export const ABANDONED_IS_NOT_CONDEMNED = {
     demonic:
-        'Condemned. Righteous sects execute for possession, demonic sects charge for it, and both of them are making a claim about what the art is for. The Nine-Abyss Demon Transformation, the Heart of the Ten Thousand Corpses and the Meridian-Devouring Art are here: each of them spends somebody else, and the world has an opinion about that which has not changed in an age.',
+        'Condemned. Righteous sects execute for possession, demonic sects charge for it, and both of them are making a claim about what the art is for. The Nine-Abyss Demon Transformation, the Ten Thousand Corpse Heart and the Meridian-Devouring Art are here: each of them spends somebody else, and the world has an opinion about that which has not changed in an age.',
     abandoned:
         'Finished with. Nothing about the art is illegal, nothing about it is secret, and no house will move against a person for holding one. An era worked out what it cost, decided the price was not worth paying, and went a different way - and it was right, which is the part that keeps the abandonment coherent. A cultivator today who takes one up is making a defensible and eccentric choice, not discovering that everybody else was an idiot.',
     theOneThatMoved:
@@ -128,7 +128,7 @@ export const ANCIENT_ARTS: readonly AncientArt[] = [
             'Salvage crews and the very old. It is the one ancient road with a working trade behind it: a Deep Gleaner who can step out of a collapsed shaft is worth four who cannot, and by the time somebody has done the work to hold it they are old enough for the price not to matter.'
     },
     {
-        techniqueId: 'sealed-field-of-the-shut-hour',
+        techniqueId: 'shut-hour-sealing-field',
         capability:
             'A piece of ground is taken out of the world for an hour. Nothing enters, nothing leaves, no messenger, no formation, no ally, no retreat. It does not stop what is already inside with you.',
         costToTheUser:
@@ -302,7 +302,7 @@ export const LOST_MATERIALS: readonly LostMaterial[] = [
         remainingStock:
             'Jars. Two in an archive that has never acknowledged holding them, and seven more in three sealed sites, each with the level marked on the outside so that whoever opens the cupboard can see what is left without opening the jar.',
         closedRecipeIds: [],
-        gatesTechniqueIds: ['sealed-field-of-the-shut-hour'],
+        gatesTechniqueIds: ['shut-hour-sealing-field'],
         closedObjectKinds: [
             'element-bound blades of the old pattern, where the element is in the coating rather than in the smith - a class of weapon nobody now makes, as against a class nobody now makes WELL',
             'the sealing lacquer for any working that has to hold a boundary against the world rather than against a person'
@@ -328,7 +328,7 @@ export const LOST_MATERIALS: readonly LostMaterial[] = [
                 }
             ],
             whatIsKnownOfTheCount:
-                'Nine, and this is the one figure in the table anybody could actually establish. The jars were made to a standard and marked on the outside, the Ninefold Ledger has certified transfers of four of them over eleven hundred years, and a patient reader working the Ledger case notes could get to a number. Nobody has, because nobody has thought to ask how many are left rather than where to get one.'
+                'Nine, and this is the one figure in the table anybody could actually establish. The jars were made to a standard and marked on the outside, the Ninefold Karma Palace has certified transfers of four of them over eleven hundred years, and a patient reader working the Karma Pavilion case notes could get to a number. Nobody has, because nobody has thought to ask how many are left rather than where to get one.'
         }
     },
     {
@@ -499,7 +499,7 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
             'Given to a Mountain Elder four hundred years ago who was at the top of what she was going to reach and eleven years from the end of her allotted span. She had those years and nine hundred more, and did not advance in any of them. The Order has been a different institution since: it is the only house in the province that has already answered the question of what its one great asset was for, and every decision it has made since has been made by people who know the answer was a person rather than a position.'
     },
     {
-        factionId: 'house-narrow-hour',
+        factionId: 'house-flowing-light',
         standing: 'spent_theirs',
         howItIsKnown:
             'The house says so plainly when asked, which nobody expects and which is the reason the answer is believed.',
@@ -541,7 +541,7 @@ export interface ArchiveCopy {
 export const ARCHIVE_COPIES: readonly ArchiveCopy[] = [
     {
         factionId: 'sect-nine-peaks-ascetic-order',
-        techniqueId: 'sealed-field-of-the-shut-hour',
+        techniqueId: 'shut-hour-sealing-field',
         provenanceNote:
             'Brought back by an Order expedition eleven hundred years ago, along with four jars, which is a figure the Order still has written down.',
         stock: 'spent',
@@ -549,13 +549,13 @@ export const ARCHIVE_COPIES: readonly ArchiveCopy[] = [
             'Yes, and it has said so twice. The Order will hand the book to anybody who has done it a service worth the trouble, because it watched three of its own stall at the same place with it and does not expect the fourth to do better. What it will not hand over is the empty jars, which it keeps.'
     },
     {
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         techniqueId: 'hundred-pace-step',
         provenanceNote:
-            'Taken in payment for a perimeter survey some centuries ago and shelved, because the Anchorhold does not practise and does not teach.',
+            'Taken in payment for a perimeter survey some centuries ago and shelved, because the Immovable Mountain Temple does not practise and does not teach.',
         stock: 'never_had_any',
         willingToPartWithIt:
-            'For a price it has never had to name, since nobody has ever asked. The house has no idea what it is holding is worth to a salvage crew, and a salvage crew has no idea the Anchorhold has it.'
+            'For a price it has never had to name, since nobody has ever asked. The house has no idea what it is holding is worth to a salvage crew, and a salvage crew has no idea the Immovable Mountain Temple has it.'
     },
     {
         factionId: 'sect-ashen-forge-clan',
@@ -576,8 +576,8 @@ export const ARCHIVE_COPIES: readonly ArchiveCopy[] = [
             'Enthusiastically. It is the clearest thing in the catalog about what an ancient art is worth commercially, which is nothing, right up until it is worth everything to exactly one person.'
     },
     {
-        factionId: 'house-quiet-cut',
-        techniqueId: 'sealed-field-of-the-shut-hour',
+        factionId: 'house-still-blade',
+        techniqueId: 'shut-hour-sealing-field',
         provenanceNote:
             'No record of where it came from, which is the house\'s whole practice: four portable nodes, no address, and nothing left behind that could be surveyed.',
         // THE ONE EXCEPTION. A house with the book and material both, and
@@ -589,7 +589,7 @@ export const ARCHIVE_COPIES: readonly ArchiveCopy[] = [
         // and this is a living house's inventory.
         carriesToMastery: 0.85,
         willingToPartWithIt:
-            'It has never acknowledged holding either, and the only reason anybody suspects is that a sealed field was raised eleven years ago in a place the Quiet Cut had been working, and four separate accounts of it disagree about everything except that it happened.'
+            'It has never acknowledged holding either, and the only reason anybody suspects is that a sealed field was raised eleven years ago in a place the Still Blade Peak had been working, and four separate accounts of it disagree about everything except that it happened.'
     }
 ];
 
@@ -624,7 +624,7 @@ export const STOCKED_INHERITANCES: readonly StockedInheritance[] = [
         siteId: 'grave-shen-guyi',
         leftBy:
             'Shen Guyi, who reached the end of Tribulation Transcendence in the Third Sill\'s service, spent his last eleven years divesting in a recorded order exactly the way somebody preparing to cross divests, and then did not attempt it. He sat, and old age took him. The eleven years of divestment are the only reason this exists: a man who spends a decade putting things down deliberately has time to decide who gets what and how much of it.',
-        techniqueId: 'sealed-field-of-the-shut-hour',
+        techniqueId: 'shut-hour-sealing-field',
         upkeepHerbId: 'herb-kingfisher-lacquer-fern',
         carriesToMastery: 0.7,
         whyThatFar:

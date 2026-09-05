@@ -71,7 +71,7 @@ describe('Xu is the worked example of why names sit low', () => {
     it('is carried by more than one house, so it identifies none of them', () => {
         const houses = housesWithALineNamed('Xu');
         expect(houses.length).toBeGreaterThan(1);
-        expect(houses).toContain('house-anchorhold');
+        expect(houses).toContain('house-immovable-mountain');
         const reading = readALineageOffAName('Xu Shizhen');
         expect(reading.settles).toBe(false);
         expect(reading.corroborates).toBe(true);

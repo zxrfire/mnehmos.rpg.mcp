@@ -71,7 +71,7 @@ describe('seeding: a world that is already running', () => {
         expect(azure.tags).toContain('federated');
         expect(azure.standing['court-third-sill']).toBeGreaterThan(0);
 
-        const grove = state.factions.find(f => f.id === 'sect-standing-grove')!;
+        const grove = state.factions.find(f => f.id === 'sect-ancient-bough-grove')!;
         expect(grove.tags).toContain('deference');
         expect(grove.tags).toContain('closed');
     });

@@ -28,7 +28,7 @@ What they have in common is a door, something behind it, and nobody currently co
 So the term names the closing rather than the damage.
 
 The name was chosen to match the register this setting already writes in - the Ninefold
-Ledger, the Measured Span, the Unlit Gate, the Deep Survey, the Girdle of Nine Stones -
+Ledger, the Shrinking Earth Pavilion, the Nine Nether Hall, the Deep Survey, the Nine Stone Array -
 none of which reaches for grandeur. It is deliberately **not** "sealed ground": `sealed` is
 already a boolean on every location, `sealed_domain` is already a location kind, and
 `sealed-ancestors.ts` is already a catalog of people behind doors. A fourth meaning of that

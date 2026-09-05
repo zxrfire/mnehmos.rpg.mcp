@@ -415,7 +415,7 @@ describe('the wiring', () => {
 
             const gate = new KnowledgeGate(db);
             const repos = ensureCultivationDb();
-            for (const id of [claimant!, 'house-ninefold-ledger']) {
+            for (const id of [claimant!, 'house-ninefold-karma']) {
                 gate.learn({
                     holderId: created.cultivator.id,
                     kind: 'sect',
@@ -480,7 +480,7 @@ describe('the wiring', () => {
             );
             void hidden;
 
-            for (const sectId of ['sect-crimson-abyss-hall', 'house-narrow-hour', 'house-measured-span']) {
+            for (const sectId of ['sect-crimson-abyss-fortress', 'house-flowing-light', 'house-shrinking-earth']) {
                 const records = getSectAncestry(sectId);
                 if (!records?.dormant || records.dormant.publiclyKnown) continue;
                 const view = await sect({

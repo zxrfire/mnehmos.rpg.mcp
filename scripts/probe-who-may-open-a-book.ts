@@ -14,7 +14,7 @@
  * actually refuse?
  *
  * The answer is not uniform, and the first version of this probe got it wrong
- * by ignoring the dao gate: it reported `Canon of the First and Last Breath` as
+ * by ignoring the dao gate: it reported `First and Last Breath Scripture` as
  * needing nothing but ordinal 5, when it is chaos grade and needs a walked Dao,
  * carries a thirteen-rung opening at a tenth of the rate, and is described in
  * its own entry as something nobody has ever met a person using. The top of the

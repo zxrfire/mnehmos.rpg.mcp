@@ -147,7 +147,7 @@ describe('digest: the player learns what they could plausibly have heard', () =>
         appendFact(state.history, makeFact({
             day: state.currentDay + 100,
             kind: 'resource_contested',
-            summary: 'The Azure Cloud Pavilion lost the gorge vein to the Crimson Abyss Hall.',
+            summary: 'The Azure Cloud Pavilion lost the gorge vein to the Crimson Abyss Fortress.',
             factionIds: ['sect-azure-cloud', 'sect-crimson-abyss'],
             locationId: 'loc-region-low-fall',
             visibility: 'public',
@@ -157,8 +157,8 @@ describe('digest: the player learns what they could plausibly have heard', () =>
         appendFact(state.history, makeFact({
             day: state.currentDay + 200,
             kind: 'war',
-            summary: 'The Third Sill Court moved against the Longbough Grove.',
-            factionIds: ['court-third-sill', 'sect-standing-grove'],
+            summary: 'The Third Sill Court moved against the Ancient Bough Grove.',
+            factionIds: ['court-third-sill', 'sect-ancient-bough-grove'],
             visibility: 'public',
             magnitude: 0.8,
             data: { unattributed: 'The roads are not safe and the caravans have stopped.' }
@@ -166,7 +166,7 @@ describe('digest: the player learns what they could plausibly have heard', () =>
         appendFact(state.history, makeFact({
             day: state.currentDay + 300,
             kind: 'betrayal',
-            summary: 'Somebody opened the gate for the Crimson Abyss Hall.',
+            summary: 'Somebody opened the gate for the Crimson Abyss Fortress.',
             factionIds: ['sect-crimson-abyss'],
             visibility: 'secret',
             magnitude: 0.9,
@@ -187,7 +187,7 @@ describe('digest: the player learns what they could plausibly have heard', () =>
         const digest = buildPlayerDigest(facts, nobody, state.currentDay, state.currentDay + 400);
         for (const line of digest.lines) {
             expect(line.form).not.toBe('named');
-            expect(line.text).not.toMatch(/Azure Cloud|Crimson Abyss|Third Sill|Longbough Grove/);
+            expect(line.text).not.toMatch(/Azure Cloud|Crimson Abyss|Third Sill|Ancient Bough Grove/);
         }
         expect(namesPermitted(digest).factions.size).toBe(0);
     });
@@ -257,7 +257,7 @@ describe('digest: the player learns what they could plausibly have heard', () =>
             day: state.currentDay + 10,
             kind: 'promotion',
             summary: 'A minor promotion in a sect nobody outside it cares about.',
-            factionIds: ['sect-gleaners-company'],
+            factionIds: ['sect-fallen-grain-caravan'],
             locationId: 'loc-region-scarwater',
             visibility: 'faction',
             magnitude: 0.2,
@@ -535,7 +535,7 @@ describe('the acceptance test: five hundred years', () => {
         for (const id of permitted.factions) expect(id).toBe('sect-azure-cloud');
         for (const line of digest.lines) {
             if (line.form === 'named') continue;
-            expect(line.text).not.toMatch(/Crimson Abyss|Third Sill|Longbough Grove|Weir Office|Gleaners/);
+            expect(line.text).not.toMatch(/Crimson Abyss|Third Sill|Ancient Bough Grove|Clearwater Ward|Fallen Grain Caravan/);
         }
     });
 

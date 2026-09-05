@@ -489,7 +489,7 @@ describe('the two traditions follow from the deep past', () => {
 
     it('grounds the claim in a work that ties back to a real compound', () => {
         const works = DEAD_CIVILISATIONS.flatMap(d => d.survivingWorks);
-        const weir = works.find(w => w.heldByFactionId === 'sect-weir-office');
+        const weir = works.find(w => w.heldByFactionId === 'sect-clearwater-ward');
         expect(weir, 'the weir works are the site where both traditions meet').toBeDefined();
         expect(weir!.nodes).not.toBeNull();
     });

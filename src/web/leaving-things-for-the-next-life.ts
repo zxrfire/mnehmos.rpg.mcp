@@ -660,7 +660,7 @@ export function factsForCounters(here: string, road?: OutOfRoad): EngineFacts {
         `You can put it in the ground. That costs nothing but the days and needs nobody's permission, and it is at risk from one thing: somebody finding it. What that turns on is where you dig. ${GROUND_READS[groundOf(here)]}`,
         'Or you can lodge it with a house against a form of words, and whoever says the words collects. That is not safe either. It is at risk from the house - from the house being absorbed, or burned, or still standing and simply refusing - and the risk grows the longer you leave it.',
         ...views.map(describeCounter),
-        `The Anchorhold will anchor a burial for ${ANCHORING_A_CACHE.feeStones} stones. ${ANCHORING_A_CACHE.whatItBuys} ${ANCHORING_A_CACHE.whatItDoesNotBuy}`
+        `Immovable Mountain Temple will anchor a burial for ${ANCHORING_A_CACHE.feeStones} stones. ${ANCHORING_A_CACHE.whatItBuys} ${ANCHORING_A_CACHE.whatItDoesNotBuy}`
     ];
     return facts('What can be left behind, and to whom.', lines, [
         `${views.length} custody counters, ordered by cumulative failure odds over ${CUSTODY_HORIZON_YEARS} years. `
@@ -677,7 +677,7 @@ export function factsForBuried(
         `${describeGoods(record.goods)}, in the ground at ${record.place}.`,
         `${record.burial.daysSpent} day${record.burial.daysSpent === 1 ? '' : 's'} of work went into putting it there. ${GROUND_READS[record.ground]}`,
         record.burial.anchored
-            ? `The Anchorhold has it on the survey of record. ${ANCHORING_A_CACHE.counterLine}`
+            ? `Immovable Mountain Temple has it on the survey of record. ${ANCHORING_A_CACHE.counterLine}`
             : 'Nothing is on any survey. What holds it is the ground and how well you covered it, and neither of those improves with time.',
         watchers > 0
             ? `${watchers === 1 ? 'Somebody was' : `${watchers} people were`} standing close enough to see what you were doing, and did not leave.`
@@ -694,7 +694,7 @@ export function factsForBuried(
         + `${record.burial.daysSpent} day(s) of work by somebody standing at `
         + `${rungAndOrdinal(record.burial.burierOrdinal)}, and `
         + (record.burial.anchored
-            ? 'the Anchorhold holds it on the survey of record.'
+            ? 'the Immovable Mountain Temple holds it on the survey of record.'
             : 'nothing anchors it anywhere.'),
         `${watchers} ${watchers === 1 ? 'person was' : 'people were'} close enough to see it done. `
         + `Cultivator ${cultivator.id} was debited ${record.goods.spiritStones} stone(s) and `

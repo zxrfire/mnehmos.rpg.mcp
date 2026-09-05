@@ -65,7 +65,7 @@ export interface HouseOnItsGround {
      * `CatalogFaction.holdsVein` is `Boolean(parent.holds)` over a description
      * string every faction carries, so it reads true for all thirty-five and
      * separates nobody. A region's `qiDensity` is province-wide and puts the
-     * White Ape beside the Stonewright Consortium, when its own entry says it
+     * White Ape beside the Stone Marrow Hall, when its own entry says it
      * holds the gorge above the Jade Gorge - which is the Pavilion's. Power
      * lands on the catalog's stated answer; the other two do not.
      */
@@ -158,7 +158,7 @@ export function pairProtectors(
 // WHAT THIS CANNOT SEE YET
 //
 // A house's ground is read as open ground on a vein, so a house whose ground
-// INCLUDES closed ground is invisible here. The Weir Office has refused four
+// INCLUDES closed ground is invisible here. Clearwater Ward has refused four
 // applications to open the cut face and has not written down why, and the
 // sealed ancestor is walled into that face at ordinal 30 - the plainest truce
 // in the catalog and this module cannot produce it, because a `sealed_only`

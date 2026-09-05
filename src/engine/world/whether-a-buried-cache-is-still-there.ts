@@ -19,12 +19,12 @@
  *   CONCEALMENT What the burier actually did. Days spent, and the rung they
  *               were standing at - somebody at Nascent Soul can set a thing in
  *               ground that a villager with a spade will never turn up, and
- *               somebody at ordinal 0 has dug a hole. Optionally an Anchorhold
+ *               somebody at ordinal 0 has dug a hole. Optionally an Immovable Mountain Temple
  *               anchoring, which is a service the catalog already sells.
  *
  *   TIME        And this is the half that is easy to get wrong. Concealment is
  *               not permanent, and the setting says so in its own voice: the
- *               House of the Quiet Cut sells "concealment retainers, renewed
+ *               Still Blade Peak sells "concealment retainers, renewed
  *               annually, because concealment decays". So the protection a good
  *               burial buys is spent down over the centuries until the cache is
  *               as findable as a hole in the same ground, and the hazard rises
@@ -88,7 +88,7 @@ export type BurialGround =
  *
  * `site` is deliberately not the safest. A named site in the region catalog is
  * a place with something at it, which is why it has a name, and the people who
- * go there are grave-readers and Gleaners rather than farmers. Burying a cache
+ * go there are grave-readers and Fallen Grain Caravan rather than farmers. Burying a cache
  * next to an inheritance ground is burying it where the professionals work.
  *
  * `unplaceable` is the floor and is the honest reading of ground the catalog
@@ -150,7 +150,7 @@ export const CONCEALMENT_WORK_CEILING_DAYS = 90;
 /**
  * Half-life of a concealment, in years.
  *
- * The Quiet Cut sells concealment retainers renewed annually because
+ * The Still Blade Peak sells concealment retainers renewed annually because
  * concealment decays; nothing in this world stays hidden by having once been
  * hidden well. Two hundred years is the figure the rest of this module is
  * calibrated against and the reason a cache is a medium-term instrument: at one
@@ -159,7 +159,7 @@ export const CONCEALMENT_WORK_CEILING_DAYS = 90;
  */
 export const CONCEALMENT_HALF_LIFE_YEARS = 200;
 
-/** What an Anchorhold anchoring is worth as a straight multiplier on hazard. */
+/** What an Immovable Mountain Temple anchoring is worth as a straight multiplier on hazard. */
 export const ANCHORED_HAZARD_FACTOR = 0.45;
 
 /**
@@ -178,7 +178,7 @@ export interface CacheBurial {
     daysSpent: number;
     /** The rung the burier was standing at when they did it. */
     burierOrdinal: number;
-    /** Whether the Anchorhold was paid to anchor the site. */
+    /** Whether the Immovable Mountain Temple was paid to anchor the site. */
     anchored: boolean;
     /** How many people were present and could see what was being done. */
     watchers: number;

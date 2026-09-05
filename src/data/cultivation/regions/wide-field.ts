@@ -65,11 +65,11 @@ export const THE_WIDE_FIELD: Region = {
         missingDisciplines: [
             {
                 discipline: 'oath-binding',
-                reason: 'A Unbroken Tally oath binds to certified ground and the Anchorhold has never carried a survey east of the watershed. An oath sworn in the Yellow Plain is a promise and nothing else, which is why every arrangement here is a lease with a deposit and why the province regards the Jade Gorge habit of swearing things as a charming affectation.'
+                reason: 'A Vermilion Seal Terrace oath binds to certified ground and the Immovable Mountain Temple has never carried a survey east of the watershed. An oath sworn in the Yellow Plain is a promise and nothing else, which is why every arrangement here is a lease with a deposit and why the province regards the Jade Gorge habit of swearing things as a charming affectation.'
             },
             {
                 discipline: 'containment',
-                reason: 'A perimeter needs a datum that stays where it was put, and two thousand years of ploughing, digging, walling and rewalling have left nothing in the East that has been in one place for a century. The Anchorhold maintains no perimeter here, has never applied to, and says so in writing when asked.'
+                reason: 'A perimeter needs a datum that stays where it was put, and two thousand years of ploughing, digging, walling and rewalling have left nothing in the East that has been in one place for a century. Immovable Mountain Temple maintains no perimeter here, has never applied to, and says so in writing when asked.'
             }
         ],
         strongDisciplines: [
@@ -91,24 +91,24 @@ export const THE_WIDE_FIELD: Region = {
     politicsNote:
         'One holder, and what it holds is the rate. Nobody in the Yellow Plain holds ground, so nobody can be leaned on through a grant; what can be leaned on is the price of an assayed stone, and one house sets that at the head of nine veins and in the assay hall of every city. It is a hegemony that has never fought anybody: it buys the seniors of houses it wants quiet, three of them now have none, and every institution in the province quotes a figure it did not set to pay a rent it cannot refuse.',
     factionIds: [
-        'sect-stonewright-consortium',
+        'sect-stone-marrow-hall',
         'sect-thousand-treasure-pavilion',
         'sect-lantern-hall',
         'sect-the-severed',
         'sect-bone-lantern-cult',
-        'house-held-names',
-        'house-narrow-hour',
-        'house-quiet-cut'
+        'house-jade-register',
+        'house-flowing-light',
+        'house-still-blade'
     ],
     branches: [
         {
-            parentSectId: 'house-ninefold-ledger',
+            parentSectId: 'house-ninefold-karma',
             localName: 'The Eastern Circuit',
             doesHere:
-                'Nine of the forty-one arbitration benches, sitting in cities where nothing can be sworn and everything has to be proved. It is the busiest half of the Ledger\'s work and the half its auditors least want, because an eastern case is a lease dispute rather than a thread and there is no karma in a lease.'
+                'Nine of the forty-one arbitration benches, sitting in cities where nothing can be sworn and everything has to be proved. It is the busiest half of the Karma Pavilion\'s work and the half its auditors least want, because an eastern case is a lease dispute rather than a thread and there is no karma in a lease.'
         },
         {
-            parentSectId: 'sect-crimson-abyss-hall',
+            parentSectId: 'sect-crimson-abyss-fortress',
             localName: 'The Autumn Gate Table',
             doesHere:
                 'A table and a cash box outside the admission days of every city hall that runs one, paying the first month in advance to whoever was refused inside that morning. The eastern cities are the only place in the world where a recruiter can sit outside nine doors in one season.'
@@ -158,7 +158,7 @@ export const THE_WIDE_FIELD: Region = {
             kind: 'shared_feud',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The Bone Lantern Cult works the old grounds on both sides of the watershed and the Verdant Spring Hall has been trying to have it stopped for sixty years, in a province where nothing it says has any force at all.',
+                'The Bone Lantern Cult works the old grounds on both sides of the watershed and the Verdant Spring Valley has been trying to have it stopped for sixty years, in a province where nothing it says has any force at all.',
             travelDays: 6
         },
         {

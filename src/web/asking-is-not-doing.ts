@@ -187,7 +187,7 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
         case 'move':
         case 'ride':
         case 'fold':
-            // Where they could go, priced. "Could I ride to Iron Gate" and "how
+            // Where they could go, priced. "Could I ride to Iron Ridge" and "how
             // far can I fold" are both questions about the map rather than
             // journeys, and the destinations read answers each with the roads
             // the catalog states and the days on them.
@@ -197,7 +197,7 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
         case 'oath':
             // Both have a read as their DEFAULT intent, by the rule stated at
             // INTENT_ACTIONS: the board, and what the swearer already carries.
-            // Dropping the intent reaches it. "What would passage to Iron Gate
+            // Dropping the intent reaches it. "What would passage to Iron Ridge
             // cost" is the board, and the board is a price list.
             return { action: plan.action, ...(plan.target ? { target: plan.target } : {}) };
 

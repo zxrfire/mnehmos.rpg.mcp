@@ -39,7 +39,7 @@ export const VAULT_CONTENTS = {
         'Several centuries of an apex institution keeping everything it was ever given in one building, because the building has never been entered and there has never been a reason to disperse it.',
     whatARaiderWouldActuallyTake: [
         'Assayed spirit stones in a quantity nobody outside the Survey has ever seen in one room - the accumulated float of a body that sets the exchange rate and has never had to spend down.',
-        'Refining materials and reagents at grades the Cinnabar Crucible Guild cannot buy at any price, including scar-ground and spirit-vein stock laid down before the drawdown.',
+        'Refining materials and reagents at grades the Cinnabar Crucible Sect cannot buy at any price, including scar-ground and spirit-vein stock laid down before the drawdown.',
         'Manuals, in grades no living teacher transmits, from sites the Survey sealed itself and never published.',
         'The middle and lower immortal medicines: two golden pills and a talisman that are fungible, usable by anybody, and impossible to trace once out of the register.'
     ],
@@ -228,12 +228,12 @@ export const CONTINGENCIES: readonly Contingency[] = [
                 divergence: 'patron_overcounts'
             },
             {
-                factionId: 'house-anchorhold',
+                factionId: 'house-immovable-mountain',
                 holds: 'Xu Ci under the datum stone, published in the survey standard as a schedule, and dead for perhaps two centuries.',
                 wouldTheyWakeForThePatron:
                     'They would try, and nothing would happen. The house is not a subsidiary and owes the Survey nothing formally, but its whole existence is containment and survey work, and a request from the party whose datum its own stone refers to would be answered - by a house whose one instrument has been gone since before anybody currently posted was born.',
                 patronBelieves:
-                    'That the published schedule is real, because it has never had a reason to think otherwise and the Anchorhold has never had a reason to check.',
+                    'That the published schedule is real, because it has never had a reason to think otherwise and the Immovable Mountain Temple has never had a reason to check.',
                 divergence: 'patron_overcounts'
             },
             {
@@ -260,7 +260,7 @@ export const CONTINGENCIES: readonly Contingency[] = [
         theDilemma:
             'The two uses are mutually exclusive and the Court cannot have both. If Frostmirror is ever attacked existentially, waking her to survive means permanently giving up the payoff they have held for a hundred and ninety years - there is no second Mirror and no second hall. So the choice is to survive as a mid-tier sect with nothing left that anybody needs to be careful about, or to refuse to wake her and possibly not survive at all. There is no version where they get both, everybody senior in that hall understands it, and somebody in there has already decided which way they would go and has never said so aloud. The Court has no procedure for the question, which is not an oversight: writing a procedure would require somebody to put the answer in a document.',
         theCounterMove:
-            'The way to disarm a holder of a sealed ancestor is not to beat them. It is to threaten them hard enough that they burn the instrument defensively - a rival who understood the position could force the Mirror to be spent on survival and walk away having neutralised a two-thousand-year asset without ever facing it, at the cost of a war they intended to lose anyway. Somebody has worked this out: the House of the Narrow Hour holds it as an abstract reading, has published it to nobody, and quietly declined a commission that would have amounted to selling it - one of the two declined commissions in its own records, and the party that commissioned it has no idea how close it came. The Storm Tyrant Court, which has raided the glacier twice and stopped, would use it the day it heard it and has not heard it.',
+            'The way to disarm a holder of a sealed ancestor is not to beat them. It is to threaten them hard enough that they burn the instrument defensively - a rival who understood the position could force the Mirror to be spent on survival and walk away having neutralised a two-thousand-year asset without ever facing it, at the cost of a war they intended to lose anyway. Somebody has worked this out: the Flowing Light Tower holds it as an abstract reading, has published it to nobody, and quietly declined a commission that would have amounted to selling it - one of the two declined commissions in its own records, and the party that commissioned it has no idea how close it came. The Storm Tyrant Court, which has raided the glacier twice and stopped, would use it the day it heard it and has not heard it.',
         theWakingItself:
             'The Court has written the briefing. It is nine lines, it has been revised eleven times in a hundred and ninety years, and it exists because somebody worked out early that her first minutes will be spent establishing what the sect has become, what year it is, who holds the seat and whether the people in front of her are who they say - and that those minutes come off the clock. The nine lines are the single largest contribution the living can make to a waking, and the Court knows it. What the Court has never been able to write is the other half of the scene: she is the first Sovereign, the people asking will be her successors at a distance she can measure in a glance, she may not be impressed, and she will say so once, briefly, while deciding whether to go and rob somebody. Nobody in that hall expects to enjoy it.',
         askingIsWaking:

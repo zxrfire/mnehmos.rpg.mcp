@@ -865,7 +865,7 @@ describe('a question about what would follow is not the act it names', () => {
             ['I cultivate for ten years', 'cultivate'],
             ['I gather herbs here', 'gather'],
             ['I fight him if he draws', 'attack'],
-            ['I travel to Iron Gate', 'move']
+            ['I travel to Iron Ridge', 'move']
         ] as const) {
             const plan = parseIntent(said);
             expect(plan.action, said).toBe(action);

@@ -103,7 +103,7 @@ describe('the sentences that produced the ruling', () => {
         // Each of these is a row that runs BELOW the taking row and is deferred
         // to explicitly. A taking that ate one of them would have traded a
         // whole surface for this one.
-        expect(parseIntent('I take the carriage to Iron Gate').action).toBe('ride');
+        expect(parseIntent('I take the carriage to Iron Ridge').action).toBe('ride');
         expect(parseIntent('I take the pill').action).toBe('consume_pill');
         expect(parseIntent("I'll take the manual").action).toBe('buy');
         expect(parseIntent('I take a manual from the sect library without asking').action)
@@ -229,7 +229,7 @@ describe('what is standing free', () => {
         const free = aSword({ id: 'a', locationId: here });
         const owned = aSword({ id: 'b', ownerId: 'npc-1', locationId: here });
         const held = aSword({ id: 'c', possessorId: 'npc-1', locationId: here });
-        const elsewhere = aSword({ id: 'd', locationId: 'Iron Gate' });
+        const elsewhere = aSword({ id: 'd', locationId: 'Iron Ridge' });
         const world = { objects: [free, owned, held, elsewhere] } as never;
 
         expect(whatIsStandingFreeAt(world, here).map(o => o.id)).toEqual(['a']);

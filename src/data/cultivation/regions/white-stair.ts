@@ -178,13 +178,13 @@ export const THE_WHITE_STAIR: Region = {
     ],
     branches: [
         {
-            parentSectId: 'sect-cinnabar-crucible-guild',
+            parentSectId: 'sect-cinnabar-crucible-sect',
             localName: 'The Cold Crucible at Cold Peak',
             doesHere:
-                'Four furnaces and a price list, and the only alchemy in the province. It stands here because the Guild\'s grant comes from the Frostmirror rather than from the Third Sill, which is an arrangement neither province has a document for and neither has asked about.'
+                'Four furnaces and a price list, and the only alchemy in the province. It stands here because the Hall\'s grant comes from the Frostmirror rather than from the Third Sill, which is an arrangement neither province has a document for and neither has asked about.'
         },
         {
-            parentSectId: 'house-measured-span',
+            parentSectId: 'house-shrinking-earth',
             localName: 'The Four Graves Terminal',
             doesHere:
                 'One of the nine stations, at the head of the pass, an hour from a station seventeen days\' walk away. It is the only reason anything reaches the North in the five months the road is shut, it opens four days in nine, and the Frostmirror pays for it in stones without ever having said what for.'
@@ -260,7 +260,7 @@ export const THE_WHITE_STAIR: Region = {
             kind: 'shared_institution',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The Frostmirror grants to an alchemy guild standing on a volcanic flank in another province, on the arterial that runs under both of them. It is the only lease in the world that crosses a provincial border, and neither province has a document that admits it exists.',
+                'The Frostmirror grants to an alchemy hall standing on a volcanic flank in another province, on the arterial that runs under both of them. It is the only lease in the world that crosses a provincial border, and neither province has a document that admits it exists.',
             travelDays: 17
         },
         {

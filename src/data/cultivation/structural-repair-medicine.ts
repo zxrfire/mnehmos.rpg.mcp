@@ -97,7 +97,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
         refinedPerCentury: 0.05,
         terms: 'private_sale',
         provenance:
-            'Refined in three places in the two provinces and nowhere else, from a formula none of the three will show the other two. The Cinnabar Crucible Guild is one of them and does not advertise it, on the grounds that a queue would form and could not be served.',
+            'Refined in three places in the two provinces and nowhere else, from a formula none of the three will show the other two. The Cinnabar Crucible Sect is one of them and does not advertise it, on the grounds that a queue would form and could not be served.',
         description:
             'A foundation gets one pour, and the qi that would have gone into a second was spent getting there. This is the second pour: it dissolves what set wrong and re-lays it out of the taker, which is why it costs what it costs and why the taker comes out of it thinner than they went in.',
         takingIt:
@@ -338,13 +338,13 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
 
     // ══ EARTH GRADE - counted, and still beyond any individual ═════════
     {
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         medicineId: 'repair-core-knitting',
         count: 2,
-        howGot: 'Refined in the Guild\'s own crucible, which is one of the two places in the world that will attempt it.',
+        howGot: 'Refined in the Hall\'s own crucible, which is one of the two places in the world that will attempt it.',
         whyStillHeld:
-            'Stock, and the Guild is candid that it is stock. It will sell one to a house that can pay, and the number of houses that can pay is small enough that the Guild has gone eighty years between sales twice.',
-        whoDecides: 'The Guild, commercially, on terms it sets and does not negotiate.'
+            'Stock, and the Hall is candid that it is stock. It will sell one to a house that can pay, and the number of houses that can pay is small enough that the Hall has gone eighty years between sales twice.',
+        whoDecides: 'The Hall, commercially, on terms it sets and does not negotiate.'
     },
     {
         factionId: 'sect-azure-cloud-pavilion',
@@ -355,7 +355,7 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
         whoDecides: 'The Pavilion Master, without needing the Sword Elders for a thing of this grade.'
     },
     {
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         medicineId: 'repair-core-knitting',
         count: 1,
         howGot: 'Bought outright, at a figure the house recorded and does not discuss, for a grandson who had not yet reached the wall it answers.',
@@ -375,12 +375,12 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
 
     // ══ MORTAL GRADE - counted. The rich family's purchase ═════════════
     {
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         medicineId: 'repair-second-pour',
         count: 3,
-        howGot: 'Refined to order and to stock, being the only one of the four this Guild makes with any regularity.',
+        howGot: 'Refined to order and to stock, being the only one of the four this Hall makes with any regularity.',
         whyStillHeld: 'Awaiting a buyer who can pay, which is a very short list and does not include anybody who has ever needed one for themselves.',
-        whoDecides: 'The Guild, commercially.'
+        whoDecides: 'The Hall, commercially.'
     },
     {
         factionId: 'sect-azure-cloud-pavilion',
@@ -391,7 +391,7 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
         whoDecides: 'The hall that runs the intake, which does not need the Master for this.'
     },
     {
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         medicineId: 'repair-second-pour',
         count: 2,
         howGot: 'Bought as a pair, on the reasoning that a house with two children at the wall should not have to choose.',
@@ -399,7 +399,7 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
         whoDecides: 'The head of the house.'
     },
     {
-        factionId: 'house-held-names',
+        factionId: 'house-jade-register',
         medicineId: 'repair-second-pour',
         count: 1,
         howGot: 'Bought sixty years ago for a specific child, who did not need it.',

@@ -189,7 +189,7 @@ describe('unowned sealed ancestors', () => {
     it('includes one sealed by a party that no longer exists', () => {
         const orphaned = UNOWNED_ANCESTORS.filter(u => u.sealerFactionId === null);
         expect(orphaned.length).toBeGreaterThanOrEqual(1);
-        const tally = UNOWNED_ANCESTORS.find(u => /Tally Court/i.test(u.sealedBy));
+        const tally = UNOWNED_ANCESTORS.find(u => /Iron Tally Court/i.test(u.sealedBy));
         expect(tally, 'a destroyed house should have left a seal').toBeDefined();
         expect(tally!.sealMaintained).toBe(false);
         expect(tally!.lastChecked).toMatch(/centuries|not in|never/i);
@@ -346,7 +346,7 @@ describe('the law of sealing', () => {
     });
 
     it('makes reading a seal the scarce skill, and decay the likeliest event', () => {
-        expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Anchorhold/);
+        expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Immovable Mountain Temple/);
         expect(SEALING_LAW.readingIsAScarceSkill).toMatch(/Deep Survey/);
         expect(SEALING_LAW.sealsDoNotCheckWhoIsStanding).toMatch(/outsider/i);
         expect(SEALING_LAW.unmaintainedSealsDecay).toMatch(/erodes|degrades/i);
@@ -404,7 +404,7 @@ describe('the lineage claim', () => {
 
     it('makes her the only authority who can settle it', () => {
         expect(THE_LINEAGE_CLAIM.sheIsTheOnlyAuthority).toMatch(/single adjudicator/i);
-        expect(THE_LINEAGE_CLAIM.sheIsTheOnlyAuthority).toMatch(/Ninefold Ledger/);
+        expect(THE_LINEAGE_CLAIM.sheIsTheOnlyAuthority).toMatch(/Ninefold Karma Palace/);
         expect(THE_LINEAGE_CLAIM.theVerdictMayBeNeither).toMatch(/neither|nobody expected/i);
     });
 

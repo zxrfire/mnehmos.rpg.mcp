@@ -10,9 +10,9 @@
  *
  * Measured over a seeded, advanced world before the fix:
  *
- *   day 0   Burnt Earth 25   Green Water City 30   Iron Gate 14   Six Li 13
- *   +20y    Burnt Earth 18   Green Water City 18   Iron Gate  6   Six Li  6
- *   +50y    Burnt Earth  7   Green Water City  4   Iron Gate  0   Six Li  1
+ *   day 0   Burnt Earth 25   Green Water City 30   Iron Ridge 14   Six Li 13
+ *   +20y    Burnt Earth 18   Green Water City 18   Iron Ridge  6   Six Li  6
+ *   +50y    Burnt Earth  7   Green Water City  4   Iron Ridge  0   Six Li  1
  *
  * Total alive held at about 350 the whole time - nobody was dying off - and
  * "The Silent Cliffs (region)" went from 39 to 170. The encounter system draws

@@ -235,7 +235,7 @@ export const travelVerbs = {
         //
         // This spent `SHORT_ACTION_DAYS` for every journey to anywhere, while
         // `destinations` printed the catalog's `travelDays` beside each
-        // province - so the game told a player Iron Gate was eleven days away and
+        // province - so the game told a player Iron Ridge was eleven days away and
         // then took them there in one. `FOLD_TRAVEL_ENGINE_GAP` names this line
         // as the reason a fold could not be shown to save anybody anything.
         //
@@ -354,7 +354,7 @@ export const travelVerbs = {
     // player without printing a number the engine does not charge. It was
     // right: `move` spent a flat day for every journey while `destinations`
     // printed the catalog's `travelDays` beside each province, so the game
-    // told a player Iron Gate was eleven days away and then took them there in
+    // told a player Iron Ridge was eleven days away and then took them there in
     // one. {@link daysOnTheRoadTo} is the single reader of that figure and
     // every verb here goes through it, `move` included - so a fold that saves
     // ten days saves ten days that were being spent.

@@ -61,7 +61,7 @@ function places(): LocationRecord[] {
     return [
         makeLocation({ id: 'loc-province', name: 'The Jade Gorge', kind: 'region' }),
         makeLocation({
-            id: 'loc-town', name: 'Iron Gate', kind: 'settlement', parentId: 'loc-province'
+            id: 'loc-town', name: 'Iron Ridge', kind: 'settlement', parentId: 'loc-province'
         }),
         makeLocation({
             id: 'loc-district', name: 'The Six Li Cut', kind: 'wilderness', parentId: 'loc-town'
@@ -108,7 +108,7 @@ function war(over = 'loc-town'): AreaStatus {
         kind: 'war',
         statement: 'Two houses are fighting over the water here.',
         cause: {
-            what: 'The Fordhall called in a crossing debt it had held for sixty years.',
+            what: 'The Alliance called in a crossing debt it had held for sixty years.',
             decidedById: 'sect-clear-river-fordhall',
             factId: 'fact-the-debt-called'
         },

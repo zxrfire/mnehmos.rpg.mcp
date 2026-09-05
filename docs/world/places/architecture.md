@@ -250,7 +250,7 @@ the surviving evidence as well as the best one does:
 
 The two single-root courts narrow to **one candidate** from an ancient ruin: the rock is
 the rock, and a house that admitted one root is named centuries later by its own walls.
-`house-held-names` and `house-measured-span` narrow to **ten**. Telling *which* ordinary
+`house-jade-register` and `house-shrinking-earth` narrow to **ten**. Telling *which* ordinary
 house built an ordinary ruin is therefore the genuinely hard expert skill, and nobody had
 to assert that anywhere - it falls out of the decay order.
 

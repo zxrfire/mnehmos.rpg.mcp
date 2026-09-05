@@ -204,7 +204,7 @@ describe('counted and tracked are different answers and both are correct', () =>
     it('a tracked thing that ended keeps its row, its owner and its whole chain', () => {
         const row = thing({
             id: 't', name: 'the Nine Vane', kind: 'artifact', power: 20,
-            ownerId: 'sect-a', ownerName: 'Crimson Abyss Hall'
+            ownerId: 'sect-a', ownerName: 'Crimson Abyss Fortress'
         });
         const out = whatBecomesOfIt(row, hand(34), always);
         const back = writeBack(row, out, { onDay: 900, source: 'the war with the Kiln Clan' });
@@ -219,7 +219,7 @@ describe('being broken and being mended are events in the thing\'s history', () 
     it('a hole is a link in the chain with a date and a cause on it', () => {
         const row = thing({ id: 'h', name: 'a hull', kind: 'artifact', power: 25, ownerName: 'the Kiln Clan' });
         const out = whatBecomesOfIt(row, hand(30), never);
-        const back = writeBack(row, out, { onDay: 4242, source: 'the war with Crimson Abyss Hall' });
+        const back = writeBack(row, out, { onDay: 4242, source: 'the war with Crimson Abyss Fortress' });
         const marked = back.row as ObjectRecord;
         expect(isHoled(marked)).toBe(true);
         expect(scarsOn(marked)).toBe(1);

@@ -185,7 +185,7 @@ describe('everything that can be inspected', () => {
 
         const who = namesHeld(db)[0]!;
         expect(await reached(`I look at ${who.name}`)).toMatch(/to cultivator /);
-        expect(await reached('I examine the Gleaners Company')).toMatch(/to sect /);
+        expect(await reached('I examine the Fallen Grain Caravan')).toMatch(/to sect /);
         expect(await reached('I examine the Lesser Qi-Gathering Manual')).toMatch(/to technique /);
         expect(await reached('I examine this place')).toMatch(/to place /);
         // The asker themselves, which is its own kind and not a cultivator row.

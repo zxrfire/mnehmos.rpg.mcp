@@ -185,7 +185,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     passage: {
         takes: ['target', 'intent'],
         intents: ['board', 'buy'],
-        says: `a Measured Span counter. "intent" is "board" to read what runs from here and
+        says: `a Shrinking Earth Pavilion counter. "intent" is "board" to read what runs from here and
             what each costs, or "buy" to take a place on one; "target" is where to. Reading
             the board is free and is how somebody who has never left their province finds out
             there are others.`

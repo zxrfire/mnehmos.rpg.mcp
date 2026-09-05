@@ -20,6 +20,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { npcsAt } from '../../src/engine/world/world-state';
 import { worldLocationFor } from '../../src/web/entities';
+import { SECTS } from '../../src/data/cultivation/sects';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { worldForRun, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGame, engineCalls, refusedCall, planned } from './harness';
@@ -266,16 +267,29 @@ describe('sects are reachable from plain English', () => {
         const { db, game } = makeGame({ seed: 'joinprose' });
         const { cultivator } = await game.newRun('Ke Yan');
         const gate = new KnowledgeGate(db);
-        const known = gate.awareness(cultivator.id, 'sect')[0];
 
-        const shown = (await game.act(`I ask about joining the ${known.name}`)).narration;
+        // THE HOUSE THAT ACTUALLY TOOK THEM, rather than whichever sorts first.
+        // The prose under test is the prose of a joining that HAPPENED, so a
+        // house that refuses tests nothing - and which house sorts first is a
+        // fact about the catalog's spelling, which a rename moves. Refusals
+        // are read too, for the line that must never appear in either.
+        const seen: string[] = [];
+        let joined: string | null = null;
+        for (const known of gate.awareness(cultivator.id, 'sect')) {
+            const { game: fresh } = makeGame({ seed: 'joinprose' });
+            await fresh.newRun('Ke Yan');
+            const shown = (await fresh.act(`I ask about joining the ${known.name}`)).narration;
+            seen.push(shown);
+            // The live check read "<house> is done." - the sect surface returns
+            // a membership record and no narration hint, so the last-resort
+            // line predicated on the subject and told the player the order had
+            // ended. True of a refusal as much as of a joining.
+            expect(shown).not.toMatch(new RegExp(`${known.name}\s+is done`, 'i'));
+            if (/taken on|no longer of/i.test(shown)) { joined = shown; break; }
+        }
 
-        // The live check read "The Gleaners' Company is done." - the sect
-        // surface returns a membership record and no narration hint, so the
-        // last-resort line predicated on the subject and told the player the
-        // order had ended.
-        expect(shown).not.toMatch(new RegExp(`${known.name}\\s+is done`, 'i'));
-        expect(shown).toMatch(/taken on|no longer of/i);
+        expect(joined, `no house on this cultivator's list took them. Saw: ${seen.join(' | ')}`)
+            .not.toBeNull();
     });
 
     it('never predicates the last-resort line on its subject', async () => {

@@ -9,7 +9,7 @@
  *   nobody standing in front of them, so there was nobody to approach. The
  *   engine will not conjure a person to have a conversation with, and it will
  *   not say whether such a person exists. Known to this cultivator, or standing
- *   here: The Gleaners' Company.
+ *   here: Fallen Grain Caravan.
  *
  * Three failures in one sentence: it names the engine, it explains its own
  * policy, and it ends with a list of valid targets. The policy is right. What

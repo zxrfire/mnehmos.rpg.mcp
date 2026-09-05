@@ -24,8 +24,8 @@
  *
  * ── The one place it does have to be gated ────────────────────────────────
  * Eight of the thirty practices use their own faction's short name in the
- * middle of a sentence - "a Consortium negotiation", "a Pavilion member", "the
- * Wanderers", "the Office". Those cannot be shown to somebody with no record
+ * middle of a sentence - "a Stone Marrow Hall negotiation", "a Pavilion member", "the
+ * Wanderers", "the Court". Those cannot be shown to somebody with no record
  * for the faction, because the sentence would hand them the name.
  *
  * So the gate is narrow and computed rather than asserted: a practice is
@@ -68,7 +68,7 @@ export interface Observation {
  * The signal is a capitalised word, away from a sentence start, matching a
  * token of the faction's own name. That separates the two cases that look
  * alike and are not: "Wardens carry paint and a brush" opens a sentence and is
- * a role - it identifies nobody - whereas "a Consortium negotiation begins
+ * a role - it identifies nobody - whereas "a Stone Marrow Hall negotiation begins
  * with somebody unpacking scales" is the institution, named.
  */
 function detectNamesFaction(factionId: string, practice: string): boolean {

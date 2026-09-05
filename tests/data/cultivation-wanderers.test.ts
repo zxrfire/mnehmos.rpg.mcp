@@ -154,10 +154,10 @@ describe('the ceiling on his behaviour', () => {
         // He took one of four that day. The count has risen since, because the
         // channel keeps sending - which is why the theft cannot be read off it.
         const holding = getHoldingsOf('sect-azure-cloud-pavilion')
-            .find(h => h.itemId === 'immortal-unearned-step')!;
+            .find(h => h.itemId === 'immortal-heaven-ascending-golden-pill')!;
         expect(holding.count).toBeGreaterThan(3);
         expect(r.theOccasion.what).toMatch(/holds seven now|keeps arriving/i);
-        expect(getImmortalItem('immortal-unearned-step')).toBeDefined();
+        expect(getImmortalItem('immortal-heaven-ascending-golden-pill')).toBeDefined();
     });
 
     it('looks arbitrary from below and is readable from above', () => {

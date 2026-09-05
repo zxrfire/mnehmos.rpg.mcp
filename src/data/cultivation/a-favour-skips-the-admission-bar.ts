@@ -12,12 +12,12 @@
  * ordinal of zero until they have cultivated. Without this mechanic the numbers
  * produce absurdities that nobody wrote and everybody would have to explain:
  *
- *   - A Ninefold Ledger child cannot enter the Ledger, which admits at 4. At
+ *   - A Ninefold Karma Palace child cannot enter the Karma Pavilion, which admits at 4. At
  *     seven years old they are at 0. They wait, in their own family's house.
  *   - A Dao house's name reaches perhaps thirty houses, and the ones it can
  *     actually use on a seven-year-old are EXACTLY THE FIVE THAT ADMIT AT 0 -
  *     the Burnt Earth Temple, the Azure Dew, the Hollow Bell Wanderers, the
- *     Six Li Wardens and the Gleaners' Company. All five take anybody. So the
+ *     Six Li Patrol and the Fallen Grain Caravan. All five take anybody. So the
  *     greatest name in the province buys a place at a house that would have
  *     taken a farmer's child that morning, which makes the name worth nothing
  *     at the only moment it should be worth everything.
@@ -161,7 +161,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
         why: 'The bar is a mutated ice root and it is triage rather than standing. The arts kill everybody else - that is the whole reason the Court refuses, and every applicant it turns away is somebody it has declined to bury. A favour that got somebody through this door would be a favour that buried them, which the Court has said once, in those words, to somebody in a position to have made it an order. It has never been asked twice.',
         andWhatItTakes: null,
         andWhetherItsOwnWordMovesAnybody:
-            'Its word moves the Cinnabar Crucible Guild, which holds from it, and nothing else - the Court has spent two centuries trying to be read as a peer rather than a junior and a body in that position cannot afford to ask anybody above it for anything.'
+            'Its word moves the Cinnabar Crucible Sect, which holds from it, and nothing else - the Court has spent two centuries trying to be read as a peer rather than a junior and a body in that position cannot afford to ask anybody above it for anything.'
     },
     {
         factionId: 'sect-hollow-court',
@@ -179,7 +179,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
         andWhetherItsOwnWordMovesAnybody: null
     },
     {
-        factionId: 'sect-standing-grove',
+        factionId: 'sect-ancient-bough-grove',
         answer: 'no, and the bar does not move',
         why: 'Six disciples is the number at which every one of them is known by name across the province, and the deference the Grove lives on is a belief about those six specific people rather than about an institution. A seventh means a roster, a roster means administration, and administration means the belief stops being about anybody in particular - so a favoured seventh would dissolve the exact thing the favour was trying to buy into. It has taken nobody in forty-one years and would say the same to anybody.',
         andWhatItTakes: null,
@@ -205,7 +205,7 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
     {
         factionId: 'sect-kiln-wardens',
         answer: 'no bar to skip, because there is no door',
-        why: 'The same absence, four provinces away and signed by the other apex. Appointment is by the Long Cut, or by a sect under it or friendly to it, and its admission figure is what a posting requires rather than what an applicant could meet - there has been no applicant in nine hundred years because there is no way to be one. A Root Sill heir is a shape the arrangement cannot produce, and the reason is not that the bar is high: it is that the Court has no members in the sense the word usually carries.',
+        why: 'The same absence, four provinces away and signed by the other apex. Appointment is by the Long Cut, or by a sect under it or friendly to it, and its admission figure is what a posting requires rather than what an applicant could meet - there has been no applicant in nine hundred years because there is no way to be one. A Deeproot Court heir is a shape the arrangement cannot produce, and the reason is not that the bar is high: it is that the Court has no members in the sense the word usually carries.',
         andWhatItTakes: null,
         andWhetherItsOwnWordMovesAnybody:
             'Its nominations carry, inside the Long Cut, and that is the whole of its influence - a body holding the founding posting order is worth being on good terms with, and the Course Keepers have never once declined one of its names.'

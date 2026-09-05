@@ -585,7 +585,7 @@ machinery that exists.
 | D1 | `volumes` on a cultivation manual: an ordered list of volume ids, or null for a single-volume work | 1b | The complete work already has a `cap`. A volume is one row per part with `tags: ['shard', 'from:<manual-id>']` so `shardPower`'s arithmetic applies unchanged. Do not add a second cap field - derive it. |
 | D2 | Close the 37 - 40 corridor, or state that it is closed on purpose | 1 | `heaven-conversing-primordial-canon` is the only continuation past 37 and its only route is a parting gift. If that is intended, it belongs in a named constant with a reason, the way `NO_SURVIVING_COPY_NOTES` does it. If it is not, it needs a second route. |
 | D3 | `rootGrades` and `domain` populated on cultivation manuals | 1, 1b, 3 | `Find` already reads them and `assessFit` already judges them. Today only `element` is authored, so the root and comprehension axes never fire for a manual and every miss reads as an element miss. |
-| D4 | A `derivable` marker, or a stated reason a given manual is not | 7 | Which manuals a sufficient dao can reconstruct. Not every book: the Canon of the Unwritten Span is written for a condition no reader is in, and its own entry says so. |
+| D4 | A `derivable` marker, or a stated reason a given manual is not | 7 | Which manuals a sufficient dao can reconstruct. Not every book: the Unwritten Span Scripture is written for a condition no reader is in, and its own entry says so. |
 | D5 | Volume-holder rows for at least one scattered set | 1b | An object with three holders in three factions, with `knownOwnershipBy` set differently on each, so the investigation half of the route has something to find. |
 
 ### Engine - `src/engine/cultivation/**` and `src/engine/encounters/**`

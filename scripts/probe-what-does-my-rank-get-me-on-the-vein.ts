@@ -18,7 +18,7 @@ const catalog = await loadCultivationCatalog();
 const { state } = seedWorld({ seed: 'entitlement', catalog });
 const alive = (state.npcs as any[]).filter(n => n.status === 'alive');
 
-for (const factionId of ['sect-azure-cloud-pavilion', 'sect-hollow-court', 'sect-sixmile-wardens']) {
+for (const factionId of ['sect-azure-cloud-pavilion', 'sect-hollow-court', 'sect-six-li-patrol']) {
     const faction = (state.factions as any[]).find(f => f.id === factionId);
     if (!faction) continue;
     const members = alive.filter(n => n.factionId === factionId);

@@ -33,8 +33,8 @@
  *   the same error as reading a hall of strangers as loss.
  *
  *   IT CORROBORATES; IT DOES NOT SETTLE. Xu is the worked example: Xu Ci lies
- *   under the Anchorhold's datum stone and there are living Xu at the
- *   Anchorhold and at Held Names both, so the name identifies neither.
+ *   under the Immovable Mountain Temple's datum stone and there are living Xu at the
+ *   Immovable Mountain Temple and at Jade Register Hall both, so the name identifies neither.
  *   `settles` is true for exactly one reading and false for every other.
  *
  * ── The roll is the LIVING roll ───────────────────────────────────────────

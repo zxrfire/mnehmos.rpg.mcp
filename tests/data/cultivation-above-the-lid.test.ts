@@ -190,9 +190,9 @@ describe('objects at the True Immortal rung', () => {
     it('pairs each one with the lesser thing a house was actually left', () => {
         // The reading that makes the ceiling mean something: what came down was
         // made to be leavable, at the rung that can stay. It is not a shard.
-        expect(getArtifact('carried-the-first-course')!.description).toMatch(/Ninth Nail/);
-        expect(getArtifact('carried-the-second-edge')!.description).toMatch(/Standing Edge/);
-        expect(getArtifact('carried-the-first-datum')!.description).toMatch(/Fixed Star Lamp/);
+        expect(getArtifact('carried-heaven-splitting-chisel')!.description).toMatch(/Ninth Nail/);
+        expect(getArtifact('carried-the-hidden-edge')!.description).toMatch(/Standing Edge/);
+        expect(getArtifact('carried-the-polestar-dial')!.description).toMatch(/Polestar Lamp/);
         for (const id of ['sent-ninth-nail', 'artifact-the-standing-edge', 'sent-datum-lamp']) {
             const lesser = getArtifact(id);
             expect(lesser, `${id} left the catalog`).toBeDefined();

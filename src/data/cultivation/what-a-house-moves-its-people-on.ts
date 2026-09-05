@@ -115,7 +115,7 @@ export const CONVEYANCES: readonly Conveyance[] = [
             'Built to hold together over a province rather than a district, with a core in the '
             + 'frame and a beast in the traces that most houses could not take. Still an amount '
             + 'rather than an object: a house has four of these and could not tell you which of '
-            + 'them went to Iron Gate last spring.'
+            + 'them went to Iron Ridge last spring.'
     },
     {
         id: 'conv-carriage-heaven',
@@ -428,17 +428,17 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
         id: 'craft-the-rate-itself',
         name: 'The Rate Itself',
         power: 34,
-        ownerId: 'sect-stonewright-consortium',
-        ownerName: 'Stonewright Consortium',
+        ownerId: 'sect-stone-marrow-hall',
+        ownerName: 'Stone Marrow Hall',
         conveyanceId: 'conv-spirit-boat',
         mooredAt: 'the cutting houses at the head of the nine veins',
         builtYearsAgo: 210,
         significance: 'legendary',
         tags: ['boat'],
         description:
-            'Named after the only thing the Consortium sells, and used for the only thing worth '
+            'Named after the only thing the Stone Marrow Hall sells, and used for the only thing worth '
             + 'moving that fast: assayed stone, in quantity, arriving before the news that it '
-            + 'was coming. It has never carried a fighting party and the Consortium points that '
+            + 'was coming. It has never carried a fighting party and the Stone Marrow Hall points that '
             + 'out to everybody, at length, which is itself worth reading.'
     }),
     craft({

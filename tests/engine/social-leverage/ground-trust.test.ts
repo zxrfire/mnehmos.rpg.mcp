@@ -106,7 +106,7 @@ function attempt(over: Partial<AttemptInput> = {}): AttemptInput {
 }
 
 const RIGHTEOUS = 'sect-sweptground-temple';
-const NEUTRAL = 'sect-gleaners-company';
+const NEUTRAL = 'sect-fallen-grain-caravan';
 const DEMONIC = 'sect-storm-tyrant-court';
 
 describe('the ground under two people', () => {

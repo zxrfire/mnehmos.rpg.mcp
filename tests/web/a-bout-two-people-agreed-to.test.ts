@@ -268,14 +268,14 @@ describe('and the world answers', () => {
         for (const seed of ['killed-a', 'killed-b', 'killed-c', 'killed-d'] as const) {
             const { db, game, repos } = makeGame({ seed, worldEnabled: true });
             const { cultivator } = await game.newRun('Duellist');
-            repos.sects.addMember('house-anchorhold', cultivator.id, 1);
+            repos.sects.addMember('house-immovable-mountain', cultivator.id, 1);
             await game.act('I look around');
 
             for (let bouts = 0; bouts < 8; bouts++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
                 const acted = await game.act('I spar with someone of my own rank');
                 const held = obligations(db)
-                    .filter(row => row.holder_id === 'house-anchorhold' && row.kind === 'blood_feud');
+                    .filter(row => row.holder_id === 'house-immovable-mountain' && row.kind === 'blood_feud');
                 if (held.length > 0) {
                     opened = held[0];
                     said = acted.narration;
@@ -298,7 +298,7 @@ describe('and the world answers', () => {
         // player believes nothing happened, which is the same experience as
         // nothing having happened.
         expect(said, 'the ledger moved and the turn never mentioned it')
-            .toMatch(/Anchorhold|answered to somebody|answered to nobody/i);
+            .toMatch(/Immovable Mountain Temple|answered to somebody|answered to nobody/i);
     }, 300_000);
 
     /**
@@ -314,7 +314,7 @@ describe('and the world answers', () => {
         for (const seed of ['open-a', 'open-b', 'open-c'] as const) {
             const { db, game, repos } = makeGame({ seed, worldEnabled: true });
             const { cultivator } = await game.newRun('Brawler');
-            repos.sects.addMember('house-anchorhold', cultivator.id, 1);
+            repos.sects.addMember('house-immovable-mountain', cultivator.id, 1);
             await game.act('I look around');
 
             for (let fights = 0; fights < 8 && rows.length === 0; fights++) {
@@ -332,7 +332,7 @@ describe('and the world answers', () => {
             if (rows.length > 0) {
                 ledger = db.prepare(
                     'SELECT value FROM cultivator_flags WHERE cultivator_id = ? AND key = ?'
-                ).get(cultivator.id, 'house:house-anchorhold');
+                ).get(cultivator.id, 'house:house-immovable-mountain');
                 break;
             }
         }

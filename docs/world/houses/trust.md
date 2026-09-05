@@ -561,8 +561,8 @@ seeing a Ru on a roster makes the player sit up - and that recognition was *earn
 would not merely muddle a lineage in the fiction, it would poison knowledge the player paid for.
 The in-world use and the player-facing use want exactly the same guarantee.
 
-**Xu is the worked example of why names sit that low.** Xu Ci lies under the Anchorhold's datum
-stone - and there are Xu at the Measured Span and at Held Names as well. **A name carried by
+**Xu is the worked example of why names sit that low.** Xu Ci lies under the Immovable Mountain Temple's datum
+stone - and there are Xu at the Shrinking Earth Pavilion and at Jade Register Hall as well. **A name carried by
 three houses identifies none of them.** It is worth something as corroboration and nothing on
 its own.
 
@@ -667,7 +667,7 @@ that the mechanic is not invented for one of them:**
 
 - **Ru, at the Azure Cloud Pavilion - the line is at the top.** It holds the Pavilion Master
   and the immortal both, so its presence on the roll settles the question in one look.
-- **Xu, at the Anchorhold - the line persists and the house refuses to read it.** Xu Ci lies
+- **Xu, at the Immovable Mountain Temple - the line persists and the house refuses to read it.** Xu Ci lies
   under the datum stone and living Xu still walk the house, which has *never treated the
   succession as a family matter*. **The signal is there and is deliberately not used**, which
   is a more interesting state than either extreme.
@@ -782,9 +782,9 @@ defect: it is [an absent name is a question](#the-woken-ancestor) occurring for 
 and the two checks disagreeing about it is the model working. The name settles the claim; the
 roll cannot confirm it.
 
-**Xu is at two houses, not three.** This document said "there are Xu at the Measured Span and at
-Held Names as well". The roster has four Xu at the Anchorhold and one at Held Names, and **none
-at the Measured Span.** The argument is unchanged - a name carried by more than one house
+**Xu is at two houses, not three.** This document said "there are Xu at the Shrinking Earth Pavilion and at
+Jade Register Hall as well". The roster has four Xu at the Immovable Mountain Temple and one at Jade Register Hall, and **none
+at the Shrinking Earth Pavilion.** The argument is unchanged - a name carried by more than one house
 identifies none of them - and the third house was not there.
 
 **`surnameOf` returns a title for 41 of 186 roster rows.** It splits at the first space, which is

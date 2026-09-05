@@ -67,8 +67,8 @@
  * -------------------------
  * `aboutName` is the name as the speaker actually says it, which is frequently
  * not the name in the catalog. People clip, shorten, mishear and substitute the
- * one part of a long name they can hold. A player who hears the Ledger called
- * "the Ninefold" and later reads "the Ninefold Ledger" in an archive has to do
+ * one part of a long name they can hold. A player who hears the Karma Pavilion called
+ * "the Ninefold" and later reads "the Ninefold Karma Palace" in an archive has to do
  * that join themselves, and doing it is the reward.
  */
 
@@ -284,8 +284,8 @@ const ABOUT_CULTIVATORS: readonly Rumour[] = [
 //
 // The rule this section obeys: nobody outside an institution knows what it is
 // FOR. They know what it does to them, which is a different fact, and they
-// reason from it. The Anchorhold's whole product is nothing happening, so
-// everybody who pays for it thinks they are paying for nothing; the Ledger
+// reason from it. Immovable Mountain Temple's whole product is nothing happening, so
+// everybody who pays for it thinks they are paying for nothing; the Karma Pavilion
 // sells findings, so everybody thinks its findings are for sale.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -341,7 +341,7 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
     {
         id: 'rumour-frostmirror-cannot-reach-hers',
         saying: 'The Frostmirror lost theirs and everybody watched. They have not been able to send a word upward since, and they still keep the hall ready.',
-        saidBy: 'a Stonewright assayer who was present when it was weighed, and has told the story at every table since',
+        saidBy: 'a Stone Marrow assayer who was present when it was weighed, and has told the story at every table since',
         aboutId: 'sect-frostmirror-court',
         aboutName: 'the Frostmirror',
         accuracy: 'true',
@@ -355,36 +355,36 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-anchorhold-does-nothing',
         saying: 'We pay the levy and they come once a year and walk about and go away. Nothing happens. That is what we are paying for, apparently. Nothing.',
         saidBy: 'a perimeter settlement headman, at the levy meeting, every year',
-        aboutId: 'house-anchorhold',
-        aboutName: 'the Anchorhold',
+        aboutId: 'house-immovable-mountain',
+        aboutName: 'the Immovable Mountain Temple',
         accuracy: 'true_and_wrong_about_why',
-        underneath: 'The settlements exist because the perimeter is maintained, and nothing happening is the entire product. The Anchorhold has never found a way to say this that does not sound like a threat, and has stopped trying.',
+        underneath: 'The settlements exist because the perimeter is maintained, and nothing happening is the entire product. Immovable Mountain Temple has never found a way to say this that does not sound like a threat, and has stopped trying.',
         consequence: 'Levy income falls a little every decade, two perimeters are already being held below the standard the house publishes itself, and the house answers by publishing the standard again.',
         floorOrdinal: 0,
         regionId: null,
-        insiderFactionId: 'house-anchorhold'
+        insiderFactionId: 'house-immovable-mountain'
     },
     {
         id: 'rumour-anchorhold-broke-one',
         saying: 'One of the nails is out. They took it out themselves to see what was under it and they have not put it back.',
         saidBy: 'a Gleaner, repeating what he was told at a face',
-        aboutId: 'house-anchorhold',
-        aboutName: 'the Anchorhold',
+        aboutId: 'house-immovable-mountain',
+        aboutName: 'the Immovable Mountain Temple',
         accuracy: 'garbled',
         underneath: 'There is a faction inside the house pressing to break one of the nails, which is a real internal argument and has never been acted on. The saying has turned a proposal into an event, which is the commonest way an institution\'s internal politics reach the outside.',
         consequence: 'Two settlements have withheld levy over it, which makes the perimeter they are worried about the one most likely to actually fail.',
         floorOrdinal: 8,
         regionId: null,
-        insiderFactionId: 'house-anchorhold'
+        insiderFactionId: 'house-immovable-mountain'
     },
     {
         id: 'rumour-ledger-findings-for-sale',
         saying: 'The Ninefold finds whatever the man paying wants found. It is a very expensive way of buying an opinion and everybody knows it.',
         saidBy: 'a losing party outside an arbitration bench',
-        aboutId: 'house-ninefold-ledger',
+        aboutId: 'house-ninefold-karma',
         aboutName: 'the Ninefold',
         accuracy: 'invented',
-        underneath: 'The Ledger sells the finding and not the outcome, and its entire value rests on that distinction holding. It has ruled against the paying party often enough that the practice is standard and the losing party is the only source of this saying.',
+        underneath: 'The Karma Pavilion sells the finding and not the outcome, and its entire value rests on that distinction holding. It has ruled against the paying party often enough that the practice is standard and the losing party is the only source of this saying.',
         consequence: 'Universal, unshakeable, and repeated by the same people who commission the next assessment, because there is nothing else to commission.',
         floorOrdinal: 4,
         regionId: null,
@@ -394,11 +394,11 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-ledger-holds-a-name',
         saying: 'They have the name written down and they will not say it. Asked twice by somebody who could have made them, and refused both times on a form.',
         saidBy: 'a Silent Cliffs placer, who was there for one of the refusals',
-        aboutId: 'house-ninefold-ledger',
+        aboutId: 'house-ninefold-karma',
         aboutName: 'the Ninefold',
         accuracy: 'true',
-        underneath: 'Correct in every part, including the detail that the refusal was procedural rather than defiant, which is the part everybody drops when they repeat it. The Ledger holds a name from a scar in its own ledgers and has released it to nobody.',
-        consequence: 'The Ledger is the only body in either province that can be relied on to have a record and be relied on not to hand it over, which is why it is used and why it is hated.',
+        underneath: 'Correct in every part, including the detail that the refusal was procedural rather than defiant, which is the part everybody drops when they repeat it. The Karma Pavilion holds a name from a scar in its own ledgers and has released it to nobody.',
+        consequence: 'The Karma Pavilion is the only body in either province that can be relied on to have a record and be relied on not to hand it over, which is why it is used and why it is hated.',
         floorOrdinal: 12,
         regionId: null,
         insiderFactionId: null
@@ -407,53 +407,53 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-held-names-registration-is-a-tax',
         saying: 'It is a toll with a ledger in front of it. Three stones a year to write down a name they already have.',
         saidBy: 'anybody who has passed through a city gate twice',
-        aboutId: 'house-held-names',
+        aboutId: 'house-jade-register',
         aboutName: 'the name-house',
         accuracy: 'true_and_wrong_about_why',
         underneath: 'It is the house\'s real income and the complaint is fair. What the payer does not know is what the register is for on the other side, which is a question of who is permitted to hold a name at all, and that is one of the live disputes between the houses rather than a revenue scheme.',
         consequence: 'Registration is evaded wherever it can be, and the people who evade it are exactly the people the register was built to find, so the evasion is the signal.',
         floorOrdinal: 0,
         regionId: null,
-        insiderFactionId: 'house-held-names'
+        insiderFactionId: 'house-jade-register'
     },
     {
         id: 'rumour-measured-span-charges-for-air',
         saying: 'Priced by true distance. Their true distance. You cannot walk it to check and that is the whole trade.',
         saidBy: 'a caravan master who uses the couriers anyway',
-        aboutId: 'house-measured-span',
+        aboutId: 'house-shrinking-earth',
         aboutName: 'the Span',
         accuracy: 'true',
         underneath: 'Precisely right, stated as an accusation, and the house would agree with the sentence and not with the tone. Nobody outside the Span can verify a true li and everybody pays.',
         consequence: 'The one complaint in the world that has never produced a competitor, because a competitor would have to be able to measure.',
         floorOrdinal: 4,
         regionId: null,
-        insiderFactionId: 'house-measured-span'
+        insiderFactionId: 'house-shrinking-earth'
     },
     {
         id: 'rumour-span-gates-go-somewhere-bad',
         saying: 'The old gates still open. They open on somewhere you do not come back from, which is why the Span walks its own letters.',
         saidBy: 'a waystation keeper on the border road',
-        aboutId: 'house-measured-span',
+        aboutId: 'house-shrinking-earth',
         aboutName: 'the Span',
         accuracy: 'garbled',
         underneath: 'Terminals from the predecessor house do still answer and some of them open somewhere breathable, which is a fact the Span finds difficult and does not discuss. The step that has gone missing is that the Span does not use them because it cannot make a permanent two-way span at all, and has not been able to for centuries.',
         consequence: 'Couriers are assumed to be walking out of caution rather than out of incapacity, which is a reputation the house has never corrected and could not afford to.',
         floorOrdinal: 10,
         regionId: null,
-        insiderFactionId: 'house-measured-span'
+        insiderFactionId: 'house-shrinking-earth'
     },
     {
         id: 'rumour-oaths-cannot-be-broken',
         saying: 'Swear at the hall and that is the end of it. It is not a promise, it is a fact about you afterwards.',
         saidBy: 'a merchant explaining why the fee is worth it',
-        aboutId: 'house-unbroken-tally',
+        aboutId: 'house-vermilion-seal',
         aboutName: 'the oath hall',
         accuracy: 'garbled',
         underneath: 'An oath binds to ground, and there is a house whose whole trade is that ground can be unfixed, which means an oath sworn in the wrong place has nothing to bind to. The merchant\'s version has lost the condition, which is the only part that matters.',
         consequence: 'Oaths get sworn cheaply in unsurveyed places by people who think the words are doing the work, and the resulting disputes are a steady income for the arbitration benches.',
         floorOrdinal: 6,
         regionId: null,
-        insiderFactionId: 'house-unbroken-tally'
+        insiderFactionId: 'house-vermilion-seal'
     },
     {
         id: 'rumour-azure-cloud-takes-anybody',
@@ -485,27 +485,27 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-gleaners-lost-a-man-on-a-bet',
         saying: 'He went in on a wager. Company sealed it up after and raised the wager, which tells you what the Company is.',
         saidBy: 'every Gleaner, as a joke about the Silent Cliffs',
-        aboutId: 'sect-gleaners-company',
+        aboutId: 'sect-fallen-grain-caravan',
         aboutName: 'the Company',
         accuracy: 'true',
         underneath: 'True in every particular and told as a joke, which is the entire risk assessment the region has for that site. Nobody has improved on it and nobody has needed to.',
         consequence: 'The site stays sealed because the story does the work a perimeter would cost money to do, and the Company is aware of this and has never said so.',
         floorOrdinal: 6,
         regionId: 'region-quiet-marches',
-        insiderFactionId: 'sect-gleaners-company'
+        insiderFactionId: 'sect-fallen-grain-caravan'
     },
     {
         id: 'rumour-weir-office-owns-the-water',
-        saying: 'Nothing moves on the water without the Office and the Office is one man. Take the man and you take the water.',
+        saying: 'Nothing moves on the water without the Court and the Court is one man. Take the man and you take the water.',
         saidBy: 'a Jade Gorge boat family, in private',
-        aboutId: 'sect-weir-office',
-        aboutName: 'the Office',
+        aboutId: 'sect-clearwater-ward',
+        aboutName: 'the Court',
         accuracy: 'true_and_wrong_about_why',
-        underneath: 'The Weir Master is the strongest thing the Office has and the water rights are held by an arrangement rather than by him, so removing him would produce a succession rather than a vacancy. The saying is a reasonable reading of a small institution with one visible person on top of it.',
-        consequence: 'The Office is threatened in this specific form about once a generation, and each time it responds by making the arrangement more legible to the people who would have to honour it.',
+        underneath: 'The Weir Master is the strongest thing the Court has and the water rights are held by an arrangement rather than by him, so removing him would produce a succession rather than a vacancy. The saying is a reasonable reading of a small institution with one visible person on top of it.',
+        consequence: 'The Court is threatened in this specific form about once a generation, and each time it responds by making the arrangement more legible to the people who would have to honour it.',
         floorOrdinal: 8,
         regionId: 'region-low-fall',
-        insiderFactionId: 'sect-weir-office'
+        insiderFactionId: 'sect-clearwater-ward'
     },
     {
         id: 'rumour-severed-do-not-have-names',
@@ -550,27 +550,27 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-stonewright-sets-the-rate',
         saying: 'The rate is the rate. There is no arguing with it because there is nobody to argue with, only a hall and a scale.',
         saidBy: 'a stone dealer who has tried',
-        aboutId: 'sect-stonewright-consortium',
+        aboutId: 'sect-stone-marrow-hall',
         aboutName: 'the assay hall',
         accuracy: 'true',
-        underneath: 'The assay is the assay and the Consortium\'s whole standing rests on it not being negotiable. There is a person who sets it and the dealer has correctly worked out that meeting them would not help.',
+        underneath: 'The assay is the assay and the Stone Marrow Hall\'s whole standing rests on it not being negotiable. There is a person who sets it and the dealer has correctly worked out that meeting them would not help.',
         consequence: 'Every price in the two economies is ultimately quoted against a number a stone dealer cannot argue with, which is what makes the cash-to-stone rate legible at all.',
         floorOrdinal: 0,
         regionId: 'region-low-fall',
-        insiderFactionId: 'sect-stonewright-consortium'
+        insiderFactionId: 'sect-stone-marrow-hall'
     },
     {
-        id: 'rumour-crucible-guild-fixes-prices',
+        id: 'rumour-crucible-hall-fixes-prices',
         saying: 'Fixed rate, no haggling, take it or carry your basket home. Fair, and dull, and I would rather it were neither.',
         saidBy: 'an herb picker, resigned',
-        aboutId: 'sect-cinnabar-crucible-guild',
-        aboutName: 'the Guild',
+        aboutId: 'sect-cinnabar-crucible-sect',
+        aboutName: 'the Hall',
         accuracy: 'true',
-        underneath: 'Exactly the arrangement, and the picker\'s two adjectives are the whole of the province\'s opinion. The Guild buys at a fixed rate because a variable one would put its own supply into the hands of whoever could shout loudest at a gate.',
+        underneath: 'Exactly the arrangement, and the picker\'s two adjectives are the whole of the province\'s opinion. The Hall buys at a fixed rate because a variable one would put its own supply into the hands of whoever could shout loudest at a gate.',
         consequence: 'Herb picking is the only mortal trade in the Jade Gorge with a predictable income, which is why it is worked by families rather than by drifters.',
         floorOrdinal: 0,
         regionId: 'region-low-fall',
-        insiderFactionId: 'sect-cinnabar-crucible-guild'
+        insiderFactionId: 'sect-cinnabar-crucible-sect'
     },
     {
         id: 'rumour-ashen-forge-swords-are-ploughs',
@@ -615,14 +615,14 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-sixmile-wardens-are-finished',
         saying: 'The Wardens are six old men and a bell. They will come if you ring it and there is not much point ringing it.',
         saidBy: 'a Six Li hamlet farmer, who rings it anyway',
-        aboutId: 'sect-sixmile-wardens',
+        aboutId: 'sect-six-li-patrol',
         aboutName: 'the Wardens',
         accuracy: 'true',
         underneath: 'The Wardens are the smallest standing body in either province and the assessment is accurate. They still come, which is the part the farmer is not saying and the reason he rings.',
         consequence: 'The Silent Cliffs\' entire beast-culling arrangement at the low end rests on a body everybody has written off, and it has not failed yet.',
         floorOrdinal: 0,
         regionId: 'region-quiet-marches',
-        insiderFactionId: 'sect-sixmile-wardens'
+        insiderFactionId: 'sect-six-li-patrol'
     },
     {
         id: 'rumour-flame-sect-hall-still-burns',
@@ -654,20 +654,20 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-narrow-hour-knows-when-you-will-die',
         saying: 'They can tell you the hour. They will not, and the fee for asking is real, and the people who have paid it do not say what they were told.',
         saidBy: 'a city broker who has never paid it',
-        aboutId: 'house-narrow-hour',
+        aboutId: 'house-flowing-light',
         aboutName: 'the hour-house',
         accuracy: 'unresolved',
         underneath: 'The house does not discuss what its readings say and the people who have commissioned one are contractually silent, so there is no evidence either way that anybody outside the house can reach. The catalog does not settle it and should not.',
         consequence: 'The fee has risen for two centuries on a reputation nobody has ever tested, which is a fact about markets rather than about divination.',
         floorOrdinal: 12,
         regionId: null,
-        insiderFactionId: 'house-narrow-hour'
+        insiderFactionId: 'house-flowing-light'
     },
     {
         id: 'rumour-quiet-cut-is-a-hiring-name',
         saying: 'It is not a house, it is a way of saying you hired somebody. Nobody has ever met one and everybody has used the phrase.',
         saidBy: 'a city guard captain, dismissively',
-        aboutId: 'house-quiet-cut',
+        aboutId: 'house-still-blade',
         aboutName: 'the quiet cut',
         accuracy: 'invented',
         underneath: 'It is a house, it is old, and it is among the strongest bodies either province deals with. The captain has generalised correctly from the fact that the phrase is used loosely and incorrectly from the fact that he has not met one.',
@@ -704,10 +704,10 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
     },
     {
         id: 'rumour-tally-court-still-sits',
-        saying: 'The Tally Court still sits. They meet at the old place once a year and the fact that nobody attends does not stop them.',
+        saying: 'Iron Tally Court still sits. They meet at the old place once a year and the fact that nobody attends does not stop them.',
         saidBy: 'an antiquarian in a city archive',
-        aboutId: 'house-tally-court',
-        aboutName: 'the Tally Court',
+        aboutId: 'house-iron-tally-court',
+        aboutName: 'the Iron Tally Court',
         accuracy: 'stale',
         underneath: 'The house is gone. What survives is the practice of dating certain documents to a session, which is a form filled in rather than a body sitting, and the antiquarian has read the forms and drawn the natural conclusion.',
         consequence: 'A steady trickle of correspondence addressed to a body that cannot receive it, which one of the surviving houses quietly answers because it is easier than explaining.',

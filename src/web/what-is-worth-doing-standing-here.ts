@@ -210,7 +210,7 @@ export interface StandingHere {
         daysToTheSoonest: number | null;
     } | null;
     /**
-     * A Measured Span counter answers where they are standing.
+     * A Shrinking Earth Pavilion counter answers where they are standing.
      */
     spanCounterHere?: boolean;
     /**
@@ -777,7 +777,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     // THE COUNTER, WHERE THERE IS ONE
     if (spanCounterHere) {
         add(inTheSquare(SAY.passage, 'open',
-            'The Measured Span keeps a counter here. There is a board with what runs from it, '
+            'The Shrinking Earth Pavilion keeps a counter here. There is a board with what runs from it, '
             + 'what each costs and when it goes, and reading it costs nothing - which is how '
             + 'somebody who has never left their province finds out there are others.'));
     }

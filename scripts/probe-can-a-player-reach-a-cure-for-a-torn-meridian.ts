@@ -25,7 +25,7 @@ const PHRASES = process.argv.slice(2).length > 0 ? process.argv.slice(2) : [
     'I buy a meridian-mending pill',
     'I ask the sect for medicine',
     'I look for a healer for my meridians',
-    'I refine a Minor Healing Pill',
+    'I refine a Lesser Healing Pill',
     'I refine a Clear Meridian Pill',
     'what can I craft',
     'what formulas do I know',

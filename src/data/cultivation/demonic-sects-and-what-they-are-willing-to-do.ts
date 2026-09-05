@@ -18,10 +18,10 @@
  *                        counterparty is not named in the sect's own text
  *   Storm Tyrant Court   the member, who did not choose to be taken and is
  *                        taught properly afterwards, which nobody credits
- *   Crimson Abyss Hall   the member, who was not told the rate at the point of
+ *   Crimson Abyss Fortress   the member, who was not told the rate at the point of
  *                        sale and is paid a wage in advance against it
  *   Bone Lantern Cult    the dead, who cannot be asked
- *   The Quiet Cut        a third party who is not present and cannot appeal
+ *   The Still Blade Peak        a third party who is not present and cannot appeal
  *
  * Note what the axis is NOT. It is not cruelty, it is not power, and it is not
  * how much the province dislikes them - the Bone Lantern Cult is the most
@@ -30,7 +30,7 @@
  *
  * FIVE SECTS AND ONE DAO HOUSE, AND THE SIXTH IS A DIFFERENT KIND OF THING
  * -----------------------------------------------------------------------
- * `house-quiet-cut` is a dao house rather than a sect: `house-*` ids are bodies
+ * `house-still-blade` is a dao house rather than a sect: `house-*` ids are bodies
  * with civil authority and a specialisation and no territory at all. It is
  * carried here because it is filed demonic and a reader comparing the six needs
  * it in the comparison, and it is flagged with `kind: 'dao-house'` because the
@@ -56,12 +56,12 @@
  * ------------------------------------------------------
  * Recognition is territorial: the instrument is the grant, and a grant needs
  * ground. Two of the six hold none. The Severed rents cutting houses at the
- * edge of six cities and holds no ground at all; the Quiet Cut has a standing
+ * edge of six cities and holds no ground at all; the Still Blade Peak has a standing
  * policy of leaving nothing that could be surveyed. Neither can be granted to,
  * warned by non-renewal, or replaced by recognising a successor, because there
  * is nothing to withhold. They are the strongest and the least findable of the
  * six, and the Survey has never approached either - which the Severed has
- * noticed and the Quiet Cut has drawn its own conclusion about and written
+ * noticed and the Still Blade Peak has drawn its own conclusion about and written
  * nothing down. That is the Survey's real exposure on this axis and it is not
  * one it has a procedure for.
  *
@@ -149,7 +149,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
         whoPays:
             'The member, entirely, and nobody else at all. It is the only one of the six with no external cost whatsoever.',
         didTheyAgree:
-            'Completely, in advance, and in writing, and they are shown the ledger before they are shown anything else. This is the reason the righteous houses find it the hardest of the six to prosecute and hate it the most: there is no victim to produce, no complaint to take, and every member will tell you at length that they chose it and would choose it again. The one thing the doctrine does not survive is the Quiet Cut\'s finding, which the Severed have been told and do not accept - a self-severance takes what is reachable rather than what was chosen.',
+            'Completely, in advance, and in writing, and they are shown the ledger before they are shown anything else. This is the reason the righteous houses find it the hardest of the six to prosecute and hate it the most: there is no victim to produce, no complaint to take, and every member will tell you at length that they chose it and would choose it again. The one thing the doctrine does not survive is the Still Blade Peak\'s finding, which the Severed have been told and do not accept - a self-severance takes what is reachable rather than what was chosen.',
         whatItKeepsLocal:
             'It cuts nobody who has not asked. Six cities, all rented, no ground, no recruitment table and no approach to anybody who has not walked in - and the restraint is not principle, it is the only reason a body of that strength with no grant and no patron has never had a province decide about it. The moment a Severed cultivator cuts something off somebody else, the doctrine stops being a philosophy and becomes an incident, and the house knows precisely which of its arts would make that argument for it.',
         standingOnTheContract:
@@ -190,7 +190,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
             'The floating stone is tethered to a peak by a chain that is inspected annually and cannot be repaired, so what a successor inherits is a maintenance liability with the world\'s only lightning curriculum inside it. The Survey would recognise whoever held it, and the honest problem is that almost nobody could: the curriculum can only be worn by a mutated root, so the ground would pass to a body that could hold the stone and not read the library, and the one thing in the province nobody can replace would stop being replaced by anybody.'
     },
     {
-        factionId: 'house-quiet-cut',
+        factionId: 'house-still-blade',
         kind: 'dao-house',
         theLineItCrosses:
             'It does the harm to somebody who is not in the room. Nineteen centuries of severance sold as a service: a connection concealed, a connection cut, a consequence redirected, an inheritance broken structurally rather than defied. What is cut does not grow back, the party it is cut from is not present, is not told and cannot appeal, and the house has no position whatever on whether any given cut should be made.',
@@ -203,10 +203,10 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
         standingOnTheContract:
             'There is no contract, because there is no ground. A dao house holds a specialisation and civil standing rather than territory, so tribute, the levy and the war obligation have nothing to attach to, and the recognition doctrine cannot reach it - see `DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE`. It has twice been paid by a party it could not identify, through three intermediaries, for cuts it was not permitted to record. It has drawn the obvious conclusion and written nothing down.',
         ifItWereDestroyed:
-            'No vacancy of any kind opens, because the house occupies nothing. What ends is a capability rather than a holding: the only body in either province that can remove a thing rather than argue about it, along with nineteen centuries of accumulated method that is not written down anywhere a successor could find it. Every institution that has publicly wanted this would discover within a decade what it had actually been using, and the Ninefold Ledger, which has been reading the house\'s edges for two hundred years, would lose the only subject its best people work on.'
+            'No vacancy of any kind opens, because the house occupies nothing. What ends is a capability rather than a holding: the only body in either province that can remove a thing rather than argue about it, along with nineteen centuries of accumulated method that is not written down anywhere a successor could find it. Every institution that has publicly wanted this would discover within a decade what it had actually been using, and the Ninefold Karma Palace, which has been reading the house\'s edges for two hundred years, would lose the only subject its best people work on.'
     },
     {
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         kind: 'sect',
         theLineItCrosses:
             'It conceals the rate at the point of sale. The Hall pays a wage in advance, in cash, on a table outside somebody else\'s admission day, to people who were refused inside that morning - and the devouring art it then teaches them spends the practitioner, at a rate nobody was told and the Hall has never published. The line is not the tithe. It is the sequence: the money first, the terms never.',
@@ -261,7 +261,7 @@ export const DEMONIC_STANDINGS: readonly DemonicStanding[] = [
  *
  * What it does instead is use them, through intermediaries, in a way that
  * creates standing in neither direction and leaves no record on either side.
- * The Quiet Cut has been paid twice by a party it could not identify, through
+ * The Still Blade Peak has been paid twice by a party it could not identify, through
  * three layers, for cuts it was not permitted to record, and has written nothing
  * down about who it thinks that was. This catalog does not say either, and the
  * silence is deliberate: a body whose entire architecture is that no
@@ -279,7 +279,7 @@ export const DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE = {
     soWhatTheApexDoesInstead:
         'It uses them, through intermediaries, in a way that creates standing in neither direction. That is not recognition and it is not patronage: it is a transaction between two parties who have both arranged not to be identifiable to the other, and it leaves no record on either side, which is exactly what both of them are paying for.',
     andWhyThatIsWorseForTheHouses:
-        'Outside the grant system means answerable to no apex and protected by none. A sect that pays, sends and fights has somebody with an interest in its continuing; a dao house has nobody at all, and if a province decides about one there is no letter anybody could write. Every dao house has a counter rather than a patron - the Ledger reads the Quiet Cut\'s edges, Held Names holds the register of absences - and a counter is what an institution grows instead of protection when protection is not available to it.'
+        'Outside the grant system means answerable to no apex and protected by none. A sect that pays, sends and fights has somebody with an interest in its continuing; a dao house has nobody at all, and if a province decides about one there is no letter anybody could write. Every dao house has a counter rather than a patron - the Karma Pavilion reads the Still Blade Peak\'s edges, Jade Register Hall holds the register of absences - and a counter is what an institution grows instead of protection when protection is not available to it.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────

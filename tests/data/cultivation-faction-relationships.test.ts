@@ -159,7 +159,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
     const ROOT_SILL = 'sect-kiln-wardens';
     const KILN = 'court-kiln';
 
-    it('the Root Sill Court and the Kiln Court are related to each other at all', () => {
+    it('the Deeproot Court and the Kiln Court are related to each other at all', () => {
         const tie = relationshipBetween(ROOT_SILL, KILN);
         expect(tie, 'the pair the whole section was asked for is missing').toBeDefined();
         expect(tie?.stance).toBe('alongside');
@@ -186,7 +186,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
         expect(postings).toEqual([KILN, ROOT_SILL].sort());
     });
 
-    it('the Root Sill answers one apex and is severed from the other, and both agree', () => {
+    it('the Deeproot Court answers one apex and is severed from the other, and both agree', () => {
         const long = relationshipBetween(ROOT_SILL, 'apex-long-cut');
         expect(long?.stance).toBe('above');
         expect(long?.kind).toBe('apex_and_posting');

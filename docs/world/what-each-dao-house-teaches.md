@@ -11,7 +11,7 @@ catalog and this is the argument for what goes in it.
 
 The sects teach 魔功 and 邪功 - Heaven Devouring Art, Blood Demon Scripture, Soul Devouring
 Scripture. The dao houses do not talk like that. Their existing arts are clause-named and
-bureaucratic - *The Hour That Was Not Taken*, *Footing and Fill Canon* - and a naming pass
+bureaucratic - *Hour Reversing Art*, *Stone Marrow Foundation Canon* - and a naming pass
 today confirmed that is a **deliberate second register** rather than drift.
 
 So the same act has two names depending on who taught it, and that is the texture: a house

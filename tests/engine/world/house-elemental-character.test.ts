@@ -177,7 +177,7 @@ describe('over the catalog as it stands', () => {
 
     it('reads the fire houses as preferring rather than requiring', () => {
         for (const id of [
-            'sect-cinnabar-crucible-guild', 'sect-ashen-forge-clan', 'sect-nine-abyss-flame-sect'
+            'sect-cinnabar-crucible-sect', 'sect-ashen-forge-clan', 'sect-nine-abyss-flame-sect'
         ]) {
             expect(houseElementalCharacterOf(shelfOf(id)))
                 .toMatchObject({ element: 'fire', stance: 'prefers' });

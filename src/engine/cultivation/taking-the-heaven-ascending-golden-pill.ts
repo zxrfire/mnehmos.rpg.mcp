@@ -1,7 +1,7 @@
 /**
  * The one crossing that is given rather than made.
  *
- * `immortal-items.ts` has described The Unearned Step in full since it was
+ * `immortal-items.ts` has described The Heaven-Ascending Golden Pill in full since it was
  * written and its own `ENGINE_GAPS` entry says plainly that nothing implements
  * it: *"There is no `PillEffect` for advancing a rank. [...] What is missing is
  * the effect, not room for it."* Measured, `promote_realm` has zero consumers in
@@ -74,7 +74,7 @@ export function atPerfectionOfTheirRealm(ordinal: number): boolean {
 }
 
 /**
- * Spend one Unearned Step, and say what it did.
+ * Spend one Heaven-Ascending Golden Pill, and say what it did.
  */
 export function takeTheUnearnedStep(input: {
     fromOrdinal: number;

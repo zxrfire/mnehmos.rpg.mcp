@@ -94,7 +94,7 @@ import {
     NOTHING_IS_GIVEN_AT_OR_ABOVE,
     STEP_CEILING_BY_GRADE,
     takeTheUnearnedStep
-} from '../engine/cultivation/taking-the-unearned-step.js';
+} from '../engine/cultivation/taking-the-heaven-ascending-golden-pill.js';
 import {
     couldTheyTellItIs,
     whatTheirReferenceAffords,
@@ -918,7 +918,7 @@ const A_PRONOUN_FOR_SOMEBODY_ALREADY_NAMED =
     /^(?:him|her|them|they|his|hers|their|theirs)$/i;
 
 /**
- * An Unearned Step in the pouch, with the grade it was made at.
+ * An Heaven-Ascending Golden Pill in the pouch, with the grade it was made at.
  */
 function theUnearnedStepIn(
     itemId: string
@@ -3632,11 +3632,11 @@ ${noticed}`;
         // dao oath is defined as one sworn TO this house - the design owner:
         // *just for simplicity make them have to swear to the oath dao house* -
         // and a house you must swear to, that nobody has heard of, is a verb
-        // with no way in. Measured: "I swear a dao oath to the Unbroken Tally"
+        // with no way in. Measured: "I swear a dao oath to the Vermilion Seal Terrace"
         // came back as a stranger asking who that is.
         //
         // Exempted HERE and not by seeding awareness, which was tried. The
-        // house is called The House of the Unbroken Tally, `bound word` is oath
+        // house is called Vermilion Seal Terrace, `bound word` is oath
         // vocabulary, and putting it in the player's known-sect list sent every
         // sentence naming it to this verb instead of `sect`.
         const oathHouse = getSect(THE_OATHWRIGHT_HOUSE);
@@ -8337,7 +8337,7 @@ ${opened.text}` : receipt,
     }
 
     /**
-     * Spend an Unearned Step: the one crossing that is given rather than made.
+     * Spend an Heaven-Ascending Golden Pill: the one crossing that is given rather than made.
      */
     private spendTheUnearnedStep(
         run: Run,

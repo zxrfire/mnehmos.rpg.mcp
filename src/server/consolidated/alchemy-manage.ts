@@ -636,7 +636,7 @@ export async function handleConsumePill(
             // THE RESIDUE IS BOTH THINGS AT ONCE and both are written now: a
             // real rung, kept, and a body that is not what it was. The rung
             // goes through `advanceRealm` - the neutral door, the same one the
-            // Unearned Step uses - because there was no crossing under it.
+            // Heaven-Ascending Golden Pill uses - because there was no crossing under it.
             if (residueRungs > 0) {
                 repos.cultivators.advanceRealm(cultivator.id, residueRungs);
                 // `establishFoundation` refuses to overwrite one already laid,

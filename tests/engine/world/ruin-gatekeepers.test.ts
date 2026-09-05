@@ -94,12 +94,12 @@ describe('what a reader is told about the claim', () => {
     // - it is an apex, an unaffiliated house or a Dao house that holds no vein
     // by nature - so both shapes are asserted here rather than only the deep one.
     it('gives the authority behind a house that holds under somebody', () => {
-        const keeper = whoTurnsYouAwayFrom(ruin('sect-verdant-spring-hall'), ELDER_FLOOR_ORDINAL);
+        const keeper = whoTurnsYouAwayFrom(ruin('sect-verdant-spring-valley'), ELDER_FLOOR_ORDINAL);
         expect(keeper.claim).toBe('named');
         // Outermost first, ending at the house standing here. Authority runs
         // apex -> court -> local, so a subsidiary's claim is never self-standing.
         expect(keeper.authority.length).toBe(4);
-        expect(keeper.authority[keeper.authority.length - 1]).toBe('Verdant Spring Hall');
+        expect(keeper.authority[keeper.authority.length - 1]).toBe('Verdant Spring Valley');
     });
 
     it('gives an apex house as standing on its own, which is what it does', () => {

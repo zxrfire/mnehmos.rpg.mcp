@@ -157,7 +157,7 @@ describe('the elder rung is derived from the ladder, not hardcoded', () => {
         expect(at('sect-hollow-bell-wanderers')).toBe('Road Elder');
         // No grand elder here, so the floor at 2 keeps the rung it always had.
         expect(at('sect-hollow-court')).toBe('Elder');
-        expect(at('sect-sixmile-wardens')).toBe('Road Warden');
+        expect(at('sect-six-li-patrol')).toBe('Road Warden');
     });
 
     it('makes the grand elder an elder, and the rung below it the plain elder', () => {

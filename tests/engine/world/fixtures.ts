@@ -82,7 +82,7 @@ export function fixtureCatalog(): WorldCatalog {
             }),
             faction({
                 id: 'sect-crimson-abyss',
-                name: 'Crimson Abyss Hall',
+                name: 'Crimson Abyss Fortress',
                 alignment: 'demonic',
                 powerOrdinal: 20,
                 admissionOrdinal: 6,
@@ -93,8 +93,8 @@ export function fixtureCatalog(): WorldCatalog {
                 territory: 'region-low-fall'
             }),
             faction({
-                id: 'sect-standing-grove',
-                name: 'Longbough Grove',
+                id: 'sect-ancient-bough-grove',
+                name: 'Ancient Bough Grove',
                 powerOrdinal: 25,
                 admissionOrdinal: 8,
                 governance: 'deference',
@@ -104,8 +104,8 @@ export function fixtureCatalog(): WorldCatalog {
                 territory: 'region-low-fall'
             }),
             faction({
-                id: 'sect-weir-office',
-                name: 'Weir Office',
+                id: 'sect-clearwater-ward',
+                name: 'Clearwater Ward',
                 kind: undefined as never,
                 powerOrdinal: 17,
                 admissionOrdinal: 2,
@@ -115,8 +115,8 @@ export function fixtureCatalog(): WorldCatalog {
                 territory: 'region-scarwater'
             }),
             faction({
-                id: 'sect-gleaners-company',
-                name: "Gleaners' Company",
+                id: 'sect-fallen-grain-caravan',
+                name: "Fallen Grain Caravan",
                 powerOrdinal: 14,
                 admissionOrdinal: 0,
                 governance: 'unbacked',
@@ -146,7 +146,7 @@ export function fixtureCatalog(): WorldCatalog {
                 localCeilingOrdinal: 21,
                 ambientRateMultiplier: 1,
                 hazards: ['thin_qi'],
-                factionIds: ['sect-azure-cloud', 'sect-crimson-abyss', 'sect-standing-grove'],
+                factionIds: ['sect-azure-cloud', 'sect-crimson-abyss', 'sect-ancient-bough-grove'],
                 exports: ['herbs', 'ore'],
                 places: [
                     { name: 'Burnt Earth', kind: 'market_town', ambient: 'normal', note: 'The market.' },
@@ -166,7 +166,7 @@ export function fixtureCatalog(): WorldCatalog {
                 ambientRateMultiplier: 0.6,
                 hazards: ['thin_qi', 'corrosive'],
                 politics: 'no_authority',
-                factionIds: ['sect-weir-office', 'sect-gleaners-company'],
+                factionIds: ['sect-clearwater-ward', 'sect-fallen-grain-caravan'],
                 exports: ['salt'],
                 places: [
                     { name: 'Clear River Ford', kind: 'village', ambient: 'thin', note: 'On the dead ground.' },

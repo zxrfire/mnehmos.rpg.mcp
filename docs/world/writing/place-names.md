@@ -82,7 +82,7 @@ Clear Creek Village -> Stonewater Town -> White River City -> Jade Pass
 |---|---|---|---|
 | Ordinary | plain, concrete, often a distance or a crop or a water | most villages, hamlets, waystations | Six Li, Old River Village, Sand Well, Salt Fields |
 | Working | a trade, a landmark, a season | market towns, work faces | Wind Market, Autumn Gate, Jade Face |
-| Held | material and treasure, weather, a number | cities, sect seats, passes | Nine Peaks, Cloud Gate, Iron Gate, Cold Peak |
+| Held | material and treasure, weather, a number | cities, sect seats, passes | Nine Peaks, Cloud Gate, Iron Ridge, Cold Peak |
 | Remembered | an event the world actually holds | sites with a history | Grain Rain, Four Graves |
 | Rare | heaven, the dao, the dead, catastrophe | almost nothing | *see below* |
 
@@ -196,18 +196,18 @@ checked, and what it decided:
 - **Three Azures are one family, not a word list.** Azure Mist Court and Azure Dew Sect
   are the Azure Cloud Pavilion's feeders, their rank ladders are *Mist Servant* and *Dew
   Servant*, and a client house taking its patron's word is the register working. Two
-  Abysses - Crimson Abyss Hall and Nine Abyss Flame Sect - are two unrelated demonic
+  Abysses - Crimson Abyss Fortress and Nine Abyss Flame Sect - are two unrelated demonic
   houses reaching for the same stock word, which is what demonic houses do.
-- **The five Dao houses keep their formula.** *The House of the Narrow Hour*, *of the
-  Unbroken Tally*, *of the Quiet Cut*, *of Held Names*, *of the Measured Span*: each names
+- **The five Dao houses keep their formula.** *Flowing Light Tower*, *of the
+  Vermilion Seal Terrace*, *of the Still Blade Peak*, *of Jade Register Hall*, *of the Shrinking Earth Pavilion*: each names
   the dao rather than the ground, which is the second register, and the house noun in
   front is what stops it being the article-plus-abstraction that was struck out of
   `artifacts.ts`. A treasure with no noun saying what it is has nothing holding it up; a
   house does.
 - **A name derived from ground follows the ground.** Silver Isle became Silver Island, so
-  the Silver Isle Rail became **the Silver Island Rail**. Nothing else moved, because
+  the Silver Isle Rail became **the Silver Island Market**. Nothing else moved, because
   Burnt Earth, Six Li, Sand Well and Nine Peaks all kept their names.
-- **Left, and worth naming as left:** *Stonewright Consortium* and *The Longbough Grove*
+- **Left, and worth naming as left:** *Stone Marrow Hall* and *Ancient Bough Grove*
   are English compounds where the rest of the catalog is not. They are a working guild
   and a working grove, most things are ordinary, and neither is worth the sweep.
 
@@ -245,7 +245,7 @@ two centuries later. A counted one is an amount on a holder, and its row in
 
 | Kept as | Named | Already right in the catalog |
 |---|---|---|
-| tracked | the definite article, an image, and what it does | The Ninth Nail, The Fixed Star Lamp, The Chained Stone, The Oath-Binding Case |
+| tracked | the definite article, an image, and what it does | The Ninth Nail, The Polestar Lamp, The Quelling Stone, The Sealing Casket |
 | counted | the indefinite article and a plain description | A Notched Sabre, A Hollow Bell, A Cutting Knife |
 
 **A counted weapon must not be given a good name**, and that is the half that gets broken.
@@ -305,12 +305,12 @@ The provinces went first and are `REGION_NAME`. The settlements followed:
 
 | Was | Is | Why |
 |---|---|---|
-| Stone Ford | Clear River Ford 清河渡 | Ford is the type noun the genre uses, and it puts the town and the Clear River Fordhall that keeps it under one name |
+| Stone Ford | Clear River Ford 清河渡 | Ford is the type noun the genre uses, and it puts the town and the Clear River Alliance that keeps it under one name |
 | Grave Market | Willow Village 柳村 | the register a starting settlement is in: plain, unremarkable, no poetry |
 | The Dead Stone | Nine Hundred Paces 九百步 | the burn edge has moved about that far since the survey was drawn, which the catalog already said |
 | Green Fall | Green Water City 绿水城 | Fall is an English landscape word; the province town takes City |
 | Sweetspring Isle | Sweet Spring Island 甘泉岛 | Isle out, Island in |
-| Silver Isle | Silver Island 银岛 | the same, and it renamed the Silver Island Rail with it |
+| Silver Isle | Silver Island 银岛 | the same, and it renamed the Silver Island Market with it |
 | Bronze Bell Cape | Bronze Bell Cliff 铜钟崖 | Cape out, Cliff in |
 | The Boundless | Boundless Sea 无边海 | a name with no noun in it is a mood; the article goes |
 | The Waiting Sails | Waiting Sails | the article goes |
@@ -319,7 +319,7 @@ The provinces went first and are `REGION_NAME`. The settlements followed:
 | Old River | Old River Village 老河村 | the same |
 | - | Clear Creek Village 清溪村 | **added.** The home province had no `village` row at all |
 
-Kept, and each was looked at: Grain Rain, Four Graves, Nine Peaks, Burnt Earth, Iron Gate,
+Kept, and each was looked at: Grain Rain, Four Graves, Nine Peaks, Burnt Earth, Iron Ridge,
 Six Li, Jade Face, Cold Peak, Orchid Valley, Orchid Terrace, The Far Shore, The Bitter
 Crossing, The Living Ice, The Short Road, Wind Market, Sand Well, Long Vein, Tuo's Wall,
 Halfway Gate, Dragonvein Rock, Three Walls, Autumn Gate, Cloud Gate, Stone Shadow - and
@@ -358,7 +358,7 @@ The short version:
   string pointing at another place's `name`, declared on one end only and typed as
   `z.string().min(1)`, so a missed one passes the schema and silently unprices a road.
 - **Some house names are derived from place names** - Burnt Earth Temple, The Six Li
-  Wardens, The Silver Island Rail, Sand Well Carriers, Nine Peaks Ascetic Order. Renaming
+  Wardens, Silver Island Market, Sand Well Caravan, Nine Peaks Ascetic Order. Renaming
   the ground renames the house, and `sects.ts` usually belongs to somebody else that week.
 - **Never bulk-rename by script.** Several agents work this tree at once and a half-applied
   sweep is worse than an ugly name. Small batches, one province at a time.

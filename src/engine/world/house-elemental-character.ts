@@ -12,7 +12,7 @@
  * The Storm Tyrant Court's own admission line is "A mutated lightning root.
  * Everyone else the Court speaks to is not an applicant." That was authored
  * prose in `SECT_ADMISSION.requirement` and nothing in `src/` gated on it. The
- * Cinnabar Crucible Guild wants fire and takes wood and water anyway. Both are
+ * Cinnabar Crucible Sect wants fire and takes wood and water anyway. Both are
  * real and they are not the same door, so `stance` separates them:
  *
  *   requires  every road it has is the one element, that road is most of the

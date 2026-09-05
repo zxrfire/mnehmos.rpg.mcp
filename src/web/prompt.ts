@@ -272,7 +272,7 @@ judgement on virtue; those who fail it leave a scar where the qi never returns. 
 a dead cultivator did not get to take, and grave-reading is disreputable, profitable, and how a
 low cultivator gets something they should not have.
 
-POWERS: the Stonewright Consortium (mercantile, refines raw qi into spirit stones and sets the
+POWERS: the Stone Marrow Hall (mercantile, refines raw qi into spirit stones and sets the
 exchange rate, including the price of a vein; incapable of seeing a region as anything but
 yield). Lantern Hall (righteous archivists; they record what the crossings take, the names and
 the people no longer remembered by anyone who knew them). The Severed (cut their own bonds,
@@ -281,7 +281,7 @@ the ceiling and refused to go through; nothing left to take, so nothing left to 
 Kiln Court (guard the deep vein at the world's root; do not explain themselves - the province
 has called them the Kiln Wardens for nine hundred years and they have never corrected it).
 
-NAMES: sects take Hall / Pavilion / Court / Consortium / Sect. Techniques are verb-noun
+NAMES: sects take Hall / Pavilion / Court / Stone Marrow Hall / Sect. Techniques are verb-noun
 compounds, often numbered - Nine Severing Threads, Lid-Watching Stance, Borrowed Breath. Pills
 are graded - third-grade Meridian Knitting Pill. Places are plain and physical - Burnt Earth,
 the Jade Gorge, Clear River Ford.`;

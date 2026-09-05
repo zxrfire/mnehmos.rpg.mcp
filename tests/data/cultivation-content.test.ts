@@ -518,7 +518,7 @@ describe('pills', () => {
         }
     });
 
-    it('ships the Minor Healing Pill every run starts with', () => {
+    it('ships the Lesser Healing Pill every run starts with', () => {
         const pill = getPill(MINOR_HEALING_PILL_ID);
         expect(pill).toBeDefined();
         expect(pill?.effect).toBe('heal_hp');
@@ -1102,7 +1102,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
 
     it('carries the five standing powers of the region', () => {
         const powers: Record<string, string> = {
-            'sect-stonewright-consortium': 'neutral',
+            'sect-stone-marrow-hall': 'neutral',
             'sect-lantern-hall': 'righteous',
             'sect-the-severed': 'demonic',
             'sect-hollow-court': 'neutral',
@@ -1173,13 +1173,13 @@ describe('qi, veins and the Late Age', () => {
         }
     });
 
-    it('renamed the Ashwright Consortium and kept it in the seeding catalog', () => {
-        expect(getSect('sect-stonewright-consortium')).toBeDefined();
+    it('renamed the Ashwright Stone Marrow Hall and kept it in the seeding catalog', () => {
+        expect(getSect('sect-stone-marrow-hall')).toBeDefined();
         expect(getSect('sect-ashwright-consortium')).toBeUndefined();
-        expect(getSect('sect-stonewright-consortium')!.name).toBe('Stonewright Consortium');
+        expect(getSect('sect-stone-marrow-hall')!.name).toBe('Stone Marrow Hall');
         // Rivalry symmetry survived the rename.
-        for (const rival of getSect('sect-stonewright-consortium')!.rivals) {
-            expect(getSect(rival)!.rivals).toContain('sect-stonewright-consortium');
+        for (const rival of getSect('sect-stone-marrow-hall')!.rivals) {
+            expect(getSect(rival)!.rivals).toContain('sect-stone-marrow-hall');
         }
     });
 
@@ -1262,7 +1262,7 @@ describe('ancestral records', () => {
             expect(r.lastOffering, `${id} should have offered at least once`).not.toBeNull();
         }
         // And the house that sells the examination exists and says so.
-        const ledger = getDaoHouse('house-ninefold-ledger')!;
+        const ledger = getDaoHouse('house-ninefold-karma')!;
         expect(ledger.services.some(s => /certif/i.test(s) && /ancest/i.test(s))).toBe(true);
         expect(getEncounter('enc-ancestral-claim-verification')).toBeDefined();
     });

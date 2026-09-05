@@ -360,7 +360,7 @@ while the formula sat in the catalog. This time **the cure is reachable and its
 name is not.** Measured, carrying a crippling tear and 194 spirit stones against
 a 54-stone cure:
 
-- `buy a healing pill` sold a Minor Healing Pill - 6 HP, closes nothing;
+- `buy a healing pill` sold a Lesser Healing Pill - 6 HP, closes nothing;
 - `see a physician` said *"cannot touch a meridian"*, which is **false**: mortal
   care closed two torn meridians and two scorched channels in the same run. What
   it cannot touch is a **crippling** one;
@@ -1599,7 +1599,7 @@ practice identifies nobody, it is safe in the narrator's own voice for a player 
 name a single thing in the world - being in the room is the whole qualification.
 
 The one gate is narrow and **computed rather than asserted**: eight of the thirty use
-their own faction's short name mid-sentence ("a Consortium negotiation", "the Office"),
+their own faction's short name mid-sentence ("a Stone Marrow Hall negotiation", "the Court"),
 and those unlock only once the player holds the name. The detection reads the text, so a
 rewritten practice cannot silently start leaking a name nobody thought of as one. A
 capitalised word at a sentence start is a role and stays open - "Wardens carry paint"

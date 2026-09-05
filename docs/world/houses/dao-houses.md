@@ -98,7 +98,7 @@ already quarrelling with.
 
 **Not every house takes them.** A house with nothing behind the door cannot
 afford to open the front of it: showing an outsider its shallow end would be
-showing its whole library. The House of Held Names is the case - an ancient name,
+showing its whole library. Jade Register Hall is the case - an ancient name,
 and a working shelf that stops where every hedge-teacher's does.
 
 **And one day it stops being free.** A house that has watched somebody for its

@@ -58,7 +58,7 @@ import { engineCalls, makeGameInWorld } from './harness';
 
 describe('asking about a named thing reaches the verb that reads one', () => {
     it.each([
-        ['tell me about the Gleaners Company', 'Gleaners Company'],
+        ['tell me about the Fallen Grain Caravan', 'Fallen Grain Caravan'],
         ['tell me about Shen Wanshi', 'Shen Wanshi'],
         ['tell me about Four Graves', 'Four Graves'],
         ['tell me about the Lesser Qi-Gathering Manual', 'Lesser Qi-Gathering Manual'],
@@ -192,8 +192,8 @@ describe('asking who would take you reaches the register of who would', () => {
     });
 
     it('still carries a house the sentence actually names', () => {
-        expect(parseIntent('I ask about joining the Gleaners Company').target)
-            .toBe('Gleaners Company');
+        expect(parseIntent('I ask about joining the Fallen Grain Caravan').target)
+            .toBe('Fallen Grain Caravan');
         expect(parseIntent('I apply to the Thousand Treasure Pavilion').target)
             .toBe('Thousand Treasure Pavilion');
         expect(parseIntent('I join the Azure Dew Sect').target).toBe('Azure Dew Sect');
@@ -205,9 +205,9 @@ describe('asking who would take you reaches the register of who would', () => {
         expect(namesNoHouse('the houses near here')).toBe(true);
         expect(namesNoHouse('house that posted the notice')).toBe(true);
         expect(namesNoHouse('the intake in two days')).toBe(true);
-        expect(namesNoHouse('Gleaners Company')).toBe(false);
+        expect(namesNoHouse('Fallen Grain Caravan')).toBe(false);
         expect(namesNoHouse('Azure Dew Sect')).toBe(false);
-        expect(namesNoHouse('The Silver Island Rail')).toBe(false);
+        expect(namesNoHouse('Silver Island Market')).toBe(false);
     });
 });
 
@@ -235,8 +235,8 @@ describe('taking an intake is being taken on, not opening a treasury', () => {
     });
 
     it.each([
-        ['I take the intake at the Silver Island Rail', 'Silver Island Rail'],
-        ['I take the Silver Island Rail intake', 'Silver Island Rail'],
+        ['I take the intake at the Silver Island Market', 'Silver Island Market'],
+        ['I take the Silver Island Market intake', 'Silver Island Market'],
         ['I sign up for the intake at Silver Island', 'Silver Island'],
         ['I present myself at the Hollow Bell Wanderers intake', 'Hollow Bell Wanderers']
     ])('%s carries the house the paper named', (said, house) => {
@@ -309,8 +309,8 @@ describe('played, through the whole service', () => {
         };
 
         // A house, by the name the game itself printed.
-        expect(await resolved('tell me about the Gleaners Company'))
-            .toMatch(/to sect sect-gleaners-company/);
+        expect(await resolved('tell me about the Fallen Grain Caravan'))
+            .toMatch(/to sect sect-fallen-grain-caravan/);
         // The ground underfoot.
         expect(await resolved('tell me about this place')).toMatch(/to place /);
         // An art out of the catalog.

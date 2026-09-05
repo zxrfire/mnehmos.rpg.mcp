@@ -1025,7 +1025,7 @@ describe('the present count', () => {
         expect(p.theRumour).toMatch(/population is three/i);
         expect(p.theRumour).toMatch(/not in the world/i);
         expect(p.theRumour, 'the rumour must not be given an outside audience')
-            .not.toMatch(/circulates|Ninefold Ledger|in the world at large/i);
+            .not.toMatch(/circulates|Ninefold Karma Palace|in the world at large/i);
         // Three readings, none of them settled.
         expect(p.theRumour).toMatch(/One reads a refusal/);
         expect(p.theRumour).toMatch(/changing the subject/i);

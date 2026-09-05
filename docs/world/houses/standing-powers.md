@@ -14,7 +14,7 @@ actually standing on the four mountains.
 
 <!-- tier: 2 trigger="one of the named powers appears, is invoked, or is being traded with" -->
 
-- **The Stonewright Consortium** - neutral, mercantile, and the closest thing the world
+- **The Stone Marrow Hall** - neutral, mercantile, and the closest thing the world
   has to a functioning state. They refine raw qi into spirit stones and set the exchange
   rate, which means they set the price of everything, including the price of a vein. Not
   evil; simply incapable of seeing a region as anything but yield.

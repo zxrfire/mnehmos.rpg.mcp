@@ -382,7 +382,7 @@ export const WANDERERS: readonly Wanderer[] = [
         crossingOutcome: 'false_immortal',
         crossingYearsAgo: 640,
         before:
-            'Born at the eastern perimeter to the Girdle remnant, three generations after the Anchorhold took the survey, into a lineage that is permitted to live there and barred from holding rank in the house that replaced theirs. He climbed anyway, without a patron, without a grant, and without ever being admitted to anything, which is the part of the account nobody disputes because there is nobody who could have sponsored him.',
+            'Born at the eastern perimeter to the Girdle remnant, three generations after the Immovable Mountain Temple took the survey, into a lineage that is permitted to live there and barred from holding rank in the house that replaced theirs. He climbed anyway, without a patron, without a grant, and without ever being admitted to anything, which is the part of the account nobody disputes because there is nobody who could have sponsored him.',
         whatHappened:
             'He reached the end of Tribulation Transcendence six hundred and forty years ago and made the last crossing. The tribulation was survived and the hole was opened. The crossing did not complete: he came out over the Lid rather than through it, permanently and by name, and the Lid does not open twice for the same name. So he stands one rung above every Tribulation Transcendence alive and one rung below the thing he was reaching for, and both halves of that are permanent.',
         incomplete:
@@ -455,7 +455,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 lastMovedYearsAgo: 7,
                 contradictoryAccounts: [
                     'A Hollow Bell wanderer found it in a dry cistern under a ruined granary in the Jade Gorge, ninety years ago, and could take anybody to the spot',
-                    'A Gleaners crew found what is plainly the same cache in a burn-zone chamber in the Silent Cliffs forty years ago, and can also take anybody to the spot',
+                    'A Fallen Grain Caravan crew found what is plainly the same cache in a burn-zone chamber in the Silent Cliffs forty years ago, and can also take anybody to the spot',
                     'A Clear River ferryman describes finding it in a boat locker that was not his boat, twelve years ago, and has never been believed by anybody'
                 ]
             }
@@ -465,12 +465,12 @@ export const WANDERERS: readonly Wanderer[] = [
                 'There was no oath and no ceremony; a ritual would have embarrassed him. He said it once, while doing something else, in roughly these words: do not go telling people about me. Other people I have given things to, that is fine. The Court knows already. Everybody else, no. Then he changed the subject, and has never raised it again with anybody, and it has been honoured absolutely by every inheritor who ever received it.',
             permittedToTell: [
                 'other inheritors of his, of whom there are perhaps a dozen and most of whom have never met',
-                'the Seats of the Hollow Court and the two or three at the top of the Ninefold Ledger who already hold the file'
+                'the Seats of the Hollow Court and the two or three at the top of the Ninefold Karma Palace who already hold the file'
             ],
             forbidden:
                 'Everybody else, without exception: their sect, their master, their family, their disciples and whoever is buying.',
             motive:
-                'Not fear, since there is no consequence in the world he would mind and he knows it. He simply does not want to be gossiped about. It is a preference, expressed once, of the same weight as preferring a corner table - and it is obeyed more completely than most oaths sworn in front of the Unbroken Tally.',
+                'Not fear, since there is no consequence in the world he would mind and he knows it. He simply does not want to be gossiped about. It is a preference, expressed once, of the same weight as preferring a corner table - and it is obeyed more completely than most oaths sworn in front of the Vermilion Seal Terrace.',
             whyLegendsAreIncoherent:
                 'Because the accurate sources are precisely the ones not talking. Everything circulating in high cultivator circles comes from the outer ring: a sighting, a secondhand account, an incident witnessed at a distance and reconstructed wrongly by somebody with half of it. The people who could correct any of it are inheritors, who will not, and Court Seats, who do not speak to anybody. So the versions multiply, contradict each other, and are never once tested against somebody who knows.',
             breachConsequence:
@@ -574,7 +574,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 'the inheritors who have actually met him, of whom there are perhaps a dozen and who have been asked not to gossip'
             ],
             fragments:
-                'High-level cultivators, and only in the outer ring: a sighting, a secondhand account, an incident reconstructed wrongly by somebody who saw the end of it. Every circulating version is incompatible with the others, none has ever been tested against anybody who knows, and the two or three at the top of the Ninefold Ledger who hold the crossing file have the shape of it and not the man.',
+                'High-level cultivators, and only in the outer ring: a sighting, a secondhand account, an incident reconstructed wrongly by somebody who saw the end of it. Every circulating version is incompatible with the others, none has ever been tested against anybody who knows, and the two or three at the top of the Ninefold Karma Palace who hold the crossing file have the shape of it and not the man.',
             nothing:
                 'Everybody else in the world, including every institution that would pay enormously for it and several that have tried. There is no archive anywhere with a correct account, because the correct accounts are held by people who do not write things down and people who have been asked not to.',
             apexBlindSpot: {
@@ -693,7 +693,7 @@ export const WANDERERS: readonly Wanderer[] = [
             theOccasion: {
                 yearsAgo: 40,
                 what:
-                    'He walked into the Azure Cloud Pavilion in daylight, past four Sword Elders who understood exactly what was happening and did nothing because there was nothing to do, and took one of the four Unearned Steps out of the reserve. He did not hurry and he did not explain. The Pavilion held four that morning and three that evening. It holds seven now, because what the sister sends keeps arriving, and the rising count is the reason nobody outside has ever been able to reconcile the story with the ledger.',
+                    'He walked into the Azure Cloud Pavilion in daylight, past four Sword Elders who understood exactly what was happening and did nothing because there was nothing to do, and took one of the four Heaven-Ascending Golden Pills out of the reserve. He did not hurry and he did not explain. The Pavilion held four that morning and three that evening. It holds seven now, because what the sister sends keeps arriving, and the rising count is the reason nobody outside has ever been able to reconcile the story with the ledger.',
                 whereHeStopped:
                     'The Standing Edge was in the floor of the inner hall, ten paces further on, and he looked at it and left it there. On the way out he said - to nobody, and one Sword Elder wrote it down - that the pill was the Pavilion\'s and the sword was not.',
                 whoNoticed:
@@ -710,28 +710,28 @@ export const WANDERERS: readonly Wanderer[] = [
             {
                 yearsAgo: 40,
                 where: 'A ford town on the border road, and then the Azure Cloud Pavilion, on the same afternoon',
-                what: 'He spent two days talking to a physician\'s daughter who was cultivating on a thin hillside with a muddled root and no prospects, liked her, walked to the Pavilion, took one of the four Unearned Steps, came back, and gave it to her. He explained nothing, stayed one more night, and left the province.',
-                consequence: 'She used it. The realm arrived without the accumulation, everybody who had watched her for a decade did the arithmetic inside a month, and the Pavilion - which knew exactly what had been taken and exactly who had it - sent a courier rather than a sword. The Ledger opened a lineage audit unasked. Her sect refused her. She could not return the pill and could not explain how she had come by it in any way that was believed, and she spent the remaining sixty years of her life as the woman who was carrying stolen Pavilion property, at a realm she had not earned, in a province where both facts were common knowledge.',
+                what: 'He spent two days talking to a physician\'s daughter who was cultivating on a thin hillside with a muddled root and no prospects, liked her, walked to the Pavilion, took one of the four Heaven-Ascending Golden Pills, came back, and gave it to her. He explained nothing, stayed one more night, and left the province.',
+                consequence: 'She used it. The realm arrived without the accumulation, everybody who had watched her for a decade did the arithmetic inside a month, and the Pavilion - which knew exactly what had been taken and exactly who had it - sent a courier rather than a sword. The Karma Pavilion opened a lineage audit unasked. Her sect refused her. She could not return the pill and could not explain how she had come by it in any way that was believed, and she spent the remaining sixty years of her life as the woman who was carrying stolen Pavilion property, at a realm she had not earned, in a province where both facts were common knowledge.',
                 heNeverLearned: true
             },
             {
                 yearsAgo: 60,
-                where: 'A Cinnabar Crucible Guild refining hall, during an open examination',
-                what: 'He remarked, to a journeyman he had been talking to about something else, that the fourth line of the method-script on the wall is not a step in the method. He was correct - a Furnace Elder later died proving the same thing - and he did not stay to be asked how he knew, or to learn that the Guild teaches the line to this day.',
-                consequence: 'The journeyman repeated it, twice, in the wrong company. He was expelled for insubordination within the year, and the Guild still teaches the fourth line.',
+                where: 'A Cinnabar Crucible Sect refining hall, during an open examination',
+                what: 'He remarked, to a journeyman he had been talking to about something else, that the fourth line of the method-script on the wall is not a step in the method. He was correct - a Furnace Elder later died proving the same thing - and he did not stay to be asked how he knew, or to learn that the Hall teaches the line to this day.',
+                consequence: 'The journeyman repeated it, twice, in the wrong company. He was expelled for insubordination within the year, and the Hall still teaches the fourth line.',
                 heNeverLearned: true
             },
             {
                 yearsAgo: 19,
                 where: 'A waystation on the marked road at Six Li, in the Silent Cliffs',
                 what: 'He spent a winter repainting stakes on the burn edge because the Wardens were two people short and it was something to do. He gave no name that anybody wrote down, took paint and food, worked the season, and left in spring without mentioning where he was going.',
-                consequence: 'The Six Li Wardens remember a competent drifter who was better on the edge than he had any business being, and have never connected him to anything. Their survey that year is the most accurate they have.',
+                consequence: 'Six Li Patrol remember a competent drifter who was better on the edge than he had any business being, and have never connected him to anything. Their survey that year is the most accurate they have.',
                 heNeverLearned: false
             },
             {
                 yearsAgo: 8,
                 where: 'A Thousand Treasure Pavilion auction preview',
-                what: 'He looked at a catalogued lot for some seconds and said, out loud and to nobody in particular, that it was a forgery of an Unearned Step and not a good one. He was right, he did not elaborate, and he had left before the auctioneer worked out who to ask.',
+                what: 'He looked at a catalogued lot for some seconds and said, out loud and to nobody in particular, that it was a forgery of an Heaven-Ascending Golden Pill and not a good one. He was right, he did not elaborate, and he had left before the auctioneer worked out who to ask.',
                 consequence: 'The lot was withdrawn, the consignor was ruined inside a month, and the Pavilion has not held a preview open to the public since.',
                 heNeverLearned: true
             }
@@ -739,14 +739,14 @@ export const WANDERERS: readonly Wanderer[] = [
         legends: [
             {
                 calledBy: 'The Ninth Stone',
-                toldAmong: 'Anchorhold Wardens, mostly the ones posted to the eastern perimeter',
+                toldAmong: 'Immovable Mountain Temple Wardens, mostly the ones posted to the eastern perimeter',
                 version: 'That the barred Girdle lineage produced somebody who went all the way to the Lid, and that this is why the exclusion is maintained: the house is not keeping them out, it is keeping the story from being tested.',
                 accurate: false,
-                whatIsWrong: 'The lineage did produce him, which is the part everyone assumes is invention. The motive attributed to the Anchorhold is wrong: the house does not know, and the exclusion is nine hundred years of paperwork rather than a policy about him.'
+                whatIsWrong: 'The lineage did produce him, which is the part everyone assumes is invention. The motive attributed to the Immovable Mountain Temple is wrong: the house does not know, and the exclusion is nine hundred years of paperwork rather than a policy about him.'
             },
             {
                 calledBy: 'The Guest',
-                toldAmong: 'The four Seats of the Hollow Court, and three or four people at the top of the Ninefold Ledger',
+                toldAmong: 'The four Seats of the Hollow Court, and three or four people at the top of the Ninefold Karma Palace',
                 version: 'That a False Immortal holds the lowest rank at the Court, has never used it, and is somewhere in the world walking about.',
                 accurate: true,
                 whatIsWrong: 'Nothing, which is why it is the version almost nobody has heard: every party holding it is either an inheritor who has been asked not to gossip or a Seat who does not speak to anybody. It is also the version least likely to be believed if repeated, because it is the least interesting.'
@@ -760,7 +760,7 @@ export const WANDERERS: readonly Wanderer[] = [
             },
             {
                 calledBy: 'The Moving Hoard',
-                toldAmong: 'Grave-readers, Gleaners crews and anybody who trades in salvage on the border road',
+                toldAmong: 'Grave-readers, Fallen Grain Caravan crews and anybody who trades in salvage on the border road',
                 version: 'That there is a cache somewhere that refills itself, that three separate parties have found it in three different provinces, and that at least two of them must therefore be lying.',
                 accurate: false,
                 whatIsWrong: 'None of them is lying. It refills because he restocks it and it moves because he carries it, and the accounts contradict each other for the most ordinary reason imaginable. The version omits the man entirely, which is why it has stayed in circulation without ever leading anybody to him.'
@@ -776,7 +776,7 @@ export const WANDERERS: readonly Wanderer[] = [
         startingAwareness: 'unaware',
         awarenessSources: [
             'a Seat of the Hollow Court, in the unlikely event of one speaking to anybody',
-            'the Ninefold Ledger at Keeper level, which holds the crossing file and does not discuss it',
+            'the Ninefold Karma Palace at Keeper level, which holds the crossing file and does not discuss it',
             'a high-realm cultivator repeating one of the wrong versions at a gathering where such people are present',
             'having sat next to him for an evening and worked it out afterwards, usually years afterwards'
         ],

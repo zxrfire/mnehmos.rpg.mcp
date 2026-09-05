@@ -180,7 +180,7 @@ export const WHO_HINTS_AND_WHY = {
     theRule:
         'Whether an answer comes with a handhold is decided by two things and neither is temperament: how long the answerer has been up there, and whether they have a tie to a living person. Vintage governs whether they still know a hint is needed; the tie governs whether they spend the attention. See `THE_DECAY_OF_MEMORY`.',
     theHollowCourtDoesNotHint:
-        'Their ancestors are ancestors of a body rather than of anybody, and the youngest of them crossed nine hundred years ago. Picture a senior figure who has no time for you: not cruel, not contemptuous, simply busy and far above the matter. Qiu Danzhi answers because answering is the obligation, she answers exactly, and she is already gone. Nobody up there will notice that the Court framed its question badly and do it the courtesy of saying so - partly because the Court is not a person to any of them, and mostly because none of them can still feel that the Court gets one attempt.',
+        'Their ancestors are ancestors of a body rather than of anybody, and the youngest of them crossed nine hundred years ago. Picture a senior figure who has no time for you: not cruel, not contemptuous, simply busy and far above the matter. Qiu Danzhi answers because answering is the obligation, she answers exactly, and she is already gone. Nobody up there will notice that the Court framed its question badly and do it the courtesy of saying so - partly because the Ward is not a person to any of them, and mostly because none of them can still feel that the Court gets one attempt.',
     anInstitutionGetsInstitutionalService:
         'Correct, complete, and no help whatsoever. That is not a failure of the Court\'s records or its standing - its records are the best in the world and its standing is unmatched. It is what a perfectly maintained institutional channel actually delivers.',
     ruAnjingDoes:
@@ -267,7 +267,7 @@ export const HELD_QUESTIONS: readonly {
         theCurrentWording:
             'Not written down anywhere, on the reasoning that a sentence in a drawer is a sentence somebody can read. Two of the four seated hold it verbatim and confirm it against each other at intervals, which is the whole of the archive.',
         whyItIsStillNotSent:
-            'Because they know exactly what they will get: precisely what they ask for, from somebody who will not look up. The Court is the best-informed body in the world about how cold its own channel is, and the caution follows from the information rather than from fear.'
+            'Because they know exactly what they will get: precisely what they ask for, from somebody who will not look up. The Ward is the best-informed body in the world about how cold its own channel is, and the caution follows from the information rather than from fear.'
     },
     {
         factionId: 'apex-long-cut',
@@ -340,7 +340,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         yearsAgo: 4400,
         attestation: 'withheld',
         attestationNote:
-            'The Court holds the name, has never said it aloud to an outsider, and does not use it internally either - four thousand years of referring to a man as "the one who went through first" is a practice rather than an omission. The name in this entry is the Anchorhold\'s, taken off a Standing Works site register that predates the Court\'s reticence and was never meant to be interesting.',
+            'The Court holds the name, has never said it aloud to an outsider, and does not use it internally either - four thousand years of referring to a man as "the one who went through first" is a practice rather than an omission. The name in this entry is the Immovable Mountain Temple\'s, taken off a Standing Works site register that predates the Court\'s reticence and was never meant to be interesting.',
         answers: 'silent',
         juniority: 6,
         manner:
@@ -361,7 +361,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         answers: 'silent',
         juniority: 5,
         manner:
-            'Silent for thirty-nine centuries. The three replies attributed to her in the Court record all date from her first two hundred years and all three are longer and plainer than anything the Court has received since, which nobody at the Court has ever connected to her age at the time.',
+            'Silent for thirty-nine centuries. The three replies attributed to her in the Court record all date from her first two hundred years and all three are longer and plainer than anything the Ward has received since, which nobody at the Ward has ever connected to her age at the time.',
         note: 'The crossing that turned a group of very strong people into a method, which is the Court\'s actual founding rather than its first.'
     },
     {
@@ -393,7 +393,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         answers: 'silent',
         juniority: 3,
         manner:
-            'Silent, and the most requested of the six: the Court has petitioned her about the aborted crossing eleven times over two thousand years and received nothing, which is not a refusal so much as a matter that has stopped being live for her.',
+            'Silent, and the most requested of the six: the Ward has petitioned her about the aborted crossing eleven times over two thousand years and received nothing, which is not a refusal so much as a matter that has stopped being live for her.',
         note: 'Two dates on one tablet, which is the whole of the evidence that a crossing can be broken off and re-attempted, and which every Void Refinement cultivator in the world would want to read.'
     },
     {
@@ -402,10 +402,10 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         alsoCalled: null,
         kind: 'immortal_ancestor',
         factionId: 'sect-hollow-court',
-        whatTheyWere: 'A Seat of the western mountain who crossed at the end of the Counting Age with four standing over her, the largest guard the Court has ever fielded.',
+        whatTheyWere: 'A Seat of the western mountain who crossed at the end of the Counting Age with four standing over her, the largest guard the Ward has ever fielded.',
         yearsAgo: 1600,
         attestation: 'secure',
-        attestationNote: 'Tablet, dated, four protectors named. The Ninefold Ledger holds an independent record of the same year because two of the four owed it obligations that lapsed on the day.',
+        attestationNote: 'Tablet, dated, four protectors named. Ninefold Karma Palace holds an independent record of the same year because two of the four owed it obligations that lapsed on the day.',
         answers: 'silent',
         juniority: 2,
         manner:
@@ -422,11 +422,11 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         yearsAgo: 900,
         attestation: 'secure',
         attestationNote:
-            'Securely attested, currently addressed by name, and answered by name - the strongest attestation available to anybody in this file, because the Court has the rare luxury of being corrected if it gets it wrong.',
+            'Securely attested, currently addressed by name, and answered by name - the strongest attestation available to anybody in this file, because the Ward has the rare luxury of being corrected if it gets it wrong.',
         answers: 'answers',
         juniority: 1,
         manner:
-            'Exact, complete, and no help whatsoever. She answers what was asked, in as few words as the answer requires, and does not stay. Nine hundred years is long enough that the cost of the offering is no longer something she can feel, so it does not occur to her to wrap anything in context - and just occasionally her answers run a clause longer than the other five would have managed, which is the last visible trace of a person who used to know what this costs. Nobody at the Court has noticed, and nobody there knows to be grateful for it.',
+            'Exact, complete, and no help whatsoever. She answers what was asked, in as few words as the answer requires, and does not stay. Nine hundred years is long enough that the cost of the offering is no longer something she can feel, so it does not occur to her to wrap anything in context - and just occasionally her answers run a clause longer than the other five would have managed, which is the last visible trace of a person who used to know what this costs. Nobody at the Ward has noticed, and nobody there knows to be grateful for it.',
         note: 'The Court\'s working line upward, and the reason its depletion is medium rather than terminal. Its archives are good, so it can still name her; because it can name her, the channel is open. That sequence is the entire argument for record-keeping, demonstrated once, in one institution.'
     },
 
@@ -539,14 +539,14 @@ export const SEALED_FIGURE_NAMES: readonly NamedFigure[] = [
         name: 'Ke Yuan',
         alsoCalled: 'who set the datum',
         kind: 'sealed',
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         whatTheyWere: 'The surveyor who fixed the house datum every price in the region is still quoted against, and who went under the station where he set it.',
         yearsAgo: 600,
         attestation: 'secure',
         attestationNote: 'A datum is a signed object. The house has the signature, the figures and six hundred years of every subsequent measurement agreeing with them.',
         answers: null,
         juniority: null,
-        note: 'The Measured Span sweeps a gateless frame above him at a station where it has been failing to reopen the same span for six centuries.'
+        note: 'The Shrinking Earth Pavilion sweeps a gateless frame above him at a station where it has been failing to reopen the same span for six centuries.'
     },
     {
         id: 'figure-the-woman-who-went-down',
@@ -593,7 +593,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
     // and both are attested by the SAME KIND of document: a running record
     // the body has kept from the first day. That is what a house has instead
     // of an ancestor when there is nobody above it to have been given one by.
-    // The Rail has a rate book and the Carriers have a tally board, and each
+    // The Market has a rate book and the Caravan have a tally board, and each
     // of those is worth more to its holder than a wall of tablets, because it
     // is the thing the body is actually trusted for.
     {
@@ -601,7 +601,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Duan Xi',
         alsoCalled: 'the first Weigher',
         kind: 'founder',
-        factionId: 'sect-halfwater-rail',
+        factionId: 'sect-silver-island-market',
         whatTheyWere: 'A Sweet Spring Island factor who worked out that the middle of the eastern passage was the only place four parties who would not sit in a room together all had to stop anyway, and put a weigh house on it.',
         yearsAgo: 90,
         attestation: 'secure',
@@ -615,8 +615,8 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'The first Waterman, name cut on the oldest board',
         alsoCalled: 'the one who would not wipe it',
         kind: 'founder',
-        factionId: 'sect-sink-carriers',
-        whatTheyWere: 'Somebody the Weir Office had no record of, who put a shed a day past the last painted stake and started carrying water to people the eastern cities had a rate posted on.',
+        factionId: 'sect-sand-well-caravan',
+        whatTheyWere: 'Somebody the Clearwater Ward had no record of, who put a shed a day past the last painted stake and started carrying water to people the eastern cities had a rate posted on.',
         yearsAgo: 90,
         attestation: 'secure',
         attestationNote: 'Attested by the boards themselves, which are physical, dated by the seasons cut into their edges, and were the reason the shed had to be rebuilt around them rather than moved. Nothing else about him is recorded and the shed has never looked.',
@@ -671,7 +671,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Lu Wan',
         alsoCalled: 'Physician Lu Wan',
         kind: 'founder',
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         whatTheyWere: 'The physician who took nine people into a valley and treated whoever arrived, including the people who had put them there.',
         yearsAgo: 1100,
         attestation: 'secure',
@@ -745,7 +745,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Wen Su',
         alsoCalled: 'the first Keeper, who planted nothing and cleared nothing',
         kind: 'founder',
-        factionId: 'sect-standing-grove',
+        factionId: 'sect-ancient-bough-grove',
         whatTheyWere: 'The one who settled in a valley, answered what was brought to her, refused payment, and never claimed a foot of ground beyond what she could walk.',
         yearsAgo: 200,
         attestation: 'secure',
@@ -759,11 +759,11 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Hou Jian',
         alsoCalled: 'Principal Hou Jian',
         kind: 'founder',
-        factionId: 'sect-stonewright-consortium',
+        factionId: 'sect-stone-marrow-hall',
         whatTheyWere: 'The assayer who worked out that whoever sets the rate does not need to hold a vein, and then set it.',
         yearsAgo: 600,
         attestation: 'secure',
-        attestationNote: 'On a signed rate schedule, which is a document type the Consortium has never in its history mislaid.',
+        attestationNote: 'On a signed rate schedule, which is a document type the Stone Marrow Hall has never in its history mislaid.',
         answers: null,
         juniority: null,
         note: 'A founder attested by a price list, which is exactly how this institution would want to be remembered.'
@@ -787,11 +787,11 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Xie Lan',
         alsoCalled: 'Grandmaster Xie Lan',
         kind: 'founder',
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         whatTheyWere: 'The alchemist who read a third of a wall, built a monopoly on it, and instituted examination rather than combat as the door.',
         yearsAgo: 700,
         attestation: 'secure',
-        attestationNote: 'Signed formulae in a house that counts standing in refinements that held. A Guild founder is attested the way a batch is.',
+        attestationNote: 'Signed formulae in a house that counts standing in refinements that held. A Hall founder is attested the way a batch is.',
         answers: null,
         juniority: null,
         note: 'Still teaches, posthumously, a step that killed the man who proved it was not one.'
@@ -845,7 +845,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Shu Wangdao',
         alsoCalled: 'the First Abyss Lord',
         kind: 'founder',
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         whatTheyWere: 'The one who set a table outside somebody else\'s admission day with a cash box on it and paid the first month in advance.',
         yearsAgo: 400,
         attestation: 'secure',
@@ -903,21 +903,21 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Warden Qiu Shen',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'sect-weir-office',
+        factionId: 'sect-clearwater-ward',
         whatTheyWere: 'The clerk who took custody of two workable faces during an administrative gap and issued the first grant against them.',
         yearsAgo: 200,
         attestation: 'secure',
-        attestationNote: 'Grant number one, in the book, on the public shelf, itemised. The Office would sooner lose a face than a page.',
+        attestationNote: 'Grant number one, in the book, on the public shelf, itemised. The Court would sooner lose a face than a page.',
         answers: null,
         juniority: null,
-        note: 'The entire authority of the Weir Office rests on a two-hundred-year-old filing action that nobody has ever formally challenged.'
+        note: 'The entire authority of the Clearwater Ward rests on a two-hundred-year-old filing action that nobody has ever formally challenged.'
     },
     {
         id: 'figure-the-first-marker',
         name: 'The first Marker',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'sect-sixmile-wardens',
+        factionId: 'sect-six-li-patrol',
         whatTheyWere: 'The one who painted the first stake at the edge of ground that had moved, and went back the next season to repaint it.',
         yearsAgo: 150,
         attestation: 'unrecorded',
@@ -932,7 +932,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Company Master Bo Ai',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         whatTheyWere: 'The digger who instituted shares allocated before a shift and paid to a dead gleaner\'s family after it.',
         yearsAgo: 300,
         attestation: 'secure',
@@ -946,12 +946,12 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'First Keeper Yan Duo',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         whatTheyWere: 'The auditor who began writing connections down as a graph rather than as scores, and who destroyed the house he grew out of.',
         yearsAgo: 4000,
         attestation: 'secure',
         attestationNote:
-            'Four thousand years of continuous audit, and the entry that matters is his own account of ending the Tally Court, filed by him, in the first volume, in his own hand.',
+            'Four thousand years of continuous audit, and the entry that matters is his own account of ending the Iron Tally Court, filed by him, in the first volume, in his own hand.',
         answers: null,
         juniority: null,
         note: 'The only founder in this file who wrote down why he destroyed his predecessor and then sealed the volumes that say so.'
@@ -961,7 +961,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Cao Xun',
         alsoCalled: 'the First Sighting',
         kind: 'founder',
-        factionId: 'house-narrow-hour',
+        factionId: 'house-flowing-light',
         whatTheyWere: 'The first reader to say that only a few possibilities are load-bearing at any moment, and to charge for saying which.',
         yearsAgo: 3000,
         attestation: 'disputed',
@@ -976,7 +976,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Lin Zhao',
         alsoCalled: 'the First Oathwright',
         kind: 'founder',
-        factionId: 'house-unbroken-tally',
+        factionId: 'house-vermilion-seal',
         whatTheyWere: 'The first to make a promise structural rather than punitive, and the first to sign last.',
         yearsAgo: 3200,
         attestation: 'secure',
@@ -990,7 +990,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Unrecorded',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'house-quiet-cut',
+        factionId: 'house-still-blade',
         whatTheyWere: 'Whoever first sold the permanent removal of a relationship, and then removed the record of having done so.',
         yearsAgo: null,
         attestation: 'unrecorded',
@@ -1005,7 +1005,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'First Register Gu Yao',
         alsoCalled: null,
         kind: 'founder',
-        factionId: 'house-held-names',
+        factionId: 'house-jade-register',
         whatTheyWere: 'The one who began holding names in trust against the day a boundary took them, and instituted the morning recitation.',
         yearsAgo: 2800,
         attestation: 'secure',
@@ -1019,7 +1019,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Fu Chang',
         alsoCalled: 'the Long Measure',
         kind: 'founder',
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         whatTheyWere: 'The surveyor who first quoted a price in true rather than walked distance and made everybody else pay it.',
         yearsAgo: 5000,
         attestation: 'secure',
@@ -1033,7 +1033,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Xu Ping',
         alsoCalled: 'the First Standing Anchor',
         kind: 'founder',
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         whatTheyWere: 'The one who drove the first nail, set the datum stone, and instituted the perimeter watch as both an admission requirement and a cultivation method.',
         yearsAgo: 2600,
         attestation: 'secure',
@@ -1052,7 +1052,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         yearsAgo: 900,
         attestation: 'unrecorded',
         attestationNote:
-            'Nine hundred years of perimeter and not one recorded name, exchange, or statement of purpose. Everything anybody knows about the Wardens comes from the Anchorhold estimating what walks the boundary.',
+            'Nine hundred years of perimeter and not one recorded name, exchange, or statement of purpose. Everything anybody knows about the Wardens comes from the Immovable Mountain Temple estimating what walks the boundary.',
         answers: null,
         juniority: null,
         note: 'Two figures, both unnamed, both from the same institution: the only faction in the file that has never given anybody a name to use.'
@@ -1131,8 +1131,8 @@ export const HISTORICAL_FIGURES: readonly NamedFigure[] = [
         name: 'Warden Pei Sun',
         alsoCalled: null,
         kind: 'historical',
-        factionId: 'house-anchorhold',
-        whatTheyWere: 'The Anchorhold warden who first argued that the Lid is a containment of the same kind as the house perimeters, and wrote the internal position that has never been published.',
+        factionId: 'house-immovable-mountain',
+        whatTheyWere: 'Immovable Mountain Temple warden who first argued that the Lid is a containment of the same kind as the house perimeters, and wrote the internal position that has never been published.',
         yearsAgo: 900,
         attestation: 'secure',
         attestationNote: 'Signed, filed, unpublished, and cited internally by every warden since. The house does not lose documents and does not release them either.',
@@ -1145,7 +1145,7 @@ export const HISTORICAL_FIGURES: readonly NamedFigure[] = [
         name: 'Elder Surveyor Fu Ling',
         alsoCalled: null,
         kind: 'historical',
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         whatTheyWere: 'The surveyor who stated that the Lid is a distance rather than a lid, and that the whole vocabulary of ascension is a walked-distance description of a true-distance fact.',
         yearsAgo: 600,
         attestation: 'secure',
@@ -1159,7 +1159,7 @@ export const HISTORICAL_FIGURES: readonly NamedFigure[] = [
         name: 'Warden of Survey Ru Bo',
         alsoCalled: null,
         kind: 'historical',
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         whatTheyWere: 'The warden who published a note on seat tooling implying the terminal seats were cut before the Thirty-One, and has been left alone about it because nobody read the note.',
         yearsAgo: 40,
         attestation: 'secure',

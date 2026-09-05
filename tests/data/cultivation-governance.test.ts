@@ -92,15 +92,15 @@ describe('the pyramid', () => {
     });
 
     it('stacks: a subsidiary of a subsidiary reaches an apex by walking up', () => {
-        const chain = chainToApex('sect-gleaners-company');
-        expect(chain[0]).toBe('sect-gleaners-company');
-        expect(chain).toContain('sect-weir-office');
+        const chain = chainToApex('sect-fallen-grain-caravan');
+        expect(chain[0]).toBe('sect-fallen-grain-caravan');
+        expect(chain).toContain('sect-clearwater-ward');
         expect(chain).toContain('court-ninth-face');
         expect(chain[chain.length - 1]).toBe('apex-long-cut');
-        expect(tierOf('sect-gleaners-company')).toBeGreaterThanOrEqual(3);
+        expect(tierOf('sect-fallen-grain-caravan')).toBeGreaterThanOrEqual(3);
 
         // A vein-holder is nearer the top than its own sub-holder.
-        expect(tierOf('sect-verdant-spring-hall'))
+        expect(tierOf('sect-verdant-spring-valley'))
             .toBeGreaterThan(tierOf('sect-nine-peaks-ascetic-order'));
         // And an unbacked league has nowhere to walk.
         expect(chainToApex('sect-hollow-bell-wanderers')).toEqual(['sect-hollow-bell-wanderers']);
@@ -193,8 +193,8 @@ describe('the four governance models', () => {
             .filter(p => p.governance === 'administered' && p.relation === 'subsidiary');
         expect(marchesLeases.length, 'a direct ruler has no subsidiaries').toBe(0);
         // The local hegemon is staff, not a vassal.
-        expect(getParentage('sect-weir-office')!.relation).toBe('administration');
-        expect(getParentage('sect-gleaners-company')!.relation).toBe('contracted');
+        expect(getParentage('sect-clearwater-ward')!.relation).toBe('administration');
+        expect(getParentage('sect-fallen-grain-caravan')!.relation).toBe('contracted');
     });
 
     it('holds a deference zone on a belief that decays', () => {
@@ -364,7 +364,7 @@ describe('the feeder and arrival', () => {
         expect(arrival.titlesRecognised).toEqual([]);
 
         // The same, from anywhere, including the most prestigious sect there is.
-        for (const from of ['sect-hollow-bell-wanderers', 'sect-nine-peaks-ascetic-order', 'sect-standing-grove']) {
+        for (const from of ['sect-hollow-bell-wanderers', 'sect-nine-peaks-ascetic-order', 'sect-ancient-bough-grove']) {
             const a = arrivalStateFor(from, 'apex-deep-survey');
             expect(a.rankIndex).toBe(0);
             expect(a.contributionCarried).toBe(0);
@@ -417,8 +417,8 @@ describe('guest elders', () => {
         const sillHolders = getSubsidiariesOf('court-third-sill');
         expect(sillHolders.length).toBeGreaterThanOrEqual(5);
         for (const p of sillHolders) expect(p.governance).toBe('federated');
-        expect(getSubsidiariesOf('sect-weir-office').map(p => p.factionId))
-            .toContain('sect-gleaners-company');
+        expect(getSubsidiariesOf('sect-clearwater-ward').map(p => p.factionId))
+            .toContain('sect-fallen-grain-caravan');
         expect(getSubsidiariesOf('sect-hollow-bell-wanderers')).toEqual([]);
     });
 });

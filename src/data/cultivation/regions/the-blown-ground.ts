@@ -162,7 +162,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         'The unit of possession is a surfacing rather than an area, and a surfacing closes, so nothing here outlives the instrument that would be used to hold it - which is why there is no grant book, no lease, no tenancy and nobody to be polite to',
         'A survey here is possible, cheap and correct, and is worth nothing within the year. This is the only ground in the world that is surveyed constantly and granted not at all, and the trade that thrives is finding rather than surveying',
         'Nothing is built, because a wall stops the sand for one season and is a dune the next, so every institution that has ever operated here is a camp, and a camp that stops moving is either buried or robbed',
-        'There is no certified datum, so no oath binds and no boundary can be arbitrated - the same reason the Anchorhold maintains no perimeter in the Yellow Plain, arrived at from a different direction and much harder',
+        'There is no certified datum, so no oath binds and no boundary can be arbitrated - the same reason the Immovable Mountain Temple maintains no perimeter in the Yellow Plain, arrived at from a different direction and much harder',
         'A find is sold once, immediately, to whoever is nearest, at the finder\'s price, because the buyer cannot go back for it - which inverts the whole salvage trade, where the seller\'s problem is provenance and here the buyer\'s problem is that the site will be gone',
         'People who cannot stand at a gate anywhere else can stand here, so the population is entirely arrivals with a reason, and everybody knows that about everybody'
     ],
@@ -174,11 +174,11 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         what:
             'A patch where the cover has thinned to nothing and the vein is at the surface. Anything from forty paces across to about the size of Autumn Gate\'s market, dense to spirit-tide the whole way over, and visible from a distance because nothing grows on it and the air above it stands wrong.',
         howFound:
-            'By walking, by a change in the wind, and by the birds, which will not cross one. Finders work alone or in twos because a find is worth exactly what it is worth divided by the number of people who saw it, and the trade has no guild, no register and no way of establishing that anybody found anything first.',
+            'By walking, by a change in the wind, and by the birds, which will not cross one. Finders work alone or in twos because a find is worth exactly what it is worth divided by the number of people who saw it, and the trade has no hall, no register and no way of establishing that anybody found anything first.',
         howLong:
             'A season at the short end and about nine years at the long. The average is two or three, nobody has kept the figures long enough for the average to mean anything, and every finder alive will tell you a different number with complete confidence.',
         againstTheGrantCycle:
-            'A grant is twelve years, everywhere in the world that has one, and it is twelve years because that is how long a surveyed vein can be relied on to still be a surveyed vein. Not one show in living memory has run a full grant cycle. Long Vein is nineteen years and is the exception the whole province argues about: two parties have quietly asked whether it could be granted, both of them asked a court that has no jurisdiction here, and both were told the ground would have to be certified first, which returns the question to the Anchorhold and to a datum that walks a li a year.',
+            'A grant is twelve years, everywhere in the world that has one, and it is twelve years because that is how long a surveyed vein can be relied on to still be a surveyed vein. Not one show in living memory has run a full grant cycle. Long Vein is nineteen years and is the exception the whole province argues about: two parties have quietly asked whether it could be granted, both of them asked a court that has no jurisdiction here, and both were told the ground would have to be certified first, which returns the question to the Immovable Mountain Temple and to a datum that walks a li a year.',
         whatAFinderDoes:
             'Sells the location once, on the spot, in cash or stones, to whoever is at Wind Market that week, and does not lead the buyer to it. The buyer takes the direction and the distance and finds it themselves or does not. There is no warranty, no recourse and no second sale, and a finder who sells the same show twice is not punished, they are simply never bought from again in a province with one market in it.'
     },
@@ -216,8 +216,8 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'Refusal at a gate is the commonest origin of an unaffiliated cultivator in the world, and this is the only ground where being unable to be looked up in a register is not a disadvantage, because there is nobody here to look anybody up.'
         },
         {
-            who: 'The Crimson Abyss Hall\'s recruiters',
-            factionId: 'sect-crimson-abyss-hall',
+            who: 'The Crimson Abyss Fortress\'s recruiters',
+            factionId: 'sect-crimson-abyss-fortress',
             holds: 'nothing',
             doesHere:
                 'Work Wind Market the way they work the eastern admission days: a table, a cash box, and the first month paid in advance to anybody who will sign. They take more people out of this ground than they take out of any city in the Yellow Plain, and they take them out alive, which is a sentence their rivals find difficult.',
@@ -234,17 +234,17 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'Everywhere else the dead belong to a family, a sect hall, a temple or an ice-form. Here they belong to whoever is standing over them, which is the whole of the Cult\'s procurement problem solved in one province.'
         },
         {
-            who: 'The Gleaners\' Company',
-            factionId: 'sect-gleaners-company',
+            who: 'Fallen Grain Caravan',
+            factionId: 'sect-fallen-grain-caravan',
             holds: 'nothing',
             doesHere:
                 'Buys at Wind Market, by weight, on the same manifest rule it uses at Willow Village, and will not send a crew in. The Company is the only institution operating here that publishes what it does here, and what it publishes is that it buys and does not dig.',
             whyHere:
-                'A yard four days away in Iron Gate and a market with one buyer at it is the same trade the Company already runs, with the sorting done by somebody else and the losses taken by somebody else.'
+                'A yard four days away in Iron Ridge and a market with one buyer at it is the same trade the Company already runs, with the sorting done by somebody else and the losses taken by somebody else.'
         },
         {
-            who: 'The Measured Span',
-            factionId: 'house-measured-span',
+            who: 'The Shrinking Earth Pavilion',
+            factionId: 'house-shrinking-earth',
             holds: 'nothing',
             doesHere:
                 'One gate station, at Halfway Gate, on ground so worthless the question of granting it has never arisen - which is the house\'s own account of all nine of its stations and is more literally true here than anywhere. It opens on the station\'s own cycle and not on anybody\'s convenience, and it is why the ground is survivable for people who can pay a gate fee and lethal for everybody else.',
@@ -261,8 +261,8 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'It is the only source in the world of material out of dense ground that nobody owns, which means it is the only material on the circuit that no house can post a notice against.'
         },
         {
-            who: 'The Held Names, at one remove',
-            factionId: 'house-held-names',
+            who: 'The Jade Register Hall, at one remove',
+            factionId: 'house-jade-register',
             holds: 'nothing',
             doesHere:
                 'Nothing, in person. It posts a standing rate at nine city gates for an unregistered cultivator brought in upright, and this ground is where the unregistered are. The house has never sent anybody in and has no intention of doing so.',
@@ -270,11 +270,11 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
                 'It is not here. It is the reason a proportion of the people here cannot leave, which is a different kind of presence and is the one that shapes the population.'
         },
         {
-            who: 'Sand Well Carriers',
-            factionId: 'sect-sink-carriers',
+            who: 'Sand Well Caravan',
+            factionId: 'sect-sand-well-caravan',
             holds: 'nothing',
             doesHere:
-                'Runs water out from Sand Well to whatever shows are open, in strings of forty to sixty skins, and takes a share of what comes off the ground it watered rather than a price at the well. It holds neither the water nor the show and could not hold either: Sand Well is the one thing on this ground nobody has ever fought over and a show is gone inside nine years, so what the Carriers actually own is a route that has to be rewalked every season and a reputation for arriving.',
+                'Runs water out from Sand Well to whatever shows are open, in strings of forty to sixty skins, and takes a share of what comes off the ground it watered rather than a price at the well. It holds neither the water nor the show and could not hold either: Sand Well is the one thing on this ground nobody has ever fought over and a show is gone inside nine years, so what the Caravan actually own is a route that has to be rewalked every season and a reputation for arriving.',
             whyHere:
                 'It is the only ground in the world where carrying water is a trade rather than a chore, because it is the only ground with rich air on it and no well within four days of the air. Everywhere else the two things are in the same place.'
         }
@@ -295,7 +295,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         death: 'Left where they fell, and the cover takes them within the year and gives them back a decade later with their possessions still on them. Nobody is buried and nobody is burned, and the dead belong to whoever is standing over them when the sand puts them out again.',
         taboo: 'Never point. Indicating where a show is, in company, with your hand, is how a finder is killed, and a visitor who does it at Wind Market has the conversation ended for them by somebody else before they have finished the gesture.',
         threatModel: 'People, and specifically people who have already been refused everywhere. There is no institution to answer for anyone and nothing to be taken away from anyone, so what a stranger will do is decided entirely by what they think they can get, and everybody plans on that being the whole of it.',
-        naming: 'The gate that refused you: Refused-at-Three Walls Ma, Autumn Gate Bo, Iron Gate-Queue Ren. Where the Drowned Sea names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
+        naming: 'The gate that refused you: Refused-at-Three Walls Ma, Autumn Gate Bo, Iron Ridge-Queue Ren. Where the Drowned Sea names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
         time: 'Counted in shows. "Two shows ago" is anything from a season to nine years and nobody converts it, and the only fixed calendar anybody here observes is the posting cycle at nine city gates, which is imported, resented and universally known.'
     },
     ambientProfile: { thin: 78, normal: 4, dense: 12, spirit_tide: 6 },
@@ -315,7 +315,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     ],
     hazards: [
         'no water: four days between Sand Well and anything else, and the ordinary cause of death here is a sum somebody did before setting out',
-        'cover that moves about a li a year, so a route walked last season is not a route, and the stakes the Six Li Wardens paint stop at the Silent Cliffs survey',
+        'cover that moves about a li a year, so a route walked last season is not a route, and the stakes the Six Li Patrol paint stop at the Silent Cliffs survey',
         'other people, in a place where nobody can be complained about to anybody, and where a stranger has no institution behind them and nothing to lose',
         'shows that close while somebody is sitting on one, which is not dangerous in itself and strands people who provisioned for a season on ground they were being paid to guard',
         'buried caravans that are worth opening, which is how a proportion of the population arrived at the trade and how a proportion of it stopped'
@@ -326,7 +326,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         directDays: 9,
         throughTheCentreDays: 17,
         whyItIsEmpty:
-            'Eleven days to Clear River Ford and six down the gorge is seventeen days and a toll; the direct line is nine and is free. It is empty because no convoy can be insured across it - the Consortium will not write the policy at any price, which is the strongest thing a commercial house can say about anything - and because a cart that is robbed on it has been robbed by nobody, in nowhere, with no bench that would hear it. Every party that has tried the shortcut with goods has arrived, or has not, and the ones that did not are the reason the eight days are still there to be saved.'
+            'Eleven days to Clear River Ford and six down the gorge is seventeen days and a toll; the direct line is nine and is free. It is empty because no convoy can be insured across it - the Stone Marrow Hall will not write the policy at any price, which is the strongest thing a commercial house can say about anything - and because a cart that is robbed on it has been robbed by nobody, in nowhere, with no bench that would hear it. Every party that has tried the shortcut with goods has arrived, or has not, and the ones that did not are the reason the eight days are still there to be saved.'
     },
     whatItCostsTheNeighbours: [
         {
@@ -337,12 +337,12 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         {
             regionId: ADJACENT_REGION_ID,
             what: 'People. The sand starts about a day past the last painted stake, and the carvers who cannot get onto the Jade Face queue do not all go east.',
-            cost: 'The Silent Cliffs loses about two hundred a year to the Jade Gorge and nobody counts what it loses this way, because the ones who go this way are the ones nobody at the Weir counter has a record of. The Six Li Wardens repaint nine hundred stakes a year on ground the Long Cut has never scheduled, and the stakes stop where the sand starts, and the Wardens will tell a visitor once, free, that they stop there for a reason.'
+            cost: 'The Silent Cliffs loses about two hundred a year to the Jade Gorge and nobody counts what it loses this way, because the ones who go this way are the ones nobody at the Weir counter has a record of. Six Li Patrol repaint nine hundred stakes a year on ground the Long Cut has never scheduled, and the stakes stop where the sand starts, and the Wardens will tell a visitor once, free, that they stop there for a reason.'
         },
         {
             regionId: EAST_REGION_ID,
             what: 'Raiding on the western fields, and the thing the East does about it, which is to pay a demonic house to get there first.',
-            cost: 'The Consortium prices every convoy west of Three Walls against losses it attributes to weather, and the Autumn Gate Table sits outside nine admission days with a cash box paying the first month in advance to whoever was refused inside that morning. The East knows exactly what it is doing: a refused cultivator who signs with the Crimson Abyss Hall is a person with an address, a rank list and an institution that can be written to, and a refused cultivator who walks west is not. Nine cities have decided that a demonic house is cheaper than the alternative, and the alternative is nine days\' walk away and can be pointed at.'
+            cost: 'The Stone Marrow Hall prices every convoy west of Three Walls against losses it attributes to weather, and the Autumn Gate Table sits outside nine admission days with a cash box paying the first month in advance to whoever was refused inside that morning. The East knows exactly what it is doing: a refused cultivator who signs with the Crimson Abyss Fortress is a person with an address, a rank list and an institution that can be written to, and a refused cultivator who walks west is not. Nine cities have decided that a demonic house is cheaper than the alternative, and the alternative is nine days\' walk away and can be pointed at.'
         },
         {
             regionId: SOUTH_REGION_ID,
@@ -427,7 +427,7 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
             missingDisciplines: [
                 {
                     discipline: 'alchemy',
-                    reason: 'A furnace is a fixed installation and nothing here is fixed. Every institution that has ever operated on this ground is a camp, and a camp that stops moving is buried or robbed, so what the sand produces leaves it raw and is refined four days away in Iron Gate by somebody else.'
+                    reason: 'A furnace is a fixed installation and nothing here is fixed. Every institution that has ever operated on this ground is a camp, and a camp that stops moving is buried or robbed, so what the sand produces leaves it raw and is refined four days away in Iron Ridge by somebody else.'
                 },
                 {
                     discipline: 'formations',
@@ -487,14 +487,14 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
                 kind: 'unsettled_border',
                 otherRegionId: route.fromRegionId,
                 description:
-                    'The stakes stop. The Six Li Wardens repaint nine hundred a year and the last of them is about a day short of the sand, and the Wardens will tell a visitor once, free, that they stop there for a reason.',
+                    'The stakes stop. Six Li Patrol repaint nine hundred a year and the last of them is about a day short of the sand, and the Wardens will tell a visitor once, free, that they stop there for a reason.',
                 travelDays: nearLeg
             },
             {
                 kind: 'refugee_flow',
                 otherRegionId: route.toRegionId,
                 description:
-                    'The direct line, walked in both directions by people rather than by carts: the refused going west out of nine admission days, and the Crimson Abyss Hall\'s recruiters coming the other way with a cash box and the first month paid in advance.',
+                    'The direct line, walked in both directions by people rather than by carts: the refused going west out of nine admission days, and the Crimson Abyss Fortress\'s recruiters coming the other way with a cash box and the first month paid in advance.',
                 travelDays: farLeg
             }
         ],

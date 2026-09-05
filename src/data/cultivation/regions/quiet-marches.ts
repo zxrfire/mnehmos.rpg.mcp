@@ -73,7 +73,7 @@ const MARCHES_BANDS: LocalRankBand[] = [
         localTheory: 'Carver and face are one piece. Known from a single inscription in the sealed part of the sorting-yard ruin, which is where most of the vocabulary above Keystone comes from.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',
-        subRankNote: 'Inscription vocabulary. The Silent Cliffs uses the word and could not recognise the state if it walked into Iron Gate.'
+        subRankNote: 'Inscription vocabulary. The Silent Cliffs uses the word and could not recognise the state if it walked into Iron Ridge.'
     },
     {
         fromOrdinal: 37, toOrdinal: 40,
@@ -114,22 +114,22 @@ export const THE_QUIET_MARCHES: Region = {
         'The qi is not gone; it was driven into the stone. There is nothing in the air and a great deal in the rock, and the only way to get at it is to cut.',
     derivations: [
         'Cultivation is a trade with tools, a working day and an apprenticeship, so a carver at Standing Cut has the hands of a quarryman and the lungs of one',
-        'Status is measured in worked face rather than land, so the Weir Office rents cut by the day and holds the region by holding the two faces still worth working',
+        'Status is measured in worked face rather than land, so the Clearwater Ward rents cut by the day and holds the region by holding the two faces still worth working',
         'The whole region is loud and grey with dust, in a place named for silence, because the silence people meant was the absence of qi in the air'
     ],
     register: {
         colour: 'grey on grey: rock dust on everything, whitened hands, pale rings around every mouth and nose that has worked a face',
-        light: 'flat and hard, no haze, and a dust plume over Iron Gate visible from the border marker on a still day',
+        light: 'flat and hard, no haze, and a dust plume over Iron Ridge visible from the border marker on a still day',
         sound: 'chisels. Two hundred of them, dawn to dark, and the silence when a face is worked out is how a district learns it is finished',
         smell: 'cut stone and wet grit, cold iron, and the vinegar the carvers rinse their mouths with against the dust',
         food: 'flatbread, salt, boiled roots, and a thin sour broth drunk hot to clear the throat - imported grain, because a fifth of the arable land is gone'
     },
     customs: {
         socialPrinciple: 'Patronage. One holder, a public and wholly discretionary grant book, and no second party to defect to, so the only political question anyone asks is who is on the book.',
-        death: 'The dead are walled into the face they were working, and the face is finished around them. A worked-out district is therefore also a cemetery, and the Gleaners will not cut a face that holds somebody without asking the family.',
+        death: 'The dead are walled into the face they were working, and the face is finished around them. A worked-out district is therefore also a cemetery, and the Fallen Grain Caravan will not cut a face that holds somebody without asking the family.',
         taboo: 'Never leave a cut unfinished. Locals hold that an open cut spreads the deadening, and a visitor who chips a souvenir off a face and walks away has committed the one offence the Silent Cliffs does not forgive.',
         threatModel: 'The ground. Dead zones that do not look dead, a burn edge that moves about a pace a year, and dust-lung, which kills more carvers than everything else combined.',
-        naming: 'Tool-names and face-numbers rather than clan names: Chisel Ma, Third Face Ren, Stakes, Iron Gate Bo. A person who gives two names in the Jade Gorge style is announcing that they are leaving.',
+        naming: 'Tool-names and face-numbers rather than clan names: Chisel Ma, Third Face Ren, Stakes, Iron Ridge Bo. A person who gives two names in the Jade Gorge style is announcing that they are leaving.',
         time: 'Counted in faces rather than years - a person is "four faces old" in the trade - and a working day ends when the dust has settled enough to see the far wall.'
     },
     cultivation: {
@@ -166,30 +166,30 @@ export const THE_QUIET_MARCHES: Region = {
         'The veins are not drawn down, they are driven: whatever happened here forced the qi out of the air into the rock and killed the ground above it, and the dead ground has been spreading about a pace a year ever since.',
     politics: 'single_hegemon',
     politicsNote:
-        'Direct rule. The province is administered by the institution that holds it, through a local bureau of eleven people at the weir, and there are no client sects anywhere in it - no leases, no vassals, no local hierarchy to belong to. The Weir Office looks like a hegemon and is a counter. There is no rivalry here because there is nobody to be rival with: only application, refusal, and an appeal form that is logged and answered years later.',
+        'Direct rule. The province is administered by the institution that holds it, through a local bureau of eleven people at the weir, and there are no client sects anywhere in it - no leases, no vassals, no local hierarchy to belong to. Clearwater Ward looks like a hegemon and is a counter. There is no rivalry here because there is nobody to be rival with: only application, refusal, and an appeal form that is logged and answered years later.',
     factionIds: [
-        'sect-weir-office',
-        'sect-sixmile-wardens',
-        'sect-gleaners-company',
-        'sect-sink-carriers'
+        'sect-clearwater-ward',
+        'sect-six-li-patrol',
+        'sect-fallen-grain-caravan',
+        'sect-sand-well-caravan'
     ],
     branches: [
         {
-            parentSectId: 'sect-stonewright-consortium',
-            localName: 'The Iron Gate Assay House',
+            parentSectId: 'sect-stone-marrow-hall',
+            localName: 'The Iron Ridge Assay House',
             doesHere:
                 'Buys salvage, assays and cuts stones, sells them back at nineteen percent over Jade Gorge, and publishes the insurance table that reads every Silent Cliffs title one rank low. In a region where imported stones are the only alternative to grant time, the assay house is the second government.'
         },
         {
             parentSectId: 'sect-sweptground-temple',
-            localName: 'The Iron Gate Mission',
+            localName: 'The Iron Ridge Mission',
             doesHere:
                 'Teaches the Lesser Qi-Gathering Manual and elementless basics free to anyone who turns up, and is the only institution in the region that will tell a carver plainly that their local titles and the standard ladder are the same rungs. Four monks, no face, no grant.'
         }
     ],
     places: [
-        { name: PLACE.IRON_GATE, kind: 'market_town', ambient: 'thin', note: 'The Weir Office town: grant queue, assay house, mission, and a permanent dust plume.' },
-        { name: PLACE.GRAVE_MARKET, kind: 'village', ambient: 'thin', note: 'The Gleaners\' sorting yard, where salvage is priced before it goes to Iron Gate.' },
+        { name: PLACE.IRON_GATE, kind: 'market_town', ambient: 'thin', note: 'Clearwater Ward town: grant queue, assay house, mission, and a permanent dust plume.' },
+        { name: PLACE.GRAVE_MARKET, kind: 'village', ambient: 'thin', note: 'Fallen Grain Caravan\' sorting yard, where salvage is priced before it goes to Iron Ridge.' },
         { name: PLACE.SIX_LI, kind: 'hamlet', ambient: 'thin', note: 'A shed, a survey, and the Wardens who repaint the stakes.' },
         { name: PLACE.JADE_FACE, kind: 'site', ambient: 'dense', note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },
         { name: PLACE.DEAD_STONE, kind: 'site', ambient: 'thin', note: 'The current burn edge. It has moved about nine hundred paces since the survey was drawn.' }
@@ -230,14 +230,14 @@ export const THE_QUIET_MARCHES: Region = {
             kind: 'shared_feud',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The Gleaners\' Company and the Bone Lantern Cult both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
+                'Fallen Grain Caravan and the Bone Lantern Cult both work sealed sites and have been undercutting, robbing and occasionally killing each other across the border for sixty years. Neither region\'s authorities regard it as their problem.',
             travelDays: 11
         },
         {
             kind: 'unsettled_border',
             otherRegionId: HOME_REGION_ID,
             description:
-                'The last forty li before Iron Gate are on no survey the Anchorhold will certify, so nothing sworn there binds and nothing owned there can be proved. The Gleaners and the Quiet Cut both use it, for opposite reasons.',
+                'The last forty li before Iron Ridge are on no survey the Immovable Mountain Temple will certify, so nothing sworn there binds and nothing owned there can be proved. Fallen Grain Caravan and the Still Blade Peak both use it, for opposite reasons.',
             travelDays: 11
         }
     ],
@@ -251,7 +251,7 @@ export const THE_QUIET_MARCHES: Region = {
         'The qi thins about half a day before the border marker and keeps thinning. Cultivation that returned a day\'s progress at home returns something a visitor will first assume is a fault in their own circulation.',
         'Then the sound arrives before the town does: chisels, a couple of hundred of them, carried a long way on flat air.',
         'Everything is grey. Dust on the roofs, on the animals, in the bread, and a pale ring around every local mouth.',
-        'The road is staked in painted wood rather than paved, and leaving the stakes is how people die here. The Six Li Wardens explain this once, free, and are visibly tired of explaining it.',
+        'The road is staked in painted wood rather than paved, and leaving the stakes is how people die here. Six Li Patrol explain this once, free, and are visibly tired of explaining it.',
         'Nobody asks what realm you are. They ask whether you hold a grant, and the answer decides the rest of the conversation.',
         'There are no sect patrols, no admission days and no gates with disciples on them - there is a counter, a register, a queue, and a clerk who is not empowered to make an exception and will say so pleasantly.',
         'Local ranks are trade titles - Chipping, Standing Cut, Keystone - and a visitor who hears "Standing Cut" as a labourer\'s grade has just misread a Foundation Establishment cultivator, which is the ordinary way outsiders get hurt here.',
@@ -274,16 +274,16 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         kind: 'face_district',
         seat: PLACE.IRON_GATE,
         places: [PLACE.JADE_FACE],
-        heldByFactionId: 'sect-weir-office',
+        heldByFactionId: 'sect-clearwater-ward',
         delegatedFromId: 'court-ninth-face',
         subHoldings: [],
         onPaper:
-            'One of two workable faces in the province, entered on the Long Cut course schedule in the bottom band, administered by the Weir Office from a counter at Iron Gate.',
+            'One of two workable faces in the province, entered on the Long Cut course schedule in the bottom band, administered by the Clearwater Ward from a counter at Iron Ridge.',
         onTheGround:
-            'Grant access at forty stones a day and a queue of eleven. The Office holds nothing of its own here: it apportions somebody else\'s face on somebody else\'s schedule and has no authority to make an exception.',
+            'Grant access at forty stones a day and a queue of eleven. The Court holds nothing of its own here: it apportions somebody else\'s face on somebody else\'s schedule and has no authority to make an exception.',
         discrepancy: 'none',
         note:
-            'The Office has an unpublished survey of how much workable stone is left. The Assessor of the Four Faces asked for it, was given it, kept the copy, and fears the figure is right.'
+            'The Court has an unpublished survey of how much workable stone is left. The Assessor of the Four Faces asked for it, was given it, kept the copy, and fears the figure is right.'
     },
     {
         id: 'district-fourth-face',
@@ -292,13 +292,13 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         kind: 'face_district',
         seat: PLACE.IRON_GATE,
         places: [],
-        heldByFactionId: 'sect-weir-office',
+        heldByFactionId: 'sect-clearwater-ward',
         delegatedFromId: 'court-ninth-face',
         subHoldings: [],
         onPaper:
             'The second of the two rented faces, on the same schedule line as the Jade Face, administered from the same counter by the same eleven people.',
         onTheGround:
-            'Thinner than the Jade Face and worked by whoever cannot get onto the Jade Face queue, which the Office does not say out loud and which the queue works out inside a season.',
+            'Thinner than the Jade Face and worked by whoever cannot get onto the Jade Face queue, which the Ward does not say out loud and which the queue works out inside a season.',
         discrepancy: 'none',
         note:
             'A district exists here because there is work in it. When the face is out, this entry does not change hands - it stops existing, and the ground under it becomes a cemetery.'
@@ -310,13 +310,13 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         kind: 'face_district',
         seat: PLACE.GRAVE_MARKET,
         places: [PLACE.GRAVE_MARKET],
-        heldByFactionId: 'sect-gleaners-company',
-        delegatedFromId: 'sect-weir-office',
+        heldByFactionId: 'sect-fallen-grain-caravan',
+        delegatedFromId: 'sect-clearwater-ward',
         subHoldings: [],
         onPaper:
-            'Worked out, struck off the course, and carried on the Weir Office register only as the annual salvage contract over the burn zones inside it.',
+            'Worked out, struck off the course, and carried on the Clearwater Ward register only as the annual salvage contract over the burn zones inside it.',
         onTheGround:
-            'A sorting yard, a price list, and several hundred finished faces with the carvers who worked them walled into the stone. The Gleaners will not cut a face that holds somebody without asking the family.',
+            'A sorting yard, a price list, and several hundred finished faces with the carvers who worked them walled into the stone. Fallen Grain Caravan will not cut a face that holds somebody without asking the family.',
         discrepancy: 'none',
         note:
             'The plainest statement of what a face district is: the boundary is the work, the work is finished, and what is left is a cemetery with a contract over it.'
@@ -332,9 +332,9 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: null,
         subHoldings: [
             {
-                factionId: 'sect-sixmile-wardens',
+                factionId: 'sect-six-li-patrol',
                 holds: 'Nine hundred painted stakes, a shed and a survey, none of which anybody has thought to grant.',
-                delegatedFromId: 'sect-sixmile-wardens'
+                delegatedFromId: 'sect-six-li-patrol'
             }
         ],
         onPaper:

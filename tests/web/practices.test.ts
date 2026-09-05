@@ -91,17 +91,17 @@ describe('the narrow gate: a practice that says its own name', () => {
             .sort();
 
         // Hand-audited against the catalog. Each of these says the institution
-        // out loud: "a Consortium negotiation", "a Pavilion member", "the
-        // Wanderers", "the Office".
+        // out loud: "a Stone Marrow Hall negotiation", "a Pavilion member", "the
+        // Wanderers", "the Court".
         expect(flagged).toEqual([
-            'house-measured-span',
-            'house-ninefold-ledger',
+            'house-ninefold-karma',
+            'house-shrinking-earth',
+            'sect-ancient-bough-grove',
+            'sect-clearwater-ward',
             'sect-hollow-bell-wanderers',
-            'sect-standing-grove',
-            'sect-stonewright-consortium',
+            'sect-stone-marrow-hall',
             'sect-storm-tyrant-court',
-            'sect-thousand-treasure-pavilion',
-            'sect-weir-office'
+            'sect-thousand-treasure-pavilion'
         ]);
     });
 
@@ -109,7 +109,7 @@ describe('the narrow gate: a practice that says its own name', () => {
         // "Wardens carry paint and a brush at all times" opens the sentence and
         // identifies nobody. Three separate factions open a practice this way,
         // and gating them would cost the player the material for nothing.
-        for (const factionId of ['sect-sixmile-wardens', 'sect-kiln-wardens', 'house-anchorhold']) {
+        for (const factionId of ['sect-six-li-patrol', 'sect-kiln-wardens', 'house-immovable-mountain']) {
             expect(practiceOf(factionId)!.namesFaction, factionId).toBe(false);
         }
     });
@@ -173,7 +173,7 @@ describe('what is visible in a scene', () => {
         const gate = new KnowledgeGate(db);
         const repos = ensureCultivationDb();
         placePerson(db, 'npc-a', 'A', 6, 'sect-azure-cloud-pavilion');
-        placePerson(db, 'npc-b', 'B', 7, 'sect-verdant-spring-hall');
+        placePerson(db, 'npc-b', 'B', 7, 'sect-verdant-spring-valley');
         placePerson(db, 'npc-c', 'C', 8, 'sect-nine-peaks-ascetic-order');
 
         const present = repos.cultivators.roster().filter(row => row.id.startsWith('npc-'));
@@ -183,7 +183,7 @@ describe('what is visible in a scene', () => {
         expect(seen).not.toBeNull();
         expect([
             'sect-azure-cloud-pavilion',
-            'sect-verdant-spring-hall',
+            'sect-verdant-spring-valley',
             'sect-nine-peaks-ascetic-order'
         ]).toContain(seen!.factionId);
     });
@@ -194,7 +194,7 @@ describe('what is visible in a scene', () => {
         const gate = new KnowledgeGate(db);
         const repos = ensureCultivationDb();
         placePerson(db, 'npc-a', 'A', 6, 'sect-azure-cloud-pavilion');
-        placePerson(db, 'npc-b', 'B', 7, 'sect-verdant-spring-hall');
+        placePerson(db, 'npc-b', 'B', 7, 'sect-verdant-spring-valley');
 
         const present = repos.cultivators.roster().filter(row => row.id.startsWith('npc-'));
         const once = observableHere({
@@ -213,7 +213,7 @@ describe('what is visible in a scene', () => {
         const gate = new KnowledgeGate(db);
         const repos = ensureCultivationDb();
         // One faction whose practice says its own name, one whose does not.
-        placePerson(db, 'npc-a', 'A', 6, 'sect-stonewright-consortium');
+        placePerson(db, 'npc-a', 'A', 6, 'sect-stone-marrow-hall');
         placePerson(db, 'npc-b', 'B', 7, 'sect-azure-cloud-pavilion');
 
         const present = repos.cultivators.roster().filter(row => row.id.startsWith('npc-'));

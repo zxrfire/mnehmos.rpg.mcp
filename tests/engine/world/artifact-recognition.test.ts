@@ -176,20 +176,20 @@ describe('recognising a thing somebody is carrying', () => {
         // from and one of them does not own it - which is the catalog already
         // saying recognition is uneven, in a field nothing had ever read.
         const volume = getArtifact('volume-heaven-conversing-first')!;
-        expect(volume.knownOwnershipBy).toContain('house-ninefold-ledger');
-        expect(volume.ownerId).toBe('house-anchorhold');
+        expect(volume.knownOwnershipBy).toContain('house-ninefold-karma');
+        expect(volume.ownerId).toBe('house-immovable-mountain');
 
         const onShow: ThingOnShow = { ...volume, possessorId: THIEF };
-        // A Ledger clerk with no reference for the Anchorhold at all, and a
+        // A Ledger clerk with no reference for the Immovable Mountain Temple at all, and a
         // rung that would not matter either way - a book is not a rung.
         const clerk = looker({
-            id: 'npc-clerk', factionId: 'house-ninefold-ledger', realmOrdinal: 2, reference: 'unaware'
+            id: 'npc-clerk', factionId: 'house-ninefold-karma', realmOrdinal: 2, reference: 'unaware'
         });
 
         const read = whatTheyRecogniseAboutIt(onShow, clerk);
         expect(read.toldWhereItCameFrom).toBe(true);
         expect(read.reading).toBe('certain');
-        expect(read.ownerId).toBe('house-anchorhold');
+        expect(read.ownerId).toBe('house-immovable-mountain');
         expect(read.inTheWrongHands).toBe(true);
 
         // And a house that is NOT on the list gets no help from it: the field

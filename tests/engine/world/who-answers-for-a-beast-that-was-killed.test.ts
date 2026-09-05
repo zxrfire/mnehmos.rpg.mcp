@@ -62,8 +62,8 @@ const KILLER: Party = {
 const DISTRICT: Party = {
     id: 'p-district',
     name: 'the Six Li hill districts',
-    houseId: 'sect-sixmile-wardens',
-    houseName: 'the Six Li Wardens',
+    houseId: 'sect-six-li-patrol',
+    houseName: 'the Six Li Patrol',
     alignment: 'righteous',
     ranked: true
 };

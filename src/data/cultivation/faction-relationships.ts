@@ -122,7 +122,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'two_bodies_nobody_joins',
         what:
-            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Deep Survey, the Root Sill took the roll and the founding posting order four provinces away under the Long Cut, and neither has written to the other since.',
+            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Deep Survey, the Deeproot Court took the roll and the founding posting order four provinces away under the Long Cut, and neither has written to the other since.',
         since:
             'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Deep Survey reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Long Cut was waiting for them.',
         a: {
@@ -348,7 +348,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         what:
             'The same objection pointed at a body that has no tenants to have a view about. The Long Cut has never encountered the question the Pavilion is asking, because there are no institutions on its ground to hold beliefs - everybody there is staff and everything there is a schedule - and that is the whole of the deadlock: the Survey can be argued with about a tenant, and the Long Cut cannot, because it has none.',
         since:
-            'Since the Pavilion became an apex and began publishing a standard. The Long Cut has had to answer questions about the Weir Office twice in ninety years that it would not otherwise have been asked.',
+            'Since the Pavilion became an apex and began publishing a standard. The Long Cut has had to answer questions about the Clearwater Ward twice in ninety years that it would not otherwise have been asked.',
         a: {
             warmth: 'cold',
             howTheyPutIt:
@@ -441,7 +441,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         b: {
             warmth: 'wary',
             howTheyPutIt:
-                'The Court is the one body at that altitude nobody has an argument with, which is either the strongest position in the world or the emptiest, and the Pavilion has not settled which.',
+                'The Ward is the one body at that altitude nobody has an argument with, which is either the strongest position in the world or the emptiest, and the Pavilion has not settled which.',
             andSoTheyDo:
                 'Does not petition it, does not cite it, and does not include it on the list it keeps and has never published.',
             grievance: null
@@ -452,11 +452,11 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-storm-tyrant-and-the-tenant-that-has-started-counting',
         aId: 'sect-storm-tyrant-court',
-        bId: 'sect-crimson-abyss-hall',
+        bId: 'sect-crimson-abyss-fortress',
         aStandsTo: 'above',
         kind: 'patron_and_client',
         what:
-            'The Court holds the Hall\'s grant and takes a tithe on it, and the tithe schedule has been raised twice in ten years to fund a candidate the Court has never named. The Hall has been under-declaring by about a fifth for six years. Neither of those is a secret from the other party and neither has been said out loud, which is the ordinary condition of a grant between two demonic houses in the same province.',
+            'The Court holds the Hall\'s grant and takes a tithe on it, and the tithe schedule has been raised twice in ten years to fund a candidate the Ward has never named. The Hall has been under-declaring by about a fifth for six years. Neither of those is a secret from the other party and neither has been said out loud, which is the ordinary condition of a grant between two demonic houses in the same province.',
         since:
             'As long as the Hall has held the caldera. What changed recently is not the arrangement but the arithmetic on both sides of it.',
         a: {
@@ -464,7 +464,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'A tenant is a tenant and the schedule is the schedule. The Court has raised it twice for a stated purpose and considers the purpose its own business.',
             andSoTheyDo:
-                'Raises the schedule, does not open the vault, and describes what is in it at successions from the record rather than showing anybody. The two things are connected and the Court has never said so.',
+                'Raises the schedule, does not open the vault, and describes what is in it at successions from the record rather than showing anybody. The two things are connected and the Ward has never said so.',
             grievance: null
         },
         b: {

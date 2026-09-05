@@ -273,7 +273,7 @@ const ASKS: [string, string][] = [
     ['I apply to the Azure Cloud Pavilion', 'an apex with a front gate'],
     ['I apply to the Hollow Court', 'the highest bar in the world'],
     ['I apply to the Deep Survey', 'an apex nobody can join at all'],
-    ['I ask the House of Held Names to adopt me', 'the only way into a dao house'],
+    ['I ask the Jade Register Hall to adopt me', 'the only way into a dao house'],
 
     // ── violence ─────────────────────────────────────────────────────────
     ['I kill the elder', 'murder, inside your own house'],
@@ -289,8 +289,8 @@ const ASKS: [string, string][] = [
     ['I break the seal under the Kiln Court', 'stealing an ancestor that is not yours'],
 
     // ── asking for what cannot be bought ─────────────────────────────────
-    ['I ask the Deep Survey for an Unearned Step', 'the pill that carries you a realm'],
-    ['I ask the Azure Cloud Pavilion for a Second Dealing', 'the talisman that rewrites a root'],
+    ['I ask the Deep Survey for an Heaven-Ascending Golden Pill', 'the pill that carries you a realm'],
+    ['I ask the Azure Cloud Pavilion for a Root-Recasting Talisman', 'the talisman that rewrites a root'],
     ['I file a Requisition Against Standing Stock', 'the form, by name'],
     ['I ask the Deep Survey for one of its pills', 'the same thing in plain words'],
     ['I ask the Hollow Court for a dao protector', 'asking the top of the world for a favour'],
@@ -305,7 +305,7 @@ const ASKS: [string, string][] = [
     // ── the dead, and the ones above the Lid ─────────────────────────────
     ['I wake our sealed ancestor', 'the seal under your own mountain'],
     ['I make an offering to our ascended ancestor', 'calling on the one who crossed'],
-    ['I claim descent from Ru Anjing', 'a false lineage, which the Ledger audits'],
+    ['I claim descent from Ru Anjing', 'a false lineage, which the Karma Pavilion audits'],
 
     // ── legacy ───────────────────────────────────────────────────────────
     ['I take a disciple', 'passing anything on'],
@@ -523,7 +523,7 @@ async function seat(position: Position): Promise<{ game: Game; db: Database.Data
     // did exactly that. `factionMeant` resolves a name against THREE catalogs -
     // `SECTS`, `COURTS` and `APEX_INSTITUTIONS` - and `DAO_HOUSES` is a fourth,
     // all under the `sect` awareness kind. So `I ask the Deep Survey for an
-    // Unearned Step` came back "Unresolved faction 'Deep Survey': no knowledge
+    // Heaven-Ascending Golden Pill` came back "Unresolved faction 'Deep Survey': no knowledge
     // record. 32 faction name(s) held by this cultivator" at every single
     // position, and read as a flat row about the immortal pills when it was a
     // flat row about a catalog the harness had not taught.

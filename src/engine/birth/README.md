@@ -109,7 +109,7 @@ anywhere. `RaisedInside.stillToClear` carries the house's floors from
 `the-three-floors-a-house-admits-at.ts` untouched, and a test asserts it equals
 what that file says rather than anything shorter.
 
-Played, at The House of the Unbroken Tally: *"On the roll of The House of the Bound
+Played, at Vermilion Seal Terrace: *"On the roll of The House of the Bound
 Word"*, and `promote` answers *"there is nothing to be promoted from ... the
 first rung opens at Qi Condensation Layer 6, and they stand at Qi Condensation
 Layer 1."* At the Azure Cloud Pavilion, born on its ground: *"Serves no house."*

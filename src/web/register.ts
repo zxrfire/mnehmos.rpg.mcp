@@ -1872,7 +1872,7 @@ function claim(s: string, max: number, minUseful = 25): string {
         ? cut.slice(0, boundary)
         // No clause boundary to cut at, so cut back to the last whole word -
         // and then keep going while the tail is a word no sentence can end on.
-        // Without this the Gleaners' unit of value came out "honoured after a".
+        // Without this the Fallen Grain Caravan' unit of value came out "honoured after a".
         : cut.replace(/\s+\S*$/, '')
             .replace(/(\s+(?:of|with|and|the|a|an|to|in|on|that|which|is|was|by|from|at|after|before))+$/i, '');
     return trimmed.trim();
@@ -2060,7 +2060,7 @@ function curriculumLine(d: SectDossier): string | null {
                 : '';
             return sentence(`${ladder}${spliceable(unperiod(claim(a.rankNote, 200)))}`);
         }
-        // Teaching nothing is not a hole in the data. It is what the Root Sill
+        // Teaching nothing is not a hole in the data. It is what the Deeproot Court
         // Court and the Hollow Court are, and silence here would read as a
         // teach list the register mislaid.
         const nothing = 'It hands nothing over: no teach list, no signature art, and nobody comes here to learn.';
@@ -6454,7 +6454,7 @@ function treeNode(
      */
     const card = court && entry
         // Named for the house, not for the posting. The province has called this
-        // body the Kiln Court for nine hundred years and the Root Sill is what the
+        // body the Kiln Court for nine hundred years and the Deeproot Court is what the
         // Deep Survey calls the job; leading with the apex's word for it made the
         // name every reader arrives with disappear off the sheet entirely, which is
         // worse than the duplicate it replaced. Both names are on the one node,
@@ -6772,7 +6772,7 @@ const APEX_NOTE = '<p class="note">A court is the layer every tenant in a provin
     + '<strong>Almost all of them are sects</strong> - they have members, an intake, a ladder and a seat, '
     + 'and the word <em>court</em> describes the arterial vein they administer rather than what kind of '
     + 'institution they are, so each of those has its own entry in the list below. <strong>Two are not.</strong> '
-    + 'The Kiln Court and the Root Sill Court are offices: nobody joins either, there is no intake and no '
+    + 'The Kiln Court and the Deeproot Court are offices: nobody joins either, there is no intake and no '
     + 'ladder to climb, and what stands there is between three and six people appointed from elsewhere, '
     + 'doing an assigned job on ground the body does not own. Those two are the ones with no faction entry, '
     + 'and the reason is the distinction rather than an omission.</p>';

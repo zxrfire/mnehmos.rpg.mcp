@@ -76,7 +76,7 @@ const SEEDS = ['a', 'b', 'c', 'd'];
 const HORIZON = 400;
 
 // One house that takes a child on a word, used as the destination throughout.
-const TAKES_A_WORD = 'house-ninefold-ledger';
+const TAKES_A_WORD = 'house-ninefold-karma';
 
 function candidate(over: Partial<FosterCandidate> = {}): FosterCandidate {
     return {

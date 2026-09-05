@@ -63,7 +63,7 @@ describe('a superlative is a measurement', () => {
 
     it('does not let the Nine Abyss claim to be the strongest of anything it is not', () => {
         // Two claims, both false. The Severed stands four rungs above it and is
-        // as openly demonic as anything gets; and the Crimson Abyss Hall's
+        // as openly demonic as anything gets; and the Crimson Abyss Fortress's
         // pipeline reaches a realm higher.
         const sect = getSect('sect-nine-abyss-flame-sect')!;
         const c = getFactionCharacter(sect.id)!;
@@ -148,7 +148,7 @@ describe('every cross-reference resolves', () => {
 
         expect(third.apexId, 'the Third Sill is an ordinary Long Cut court').toBe('apex-long-cut');
         expect(kiln.apexId, 'the Kiln stayed with the Survey').toBe('apex-deep-survey');
-        expect(getParentage(rootSill.id)?.parentFactionId, 'the Root Sill walked to the Long Cut')
+        expect(getParentage(rootSill.id)?.parentFactionId, 'the Deeproot Court walked to the Long Cut')
             .toBe('apex-long-cut');
 
         // Only the two halves of the split posting are postings.
@@ -161,7 +161,7 @@ describe('every cross-reference resolves', () => {
 
         // And the Third Sill carries no defection material, because it never
         // moved. The only administration that ever changed patrons is the
-        // Root Sill.
+        // Deeproot Court.
         expect(third.transferNote, 'the Third Sill has acquired a transfer again').toBeUndefined();
     });
 

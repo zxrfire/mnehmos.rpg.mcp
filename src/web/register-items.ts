@@ -371,7 +371,7 @@ function herbRows(): RegisterItemRow[] {
             // `mundane` is what `possessions.ts` calls a thing that gets no
             // provenance at all. An extinct one is the opposite case: what is
             // left is a small number of named jars in named places, transfers of
-            // which the Ninefold Ledger has certified, so each unit has a past.
+            // which the Ninefold Karma Palace has certified, so each unit has a past.
             significance: (gone ? 'significant' : 'mundane') as ObjectSignificance,
             keptAs: (gone ? 'tracked' : 'counted') as KeptAs,
             price: gone ? null : h.value,

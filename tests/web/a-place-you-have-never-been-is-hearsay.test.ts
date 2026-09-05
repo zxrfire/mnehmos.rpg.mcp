@@ -41,7 +41,7 @@ function place(over: {
     hereNow?: boolean;
 }) {
     return {
-        name: over.name ?? 'Iron Gate',
+        name: over.name ?? 'Iron Ridge',
         kind: 'market_town',
         ambient: 'thin' as const,
         regionName: 'The Silent Cliffs',
@@ -151,7 +151,7 @@ describe('what the travel list may say about a place nobody has been to', () => 
      */
     it('reads as report rather than as measurement', () => {
         const { prose } = read([
-            place({ name: 'Iron Gate', occupants: 9, supportedDraw: 7 }),
+            place({ name: 'Iron Ridge', occupants: 9, supportedDraw: 7 }),
             place({ name: 'Six Li', occupants: 5, supportedDraw: 7 })
         ]);
         expect(prose).toMatch(/spoken of|said to|nobody speaks of/);

@@ -256,7 +256,7 @@ describe('what happens afterwards', () => {
         for (const item of IMMORTAL_ITEMS) {
             expect(item.socialConsequence.length, `${item.id} social consequence`).toBeGreaterThan(200);
             // Named institutions react, rather than "people talk".
-            expect(item.socialConsequence).toMatch(/Ledger|Held Names|Narrow Hour|Quiet Cut|Frostmirror|Storm Tyrant/);
+            expect(item.socialConsequence).toMatch(/Karma Palace|Jade Register Hall|Flowing Light Tower|Still Blade Peak|Frostmirror|Storm Tyrant/);
         }
         const step = IMMORTAL_ITEMS.find(i => i.effect === 'promote_realm')!;
         // A jumped realm is arithmetic anybody can do.
@@ -412,8 +412,8 @@ describe('the step and the boundary', () => {
 
 describe('once in a life', () => {
     it('applies to both objects and does not stack', () => {
-        expect(ONCE_IN_A_LIFE.theRule).toMatch(/One Unearned Step per person, ever/i);
-        expect(ONCE_IN_A_LIFE.theRule).toMatch(/One Second Dealing per person, ever/i);
+        expect(ONCE_IN_A_LIFE.theRule).toMatch(/One Heaven-Ascending Golden Pill per person, ever/i);
+        expect(ONCE_IN_A_LIFE.theRule).toMatch(/One Root-Recasting Talisman per person, ever/i);
         expect(ONCE_IN_A_LIFE.theRule).toMatch(/do not stack/i);
         expect(ONCE_IN_A_LIFE.whatItProtects).toMatch(/one rung and one root/i);
     });
@@ -491,11 +491,11 @@ describe('the engine contract', () => {
 describe('the Pavilion position after the buff', () => {
     it('holds seven lower Steps and cannot spend them for want of people', () => {
         const holding = IMMORTAL_HOLDINGS.find(
-            h => h.factionId === 'sect-azure-cloud-pavilion' && h.itemId === 'immortal-unearned-step'
+            h => h.factionId === 'sect-azure-cloud-pavilion' && h.itemId === 'immortal-heaven-ascending-golden-pill'
         )!;
         expect(holding.count).toBe(7);
         expect(holding.byGrade.lower).toBe(7);
-        expect(AZURE_CLOUD_INTAKE.theOtherReason).toMatch(/seven lower Unearned Steps/i);
+        expect(AZURE_CLOUD_INTAKE.theOtherReason).toMatch(/seven lower Heaven-Ascending Golden Pills/i);
         expect(AZURE_CLOUD_INTAKE.theOtherReason).toMatch(/Nascent Soul Perfection/);
         expect(AZURE_CLOUD_INTAKE.theOtherReason).toMatch(/not medicine and never was\. It is people/i);
         expect(AZURE_CLOUD_INTAKE.theBottleneckIsPeople).toMatch(/only work on members it does not have/i);
@@ -503,10 +503,10 @@ describe('the Pavilion position after the buff', () => {
     });
 
     it('keeps the world counts exactly where they were before the buff', () => {
-        const step = getImmortalItem('immortal-unearned-step')!;
+        const step = getImmortalItem('immortal-heaven-ascending-golden-pill')!;
         expect(step.knownCount).toBe(13);
         expect(step.knownByGrade).toEqual({ higher: 1, middle: 3, lower: 9 });
-        const dealing = getImmortalItem('immortal-second-dealing')!;
+        const dealing = getImmortalItem('immortal-root-recasting-talisman')!;
         expect(dealing.knownCount).toBe(4);
         expect(dealing.knownByGrade).toEqual({ higher: 1, middle: 1, lower: 2 });
         // And the admission bar the ceiling rule leans on is unchanged.
@@ -557,10 +557,10 @@ describe('what service actually buys', () => {
     });
 
     it('runs the same principle down to the poorest institution in the world', () => {
-        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/Gleaners/);
+        expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/Fallen Grain Caravan/);
         expect(WHAT_SERVICE_ACTUALLY_BUYS.theSameAtEveryScale).toMatch(/not being kind/i);
-        // And the claim matches what the Gleaners entry actually says.
-        const gleaners = FACTION_CHARACTER['sect-gleaners-company']!;
+        // And the claim matches what the Fallen Grain Caravan entry actually says.
+        const gleaners = FACTION_CHARACTER['sect-fallen-grain-caravan']!;
         expect(gleaners.unitOfValue).toMatch(/share goes to their family/i);
         expect(gleaners.unitOfValue).toMatch(/never once defaulted/i);
     });
@@ -667,7 +667,7 @@ describe('the sending pyramid', () => {
     it('says plainly who has never received anything', () => {
         expect(THE_SENDING_PYRAMID.whoNeverReceivedAnything).toMatch(/A receipt requires a line/i);
         for (const id of [
-            'sect-standing-grove', 'sect-sixmile-wardens', 'sect-hollow-bell-wanderers',
+            'sect-ancient-bough-grove', 'sect-six-li-patrol', 'sect-hollow-bell-wanderers',
             'sect-bone-lantern-cult', 'sect-the-severed', 'sect-clear-river-alliance'
         ]) {
             expect(getSect(id), `${id} is unknown`).toBeDefined();
@@ -727,7 +727,7 @@ describe('receipt histories', () => {
 
     it('has the four judgements the catalog needs', () => {
         const storm = RECEIPT_HISTORIES.find(
-            r => r.factionId === 'sect-storm-tyrant-court' && r.itemId === 'immortal-unearned-step')!;
+            r => r.factionId === 'sect-storm-tyrant-court' && r.itemId === 'immortal-heaven-ascending-golden-pill')!;
         expect(storm.judgedInHindsight).toMatch(/best-spent stock in the world/i);
         expect(storm.stillHeld).toEqual({ higher: 0, middle: 0, lower: 0 });
 
@@ -742,7 +742,7 @@ describe('receipt histories', () => {
         expect(peaks.judgedInHindsight).toMatch(/HELD_QUESTIONS/);
 
         const temple = RECEIPT_HISTORIES.find(
-            r => r.factionId === 'sect-sweptground-temple' && r.itemId === 'immortal-second-dealing')!;
+            r => r.factionId === 'sect-sweptground-temple' && r.itemId === 'immortal-root-recasting-talisman')!;
         expect(temple.stillHeld.middle).toBe(1);
         expect(temple.countedByTheRegisters).toBe(false);
         expect(temple.judgedInHindsight).toMatch(/LOST_RECORDS/);

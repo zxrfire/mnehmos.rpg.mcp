@@ -83,7 +83,7 @@ describe('a child at ordinal zero, and the tally the catalog owns', () => {
         // The correction. There are two bodies with no door at all - the Root
         // Sill Court and the Kiln Court - but they live in different catalogs,
         // so a tally that reports two postings against the sect catalog is off
-        // by one. `sect-kiln-wardens` IS the Root Sill Court, despite the id.
+        // by one. `sect-kiln-wardens` IS the Deeproot Court, despite the id.
         expect(howAChildAtZeroGetsIn('sect-kiln-wardens')).toBe('no door to skip');
         expect(howAChildAtZeroGetsIn('court-kiln')).toBe('no door to skip');
         expect(
@@ -167,16 +167,16 @@ describe('spending one on your own child', () => {
     });
 
     it('refuses where the child already qualifies, because there is nothing to buy', () => {
-        const doors = doorsOf('house-ninefold-ledger')!;
+        const doors = doorsOf('house-ninefold-karma')!;
         expect(spendAWord({
             ...ask,
-            houseId: 'house-ninefold-ledger',
+            houseId: 'house-ninefold-karma',
             childOrdinal: doors.lowestDoor
         })).toBe('child already qualifies');
     });
 
     it('writes a receipt held by the person asked, about the person who asked', () => {
-        const result = spendAWord({ ...ask, houseId: 'house-ninefold-ledger' });
+        const result = spendAWord({ ...ask, houseId: 'house-ninefold-karma' });
         expect(wasPlaced(result)).toBe(true);
         if (!wasPlaced(result)) return;
 
@@ -194,7 +194,7 @@ describe('spending one on your own child', () => {
     });
 
     it('is visible to exactly one other person, and never to the public', () => {
-        const result = spendAWord({ ...ask, houseId: 'house-ninefold-ledger' });
+        const result = spendAWord({ ...ask, houseId: 'house-ninefold-karma' });
         if (!wasPlaced(result)) throw new Error('expected a placement');
 
         expect(result.told).toHaveLength(1);
@@ -207,7 +207,7 @@ describe('spending one on your own child', () => {
     });
 
     it('confers no rank and no ordinal, only the bar', () => {
-        const result = spendAWord({ ...ask, houseId: 'house-ninefold-ledger' });
+        const result = spendAWord({ ...ask, houseId: 'house-ninefold-karma' });
         if (!wasPlaced(result)) throw new Error('expected a placement');
         const shape = JSON.stringify(result);
         for (const forbidden of ['realmOrdinal', 'rankIndex', 'cultivationProgress', 'foundation']) {
@@ -216,7 +216,7 @@ describe('spending one on your own child', () => {
     });
 
     it('ties the asker to the person asked, in one direction only', () => {
-        const result = spendAWord({ ...ask, houseId: 'house-ninefold-ledger' });
+        const result = spendAWord({ ...ask, houseId: 'house-ninefold-karma' });
         if (!wasPlaced(result)) throw new Error('expected a placement');
         expect(result.tie.fromId).toBe(ask.askerId);
         expect(result.tie.toId).toBe(ask.askedOfId);

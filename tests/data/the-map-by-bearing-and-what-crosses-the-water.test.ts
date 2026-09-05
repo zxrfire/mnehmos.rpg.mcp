@@ -230,7 +230,7 @@ describe('what is on the hulls', () => {
     });
 
     it('has no two carriers that are the same kind of operator', () => {
-        // "Traders" as one undifferentiated noun is a guild with another name.
+        // "Traders" as one undifferentiated noun is a hall with another name.
         expect(SEA_TRADERS.length).toBeGreaterThanOrEqual(3);
         for (const t of SEA_TRADERS) {
             expect(getSect(t.factionId), `${t.factionId} is not a house`).toBeDefined();
@@ -247,8 +247,8 @@ describe('what is on the hulls', () => {
 // ─────────────────────────────────────────────────────────────────────────
 describe('the free port, and the two regimes of order on it', () => {
     it('is unbacked for a reason that is not the desert\'s reason', () => {
-        const port = getSect('sect-halfwater-rail')!;
-        const shed = getSect('sect-sink-carriers')!;
+        const port = getSect('sect-silver-island-market')!;
+        const shed = getSect('sect-sand-well-caravan')!;
         expect(port).toBeDefined();
         expect(shed).toBeDefined();
         // Both hold nothing inherited and neither has a compound to have lost,
@@ -272,9 +272,9 @@ describe('the free port, and the two regimes of order on it', () => {
 
     it('makes the port weaker than the watch\'s ceiling implies, on purpose', () => {
         // The port's own strongest is one person, and she is not the watch.
-        // If the Rail could police the seam it would be a power rather than a
+        // If the Market could police the seam it would be a power rather than a
         // counter, and the neutrality that protects it would be gone.
-        const port = getSect('sect-halfwater-rail')!;
+        const port = getSect('sect-silver-island-market')!;
         expect(port.powerOrdinal).toBe(21);
         expect(port.powerOrdinal).toBeGreaterThan(HALFWATER_TERMS.theSeam.ordinalTo);
         expect(port.rivals, 'a free port with a feud is not a free port').toEqual([]);
@@ -293,17 +293,17 @@ describe('the free port, and the two regimes of order on it', () => {
 // ─────────────────────────────────────────────────────────────────────────
 describe('the lawless sand, and the body on it', () => {
     it('keeps the shed present on ground it does not hold', () => {
-        const onIt = THE_BLOWN_GROUND.whoIsOnIt.find(p => p.factionId === 'sect-sink-carriers');
-        expect(onIt, 'the Carriers are not on the sand').toBeDefined();
+        const onIt = THE_BLOWN_GROUND.whoIsOnIt.find(p => p.factionId === 'sect-sand-well-caravan');
+        expect(onIt, 'the Caravan are not on the sand').toBeDefined();
         // Being present is not holding, and the ground's whole argument is that
         // nothing here can be held by anybody.
         expect(onIt!.holds).toBe('nothing');
         // Seating records holding, so a body present here is seated elsewhere.
-        expect(bearingOfFaction('sect-sink-carriers')).toBe('west');
+        expect(bearingOfFaction('sect-sand-well-caravan')).toBe('west');
     });
 
     it('asks little at the door and a great deal afterwards', () => {
-        const shed = getSect('sect-sink-carriers')!;
+        const shed = getSect('sect-sand-well-caravan')!;
         expect(shed.admissionOrdinal).toBe(0);
         expect(shed.recruits).toBe(true);
         // The three omissions are the identity: where you came from, what you

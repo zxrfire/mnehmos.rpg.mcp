@@ -123,7 +123,7 @@ describe('the ladder the ruling makes the real answer', () => {
         db.prepare(
             'UPDATE cultivators SET max_hp = 60, hp = 10, spirit_stones = 500 WHERE id = ?'
         ).run(cultivator.id);
-        await game.act('I buy a Minor Healing Pill');
+        await game.act('I buy a Lesser Healing Pill');
         const before = game.state().cultivator.hp;
         await game.act('I swallow a healing pill');
         // The whole point of the ruling reaching a player at all.

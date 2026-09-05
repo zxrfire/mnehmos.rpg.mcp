@@ -303,7 +303,7 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
     // ── where we stand ──
     //
     // The READ first, and that ORDER is the point: "are we at war with the Iron
-    // Gate" is a question and "I declare war on the Iron Gate" is an act, and
+    // Gate" is a question and "I declare war on the Iron Ridge" is an act, and
     // the two share every noun. Getting them the wrong way round starts a war
     // by answering a question.
     if (WHERE_WE_STAND.test(text)) {

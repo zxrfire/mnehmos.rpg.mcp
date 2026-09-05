@@ -53,7 +53,7 @@ const html: string = renderRegisterHtml(reg);
  *
  * The decode is not cosmetic. `esc` turns a double quote into `&quot;`, and the
  * moment an entry started quoting the catalog's own distinct sentence - the
- * House of the Unbroken Tally cannot say "I promise" in conversation - every
+ * Vermilion Seal Terrace cannot say "I promise" in conversation - every
  * assertion that the sentence reached the page failed on correct escaping.
  */
 function text(source: string): string {
@@ -576,7 +576,7 @@ describe('what a faction entry actually says', () => {
     });
 
     it('never leaves a spliced field cut off mid-clause', () => {
-        // The failure this replaces produced "Standing inside the Guild is a
+        // The failure this replaces produced "Standing inside the Hall is a
         // count of." - a fragment that reads as data loss rather than as a
         // summary. Nothing may end on a dangling preposition or conjunction.
         // Not "for" or "to": "money it has not accounted for." is an ordinary
@@ -591,7 +591,7 @@ describe('what a faction entry actually says', () => {
     });
 
     it('splices a whole clause behind a colon, never behind a preposition', () => {
-        // "Best at the Guild is a school with a shopfront" was the bug. A
+        // "Best at the Hall is a school with a shopfront" was the bug. A
         // field may come back as a noun phrase or as a full sentence and the
         // frame has to survive both, so these use a colon.
         for (const d of reg.dossiers) {
@@ -1039,7 +1039,7 @@ describe('a body with a row in two catalogs', () => {
     // The duplicate the user reported, and the over-correction that replaced
     // it. Merging the two nodes is right; deleting one of the two NAMES is not
     // - the province has called the Kiln Court that for nine hundred years and
-    // the Root Sill is what the Deep Survey calls the posting, and which one is
+    // the Deeproot Court is what the Deep Survey calls the posting, and which one is
     // real is exactly what the catalog says has never been settled.
     const embodied = COURTS.filter(c => c.embodiedByFactionId !== null);
 
@@ -1111,7 +1111,7 @@ describe('a court panel', () => {
         // Was "two courts do not answer where they used to". There is one, and
         // that is a correction rather than a loss: the other was the Third
         // Sill, which never moved at all and had a conversion note describing a
-        // transfer that did not happen. The body that did move is the Root Sill
+        // transfer that did not happen. The body that did move is the Deeproot Court
         // and it is a posting rather than a court, so its account lives on its
         // own entry, and how it stands with the half that stayed is one row in
         // the relationships section rather than a transfer note.

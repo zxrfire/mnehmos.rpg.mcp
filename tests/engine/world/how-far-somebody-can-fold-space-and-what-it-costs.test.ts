@@ -188,7 +188,7 @@ describe('you cannot fold further than you can see', () => {
     });
 });
 
-describe('the fix is the scarce thing, and it is the Measured Span\'s scarcity', () => {
+describe('the fix is the scarce thing, and it is the Shrinking Earth Pavilion\'s scarcity', () => {
     it('lands a sighting short and ground somebody has stood on exact', () => {
         expect(landsShortByDays(20, 'stood')).toBe(0);
         expect(landsShortByDays(20, 'seen')).toBe(Math.ceil(20 * SEEN_FIX_ERROR));

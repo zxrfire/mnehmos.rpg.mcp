@@ -38,7 +38,7 @@
  *
  * The first version matched the printed names alone and took four other verbs'
  * sentences immediately: "I barter with the courier", "I shadow the courier",
- * "I ask about joining the Gleaners Company" and a conversation with a
+ * "I ask about joining the Fallen Grain Caravan" and a conversation with a
  * physician. A trade name is also a person, and one of them is half a
  * faction's name. So a NOUN needs the sentence to be about taking or doing
  * work, and only a verb phrase - "carry water", "burn charcoal" - stands on its

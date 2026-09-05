@@ -66,8 +66,8 @@ export const ARTERIALS: readonly Arterial[] = [
             'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Long Cut. The Deep Survey has not stated in any document that its province\'s working arterial is administered by the other apex, the Long Cut has not either, and both are counting on the Jade Gorge never asking whose name is on the countersignature.'
     },
     {
-        id: 'arterial-the-long-cold',
-        name: 'The Long Cold',
+        id: 'arterial-the-black-ice-vein',
+        name: 'The Black Ice Vein',
         ordinalInSystem: 4,
         provinceId: LOW_FALL_PROVINCE_ID,
         administeredByCourtId: null,

@@ -93,14 +93,14 @@ describe('the sentence names the thing and the person', () => {
 
     it('does not take a sentence about riding one', () => {
         // The two verbs share every noun and are separated by the verb alone.
-        expect(parseIntent('I take the carriage to Iron Gate').action).toBe('ride');
+        expect(parseIntent('I take the carriage to Iron Ridge').action).toBe('ride');
         expect(parseIntent('I buy a carriage').action).toBe('buy');
         expect(parseIntent('I build a carriage').action).toBe('craft');
     });
 });
 
 describe('what is within reach of somebody standing here', () => {
-    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Gate');
+    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Ridge');
 
     it('sees a craft moored where you are, which a possession query cannot', () => {
         // `mintCraft` leaves the possessor null forever, so this row is
@@ -108,8 +108,8 @@ describe('what is within reach of somebody standing here', () => {
         expect(boat.possessorId).toBeNull();
         const world = { objects: [boat] } as never;
 
-        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Gate')).toHaveLength(1);
-        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Gate')[0].because).toBe('moored');
+        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Ridge')).toHaveLength(1);
+        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Ridge')[0].because).toBe('moored');
     });
 
     it('does not see one moored somewhere else', () => {
@@ -120,20 +120,20 @@ describe('what is within reach of somebody standing here', () => {
 
     it('does not see somebody else\'s', () => {
         const world = { objects: [boat] } as never;
-        expect(whatIsWithinReachOf(world, 'npc-2', 'Iron Gate')).toEqual([]);
+        expect(whatIsWithinReachOf(world, 'npc-2', 'Iron Ridge')).toEqual([]);
     });
 
     it('leaves the counted tier alone, which has no row to take', () => {
         const mundane = makeObject({
             id: 'obj-cart', name: 'A drawn carriage', kind: 'artifact',
-            significance: 'mundane', ownerId: 'npc-1', data: { mooredAt: 'Iron Gate' }
+            significance: 'mundane', ownerId: 'npc-1', data: { mooredAt: 'Iron Ridge' }
         });
         const world = { objects: [mundane] } as never;
-        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Gate')).toEqual([]);
+        expect(whatIsWithinReachOf(world, 'npc-1', 'Iron Ridge')).toEqual([]);
     });
 
     it('resolves the name the game printed', () => {
-        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Gate');
+        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Ridge');
         expect(whichThingTheyMeant(within, 'spirit boat')?.object.id).toBe(boat.id);
         expect(whichThingTheyMeant(within, 'A spirit boat')?.object.id).toBe(boat.id);
         expect(whichThingTheyMeant(within, 'the manual')).toBeNull();
@@ -141,10 +141,10 @@ describe('what is within reach of somebody standing here', () => {
 });
 
 describe('the lift itself', () => {
-    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Gate');
+    const boat = aSpiritBoatOwnedBy('npc-1', 'Wei Lanya', 'Iron Ridge');
 
     it('moves possession, leaves ownership, and brings the mooring with it', () => {
-        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Gate');
+        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Ridge');
         const lifted = liftIt(within[0], {
             thiefId: 'player', thiefName: 'Shen Wu', fromName: 'Wei Lanya',
             onDay: 400, here: 'Clear River Ford'
@@ -167,13 +167,13 @@ describe('the lift itself', () => {
     });
 
     it('does not mutate the row it was handed', () => {
-        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Gate');
+        const within = whatIsWithinReachOf({ objects: [boat] } as never, 'npc-1', 'Iron Ridge');
         liftIt(within[0], {
             thiefId: 'player', thiefName: 'Shen Wu', fromName: 'Wei Lanya',
             onDay: 400, here: 'Clear River Ford'
         });
         expect(boat.possessorId).toBeNull();
-        expect(boat.data.mooredAt).toBe('Iron Gate');
+        expect(boat.data.mooredAt).toBe('Iron Ridge');
     });
 });
 

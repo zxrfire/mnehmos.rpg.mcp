@@ -543,14 +543,14 @@ describe('referential integrity', () => {
         }
         // Several of them guard the fragments of destroyed houses, which is the
         // whole reason those techniques exist as ruin-only entries.
-        expect(trialsGuarding('anchor-nail-of-the-broken-girdle').length).toBeGreaterThanOrEqual(1);
+        expect(trialsGuarding('earth-anchoring-nail-art').length).toBeGreaterThanOrEqual(1);
         expect(trialsGuarding('gate-that-was-closed').length).toBeGreaterThanOrEqual(1);
-        expect(trialsGuarding('severed-thread-audit').length).toBeGreaterThanOrEqual(1);
+        expect(trialsGuarding('karmic-thread-reading-art').length).toBeGreaterThanOrEqual(1);
         expect(trialsGuarding('nameless-witness-stance').length).toBeGreaterThanOrEqual(1);
         // And the trials guarding a fragment name the house it belonged to.
         const girdle = getTrial('trial-the-eighth-stone')!;
-        expect(girdle.factionIds).toContain('house-girdle-of-nine-stones');
-        expect(getDestroyedDaoHouse('house-girdle-of-nine-stones')).toBeDefined();
+        expect(girdle.factionIds).toContain('house-nine-stone-array');
+        expect(getDestroyedDaoHouse('house-nine-stone-array')).toBeDefined();
     });
 
     it('never puts a grave-only art behind a trial door', () => {

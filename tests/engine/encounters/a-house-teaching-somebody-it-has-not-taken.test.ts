@@ -39,12 +39,12 @@ describe('which houses take guests at all', () => {
     });
 
     it('refuses the houses with nothing behind the door, by name and for the stated reason', () => {
-        // The House of Held Names is the case the rule exists for: a dao house,
+        // Jade Register Hall is the case the rule exists for: a dao house,
         // an eight-hundred-year library, and a working shelf that stops at the
         // intake primer. It has nothing to hold back, so opening any of it
         // would be opening all of it.
-        expect(takesGuests('house-held-names')).toBe(false);
-        expect(shelfTopOf('house-held-names')).toBeLessThanOrEqual(WORKING_ROAD_CAP);
+        expect(takesGuests('house-jade-register')).toBe(false);
+        expect(shelfTopOf('house-jade-register')).toBeLessThanOrEqual(WORKING_ROAD_CAP);
 
         // And a body that teaches nothing at all cannot be holding anything
         // back either.
@@ -180,7 +180,7 @@ describe('how long they watch, and what the watching is for', () => {
         // The Azure Cloud Pavilion sits on the deepest shelf in the catalog and
         // reliably raises people to a third of it. It takes its time.
         const deep = guestTermYears('sect-azure-cloud-pavilion');
-        const shallower = guestTermYears('house-quiet-cut');
+        const shallower = guestTermYears('house-still-blade');
         expect(deep).toBeGreaterThan(shallower);
         expect(shallower).toBeGreaterThanOrEqual(1);
     });

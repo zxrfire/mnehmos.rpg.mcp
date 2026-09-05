@@ -206,7 +206,7 @@ Takes `target`.
 
 ### `passage`
 
-a Measured Span counter. "intent" is "board" to read what runs from here and what each costs, or "buy" to take a place on one; "target" is where to. Reading the board is free and is how somebody who has never left their province finds out there are others.
+a Shrinking Earth Pavilion counter. "intent" is "board" to read what runs from here and what each costs, or "buy" to take a place on one; "target" is where to. Reading the board is free and is how somebody who has never left their province finds out there are others.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'passage'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.passage` · the deterministic parser reaches it · spends in-world time.
 

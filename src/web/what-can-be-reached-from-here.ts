@@ -134,7 +134,7 @@ export function whatThePhraseReaches(
  * The other things a house gets called, out of its own name.
  *
  * Houses in this world are named `<image> <type-noun>` - the Hollow Court, the
- * Iron Gate - and people drop the first half constantly. Nothing here is a
+ * Iron Ridge - and people drop the first half constantly. Nothing here is a
  * table of nicknames: the short form is the name's own last word, so a house
  * added to the catalog tomorrow is shortened correctly without anybody writing
  * it down. The leaning is included because it is how a player refers to a house

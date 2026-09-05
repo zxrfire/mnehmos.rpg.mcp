@@ -261,7 +261,7 @@ describe('whether a family can reach the person they are refusing', () => {
         // the same call answers `elope, or give up`, which tells a rung-44
         // cultivator to run from a house that could not touch them.
         const standing = {
-            theFamily: { houseId: 'house-held-names' },
+            theFamily: { houseId: 'house-jade-register' },
             theSuitorsBacking: 'none' as const
         };
         expect(whatTheHousesNoIsWorth({
@@ -279,7 +279,7 @@ describe('whether a family can reach the person they are refusing', () => {
         // have to deal with somebody first and cannot reach the suitor either,
         // their answer follows from nothing at all.
         expect(whatTheHousesNoIsWorth({
-            theFamily: { houseId: 'house-held-names' },
+            theFamily: { houseId: 'house-jade-register' },
             theSuitorsBacking: 'backed',
             theSuitorIsOutOfTheirReach: theSuitorIsPastWhatTheyCouldReach(29, 44)
         }).is).toBe('the refusal changes nothing');

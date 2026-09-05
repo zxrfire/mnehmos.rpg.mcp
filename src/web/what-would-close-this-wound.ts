@@ -11,7 +11,7 @@
  * more wounds, holding 194 spirit stones against a 54-stone cure, and got:
  *
  *   the seclusion summary   "a healing pill does it faster" - which pill?
- *   `buy a healing pill`    a Minor Healing Pill. 6 HP. Closes nothing.
+ *   `buy a healing pill`    a Lesser Healing Pill. 6 HP. Closes nothing.
  *   `see a physician`       "cannot touch a meridian" - which is FALSE. Mortal
  *                           care closed two torn meridians and two scorched
  *                           channels in that same run. What it cannot touch is

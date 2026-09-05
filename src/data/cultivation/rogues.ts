@@ -244,7 +244,7 @@ export const WHY_UNAFFILIATED: readonly WhyUnaffiliated[] = [
     { id: 'why-expelled', reason: 'Thrown out', share: 'some', note: 'For insubordination, for a theft, for losing an argument with the wrong elder, or for being inconvenient during a succession. The reason given is rarely the reason.' },
     { id: 'why-sect-gone', reason: 'The sect stopped existing', share: 'some', note: 'Absorbed, burned out, or simply not renewed by its patron. The disciples are not redistributed; they are outside the gate on a Tuesday with whatever they were carrying.' },
     { id: 'why-cannot-pay', reason: 'Could not pay the entry', share: 'some', note: 'Several sects charge to be assessed. The fee is small by their standards and is a wall to somebody living on culling contracts.' },
-    { id: 'why-record', reason: 'A record that follows them', share: 'a few', note: 'A Held Names entry, a Ledger judgement, a grave-reading conviction. Gates are where registers are read, so a bad register means no gate.' },
+    { id: 'why-record', reason: 'A record that follows them', share: 'a few', note: 'A Jade Register Hall entry, a Ledger judgement, a grave-reading conviction. Gates are where registers are read, so a bad register means no gate.' },
     { id: 'why-chose', reason: 'Chose it, and means it', share: 'a few', note: 'A genuine minority. Some of them are proud of it and say so, and are respected for it in a slightly pitying way that they are entirely aware of.' }
 ];
 
@@ -297,7 +297,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         whoPays: 'Nobody. A diver is paid by what comes out, sold at the barrow yard or the kerb, and the buyer sets the price knowing precisely how much the seller needs to eat this month.',
         unbackedCost: 'A Company crew has rules, a manifest and somebody who comes looking. An independent crew has an agreement made at the mouth of the shaft, which is exactly as durable as the people who made it.',
         deathRate: 'About one independent diver in four does not see the year out, against roughly one Company gleaner in nine a season on comparable ground. The Company is not safer; it is more selective about which holes.',
-        factionIds: ['sect-gleaners-company', 'sect-hollow-bell-wanderers']
+        factionIds: ['sect-fallen-grain-caravan', 'sect-hollow-bell-wanderers']
     },
     {
         id: 'rogue-grave-reader',
@@ -326,10 +326,10 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
             note: 'Three hundred cash a head on a village contract, which is where the culling wage in the occupation table comes from: four heads a month is an ordinary month.'
         },
         risk: 'high',
-        whoPays: 'Village headmen, the Weir Office, a sect with a specific problem, and, at the bad end, a broker holding somebody\'s private grudge.',
+        whoPays: 'Village headmen, the Clearwater Ward, a sect with a specific problem, and, at the bad end, a broker holding somebody\'s private grudge.',
         unbackedCost: 'Nothing on beast work: the head is the proof and nobody needs a name. Everything on person-work, where a rogue is the party most easily disowned by whoever posted it.',
         deathRate: 'The standard living for an unaffiliated Qi Condensation cultivator, and the standard way one dies at twenty-six.',
-        factionIds: ['sect-weir-office', 'sect-verdant-spring-hall']
+        factionIds: ['sect-clearwater-ward', 'sect-verdant-spring-valley']
     },
     {
         id: 'rogue-escort',
@@ -342,10 +342,10 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
             note: 'The listed escort wage less the unbacked deduction. Use `unbackedMonthlyFor` rather than this figure: the table moves and this note will not.'
         },
         risk: 'high',
-        whoPays: 'The Consortium underwrites the contract and prices it off its own rank table. Merchants hire under that price directly when they think they can get away with it.',
+        whoPays: 'The Stone Marrow Hall underwrites the contract and prices it off its own rank table. Merchants hire under that price directly when they think they can get away with it.',
         unbackedCost: 'A quarter off the rate, plus a bond on high-value cargo that a backed escort is not asked for. The bond is returned. The bond is also most of a starting purse.',
         deathRate: null,
-        factionIds: ['sect-stonewright-consortium']
+        factionIds: ['sect-stone-marrow-hall']
     },
     {
         id: 'rogue-mercenary-crew',
@@ -361,7 +361,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         whoPays: 'Sects that need bodies for something they would rather not have disciples seen doing, and unbacked sects that need a border held and have nobody to hold it.',
         unbackedCost: 'A crew is hired precisely because it is deniable, which means it is deniable. Every crew that has worked a border dispute knows a crew that was left holding one.',
         deathRate: null,
-        factionIds: ['sect-storm-tyrant-court', 'sect-standing-grove']
+        factionIds: ['sect-storm-tyrant-court', 'sect-ancient-bough-grove']
     },
     {
         id: 'rogue-formation-hand',
@@ -377,7 +377,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         whoPays: 'Any sect maintaining a compound it did not build, which is all of them. Node work is endless and no institution has enough hands for it.',
         unbackedCost: 'A hired hand holds nodes and is never shown the diagram. Twenty years of this teaches somebody a great deal about one compound and nothing transferable, which is the arrangement working as intended.',
         deathRate: null,
-        factionIds: ['sect-azure-cloud-pavilion', 'sect-verdant-spring-hall']
+        factionIds: ['sect-azure-cloud-pavilion', 'sect-verdant-spring-valley']
     },
     {
         id: 'rogue-seclusion-watch',
@@ -407,9 +407,9 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         },
         risk: 'moderate',
         whoPays: 'The customer, in cash or stones, at whatever the road will bear. See `DEALER_MARKUP` for what the road bears.',
-        unbackedCost: 'No guild seal means no recourse when the stock is fake, in either direction: the dealer cannot prove the pill is real and the buyer cannot prove it was not.',
+        unbackedCost: 'No hall seal means no recourse when the stock is fake, in either direction: the dealer cannot prove the pill is real and the buyer cannot prove it was not.',
         deathRate: null,
-        factionIds: ['sect-cinnabar-crucible-guild', 'sect-thousand-treasure-pavilion']
+        factionIds: ['sect-cinnabar-crucible-sect', 'sect-thousand-treasure-pavilion']
     },
     {
         id: 'rogue-auction-runner',
@@ -425,7 +425,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         whoPays: 'Consignors who do not want to be seen at the preview, and buyers who do not want the floor to know who bought.',
         unbackedCost: 'A runner carrying a lot is the most robbable object on the border road, and the Pavilion\'s floor peace stops at its own door and says so in the charter.',
         deathRate: null,
-        factionIds: ['sect-thousand-treasure-pavilion', 'house-measured-span']
+        factionIds: ['sect-thousand-treasure-pavilion', 'house-shrinking-earth']
     },
     {
         id: 'rogue-herb-runner',
@@ -435,13 +435,13 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         pay: {
             basis: 'monthly',
             cash: 1_800,
-            note: 'Four times a picker\'s wage, for ground where something is living, and the Guild buys at a fixed rate and does not haggle.'
+            note: 'Four times a picker\'s wage, for ground where something is living, and the Hall buys at a fixed rate and does not haggle.'
         },
         risk: 'high',
-        whoPays: 'The Cinnabar Crucible Guild at a posted rate, and alchemists off the books at better than the posted rate for anything they do not want logged.',
+        whoPays: 'The Cinnabar Crucible Sect at a posted rate, and alchemists off the books at better than the posted rate for anything they do not want logged.',
         unbackedCost: 'No sect claim on the ground means gathering on somebody else\'s, which is tolerated until a bad season and then is not.',
-        deathRate: 'About one gatherer in twenty a year, which the Guild publishes and considers acceptable.',
-        factionIds: ['sect-cinnabar-crucible-guild', 'sect-verdant-spring-hall']
+        deathRate: 'About one gatherer in twenty a year, which the Hall publishes and considers acceptable.',
+        factionIds: ['sect-cinnabar-crucible-sect', 'sect-verdant-spring-valley']
     }
 ];
 
@@ -480,7 +480,7 @@ export const BOUNTIES: readonly Bounty[] = [
     {
         id: 'bounty-standing-yard',
         what: 'A standing purse on whatever keeps taking the sorting yard\'s dogs',
-        posterFactionId: 'sect-gleaners-company',
+        posterFactionId: 'sect-fallen-grain-caravan',
         posterNote: 'The Willow Village factor, renewed every season for eleven years without ever being claimed.',
         purseCash: 2_000,
         evidence: 'The animal, and the dogs stopping.',
@@ -490,8 +490,8 @@ export const BOUNTIES: readonly Bounty[] = [
     {
         id: 'bounty-weir-grant',
         what: 'Clearing a burn-edge chamber before a grant is issued over it',
-        posterFactionId: 'sect-weir-office',
-        posterNote: 'The Weir Office at Iron Gate, posted at the grant queue, paid out of the grant fee before the grant exists.',
+        posterFactionId: 'sect-clearwater-ward',
+        posterNote: 'Clearwater Ward at Iron Ridge, posted at the grant queue, paid out of the grant fee before the grant exists.',
         purseCash: 8_000,
         evidence: 'A Warden walks it afterwards and signs.',
         honoured: 'reliably',
@@ -500,17 +500,17 @@ export const BOUNTIES: readonly Bounty[] = [
     {
         id: 'bounty-consortium-road',
         what: 'A stretch of the border road cleared and kept clear for a season',
-        posterFactionId: 'sect-stonewright-consortium',
+        posterFactionId: 'sect-stone-marrow-hall',
         posterNote: 'Posted by the assay hall, underwritten against the convoy insurance table, and settled thirty days after the season closes.',
         purseCash: 30_000,
         evidence: 'Convoy losses on that stretch, measured against the table.',
         honoured: 'reliably',
-        catch: 'Thirty days is thirty days, deductions are taken for anything lost during the season, and the Consortium has never once failed to pay or once paid early.'
+        catch: 'Thirty days is thirty days, deductions are taken for anything lost during the season, and the Stone Marrow Hall has never once failed to pay or once paid early.'
     },
     {
         id: 'bounty-sect-specimen',
         what: 'A named spirit beast wanted alive, or a specific herb-eater wanted dead',
-        posterFactionId: 'sect-verdant-spring-hall',
+        posterFactionId: 'sect-verdant-spring-valley',
         posterNote: 'Posted at the gate at admission season, when there are the most desperate cultivators standing in front of it.',
         purseCash: 6_000,
         evidence: 'Delivery, and the Hall\'s own examination.',
@@ -520,12 +520,12 @@ export const BOUNTIES: readonly Bounty[] = [
     {
         id: 'bounty-ledger-judgement',
         what: 'Recovery of a judgement debt the debtor has declined to settle',
-        posterFactionId: 'house-ninefold-ledger',
+        posterFactionId: 'house-ninefold-karma',
         posterNote: 'A bench on circuit, which posts the judgement and never the method.',
         purseCash: 5_000,
         evidence: 'The debt, recovered, and handed to the bench rather than kept.',
         honoured: 'reliably',
-        catch: 'The Ledger honours the purse to the cash and will not tell you what the debtor is protected by. That is not withholding; the bench genuinely does not consider it part of the posting.'
+        catch: 'The Karma Pavilion honours the purse to the cash and will not tell you what the debtor is protected by. That is not withholding; the bench genuinely does not consider it part of the posting.'
     },
     {
         id: 'bounty-broker-grudge',
@@ -535,12 +535,12 @@ export const BOUNTIES: readonly Bounty[] = [
         purseCash: 20_000,
         evidence: 'A token the broker described in advance and can later claim not to recognise.',
         honoured: 'rarely',
-        catch: 'This is how a sectless cultivator ends up standing over a body with no payer, no witness, and a Held Names entry against their name inside the month.'
+        catch: 'This is how a sectless cultivator ends up standing over a body with no payer, no witness, and a Jade Register Hall entry against their name inside the month.'
     },
     {
         id: 'bounty-crew-recovery',
         what: 'Bringing out the pouch and manifest of a crew that did not come back',
-        posterFactionId: 'sect-gleaners-company',
+        posterFactionId: 'sect-fallen-grain-caravan',
         posterNote: 'The Company, which posts these itself and pays them itself, and considers the practice load-bearing.',
         purseCash: 3_000,
         evidence: 'The pouch, checked against the manifest in front of you.',
@@ -550,7 +550,7 @@ export const BOUNTIES: readonly Bounty[] = [
     {
         id: 'bounty-held-names',
         what: 'An unregistered cultivator, wanted at the gate for the register',
-        posterFactionId: 'house-held-names',
+        posterFactionId: 'house-jade-register',
         posterNote: 'Posted at nine city gates as a standing rate, in the same notice as the registration fee.',
         purseCash: 1_200,
         evidence: 'The person, at the gate, upright.',
@@ -591,7 +591,7 @@ export const DEALER_MARKUP: Record<
     medicine: {
         multiplier: 1.5,
         fakeRate: 'About one road pill in five is not what the wrapper says, and about one in twenty is actively dangerous.',
-        note: 'A Minor Healing Pill over a counter is twenty stones. On the road it is thirty, and the buyer has no way to tell until they need it.'
+        note: 'A Lesser Healing Pill over a counter is twenty stones. On the road it is thirty, and the buyer has no way to tell until they need it.'
     },
     manual: {
         multiplier: 2.5,
@@ -610,8 +610,8 @@ export const DEALER_MARKUP: Record<
     },
     stones: {
         multiplier: 1.1,
-        fakeRate: 'Not fake. Shaved, cut short, or assayed generously, which a Consortium hall will detect and a ford changer will not.',
-        note: 'The Consortium sets the rate, so nobody makes money on stones. They make it on the weighing.'
+        fakeRate: 'Not fake. Shaved, cut short, or assayed generously, which a Stone Marrow Hall hall will detect and a ford changer will not.',
+        note: 'The Stone Marrow Hall sets the rate, so nobody makes money on stones. They make it on the weighing.'
     }
 };
 
@@ -653,16 +653,16 @@ export const DEALERS: readonly Dealer[] = [
         factionIds: []
     },
     {
-        id: 'dealer-guild-castoff',
-        name: 'Guild cast-off with real stock',
+        id: 'dealer-hall-castoff',
+        name: 'Hall cast-off with real stock',
         deals: ['medicine'],
         side: 'sells',
         regionId: 'region-low-fall',
         places: [PLACE.GREEN_FALL, PLACE.STONE_FORD],
         trust: 'sound',
         stock: 'Genuine refinements, made by somebody who spent nine years on a bellows and was never let near a cauldron officially.',
-        catch: 'No guild seal, so the pills are real and unprovable. Anybody caught reselling them into a sect town is the Guild\'s problem and then his.',
-        factionIds: ['sect-cinnabar-crucible-guild']
+        catch: 'No hall seal, so the pills are real and unprovable. Anybody caught reselling them into a sect town is the Hall\'s problem and then his.',
+        factionIds: ['sect-cinnabar-crucible-sect']
     },
     {
         id: 'dealer-ford-widow',
@@ -686,7 +686,7 @@ export const DEALERS: readonly Dealer[] = [
         trust: 'mixed',
         stock: 'Buys by weight, sorts, and sells onward to the Jade Gorge at four times what he paid, which is public knowledge and changes nothing.',
         catch: 'He is the only buyer within four days\' walk and everybody selling to him knows the onward price. That is the trade, and the resentment is part of the price.',
-        factionIds: ['sect-gleaners-company']
+        factionIds: ['sect-fallen-grain-caravan']
     },
     {
         id: 'dealer-off-book-appraiser',
@@ -709,8 +709,8 @@ export const DEALERS: readonly Dealer[] = [
         places: [PLACE.STONE_FORD, PLACE.BURNT_EARTH],
         trust: 'bad',
         stock: 'Cash for stones and stones for cash, at a rate that is always a little worse than the market-town rate and always defensible.',
-        catch: 'The rate is fine. The weighing is not, and a Consortium assay hall four days away would find it, which is four days away.',
-        factionIds: ['sect-stonewright-consortium']
+        catch: 'The rate is fine. The weighing is not, and a Stone Marrow Hall assay hall four days away would find it, which is four days away.',
+        factionIds: ['sect-stone-marrow-hall']
     }
 ];
 
@@ -787,14 +787,14 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
     },
     {
         id: 'auction-kettle-yard',
-        name: 'The Iron Gate assay yard disposal',
-        runByFactionId: 'sect-weir-office',
+        name: 'The Iron Ridge assay yard disposal',
+        runByFactionId: 'sect-clearwater-ward',
         regionId: 'region-quiet-marches',
         places: [PLACE.IRON_GATE],
         cadence: 'Once a season, when forfeited grants and unclaimed salvage are cleared.',
         entryBondStones: 5,
         protections: [
-            'The Office runs the sale and takes the money, which makes it orderly and not impartial',
+            'The Court runs the sale and takes the money, which makes it orderly and not impartial',
             'Every lot is assayed first, and the assay is published with the lot'
         ],
         whatSells: 'Forfeited grant days, the tools of people who did not come back, and salvage nobody claimed inside the year.',
@@ -803,7 +803,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
     {
         id: 'auction-hollowmarket-manifest',
         name: 'The Willow Village manifest sale',
-        runByFactionId: 'sect-gleaners-company',
+        runByFactionId: 'sect-fallen-grain-caravan',
         regionId: 'region-quiet-marches',
         places: [PLACE.GRAVE_MARKET],
         cadence: 'Whenever the sorting yard is full, which is about every six weeks.',
@@ -813,7 +813,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
             'Weight is checked in front of the buyer, and disputes are settled by reweighing and nothing else'
         ],
         whatSells: 'Salvage by weight, in lots too large for an individual, to dealers who will break them up.',
-        sectlessNote: 'Buyers here are dealers rather than cultivators. A rogue is on the selling side, is offered the yard rate, and takes it because the alternative is carrying it four days to Iron Gate.'
+        sectlessNote: 'Buyers here are dealers rather than cultivators. A rogue is on the selling side, is offered the yard rate, and takes it because the alternative is carrying it four days to Iron Ridge.'
     }
 ];
 
@@ -827,11 +827,11 @@ export const AUCTION_ACCESS = {
     cannotBid: [
         'Reserved lots, which require a named guarantor or a faction seal that a rogue by definition does not have',
         'Anything catalogued above heaven grade, which is sent to the Pavilion\'s parent court before the floor ever sees it',
-        'Any lot the Consortium has flagged pending assay, which cannot be released to an unregistered buyer at all'
+        'Any lot the Stone Marrow Hall has flagged pending assay, which cannot be released to an unregistered buyer at all'
     ],
     theWayAround: [
         'Bid as somebody\'s agent, which works and means that somebody knows exactly what you are holding',
-        'Buy the guarantee: a Unbroken Tally bond can stand in for a faction seal, and is priced against the penalty clause rather than the lot',
+        'Buy the guarantee: a Vermilion Seal Terrace bond can stand in for a faction seal, and is priced against the penalty clause rather than the lot',
         'Buy it afterwards from whoever did win it, at a markup, which is a large part of what the kerb is for'
     ],
     theRealConstraint:
@@ -893,7 +893,7 @@ export const ROAD_CUSTOMS: readonly RoadCustom[] = [
     {
         id: 'custom-crossings-owed',
         custom: 'A ferry debt is counted in crossings rather than cash and is honoured across the whole river, by any ferryman, for years.',
-        keptBy: 'The Clear River Fordhall, and by every rogue who has ever needed to be on the other bank at night.',
+        keptBy: 'The Clear River Alliance, and by every rogue who has ever needed to be on the other bank at night.',
         breakingIt: 'There is no penalty. There is simply a long river with one organisation on it, and a memory that is longer than the debt.'
     },
     {

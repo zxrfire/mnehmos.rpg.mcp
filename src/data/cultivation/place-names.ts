@@ -47,7 +47,7 @@ export const PLACE = {
     NINE_PEAKS: 'Nine Peaks',
 
     // ─── The Silent Cliffs ───────────────────────────────────────────────
-    IRON_GATE: 'Iron Gate',
+    IRON_GATE: 'Iron Ridge',
     GRAVE_MARKET: 'Willow Village',
     SIX_LI: 'Six Li',
     JADE_FACE: 'The Jade Face',

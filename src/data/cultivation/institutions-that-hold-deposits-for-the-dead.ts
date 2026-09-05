@@ -15,12 +15,12 @@
  * Six houses in the catalog already say, in their own words, that they hold
  * property or obligations for parties who are absent, dead or unidentifiable:
  *
- *   Ninefold Ledger     'sealed escrow of obligations that outlive their parties'
- *   Held Names          'name custody, an annual fee, payable in advance and
+ *   Ninefold Karma Palace     'sealed escrow of obligations that outlive their parties'
+ *   Jade Register Hall          'name custody, an annual fee, payable in advance and
  *                        famously never refunded'
- *   Unbroken Tally          'custody of the treaty vault, with certified copies
+ *   Vermilion Seal Terrace          'custody of the treaty vault, with certified copies
  *                        issued to any party to a treaty'
- *   Measured Span       'storage certification, without which no storage ring
+ *   Shrinking Earth Pavilion       'storage certification, without which no storage ring
  *                        sells at full value'
  *   Thousand Treasure   'a vault nobody has located'
  *   Lantern Hall        'records what it was from whatever witness is left, so
@@ -31,7 +31,7 @@
  *
  * ── The phrase, and why an institution asks for one ──────────────────────
  *
- * The Ninefold Ledger settles every inheritance in the region by reading the
+ * Ninefold Karma Palace settles every inheritance in the region by reading the
  * karma graph, and its own entry states the one thing the graph cannot do: it
  * "cannot read a thread through a grave, which has never once worked and is
  * filed under research rather than failure." A depositor who is dead and a
@@ -99,17 +99,17 @@ export const A_DEPOSIT_IS_NOT_A_LIFE = {
 /**
  * Why a house takes a phrase rather than a name, an heir or a token.
  *
- * Read off the Ledger's own stated limit rather than asserted here.
+ * Read off the Karma Pavilion's own stated limit rather than asserted here.
  */
 export const WHY_A_PHRASE_AND_NOT_A_NAME = {
     theLimit:
-        'The Ninefold Ledger settles inheritance by reading a thread across generations, and its own entry states that it has never once been able to read a thread through a grave. A dead depositor and an unrelated claimant is that case exactly.',
+        'Ninefold Karma Palace settles inheritance by reading a thread across generations, and its own entry states that it has never once been able to read a thread through a grave. A dead depositor and an unrelated claimant is that case exactly.',
     soWhatIsLeft:
         'A form of words agreed while the depositor was alive, written against the entry, and produced at the counter by whoever turns up. It proves nothing about who the claimant is and is not supposed to: it proves that the depositor told them, which is the only fact the house is being asked to establish.',
     andTheHouseKnowsThisIsWeak:
         'Every one of the six says so in its own way. A phrase can be overheard, tortured out of somebody, or guessed by a persistent fraud, and the houses that keep records defend against the last of those by counting failed attempts and refusing the entry when the count runs out. The other two do not count, which is a different kind of risk and not a smaller one.',
     whyTheHouseDoesNotHoldTheDepositorsName:
-        'Held Names would, for a fee, and that is a separate product. An escrow entry carries the phrase and the goods. Attaching the depositor to it would make the entry findable by anybody who knew who died, which is the failure the phrase exists to prevent.'
+        'Jade Register Hall would, for a fee, and that is a separate product. An escrow entry carries the phrase and the goods. Attaching the depositor to it would make the entry findable by anybody who knew who died, which is the failure the phrase exists to prevent.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ export interface CustodyTerms {
     derivedFrom: string;
     /**
      * Stones a year to hold an entry, paid in advance. Anchored to
-     * `price-gate-registration` - three stones a year to Held Names for a gate
+     * `price-gate-registration` - three stones a year to Jade Register Hall for a gate
      * record, which is the one custody fee the price board already carries -
      * and scaled by how much more than a line of writing the house is holding.
      */
@@ -209,9 +209,9 @@ export const HINTS_ARE_NOT_THE_PHRASE = {
  */
 export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
     {
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         derivedFrom: 'sealed escrow of obligations that outlive their parties',
-        // Seven times the gate-registration rate. The Ledger is holding goods
+        // Seven times the gate-registration rate. The Karma Pavilion is holding goods
         // under seal and an obligation to hand them over, against a book it
         // maintains across generations, and it prices the placement of a single
         // cultivator at seventy stones.
@@ -223,12 +223,12 @@ export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
             'The auditor closes the book on her finger and tells you what the entry says about itself: the day it was lodged, and how many words were agreed. She does not tell you the words, and she does not soften it.',
         lapse: 'absorbed_and_recorded',
         counterLine:
-            'The Ledger writes the phrase against the entry, seals it, and enters the obligation in the ninefold book. It does not ask who lodged it and it will not ask who collects.',
+            'The Karma Pavilion writes the phrase against the entry, seals it, and enters the obligation in the ninefold book. It does not ask who lodged it and it will not ask who collects.',
         whatTheyWillNotDo:
             'It will not take an entry it cannot audit later, and it will not take a claimant\'s word over the book. Three wrong phrases and the entry is marked contested, which in this house means it stops being collectible by anybody at all.'
     },
     {
-        factionId: 'house-unbroken-tally',
+        factionId: 'house-vermilion-seal',
         derivedFrom: 'custody of the treaty vault, with certified copies issued to any party to a treaty',
         annualFeeStones: 14,
         minimumTermYears: 100,
@@ -243,7 +243,7 @@ export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
             'It will not witness a deposit on unsurveyed ground and it will not shorten the term. Two wrong phrases voids the undertaking, and a voided undertaking at this house is not reopened for any consideration.'
     },
     {
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         derivedFrom: 'storage certification, without which no storage ring sells at full value',
         annualFeeStones: 9,
         minimumTermYears: 25,
@@ -258,7 +258,7 @@ export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
             'It will not defend the goods against anybody who takes the station. The Span is a courier house that certifies capacity; it does not garrison, and it has never claimed to.'
     },
     {
-        factionId: 'house-held-names',
+        factionId: 'house-jade-register',
         derivedFrom: 'name custody, an annual fee, payable in advance and famously never refunded',
         // Three stones a year is the published gate-registration rate. Holding
         // goods rather than a line of writing is priced at twice it.
@@ -293,7 +293,7 @@ export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
         factionId: 'sect-lantern-hall',
         derivedFrom:
             'the Hall records what it was from whatever witness is left, so that somebody in the world still holds it',
-        // Free. The Hall's own position in the dispute with Held Names is that a
+        // Free. The Hall's own position in the dispute with Jade Register Hall is that a
         // name written down and charged for is a name sold; it does not charge
         // for the register, and it does not charge for this.
         annualFeeStones: 0,
@@ -343,24 +343,24 @@ export function feeForTerm(terms: CustodyTerms, years: number): number {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The Anchorhold will anchor a burial, and says so.
+ * Immovable Mountain Temple will anchor a burial, and says so.
  *
  * Its `services` array reads "anchoring of a site for a breakthrough, a burial
  * or a sealed inheritance" - three things, and two of them are this. So the one
  * way a cache can be made materially harder to find is a service the catalog
  * already sells, at a house that already exists, to anybody who can pay for it.
  *
- * What it buys is not concealment. The Anchorhold's discipline is fixity: the
+ * What it buys is not concealment. Immovable Mountain Temple's discipline is fixity: the
  * ground does not move, cannot be folded into, and an anchored site holds its
  * survey. In practice that means the marks stay where they were put, the hole
  * does not silt or slump, and nothing gets at it by opening a span into it -
  * which is why an anchored cache decays far more slowly than a hidden one. It
  * is also a public act performed by a house that keeps a survey of record, so
- * anybody who thinks to ask the Anchorhold what it anchored that decade can be
+ * anybody who thinks to ask the Immovable Mountain Temple what it anchored that decade can be
  * told. Fixity is not secrecy and the house has never pretended otherwise.
  */
 export const ANCHORING_A_CACHE = {
-    factionId: 'house-anchorhold',
+    factionId: 'house-immovable-mountain',
     derivedFrom: 'anchoring of a site for a breakthrough, a burial or a sealed inheritance',
     /**
      * Fifty stones. `price-oath-witness` is fifty stones and up for a witnessed
@@ -371,7 +371,7 @@ export const ANCHORING_A_CACHE = {
     whatItBuys:
         'The ground is entered on the survey of record and holds its datum. Marks stay where they were cut, the hole does not slump or silt, and a span cannot be opened into it, so what usually finds a cache - the ground moving, or somebody arriving through it - does not.',
     whatItDoesNotBuy:
-        'Secrecy. The Anchorhold keeps the survey of record and will tell any competent party what it anchored and roughly when, because the survey is the product and a withheld survey is worthless. What you have bought is that the cache is still where you put it, not that nobody knows there is one.',
+        'Secrecy. Immovable Mountain Temple keeps the survey of record and will tell any competent party what it anchored and roughly when, because the survey is the product and a withheld survey is worthless. What you have bought is that the cache is still where you put it, not that nobody knows there is one.',
     counterLine:
         'Two surveyors, a datum cut into the nearest fixed thing, and a line in a book that will still be legible in a thousand years. They do not ask what is in the hole and they do not look.'
 } as const;

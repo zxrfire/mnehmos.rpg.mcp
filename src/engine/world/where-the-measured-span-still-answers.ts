@@ -1,5 +1,5 @@
 /**
- * Where the Measured Span still keeps a counter somebody can walk up to, and
+ * Where the Shrinking Earth Pavilion still keeps a counter somebody can walk up to, and
  * what runs from each of them.
  *
  * THE GAP THIS CLOSES
@@ -26,7 +26,7 @@
  *   that arrives.
  *
  *   SCARWATER, in the Jade Gorge. The province's own connection text: *"The
- *   border road from Clear River Ford to Iron Gate: eleven days by cart, four by Measured
+ *   border road from Clear River Ford to Iron Ridge: eleven days by cart, four by Measured
  *   Span courier where the Span still runs it."* Two named places, a stated
  *   walked distance, and the house named as the thing that shortens it.
  *
@@ -54,7 +54,7 @@
  *   Four Graves is *"one of the nine stations"* and runs on the station's own
  *   cycle. Nine is the count of the terminals the house inherited and cannot
  *   reopen when one stops answering.
- *   Clear River Ford to Iron Gate is a COURIER route - *"four by Measured Span courier
+ *   Clear River Ford to Iron Ridge is a COURIER route - *"four by Shrinking Earth Pavilion courier
  *   where the Span still runs it"* - which is the house's own hand doing the
  *   work, conditionally, and is therefore not a terminal at all.
  *
@@ -66,7 +66,7 @@
  * is not something any caller can turn into a fare. So the rate below is stated
  * in the unit a buyer can check, and is anchored against the line on the price
  * board that prices the same road: caravan passage, 250 per 100 li, *"the border
- * road to Iron Gate is eleven days and priced as such"*. See {@link
+ * road to Iron Ridge is eleven days and priced as such"*. See {@link
  * SPAN_CASH_PER_WALKED_DAY}.
  *
  * PURE. State in, deltas out. No I/O, no DB, no mutation of inputs, and nothing
@@ -78,7 +78,7 @@ import type { OpeningCycle } from './locations.js';
 import { PLACE } from '../../data/cultivation/place-names.js';
 
 /** The house whose counters these are. */
-export const THE_SPAN_HOUSE_ID = 'house-measured-span';
+export const THE_SPAN_HOUSE_ID = 'house-shrinking-earth';
 
 /**
  * Four days in nine, off the Four Graves Terminal entry, and the only Span
@@ -99,7 +99,7 @@ export const SPAN_SCHEDULE: OpeningCycle = Object.freeze({
  *
  * FOUR HUNDRED, and it is derived rather than picked. The price board carries
  * caravan passage at 250 per 100 li and says in its own note that the eleven-day
- * border road to Iron Gate is priced by it, which puts an ordinary crossing of that
+ * border road to Iron Ridge is priced by it, which puts an ordinary crossing of that
  * road somewhere near 1,400 cash with food and company thrown in. A Span fare
  * has to sit well above that, because what it sells is not speed on the road -
  * it is not being on the road, and the one journey nothing else in the world
@@ -149,7 +149,7 @@ export const SPAN_ROUTES: readonly SpanRoute[] = Object.freeze([
     },
     // ── The Jade Gorge, and the border road ────────────────────────────────
     //
-    // "Eleven days by cart, four by Measured Span courier where the Span still
+    // "Eleven days by cart, four by Shrinking Earth Pavilion courier where the Span still
     // runs it." The conditional is the house's weak period showing on a
     // timetable, and it is why this row is a folded route rather than a
     // terminal: a terminal answers or it does not, and a courier route is

@@ -62,7 +62,7 @@ function theWater(areaId: string): AreaStatus {
         kind: 'war',
         statement: 'Two houses are fighting over the water here.',
         cause: {
-            what: 'The Fordhall called in a crossing debt it had held for sixty years.',
+            what: 'The Alliance called in a crossing debt it had held for sixty years.',
             decidedById: 'sect-clear-river-fordhall',
             factId: null
         },

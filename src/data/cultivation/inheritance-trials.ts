@@ -616,9 +616,9 @@ export const WHAT_THE_LIGHTNING_TOOK = {
     whyProvenIsWorthMore:
         'Because there is no other way to get the claim. A forge states what it intended, an assay house states what it measured, and both are opinions about behaviour under conditions nobody applied. An object that was on a body through a tribulation and is still an object has been through the only test that is not an opinion, and the people who understand this will pay a multiple for it that looks insane to anybody reading the inventory count.',
     whoKnowsThis:
-        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. The Gleaners know it as a working rule without having a theory about it. The Ninefold Ledger prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Treasure Pavilion catalogues by count because count is what buyers ask for.',
+        'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Fallen Grain Caravan know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Treasure Pavilion catalogues by count because count is what buyers ask for.',
     theExceptionIsNotAnException:
-        'A tribulation grave with a long inventory has been salted, and the salting is always the same trick: ordinary goods laid on a real scar so the provenance rubs off on them. Two of the three frauds the Ledger has established in four centuries were exactly this.',
+        'A tribulation grave with a long inventory has been salted, and the salting is always the same trick: ordinary goods laid on a real scar so the provenance rubs off on them. Two of the three frauds the Karma Pavilion has established in four centuries were exactly this.',
     andAFailedCrossingLeavesNoBody:
         'The last crossing does not leave remains. What is on that ground is what fell out of a hand, and there is no body, no pouch, no arrangement and nobody to have arranged one. It is the shortest list in the world and it is the best.'
 } as const;
@@ -645,7 +645,7 @@ export const A_RESTING_PLACE_IS_NOT_A_GRAVE = {
         'resting place: occupied. Not this file. Opening it wakes somebody, and what happens next is a conversation rather than a recovery.'
     ],
     theOverlapThatIsRealAnyway:
-        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Gleaners\' sealed part, and the Company sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
+        'One entry here is a grave that shares a wall with a resting place, which happens because the world is not tidy: a man went in on a wager, died on the far side of the Fallen Grain Caravan\' sealed part, and the Company sealed it again with him inside. He is a grave. What is deeper in that building is not, and the entry says so rather than letting a reader blur them.',
     howToTell:
         'The marker. A resting place has maintenance on it - a swept floor, a repaired channel, a schedule somebody keeps - because somebody is keeping something alive. A grave has weather on it.'
 } as const;
@@ -719,19 +719,19 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whatIsDownThere: 'A ninth of a containment ring, redistributed onto eight stones instead of nine, read off any body standing in the room at the foot of the worst-loaded leg. It does not build and it does not stop.',
             whatItDoesToSomebodyShortOfIt: 'Puts them on the floor in the first ten paces and keeps them there until they stop breathing, which is slow enough that every recovery attempt in the site\'s history was launched on good information and arrived late.'
         },
-        factionIds: ['house-girdle-of-nine-stones', 'house-anchorhold'],
+        factionIds: ['house-nine-stone-array', 'house-immovable-mountain'],
         outside: {
             marker: 'One of eight standing stones on a dead province\'s perimeter, all still upright, all still doing something. This one has a shaft cut down beside it at an angle, lined, with a rail bracket every four paces and the rail long gone.',
-            rumour: 'Perimeter people call it the eighth and will tell you the shaft goes to a maintenance chamber, which is true. What they will not tell you, because the Anchorhold employs them, is that the maintenance chamber is where the house that cut the stones kept its method.',
-            attributedTo: 'The Girdle of Nine Stones',
-            lastPartySaid: 'An Anchorhold survey team went down eleven years ago to document the shaft for the standard. Their report is one page, describes the lining and the brackets, and stops.',
+            rumour: 'Perimeter people call it the eighth and will tell you the shaft goes to a maintenance chamber, which is true. What they will not tell you, because the Immovable Mountain Temple employs them, is that the maintenance chamber is where the house that cut the stones kept its method.',
+            attributedTo: 'Nine Stone Array',
+            lastPartySaid: 'An Immovable Mountain Temple survey team went down eleven years ago to document the shaft for the standard. Their report is one page, describes the lining and the brackets, and stops.',
             whatAKnowledgeablePartyReads: 'Eight stones are standing and the ninth socket is empty and the wrong size. A containment ring that lost a stone did not stop containing; it redistributed, and the load the missing stone carried is now spread across the eight. This one has a chamber under it, so this one is where the redistribution is measured, which means this one is carrying more than its share and has been for nine hundred years.',
             whatAnIgnorantPartyConcludes: 'That eight standing stones out of nine is a ruin in good condition. The arithmetic runs the other way: a ring at full strength is inert, and a ring carrying a ninth of itself extra is a thing under load with a chamber at the bottom of the worst-loaded leg.',
             startingAwareness: 'whisper',
             advertisedOrdinal: 20
         },
         interior: {
-            chamber: 'A round room at the foot of the shaft, floored in a single piece, with the stone\'s foot coming through the ceiling and standing clear of it by a finger all the way round. The gap is deliberate and is the only decoration in the room. On the wall opposite the shaft is the method, cut in full, in a hand the Anchorhold does not use.',
+            chamber: 'A round room at the foot of the shaft, floored in a single piece, with the stone\'s foot coming through the ceiling and standing clear of it by a finger all the way round. The gap is deliberate and is the only decoration in the room. On the wall opposite the shaft is the method, cut in full, in a hand the Immovable Mountain Temple does not use.',
             setBy: 'The Girdle, as a maintenance chamber and as a test at once, because a house whose principle was fixity did not distinguish between them: the person allowed to read the method was the person who could stand where the method was, and standing there was the qualification. It was calibrated for the Girdle\'s own perimeter staff at Deity Transformation, and the redistribution has raised it since.',
             gates: [
                 {
@@ -745,10 +745,10 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             howItKills: 'Slowly and without any drama at all. Nobody is struck. People walk in, get a third of the way, stop being able to stand, and are still alive when they stop being able to breathe, which takes long enough that every recovery attempt in the site\'s history was launched on good information and arrived too late anyway.',
             prize: {
                 techniqueIds: [
-                    'anchor-nail-of-the-broken-girdle',
+                    'earth-anchoring-nail-art',
                 ],
                 other: [
-                    'The containment method cut in full on the far wall, which is the partial manual the Anchorhold will not cite, complete, with the section the Anchorhold\'s copy is missing.',
+                    'The containment method cut in full on the far wall, which is the partial manual the Immovable Mountain Temple will not cite, complete, with the section the Immovable Mountain Temple\'s copy is missing.',
                     'The load figures for all nine stones as they were before the eastern nail went, which is the only document in the world that proves the Girdle\'s containment was intact when it was broken.'
                 ],
                 immortalItemId: null
@@ -777,7 +777,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             attributedTo: null,
             lastPartySaid: 'A four-person Gleaner crew took a contract on it eighteen years ago and the leader said the sensible thing, which was that a single lit node in a dead hall is a fortune and the risk is the roof.',
             whatAKnowledgeablePartyReads: 'A node that is lit and drawing and has nothing to spend on is a node that is storing, and a formation that has been storing for nine hundred years has one number attached to it. The air moving against the wind at the threshold is the discharge condition being nearly met by a person walking through it.',
-            whatAnIgnorantPartyConcludes: 'That a lit node is loot and that nine centuries of nobody touching it is nine centuries of nobody bothering. The Flame Sect is four days away and has a refining guild in its pocket; the reason it has not collected a live node off its own doorstep is the whole of the information available from outside, and it is available for free.',
+            whatAnIgnorantPartyConcludes: 'That a lit node is loot and that nine centuries of nobody touching it is nine centuries of nobody bothering. The Flame Sect is four days away and has a refining hall in its pocket; the reason it has not collected a live node off its own doorstep is the whole of the information available from outside, and it is available for free.',
             startingAwareness: 'whisper',
             advertisedOrdinal: 12
         },
@@ -795,7 +795,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'Instantly, completely, and to everyone in the room rather than only the one who triggered it. There is no wounded and there is no witness, which is why the site has no accumulated warning attached to it and keeps taking crews on the same reasoning as the last crew.',
             prize: {
-                techniqueIds: ['cinder-of-the-first-sun'],
+                techniqueIds: ['first-sun-cinder-art'],
                 other: [
                     'The node itself, intact, which after the discharge is an ordinary dead node and worth what the stone is worth.',
                     'The house\'s examination record, in a case under the plinth, listing every candidate it passed and the two it did not, with the reasons.'
@@ -821,20 +821,20 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whatIsDownThere: 'A bench, a table and a book. Nobody has ever been hurt at this site and nobody ever will be, which is the most dangerous thing about it and the reason the Temple calls it furniture.',
             whatItDoesToSomebodyShortOfIt: 'Nothing, because there is nobody it is above. The floor is zero and it is honestly zero: the cost of this ground is charged to whoever reads far enough to be entered as having read, and a villager can incur it.'
         },
-        factionIds: ['house-tally-court', 'house-ninefold-ledger', 'sect-sweptground-temple'],
+        factionIds: ['house-iron-tally-court', 'house-ninefold-karma', 'sect-sweptground-temple'],
         outside: {
             marker: 'A stone bench and a stone table on the burned ground at Burnt Earth, both original, both cut for somebody to sit at one and put documents on the other. There is no building. Debts sworn on this ground do not settle and never have.',
-            rumour: 'The monks say the bench is where the old house heard cases and that sitting on it is bad luck, which is the Temple being polite. The Ledger says nothing about the bench in any document anybody outside the Ledger has read.',
-            attributedTo: 'The Tally Court',
+            rumour: 'The monks say the bench is where the old house heard cases and that sitting on it is bad luck, which is the Temple being polite. The Karma Pavilion says nothing about the bench in any document anybody outside the Karma Pavilion has read.',
+            attributedTo: 'Iron Tally Court',
             lastPartySaid: 'A Ledger circuit arbiter sat at it nine years ago on her own initiative, spent two hours, stood up and wrote nothing. She has been asked and says that it was not a matter for the house.',
-            whatAKnowledgeablePartyReads: 'A karma house left a working bench on ground where obligations do not discharge, which is not a monument. It is a bench that is still in session. And the Ledger, which destroyed that house and holds nine sealed volumes with no subject line, has had an arbiter sit at it and produce no record, which is the loudest thing the Ledger has ever not said.',
+            whatAKnowledgeablePartyReads: 'A karma house left a working bench on ground where obligations do not discharge, which is not a monument. It is a bench that is still in session. And the Karma Pavilion, which destroyed that house and holds nine sealed volumes with no subject line, has had an arbiter sit at it and produce no record, which is the loudest thing the Karma Pavilion has ever not said.',
             whatAnIgnorantPartyConcludes: 'That it is furniture on a burned site and the site itself is the curiosity. Parties camp on the ground, swear things to each other for the novelty of watching the oath not take, and go home without having sat down.',
             startingAwareness: 'named',
             advertisedOrdinal: null
         },
         interior: {
             chamber: 'Sitting down is entering. The table acquires a ledger, which was not there and is not an illusion, open at a page in the middle, in a hand that has been out of use for two thousand three hundred years. There is no room, no door and nothing to fight. There is a bench, a table, an open book and however long the claimant is willing to sit there.',
-            setBy: 'The Tally Court, as the bench itself rather than as a test set on the bench: a karma house did not build examinations, it built instruments, and the instrument is a case waiting to be heard. What it wants is a reading, and it has been waiting for one since the house was ended by its own auditors.',
+            setBy: 'Iron Tally Court, as the bench itself rather than as a test set on the bench: a karma house did not build examinations, it built instruments, and the instrument is a case waiting to be heard. What it wants is a reading, and it has been waiting for one since the house was ended by its own auditors.',
             gates: [
                 {
                     kind: 'age_and_talent',
@@ -857,7 +857,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                             note: 'The page is a running total of obligations across four generations of a bloodline, and somebody who has not watched three of anything happen has no shape to fit it to.'
                         }
                     ],
-                    test: 'Read the open page and say what the total is. That is the whole of it. The page is the Tally Court\'s working of what the crossings have taken out of everyone, carried forward two millennia, and the entry the bench is waiting on is the one the house was in the middle of when it was ended.',
+                    test: 'Read the open page and say what the total is. That is the whole of it. The page is the Iron Tally Court\'s working of what the crossings have taken out of everyone, carried forward two millennia, and the entry the bench is waiting on is the one the house was in the middle of when it was ended.',
                     strengthDoesNotHelp: 'Nothing in the room can be pushed, broken, opened or outlasted, and the bench does not care how hard the person sitting on it can hit. A Body Integration cultivator with no karmic comprehension sits there for a day and reads a column of numbers in an unfamiliar hand, which is exactly what it is, and stands up having learned nothing.',
                     below: 'Nothing happens. That is the failure state, and it is worse than a hostile one: the claimant sits, reads, works, does not get it, and leaves believing the bench is inert, which is the account every party who has failed it has given and the reason the Temple thinks it is furniture.'
                 }
@@ -866,13 +866,13 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             prize: {
                 techniqueIds: [
                     // Forty-one benches for settling what is owed between people, and
-                    // the art for cutting the thread instead. The Tally Court kept
+                    // the art for cutting the thread instead. Iron Tally Court kept
                     // both and used only one.
-                    'severance-of-the-standing-thread',
-                    'severed-thread-audit', 'unpayable-tally-brand',
+                    'karmic-severing-art',
+                    'karmic-thread-reading-art', 'unpayable-tally-brand',
                 ],
                 other: [
-                    'The page itself, which is the Tally Court\'s total, and the identity of the party it entered as owing it. The Ledger has nine sealed volumes and has never opened them; this is the other half of that.',
+                    'The page itself, which is the Iron Tally Court\'s total, and the identity of the party it entered as owing it. The Karma Pavilion has nine sealed volumes and has never opened them; this is the other half of that.',
                     'Standing, at the bench, to hear anything sworn on that ground. It is a real office with no institution behind it and no way to resign.'
                 ],
                 immortalItemId: null
@@ -894,11 +894,11 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whatIsDownThere: 'A terminal hall with thirty-one arches, nine of them answering and four of those opening somewhere a person can breathe. The hall is indifferent to rank and has been open continuously for fourteen hundred years.',
             whatItDoesToSomebodyShortOfIt: 'Nothing. Station staff sweep the yard around the frame daily and walk through it, and the frame has never done anything to any of them, because the yard is also there and the yard is what they are in.'
         },
-        factionIds: ['house-unlit-gate', 'house-measured-span'],
+        factionIds: ['house-nine-nether', 'house-shrinking-earth'],
         outside: {
-            marker: 'A stone frame standing in the yard of a Measured Span relay station, swept daily by the station staff because it is in the way of the cart line and they have always swept it. Nothing is in the frame. Standing anywhere in the yard, it is a doorway with a wall of the yard visible through it.',
+            marker: 'A stone frame standing in the yard of a Shrinking Earth Pavilion relay station, swept daily by the station staff because it is in the way of the cart line and they have always swept it. Nothing is in the frame. Standing anywhere in the yard, it is a doorway with a wall of the yard visible through it.',
             rumour: 'The couriers say the Span keeps it for the look of the thing and that the old house it came from opened a span it could not hold. Station staff say it is a nuisance and that the founder\'s wife would not let it be moved.',
-            attributedTo: 'The Unlit Gate House',
+            attributedTo: 'Nine Nether Hall',
             lastPartySaid: 'Nobody has gone in, because there is nothing to go into. The last person to take the frame seriously was a Span surveyor forty years ago who measured it, found it eleven fingers out of square, remeasured it from the other side and found it square, and did not write the second measurement down.',
             whatAKnowledgeablePartyReads: 'Thirty-one terminals, twenty-two closed and nine still answering, and this one is swept daily by people who do not know what they are sweeping. A frame that measures differently from two sides is not out of square. It is open, at a width nothing can pass, and it has been open the whole time.',
             whatAnIgnorantPartyConcludes: 'That an empty frame is a ruin with the interesting part missing. Everybody who has ever stood in that yard has walked through it without incident, which is the strongest possible evidence that nothing is there and is the reason nobody looks twice.',
@@ -907,7 +907,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         },
         interior: {
             chamber: 'Standing in the frame with the right comprehension, the yard on the far side is not the yard. It is a terminal hall, unlit, with thirty-one arches around it and a floor of unswept dust holding no footprints at all. Nine of the arches are answering. Four of those open somewhere a person can breathe. The claimant is in the hall and the yard is behind them at a width nothing can pass.',
-            setBy: 'The Unlit Gate House, which did not build a test and did not need to: a space house left its terminal hall open and let the frame do the sorting, on the reasoning that anybody who could see the hall was already somebody the house could talk to. The house went to war for eleven years and burned in a season, and the sorting has been running unattended for fourteen hundred years.',
+            setBy: 'Nine Nether Hall, which did not build a test and did not need to: a space house left its terminal hall open and let the frame do the sorting, on the reasoning that anybody who could see the hall was already somebody the house could talk to. The house went to war for eleven years and burned in a season, and the sorting has been running unattended for fourteen hundred years.',
             gates: [
                 {
                     kind: 'age_and_talent',
@@ -954,12 +954,12 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     // A room swept, left tidy, and still exactly as it was left. The art
                     // in it is the reason, and nobody who has catalogued the site has
                     // connected the two facts.
-                    'stillness-of-the-turning-year',
+                    'turning-year-stillness-art',
                     'gate-that-was-closed',
                 ],
                 other: [
                     'The house\'s terminal convention, on the hall floor, which is what makes the nine answering gates in the world usable rather than lethal by anyone who holds it.',
-                    'Four working terminals, and the standing ability to reach a courier yard in the Jade Gorge from wherever the other ends of them are. The Measured Span has spent nine hundred years and a great deal of money on the problem this solves.'
+                    'Four working terminals, and the standing ability to reach a courier yard in the Jade Gorge from wherever the other ends of them are. The Shrinking Earth Pavilion has spent nine hundred years and a great deal of money on the problem this solves.'
                 ],
                 immortalItemId: null
             },
@@ -987,7 +987,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             attributedTo: 'Whoever cut the ice curriculum the Frostmirror Court teaches out of, before the Court existed',
             lastPartySaid: 'The Court sends a party every eleven years as a matter of standing practice. Nine of the last twelve came back down having read the whole face and understood every word of it, and said so in identical language.',
             whatAKnowledgeablePartyReads: 'A curriculum in plain script on an open ledge, in a province where every institution hoards, and the sect that lives below it has been unable to use it for four hundred years despite reading it annually. Nothing is hidden. The obstacle is not the text.',
-            whatAnIgnorantPartyConcludes: 'That the Court is sitting on an open transmission out of institutional stupidity, and that a competent outsider could take it in an afternoon. Six outside parties have attempted it in living memory on exactly that reasoning.',
+            whatAnIgnorantPartyConcludes: 'That the Ward is sitting on an open transmission out of institutional stupidity, and that a competent outsider could take it in an afternoon. Six outside parties have attempted it in living memory on exactly that reasoning.',
             startingAwareness: 'named',
             advertisedOrdinal: null
         },
@@ -1019,7 +1019,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     below: 'A wuxing root that pushes past the fourth section on determination tears something in the fifth, and the tear is the ordinary meridian injury that the ordinary pill fixes if it is bought inside a season. Nobody has died on the ledge. Four people have come down with a permanent one because the Court\'s stipend does not cover the pill.'
                 }
             ],
-            howItKills: 'It does not kill and it never has, which is precisely why the Court can send a party every eleven years and why six outside parties have tried it. What it does is cost five weeks and, for the ones who push, the thing a torn meridian costs somebody who cannot afford sixty stones. The site\'s casualty record is entirely in the margins catalog and none of it looks like a trial death.',
+            howItKills: 'It does not kill and it never has, which is precisely why the Ward can send a party every eleven years and why six outside parties have tried it. What it does is cost five weeks and, for the ones who push, the thing a torn meridian costs somebody who cannot afford sixty stones. The site\'s casualty record is entirely in the margins catalog and none of it looks like a trial death.',
             prize: {
                 techniqueIds: ['void-tide-breathing-canon'],
                 other: [
@@ -1083,7 +1083,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             ],
             howItKills: 'By being forced. The array is not a defence and has none, but the inner door is cut into a Nine Peaks vein wall, and every party that has tried to open a vein wall by force in that province has learned what the Ascetic Order does about it. Two of the nine recorded attempts ended at the door; the other seven ended two days later on the Order\'s terms.',
             prize: {
-                techniqueIds: ['lifespring-of-the-jade-pool'],
+                techniqueIds: ['jade-pool-lifespring-art'],
                 other: [
                     'Her method, written out over nineteen years in the plainest prose in the catalog, on how to lay a foundation slowly in thin qi with nothing bought. It is worth almost nothing to anybody past Foundation and everything to the four-fifths of the world that will never leave it.',
                     'A chest of ordinary goods: her pills, her stones, her spare robe. She was not rich and did not pretend to be.'
@@ -1109,11 +1109,11 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whatIsDownThere: 'A room with a log in it. Nothing in it is dangerous, nothing is set for anybody and nothing has ever hurt a person who got inside, which is the honest reading and not a reassurance.',
             whatItDoesToSomebodyShortOfIt: 'Nothing at all. Girdle descendants have lived against the outside of this door for nine hundred years without it doing anything to any of them, and the cost of the site is entirely in what the log says once somebody is holding it.'
         },
-        factionIds: ['house-girdle-of-nine-stones', 'house-anchorhold', 'house-held-names'],
+        factionIds: ['house-nine-stone-array', 'house-immovable-mountain', 'house-jade-register'],
         outside: {
             marker: 'A door in the perimeter wall of the dead province, on the inside face, with no handle, no seam visible and no formation anybody has been able to read. Girdle descendants living at the perimeter have known it was a door for nine hundred years and have never seen it open.',
-            rumour: 'The descendants say it opens for a witness and will not say to what, because the answer they have is the family answer and has been repeated for thirty generations without being understood. The Anchorhold\'s standard lists the wall and does not list the door.',
-            attributedTo: 'The Girdle of Nine Stones',
+            rumour: 'The descendants say it opens for a witness and will not say to what, because the answer they have is the family answer and has been repeated for thirty generations without being understood. Immovable Mountain Temple\'s standard lists the wall and does not list the door.',
+            attributedTo: 'Nine Stone Array',
             lastPartySaid: 'Nobody goes. There is no attempt record because there is nothing to attempt: parties arrive, find a flat piece of wall that is known to be a door, and leave.',
             whatAKnowledgeablePartyReads: 'A house whose principle was fixity, destroyed by a house that broke its nail and then wrote the history, left a door on the inside face of the wall the argument was about. What such a house wants preserved is testimony, and what it built to preserve it is not going to accept a testifier the surviving house could have arranged.',
             whatAnIgnorantPartyConcludes: 'That it is a sealed door on a dead perimeter and that the seal is the problem. Four formation readers have been paid to look at it in the last century and all four reported that there is nothing there to read, which is correct.',
@@ -1130,7 +1130,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     worldStateCheck: 'Was the claimant present at an event that a surviving institution has since given an official account of, and does the claimant appear nowhere in that account? Both halves are required. The door is not looking for a witness; it is looking for a witness who was left out, which is a fact about somebody else\'s paperwork.',
                     characterStat: null,
                     whyItCannotBeFarmed: 'The second half destroys itself the moment it is pursued. Being absent from an official record is not an achievement a person can work towards, because any action taken to secure it is itself the kind of action that gets recorded, and the institutions that write these accounts write them about the people who were doing things. The claimants who satisfy it are the ones who were standing somewhere when something happened and were not important enough to name, and a cultivator who has arranged to be unimportant at a specific event has been noticed arranging it.',
-                    whoHasEverPassed: 'Twice in nine hundred years, and neither of them was looking for the door. One was a Girdle descendant who had been at a perimeter failure the Anchorhold wrote up without mentioning the perimeter staff. The other was a caravan cook.',
+                    whoHasEverPassed: 'Twice in nine hundred years, and neither of them was looking for the door. One was a Girdle descendant who had been at a perimeter failure the Immovable Mountain Temple wrote up without mentioning the perimeter staff. The other was a caravan cook.',
                     below: 'The wall is a wall. There is no reaction, no partial opening and no indication that the claimant was assessed, which is why the descendants have a family answer they cannot check.'
                 }
             ],
@@ -1140,7 +1140,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     // A door that opens for somebody a house wrote an account of without
                     // troubling to name, holding the art for taking a name back. The
                     // pairing is not commented on anywhere in the room.
-                    'unsaying-of-a-given-name',
+                    'name-erasing-art',
                     'nameless-witness-stance',
                     // The art that makes a person act, in the one room in the
                     // world whose whole subject is what a person said and
@@ -1153,11 +1153,11 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                 ],
                 other: [
                     'The duty log of the four days, in the Girdle\'s hand, which is the only document in the world that establishes the containment was intact when the eastern nail was broken.',
-                    'The names of the perimeter staff, which the House of Held Names does not have and which the descendants at the wall have been unable to claim rank on for nine hundred years.'
+                    'The names of the perimeter staff, which the Jade Register Hall does not have and which the descendants at the wall have been unable to claim rank on for nine hundred years.'
                 ],
                 immortalItemId: null
             },
-            afterwards: 'The door shuts and does not open for the same person twice. The log stays where it is, because it is cut into the wall, so what a claimant leaves with is what they can carry in their head and the ability to say they read it, which the Anchorhold will contest and cannot disprove.'
+            afterwards: 'The door shuts and does not open for the same person twice. The log stays where it is, because it is cut into the wall, so what a claimant leaves with is what they can carry in their head and the ability to say they read it, which the Immovable Mountain Temple will contest and cannot disprove.'
         }
     },
     {
@@ -1174,12 +1174,12 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whatIsDownThere: 'A filing room. Several thousand live obligations with nobody holding them, in a brick vault under a working yard, and not one thing in it that was ever meant to injure a person.',
             whatItDoesToSomebodyShortOfIt: 'Nothing, and it cannot be forced either, so a mortal and an immortal get exactly the same result from trying. The danger at this site is all downstream of holding the position, which is a thing a person acquires rather than survives.'
         },
-        factionIds: ['house-tally-court', 'house-unbroken-tally', 'house-ninefold-ledger'],
+        factionIds: ['house-iron-tally-court', 'house-vermilion-seal', 'house-ninefold-karma'],
         outside: {
             marker: 'A vault head in the eastern towns, brick, in the corner of a yard behind a dyer\'s, with the surround cut in a pattern the dyer\'s family has repainted for six generations without knowing it is writing.',
             rumour: 'The towns say the branded families keep something in the yard, which the branded families deny, and the denial is honest: they know the vault is there and none of them has ever been able to open it.',
-            attributedTo: 'The Tally Court',
-            lastPartySaid: 'The Ninefold Ledger surveyed the yard forty years ago on an unrelated audit, recorded the vault head as a disused cistern, and moved on. Nobody has attempted it since, because the Ledger said it was a cistern.',
+            attributedTo: 'Iron Tally Court',
+            lastPartySaid: 'Ninefold Karma Palace surveyed the yard forty years ago on an unrelated audit, recorded the vault head as a disused cistern, and moved on. Nobody has attempted it since, because the Karma Pavilion said it was a cistern.',
             whatAKnowledgeablePartyReads: 'A karma house that was ended left standing oaths behind it, and an oath sworn to a party that no longer exists does not lapse, it simply has nobody to discharge it to. A vault in the middle of the bloodline that inherits an unidentifiable obligation is where the other end of those oaths is kept.',
             whatAnIgnorantPartyConcludes: 'That it is a cistern, on the authority of the institution best placed to know, which is a reasonable thing to believe and is the reason the vault has been sitting behind a dyer\'s for two thousand three hundred years.',
             startingAwareness: 'unaware',
@@ -1187,7 +1187,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         },
         interior: {
             chamber: 'Four steps down into a dry brick chamber with racking on three walls and, on the racking, oath tokens. Several thousand of them, each one a physical object somebody swore on, each still current, none of them discharged, all of them owed to a house that has not existed since before the current calendar.',
-            setBy: 'The Tally Court, as ordinary business. This is not a treasury and was never a trial; it is the filing room for a class of obligation the house held, and it is shut to everybody because the house that could open it was dissolved and the lock is the house.',
+            setBy: 'Iron Tally Court, as ordinary business. This is not a treasury and was never a trial; it is the filing room for a class of obligation the house held, and it is shut to everybody because the house that could open it was dissolved and the lock is the house.',
             gates: [
                 {
                     kind: 'fate',
@@ -1199,10 +1199,10 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     below: 'The steps are not there. From the yard it is a brick surround over filled ground, and a claimant who does not carry the obligation can dig it out and find soil, which two people have done.'
                 }
             ],
-            howItKills: 'It does not kill and it cannot be forced, and the danger is entirely downstream. Several thousand current oaths with no holder is not treasure; it is a position, and the party that holds it can call on obligations that predate every institution now standing. The Ninefold Ledger was founded by the auditors who ended the Tally Court and holds nine sealed volumes on the subject, and it would arrive.',
+            howItKills: 'It does not kill and it cannot be forced, and the danger is entirely downstream. Several thousand current oaths with no holder is not treasure; it is a position, and the party that holds it can call on obligations that predate every institution now standing. Ninefold Karma Palace was founded by the auditors who ended the Iron Tally Court and holds nine sealed volumes on the subject, and it would arrive.',
             prize: {
                 // No technique. A karma house filed obligations here rather than
-                // arts, and the third Tally Court fragment is grave-only in
+                // arts, and the third Iron Tally Court fragment is grave-only in
                 // `techniques.ts`, which a trial is not.
                 techniqueIds: [],
                 other: [
@@ -1228,13 +1228,13 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whatIsDownThere: 'A stone box on a plinth just inside an open threshold, closed for six hundred years and not locked. The elder who put it here wrote down that he did not want a guarded thing, he wanted an unspendable one.',
             whatItDoesToSomebodyShortOfIt: 'Nothing whatever. Anybody can walk in, and anybody can put both hands on the box, and the six hundred years of it staying shut are six hundred years of people who could have opened it deciding on the threshold that they would rather have it.'
         },
-        factionIds: ['sect-azure-cloud-pavilion', 'sect-the-severed', 'house-narrow-hour'],
+        factionIds: ['sect-azure-cloud-pavilion', 'sect-the-severed', 'house-flowing-light'],
         outside: {
             marker: 'A cut chamber mouth high on a spur above the Pavilion\'s outer holdings, open, unsealed, with a stone box on a plinth just inside the threshold and nothing else visible from outside. The box is closed. It has been closed for six hundred years and it is not locked.',
             rumour: 'The Pavilion knows about it, has sent people, and describes it in its own records as an empty cave with a box in it that will not open. Outer disciples are told the story as an example of how much of the world is nothing.',
             attributedTo: 'A Pavilion elder who was given something and gave it back',
             lastPartySaid: 'A Pavilion inner disciple went up nine years ago with a stated intention to break the box, which is on the record because she filed the intention. She came down having not broken it and having declined to say why.',
-            whatAKnowledgeablePartyReads: 'The Pavilion holds seven of the nine known lower-grade Unearned Steps, is the deepest stock in the world, and has a six-hundred-year-old cave above its own holdings with an unlocked box in it that its own people cannot open. An institution that holds seven does not leave an eighth in a cave by accident. Somebody refused one, and what is in the box is the refusal.',
+            whatAKnowledgeablePartyReads: 'The Pavilion holds seven of the nine known lower-grade Heaven-Ascending Golden Pills, is the deepest stock in the world, and has a six-hundred-year-old cave above its own holdings with an unlocked box in it that its own people cannot open. An institution that holds seven does not leave an eighth in a cave by accident. Somebody refused one, and what is in the box is the refusal.',
             whatAnIgnorantPartyConcludes: 'That an unlocked box that will not open is a formation problem, and that the Pavilion has failed to solve it because the Pavilion is complacent. Every party that has gone up has arrived holding that sentence.',
             startingAwareness: 'whisper',
             advertisedOrdinal: null
@@ -1249,20 +1249,20 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     worldStateCheck: 'Has the claimant refused an offer that would have advanced them, from a party in a position to make it, and is the refusal on somebody\'s record? The box reads a recorded refusal - the kind `immortal-items.ts` calls a recorded refusal, held by the party who was turned down rather than by the one who did the turning.',
                     characterStat: null,
                     whyItCannotBeFarmed: 'Because the offer is not the claimant\'s to arrange. Somebody with standing has to have decided to advance them and been told no, and a cultivator cannot cause the first half: the parties who make such offers make them for their own reasons, rarely, to people they have already chosen. What a player controls is only the answer, and the answer is only available to somebody who was asked. Manufacturing the ask - arranging to be offered something in order to decline it - has been attempted once, by somebody who understood the box, and the party making the offer withdrew it when the arrangement became apparent, which is what such parties do.',
-                    whoHasEverPassed: 'One person in six hundred years, who was not looking for the cave and had refused a placement from the Ninefold Ledger eleven years earlier over something unrelated.',
+                    whoHasEverPassed: 'One person in six hundred years, who was not looking for the cave and had refused a placement from the Ninefold Karma Palace eleven years earlier over something unrelated.',
                     below: 'The box does not open, cannot be broken, and is not protected. Parties have taken it away with them; it is a stone box a hundred paces down the spur and it still does not open, and eventually somebody carries it back up because carrying it down was the whole of the idea.'
                 }
             ],
-            howItKills: 'It does not, and the elder was specific about that in the note: he did not want a guarded thing, he wanted an unspendable one. The cost is entirely in what opening it makes true about the claimant, because the Pavilion knows what is in the box and will know within a season who has it, and the House of the Narrow Hour has had a standing sighting on the cave for four hundred years.',
+            howItKills: 'It does not, and the elder was specific about that in the note: he did not want a guarded thing, he wanted an unspendable one. The cost is entirely in what opening it makes true about the claimant, because the Pavilion knows what is in the box and will know within a season who has it, and the Flowing Light Tower has had a standing sighting on the cave for four hundred years.',
             prize: {
                 techniqueIds: [
                     // A door that opens only for somebody who refuses it, holding the art
                     // for returning a chooser to the doorway. Whoever set this was
                     // making a point and left no note explaining it.
-                    'the-hour-that-was-not-taken',
+                    'hour-reversing-art',
                 ],
                 other: [
-                    'A lower-grade Unearned Step, unspent, which is the object `immortal-items.ts` says never appears in an inheritance and which is here for the only reason that rule allows: it was not left as a prize, it was put down by somebody who did not want it, and the box is not a cache because there is not and never will be a second one.',
+                    'A lower-grade Heaven-Ascending Golden Pill, unspent, which is the object `immortal-items.ts` says never appears in an inheritance and which is here for the only reason that rule allows: it was not left as a prize, it was put down by somebody who did not want it, and the box is not a cache because there is not and never will be a second one.',
                     'The elder\'s four lines, which are the only first-hand account in either province of being offered one and declining, written by the person who did it.'
                 ],
                 immortalItemId: null
@@ -1289,10 +1289,10 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         factionIds: ['sect-bone-lantern-cult', 'sect-lantern-hall'],
         outside: {
             marker: 'A cleared circle in the burn zone, forty paces across. The burnt floor inside it has not been disturbed since the catastrophe and the burnt floor outside it is walked flat. Nothing grows in either. Crews have used the edge as a landmark for four generations and none of them steps in, for reasons nobody in the Silent Cliffs has ever been able to state.',
-            rumour: 'Gleaners say the circle takes people and that it is one of the honest hazards, meaning one that does not pretend. The Bone Lantern Cult has sent parties and describes it, in its own vocabulary, as ground that is still owed something.',
+            rumour: 'Fallen Grain Caravan say the circle takes people and that it is one of the honest hazards, meaning one that does not pretend. The Bone Lantern Cult has sent parties and describes it, in its own vocabulary, as ground that is still owed something.',
             attributedTo: null,
             lastPartySaid: 'Six people have walked into the circle in recorded memory. Five of them walked out, unhurt, within a minute, and reported that there was nothing there. The sixth did not come out and there is no body.',
-            whatAKnowledgeablePartyReads: 'Five out of six is not a hazard and it is not a trial either. It is a filter with a very narrow acceptance, and the one who did not come out was the one it accepted. Everything the Gleaners avoid it for is wrong, and the reason it is not more dangerous is that it is almost never interested.',
+            whatAKnowledgeablePartyReads: 'Five out of six is not a hazard and it is not a trial either. It is a filter with a very narrow acceptance, and the one who did not come out was the one it accepted. Everything the Fallen Grain Caravan avoid it for is wrong, and the reason it is not more dangerous is that it is almost never interested.',
             whatAnIgnorantPartyConcludes: 'That the five who walked out prove it is empty and the sixth had bad luck, which is the reading five of the six themselves gave and is why the Cult has stopped sending parties.',
             startingAwareness: 'whisper',
             advertisedOrdinal: null
@@ -1318,7 +1318,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     // for, holding the art for unsetting a mark somebody set
                     // on purpose. Every claim in the room is resting on a line
                     // and the thing behind the door dissolves lines.
-                    'unfixing-of-the-set-mark',
+                    'boundary-loosening-art',
                     'severed-fate-mending-art'
                 ],
                 other: [
@@ -1401,7 +1401,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     // The art for taking the qi out of a place, in a station built to
                     // measure how much of it a branch was carrying. Whoever shelved it
                     // here filed it with the surveys rather than with the weapons.
-                    'quenching-of-the-standing-air',
+                    'standing-air-quenching-art',
                     'abyssal-gate-torrent', 'dragonbone-severing-decree',
                 ],
                 other: [
@@ -1468,7 +1468,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             howItKills: 'By the ground, and only by the ground. Nothing on this site is hostile, nothing is concealed and nothing was set for anybody: a claimant walks in, begins reading, spends at a rate they have not budgeted for because the ring gives nothing back, and sits down. Six bodies have been recovered inside the ring in four hundred years and every one of them was found sitting, upright, facing a stone, at a distance from the line they could have walked twice over on the morning they arrived.',
             prize: {
                 techniqueIds: [
-                    'calamity-word-of-the-open-sky',
+                    'open-sky-calamity-word',
                     // Four faces looking inward, and the art in the room with
                     // them is the one for making a second body. Whoever set
                     // this did not think that needed explaining.
@@ -1476,7 +1476,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                 ],
                 other: [
                     'Four names, four dates and four ranks at the moment of attempt, cut small at the foot of each face, which is a better record of what the last crossing takes than anything the Long Cut has ever published.',
-                    'The plain fact that the four hands agree, which is worth more to the House of Held Names than the art is, and which the Long Cut would prefer stayed on the stones.'
+                    'The plain fact that the four hands agree, which is worth more to the Jade Register Hall than the art is, and which the Long Cut would prefer stayed on the stones.'
                 ],
                 immortalItemId: null
             },
@@ -1501,7 +1501,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whyItRefusesPower: 'A cultivator past Foundation Establishment reads to the ward as something very large and very hungry, and the ward does what it was built to do about something large and hungry, which is fold the beds down into the ground and stay folded until the thing goes away. Nothing is destroyed and nobody is attacked. The garden simply is not there any more.',
             soWhoGoesInstead: 'The Hall\'s youngest, which the Hall has been doing without knowing why for a hundred and ten years: the standing instruction is that the walled ground is a task for a first-year, everyone assumes it is because the work is menial, and it is the only reason the Hall gets anything out of it at all.'
         },
-        factionIds: ['sect-frostmirror-court', 'house-measured-span'],
+        factionIds: ['sect-frostmirror-court', 'house-shrinking-earth'],
         outside: {
             marker: 'A dry-stone wall about chest height enclosing rather more ground than a garden needs, with a gate that has rotted off its hangings and been left where it fell. Inside, eleven long beds are still visible as ridges under the grass, and the grass over them is a different colour from the grass everywhere else.',
             rumour: 'The valley calls it the old physic wall and says the beds went over to weeds four generations back. Herb crews cut through it as a shortcut and have never once brought anything out of it, which everybody treats as settled evidence.',
@@ -1564,7 +1564,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whyItRefusesPower: 'Weight here is not a number in a ledger, it is a load on stone. A cultivator past Deity Transformation does not walk on a floor so much as press on it, and the slab over the shaft head has about the margin a two-hundred-year-old slab has. Three parties have gone through it and the shaft under it is four hundred paces of nothing.',
             soWhoGoesInstead: 'Whoever in the party is smallest, roped, with everybody heavy standing on the gallery side of the door. This is the ordinary practice of every survey house and it is written into the Deep Survey\'s own procedure, which does not explain why and does not have to.'
         },
-        factionIds: ['house-anchorhold', 'house-measured-span'],
+        factionIds: ['house-immovable-mountain', 'house-shrinking-earth'],
         outside: {
             marker: 'A door in the side of a dry gallery, propped, with a working floor visible beyond it and a rope still tied off to the frame. The rope goes through the doorway and down, which is not where a rope for a floor goes. There is a chalk line across the threshold that somebody has redrawn several times.',
             rumour: 'Gallery crews say the old cut behind that door was worked out before anybody\'s grandfather and that the floor is safe because people have walked it for two hundred years. Both halves are true and they are not the same claim.',
@@ -1627,7 +1627,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whyItRefusesPower: 'The door does not refuse power, it does not know what power is. It knows tokens, and a token was a thing carried by somebody at the bottom of a house that issued them to its intake and to nobody above Qi Condensation, because above Qi Condensation you sent somebody. A Nascent Soul cultivator standing at that door is standing in front of a mechanism with no concept she fits into.',
             soWhoGoesInstead: 'Somebody\'s errand-runner, exactly as it always was. Two houses have worked this out and both of them handle it the same way, which is to hand a token to their newest intake and to tell them nothing, and one of those houses has been doing it for sixty years.'
         },
-        factionIds: ['sect-nine-peaks-ascetic-order', 'house-ninefold-ledger'],
+        factionIds: ['sect-nine-peaks-ascetic-order', 'house-ninefold-karma'],
         outside: {
             marker: 'A store front built into a bank at the edge of a compound that has otherwise fallen in, with a slot beside the door at about the height of a boy\'s chest and a shallow dish worn into the stone underneath it. The door is intact, the lintel is intact, and the roof of everything behind it is on the floor.',
             rumour: 'Locals say the stores at the old compound were emptied within a month of the sect going and that the last door is stuck. The children of the two nearest villages have been putting things in the slot for as long as anybody remembers, on a dare, and nothing has ever happened.',
@@ -1696,7 +1696,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whoTheyGoFor: 'The junior the reader is bringing up, because a reading room is not a thing an elder needs and is exactly the thing somebody two realms below them is stopped for want of.',
             whatComesBackForThatPerson: 'A road. What is on the shelves is the working notes of a house that thought in one particular direction for two hundred years, which is the sort of thing that gives somebody a way of seeing they did not have and cannot be handed a technique for.'
         },
-        factionIds: ['house-tally-court', 'sect-sweptground-temple'],
+        factionIds: ['house-iron-tally-court', 'sect-sweptground-temple'],
         outside: {
             marker: 'A fallen hall on a low rise with a chimney of settled rubble at one corner that goes down rather than in, and a draught coming out of it that does not vary with the weather and has not varied within living memory. The rubble around the mouth is polished on the underside where things have been dragged out of it.',
             rumour: 'The Temple lists it as a collapsed hall and has done for eight centuries. The draught is well known and is generally explained as a cave under the rise, which is a reasonable explanation and is the one the Temple prefers.',
@@ -1899,7 +1899,7 @@ export const GRAVES: readonly Grave[] = [
             whoTheyGoFor: 'Anybody the crosser intends to outlive them, which after a failed crossing is the only reason left to walk onto ground that took the person who made it.',
             whatComesBackForThatPerson: 'What fell out of a hand. There is no body, no pouch and nothing anybody arranged, and it is the shortest list in the world and the best one.'
         },
-        factionIds: ['court-ninth-face', 'sect-weir-office'],
+        factionIds: ['court-ninth-face', 'sect-clearwater-ward'],
         occupantOrdinal: 44,
         yearsDead: 90,
         mannerOfDeath: 'failed_crossing',
@@ -1908,7 +1908,7 @@ export const GRAVES: readonly Grave[] = [
             marker: 'Eleven li of high ground that has not held qi in ninety years and will not again. There is no stone, no name and no mound, because there is nothing to put one over. The boundary of it is exact and visible from a distance in the way the vegetation stops.',
             rumour: 'The Silent Cliffs knows what it is. It is the most recent attempt anybody in either province can date and everybody local can point at it, and what they will tell you is that a person went up there alone one spring and the sky came down on her.',
             attributedTo: 'Yun Baiheng',
-            lastPartySaid: 'Nobody has organised an entry, because there is no entry. Gleaners walk the scar every few years on the way to somewhere else and pick things up off the surface, which is exactly the correct method and none of them thinks of it as a dig.',
+            lastPartySaid: 'Nobody has organised an entry, because there is no entry. Fallen Grain Caravan walk the scar every few years on the way to somewhere else and pick things up off the surface, which is exactly the correct method and none of them thinks of it as a dig.',
             whatAKnowledgeablePartyReads: 'A failed crossing leaves no body and almost no goods, and everything still lying on that ground went through the heaviest event that occurs anywhere in the world and is still an object. There are perhaps three things on eleven li of ground. Each of them is warranted by the only test that is not somebody\'s opinion, and no forge, no assay house and no auction in either province can issue the equivalent claim about anything.',
             whatAnIgnorantPartyConcludes: 'That eleven li of dead ground with three things on it is a poor site, which by count and by weight it is, and that the interment forty days south with a maintained stone front is where the money is. Every party that has had to choose between the two has chosen the interment.',
             startingAwareness: 'named',
@@ -1945,7 +1945,7 @@ export const GRAVES: readonly Grave[] = [
                 {
                     what: 'A case of the court\'s own manufacture, closed, containing the countersigned authorisation for the attempt and nothing else. She was carrying the paperwork.',
                     proven: true,
-                    survived: 'The crossing, closed, which the Weir Office has been told about and has never been able to get the Long Cut to acknowledge in writing.',
+                    survived: 'The crossing, closed, which the Clearwater Ward has been told about and has never been able to get the Long Cut to acknowledge in writing.',
                     techniqueId: null,
                     immortalItemId: null
                 }
@@ -1970,14 +1970,14 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'Two hundred paces of moor fused to a depth nobody has dug through, four hundred years old, with a body lying on top of it that was never buried and is the first thing every account of the site mentions.',
             whatItDoesToSomebodyShortOfIt: 'The residue is still in the ground and still discharging into anything that crosses it slowly enough. Below Nascent Soul a person gets about as far as the fused edge before what is left in the moor finishes what the lightning started.'
         },
-        factionIds: ['sect-storm-tyrant-court', 'house-ninefold-ledger'],
+        factionIds: ['sect-storm-tyrant-court', 'house-ninefold-karma'],
         occupantOrdinal: 40,
         yearsDead: 410,
         mannerOfDeath: 'heavenly_tribulation',
         burial: 'left_where_they_fell',
         outside: {
             marker: 'A tribulation scar about two hundred paces across on a shoulder of open moor, four hundred years old, with the ground inside it fused to a depth nobody has dug through. There is a body in it, visible, not buried, which is the part every account of the site opens with.',
-            rumour: 'It is on the local maps as the burned man. The Ninefold Ledger holds the name in its ledgers and has never released it, and the Storm Tyrant Court has twice asked for it and been refused on a procedural ground.',
+            rumour: 'It is on the local maps as the burned man. Ninefold Karma Palace holds the name in its ledgers and has never released it, and the Storm Tyrant Court has twice asked for it and been refused on a procedural ground.',
             attributedTo: null,
             lastPartySaid: 'Nine parties are recorded. The most recent, sixty years ago, was four people who said the sensible thing: that a Grand Ascension cultivator struck at the last boundary would have been carrying everything and that four centuries of weather is not enough to move it.',
             whatAKnowledgeablePartyReads: 'He was struck going into Tribulation Transcendence, which means he was at Grand Ascension Rising Dao and carrying a lifetime, and it means the lightning had all of it. Whatever is still on that ground is what forty thousand years of accumulated everything could not put in front of it fast enough. There will be two or three things and they will be extraordinary, and the reason nine parties have come away with nothing is that they were looking for a hoard.',
@@ -1992,7 +1992,7 @@ export const GRAVES: readonly Grave[] = [
                 {
                     kind: 'strength',
                     ordinal: 29,
-                    test: 'The fused ground still discharges. Four hundred years on it holds a residual that lifts and earths itself through anything crossing the last thirty paces to the body, in irregular events, at a measured output that the Ledger surveyed once and recorded.',
+                    test: 'The fused ground still discharges. Four hundred years on it holds a residual that lifts and earths itself through anything crossing the last thirty paces to the body, in irregular events, at a measured output that the Karma Pavilion surveyed once and recorded.',
                     below: 'Under Void Refinement the discharge is lethal on a bad interval and crippling on a good one, and the intervals are not periodic and have never been predicted by anybody. Three of the nine parties lost people to it and all three were working the outer pits when it happened, which is why the pits are where they are: nobody has ever got closer.',
                     noWorkaround: 'Insulation does not work, because what earths through a body earths through whatever the body is standing in. Two parties have tried approaching along a laid conductor and both discovered that the conductor is a better route than the ground and that they were standing on it.'
                 }
@@ -2003,11 +2003,11 @@ export const GRAVES: readonly Grave[] = [
                     what: 'A second slip in his left hand, unremarked in every account of the site, on a method for taking a piece of ground out of the world for an hour. It is the more useful of the two and nobody has ever mentioned it.',
                     proven: true,
                     survived: 'The tribulation that ended him, in his closed left hand, which is the only warranty any object in this world can carry and is one no forge can issue.',
-                    techniqueId: 'sealed-field-of-the-shut-hour',
+                    techniqueId: 'shut-hour-sealing-field',
                     immortalItemId: null
                 },
                 {
-                    what: 'A jade slip in his right hand, whole, containing a chaos-grade art that no institution below the Lid can transmit and that the Ledger\'s own index does not list.',
+                    what: 'A jade slip in his right hand, whole, containing a chaos-grade art that no institution below the Lid can transmit and that the Karma Pavilion\'s own index does not list.',
                     proven: true,
                     survived: 'The tribulation at the last mortal boundary, in a closed hand, which is a warranty nobody in either province can issue about anything and the reason a single slip off this scar is worth more than the eleven-man haul out of a maintained interment.',
                     techniqueId: 'kalpa-fire-that-eats-heaven',
@@ -2022,7 +2022,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'It destroyed a lifetime at Grand Ascension and left two objects touching a hand. Everything a cultivator at ordinal forty owns, and there is no way to overstate that quantity, went through the boundary tribulation and did not come out, including the contents of a storage ring that itself came out. Two items. Both proven. That ratio is the rule this catalog is built on and this is the cleanest instance of it.',
-            afterwards: 'The residual is not diminishing at any measurable rate and the body is not decaying. Whoever takes the two things leaves a site that is exactly as dangerous and has nothing on it, which the Ledger will know within a season because the Ledger holds the name and has been watching who asks for it.'
+            afterwards: 'The residual is not diminishing at any measurable rate and the body is not decaying. Whoever takes the two things leaves a site that is exactly as dangerous and has nothing on it, which the Karma Pavilion will know within a season because the Karma Pavilion holds the name and has been watching who asks for it.'
         }
     },
 
@@ -2067,7 +2067,7 @@ export const GRAVES: readonly Grave[] = [
                     coincidence: 'bloodline',
                     worldStateCheck: 'Does the claimant descend from the occupant? The leaf reads descent and nothing else - not clan membership, not adoption, not a name, not the clan mark, and not the current clan head, who is not descended from this ancestor and has never been able to open it.',
                     characterStat: null,
-                    whyItCannotBeFarmed: 'Because descent is settled before the run begins and there is no procedure anywhere in the world that produces it. It cannot be bought, forged, married into or earned; the House of Held Names, which is the institution best placed to fake one, holds that a register entry is a claim about descent rather than descent itself and has never asserted otherwise even when it was being paid to. What can be done is finding out that you have it, which several people have, and one of them was working as a porter at a barrow yard four hundred li away.',
+                    whyItCannotBeFarmed: 'Because descent is settled before the run begins and there is no procedure anywhere in the world that produces it. It cannot be bought, forged, married into or earned; the Jade Register Hall, which is the institution best placed to fake one, holds that a register entry is a claim about descent rather than descent itself and has never asserted otherwise even when it was being paid to. What can be done is finding out that you have it, which several people have, and one of them was working as a porter at a barrow yard four hundred li away.',
                     whoHasEverPassed: 'Nine people in two hundred and forty years, all of them clan, all of them descended, and none of them has ever taken anything out, because the custom is that the vault is the ancestor and the ancestor is not divisible.',
                     below: 'Nothing. The leaf is a slab of stone with a mark on it and the clan holds meetings standing on it, and a party without the descent can dig the hall out from around it and be looking at a slab of stone in a hole.'
                 }
@@ -2149,7 +2149,7 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'A low walled plot at the top of a terraced herb valley with ten physicians in it, nine of them ordinary Hall interments and one with a longer stone. Nothing here was ever set against anybody.',
             whatItDoesToSomebodyShortOfIt: 'Nothing, and the plot is walked into by the Hall\'s own students on the ordinary rounds. The eleven lines on the long stone are the whole of the site and they can be read by anybody standing in front of them, which is why the site has been open for a century and has not been taken.'
         },
-        factionIds: ['sect-verdant-spring-hall'],
+        factionIds: ['sect-verdant-spring-valley'],
         occupantOrdinal: 15,
         yearsDead: 70,
         mannerOfDeath: 'died_of_injuries',
@@ -2258,10 +2258,10 @@ export const GRAVES: readonly Grave[] = [
             floorOrdinal: 8,
             ceilingOrdinal: 24,
             whatReadsThePerson: 'The gap the Company left when it put the wall back by hand, which is a crawl about the width of a sorting hatch and was never meant to be a door at all.',
-            whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Gleaners have died going in the correct way round and one very strong outsider has died going in sideways.',
+            whyItRefusesPower: 'A cultivator past Nascent Soul does not fit a crawl in the sense that matters: the field a body at that height carries is larger than the body, and a hole cut for a body reads it as the wall and closes on it. Two Fallen Grain Caravan have died going in the correct way round and one very strong outsider has died going in sideways.',
             soWhoGoesInstead: 'The Company sends its own small people, which is a sentence the Company would object to and is exactly what the wager board records: everybody whose name is on it went in at Foundation or under, and the amount is still written next to his.'
         },
-        factionIds: ['sect-gleaners-company', 'sect-weir-office'],
+        factionIds: ['sect-fallen-grain-caravan', 'sect-clearwater-ward'],
         occupantOrdinal: 12,
         yearsDead: 30,
         mannerOfDeath: 'killed_in_a_fight',
@@ -2341,7 +2341,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing, and the sealed room preserved it. He was killed in a fight in an enclosed space thirty years ago, so his kit is a thirty-year-old kit in good condition, none of it tested by anything except the six paces he got, and the most valuable object in the inventory is eleven characters he copied off a wall on the way past.',
-            afterwards: 'The Company would have to decide what a recovery was, and the Weir Office would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later. What is deeper in the building is unaffected by any of this and is not in this catalog.'
+            afterwards: 'The Company would have to decide what a recovery was, and the Clearwater Ward would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later. What is deeper in the building is unaffected by any of this and is not in this catalog.'
         }
     },
     {
@@ -2358,14 +2358,14 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'A dry overhang with a person under it who sat down against the rock and did not get up. There is no cutting, no cairn and no arrangement of any kind, and weather has done everything that has been done to the site.',
             whatItDoesToSomebodyShortOfIt: 'Nothing, which is precisely the problem: what closes this site is four days off the nearest track in either direction, and distance charges the same to a villager and to a Grand Ascension cultivator who does not know it is there.'
         },
-        factionIds: ['house-ninefold-ledger', 'sect-bone-lantern-cult'],
+        factionIds: ['house-ninefold-karma', 'sect-bone-lantern-cult'],
         occupantOrdinal: 33,
         yearsDead: 600,
         mannerOfDeath: 'died_of_injuries',
         burial: 'left_where_they_fell',
         outside: {
             marker: 'A dry overhang on a spur that is not on any route and is four days from the nearest track, with a person under it who sat down against the rock and did not get up. There is no cutting, no cairn and no arrangement of any kind. Weather has done everything that has been done to the site.',
-            rumour: 'There is none, because nobody knows it is there. Two claims of this kind of find have been made in four hundred years, both were established as forgeries by the Ninefold Ledger, and the effect on the third claim is the obvious one.',
+            rumour: 'There is none, because nobody knows it is there. Two claims of this kind of find have been made in four hundred years, both were established as forgeries by the Ninefold Karma Palace, and the effect on the third claim is the obvious one.',
             attributedTo: null,
             lastPartySaid: 'Nobody. There is no attempt record, no camp, no pit and no path. Whoever finds it will be the first party to stand there in six hundred years.',
             whatAKnowledgeablePartyReads: 'That everything about the site is wrong for a planted one. A forgery is placed where people look, because a forgery has to be found; this is four days from a track on a spur with no reason to be walked. The correct reading is available only to somebody standing there, which is the whole difficulty with the category.',
@@ -2383,7 +2383,7 @@ export const GRAVES: readonly Grave[] = [
                     worldStateCheck: 'Did the claimant reach this site while doing something else? The condition is on the arrival rather than on the claimant: the site is four days off any route and has no rumour attached, so a party that got here was going somewhere else, was lost, or was following something. A party that came looking for it did not come looking for this one, because this one has never been described to anybody.',
                     characterStat: null,
                     whyItCannotBeFarmed: 'Because searching for it is what makes it not be found. There is no rumour to follow and no record to consult; the two claims in four hundred years were both forgeries and forgeries are planted where searchers go, so the entire effect of deciding to look for one of these is to arrive at the places somebody has arranged for searchers to arrive at. The Bone Lantern Cult works more graves than anybody, states plainly that it has never seen one, and does not expect to, and it is not saying that out of modesty.',
-                    whoHasEverPassed: 'Twice in recorded history, on the Ledger\'s own count, and both times by somebody who was not in the business of finding one.',
+                    whoHasEverPassed: 'Twice in recorded history, on the Karma Pavilion\'s own count, and both times by somebody who was not in the business of finding one.',
                     below: 'Not applicable in the ordinary way. There is no door and nothing refuses anybody: the gate is whether the claimant is ever standing here at all, and for almost every run in the world the answer is no and there is nothing to be told.'
                 }
             ],
@@ -2424,7 +2424,7 @@ export const GRAVES: readonly Grave[] = [
                     proven: false,
                     survived: null,
                     techniqueId: null,
-                    immortalItemId: 'immortal-unearned-step'
+                    immortalItemId: 'immortal-heaven-ascending-golden-pill'
                 },
                 {
                     what: 'A sword, good, ordinary for the rank, with the wear of somebody who used it.',
@@ -2442,7 +2442,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing at all. He died of injuries under an overhang, so the inventory is full, ordinary, untested and long, and the object that matters is the fourth item in a list of six and looks like the least interesting thing there. This is the one entry where the catalog\'s own rule is the wrong tool: the inventory is intact and unproven exactly as the rule predicts, and the rule says nothing about the box, because nothing in the world tests one of those either.',
-            afterwards: 'The Ledger opens a lineage audit on anybody who spends one without being able to say where it came from, and it will not accept this account, because it has heard this account twice and established both as forgeries. The correct move is not to spend it, which nobody has ever managed.'
+            afterwards: 'The Karma Pavilion opens a lineage audit on anybody who spends one without being able to say where it came from, and it will not accept this account, because it has heard this account twice and established both as forgeries. The correct move is not to spend it, which nobody has ever managed.'
         }
     },
     {
@@ -2459,15 +2459,15 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'Two cairns eleven paces apart, raised by the same party on the same afternoon, with a stone standing at the head of each and no name on either. There is nothing else and there never was.',
             whatItDoesToSomebodyShortOfIt: 'Nothing. This is the plainest site in the catalog and the ordinary case for a grave: unguarded, unsealed, walked past by surveyors twice a season, and the only thing keeping anything in it is that nobody has thought it worth the digging.'
         },
-        factionIds: ['sect-azure-cloud-pavilion', 'sect-stonewright-consortium', 'house-anchorhold'],
+        factionIds: ['sect-azure-cloud-pavilion', 'sect-stone-marrow-hall', 'house-immovable-mountain'],
         occupantOrdinal: 18,
         yearsDead: 12,
         mannerOfDeath: 'duel',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'Two cairns eleven paces apart on a surveyed line above Clear River Ford, both raised by the same party on the same afternoon, both with a stone standing at the head and neither with a name on it. The Anchorhold\'s perimeter mark is on the rock between them and was there first.',
+            marker: 'Two cairns eleven paces apart on a surveyed line above Clear River Ford, both raised by the same party on the same afternoon, both with a stone standing at the head and neither with a name on it. Immovable Mountain Temple\'s perimeter mark is on the rock between them and was there first.',
             rumour: 'Everybody local knows what happened, has an opinion about who was in the right, and can name both parties. It was twelve years ago and there are people in Clear River Ford who were there.',
-            attributedTo: 'Two Core Formation cultivators of the Pavilion and the Consortium',
+            attributedTo: 'Two Core Formation cultivators of the Pavilion and the Stone Marrow Hall',
             lastPartySaid: 'Nobody has opened either. There is no reason to think there is anything in them and the families are alive and local.',
             whatAKnowledgeablePartyReads: 'Two Core Formation cultivators died in a duel over a survey line twelve years ago and were cairned where they fell by the survivors, which means both of them went into the ground with everything they had on that day and none of it has been through anything except an afternoon. It is a fair haul at a fair price and it is exactly what it looks like.',
             whatAnIgnorantPartyConcludes: 'The same thing, correctly. This is the entry where the ignorant reading and the knowledgeable one agree, and it is here so the catalog does not imply that every grave is a puzzle: most of them are two cairns on a hillside with the ordinary goods of ordinary people in them.',
@@ -2509,7 +2509,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'The Consortium man\'s survey instruments, which are worth more than his sword and which his employer wrote off.',
+                    what: 'The Stone Marrow Hall man\'s survey instruments, which are worth more than his sword and which his employer wrote off.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
@@ -2531,7 +2531,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing. A duel is a fight between two people and it does not damage what they are carrying in any interesting way, so both inventories are complete, current, twelve years old and warranted by nobody. It is the ordinary case, and the ordinary case is a full inventory of untested goods, which is why the catalog\'s rule is worth stating: the exception is the short list, and the short list is the good one.',
-            afterwards: 'Both sects find out, because both keep records of where their people fell, and what arrives is not a request for the goods back. The survey line is still disputed and the Anchorhold\'s mark is still on the rock.'
+            afterwards: 'Both sects find out, because both keep records of where their people fell, and what arrives is not a request for the goods back. The survey line is still disputed and the Immovable Mountain Temple\'s mark is still on the rock.'
         }
     },
     {
@@ -2548,17 +2548,17 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'A man in a ditch with his contract still in his coat, three years there, reported twice by people who did not want the trouble of moving him. The village has a note of it and nothing else has happened.',
             whatItDoesToSomebodyShortOfIt: 'Nothing whatever, and the site is a hundred paces from a walked circuit. What has kept it is not danger and not concealment, it is that two separate people looked at a dead culler and decided he was somebody else\'s business.'
         },
-        factionIds: ['sect-verdant-spring-hall'],
+        factionIds: ['sect-verdant-spring-valley'],
         occupantOrdinal: 6,
         yearsDead: 3,
         mannerOfDeath: 'died_of_injuries',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'A man in a ditch off the Iron Gate circuit with his contract still in his coat, three years there, found and reported twice by people who did not want the trouble of moving him. The village has a note of it.',
+            marker: 'A man in a ditch off the Iron Ridge circuit with his contract still in his coat, three years there, found and reported twice by people who did not want the trouble of moving him. The village has a note of it.',
             rumour: 'He is known about. He took a culling notice priced off an old survey, the notice was wrong by four ranks, and the village has not amended it and does not intend to.',
-            attributedTo: 'A culler of the Iron Gate circuit',
+            attributedTo: 'A culler of the Iron Ridge circuit',
             lastPartySaid: 'Two people have gone through his pockets and both left the contract, which is the only object at the site anybody has any use for and neither of them could read.',
-            whatAKnowledgeablePartyReads: 'That there is nothing here, and that the contract in his coat is the mispriced notice and is evidence, and that a party who takes it to the Weir Office is doing something for somebody rather than for themselves.',
+            whatAKnowledgeablePartyReads: 'That there is nothing here, and that the contract in his coat is the mispriced notice and is evidence, and that a party who takes it to the Clearwater Ward is doing something for somebody rather than for themselves.',
             whatAnIgnorantPartyConcludes: 'The same. Nobody is wrong about this grave. It is in the catalog because a file about inheritance needs the floor of the distribution in it, and the floor is a man in a ditch with a splint on and a contract that killed him.',
             startingAwareness: 'named',
             advertisedOrdinal: 6
@@ -2598,7 +2598,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'A Verdant Spring Hall dosage card for a pill he could not afford, folded small and carried long enough to have worn through at the folds.',
+                    what: 'A Verdant Spring Valley dosage card for a pill he could not afford, folded small and carried long enough to have worn through at the folds.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
@@ -2606,7 +2606,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing, and there was nothing for it to do anything to. He died of injuries in a ditch and the inventory is five items of which four are worthless and the fifth is a piece of paper that would embarrass a village if anybody took it anywhere. The intact profile holds here as exactly as it holds at the clan vault, and it is worth noticing that the profile says nothing about value: it says the list is long and untested, and this list is long and untested and comes to about nine stones.',
-            afterwards: 'The village would rather he stayed in the ditch and will not say so directly. If the notice goes to the Weir Office the notice is amended and the next culler on that circuit lives, and nobody involved will ever connect the two events.'
+            afterwards: 'The village would rather he stayed in the ditch and will not say so directly. If the notice goes to the Clearwater Ward the notice is amended and the next culler on that circuit lives, and nobody involved will ever connect the two events.'
         }
     },
 
@@ -2630,7 +2630,7 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'A dry watercourse with a body in it that has not gone the way a body goes, laid in order, with a brand cut across the front of the skull that repeats on a stone at the head of the channel.',
             whatItDoesToSomebodyShortOfIt: 'Whatever was done to him is still being done, at the rate it has been done for as long as the channel has been dry, and a body below Foundation that lies down in that watercourse does not get up either. Nobody set this and nobody maintains it; it is a property of what happened here.'
         },
-        factionIds: ['house-tally-court', 'house-ninefold-ledger'],
+        factionIds: ['house-iron-tally-court', 'house-ninefold-karma'],
         occupantOrdinal: 34,
         yearsDead: 2_280,
         mannerOfDeath: 'killed_in_a_fight',
@@ -2638,7 +2638,7 @@ export const GRAVES: readonly Grave[] = [
         outside: {
             marker: 'A dry watercourse four days off the eastern road with a body in it that has not gone the way a body goes. The cloth is gone and the bones are in order, and there is a brand across the front of the skull which is cut rather than burned and is the same mark that is on a stone at the head of the watercourse.',
             rumour: 'The eastern towns know the mark and will not say the name attached to it. What they will tell you is that people from a house that no longer exists used to come out this way to collect, that one of them did not go back, and that the families who owe whatever it is they owe still cannot say what it is.',
-            attributedTo: 'A collector of the Tally Court',
+            attributedTo: 'A collector of the Iron Tally Court',
             lastPartySaid: 'A Bone Lantern rotation crew logged the site ninety years ago, dated it correctly to within a century, and did not work it. Their note gives the reason as bad flowering, which is not what the flowering says and is the only entry in that rotation book with a reason in it at all.',
             whatAKnowledgeablePartyReads: 'A body that has not decayed in twenty-three centuries was at Body Integration when it stopped, and a cultivator at Body Integration does not end up in a watercourse four days from anywhere unless somebody made a point of it. The brand is on the skull and on the stone, which means it was cut twice, once into him and once into the place, and cutting a mark into the ground is what you do when you want the ground to hold the record after you have gone.',
             whatAnIgnorantPartyConcludes: 'That an undecayed body in a ditch is a haunting and that the mark is a warding, and that the correct response to both is to leave. It is a reasonable reading of everything visible and it is why the site is still intact after two thousand three hundred years, in a province where nothing at that rank stays intact for eleven.',
@@ -2654,18 +2654,18 @@ export const GRAVES: readonly Grave[] = [
                     coincidence: 'carries_an_obligation',
                     worldStateCheck: 'Whether the claimant is carrying an inherited obligation that nobody, including the claimant, can identify or discharge. The eastern branded bloodline is the known case and is not the only one; the Court entered obligations against parties who had not been born, and the entries outlived the Court, the ledger volumes and everybody who could have read them out.',
                     characterStat: null,
-                    whyItCannotBeFarmed: 'Because the obligation is descent and nothing else. It cannot be bought, because the Court took consideration in kind and there is no party left to pay; it cannot be sworn into, because the oath that would do it needs a counterparty and the counterparty was dissolved twenty-three centuries ago; and it cannot be discovered by looking, because the entire diagnostic value of the thing is that the carrier does not know what it is. The Ninefold Ledger has tried to acquire one deliberately, twice, in writing, and the file on the second attempt runs to nine years and ends without a finding.',
-                    whoHasEverPassed: 'Nobody on record. Two of the branded families are known to the Ledger by name and neither has ever been within two provinces of the watercourse, and the Ledger has never told either of them that anything about their line is unusual.',
+                    whyItCannotBeFarmed: 'Because the obligation is descent and nothing else. It cannot be bought, because the Court took consideration in kind and there is no party left to pay; it cannot be sworn into, because the oath that would do it needs a counterparty and the counterparty was dissolved twenty-three centuries ago; and it cannot be discovered by looking, because the entire diagnostic value of the thing is that the carrier does not know what it is. Ninefold Karma Palace has tried to acquire one deliberately, twice, in writing, and the file on the second attempt runs to nine years and ends without a finding.',
+                    whoHasEverPassed: 'Nobody on record. Two of the branded families are known to the Karma Pavilion by name and neither has ever been within two provinces of the watercourse, and the Karma Pavilion has never told either of them that anything about their line is unusual.',
                     below: 'The body is a body and the mark is a mark. Everything on him can be taken by anybody who walks down the watercourse and picks it up, and the manual comes off him as a sealed case that does not open, has never opened for anybody, and cannot be forced, because what holds it shut is the same entry that is holding the family.'
                 }
             ],
             gateOrigin: 'circumstance',
             contents: [
                 {
-                    what: 'A sealed case of Tally Court manufacture holding the collector\'s working copy of the art he was out there to use, which is the only route by which a copy of it reaches anybody and is the reason the auditors left the body where it was instead of burning it.',
+                    what: 'A sealed case of Iron Tally Court manufacture holding the collector\'s working copy of the art he was out there to use, which is the only route by which a copy of it reaches anybody and is the reason the auditors left the body where it was instead of burning it.',
                     proven: false,
                     survived: null,
-                    techniqueId: 'debt-collection-in-arrears',
+                    techniqueId: 'debt-karmic-reclamation-art',
                     immortalItemId: null
                 },
                 {
@@ -2697,7 +2697,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'A second seal, not his, in the bottom of the same pouch, which belongs to one of the auditors who founded the Ninefold Ledger the following year.',
+                    what: 'A second seal, not his, in the bottom of the same pouch, which belongs to one of the auditors who founded the Ninefold Karma Palace the following year.',
                     proven: false,
                     survived: null,
                     techniqueId: null,
@@ -2705,7 +2705,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing at all, which is the ordinary intact case and is doing unusual work here. He was killed by people who wanted the arithmetic to be visible rather than the goods to be gone, so they did not take a single item, and the result is a complete two-thousand-year-old collector\'s kit lying in the open in a province where a Foundation Establishment corpse gets stripped inside a season. Nobody has stripped this one because everybody who has found it has read the mark correctly enough to be frightened and not correctly enough to understand it.',
-            afterwards: 'The watercourse stays what it is and the mark on the stone does not fade, because it was cut by a house whose entire discipline was making a record outlast the parties to it. A claimant who opens the case has closed the eleventh entry in the route book, which is the transaction the whole site is, and the Ledger will know inside a year without anybody having told it.'
+            afterwards: 'The watercourse stays what it is and the mark on the stone does not fade, because it was cut by a house whose entire discipline was making a record outlast the parties to it. A claimant who opens the case has closed the eleventh entry in the route book, which is the transaction the whole site is, and the Karma Pavilion will know inside a year without anybody having told it.'
         }
     },
     {
@@ -2723,7 +2723,7 @@ export const GRAVES: readonly Grave[] = [
             whoTheyGoFor: 'Whoever the crosser has already decided to leave things to, because the Cult\'s arithmetic is right and nobody makes this crossing for their own benefit.',
             whatComesBackForThatPerson: 'Three objects, two of them warranted copies of arts nobody in the world holds a warranted copy of and nobody ever will again, because the only way to issue that warranty is to carry the thing to a boundary and lose.'
         },
-        factionIds: ['sect-bone-lantern-cult', 'house-ninefold-ledger'],
+        factionIds: ['sect-bone-lantern-cult', 'house-ninefold-karma'],
         occupantOrdinal: 42,
         yearsDead: 340,
         mannerOfDeath: 'heavenly_tribulation',
@@ -2756,7 +2756,7 @@ export const GRAVES: readonly Grave[] = [
                     what: 'A manual case, closed, with a tally cut into the outer face in a hand that changes across the course of it, and the tally is the count the art keeps rather than one he kept.',
                     proven: true,
                     survived: 'The heavenly tribulation of a Tribulation Transcendence boundary, in direct contact, at the centre of it, which took the body it was lying against and did not take the case.',
-                    techniqueId: 'heart-of-the-ten-thousand-corpses',
+                    techniqueId: 'ten-thousand-corpse-heart',
                     immortalItemId: null
                 },
                 {
@@ -2794,7 +2794,7 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'A two-room post with a stove in it, a duty board on the wall and a man on the floor of the back room who was on his own watch when whatever happened happened. Nothing here was ever dangerous to anybody.',
             whatItDoesToSomebodyShortOfIt: 'Nothing. This is the shallowest sort of site there is and it is the sort that gets found first, worked in an afternoon and written up as disappointing, which it is, and which is exactly what the easy end of the ground looks like.'
         },
-        factionIds: ['house-measured-span'],
+        factionIds: ['house-shrinking-earth'],
         occupantOrdinal: 4,
         yearsDead: 210,
         mannerOfDeath: 'killed_in_a_fight',
@@ -2869,7 +2869,7 @@ export const GRAVES: readonly Grave[] = [
             whatIsDownThere: 'About a mile of ground that two houses spent a day on, with what they were carrying still in it and the formation both of them were standing inside still holding at the setting it was left at.',
             whatItDoesToSomebodyShortOfIt: 'The array is still up and it is still doing to anything inside it what it was doing to them, which was designed to hold a Nascent Soul cultivator in place long enough to be reached. Below that it does not hold, it stops: nine of the eleven bodies added to the field since the battle are people who walked in under it.'
         },
-        factionIds: ['house-anchorhold', 'house-girdle-of-nine-stones'],
+        factionIds: ['house-immovable-mountain', 'house-nine-stone-array'],
         occupantOrdinal: 23,
         yearsDead: 340,
         mannerOfDeath: 'duel',
@@ -2913,7 +2913,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'The Anchorhold\'s answer to it, laid across the same ground on the same day by people who were reading it live, which is a document about what the Anchorhold understood of the Girdle at the moment the two of them stopped talking.',
+                    what: 'Immovable Mountain Temple\'s answer to it, laid across the same ground on the same day by people who were reading it live, which is a document about what the Immovable Mountain Temple understood of the Girdle at the moment the two of them stopped talking.',
                     proven: false,
                     survived: null,
                     techniqueId: null,

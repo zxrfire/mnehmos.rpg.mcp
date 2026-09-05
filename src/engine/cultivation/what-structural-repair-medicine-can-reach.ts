@@ -81,7 +81,7 @@ export function repairRefusalReason(
     // conversation instead of sending somebody looking for a better shelf.
     if (atOrdinal > medicine.reachesUpToOrdinal) {
         if (medicine.madeBelowTheLid && atOrdinal > ordinaryGradeCeiling()) {
-            return 'Nothing refined on this side of the Lid reaches a break above Deity Transformation. Not this, not a better one, not one made anywhere: the ceiling is on the refining rather than on the price, and every guild in the two provinces has established it independently and stopped trying.';
+            return 'Nothing refined on this side of the Lid reaches a break above Deity Transformation. Not this, not a better one, not one made anywhere: the ceiling is on the refining rather than on the price, and every hall in the two provinces has established it independently and stopped trying.';
         }
         return 'Below its grade. It sets, it holds for a while, and it does not take - and the taker is out one dose and a year, which is the more common of the two disasters.';
     }

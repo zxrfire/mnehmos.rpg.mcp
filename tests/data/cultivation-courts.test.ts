@@ -222,7 +222,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
         // and it is exactly the mistake this assertion exists to catch.
         const walked = getSect('sect-kiln-wardens')!;
         expect(walked.name, 'the half that walked keeps the Survey\'s word for the posting')
-            .toBe('The Root Sill Court');
+            .toBe('Deeproot Court');
         expect(kiln.name).not.toBe(walked.name);
         // The half that STAYED is under the old apex; the half that WALKED is
         // under the Long Cut. If these two ever read the same way round as each
@@ -246,7 +246,7 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
             'the naming dispute is back on the Kiln').toBeUndefined();
         const walkedParentage = getParentage('sect-kiln-wardens')!;
         expect((walkedParentage as { lineageDispute?: unknown }).lineageDispute,
-            'the naming dispute is back on the Root Sill').toBeUndefined();
+            'the naming dispute is back on the Deeproot Court').toBeUndefined();
         expect(kiln.officesNote, 'the standing half no longer says what it kept')
             .toMatch(/datum|nodes|perimeter/i);
         expect(walkedParentage.note, 'the walking half no longer says what it took')
@@ -285,10 +285,12 @@ describe('a faction wants something, and somebody is in the way', () => {
         // them: a temple with no stated grievance, a grove that holds a
         // grievance to be a claim, staff with no interests of their own, and
         // four people with nothing left to be afraid of.
+        // Alphabetical, because the read above sorts. The grove moved to the
+        // front when it was renamed; the four are the same four.
         expect(silent).toEqual([
+            'sect-ancient-bough-grove',
             'sect-hollow-court',
             'sect-kiln-wardens',
-            'sect-standing-grove',
             'sect-sweptground-temple'
         ]);
     });
@@ -515,7 +517,7 @@ describe('a name in the pyramid says which tier it is', () => {
         // Survey. Nothing else about it changed - still closed, still teaching
         // nothing - which is why it is still filed here rather than as a sect.
         const walked = getSect('sect-kiln-wardens')!;
-        expect(walked.name).toBe('The Root Sill Court');
+        expect(walked.name).toBe('Deeproot Court');
         expect(walked.recruits).toBe(false);
         expect(walked.teaches.length).toBe(0);
         expect(walked.description).toContain('Kiln Wardens');

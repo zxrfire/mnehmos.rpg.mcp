@@ -71,7 +71,7 @@ export const THE_LOW_FALL: Region = {
         harderBoundaries: [],
         missingDisciplines: [],
         strongDisciplines: [
-            'alchemy, which requires ambient qi to hold a refinement and has a guild here',
+            'alchemy, which requires ambient qi to hold a refinement and has a refining hall here',
             'formations, which draw on the veins the province is built over',
             'every discipline, in fact, which is exactly what makes it unremarkable'
         ],
@@ -92,33 +92,33 @@ export const THE_LOW_FALL: Region = {
         'sect-azure-cloud-pavilion',
         'sect-azure-mist-court',
         'sect-azure-dew-sect',
-        'sect-verdant-spring-hall',
+        'sect-verdant-spring-valley',
         'sect-nine-peaks-ascetic-order',
         'sect-clear-river-alliance',
         'sect-sweptground-temple',
-        'sect-standing-grove',
-        'sect-cinnabar-crucible-guild',
+        'sect-ancient-bough-grove',
+        'sect-cinnabar-crucible-sect',
         'sect-ashen-forge-clan',
         'sect-kiln-wardens',
         'sect-hollow-court',
-        'sect-crimson-abyss-hall',
+        'sect-crimson-abyss-fortress',
         'sect-nine-abyss-flame-sect',
-        'house-ninefold-ledger',
-        'house-unbroken-tally',
-        'house-anchorhold'
+        'house-ninefold-karma',
+        'house-vermilion-seal',
+        'house-immovable-mountain'
     ],
     branches: [
         {
-            parentSectId: 'sect-gleaners-company',
+            parentSectId: 'sect-fallen-grain-caravan',
             localName: 'The Willow Village Factor at Clear River Ford',
             doesHere:
                 'Sells Silent Cliffs salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Silent Cliffs has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
         },
         {
-            parentSectId: 'sect-stonewright-consortium',
+            parentSectId: 'sect-stone-marrow-hall',
             localName: 'The Gorge Assay',
             doesHere:
-                'Assays and cuts to the Stonewright standard at the head of the eleven veins, and is the only reason a Jade Gorge grant can be priced at all. It holds no ground, sets the rate from nine cities away, and every sect in the province quotes a figure it did not set.'
+                'Assays and cuts to the Stone Marrow standard at the head of the eleven veins, and is the only reason a Jade Gorge grant can be priced at all. It holds no ground, sets the rate from nine cities away, and every sect in the province quotes a figure it did not set.'
         },
         {
             parentSectId: 'sect-hollow-bell-wanderers',
@@ -138,7 +138,7 @@ export const THE_LOW_FALL: Region = {
             // reason this field exists rather than an illustration of it.
             //
             // The `trade_route` to the Silent Cliffs below quotes its
-            // eleven days as "the border road from Clear River Ford to Iron Gate" -
+            // eleven days as "the border road from Clear River Ford to Iron Ridge" -
             // so the figure starts at the ford, and the stretch from the
             // province town out to the ford has never been priced by
             // anything. `daysOnTheRoadTo` charged a player one flat day
@@ -165,13 +165,13 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         { name: PLACE.CLEAR_CREEK_VILLAGE, kind: 'village', ambient: 'thin', note: 'Rice on the gorge floor, a mill, and one road down to the province town.' },
-        { name: PLACE.BURNT_EARTH, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Unbroken Tally.' },
+        { name: PLACE.BURNT_EARTH, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Vermilion Seal Terrace.' },
         { name: PLACE.NINE_PEAKS, kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' },
     ],
     exports: [
         'refined pills and formulae, which the Silent Cliffs cannot make at all',
         'manuals to heaven grade, and living teachers for them',
-        'assayed spirit stones, cut to the Stonewright standard',
+        'assayed spirit stones, cut to the Stone Marrow standard',
         'arbitration, certification and oath witnessing, all of which travel'
     ],
     imports: [
@@ -189,28 +189,28 @@ export const THE_LOW_FALL: Region = {
             kind: 'trade_route',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The border road from Clear River Ford to Iron Gate: eleven days by cart, four by Measured Span courier where the Span still runs it. Salvage and people out; pills, stones and grain in.',
+                'The border road from Clear River Ford to Iron Ridge: eleven days by cart, four by Shrinking Earth Pavilion courier where the Span still runs it. Salvage and people out; pills, stones and grain in.',
             travelDays: 11
         },
         {
             kind: 'refugee_flow',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'A steady drift of Silent Cliffs-born carvers arriving at Clear River Ford with split hands, a cough, and a title nobody here prices correctly. Burnt Earth Temple takes most of them; the Crimson Abyss Hall recruits the rest.',
+                'A steady drift of Silent Cliffs-born carvers arriving at Clear River Ford with split hands, a cough, and a title nobody here prices correctly. Burnt Earth Temple takes most of them; the Crimson Abyss Fortress recruits the rest.',
             travelDays: 11
         },
         {
             kind: 'shared_institution',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The Stonewright Consortium and Burnt Earth Temple both hold Silent Cliffs outposts, and the Gleaners\' Company keeps a factor at Clear River Ford. Those three offices are the whole formal relationship between the regions.',
+                'The Stone Marrow Hall and Burnt Earth Temple both hold Silent Cliffs outposts, and the Fallen Grain Caravan keeps a factor at Clear River Ford. Those three offices are the whole formal relationship between the regions.',
             travelDays: 11
         },
         {
             kind: 'unsettled_border',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The Anchorhold has surveyed to the burn edge and no further, so the last forty li before Iron Gate are on nobody\'s survey. Oaths sworn there do not bind, which several parties on both sides find useful.',
+                'Immovable Mountain Temple has surveyed to the burn edge and no further, so the last forty li before Iron Ridge are on nobody\'s survey. Oaths sworn there do not bind, which several parties on both sides find useful.',
             travelDays: 11
         },
         {
@@ -224,7 +224,7 @@ export const THE_LOW_FALL: Region = {
             kind: 'unsettled_border',
             otherRegionId: EAST_REGION_ID,
             description:
-                'The Anchorhold has never carried a survey past the watershed, so the whole eastern boundary is a matter of habit. Nothing sworn on the far side binds, which is why every arrangement the Jade Gorge makes with a city is a lease with a deposit rather than an oath.',
+                'Immovable Mountain Temple has never carried a survey past the watershed, so the whole eastern boundary is a matter of habit. Nothing sworn on the far side binds, which is why every arrangement the Jade Gorge makes with a city is a lease with a deposit rather than an oath.',
             travelDays: 6
         },
         {
@@ -238,21 +238,21 @@ export const THE_LOW_FALL: Region = {
             kind: 'shared_institution',
             otherRegionId: NORTH_REGION_ID,
             description:
-                'The Cinnabar Crucible Guild stands on the Ashfall flank and holds its grant from the Frostmirror Court, which is over the pass and on the other arterial - so an alchemy guild in this province answers to a court in that one, and neither province has a document that says so.',
+                'The Cinnabar Crucible Sect stands on the Ashfall flank and holds its grant from the Frostmirror Court, which is over the pass and on the other arterial - so an alchemy hall in this province answers to a court in that one, and neither province has a document that says so.',
             travelDays: 17
         },
         {
             kind: 'trade_route',
             otherRegionId: SOUTH_REGION_ID,
             description:
-                'Nine days down the river to the mouth and out to Sweet Spring Island, which is where the Jade Gorge\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Fordhall will take a hull that far and refuses to go further.',
+                'Nine days down the river to the mouth and out to Sweet Spring Island, which is where the Jade Gorge\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Alliance will take a hull that far and refuses to go further.',
             travelDays: 9
         }
     ],
     trueHereFalseThere: [
         'A holding can be granted. This is the only province with a surveyed vein under it, so it is the only one with a grant book, a renewal cycle, a tenant, and a reason for anybody to be polite to anybody.',
         'A pill above mortal grade can be bought over a counter, today, in four towns, and the counter is not a monopoly.',
-        'An oath binds. The Unbroken Tally witnesses on certified ground and there is certified ground here, which there is nowhere else in the world.',
+        'An oath binds. The Vermilion Seal Terrace witnesses on certified ground and there is certified ground here, which there is nowhere else in the world.',
         'Sitting still on ordinary ground, in the open, makes measurable progress - and it goes on making it all the way to the top of the ladder, which no other province can say at any rung.'
     ],
     crossingNotes: [
@@ -306,7 +306,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: 'court-third-sill',
         subHoldings: [
             {
-                factionId: 'sect-verdant-spring-hall',
+                factionId: 'sect-verdant-spring-valley',
                 holds: 'The spring valley and its nine springs, a sub-grant one rung lower than the Hall lets on.',
                 delegatedFromId: 'sect-nine-peaks-ascetic-order'
             }
@@ -335,7 +335,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
                 delegatedFromId: 'court-third-sill'
             },
             {
-                factionId: 'sect-cinnabar-crucible-guild',
+                factionId: 'sect-cinnabar-crucible-sect',
                 holds: 'The field furnace halls and the refining hall with the method-script on the wall.',
                 delegatedFromId: 'sect-frostmirror-court'
             }
@@ -346,7 +346,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'Three institutions on one flank answering to two different courts on two different arterials, none of which has ever been drawn as a boundary.',
         discrepancy: 'none',
         note:
-            'The clearest case in the province of the map and the paper disagreeing without anybody lying. The Crucible Guild stands inside the Ashfall and holds from a court on the fourth arterial, so the flank has no single line anybody could draw around it.'
+            'The clearest case in the province of the map and the paper disagreeing without anybody lying. The Crucible Hall stands inside the Ashfall and holds from a court on the fourth arterial, so the flank has no single line anybody could draw around it.'
     },
     {
         id: 'prefecture-cold-head',
@@ -364,7 +364,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'The same, and the Frostmirror has been writing to the Third Sill about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent. The glacier itself is seventeen days over the pass in the White Stair, and the Court has never sat in the province the register puts it in.',
         discrepancy: 'none',
         note:
-            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Long Cold runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two catchments over it on the Jade Gorge book because the arterial is Jade Gorge rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
+            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Black Ice Vein runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two catchments over it on the Jade Gorge book because the arterial is Jade Gorge rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
     },
     {
         id: 'prefecture-floating-stone',
@@ -377,7 +377,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: 'apex-deep-survey',
         subHoldings: [
             {
-                factionId: 'sect-crimson-abyss-hall',
+                factionId: 'sect-crimson-abyss-fortress',
                 holds: 'The sinkhole and the thin vein beneath the town, the least valuable grant in the province.',
                 delegatedFromId: 'sect-storm-tyrant-court'
             }
@@ -406,18 +406,18 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
                 delegatedFromId: 'sect-clear-river-alliance'
             },
             {
-                factionId: 'sect-gleaners-company',
+                factionId: 'sect-fallen-grain-caravan',
                 holds: 'The Willow Village Factor at Clear River Ford, a shopfront for Silent Cliffs salvage.',
-                delegatedFromId: 'sect-weir-office'
+                delegatedFromId: 'sect-clearwater-ward'
             }
         ],
         onPaper:
-            'Surveyed by the Anchorhold to the burn edge and no further, so the last forty li before the Silent Cliffs border sit on no certified survey and the catchment has no closing line.',
+            'Surveyed by the Immovable Mountain Temple to the burn edge and no further, so the last forty li before the Silent Cliffs border sit on no certified survey and the catchment has no closing line.',
         onTheGround:
-            'Run by the Clear River Fordhall, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
+            'Run by the Clear River Alliance, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
         discrepancy: 'no_holder_of_record',
         note:
-            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Gleaners and the Quiet Cut both use, for opposite reasons.'
+            'Oaths sworn in the unsurveyed forty li do not bind and nothing owned there can be proved, which the Fallen Grain Caravan and the Still Blade Peak both use, for opposite reasons.'
     },
     {
         id: 'prefecture-sweptground',
@@ -430,9 +430,9 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: null,
         subHoldings: [
             {
-                factionId: 'house-unbroken-tally',
+                factionId: 'house-vermilion-seal',
                 holds: 'The treaty vault, which is a building rather than ground.',
-                delegatedFromId: 'house-unbroken-tally'
+                delegatedFromId: 'house-vermilion-seal'
             }
         ],
         onPaper:
@@ -450,7 +450,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         kind: 'catchment',
         seat: 'the valley of old trees',
         places: [],
-        heldByFactionId: 'sect-standing-grove',
+        heldByFactionId: 'sect-ancient-bough-grove',
         delegatedFromId: null,
         subHoldings: [],
         onPaper:

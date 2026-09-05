@@ -131,12 +131,12 @@ export interface TechniqueEntry extends Technique {
  * ways their finders do not discover until later.
  */
 export const FRAGMENT_TECHNIQUE_ORIGINS: Readonly<Record<string, string>> = {
-    'severed-thread-audit': 'house-tally-court',
-    'unpayable-tally-brand': 'house-tally-court',
-    'debt-collection-in-arrears': 'house-tally-court',
-    'anchor-nail-of-the-broken-girdle': 'house-girdle-of-nine-stones',
-    'nameless-witness-stance': 'house-girdle-of-nine-stones',
-    'gate-that-was-closed': 'house-unlit-gate'
+    'karmic-thread-reading-art': 'house-iron-tally-court',
+    'unpayable-tally-brand': 'house-iron-tally-court',
+    'debt-karmic-reclamation-art': 'house-iron-tally-court',
+    'earth-anchoring-nail-art': 'house-nine-stone-array',
+    'nameless-witness-stance': 'house-nine-stone-array',
+    'gate-that-was-closed': 'house-nine-nether'
 } as const;
 
 /**
@@ -146,23 +146,23 @@ export const FRAGMENT_TECHNIQUE_ORIGINS: Readonly<Record<string, string>> = {
  */
 export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // fragments of destroyed Dao houses - see FRAGMENT_TECHNIQUE_ORIGINS
-    'severed-thread-audit',
+    'karmic-thread-reading-art',
     'unpayable-tally-brand',
     'nameless-witness-stance',
-    'anchor-nail-of-the-broken-girdle',
+    'earth-anchoring-nail-art',
     'gate-that-was-closed',
     // heaven - the sects held these once and cannot read their own copies now
     'worldroot-strangling-vine',
     // immortal - a handful of sects still transmit theirs; these are not among them
     'star-quenching-blade-domain',
     'abyssal-gate-torrent',
-    'cinder-of-the-first-sun',
+    'first-sun-cinder-art',
     'void-fold-pilgrimage',
-    'lifespring-of-the-jade-pool',
+    'jade-pool-lifespring-art',
     'severed-fate-mending-art',
     'void-tide-breathing-canon',
     // chaos - nobody alive has ever seen one of these used correctly
-    'calamity-word-of-the-open-sky',
+    'open-sky-calamity-word',
     'dragonbone-severing-decree',
     'kalpa-fire-that-eats-heaven',
     'undying-kalpa-body',
@@ -176,40 +176,40 @@ export const RUIN_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // archives, and nothing about them that a sect could transmit even if it wanted
     // to. See `docs/world/history/ancient.md` and `lost-ages.ts`.
     'hundred-pace-step',
-    'sealed-field-of-the-shut-hour',
+    'shut-hour-sealing-field',
     'thousand-spear-summoning',
     'vessel-borrowing-palm',
     'sixteen-thread-command',
     'hollow-second-body',
     'paired-breath-canon',
-    'quenching-of-the-standing-air',
-    'stillness-of-the-turning-year',
-    'unsaying-of-a-given-name',
-    'severance-of-the-standing-thread',
-    'the-hour-that-was-not-taken',
-    'unfixing-of-the-set-mark',
+    'standing-air-quenching-art',
+    'turning-year-stillness-art',
+    'name-erasing-art',
+    'karmic-severing-art',
+    'hour-reversing-art',
+    'boundary-loosening-art',
     // The two decrees. Ruin-only is a structural requirement of the top rung
     // rather than a flavour choice: nothing alive teaches a decree, and the
     // guard in the escalation suite asserts it.
-    'the-road-that-was-always-there',
-    'the-witness-who-was-always-there',
+    'heavenly-road-decree',
+    'heavenly-witness-decree',
     // Above the Lid, and here for the same reason everything else in this list
     // is: no living institution transmits them. The two rungs differ in where
     // the copy is rather than in what kind of thing it is - three faces one man
     // cut where he had been lecturing, and three sets of writings an ascended
     // founder sent back down to a house that cannot read them. Both are the
     // read channel, both are ordinary rows, and neither is taught by anybody.
-    'the-seam-that-did-not-close',
-    'what-came-back-instead',
-    'the-second-question',
-    'one-crossing-of-a-courtyard',
-    'canon-of-the-unwritten-span',
-    'the-fifteenth-breath',
+    'void-seam-holding-art',
+    'half-immortal-body',
+    'first-arrival-sword-art',
+    'one-step-beyond-heaven',
+    'unwritten-span-scripture',
+    'fifteenth-breath-return-art',
     // Ruin by classification and unobtainable in fact: no living institution
     // transmits it and no site holds it either. See
     // `NO_SURVIVING_COPY_TECHNIQUE_IDS`, which is the half of the statement
     // this list cannot make.
-    'word-of-continuance',
+    'continuance-decree',
     'heaven-conversing-primordial-canon',
     'chaos-origin-scripture',
     // The wide-span treasure. Nobody teaches a book that makes four of
@@ -274,7 +274,7 @@ export const DERIVABLE_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
  * Why a particular manual cannot be reconstructed, however deep the reader.
  */
 export const NOT_DERIVABLE_NOTES: Readonly<Record<string, string>> = {
-    'canon-of-the-unwritten-span':
+    'unwritten-span-scripture':
         'It is written for a condition the reader is not in and cannot simulate. Every house that has worked through it agrees it is correct and that there is nothing in it they can do, which is also the reason nobody can reconstruct the missing half: you would have to already be past the Lid to know what it was describing, and anybody past the Lid has no use for it.',
     'heaven-conversing-primordial-canon':
         'Not a method but a transcript of one side of a conversation, and the other side was had by somebody who is no longer in the world. A reader deep enough to follow it is deep enough to establish that the missing half cannot be inferred from the half that survives - which is precisely what the three people who have tried each concluded, separately, and wrote down.',
@@ -287,16 +287,16 @@ export const GRAVE_ONLY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // moved: no house has held it long enough to shelve it and the one
     // person known to have carried it stopped twelve rungs short of its end.
     'first-and-last-breath-canon',
-    'heart-of-the-ten-thousand-corpses',
+    'ten-thousand-corpse-heart',
     'lifespan-devouring-heaven-theft',
-    'debt-collection-in-arrears'
+    'debt-karmic-reclamation-art'
 ]);
 
 /**
  * Arts the record attests and no copy of which is anywhere in the world.
  */
 export const NO_SURVIVING_COPY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
-    'word-of-continuance'
+    'continuance-decree'
 ]);
 
 /**
@@ -305,7 +305,7 @@ export const NO_SURVIVING_COPY_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
  * different place.
  */
 export const NO_SURVIVING_COPY_NOTES: Readonly<Record<string, string>> = {
-    'word-of-continuance':
+    'continuance-decree':
         'Attested and unobtainable. What survives is the outcome record and nothing else: a short list of occasions on which somebody standing at the last crossing argued for a death that had already been decided, kept by the parties who were watching rather than by the parties who spoke. Everyone who could perform it was at the top of the ladder with their own crossing still ahead of them, and not one of them wrote the working out, because at that rung the reader they would have been writing for does not exist. There is no manual, no fragment and no site, and a cultivator who reaches the rung the art asks for will find nothing there to read.'
 } as const;
 
@@ -317,7 +317,7 @@ export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // purpose: an ancient art at a low rung is a thing a player can be handed,
     // and the tier is worth what its scarcity is worth.
     'hundred-pace-step',
-    'sealed-field-of-the-shut-hour',
+    'shut-hour-sealing-field',
     'thousand-spear-summoning',
     'vessel-borrowing-palm',
     'sixteen-thread-command',
@@ -330,16 +330,16 @@ export const ANCIENT_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // categorical on their face: a seam held open from underneath, a defence made
     // of being permitted to remain, a strike that arrives before the answer to the
     // first.
-    'the-seam-that-did-not-close',
-    'what-came-back-instead',
-    'the-second-question',
-    'one-crossing-of-a-courtyard',
-    'canon-of-the-unwritten-span',
-    'the-fifteenth-breath',
+    'void-seam-holding-art',
+    'half-immortal-body',
+    'first-arrival-sword-art',
+    'one-step-beyond-heaven',
+    'unwritten-span-scripture',
+    'fifteenth-breath-return-art',
     // The two decrees, which are categorical by definition: a statement, and
     // the world is obliged.
-    'the-road-that-was-always-there',
-    'the-witness-who-was-always-there'
+    'heavenly-road-decree',
+    'heavenly-witness-decree'
 ]);
 
 /**
@@ -511,7 +511,7 @@ const CULTIVATION_CLASS_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
     // Forbidden methods that ARE progression: they raise a rank, by means the
     // orthodox road does not use and at prices it will not pay.
     'nine-abyss-demon-transformation',
-    'heart-of-the-ten-thousand-corpses',
+    'ten-thousand-corpse-heart',
     'lifespan-devouring-heaven-theft',
     'meridian-devouring-art',
     // An ancient road you practise rather than use. It is filed `cultivation`
@@ -559,7 +559,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'cold-bed-foundation-canon': 'sound',
     'overwintering-canon': 'sound',
     'second-flowering-canon': 'sound',
-    'late-opening-canon': 'refined',
+    'late-blossom-scripture': 'refined',
     'unhurried-canon': 'refined',
 
     'lesser-qi-gathering-manual': 'crude',
@@ -578,7 +578,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // by cultivators at all. Building gangs in four prefectures have been
     // writing it out for each other for generations, none of them mastered
     // it, and `crude` is what that produces.
-    'footing-and-fill-canon': 'crude',
+    'stone-marrow-foundation-canon': 'crude',
     // Damage, with the cause in the entry's own description. Most of the
     // people who worked the method out did not come back from working it out,
     // so what exists was assembled from notes by people who were not there.
@@ -603,10 +603,10 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // careful pass produces: it works, it is his, and nobody has taken it
     // further because the Azure Mist has never held anybody who could.
     'mist-runoff-canon': 'sound',
-    'held-under-canon': 'sound',
+    'drowned-core-scripture': 'sound',
     'interred-soul-canon': 'sound',
     'grafted-form-canon': 'sound',
-    'drawn-wire-canon': 'refined',
+    'silk-drawing-scripture': 'refined',
     // A partial manual assembled out of what eleven people who died working
     // the method left behind. Above Core Formation the only bad tier
     // available is damage, and this is what damage looks like.
@@ -616,7 +616,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'nine-abyss-demon-transformation': 'corrupt',
     'rime-heart-stillness-canon': 'refined',
     'cinder-lung-tempering-canon': 'sound',
-    'heart-of-the-ten-thousand-corpses': 'corrupt',
+    'ten-thousand-corpse-heart': 'corrupt',
     'heaven-conversing-primordial-canon': 'refined',
     'chaos-origin-scripture': 'pristine',
     'lifespan-devouring-heaven-theft': 'corrupt',
@@ -637,7 +637,7 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // who had stood on both sides of it, and nobody has copied it since. ──
     'single-road-treatise': 'pristine',
     'first-and-last-breath-canon': 'pristine',
-    'canon-of-the-unwritten-span': 'pristine'
+    'unwritten-span-scripture': 'pristine'
 };
 
 /**
@@ -1155,8 +1155,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Not a bolt the user makes, but one the user requests. The heavens are not required to stop at one, and the manual is explicit that they frequently do not. Only a mutated lightning root survives the asking.'
     }),
     art({
-        id: 'cinder-of-the-first-sun',
-        name: 'Cinder of the First Sun',
+        id: 'first-sun-cinder-art',
+        name: 'First Sun Cinder Art',
         category: 'attack',
         grade: 'immortal',
         element: 'fire',
@@ -1172,10 +1172,10 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ATTACK - CHAOS (Grand Ascension / Tribulation Transcendence)
     // ═══════════════════════════════════════════════════════════════════
     art({
-        id: 'calamity-word-of-the-open-sky',
+        id: 'open-sky-calamity-word',
         // One syllable, spoken outdoors. The qualifier is the mechanic.
         reach: 'field',
-        name: 'Calamity Word of the Open Sky',
+        name: 'Open Sky Calamity Word',
         category: 'attack',
         grade: 'chaos',
         element: null,
@@ -1284,8 +1284,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A skin of motionless water qi that takes an incoming strike and hands part of it back along its own line. Fails badly against earth arts, as water always does.'
     }),
     art({
-        id: 'rimeglass-carapace',
-        name: 'Rimeglass Carapace',
+        id: 'cold-jade-carapace',
+        name: 'Cold Jade Carapace',
         category: 'defense',
         grade: 'earth',
         element: 'ice',
@@ -1314,8 +1314,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Body-tempering taken to the point where the cultivator stops being a thing that is struck and becomes a thing that is climbed. Movement suffers for as long as it holds.'
     }),
     art({
-        id: 'cinder-ward-of-the-burning-heart',
-        name: 'Cinder Ward of the Burning Heart',
+        id: 'burning-heart-cinder-ward',
+        name: 'Burning Heart Cinder Ward',
         category: 'defense',
         grade: 'heaven',
         element: 'fire',
@@ -1650,8 +1650,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Pins a nascent soul to its body while the body is being ruined, buying the time in which a rescue becomes possible. Does nothing for the body. That is somebody else\'s art.'
     }),
     art({
-        id: 'lifespring-of-the-jade-pool',
-        name: 'Lifespring of the Jade Pool',
+        id: 'jade-pool-lifespring-art',
+        name: 'Jade Pool Lifespring Art',
         category: 'support',
         grade: 'immortal',
         element: 'water',
@@ -1689,8 +1689,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The body is burned down to what is essential and reassembled from the cinders by fire qi that has been taught the shape. Survivors describe it as the worst hour of their several thousand years.'
     }),
     art({
-        id: 'word-of-continuance',
-        name: 'Word of Continuance',
+        id: 'continuance-decree',
+        name: 'Continuance Decree',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -1924,8 +1924,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The foundation is laid at slack water, in the quarter hour either side of the turn, when the river is neither running out nor coming in. It works anywhere the tide reaches and nowhere else, so a practitioner\'s whole life is arranged around a timetable that moves fifty minutes later every day, and ferrymen find them extremely easy to recognise and extremely difficult to employ.'
     }),
     art({
-        id: 'held-under-canon',
-        name: 'Held-Under Canon',
+        id: 'drowned-core-scripture',
+        name: 'Drowned Core Scripture',
         category: 'cultivation',
         grade: 'earth',
         element: 'water',
@@ -1981,8 +1981,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The infant soul is raised as a scion rather than born: cut, bound into the stock while both are still open, and left a season to find out whether it took. The Hall regards this as the plainest available description of what Nascent Soul actually does to a person, and everybody else regards it as an unusually literal one. A graft that fails does not kill the cultivator. It leaves them with the join.'
     }),
     art({
-        id: 'footing-and-fill-canon',
-        name: 'Footing and Fill Canon',
+        id: 'stone-marrow-foundation-canon',
+        name: 'Stone Marrow Foundation Canon',
         category: 'cultivation',
         grade: 'earth',
         element: 'earth',
@@ -2008,8 +2008,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The infant soul is set into worked stone and left in the ground for the years it takes, and the cultivator goes on with their life around the place it is buried. It produces an exceptionally durable Nascent Soul and one obvious vulnerability, which is that everybody in the house knows the location and the practitioner cannot move it. Houses that teach this are houses that do not expect to be driven off their ground.'
     }),
     art({
-        id: 'drawn-wire-canon',
-        name: 'Drawn Wire Canon',
+        id: 'silk-drawing-scripture',
+        name: 'Silk Drawing Scripture',
         category: 'cultivation',
         grade: 'immortal',
         element: 'metal',
@@ -2189,8 +2189,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Holds still and reads what a person is attached to: who is owed, who is owed by, what was inherited and from whom. It resolves nothing and proves nothing in law. It is simply that the reader now knows, and the read party can tell they know.'
     }),
     art({
-        id: 'convergence-sighting',
-        name: 'Convergence Sighting',
+        id: 'heavenly-mechanism-sight',
+        name: 'Heavenly Mechanism Sight',
         category: 'support',
         grade: 'earth',
         element: null,
@@ -2215,8 +2215,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A name is spoken into the register and held there by someone other than its owner. When a crossing takes a name at a realm boundary, the register still has it, and the holder can give it back - slowly, incompletely, and at whatever price the house has decided that year.'
     }),
     art({
-        id: 'anchor-stance-of-fixed-ground',
-        name: 'Anchor Stance of Fixed Ground',
+        id: 'immovable-ground-stance',
+        name: 'Immovable Ground Stance',
         category: 'defense',
         grade: 'earth',
         element: 'earth',
@@ -2228,8 +2228,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Fixes a patch of ground to itself so that nothing folds into it and nothing folds out. Against a sword it is nearly worthless. Against anyone whose whole doctrine is arriving somewhere else, it is the end of the argument.'
     }),
     art({
-        id: 'span-folding-survey',
-        name: 'Span-Folding Survey',
+        id: 'earth-shrinking-art',
+        name: 'Earth Shrinking Art',
         category: 'movement',
         grade: 'earth',
         element: null,
@@ -2255,7 +2255,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'quiet-cut-severing-stroke',
-        name: 'Quiet Cut Severing Stroke',
+        name: 'Still Blade Severing Stroke',
         category: 'forbidden',
         grade: 'heaven',
         element: null,
@@ -2273,8 +2273,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // out of burned seats, and the parts that are missing are not marked.
     // ═══════════════════════════════════════════════════════════════════
     art({
-        id: 'severed-thread-audit',
-        name: 'Severed Thread Audit',
+        id: 'karmic-thread-reading-art',
+        name: 'Karmic Thread Reading Art',
         category: 'support',
         grade: 'heaven',
         element: null,
@@ -2312,8 +2312,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Writes a debt onto someone that no amount of anything will settle, and then lets the ordinary machinery of consequence do the rest. The house that developed it was dissolved for selling it. Every recovered copy is missing the closing procedure, so the brand is also written, faintly, onto whoever applies it.'
     }),
     art({
-        id: 'anchor-nail-of-the-broken-girdle',
-        name: 'Anchor Nail of the Broken Girdle',
+        id: 'earth-anchoring-nail-art',
+        name: 'Earth Anchoring Nail Art',
         category: 'defense',
         grade: 'immortal',
         element: 'earth',
@@ -2326,7 +2326,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'gate-that-was-closed',
-        name: 'The Gate That Was Closed',
+        name: 'Ancient Gate Opening Art',
         category: 'movement',
         grade: 'immortal',
         element: null,
@@ -2338,8 +2338,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Opens one of the gates that were shut when their house ended. Travel is instantaneous and the destination is one of the old terminals rather than anywhere the traveller chose. Nine terminals are known to survive. Four of them are known to be somewhere a person can breathe.'
     }),
     art({
-        id: 'debt-collection-in-arrears',
-        name: 'Collection in Arrears',
+        id: 'debt-karmic-reclamation-art',
+        name: 'Karmic Reclamation Art',
         category: 'forbidden',
         grade: 'immortal',
         element: null,
@@ -2483,8 +2483,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The body is opened to something patient that has been waiting for exactly this offer. Power arrives immediately. The terms are collected across the remaining centuries, in instalments.'
     }),
     art({
-        id: 'heart-of-the-ten-thousand-corpses',
-        name: 'Heart of the Ten Thousand Corpses',
+        id: 'ten-thousand-corpse-heart',
+        name: 'Ten Thousand Corpse Heart',
         category: 'forbidden',
         grade: 'immortal',
         element: null,
@@ -2534,8 +2534,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The user is somewhere else, about a hundred paces off, without having crossed the distance. Ordinary qinggong at this rung is faster over any journey, cheaper, and can be done all day; this can be done four or five times before the user starts coughing, and each use takes a little off the far end of their life. What it is for is the hundred paces that cannot be crossed - a closed gate, a collapsed shaft, the far side of a formation, a room with one door and somebody standing in it.'
     }),
     art({
-        id: 'sealed-field-of-the-shut-hour',
-        name: 'Sealed Field of the Shut Hour',
+        id: 'shut-hour-sealing-field',
+        name: 'Shut Hour Sealing Field',
         category: 'defense',
         grade: 'heaven',
         element: null,
@@ -2642,8 +2642,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // below take a location and change a property of it that outlasts everybody who
     // was present.
     art({
-        id: 'quenching-of-the-standing-air',
-        name: 'Quenching of the Standing Air',
+        id: 'standing-air-quenching-art',
+        name: 'Standing Air Quenching Art',
         category: 'attack',
         grade: 'immortal',
         element: null,
@@ -2657,8 +2657,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The qi goes out of the air over a stretch of ground and does not come back. Nobody present is harmed and nothing is destroyed; what changes is what the place IS, permanently, for everybody who ever stands there afterwards. It does not win a fight - anybody it was used against walks away, and walks away able to fight - so as a weapon it is close to useless and was never meant as one. What it is for is denying ground to whoever comes next, which is a thing an age with sieges wanted and this one has no use for. The practitioner cannot draw there either, ever again, and the quenching takes a share of their own span on the way out. Every dead zone anybody has ever surveyed is either this art or something that behaved exactly like it.'
     }),
     art({
-        id: 'stillness-of-the-turning-year',
-        name: 'Stillness of the Turning Year',
+        id: 'turning-year-stillness-art',
+        name: 'Turning Year Stillness Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -2678,8 +2678,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // and every one of them is bounded in the way the schema insists on - it needs
     // something to ALREADY BE TRUE, and no magnitude widens that bound.
     art({
-        id: 'unsaying-of-a-given-name',
-        name: 'Unsaying of a Given Name',
+        id: 'name-erasing-art',
+        name: 'Name Erasing Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -2692,8 +2692,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A name that was given is ungiven, and everything fastened to it comes loose: the register entry, the inheritance, the oath sworn under it, the debt recorded against it. WHAT HAD TO ALREADY BE TRUE is that somebody named them, once, out loud, and that the naming was kept - so it does nothing whatsoever to a person who was never named, which is most people who have ever lived and every foundling in the province. It does not kill and it does not harm. It removes a person from the paperwork of the world, and the world is largely paperwork.'
     }),
     art({
-        id: 'severance-of-the-standing-thread',
-        name: 'Severance of the Standing Thread',
+        id: 'karmic-severing-art',
+        name: 'Karmic Severing Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -2706,8 +2706,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A connection that was made is unmade - a lineage, a master and disciple, a debt, a thing owed between two people who both know it is owed. WHAT HAD TO ALREADY BE TRUE is that the connection exists and that both ends of it are real; it cannot invent a severance where there was no thread, and against two people who merely dislike each other it does precisely nothing. Both ends feel it go. Neither can say afterwards what it was, only that there was one.'
     }),
     art({
-        id: 'the-hour-that-was-not-taken',
-        name: 'The Hour That Was Not Taken',
+        id: 'hour-reversing-art',
+        name: 'Hour Reversing Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -2720,8 +2720,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'A decision that was taken becomes one that was not taken, and the world proceeds from the other branch. WHAT HAD TO ALREADY BE TRUE is that somebody decided, deliberately, at a moment that can be identified - so it is useless against drift, against accident, against everything that merely happened, and useless against a decision nobody can now point to. It does not choose the other branch on anybody\'s behalf. It returns the chooser to the doorway, and they are perfectly free to walk through it again, which is what most of them do.'
     }),
     art({
-        id: 'unfixing-of-the-set-mark',
-        name: 'Unfixing of the Set Mark',
+        id: 'boundary-loosening-art',
+        name: 'Boundary Loosening Art',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -2739,13 +2739,13 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // art reaches a fact the world has already fixed. A decree needs nothing to
     // have been true.
     art({
-        id: 'the-road-that-was-always-there',
+        id: 'heavenly-road-decree',
         // Declared rather than defaulted, which every art above the Lid is
         // required to do. A decree has no headcount by construction: it is a
         // statement, and a statement that kills a number of people is a
         // tier-four art wearing the wrong label.
         reach: 'single',
-        name: 'The Road That Was Always There',
+        name: 'Heavenly Road Decree',
         category: 'movement',
         grade: 'chaos',
         element: null,
@@ -2758,13 +2758,13 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'There is a road here. There always was; the maps have it, the villages along it remember the tolls, and the families who have kept the waystations have kept them for nine generations. NOTHING HAD TO BE TRUE BEFOREHAND, which is the whole of the difference between this and the rung beneath it - no path, no track, no intention, no surveyor, nobody who ever walked it. The statement is made and the road has been there the entire time. It cannot be revised, so a road laid through a place that later needs to not have a road through it is a permanent fact about that place, and the two occasions anybody can point to are both remembered as disasters rather than as feats.'
     }),
     art({
-        id: 'the-witness-who-was-always-there',
+        id: 'heavenly-witness-decree',
         // Declared rather than defaulted, which every art above the Lid is
         // required to do. A decree has no headcount by construction: it is a
         // statement, and a statement that kills a number of people is a
         // tier-four art wearing the wrong label.
         reach: 'single',
-        name: 'The Witness Who Was Always There',
+        name: 'Heavenly Witness Decree',
         category: 'support',
         grade: 'chaos',
         element: null,
@@ -2793,8 +2793,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // lecture happened is the read channel operating at a rung that has exactly one
     // teacher who could simply have been asked.
     art({
-        id: 'the-seam-that-did-not-close',
-        name: 'The Seam That Did Not Close',
+        id: 'void-seam-holding-art',
+        name: 'Void Seam Holding Art',
         category: 'attack',
         grade: 'chaos',
         // The one that makes him what the measurement says he is. A hole in
@@ -2815,8 +2815,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The seam a crossing opens, made downward over ground instead of upward over a person, and held open rather than survived. He is the only being who has ever had a good look at one from underneath, which is the entire reason the art exists and the entire reason nobody else could have written it.'
     }),
     art({
-        id: 'what-came-back-instead',
-        name: 'What Came Back Instead',
+        id: 'half-immortal-body',
+        name: 'Half Immortal Body',
         category: 'defense',
         grade: 'chaos',
         // One person, and it is his own. A defence at this rung is not a wall
@@ -2833,8 +2833,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Half of a transformation completed and the rest of it did not, and the half that stays is the half that cannot be sent anywhere. Cultivated deliberately for six centuries by the only person the lower realm has ever declined to expel, it is a defence made out of being permitted to remain.'
     }),
     art({
-        id: 'the-second-question',
-        name: 'The Second Question',
+        id: 'first-arrival-sword-art',
+        name: 'First Arrival Sword Art',
         category: 'attack',
         grade: 'chaos',
         // The man he meant and whoever is holding the position with him,
@@ -2860,8 +2860,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // which is `OBJECT_CEILING_BELOW_THE_LID` and the reason this file can
     // carry the rung and `artifacts.ts` carries it differently.
     art({
-        id: 'one-crossing-of-a-courtyard',
-        name: 'One Crossing of a Courtyard',
+        id: 'one-step-beyond-heaven',
+        name: 'One Step Beyond Heaven',
         category: 'attack',
         grade: 'chaos',
         // A place, and it is the only reach that makes sense of the accounts:
@@ -2967,7 +2967,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     art({
         // THE TOP PRIZE, AND THE ONE BOOK THAT TAKES THE BAND EXEMPTION.
         id: 'first-and-last-breath-canon',
-        name: 'Canon of the First and Last Breath',
+        name: 'First and Last Breath Scripture',
         category: 'cultivation',
         grade: 'chaos',
         element: null,
@@ -2984,8 +2984,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'One breath cycle, described once, and then forty rungs of what that same cycle becomes as the body around it stops being a mortal body. It does not teach a foundation method and a core method and a soul method; it teaches a breath, and then it explains for six hundred pages that there was never more than one thing to learn. Every alchemist and every sword house that has read it agrees it is correct. Nobody has ever met a person who was using it.'
     }),
     art({
-        id: 'canon-of-the-unwritten-span',
-        name: 'Canon of the Unwritten Span',
+        id: 'unwritten-span-scripture',
+        name: 'Unwritten Span Scripture',
         category: 'cultivation',
         grade: 'chaos',
         // A gathering canon lands on the person practising it, which is one
@@ -3011,8 +3011,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'Accumulation written for somebody whose remaining years have stopped being a quantity anybody would bother recording. It is short, it is orderly, and every house that has worked through it has come out the far side agreeing that it is correct and that there is nothing in it they can do.'
     }),
     art({
-        id: 'the-fifteenth-breath',
-        name: 'The Fifteenth Breath',
+        id: 'fifteenth-breath-return-art',
+        name: 'Fifteenth Breath Return Art',
         category: 'movement',
         grade: 'chaos',
         // The traveller, and only the traveller. Nothing about the going up
@@ -3162,7 +3162,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
 
     // the climb, wood end to end One element the whole way, which is deliberate and
     // is the difference between this house and the physician house one province
-    // over: the Verdant Spring Hall's wood line runs 16, 17, 21, 25 and stops, so a
+    // over: the Verdant Spring Valley's wood line runs 16, 17, 21, 25 and stops, so a
     // wood root there has a real career and a real ceiling. Here the same root goes
     // to thirty-three. Which road you are on decides nothing inside these walls;
     // the door does.
@@ -3212,9 +3212,9 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
             'The soul is brought up as a second flowering off a stem that has already flowered once, which is a thing plants do and bodies are not supposed to. The Court holds that this is why its people take so long over Nascent Soul and why so few of them break in the attempt, and it has the roll to argue it with.'
     }),
     art({
-        id: 'late-opening-canon',
+        id: 'late-blossom-scripture',
         subjects: ['flower'],
-        name: 'Late-Opening Canon',
+        name: 'Late Blossom Scripture',
         category: 'cultivation',
         grade: 'heaven',
         element: 'wood',
@@ -3473,7 +3473,7 @@ export const LIVING_TRANSMISSIONS: readonly LivingTransmission[] = [
         wants:
             'To be taken to a perimeter he has not surveyed, and left alone at it for a season. He will not say which perimeters he has already done and he keeps the list on him.',
         whyNotTheShelf:
-            'The Anchorhold teaches the canon and teaches it badly, because the house understands it as a method for drawing on a vein and Xu Zhenshan is the only person in either province who has worked out that it is a method for measuring one. The shelf version works. His version tells the student what they are standing on, which is a different art wearing the same title.'
+            'Immovable Mountain Temple teaches the canon and teaches it badly, because the house understands it as a method for drawing on a vein and Xu Zhenshan is the only person in either province who has worked out that it is a method for measuring one. The shelf version works. His version tells the student what they are standing on, which is a different art wearing the same title.'
     },
     {
         // Was the Flame Sovereign, who stands at 34 and cannot walk anybody to

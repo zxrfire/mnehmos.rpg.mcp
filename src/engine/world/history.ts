@@ -825,7 +825,7 @@ const FACTION_ADJ = [
     'Hollow Reed', 'Wound Gate', 'Thousand Furrow', 'Salt Bell', 'Low Hearth'
 ] as const;
 
-const FACTION_FORM = ['Sect', 'Hall', 'Pavilion', 'Court', 'Consortium'] as const;
+const FACTION_FORM = ['Sect', 'Hall', 'Pavilion', 'Court', 'Stone Marrow Hall'] as const;
 
 const ERA_ADJ = [
     'Standing', 'Bright', 'Drowned', 'Iron', 'Counting', 'Quiet', 'Burning',

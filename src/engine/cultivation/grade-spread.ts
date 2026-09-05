@@ -32,7 +32,7 @@ import { BODY_COST_OF_A_CROSSING } from './breakthrough.js';
 import {
     FOUNDATION_A_GIVEN_CROSSING_LEAVES,
     NOTHING_IS_GIVEN_AT_OR_ABOVE
-} from './taking-the-unearned-step.js';
+} from './taking-the-heaven-ascending-golden-pill.js';
 import { BEASTS, BEAST_CORE_ORDINAL } from '../../data/cultivation/beasts.js';
 // THE ONE DETONATION. `what-somebody-does-about-being-wronged.ts` already owns
 // what spending yourself reaches and what it costs by distance; a second way to
@@ -73,7 +73,7 @@ export interface Overdraw {
     /** What is still there when it ends. Kept, permanently. */
     residueRungs: number;
     /**
-     * What the residue's structure is, and it is the Unearned Step's word.
+     * What the residue's structure is, and it is the Heaven-Ascending Golden Pill's word.
      */
     foundation: FoundationQuality;
     /**
@@ -468,7 +468,7 @@ export const GRADE_SPREAD: Readonly<Record<TechniqueGrade, readonly GradeOutcome
                 const lift = liftFromCarrying(sheet.realmOrdinal, ctx.sourceOrdinal);
                 // THE RESIDUE OBEYS THE LADDER'S OWN RULE ABOUT GIFTS
                 //
-                // `NOTHING_IS_GIVEN_AT_OR_ABOVE` is the Unearned Step's bound
+                // `NOTHING_IS_GIVEN_AT_OR_ABOVE` is the Heaven-Ascending Golden Pill's bound
                 // and it is not about pills: nothing hands anybody a rung up
                 // there, whatever it is. Reusing the constant rather than
                 // writing a bound of my own is what stops this becoming a

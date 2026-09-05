@@ -599,7 +599,7 @@ export const situatedReads = {
 
         // AND THE TWO WAYS OF GETTING THERE THAT ARE NOT THE ROAD
         if (thereIsACounterAt(placeName(cultivator))) {
-            const line = 'The Measured Span keeps a counter here. There is a board on the wall '
+            const line = 'The Shrinking Earth Pavilion keeps a counter here. There is a board on the wall '
                 + 'with what runs from it, what each costs and when it goes, and reading it '
                 + 'costs nothing.';
             facts.lines.push(line);

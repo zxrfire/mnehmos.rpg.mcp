@@ -87,7 +87,7 @@ export const NAMEABLE_FROM: KnowingStage = 'whisper';
 
 /**
  * The floor at which the holder can point at a thing in the world. Below
- * `placed` a name is a sound: somebody who heard "Iron Gate" through a wall
+ * `placed` a name is a sound: somebody who heard "Iron Ridge" through a wall
  * cannot set out for it, not knowing whether it is a town or a person. This is
  * the predicate a travel verb wants and NOT one about being let in.
  */

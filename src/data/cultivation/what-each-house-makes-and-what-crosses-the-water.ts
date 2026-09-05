@@ -101,23 +101,23 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
         soldOutside: 'Openly, over a counter, at a published price, and the clan has delivered eleven blades to the Azure Cloud Pavilion at cost in four years without an order and without acknowledgement.'
     },
     {
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         craft: 'Refining. Four furnaces, a fixed price list, and the only alchemy anybody in two provinces can buy over a counter.',
-        whoTheyAre: 'The guild IS its artisans - there is no distinction here between a member and a maker, and a Guild rank is a furnace rank. Its cold branch at Cold Peak is four furnaces and a price list and nothing else.',
+        whoTheyAre: 'The hall IS its artisans - there is no distinction here between a member and a maker, and a Hall rank is a furnace rank. Its cold branch at Cold Peak is four furnaces and a price list and nothing else.',
         makes: [
             'the healing, gathering and clear-meridian pills that the whole price table is anchored against',
             'crossing pills bought by every house in the province for its own people, at a price nobody negotiates',
             'furnace time, sold by the day to anybody who brings their own formula and their own materials'
         ],
-        cannotMake: 'Anything at all in the Silent Cliffs, and this is the single largest fact about the world\'s pill trade. A refinement needs ambient qi to hold its shape while it sets, and in the Silent Cliffs it does not set - so every pill in that province is imported eleven days by cart, and the Guild has tried and abandoned a western furnace three times.',
-        soldOutside: 'To everybody, at the list price, without exception and without discount, which is the Guild\'s entire reputation and the reason its list is quoted in provinces it has never operated in.'
+        cannotMake: 'Anything at all in the Silent Cliffs, and this is the single largest fact about the world\'s pill trade. A refinement needs ambient qi to hold its shape while it sets, and in the Silent Cliffs it does not set - so every pill in that province is imported eleven days by cart, and the Hall has tried and abandoned a western furnace three times.',
+        soldOutside: 'To everybody, at the list price, without exception and without discount, which is the Hall\'s entire reputation and the reason its list is quoted in provinces it has never operated in.'
     },
     {
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         craft: 'Growing and preparing. Nine warm springs, terraced beds, and physicians who prepare what they pick.',
         whoTheyAre: 'Gardeners and physicians, and the Hall does not rank them below its cultivators - it lives on its physicians, which is stated in its own territory line and is the reason a hall on ground with no vein worth the name is still standing.',
         makes: [
-            'prepared herbs by the catty, graded and dated, which is the input half of most of the Guild\'s list',
+            'prepared herbs by the catty, graded and dated, which is the input half of most of the Hall\'s list',
             'mortal medicine that works on mortals, sold at prices a village can raise',
             'the only cultivated stock of four herbs that everybody else has to find'
         ],
@@ -125,32 +125,32 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
         soldOutside: 'Freely, and the Hall prices mortal medicine below cost on purpose, which two of its own elders have argued about for thirty years without either of them winning.'
     },
     {
-        factionId: 'sect-stonewright-consortium',
+        factionId: 'sect-stone-marrow-hall',
         craft: 'Assay and cutting. Refining houses at the head of nine veins, and the standard everybody else\'s stones are cut to.',
-        whoTheyAre: 'Assayers and cutters, and the Consortium is the rare house where the artisans set the policy: the rate is a technical judgement before it is a commercial one, and the cutters are the people who make it.',
+        whoTheyAre: 'Assayers and cutters, and the Stone Marrow Hall is the rare house where the artisans set the policy: the rate is a technical judgement before it is a commercial one, and the cutters are the people who make it.',
         makes: [
-            'assayed spirit stones cut to the Stonewright standard, which is the currency everything else in this file is priced in',
+            'assayed spirit stones cut to the Stone Marrow standard, which is the currency everything else in this file is priced in',
             'the published rate itself, which is the only export in the world that arrives before the goods do',
             'the insurance table that reads a Silent Cliffs title one rank low, which is a product and gets people killed'
         ],
-        cannotMake: 'Its own stones. The Consortium holds no vein and cuts what other people dig, so it is the wealthiest body in two provinces and owns none of the material it is wealthy from.',
-        soldOutside: 'It sells nothing else. Every stone it touches belongs to somebody when it arrives and to somebody when it leaves, and the Consortium takes the cut and the rate.'
+        cannotMake: 'Its own stones. The Stone Marrow Hall holds no vein and cuts what other people dig, so it is the wealthiest body in two provinces and owns none of the material it is wealthy from.',
+        soldOutside: 'It sells nothing else. Every stone it touches belongs to somebody when it arrives and to somebody when it leaves, and the Stone Marrow Hall takes the cut and the rate.'
     },
     {
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         craft: 'Not making - recovering. The Company is the one body here whose product was made by somebody who is dead.',
         whoTheyAre: 'Diggers and sorters. The barrow yard at Willow Village is a sorting floor rather than a workshop and the distinction is the whole of the Silent Cliffs: a province that cuts its qi out of stone does not have artisans in the ordinary sense, it has extractors.',
         makes: [
-            'sorted sealed-site salvage, priced at Willow Village before it goes to Iron Gate',
+            'sorted sealed-site salvage, priced at Willow Village before it goes to Iron Ridge',
             'scar-ground herbs that only fruit on dead ground, which are the Jade Gorge\'s single largest import from the west',
             'nothing that did not already exist, which is stated plainly in the Company\'s own manifest rule'
         ],
         cannotMake: 'Anything whatsoever. There is no forge, no furnace and no bed in the Silent Cliffs that works, because alchemy will not set and the ambient will not hold a refinement - so the region\'s entire economy is moving other people\'s finished goods and other ages\' leavings.',
-        soldOutside: 'By weight, on a published manifest rule, to the Iron Gate Assay House and to its own factor at Clear River Ford, and to the Thousand Treasure Pavilion when the Pavilion sends a buyer.'
+        soldOutside: 'By weight, on a published manifest rule, to the Iron Ridge Assay House and to its own factor at Clear River Ford, and to the Thousand Treasure Pavilion when the Pavilion sends a buyer.'
     },
     {
-        factionId: 'sect-halfwater-rail',
-        craft: 'Making nothing, and that is the whole of the port. What the Rail produces is the transaction.',
+        factionId: 'sect-silver-island-market',
+        craft: 'Making nothing, and that is the whole of the port. What the Market produces is the transaction.',
         whoTheyAre: 'Coopers, ropewalkers, a cistern crew and eleven caulkers, and every one of them is maintenance rather than manufacture. The port makes barrels, cordage and repairs because a hull that cannot be repaired at Silver Island is a hull that stops coming.',
         makes: [
             'water casks and sealed stone jars, which are the binding constraint on every passage in the province',
@@ -161,9 +161,9 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
         soldOutside: 'The repairs are sold on the quay. The transaction is sold everywhere, and the margin on it is the port\'s entire income - the tax is a fortieth and the spread is where the money is.'
     },
     {
-        factionId: 'sect-sink-carriers',
+        factionId: 'sect-sand-well-caravan',
         craft: 'Carrying, and the only thing the shed makes is skins to carry in.',
-        whoTheyAre: 'Sewers and pitchers, mostly people too broken to walk a string any more, working under the shed roof beside the tally boards. It is the one job at the Carriers that a person can hold after the sand has finished with them, and everybody there knows what being moved to it means.',
+        whoTheyAre: 'Sewers and pitchers, mostly people too broken to walk a string any more, working under the shed roof beside the tally boards. It is the one job at the Caravan that a person can hold after the sand has finished with them, and everybody there knows what being moved to it means.',
         makes: [
             'water skins, pitched and stitched, forty to sixty of which are a string',
             'nothing else at all, because a body that has to rewalk its own route every season cannot carry a workshop'
@@ -302,11 +302,11 @@ export const SEA_CARGO: readonly Cargo[] = [
     {
         id: 'cargo-pills-south',
         what: 'Refined pills, in sealed stone jars, packed in salt against the damp',
-        madeByFactionId: 'sect-cinnabar-crucible-guild',
+        madeByFactionId: 'sect-cinnabar-crucible-sect',
         laneId: 'lane-the-river-mouth',
         direction: 'outbound',
         carriedByFactionId: 'sect-clear-river-alliance',
-        boughtBy: 'Everybody at Silver Island, and the Guild does not send a factor - it sells at the list price at Green Water City and the port pays the carriage, which is why a pill costs more than twice as much on the quay as it does in the Guild hall.',
+        boughtBy: 'Everybody at Silver Island, and the Hall does not send a factor - it sells at the list price at Green Water City and the port pays the carriage, which is why a pill costs more than twice as much on the quay as it does in the Hall hall.',
         whyByWater: 'There is no road. The Drowned Sea is water, so every grain of food and every pill in it arrived on a hull, and this is the only regular service between the land and the water at all.'
     },
     {
@@ -321,11 +321,11 @@ export const SEA_CARGO: readonly Cargo[] = [
     },
     {
         id: 'cargo-assayed-stones-east',
-        what: 'Assayed spirit stones, cut to the Stonewright standard and sealed under a factor\'s mark',
-        madeByFactionId: 'sect-stonewright-consortium',
+        what: 'Assayed spirit stones, cut to the Stone Marrow standard and sealed under a factor\'s mark',
+        madeByFactionId: 'sect-stone-marrow-hall',
         laneId: 'lane-eastern-passage',
         direction: 'inbound',
-        carriedByFactionId: 'sect-halfwater-rail',
+        carriedByFactionId: 'sect-silver-island-market',
         boughtBy: 'The port itself, and then everybody at it. Stones out here are not savings and not fuel - they are the ground, so the largest single buyer of stones in the world is a market with no vein under it.',
         whyByWater: 'The road east goes through the gorge and is taxed there. A hull out of Cloud Gate reaches Silver Island in twelve days having paid nobody, which is the whole of why the port is on that lane and not on a coast.'
     },
@@ -335,8 +335,8 @@ export const SEA_CARGO: readonly Cargo[] = [
         madeByFactionId: 'sect-frostmirror-court',
         laneId: 'lane-the-northern-capes',
         direction: 'outbound',
-        carriedByFactionId: 'sect-halfwater-rail',
-        boughtBy: 'The Thousand Treasure Pavilion\'s floor at Sweet Spring Island and the Stonewright assay at Iron Gate, both of which pay a premium for stones that assay high and neither of which will insure the carriage.',
+        carriedByFactionId: 'sect-silver-island-market',
+        boughtBy: 'The Thousand Treasure Pavilion\'s floor at Sweet Spring Island and the Stone Marrow assay at Iron Ridge, both of which pay a premium for stones that assay high and neither of which will insure the carriage.',
         whyByWater: 'The pass is shut five months a year and the five months it is shut are the five months the stones can be moved. This lane is open two months a year and both of them are inside that window, which is the only reason a route that loses one hull in five carries anything at all.'
     },
     {
@@ -352,11 +352,11 @@ export const SEA_CARGO: readonly Cargo[] = [
     {
         id: 'cargo-water-jars',
         what: 'Fresh water in sealed stone jars, and the casks and cordage that carry it',
-        madeByFactionId: 'sect-halfwater-rail',
+        madeByFactionId: 'sect-silver-island-market',
         laneId: 'lane-eastern-passage',
         direction: 'outbound',
-        carriedByFactionId: 'sect-halfwater-rail',
-        boughtBy: 'Every hull leaving the port, without exception, and it is the one thing on the quay the Rail sells at a margin nobody complains about, because a shipmaster arguing about the water price in front of a crew has already lost the crew.',
+        carriedByFactionId: 'sect-silver-island-market',
+        boughtBy: 'Every hull leaving the port, without exception, and it is the one thing on the quay the Market sells at a margin nobody complains about, because a shipmaster arguing about the water price in front of a crew has already lost the crew.',
         whyByWater: 'It is the constraint rather than the cargo. Water is the actual binding limit on every passage in the province and the reason the map is a list of wells rather than a list of places.'
     }
 ];
@@ -378,7 +378,7 @@ export function cargoCarriedBy(factionId: string): Cargo[] {
 //
 // Four bodies move goods across this water and no two of them are the same
 // kind of operator. That is the content: "traders" as one undifferentiated
-// noun would be a guild with a different name, and what makes a sea trade
+// noun would be a hall with a different name, and what makes a sea trade
 // interesting is that the people on it disagree about what they are doing.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -395,9 +395,9 @@ export const SEA_TRADERS: readonly {
         howItIsPaid: 'In crossings owed rather than in cash, wherever it can arrange it, which is how it prices a ford and is the only pricing the Alliance has ever used.'
     },
     {
-        factionId: 'sect-halfwater-rail',
+        factionId: 'sect-silver-island-market',
         whatKindOfOperator: 'A port rather than a carrier, and it works both lanes it touches only because nobody else will. What it actually sells is the counter, and the hulls are what keeps the counter stocked.',
-        whereItWillNotGo: 'Anywhere that would make it a second port. A network is a party and a party has enemies, and the Rail Master has put that to the Factors twice in those words.',
+        whereItWillNotGo: 'Anywhere that would make it a second port. A network is a party and a party has enemies, and the Market Master has put that to the Factors twice in those words.',
         howItIsPaid: 'A fortieth on what crosses the rail, and the spread on what it buys from people who have no other buyer. The second is much the larger and is the reason the first can stay a fortieth.'
     },
     {
@@ -407,7 +407,7 @@ export const SEA_TRADERS: readonly {
         howItIsPaid: 'On the hammer, at its own floors, and the carriage never appears as a line - which means nobody outside the Pavilion knows what the eastern passage actually costs it.'
     },
     {
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         whatKindOfOperator: 'Not a carrier and the reason the others survive. Nine gate stations, no two within a month\'s walk and all of them an hour apart, including The Far Shore on a shore three weeks\' sail out.',
         whereItWillNotGo: 'It carries goods for nobody. The Span moves people and letters through a door on its own cycle, four days in nine and never in a storm, and a consignment has never once gone through one.',
         howItIsPaid: 'A gate fee, in stones, priced by true rather than walked distance, which nobody outside the Span can verify and everybody pays.'
@@ -424,20 +424,20 @@ export const SEA_TRADERS: readonly {
 // ─────────────────────────────────────────────────────────────────────────
 
 export const HALFWATER_TERMS = {
-    portFactionId: 'sect-halfwater-rail',
+    portFactionId: 'sect-silver-island-market',
     regionId: SOUTH_REGION_ID,
 
     theRate:
         'A fortieth of what crosses the rail, published, unchanged in ninety years, and refused upward four times in writing. It is light on purpose and not out of generosity: the traffic is where the profit is, and a port that squeezes the traffic moves it somewhere else and is then holding forty acres of rock.',
 
     whereTheMoneyActuallyIs:
-        'The spread. The Rail buys from people who have no other buyer and sells on at what the thing is worth, and that margin is several times the rate. A weak cultivator holding something valuable cannot sell it to an individual, because the individual can simply take it and nobody is coming for them - so the port is not competing on price, it is the only counterparty in the world that a person in that position can safely approach.',
+        'The spread. The Market buys from people who have no other buyer and sells on at what the thing is worth, and that margin is several times the rate. A weak cultivator holding something valuable cannot sell it to an individual, because the individual can simply take it and nobody is coming for them - so the port is not competing on price, it is the only counterparty in the world that a person in that position can safely approach.',
 
     discretionIsPriced:
         'A seller who wants no name attached takes less for the lot and knows they are taking less. It is a service with a margin on it rather than a courtesy, and it is exactly what somebody holding a thing they should not be holding will pay for. The port does not pretend this is kindness and nobody at the quay has ever thought it was.',
 
     theLineItDraws:
-        'Buying quietly is the service. Buying from somebody an apex is actively hunting is a different proposition, because the hunt arrives at the port and the port has nothing to meet it with - so the Rail refuses those lots, refuses them in front of whoever is standing there, and has the refusal copied to the seller\'s face. It has cost the port four large lots in ninety years and is the reason the arrangement that protects it has never been tested.',
+        'Buying quietly is the service. Buying from somebody an apex is actively hunting is a different proposition, because the hunt arrives at the port and the port has nothing to meet it with - so the Market refuses those lots, refuses them in front of whoever is standing there, and has the refusal copied to the seller\'s face. It has cost the port four large lots in ninety years and is the reason the arrangement that protects it has never been tested.',
 
     // ── the two regimes of order, and only one of them is the port's ──
     theWatch: {
@@ -450,7 +450,7 @@ export const HALFWATER_TERMS = {
     },
 
     abovePartiesGuaranteeThemselves:
-        'Above the watch, the Rail does not police anybody and says so at the gate. A high cultivator at Silver Island is protected by what they are and by who would come for them, which is why it is usually quiet up there: nobody robs a Nascent Soul cultivator, because everybody knows what that person will do and how long they will take about it. When it does happen it is spectacular, it is a private war, and the port neither stops it nor is party to it.',
+        'Above the watch, the Market does not police anybody and says so at the gate. A high cultivator at Silver Island is protected by what they are and by who would come for them, which is why it is usually quiet up there: nobody robs a Nascent Soul cultivator, because everybody knows what that person will do and how long they will take about it. When it does happen it is spectacular, it is a private war, and the port neither stops it nor is party to it.',
 
     theSeam: {
         ordinalFrom: 17,

@@ -14,7 +14,7 @@
  *
  * Measured before this existed, with the offerer standing at rung 4:
  *
- *     The Unearned Step   ->  4
+ *     The Heaven-Ascending Golden Pill   ->  4
  *     The Standing Edge   ->  4      (a rated-45 object)
  *     my protection       ->  4
  *
@@ -60,9 +60,9 @@ describe('what an offer is worth is read off its grade', () => {
     it('prices a thing that came down off the ceiling its own grade permits', () => {
         // `STEP_CEILING_BY_GRADE`, read and not restated. What is asserted is
         // the ORDER, because the ordinals are the ladder's to move.
-        const lower = whatIsBeingPutDown('a lower Unearned Step', 4, []);
-        const middle = whatIsBeingPutDown('a middle Unearned Step', 4, []);
-        const higher = whatIsBeingPutDown('a higher Unearned Step', 4, []);
+        const lower = whatIsBeingPutDown('a lower Heaven-Ascending Golden Pill', 4, []);
+        const middle = whatIsBeingPutDown('a middle Heaven-Ascending Golden Pill', 4, []);
+        const higher = whatIsBeingPutDown('a higher Heaven-Ascending Golden Pill', 4, []);
 
         expect(lower.carriesThemTo).toBeGreaterThan(4);
         expect(middle.carriesThemTo).toBeGreaterThan(lower.carriesThemTo);
@@ -79,8 +79,8 @@ describe('what an offer is worth is read off its grade', () => {
     it('is worth nothing to somebody it cannot move, and everything to somebody it can', () => {
         // The two Steps offered to the same person. A middle one tops out at
         // the realm she is already standing in; a higher one crosses her wall.
-        const middle = whatIsBeingPutDown('a middle Unearned Step', 4, [], AT_THE_FLOOR);
-        const higher = whatIsBeingPutDown('a higher Unearned Step', 4, [], AT_THE_FLOOR);
+        const middle = whatIsBeingPutDown('a middle Heaven-Ascending Golden Pill', 4, [], AT_THE_FLOOR);
+        const higher = whatIsBeingPutDown('a higher Heaven-Ascending Golden Pill', 4, [], AT_THE_FLOOR);
 
         expect(middle.carriesThemTo).toBe(0);
         expect(higher.carriesThemTo).toBeGreaterThan(AT_THE_FLOOR);
@@ -101,7 +101,7 @@ describe('what an offer is worth is read off its grade', () => {
             whatIsBeingPutDown('5000 spirit stones', 4, [], AT_THE_FLOOR)
         ]);
         const forAStep = whatItWouldTake(holding, [
-            whatIsBeingPutDown('a higher Unearned Step', 4, [], AT_THE_FLOOR)
+            whatIsBeingPutDown('a higher Heaven-Ascending Golden Pill', 4, [], AT_THE_FLOOR)
         ]);
 
         expect(forStones.itIsATrade).toBe(false);

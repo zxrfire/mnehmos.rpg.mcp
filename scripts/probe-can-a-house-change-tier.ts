@@ -56,7 +56,7 @@ for (const f of founded.slice(0, 6)) {
 }
 console.log('\nTIER OF SEEDED BODIES, for comparison');
 for (const id of ['sect-azure-cloud-pavilion', 'sect-storm-tyrant-court',
-    'sect-hollow-court', 'sect-sixmile-wardens']) {
+    'sect-hollow-court', 'sect-six-li-patrol']) {
     console.log(`  tier ${tierOf(id)}  chain [${chainToApex(id).join(' -> ')}]  ${id}`);
 }
 

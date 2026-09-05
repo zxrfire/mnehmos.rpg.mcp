@@ -198,14 +198,14 @@ describe('what the engine does with it', () => {
     it('refuses a tie rather than guessing which thing they meant', () => {
         const two = deps({
             pouch: [
-                { itemId: 'pill-a', kind: 'pill', quantity: 1, name: 'Minor Healing Pill' },
+                { itemId: 'pill-a', kind: 'pill', quantity: 1, name: 'Lesser Healing Pill' },
                 { itemId: 'pill-b', kind: 'pill', quantity: 1, name: 'Greater Healing Pill' }
             ]
         });
         expect(theLotTheyMeant('healing', two.pouch)).toBe('ambiguous');
         const out = handOver(two, 'the healing pill', undefined);
         expect(out.refused).toBe(true);
-        expect(out.facts.lines[0]).toContain('Minor Healing Pill');
+        expect(out.facts.lines[0]).toContain('Lesser Healing Pill');
     });
 
     it('names the room when nobody is there to take it', () => {
@@ -238,11 +238,11 @@ describe('what the engine does with it', () => {
 /**
  * A name the game printed is a name the player can type - the pill half.
  *
- * The Unearned Step became a spendable item and the game began printing its
+ * The Heaven-Ascending Golden Pill became a spendable item and the game began printing its
  * name, and the class noun was still required:
  *
- *   I take the Unearned Step      -> unclear
- *   I swallow the Unearned Step   -> unclear
+ *   I take the Heaven-Ascending Golden Pill      -> unclear
+ *   I swallow the Heaven-Ascending Golden Pill   -> unclear
  *   I take the pill               -> consume_pill
  *
  * The only sentence that reached the effect was the one that did not name the
@@ -250,16 +250,16 @@ describe('what the engine does with it', () => {
  */
 describe('a consumable is reachable by its own name', () => {
     it.each([
-        'I take the Unearned Step',
-        'I swallow the Unearned Step',
-        'I use the Second Dealing'
+        'I take the Heaven-Ascending Golden Pill',
+        'I swallow the Heaven-Ascending Golden Pill',
+        'I use the Root-Recasting Talisman'
     ])('%s reaches the effect', said => {
         expect(parseIntent(said).action).toBe('consume_pill');
     });
 
     it('still needs the taking verb, so naming one is not taking one', () => {
-        expect(parseIntent('what is the Unearned Step').action).not.toBe('consume_pill');
-        expect(parseIntent('I ask the Court for the Unearned Step').action).toBe('petition');
-        expect(parseIntent('I petition for the Unearned Step').action).toBe('petition');
+        expect(parseIntent('what is the Heaven-Ascending Golden Pill').action).not.toBe('consume_pill');
+        expect(parseIntent('I ask the Court for the Heaven-Ascending Golden Pill').action).toBe('petition');
+        expect(parseIntent('I petition for the Heaven-Ascending Golden Pill').action).toBe('petition');
     });
 });

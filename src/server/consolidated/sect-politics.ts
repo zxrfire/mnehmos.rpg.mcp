@@ -54,7 +54,7 @@ import type { Cultivator, InsightDomain } from '../../schema/cultivation.js';
 /**
  * The house that sells certification of an ancestral claim.
  */
-export const CERTIFYING_HOUSE_ID = 'house-ninefold-ledger';
+export const CERTIFYING_HOUSE_ID = 'house-ninefold-karma';
 
 /**
  * Spirit stones a certification costs.

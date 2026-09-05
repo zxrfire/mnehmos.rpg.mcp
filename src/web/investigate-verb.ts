@@ -69,7 +69,7 @@ export const investigateVerb = {
         //
         // `resolveAnything` walked self, cultivator, sect, place, technique,
         // recipe, pill and herb, and objects were in none of it - so
-        // `I examine the Unearned Step`, `I look at the sword in his hand` and
+        // `I examine the Heaven-Ascending Golden Pill`, `I look at the sword in his hand` and
         // `I examine my sword` all reached the generic refusal with every
         // ingredient of the answer sitting in the world.
         //

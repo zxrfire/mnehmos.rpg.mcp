@@ -118,13 +118,13 @@ export function tooLightToBeWorthTaking(weight: Severity): boolean {
  * The oathwright house, and the reason two indentures identical on paper are not
  * the same arrangement.
  */
-export const THE_OATHWRIGHT_HOUSE = 'house-unbroken-tally';
+export const THE_OATHWRIGHT_HOUSE = 'house-vermilion-seal';
 
 /** Bodies the oathwright house will not witness for, and why. */
 export const THE_OATHWRIGHT_WILL_NOT_WITNESS_FOR: Readonly<Record<string, string>> =
     Object.freeze({
         'sect-the-severed':
-            'A founding oath of the House of the Unbroken Tally forbids it, and the house has '
+            'A founding oath of the Vermilion Seal Terrace forbids it, and the house has '
             + 'refused the fee every year since rather than break it. What the Severed use '
             + 'instead is not recorded anywhere the House would be able to read.'
     });

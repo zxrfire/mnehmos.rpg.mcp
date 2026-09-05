@@ -322,10 +322,10 @@ describe('the overshoot the old lookup was carrying', () => {
         const ids = [
             'sect-azure-cloud-pavilion', 'sect-the-severed', 'sect-frostmirror-court',
             'sect-sweptground-temple', 'sect-nine-peaks-ascetic-order', 'sect-lantern-hall',
-            'sect-azure-mist-court', 'sect-stonewright-consortium', 'sect-clear-river-alliance',
-            'sect-verdant-spring-hall', 'sect-crimson-abyss-hall', 'sect-nine-abyss-flame-sect',
-            'sect-storm-tyrant-court', 'sect-cinnabar-crucible-guild', 'sect-ashen-forge-clan',
-            'sect-standing-grove', 'sect-weir-office', 'sect-bone-lantern-cult'
+            'sect-azure-mist-court', 'sect-stone-marrow-hall', 'sect-clear-river-alliance',
+            'sect-verdant-spring-valley', 'sect-crimson-abyss-fortress', 'sect-nine-abyss-flame-sect',
+            'sect-storm-tyrant-court', 'sect-cinnabar-crucible-sect', 'sect-ashen-forge-clan',
+            'sect-ancient-bough-grove', 'sect-clearwater-ward', 'sect-bone-lantern-cult'
         ];
         for (const id of ids) {
             const sect = getSect(id);

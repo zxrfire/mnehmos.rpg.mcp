@@ -56,7 +56,7 @@ describe('a dao oath', () => {
     it('is answered by the sky as well', async () => {
         const { game, db } = makeGame({ seed: 'dao-oath', worldEnabled: true });
         await game.newRun('Probe');
-        await game.act('I swear a dao oath to the Unbroken Tally');
+        await game.act('I swear a dao oath to the Vermilion Seal Terrace');
         const broke = await game.act('I break the dao oath I swore');
 
         expect(struckIn(broke.toolCalls), 'the sky answered').toBe(true);
@@ -64,8 +64,8 @@ describe('a dao oath', () => {
         // too" half. Whether they act is their discretion and not this test's.
         expect(
             ledger(db).some(row =>
-                row.cause === 'broken_oath' && row.holder_id === 'house-unbroken-tally'),
-            'the Unbroken Tally is holding an account about it'
+                row.cause === 'broken_oath' && row.holder_id === 'house-vermilion-seal'),
+            'the Vermilion Seal Terrace is holding an account about it'
         ).toBe(true);
     });
 
@@ -73,7 +73,7 @@ describe('a dao oath', () => {
     it('can be sworn by somebody who was never introduced to the house', async () => {
         const { game } = makeGame({ seed: 'known-house', worldEnabled: true });
         await game.newRun('Probe');
-        const sworn = await game.act('I swear a dao oath to the Unbroken Tally');
+        const sworn = await game.act('I swear a dao oath to the Vermilion Seal Terrace');
         expect(sworn.toolCalls.map(c => c.name)).toContain('social.createObligation');
     });
 });
@@ -118,7 +118,7 @@ describe('an oath about a thing is not the thing', () => {
      */
     it('swears about a killing rather than doing one', () => {
         expect(parseIntent('I swear a dao oath that I will kill him').action).toBe('oath');
-        expect(parseIntent('I swear a blood oath to destroy the Iron Gate').action).toBe('oath');
+        expect(parseIntent('I swear a blood oath to destroy the Iron Ridge').action).toBe('oath');
         expect(parseIntent('I take an oath that I will bring back the herb').action).toBe('oath');
     });
 

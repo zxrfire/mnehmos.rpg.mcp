@@ -2085,7 +2085,7 @@ Void Refinement, the whole map by ordinal 38, and nothing at all below the floor
 scarce thing is not power, it is knowing where the far end is** - a fold needs a fix, and
 there are exactly two, ground somebody has stood on and something they have seen. There is
 no third for being told or being sold one, because a bought fix is the Wide Age
-true-distance table and the House of the Measured Span has spent five thousand years
+true-distance table and the Shrinking Earth Pavilion has spent five thousand years
 failing to reproduce it. `convergence.ts` prices its escape off the same curve, so a
 rescuer's reach is their own - **whose student you are is now a fact about how deep you may
 go**, and it is legible before you go. What rank never buys back is the waning: the reach is

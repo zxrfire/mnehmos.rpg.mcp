@@ -73,7 +73,7 @@ export const MODERN_REFINEMENT = {
     /** Above this, a refinement does not take at all. */
     lifespanCeilingOrdinal: NASCENT_SOUL_END_ORDINAL,
     why:
-        'A refinement has to set in the body it is given to, and past Nascent Soul the body has stopped being the kind of thing it was made for. Every guild has tried. The Cinnabar Crucible has the failures written up and the method-script on its wall does not help, because the script is a transcription of somebody who could and the difficult step is missing.',
+        'A refinement has to set in the body it is given to, and past Nascent Soul the body has stopped being the kind of thing it was made for. Every hall has tried. The Cinnabar Crucible has the failures written up and the method-script on its wall does not help, because the script is a transcription of somebody who could and the difficult step is missing.',
     whatItMeansAtTheTop:
         'Nobody above Nascent Soul can buy a year. Not expensively, not at auction, not from a house that owes them: the thing does not exist to be bought, and every apex in the world has established that independently and stopped asking.'
 } as const;
@@ -145,7 +145,7 @@ export const PILLS: readonly Pill[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: MINOR_HEALING_PILL_ID,
-        name: 'Minor Healing Pill',
+        name: 'Lesser Healing Pill',
         grade: 'mortal',
         effect: 'heal_hp',
         potency: 12,
@@ -321,7 +321,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-lean-month-fasting',
-        name: 'Lean-Month Fasting Pill',
+        name: 'Lesser Grain Abstinence Pill',
         grade: 'earth',
         effect: 'sate_hunger',
         potency: 100,

@@ -37,7 +37,7 @@ describe('a match is reachable by typing a sentence', () => {
             'I ask Bai Jinglu to marry me',
             'I offer the Xu a marriage',
             'I want to marry into the Xu',
-            'I seek a marriage with the Ninefold Ledger',
+            'I seek a marriage with the Ninefold Karma Palace',
             'I accept the match',
             'I agree to the betrothal'
         ]) {
@@ -94,7 +94,7 @@ describe('a match is reachable by typing a sentence', () => {
             'the Nine Abyss Flame Manual',
             'a beast core',
             'protection over the valley',
-            'an alliance against the Ninefold Ledger'
+            'an alliance against the Ninefold Karma Palace'
         ];
         for (const offer of OFFERS) {
             const plan = parseIntent(`I offer ${offer} for a match with the Xu`);

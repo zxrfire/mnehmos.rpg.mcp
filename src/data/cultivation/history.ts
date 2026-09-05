@@ -86,7 +86,7 @@ export const AGES: readonly Age[] = [
         whatItWas:
             'The age in which distance did not signify. A single order held ground from one end of the continent to the other, not because it was strong enough to hold it but because holding it was cheap: a person stepped between fixed points rather than travelling between them, and an administration that can be everywhere in an afternoon does not need provinces, garrisons or a second capital. Nothing since has been that large and nothing since has needed to be that small.',
         whatItBuilt:
-            'The gate terminals, of which the Measured Span inherited a survey listing thirty-one. The roads, which is the part everybody walks on and nobody thinks about: the old roads run terminal to terminal and not town to town, so the present road network connects places with no reason to be connected and misses every market in both provinces. And the figures. True distance between two points is a Wide Age measurement and the Span has never produced an original one, only maintained the table.',
+            'The gate terminals, of which the Shrinking Earth Pavilion inherited a survey listing thirty-one. The roads, which is the part everybody walks on and nobody thinks about: the old roads run terminal to terminal and not town to town, so the present road network connects places with no reason to be connected and misses every market in both provinces. And the figures. True distance between two points is a Wide Age measurement and the Span has never produced an original one, only maintained the table.',
         livingThere:
             'Crowded, and by every account extremely uneven. The qi was thicker than anything now living has stood in and it was drawn on continuously by the network, so a person near a terminal lived in ground richer than the Hollow Court holds and a person four days away lived in ground the Jade Gorge would consider ordinary. There was no local anything: no local price, no local ruler, no local famine, because a shortfall anywhere was answered from somewhere else the same day. It is the only age in the record with no recorded famine at all, and the only one where a single failure could starve everybody.',
         didTheyKnow:
@@ -95,7 +95,7 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Wide Age ended over a period nobody can bound, and the gates closed. Nine terminals still answer and twenty-two do not, and no account survives of a decision to close any of them.',
             truth: 'unresolved',
-            heldBy: ['house-measured-span', 'house-anchorhold', 'apex-deep-survey'],
+            heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'apex-deep-survey'],
             evidence: [
                 'thirty-one terminals exist, nine of which still answer when worked, which is not the behaviour of a network that was destroyed',
                 'four of the nine open somewhere a person can breathe and five do not, and nothing distinguishes the two groups in any surviving figure',
@@ -112,7 +112,7 @@ export const AGES: readonly Age[] = [
             fidelity: 'rumour'
         },
         whatSurvives: [
-            'thirty-one gate terminals on the Measured Span survey, twenty-two closed and nine answering, none of them Span work',
+            'thirty-one gate terminals on the Shrinking Earth Pavilion survey, twenty-two closed and nine answering, none of them Span work',
             'the road network, which goes to terminals and is the reason travel in both provinces is inefficient in a way nobody can explain locally',
             'the true-distance table, which prices every courier contract and every freight span in the region and has never been recalculated',
             'the gate hand: a script on the terminal frames of which three sign groups are agreed and one of the three is agreed to be a number'
@@ -129,7 +129,7 @@ export const AGES: readonly Age[] = [
         whatItWas:
             'What people did when distance came back. The Standing Age is the age of building things where they are used, and it is the only age in the record that was primarily civil rather than martial: weights, surveys, granaries, boundaries, drainage, a datum, a standard for everything that could be standardised. It inherited a continent it could no longer cross and it responded by making every part of it separately habitable, which took five and a half thousand years and worked.',
         whatItBuilt:
-            'The node grammar, which is the single most consequential thing anybody has ever built in this world. A node is qi driven into stone and held there against the ground\'s own tendency to give it up; a network of them holds a pocket of density in place over ground that would not otherwise carry it. Every inherited compound in both provinces is Standing work, uses the same node spacing, the same node families and the same conventions, and no institution alive can cut one to the same specification. Also: the survey of record, the datum stone the Anchorhold keeps chained under a roof, the standard weights, and the practice yards, seat halls and granaries cut for populations nobody now fields.',
+            'The node grammar, which is the single most consequential thing anybody has ever built in this world. A node is qi driven into stone and held there against the ground\'s own tendency to give it up; a network of them holds a pocket of density in place over ground that would not otherwise carry it. Every inherited compound in both provinces is Standing work, uses the same node spacing, the same node families and the same conventions, and no institution alive can cut one to the same specification. Also: the survey of record, the datum stone the Immovable Mountain Temple keeps chained under a roof, the standard weights, and the practice yards, seat halls and granaries cut for populations nobody now fields.',
         livingThere:
             'Poorer than the Wide Age and enormously better organised. An ordinary person lived in one place their whole life, in a district with a boundary stone, under an administration that weighed their grain with a certified weight and recorded the transaction. Cultivation was ordinary rather than exalted: the works made thin ground workable, so a great many people got somewhere modest and almost nobody got very far, which is the opposite distribution to every age since. The Standing Age produced fewer crossings than any age in the record and more literate people than all the others combined.',
         didTheyKnow:
@@ -138,7 +138,7 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Standing Age ended without a war. The works required more people able to cut and hold nodes than the age could produce, the shortfall compounded for several centuries, and districts were abandoned in an order that follows the difficulty of their networks rather than the wealth of their ground.',
             truth: 'reconstructed',
-            heldBy: ['house-anchorhold', 'apex-deep-survey', 'house-measured-span'],
+            heldBy: ['house-immovable-mountain', 'apex-deep-survey', 'house-shrinking-earth'],
             evidence: [
                 'abandonment order tracks node count and not vein quality: the richest ground with the largest networks emptied first, which no invasion produces',
                 'no scar layer, no burned seats and no mass graves anywhere in the Standing survey, in five and a half thousand years of it',
@@ -176,11 +176,11 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Counting Age ended when the first arterial surveys were published and the great powers of the age acted on them. There is no single event and no date anybody defends; there is a century in which leases stopped being renewed everywhere at once and were not replaced by anything.',
             truth: 'reconstructed',
-            heldBy: ['house-ninefold-ledger', 'house-anchorhold', 'apex-deep-survey', 'house-narrow-hour'],
+            heldBy: ['house-ninefold-karma', 'house-immovable-mountain', 'apex-deep-survey', 'house-flowing-light'],
             evidence: [
                 'three surviving arterial figures from that century, from three institutions, agreeing to within a tenth, which is the only time in the record that any three surveys have agreed about anything',
-                'lease and grant instruments from the Ledger\'s own tally volumes stop mid-series across nine unrelated parties within about eighty years',
-                'the Narrow Hour has case records from the century showing an abrupt collapse in the number of live possibilities its predecessors could read, which it interprets as everybody having already decided',
+                'lease and grant instruments from the Karma Pavilion\'s own tally volumes stop mid-series across nine unrelated parties within about eighty years',
+                'the Flowing Light Tower has case records from the century showing an abrupt collapse in the number of live possibilities its predecessors could read, which it interprets as everybody having already decided',
                 'no battle of any size is recorded for the first forty years of it, which is what a scramble looks like before it becomes a war'
             ],
             claimedOutcomes: [],
@@ -211,12 +211,12 @@ export const AGES: readonly Age[] = [
             'They knew the ground was being killed and they did it anyway, and the surviving arguments for it are not stupid. The Burning Age position, stated plainly in three separate places, is that the decline made the arithmetic unavoidable: a region carries so many cultivators, the number is falling, and a party that declines to act on that is choosing to be the one that is culled. Everybody who acted on it was individually correct and collectively catastrophic, and every institution that came out of it knows this and none of them will say it in a room.',
         howItEnded: {
             statement:
-                'The Burning Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Unbroken Tally does not hold one.',
+                'The Burning Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Vermilion Seal Terrace does not hold one.',
             truth: 'unresolved',
-            heldBy: ['house-unbroken-tally', 'house-ninefold-ledger', 'apex-deep-survey', 'apex-long-cut'],
+            heldBy: ['house-vermilion-seal', 'house-ninefold-karma', 'apex-deep-survey', 'apex-long-cut'],
             evidence: [
                 'the practice changed within about a decade across both provinces and every tradition, which is not how customs change and is exactly how instruments do',
-                'the Unbroken Tally holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
+                'the Vermilion Seal Terrace holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
                 'grant language in nine unrelated houses converges on the same four clauses in the same order within a generation',
                 'the Jade Gorge counts its years from it, so at minimum somebody at the time was certain enough to reset a calendar'
             ],
@@ -230,7 +230,7 @@ export const AGES: readonly Age[] = [
         },
         whatSurvives: [
             'the pyramid itself: grant, tribute, renewal, non-renewal, and every clause in it',
-            'the scars, the dead provinces and the eleven containment perimeters the Anchorhold maintains',
+            'the scars, the dead provinces and the eleven containment perimeters the Immovable Mountain Temple maintains',
             'the crossing practice, which is a Burning Age adaptation that nobody has seen a reason to abandon',
             'the standing grievances of every institution founded before it against every institution founded before it'
         ],
@@ -250,7 +250,7 @@ export const AGES: readonly Age[] = [
         livingThere:
             'Thin, ordinary and survivable, and for most people uneventful in a way the earlier ages were not. Progress is slow, the ceiling arrives early, and the ruins are so common that a village granary is built against a wall nobody remembers building. What the present has that no earlier age had is the wreckage of four ages lying open, and the whole exploration economy is people digging in it.',
         didTheyKnow:
-            'The present knows the ground is thin and mostly explains it as bad luck or as the sins of the Burning Age, which is a quarter true. Two institutions hold the fuller account and neither publishes it: the Anchorhold, which can read the numerals and has the datum, and the Deep Survey, which has the arterial figures and no reason to share them. Everybody else believes the world was always going to end up like this and that the ancients were simply better, which is the most comfortable available error.',
+            'The present knows the ground is thin and mostly explains it as bad luck or as the sins of the Burning Age, which is a quarter true. Two institutions hold the fuller account and neither publishes it: the Immovable Mountain Temple, which can read the numerals and has the datum, and the Deep Survey, which has the arterial figures and no reason to share them. Everybody else believes the world was always going to end up like this and that the ancients were simply better, which is the most comfortable available error.',
         howItEnded: {
             statement:
                 'It has not ended. Ambient qi is still falling at a rate the Deep Survey measures and does not publish, and no institution in either province has a plan that addresses it rather than positions against it.',
@@ -317,22 +317,22 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         existence: 'established',
         ageId: 'age-wide',
         whyThatName:
-            'For the terminal count on the survey the Measured Span inherited, which is the only number about them anybody can state. It is very likely wrong: the Anchorhold\'s fixed survey disagrees with the Span\'s in four places, all of them over arterial ground, and at least one of the four is a site the Span lists as a terminal and the Anchorhold does not.',
+            'For the terminal count on the survey the Shrinking Earth Pavilion inherited, which is the only number about them anybody can state. It is very likely wrong: the Immovable Mountain Temple\'s fixed survey disagrees with the Span\'s in four places, all of them over arterial ground, and at least one of the four is a site the Span lists as a terminal and the Immovable Mountain Temple does not.',
         whoTheyWere:
             'An administration that held the continent, and whose entire character follows from the fact that it could be anywhere in it the same afternoon. No provinces, no local authorities, no second seat, no garrisons, and an extraordinary volume of routine paperwork about draw rates, stocks and shortfalls. Every surviving fragment of them is a clerk\'s document. Whatever they were called and whoever they answered to, what is legible of them is an office, not a court, and they left no monument to anybody at all.',
         whatTheyCouldDo:
-            'Move people and cargo between fixed points without crossing the distance between them, permanently, in both directions, at will, and at a scale that fed a continent. The Measured Span can fold a courier down a route it has surveyed and can build a one-way gate at ruinous cost; it has never in five thousand years produced a permanent two-way span, and the nine terminals that still answer are doing exactly that, unattended, having been unmaintained for eleven thousand years.',
+            'Move people and cargo between fixed points without crossing the distance between them, permanently, in both directions, at will, and at a scale that fed a continent. The Shrinking Earth Pavilion can fold a courier down a route it has surveyed and can build a one-way gate at ruinous cost; it has never in five thousand years produced a permanent two-way span, and the nine terminals that still answer are doing exactly that, unattended, having been unmaintained for eleven thousand years.',
         survivingWorks: [
             {
                 what: 'Thirty-one gate terminals on the inherited survey. Twenty-two closed, nine still answering, four of the nine opening somewhere a person can breathe and five somewhere they cannot.',
-                heldByFactionId: 'house-measured-span',
+                heldByFactionId: 'house-shrinking-earth',
                 nodes: { total: 58, lit: 29 },
                 whyItCannotBeReplaced:
                     'The Span has spent six hundred years trying to reopen one span at one station and keeps a swept gate frame with no gate in it there. Every attempt it has made from first principles has produced a gate that runs one way and closes, which is a different object.'
             },
             {
                 what: 'The true-distance table: the difference between the walked distance and the true distance between any two points in the region.',
-                heldByFactionId: 'house-measured-span',
+                heldByFactionId: 'house-shrinking-earth',
                 nodes: null,
                 whyItCannotBeReplaced:
                     'The Span maintains the table, corrects it where the ground has moved, and prices the whole region off it, and has never produced an original measurement. Its method reads a distance; the table states one, for pairs of points nobody has ever surveyed.'
@@ -349,7 +349,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
             statement:
                 'The gates closed. Whether the Thirty-One ended before, during or after that is not established, and no account of an ending survives in any hand anybody can read.',
             truth: 'unresolved',
-            heldBy: ['house-measured-span', 'house-anchorhold'],
+            heldBy: ['house-shrinking-earth', 'house-immovable-mountain'],
             evidence: [
                 'nine terminals still answer, which is not what a destroyed network looks like',
                 'no scar, no burn layer and no battle debris anywhere in the terminal survey',
@@ -365,8 +365,8 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         },
         howItIsDiscoverable: [
             'walking the old roads and noticing that they connect nothing, then finding what is at the ends of them',
-            'a Measured Span station warden who will explain, at length and for free, why the swept gate frame is swept',
-            'comparing the Span survey and the Anchorhold survey, which disagree in four places, all arterial, and asking why nobody has resolved it',
+            'a Shrinking Earth Pavilion station warden who will explain, at length and for free, why the swept gate frame is swept',
+            'comparing the Span survey and the Immovable Mountain Temple survey, which disagree in four places, all arterial, and asking why nobody has resolved it',
             'the gate hand on a terminal frame, and the fact that a Cinnabar Crucible reader can tell you it is not method-script and nothing else'
         ],
         note:
@@ -400,31 +400,31 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
             },
             {
                 what: 'The datum stone: a marker at the centre of the survey that every measurement in the Jade Gorge is ultimately taken from, chained down, under a roof, watched by two people at all times.',
-                heldByFactionId: 'house-anchorhold',
+                heldByFactionId: 'house-immovable-mountain',
                 nodes: { total: 88, lit: 62 },
                 whyItCannotBeReplaced:
-                    'It is not a datum. It is a marker referring to a survey the Anchorhold does not hold, which means every boundary, weight and property argument in the province is being resolved against a citation rather than against an origin.'
+                    'It is not a datum. It is a marker referring to a survey the Immovable Mountain Temple does not hold, which means every boundary, weight and property argument in the province is being resolved against a citation rather than against an origin.'
             },
             {
                 what: 'The standard weights, and the numerals they are marked in, which are the only part of the Standing hand anybody can read completely.',
-                heldByFactionId: 'house-anchorhold',
+                heldByFactionId: 'house-immovable-mountain',
                 nodes: null,
                 whyItCannotBeReplaced:
                     'They survived because they were never out of use. Everything else in the hand fell out of use and is now unreadable, which is the whole mechanism of how a script dies while its numbers live.'
             },
             {
-                what: 'The Weir Office\'s flood works, built to manage water by people who plainly also used it to manage qi.',
-                heldByFactionId: 'sect-weir-office',
+                what: 'Clearwater Ward\'s flood works, built to manage water by people who plainly also used it to manage qi.',
+                heldByFactionId: 'sect-clearwater-ward',
                 nodes: { total: 26, lit: 7 },
                 whyItCannotBeReplaced:
-                    'Seven of twenty-six nodes hold both of the region\'s remaining pockets. The Office is aware that whatever the other nineteen were doing, they were doing it to a province that is now driven ground.'
+                    'Seven of twenty-six nodes hold both of the region\'s remaining pockets. The Ward is aware that whatever the other nineteen were doing, they were doing it to a province that is now driven ground.'
             }
         ],
         theEnd: {
             statement:
                 'The Standing Works ran short of people who could cut and hold nodes, for several centuries, and abandoned districts in an order that follows network difficulty rather than ground quality.',
             truth: 'reconstructed',
-            heldBy: ['house-anchorhold', 'apex-deep-survey'],
+            heldBy: ['house-immovable-mountain', 'apex-deep-survey'],
             evidence: [
                 'the abandonment order tracks node count, not vein quality, which no invasion produces',
                 'the last dated Standing documents are staffing returns and the returns get shorter',
@@ -437,8 +437,8 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         howItIsDiscoverable: [
             'counting nodes in two compounds held by unrelated sects and finding the same spacing and the same node families',
             'the Burnt Earth Temple, whose six self-cut nodes are the only complete modern formation in the province and are all weak',
-            'a Gleaners Company salvage crew, who work the front of a compound they did not build and can describe exactly where the work stops being theirs',
-            'the Anchorhold\'s own numerals, which any careful person can learn to read in a season, at which point every Standing document becomes a readable table of quantities inside an unreadable sentence'
+            'a Fallen Grain Caravan salvage crew, who work the front of a compound they did not build and can describe exactly where the work stops being theirs',
+            'the Immovable Mountain Temple\'s own numerals, which any careful person can learn to read in a season, at which point every Standing document becomes a readable table of quantities inside an unreadable sentence'
         ],
         note:
             'This is the civilisation the present is actually living inside. The pyramid, the vein lease and the phrase "holds a vein at sufferance" all resolve to the same thing: the thing being granted was built by the Standing Works, cannot be rebuilt, and is being spent.'
@@ -451,20 +451,20 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         whyThatName:
             'It has no name because most parties do not accept that it is a thing. The phrase is a description of the evidence: at eleven of the thirty-one terminals the frame sits in a seat that was cut before the frame and to a different standard, and the seat is not Wide Age work.',
         whoTheyWere:
-            'Unknown, and possibly nobody. The claim is that the Thirty-One did not build the gate network but inherited it, refitted it, and ran it, exactly as the present inherited the Standing Works and lights a ninth of them. It is held by two people: an Elder Surveyor of the Measured Span who has published nothing, and a Warden of the Anchorhold\'s survey who has published a note about seat tooling and has been left alone about it because nobody read it.',
+            'Unknown, and possibly nobody. The claim is that the Thirty-One did not build the gate network but inherited it, refitted it, and ran it, exactly as the present inherited the Standing Works and lights a ninth of them. It is held by two people: an Elder Surveyor of the Shrinking Earth Pavilion who has published nothing, and a Warden of the Immovable Mountain Temple\'s survey who has published a note about seat tooling and has been left alone about it because nobody read it.',
         whatTheyCouldDo:
             'Nothing anybody can state, which is the honest position. The seats are cut, they are older than the frames sitting in them, and the tooling is not a tooling anybody can match to a known hand. Every other statement about them is an inference from eleven holes in the ground.',
         survivingWorks: [
             {
-                what: 'Eleven terminal seats whose tooling predates the frames set into them, on the Measured Span\'s own stations.',
-                heldByFactionId: 'house-measured-span',
+                what: 'Eleven terminal seats whose tooling predates the frames set into them, on the Shrinking Earth Pavilion\'s own stations.',
+                heldByFactionId: 'house-shrinking-earth',
                 nodes: null,
                 whyItCannotBeReplaced:
                     'Nobody is trying to replace them. The Span\'s Freight faction regards the whole question as an antiquarian expense and the Long Measure faction regards it as the only lead anybody has ever had on reopening a gate.'
             },
             {
-                what: 'A tooling note in the Anchorhold\'s survey appendix, four pages, unread by anybody outside the house in ninety years.',
-                heldByFactionId: 'house-anchorhold',
+                what: 'A tooling note in the Immovable Mountain Temple\'s survey appendix, four pages, unread by anybody outside the house in ninety years.',
+                heldByFactionId: 'house-immovable-mountain',
                 nodes: null,
                 whyItCannotBeReplaced:
                     'It is a live document in a working archive that nobody consults, which is the ordinary way a fact stays lost in a world that writes things down.'
@@ -474,7 +474,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
             statement:
                 'There is no established civilisation here and therefore no end. What exists is eleven seats, a tooling difference, and two people who think it means something.',
             truth: 'unresolved',
-            heldBy: ['house-measured-span', 'house-anchorhold'],
+            heldBy: ['house-shrinking-earth', 'house-immovable-mountain'],
             evidence: [
                 'eleven of thirty-one seats show tooling that does not match the frames set into them',
                 'the mismatch is consistent across all eleven and absent from the other twenty',
@@ -490,7 +490,7 @@ export const DEAD_CIVILISATIONS: readonly DeadCivilisation[] = [
         },
         howItIsDiscoverable: [
             'a Long Measure surveyor who will talk about the seats for an hour and expects to be laughed at',
-            'reading the Anchorhold survey appendix, which requires only being permitted into the archive and having a reason',
+            'reading the Immovable Mountain Temple survey appendix, which requires only being permitted into the archive and having a reason',
             'looking at two seats and noticing that one of them was cut with something that does not leave the same mark'
         ],
         note:
@@ -505,12 +505,12 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
     statement:
         'A Standing Works node is qi driven into stone and held there. A carver\'s seam is qi driven into stone and worked out. They are very likely the same physical thing at two scales, and the Cut Road is therefore an unwitting reconstruction of one part of a Standing Works trade.',
     truth: 'reconstructed',
-    heldBy: ['house-anchorhold'],
+    heldBy: ['house-immovable-mountain'],
     evidence: [
-        'the Weir Office\'s flood works have nodes cut into stone rather than laid on ground, which is the only place in either province where Standing work and Cut work are the same operation on the same site',
+        'the Clearwater Ward\'s flood works have nodes cut into stone rather than laid on ground, which is the only place in either province where Standing work and Cut work are the same operation on the same site',
         'the Cut Road was reconstructed from nothing in nine hundred years by people with no manuals, which is a plausible span for rediscovering a technique and a very short one for inventing a road',
         'driven ground is not confined to the Silent Cliffs and predates it by ages, so the weir inversion made a province of a thing that already existed rather than making the thing',
-        'a carver can work a Standing node out of a wall and does not find it different in kind from a face, which several Gleaners Company crews will confirm and no Anchorhold Warden will discuss'
+        'a carver can work a Standing node out of a wall and does not find it different in kind from a face, which several Fallen Grain Caravan crews will confirm and no Immovable Mountain Temple Warden will discuss'
     ],
     claimedOutcomes: [],
     fidelity: 'partial'
@@ -518,7 +518,7 @@ export const DRIVEN_GROUND_AND_THE_NODE: Claim = {
 
 /** Why nobody has ever said the sentence above in a room with both traditions in it. */
 export const WHY_THE_RECONCILIATION_IS_NOT_MADE = [
-    'The Anchorhold holds it, has not published it, and does not intend to. Its own discipline is fixity, its own founding account is already in trouble on dates, and a finding that the carvers are doing Standing work is a finding that the house that keeps the survey has been treating a live tradition as quarrying for nine hundred years.',
+    'Immovable Mountain Temple holds it, has not published it, and does not intend to. Its own discipline is fixity, its own founding account is already in trouble on dates, and a finding that the carvers are doing Standing work is a finding that the house that keeps the survey has been treating a live tradition as quarrying for nine hundred years.',
     'The Drawn will not hear it, because it makes carving older and more legitimate than the Drawn Road\'s own account of itself, and the standing Jade Gorge position is that carving is quarrying with extra steps.',
     'The Cut will not hear it either, and this is the part outsiders get wrong. A carver\'s objection is not sentimental: the Silent Cliffs account of itself is that the Cut Road was built from nothing by people who were dying of the ground, in living memory, without help. Being told they recovered somebody else\'s trade takes the one thing the province is actually proud of.',
     'And it would change what a vein lease is. If a node and a seam are the same thing, then a Drawn sect holding lit nodes and a carver holding a face are holding the same asset under two entirely different bodies of law, which is a question no arbitration in the world currently has a forum for.'
@@ -558,7 +558,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
         name: 'The Taught Account',
         heldBy: [
             'sect-azure-cloud-pavilion',
-            'sect-verdant-spring-hall',
+            'sect-verdant-spring-valley',
             'sect-nine-peaks-ascetic-order',
             'sect-frostmirror-court',
             'sect-storm-tyrant-court',
@@ -581,21 +581,21 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
             refutation:
                 'The shared structure is a copying artifact and not a doctrine. The Standing Works standardised manual formatting the way they standardised weights: section order, stage marks and head phrases are Standing survey conventions applied to instructional documents, and they appear in every manual in the world because every manual in the world descends from a Standing-era recopying programme. Pre-Standing manual fragments exist, they do not share the structure, and they do not share it in exactly the places the convention would predict.',
             whyItIsStillHeld:
-                'Because the fragments that refute it are in two collections and neither will lend. The Deep Survey holds a set it has never described to anybody, and the Cinnabar Crucible Guild holds three sheets it believes to be a defective alchemy text and has never shown to a person who reads the Standing hand. Nobody has ever put a pre-Standing and a post-Standing manual on the same table, so the argument has never been made in a room, and the account is far too useful to a sect that wants to be descended from a teacher for anybody inside one to go looking.',
-            whoCouldDemonstrateIt: ['apex-deep-survey', 'house-anchorhold', 'sect-cinnabar-crucible-guild']
+                'Because the fragments that refute it are in two collections and neither will lend. The Deep Survey holds a set it has never described to anybody, and the Cinnabar Crucible Sect holds three sheets it believes to be a defective alchemy text and has never shown to a person who reads the Standing hand. Nobody has ever put a pre-Standing and a post-Standing manual on the same table, so the argument has never been made in a room, and the account is far too useful to a sect that wants to be descended from a teacher for anybody inside one to go looking.',
+            whoCouldDemonstrateIt: ['apex-deep-survey', 'house-immovable-mountain', 'sect-cinnabar-crucible-sect']
         }
     },
     {
         id: 'origin-found',
         name: 'The Found Account',
-        heldBy: ['house-measured-span', 'house-anchorhold', 'apex-deep-survey', 'sect-sixmile-wardens'],
+        heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'apex-deep-survey', 'sect-six-li-patrol'],
         currency: 'institutional',
         account:
             'That cultivation was not invented and not given. It is a property of the world, the way a vein is, and the first cultivators were the first people to notice a thing that had always been there. The surveying houses hold this because it is what a surveyor believes about everything: the world has features, features can be measured, and the question of who put them there is not a question a survey can be asked.',
         whyTheRealmsHaveTheirShape:
             'Because the world has boundaries at those places, in the same sense that a river has banks. On this account the tribulation is not an examination and not a fee but a physical event at a physical edge, which is why it leaves scars that can be surveyed and quarantined like any other terrain.',
         evidence: [
-            'the tribulation is physical: it leaves ground that can be measured, perimeter and radius, and the Anchorhold nails four such sites shut',
+            'the tribulation is physical: it leaves ground that can be measured, perimeter and radius, and the Immovable Mountain Temple nails four such sites shut',
             'the boundaries are identical in the two traditions, which share no method, no vocabulary, no lineage and no manuals, and have been mutually contemptuous for nine hundred years',
             'the ladder does not vary by region, by ground quality or by teaching, which is a very strange property for a curriculum and a very ordinary one for terrain',
             'nothing in the record has ever moved a boundary, and several extremely well-resourced parties have tried'
@@ -607,7 +607,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
     {
         id: 'origin-built',
         name: 'The Built Account',
-        heldBy: ['house-narrow-hour', 'house-ninefold-ledger', 'house-unbroken-tally'],
+        heldBy: ['house-flowing-light', 'house-ninefold-karma', 'house-vermilion-seal'],
         currency: 'institutional',
         account:
             'That somebody built it. The ladder is a work, the boundaries are its joints, and the tribulation is its enforcement. The three houses that hold this hold it for three incompatible reasons and are not allies about it: the fate house because a structure that prunes is a structure somebody shaped, the karma house because a charge that specific is a term, and the oath house because a rule with an enforcement clause is an agreement whether or not anybody signed it.',
@@ -617,7 +617,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
             'thirteen at the bottom and four above, which reads as a design choice and nothing else',
             'the Price of Advancement takes something specific rather than something proportional, which is a term and not a weather',
             'the tribulation arrives, which is to say something responds, and a response requires a responder even if nobody can name one',
-            'the Unbroken Tally can demonstrate that an oath sworn on unfixed ground does not bind, which establishes that the world enforces terms against ground rather than against intent'
+            'the Vermilion Seal Terrace can demonstrate that an oath sworn on unfixed ground does not bind, which establishes that the world enforces terms against ground rather than against intent'
         ],
         theProblem:
             'No builder, no site, no method, no tool and no artifact of the building, in eleven thousand years of digging, by a world whose entire economy is digging. The Built account has never produced a single object. Its holders answer that a work this size would not leave the kind of debris anybody is looking for, which is true and is also exactly what an unfalsifiable position sounds like, and all three houses know it.',
@@ -626,7 +626,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
     {
         id: 'origin-workshop',
         name: 'The Workshop Account',
-        heldBy: ['apex-long-cut', 'sect-gleaners-company'],
+        heldBy: ['apex-long-cut', 'sect-fallen-grain-caravan'],
         currency: 'minority',
         account:
             'That there is no ladder, only material. The Cut Road position, held by carvers and by nobody in the Jade Gorge, is that the realms are simply the points at which the material fails and has to be worked differently, and that the Drawn dressed a workshop fact up as cosmology because they cultivate in the air where nothing can be seen. A carver will tell you the boundaries are where the stone changes, and will not be joking.',
@@ -652,17 +652,17 @@ export const THE_FIRST_CULTIVATORS: Claim = {
     statement:
         'Nobody can name a first cultivator, place one, or date one. What exists is three pieces of evidence, and they cannot all be about the same beginning.',
     truth: 'unresolved',
-    heldBy: ['house-anchorhold', 'house-measured-span', 'sect-hollow-court', 'apex-deep-survey'],
+    heldBy: ['house-immovable-mountain', 'house-shrinking-earth', 'sect-hollow-court', 'apex-deep-survey'],
     evidence: [
         'the Standing hand has a sign group for a practitioner that appears in documents older than any manual anybody holds, in survey contexts, treated as an ordinary occupation alongside masons and weighers',
-        'the gate terminals cannot be worked by anyone now living, and the Measured Span\'s own estimate of what operating one would require is a realm nobody in the world currently occupies, which means the Wide Age already had people above the present ceiling',
+        'the gate terminals cannot be worked by anyone now living, and the Shrinking Earth Pavilion\'s own estimate of what operating one would require is a realm nobody in the world currently occupies, which means the Wide Age already had people above the present ceiling',
         'the Hollow Court has an account from above, received roughly nine hundred years ago and never reconciled with the rest, in which the person who made the crossing describes the approach in terms that do not assume the ladder has a bottom'
     ],
     claimedOutcomes: [
         'cultivation is older than every civilisation in the record and the question has no answer inside this world at all',
         'the Wide Age had it, taught it as an occupation, and everything since is a degraded transmission of a Wide Age trade',
         'there were several beginnings, unrelated, and the ladder is what all of them converged on because it is what is there',
-        'the account from above is not about this world and the Court has been treating a description of somewhere else as evidence for four thousand years'
+        'the account from above is not about this world and the Ward has been treating a description of somewhere else as evidence for four thousand years'
     ],
     fidelity: 'rumour'
 };
@@ -692,27 +692,27 @@ export const LID_THEORIES: readonly LidTheory[] = [
     {
         id: 'lid-containment',
         name: 'The Containment',
-        heldBy: 'house-anchorhold',
+        heldBy: 'house-immovable-mountain',
         throughWhichPrinciple: 'fixity',
         theory:
-            'That the Lid is an anchor. Not a wall, not a door and not a distance: a containment, of exactly the kind the Anchorhold maintains around four catastrophe sites, differing from those only in age and scale. The house\'s position is that the Lid is doing the same job as its eleven perimeters and can be reasoned about with the same discipline, and that everybody else is confused because they are looking at what is on the other side instead of at the boundary itself.',
+            'That the Lid is an anchor. Not a wall, not a door and not a distance: a containment, of exactly the kind the Immovable Mountain Temple maintains around four catastrophe sites, differing from those only in age and scale. The house\'s position is that the Lid is doing the same job as its eleven perimeters and can be reasoned about with the same discipline, and that everybody else is confused because they are looking at what is on the other side instead of at the boundary itself.',
         evidence: [
             'the Lid does not distinguish a hole made outward from one made inward, which is the defining behaviour of a containment and is not a property of a wall, a gate or a distance',
-            'a span cannot be folded through it, exactly as a span cannot be folded through anchored ground, and the Measured Span has never disputed this measurement',
-            'the tribulation drawn by an immortal coming down is indistinguishable in kind from what a perimeter does to something crossing it outward, which the Anchorhold has measured on its own sites',
+            'a span cannot be folded through it, exactly as a span cannot be folded through anchored ground, and the Shrinking Earth Pavilion has never disputed this measurement',
+            'the tribulation drawn by an immortal coming down is indistinguishable in kind from what a perimeter does to something crossing it outward, which the Immovable Mountain Temple has measured on its own sites',
             'the crossing is survivable only for something that has been changed enough to belong on the far side, which is how every containment the house maintains behaves at its edge'
         ],
         cannotAnswer:
-            'A containment has a holder. Every containment the Anchorhold has ever certified, without exception, fails when nobody is holding it, and the failure is the house\'s entire business: it maintains eleven perimeters because eleven perimeters would otherwise let go. The Lid has not let go in the whole recoverable record, and there is no nail, no datum, no staff and no institution anywhere that claims to be holding it.',
+            'A containment has a holder. Every containment the Immovable Mountain Temple has ever certified, without exception, fails when nobody is holding it, and the failure is the house\'s entire business: it maintains eleven perimeters because eleven perimeters would otherwise let go. The Lid has not let go in the whole recoverable record, and there is no nail, no datum, no staff and no institution anywhere that claims to be holding it.',
         theirAnswerToThat:
             'That the holder exists and is not in the survey, which the house concedes is an admission rather than an argument. Its internal position, written down and not published, is that the Kiln Wardens are staff of something, that the deep vein at the world\'s root is a datum of some kind, and that these two facts sit uncomfortably close to the question and cannot be pursued because the Wardens do not answer anyone.',
         ifItIsTrue:
-            'Somebody is holding it, has held it since before the record, and the entire history of the world is happening inside a maintained perimeter. It also means it can fail, which is the part the Anchorhold does not put in writing.'
+            'Somebody is holding it, has held it since before the record, and the entire history of the world is happening inside a maintained perimeter. It also means it can fail, which is the part the Immovable Mountain Temple does not put in writing.'
     },
     {
         id: 'lid-distance',
         name: 'The Long Span',
-        heldBy: 'house-measured-span',
+        heldBy: 'house-shrinking-earth',
         throughWhichPrinciple: 'space',
         theory:
             'That the Lid is not a lid. It is a distance, and the other side is not above but far. The house holds that the whole vocabulary of ascension is a walked-distance description of a true-distance fact: the crossing is a span, its cost is a span\'s cost, the stripping is what a span does to anything not part of the traveller, and the density on the far side is simply what somewhere else is like. The Span is untroubled by this being unromantic and considers that a point in its favour.',
@@ -727,12 +727,12 @@ export const LID_THEORIES: readonly LidTheory[] = [
         theirAnswerToThat:
             'That the one-way behaviour is the same defect as every gate they have built since the predecessor house died, which is to say a known engineering failure rather than a metaphysical fact, and that the network\'s inability to reach immortal-realm ground is a range limit. Both answers are the answers of a house that believes every problem is a technical problem, and the Long Measure faction says so out loud.',
         ifItIsTrue:
-            'The Lid is an engineering problem, the Thirty-One may have solved it, and the reason nobody has repeated it is that the method died with a network nobody can read. It would make the Measured Span the most important institution in the world and it is entirely aware of the incentive.'
+            'The Lid is an engineering problem, the Thirty-One may have solved it, and the reason nobody has repeated it is that the method died with a network nobody can read. It would make the Shrinking Earth Pavilion the most important institution in the world and it is entirely aware of the incentive.'
     },
     {
         id: 'lid-narrowing',
         name: 'The Narrowing',
-        heldBy: 'house-narrow-hour',
+        heldBy: 'house-flowing-light',
         throughWhichPrinciple: 'fate',
         theory:
             'That there is no structure. The Lid is what a narrowing looks like from underneath: ascension is the state in which the possibilities available to a person have reduced to one, and what people describe as a barrier is the experience of arriving at a place where nothing else can happen. The House does not claim the far side is unreal. It claims that the crossing is not a passage through anything, and that everybody who describes a boundary is describing the last few days of their own convergence and mistaking it for terrain.',
@@ -752,22 +752,22 @@ export const LID_THEORIES: readonly LidTheory[] = [
     {
         id: 'lid-term',
         name: 'The Term',
-        heldBy: 'house-ninefold-ledger',
+        heldBy: 'house-ninefold-karma',
         throughWhichPrinciple: 'karma',
         theory:
-            'That the Lid is a term of an agreement, and the crossing is its discharge. The Ledger\'s position is that a boundary which charges something specific rather than something proportional is a clause and not a phenomenon: the Price of Advancement takes a named thing, at a named point, in a defined order, and nothing in the natural world behaves like that while every instrument in the house\'s own vault does. On this reading the ladder is an instalment schedule and the last crossing is the settlement of an account.',
+            'That the Lid is a term of an agreement, and the crossing is its discharge. The Karma Pavilion\'s position is that a boundary which charges something specific rather than something proportional is a clause and not a phenomenon: the Price of Advancement takes a named thing, at a named point, in a defined order, and nothing in the natural world behaves like that while every instrument in the house\'s own vault does. On this reading the ladder is an instalment schedule and the last crossing is the settlement of an account.',
         evidence: [
             'the Price of Advancement takes something specific rather than an amount, which is the signature of a term and is not the signature of a physical process',
             'the charge is not negotiable, not avoidable, and not reducible by strength, which is how the house\'s own binding instruments behave and is not how terrain behaves',
-            'the Tally Court had begun an account of what the crossings take, with the Lid itself named as the party in arrears, and had got far enough to name what was owed before it was ended',
+            'the Iron Tally Court had begun an account of what the crossings take, with the Lid itself named as the party in arrears, and had got far enough to name what was owed before it was ended',
             'oaths, debts and inheritances all pull tight across generations without anybody enforcing them, which establishes that this world does in fact carry obligations that nothing visible is holding'
         ],
         cannotAnswer:
-            'An obligation has a counterparty and the Ledger cannot name one it could serve. It has never produced an instrument, a party, a witness or a date. And the body that had come closest to producing all four was destroyed by the Ledger\'s own founders, who kept the volumes and have not opened them in twenty-three hundred years, so the house\'s strongest evidence is a thing it deliberately made unavailable.',
+            'An obligation has a counterparty and the Karma Pavilion cannot name one it could serve. It has never produced an instrument, a party, a witness or a date. And the body that had come closest to producing all four was destroyed by the Karma Pavilion\'s own founders, who kept the volumes and have not opened them in twenty-three hundred years, so the house\'s strongest evidence is a thing it deliberately made unavailable.',
         theirAnswerToThat:
-            'Nothing, in public. In private the house\'s position is that the founders ended the Tally Court because naming a party in arrears creates an account, that an account against that particular party was judged not survivable, and that the nine sealed volumes are exactly where a responsible institution keeps a finding it cannot act on. Whether that is prudence or the largest act of cowardice in the history of the world is argued inside the house and nowhere else.',
+            'Nothing, in public. In private the house\'s position is that the founders ended the Iron Tally Court because naming a party in arrears creates an account, that an account against that particular party was judged not survivable, and that the nine sealed volumes are exactly where a responsible institution keeps a finding it cannot act on. Whether that is prudence or the largest act of cowardice in the history of the world is argued inside the house and nowhere else.',
         ifItIsTrue:
-            'Something is owed, by everybody, and the crossings are collection. It would also mean the Ledger has been sitting on the identity of the counterparty for twenty-three centuries, which is the reading its enemies prefer and which the house cannot refute without opening the volumes.'
+            'Something is owed, by everybody, and the crossings are collection. It would also mean the Karma Pavilion has been sitting on the identity of the counterparty for twenty-three centuries, which is the reading its enemies prefer and which the house cannot refute without opening the volumes.'
     }
 ];
 
@@ -793,9 +793,9 @@ export const LID_NON_POSITIONS = [
     {
         factionId: 'sect-kiln-wardens',
         position:
-            'The Kiln Wardens do not answer. They have been asked, in writing, by the Anchorhold, twice in nine hundred years, and both letters were received and neither was replied to. They keep a datum of their own, they date documents in a five-figure year in a reckoning nobody else uses, and they hold every node they have lit since before the province had a name.',
+            'The Kiln Wardens do not answer. They have been asked, in writing, by the Immovable Mountain Temple, twice in nine hundred years, and both letters were received and neither was replied to. They keep a datum of their own, they date documents in a five-figure year in a reckoning nobody else uses, and they hold every node they have lit since before the province had a name.',
         whyItMatters:
-            'They are staff of an apex, posted, doing an assigned job on somebody else\'s datum. Whatever the assignment is, it is older than the Standing Age\'s ability to date it, and the Anchorhold\'s unpublished position is that the Wardens are the closest thing in the world to a party that might be holding something.'
+            'They are staff of an apex, posted, doing an assigned job on somebody else\'s datum. Whatever the assignment is, it is older than the Standing Age\'s ability to date it, and the Immovable Mountain Temple\'s unpublished position is that the Wardens are the closest thing in the world to a party that might be holding something.'
     }
 ] as const;
 
@@ -809,7 +809,7 @@ export const THE_LID: Claim = {
     statement:
         'There is a limit to how far the world will let a person rise, and past it is somewhere else. What it is made of, whether it is made at all, and whether anything is holding it are not known, including to the engine.',
     truth: 'unresolved',
-    heldBy: ['house-anchorhold', 'house-measured-span', 'house-narrow-hour', 'house-ninefold-ledger'],
+    heldBy: ['house-immovable-mountain', 'house-shrinking-earth', 'house-flowing-light', 'house-ninefold-karma'],
     evidence: [
         'people who cross stop being here, and a small number of them keep answering afterwards',
         'objects come down and can be held, counted and spent, and nothing goes up',
@@ -849,11 +849,11 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
         ageId: 'age-standing',
         legibility:
             'The numerals are read completely and by a great many people. The prose is not read at all. A careful person can pick up a five-thousand-year-old survey document and state every quantity in it to the unit while having no idea what is being quantified, which is the ordinary experience of every archivist in the Jade Gorge and is far more frustrating than total illegibility would be.',
-        readBy: ['house-anchorhold', 'house-measured-span', 'house-ninefold-ledger', 'sect-stonewright-consortium'],
+        readBy: ['house-immovable-mountain', 'house-shrinking-earth', 'house-ninefold-karma', 'sect-stone-marrow-hall'],
         whyItIsLikeThat:
             'The numerals never went out of use. The standard weights are marked in them, the distance table is written in them, and every transaction in the province has kept them in continuous circulation for eleven thousand years. The prose went out of use in a single generation somewhere in the Counting Age and was never taught again, and nothing has ever kept a sentence alive the way a price keeps a number alive.',
         whatIsWrittenInIt: [
-            'the survey of record, including the sections the Anchorhold cannot read and cites anyway',
+            'the survey of record, including the sections the Immovable Mountain Temple cannot read and cites anyway',
             'staffing returns from the last centuries of the Standing Age, which are the evidence for how that age ended',
             'the standing formula at the head of survey documents, which is a comparison between a present figure and a larger older one and appears for four thousand years'
         ]
@@ -864,7 +864,7 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
         ageId: 'age-wide',
         legibility:
             'Three sign groups are agreed by everybody who has looked, and one of the three is agreed to be a number that nobody can interpret because nothing states its units. Beyond that there is no agreement of any kind, including on whether the marks on a terminal frame are one script or two.',
-        readBy: ['house-measured-span'],
+        readBy: ['house-shrinking-earth'],
         whyItIsLikeThat:
             'Nothing carried it forward. The Standing Age inherited the terminals as objects rather than as documents, kept the distance table because it was useful, and let the frames become furniture, so there was never a period in which anybody needed to read a terminal in order to do their job.',
         whatIsWrittenInIt: [
@@ -877,12 +877,12 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
         name: 'Method-script',
         ageId: 'age-standing',
         legibility:
-            'About a third, and the Cinnabar Crucible Guild has built its whole reputation on that third. It is a technical notation and not a language: it encodes procedure, and a reader who cannot follow the procedure cannot read the notation no matter how much of the world they can read otherwise.',
-        readBy: ['sect-cinnabar-crucible-guild'],
+            'About a third, and the Cinnabar Crucible Sect has built its whole reputation on that third. It is a technical notation and not a language: it encodes procedure, and a reader who cannot follow the procedure cannot read the notation no matter how much of the world they can read otherwise.',
+        readBy: ['sect-cinnabar-crucible-sect'],
         whyItIsLikeThat:
             'It survives at all only where it was cut into a working surface that nobody had a reason to reuse, which in practice means one refining hall wall. A notation that is only preserved on the walls of buildings is preserved in exactly the fraction of cases where the building outlasted the trade.',
         whatIsWrittenInIt: [
-            'the refining hall wall, of which a third is the Guild\'s method and the rest is not attempted',
+            'the refining hall wall, of which a third is the Hall\'s method and the rest is not attempted',
             'the fourth line, which a Furnace Elder died proving is not a step in the method, which is the only negative result anybody has ever published about it'
         ]
     },
@@ -891,10 +891,10 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
         name: 'The tally hand',
         ageId: 'age-burning',
         legibility:
-            'Fully legible to the Ninefold Ledger and to nobody else, deliberately. It is not ancient enough to have died; it is a working notation that has been kept inside one institution for twenty-three hundred years because the volumes written in it are still binding on families who cannot read them.',
-        readBy: ['house-ninefold-ledger'],
+            'Fully legible to the Ninefold Karma Palace and to nobody else, deliberately. It is not ancient enough to have died; it is a working notation that has been kept inside one institution for twenty-three hundred years because the volumes written in it are still binding on families who cannot read them.',
+        readBy: ['house-ninefold-karma'],
         whyItIsLikeThat:
-            'A house that arbitrates inheritance has an obvious interest in being the only party that can read the inheritance record, and the Ledger has never pretended otherwise. It teaches the hand to auditors and to no one else, and an auditor who leaves the house is required to have never written it down.',
+            'A house that arbitrates inheritance has an obvious interest in being the only party that can read the inheritance record, and the Karma Pavilion has never pretended otherwise. It teaches the hand to auditors and to no one else, and an auditor who leaves the house is required to have never written it down.',
         whatIsWrittenInIt: [
             'the tally volumes, still consulted, still binding, and still accurate about families that do not know they are in them',
             'the nine sealed volumes in the house\'s own index, with no subject line'
@@ -953,10 +953,10 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
         statement:
             'Recopying drift. Every old document is a copy, each copyist understood less than the last, and errors run systematically toward what the copyist expected rather than randomly.',
         truth: 'objective',
-        heldBy: ['sect-lantern-hall', 'house-ninefold-ledger'],
+        heldBy: ['sect-lantern-hall', 'house-ninefold-karma'],
         evidence: [
             'two sects holding copies of the same Counting Age instrument differ in nine places, and in all nine the difference is in the direction of that sect\'s own practice',
-            'the Ledger keeps originals precisely because it worked this out early and has never allowed a volume to be recopied'
+            'the Karma Pavilion keeps originals precisely because it worked this out early and has never allowed a volume to be recopied'
         ],
         claimedOutcomes: [],
         fidelity: 'full'
@@ -965,11 +965,11 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
         statement:
             'Deliberate rewriting at a succession. A house that replaces another inherits its territory, its records and its enemies, and writes an account of the replacement that suits the successor.',
         truth: 'objective',
-        heldBy: ['house-ninefold-ledger', 'house-narrow-hour', 'sect-lantern-hall'],
+        heldBy: ['house-ninefold-karma', 'house-flowing-light', 'sect-lantern-hall'],
         evidence: [
-            'the official account of the Girdle of Nine Stones has the Anchorhold founded to replace it, and the two published dates are two thousand years apart',
-            'the official account of the Unlit Gate House has it destroying itself, and both seats burned in the same season',
-            'the coalition named in the official account of the Tally Court\'s end did not exist as a coalition in that century'
+            'the official account of the Nine Stone Array has the Immovable Mountain Temple founded to replace it, and the two published dates are two thousand years apart',
+            'the official account of the Nine Nether Hall House has it destroying itself, and both seats burned in the same season',
+            'the coalition named in the official account of the Iron Tally Court\'s end did not exist as a coalition in that century'
         ],
         claimedOutcomes: [],
         fidelity: 'full'
@@ -978,11 +978,11 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
         statement:
             'The crossing practice. Cultivators attempt the last crossing in caves nobody was told about, so the last thousand years of ascension records are structurally unreliable: a person stops being seen, and nothing distinguishes crossed, killed, failed and in seclusion.',
         truth: 'objective',
-        heldBy: ['sect-lantern-hall', 'house-held-names', 'house-narrow-hour'],
+        heldBy: ['sect-lantern-hall', 'house-jade-register', 'house-flowing-light'],
         evidence: [
-            'the Narrow Hour\'s own records for the last confirmed ascension are internally contradictory and it has never resolved why',
+            'the Flowing Light Tower\'s own records for the last confirmed ascension are internally contradictory and it has never resolved why',
             'unattributed tribulation scars exist with no name against them, and some belong to candidates and some to people nobody wondered about',
-            'the House of Held Names holds register entries that stopped matching their holders and cannot say what happened to any of them'
+            'the Jade Register Hall holds register entries that stopped matching their holders and cannot say what happened to any of them'
         ],
         claimedOutcomes: [],
         fidelity: 'full'
@@ -991,11 +991,11 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
         statement:
             'The calendar. Two provinces count from two different epochs with an offset nobody can verify, so two true records can be irreconcilable without either being wrong, and a great many disagreements about what happened are disagreements about when.',
         truth: 'objective',
-        heldBy: ['house-measured-span', 'house-anchorhold', 'house-ninefold-ledger'],
+        heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'house-ninefold-karma'],
         evidence: [
             'freight contracts across the border use an offset of twenty-eight years because a contract requires a number',
-            'the Anchorhold computes thirty-one and says so in its survey notes',
-            'the Ninefold Ledger computes thirty-three from inheritance intervals and has never published it'
+            'the Immovable Mountain Temple computes thirty-one and says so in its survey notes',
+            'the Ninefold Karma Palace computes thirty-three from inheritance intervals and has never published it'
         ],
         claimedOutcomes: [],
         fidelity: 'full'
@@ -1004,7 +1004,7 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
         statement:
             'And sometimes somebody is lying, usually about an ancestor. A claimed immortal ancestor is the cheapest prestige in the world if nobody can check, and verifying one is exactly the service a house sells and exactly the thing worth killing to keep unverified.',
         truth: 'objective',
-        heldBy: ['house-ninefold-ledger', 'house-narrow-hour', 'sect-lantern-hall'],
+        heldBy: ['house-ninefold-karma', 'house-flowing-light', 'sect-lantern-hall'],
         evidence: [
             'audit is a paid service with a price list, which establishes that the market for unverified claims is large enough to support one',
             'sects lie about dormant ancestors in both directions, and outsiders frequently cannot tell which lie is being told'
@@ -1037,7 +1037,7 @@ export const CALENDARS: readonly Calendar[] = [
         id: 'calendar-standing-count',
         name: 'The Standing Count',
         regionId: 'region-low-fall',
-        keptBy: ['house-anchorhold', 'sect-stonewright-consortium', 'house-ninefold-ledger'],
+        keptBy: ['house-immovable-mountain', 'sect-stone-marrow-hall', 'house-ninefold-karma'],
         countsFrom:
             'The Settlement, which is said to be the arrangement that ended the Burning Age and made water something granted rather than taken. Year one is the year of it, and the present year is 1,517.',
         presentYear: PRESENT_YEAR,
@@ -1045,9 +1045,9 @@ export const CALENDARS: readonly Calendar[] = [
             statement:
                 'The Standing Count is dated from an event for which no instrument survives, whose convening nobody can name, and which may not have been a single event at all.',
             truth: 'unresolved',
-            heldBy: ['house-unbroken-tally', 'house-anchorhold', 'house-ninefold-ledger'],
+            heldBy: ['house-vermilion-seal', 'house-immovable-mountain', 'house-ninefold-karma'],
             evidence: [
-                'no instrument bearing the name survives and the Unbroken Tally does not hold one, which for that house is an extraordinary admission',
+                'no instrument bearing the name survives and the Vermilion Seal Terrace does not hold one, which for that house is an extraordinary admission',
                 'the eleven subsidiary agreements of that decade refer to terms they do not restate',
                 'the practice changed across both provinces within about a decade, which is instrument speed and not custom speed',
                 'the calendar itself was reset, which means somebody at the time was certain enough to make everybody renumber'
@@ -1066,7 +1066,7 @@ export const CALENDARS: readonly Calendar[] = [
         id: 'calendar-face-reckoning',
         name: 'The Face Reckoning',
         regionId: 'region-quiet-marches',
-        keptBy: ['apex-long-cut', 'sect-weir-office', 'sect-sixmile-wardens'],
+        keptBy: ['apex-long-cut', 'sect-clearwater-ward', 'sect-six-li-patrol'],
         countsFrom:
             'The first cut on the founding face, which is a schedule entry rather than a treaty: the Long Cut dates from work rather than from agreement, and considers this the more honest practice. The present year is 1,489.',
         presentYear: 1_489,
@@ -1074,7 +1074,7 @@ export const CALENDARS: readonly Calendar[] = [
             statement:
                 'The Face Reckoning\'s epoch is a dated schedule entry, which makes it the better-evidenced of the two origins and does not make it convertible to the other one.',
             truth: 'reconstructed',
-            heldBy: ['apex-long-cut', 'house-measured-span'],
+            heldBy: ['apex-long-cut', 'house-shrinking-earth'],
             evidence: [
                 'the entry exists, in the schedule, in a continuous series with entries either side of it',
                 'the Long Cut has never revised the series and publishes a decreasing stock count against it, which is the same administration being honest about a different number',
@@ -1093,9 +1093,9 @@ export const CALENDARS: readonly Calendar[] = [
         keptBy: [
             'sect-azure-cloud-pavilion',
             'sect-nine-peaks-ascetic-order',
-            'sect-verdant-spring-hall',
+            'sect-verdant-spring-valley',
             'sect-frostmirror-court',
-            'sect-crimson-abyss-hall'
+            'sect-crimson-abyss-fortress'
         ],
         countsFrom:
             'Whoever is sitting. A sect dates internally by the year of the current seat: the ninth year of the Fourth Master, and before that the thirty-first year of the Third. There is no absolute count anywhere in it and none is felt to be needed.',
@@ -1104,10 +1104,10 @@ export const CALENDARS: readonly Calendar[] = [
             statement:
                 'Seat years have no origin to be correct about, and converting a sect\'s internal date to either provincial count requires a complete and accurate list of its seats and their lengths, which almost no sect has.',
             truth: 'objective',
-            heldBy: ['sect-lantern-hall', 'house-ninefold-ledger'],
+            heldBy: ['sect-lantern-hall', 'house-ninefold-karma'],
             evidence: [
                 'sect succession lists are hagiography and routinely omit short or disputed seats',
-                'an arbitration that turns on a sect\'s internal date requires the Ledger to reconstruct the seat list first, which it charges for'
+                'an arbitration that turns on a sect\'s internal date requires the Karma Pavilion to reconstruct the seat list first, which it charges for'
             ],
             claimedOutcomes: [],
             fidelity: 'full'
@@ -1127,7 +1127,7 @@ export const CALENDARS: readonly Calendar[] = [
             statement:
                 'Two attempts have been made to convert the Warden year against dateable events, and the two answers are about four thousand years apart. Nobody has made a third.',
             truth: 'unresolved',
-            heldBy: ['house-anchorhold', 'sect-lantern-hall'],
+            heldBy: ['house-immovable-mountain', 'sect-lantern-hall'],
             evidence: [
                 'eleven documents, over nine hundred years, with year marks in a consistent series, which establishes at minimum that the count is real and is being kept',
                 'the increments between the eleven match the elapsed years exactly, so the unit is the same year everybody else uses',
@@ -1141,7 +1141,7 @@ export const CALENDARS: readonly Calendar[] = [
             fidelity: 'partial'
         },
         note:
-            'The single most alarming document in either province is a receipt. It is dated, the date is five figures, and it is filed in the Anchorhold under correspondence because nobody could think of anywhere better to put it.'
+            'The single most alarming document in either province is a receipt. It is dated, the date is five figures, and it is filed in the Immovable Mountain Temple under correspondence because nobody could think of anywhere better to put it.'
     }
 ];
 
@@ -1153,13 +1153,13 @@ export const CALENDARS: readonly Calendar[] = [
  */
 export const THE_CALENDAR_OFFSET: Claim = {
     statement:
-        'The Standing Count and the Face Reckoning are twenty-eight years apart by universal commercial practice, thirty-one by the Anchorhold\'s survey notes, and thirty-three by the Ninefold Ledger\'s unpublished computation from inheritance intervals. No event is dated in both reckonings, so nothing bridges them.',
+        'The Standing Count and the Face Reckoning are twenty-eight years apart by universal commercial practice, thirty-one by the Immovable Mountain Temple\'s survey notes, and thirty-three by the Ninefold Karma Palace\'s unpublished computation from inheritance intervals. No event is dated in both reckonings, so nothing bridges them.',
     truth: 'unresolved',
-    heldBy: ['house-measured-span', 'house-anchorhold', 'house-ninefold-ledger', 'apex-long-cut'],
+    heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'house-ninefold-karma', 'apex-long-cut'],
     evidence: [
         'twenty-eight is what every freight and border contract has used for fifteen hundred years, on no stated basis, because the first one to need a number picked one',
-        'thirty-one is the Anchorhold\'s figure, derived from the advance of a physical edge against its own survey, and it has never pressed the point',
-        'thirty-three is the Ledger\'s, derived from inheritance intervals across the border where the same estate is dated twice, and it is unpublished',
+        'thirty-one is the Immovable Mountain Temple\'s figure, derived from the advance of a physical edge against its own survey, and it has never pressed the point',
+        'thirty-three is the Karma Pavilion\'s, derived from inheritance intervals across the border where the same estate is dated twice, and it is unpublished',
         'the two epochs are different events of different kinds, and no third event anywhere is dated in both'
     ],
     claimedOutcomes: [
@@ -1176,8 +1176,8 @@ export const THE_CALENDAR_OFFSET: Claim = {
  * conceals.
  */
 export const WHAT_THE_OFFSET_HIDES = [
-    'The official account of the Girdle of Nine Stones has the Anchorhold founded to replace it. The Anchorhold publishes its own founding at two thousand nine hundred years ago and the Girdle\'s fall is dated nine hundred years ago, so the account is off by two thousand years, on two numbers both houses publish. Nobody has ever put the two on the same page, because the dates are quoted in different reckonings in different provinces and everybody assumes the discrepancy is the offset.',
-    'Cross-border inheritance intervals are computed at twenty-eight. If the Ledger\'s thirty-three is right, a class of settled estates is out by five years, several of them are out across a boundary that decides which house arbitrates, and the Ledger has known this for at least two centuries.',
+    'The official account of the Nine Stone Array has the Immovable Mountain Temple founded to replace it. Immovable Mountain Temple publishes its own founding at two thousand nine hundred years ago and the Girdle\'s fall is dated nine hundred years ago, so the account is off by two thousand years, on two numbers both houses publish. Nobody has ever put the two on the same page, because the dates are quoted in different reckonings in different provinces and everybody assumes the discrepancy is the offset.',
+    'Cross-border inheritance intervals are computed at twenty-eight. If the Karma Pavilion\'s thirty-three is right, a class of settled estates is out by five years, several of them are out across a boundary that decides which house arbitrates, and the Karma Pavilion has known this for at least two centuries.',
     'A carver and a Jade Gorge cultivator describing the same border incident will file it in years that differ by an unverifiable amount, which is why the tradition war has two dates as well as two accounts and why nobody has noticed that the two dates are not the same event.'
 ] as const;
 

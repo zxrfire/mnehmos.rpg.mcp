@@ -19,7 +19,7 @@ export const FLAG_LAST_ADDRESSED = 'last_addressed';
 /**
  * That this body has already been carried across once, and will not be again.
  *
- * `ONCE_IN_A_LIFE` in `immortal-items.ts`: one Unearned Step per person, ever.
+ * `ONCE_IN_A_LIFE` in `immortal-items.ts`: one Heaven-Ascending Golden Pill per person, ever.
  * A flag rather than a derived fact, because the thing it records is that an
  * EVENT happened - the ordinal it produced is indistinguishable afterwards from
  * one somebody climbed to, which is precisely what makes the object socially

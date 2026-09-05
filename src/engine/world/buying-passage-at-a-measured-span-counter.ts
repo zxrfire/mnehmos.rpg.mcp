@@ -1,5 +1,5 @@
 /**
- * Buying passage at a Measured Span counter: what is on the board, what it
+ * Buying passage at a Shrinking Earth Pavilion counter: what is on the board, what it
  * costs, and what being sent through does to somebody who could never do it
  * themselves.
  *
@@ -62,7 +62,7 @@
  *
  * `dao-houses.md` requires a counter to every principle and names this one:
  * space is countered by SPATIAL ANCHORING. The counter is already standing in
- * the catalog rather than needing to be invented - the Anchorhold nails ground
+ * the catalog rather than needing to be invented - the Immovable Mountain Temple nails ground
  * shut, and the Span's own stated grievance is that the world calls it public
  * safety. Anywhere anchored is anywhere no fare reaches.
  *

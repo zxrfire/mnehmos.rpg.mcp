@@ -8,9 +8,9 @@
  * Read off the standing register of a seeded world, every senior of every great
  * body came back the same way:
  *
- *     Fang Ronglin    Elder Holder of the House of Held Names   [born: thin_county]
- *     Qiu Xuchen      Convergence Master of the Narrow Hour     [born: thin_county]
- *     Shen Jingbo     Elder Holder of the House of Held Names   [born: thin_county]
+ *     Fang Ronglin    Elder Holder of the Jade Register Hall   [born: thin_county]
+ *     Qiu Xuchen      Convergence Master of the Flowing Light Tower     [born: thin_county]
+ *     Shen Jingbo     Elder Holder of the Jade Register Hall   [born: thin_county]
  *
  * Measured across five worlds: 89.4% of the seniors of apex bodies were born on
  * a farm in a thin county, 10.6% in a market town, and not one person in a

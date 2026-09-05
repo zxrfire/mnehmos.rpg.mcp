@@ -1497,7 +1497,7 @@ ${done.lines.join(' ')}`;
             // The fourth argument is WHO IS RECEIVING IT, and without it the
             // function cannot honour its own contract. A medicine carries the
             // person who takes it somewhere, and where that is depends on where
-            // they already stand: an Unearned Step whose grade tops out beneath
+            // they already stand: an Heaven-Ascending Golden Pill whose grade tops out beneath
             // somebody carries them nowhere at all. Measured against a receiver at
             // rung 29, a middle Step is worth 0 to them and a higher one is worth
             // 33 - and with no receiver passed, both read 29.

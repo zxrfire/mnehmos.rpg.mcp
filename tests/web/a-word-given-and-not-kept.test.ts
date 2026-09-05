@@ -10,7 +10,7 @@
  * and nobody could swear one, be told what they were carrying, or break one.
  *
  * THE LAW THIS FILE PINS, and it is the design's own, from `faction-character.ts`
- * on the House of the Unbroken Tally: *a broken oath is structural rather than
+ * on the Vermilion Seal Terrace: *a broken oath is structural rather than
  * punitive - removing it removes some of the person.* So nothing here prevents
  * anybody leaving. What it does is say what leaving IS, which is the difference
  * between the agency rule being followed and being talked about.

@@ -104,10 +104,10 @@ const THE_FIFTEEN: Readonly<Record<string, RouteKind>> = {
     'bloodwarm-battle-chant': 'taught',
     'abyssal-gate-torrent': 'trial',
     'dragonbone-severing-decree': 'trial',
-    'calamity-word-of-the-open-sky': 'trial',
+    'open-sky-calamity-word': 'trial',
     'chaos-origin-scripture': 'grave',
-    'debt-collection-in-arrears': 'grave',
-    'heart-of-the-ten-thousand-corpses': 'grave',
+    'debt-karmic-reclamation-art': 'grave',
+    'ten-thousand-corpse-heart': 'grave',
     'lifespan-devouring-heaven-theft': 'grave',
     'immovable-heaven-pillar': 'carving',
     'heaven-conversing-primordial-canon': 'parting_gift',
@@ -115,7 +115,7 @@ const THE_FIFTEEN: Readonly<Record<string, RouteKind>> = {
     'one-thought-ten-thousand-li': 'parting_gift',
     'rebirth-in-the-lotus-furnace': 'parting_gift',
     // The one that is genuinely unobtainable, and says so.
-    'word-of-continuance': 'taught'
+    'continuance-decree': 'taught'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────

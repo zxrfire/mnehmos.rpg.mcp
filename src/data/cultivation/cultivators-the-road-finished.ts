@@ -159,7 +159,7 @@ export const FALLEN: readonly Fallen[] = [
             underestimated: true,
             how: 'Twenty years of body tempering did not leave with the qi. In a room with knives and no cultivators in it he is the most dangerous thing present, and every person in that room has already decided he is a cripple with a stick.'
         },
-        factionIds: ['sect-azure-cloud-pavilion', 'house-ninefold-ledger']
+        factionIds: ['sect-azure-cloud-pavilion', 'house-ninefold-karma']
     },
     {
         id: 'fallen-innkeeper-at-the-gate',
@@ -217,7 +217,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'good',
         asked: 'What grade is safe at this rank, which is the only free advice he gives',
         danger: null,
-        factionIds: ['sect-cinnabar-crucible-guild']
+        factionIds: ['sect-cinnabar-crucible-sect']
     },
     {
         id: 'fallen-cut-by-his-crew',
@@ -249,7 +249,7 @@ export const FALLEN: readonly Fallen[] = [
             underestimated: true,
             how: 'He walked eleven sealed shafts in six years and remembers which three were baited. He has never told anybody, he is asked for directions constantly, and there is no longer any reason for him to be accurate.'
         },
-        factionIds: ['sect-gleaners-company']
+        factionIds: ['sect-fallen-grain-caravan']
     },
 
     // ── stalled ───────────────────────────────────────────────────────
@@ -297,7 +297,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: 'unstable',
         work: {
             occupationId: null,
-            doing: 'Reads a foundation and tells you what it is, for five stones, in a back room, with nobody else present. That is a fifteenth of what the Ledger charges to place a foreign cultivator, and he makes the comparison before you do.',
+            doing: 'Reads a foundation and tells you what it is, for five stones, in a back room, with nobody else present. That is a fifteenth of what the Karma Pavilion charges to place a foreign cultivator, and he makes the comparison before you do.',
             quotesPriceId: 'price-placement'
         },
         place: {
@@ -309,7 +309,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'difficult',
         asked: 'Whether he can fix what he has just named, which he cannot and says so',
         danger: null,
-        factionIds: ['house-ninefold-ledger']
+        factionIds: ['house-ninefold-karma']
     },
     {
         id: 'fallen-damaged-climber',
@@ -338,7 +338,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'difficult',
         asked: 'How he did it, by every stalled cultivator who hears about him',
         danger: null,
-        factionIds: ['sect-stonewright-consortium']
+        factionIds: ['sect-stone-marrow-hall']
     },
 
     // ── came back wrong ───────────────────────────────────────────────
@@ -369,7 +369,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'good',
         asked: 'What happened in the three days, and he does not know',
         danger: null,
-        factionIds: ['sect-gleaners-company', 'sect-sixmile-wardens']
+        factionIds: ['sect-fallen-grain-caravan', 'sect-six-li-patrol']
     },
     {
         id: 'fallen-lantern-and-carrier',
@@ -415,7 +415,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: null,
         work: {
             occupationId: 'job-placer-runner',
-            doing: 'Works the border road for a placer, finding foreign cultivators willing to be assessed. The Ledger\'s tables were the first document that ever described her accurately and she has kept a copy.',
+            doing: 'Works the border road for a placer, finding foreign cultivators willing to be assessed. The Karma Pavilion\'s tables were the first document that ever described her accurately and she has kept a copy.',
             quotesPriceId: 'price-placement'
         },
         place: {
@@ -427,7 +427,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'good',
         asked: 'Which of the two names is the real one, usually within a minute of meeting her',
         danger: null,
-        factionIds: ['house-ninefold-ledger']
+        factionIds: ['house-ninefold-karma']
     },
     {
         id: 'fallen-shaft-mouth-remnant',
@@ -444,7 +444,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: null,
         work: {
             occupationId: null,
-            doing: 'It is used. Crews treat the greeting as a gauge: if it speaks the shaft is as they left it, and if it is silent the edge has moved and nobody goes in. Four generations of Gleaners have worked off that reading.',
+            doing: 'It is used. Crews treat the greeting as a gauge: if it speaks the shaft is as they left it, and if it is silent the edge has moved and nobody goes in. Four generations of Fallen Grain Caravan have worked off that reading.',
             quotesPriceId: null
         },
         place: {
@@ -456,7 +456,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'not_company',
         asked: null,
         danger: null,
-        factionIds: ['sect-gleaners-company', 'sect-sixmile-wardens']
+        factionIds: ['sect-fallen-grain-caravan', 'sect-six-li-patrol']
     },
 
     // ── spent ─────────────────────────────────────────────────────────
@@ -475,7 +475,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: 'sacrificed',
         work: {
             occupationId: 'job-escort',
-            doing: 'Captains an escort crew on the border road. The Consortium rank table reads him at Foundation and pays accordingly, and the table is not wrong about the rank.',
+            doing: 'Captains an escort crew on the border road. The Stone Marrow Hall rank table reads him at Foundation and pays accordingly, and the table is not wrong about the rank.',
             quotesPriceId: 'price-caravan-passage'
         },
         place: {
@@ -487,7 +487,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'good',
         asked: 'Whether it was worth it, which he treats as a question about arithmetic',
         danger: null,
-        factionIds: ['sect-stonewright-consortium']
+        factionIds: ['sect-stone-marrow-hall']
     },
     {
         id: 'fallen-name-on-a-slip',
@@ -504,7 +504,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: 'stable',
         work: {
             occupationId: 'job-courier',
-            doing: 'Runs Measured Span work at true distance, and is very good at it, which is a trade that rewards somebody who does not need to be anywhere in particular.',
+            doing: 'Runs Shrinking Earth Pavilion work at true distance, and is very good at it, which is a trade that rewards somebody who does not need to be anywhere in particular.',
             quotesPriceId: 'price-span-courier'
         },
         place: {
@@ -516,7 +516,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'good',
         asked: 'Who the boy was, which is the one thing the slip does not say',
         danger: null,
-        factionIds: ['sect-lantern-hall', 'house-measured-span']
+        factionIds: ['sect-lantern-hall', 'house-shrinking-earth']
     },
     {
         id: 'fallen-forced-the-rank',
@@ -545,7 +545,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'good',
         asked: 'Whether the pill was worth one rank',
         danger: null,
-        factionIds: ['sect-verdant-spring-hall']
+        factionIds: ['sect-verdant-spring-valley']
     },
     {
         id: 'fallen-cut-in-advance',
@@ -605,7 +605,7 @@ export const FALLEN: readonly Fallen[] = [
         company: 'good',
         asked: 'Why he does not simply buy the pill',
         danger: null,
-        factionIds: ['sect-verdant-spring-hall', 'sect-cinnabar-crucible-guild']
+        factionIds: ['sect-verdant-spring-valley', 'sect-cinnabar-crucible-sect']
     },
     {
         id: 'fallen-deviation-survivor',
@@ -647,14 +647,14 @@ export const FALLEN: readonly Fallen[] = [
         lastOrdinal: 5,
         currentOrdinal: 5,
         stillClimbs: false,
-        what: 'A decade on the bellows in a refining hall. The residue settled where it settles, and now his blood carries something the Guild will buy quarterly and his skin carries something nobody wants to touch.',
+        what: 'A decade on the bellows in a refining hall. The residue settled where it settles, and now his blood carries something the Hall will buy quarterly and his skin carries something nobody wants to touch.',
         unexplained: null,
         existenceState: 'alive',
         identityContinuity: null,
         foundationQuality: null,
         work: {
             occupationId: 'job-bellows-hand',
-            doing: 'Still on the bellows, and sells his own blood back to the Guild four times a year, an arithmetic he finds funnier than anyone else in the hall does.',
+            doing: 'Still on the bellows, and sells his own blood back to the Hall four times a year, an arithmetic he finds funnier than anyone else in the hall does.',
             quotesPriceId: null
         },
         place: {
@@ -664,12 +664,12 @@ export const FALLEN: readonly Fallen[] = [
         },
         attitude: 'Wheezing, cheerful and profane. He has watched three journeymen promoted past him and holds opinions about all three that are worth the evening.',
         company: 'good',
-        asked: 'What the Guild does with the blood, which he does not know either',
+        asked: 'What the Hall does with the blood, which he does not know either',
         danger: {
             underestimated: true,
             how: 'Bare skin on him for any length of time is a poisoning, and everybody in the hall treats him as a harmless old wheezer who can be shoved out of the way. Two apprentices have found out and neither of them was believed at first.'
         },
-        factionIds: ['sect-cinnabar-crucible-guild']
+        factionIds: ['sect-cinnabar-crucible-sect']
     },
     {
         id: 'fallen-marches-carver',
@@ -696,9 +696,9 @@ export const FALLEN: readonly Fallen[] = [
         },
         attitude: 'Working. Not dying, not doomed, not brave about it: working, with a year or two of it left, and irritated by visitors from the Jade Gorge who arrive with a face already arranged.',
         company: 'good',
-        asked: 'Why he does not stop, which assumes there is something else to do in Iron Gate',
+        asked: 'Why he does not stop, which assumes there is something else to do in Iron Ridge',
         danger: null,
-        factionIds: ['sect-weir-office']
+        factionIds: ['sect-clearwater-ward']
     }
 ];
 

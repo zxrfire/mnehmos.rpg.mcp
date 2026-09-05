@@ -35,10 +35,10 @@ import type { Band } from './techniques.js';
 // PROVENANCE - knowledge is recovered, not invented
 // In the Late Age nobody develops a new heaven-grade method. The good recipes
 // are dug out of tombs, read off a wall in a sealed refining hall, or bought
-// from someone who did the digging. A guild's "secret formula" is usually a
+// from someone who did the digging. A hall's "secret formula" is usually a
 // transcription of something two ages old with the difficult step missing.
 //
-//   known     → in circulation. A guild will sell it, or teach it for a bond.
+//   known     → in circulation. A hall will sell it, or teach it for a bond.
 //   recovered → recovered from a sealed site or a grave deposit. Every
 //               immortal- and chaos-grade recipe is of this kind by rule, and
 //               so is the Grain Abstinence formula, which is why the pill that
@@ -55,7 +55,7 @@ export interface RecipeEntry extends Recipe {
 
 /** Recipes that exist only because somebody opened something that was sealed. */
 export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
-    // heaven - the methods the surviving guilds cannot reproduce from first principles
+    // heaven - the methods the surviving halls cannot reproduce from first principles
     'recipe-meridian-rebirth',
     'recipe-condensed-decade',
     'recipe-nascent-soul-guiding',
@@ -86,7 +86,7 @@ export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
 ]);
 
 const RECIPE_SOURCE_NOTES: Record<RecipeProvenance, string> = {
-    known: 'In circulation. A guild will sell the method, or teach it against a bond.',
+    known: 'In circulation. A hall will sell the method, or teach it against a bond.',
     recovered: 'Recovered from a sealed site. No living alchemist worked it out; someone transcribed it off a wall or out of a tomb, and the transcription may not be complete.'
 } as const;
 
@@ -121,7 +121,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'recipe-minor-healing',
-        name: 'Minor Healing Pill Formula',
+        name: 'Lesser Healing Pill Formula',
         producesPillId: 'pill-minor-healing',
         ingredients: [
             { itemId: 'herb-blood-millet', quantity: 2 },
@@ -294,7 +294,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-lean-month-fasting',
-        name: 'Lean-Month Fasting Pill Formula',
+        name: 'Lesser Grain Abstinence Pill Formula',
         producesPillId: 'pill-lean-month-fasting',
         ingredients: [
             { itemId: 'herb-cloudcap-mushroom', quantity: 4 },

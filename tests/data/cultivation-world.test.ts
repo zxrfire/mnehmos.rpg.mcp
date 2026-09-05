@@ -284,7 +284,7 @@ describe('regions', () => {
                 expect(getRegionForFaction(b.parentSectId)!.id).not.toBe(r.id);
             }
         }
-        expect(getBranchesOf('sect-stonewright-consortium').length).toBeGreaterThan(0);
+        expect(getBranchesOf('sect-stone-marrow-hall').length).toBeGreaterThan(0);
     });
 
     it('changes cultivation itself, not just the scenery', () => {
@@ -615,7 +615,7 @@ describe('one ladder, local vocabulary', () => {
         expect(m.systematicDirection.length).toBeGreaterThan(60);
         expect(m.recordedIncident.length, 'the incident must be specific').toBeGreaterThan(200);
         expect(PLACERS.trade).toBe('placer');
-        expect(getDaoHouse('house-ninefold-ledger')!.services.some(s => /placement/i.test(s))).toBe(true);
+        expect(getDaoHouse('house-ninefold-karma')!.services.some(s => /placement/i.test(s))).toBe(true);
     });
 });
 
@@ -729,9 +729,9 @@ describe('faction distinctness pass', () => {
     });
 
     it('lets reputation run ahead of capability in at least one case', () => {
-        // Usually the world underrates a faction. The Weir Office is the
+        // Usually the world underrates a faction. Clearwater Ward is the
         // inversion, and the catalog would be a monotone without it.
-        const weir = FACTION_CHARACTER['sect-weir-office']!;
+        const weir = FACTION_CHARACTER['sect-clearwater-ward']!;
         expect(weir.knownFor.actuallyGoodAt).toMatch(/nothing anybody outside would recognise/i);
         expect(weir.knownFor.theGap).toMatch(/ahead of capability/i);
         expect(weir.knownFor.theGap).toMatch(/positional/i);
@@ -837,7 +837,7 @@ describe('the mortal world', () => {
             expect(getPrice(order[i])!.cash, `${order[i]} should cost more than ${order[i - 1]}`)
                 .toBeGreaterThan(getPrice(order[i - 1])!.cash);
         }
-        expect(getPrice('price-minor-healing-pill')!.cash)
+        expect(getPrice('price-lesser-healing-pill')!.cash)
             .toBe(stonesToCash(getPill(MINOR_HEALING_PILL_ID)!.value));
         expect(getPrice('price-qi-gathering-pill')!.cash)
             .toBe(stonesToCash(getPill('pill-qi-gathering')!.value));

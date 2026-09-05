@@ -116,7 +116,7 @@
  *                    the walking days every road is quoted in, what it takes
  *                    out of somebody, and the two things that can serve as a
  *                    fix on the far end. The binding scarcity is knowing where
- *                    the far end is, which is the House of the Measured Span's
+ *                    the far end is, which is the Shrinking Earth Pavilion's
  *                    whole business and the thing it inherited rather than
  *                    derived.
  *

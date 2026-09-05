@@ -178,7 +178,7 @@ interface Rule {
  */
 const ASH = /(?<![A-Za-z0-9])(?:ash|Ash)(?![a-z0-9])|(?<![A-Za-z0-9])ASH(?![A-Z0-9])/;
 
-/** The retired faction prefix. It is now the Stonewright Consortium. */
+/** The retired faction prefix. It is now the Stone Marrow Hall. */
 const ASHWRIGHT = /ashwright/i;
 
 /** `Vault` as a standalone capitalised noun. A lowercase vault door is fine. */
@@ -213,7 +213,7 @@ const VOCAB_EXEMPT = [...VOCABULARY_ALLOWLIST, ...TEMPORARY_ALLOWLIST];
 
 const RULES: readonly Rule[] = [
     { name: "'ash' as a word or identifier component", group: 'retired-vocabulary', pattern: ASH, allowlist: VOCAB_EXEMPT },
-    { name: "'Ashwright' (renamed to Stonewright)", group: 'retired-vocabulary', pattern: ASHWRIGHT, allowlist: VOCAB_EXEMPT },
+    { name: "'Ashwright' (renamed to Stone Marrow)", group: 'retired-vocabulary', pattern: ASHWRIGHT, allowlist: VOCAB_EXEMPT },
     { name: "'Vault' as a proper noun", group: 'retired-vocabulary', pattern: VAULT, allowlist: VOCAB_EXEMPT },
     { name: 'prose from the discarded conceit', group: 'retired-vocabulary', pattern: RETIRED_PHRASING, allowlist: VOCAB_EXEMPT },
     {

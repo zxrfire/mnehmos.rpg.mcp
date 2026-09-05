@@ -134,7 +134,7 @@ async function main(): Promise<void> {
     // OUTLIVING YOUR HOUSE IS NOT THE SAME AS NEVER HAVING ONE.
     //
     // `!npc.factionId` was the whole test, and it counted as rogues three
-    // people who were nothing of the kind: a Stonewright principal, a Flame
+    // people who were nothing of the kind: a Stone Marrow principal, a Flame
     // Sovereign still tagged `chosen` of the Nine Abyss, and a Hollow Court
     // apex aged twenty-five thousand. All three were seeded into a house, all
     // three still carry the `faction:` tag naming it, and all three are

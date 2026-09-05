@@ -265,14 +265,14 @@ describe('the stratum gate', () => {
 describe('locality decides how often, never whether', () => {
     it('joins a free-text place to the region it sits in', () => {
         expect(regionOfPlace('Burnt Earth')).toBe('region-low-fall');
-        expect(regionOfPlace('Iron Gate')).toBe('region-quiet-marches');
+        expect(regionOfPlace('Iron Ridge')).toBe('region-quiet-marches');
         expect(regionOfPlace('  the jade gorge  ')).toBe('region-low-fall');
         expect(regionOfPlace('nowhere in particular')).toBeNull();
         expect(regionOfPlace(null)).toBeNull();
     });
 
     it('reads the same row as local here and regional elsewhere', () => {
-        const kettle = LORE.find(entry => entry.name === 'Iron Gate')!;
+        const kettle = LORE.find(entry => entry.name === 'Iron Ridge')!;
         expect(bandFor(kettle, { regionId: 'region-quiet-marches' })).toBe('local');
         expect(bandFor(kettle, { regionId: 'region-low-fall' })).toBe('regional');
         // An unknown place narrows nothing rather than excluding everything.
@@ -487,7 +487,7 @@ describe('the overheard channel', () => {
         const gate = new KnowledgeGate(db);
         const repos = ensureCultivationDb();
         placePerson(db, 'npc-one', 'The First', 16, { sectId: 'sect-lantern-hall' });
-        placePerson(db, 'npc-two', 'The Second', 19, { sectId: 'sect-verdant-spring-hall' });
+        placePerson(db, 'npc-two', 'The Second', 19, { sectId: 'sect-verdant-spring-valley' });
         const run = game.state().run as never;
 
         let heard = null;
@@ -713,7 +713,7 @@ describe('listening on purpose', () => {
         const gate = new KnowledgeGate(db);
         const repos = ensureCultivationDb();
         placePerson(db, 'npc-one', 'The First', 15, { sectId: 'sect-lantern-hall' });
-        placePerson(db, 'npc-two', 'The Second', 18, { sectId: 'sect-verdant-spring-hall' });
+        placePerson(db, 'npc-two', 'The Second', 18, { sectId: 'sect-verdant-spring-valley' });
         const run = game.state().run as never;
 
         let ambient = 0;
@@ -765,7 +765,7 @@ describe('what the player actually reads', () => {
         speaker: null,
         names: [
             { kind: 'sect' as const, id: 'a', name: 'The Third Sill Court' },
-            { kind: 'place' as const, id: 'b', name: 'Iron Gate' }
+            { kind: 'place' as const, id: 'b', name: 'Iron Ridge' }
         ],
         note: 'n',
         confidence: 0.2,
@@ -775,7 +775,7 @@ describe('what the player actually reads', () => {
     it('performs the exchange instead of describing it', () => {
         const prose = hearingProse(overheard);
         expect(prose).toContain('The Third Sill Court');
-        expect(prose).toContain('Iron Gate');
+        expect(prose).toContain('Iron Ridge');
         expect(prose).not.toMatch(/a fragment|it contained/i);
     });
 

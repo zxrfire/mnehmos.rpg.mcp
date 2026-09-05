@@ -430,7 +430,7 @@ describe('every verb is reachable from plain English', () => {
         // given. All four were engine modules with no caller; `ride` was a
         // label on `move` that resolved through the same flat journey.
         ride: 'I ride to Clear River Ford',
-        fold: 'I fold space to Iron Gate',
+        fold: 'I fold space to Iron Ridge',
         passage: 'what does the Span board say',
         oath: 'what oaths am I carrying',
         provision: 'I stock up on provisions',
@@ -1026,7 +1026,7 @@ describe('buying a line off the price board', () => {
     it('reads a purchase as a purchase', () => {
         for (const input of [
             'I buy a visit from the mortal physician',
-            'I buy a Minor Healing Pill',
+            'I buy a Lesser Healing Pill',
             'I pay for a ferry crossing',
             'I buy a night at an inn',
             'I hire a scribe'
@@ -1063,7 +1063,7 @@ describe('buying a line off the price board', () => {
         const { cultivator } = await game.newRun('Shi Wanjun');
         db.prepare('UPDATE cultivators SET spirit_stones = 400 WHERE id = ?').run(cultivator.id);
 
-        const result = await game.act('I buy a Minor Healing Pill');
+        const result = await game.act('I buy a Lesser Healing Pill');
         const pouch = db
             .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE cultivator_id = ?')
             .all(cultivator.id) as Array<{ item_id: string; quantity: number }>;
@@ -1544,8 +1544,8 @@ describe('asking what I know', () => {
             'what do I know of Lu Sheng',
             'what do I know of the Hollow Court',
             'what have I heard of the Ninth Stone',
-            'what do I know about the Gleaners Company',
-            'have I ever heard of the Weir Office',
+            'what do I know about the Fallen Grain Caravan',
+            'have I ever heard of the Clearwater Ward',
             'remind me what I know about Elder Fang',
             'what do I have on the Moving Hoard',
             'what do I know'
@@ -1936,7 +1936,7 @@ describe('institutions acting on each other', () => {
         ['I declare war on the Nine Abyss Flame Sect', 'posture', 'war'],
         ['I claim descent from Ru Anjing', 'petition', 'descent'],
         ['I ask the Deep Survey for one of its pills', 'petition', 'stock'],
-        ['I ask the Deep Survey for an Unearned Step', 'petition', 'stock'],
+        ['I ask the Deep Survey for an Heaven-Ascending Golden Pill', 'petition', 'stock'],
         ['I offer an alliance to the Frostmirror Court', 'posture', 'alliance'],
         ['I petition the Third Sill Court for a grant', 'petition', 'grant'],
         ['I demand tribute from the Azure Dew Sect', 'posture', 'tribute'],
@@ -1956,7 +1956,7 @@ describe('institutions acting on each other', () => {
          * your word to an institution reaches the thing that models giving your
          * word rather than the thing next to it.
          */
-        ['I swear an oath to the House of the Unbroken Tally', 'oath', 'swear']
+        ['I swear an oath to the Vermilion Seal Terrace', 'oath', 'swear']
     ];
 
     for (const [typed, action, intent] of TWELVE) {
@@ -2792,7 +2792,7 @@ describe('the pill loop', () => {
 
     it('resolves a formula by name instead of picking one', async () => {
         // "I refine a pill" scored "pill" against the catalog, matched
-        // `Minor Healing Pill Formula` on containment, and silently chose one
+        // `Lesser Healing Pill Formula` on containment, and silently chose one
         // arbitrary row out of forty-two. A category is a question about the
         // whole set; only a name is a name.
         const { game } = makeGame({ seed: 'byname' });

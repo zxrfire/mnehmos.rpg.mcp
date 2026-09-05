@@ -11,7 +11,7 @@
  * Measured before it existed: six commanded crossings, ordinal 0 to 6, health
  * 40 of 40 the whole way. `attemptBreakthrough` returned no body cost at all;
  * a successful crossing was free on both paths. So the sentence that separates
- * the Unearned Step from a qi pill separated nothing, because the thing the qi
+ * the Heaven-Ascending Golden Pill from a qi pill separated nothing, because the thing the qi
  * pill makes you pay was not being charged.
  *
  * The two exemptions come from the shape rather than from a flag. Both the
@@ -240,7 +240,7 @@ describe('the immortal pill is the exemption, and it is the point', () => {
      * `promote_realm` had ZERO consumers in `src/` outside the catalog that
      * declares it and one test that reads the catalog, so the exemption the
      * owner's sentence names had nothing to name it with. See
-     * `taking-the-unearned-step.ts`.
+     * `taking-the-heaven-ascending-golden-pill.ts`.
      */
     it('crosses a wall without touching the body', async () => {
         const h = await makeGameInWorld({ worldSeed: WORLD, seed: 'the-step' });
@@ -249,7 +249,7 @@ describe('the immortal pill is the exemption, and it is the point', () => {
 
         // Standing at the top of Qi Condensation, which is a wall.
         h.repos.cultivators.update(id, { realmOrdinal: 12 } as never);
-        addToPouch(h.db, id, 'immortal-unearned-step:lower', 'pill', 1);
+        addToPouch(h.db, id, 'immortal-heaven-ascending-golden-pill:lower', 'pill', 1);
 
         const before = h.game.state().cultivator;
         const { narration } = await h.game.act('I take the pill');
@@ -269,7 +269,7 @@ describe('the immortal pill is the exemption, and it is the point', () => {
         const h = await makeGameInWorld({ worldSeed: WORLD, seed: 'not-a-wall' });
         const opened = await h.game.newRun('Shen Wu');
         const id = opened.cultivator.id;
-        addToPouch(h.db, id, 'immortal-unearned-step:lower', 'pill', 1);
+        addToPouch(h.db, id, 'immortal-heaven-ascending-golden-pill:lower', 'pill', 1);
 
         const { narration } = await h.game.act('I take the pill');
         const after = h.game.state().cultivator;
@@ -290,7 +290,7 @@ describe('the immortal pill is the exemption, and it is the point', () => {
         // Body Integration Marrow: the wall into Grand Ascension, which only a
         // higher grade reaches.
         h.repos.cultivators.update(id, { realmOrdinal: 36 } as never);
-        addToPouch(h.db, id, 'immortal-unearned-step:lower', 'pill', 1);
+        addToPouch(h.db, id, 'immortal-heaven-ascending-golden-pill:lower', 'pill', 1);
 
         const { narration } = await h.game.act('I take the pill');
 
@@ -307,13 +307,13 @@ describe('the immortal pill is the exemption, and it is the point', () => {
         const opened = await h.game.newRun('Shen Wu');
         const id = opened.cultivator.id;
         h.repos.cultivators.update(id, { realmOrdinal: 12 } as never);
-        addToPouch(h.db, id, 'immortal-unearned-step:lower', 'pill', 1);
+        addToPouch(h.db, id, 'immortal-heaven-ascending-golden-pill:lower', 'pill', 1);
 
         await h.game.act('I take the pill');
         const afterFirst = h.game.state().cultivator.realmOrdinal;
 
         h.repos.cultivators.update(id, { realmOrdinal: 16 } as never);
-        addToPouch(h.db, id, 'immortal-unearned-step:higher', 'pill', 1);
+        addToPouch(h.db, id, 'immortal-heaven-ascending-golden-pill:higher', 'pill', 1);
         const { narration } = await h.game.act('I take the pill');
 
         expect(h.game.state().cultivator.realmOrdinal, 'the second moved nothing').toBe(16);

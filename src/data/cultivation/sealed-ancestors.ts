@@ -261,7 +261,7 @@ export const SEALING_LAW = {
     sealsDoNotCheckWhoIsStanding:
         'And a seal does not check who opens it. An outsider who reaches the chamber can open it exactly as the holder can, which is what makes the raid scenarios coherent and what makes an unattended hall genuinely exposed. The protection on a sealed ancestor is the walk in, the wall, and the people standing in front of it - never the seal itself.',
     readingIsAScarceSkill:
-        'Repairing and understanding an existing seal is possible and not common. It needs somebody who can read what is written on it, in a hand most people cannot read, and that skill is where the archival powers get their leverage: the Anchorhold certifies seals for a fee and keeps copies, the Deep Survey holds site records it sealed itself and never published, and a Dao house will read a hand nobody local can. It is the concrete, unmagical reason an outside party can know more about what is under your floor than you do.',
+        'Repairing and understanding an existing seal is possible and not common. It needs somebody who can read what is written on it, in a hand most people cannot read, and that skill is where the archival powers get their leverage: the Immovable Mountain Temple certifies seals for a fee and keeps copies, the Deep Survey holds site records it sealed itself and never published, and a Dao house will read a hand nobody local can. It is the concrete, unmagical reason an outside party can know more about what is under your floor than you do.',
     unmaintainedSealsDecay:
         'A seal nobody maintains erodes. Not toward a wake condition and not on any schedule anybody set - it simply degrades, continuously, with nobody responsible and nobody watching. Every unowned ancestor in this catalog is sitting under a slow failure of exactly this kind, and that is the most likely way any of this material actually comes up: not a plan, not a raid, not a decision. Erosion, and then a morning when something that had been holding stops holding.'
 } as const;
@@ -282,7 +282,7 @@ export const THE_LINEAGE_CLAIM = {
         'It is usually unfalsifiable, which is why it survives. Everybody is working from documents, and documents are the thing that gets lost.'
     ],
     sheIsTheOnlyAuthority:
-        'And here is what makes it explosive. A woken ancestor is, for a few hours, the single adjudicator of a legitimacy question that no other party in the world can resolve - not the Ninefold Ledger, which certifies records rather than lines, not the Anchorhold, and not possession. Waking her is therefore a political act quite apart from anything she could destroy.',
+        'And here is what makes it explosive. A woken ancestor is, for a few hours, the single adjudicator of a legitimacy question that no other party in the world can resolve - not the Ninefold Karma Palace, which certifies records rather than lines, not the Immovable Mountain Temple, and not possession. Waking her is therefore a political act quite apart from anything she could destroy.',
     theSecondReasonInstrumentsGoUnspent:
         'Which produces a reason for not waking that sits entirely alongside the arithmetic and has nothing to do with it. Not cost, not risk, not losing the hall: they are not certain their own claim would survive her verdict. Fear of being told, by the only party who could say it, that they are not who they have been saying they are for six hundred years - in front of witnesses, in the moment they were counting on her most. It applies to bodies whose claim is probably fine, because probably is not good enough when the answer is public, immediate and final.',
     theRivalClaimantWantsHerWoken:
@@ -314,9 +314,9 @@ export const THE_LINEAGE_CLAIM = {
     whichAssetYouActuallyHold:
         'So the claim decides what kind of thing a holder is sitting on. A clean claim means the instrument is usable. A murky one means it is usable only as a fraud, at the risk of annihilation, which is a completely different asset - and the sect holding it knows precisely which kind it has, has known for generations, and has never written the distinction down anywhere.',
     whereItAlreadyBites: [
-        'sect-thousand-treasure-pavilion: two bodies claiming one ancestor, at most one correctly, neither able to settle it and the Ledger refusing to certify either. If that ancestor were ever woken, the dispute ends in an afternoon, which is why the quiet claimant is quiet.',
+        'sect-thousand-treasure-pavilion: two bodies claiming one ancestor, at most one correctly, neither able to settle it and the Karma Pavilion refusing to certify either. If that ancestor were ever woken, the dispute ends in an afternoon, which is why the quiet claimant is quiet.',
         'sect-clear-river-alliance: a name written down later because the ceremony needed one. The Alliance would not survive its own ancestor being asked, and has no way of finding that out.',
-        'sect-frostmirror-court: a claim that is probably fine, resting on records that are good rather than perfect - and the Court has never once written down that this is one of the things it is risking when it opens the ice.'
+        'sect-frostmirror-court: a claim that is probably fine, resting on records that are good rather than perfect - and the Ward has never once written down that this is one of the things it is risking when it opens the ice.'
     ]
 } as const;
 
@@ -378,7 +378,7 @@ export const LOST_RECORDS = {
     theClaimProblem:
         'Which compounds catastrophically at the moment it matters. She wakes, and the sect cannot state who they are to her. Her duty ran to an institution whose line reaches her, and the people standing over her have no name for her and no descent they can show - so what they have is not a diminished claim, it is no claim, and she is under no obligation to it. That does not make her hostile and it does not even make her unhelpful. It makes everything she does from that point a gift rather than a duty, freely given or freely withheld, and the sect has no standing to be disappointed either way. The waking was spent before anybody opened their mouth, and it was spent by an archivist nine centuries ago.',
     somebodyElseMayKnow:
-        'An outside party with better archives can know more about what is under your floor than you do, and the mechanism is mundane: reading a seal is a scarce skill and the archival powers have it. The Deep Survey holds site records it sealed itself and never published, the Anchorhold certifies seals for a fee and keeps copies, and a Dao house will read a hand nobody local can. So a rival with one good document knows the wake condition, the kind and the remaining window, while the holder knows a ceremony - an enormous, entirely quiet advantage that requires no strength at all. Somebody in this world is sitting on one right now, has never mentioned it, and is waiting to see whether it ever becomes useful.',
+        'An outside party with better archives can know more about what is under your floor than you do, and the mechanism is mundane: reading a seal is a scarce skill and the archival powers have it. The Deep Survey holds site records it sealed itself and never published, the Immovable Mountain Temple certifies seals for a fee and keeps copies, and a Dao house will read a hand nobody local can. So a rival with one good document knows the wake condition, the kind and the remaining window, while the holder knows a ceremony - an enormous, entirely quiet advantage that requires no strength at all. Somebody in this world is sitting on one right now, has never mentioned it, and is waiting to see whether it ever becomes useful.',
     categoryCollapse:
         'A forgotten sealed ancestor collapses the two categories in this file. It is not a held instrument, because nobody has priced it and nobody could brief her. It is not an ordinary unowned one either, because it is under an inhabited building with people working over it every day. It is an unowned ancestor under somebody else\'s floor: nobody\'s responsibility, with nobody watching the seal, an unmaintained seal decaying on schedule, and a congregation on top. The merge is the interesting part rather than a gap in the taxonomy.',
     theAccidentalWaking:
@@ -456,7 +456,7 @@ export const HELD_INSTRUMENTS: readonly HeldInstrument[] = [
         restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
         publishedCondition: null,
         privateContingency:
-            'An apex vault at the one moment nobody is sitting on it. The Court has worked out that the Deep Survey cannot leave its own seat, has told nobody in a hundred and ninety years, and keeps a permanent watcher at Green Water City against a trigger that has never once occurred. See `contingencies.ts` for the worked case: it is the clearest example in the world of what a private contingency actually looks like, and it is not what the Court has written down.',
+            'An apex vault at the one moment nobody is sitting on it. The Court has worked out that the Deep Survey cannot leave its own seat, has told nobody in a hundred and ninety years, and keeps a permanent watcher at Green Water City against a trigger that has never once occurred. See `contingencies.ts` for the worked case: it is the clearest example in the world of what a private contingency actually looks like, and it is not what the Ward has written down.',
         strategy: 'silence',
         strategyNote:
             'Silence, absolutely, and for the specific reason that the plan requires surprise and the observation underneath it is spent the moment a second party holds it. The Court fields a fraction of the defence its holdings warrant and has never lost the library, which reads externally as luck and is a deliberate refusal to advertise.',
@@ -466,16 +466,16 @@ export const HELD_INSTRUMENTS: readonly HeldInstrument[] = [
         kind: 'terminal',
         holderBelievesKind: 'terminal',
         kindNote:
-            'Terminal, and the Court has never pretended otherwise. She dug the curriculum out of the glacier, taught it to nine people and lay down in the hall she had cleared, at the end of a life rather than in the middle of one - so she wakes with hours and the whole closing-window arithmetic applies. Every term of the vault plan is built on that number and the Court has never had cause to doubt it.',
+            'Terminal, and the Ward has never pretended otherwise. She dug the curriculum out of the glacier, taught it to nine people and lay down in the hall she had cleared, at the end of a life rather than in the middle of one - so she wakes with hours and the whole closing-window arithmetic applies. Every term of the vault plan is built on that number and the Ward has never had cause to doubt it.',
         condition: 'live',
         holderBelieves: 'live',
         conditionNote:
-            'Live. Two forced entries are recorded by outside parties and neither party is recorded as having left, which is the closest thing to a test any sealed ancestor in the catalog has had, and it is why the Court is confident where the Anchorhold is merely certain.'
+            'Live. Two forced entries are recorded by outside parties and neither party is recorded as having left, which is the closest thing to a test any sealed ancestor in the catalog has had, and it is why the Ward is confident where the Immovable Mountain Temple is merely certain.'
     },
     {
         id: 'sealed-xu-ci',
         name: 'Xu Ci, the Second Standing Anchor',
-        holderFactionId: 'house-anchorhold',
+        holderFactionId: 'house-immovable-mountain',
         whoTheyWere: 'The Anchor who drove the replacement eastern nail personally and then had herself entombed under the datum stone rather than retire, on the argument that a nail should stay where it is.',
         dormantYears: 700,
         restingPlace: 'Under the datum stone, in the chamber every measurement in the region is ultimately taken from.',
@@ -484,7 +484,7 @@ export const HELD_INSTRUMENTS: readonly HeldInstrument[] = [
             'The eastern nail specifically, and not perimeters in general. The published schedule is deliberately broader than the intention: the Wardens of the Survey have agreed among themselves that they would wake her for the eastern socket failing and would find a reason not to for anything else, because the eastern nail is the one the house broke to found itself and is the only failure it could not survive being blamed for. Nobody has written that down and every Warden of the Survey knows it.',
         strategy: 'deterrent_by_publication',
         strategyNote:
-            'The only holder in the world that publishes. Putting the condition in the survey standard converts a sealed ancestor into a deterrent that works continuously and costs nothing, and the Anchorhold cannot pursue anybody, so a schedule is the only enforcement it has. It also means the house has bet everything on a claim anybody could test by taking two perimeters in one season, and nobody has.',
+            'The only holder in the world that publishes. Putting the condition in the survey standard converts a sealed ancestor into a deterrent that works continuously and costs nothing, and the Immovable Mountain Temple cannot pursue anybody, so a schedule is the only enforcement it has. It also means the house has bet everything on a claim anybody could test by taking two perimeters in one season, and nobody has.',
         wakeCost:
             'She rises, drives one nail, and does not come back up. The house has published that too, in detail, which is the part that makes the deterrent legible rather than boastful.',
         awareness: 'published',
@@ -495,7 +495,7 @@ export const HELD_INSTRUMENTS: readonly HeldInstrument[] = [
         condition: 'dead',
         holderBelieves: 'live',
         conditionNote:
-            'She is gone, and has been for something on the order of two centuries. Seven hundred years is a long time under a stone, the entombment was performed by a house that had never done one before and has never done another, and nothing about the chamber would tell anybody: it is sealed, it is quiet, and quiet is what it is supposed to be. So the Anchorhold has published a schedule it cannot execute, the entire strategic posture of a house that administers eleven perimeters rests on it, and the two perimeters currently maintained below standard are being watched by more people than the house employs. It is the most likely state for the oldest of these and it is the one nobody checks, because checking is indistinguishable from spending.'
+            'She is gone, and has been for something on the order of two centuries. Seven hundred years is a long time under a stone, the entombment was performed by a house that had never done one before and has never done another, and nothing about the chamber would tell anybody: it is sealed, it is quiet, and quiet is what it is supposed to be. So the Immovable Mountain Temple has published a schedule it cannot execute, the entire strategic posture of a house that administers eleven perimeters rests on it, and the two perimeters currently maintained below standard are being watched by more people than the house employs. It is the most likely state for the oldest of these and it is the one nobody checks, because checking is indistinguishable from spending.'
     }
 ];
 
@@ -528,29 +528,29 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
     },
     {
         id: 'sealed-the-tally-seal',
-        name: 'Whatever the Tally Court sealed at Burnt Earth',
-        whereItIs: 'Under the burned seat at Burnt Earth, behind a seal that predates the Ninefold Ledger and was cut by the house the Ledger destroyed.',
-        sealedBy: 'The Tally Court, twenty-three centuries ago, for a reason that was in the volumes the Ledger took and has never opened.',
+        name: 'Whatever the Iron Tally Court sealed at Burnt Earth',
+        whereItIs: 'Under the burned seat at Burnt Earth, behind a seal that predates the Ninefold Karma Palace and was cut by the house the Karma Pavilion destroyed.',
+        sealedBy: 'Iron Tally Court, twenty-three centuries ago, for a reason that was in the volumes the Karma Pavilion took and has never opened.',
         sealedFor: 'Unknown, and the distinction matters: nobody can say whether it was sealed to keep something in, to keep something preserved, or to keep something from being read. The three cases call for three completely different responses and there is no evidence that separates them.',
         sealerFactionId: null,
         sealMaintained: false,
         lastChecked: 'Not in twenty-three centuries by anyone with standing to do it. The ground is where debts sworn do not settle and never have, which is treated locally as a curiosity of the site.',
         awareness: 'rumoured',
         whoKnows:
-            'Burnt Earth Temple knows there is something under its ground and has never investigated, on the Abbot\'s stated reasoning that a thing sealed by people who are dead is not the Temple\'s business. The Ninefold Ledger almost certainly holds the answer in its nine sealed volumes, has never opened them, and has three internal factions arguing about it for reasons that have nothing to do with this.',
+            'Burnt Earth Temple knows there is something under its ground and has never investigated, on the Abbot\'s stated reasoning that a thing sealed by people who are dead is not the Temple\'s business. Ninefold Karma Palace almost certainly holds the answer in its nine sealed volumes, has never opened them, and has three internal factions arguing about it for reasons that have nothing to do with this.',
         hazard:
             'An unmaintained seal cut by a destroyed house, on ground that visibly does something to obligations sworn on it, under a temple that takes in anybody and has four monks. Nobody is maintaining it because the maintainers were dissolved twenty-three centuries ago, nobody has inspected it because inspecting it requires opening it, and the only party who could say what is behind it destroyed the party that put it there and then sealed the records.',
         opportunity:
-            'The Ledger volumes and the seal are the same question from two ends. A player who opened either would be the first person in two millennia to know what the Tally Court was actually doing when it was ended, which is worth more than anything physical that might be behind the stone.',
+            'The Karma Pavilion volumes and the seal are the same question from two ends. A player who opened either would be the first person in two millennia to know what the Iron Tally Court was actually doing when it was ended, which is worth more than anything physical that might be behind the stone.',
         ifSheWakes:
-            'If it is a person at all, it is a person whose institution was destroyed by a body that still exists and still holds the volumes. There is no duty to anybody - the Tally Court is gone, and nothing the Burnt Earth monks could say would give them a claim - so what wakes is someone with a short window, no obligations, and a grievance whose defendant is genuinely still there. That is the one case in this catalog where a stale grievance has a living heir, and the Ninefold Ledger has never once considered that its nine sealed volumes might be the other half of a person. What she would actually do with the hours is nobody\'s to predict. The Abbot, who takes in anybody and asks nothing, would very likely be the first person she spoke to, and that is not the worst possible start.',
+            'If it is a person at all, it is a person whose institution was destroyed by a body that still exists and still holds the volumes. There is no duty to anybody - the Iron Tally Court is gone, and nothing the Burnt Earth monks could say would give them a claim - so what wakes is someone with a short window, no obligations, and a grievance whose defendant is genuinely still there. That is the one case in this catalog where a stale grievance has a living heir, and the Ninefold Karma Palace has never once considered that its nine sealed volumes might be the other half of a person. What she would actually do with the hours is nobody\'s to predict. The Abbot, who takes in anybody and asks nothing, would very likely be the first person she spoke to, and that is not the worst possible start.',
         nobodyIsResponsible:
-            'The Temple did not seal it, the Ledger did not seal it, and the party that did no longer exists. If it opens, the arbitration would be about who has to deal with it rather than who caused it, and the Ledger would be arbitrating a case in which it is the interested party.'
+            'The Temple did not seal it, the Karma Pavilion did not seal it, and the party that did no longer exists. If it opens, the arbitration would be about who has to deal with it rather than who caused it, and the Karma Pavilion would be arbitrating a case in which it is the interested party.'
     },
     {
         id: 'sealed-the-sorting-yard',
         name: 'The sealed part of the sorting-yard ruin',
-        whereItIs: 'Behind the front three chambers of the ruin the Gleaners\' Company works out of at Willow Village, in the Silent Cliffs.',
+        whereItIs: 'Behind the front three chambers of the ruin the Fallen Grain Caravan works out of at Willow Village, in the Silent Cliffs.',
         sealedBy: 'The catastrophe, most likely, rather than by anybody - the driving of the qi into the stone closed a great deal that nobody chose to close, and this is one of the places that shut.',
         sealedFor: null,
         sealerFactionId: null,
@@ -558,19 +558,19 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         lastChecked: 'Thirty years ago, by Deep Gleaner Xun, who went in on a wager and did not come back. The Company sealed it again and raised the wager, which is the whole of the region\'s risk assessment.',
         awareness: 'rumoured',
         whoKnows:
-            'Every Gleaner, as a working fact rather than a secret: the Company lays out its sorting yard inside a building it has never fully entered, works three nodes at the front of it, and leaves the rest closed on the reasonable grounds that it was closed for a reason. Nobody outside the Silent Cliffs has ever been told, because nobody outside the Silent Cliffs asks the Gleaners anything.',
+            'Every Gleaner, as a working fact rather than a secret: the Company lays out its sorting yard inside a building it has never fully entered, works three nodes at the front of it, and leaves the rest closed on the reasonable grounds that it was closed for a reason. Nobody outside the Silent Cliffs has ever been told, because nobody outside the Silent Cliffs asks the Fallen Grain Caravan anything.',
         hazard:
             'A crew of nine to fifteen people sorts salvage every working day against a wall that has taken one person in living memory. The Company has no idea what is behind it, has never seen the inscription its own vocabulary above Keystone was copied from, and the highest-ranking authority in the province is a bureau with eleven staff and no procedure for this.',
         opportunity:
             'The Silent Cliffs vocabulary for the upper realms came off an inscription in there, which means somebody in that ruin knew what those states are - and the Long Cut, which administers the province and would very much like a working account of the upper realms, has never been told the sealed part exists.',
         ifSheWakes:
-            'This is the entry where the selection effect does not apply, because nobody chose her: the catastrophe shut the door and her own people sealed the front and walked out, and she has had four thousand years to think about that. She was a scholar of the upper realms and vain about it - the inscription the whole Silent Cliffs vocabulary was copied from is hers, and she wrote it in the register of somebody who expected to be read. What makes her dangerous is not power and not malice. It is that she cannot tell the difference between the people who left her and the people working her yard, because the Gleaners are sorting salvage in her building using her words, and the distinction between a successor and a stranger will not survive the first thirty seconds. A crew of nine would be talking to somebody who has already decided who they are.',
+            'This is the entry where the selection effect does not apply, because nobody chose her: the catastrophe shut the door and her own people sealed the front and walked out, and she has had four thousand years to think about that. She was a scholar of the upper realms and vain about it - the inscription the whole Silent Cliffs vocabulary was copied from is hers, and she wrote it in the register of somebody who expected to be read. What makes her dangerous is not power and not malice. It is that she cannot tell the difference between the people who left her and the people working her yard, because the Fallen Grain Caravan are sorting salvage in her building using her words, and the distinction between a successor and a stranger will not survive the first thirty seconds. A crew of nine would be talking to somebody who has already decided who they are.',
         nobodyIsResponsible:
-            'The Company holds a salvage contract rather than a lease, and a contractor is not protected, arbitrated for, or spoken for. If it opened, the Weir Office would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later.'
+            'The Company holds a salvage contract rather than a lease, and a contractor is not protected, arbitrated for, or spoken for. If it opened, the Clearwater Ward would receipt the notification and the Ninth Face would answer it at the next revision, up to twenty years later.'
     },
     {
         id: 'unowned-under-the-spring-hall',
-        name: 'Whoever is under the Verdant Spring Hall',
+        name: 'Whoever is under the Verdant Spring Valley',
         whereItIs: 'Beneath the terraced herb valley, in a chamber the stone irrigation channels run over and around, under a hall with ninety physicians working in it every day.',
         sealedBy: 'The party whose channels the Hall inherited and has never been able to reproduce, at a date nothing in the valley records.',
         sealedFor: 'Unknown, and nobody has ever formulated the question. The Hall does not know there is a chamber; it knows the channels are original, that they are cut to a standard its own masons cannot match, and that they crack.',
@@ -583,9 +583,9 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         hazard:
             'The channels are part of the sealing work rather than merely near it, and the standing trigger is a state of that work rather than an intruder - so the Hall moves a little closer to it every time its masons make a careful, competent, entirely reasonable repair with the wrong material. Nobody alive could have told them. There is no malice anywhere in it, no raid and no greed, and no moment at which anybody did anything wrong. The seal is also unmaintained and has been eroding for nine hundred years, so the two clocks are running together.',
         opportunity:
-            'Anybody who read the original site record would know something about the Verdant Spring Hall that the Verdant Spring Hall cannot know, and could tell them - which would be worth more to the Hall than anything else in the world and is worth almost nothing to anybody else.',
+            'Anybody who read the original site record would know something about the Verdant Spring Valley that the Verdant Spring Valley cannot know, and could tell them - which would be worth more to the Hall than anything else in the world and is worth almost nothing to anybody else.',
         nobodyIsResponsible:
-            'The Hall holds a sub-grant on a valley and has no custodial obligation to anything under it, the Ascetic Order that granted it has never surveyed below the springs, and the party that did the sealing has been gone long enough that the question of liability has no defendant. If it opens, the arbitration is about who deals with ninety physicians and a chamber, and the Ledger would be starting from nothing.',
+            'The Hall holds a sub-grant on a valley and has no custodial obligation to anything under it, the Ascetic Order that granted it has never surveyed below the springs, and the party that did the sealing has been gone long enough that the question of liability has no defendant. If it opens, the arbitration is about who deals with ninety physicians and a chamber, and the Karma Pavilion would be starting from nothing.',
         ifSheWakes:
             'A wall comes down during a repair and a woman steps out into a working infirmary. Nobody there can name her, nobody can show her a line, and she does not ask them to - she can see what the building is for inside a minute, which is more than most wakings get. So there is no duty and she does not pretend there is one. What there is, is an afternoon, ninety physicians, and a person who knew the channels when they were cut and understood what they were doing to the water. The likely outcome is the generous one and it is generous precisely because nothing obliges it: she spends the hours teaching. A method the Late Age lost, a Dao transmitted directly to whichever physician was holding the trowel, or simply the answer to the question the Hall has been getting wrong since the channels started cracking. It is one of the very few ways anything actually comes back in this age, it is nobody\'s plan, and it happens because somebody was standing there.'
     }
@@ -603,7 +603,7 @@ export const SEALED_ANCESTOR_PATTERN = {
     whyHoldersLieBothWays:
         'A holder with a live sealed ancestor may publish it, to deter, or conceal it, to preserve surprise. A holder with a dead one has every reason to keep publishing. So a claim is not evidence and an absence of claim is not evidence, and no institution in the world can price another one on this axis - which is a large part of why the powers are so careful with each other.',
     howAnybodyKnows: [
-        'published: the Anchorhold puts its wake condition in the regional survey standard as a line item, because a deterrent that nobody has read does not deter.',
+        'published: the Immovable Mountain Temple puts its wake condition in the regional survey standard as a line item, because a deterrent that nobody has read does not deter.',
         'rumoured: the sorting-yard ruin and the Burnt Earth seal, known as working facts to the people standing next to them and to almost nobody else.',
         'holder only: the Kindler and the Mirror, both concealed deliberately and for opposite reasons - one to surprise a creditor, one to preserve a plan.',
         'unknown to the holder: Meng Da, under an institution that treats the question as folklore.',
@@ -618,14 +618,14 @@ export const SEALED_ANCESTOR_PATTERN = {
     ],
     theOneCaseWhereItWasSpent: {
         yearsAgo: 1_100,
-        who: 'A sect the Ledger records as the Verge Hall, which held a vein at the head of a valley two provinces east and does not exist now.',
+        who: 'A sect the Karma Pavilion records as the Verge Hall, which held a vein at the head of a valley two provinces east and does not exist now.',
         why: 'Its vein was taken by a larger neighbour in a lease dispute that the Hall lost on paper, correctly and unappealably, and it woke what it had under its mountain rather than accept the ruling.',
         whatItBought:
             'Everything it asked for, in one night. The neighbour ceased to exist as an institution - not defeated, ended - the lease was void because there was no counterparty, and the Verge Hall held its vein and the neighbour\'s with nobody in the province willing to raise the subject.',
         whatItCost:
             'The sealed ancestor, the mountain, and forty years later the Hall itself. Having spent the only thing that made anybody careful around it, it was an ordinary sect with two veins and a reputation for having no reserve left - and a third party that had watched the whole thing absorbed it inside two generations, without a fight, mostly by hiring its people.',
         theLessonEverybodyTook:
-            'Not that it fails, because it did not fail: it worked completely. The lesson every current holder reasons from is that it works and then you are food. That is why the Anchorhold publishes rather than uses, why the Frostmirror Court will only spend the Mirror on something that leaves it the wealthiest institution in the world afterwards, and why the Nine Abyss Flame Sect is saving the Kindler for a creditor rather than for a rival.'
+            'Not that it fails, because it did not fail: it worked completely. The lesson every current holder reasons from is that it works and then you are food. That is why the Immovable Mountain Temple publishes rather than uses, why the Frostmirror Court will only spend the Mirror on something that leaves it the wealthiest institution in the world afterwards, and why the Nine Abyss Flame Sect is saving the Kindler for a creditor rather than for a rival.'
     },
     theyArePeople:
         'Read this whole section in the light of `AGE_IS_NOT_MENACE`. The vocabulary above - instrument, asset, deterrent, spend - is the holders speaking and not the narrator. What it describes is somebody asleep under a building who was young once, built the place, would still like it to do well, and would be surprised to hear herself priced. Three things can happen when one wakes, only one of them is what anybody planned, and the other two are better. See `WHAT_SHE_DOES_WITH_THE_TIME`.',
@@ -636,7 +636,7 @@ export const SEALED_ANCESTOR_PATTERN = {
     theTwoKinds:
         'Terminal and protector, and it is the most important unknown about any of them. A terminal wakes with hours and must convert inside them; a protector wakes with real time and a future, is closer to a seated defender who happens to be asleep, and does not burn out in the using. Value rankings, capability envelopes and wake conditions all change depending on which one a holder actually has - and where the records are thin, the holder frequently does not know. There is one of each in this catalog held correctly, and one held wrongly.',
     theOneThatWillNotWake:
-        'At least one of them is already gone, and the holder is the last party who would find out. Xu Ci has been dead for perhaps two centuries under the Anchorhold datum stone, the house has published a schedule it cannot execute, and its entire strategic posture rests on it. This is the most likely state for the oldest of these, and nobody checks, because checking a sealed ancestor is indistinguishable from spending one.'
+        'At least one of them is already gone, and the holder is the last party who would find out. Xu Ci has been dead for perhaps two centuries under the Immovable Mountain Temple datum stone, the house has published a schedule it cannot execute, and its entire strategic posture rests on it. This is the most likely state for the oldest of these, and nobody checks, because checking a sealed ancestor is indistinguishable from spending one.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────

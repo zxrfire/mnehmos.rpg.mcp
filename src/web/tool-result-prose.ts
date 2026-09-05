@@ -400,7 +400,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         const membership = body.membership as { rankTitle?: string } | undefined;
         lines.push(
             // "at ${rankTitle}" read as a place. Barrow Hand is the lowest
-            // rank in the Gleaners' Company and it is also a town, so the line
+            // rank in the Fallen Grain Caravan and it is also a town, so the line
             // told a player standing in Burnt Earth that they were somewhere
             // else. A rank has to be named as a rank.
             `Taken on by ${joinedSect?.name ?? 'the sect'}` +

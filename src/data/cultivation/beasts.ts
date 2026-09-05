@@ -262,7 +262,7 @@ export const WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS = {
  *              is a property question and a real one; it is not predation.
  *   demonic    Takes from people who did not agree and cannot appeal. The
  *              Core-Taker waits for the second day of a seclusion and leaves
- *              the pouch on the belt, which is the same row the Quiet Cut
+ *              the pouch on the belt, which is the same row the Still Blade Peak
  *              occupies among the houses: a third party who is not present.
  *
  * ── ORTHOGONAL TO THE RUNG, AND ORTHOGONAL TO `nature` ──────────────────
@@ -570,7 +570,7 @@ export const ESTIMATING_A_BEAST = {
     standardError:
         'Reading it a rank low, from size or from an old district survey. Culling notices are written from surveys and surveys are not redrawn when a beast has a good century, so the price on the notice is the price for what used to be there.',
     whoGetsItRight:
-        'Gleaners, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
+        'Fallen Grain Caravan, herb gatherers on guarded ground, and anybody who has been paid per head for long enough to have stopped guessing. Sect disciples are the worst at it, because they have never had to be right about it alone.'
 } as const;
 
 /**
@@ -1222,7 +1222,7 @@ export const BEASTS: readonly Beast[] = [
         name: 'The Thing Under Nine Peaks',
         nature: 'ancient',
         // It is drinking a vein an order of four hundred people live on, and
-        // none of them can see the clock or appeal it. That is the Quiet Cut's
+        // none of them can see the clock or appeal it. That is the Still Blade Peak's
         // own row among the houses: a third party who is not present.
         disposition: 'demonic',
         ordinal: 33,
@@ -1270,7 +1270,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It is walled into a working face on the Silent Cliffs side, it is past the change, and it has been awake for some of the nine hundred years. Carvers who have cut near it report the dust hanging wrong and stop taking that grant.',
         materialIds: ['mat-sleeper-seam-core'],
-        note: 'The Weir Office has refused four applications to open the face and has not given a reason in writing, which is itself the longest entry in the grant ledger.'
+        note: 'Clearwater Ward has refused four applications to open the face and has not given a reason in writing, which is itself the longest entry in the grant ledger.'
     }
 ] as const;
 
@@ -1378,7 +1378,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         value: 180,
         rarityWeight: 48,
         harvestOrdinal: 11,
-        description: 'The one beast material the Silent Cliffs can supply in quantity, and the reason Iron Gate has a horn market at all.'
+        description: 'The one beast material the Silent Cliffs can supply in quantity, and the reason Iron Ridge has a horn market at all.'
     },
     {
         id: 'mat-core-taker-jaw',
@@ -1627,7 +1627,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
         driverBeastId: 'beast-thing-under-nine-peaks',
         beastIds: ['beast-grey-wolf-pack', 'beast-vein-deer', 'beast-stone-ox', 'beast-thunder-hawk'],
         whoAbsorbsIt:
-            'The river villages between the mountain and the province town, none of which are inside any sect recall order, and the Clear River Fordhall, which counts the crossings and will call in the debt afterwards.',
+            'The river villages between the mountain and the province town, none of which are inside any sect recall order, and the Clear River Alliance, which counts the crossings and will call in the debt afterwards.',
         aftermath:
             'The front of it is killed within a month and the cause is not addressed, because addressing it means opening the lower chamber. The same tide is expected again and no date is offered.'
     },
@@ -1660,8 +1660,8 @@ export const BEAST_TIDES: readonly BeastTide[] = [
             'The burn edge moved about nine hundred paces since the survey was drawn, and the thin population living behind it ran out of ground with anything in it at all. Nothing is driving them and there is nothing at the back of it to kill.',
         causeKnownLocally: true,
         precursors: [
-            'the Six Li Wardens repainted the stakes twice in one year and the second repaint was not published',
-            'horn prices at Iron Gate fell, because everything arriving at market was undersized and everyone could see it',
+            'the Six Li Patrol repainted the stakes twice in one year and the second repaint was not published',
+            'horn prices at Iron Ridge fell, because everything arriving at market was undersized and everyone could see it',
             'hares reached the sorting yard at Willow Village, which they have no business doing and had not done before'
         ],
         minOrdinal: 0,
@@ -1669,7 +1669,7 @@ export const BEAST_TIDES: readonly BeastTide[] = [
         driverBeastId: null,
         beastIds: ['beast-stubble-hare', 'beast-stone-ox', 'beast-grey-wolf-pack'],
         whoAbsorbsIt:
-            'Iron Gate, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
+            'Iron Ridge, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
         aftermath:
             'Nothing in it is worth taking, everything in it has to be killed anyway, and the district ends the season poorer than it started. This is the tide the Silent Cliffs actually gets, and it is not a story anybody tells.'
     }
@@ -1712,7 +1712,7 @@ export const THE_CONTRACT = {
         'a witness fee to a Dao house, since an unwitnessed contract binds nobody and the beast knows the law better than most disciples do'
     ],
     witnessing:
-        'A contract of this kind is witnessed the way any other agreement is - a house of the Unbroken Tally takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
+        'A contract of this kind is witnessed the way any other agreement is - a house of the Vermilion Seal Terrace takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
     whyItIsRare:
         'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail the first below Void Refinement, which is nearly all of them - the other party has to be one of a handful of things in the world.',
     howItBreaks: [

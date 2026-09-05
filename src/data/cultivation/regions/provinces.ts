@@ -96,7 +96,7 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
 // inherited. So `onPaper` and `onTheGround` are separate fields on every
 // prefecture and they are allowed to disagree, in both directions - a house
 // that holds less than the record says is the common case, and a house that
-// holds more than any document mentions is the Longbough Grove. `discrepancy`
+// holds more than any document mentions is the Ancient Bough Grove. `discrepancy`
 // names which kind, and the catalog test asserts that a prefecture claiming
 // `none` really does read the same in both fields.
 //
@@ -205,7 +205,7 @@ export const PROVINCES: readonly Province[] = [
         onTheGround: 'Nobody in either played province has been, and the Long Cut does not publish what it takes out.',
         prefectureIds: [],
         whatIsKnownOfIt:
-            'A name on a schedule the Weir Office countersigns once every twenty years without reading past its own line, and a rumour among Iron Gate carvers that there is somewhere the tools are better.',
+            'A name on a schedule the Clearwater Ward countersigns once every twenty years without reading past its own line, and a rumour among Iron Ridge carvers that there is somewhere the tools are better.',
         startingAwareness: 'unaware'
     },
     {
@@ -219,7 +219,7 @@ export const PROVINCES: readonly Province[] = [
         onPaper: 'Second band of five, and the only one that has ever moved up rather than down.',
         onTheGround: 'Unknown here. The Assessor of the Four Faces rates it annually and the figure is not circulated.',
         prefectureIds: [],
-        whatIsKnownOfIt: 'Nothing at all in the Silent Cliffs. The name appears once on the schedule the Twenty-Year Hand carries and nobody at the Weir Office has ever asked what it is.',
+        whatIsKnownOfIt: 'Nothing at all in the Silent Cliffs. The name appears once on the schedule the Twenty-Year Hand carries and nobody at the Clearwater Ward has ever asked what it is.',
         startingAwareness: 'unaware'
     },
     {
@@ -233,7 +233,7 @@ export const PROVINCES: readonly Province[] = [
         onPaper: 'Third band of five, and it has been third for two hundred years.',
         onTheGround: 'Unknown here, and the Long Cut has never had reason to describe it to anybody in the Silent Cliffs.',
         prefectureIds: [],
-        whatIsKnownOfIt: 'A name, and the fact that it is above the Silent Cliffs in the queue, which is the only comparative figure anybody in Iron Gate has ever heard.',
+        whatIsKnownOfIt: 'A name, and the fact that it is above the Silent Cliffs in the queue, which is the only comparative figure anybody in Iron Ridge has ever heard.',
         startingAwareness: 'unaware'
     },
     {
@@ -248,7 +248,7 @@ export const PROVINCES: readonly Province[] = [
         onTheGround: 'Unknown here, and the Assessor believes it will change places with the Silent Cliffs within her tenure and has not written that down.',
         prefectureIds: [],
         whatIsKnownOfIt:
-            'The one name a Iron Gate carver might have heard, because it is the province directly above them in a queue nobody has told them they are in.',
+            'The one name a Iron Ridge carver might have heard, because it is the province directly above them in a queue nobody has told them they are in.',
         startingAwareness: 'unaware'
     }
 ];
@@ -326,7 +326,7 @@ export function provinceForFaction(factionId: string): Province | undefined {
  * Whose gift a faction's ground is in, tracing sub-holdings up. Returns null
  * where nothing granted it - which is a real and important answer, and the
  * only thing the Pavilion, the Hollow Court, the Grove, the Clear River
- * Alliance and the Six Li Wardens have in common.
+ * Alliance and the Six Li Patrol have in common.
  */
 export function delegatedFrom(factionId: string): string | null {
     const pref = prefectureForFaction(factionId);

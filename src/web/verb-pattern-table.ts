@@ -95,6 +95,7 @@ import {
 // nothing to this module's namespace.
 export * from './planned-action.js';
 import type { PlannedAction } from './planned-action.js';
+import { A_HOUSE_TYPE_NOUN } from './what-a-house-is-called.js';
 
 // A question about an act is not the act. The mood post-pass, and the guard on
 // a quantity the engine could not read. Both were public already, so `export *`
@@ -542,7 +543,7 @@ export function whatATakingNames(text: string, input: string): string | null {
         return null;
     }
     if (SITE_PRIZE_NOUNS.test(text) && !/\bwhat(?:'s| is) on\b/.test(text)) return null;
-    // "I take the carriage to Iron Gate" is a journey, and {@link RIDING} owns
+    // "I take the carriage to Iron Ridge" is a journey, and {@link RIDING} owns
     // the whole shape of it. Deferred to explicitly rather than by ordering,
     // because that row runs below this one - except where the sentence says
     // whose the thing is, which is the one reading a journey never has.
@@ -554,7 +555,16 @@ export function whatATakingNames(text: string, input: string): string | null {
     // taking inside an institution is - and a taking off a house you are NOT on the
     // roll of is a sentence this engine does not have, which `object-theft.ts` says
     // in its own docstring.
-    if (/\b(?:sect|house|clan|school|order|treasury|reserves|coffers|vault|library|archive|storehouse|granary)\b/.test(text)) {
+    // THE HOUSE WORDS COME FROM THE CATALOG, not from this line. Five of them
+    // were written here by hand and the catalog has eighteen: four houses end in
+    // `Hall`, two in `Temple`, one each in `Grove`, `Cult`, `Caravan`, `Patrol`
+    // and `Bureau`, and every one of those fell through this veto into a taking.
+    // Measured: "I take the Cinnabar Crucible Sect intake" came back as somebody
+    // lifting an object called "Cinnabar Crucible Sect intake" out of a pouch,
+    // and had done since that hall was written.
+    if (new RegExp(
+        `\\b(?:${A_HOUSE_TYPE_NOUN}|treasury|reserves|coffers|vault|library|archive|storehouse|granary)\\b`, 'i'
+    ).test(text)) {
         return null;
     }
     // "I'll take the manual" is said across a counter. {@link OFFERING_TO_BUY}
@@ -2855,7 +2865,7 @@ function planIntent(input: string): PlannedAction {
         && !/\bgather (?:qi|energy|my qi)\b/.test(text)
         // A pocket is not a plant. `pick` carried this branch, so "I pick Xiao
         // Suiya's pocket" - a theft aimed at a named person - came back "Cloudcap
-        // Mushroom, pouched" and "7 days bent over the ground around Iron Gate".
+        // Mushroom, pouched" and "7 days bent over the ground around Iron Ridge".
         // The player attempted a crime against somebody and the engine charged them
         // a week of foraging for it, which is the worst answer available: not a
         // refusal, not the act, and irreversible.
@@ -3020,7 +3030,7 @@ function planIntent(input: string): PlannedAction {
 
     // The oath phrasings are here rather than in a verb of their own, and that is
     // the finding rather than a shortcut. "I swear an oath to the House of the
-    // Unbroken Tally" reached the INTERACT table and was answered by walking the player
+    // Vermilion Seal Terrace" reached the INTERACT table and was answered by walking the player
     // over and describing them - and the act it names is JOINING. The catalog says
     // so in its own admission requirement, which for that house reads "forty years
     // of intended service, sworn in front of a Warden of Terms before any training

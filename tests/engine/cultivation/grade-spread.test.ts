@@ -35,7 +35,7 @@ import {
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { GRADE_ORDER, gradeRank } from '../../../src/data/cultivation/techniques.js';
 import { pillBandOrdinal } from '../../../src/engine/cultivation/breakthrough.js';
-import { NOTHING_IS_GIVEN_AT_OR_ABOVE } from '../../../src/engine/cultivation/taking-the-unearned-step.js';
+import { NOTHING_IS_GIVEN_AT_OR_ABOVE } from '../../../src/engine/cultivation/taking-the-heaven-ascending-golden-pill.js';
 import { OVERCOMES } from '../../../src/engine/cultivation/spirit-roots.js';
 import {
     BODY_REALM_MULTIPLIER,
@@ -210,7 +210,7 @@ describe('grade spread: the overdraw is a burst you buy and a residue you keep',
         expect(change.overdraw!.days).toBeGreaterThan(0);
     });
 
-    it('leaves the rung standing on nothing, in the Unearned Step\'s own word', () => {
+    it('leaves the rung standing on nothing, in the Heaven-Ascending Golden Pill\'s own word', () => {
         // A rung arrived at with no crossing under it is `incomplete` - the
         // schema's "rushed; part of the structure was never formed". Reusing
         // the constant means the world reads somebody carrying this exactly the
@@ -471,7 +471,7 @@ describe('grade spread: the residue obeys the ladder, not the object', () => {
     });
 
     it('gives nothing at the height where nothing is given, by the existing rule', () => {
-        // `NOTHING_IS_GIVEN_AT_OR_ABOVE` is the Unearned Step's bound and it is
+        // `NOTHING_IS_GIVEN_AT_OR_ABOVE` is the Heaven-Ascending Golden Pill's bound and it is
         // not about pills - nothing hands anybody a rung up there, whatever it
         // is. Reused rather than restated, so this cannot become a second
         // opinion about the top of the ladder.

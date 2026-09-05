@@ -343,11 +343,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Verdant Spring Hall -------------------------------------------
+    // --- Verdant Spring Valley -------------------------------------------
     {
         id: 'member-tao-chunxi',
         name: 'Tao Chunxi',
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         rankIndex: 0,
         rank: 'Herb Boy',
         realmOrdinal: 3,
@@ -364,7 +364,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-jiang-ruoshui',
         name: 'Jiang Ruoshui',
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         rankIndex: 1,
         rank: 'Outer Physician',
         realmOrdinal: 8,
@@ -381,7 +381,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-pei-hanyue',
         name: 'Pei Hanyue',
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         rankIndex: 2,
         rank: 'Inner Physician',
         realmOrdinal: 12,
@@ -398,7 +398,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lou-tingwei',
         name: 'Lou Tingwei',
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         rankIndex: 3,
         rank: 'Hall Physician',
         realmOrdinal: 15,
@@ -419,7 +419,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-xue-songyi',
         name: 'Xue Songyi',
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         rankIndex: 4,
         rank: 'Life Elder',
         realmOrdinal: 19,
@@ -628,7 +628,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Lamp Novice',
         realmOrdinal: 3,
         role: 'peer',
-        wants: 'eleven days\' cart fare back to Iron Gate, to fetch her brother',
+        wants: 'eleven days\' cart fare back to Iron Ridge, to fetch her brother',
         fears: 'that the cough is the thing that decides it and not the fare',
         detail: 'Rinses her mouth with vinegar before every meal, which no Jade Gorge native does and which nobody at the Temple has asked her about.',
         outlier: false,
@@ -662,7 +662,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Inner Monk',
         realmOrdinal: 12,
         role: 'peer',
-        wants: 'a posting to the Iron Gate Mission, eleven days away',
+        wants: 'a posting to the Iron Ridge Mission, eleven days away',
         fears: 'that he wants it because it is eleven days from his family\'s creditors',
         detail: 'Cuts his own hair rather than let anybody do it, badly, in front of a polished pan, on the first of the month.',
         outlier: false,
@@ -754,7 +754,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 14,
         role: 'master',
         wants: 'the nine cities\' indices reconciled before he dies, which he calculates as eleven more years of work',
-        fears: 'the Stonewright Consortium buying up the Hall\'s paper supply, which it has begun to',
+        fears: 'the Stone Marrow Hall buying up the Hall\'s paper supply, which it has begun to',
         detail: 'Has an index of the indices, in his own hand, which he has never copied and will not allow out of the room.',
         outlier: false,
         outlierReason: null,
@@ -788,7 +788,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-ge-yiran',
         name: 'Ge Yiran',
-        factionId: 'sect-standing-grove',
+        factionId: 'sect-ancient-bough-grove',
         rankIndex: 0,
         rank: 'Guest of the Grove',
         realmOrdinal: 15,
@@ -805,7 +805,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-wen-danyang',
         name: 'Wen Danyang',
-        factionId: 'sect-standing-grove',
+        factionId: 'sect-ancient-bough-grove',
         rankIndex: 1,
         rank: 'Disciple',
         realmOrdinal: 19,
@@ -826,7 +826,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-yun-qingtai',
         name: 'Yun Qingtai',
-        factionId: 'sect-standing-grove',
+        factionId: 'sect-ancient-bough-grove',
         rankIndex: 3,
         rank: 'Keeper of the Grove',
         realmOrdinal: 24,
@@ -845,11 +845,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // LOW FALL - NEUTRAL
     // ═══════════════════════════════════════════════════════════════════
 
-    // --- Stonewright Consortium ------------------------------------------
+    // --- Stone Marrow Hall ------------------------------------------
     {
         id: 'member-pan-mingyu',
         name: 'Pan Mingyu',
-        factionId: 'sect-stonewright-consortium',
+        factionId: 'sect-stone-marrow-hall',
         rankIndex: 0,
         rank: 'Weigher',
         realmOrdinal: 7,
@@ -866,7 +866,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-teng-kexin',
         name: 'Teng Kexin',
-        factionId: 'sect-stonewright-consortium',
+        factionId: 'sect-stone-marrow-hall',
         rankIndex: 1,
         rank: 'Refiner',
         realmOrdinal: 11,
@@ -883,27 +883,27 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-qin-fusheng',
         name: 'Qin Fusheng',
-        factionId: 'sect-stonewright-consortium',
+        factionId: 'sect-stone-marrow-hall',
         rankIndex: 2,
         rank: 'Factor',
         realmOrdinal: 15,
         role: 'rival',
         wants: 'the Clear River Ford rate desk, which decides what the entire border road pays',
         fears: 'an audit of the nineteen percent',
-        detail: 'Keeps a private book of who has bought below rate and from whom, and it is more accurate than the Consortium\'s own.',
+        detail: 'Keeps a private book of who has bought below rate and from whom, and it is more accurate than the Stone Marrow Hall\'s own.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
         rivalry: {
             grievance: 'Anybody trading across the border road without going through him is, in his reading, stealing from him personally.',
-            beatableBecause: 'All of his power is a desk he does not hold yet and a book he is not supposed to keep. He cannot fight and has never claimed to. One credible audit request lodged with the Ninefold Ledger removes him entirely, and the Consortium will not spend a stone defending a Factor.'
+            beatableBecause: 'All of his power is a desk he does not hold yet and a book he is not supposed to keep. He cannot fight and has never claimed to. One credible audit request lodged with the Ninefold Karma Palace removes him entirely, and the Stone Marrow Hall will not spend a stone defending a Factor.'
         },
         teaching: null
     },
     {
         id: 'member-yao-wangchun',
         name: 'Yao Wangchun',
-        factionId: 'sect-stonewright-consortium',
+        factionId: 'sect-stone-marrow-hall',
         rankIndex: 3,
         rank: 'House Factor',
         realmOrdinal: 18,
@@ -996,11 +996,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Cinnabar Crucible Guild ------------------------------------------
+    // --- Cinnabar Crucible Sect ------------------------------------------
     {
         id: 'member-fu-niankang',
         name: 'Fu Niankang',
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 0,
         rank: 'Bellows Hand',
         realmOrdinal: 7,
@@ -1017,7 +1017,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-chai-xilian',
         name: 'Chai Xilian',
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 1,
         rank: 'Apprentice Alchemist',
         realmOrdinal: 10,
@@ -1034,7 +1034,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-ruan-jiangming',
         name: 'Ruan Jiangming',
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 2,
         rank: 'Journeyman Alchemist',
         realmOrdinal: 15,
@@ -1047,14 +1047,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: false,
         rivalry: {
             grievance: 'Somebody else\'s batches are holding, and he has decided the reason is favouritism rather than method.',
-            beatableBecause: 'The Guild admits by examination and allocates by examination, and he cannot fix one he is not invigilating. Everything he has ever won he won by being right in public, so being wrong in public once is the whole of it. He is also an alchemist and has never been in a fight.'
+            beatableBecause: 'The Hall admits by examination and allocates by examination, and he cannot fix one he is not invigilating. Everything he has ever won he won by being right in public, so being wrong in public once is the whole of it. He is also an alchemist and has never been in a fight.'
         },
         teaching: null
     },
     {
         id: 'member-nie-shiyu',
         name: 'Nie Shiyu',
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 3,
         rank: 'Cauldron Master',
         realmOrdinal: 18,
@@ -1067,15 +1067,15 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: false,
         rivalry: null,
         teaching: {
-            knows: 'Every mortal- and earth-grade formula in the Guild book, and the exact failure mode of each one.',
-            mayNotSay: 'Which heaven-grade formulae the Guild privately knows are incomplete, which is a Furnace Elder\'s to disclose and never has been.',
-            costsThem: 'Saying "recovered, not devised" out loud in the refining hall is a thing the Guild has formally censured two people for, and she has been censured once.'
+            knows: 'Every mortal- and earth-grade formula in the Hall book, and the exact failure mode of each one.',
+            mayNotSay: 'Which heaven-grade formulae the Hall privately knows are incomplete, which is a Furnace Elder\'s to disclose and never has been.',
+            costsThem: 'Saying "recovered, not devised" out loud in the refining hall is a thing the Hall has formally censured two people for, and she has been censured once.'
         }
     },
     {
         id: 'member-liang-tuoshan',
         name: 'Liang Tuoshan',
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 4,
         rank: 'Furnace Elder',
         realmOrdinal: 21,
@@ -1191,7 +1191,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 3,
         role: 'peer',
         wants: 'the Burnt Earth Temple to have said yes, which it did not, for reasons nobody explained',
-        fears: 'the Crimson Abyss Hall, which keeps a list of who was refused where and has her on it',
+        fears: 'the Crimson Abyss Fortress, which keeps a list of who was refused where and has her on it',
         detail: 'Keeps her four refusal chits in a wallet and produces them to strangers as credentials.',
         outlier: false,
         outlierReason: null,
@@ -1292,7 +1292,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Snow Servant',
         realmOrdinal: 14,
         role: 'peer',
-        wants: 'to stop being grateful, which is the only thing anyone at the Court has ever asked of her',
+        wants: 'to stop being grateful, which is the only thing anyone at the Ward has ever asked of her',
         fears: 'leaving, and finding that the arts kill her outside the cold hall',
         detail: 'Has not been warm in four years, has stopped noticing, and other people notice within a minute of meeting her.',
         outlier: false,
@@ -1309,7 +1309,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Mirror Disciple',
         realmOrdinal: 17,
         role: 'peer',
-        wants: 'to be sent out to look for another mutated ice root, which the Court does once a decade',
+        wants: 'to be sent out to look for another mutated ice root, which the Ward does once a decade',
         fears: 'finding one and being wrong about it',
         detail: 'Keeps a list of eleven names of people rumoured to have the root. Nine of them are dead and she has not crossed them off.',
         outlier: false,
@@ -1327,7 +1327,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 22,
         role: 'master',
         wants: 'the curriculum copied out in full before the glacier moves again',
-        fears: 'that it was never complete and that the Court has been teaching a fragment for four hundred years',
+        fears: 'that it was never complete and that the Ward has been teaching a fragment for four hundred years',
         detail: 'Teaches in a hall cold enough to crack a cup, and provides the cups.',
         outlier: false,
         outlierReason: null,
@@ -1368,7 +1368,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 20,
         role: 'senior',
         wants: 'a reply of any wording at all from an office that has not answered eleven letters',
-        fears: 'that the silence is not contempt but a filing decision, and that the Court is not in the file',
+        fears: 'that the silence is not contempt but a filing decision, and that the Ward is not in the file',
         detail: 'Drafts the correspondence to the Third Sill and rewrites every sentence that could be quoted back, which is why the Court\'s claim on the arterial has never once been stated in a form anybody can hold it to.',
         outlier: false,
         outlierReason: null,
@@ -1410,7 +1410,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 22,
         role: 'senior',
         wants: 'the standing count taken twice a day rather than once, which he has now requested in writing eleven times',
-        fears: 'nothing he will state, and the Anchorhold has filed the absence itself as a finding',
+        fears: 'nothing he will state, and the Immovable Mountain Temple has filed the absence itself as a finding',
         detail: 'Holds that water handed out at the gate is an exchange and that the Wardens have never made one; he lost, wrote down the date and the quantity anyway, and that entry is one of the eleven Warden documents anybody outside the perimeter has seen.',
         outlier: false,
         outlierReason: null,
@@ -1534,11 +1534,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- Crimson Abyss Hall ------------------------------------------------
+    // --- Crimson Abyss Fortress ------------------------------------------------
     {
         id: 'member-tang-lingyun',
         name: 'Tang Lingyun',
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         rankIndex: 0,
         rank: 'Blood Offering',
         realmOrdinal: 4,
@@ -1555,7 +1555,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-ping-xingzhi',
         name: 'Ping Xingzhi',
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         rankIndex: 1,
         rank: 'Crimson Servant',
         realmOrdinal: 9,
@@ -1572,7 +1572,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lin-mudan',
         name: 'Lin Mudan',
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         rankIndex: 2,
         rank: 'Chosen',
         realmOrdinal: 14,
@@ -1592,7 +1592,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-zhu-renshan',
         name: 'Zhu Renshan',
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         rankIndex: 3,
         rank: 'Hall Master',
         realmOrdinal: 17,
@@ -1613,7 +1613,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-cui-fangzhi',
         name: 'Cui Fangzhi',
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         rankIndex: 4,
         rank: 'Left Envoy',
         realmOrdinal: 20,
@@ -1655,7 +1655,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 8,
         role: 'peer',
         wants: 'out',
-        fears: 'the Verdant Spring Hall, which hunts the Cult on principle and does not check rank first',
+        fears: 'the Verdant Spring Valley, which hunts the Cult on principle and does not check rank first',
         detail: 'Has a Verdant Spring herb boy\'s token she took off a body four years ago and has never dared sell.',
         outlier: false,
         outlierReason: null,
@@ -1671,9 +1671,9 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Bone Disciple',
         realmOrdinal: 12,
         role: 'rival',
-        wants: 'the Gleaners\' Company driven off the border sites entirely',
+        wants: 'the Fallen Grain Caravan driven off the border sites entirely',
         fears: 'the Company\'s factor at Clear River Ford, personally and by name',
-        detail: 'Has killed two Gleaners in six years, can name them both, and does, at length, when drinking.',
+        detail: 'Has killed two Fallen Grain Caravan in six years, can name them both, and does, at length, when drinking.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -1841,7 +1841,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: true,
         rivalry: null,
         teaching: {
-            knows: 'The whole flower road up to the last volume - the three lower canons, the setting, the nine-night opening, the petal cut and the bed array - and she teaches all of it to anybody the Court has admitted.',
+            knows: 'The whole flower road up to the last volume - the three lower canons, the setting, the nine-night opening, the petal cut and the bed array - and she teaches all of it to anybody the Ward has admitted.',
             mayNotSay: 'What the Matriarch did to cross the rung above the road. She has not been forbidden it; she does not know, and she will say she does not know rather than let a bed hand think the answer is being kept from her.',
             costsThem: 'A season of her own setting, every time, because she watches a new pair of hands instead of working her own beds - and the Court counts a bed unworked exactly the way it counts one lost.'
         }
@@ -1862,7 +1862,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         goodCompany: false,
         rivalry: {
             grievance: 'The Terrace Elders keep selling the third bed forward and she has stopped losing the argument politely, because every season sold is a season somebody can count backwards from.',
-            beatableBecause: 'She is right and she argues it in front of the bed hands, which is the one thing the Court has a rule about. Anybody who lets her make the argument publicly twice has already won it, because the house will side with the room over the point.'
+            beatableBecause: 'She is right and she argues it in front of the bed hands, which is the one thing the Ward has a rule about. Anybody who lets her make the argument publicly twice has already won it, because the house will side with the room over the point.'
         },
         teaching: null
     },
@@ -1959,7 +1959,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: {
             knows: 'The world\'s only working lightning curriculum, to Nascent Soul, and the whole of the fragment the Court lives on.',
-            mayNotSay: 'He may not teach an unmutated root, which is not a secret but a refusal: the Court has no interest and the arts kill everyone else.',
+            mayNotSay: 'He may not teach an unmutated root, which is not a secret but a refusal: the Ward has no interest and the arts kill everyone else.',
             costsThem: 'The Court treats a refusal as a scheduling matter, so a straight answer given to an outsider is read internally as a failure to collect them.'
         }
     },
@@ -1967,11 +1967,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // DAO HOUSES Smaller rosters, because a house is a profession before it is a
     // faction and the bottom of one is a clerk rather than a disciple.
 
-    // --- The Ninefold Ledger -----------------------------------------------
+    // --- Ninefold Karma Palace -----------------------------------------------
     {
         id: 'member-yan-zhenyi',
         name: 'Yan Zhenyi',
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         rankIndex: 0,
         rank: 'Tallyhand',
         realmOrdinal: 6,
@@ -1988,7 +1988,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-yan-boting',
         name: 'Yan Boting',
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         rankIndex: 1,
         rank: 'Reader of Threads',
         realmOrdinal: 12,
@@ -2005,12 +2005,12 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-yan-changshi',
         name: 'Yan Changshi',
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         rankIndex: 3,
         rank: 'Circuit Arbiter',
         realmOrdinal: 18,
         role: 'master',
-        wants: 'the Weir Office to submit its rank table for certification, which it has never done',
+        wants: 'the Clearwater Ward to submit its rank table for certification, which it has never done',
         fears: 'being asked to certify an ancestral claim he cannot actually check',
         detail: 'Carries the certified border table on a single folded sheet and produces it in arguments the way other men produce a weapon.',
         outlier: false,
@@ -2020,15 +2020,15 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: {
             knows: 'The certified band-for-band table between the two vocabularies, and every published dispute about it, including the house\'s own error rate.',
             mayNotSay: 'Anything about an open audit, and there is always an open audit, which he will say pleasantly and immediately.',
-            costsThem: 'Stating in public that the Weir Office\'s table is revenue rather than scholarship is a claim the house would then have to back, and the house charges for backing claims.'
+            costsThem: 'Stating in public that the Clearwater Ward\'s table is revenue rather than scholarship is a claim the house would then have to back, and the house charges for backing claims.'
         }
     },
 
-    // --- The House of the Narrow Hour ---------------------------------------
+    // --- Flowing Light Tower ---------------------------------------
     {
         id: 'member-cao-chanming',
         name: 'Cao Chanming',
-        factionId: 'house-narrow-hour',
+        factionId: 'house-flowing-light',
         rankIndex: 0,
         rank: 'Watcher',
         realmOrdinal: 8,
@@ -2045,7 +2045,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-cao-hengzhi',
         name: 'Cao Hengzhi',
-        factionId: 'house-narrow-hour',
+        factionId: 'house-flowing-light',
         rankIndex: 1,
         rank: 'Sighting Disciple',
         realmOrdinal: 13,
@@ -2062,7 +2062,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-cao-shuangqing',
         name: 'Cao Shuangqing',
-        factionId: 'house-narrow-hour',
+        factionId: 'house-flowing-light',
         rankIndex: 2,
         rank: 'Reader of Hours',
         // 19 before the grand elder lengthened this house's ladder.
@@ -2085,11 +2085,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The House of the Unbroken Tally ----------------------------------------
+    // --- Vermilion Seal Terrace ----------------------------------------
     {
         id: 'member-lin-shouzhen',
         name: 'Lin Shouzhen',
-        factionId: 'house-unbroken-tally',
+        factionId: 'house-vermilion-seal',
         rankIndex: 0,
         rank: 'Witness',
         realmOrdinal: 7,
@@ -2106,7 +2106,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lin-muyan',
         name: 'Lin Muyan',
-        factionId: 'house-unbroken-tally',
+        factionId: 'house-vermilion-seal',
         rankIndex: 1,
         rank: 'Sworn Clerk',
         realmOrdinal: 12,
@@ -2123,7 +2123,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lin-liangfu',
         name: 'Lin Liangfu',
-        factionId: 'house-unbroken-tally',
+        factionId: 'house-vermilion-seal',
         rankIndex: 2,
         rank: 'Oathwright',
         realmOrdinal: 18,
@@ -2142,11 +2142,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The House of the Quiet Cut ------------------------------------------
+    // --- Still Blade Peak ------------------------------------------
     {
         id: 'member-chu-changting',
         name: 'Chu Changting',
-        factionId: 'house-quiet-cut',
+        factionId: 'house-still-blade',
         rankIndex: 0,
         rank: 'Holder of the Blade',
         realmOrdinal: 9,
@@ -2163,7 +2163,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-chu-wuji',
         name: 'Chu Wuji',
-        factionId: 'house-quiet-cut',
+        factionId: 'house-still-blade',
         rankIndex: 1,
         rank: 'Cutter',
         realmOrdinal: 14,
@@ -2180,7 +2180,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-chu-hengan',
         name: 'Chu Hengan',
-        factionId: 'house-quiet-cut',
+        factionId: 'house-still-blade',
         rankIndex: 3,
         rank: 'Master of Removal',
         realmOrdinal: 22,
@@ -2199,11 +2199,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The House of Held Names ---------------------------------------------
+    // --- Jade Register Hall ---------------------------------------------
     {
         id: 'member-gu-anding',
         name: 'Gu Anding',
-        factionId: 'house-held-names',
+        factionId: 'house-jade-register',
         rankIndex: 0,
         rank: 'Register Hand',
         realmOrdinal: 5,
@@ -2220,7 +2220,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-gu-changle',
         name: 'Gu Changle',
-        factionId: 'house-held-names',
+        factionId: 'house-jade-register',
         rankIndex: 1,
         rank: 'Namekeeper',
         realmOrdinal: 10,
@@ -2237,14 +2237,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-xu-zhengsu',
         name: 'Xu Zhengsu',
-        factionId: 'house-held-names',
+        factionId: 'house-jade-register',
         rankIndex: 3,
         rank: 'Warden of the Register',
         realmOrdinal: 18,
         role: 'master',
         wants: 'one clean handover of a name, done properly, in her career',
         fears: 'Lantern Hall publishing what the house holds',
-        detail: 'Married in from the Anchorhold and kept the Xu, which in a house whose whole trade is holding names is either a joke or a position and she has never said which; is an administrator rather than a cultivator, cannot fight at all, and says so within the first minute of meeting anyone.',
+        detail: 'Married in from the Immovable Mountain Temple and kept the Xu, which in a house whose whole trade is holding names is either a joke or a position and she has never said which; is an administrator rather than a cultivator, cannot fight at all, and says so within the first minute of meeting anyone.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2256,11 +2256,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The House of the Measured Span ---------------------------------------
+    // --- Shrinking Earth Pavilion ---------------------------------------
     {
         id: 'member-fu-tuoyi',
         name: 'Fu Tuoyi',
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         rankIndex: 0,
         rank: 'Chain Bearer',
         realmOrdinal: 10,
@@ -2277,13 +2277,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-fu-jingsheng',
         name: 'Fu Jingsheng',
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         rankIndex: 1,
         rank: 'Surveyor',
         realmOrdinal: 15,
         role: 'peer',
         wants: 'the border road courier run, which is four days rather than eleven',
-        fears: 'the last forty li before Iron Gate, which are on nobody\'s survey',
+        fears: 'the last forty li before Iron Ridge, which are on nobody\'s survey',
         detail: 'Has walked the unsurveyed forty li twice, will not do it a third time, and will not say why.',
         outlier: false,
         outlierReason: null,
@@ -2294,7 +2294,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-fu-lingchuan',
         name: 'Fu Lingchuan',
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         rankIndex: 2,
         rank: 'Span Master',
         realmOrdinal: 21,
@@ -2313,11 +2313,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The Anchorhold --------------------------------------------------------
+    // --- Immovable Mountain Temple --------------------------------------------------------
     {
         id: 'member-xu-shizhen',
         name: 'Xu Shizhen',
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         rankIndex: 0,
         rank: 'Peg',
         realmOrdinal: 12,
@@ -2334,7 +2334,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-xu-heshan',
         name: 'Xu Heshan',
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         rankIndex: 1,
         rank: 'Holder',
         realmOrdinal: 17,
@@ -2351,7 +2351,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-xu-kanping',
         name: 'Xu Kanping',
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         rankIndex: 2,
         rank: 'Nail Warden',
         realmOrdinal: 19,
@@ -2368,7 +2368,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-xu-suzhi',
         name: 'Xu Suzhi',
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         rankIndex: 3,
         rank: 'Warden of the Survey',
         realmOrdinal: 23,
@@ -2393,11 +2393,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // arrives four realms earlier than it does one province over.
     // ═══════════════════════════════════════════════════════════════════
 
-    // --- The Weir Office ---------------------------------------------------
+    // --- Clearwater Ward ---------------------------------------------------
     {
         id: 'member-queue-bo',
         name: 'Queue Bo',
-        factionId: 'sect-weir-office',
+        factionId: 'sect-clearwater-ward',
         rankIndex: 0,
         rank: 'Applicant',
         realmOrdinal: 3,
@@ -2414,7 +2414,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-chisel-ma',
         name: 'Chisel Ma',
-        factionId: 'sect-weir-office',
+        factionId: 'sect-clearwater-ward',
         rankIndex: 1,
         rank: 'Ticketed',
         realmOrdinal: 7,
@@ -2431,7 +2431,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-third-face-ren',
         name: 'Third Face Ren',
-        factionId: 'sect-weir-office',
+        factionId: 'sect-clearwater-ward',
         rankIndex: 2,
         rank: 'Standing Grant',
         realmOrdinal: 12,
@@ -2450,8 +2450,8 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-kettle-shen',
-        name: 'Iron Gate Shen',
-        factionId: 'sect-weir-office',
+        name: 'Iron Ridge Shen',
+        factionId: 'sect-clearwater-ward',
         rankIndex: 3,
         rank: 'Under-Warden of the Weir',
         realmOrdinal: 15,
@@ -2465,14 +2465,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: {
             knows: 'The weir works, its seven live nodes, and exactly what a day of grant time buys at each of the two faces.',
-            mayNotSay: 'He may not vary a grant by so much as an hour, which is the Weir Master\'s alone and is the reason the Office exists.',
+            mayNotSay: 'He may not vary a grant by so much as an hour, which is the Weir Master\'s alone and is the reason the Court exists.',
             costsThem: 'Explaining the book honestly to a refused applicant is a conversation that ends with them understanding they will never be on it, and he has had it several hundred times.'
         }
     },
     {
         id: 'member-gapwater-yun',
         name: 'Jade Face Yun',
-        factionId: 'sect-weir-office',
+        factionId: 'sect-clearwater-ward',
         rankIndex: 6,
         rank: 'Weir Master',
         realmOrdinal: 17,
@@ -2487,11 +2487,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- The Six Li Wardens -------------------------------------------------
+    // --- Six Li Patrol -------------------------------------------------
     {
         id: 'member-stakes',
         name: 'Stakes',
-        factionId: 'sect-sixmile-wardens',
+        factionId: 'sect-six-li-patrol',
         rankIndex: 0,
         rank: 'Marker',
         realmOrdinal: 1,
@@ -2508,7 +2508,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-paint-hui',
         name: 'Paint Hui',
-        factionId: 'sect-sixmile-wardens',
+        factionId: 'sect-six-li-patrol',
         rankIndex: 0,
         rank: 'Marker',
         realmOrdinal: 3,
@@ -2525,7 +2525,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-ninth-marker-ji',
         name: 'Ninth Marker Ji',
-        factionId: 'sect-sixmile-wardens',
+        factionId: 'sect-six-li-patrol',
         rankIndex: 1,
         rank: 'Warden',
         realmOrdinal: 6,
@@ -2542,7 +2542,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-survey-wen',
         name: 'Survey Wen',
-        factionId: 'sect-sixmile-wardens',
+        factionId: 'sect-six-li-patrol',
         rankIndex: 2,
         rank: 'Road Warden',
         realmOrdinal: 10,
@@ -2563,12 +2563,12 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-longstake-mu',
         name: 'Longstake Mu',
-        factionId: 'sect-sixmile-wardens',
+        factionId: 'sect-six-li-patrol',
         rankIndex: 3,
         rank: 'Warden of the Six Mile',
         realmOrdinal: 13,
         role: 'senior',
-        wants: 'the Weir Office to pay for the paint its grantees walk in on',
+        wants: 'the Clearwater Ward to pay for the paint its grantees walk in on',
         fears: 'dying and taking the uncopied parts of the survey with him',
         detail: 'Is the strongest Warden in the region and would be an outer disciple in the Jade Gorge, has been told so, and now says it first, as a joke.',
         outlier: false,
@@ -2578,11 +2578,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- The Gleaners' Company ------------------------------------------------
+    // --- Fallen Grain Caravan ------------------------------------------------
     {
         id: 'member-barrow-nine',
         name: 'Barrow Nine',
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         rankIndex: 0,
         rank: 'Barrow Hand',
         realmOrdinal: 2,
@@ -2599,7 +2599,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-sorting-yard-heng',
         name: 'Sorting Yard Heng',
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         rankIndex: 0,
         rank: 'Barrow Hand',
         realmOrdinal: 4,
@@ -2616,7 +2616,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-second-face-guo',
         name: 'Second Face Guo',
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         rankIndex: 1,
         rank: 'Gleaner',
         realmOrdinal: 7,
@@ -2633,7 +2633,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lampblack-ke',
         name: 'Lampblack Ke',
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         rankIndex: 2,
         rank: 'Deep Gleaner',
         // 11 before the grand elder lengthened this house's ladder.
@@ -2657,7 +2657,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-hollowmarket-zhai',
         name: 'Willow Village Zhai',
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         rankIndex: 3,
         rank: 'Company Factor',
         // 14 before the grand elder lengthened this house's ladder.
@@ -2680,14 +2680,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The Silver Island Rail
+    // --- Silver Island Market
     // ---------------------------------------------------
     {
         id: 'member-dryrun-ping',
         name: 'The Bitter Crossing Ping',
-        factionId: 'sect-halfwater-rail',
+        factionId: 'sect-silver-island-market',
         rankIndex: 0,
-        rank: 'Rail Hand',
+        rank: 'Barge Hand',
         realmOrdinal: 2,
         role: 'peer',
         wants: 'the bell rope on a morning he hears a hull before the watch does',
@@ -2702,7 +2702,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-sui-out-of-bellhead',
         name: 'Sui out of Bronze Bell Cliff',
-        factionId: 'sect-halfwater-rail',
+        factionId: 'sect-silver-island-market',
         rankIndex: 1,
         rank: 'Watch',
         // 10 before the grand elder lengthened this house's ladder.
@@ -2726,7 +2726,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-farside-wen',
         name: 'The Far Shore Wen',
-        factionId: 'sect-halfwater-rail',
+        factionId: 'sect-silver-island-market',
         rankIndex: 2,
         rank: 'Weigher',
         // 14 before the grand elder lengthened this house's ladder.
@@ -2751,16 +2751,16 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-nie-out-of-salt-reach',
         name: 'Nie out of the Salt Fields',
-        factionId: 'sect-halfwater-rail',
+        factionId: 'sect-silver-island-market',
         rankIndex: 3,
-        rank: 'Rail Factor',
+        rank: 'Barge Factor',
         // 18 before the grand elder lengthened this house's ladder.
         // `rankRealmBand` spreads a house's ordinal span across its rungs,
         // so one more rung moves every ceiling down. This row was authored at
         // the top of its rung and still is.
         realmOrdinal: 17,
         role: 'senior',
-        wants: 'the northern anchorage carried before the Rail Master can put the question a third time',
+        wants: 'the northern anchorage carried before the Market Master can put the question a third time',
         fears: 'being asked at the table, in front of the other three, whose name the salt flats are in',
         detail: 'Bought two salt flats a day north of the port over four seasons in his own name rather than the port\'s, and has an answer ready for a question nobody has yet put to him.',
         outlier: false,
@@ -2770,7 +2770,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Sand Well Carriers ----------------------------------------------------
+    // --- Sand Well Caravan ----------------------------------------------------
     //
     // Silent Cliffs naming throughout - tool-names and face-numbers, no clan names -
     // and at the shed the tool is a water skin, so the roll reads like a kit
@@ -2779,7 +2779,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-stopper-xi',
         name: 'Stopper Xi',
-        factionId: 'sect-sink-carriers',
+        factionId: 'sect-sand-well-caravan',
         rankIndex: 0,
         rank: 'Skin',
         realmOrdinal: 1,
@@ -2796,14 +2796,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-half-cup-lian',
         name: 'Half Cup Lian',
-        factionId: 'sect-sink-carriers',
+        factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
         rank: 'Carrier',
         realmOrdinal: 3,
         role: 'peer',
         wants: 'a route that ends somewhere with a roof on it, having been promised one four times',
         fears: 'the sound the sand makes at night nine days out, which he will admit to out there and not at the shed door',
-        detail: 'Named for the ration and has never let it go: prices everything in cups, and once gave a Weir Office clerk his own age in cups and made him work it out.',
+        detail: 'Named for the ration and has never let it go: prices everything in cups, and once gave a Clearwater Ward clerk his own age in cups and made him work it out.',
         outlier: false,
         outlierReason: null,
         goodCompany: true,
@@ -2813,7 +2813,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-short-rope-yi',
         name: 'Short Rope Yi',
-        factionId: 'sect-sink-carriers',
+        factionId: 'sect-sand-well-caravan',
         rankIndex: 1,
         rank: 'Carrier',
         // 6 before the grand elder lengthened this house's ladder.
@@ -2837,7 +2837,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-tally-board-mu',
         name: 'Tally Board Mu',
-        factionId: 'sect-sink-carriers',
+        factionId: 'sect-sand-well-caravan',
         rankIndex: 2,
         rank: 'String Head',
         realmOrdinal: 8,
@@ -2854,7 +2854,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-sounding-wei',
         name: 'Sounding Wei',
-        factionId: 'sect-sink-carriers',
+        factionId: 'sect-sand-well-caravan',
         rankIndex: 3,
         rank: 'Route Elder',
         realmOrdinal: 11,
@@ -2895,7 +2895,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-ji-wanniang',
         name: 'Ji Wanniang',
-        factionId: 'sect-verdant-spring-hall',
+        factionId: 'sect-verdant-spring-valley',
         rankIndex: 6,
         rank: 'Hall Sovereign',
         realmOrdinal: 26,
@@ -2935,7 +2935,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 24,
         role: 'senior',
         wants: 'the fords kept open',
-        fears: 'a Measured Span station at Clear River Ford, which would make every ford on the river a formality',
+        fears: 'a Shrinking Earth Pavilion station at Clear River Ford, which would make every ford on the river a formality',
         detail: 'Still runs a boat, personally, on the least profitable crossing the Alliance keeps, and will not say why the Alliance keeps it.',
         outlier: true,
         outlierReason: 'last_of_age',
@@ -2980,9 +2980,9 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-principal-hou-sanyi',
         name: 'Principal Hou Sanyi',
-        factionId: 'sect-stonewright-consortium',
+        factionId: 'sect-stone-marrow-hall',
         rankIndex: 6,
-        rank: 'Consortium Principal',
+        rank: 'Stone Marrow Hall Principal',
         realmOrdinal: 33,
         role: 'senior',
         wants: 'one more press, built rather than repaired',
@@ -3002,7 +3002,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Grand Steward',
         realmOrdinal: 27,
         role: 'senior',
-        wants: 'a season without a Ledger auditor in the building',
+        wants: 'a season without a Karma Pavilion reckoner in the building',
         fears: 'the tablet hall, and what an audit of it would establish about forty years of provenance',
         detail: 'Appraises with gloves off and hands visibly shaking, which he has never explained and which has never once been wrong.',
         outlier: true,
@@ -3014,13 +3014,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-grandmaster-xie-ruo',
         name: 'Grandmaster Xie Ruo',
-        factionId: 'sect-cinnabar-crucible-guild',
+        factionId: 'sect-cinnabar-crucible-sect',
         rankIndex: 6,
-        rank: 'Guild Grandmaster',
+        rank: 'Hall Grandmaster',
         realmOrdinal: 25,
         role: 'senior',
         wants: 'the missing steps, in any form, from any source',
-        fears: 'that they are not missing but withheld, and that the Guild has spent nine hundred years being permitted to fail',
+        fears: 'that they are not missing but withheld, and that the Hall has spent nine hundred years being permitted to fail',
         detail: 'Keeps both hands bandaged rather than the required one, and has done since the year she read the fourth line of the wall script aloud.',
         outlier: true,
         outlierReason: 'last_of_age',
@@ -3121,7 +3121,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-abyss-lord-wen-qiao',
         name: 'Abyss Lord Wen Qiao',
-        factionId: 'sect-crimson-abyss-hall',
+        factionId: 'sect-crimson-abyss-fortress',
         rankIndex: 6,
         rank: 'Abyss Lord',
         realmOrdinal: 29,
@@ -3144,7 +3144,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 26,
         role: 'senior',
         wants: 'to be left to work',
-        fears: 'the Crimson Abyss Hall, which hunts them over supply rather than principle and is much better at it',
+        fears: 'the Crimson Abyss Fortress, which hunts them over supply rather than principle and is much better at it',
         detail: 'Works battlefields in silence and talks continuously on the road back, and has never given a name to anybody outside the cult.',
         outlier: true,
         outlierReason: 'last_of_age',
@@ -3178,7 +3178,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 34,
         role: 'senior',
         wants: 'the tether to hold one more century',
-        fears: 'a Ledger certification of the vault, which would establish exactly what the Court has and what it does not',
+        fears: 'a Ledger certification of the vault, which would establish exactly what the Ward has and what it does not',
         detail: 'Stands through every audience, indoors and out, and is audibly uncomfortable in still air - which visitors read as menace and is a tell.',
         outlier: true,
         outlierReason: 'last_of_age',
@@ -3189,7 +3189,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-keeper-shen-muyan',
         name: 'Keeper Shen Muyan',
-        factionId: 'sect-standing-grove',
+        factionId: 'sect-ancient-bough-grove',
         rankIndex: 3,
         rank: 'Keeper of the Grove',
         realmOrdinal: 27,
@@ -3206,7 +3206,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-weir-master-tan-zhu',
         name: 'Weir Master Tan Zhu',
-        factionId: 'sect-weir-office',
+        factionId: 'sect-clearwater-ward',
         rankIndex: 6,
         rank: 'Weir Master',
         realmOrdinal: 21,
@@ -3223,7 +3223,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-warden-ai-sanniang',
         name: 'Warden Ai Sanniang',
-        factionId: 'sect-sixmile-wardens',
+        factionId: 'sect-six-li-patrol',
         rankIndex: 3,
         rank: 'Warden of the Six Mile',
         realmOrdinal: 14,
@@ -3240,7 +3240,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-company-master-xun-erlang',
         name: 'Company Master Xun Erlang',
-        factionId: 'sect-gleaners-company',
+        factionId: 'sect-fallen-grain-caravan',
         rankIndex: 5,
         rank: 'Company Master',
         realmOrdinal: 17,
@@ -3258,14 +3258,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // person rather than a capability: the watch tops out five rungs under her,
     // she does not work it, and what the wage buys is somebody a disappointed
     // buyer cannot quietly make disappear. `arrived` rather than `last_of_age`
-    // because the Rail has no age to be the last of - it inherited nothing, and
+    // because the Market has no age to be the last of - it inherited nothing, and
     // its production line is a straight function of its wage bill.
     {
         id: 'member-halfwater-yue',
         name: 'Silver Island Yue',
-        factionId: 'sect-halfwater-rail',
+        factionId: 'sect-silver-island-market',
         rankIndex: 5,
-        rank: 'Rail Master',
+        rank: 'Barge Master',
         realmOrdinal: 21,
         role: 'senior',
         wants: 'the second anchorage voted down a third time, and to stop being the only argument against it',
@@ -3285,7 +3285,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-nine-boards-qiu',
         name: 'Nine Boards Qiu',
-        factionId: 'sect-sink-carriers',
+        factionId: 'sect-sand-well-caravan',
         rankIndex: 5,
         rank: 'Waterman',
         realmOrdinal: 19,
@@ -3302,14 +3302,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-cao-duan',
         name: 'Cao Duan',
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         rankIndex: 6,
-        rank: 'Keeper of the Ninefold Book',
+        rank: 'Keeper of the Ninefold Register',
         realmOrdinal: 32,
         role: 'senior',
         wants: 'the nine sealed volumes to stay sealed for one more Keeper',
-        fears: 'that the Tally Court was not corrupt, and that the Ledger wrote the account that says otherwise',
-        detail: 'Married in from the Narrow Hour and did not take the Yan, which makes her the one Keeper in the book who does not carry the house name; writes in front of whoever is speaking and reads the entry back before leaving.',
+        fears: 'that the Iron Tally Court was not corrupt, and that the Karma Pavilion wrote the account that says otherwise',
+        detail: 'Married in from the Flowing Light Tower and did not take the Yan, which makes her the one Keeper in the book who does not carry the house name; writes in front of whoever is speaking and reads the entry back before leaving.',
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
@@ -3319,7 +3319,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-cao-yulian',
         name: 'Cao Yulian',
-        factionId: 'house-narrow-hour',
+        factionId: 'house-flowing-light',
         rankIndex: 6,
         rank: 'First Sighting',
         realmOrdinal: 30,
@@ -3336,7 +3336,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lin-anren',
         name: 'Lin Anren',
-        factionId: 'house-unbroken-tally',
+        factionId: 'house-vermilion-seal',
         rankIndex: 6,
         rank: 'Keeper of the Standing Word',
         realmOrdinal: 31,
@@ -3353,7 +3353,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-chu-jueyi',
         name: 'Chu Jueyi',
-        factionId: 'house-quiet-cut',
+        factionId: 'house-still-blade',
         rankIndex: 6,
         rank: 'The Last Cut',
         realmOrdinal: 33,
@@ -3370,7 +3370,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-gu-baiyun',
         name: 'Gu Baiyun',
-        factionId: 'house-held-names',
+        factionId: 'house-jade-register',
         rankIndex: 6,
         rank: 'First Register',
         realmOrdinal: 29,
@@ -3387,7 +3387,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-fu-nianzhi',
         name: 'Fu Nianzhi',
-        factionId: 'house-measured-span',
+        factionId: 'house-shrinking-earth',
         rankIndex: 6,
         rank: 'Keeper of the Long Measure',
         realmOrdinal: 34,
@@ -3404,7 +3404,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-xu-zhenshan',
         name: 'Xu Zhenshan',
-        factionId: 'house-anchorhold',
+        factionId: 'house-immovable-mountain',
         rankIndex: 6,
         rank: 'The Standing Anchor',
         realmOrdinal: 35,

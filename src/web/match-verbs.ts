@@ -281,7 +281,7 @@ export const matchVerbs = {
             // and it falls out of rows rather than out of a branch on a house -
             // a member standing at the Void Refinement floor is refused stones
             // and refused a heaven-grade pill, and the one thing in the catalog
-            // that reaches past her own rung is a higher Unearned Step.
+            // that reaches past her own rung is a higher Heaven-Ascending Golden Pill.
             table.push(whatIsBeingPutDown(
                 offered.trim(), cultivator.realmOrdinal, this.whatTheyAreCarrying(party.id),
                 theirs.reachesTo

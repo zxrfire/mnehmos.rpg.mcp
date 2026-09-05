@@ -6,8 +6,8 @@
  * seat is written with `stops: ['passage']`, `priceMultiplier: 2` and
  * `dangerDelta: 0.5`. Played on the seat of one, on this seed, standing in it:
  *
- *     WAR  loc-sect-weir-office-ground
- *     "The Weir Office is fighting The Six Li Wardens, and The Weir Office
+ *     WAR  loc-sect-clearwater-ward-ground
+ *     "Clearwater Ward is fighting Six Li Patrol, and Clearwater Ward
  *      grounds is ground they hold. Nothing goes through it that is not theirs."
  *
  * and then nothing happened. Measured before this file existed: the market
@@ -46,12 +46,12 @@ import type { LocationRecord } from '../../src/engine/world/locations';
  * The world's seed, and it is half of the pin.
  *
  * A run seed alone fixes nothing about who is at war with whom - see
- * `makeGameInWorld`. On this world seed The Weir Office and The Six Li Wardens
+ * `makeGameInWorld`. On this world seed Clearwater Ward and Six Li Patrol
  * are openly fighting inside the first advanced year, and each holds a war
  * status on its own seat.
  */
 const WORLD = 'war-1';
-const SEAT = 'The Weir Office grounds';
+const SEAT = 'Clearwater Ward grounds';
 
 async function standingOnAWarSeat() {
     const h = await makeGameInWorld({ seed: 'probe-war', worldSeed: WORLD });
@@ -248,7 +248,7 @@ describe('what a war does to the ground it is fought on', () => {
      * build of the case above printed, in one paragraph:
      *
      *     It is an ordinary day and it intends to stay one.
-     *     The Weir Office is fighting The Six Li Wardens...
+     *     Clearwater Ward is fighting Six Li Patrol...
      *
      * "Nothing lies or contradicts itself" is a floor at every reading tier,
      * and this is the deterministic one: no model is involved in the defect or

@@ -325,14 +325,14 @@ describe('provinces, arterials and prefectures', () => {
         for (const id of [
             'sect-azure-cloud-pavilion',
             'sect-hollow-court',
-            'sect-standing-grove',
+            'sect-ancient-bough-grove',
             'sect-clear-river-alliance',
-            'sect-sixmile-wardens'
+            'sect-six-li-patrol'
         ]) {
             expect(delegatedFromSect(id), `${id} was granted its ground by somebody`).toBeNull();
         }
 
-        const territory = territoryOfSect('sect-verdant-spring-hall');
+        const territory = territoryOfSect('sect-verdant-spring-valley');
         expect(territory).toBeDefined();
         expect(territory!.isPrincipalHolder).toBe(false);
         expect(territory!.delegatedFromId).toBe('sect-nine-peaks-ascetic-order');
@@ -457,8 +457,8 @@ describe('the ancient tier', () => {
     });
 
     it('sorts absence into its tiers, and puts a sleeping holder before either cause', () => {
-        expect(absenceTierOf('word-of-continuance')).toBe('no_surviving_copy');
-        expect(absenceTierOf('sealed-field-of-the-shut-hour')).toBe('lost');
+        expect(absenceTierOf('continuance-decree')).toBe('no_surviving_copy');
+        expect(absenceTierOf('shut-hour-sealing-field')).toBe('lost');
         expect(absenceTierOf('sixteen-thread-command')).toBe('abandoned');
         expect(absenceTierOf('cross-meridian-strike')).toBe('present');
         // The fifth tier, where nothing about the ART is missing at all.

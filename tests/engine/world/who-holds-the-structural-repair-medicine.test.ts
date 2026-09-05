@@ -127,9 +127,9 @@ describe('the holdings are live state', () => {
         const state = world();
         // A house with only the cheap grades cannot answer a Deity
         // Transformation break at any price.
-        expect(doseAHouseWouldUse(state, 'house-held-names', 'failed-transformation', 25)).toBeNull();
+        expect(doseAHouseWouldUse(state, 'house-jade-register', 'failed-transformation', 25)).toBeNull();
         expect(spendRepairDose(
-            state, 'house-held-names', 'x', 'X', 'failed-transformation', 25, 1
+            state, 'house-jade-register', 'x', 'X', 'failed-transformation', 25, 1
         )).toBeNull();
         // And nobody anywhere can answer a broken step.
         for (const holding of everyRepairHolding(state)) {
@@ -141,8 +141,8 @@ describe('the holdings are live state', () => {
 
     it('keeps counted stock as a number on the holder, with no rows', () => {
         const state = world();
-        const guild = state.factions.find(f => f.id === 'sect-cinnabar-crucible-guild')!;
-        expect(guild.resources[repairStockKey('repair-second-pour')]).toBe(3);
+        const hall = state.factions.find(f => f.id === 'sect-cinnabar-crucible-sect')!;
+        expect(hall.resources[repairStockKey('repair-second-pour')]).toBe(3);
         expect(allDoses(state).some(o => o.data.medicineId === 'repair-second-pour')).toBe(false);
     });
 });

@@ -61,7 +61,7 @@ export const THE_DROWNED_REACH: Region = {
         death: 'Over the side, weighted, with the name said once and not written down. The Drowned Sea is the only province in the world that keeps no record of its dead, and all four of the others regard this as barbarism and say so.',
         taboo: 'Never count the stone chest aloud. What is in it is what everybody aboard is standing on, and saying the figure where it can be heard is the moment a crew stops being a crew and becomes a number of people with an interest.',
         threatModel: 'The weather and the arithmetic, in that order and usually together. Most people who die in the South die because a passage took eleven days longer than it was provisioned for, which is not misfortune, it is a sum somebody did wrong ashore.',
-        naming: 'Hulls and landfalls instead of clans: Bell of the Third Landfall, Ma out of Iron Gate, Sweet Spring Island Xu. A person at sea is named for where they came aboard, and nobody asks past that.',
+        naming: 'Hulls and landfalls instead of clans: Bell of the Third Landfall, Ma out of Iron Ridge, Sweet Spring Island Xu. A person at sea is named for where they came aboard, and nobody asks past that.',
         time: 'Counted in passages and in stones burned. Nine passages is a career; a hull\'s age is the number of stones it has gone through, cut into the mast where anybody can read it, and it is the one figure in the province nobody argues with.'
     },
     cultivation: {
@@ -98,11 +98,11 @@ export const THE_DROWNED_REACH: Region = {
         'There are veins under the Drowned Sea and every one of them is a hundred fathoms down. What put them there is not recorded anywhere anybody has read; what is recorded is the shape, which is a mountain range with its peaks above water, so every island in the province is a vein head with the whole of its vein out of reach beneath it.',
     politics: 'no_authority',
     politicsNote:
-        'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Three institutions operate on this water and none of them holds a strait - one because its whole doctrine is leaving, one because it never had anywhere to be, and one because it holds forty acres of island instead and would be worth nothing if it held any more. That is not a gap in the province, it is the only kind of institution the province can support, and the third of them is the interesting case: the Silver Island Rail is unbacked not because nobody could take it but because everybody would lose by it, which is the only security arrangement in the world that nobody signed and nobody can withdraw from unilaterally.',
+        'Nothing at all: no grant book, no bench, no court, no survey, no apex and no province in the administrative sense, because nothing here can be held and therefore nothing here can be given. Four straits are claimed by parties ashore and all four claims are sentences in documents. Three institutions operate on this water and none of them holds a strait - one because its whole doctrine is leaving, one because it never had anywhere to be, and one because it holds forty acres of island instead and would be worth nothing if it held any more. That is not a gap in the province, it is the only kind of institution the province can support, and the third of them is the interesting case: the Silver Island Market is unbacked not because nobody could take it but because everybody would lose by it, which is the only security arrangement in the world that nobody signed and nobody can withdraw from unilaterally.',
     factionIds: [
-        'house-measured-span',
+        'house-shrinking-earth',
         'sect-hollow-bell-wanderers',
-        'sect-halfwater-rail'
+        'sect-silver-island-market'
     ],
     branches: [
         {

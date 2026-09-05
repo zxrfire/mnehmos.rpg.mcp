@@ -617,7 +617,7 @@ fact are two things to keep true - see [the almanac and the ledger](#the-almanac
 What a reader of this file needs to know before going there:
 
 - **These are not priced and must never be.** A price would imply the economy reaches them
-  and it does not. The great auction house has never listed one; the Consortium declines to
+  and it does not. The great auction house has never listed one; the Stone Marrow Hall declines to
   assay them, on the stated grounds that an assay implies a rate.
 - **Their own higher/middle/lower grading is not the grading in this section.** Up there,
   grade is what an ancestor can afford to send, which tracks how long they have been

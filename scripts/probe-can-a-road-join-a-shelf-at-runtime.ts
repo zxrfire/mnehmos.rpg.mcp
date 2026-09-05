@@ -28,7 +28,7 @@ const { state } = seedWorld({ seed: 'shelf-growth', catalog });
 // A house with a shallow shelf, and a road it has never held. The Six Li
 // Wardens teach one primer and stop; `verdant-longevity-canon` is the Verdant
 // Spring Hall's wood road and carries to 17.
-const HOUSE = 'sect-sixmile-wardens';
+const HOUSE = 'sect-six-li-patrol';
 const INCOMING = 'verdant-longevity-canon';
 
 const before = shelfOf(state as any, HOUSE);

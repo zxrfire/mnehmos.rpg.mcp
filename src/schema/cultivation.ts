@@ -1878,7 +1878,7 @@ export const BreakthroughResultSchema = z.object({
      *
      * Measured before this existed: six commanded crossings, ordinal 0 to 6,
      * health 40 of 40 the whole way. A crossing was free, so the one thing
-     * separating the Unearned Step from a qi pill separated nothing.
+     * separating the Heaven-Ascending Golden Pill from a qi pill separated nothing.
      *
      * A FRACTION rather than a figure: forty points is a whole newborn and a
      * rounding error at Nascent Soul, so an absolute would mean four different

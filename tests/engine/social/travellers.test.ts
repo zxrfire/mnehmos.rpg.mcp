@@ -25,7 +25,7 @@ const HERE = 'region-home';
 
 const PLACES: TravellerPlace[] = [
     { id: 'Nextvillage', name: 'Nextvillage', regionId: HERE },
-    { id: 'Iron Gate', name: 'Iron Gate', regionId: 'region-far' },
+    { id: 'Iron Ridge', name: 'Iron Ridge', regionId: 'region-far' },
     { id: 'Willow Village', name: 'Willow Village', regionId: 'region-far' },
     { id: 'Six Li', name: 'Six Li', regionId: 'region-far' }
 ];

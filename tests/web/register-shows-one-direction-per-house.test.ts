@@ -9,7 +9,7 @@
  * belongs on the entry of whoever made it.
  *
  * The register's own entry for this is the Kiln pair, which is asymmetric in
- * exactly the way that matters: the Root Sill is cold to the Kiln, and the Kiln
+ * exactly the way that matters: the Deeproot Court is cold to the Kiln, and the Kiln
  * is merely civil back, having nothing to complain about.
  */
 

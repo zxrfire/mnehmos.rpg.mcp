@@ -91,22 +91,22 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     ride: [
         'I ride to Clear River Ford',
         'I ride the horse',
-        'I saddle a beast and ride for Iron Gate',
+        'I saddle a beast and ride for Iron Ridge',
         'I take a carriage to Clear River Ford',
         'I take a spirit boat to Silver Island',
         'I fly to Clear River Ford on my sword'
     ],
     fold: [
         'I fold space to Clear River Ford',
-        'I step through space to Iron Gate',
+        'I step through space to Iron Ridge',
         'I fold to the Silent Cliffs',
-        'I tear open space and go to Iron Gate',
+        'I tear open space and go to Iron Ridge',
         'I cross the distance in one step'
     ],
     passage: [
-        'I buy passage to Iron Gate',
+        'I buy passage to Iron Ridge',
         'what does the Span board say',
-        'what would a ticket to Iron Gate cost',
+        'what would a ticket to Iron Ridge cost',
         'I book a place on the next span',
         'is there a Span counter here'
     ],
@@ -150,7 +150,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     // The bench. Every phrasing names the thing, because `build`, `make` and
     // `craft` on their own are how somebody says half a dozen other
     // intentions - and the sentences next door that must NOT come here are in
-    // `refine` above and in `ride`'s block: "I take the carriage to Iron Gate" is
+    // `refine` above and in `ride`'s block: "I take the carriage to Iron Ridge" is
     // a journey and "I buy a carriage" is a purchase.
     craft: [
         'I build a carriage',
@@ -216,7 +216,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I look for a sect that will take me',
         'I want to join a sect',
         'what sects are near here',
-        'I ask about joining the Gleaners Company'
+        'I ask about joining the Fallen Grain Caravan'
     ],
     look: [
         'I look around',
@@ -260,7 +260,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     ],
     buy: [
         'I buy a visit from the mortal physician',
-        'I buy a Minor Healing Pill',
+        'I buy a Lesser Healing Pill',
         'I pay for a ferry crossing',
         'I hire a scribe'
     ],
@@ -315,8 +315,8 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'where can I leave things',
         'I bury my things here',
         'I dig up the cache',
-        'I lodge my things with the Ninefold Ledger',
-        'I claim the deposit at the Ninefold Ledger'
+        'I lodge my things with the Ninefold Karma Palace',
+        'I claim the deposit at the Ninefold Karma Palace'
     ],
     // ── institutions acting on each other, and on the dead ──
     //
@@ -328,7 +328,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     petition: [
         'I file a Requisition Against Standing Stock',
         'I ask the Deep Survey for one of its pills',
-        'I ask the Deep Survey for an Unearned Step',
+        'I ask the Deep Survey for an Heaven-Ascending Golden Pill',
         'I petition the Third Sill Court for a grant',
         'I appeal to the court for protection',
         'I claim descent from Ru Anjing'
@@ -409,7 +409,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
     ],
     consume_pill: [
         'I swallow a healing pill',
-        'I take a Minor Healing Pill',
+        'I take a Lesser Healing Pill',
         'I eat a healing pill',
         'I use the pill'
     ],
@@ -688,8 +688,8 @@ describe('every intent behind a door is reachable from plain English too', () =>
      * feature nobody has or a price nobody can avoid.
      */
     const PASSAGE_PHRASINGS: Record<string, readonly string[]> = {
-        board: ['what does the Span board say', 'what would a ticket to Iron Gate cost'],
-        buy: ['I buy passage to Iron Gate', 'I book a place on the next span']
+        board: ['what does the Span board say', 'what would a ticket to Iron Ridge cost'],
+        buy: ['I buy passage to Iron Ridge', 'I book a place on the next span']
     };
 
     for (const [intent, phrasings] of Object.entries(PASSAGE_PHRASINGS)) {
@@ -1041,7 +1041,7 @@ describe('asking somebody is not consulting a register', () => {
     it('leaves an application to the sect surface, where the act actually is', () => {
         // "ask about joining" names no person. It is not a question, it is an
         // application, and routing it to a conversation would lose the join.
-        expect(parseIntent('I ask about joining the Gleaners Company').action).toBe('sect');
+        expect(parseIntent('I ask about joining the Fallen Grain Caravan').action).toBe('sect');
     });
 
     it('leaves asking around for work to the verb that feeds them', () => {

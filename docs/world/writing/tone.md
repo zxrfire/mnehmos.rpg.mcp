@@ -150,7 +150,7 @@ Prefer an event the catalog already records over inventing one to justify a name
   Datum Lamp* - these belong in a poetry collection, not a cultivation world. A named treasure
   is an image and what it does: *Azure Dragon Sword*, *Soul Suppressing Pagoda*.
 
-**What is already right, by kind.** Sects take Hall / Pavilion / Court / Consortium / Sect.
+**What is already right, by kind.** Sects take Hall / Pavilion / Court / Stone Marrow Hall / Sect.
 Techniques are verb-noun compounds, often numbered - *Nine Severing Threads*, *Lid-Watching
 Stance*, *Borrowed Breath*, *void-piercing sword domain*. Pills are graded and plainly
 functional - *third-grade Meridian Knitting Pill*, *Blood-Replenishing Pill*, *Spirit Dew
@@ -251,7 +251,7 @@ only purpose in narration.
 | "This province is held by deference" | Three separate carters refuse the shortcut through the valley and change the subject |
 | "They practise the other tradition" | The candle leans toward one man and stands straight beside the other, and nobody remarks on it |
 | "Their fourth grade equals Core Formation" | Someone addresses a stranger by a title the player does not know, and the room rearranges itself |
-| "The Consortium sets the exchange rate" | Two merchants a hundred li apart quote the same price on the same day |
+| "The Stone Marrow Hall sets the exchange rate" | Two merchants a hundred li apart quote the same price on the same day |
 | "You lack the comprehension for this art" | The pages are perfectly legible and the meaning does not arrive |
 
 Rules of thumb:

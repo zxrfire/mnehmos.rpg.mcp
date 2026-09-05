@@ -296,7 +296,7 @@ describe('the deterministic path is a first-class way to play', () => {
             'examine the inscription',
             'search the ruin',
             'study the formation',
-            'I look into the Stonewright Consortium'
+            'I look into the Stone Marrow Hall'
         ]) {
             expect(parseIntent(text).action).toBe('investigate');
         }

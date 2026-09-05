@@ -56,8 +56,8 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // catalog's own accessors enforce that without a branch: `artifactsOwnedBy`
     // filters on a non-null `ownerId` and there is not one on this band.
     makeObject({
-        id: 'carried-the-first-course',
-        name: 'The First Chisel',
+        id: 'carried-heaven-splitting-chisel',
+        name: 'The Heaven-Splitting Chisel',
         kind: 'artifact',
         significance: 'legendary',
         power: 46,
@@ -69,8 +69,8 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
     makeObject({
-        id: 'carried-the-second-edge',
-        name: 'The Second Edge',
+        id: 'carried-the-hidden-edge',
+        name: 'The Hidden Edge',
         kind: 'artifact',
         significance: 'legendary',
         power: 46,
@@ -82,8 +82,8 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
     makeObject({
-        id: 'carried-the-first-datum',
-        name: 'The Fixed Star',
+        id: 'carried-the-polestar-dial',
+        name: 'The Polestar Dial',
         kind: 'artifact',
         significance: 'legendary',
         power: 46,
@@ -91,7 +91,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: '',
         possessorId: 'figure-tao-jingwei',
         description:
-            'A reference that is not local, held by the woman who founded the arterial survey and crossed from a site her own register locates precisely and describes not at all. The Fixed Star Lamp in the Deep Survey vault does the same job three rungs down and does it well enough that the Survey has never wondered what it is a smaller version of.',
+            'A reference that is not local, held by the woman who founded the arterial survey and crossed from a site her own register locates precisely and describes not at all. The Polestar Lamp in the Deep Survey vault does the same job three rungs down and does it well enough that the Survey has never wondered what it is a smaller version of.',
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
     // 45: three of them, and no two are held by allies
@@ -181,7 +181,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'sent-datum-lamp',
         data: { daoDomain: 'void' },
-        name: 'The Fixed Star Lamp',
+        name: 'The Polestar Lamp',
         kind: 'artifact',
         significance: 'legendary',
         power: 43,
@@ -205,35 +205,35 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'artifact-the-standing-weight',
         data: { daoDomain: 'formation' },
-        name: 'The Chained Stone',
+        name: 'The Quelling Stone',
         kind: 'artifact',
         significance: 'legendary',
         power: 41,
-        ownerId: 'house-anchorhold',
-        ownerName: 'The Anchorhold',
-        possessorId: 'house-anchorhold',
+        ownerId: 'house-immovable-mountain',
+        ownerName: 'Immovable Mountain Temple',
+        possessorId: 'house-immovable-mountain',
         description:
-            'The datum stone, chained down under a roof and watched by two people at all times. Twenty-nine centuries of the least dramatic dao in the world went into it and it is the high-water mark of everything made below the Lid: a place that cannot be moved, folded, opened, spread or relocated while it is standing. It is one rung under the weakest sent-down object and the Anchorhold has never claimed otherwise, which is most of why the claim is believed.',
+            'The datum stone, chained down under a roof and watched by two people at all times. Twenty-nine centuries of the least dramatic dao in the world went into it and it is the high-water mark of everything made below the Lid: a place that cannot be moved, folded, opened, spread or relocated while it is standing. It is one rung under the weakest sent-down object and the Immovable Mountain Temple has never claimed otherwise, which is most of why the claim is believed.',
         tags: ['forged', 'the-ceiling', 'immovable', 'known-to-exist']
     }),
     // ── 38-26: what centuries and a dao will buy ──────────────────────────
     makeObject({
         id: 'artifact-the-ninth-volume-case',
         data: { daoDomain: 'karma' },
-        name: 'The Oath-Binding Case',
+        name: 'The Sealing Casket',
         kind: 'artifact',
         significance: 'legendary',
         power: 38,
-        ownerId: 'house-ninefold-ledger',
-        ownerName: 'The Ninefold Ledger',
-        possessorId: 'house-ninefold-ledger',
+        ownerId: 'house-ninefold-karma',
+        ownerName: 'Ninefold Karma Palace',
+        possessorId: 'house-ninefold-karma',
         description:
-            'The case the nine sealed volumes sit in, which the Ledger commissioned and which is worth more than most of what it holds. An obligation entered into its presence binds to ground rather than to a name, so it cannot be escaped by becoming somebody else - which in a world where identity is what people shed at realm boundaries is the whole of what an oath is for. Four thousand years of the house\'s trade is inside it.',
+            'The case the nine sealed volumes sit in, which the Karma Pavilion commissioned and which is worth more than most of what it holds. An obligation entered into its presence binds to ground rather than to a name, so it cannot be escaped by becoming somebody else - which in a world where identity is what people shed at realm boundaries is the whole of what an oath is for. Four thousand years of the house\'s trade is inside it.',
         tags: ['forged', 'oath-bearing', 'known-to-exist']
     }),
     makeObject({
         id: 'artifact-the-cold-arterial-key',
-        name: 'The Key of the Long Cold',
+        name: 'The Black Ice Key',
         kind: 'artifact',
         significance: 'significant',
         power: 34,
@@ -247,7 +247,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     makeObject({
         id: 'artifact-the-severed-ledger-blade',
         data: { daoDomain: 'karma' },
-        name: 'The Book of Severings',
+        name: 'The Severing Canon',
         kind: 'artifact',
         significance: 'significant',
         power: 29,
@@ -274,7 +274,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     // ── 22-14: what an ordinary strong house fields ───────────────────────
     makeObject({
         id: 'artifact-frostmirror-plate',
-        name: 'The Rimeglass Plate',
+        name: 'The Cold Jade Plate',
         kind: 'artifact',
         significance: 'significant',
         power: 22,
@@ -287,7 +287,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
     }),
     makeObject({
         id: 'artifact-kiln-gate-seal',
-        name: 'The Gate Seal of the Kiln',
+        name: 'The Kiln Gate Seal',
         kind: 'artifact',
         significance: 'significant',
         power: 18,
@@ -366,12 +366,12 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         // worth is a ceiling it lifts, and the engine derives that from how
         // many of the set are held. It is worth nothing in a room.
         power: null,
-        ownerId: 'house-anchorhold',
-        ownerName: 'The Anchorhold',
-        possessorId: 'house-anchorhold',
-        knownOwnershipBy: ['house-anchorhold', 'house-ninefold-ledger', 'sect-azure-cloud-pavilion'],
+        ownerId: 'house-immovable-mountain',
+        ownerName: 'Immovable Mountain Temple',
+        possessorId: 'house-immovable-mountain',
+        knownOwnershipBy: ['house-immovable-mountain', 'house-ninefold-karma', 'sect-azure-cloud-pavilion'],
         description:
-            'Catalogued, shelved, and read once a decade by somebody checking it is still the same book. The Anchorhold knows what it is, knows it is a third of something, and has never advertised either fact - a house of surveyors is a house that understands the difference between holding a thing and being known to hold it. It is also the only one of the three that could not read past the fourth page if it wanted to.',
+            'Catalogued, shelved, and read once a decade by somebody checking it is still the same book. Immovable Mountain Temple knows what it is, knows it is a third of something, and has never advertised either fact - a house of surveyors is a house that understands the difference between holding a thing and being known to hold it. It is also the only one of the three that could not read past the fourth page if it wanted to.',
         tags: ['shard', 'from:heaven-conversing-primordial-canon', 'volume:1', 'catalogued']
     }),
     makeObject({
@@ -386,9 +386,9 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         // worth is a ceiling it lifts, and the engine derives that from how
         // many of the set are held. It is worth nothing in a room.
         power: null,
-        ownerId: 'sect-gleaners-company',
-        ownerName: "The Gleaners' Company",
-        possessorId: 'sect-gleaners-company',
+        ownerId: 'sect-fallen-grain-caravan',
+        ownerName: "Fallen Grain Caravan",
+        possessorId: 'sect-fallen-grain-caravan',
         knownOwnershipBy: [],
         description:
             'Came out of a burn zone in a bundle of forty-one salvaged documents, was priced by weight, and has been holding a window open in a back office for a hundred and ten years. Nobody in the Company can read it and nobody has asked anybody who can. It is the cheapest of the three to acquire and the hardest to find, which is the ordinary shape of salvage.',
@@ -406,12 +406,12 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         // worth is a ceiling it lifts, and the engine derives that from how
         // many of the set are held. It is worth nothing in a room.
         power: null,
-        ownerId: 'house-ninefold-ledger',
-        ownerName: 'The Ninefold Ledger',
-        possessorId: 'house-ninefold-ledger',
-        knownOwnershipBy: ['house-ninefold-ledger', 'house-anchorhold'],
+        ownerId: 'house-ninefold-karma',
+        ownerName: 'Ninefold Karma Palace',
+        possessorId: 'house-ninefold-karma',
+        knownOwnershipBy: ['house-ninefold-karma', 'house-immovable-mountain'],
         description:
-            'The Ledger knows it holds a third of a chaos-grade canon, has known for two hundred years, and has an open standing offer for either of the other two that it has never once described in writing. It does not know the Anchorhold has the first. The Anchorhold does know the Ledger has the third, and has said nothing, for reasons the Ledger would find entirely familiar.',
+            'The Karma Pavilion knows it holds a third of a chaos-grade canon, has known for two hundred years, and has an open standing offer for either of the other two that it has never once described in writing. It does not know the Immovable Mountain Temple has the first. Immovable Mountain Temple does know the Karma Pavilion has the third, and has said nothing, for reasons the Karma Pavilion would find entirely familiar.',
         tags: ['shard', 'from:heaven-conversing-primordial-canon', 'volume:3', 'sought']
     })
 ];

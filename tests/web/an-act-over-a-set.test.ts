@@ -52,8 +52,8 @@ describe('what a set-shaped target names', () => {
         expect(theSetThisNames("Cao Antao's whole clan"))
             .toMatchObject({ kind: 'kin_of', anchor: 'Cao Antao' });
         expect(theSetThisNames('the whole sect')?.kind).toBe('members_of');
-        expect(theSetThisNames('all of Iron Gate Sect'))
-            .toMatchObject({ kind: 'members_of', house: 'Iron Gate' });
+        expect(theSetThisNames('all of Iron Ridge'))
+            .toMatchObject({ kind: 'members_of', house: 'Iron Ridge' });
         expect(theSetThisNames('all the guards')).toMatchObject({ kind: 'role_here', role: 'guard' });
     });
 
@@ -73,7 +73,7 @@ describe('what a set-shaped target names', () => {
         expect(theSetThisNames('all of the demonic houses'))
             .toMatchObject({ kind: 'of_alignment', alignment: 'demonic' });
         // And a house named in full is still a house.
-        expect(theSetThisNames('all of Iron Gate Sect')?.kind).toBe('members_of');
+        expect(theSetThisNames('all of Iron Ridge')?.kind).toBe('members_of');
     });
 
     /**
@@ -204,7 +204,7 @@ describe('an act aimed at a set, played', () => {
      * somebody. A house is split by construction, so the same mechanism is
      * measured on the shape that can show it today.
      *
-     * `w-b`, Willow Village, The Weir Office: eleven members, three of them
+     * `w-b`, Willow Village, Clearwater Ward: eleven members, three of them
      * here. The player is taught the three who are here and TWO of the eight
      * who are not, so the other six are in neither half of the answer - which
      * is the whole claim, since the world's own figure is eleven and the report
@@ -218,7 +218,7 @@ describe('an act aimed at a set, played', () => {
 
         const service = game as any;
         const world = await game.loadWorld();
-        const house = world!.factions.find((row: any) => row.id === 'sect-weir-office')!;
+        const house = world!.factions.find((row: any) => row.id === 'sect-clearwater-ward')!;
         const members = npcsInFaction(world!, house.id);
         const here = new Set(service.present(service.currentRun().cultivator)
             .map((row: any) => row.id));

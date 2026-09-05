@@ -33,7 +33,7 @@ const BODIES: string[] = (() => {
 })();
 
 describe('what two houses both have a hand on', () => {
-    it('finds the founding the Kiln Court and the Root Sill Court both claim', () => {
+    it('finds the founding the Kiln Court and the Deeproot Court both claim', () => {
         // The worked case. Neither body carries the other in `rivals` - both
         // lists are empty - and neither carries an ambition, so nothing the
         // catalog states outright connects them. What connects them is the

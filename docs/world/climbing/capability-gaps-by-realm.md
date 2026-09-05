@@ -465,7 +465,7 @@ distance for a journey that was not made. It is the top of the same ladder a spi
 on - on foot, mount or drawn carriage, boat, flight on a blade, fold - and it is the end of it,
 because there is no quiet version.
 
-<!-- trigger="somebody wants to cross the map and cannot fold, or asks what a Measured Span counter sells, or the player does not know the world has other provinces in it" -->
+<!-- trigger="somebody wants to cross the map and cannot fold, or asks what a Shrinking Earth Pavilion counter sells, or the player does not know the world has other provinces in it" -->
 #### The Span sends other people through, and that is why it is a Dao house
 
 `buying-passage-at-a-measured-span-counter.ts` owns this, and it is not the same capability as
@@ -480,7 +480,7 @@ martial, reaching into travel, portals, territory, formations, storage and barri
 the axis [`understanding.md`](./understanding.md) already keeps separate from rank. Which is also
 why the counter is not an automatic win: that document requires a counter to every principle and
 names this one as **spatial anchoring**, and the counter is already standing in the catalog
-rather than needing to be invented. The Anchorhold nails ground shut, and the Span's own stated
+rather than needing to be invented. Immovable Mountain Temple nails ground shut, and the Span's own stated
 grievance is that the world calls it public safety. Anywhere anchored is anywhere no fare reaches.
 
 **So the passenger's rung is not what carries them.** Stated explicitly, because leaving it

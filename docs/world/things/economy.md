@@ -100,7 +100,7 @@ and they are the only way to cultivate somewhere the ambient qi will not support
 which is why a poor cultivator's stones are never savings. **They are the difference
 between progressing and not.**
 
-The Stonewright Consortium refines raw qi into stones and sets the exchange rate, which
+The Stone Marrow Hall refines raw qi into stones and sets the exchange rate, which
 means they set the price of everything, including the price of a vein. See
 [`sects.md`](../houses/sects.md).
 

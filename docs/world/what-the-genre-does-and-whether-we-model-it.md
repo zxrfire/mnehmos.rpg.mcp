@@ -470,7 +470,7 @@ the Leviathan and the sealed ancestor are `sealed_only` and a compound is not in
 the Reader is `indifferent` to veins, which is the catalog saying it never ends up beside
 anybody; and the Thing Under Nine Peaks is `demonic` - it is drinking the Ascetic Order's
 vein, which is why the ground is contested rather than why it is held. That leaves the White
-Ape with the Azure Cloud Pavilion and the Millennial Tortoise with the Clear River Fordhall,
+Ape with the Azure Cloud Pavilion and the Millennial Tortoise with the Clear River Alliance,
 both on a shared element. The third chair is not a beast at all: the Nine Abyss Flame Sect
 seats the Kindler, its own ancestor sealed at strength, which `sealed-ancestors.ts` was
 already calling `kind: 'protector'`.

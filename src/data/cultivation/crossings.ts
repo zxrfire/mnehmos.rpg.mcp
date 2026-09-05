@@ -46,7 +46,7 @@ export const DAO_PROTECTOR = {
         what:
             'It has happened, and the histories keep one instance because it is the only one anybody could prove. A cultivator at Tribulation Transcendence Perfection accepted a protector, named the mountain, and was killed at the moment of commitment by the person standing guard, who then took what was on the body and reported a failed crossing - which is exactly what a failed crossing looks like from outside.',
         howItWasEstablished:
-            'Two centuries later, by an inheritance that could not have been opened by anyone but the dead party, in the possession of somebody who should never have had it. The Ninefold Ledger still holds the case and cites it in arbitration about nothing else.',
+            'Two centuries later, by an inheritance that could not have been opened by anyone but the dead party, in the possession of somebody who should never have had it. Ninefold Karma Palace still holds the case and cites it in arbitration about nothing else.',
         whyItStillMatters:
             'It is the reason a protector arrangement is almost never made between parties who are not already bound by something older than the arrangement, and it is quoted by every cultivator who declines to guard somebody. One instance in seventeen hundred years has been enough to shape the practice permanently.'
     },
@@ -158,7 +158,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         factionId: 'apex-long-cut',
         kind: 'answering_channel',
         ancestor: {
-            name: 'The First Chisel, named on the schedule and nowhere else',
+            name: 'The Heaven-Splitting Chisel, named on the schedule and nowhere else',
             whatTheyWere: 'A carver who crossed from driven ground, which the Long Cut regards as the more difficult road and does not argue about with anybody',
             crossedYearsAgo: 2_600
         },
@@ -178,7 +178,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'why the Long Cut does not compare notes with the Deep Survey about any of it'
         ],
         note:
-            'The two apexes hold the same category of asset from different ancestors, and neither institution knows whether the two are acquainted, hostile, or unaware of each other. Neither has ever asked the other. The House of the Narrow Hour would give a great deal for the answer and has no instrument that reaches it.'
+            'The two apexes hold the same category of asset from different ancestors, and neither institution knows whether the two are acquainted, hostile, or unaware of each other. Neither has ever asked the other. Flowing Light Tower would give a great deal for the answer and has no instrument that reaches it.'
     },
     {
         factionId: 'sect-hollow-court',
@@ -305,7 +305,7 @@ export const ARCHIVE_AS_CLAIM = {
         {
             case: 'two sects claiming the same ancestor',
             example: 'sect-thousand-treasure-pavilion',
-            note: 'At most one correctly, neither able to settle it, and the Ninefold Ledger will certify neither because certification requires a record and both records are assertions. The Pavilion is the loud claimant; the quiet one has never been named here on purpose.'
+            note: 'At most one correctly, neither able to settle it, and the Ninefold Karma Palace will certify neither because certification requires a record and both records are assertions. The Pavilion is the loud claimant; the quiet one has never been named here on purpose.'
         },
         {
             case: 'does not know it has one',
@@ -332,18 +332,18 @@ export const ARCHIVE_AS_CLAIM = {
 
 export const PAVILION_SURPLUS = {
     theTension:
-        'The Azure Cloud Pavilion holds nine of these objects - seven Unearned Steps and two Second Dealings, all lower grade - and can barely use any of them. A lower Step is not a small thing: it carries somebody from Nascent Soul Perfection across into Deity Transformation, which is a regional power made in an afternoon. It is also useless to anybody not standing at that boundary, and the Pavilion produces reliably at Core Formation with six people at that height and about ninety disciples below it. The stock is enormous, the stock is rising, and the sect has almost nobody it fits. The bottleneck is people rather than medicine, which is the same sentence as everything else about this institution.',
+        'The Azure Cloud Pavilion holds nine of these objects - seven Heaven-Ascending Golden Pills and two Root-Recasting Talismans, all lower grade - and can barely use any of them. A lower Step is not a small thing: it carries somebody from Nascent Soul Perfection across into Deity Transformation, which is a regional power made in an afternoon. It is also useless to anybody not standing at that boundary, and the Pavilion produces reliably at Core Formation with six people at that height and about ninety disciples below it. The stock is enormous, the stock is rising, and the sect has almost nobody it fits. The bottleneck is people rather than medicine, which is the same sentence as everything else about this institution.',
     whatItDoes: [
         'Gives them away, at a rate no institution in history has matched, because the instructions permit it and the arithmetic no longer punishes it - four grants in the last century against one in the two centuries before.',
         'Places them outward: with allied sects, with guest elders, and twice with cultivators who hold no affiliation at all, which is the closest thing the world has seen to an institution exporting advancement.',
-        'Buys loyalty in medicine rather than in stones, which is a currency the Stonewright Consortium cannot price and does not like.',
+        'Buys loyalty in medicine rather than in stones, which is a currency the Stone Marrow Hall cannot price and does not like.',
         'Argues with itself. The refusal doctrine was written when a grant was a wound, and it is now being applied to an income by people who know it and have not revised it.'
     ],
     theQuietProblem:
         'Every object placed outside creates somebody who owes the Pavilion a realm, and the Pavilion has never decided what it wants that to be. It is not building a faction, it is not charging, and it has not asked for anything back - so it is accumulating obligations at a rate its own Sword Elders describe as untidy and nobody has proposed a use for.',
     whoHasNoticed: [
-        'The Stonewright Consortium, whose Iron Gate and Green Water City houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
-        'The Ninefold Ledger, because unexplained advancements cluster around Pavilion allies and each one opens a lineage audit that finds nothing wrong and no explanation.',
+        'The Stone Marrow Hall, whose Iron Ridge and Green Water City houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
+        'Ninefold Karma Palace, because unexplained advancements cluster around Pavilion allies and each one opens a lineage audit that finds nothing wrong and no explanation.',
         'The Thousand Treasure Pavilion, which has noticed the opposite of a thing: not one of these has ever come to auction from a sect that plainly has more than it needs.',
         'The Deep Survey, which holds three objects, keeps a register on the subject, and has no explanation whatever for how a single sect in a single province has nine.'
     ],
@@ -486,7 +486,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             // records without comment and which nobody outside has ever been
             // able to get an explanation of. Two people went up in the same
             // year, on the same ground, and only one of them is named.
-            { title: 'The First Chisel, named on the schedule and nowhere else', yearsAgo: 2_600, was: 'whoever drove the Nail through from the other side, which the Long Cut states and does not elaborate', afterCrossing: 'still_above' },
+            { title: 'The Heaven-Splitting Chisel, named on the schedule and nowhere else', yearsAgo: 2_600, was: 'whoever drove the Nail through from the other side, which the Long Cut states and does not elaborate', afterCrossing: 'still_above' },
             { title: 'Bai Zhuo', yearsAgo: 2_600, was: 'a cutter with no patron and a posted staff that did not notice until it was over', afterCrossing: 'still_above' }
         ],
         depletion: 'light',

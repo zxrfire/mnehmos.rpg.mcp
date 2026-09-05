@@ -453,10 +453,10 @@ describe('the prose matches what was measured', () => {
         // long as this claim existed. The Third Sill has answered the Long Cut
         // for longer than either apex keeps a record of and has never changed
         // patrons; the one administration in the catalog that ever did is the
-        // Root Sill, which walked when the Deep Survey reposted it - and a
+        // Deeproot Court, which walked when the Deep Survey reposted it - and a
         // reposting is a thing you can do to a posting and to nothing else in
         // the world, which is why this has happened exactly once.
-        expect(WHY_NOBODY_MOVES.andItHasHappenedOnce).toMatch(/Root Sill Court/);
+        expect(WHY_NOBODY_MOVES.andItHasHappenedOnce).toMatch(/Deeproot Court/);
         expect(WHY_NOBODY_MOVES.andItHasHappenedOnce, 'the wrong Sill is back')
             .not.toMatch(/Third Sill/);
     });

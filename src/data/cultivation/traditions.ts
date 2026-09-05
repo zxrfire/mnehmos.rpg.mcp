@@ -159,7 +159,7 @@ export const TRADITIONS: readonly Tradition[] = [
         weaknesses: [
             'a soul is a target, and everyone above Nascent Soul is carrying one',
             'the road stops entirely on ground with nothing in the air, which is most of the Silent Cliffs',
-            'dependence on pills, which means dependence on somebody else\'s guild'
+            'dependence on pills, which means dependence on somebody else\'s hall'
         ],
         saysOfTheOther:
             'That carving is not cultivation but quarrying with extra steps, that a seam is a crutch for people who could not find good ground, and that a carver who dies is simply dead because there was never anything in there to leave. The last part is close to true and stated with a confidence the evidence does not support.'
@@ -201,7 +201,7 @@ export const TRADITIONS: readonly Tradition[] = [
         ],
         weaknesses: [
             'no alchemy and no formations, so a carver arrives at high ranks lopsided and knows it',
-            'dependent on access to a workable face, which in practice means dependent on the Weir Office',
+            'dependent on access to a workable face, which in practice means dependent on the Clearwater Ward',
             'dust-lung, which is not a hazard of the road but the road itself, and is untreatable locally'
         ],
         saysOfTheOther:
@@ -223,12 +223,12 @@ export const TRADITION_WAR = {
     marchesAccount:
         'That the Drawn drained the province deliberately to end the quarrel, and that the Cut Road exists because a few people learned to work what was left rather than die of it. Taught in the Silent Cliffs as the founding fact of the region.',
     trueAccount:
-        'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Unbroken Tally\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
+        'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Vermilion Seal Terrace\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
     discoverableTraces: [
         'the weir nodes are cut into stone, which is Cut Road work, on a site the Jade Gorge account says the Drawn never held',
         'the burn edge radiates from the weir rather than from any battlefield, and no engagement of any size is recorded within forty li of it',
-        'the Unbroken Tally\'s vault index lists a treaty of that year with both traditions as parties and no subject line',
-        'the Ninefold Ledger has an arbitration case from eighty years later in which both regions sued the same third party and then jointly withdrew'
+        'the Vermilion Seal Terrace\'s vault index lists a treaty of that year with both traditions as parties and no subject line',
+        'the Ninefold Karma Palace has an arbitration case from eighty years later in which both regions sued the same third party and then jointly withdrew'
     ]
 } as const;
 
@@ -294,13 +294,13 @@ export const CROSS_TRADITION_ERRORS: readonly {
         heldBy: 'tradition-cut',
         belief: 'That a cornered Drawn cultivator can take somebody else\'s body.',
         truth: 'That door does not exist for them. Every attempt on record ended the soul that tried it.',
-        consequence: 'Two Drawn envoys have been killed pre-emptively in Iron Gate by people acting reasonably on a false premise, and the Silent Cliffs has never revised the teaching.'
+        consequence: 'Two Drawn envoys have been killed pre-emptively in Iron Ridge by people acting reasonably on a false premise, and the Silent Cliffs has never revised the teaching.'
     },
     {
         heldBy: 'tradition-drawn',
         belief: 'That a carver who has been killed is finished, because there is nothing in there to leave.',
         truth: 'The seam persists in material. Nine years later a large enough fragment can produce somebody who remembers the argument.',
-        consequence: 'At least three Jade Gorge feuds thought closed have reopened with the same party on the other side of them, and the Ledger files these as continuations rather than new cases.'
+        consequence: 'At least three Jade Gorge feuds thought closed have reopened with the same party on the other side of them, and the Karma Pavilion files these as continuations rather than new cases.'
     },
     {
         heldBy: 'tradition-drawn',

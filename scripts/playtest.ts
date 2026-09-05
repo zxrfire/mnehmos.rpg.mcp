@@ -289,8 +289,8 @@ async function disciple(): Promise<void> {
     for (const [sectId, door] of [
         ['sect-azure-dew-sect', 'Azure Dew Sect'],
         ['sect-azure-cloud-pavilion', 'Azure Cloud Pavilion'],
-        ['sect-crimson-abyss-hall', 'Crimson Abyss Hall'],
-        ['sect-verdant-spring-hall', 'Verdant Spring Hall'],
+        ['sect-crimson-abyss-fortress', 'Crimson Abyss Fortress'],
+        ['sect-verdant-spring-valley', 'Verdant Spring Valley'],
         ['sect-hollow-court', 'Hollow Court']
     ] as const) {
         const bar = getSect(sectId)?.admissionOrdinal ?? 0;

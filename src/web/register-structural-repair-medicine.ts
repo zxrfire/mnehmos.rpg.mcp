@@ -26,7 +26,7 @@
  *   summed from the holdings rather than restated, so a holdings edit moves it.
  *
  *   WHO IS HOLDING WHAT. Read off the same table, and it should read as strange:
- *   two bureaucracies, one sect, one court, one guild and two houses, and
+ *   two bureaucracies, one sect, one court, one hall and two houses, and
  *   nobody else in either province holds a single dose of anything.
  *
  * WHAT EACH MEDICINE IS is not here any more - it is a row in the almanac

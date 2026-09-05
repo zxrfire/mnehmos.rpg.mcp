@@ -1031,7 +1031,7 @@ interface SeedMemory {
  */
 const NPC_SEED_MEMORIES: Record<string, SeedMemory[]> = {
     npc_001: [
-        { summary: 'I am the living head of the Cathedral, but my Stain reads 1.4 not clean. The Office of Pyric Audit does not know — or pretends not to.', importance: 'critical', topics: ['stain', 'office_of_pyric_audit', 'cathedral'] },
+        { summary: 'I am the living head of the Cathedral, but my Stain reads 1.4 not clean. The Court of Pyric Audit does not know — or pretends not to.', importance: 'critical', topics: ['stain', 'office_of_pyric_audit', 'cathedral'] },
         { summary: 'The Mournwing Letter — Paragon Halidan\'s warning — must not reach me. I have not seen it. Mortane sees my mail first.', importance: 'high', topics: ['mournwing_letter', 'paragon', 'mortane'] }
     ],
     npc_002: [
@@ -1043,7 +1043,7 @@ const NPC_SEED_MEMORIES: Record<string, SeedMemory[]> = {
         { summary: 'My own Stain reads 1.9 (clean apparent). I am one of the Half-Kind, which the Cathedral merely tolerates. I cannot afford a confessor flag.', importance: 'high', topics: ['stain', 'half_kind'] }
     ],
     npc_004: [
-        { summary: 'I head the Office of Pyric Audit. My own Stain is sealed and unknown even to me. The Sebast-Auditor must be above suspicion or the entire Audit collapses.', importance: 'critical', topics: ['stain', 'pyric_audit', 'sealed'] },
+        { summary: 'I head the Court of Pyric Audit. My own Stain is sealed and unknown even to me. The Sebast-Auditor must be above suspicion or the entire Audit collapses.', importance: 'critical', topics: ['stain', 'pyric_audit', 'sealed'] },
         { summary: 'The parallel readings Korreth Slag-Tongue is conducting in the Audit-Below are unauthorized. I have not stopped them.', importance: 'high', topics: ['parallel_readings', 'korreth', 'audit_below'] }
     ],
     npc_008: [

@@ -270,7 +270,7 @@ is closed by construction whatever that shelf's height.
 **Which is why not every house takes guests**, with no flag and no branch: a
 house takes them when its shelf reaches above the line it can afford to show.
 Measured over the catalog, 16 of 34 bodies do, including six of the seven dao
-houses - the House of Held Names does not, because its whole working shelf stops
+houses - the Jade Register Hall does not, because its whole working shelf stops
 at the intake primer and there is nothing behind it to protect.
 
 **What a guest gets is access and nothing else.** No rung, no stipend, no

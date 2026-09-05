@@ -52,7 +52,7 @@
  * nothing and an immortal's is worth everything, with no rule about promises.
  *
  * **And it is only truthful where there is no row.** Everything above it was
- * once falling through to it, so a rated-45 blade and an Unearned Step both
+ * once falling through to it, so a rated-45 blade and an Heaven-Ascending Golden Pill both
  * priced at the offerer's own rung - measured at 4, which is what *my
  * protection* also came to. A fallback that catches things the catalog does
  * answer for is the quiet kind of wrong: nothing fails, the offer is simply
@@ -88,7 +88,7 @@ import { PILLS } from '../data/cultivation/pills.js';
 import { TECHNIQUES } from '../data/cultivation/techniques.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { REALM_TIERS, type RealmKey } from '../engine/cultivation/realms.js';
-import { STEP_CEILING_BY_GRADE } from '../engine/cultivation/taking-the-unearned-step.js';
+import { STEP_CEILING_BY_GRADE } from '../engine/cultivation/taking-the-heaven-ascending-golden-pill.js';
 import { pillTradeTier } from '../engine/cultivation/buying-and-bartering-pills.js';
 import { significanceOfPill } from '../engine/world/where-the-pills-actually-are.js';
 import type { ObjectRecord } from '../engine/world/possessions.js';
@@ -196,7 +196,7 @@ const A_SUM_OF_STONES = /^\s*(?:about\s+|around\s+)?\d[\d,]*\s*(?:spirit\s+)?sto
  * Which grade of an immortal medicine was named, out of the words used.
  *
  * The catalog holds ONE row and three grades on it, and the pouch convention
- * `theUnearnedStepIn` reads is `immortal-unearned-step:lower`. A sentence has
+ * `theUnearnedStepIn` reads is `immortal-heaven-ascending-golden-pill:lower`. A sentence has
  * neither, so the grade is read off the words the way `resolvePill` reads a
  * pill's name, and the default is the same default that convention takes: the
  * lower grade, which is nine of the thirteen in the world.
@@ -284,15 +284,15 @@ export function whatIsBeingPutDown(
     // its own grade permits, and the ceiling is `STEP_CEILING_BY_GRADE` in the
     // engine that spends one - read, never restated.
     //
-    // Before this, `The Unearned Step` fell through to the clause below and
+    // Before this, `The Heaven-Ascending Golden Pill` fell through to the clause below and
     // priced at the offerer's own rung. Measured at a rung-4 offerer: 4, which
     // is what `my protection` also came to. The most valuable object in the
     // world and a vague promise were the same offer, so no offer of one could
     // ever move a refusal - which is the whole of what an immortal medicine is
     // for in a negotiation.
     // Matched on the name without its article, because the grade is said in
-    // front of it - "a higher Unearned Step" is how anybody names one, and the
-    // catalog row is called "The Unearned Step".
+    // front of it - "a higher Heaven-Ascending Golden Pill" is how anybody names one, and the
+    // catalog row is called "The Heaven-Ascending Golden Pill".
     const fromAbove = IMMORTAL_ITEMS.find(i => {
         const bare = i.name.replace(/^the\s+/i, '').toLowerCase();
         return what.toLowerCase().includes(bare) || bare.includes(what.toLowerCase());
@@ -338,7 +338,7 @@ export function whatIsBeingPutDown(
     // ── EVERYTHING ELSE, WHICH IS WHERE THE MEDIUM STAYS OPEN ────────────
     //
     // An oath, a service, a placement, a name, information, a favour owed - and
-    // a Second Dealing, which changes an aperture rather than a rung and which
+    // a Root-Recasting Talisman, which changes an aperture rather than a rung and which
     // this world therefore has no unit for. What backs an undertaking is the
     // person making it, so it is worth exactly what they are worth. A tenth
     // medium needs no code here.

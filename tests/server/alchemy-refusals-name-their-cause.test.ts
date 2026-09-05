@@ -7,7 +7,7 @@
  * one. A player carrying three torn meridians typed "I refine a Minor Healing
  * Pill" and was told, in full:
  *
- *     Minor Healing Pill Formula cannot be attempted.
+ *     Lesser Healing Pill Formula cannot be attempted.
  *
  * No cause, no shortfall, no route. That sentence is indistinguishable from an
  * unfinished subsystem, and it sat directly on the critical path out of the

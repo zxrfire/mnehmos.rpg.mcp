@@ -112,11 +112,11 @@ describe('the address ladder', () => {
         expect(new Set(outcomes).size).toBe(3);
     });
 
-    it('the Word of Continuance is the petition rung, and is still what it always was', () => {
+    it('the Continuance Decree is the petition rung, and is still what it always was', () => {
         // The rung-44 art that argues. It was in the catalog before the ladder
         // existed and the ladder was derived to fit it rather than the reverse,
         // so if this entry ever moves the ladder is describing nothing.
-        const word = getTechnique('word-of-continuance');
+        const word = getTechnique('continuance-decree');
         expect(word?.requiredOrdinal).toBe(LAST_CROSSING_ORDINAL);
         expect(word?.damage).toBeNull();
         expect(word?.class).toBe('dao');
@@ -172,13 +172,13 @@ describe('the ladder composes with class and era rather than replacing them', ()
     it('a cultivation manual addresses the practitioner at every rung, for ever', () => {
         // Not a default - an invariant. What you practise to rank up never
         // escalates in kind; only what you use does. The catalog already said
-        // this in the note on the Canon of the Unwritten Span, which sits at
+        // this in the note on the Unwritten Span Scripture, which sits at
         // the very top of the ladder and still lands on one person.
         for (const t of TECHNIQUES) {
             if (t.class !== 'cultivation') continue;
             expect(addressOf(t), `${t.id}`).toBe('body');
         }
-        expect(addressOf(getTechnique('canon-of-the-unwritten-span')!)).toBe('body');
+        expect(addressOf(getTechnique('unwritten-span-scripture')!)).toBe('body');
     });
 
     it('an ancient art never buys a higher address than its rung allows', () => {
@@ -287,7 +287,7 @@ describe('the ladder composes with class and era rather than replacing them', ()
         // default. Asserted as legality rather than as a fixed value, so this
         // passes before and after the catalog declares them and never locks in
         // the answer it is waiting for.
-        for (const id of ['sealed-field-of-the-shut-hour', 'thousand-spear-summoning']) {
+        for (const id of ['shut-hour-sealing-field', 'thousand-spear-summoning']) {
             const t = getTechnique(id)!;
             expect(t.era, `${id} is not ancient`).toBe('ancient');
             expect(addressIsLegal(t), `${id}`).toBe(true);

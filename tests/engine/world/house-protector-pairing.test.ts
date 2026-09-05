@@ -85,7 +85,7 @@ describe('the pairing', () => {
     it('lands the ape on the house whose gorge its own entry names', () => {
         // The pairing is derived and the catalog states the answer in prose, so
         // the two have to agree. A province-wide ground read put the ape beside
-        // the Stonewright Consortium, which is how this test came to exist.
+        // the Stone Marrow Hall, which is how this test came to exist.
         const paired = pairProtectors(houses, thingsThatCouldStandOverAHouse());
         const ape = paired.find(p => p.heldBy === 'beast-white-ape-of-the-gorge');
         expect(ape?.factionId).toBe('sect-azure-cloud-pavilion');

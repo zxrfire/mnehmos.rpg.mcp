@@ -392,7 +392,7 @@ describe('bounties', () => {
             .toBe(true);
         expect(BOUNTIES.some(b => b.posterFactionId !== null), 'no institutional posting').toBe(true);
         for (const b of BOUNTIES) expect(b.catch.length, b.id).toBeGreaterThan(39);
-        expect(bountiesFrom('sect-gleaners-company').length).toBeGreaterThan(0);
+        expect(bountiesFrom('sect-fallen-grain-caravan').length).toBeGreaterThan(0);
         expect(bountiesFrom('sect-nobody').length).toBe(0);
     });
 });
@@ -424,13 +424,13 @@ describe('itinerant dealers', () => {
         }
         // Advancement costs more than survival on the road too.
         expect(DEALER_MARKUP.manual.multiplier).toBeGreaterThan(DEALER_MARKUP.medicine.multiplier);
-        // And stones barely move, because the Consortium sets that rate.
+        // And stones barely move, because the Stone Marrow Hall sets that rate.
         expect(DEALER_MARKUP.stones.multiplier).toBeLessThan(DEALER_MARKUP.medicine.multiplier);
     });
 
     it('computes the road price off the catalog price', () => {
-        const counter = getPrice('price-minor-healing-pill')!.cash;
-        const road = roadPrice('price-minor-healing-pill', 'medicine')!;
+        const counter = getPrice('price-lesser-healing-pill')!.cash;
+        const road = roadPrice('price-lesser-healing-pill', 'medicine')!;
         expect(road).toBeGreaterThan(counter);
         expect(road).toBe(Math.round(counter * DEALER_MARKUP.medicine.multiplier));
         // Thirty stones on the road for the pill every run starts with one of.
@@ -438,7 +438,7 @@ describe('itinerant dealers', () => {
         expect(roadPrice('price-nothing', 'medicine')).toBeUndefined();
 
         const months = monthsToAffordOnTheRoad(
-            'price-minor-healing-pill', 'medicine', 'job-beast-culler')!;
+            'price-lesser-healing-pill', 'medicine', 'job-beast-culler')!;
         expect(months).toBeGreaterThan(1);
         expect(months).toBeLessThan(4);
     });

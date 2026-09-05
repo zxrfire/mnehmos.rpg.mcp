@@ -197,7 +197,7 @@ True Immortal       The world is obliged.
 Two rungs, three categorically different outcomes, and no quantity anywhere in the
 progression. The middle one is not a flourish: **being refused is what a False Immortal
 is**, said in the vocabulary of the word instead of the vocabulary of the crossing. And
-the first is the Word of Continuance, which has been in the catalog all along - *spoken
+the first is the Continuance Decree, which has been in the catalog all along - *spoken
 over someone whose death has already been decided, it argues*.
 
 ---
@@ -309,7 +309,7 @@ four of the six land on the first rung:
 | Vessel-Borrowing Palm | body | It takes a resource out of one body and puts it into another. Two bodies, and nothing else. |
 | Sixteen-Thread Command | body | It makes *one person* act. |
 | Hollow Second Body | body | A second body is a body. |
-| Sealed Field of the Shut Hour | place | It takes a piece of ground out of the world, for an hour. |
+| Shut Hour Sealing Field | place | It takes a piece of ground out of the world, for an hour. |
 | Thousand-Spear Summoning | place | The spears are still standing in the ground afterwards, holding a line. |
 
 None of them reaches past its rung, and the Sixteen-Thread Command lands **two steps

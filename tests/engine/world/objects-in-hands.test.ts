@@ -97,7 +97,7 @@ describe('a rated object reaches the person the catalog says is holding it', () 
         // breakage on exactly this test, so moving one out of the vault is a
         // decision and not a tidy-up.
         expect(byId.get('sent-datum-lamp')?.possessorId).toBe('apex-deep-survey');
-        expect(byId.get('artifact-the-standing-weight')?.possessorId).toBe('house-anchorhold');
+        expect(byId.get('artifact-the-standing-weight')?.possessorId).toBe('house-immovable-mountain');
 
         // Held by nobody, which is a real state and not a gap.
         expect(byId.get('artifact-the-severed-ledger-blade')?.possessorId).toBeNull();
@@ -106,7 +106,7 @@ describe('a rated object reaches the person the catalog says is holding it', () 
         // NOTHING_AT_FORTY_SIX_IS_EVER_LEFT. These three are carried by people
         // above the Lid, and no party in this world can reach, ask, rob or
         // inherit from them - so their holder must NOT resolve to a world row.
-        for (const id of ['carried-the-first-course', 'carried-the-second-edge', 'carried-the-first-datum']) {
+        for (const id of ['carried-heaven-splitting-chisel', 'carried-the-hidden-edge', 'carried-the-polestar-dial']) {
             const object = byId.get(id);
             expect(object?.power).toBe(46);
             expect(npcIds.has(object!.possessorId!)).toBe(false);

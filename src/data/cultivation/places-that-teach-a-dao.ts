@@ -184,7 +184,7 @@ export type PlaceThatTeachesADao = z.infer<typeof PlaceThatTeachesADaoSchema>;
 //     the world.
 //   - the held grounds sit on houses that already have a reason to hold them,
 //     read off what those houses are: the sword sect holds the cliff, the
-//     alchemy guild holds the kiln, the karma house holds the floor its whole
+//     alchemy hall holds the kiln, the karma house holds the floor its whole
 //     civil authority is issued from.
 //   - the floors climb with the road rather than with the holder. Two houses
 //     of identical standing hold grounds four realms apart, because what they
@@ -216,12 +216,12 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         subject: 'refinement',
         fromOrdinal: 16,
         access: 'held',
-        heldBy: 'sect-cinnabar-crucible-guild',
+        heldBy: 'sect-cinnabar-crucible-sect',
         standingRequired: 2,
         description:
-            'A furnace under the Guild compound that has not been allowed to go out in nine hundred and forty years, banked and fed in six-hour watches by people whose entire duty it is. The brickwork has taken on the shape of what has been refined in it, and the interior is no longer the shape anybody built.',
+            'A furnace under the Hall compound that has not been allowed to go out in nine hundred and forty years, banked and fed in six-hour watches by people whose entire duty it is. The brickwork has taken on the shape of what has been refined in it, and the interior is no longer the shape anybody built.',
         what:
-            'Watch-keeping. A Guild alchemist stands the watches for years, and what teaches is not the fire but the fact that every batch anyone has ever run has left the chamber slightly different - so a recipe is a conversation with a vessel that remembers, and no two furnaces in the world are the same instrument.'
+            'Watch-keeping. A Hall alchemist stands the watches for years, and what teaches is not the fire but the fact that every batch anyone has ever run has left the chamber slightly different - so a recipe is a conversation with a vessel that remembers, and no two furnaces in the world are the same instrument.'
     },
     {
         id: 'dao-ground-counting-floor',
@@ -231,7 +231,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         subject: 'debt',
         fromOrdinal: 20,
         access: 'held',
-        heldBy: 'house-ninefold-ledger',
+        heldBy: 'house-ninefold-karma',
         standingRequired: 2,
         description:
             'The room every arbitration in the province is issued out of: a stone floor scored in nine rings, with the house\'s working ledgers stacked against the walls in the order they were closed rather than by date. Six centuries of who owed what to whom, and what happened to them afterwards.',
@@ -246,7 +246,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         subject: 'duration',
         fromOrdinal: 24,
         access: 'held',
-        heldBy: 'house-narrow-hour',
+        heldBy: 'house-flowing-light',
         standingRequired: 3,
         description:
             'A windowless chamber under the house seat in which one hour takes a measurably different length of time to pass than it does outside, by an amount the house has recorded daily for eight hundred years and has never been able to change. The record is the holding; the room is only where it is kept.',
@@ -276,12 +276,12 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         subject: 'the diagram',
         fromOrdinal: 16,
         access: 'held',
-        heldBy: 'sect-stonewright-consortium',
+        heldBy: 'sect-stone-marrow-hall',
         standingRequired: 2,
         description:
-            'A survey diagram of a formation nobody now living can light, cut into the floor of the Consortium\'s drafting hall at full scale because it was the only way to check the line lengths. Nine of its forty-one nodes are understood. The Consortium has never claimed otherwise and has never covered the other thirty-two.',
+            'A survey diagram of a formation nobody now living can light, cut into the floor of the Stone Marrow Hall\'s drafting hall at full scale because it was the only way to check the line lengths. Nine of its forty-one nodes are understood. The Stone Marrow Hall has never claimed otherwise and has never covered the other thirty-two.',
         what:
-            'Drafting on top of it. Every apprentice line in the Consortium is laid over the diagram, so a draughtsman spends a career watching their own work fail to explain thirty-two nodes, which is a more useful education than the nine.'
+            'Drafting on top of it. Every apprentice line in the Stone Marrow Hall is laid over the diagram, so a draughtsman spends a career watching their own work fail to explain thirty-two nodes, which is a more useful education than the nine.'
     },
     {
         id: 'dao-ground-doorless-room',
@@ -291,7 +291,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         subject: 'absence',
         fromOrdinal: 28,
         access: 'held',
-        heldBy: 'house-unlit-gate',
+        heldBy: 'house-nine-nether',
         standingRequired: 3,
         description:
             'A room the house has held for as long as it has been a house, with no door in it and no record of one ever being cut. It is entered, by the four people alive who can, and none of them can describe the entering afterwards in a way that survives being written down.',

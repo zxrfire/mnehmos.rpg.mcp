@@ -206,7 +206,7 @@ export const ORIGIN_TIERS: readonly OriginTier[] = [
             // they actually buy is above, in the stones, the ground and the
             // book, and none of that needs anybody to take their word.
             //
-            // Raising this to reach the Six Li Wardens would delete the one
+            // Raising this to reach the Six Li Patrol would delete the one
             // origin in the table that says something true about the difference
             // between having a little and having any.
             reach: 12,

@@ -614,9 +614,9 @@ describe('a dao house is a family', () => {
     /**
      * A house does not recruit; it adopts, and adoption here is the name. So a
      * house roll is one surname repeated, and the surname is the founder's -
-     * Yan Duo of the Ninefold Ledger, Cao Xun of the Narrow Hour, Lin Zhao of
-     * the Unbroken Tally, Gu Yao of Held Names, Fu Chang of the Measured Span, Xu
-     * Ping of the Anchorhold. The Quiet Cut's founder is unrecorded and the Chu
+     * Yan Duo of the Ninefold Karma Palace, Cao Xun of the Flowing Light Tower, Lin Zhao of
+     * the Vermilion Seal Terrace, Gu Yao of Jade Register Hall, Fu Chang of the Shrinking Earth Pavilion, Xu
+     * Ping of the Immovable Mountain Temple. The Still Blade Peak's founder is unrecorded and the Chu
      * are known by nothing except that they are all Chu.
      *
      * The exception is a woman who married in and declined to change, and it is

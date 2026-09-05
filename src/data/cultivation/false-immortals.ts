@@ -80,9 +80,9 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
         whatWouldBeNeeded:
             'The Standing Age left a specification for holding something above the band, and it is a specification rather than a record of anything built. It calls for nine nodes of the ninth family, in one place, on ground carrying more than any vein in either province now runs.',
         theNinthFamily:
-            'The Standing node grammar has nine families. The Anchorhold reads eight of them and can cut six. The ninth appears only on the oldest work, no living formation master can cut one, and its presence is the actual definition of a masterwork seal - which is why masterworks are inherited and never built, and why a small sect with a very old formation can be holding something enormous without the expenditure that would give it away.',
+            'The Standing node grammar has nine families. Immovable Mountain Temple reads eight of them and can cut six. The ninth appears only on the oldest work, no living formation master can cut one, and its presence is the actual definition of a masterwork seal - which is why masterworks are inherited and never built, and why a small sect with a very old formation can be holding something enormous without the expenditure that would give it away.',
         theCount:
-            'Eleven ninth-family nodes exist in the two provinces by the Anchorhold\'s own survey. Nine are required. The eleven are in four different places, none of them can be moved, and cutting a new one is the thing nobody can do. The world is holding more than enough and cannot get them into one room.',
+            'Eleven ninth-family nodes exist in the two provinces by the Immovable Mountain Temple\'s own survey. Nine are required. The eleven are in four different places, none of them can be moved, and cutting a new one is the thing nobody can do. The world is holding more than enough and cannot get them into one room.',
         theGround:
             'And even in one room it would burn more than any vein in either province carries. The one that would run it is the datum itself, which the Kiln Wardens are posted on and draw nothing from, and they are staff on somebody else\'s ground rather than a sect with a decision to make.',
         nobodyEverBuiltOne:
@@ -254,7 +254,7 @@ export const THE_TWO_EXITS = {
     theyGoLooking:
         'The commonest, and it is path two rather than restlessness. Somebody at the bottom of their own dao who wants the next thing has to go where the next thing is, and none of it is here: down the arterial system to where the qi comes from, out past the last surveyed ground, or through one of the twenty-two closed gate terminals. All three are one-way for practical purposes, all three are the reasonable act for somebody with nothing left to attempt, and none of them has ever returned anybody. Write it as going where the answer is and not as sightseeing.',
     theGatesAreWhereTheyGo:
-        'And the terminals are the specific door, which is worth stating because it explains a category of visitor the Measured Span has never accounted for. Nine terminals answer, four of the nine open somewhere a person can breathe, and five do not - and the person for whom walking into one is a defensible decision is precisely the person with an enormous span, no remaining rung, and a completed dao. Two of the seven in this catalog left through a gate. The Span has no entry for any of them and would not know what it was looking at.',
+        'And the terminals are the specific door, which is worth stating because it explains a category of visitor the Shrinking Earth Pavilion has never accounted for. Nine terminals answer, four of the nine open somewhere a person can breathe, and five do not - and the person for whom walking into one is a defensible decision is precisely the person with an enormous span, no remaining rung, and a completed dao. Two of the seven in this catalog left through a gate. The Span has no entry for any of them and would not know what it was looking at.',
     theyGoMad:
         'The other, and it does not look like leaving at all from inside the house. See `MADNESS_STAGES`. What matters here is that the trajectory removes them as reliably as the door does: a protector at the fourth stage is no longer available to anybody in any sense that an institution could use, and the institution is usually the last party to work that out.',
     andTheyAreOftenTheSameExit:
@@ -323,12 +323,12 @@ export const THE_VACANCY = {
     thereIsLessOnOfferToo:
         'And it is true, and it changes nothing, that a house has less to offer than it did. Every discipline practised in either province was founded in the Counting Age and not one since; the houses maintain a dao rather than build one, so what a protector would be standing on is a smaller thing than it was. That would matter if there were anybody to make the offer to. There is not, so it does not, and it should never be written as the reason.',
     theVacancyBegan:
-        'Eight hundred years ago, when the House of Held Names lost its Kept Name to an expiring span in a chair on an ordinary afternoon. Nobody at the time knew it was the last one in the world and there is no reason they would have. The house kept the ceremonies, kept the quarters, and kept the entry on the wall until it struck it four years later for reasons that had nothing to do with any of this.',
+        'Eight hundred years ago, when the Jade Register Hall lost its Kept Name to an expiring span in a chair on an ordinary afternoon. Nobody at the time knew it was the last one in the world and there is no reason they would have. The house kept the ceremonies, kept the quarters, and kept the entry on the wall until it struck it four years later for reasons that had nothing to do with any of this.',
     whatTheResidueLooksLike: [
         'A stipend line in a house ledger that has been carried forward at the same figure for eight hundred years and never drawn against, because striking it would require a Keeper to write down that the house has given up.',
         'Quarters kept swept at the top of a stair, with no bedding in them and a schedule for the sweeping, in houses that would be embarrassed to be asked why.',
         'A place laid at a founding ceremony, at the end of the row rather than the head of it, which the officiant announces as vacant and everybody present has heard announced as vacant every year of their lives.',
-        'An entry on a roll with the name column empty, which the Ninefold Ledger will certify as a valid standing office and has certified twice in four centuries for houses that wanted it on paper.',
+        'An entry on a roll with the name column empty, which the Ninefold Karma Palace will certify as a valid standing office and has certified twice in four centuries for houses that wanted it on paper.',
         'A hall in the Nine Peaks compound that the ascetics still call the ninth guest\'s, which is the only trace of the last occupant anybody outside the Order would recognise.'
     ],
     theBurntEarthEntryWasWrongAndIsRetracted:
@@ -400,7 +400,7 @@ export const DEPARTURE_DESTINATIONS: readonly {
         whyThere:
             'They are the only doors out of a world that is otherwise closed, they were built by an age that could do things nothing since can, and walking into one is a defensible act for somebody with an enormous span, no remaining rung and a completed dao. For everybody else it is suicide, which is why the terminals are surveyed and not used.',
         whoWent:
-            'Two of the seven in this catalog, on the record, and an unknown number who were never in anybody\'s record at all. The Measured Span has never accounted for this category of visitor and would not know what it was looking at if it did.',
+            'Two of the seven in this catalog, on the record, and an unknown number who were never in anybody\'s record at all. The Shrinking Earth Pavilion has never accounted for this category of visitor and would not know what it was looking at if it did.',
         whatComesBack:
             'Nothing has ever come back through a closed terminal. Whether that is because nothing survives the other side or because nobody who arrives somewhere better bothers returning is exactly the sort of question the world cannot answer.'
     },
@@ -608,11 +608,11 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'Thirty-four thousand, which he gave to the Girdle once, in a letter about something else, and which the house entered in its survey ledger under a column for durations because that is the column it had. It is the only figure of its kind anybody in either province has ever written down.',
         path: 'protector',
         pathNote:
-            'The clearest case of path one in the record. He came to the Girdle of Nine Stones because a containment house is a thing that is only worth anything if it is still standing in two thousand years, which is a project with the right shape for somebody who has thirty-four thousand of them. He was not being generous and would not have understood the word. He wanted something to still be there.',
+            'The clearest case of path one in the record. He came to the Nine Stone Array because a containment house is a thing that is only worth anything if it is still standing in two thousand years, which is a project with the right shape for somebody who has thirty-four thousand of them. He was not being generous and would not have understood the word. He wanted something to still be there.',
         office: {
-            factionId: 'house-girdle-of-nine-stones',
+            factionId: 'house-nine-stone-array',
             factionNote:
-                'The containment house destroyed nine hundred years ago by the Anchorhold, which was raised from its survivors and taught an account of the ending that is not what happened.',
+                'The containment house destroyed nine hundred years ago by the Immovable Mountain Temple, which was raised from its survivors and taught an account of the ending that is not what happened.',
             recruitment: 'external',
             recruitmentNote:
                 'Entirely external and the most awkward case in the catalog, because the Girdle had never produced a crossing and never would. He was not their ancestor, owed them nothing, had no history on that perimeter and no reason to die for it, and everybody in the house knew all four of those things every day for twenty-three centuries. What they did about it was write the instrument as an invitation and then never refer to it again, and what he did about it was stay.',
@@ -629,28 +629,28 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             id: 'carving-the-inner-faces',
             where: 'The inner faces of three of the eight standing stones, on the sides that face the perimeter rather than the road, where nothing was ever expected to be looked at.',
             whatItIs:
-                'A course of cutting that is not containment work and was never part of the survey. It runs to about nine hundred characters across the three faces, it is finished rather than abandoned, and the Anchorhold has surveyed all eight stones four times without publishing a word about what is on the inside of them.',
+                'A course of cutting that is not containment work and was never part of the survey. It runs to about nine hundred characters across the three faces, it is finished rather than abandoned, and the Immovable Mountain Temple has surveyed all eight stones four times without publishing a word about what is on the inside of them.',
             script: 'gate_hand',
             legible: 'not_at_all',
-            heldByFactionId: 'house-anchorhold',
+            heldByFactionId: 'house-immovable-mountain',
             holderKnows: false,
             builtOnIt:
-                'Nothing, which is the ordinary case and worth having once. Three sign groups of the gate hand are agreed and one of the three is agreed to be a number, so what the Anchorhold has is nine hundred characters of which it can identify roughly forty and can read none. It surveys them, records that they are unchanged, and files the entry under condition of the stones. The house has never asked why a containment house would cut gate hand on anything.',
+                'Nothing, which is the ordinary case and worth having once. Three sign groups of the gate hand are agreed and one of the three is agreed to be a number, so what the Immovable Mountain Temple has is nine hundred characters of which it can identify roughly forty and can read none. It surveys them, records that they are unchanged, and files the entry under condition of the stones. The house has never asked why a containment house would cut gate hand on anything.',
             yieldedTechniqueIds: []
         },
         end: 'went_looking',
         endedYearsAgo: 2_900,
         endNote:
-            'He walked into the seventh terminal and did not come back. He said where he was going, to two people, and neither of them thought to write down that the seventh had been closed for eight thousand years by then - it is a Measured Span terminal in the eastern hills and it does not answer, and everybody in the region knows it does not answer, and he went in anyway. The Girdle recorded his departure as a departure. It recorded nothing else about it, ever, and it went on maintaining the office in its ceremonies for the next two thousand years.',
+            'He walked into the seventh terminal and did not come back. He said where he was going, to two people, and neither of them thought to write down that the seventh had been closed for eight thousand years by then - it is a Shrinking Earth Pavilion terminal in the eastern hills and it does not answer, and everybody in the region knows it does not answer, and he went in anyway. The Girdle recorded his departure as a departure. It recorded nothing else about it, ever, and it went on maintaining the office in its ceremonies for the next two thousand years.',
         whichExitItReallyWas:
             'Both, and it cannot be separated. He was at the Settled Error, and the memory a man acquires at the Settled Error is accurate: he remembered the seventh terminal answering, because it did, and nothing since had been permitted to overwrite it. So he went to a door that had been shut for eighty centuries with complete confidence, and the record has it as an expedition.',
         stageAtEndId: 'stage-the-settled-error',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
-            'The Girdle stood for another two thousand years and then was ended by the Anchorhold, which broke the eastern nail itself to demonstrate that the Girdle could not hold the survey. Nobody involved on either side knew that the Girdle had been keeping an empty office for twenty centuries, and nobody has worked out since that the house the Anchorhold\'s founders moved against had lost its deterrent before the Counting Age ended. He does not know any of it happened.',
+            'The Girdle stood for another two thousand years and then was ended by the Immovable Mountain Temple, which broke the eastern nail itself to demonstrate that the Girdle could not hold the survey. Nobody involved on either side knew that the Girdle had been keeping an empty office for twenty centuries, and nobody has worked out since that the house the Immovable Mountain Temple\'s founders moved against had lost its deterrent before the Counting Age ended. He does not know any of it happened.',
         whatSurvives: [
             'nine hundred characters of gate hand on the inner faces of three standing stones, surveyed four times and never published',
-            'a duration entered in the Girdle survey ledger in a column meant for something else, which the Anchorhold inherited and has never queried',
+            'a duration entered in the Girdle survey ledger in a column meant for something else, which the Immovable Mountain Temple inherited and has never queried',
             'the office in the Girdle ceremonies, kept for two thousand years after the occupant walked out, which is why the accounts of the house are confident about a protector nobody alive ever saw'
         ],
         servingNow: false
@@ -662,29 +662,29 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         crossedYearsAgo: 8_400,
         remainderAtCrossingYears: null,
         remainderNote:
-            'Unknown, and the joke is at the expense of the only house it could possibly be at the expense of. The Tally Court totalled what the crossings had taken out of everybody in the world, entered the Lid as the party that owed it, and could not get a figure out of the one person in its own building who had actually crossed. She was asked. She did not refuse and she did not answer, and there is no entry.',
+            'Unknown, and the joke is at the expense of the only house it could possibly be at the expense of. Iron Tally Court totalled what the crossings had taken out of everybody in the world, entered the Lid as the party that owed it, and could not get a figure out of the one person in its own building who had actually crossed. She was asked. She did not refuse and she did not answer, and there is no entry.',
         path: 'peak',
         pathNote:
-            'Path two, held openly, and she was the only False Immortal in this catalog who said so out loud. She was at the Tally Court because the Court was working on the same question she was from the other end - what the crossings cost and where the cost goes - and she stated plainly and repeatedly that she was there until the work took her somewhere else. It did.',
+            'Path two, held openly, and she was the only False Immortal in this catalog who said so out loud. She was at the Iron Tally Court because the Court was working on the same question she was from the other end - what the crossings cost and where the cost goes - and she stated plainly and repeatedly that she was there until the work took her somewhere else. It did.',
         office: {
-            factionId: 'house-tally-court',
+            factionId: 'house-iron-tally-court',
             factionNote:
-                'The karma house ended twenty-three centuries ago by its own auditors, who founded the Ninefold Ledger the following year and kept the volumes.',
+                'The karma house ended twenty-three centuries ago by its own auditors, who founded the Ninefold Karma Palace the following year and kept the volumes.',
             recruitment: 'external',
             recruitmentNote:
-                'External, and it never troubled either party, because she was not there for the house. She had crossed four thousand years before the Tally Court existed and turned up at it for the same reason a scholar turns up at an archive. The Court was clear-eyed about what it had: not an ancestor and not a partisan, but somebody working on the same question who would leave when the question moved, which she told them and then did.',
+                'External, and it never troubled either party, because she was not there for the house. She had crossed four thousand years before the Iron Tally Court existed and turned up at it for the same reason a scholar turns up at an archive. The Court was clear-eyed about what it had: not an ancestor and not a partisan, but somebody working on the same question who would leave when the question moved, which she told them and then did.',
             title: 'The Standing Sum, which the Court entered on its roll as a line rather than as a person',
             fromYearsAgo: 4_100,
             toYearsAgo: 2_400,
             whatTheHouseSupplied:
-                'The single largest body of accounting anybody has ever assembled about the crossing, and colleagues who could argue with her about it competently. The Tally Court was the one house in the world doing work she would have been doing anyway, which is why she stayed seventeen hundred years and why she gave it nothing beyond her presence and did not need to.',
+                'The single largest body of accounting anybody has ever assembled about the crossing, and colleagues who could argue with her about it competently. Iron Tally Court was the one house in the world doing work she would have been doing anyway, which is why she stayed seventeen hundred years and why she gave it nothing beyond her presence and did not need to.',
             whatTheHouseGot:
                 'The most complete impunity any house in the record has enjoyed, and the confidence to enter the Lid as a debtor in its own volumes. The second of those is what got it destroyed and it could not have been written down at all without her standing in the building.',
             theOrderThatWasGiven: null
         },
         carving: {
             id: 'carving-under-the-burned-seat',
-            where: 'Under the burned seat at Burnt Earth, behind the seal the Tally Court cut in its last year, on ground where debts sworn do not settle and never have since.',
+            where: 'Under the burned seat at Burnt Earth, behind the seal the Iron Tally Court cut in its last year, on ground where debts sworn do not settle and never have since.',
             whatItIs:
                 'Her account of the arterial system and where its output goes, cut into the wall of the Court\'s own seat chamber over about a century, finished a hundred years before the house ended. It is the only thing she ever wrote down and it is not a technique. It is a survey of the thing every institution in the world is now quietly losing to.',
             script: 'tally_hand',
@@ -692,7 +692,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             heldByFactionId: 'sect-sweptground-temple',
             holderKnows: false,
             builtOnIt:
-                'Nothing whatever, by anybody, in twenty-three centuries. The Temple knows there is something under its ground and has never investigated, on the Abbot\'s stated reasoning that a thing sealed by dead people is not the Temple\'s business. The Ninefold Ledger almost certainly holds the reason for the seal in its nine sealed volumes and has never opened them. Whether the Court sealed the chamber to keep something in, to keep something preserved, or to keep something from being read is genuinely open, and this entry supplies a fourth possibility rather than settling any of the three: that it sealed her wall.',
+                'Nothing whatever, by anybody, in twenty-three centuries. The Temple knows there is something under its ground and has never investigated, on the Abbot\'s stated reasoning that a thing sealed by dead people is not the Temple\'s business. Ninefold Karma Palace almost certainly holds the reason for the seal in its nine sealed volumes and has never opened them. Whether the Court sealed the chamber to keep something in, to keep something preserved, or to keep something from being read is genuinely open, and this entry supplies a fourth possibility rather than settling any of the three: that it sealed her wall.',
             yieldedTechniqueIds: []
         },
         end: 'went_looking',
@@ -703,9 +703,9 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         stageAtEndId: 'stage-the-long-work',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
-            'The Tally Court was ended by its own auditors within a century of her going down, which they could not have attempted while she was standing in the building, and every account of the ending that survives is theirs. The Ledger has held her figures ever since without knowing they are hers, in volumes it has never opened, in a hand it can read.',
+            'Iron Tally Court was ended by its own auditors within a century of her going down, which they could not have attempted while she was standing in the building, and every account of the ending that survives is theirs. The Karma Pavilion has held her figures ever since without knowing they are hers, in volumes it has never opened, in a hand it can read.',
         whatSurvives: [
-            'nine sealed volumes in the Ninefold Ledger vault index with no subject line, which almost certainly contain her figures',
+            'nine sealed volumes in the Ninefold Karma Palace vault index with no subject line, which almost certainly contain her figures',
             'a wall under the burned seat at Burnt Earth that nobody has looked at in twenty-three centuries',
             'a branded bloodline in the eastern towns carrying an obligation nobody can identify, entered by a house that was totalling what the crossings had taken and had her arithmetic to do it with'
         ],
@@ -714,38 +714,38 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
     {
         id: 'fi-deng-ru',
         name: 'Deng Ru',
-        calledBy: 'The Guest at Iron Gate',
+        calledBy: 'The Guest at Iron Ridge',
         crossedYearsAgo: 44_000,
         remainderAtCrossingYears: null,
         remainderNote:
-            'Never given and never asked for. He had been across for forty thousand years before the Measured Span ever met him and the Span had no framework in which the question would have occurred to anybody. Whether he is still alive is therefore not answerable: nothing rules it out and nothing supports it, and this catalog does not resolve it.',
+            'Never given and never asked for. He had been across for forty thousand years before the Shrinking Earth Pavilion ever met him and the Span had no framework in which the question would have occurred to anybody. Whether he is still alive is therefore not answerable: nothing rules it out and nothing supports it, and this catalog does not resolve it.',
         path: 'peak',
         pathNote:
             'Path two, completed. He reached the bottom of his own dao somewhere in the region of four thousand years before he ever came to the Span, which means he arrived at the office already holding a finished axis and nowhere to put it. The post was not a project. It was somewhere to be afterwards, and this catalog holds him up as the clearest demonstration that being afterwards is the dangerous condition rather than being busy.',
         office: {
-            factionId: 'house-measured-span',
+            factionId: 'house-shrinking-earth',
             factionNote:
                 'The gate house that holds the terminal survey and the true-distance table, and has never produced an original figure of its own - which is what it sincerely believes.',
             recruitment: 'external',
             recruitmentNote:
                 'External, and the Span never once put it that way, because the Span never put it any way at all. He was entered on a station roll rather than a house roll, which is what the Span does with a surveyor it has hired for a season, and nobody ever revised the entry in eleven hundred years. It is the least ceremonious arrangement in the catalog and it worked better than any of the others.',
-            title: 'The Guest at Iron Gate, entered on the station roll and never on the house roll',
+            title: 'The Guest at Iron Ridge, entered on the station roll and never on the house roll',
             fromYearsAgo: 4_600,
             toYearsAgo: 3_500,
             whatTheHouseSupplied:
                 'Terminals. Twenty-two closed and nine answering, a survey listing thirty-one, and a house that would talk about nothing else for as long as anybody would sit there. It was the last subject in the world he still had an appetite for, and the Span gave him eleven hundred years of it without ever once asking him for anything.',
             whatTheHouseGot:
-                'Eleven hundred years of a guest at Iron Gate station who was never described as anything more than that, and nine amended entries in the true-distance table, which is the part the Span does not know it got.',
+                'Eleven hundred years of a guest at Iron Ridge station who was never described as anything more than that, and nine amended entries in the true-distance table, which is the part the Span does not know it got.',
             theOrderThatWasGiven: null
         },
         carving: {
             id: 'carving-under-the-kettle-plaster',
-            where: 'On the north wall of the second room at Iron Gate station, faced over with lime plaster during a rebuild four hundred years ago by masons who recorded the wall as bearing old cutting of no interest.',
+            where: 'On the north wall of the second room at Iron Ridge station, faced over with lime plaster during a rebuild four hundred years ago by masons who recorded the wall as bearing old cutting of no interest.',
             whatItIs:
                 'A folding: how two known places are brought against each other and walked across, cut out in full by somebody who remembered doing it as a matter of ordinary travel. About two thirds of the face was recorded in a station notebook before the plaster went on, by a clerk who copied it because it was there and did not understand a character of it.',
             script: 'ordinary',
             legible: 'partly',
-            heldByFactionId: 'house-measured-span',
+            heldByFactionId: 'house-shrinking-earth',
             holderKnows: false,
             builtOnIt:
                 'A great deal, at second and third hand, and none of it credited. The clerk\'s notebook left the station in an estate sale, and the art that came out of it is in circulation as a recovered fragment of nobody in particular. The Span is holding the original under two fingers of plaster in a room its own staff sit in every day, has the notebook nowhere, and would not connect the two if it had both.',
@@ -754,7 +754,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         end: 'went_mad',
         endedYearsAgo: 3_500,
         endNote:
-            'Over about a century he answered less, and then not at all, and one spring he walked out of Iron Gate station and down the eastern road toward a terminal that stopped existing eleven thousand years ago. The station book has one line in the ordinary hand recording that the Guest departed on that date, and no further entry of any kind. Nobody went after him. Nobody at the station thought anything had happened, because from inside the building nothing had: a very old man had stopped being talkative and then had gone somewhere, which is what very old men do.',
+            'Over about a century he answered less, and then not at all, and one spring he walked out of Iron Ridge station and down the eastern road toward a terminal that stopped existing eleven thousand years ago. The station book has one line in the ordinary hand recording that the Guest departed on that date, and no further entry of any kind. Nobody went after him. Nobody at the station thought anything had happened, because from inside the building nothing had: a very old man had stopped being talkative and then had gone somewhere, which is what very old men do.',
         whichExitItReallyWas:
             'The record would call it going looking and this catalog calls it the trajectory, and the distinction rests on the eleven hundred years before it rather than on the walk. A man who spends a century answering less and then leaves for a place that is not there has not decided anything. He has arrived somewhere.',
         stageAtEndId: 'stage-the-settled-error',
@@ -763,7 +763,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'Nine entries of the true-distance table carry corrections in the Span\'s own hand, unsigned, all made in one season, and they are the only original figures the house has ever produced. The Span believes they are a recovered Wide Age correction, which in every sense that matters they are: he took them himself, correctly, when the network ran. Every courier contract and freight span in two provinces has been priced off them for eleven hundred years and the Span cannot find the error, because there is no error in them.',
         whatSurvives: [
             'nine corrected entries in the true-distance table, unsigned, in the Span\'s own hand, which price every courier contract in two provinces',
-            'a line in the Iron Gate station book recording that the Guest departed, with no entry before it and none after',
+            'a line in the Iron Ridge station book recording that the Guest departed, with no entry before it and none after',
             'about two thirds of a folding, copied by a clerk who did not understand it, circulating as a recovered fragment with no attribution',
             'the original under lime plaster on the north wall of a room the Span uses daily'
         ],
@@ -783,7 +783,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         office: {
             factionId: null,
             factionNote:
-                'Not nameable. The three surviving accounts name three different houses, two of which certainly did not exist yet at the date all three give, and the Ninefold Ledger has never been able to do anything with that beyond record it.',
+                'Not nameable. The three surviving accounts name three different houses, two of which certainly did not exist yet at the date all three give, and the Ninefold Karma Palace has never been able to do anything with that beyond record it.',
             recruitment: 'internal',
             recruitmentNote:
                 'Internal on all three accounts, which is the one thing they agree about besides the duration, and it is why the house is unnameable rather than merely unnamed. An internal protector is a house\'s own ancestor doing what a house expects of an ancestor, so nobody writes an instrument, nobody arbitrates anything and nobody outside is told. The record of an internal arrangement is the house, and the house is gone.',
@@ -820,17 +820,17 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         crossedYearsAgo: 2_300,
         remainderAtCrossingYears: 1_500,
         remainderNote:
-            'One thousand five hundred, which he gave the House of Held Names on the day he came back down because they asked, and which they entered correctly on the register wall beside the name. It is the only remainder in this catalog recorded by a party that understood exactly what it was being told, and it is under a strike.',
+            'One thousand five hundred, which he gave the Jade Register Hall on the day he came back down because they asked, and which they entered correctly on the register wall beside the name. It is the only remainder in this catalog recorded by a party that understood exactly what it was being told, and it is under a strike.',
         path: 'protector',
         pathNote:
             'Path one, chosen by somebody who did not have the years for anything else. Fifteen hundred is a countable life by the standards of this file - it does not reach the end of the first stage, let alone anything past it - and he knew that on the day of his crossing. So he did not attempt a dao that would need forty thousand years and did not go looking for anything that could not be reached inside a lifetime he could count. He did go looking first, for six hundred years, which is what everybody does - and then he came back, which is what almost nobody does, walked down to the house that had raised him, and stood on it for nine hundred years.',
         office: {
-            factionId: 'house-held-names',
+            factionId: 'house-jade-register',
             factionNote:
                 'The counter-register house, whose founding demonstration was holding a name through a crossing and giving most of it back.',
             recruitment: 'internal',
             recruitmentNote:
-                'Internal, and it is the model case: the house raised him, sent him up, and got him back. It is also the only crossing the House of Held Names has ever produced, which is why the reserved post existed there at all - and it is why the house does not appear in anybody\'s crossing records, because the entry that would say so is the one it struck.',
+                'Internal, and it is the model case: the house raised him, sent him up, and got him back. It is also the only crossing the Jade Register Hall has ever produced, which is why the reserved post existed there at all - and it is why the house does not appear in anybody\'s crossing records, because the entry that would say so is the one it struck.',
             title: 'The Kept Name, cut on the register wall in the ordinary hand beside the figure',
             fromYearsAgo: 1_700,
             toYearsAgo: 800,
@@ -842,12 +842,12 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         },
         carving: {
             id: 'carving-the-struck-name',
-            where: 'The register wall of the House of Held Names, third course from the bottom, in the ordinary hand of the province, with a single ruled line through it.',
+            where: 'The register wall of the Jade Register Hall, third course from the bottom, in the ordinary hand of the province, with a single ruled line through it.',
             whatItIs:
                 'His name, his rank at the end of the last crossing, and the figure he gave them. Three lines. He never cut anything else anywhere, was asked twice to and declined both times without explaining, and this is the only legible carving by a False Immortal that anybody in either province can walk up to and read.',
             script: 'ordinary',
             legible: 'fully',
-            heldByFactionId: 'house-held-names',
+            heldByFactionId: 'house-jade-register',
             holderKnows: false,
             builtOnIt:
                 'A conclusion, and the conclusion is wrong. When he died the house examined the body, found it ordinary in every way a body can be measured, and reasoned that a being of that rank could not leave that - so the entry was a fraud, the testimony behind it was a fraud, and nine hundred years of counter-register material sourced to him was quietly reclassified as uncorroborated. Nobody in the room had ever met anybody who had met him before he went up; the Keepers who watched him go were nine centuries dead, and what the house had instead of a memory was a document, which is the thing this house of all houses knows is losable. They struck the name rather than erasing it, because the house does not erase, which means the strike is a ruled line and the name is perfectly readable underneath it. Every visitor is told what the line means and every visitor is told wrongly.',
@@ -861,9 +861,9 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         stageAtEndId: 'stage-the-interval',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
-            'It failed after he was dead and it failed because of the corpse. Nine centuries of the best material any institution in the world has ever held about the last crossing was reclassified as uncorroborated inside four years, on a reading of a body by people who had no way to know that a False Immortal whose span runs out leaves exactly that and nothing else. The House of Held Names is still working, still respected, and is the only party in the world that has ever had the answer and thrown it away.',
+            'It failed after he was dead and it failed because of the corpse. Nine centuries of the best material any institution in the world has ever held about the last crossing was reclassified as uncorroborated inside four years, on a reading of a body by people who had no way to know that a False Immortal whose span runs out leaves exactly that and nothing else. Jade Register Hall is still working, still respected, and is the only party in the world that has ever had the answer and thrown it away.',
         whatSurvives: [
-            'a name, a rank and a figure on the register wall of the House of Held Names, under a ruled line, readable by anybody who walks in',
+            'a name, a rank and a figure on the register wall of the Jade Register Hall, under a ruled line, readable by anybody who walks in',
             'nine hundred years of counter-register testimony about the last crossing, filed as uncorroborated and open to any Keeper who asks',
             'the strike itself, which the house explains to every visitor and explains wrongly',
             'the one fact the world could have had and did not keep: that a False Immortal who runs out leaves an ordinary corpse'
@@ -972,7 +972,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         end: 'went_looking',
         endedYearsAgo: 4_400,
         endNote:
-            'He walked down the mountain the same afternoon he was asked for something and went east. The last record of him anywhere is a Measured Span station daybook nine years later: a traveller asked which of the terminals open somewhere a person can breathe, was told the four, thanked the clerk, and left. The clerk wrote it down because the question was unusual, and the entry gives no name because the traveller did not offer one and the clerk did not ask.',
+            'He walked down the mountain the same afternoon he was asked for something and went east. The last record of him anywhere is a Shrinking Earth Pavilion station daybook nine years later: a traveller asked which of the terminals open somewhere a person can breathe, was told the four, thanked the clerk, and left. The clerk wrote it down because the question was unusual, and the entry gives no name because the traveller did not offer one and the clerk did not ask.',
         whichExitItReallyWas:
             'Going looking, and the catalog is reasonably confident. He was fourteen and a half thousand years across, well inside the second stage, entirely lucid on every account of him, and he asked a specific question and got a specific answer before doing anything. That is a decision rather than an arrival, and it is the difference between him and Yu Han.',
         stageAtEndId: 'stage-the-long-work',
@@ -983,7 +983,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'nine legible characters on the underside of the ninth peak lintel, which nobody has ever looked at',
             'a step change in the Nine Peaks offering weights in one year, in numerals the Order reads perfectly and has never interpreted',
             'a remainder figure of twenty-one thousand in an unheaded column of the Order offering ledger',
-            'an unnamed entry in a Measured Span station daybook, nine years later, about a traveller who asked which terminals open somewhere breathable'
+            'an unnamed entry in a Shrinking Earth Pavilion station daybook, nine years later, about a traveller who asked which terminals open somewhere breathable'
         ],
         servingNow: false
     }
@@ -1139,7 +1139,7 @@ export const THE_PRESENT_COUNT = {
             nobodyHasRaisedItSince:
                 'Not the Court, and not him. Nobody has put it to him again, because putting it to him is pressing and the Court does not press, and because the four who would need the answer are the four who cannot ask for it - the same bind `theDefenceQuestionStaysOpen` sets out, on a smaller question and exactly as binding. Whether the silence since is tact, an answer taken and not argued with, or the Court doing with this what it does with everything is not going to be settled by four people who do not discuss anything. He has not raised it either, and for him that is not restraint: it is a subject that did not stay in his head.',
             andThisIsTheOnlyHouseWhereNoneOfItGetsOut:
-                'Worth stating once and not developing. Every other reserved chair in the world is at least publicly empty - announced at a ceremony, carried on a ledger line, certifiable on a roll by the Ninefold Ledger. This one is held by a house that answers to nobody and has never mentioned him where a third party could hear. Three apex institutions hold his name, his house and the word possible, and that is the whole outer extent of it: not one of them knows there is a chair, let alone that somebody sat beside him and said so. The chair, the afternoon and the answer have never been anywhere but inside the same five heads.'
+                'Worth stating once and not developing. Every other reserved chair in the world is at least publicly empty - announced at a ceremony, carried on a ledger line, certifiable on a roll by the Ninefold Karma Palace. This one is held by a house that answers to nobody and has never mentioned him where a third party could hear. Three apex institutions hold his name, his house and the word possible, and that is the whole outer extent of it: not one of them knows there is a chair, let alone that somebody sat beside him and said so. The chair, the afternoon and the answer have never been anywhere but inside the same five heads.'
         },
         theRumour:
             'There is a rumour that he declined, or that he would not take it officially, and its entire population is three. It is not in the world and could not get there: what it presupposes is that the Court has a chair for him at all, and five people alive know that. What the three hold is an offhand remark at second hand, from the one of them who was in the room, and they do not agree about it. One reads a refusal. One reads a man changing the subject, which he does constantly and about everything. One holds that no question was ever actually put and there is therefore nothing in it to interpret. So it might be true. It might be a misheard joke. It might have been about something else entirely, and he does not remember making it. Nothing in this catalog says which.',
@@ -1217,20 +1217,20 @@ export const LU_SHENG_CARVINGS: readonly DaoCarving[] = [
         holderKnows: true,
         builtOnIt:
             'Four thousand years of work on one problem, and this is the first outside contribution any of it has had. The Court knows exactly what it is standing on, which is the one place in this file where a holder does, and it changes nothing about what they can do with it: the art on that floor asks for a rung above the one all four of them stand at, and the Seats read it the way anybody reads a thing written for somebody else. They have never mentioned the floor to an outsider and have never needed a policy about it. Nobody outside those mountains knows there is cutting in that hall.',
-        yieldedTechniqueIds: ['what-came-back-instead']
+        yieldedTechniqueIds: ['half-immortal-body']
     },
     {
         id: 'carving-the-register-wall-second-course',
-        where: 'The second course of the register wall at the House of Held Names, three feet along from a struck entry that the house explains to every visitor and explains wrongly.',
+        where: 'The second course of the register wall at the Jade Register Hall, three feet along from a struck entry that the house explains to every visitor and explains wrongly.',
         whatItIs:
             'Nine lines in the ordinary hand, cut in an afternoon by a visitor the Keepers remember as courteous and cannot otherwise describe, on a wall the house cuts its whole product into. It is a working rather than a record: it says how a thing is done and does not say who did it, which is the opposite of every other line on that wall.',
         script: 'ordinary',
         legible: 'fully',
-        heldByFactionId: 'house-held-names',
+        heldByFactionId: 'house-jade-register',
         holderKnows: false,
         builtOnIt:
             'Nothing, and it is the second time this house has had the answer in the building and not kept it. The counter-register exists to establish what a crossing takes and what of a person survives it; nine lines by somebody who came back from one are on its own wall, three feet from the name it struck for leaving an ordinary corpse, and the Keepers file the lines under wall condition because no Keeper was in the room and nobody signs a wall they are not entered on. Every visitor is walked past both. The house has been asked twice what the nine lines are and has said, accurately, that it does not know.',
-        yieldedTechniqueIds: ['the-second-question']
+        yieldedTechniqueIds: ['first-arrival-sword-art']
     },
     {
         id: 'carving-the-ford-stone',
@@ -1243,7 +1243,7 @@ export const LU_SHENG_CARVINGS: readonly DaoCarving[] = [
         holderKnows: false,
         builtOnIt:
             'Nothing whatever, by anybody, in thirty years. Nobody holds a ford. The stall keeper is the dead boatman\'s granddaughter, she has swept past it four times a day for twelve years, and the one person who has ever stood in front of it and known what it was is the man who cut it and has not mentioned it since. It is legible in the ordinary hand up to a point and stops being legible where the reader stops being able to follow rather than where the cutting stops, which is the difference between this face and every other one in the file.',
-        yieldedTechniqueIds: ['the-seam-that-did-not-close']
+        yieldedTechniqueIds: ['void-seam-holding-art']
     }
 ];
 

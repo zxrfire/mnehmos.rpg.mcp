@@ -695,7 +695,7 @@ export function simulateTimeSkip(
                     // The design owner's ruling, and the second of the two
                     // callers that has to honour it. See `bodyCost` on
                     // `BreakthroughResultSchema`: a crossing costs, and the one
-                    // thing that separates the Unearned Step from a qi pill is
+                    // thing that separates the Heaven-Ascending Golden Pill from a qi pill is
                     // that the qi pill still makes you cross.
                     //
                     // Against `cultivator.maxHp` because that is the pool this

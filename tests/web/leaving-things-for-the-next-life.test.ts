@@ -96,7 +96,7 @@ function cache(overrides: Partial<CacheRecord> = {}): CacheRecord {
         kind: 'cache',
         id: 'cache::run-a::1',
         buriedByRunId: 'run-a',
-        place: 'Iron Gate Ford',
+        place: 'Iron Ridge Ford',
         ground: 'waystation',
         burial: { ground: 'waystation', daysSpent: 7, burierOrdinal: 6, anchored: false, watchers: 0 },
         buriedOnWorldDay: 1_000,
@@ -115,7 +115,7 @@ function deposit(overrides: Partial<DepositRecord> = {}): DepositRecord {
         kind: 'deposit',
         id: 'deposit::run-a::1',
         lodgedByRunId: 'run-a',
-        factionId: 'house-ninefold-ledger',
+        factionId: 'house-ninefold-karma',
         sealed: sealPhrase('deposit::run-a::1', phrase),
         wordCount: 6,
         lodgedOnWorldDay: 1_000,
@@ -263,7 +263,7 @@ describe('the phrase is the player\'s, not the engine\'s', () => {
 
     it('the hint says what the book holds and never any part of the words', () => {
         const record = deposit();
-        const terms = custodyTermsFor('house-ninefold-ledger')!;
+        const terms = custodyTermsFor('house-ninefold-karma')!;
         const { hintLines } = recordWrongPhrase(record, terms, 2_000);
         const said = hintLines.join(' ').toLowerCase();
         for (const word of ['third', 'stone', 'ford']) {
@@ -274,14 +274,14 @@ describe('the phrase is the player\'s, not the engine\'s', () => {
     });
 
     it('a house that keeps a book runs out of patience; one that does not, cannot count reliably', () => {
-        const strict = custodyTermsFor('house-unbroken-tally')!;
+        const strict = custodyTermsFor('house-vermilion-seal')!;
         const loose = custodyTermsFor('sect-thousand-treasure-pavilion')!;
         expect(strict.attemptsAllowed).toBeLessThan(loose.attemptsAllowed);
         expect(strict.keepsWrittenRecord).toBe(true);
         expect(loose.keepsWrittenRecord).toBe(false);
 
         // And running out closes the entry against everybody, not just the fraud.
-        let record = deposit({ factionId: 'house-unbroken-tally', wrongAttempts: 0 });
+        let record = deposit({ factionId: 'house-vermilion-seal', wrongAttempts: 0 });
         for (let i = 0; i < strict.attemptsAllowed; i += 1) {
             record = recordWrongPhrase(record, strict, 2_000).record;
         }
@@ -309,7 +309,7 @@ describe('both routes lose, and they lose differently', () => {
         expect(oddsGoneIn(inTown, 200)).toBeGreaterThan(oddsGoneIn(offMap, 200) * 3);
     });
 
-    it('digging longer, standing higher and paying the Anchorhold all help', () => {
+    it('digging longer, standing higher and paying the Immovable Mountain Temple all help', () => {
         const base = { ground: 'village' as const, daysSpent: 1, burierOrdinal: 0, anchored: false, watchers: 0 };
         expect(oddsGoneIn({ ...base, daysSpent: 60 }, 200)).toBeLessThan(oddsGoneIn(base, 200));
         expect(oddsGoneIn({ ...base, burierOrdinal: 30 }, 200)).toBeLessThan(oddsGoneIn(base, 200));
@@ -337,7 +337,7 @@ describe('both routes lose, and they lose differently', () => {
     });
 
     it('an old house is a better bet than a young one and the player can see it first', () => {
-        const ledger = standingOf('house-ninefold-ledger', true)!;
+        const ledger = standingOf('house-ninefold-karma', true)!;
         const pavilion = standingOf('sect-thousand-treasure-pavilion', false)!;
         expect(ledger.yearsStanding).toBeGreaterThan(3_000);
         expect(pavilion.yearsStanding).toBeNull();
@@ -347,14 +347,14 @@ describe('both routes lose, and they lose differently', () => {
         const listed = counters();
         expect(listed.length).toBe(CUSTODY_TAKERS.length);
         const names = listed.map(view => view.houseName);
-        expect(names.indexOf('The Ninefold Ledger')).toBeLessThan(names.indexOf('Thousand Treasure Pavilion'));
+        expect(names.indexOf('Ninefold Karma Palace')).toBeLessThan(names.indexOf('Thousand Treasure Pavilion'));
         for (const view of listed) {
             expect(['as safe as anything gets', 'sound', 'a risk', 'a bad bet']).toContain(view.band);
         }
     });
 
     it('no house is certain either, and the risk grows with time rather than sitting still', () => {
-        const best = standingOf('house-measured-span', true)!;
+        const best = standingOf('house-shrinking-earth', true)!;
         expect(oddsHolderFailsIn(best, 100)).toBeLessThan(oddsHolderFailsIn(best, 800));
         expect(oddsHolderFailsIn(best, 2_000)).toBeGreaterThan(0.1);
     });
@@ -385,14 +385,14 @@ describe('a thing left behind outlives the life that left it', () => {
     it('a cache is readable with the run that buried it gone from the runs table', () => {
         const db = makeDb();
         const ledger = new LegacyLedger(db);
-        ledger.write(cache(), 'A cache at Iron Gate Ford', 1_000);
+        ledger.write(cache(), 'A cache at Iron Ridge Ford', 1_000);
 
         // There is no run row and there never has to be: `cultivation_sites`
         // carries no foreign key on run_id, on purpose.
         expect(db.prepare('SELECT COUNT(*) AS n FROM runs').get()).toEqual({ n: 0 });
 
         // And the read is not scoped to a run, which is the whole point.
-        const found = ledger.cachesAt('the Iron Gate Ford');
+        const found = ledger.cachesAt('the Iron Ridge Ford');
         expect(found.length).toBe(1);
         expect(found[0].buriedByRunId).toBe('run-a');
     });
@@ -400,10 +400,10 @@ describe('a thing left behind outlives the life that left it', () => {
     it('a deposit is readable by a different run entirely', () => {
         const db = makeDb();
         const ledger = new LegacyLedger(db);
-        ledger.write(deposit(), 'A deposit with the Ninefold Ledger', 1_000);
+        ledger.write(deposit(), 'A deposit with the Ninefold Karma Palace', 1_000);
 
         expect(ledger.leftByRun('run-b')).toEqual([]);
-        const theirs = ledger.depositsWith('house-ninefold-ledger');
+        const theirs = ledger.depositsWith('house-ninefold-karma');
         expect(theirs.length).toBe(1);
         expect(theirs[0].lodgedByRunId).toBe('run-a');
     });
@@ -551,8 +551,8 @@ describe('nothing here is a body somebody made up', () => {
     });
 
     it('a sentence naming a house resolves to it, and an invented one resolves to nothing', () => {
-        expect(resolveCustodian('the Ninefold Ledger')?.factionId).toBe('house-ninefold-ledger');
-        expect(resolveCustodian('held names')?.factionId).toBe('house-held-names');
+        expect(resolveCustodian('the Ninefold Karma Palace')?.factionId).toBe('house-ninefold-karma');
+        expect(resolveCustodian('jade register')?.factionId).toBe('house-jade-register');
         expect(resolveCustodian('Lantern Hall')?.factionId).toBe('sect-lantern-hall');
         expect(resolveCustodian('the Bank of the Nine Provinces')).toBeNull();
         expect(resolveCustodian('')).toBeNull();
@@ -560,9 +560,9 @@ describe('nothing here is a body somebody made up', () => {
 
     it('the free counter is free and the expensive one is expensive', () => {
         expect(feeForTerm(custodyTermsFor('sect-lantern-hall')!, 500)).toBe(0);
-        expect(feeForTerm(custodyTermsFor('house-ninefold-ledger')!, 500)).toBeGreaterThan(1_000);
+        expect(feeForTerm(custodyTermsFor('house-ninefold-karma')!, 500)).toBeGreaterThan(1_000);
         // And nobody writes a term shorter than their own minimum.
-        const held = custodyTermsFor('house-held-names')!;
+        const held = custodyTermsFor('house-jade-register')!;
         expect(feeForTerm(held, 1)).toBe(held.annualFeeStones * held.minimumTermYears);
     });
 
@@ -608,7 +608,7 @@ describe('one life puts it aside and another life collects it', () => {
             ledger,
             mover,
             cultivator: { id: 'a', spiritStones: 5_000, realmOrdinal: 24, name: 'A' } as never,
-            here: 'Iron Gate Ford',
+            here: 'Iron Ridge Ford',
             worldSeed: seed,
             worldDay: 100_000,
             runId: 'run-a',
@@ -665,7 +665,7 @@ describe('one life puts it aside and another life collects it', () => {
 
         const lodged = handleLegacy(
             h.deps({ cultivator: { id: 'a', spiritStones: 60_000, realmOrdinal: 24 } as never }),
-            'lodge', 'the Ninefold Ledger', 'three crows on the weir', 0
+            'lodge', 'the Ninefold Karma Palace', 'three crows on the weir', 0
         );
         expect(lodged.refused).toBe(false);
         // The fee came out and the rest went in.
@@ -683,14 +683,14 @@ describe('one life puts it aside and another life collects it', () => {
         });
 
         // Wrong words: refused, and the refusal says nothing about the words.
-        const wrong = handleLegacy(stranger, 'claim', 'the Ninefold Ledger', 'four crows on the weir', 0);
+        const wrong = handleLegacy(stranger, 'claim', 'the Ninefold Karma Palace', 'four crows on the weir', 0);
         expect(wrong.refused).toBe(true);
         expect(h.purses.get('b')).toBe(0);
         expect(wrong.facts.lines.join(' ').toLowerCase()).not.toContain('crows');
         expect(wrong.calls[0].summary).not.toContain('crows');
 
         // Right words, said by somebody who is not the depositor.
-        const right = handleLegacy(stranger, 'claim', 'the Ninefold Ledger', 'Three Crows On The Weir.', 0);
+        const right = handleLegacy(stranger, 'claim', 'the Ninefold Karma Palace', 'Three Crows On The Weir.', 0);
         expect(right.refused).toBe(false);
         expect(h.purses.get('b')).toBeGreaterThan(50_000);
         expect(right.facts.lines.join(' ')).toContain('not them');
@@ -701,16 +701,16 @@ describe('one life puts it aside and another life collects it', () => {
         h.purses.set('a', 60_000);
         handleLegacy(
             h.deps({ cultivator: { id: 'a', spiritStones: 60_000, realmOrdinal: 24 } as never }),
-            'lodge', 'the Unbroken Tally', 'a boat with no name', 0
+            'lodge', 'the Vermilion Seal Terrace', 'a boat with no name', 0
         );
-        const terms = custodyTermsFor('house-unbroken-tally')!;
+        const terms = custodyTermsFor('house-vermilion-seal')!;
         const fraud = h.deps({ cultivator: { id: 'f', spiritStones: 0 } as never, runId: 'run-f' });
         for (let i = 0; i < terms.attemptsAllowed; i += 1) {
-            handleLegacy(fraud, 'claim', 'the Unbroken Tally', `guess ${i} at the words`, 0);
+            handleLegacy(fraud, 'claim', 'the Vermilion Seal Terrace', `guess ${i} at the words`, 0);
         }
         // The right words, too late, said by somebody else entirely.
         const heir = h.deps({ cultivator: { id: 'h', spiritStones: 0 } as never, runId: 'run-h' });
-        const late = handleLegacy(heir, 'claim', 'the Unbroken Tally', 'a boat with no name', 0);
+        const late = handleLegacy(heir, 'claim', 'the Vermilion Seal Terrace', 'a boat with no name', 0);
         expect(late.refused).toBe(true);
         expect(late.facts.lines.join(' ')).toContain('closed');
     });
@@ -720,10 +720,10 @@ describe('one life puts it aside and another life collects it', () => {
         h.purses.set('a', 60_000);
         const short = handleLegacy(
             h.deps({ cultivator: { id: 'a', spiritStones: 60_000 } as never }),
-            'lodge', 'the Ninefold Ledger', 'dog', 0
+            'lodge', 'the Ninefold Karma Palace', 'dog', 0
         );
         expect(short.refused).toBe(true);
-        expect(h.ledger.depositsWith('house-ninefold-ledger')).toEqual([]);
+        expect(h.ledger.depositsWith('house-ninefold-karma')).toEqual([]);
         expect(h.purses.get('a')).toBe(60_000);
     });
 
@@ -732,7 +732,7 @@ describe('one life puts it aside and another life collects it', () => {
         h.purses.set('a', 10);
         const broke = handleLegacy(
             h.deps({ cultivator: { id: 'a', spiritStones: 10 } as never }),
-            'lodge', 'the Ninefold Ledger', 'a phrase that is long enough', 0
+            'lodge', 'the Ninefold Karma Palace', 'a phrase that is long enough', 0
         );
         expect(broke.refused).toBe(true);
         expect(h.purses.get('a')).toBe(10);
@@ -755,7 +755,7 @@ describe('one life puts it aside and another life collects it', () => {
         h.purses.set('a', 500);
         const buried = handleLegacy(h.deps({ watchers: 2 }), 'bury', undefined, undefined, 7);
         expect(buried.facts.lines.join(' ')).toContain('2 people were');
-        const [row] = h.ledger.cachesAt('Iron Gate Ford') as CacheRecord[];
+        const [row] = h.ledger.cachesAt('Iron Ridge Ford') as CacheRecord[];
         expect(row.burial.watchers).toBe(2);
     });
 });
@@ -781,11 +781,11 @@ describe('what a player types to leave something behind', () => {
         expect(step('I dig here')).toMatchObject({ intent: 'dig' });
         expect(step('I dig up my cache')).toMatchObject({ intent: 'dig' });
         expect(step('I dig where I buried it')).toMatchObject({ intent: 'dig' });
-        expect(step('I leave my things with the Ninefold Ledger'))
-            .toMatchObject({ intent: 'lodge', target: 'ninefold ledger' });
-        expect(step('I deposit everything I have with the house of held names'))
+        expect(step('I leave my things with the Ninefold Karma Palace'))
+            .toMatchObject({ intent: 'lodge', target: 'ninefold karma palace' });
+        expect(step('I deposit everything I have with the jade register hall'))
             .toMatchObject({ intent: 'lodge' });
-        expect(step('I claim my deposit at the ninefold ledger'))
+        expect(step('I claim my deposit at the ninefold karma palace'))
             .toMatchObject({ intent: 'claim' });
         expect(step('I collect what is held for me at the lantern hall'))
             .toMatchObject({ intent: 'claim' });
@@ -807,7 +807,7 @@ describe('what a player types to leave something behind', () => {
         for (const sentence of [
             'I leave the sect',
             'I leave the Azure Cloud Pavilion',
-            'I leave for the Iron Gate Ford',
+            'I leave for the Iron Ridge Ford',
             'I dig for roots along the bank',
             'I claim the reward',
             'I collect my stipend',
@@ -830,7 +830,7 @@ describe('what a player types to leave something behind', () => {
     });
 
     it('a phrase is pulled out of what the player typed, never invented', () => {
-        expect(phraseIn('I lodge it with the Ledger, the words are "three crows on the weir"'))
+        expect(phraseIn('I lodge it with the Karma Pavilion, the words are "three crows on the weir"'))
             .toBe('three crows on the weir');
         expect(phraseIn('I deposit it under the phrase three crows on the weir'))
             .toBe('three crows on the weir');
@@ -838,7 +838,7 @@ describe('what a player types to leave something behind', () => {
             .toBe('nine willows and a broken oar');
         // And a sentence with no phrase in it produces none, rather than half
         // the sentence sealed against an entry nobody meant.
-        expect(phraseIn('I lodge my things with the Ninefold Ledger')).toBeUndefined();
+        expect(phraseIn('I lodge my things with the Ninefold Karma Palace')).toBeUndefined();
         expect(phraseIn('I bury my things here')).toBeUndefined();
     });
 
