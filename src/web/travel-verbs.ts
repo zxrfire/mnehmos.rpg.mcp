@@ -74,6 +74,7 @@ import { primaryRoadOf } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import {
     listCarriedArtifacts,
+    daoHeartConditions,
     tollConditionsFor
 } from '../server/consolidated/cultivation-support.js';
 import type { ActionName } from './actions.js';
@@ -276,7 +277,7 @@ export const travelVerbs = {
         // ── THE NAME WE STORE IS THE WORLD'S, NOT THE PLAYER'S ───────────
         //
         // `extractSubject` consumes an optional leading article after the verb,
-        // so "I travel to The Quiet Marches" arrives here as "Quiet Marches" -
+        // so "I travel to The Silent Cliffs" arrives here as "Silent Cliffs" -
         // and every province in the world is named "The" something. Matching
         // survives that, because `somewhereReal` compares on `loosePlaceKey`
         // and the comment there says exactly why. STORING did not: the run then
@@ -306,7 +307,7 @@ export const travelVerbs = {
         //
         // This spent `SHORT_ACTION_DAYS` for every journey to anywhere, while
         // `destinations` printed the catalog's `travelDays` beside each
-        // province - so the game told a player Kettle was eleven days away and
+        // province - so the game told a player Iron Gate was eleven days away and
         // then took them there in one. `FOLD_TRAVEL_ENGINE_GAP` names this line
         // as the reason a fold could not be shown to save anybody anything.
         //
@@ -338,6 +339,7 @@ export const travelVerbs = {
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
@@ -424,7 +426,7 @@ export const travelVerbs = {
     // player without printing a number the engine does not charge. It was
     // right: `move` spent a flat day for every journey while `destinations`
     // printed the catalog's `travelDays` beside each province, so the game
-    // told a player Kettle was eleven days away and then took them there in
+    // told a player Iron Gate was eleven days away and then took them there in
     // one. {@link daysOnTheRoadTo} is the single reader of that figure and
     // every verb here goes through it, `move` included - so a fold that saves
     // ten days saves ten days that were being spent.
@@ -503,7 +505,7 @@ export const travelVerbs = {
      * cannot be bought, lent or taken; and a tracked craft they own, which is
      * an ordinary object row with a `conveyanceId` on it. Everything else in
      * `CONVEYANCES` is a COUNTED holding - a house has four of these and could
-     * not tell you which went to Kettle last spring - and there is nowhere in
+     * not tell you which went to Iron Gate last spring - and there is nowhere in
      * this engine that counts them for a person. See
      * {@link A_HIRED_BEAST_IS_NOT_MODELLED}.
      */
@@ -625,6 +627,7 @@ export const travelVerbs = {
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 

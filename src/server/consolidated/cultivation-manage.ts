@@ -131,6 +131,7 @@ import {
     skipEndState,
     summariseInjury,
     summariseInsight,
+    daoHeartConditions,
     tollConditionsFor,
     totalDays,
     type CultivationRepos,
@@ -738,6 +739,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         // read the ledger and see the shape of who you used to be" true rather
         // than decorative.
         toll: tollConditionsFor(repos, cultivator),
+        // 道心, read the same way every other door onto a wall reads it.
+        ...daoHeartConditions(repos.db, cultivator, startDay),
         rations,
         grainAbstinence: isOnGrainAbstinence(repos.db, cultivator.id, startDay),
         autoBreakthrough: args.autoBreakthrough ?? true,
@@ -931,7 +934,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
                 // `RecordedEncounters.met`. `met` holds people whose standing
                 // moved - a relationship contact - and is empty for precisely
                 // the arrivals that stop a span: measured, four worlds out of
-                // four cut at day 120 by "8 bandits block the road at Kettle,
+                // four cut at day 120 by "8 bandits block the road at Iron Gate,
                 // strongest is Qi Condensation Layer 3", with `met` empty every
                 // time. Reporting that as an unnamed somebody would have been
                 // the withdrawn `ground` member in a different costume - a span
@@ -1122,6 +1125,7 @@ export async function handleBreakthrough(
             priorPillsTaken: pending.priorPillsTaken ?? 0
         } : null,
         ranksGainedThisTurn: alreadyGained,
+        ...daoHeartConditions(repos.db, cultivator),
         // Real candidates from real rows: known techniques and the people in
         // this run who know this cultivator. The crossing picks; nobody asks.
         toll: tollConditionsFor(repos, cultivator)

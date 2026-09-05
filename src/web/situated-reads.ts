@@ -70,7 +70,7 @@ import {
     stagnationYearsForOrdinal
 } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
-import { listPouch } from '../server/consolidated/cultivation-support.js';
+import { daoHeartFor, listPouch } from '../server/consolidated/cultivation-support.js';
 import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import {
     requiredContributionForRank,
@@ -256,7 +256,10 @@ export const situatedReads = {
             progressAvailable: eligibility.progressAvailable,
             eligible: eligibility.eligible,
             yearsAtCurrentRealm: cultivator.yearsAtCurrentRealm,
-            stagnationYears: stagnationYearsForOrdinal(cultivator.realmOrdinal)
+            stagnationYears: stagnationYearsForOrdinal(cultivator.realmOrdinal),
+            // The same read the crossing takes, taken here before anybody
+            // commits to one. `daoHeartFor` is the single derivation.
+            daoHeart: daoHeartFor(this.db, cultivator, Math.floor(run.elapsedDays))
         });
 
         const facts = factsForToolResult(read.headline, read.lines);
@@ -560,7 +563,7 @@ export const situatedReads = {
         //
         // Reproduced before fixing, on an ordinary opening turn: two of seven
         // destinations were emitted twice, byte-identical, in the prose AND on
-        // the engine channel - "The Dead Verge" and "The Gapwater face". The
+        // the engine channel - "Nine Hundred Paces" and "The Jade Face". The
         // quiet-ground loop below already guarded against this for its own
         // rows; nothing guarded the two loops above it.
         //
@@ -581,7 +584,7 @@ export const situatedReads = {
 
             // A PROVINCE, which is the scale the catalog actually prices. This
             // half was missing from the first build and it was the whole of the
-            // travel answer: "The Low Fall" and "The Drowned Reach" are names
+            // travel answer: "The Jade Gorge" and "The Drowned Sea" are names
             // in the knowledge table like any other, they are the only names
             // with a stated `travelDays` beside them, and looking up
             // settlements only dropped every one of them on the floor. The
@@ -639,7 +642,7 @@ export const situatedReads = {
                 //                   zero a player would plan around.
                 //   another one     the province road, as before.
                 //
-                // Found by playing. The listing said Scarwater was in this
+                // Found by playing. The listing said Clear River Ford was in this
                 // province and "nothing states how far", and `move` then spent
                 // the two days the catalog states for that road - the game
                 // printing one thing and charging another, which is the exact
@@ -1373,7 +1376,7 @@ export const situatedReads = {
      * ── And what it is for ───────────────────────────────────────────────
      *
      * The miss that produced it, from a real run: two houses were holding
-     * intakes at Wheatgate, one in 35 days and one in 70, the engine knew both
+     * intakes at Autumn Gate, one in 35 days and one in 70, the engine knew both
      * and narrated both, and the row of things to do went on offering the same
      * three reads it offers everywhere. A wall is the most place-specific
      * object in a settlement and it is the one channel that runs towards the
@@ -1421,8 +1424,8 @@ export const situatedReads = {
      * The trust term in `ground-trust.ts` has been moving the player's odds off
      * this since it landed, and the played game would not say it:
      * `whoHoldsTheGround` had two callers in `src/` and both were inside the
-     * NPC simulation. Measured on a fresh run, which opens at the Meet on The
-     * Blown Ground - so a player stands on the one province nobody holds, on
+     * NPC simulation. Measured on a fresh run, which opens at Wind Market on The
+     * Burial Sands - so a player stands on the one province nobody holds, on
      * turn one, and could not find out. Five phrasings, five wrong answers:
      *
      *   "I ask who holds this ground"  an NPC, and the resolve failed

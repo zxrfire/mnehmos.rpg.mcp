@@ -41,6 +41,7 @@ import {
     FLAG_PENDING_PILL,
     type PendingPill,
     clearFlag,
+    daoHeartFor,
     persistFoundation,
     persistToll,
     readJsonFlag,
@@ -86,6 +87,16 @@ export const crossingVerb = {
         // attempt consumes what was actually taken.
         const pending = readJsonFlag<PendingPill>(this.db, cultivator.id, FLAG_PENDING_PILL);
 
+        // ── 道心, read at the moment of crossing ──
+        //
+        // The obligation ledger already holds what this cultivator has left
+        // unfinished; nothing on the breakthrough path had ever looked at it.
+        // Read here, in the impure layer, and passed in as a bare share,
+        // because the resolver is pure. Zero at every rung that is not a wall,
+        // and zero for anybody whose ledger is empty, so a run that has never
+        // met anybody books no line.
+        const daoHeart = daoHeartFor(this.db, cultivator, absDay);
+
         const result = attemptBreakthrough(cultivator, {
             // ── why the attempt count is in the stream ──
             //
@@ -127,6 +138,8 @@ export const crossingVerb = {
                 priorPillsTaken: pending.priorPillsTaken ?? 0
             } : null,
             ranksGainedThisTurn: 0,
+            daoHeart: daoHeart.share,
+            daoHeartOpen: daoHeart.open,
             // Deliberate, and now aided where the cultivator prepared for it.
             toll: {
                 ...tollConditionsFor(this.repos, cultivator),
@@ -273,6 +286,21 @@ export const crossingVerb = {
                 `${result.outcome}. ${result.narrationHint}`,
             ok: true
         }];
+        // 道心. Its own row rather than a clause on the one above, because the
+        // modifier list goes to the narrator's channel and a narrator is
+        // allowed to drop a line from it - and a player asking why the odds
+        // were what they were is asking about the inspector. Booked only when
+        // there was something to read, so a clean record adds no row.
+        if (daoHeart.open > 0) {
+            calls.push({
+                name: 'engine.whatACrossingAsksOfTheDaoHeart',
+                action: 'breakthrough',
+                summary:
+                    `dao_heart:${daoHeart.open}_unfinished, weighing `
+                    + `${daoHeart.weight.toFixed(2)}. ${daoHeart.line}`,
+                ok: true
+            });
+        }
         for (const injury of result.injuriesSustained) {
             calls.push({
                 name: 'cultivator.addInjury',

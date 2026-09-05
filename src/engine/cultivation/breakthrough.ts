@@ -76,6 +76,7 @@ import {
     type RoadWithinReach
 } from './what-a-road-in-reach-costs-to-walk.js';
 import { getWoundType } from '../../data/cultivation/wounds.js';
+import { MAX_DAO_HEART_STRAIN } from './what-a-crossing-asks-of-the-dao-heart.js';
 import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
 import { aggregateInjuryPenalties, createInjury, scarTempering } from './injuries.js';
@@ -1066,6 +1067,27 @@ export interface BreakthroughContext {
      * caller that genuinely does not know who stood.
      */
     protectionBy?: readonly string[];
+    /**
+     * How much of this cultivator's record is unfinished, 0..1. 道心.
+     *
+     * `whatACrossingAsksOfTheDaoHeart(...).share`, and nothing else may be
+     * passed here. The selection - what counts as unfinished, and the rule that
+     * direction is not read - belongs to that module; the SIZE of what it costs
+     * a crossing belongs here, which is the same split `protection` uses and for
+     * the same reason.
+     *
+     * Charged at realm boundaries only. Within-realm rungs are steps and not
+     * crossings: `TRIAL_DESCRIPTIONS` has a line for every wall and `none` for
+     * every step, and the wall's line is the one that says everything unsettled
+     * has a say in what comes out.
+     *
+     * Absent or zero books no line, so every caller without a ledger - the
+     * unaided sweeps the whole ladder is calibrated against among them -
+     * produces a byte-identical modifier list.
+     */
+    daoHeart?: number;
+    /** How many unfinished accounts that share came from, for the line's label. */
+    daoHeartOpen?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1703,7 +1725,11 @@ export function computeBreakthroughOdds(
             'foundationQuality' | 'insights' | 'age' | 'cultivationProgress' | 'knownTechniques'
         >>
         & { roadsWithinReach?: readonly RoadWithinReach[] },
-    ctx: Pick<BreakthroughContext, 'ambient' | 'pill' | 'manualQuality' | 'protection' | 'protectionBy'>
+    ctx: Pick<
+        BreakthroughContext,
+        'ambient' | 'pill' | 'manualQuality' | 'protection' | 'protectionBy'
+        | 'daoHeart' | 'daoHeartOpen'
+    >
         & { relevance?: Partial<RelevanceContext> }
 ): BreakthroughOdds {
     const ordinal = cultivator.realmOrdinal;
@@ -1748,6 +1774,26 @@ export function computeBreakthroughOdds(
     const brokenStatus = brokenStatusOf(cultivator.injuries ?? []);
     if (brokenStatus) {
         modifiers.push({ source: `broken:${brokenStatus}`, delta: BROKEN_STATUS_STRAIN });
+    }
+
+    // ── 道心, and it is charged at a wall and nowhere else. ──
+    //
+    // Booked beside the break rather than beside the foundation because the two
+    // are the same kind of fact - something the cultivator arrived carrying that
+    // no amount of qi answers - and a player weighing an attempt should read
+    // them together. What it is worth is `MAX_DAO_HEART_STRAIN`; what is in it
+    // is `what-a-crossing-asks-of-the-dao-heart.ts` and is not this file's.
+    //
+    // The label carries the COUNT and never the causes. A crossing that named
+    // what it was asking about would be the engine publishing somebody's
+    // record, at a moment they cannot decline, to whoever is reading the log.
+    const daoHeart = boundary ? Math.min(1, Math.max(0, Number(ctx.daoHeart ?? 0))) : 0;
+    if (daoHeart > 0) {
+        const open = Math.max(0, Math.floor(Number(ctx.daoHeartOpen ?? 0)));
+        modifiers.push({
+            source: open > 0 ? `dao_heart:${open}_unfinished` : 'dao_heart',
+            delta: -daoHeart * MAX_DAO_HEART_STRAIN
+        });
     }
 
     modifiers.push({

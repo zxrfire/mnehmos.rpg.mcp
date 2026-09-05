@@ -375,6 +375,22 @@ export interface TimeSkipContext {
      */
     foundation?: Omit<FoundationConditions, 'ambient'>;
     /**
+     * 道心 - how much of this cultivator's record is unfinished, 0..1, and how
+     * many accounts that is.
+     *
+     * `daoHeartFor(...)` in `server/consolidated/cultivation-support.ts` is the
+     * one derivation and both this path and `strikeBarrier` take it from there.
+     * A skip that crosses a wall must price a record the same way a deliberate
+     * strike does, or seclusion is the cheap door and a player who found it
+     * would be climbing a different ladder from the world.
+     *
+     * Omitted is zero and books no line, which is the honest reading for the
+     * NPC and sweep callers: the engine holds no database, so a caller with no
+     * ledger in hand has nothing to say about anybody's record.
+     */
+    daoHeart?: number;
+    daoHeartOpen?: number;
+    /**
      * What the cultivator is doing and where, for understanding. Supplied by
      * the caller from real world state - the engine holds no map and no
      * technique table. Omitted means "sitting in a cave practising nothing in
@@ -845,7 +861,11 @@ export function simulateTimeSkip(
             // did not have, and now states the one they do - shorten the
             // stretch, or strike deliberately.
             const odds = eligibility.eligible
-                ? computeBreakthroughOdds(snapshot(), { ambient })
+                ? computeBreakthroughOdds(snapshot(), {
+                    ambient,
+                    daoHeart: ctx.daoHeart,
+                    daoHeartOpen: ctx.daoHeartOpen
+                })
                 : null;
             const headroom = odds
                 ? Math.max(0, MAX_OVERFLOW_BONUS - overflowBonus(ordinal, progress))
@@ -882,6 +902,8 @@ export function simulateTimeSkip(
                     ambient,
                     turn: resolvesOnTurn,
                     ranksGainedThisTurn: ranksOnDay,
+                    daoHeart: ctx.daoHeart,
+                    daoHeartOpen: ctx.daoHeartOpen,
                     toll: ctx.toll,
                     foundation: ctx.foundation
                 });

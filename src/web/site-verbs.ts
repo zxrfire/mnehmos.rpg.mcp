@@ -58,6 +58,7 @@ import {
     addToPouch,
     isGuidingErrorBody,
     removeFromPouch,
+    daoHeartConditions,
     tollConditionsFor
 } from '../server/consolidated/cultivation-support.js';
 import { handleLearn } from '../server/consolidated/technique-manage.js';
@@ -442,6 +443,7 @@ export const siteVerbs = {
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            ...daoHeartConditions(this.repos.db, afterGoods, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, afterGoods)
         });
         const applied = applyTimeSkip(this.repos, { before: afterGoods, run, skip });
@@ -675,6 +677,7 @@ export const siteVerbs = {
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
