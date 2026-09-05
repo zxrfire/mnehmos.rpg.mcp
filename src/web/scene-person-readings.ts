@@ -42,6 +42,15 @@ export interface DeclaredMovement {
     dealtWith?: boolean;
 }
 
+/**
+ * What one person in the square feels about the player, if anything.
+ *
+ * A lookup the caller owns, so this module stays clear of the ledger. Null for
+ * anybody nothing has passed with, which is nearly everybody in nearly every
+ * square.
+ */
+export type WhatTheyFeelAboutThePlayer = (personId: string) => string | null;
+
 export interface SceneAsPeopleFoundIt {
     /** Everybody standing here as the turn opened. */
     before: readonly RosterEntry[];
@@ -58,6 +67,20 @@ export interface SceneAsPeopleFoundIt {
      * over the same rows the snapshot came from, not a thing a verb reports.
      */
     fallen?: readonly RosterEntry[];
+    /**
+     * What each person here feels about the player, off what has passed between
+     * them.
+     *
+     * The design owner: *emotion needs to be tracked ... for every npc you do
+     * stuff to, of course ... and emotions can change - like if i rob her,
+     * she's sad. if i kill her father she's despondent (and acts that way).*
+     *
+     * The ACTS THAT WAY half is why it belongs here rather than in a sheet
+     * somewhere: this is the channel that puts a person in front of the
+     * narrator, and a person who has been robbed by whoever is standing in
+     * front of them is not the same person as one who has not.
+     */
+    feels?: WhatTheyFeelAboutThePlayer;
 }
 
 /**
@@ -244,7 +267,13 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
         lines.push(dead.has(entry.row.id)
             ? lastSentenceFor(
                 entry.row, nameable, entry.asked, entry.gotAMoment, scene.playerNow.realmOrdinal)
-            : sentenceFor(entry.row, nameable, entry.asked, scene.playerNow.realmOrdinal));
+            : sentenceFor(
+                entry.row,
+                nameable,
+                entry.asked,
+                scene.playerNow.realmOrdinal,
+                scene.feels?.(entry.row.id) ?? null
+            ));
         spokenFor++;
     }
 
@@ -317,7 +346,9 @@ function sentenceFor(
     row: RosterEntry,
     nameable: boolean,
     asked: { aloud: boolean; reading: string | null },
-    observerOrdinal: number
+    observerOrdinal: number,
+    /** What they feel about the player, where anything has passed between them. */
+    feeling: string | null = null
 ): string {
     const who = nameable
         ? row.name
@@ -328,6 +359,11 @@ function sentenceFor(
     return [
         `${who}, ${standing}.`,
         asked.reading,
+        // WHAT THEY FEEL ABOUT THE PLAYER BEFORE WHAT THEY ARE LIKE, because
+        // the first is about this pair and the second is about them in
+        // general, and a person robbed by whoever is standing in front of them
+        // is read through that first.
+        feeling,
         disposition === null ? null : `They ${disposition}.`,
         whetherTheySayIt(asked.aloud)
     ].filter((part): part is string => part !== null).join(' ');
