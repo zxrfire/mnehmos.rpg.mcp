@@ -1,39 +1,5 @@
 /**
  * Your Dao - what a cultivator turns out to have been doing.
- *
- * Ask a cultivator what they are and the honest answer is not their realm. It
- * is what dao they cultivate. So this is not a class, not a specialisation
- * picked at creation, and not something spirit stones reach: it is DERIVED,
- * every time, from the insight set in `understanding.ts`.
- *
- * That derivation is the whole discipline. There is no `dao` column, no
- * setter, and no field a writer could populate, which makes it structurally
- * impossible for a cultivator to have a Dao without the comprehension behind
- * it - the same rule as insight provenance, applied one level up. If caching
- * is ever needed, cache `daoOf()` explicitly as a derived value; never
- * introduce it as independent state.
- *
- *   a few shallow insights, scattered  ->  none. Most cultivators, most of the time.
- *   depth in one subject               ->  a leaning. Others start to notice.
- *   heart or dao degree, reinforced    ->  a Dao. He walks the Dao of the Sword.
- *
- * ── A warning about warnings ─────────────────────────────────────────────
- *
- * A cultivator can spend two centuries on a Dao their root, tradition or
- * circumstances never suited, be genuinely good at it, and never pass a
- * boundary on it. NOTHING IN THIS FILE TELLS THEM SO.
- *
- * There is no `suited` field, no `mismatch` flag, no advisory string, and no
- * hint in any return value. The engine simply does not reward the mismatch:
- * `pathWeightOf` in understanding.ts gives a foreign element zero weight at a
- * bottleneck, so the substitution never arrives and the wall never moves.
- * They keep their technique effectiveness - they really are good at it - and
- * the boundary stays shut.
- *
- * This is deliberate and it is load-bearing. The realisation is one of the
- * worse things that happens to people here, and it has to be arrived at by
- * living it. A helpful flag would convert a tragedy into a tooltip. Anyone
- * adding one later should read this paragraph first.
  */
 
 import {
@@ -46,9 +12,7 @@ import {
 import { isUniversalDomain } from './understanding.js';
 import { forStream, type CultivationRNG } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // STANDING
-// ─────────────────────────────────────────────────────────────────────────
 
 export type DaoStanding = 'none' | 'leaning' | 'dao';
 
@@ -94,10 +58,6 @@ const NO_DAO: DaoAssessment = {
 
 /**
  * What this cultivator turns out to have been doing.
- *
- * Pure, cheap, and derived from nothing but the insight set. Ties are broken
- * by breadth and then by subject name so the answer is stable rather than
- * dependent on the order rows came back from a query.
  */
 export function daoOf(insights: readonly Insight[]): DaoAssessment {
     if (insights.length === 0) return { ...NO_DAO };
@@ -168,13 +128,11 @@ export function daoName(subject: string, domain: InsightDomain): string {
     return `the Dao of ${article}${titled}`;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // 1. IT GATES THE HIGHEST ARTS
 //
 // The reason top-grade manuals sit in ruins unread. Someone can hold one for a
 // century, have the ordinal and the qi to spare, and never open it - because
 // what the art requires is not power, it is having walked the road.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Standing a grade demands before it can be learned at all. */
 export const GRADE_REQUIREMENT: Record<TechniqueGrade, DaoStanding> = {
@@ -189,10 +147,6 @@ const STANDING_ORDER: Record<DaoStanding, number> = { none: 0, leaning: 1, dao: 
 
 /**
  * What a technique is about, as far as the Dao gate is concerned.
- *
- * Kept structural rather than reading TechniqueSchema directly, so this does
- * not depend on which of `subject` / `element` / `category` the content layer
- * happens to carry for a given art.
  */
 export interface GatedTechnique {
     grade: TechniqueGrade;
@@ -280,14 +234,12 @@ export function daoMatches(dao: DaoAssessment, technique: GatedTechnique): boole
     return false;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // 2. IT NARROWS AS IT DEEPENS
 //
 // Not forbidden, increasingly foreign. What you comprehend deeply, you
 // comprehend at the cost of comprehending otherwise - so a cultivator far
 // along one road finds other subjects harder to take in, and finds their own
 // road easier than anyone else would.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** How far a candidate sits from the road already walked. */
 export type DaoDistance = 'same_subject' | 'same_domain' | 'distant';
@@ -361,7 +313,6 @@ export function pickNarrowed<T extends { domain: InsightDomain; subject: string 
     return candidates[candidates.length - 1];
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AFFINITY, AND FINDING OUT TOO LATE
 //
 // Every cultivator has predispositions toward Daos they may never encounter.
@@ -399,10 +350,10 @@ export type AffinityDegree = 'none' | 'aptitude' | 'strong' | 'extraordinary';
 
 /**
  * Cumulative thresholds on one uniform sample. Deliberately steep: roughly one
- * subject in ten draws an aptitude, one in forty-five something strong, and
- * one in three hundred something extraordinary. Across the handful of subjects
- * a world actually contains, that makes an extraordinary affinity the sort of
- * thing a generation produces a few of.
+ * subject in ten draws an aptitude, one in forty-five something strong, and one in
+ * three hundred something extraordinary. Across the handful of subjects a world
+ * actually contains, that makes an extraordinary affinity the sort of thing a
+ * generation produces a few of.
  */
 export const AFFINITY_THRESHOLDS: readonly { min: number; degree: AffinityDegree }[] = [
     { min: 0.997, degree: 'extraordinary' },
@@ -424,10 +375,6 @@ export const AFFINITY_WEIGHT: Record<AffinityDegree, number> = {
 
 /**
  * Degree the first comprehension lands at.
- *
- * An extraordinary affinity does not start at a glimpse and work up: the thing
- * is simply obvious, at a speed nothing in the cultivator's experience
- * prepares them for.
  */
 export const AFFINITY_INITIAL_DEGREE: Record<AffinityDegree, InsightDegree> = {
     none: 1,
@@ -438,13 +385,6 @@ export const AFFINITY_INITIAL_DEGREE: Record<AffinityDegree, InsightDegree> = {
 
 /**
  * This cultivator's latent predisposition toward one Dao.
- *
- * Pure and derived - the same (runSeed, cultivatorId, domain, subject) always
- * yields the same answer, from the moment the cultivator exists. Nothing about
- * their history, their sect, their rank or their exposure enters it.
- *
- * DO NOT call this from `discoverableInsights` or from anything that decides
- * what a cultivator can reach. Access is the filter; this is the slope.
  */
 export function affinityFor(
     runSeed: string,

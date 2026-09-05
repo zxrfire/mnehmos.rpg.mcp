@@ -1,28 +1,9 @@
 /**
  * Filling the catalog's `{token}` slots with facts.
  *
- * `encounters.ts` is explicit that a `summaryTemplate` is an ENGINE-AUTHORED
- * FACTUAL SUMMARY and not prose. This module is what makes that true: every
- * slot is filled from arithmetic, from `regard.ts`, or from a name the CALLER
- * supplied, and nothing here composes a proper noun of its own.
- *
- * ── The rule this module enforces ────────────────────────────────────────
- *
  * `docs/world/houses/discovery.md`: never reference an entity the player has no
  * knowledge record for. A summary is handed to a narrator, so a faction name
- * dropped into `{faction}` is a name spoken in the player's hearing. Two ways
- * that is legitimate and one way it is not:
- *
- *   legitimate   the player already knows the name
- *   legitimate   a PERSON in the encounter says it, flatly, assuming it needs
- *                no explaining - which is discovery.md's preferred way for a
- *                name to enter the world, and which produces a knowledge grant
- *                at the lowest stage with the source recorded honestly
- *   not          the engine narrating an unknown name in its own voice
- *
- * The third case is what `UNATTRIBUTED` is for. The consequence still arrives;
- * it simply arrives without anybody's name on it, which is the design and not a
- * degradation of it.
+ * dropped into `{faction}` is a name spoken in the player's hearing.
  */
 
 import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
@@ -51,10 +32,6 @@ const UNATTRIBUTED = {
 
 /**
  * Kinds where a person is doing the talking.
- *
- * The narrow gate on unknown names being SAID. A ledger clerk, a recruiter, an
- * auctioneer and a sect messenger all state affiliations flatly because it has
- * not occurred to them that anyone would not know. A beast on a vein does not.
  */
 const SPEAKING_KINDS = new Set(['dao_house', 'sect_event', 'commerce']);
 
@@ -69,24 +46,15 @@ export interface FillContext {
     absoluteDay: number;
     /** `Regard.damageMultiplier` against the threat, when there is one. */
     threatGap: number;
-    /**
-     * Whether the encounter actually arrived.
-     *
-     * Load-bearing, and it was not obvious until a guard caught it. A window
-     * that had already shut still produces a summary, and if that summary
-     * carries a name the player never earned, the discovery rule has been
-     * broken by an event that did not even happen. Nobody said anything to
-     * somebody who arrived four days late, so nothing is named and nothing is
-     * granted. Defaults true for callers that resolve everything.
-     */
+/**
+ * Whether the encounter actually arrived. Load-bearing: a window that had already
+ * shut still produces a summary, and a name carried in it would break the
+ * discovery rule on an event that did not happen. Defaults true for callers that
+ * resolve everything.
+ */
     spoken?: boolean;
     /**
      * The body doing the asking, when one particular body is.
-     *
-     * Takes precedence for `{faction}`. A summons comes from the house the
-     * cultivator belongs to and from nobody else, and drawing it out of the
-     * general pool would occasionally have somebody else's sect order them
-     * to a wall.
      */
     primaryFaction?: EncounterName | null;
 }
@@ -99,10 +67,6 @@ export interface FillResult {
 
 /**
  * Fill every token the entry declares.
- *
- * Only the declared ones: `entry.tokens` is the contract, and a token the
- * catalog did not declare is a catalog bug that should stay visible rather
- * than be papered over here.
  */
 export function fillTokens(ctx: FillContext): FillResult {
     const grants: KnowledgeGrant[] = [];
@@ -145,7 +109,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
     const o = ctx.ordinal;
 
     switch (token) {
-        // ── people, places, bodies ──────────────────────────────────────
+        // people, places, bodies
         case 'faction':
             return resolved.faction;
         case 'rivalFaction':
@@ -159,7 +123,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
         case 'witnesses':
             return ctx.cast.length;
 
-        // ── the ladder ──────────────────────────────────────────────────
+        // the ladder
         case 'threatRank':
             return rankName(clampOrdinal(ctx.entry.threatOrdinal ?? o));
         case 'rank':
@@ -169,7 +133,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
         case 'gap':
             return Math.abs(Math.round(ctx.threatGap));
 
-        // ── counts ──────────────────────────────────────────────────────
+        // counts
         case 'count':
             return rng.int(2, 9);
         case 'settlements':
@@ -185,7 +149,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
         case 'generations':
             return rng.int(2, 7);
 
-        // ── time ────────────────────────────────────────────────────────
+        // time
         case 'days':
             return rng.int(3, 90);
         case 'years':
@@ -193,7 +157,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
         case 'remainingYears':
             return rng.int(4, 120);
 
-        // ── money and measure ───────────────────────────────────────────
+        // money and measure
         case 'stones':
             return stonesFor(o, rng);
         case 'percent':
@@ -203,7 +167,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
         case 'height':
             return `${rng.int(5, 9)} feet`;
 
-        // ── the ground ──────────────────────────────────────────────────
+        // the ground
         case 'ambient':
             return ambientWord(ctx.place, rng);
         case 'sealGrade':
@@ -212,7 +176,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
         case 'feature':
             return featureWord(ctx.place, rng);
 
-        // ── content the caller substantiated ────────────────────────────
+        // content the caller substantiated
         case 'herbName':
             return pickOr(ctx.names.herbs, rng, 'a spirit herb');
         case 'pillName':
@@ -222,7 +186,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
         case 'loot':
             return pickOr(ctx.names.loot, rng, 'a storage pouch and what was in it');
 
-        // ── stated circumstance ─────────────────────────────────────────
+        // stated circumstance
         case 'cause':
             return pick(rng, CAUSES);
         case 'grudgeSource':
@@ -260,9 +224,7 @@ function fillOne(token: string, ctx: FillContext, resolved: Resolved): string | 
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // NAMES
-// ─────────────────────────────────────────────────────────────────────────
 
 interface TakenName {
     picked: EncounterName | null;
@@ -272,10 +234,6 @@ interface TakenName {
 
 /**
  * A name that may appear in this summary.
- *
- * Known names first, always. An unknown name is used only when somebody in the
- * encounter is doing the talking, and using one records the acquisition at the
- * lowest stage with the source and the fact that it was not explained.
  */
 function takeName(
     pool: readonly EncounterName[],
@@ -311,14 +269,8 @@ function takeName(
 }
 
 /**
- * Somebody out of the crowd.
- *
- * The promotion seam. A place holds people who are nobody in particular until
- * something makes one of them a person; an encounter is one of the things that
- * does. The grant is `witnessed` rather than `told` - the player was in the
- * same event as them, which is a stronger fact than a name in a sentence.
- *
- * Nobody present means nobody is named. This module never invents a person.
+ * Somebody out of the crowd. Nobody present means nobody is named - this module
+ * never invents a person.
  */
 function takePerson(
     ctx: FillContext,
@@ -356,12 +308,10 @@ function takePerson(
     return picked.name;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // STATED CIRCUMSTANCE
 // Short factual phrases, not prose. The narrator writes the scene; these are
 // the facts it is written from, and they exist so that two firings of the same
 // row are two different events rather than the same sentence twice.
-// ─────────────────────────────────────────────────────────────────────────
 
 const CAUSES = [
     'a vein shifting upstream', 'a failed crossing', 'an unpaid toll',
@@ -433,15 +383,11 @@ const CONTAINED = [
     'a chamber nobody has opened', 'a thing that has not been described in writing'
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────────────
 // SMALL DERIVATIONS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Money scales with the rung.
- *
- * A crude exponent, and deliberately crude: the point is that a toll a Qi
- * Condensation cultivator cannot pay is pocket change ten rungs up, which is
+ * Money scales with the rung. A crude exponent and deliberately crude: a toll a
+ * Qi Condensation cultivator cannot pay is pocket change ten rungs up, which is
  * the same statement the regard bands make about damage.
  */
 function stonesFor(ordinal: number, rng: CultivationRNG): number {
@@ -452,25 +398,12 @@ function stonesFor(ordinal: number, rng: CultivationRNG): number {
 /**
  * The band of the ground this is happening on.
  *
- * Two defects lived here, and both of them made an encounter line assert a
- * MEASUREMENT the rest of the engine disagreed with. The crowding template
- * reads "Measured ambient has fallen to {ambient}", which is a claim about a
- * reading, so getting it wrong is not a wording problem.
- *
- *   A SECOND BANDING TABLE. The floors here were 70/40/15 against
- *   `QI_BAND_FLOORS`' 90/55/25, so the same density banded two ways depending
- *   on which reader you asked. A place at 45 was `dense` in this sentence and
- *   `normal` on the sheet beside it. One table now, the canonical one.
- *
- *   A RANDOM DRAW WHERE THERE WAS NO READING. An unmapped place - a road, a
- *   hillside, anywhere the world has no record for - has no density, and this
- *   answered by picking a band out of a hat and then calling it "measured".
- *   Played live, that is how the panel, `/api/state` and the engine log came to
- *   give three different answers about the same ground. Unmeasured ground now
- *   reads as the Late Age's ordinary open air, which is what such a place is.
- *
- * The sample is still drawn, because every stream in this package is aligned by
- * position and dropping a draw would shift every subsequent one.
+ * The crowding template reads "Measured ambient has fallen to {ambient}", which
+ * is a claim about a reading, so getting it wrong is not a wording problem. This
+ * used to pick a band out of a hat for unmapped ground and then call it
+ * "measured", which is how the panel, `/api/state` and the engine log came to
+ * give three different answers about the same ground. Unmeasured ground now
+ * reads as the Late Age's ordinary open air.
  */
 function ambientWord(place: EncounterPlace, rng: CultivationRNG): string {
     void pick(rng, ['thin', 'normal', 'dense'] as const);

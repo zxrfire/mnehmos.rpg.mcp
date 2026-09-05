@@ -1,55 +1,18 @@
 /**
  * What saying no to somebody leaves behind.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * A REFUSAL IS A DEED, AND THERE IS ALREADY ONE MODEL OF WHAT A DEED LEAVES
- * ═════════════════════════════════════════════════════════════════════════
+ * A refusal is a deed and `social-leverage/what-a-deed-leaves.ts` already prices
+ * any deed off what it cost against what the payer had, so there is no refusal
+ * severity table here and no branch on marriage anywhere.
  *
- * `social-leverage/what-a-deed-leaves.ts` prices any deed at all, in either
- * direction, off what it cost the person who paid AGAINST WHAT THEY HAD, and
- * its own charter is that *"nothing in it branches on what the deed was"*. So
- * there is no refusal severity table here, no scale of humiliation, and no
- * branch on marriage anywhere: a refused proposal arrives at that module as a
- * cost and a `promised` flag, exactly like everything else, and comes back as
- * a record the ledger already knows how to carry, inherit and settle.
- *
- * The `promised` step is the one that matters and it was already there: *"a
- * word given first is worth a step in both directions"*. Being told yes and
- * then refused is a different injury from being refused, and the model has
- * said so since before anybody thought about marriage.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * ONE IMPLEMENTATION, BOTH DIRECTIONS
- * ═════════════════════════════════════════════════════════════════════════
+ * MOST REFUSALS OPEN NOTHING, AND THE GATE IS CATEGORICAL - not a threshold on
+ * what was staked. People and houses refuse constantly and must be able to
+ * without accumulating enemies, so what decides it is whether there was anything
+ * between the two of them when the no was said ({@link TheRoute}). What was
+ * staked decides how HEAVY, never whether.
  *
  * The player declining a suitor and a house declining the player are the same
- * call with the two parties swapped. There is no player branch, no NPC branch,
- * and nothing anywhere reads which of the two is being played - which is the
- * symmetry rule the rest of the repo runs on, applied to the one move where it
- * would have been easiest to write two.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * MOST REFUSALS OPEN NOTHING, AND THE GATE IS CATEGORICAL
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A refusal that always opens an account is a trap - it makes "no" a move
- * nobody can afford, and then a proposal is a purchase from the other side.
- * People and houses refuse constantly and must be able to without accumulating
- * enemies for it, or the world fills up with records that mean nothing.
- *
- * WHAT DECIDES IT IS NOT A THRESHOLD ON WHAT WAS STAKED. It is whether there
- * was anything between the two of them when the no was said, which is
- * {@link TheRoute} and is a value rather than a number:
- *
- *   family first   the answer came before there was anything. Declining a
- *                  proposal is declining a proposal, and it costs nobody.
- *   person first   the two of them had already agreed. A no here takes away a
- *                  thing that existed, and that is a different act.
- *
- * What was staked decides how HEAVY, never whether. That is the deed model's
- * own arithmetic and this file supplies the fraction rather than a rule.
- *
- * Pure. Rows in, rows out.
+ * call with the parties swapped. No player branch, no NPC branch.
  */
 
 import type { DayIndex } from '../social/common.js';
@@ -64,29 +27,21 @@ import {
     type TheRoute
 } from './which-route-a-match-took-and-what-a-house-can-make-stick.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT WAS STAKED
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * What the side that asked had riding on the answer.
- *
- * Every field is something the negotiation already produced. Nothing here is
- * measured for this purpose and nothing is authored: `theBestOnTheTable` and
- * `theyReachTo` come straight off `whatItWouldTake`'s answer and the asking
- * party's own rung.
+ * What the side that asked had riding on the answer. Every field is something
+ * the negotiation already produced: nothing here is measured for this purpose
+ * and nothing is authored.
  */
 export interface WhatTheAskingSideStaked {
     /** How high the best singular thing they put down carries somebody. */
     theBestOnTheTable: number;
-    /**
-     * Their own rung, which is what the offer is weighed against.
-     *
-     * `what-a-deed-leaves.ts`'s central rule: a hundred stones off a beggar
-     * and a hundred stones off a house treasury are not the same deed. An
-     * offer that reaches as high as the person making it is most of what they
-     * had; the same offer from somebody three realms above is nothing.
-     */
+/**
+ * Their own rung, which is what the offer is weighed against.
+ * `what-a-deed-leaves.ts`'s central rule: a hundred stones off a beggar and a
+ * hundred off a house treasury are not the same deed.
+ */
     theyReachTo: number;
     /**
      * True when they had been told yes and were then refused.
@@ -99,10 +54,6 @@ export interface WhatTheAskingSideStaked {
 
 /**
  * Whether a refusal leaves anything at all.
- *
- * The whole of the gate, in one line, reading the route and nothing else.
- * Exported so a caller can say "nothing came of it" honestly rather than
- * inferring it from an empty list, and so the rule is testable on its own.
  */
 export function aRefusalLeavesSomething(route: TheRoute): boolean {
     return aRefusalOpensAnAccount(route);
@@ -119,9 +70,7 @@ export function howMuchOfWhatTheyHad(staked: WhatTheAskingSideStaked): number {
     return Math.max(0, Math.min(1, staked.theBestOnTheTable / reach));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE REFUSAL
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface WhatDecliningLeaves {
     /**
@@ -137,10 +86,6 @@ export interface WhatDecliningLeaves {
 
 /**
  * Say no, and say what it left.
- *
- * `declining` is whoever refused and `asking` is whoever was refused, and that
- * is the only thing the two arguments mean. Either may be the played
- * character.
  */
 export function whatDecliningSomebodyLeaves(input: {
     /** The party who said no. */
@@ -163,11 +108,6 @@ export function whatDecliningSomebodyLeaves(input: {
     reach?: Reach;
     /**
      * Who knows it happened. Omit and everybody involved does.
-     *
-     * The field that makes a private no different from a public one, and it is
-     * `what-a-deed-leaves.ts`'s own: a principal not on the list opens no
-     * account, because a grudge is held against somebody and they have no name
-     * to put on it.
      */
     knownTo?: readonly string[];
     witnesses?: number;

@@ -1,53 +1,5 @@
 /**
  * Cultivation combat.
- *
- * The thesis of the setting is that realm gaps are categorical, so the first
- * thing this module does is refuse to hold a fight that is not one. Everything
- * else is built on that refusal.
- *
- * FIVE RULES, IN THE ORDER THEY BIND
- * ----------------------------------
- *
- * 1. THE GAP IS CATEGORICAL. A cultivator two or more major realms below
- *    another is not underdog, they are irrelevant. `assessGap` returns
- *    `helpless` and `resolveConfrontation` returns `no_contest` with the list
- *    of things that would actually work - flee, hide, negotiate, seek
- *    protection, exploit terrain, a specialised counter, a third party,
- *    preparation, or not being found. That list is the content of the
- *    encounter. Cleverness does not dissolve the hierarchy; it routes around
- *    it.
- *
- * 2. UPSETS ARE POSSIBLE AND EXCEPTIONAL. Within one realm of each other, a
- *    weaker cultivator can win, and only by carrying an `Edge`: superior
- *    technique, an artifact, preparation, terrain, an ambush, poison, a
- *    formation, numbers, or an injury the other one was already carrying. The
- *    total edge multiplier is capped at `MAX_EDGE_MULTIPLIER`, which is set
- *    above one realm's power ratio and far below two. That single constant is
- *    where "possible, and never routine" is actually enforced.
- *
- * 3. POWER IS COMPOSITE. Realm is the spine and never the whole. `assessPower`
- *    returns an itemised list of named factors - body, soul, comprehension,
- *    technique mastery, artifacts, battle experience, environment, condition -
- *    which MULTIPLY in listed order to exactly the reported total. Two
- *    cultivators at one ordinal can differ enormously, and the engine can say
- *    which line did it.
- *
- * 4. THE TRADITIONS DIFFER ABOUT DYING. `killRequirement` is consulted at the
- *    moment a lethal blow lands, and soul-directed arts are checked against
- *    the target's tradition before they are allowed to do anything at all. A
- *    Drawn cultivator above Nascent Soul does not die to a destroyed body; a
- *    Cut cultivator takes literally nothing from a soul attack at any rank.
- *
- * 5. DEATH IS ONE OUTCOME AMONG SEVERAL. Withdrawal, capture, humiliation, a
- *    crippling injury and a standing feud are the usual results. This module
- *    NEVER declares anyone dead - it reports damage, injuries and whether the
- *    finishing requirement was met, and `survival.ts` remains the only place
- *    in this engine that decides a cultivator is dead.
- *
- * Deterministic and seeded throughout: every draw comes from a `CultivationRNG`
- * the caller derived from the run seed. Nothing here reads the clock, touches a
- * database, or knows an LLM exists. No branch anywhere favours the player; the
- * same function decides an NPC ambush and the player's last stand.
  */
 
 import {
@@ -94,37 +46,22 @@ import {
 } from './how-far-you-went-to-make-them-comply.js';
 import type { CultivationRNG } from './rng.js';
 
-// ═════════════════════════════════════════════════════════════════════════
 // TUNING
 // Every constant here is a design statement. Read the comment before changing
 // the number; several of them are load-bearing for rules 1 and 2.
-// ═════════════════════════════════════════════════════════════════════════
 
 /**
  * Major-realm gap at which a direct confrontation stops being a fight.
- *
- * Two. One realm below is outmatched and can be overturned by someone who
- * brought something; two realms below is `powerMultiplierForOrdinal` reporting
- * a sixteenfold difference before anything else is counted, and no stack of
- * edges this module permits comes near closing it.
  */
 export const HELPLESS_REALM_GAP = 2;
 
 /**
  * How much a cultivator gains across the sub-ranks of their own realm.
- *
- * A realm's Perfection is `WITHIN_REALM_PEAK` times its Early. Set to 2 so a
- * peak cultivator of one realm sits at half the power of the weakest of the
- * next, which is the genre's "can threaten, will probably still lose".
  */
 export const WITHIN_REALM_PEAK = 2;
 
 /**
  * Hard ceiling on everything the weaker side brought, multiplied together.
- *
- * The realm ratio is 4x per rung. Six is comfortably enough to overturn one
- * realm and nowhere near the sixteen needed for two. This is the constant that
- * makes upsets exceptional rather than a tactic, and it is checked by test.
  */
 export const MAX_EDGE_MULTIPLIER = 6;
 
@@ -164,75 +101,20 @@ export const EXPERIENCE_SATURATION = 40;
 
 /**
  * Exchanges a confrontation runs before it is called a stalemate.
- *
- * Bounded so a resolution always terminates, and short because cultivation
- * fights are decided quickly - the long ones are the exception and they are
- * exhausting rather than dramatic.
- *
- * Set against `EXCHANGE_DAMAGE_*` so that a genuinely even fight only just
- * runs out of exchanges: a stalemate has to be REACHABLE, or the outcome is
- * decoration. A lopsided one finishes in three or four.
- *
- * THIS IS THE BUDGET FOR ONE BODY A SIDE. `resolveMelee` scales it - see
- * `meleeRoundBudget`, and the defect it exists to fix.
  */
 export const MAX_EXCHANGES = 8;
 
 /**
  * Rounds a melee runs before it is called a stalemate.
  *
- * ── The defect ───────────────────────────────────────────────────────────
- *
- * `resolveMelee` used `MAX_EXCHANGES` directly, and that constant is
- * calibrated in its own comment for a DUEL. The two quantities it sits between
- * scale differently, and nothing noticed:
- *
- *   work to do    grows LINEARLY with the bodies on a side - each one needs
- *                 roughly four landed strikes to fall or break off.
- *   rate of work  is CAPPED. `strikesThisRound` spends `sideStrength`'s
- *                 multiplier, which is `min(MAX_NUMBERS_MULTIPLIER, ...)` = 2.
- *                 A side of fifteen lands two strikes a round, exactly as a
- *                 side of two does. That cap is correct and load-bearing -
- *                 numbers must not buy force - but it means rounds-to-resolve
- *                 grows linearly while the budget stayed constant.
- *
- * So a mobilised apex of fifteen needs about thirty rounds and was given
- * eight. Measured by the conspiracy harness at 300 seeds: `winningSideId: null`
- * in 300 of 300, every pairing, both directions. The control - the identical
- * construction at two or three a side - stalemated 0 times in 3,000. Side SIZE
- * decided whether the resolver resolved anything, which made every
- * whole-house metric structurally zero and read as "nothing is worth doing".
- *
- * That is the failure mode AGENTS.md names by title: a stalemate scored as a
- * defeat, by a harness that could not tell a beaten attacker from a clock
- * running out.
- *
- * ── The fix ──────────────────────────────────────────────────────────────
- *
- * The budget is `MAX_EXCHANGES` per body on the SMALLEST side.
- *
- * Smallest, not largest, and the difference is load-bearing. A fight ends when
- * some side is cleared, so the work that has to be finished is the work of
- * felling the side that can be felled soonest - and scaling on the largest side
- * instead hands a big weak side unlimited time to grind down somebody it cannot
- * hurt. That is numbers buying FORCE, which the charter forbids, and it broke
- * `combat.test.ts`'s load-bearing guard on the first attempt: sixty Core
- * Formation cultivators mobbed a Nascent Soul elder to death given 480 rounds,
- * where at 8 they correctly cannot touch her.
- *
- * So:
- *   duel, 1 v 1          8 rounds, exactly the calibrated constant
- *   elder v mob, 1 v 60  8 rounds. The mob gets no more clock for being a mob.
- *   apex war, 8 v 15     64 rounds against a need of about 16
- *   even war, 15 v 15    120 rounds against a need of about 30
- *
- * Numbers still buy TIME - a bigger side takes longer to chew through, and
- * everybody past the strike budget is standing there being a reason the fight
- * runs long. What they no longer buy is a longer clock to do it in.
- *
- * A stalemate stays reachable everywhere, because it is reached when neither
- * side can finish the other rather than when the clock is short - which is what
- * it was always supposed to mean.
+ * The work to do grows LINEARLY with the bodies on a side, but the rate of work
+ * is CAPPED - `strikesThisRound` spends `sideStrength`'s `min(MAX_NUMBERS_MULTIPLIER, ...)`
+ * = 2, so a side of fifteen lands two strikes a round exactly as a side of two
+ * does. That cap is load-bearing - numbers must not buy force - but it means
+ * rounds-to-resolve grows while a constant budget does not. A mobilised apex of
+ * fifteen needs about thirty rounds and was given eight: measured by the
+ * conspiracy harness at 300 seeds, `winningSideId: null` in 300 of 300, every
+ * pairing, both directions, against 0 of 3,000 stalemates at two or three a side.
  */
 export function meleeRoundBudget(sides: readonly { members: readonly unknown[] }[]): number {
     const sizes = sides.map(side => side.members.length).filter(n => n > 0);
@@ -250,9 +132,7 @@ export const WITHDRAW_HP_FRACTION = 0.25;
 /** Qi below this fraction of maximum and the arts stop being available. */
 export const EXHAUSTED_QI_FRACTION = 0.1;
 
-// ═════════════════════════════════════════════════════════════════════════
 // COMPOSITE POWER
-// ═════════════════════════════════════════════════════════════════════════
 
 export type Edge =
     | 'superior_technique'
@@ -272,10 +152,6 @@ export const ALL_EDGES: readonly Edge[] = Object.freeze([
 
 /**
  * One line of the power breakdown.
- *
- * `factor` is multiplicative. Multiplying every factor in listed order, starting
- * from `realmBase`, reproduces `total` exactly - that identity is the whole
- * point of the shape and it is tested.
  */
 export interface PowerFactor {
     source: string;
@@ -299,45 +175,23 @@ export interface CombatantPower {
     /** What ending this combatant requires, given tradition and rank. */
     kill: KillRequirement;
     /**
-     * How badly this combatant's own OPEN CHANNEL wounds degrade the execution
-     * of anything they throw, in [0, MAX_INJURY_CULTIVATION_PENALTY].
-     *
-     * Zero for a whole body, and zero for a maiming or a structural break -
-     * those are priced as capability, on the condition and broken lines. This
-     * is the torn-muscle term and it is deliberately NOT part of `total`, so it
-     * cannot silently make somebody easier to hit. It is read by
-     * `resolveExchange` and nowhere else. See the ACCURACY banner there.
+     * How badly this combatant's own OPEN CHANNEL wounds degrade the execution of
+     * anything they throw, in [0, MAX_INJURY_CULTIVATION_PENALTY].
      */
     channelWoundPenalty: number;
     /**
      * The rung and the body line ALONE, with nothing this person brought and
      * nothing they did.
-     *
-     * `realmBase` times the `body` factor and no other line. It exists for one
-     * consumer - `whether-a-weapon-survives-being-used.ts`, which needs to ask
-     * what would have happened with nobody acting - and it is computed here
-     * rather than reconstructed from `factors` by a caller, because a caller
-     * picking one line out of a list by its string name is a second opinion
-     * about which line the body is.
      */
     bodyAlone: number;
     /**
      * The single rated object this combatant is actually swinging, or null.
-     *
-     * Identity, not price: `assessPower` already prices it through the artifact
-     * line. What this is for is that an object is a specific thing with a
-     * history, and a fight can end it - see `resolveExchange`.
      */
     weapon: CarriedObject | null;
 }
 
 /**
  * A rated object, as the engine needs to see one.
- *
- * The same shape `carriedArtifact` in `cultivation-support.ts` already returns,
- * which is the catalog's own row narrowed to what a fight needs to know: what
- * it is, so the caller can find the row again, and what it is worth, which is
- * the ladder rung the artifact catalog stores in `power`.
  */
 export interface CarriedObject {
     id: string;
@@ -347,12 +201,6 @@ export interface CarriedObject {
 
 /**
  * What the engine needs to know about someone to price them.
- *
- * Deliberately a subset of `Cultivator` plus the things the database holds and
- * the pure layer cannot: artifacts, and how many fights they have lived
- * through. Nothing here is optional-with-a-default that hides a missing fact -
- * a caller who does not know a combatant's battle history passes zero and gets
- * a novice, which is honest.
  */
 export interface CombatantInput {
     id: string;
@@ -379,37 +227,11 @@ export interface CombatantInput {
     /**
      * A single object rated on the REALM LADDER rather than on the mortal grade
      * scale, for the handful of things that are not on that scale at all.
-     *
-     * `artifactGrade` above prices a satchel of good work and is capped, because
-     * a pile of treasures is not a realm. This is for the other kind of object -
-     * something sent down by somebody who crossed, which was made at a rank and
-     * still is that rank - so it is priced the way a person of that rank is
-     * priced and it is not capped. Carrying one is worth, in power, a second
-     * body of that ordinal standing beside you that nobody can attack.
-     *
-     * Deliberately no gate and no branch. This module prices what is carried; it
-     * has no opinion about who is entitled to carry it, which institution the
-     * bearer runs, or whether the object was earned. Take it away and the bearer
-     * prices out as an ordinary cultivator at their ordinal, with no residue.
      */
     artifactOrdinal?: number;
     /**
-     * The rated object they are actually swinging, when the caller knows which
-     * one it is.
-     *
-     * The same scale as `artifactOrdinal` above and NOT a second opinion about
-     * it: `weapon.power` IS the rated ordinal when no explicit `artifactOrdinal`
-     * is given, so a caller states the object once and it is both priced and at
-     * risk. `artifactOrdinal` stays for the caller who wants to price an object
-     * without naming one, and wins if both are supplied - in which case the two
-     * must describe the SAME object, because a fight that ends the named one
-     * ends the price with it.
-     *
-     * Passing this is what puts the object in danger. A weapon far under the
-     * rung it is swung into comes apart -
-     * `whether-a-weapon-survives-being-used.ts` - and a caller that names no
-     * weapon has nothing to lose, which is why every existing caller's seeded
-     * sequence is unchanged by this field existing.
+     * The rated object they are actually swinging, when the caller knows which one
+     * it is.
      */
     weapon?: CarriedObject | null;
     /** Confrontations survived. Experience is a form of power and it is tracked. */
@@ -428,12 +250,6 @@ export interface PowerContext {
 
 /**
  * Realm multiplier including position within the realm.
- *
- * `powerMultiplierForOrdinal` gives the categorical step between realms;
- * this interpolates across the sub-ranks so that a Perfection cultivator is
- * `WITHIN_REALM_PEAK` times their realm's Early. Both halves matter: the step
- * is what makes the hierarchy real, the interpolation is what makes climbing
- * inside a realm worth doing.
  */
 export function combatPowerForOrdinal(ordinal: number, status: ImmortalStatus = 'none'): number {
     const base = effectivePowerMultiplier(ordinal, status);
@@ -447,101 +263,20 @@ export function combatPowerForOrdinal(ordinal: number, status: ImmortalStatus = 
 
 /**
  * What a broken cultivator prices at, as a share of the rung they stand on.
- *
- * ── WHAT THE ORDERING ACTUALLY HAS TO BE, WHICH IS NOT WHAT IT WAS ───────
- *
- * This was written for a strict two-sided ordering: weaker than EVERY intact
- * holder of their realm and stronger than EVERY intact holder of the realm
- * below. That is unsatisfiable, and the arithmetic is worth keeping because it
- * is what a future attempt will rediscover. The ladder is x4 a realm and
- * `WITHIN_REALM_PEAK` is 2, so the top of one realm sits at exactly half the
- * bottom of the next: a window of x2.000, measured. The legal attribute range
- * is worth x1.516, also measured, and it widens BOTH bands the broken holder
- * has to fit between, so a strict fit needs x2.299 and has x2.000.
- *
- * The design has since said that the case which does not fit is a case it
- * WANTS. A cracked core who has been fighting for a century should be
- * dangerous to somebody who formed their core last year, and the model should
- * be allowed to say so. So the ordering that binds is the one-sided one:
- *
- *   MUST   beat every intact holder of the realm below, at every attribute
- *          spread, from any rung of their own realm.
- *   MUST   lose to a typical holder of their own rung.
- *   MAY    beat a weak one, and does, especially with battle experience behind
- *          them - which is not compressed and is worth x1.4 on its own.
- *
- * Only the first is a constraint on this number, and it is satisfiable with
- * room: it needs the share to clear the realm below's ceiling widened by the
- * attribute range, which is 0.5 x 1.516 = 0.758. Anything from there to 1 is
- * legal, and lower is better for the second requirement.
- *
- * 0.75 with the transmission exponent below lands at x1.088 of what the first
- * requirement needs while leaving a broken holder a quarter weaker than an
- * intact peer at equal attributes. It is also, deliberately, what a broken
- * status has always cost in practice: one crippling permanent wound through the
- * condition line was `1 - 0.5 x 0.5`, and the level is unchanged. What changed
- * is that it is now DECLARED here rather than falling out of `INJURY_WEIGHTS`
- * by coincidence, which is what let it drift below the line it has to clear.
- *
- * ── AND IT IS THE RUNG, NOT THE REALM ────────────────────────────────────
- *
- * A share of `combatPowerForOrdinal(ordinal)`, so a broken cultivator who
- * climbs their realm's sub-ranks gets stronger the way anybody does. They may:
- * `blocksAdvancement` gates realm boundaries and not sub-rank steps, and the
- * wound rows describe exactly this person - "forty years into being extremely
- * good at the rung they are on". Anchoring them to the realm floor instead
- * would have made those forty years worth nothing in a fight, and was only ever
- * needed for the strict ordering that has now been dropped.
+ * Measured over all twelve legal attribute pairs on both sides at every realm by
+ * `scripts/probe-how-strong-a-broken-cultivator-is.ts`, which is where any future
+ * move of either constant has to be re-argued. The admissible ceiling at the
+ * current attribute range is 0.943.
  */
 export const BROKEN_STATUS_POWER = 0.75;
 
 /**
  * How much of their own strength a broken cultivator still transmits.
- *
- * An exponent rather than a second multiplier, and the difference is what buys
- * the margin. `BROKEN_STATUS_POWER` slides the broken band down; it does not
- * narrow it, so the band stays the full x1.516 of the attribute range and its
- * bottom edge is what has to clear the realm below. At 0.75 flat that edge
- * lands at x0.989 of where it needs to be - it FAILS, narrowly, and it failed
- * silently for exactly that reason: the median case looked fine.
- *
- * Raising body and comprehension to a power below 1 pulls them toward the point
- * they are defined around. Both lines are written as deviations from exactly 1
- * at median attributes, so that point is 1 and the compression is toward the
- * ordinary rather than toward anything invented. At 0.5 the band narrows to
- * x1.231 and its bottom edge clears by x1.088.
- *
- * Half, which is easy to state and easy to check: half of what this body and
- * this understanding would otherwise deliver arrives. The whole legal attribute
- * range is still worth x1.231 to a broken cultivator, so a strong one is
- * visibly stronger than a weak one, and a broken holder with the best
- * attributes in the world still prices under a median intact peer - 0.840
- * against 1.000 - which is the second requirement holding.
- *
- * Measured over all twelve legal attribute pairs on both sides at every realm
- * by `scripts/probe-how-strong-a-broken-cultivator-is.ts`, which is where any
- * future move of either constant has to be re-argued. The admissible ceiling
- * at the current attribute range is 0.943.
- *
- * What it deliberately does NOT touch: technique, artifacts, battle experience,
- * ground and condition. An art is an art, an object is worth what it is worth
- * in anybody's hand, and a bleeding cultivator is a bleeding cultivator. The
- * break is in the structure a person's OWN strength has to pass through, so
- * that is the only thing it is charged against - and leaving experience out of
- * it is what lets a broken veteran overturn a fresh peer, which the design
- * asks for by name.
  */
 export const BROKEN_TRANSMISSION = 0.5;
 
 /**
  * What a broken holder of this rung prices at, at median attributes.
- *
- * The figure the tests measure against and the one to quote when asking whether
- * somebody is worth fighting. It is a share of the rung rather than a bracket
- * of its own: `assessPower` gives a broken cultivator their rung's ordinary
- * spine and charges the break as one more line of the ordinary breakdown, so
- * "41 with cracks IS half-step 41" still holds and there is no second power
- * scale anywhere in this module.
  */
 export function brokenCombatPowerForOrdinal(ordinal: number): number {
     return combatPowerForOrdinal(ordinal) * BROKEN_STATUS_POWER;
@@ -558,11 +293,6 @@ function clampFactor(raw: number, max: number): number {
 
 /**
  * Price a combatant.
- *
- * Realm first, then everything the charter says must be able to separate two
- * people standing on the same rung. Each line is capped on its own so that a
- * fight is never decided entirely by one number, and the product is what the
- * confrontation actually compares.
  */
 export function assessPower(combatant: CombatantInput, ctx: PowerContext): CombatantPower {
     const ordinal = combatant.realmOrdinal;
@@ -619,7 +349,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
 
     const factors: PowerFactor[] = [];
 
-    // ── BODY ──────────────────────────────────────────────────────────────
+    // BODY
     // Might is how much qi the body can hold before it starts holding you, and
     // closed wounds are the judgement of someone who has been hurt and paid to
     // stop being hurt. A carver's body was built by physical work and reads as
@@ -638,7 +368,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
             (tradition === 'tradition-cut' ? ', and a body built by working a face' : '')
     });
 
-    // ── SOUL ──────────────────────────────────────────────────────────────
+    // SOUL
     // Above Nascent Soul the soul is a real part of what a cultivator can
     // bring, and a damaged one is a real part of what they cannot. A carver has
     // no detachable soul at all: nothing to bring, and nothing to hit.
@@ -653,7 +383,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
             : `${tier.name}, soul ${combatant.soulState ?? 'intact'}`
     });
 
-    // ── COMPREHENSION ─────────────────────────────────────────────────────
+    // COMPREHENSION
     // Understanding is the third quantity and it is not a second experience
     // bar. Only insights that BEAR on what is being done here count, which is
     // why the same cultivator prices differently against different opponents.
@@ -666,7 +396,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         note: `Insight ${combatant.attributes.insight}, ${understanding.contributing.length} bearing insight(s)`
     });
 
-    // ── TECHNIQUE MASTERY ─────────────────────────────────────────────────
+    // TECHNIQUE MASTERY
     // A quarter-learned art half-works. A mastered art of a matched element is
     // the difference the genre is actually about.
     const technique = combatant.technique ?? null;
@@ -697,7 +427,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
                 + `${reading.powerMultiplier === 1 ? '' : `; ${reading.label.toLowerCase()}`}`
     });
 
-    // ── ARTIFACTS ─────────────────────────────────────────────────────────
+    // ARTIFACTS
     // Two scales, one line. Graded work is a satchel of good things and is
     // capped, because a pile of treasures is not a realm. A ladder-rated object
     // is not on that scale at all: it is priced as the rank it was made at, the
@@ -732,7 +462,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
                   `second body of that rank, standing beside them, that nothing can be done about`)
     });
 
-    // ── BATTLE EXPERIENCE ─────────────────────────────────────────────────
+    // BATTLE EXPERIENCE
     // A veteran and a novice at identical cultivation must not fight
     // identically. Saturating, because there is a point past which having
     // survived more fights stops teaching you anything.
@@ -744,7 +474,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         note: `${battles} confrontation(s) survived`
     });
 
-    // ── ENVIRONMENT ───────────────────────────────────────────────────────
+    // ENVIRONMENT
     // Where you are standing. A Drawn cultivator on ground with nothing in the
     // air is a cultivator with a problem; a carver does not care, because their
     // qi was in the rock before it was in them.
@@ -759,7 +489,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
             : `Ambient qi is ${ctx.ambient}`
     });
 
-    // ── CONDITION ─────────────────────────────────────────────────────────
+    // CONDITION
     // What they are actually able to do right now: open wounds, blood, qi in
     // the meridians. The ratchet arriving in a fight.
     //
@@ -792,7 +522,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
             `, foundation ${foundation}`
     });
 
-    // ── THE BREAK ────────────────────────────────────────────────
+    // THE BREAK
     // Last, because it is charged against lines already computed, and one line
     // rather than two so a player who asks what the break costs gets a single
     // number back rather than having to diff two breakdowns.
@@ -857,13 +587,6 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
 
 /**
  * What this body's OPEN CHANNEL wounds cost the execution of anything it does.
- *
- * Open, untreated, and not permanent - so torn meridians and scorched channels
- * and every untyped wound the engine mints, and NOT a severed meridian, a
- * ruined dantian or a broken foundation. Those are wounds of the cultivation
- * rather than of the body: they close roads, they are priced on the condition
- * and broken lines, and they are not a torn muscle. The two families are not
- * one scale (`docs/world/climbing/injuries.md`).
  */
 function openChannelPenalty(injuries: readonly Injury[]): number {
     return aggregateInjuryPenalties(
@@ -888,9 +611,7 @@ function soulStatePenalty(state: Cultivator['soulState'] | undefined): number {
     }
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // THE GAP
-// ═════════════════════════════════════════════════════════════════════════
 
 export type GapVerdict = 'contested' | 'outmatched' | 'helpless' | 'dominant';
 
@@ -925,10 +646,6 @@ export interface GapAssessment {
 
 /**
  * Read the gap between two priced combatants.
- *
- * Counted in major realms rather than ordinals, because that is the unit the
- * setting is built in: thirteen sub-ranks of Qi Condensation are one realm, and
- * the step out of it is worth more than all thirteen.
  */
 export function assessGap(subject: CombatantPower, opponent: CombatantPower): GapAssessment {
     const realmGap = opponent.realmIndex - subject.realmIndex;
@@ -994,9 +711,7 @@ export function assessGap(subject: CombatantPower, opponent: CombatantPower): Ga
     };
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // EDGES
-// ═════════════════════════════════════════════════════════════════════════
 
 export interface EdgeAssessment {
     edges: readonly Edge[];
@@ -1009,11 +724,6 @@ export interface EdgeAssessment {
 
 /**
  * Price what somebody brought.
- *
- * Duplicates are ignored - bringing two ambushes is bringing one ambush - and
- * the product is capped hard. When the cap bites it is reported, because a
- * player who lost a fight they had stacked nine advantages into is owed the
- * explanation that nine advantages is not a realm.
  */
 export function assessEdges(edges: readonly Edge[]): EdgeAssessment {
     const unique = [...new Set(edges)].filter(e => e in EDGE_VALUES);
@@ -1026,9 +736,7 @@ export function assessEdges(edges: readonly Edge[]): EdgeAssessment {
     return { edges: unique, items, multiplier, capped: multiplier < raw };
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // SOUL-DIRECTED ARTS
-// ═════════════════════════════════════════════════════════════════════════
 
 /** First ordinal at which soul techniques proper become possible at all. */
 export const SOUL_ART_MIN_ORDINAL = REALM_TIERS.find(t => t.key === 'nascent_soul')!.ordinalStart;
@@ -1037,20 +745,13 @@ export type AttackVector = 'body' | 'soul';
 
 /**
  * Whether an art can be directed at a soul rather than at a body.
- *
- * Derived from the catalog fields rather than from a second table: elemental qi
- * has to travel through flesh to arrive, so only an elementless art can reach
- * past a body, and soul techniques proper do not exist below Nascent Soul. Both
- * halves are the world bible's, not this module's invention.
  */
 export function canDirectAtSoul(technique: Technique | null | undefined): boolean {
     if (!technique) return false;
     return technique.element === null && technique.requiredOrdinal >= SOUL_ART_MIN_ORDINAL;
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // ONE EXCHANGE
-// ═════════════════════════════════════════════════════════════════════════
 
 export interface ExchangeContext {
     rng: CultivationRNG;
@@ -1064,47 +765,20 @@ export interface ExchangeContext {
     /** Where the attacker is aiming. Defaults to the body. */
     vector?: AttackVector;
     /**
-     * What the attacker's POSTURE this round is worth on this blow, and what
-     * the defender's is worth against it. 1 for the ordinary case, which is
-     * every caller that does not stand inside the fight and choose.
-     *
-     * Separate from `attackerEdges` because an edge is something somebody
-     * BROUGHT - a formation laid, an art mastered, ground scouted - and a
-     * posture is something they are doing right now instead of something else.
-     * `assessEdges` prices the first against `MAX_EDGE_MULTIPLIER` and would
-     * quietly spend a cap on the second.
-     *
-     * Both are itemised into `modifiers` under their own names, so a player who
-     * guarded can see the line their guard bought. Absent or 1 pushes nothing
-     * and draws nothing, so every existing caller's seeded sequence and
-     * modifier list are byte-identical.
+     * What the attacker's POSTURE this round is worth on this blow, and what the
+     * defender's is worth against it. 1 for the ordinary case, which is every
+     * caller that does not stand inside the fight and choose.
      */
     attackerPosture?: number;
     defenderPosture?: number;
-    /**
-     * What to call a wound this exchange leaves, when the attacker is not a
-     * person.
-     *
-     * `resolveExchange` is the shared resolver for anything that trades force,
-     * and some of its callers are not people: `site-verbs.ts` runs it with a
-     * ruin's own rung as the attacker. Those wounds stay `combat`, which is the
-     * correct answer and the reason there is no enum member for scenery - **a
-     * wound has an AUTHOR, and an exchange is what having one looks like.**
-     *
-     * A `ground` member was added here and withdrawn within the hour, ruled by
-     * the design owner: *"ground is too vague... when you go into ruins a
-     * specific thing hurts you. some sort of sealed automaton, traps,
-     * formations."* Naming the room names the place a fight happened instead of
-     * naming what was fought, and "torn by ground deeper than they were" points
-     * at no author at all. It is the same defect as a die rolled against the
-     * calendar, wearing a location instead of a clock.
-     *
-     * So this field is for a caller that can name a SPECIFIC non-person
-     * attacker and needs the record to say which - not for labelling a place.
-     * Poison stays a property of what the attacker BROUGHT and outranks it.
-     * Omitted is the old behaviour exactly, so every existing caller's record
-     * and seeded sequence are byte-identical.
-     */
+/**
+ * What to call a wound this exchange leaves, when the attacker is not a person.
+ *
+ * A `ground` member was added here and withdrawn within the hour, ruled by the
+ * design owner: *"ground is too vague... when you go into ruins a specific thing
+ * hurts you. some sort of sealed automaton, traps, formations."* Naming the room
+ * names the place a fight happened instead of naming what was fought.
+ */
     injurySource?: InjurySource;
 }
 
@@ -1126,17 +800,6 @@ export interface ExchangeResult {
     modifiers: Array<{ source: string; factor: number }>;
     /**
      * What the ATTACKER's rated object did against the body it was swung into.
-     *
-     * Null when the attacker named no weapon, which is every caller that does
-     * not pass one. Reported even when the weapon held, so a player who is
-     * about to lose a blade can be told how close it came - the odds are the
-     * point of the mechanic and hiding them until the object is gone would make
-     * it read as arbitrary.
-     *
-     * The object itself is NOT modified here. This module is pure with respect
-     * to both combatants and it is pure with respect to their equipment for the
-     * same reason: the row lives in the world layer, and the caller applies
-     * `ruin` or `shatter` to it. See `WeaponUnmade.leavesFragments` for which.
      */
     weapon: WeaponAtRisk | null;
     narrationHint: string;
@@ -1150,11 +813,6 @@ export interface WeaponAtRisk extends WeaponUnmade {
 
 /**
  * Resolve one exchange between two priced combatants.
- *
- * Pure with respect to both: nothing is mutated, and the caller applies the
- * damage. The defender's tradition is consulted BEFORE anything is rolled,
- * because a soul-directed art against a carver is not a weak attack, it is not
- * an attack.
  */
 export function resolveExchange(
     attacker: CombatantPower,
@@ -1164,7 +822,7 @@ export function resolveExchange(
 ): ExchangeResult {
     const vector: AttackVector = ctx.vector ?? 'body';
 
-    // ── The one check that happens before the dice. ──
+    // The one check that happens before the dice.
     if (vector === 'soul' && !soulAttacksAffect(defender.tradition)) {
         return {
             damage: 0,
@@ -1219,7 +877,7 @@ export function resolveExchange(
     const roll = ctx.rng.next();
     const share = advantage / (1 + advantage);
 
-    // ── ACCURACY: WHAT A TORN CHANNEL COSTS THE BLOW ──────────────────────
+    // ACCURACY: WHAT A TORN CHANNEL COSTS THE BLOW
     //
     // Design owner: "you can probably still use your dao skills, its just
     // painful for you in a way that affects the rng of the damage it does cuz
@@ -1278,7 +936,7 @@ export function resolveExchange(
         );
     }
 
-    // ── WHAT THE BLOW DID TO THE THING THAT THREW IT ──────────────────────
+    // WHAT THE BLOW DID TO THE THING THAT THREW IT
     //
     // Last, and only when there is a weapon to lose, so the seeded sequence of
     // every caller that names no object is byte-identical to what it was.
@@ -1317,11 +975,6 @@ export function resolveExchange(
 
 /**
  * Put one named object through the body it was swung into.
- *
- * The whole of the arithmetic is in
- * `whether-a-weapon-survives-being-used.ts`; what lives here is the translation
- * from a priced combatant into the four numbers that module asks for, which is
- * the only thing this file knows that it does not.
  */
 function atRisk(
     object: CarriedObject,
@@ -1345,11 +998,6 @@ function atRisk(
 
 /**
  * What a fight would do to an object, without fighting one.
- *
- * The odds a player is owed BEFORE they swing. Every other gated-then-rolled
- * system in this engine shows its number first - a breakthrough, a crossing, a
- * refinement - and equipment should not be the one place the engine keeps the
- * arithmetic to itself until after it has taken something.
  */
 export function weaponAgainst(object: CarriedObject, metBy: CombatantPower): WeaponExposure {
     return weaponExposure({
@@ -1386,16 +1034,10 @@ function exchangeInjurySeverity(advantage: number, rng: CultivationRNG): InjuryS
     return 'crippling';
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // THE CONFRONTATION
-// ═════════════════════════════════════════════════════════════════════════
 
 /**
  * How a confrontation ended.
- *
- * Death is one of eight, and the ordinary results are the other seven. A
- * cultivation world where every fight ends in a corpse has no feuds in it, and
- * feuds are most of what makes it a world.
  */
 export type ConfrontationOutcome =
     /** The gap was categorical. Nothing was resolved because nothing was contested. */
@@ -1414,26 +1056,6 @@ export type ConfrontationOutcome =
     | 'lethal'
     /**
      * Beaten, alive, and yielding.
-     *
-     * The sixth, and the only outcome that leaves you with a PERSON rather than
-     * a corpse or an empty road. Design owner: *"I should be able to force
-     * someone to submit to me."* What makes it worth having is what it leaves
-     * standing - somebody who owes you, is under you, can be made to do
-     * something, and will remember it - and that is a live relationship where
-     * every other ending is the end of one.
-     *
-     * It is reached from `goal: 'coerce'` and ONLY when the loser actually
-     * yields. Submission is not what losing means: whether somebody kneels is a
-     * fact about who they are, read by the caller off records the world already
-     * keeps, and somebody who would rather die does, which turns a fight you
-     * opened meaning to take somebody alive into a body you did not want. See
-     * `ConfrontationIntent.yields`.
-     *
-     * What KIND of thing you are left with is not decided here and must not be.
-     * Below `BEAST_CHANGE_ORDINAL` the thing that yielded is an animal you now
-     * have; at or above it, it is a person under an obligation, which is an
-     * indenture. The act is identical and this module has no opinion about what
-     * shape was standing there - the caller holds the row and decides.
      */
     | 'submission'
     /** Neither could finish it. Both are worse off and nothing is settled. */
@@ -1453,58 +1075,20 @@ export interface ConfrontationIntent {
     /**
      * What the aggressor is actually trying to do. Decides which endings are
      * reachable.
-     *
-     * `coerce` is the fifth and it is the `done` rung of
-     * `how-far-you-went-to-make-them-comply.ts`: harm applied to get compliance
-     * rather than to end anybody. It wants them complying and still standing,
-     * where `kill` wants them stopped - which is the whole of the difference,
-     * because the blows in between are the same blows. It reaches `submission`
-     * when they yield and the ordinary killing outcomes when they will not.
      */
     goal: 'kill' | 'subdue' | 'drive_off' | 'humiliate' | 'coerce';
     /** Whether the loser will break off rather than be finished. Usually yes. */
     willWithdraw?: boolean;
-    /**
-     * Whether the beaten party yields rather than being finished.
-     *
-     * READ BY THE CALLER, off records the world already keeps - a person's
-     * wants and their standing toward whoever is in the room, a beast's own
-     * nature. There is deliberately no will-to-submit number anywhere in the
-     * engine and there must not be one: submission is a fact about who somebody
-     * is, and every fact about who somebody is already lives somewhere.
-     *
-     * Omitted reads as `ORDINARILY_YIELDS`, because most people beaten badly
-     * enough do. That is a default and not a rule, which is what keeps the
-     * interesting case reachable: somebody who would rather die is finished
-     * instead, and the aggressor gets a body they did not want.
-     */
+/**
+ * Whether the beaten party yields rather than being finished. READ BY THE CALLER,
+ * off records the world already keeps. There is deliberately no will-to-submit
+ * number anywhere in the engine and there must not be one: submission is a fact
+ * about who somebody is, and every fact about who somebody is already lives
+ * somewhere. What KIND of thing you are left with is also not decided here.
+ */
     yields?: WhetherTheyYield;
     /**
      * How the fight was opened.
-     *
-     * `from_concealment` is a different act from squaring up, and the
-     * difference is what it buys and what it costs socially rather than a
-     * second combat system. Two things change, both of them inside the rules
-     * that already exist:
-     *
-     *   the first exchange carries the `ambush` edge, which
-     *   `EDGE_VALUES` has priced at 1.5 since before this field existed and
-     *   whose own comment says "Once. Never twice against the same person" -
-     *   so it is applied to the opening exchange and to no other.
-     *
-     *   the target does not swing back in the opening round. They did not know
-     *   they were in a fight, which is the whole content of concealment, and it
-     *   is worth more than the multiplier.
-     *
-     * What it does NOT change is what a blow does to a body. Softening or
-     * hardening the physics on the strength of how the fight started would be
-     * two sets of rules reachable by choosing your words. What it changes
-     * besides the opening is what the deed says about you, which is the
-     * caller's business and is where an ambush actually costs something.
-     *
-     * NO NEW DRAW when this is absent or `open`: the seeded sequence of every
-     * existing caller is byte-identical, which is what makes the change
-     * measurable at all.
      */
     opening?: 'open' | 'from_concealment';
 }
@@ -1550,19 +1134,12 @@ export interface ConfrontationResult {
     remnant: 'soul' | 'seam' | null;
     /**
      * Objects that did not survive the fight, in the order they went.
-     *
-     * The rows are NOT modified - this module owns no object table. What the
-     * caller does with these is apply `ruin` or, above `FRAGMENTS_AT_OR_ABOVE`,
-     * `shatter`, and either way the provenance chain keeps the entry, because a
-     * thing that vanishes cleanly from the record is a thing nobody can ever be
-     * asked about.
      */
     brokenObjects: Array<{ carrierId: string; breakerId: string; broke: WeaponAtRisk }>;
     obligations: ObligationSeed[];
     narrationHint: string;
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // ONE ROUND
 //
 // A confrontation is a loop over rounds, and until this section existed the
@@ -1585,21 +1162,9 @@ export interface ConfrontationResult {
 // whole of `RoundAct`. `resolveConfrontation` chooses `strike` for both sides
 // every round, which is exactly what it did before this existed, so its seeded
 // sequence is unchanged.
-// ═════════════════════════════════════════════════════════════════════════
 
 /**
  * RULE 1, before anything is rolled: whether there is a fight here at all.
- *
- * Returns a finished result when the gap has already decided it, and null when
- * there is something to resolve. Lifted out of `resolveConfrontation` for the
- * same reason the round was: a caller holding a fight open across turns has to
- * ask this question first and must get the same answer, or the two entrances
- * disagree about who can be fought - which would be the categorical gap, the
- * load-bearing claim of the whole setting, holding in one place and not the
- * other.
- *
- * `hp` and `injuries` are the running totals, handed in so the returned result
- * carries them.
  */
 export function theGapDecidesItAlone(
     aggressorInput: CombatantInput,
@@ -1645,16 +1210,6 @@ export function theGapDecidesItAlone(
 
 /**
  * What somebody is doing with their round.
- *
- * Three postures on ONE axis, and that is deliberate: a round is a fixed amount
- * of attention, and all three answers are about where it went. Guarding spends
- * it on not being hit and has nothing left to swing with; pressing spends it on
- * the blow and leaves nothing over to keep anybody off you; striking is the
- * ordinary even split and is what everybody does when nobody chose.
- *
- * There is no fourth. A posture that both raised your blow and lowered theirs
- * would be a free lunch, and a fight in which one answer dominates is a fight
- * with no decision in it.
  */
 export type RoundAct =
     /** The ordinary exchange. Swing, and take what comes back. */
@@ -1666,16 +1221,6 @@ export type RoundAct =
 
 /**
  * What a posture is worth, in either direction.
- *
- * DERIVED, NOT CHOSEN. It is the cheapest entry in `EDGE_VALUES`, and the
- * reasoning is that a posture is the one advantage in this engine that costs
- * NOTHING to have: anybody can guard, at any rung, with no art, no preparation
- * and no ground. So it must be worth no more than the cheapest thing somebody
- * had to go and get, which is `terrain` - free to use and not free to find.
- *
- * Read off the table rather than restated, so it cannot drift from it. If the
- * cheapest edge is ever repriced this moves with it, which is correct: the
- * claim being made is "no better than the cheapest edge", not a number.
  */
 export const POSTURE_WORTH = Math.min(...Object.values(EDGE_VALUES));
 
@@ -1724,16 +1269,6 @@ export interface RoundResult {
 
 /**
  * Resolve one round between two priced combatants.
- *
- * `hp` and `injuries` are the running totals and ARE written to, because a
- * round is an event in a fight rather than a question about one - the same
- * thing `resolveConfrontation` has always done to its own locals. Everything
- * else is returned.
- *
- * Nothing here decides an ending beyond "somebody is down" and "somebody broke
- * off under the floor". What that ending MEANS - a killing, a capture, a
- * submission, a body destroyed - is `concludeConfrontation`'s, because it turns
- * on the goal and the tradition and not on the blow.
  */
 export function resolveConfrontationRound(
     aggressorSide: RoundParty,
@@ -1842,15 +1377,6 @@ export function resolveConfrontationRound(
 
 /**
  * Resolve a confrontation between two combatants.
- *
- * The order of business is the order of the rules at the top of this file: the
- * gap is checked first and can end the whole thing before a die is rolled; then
- * exchanges alternate until somebody breaks, is finished, or nobody can; then
- * the tradition decides whether what happened to the loser's body was an
- * ending; then the social consequences are seeded.
- *
- * Nothing in here is adjusted because a run is going badly. The player may lose
- * this, and if they walked into it they will.
  */
 export function resolveConfrontation(
     aggressorInput: CombatantInput,
@@ -1876,7 +1402,7 @@ export function resolveConfrontation(
         [defenderInput.id]: []
     };
 
-    // ── RULE 1. The gap can end this before anything is rolled. ──
+    // RULE 1. The gap can end this before anything is rolled.
     // Checked in both directions: an aggressor who is helpless against their
     // target achieves nothing, and an aggressor several realms above one does
     // not have a fight either - they have a decision.
@@ -1885,7 +1411,7 @@ export function resolveConfrontation(
     );
     if (settledAlready) return settledAlready;
 
-    // ── Exchanges. ──
+    // Exchanges.
     const exchanges: ExchangeRecord[] = [];
     let outcome: ConfrontationOutcome = 'stalemate';
     let winnerId: string | null = null;
@@ -1900,7 +1426,7 @@ export function resolveConfrontation(
     let aggressorLive = aggressorInput;
     let defenderLive = defenderInput;
 
-    // ── OPENING FROM CONCEALMENT ─────────────────────────────────────────
+    // OPENING FROM CONCEALMENT
     //
     // Applied to the first round and to no other. `EDGE_VALUES.ambush` already
     // carries the reason in its own comment - "Once. Never twice against the
@@ -1993,12 +1519,6 @@ export interface ConcludeInput {
 
 /**
  * What the ending MEANT.
- *
- * Split out of `resolveConfrontation` so that a fight taken a round at a time
- * ends the same way one settled in a single call does. Everything in here turns
- * on the goal, the tradition and the wounds - never on how many turns the
- * player spent getting here - so there is exactly one answer to "what happened
- * to the loser" and both entrances get it.
  */
 export function concludeConfrontation(input: ConcludeInput): ConfrontationResult {
     const {
@@ -2012,7 +1532,7 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
     const loserPower = loserId === aggressorInput.id ? aggressor : defender;
     const requirement = loserPower.kill;
 
-    // ── RULE 5 and RULE 4. What actually happened to the loser. ──
+    // RULE 5 and RULE 4. What actually happened to the loser.
     //
     // COERCION IS RESOLVED HERE AND NOT IN `finishOutcome`, because it is the
     // one goal whose ending is not decided by the goal. The aggressor wanted
@@ -2085,11 +1605,6 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
 
 /**
  * Which ending the aggressor's goal and the loser's tradition actually permit.
- *
- * A goal of `kill` against a Drawn cultivator above Nascent Soul with a
- * body-directed art destroys the body and does not end them, and the winner
- * does not necessarily know that. That gap between what happened and what the
- * winner believes happened is how feuds continue after a funeral.
  */
 function finishOutcome(
     goal: ConfrontationIntent['goal'],
@@ -2213,7 +1728,7 @@ function describeOutcome(
                   'shortening every day it stays out. Anyone who walks away believing this was a killing is wrong, ' +
                   'and will find out.'
                 : 'The body is gone and the seam is not. A large enough seam-bearing piece regrows over years into ' +
-                  'somebody who remembers the argument, which is why the Marches distinguishes a funeral from a scattering.';
+                  'somebody who remembers the argument, which is why the Silent Cliffs distinguishes a funeral from a scattering.';
         case 'withdrawal':
             return winnerWasHurt
                 ? 'Broken off. Both parties are worse than they were, the wounds are real, and nothing is settled.'
@@ -2238,7 +1753,7 @@ function describeOutcome(
     }
 }
 
-// ── Terminal shapes, kept together so every early return has the same fields. ──
+// Terminal shapes, kept together so every early return has the same fields.
 
 function noContest(
     aggressor: CombatantPower,
@@ -2272,22 +1787,6 @@ function noContest(
 
 /**
  * What a one-sided resolution actually was, said in one voice.
- *
- * `describeOutcome` is written for a CONTESTED fight and every line of it
- * assumes two people traded blows - "both parties are worse than they were",
- * "nothing is settled", "neither could finish it". None of that is true when
- * the aggressor stood realms above and the defender never got to swing, so
- * pasting the two together produced the flat contradiction this function
- * exists to make impossible:
- *
- *   "There was no exchange to resolve. Broken off. Both parties are worse
- *    than they were, the wounds are real, and nothing is settled."
- *
- * Composed from two fragments that did not know about each other, against a
- * result where the aggressor was untouched at full HP, the defender was at a
- * fifth of theirs and carrying a wound that does not close, and the matter was
- * entirely settled. The rule this restates: the outcome decides the sentence,
- * and one function writes the whole sentence.
  */
 function describeOneSided(
     outcome: ConfrontationOutcome,
@@ -2330,11 +1829,6 @@ function describeOneSided(
 
 /**
  * The aggressor is several realms above the defender.
- *
- * Not a fight either, but it is not nothing: the stronger party gets what they
- * came for, at no risk, in one action. The defender is hurt in proportion to
- * what was actually intended rather than to a die roll, because nothing about
- * this was uncertain.
  */
 function oneSided(
     aggressor: CombatantPower,
@@ -2404,7 +1898,7 @@ function oneSided(
         killRequirement: requirement,
         remnant: outcome === 'body_destroyed' ? requirement.remnant : null,
         obligations: seedObligations(outcome, aggressorInput.id, defenderInput.id, defenderInput.name, injuries[defenderInput.id]),
-        // ── WHAT WAS DONE, NOT WHAT WAS NOT ──────────────────────────────
+        // WHAT WAS DONE, NOT WHAT WAS NOT
         //
         // The old hint led with "there was no exchange to resolve" and then
         // handed the rest of the sentence to the contested-fight vocabulary,
@@ -2478,9 +1972,7 @@ export function stalemate(
     };
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // DISENGAGEMENT
-// ═════════════════════════════════════════════════════════════════════════
 
 export interface FleeResult {
     escaped: boolean;
@@ -2500,11 +1992,6 @@ export const MAX_FLEE_CHANCE = 0.95;
 
 /**
  * Try to break off and get away.
- *
- * The first entry on `REAL_OPTIONS` and the one a weaker cultivator reaches for
- * most, so it gets real arithmetic rather than a coin flip. A movement art is
- * worth more here than anything else a cultivator can be carrying, which is why
- * qinggong manuals sell.
  */
 export function attemptFlight(
     fleeing: CombatantPower,
@@ -2580,12 +2067,10 @@ export function attemptFlight(
     };
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // INITIATIVE
 // Retained substrate, re-expressed. Order of action is decided by rank and
 // then by a seeded sample, because in this world the question "who moves
 // first" is mostly answered by "who is further up the ladder".
-// ═════════════════════════════════════════════════════════════════════════
 
 export interface InitiativeEntry {
     id: string;
@@ -2606,10 +2091,6 @@ export interface InitiativeInput {
 
 /**
  * Roll initiative for a confrontation.
- *
- * Ties break on id so the order is total and stable: a replay of the same seed
- * with the same participants produces the same sequence, which is what makes a
- * confrontation reproducible at all.
  */
 export function rollInitiative(
     participants: readonly InitiativeInput[],
@@ -2634,9 +2115,7 @@ export function rollInitiative(
     );
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // QI AND ARTS
-// ═════════════════════════════════════════════════════════════════════════
 
 /** Whether a combatant can actually use this art right now, and why not. */
 export function canUseTechnique(
@@ -2659,201 +2138,77 @@ export function canUseTechnique(
     return { usable: true, reason: null };
 }
 
-// ═════════════════════════════════════════════════════════════════════════
 // SIDES
 //
-// Everything above this line resolves one aggressor against one defender.
-// Most of what this world does with violence is not that: a raiding party
-// against a hall, a court's seniors against a client sect, two houses' woken
-// ancestors arriving at the same hour on the same person. None of it involves
-// the player and all of it has to resolve.
+// Everything above resolves one aggressor against one defender. The five rules
+// do not change here; what changes is that a combatant stands on a SIDE, and the
+// only genuinely new question is what a second body is worth.
 //
-// The five rules do not change here. What changes is that a combatant now
-// stands on a SIDE, and the question the group layer has to answer - the only
-// genuinely new question in it - is what a second body is worth.
-//
-// WHAT NUMBERS ARE WORTH, AND WHY IT IS NOT N
-// -------------------------------------------
-// The naive answer resolves itself and is wrong. Let everybody strike once a
-// round at whoever is in front of them, price each strike off the striker's
-// power, and the arithmetic that falls out is Lanchester's square law: N
-// attackers beat a defender R times stronger whenever N-squared exceeds R.
-// A realm is worth four, so three Foundation cultivators would take a Core
-// Formation elder and four would take a Nascent Soul one. That is not a
-// tuning problem, it is the setting's central claim being deleted by a
-// modelling choice nobody made on purpose.
-//
-// So numbers are priced deliberately, and the shape is:
+// WHAT NUMBERS ARE WORTH, AND WHY IT IS NOT N. The naive answer gives
+// Lanchester's square law - N attackers beat a defender R times stronger
+// whenever N-squared exceeds R - so with a realm worth four, three Foundation
+// cultivators would take a Core Formation elder. That is the setting's central
+// claim being deleted by a modelling choice nobody made on purpose. So:
 //
 //     multiplier = min(CAP, effectiveBodies ^ NUMBERS_EXPONENT)
 //     effectiveBodies = (sum of every engaged member's power) / strongest
 //
-// Read the second line first. Bodies are not counted, they are WEIGHED: a
-// member counts as their share of the side's best member, so five Foundation
-// disciples standing behind a Nascent Soul elder are worth about a third of
-// one extra elder between them, which is what they are actually worth. The
-// first line then compresses that count, so a side is its best member plus a
-// sharply diminishing contribution from everybody else. Written against raw
-// power the whole thing is `strongest^(1-a) * summed^a` - a geometric
-// interpolation between "only the strongest of you matters" and "add yourselves
-// up", with the exponent saying where between them the world sits.
+// Bodies are WEIGHED, not counted: a member counts as their share of the side's
+// best member. The exponent then compresses that count, which written against
+// raw power is `strongest^(1-a) * summed^a`.
 //
-// AND IT IS SPENT AS STRIKES, NOT AS POWER
-// ----------------------------------------
-// The multiplier is not added to anybody's power. It is the number of strikes
-// the side gets to land in a round, and everybody who lands one lands it at
-// their own undiluted weight. The distinction is the entire difference between
-// a rule that holds and one that leaks: scaling power instead would let a
-// hundred people each contribute a hundredth of the budget, and because damage
-// is concave in advantage, a hundred small strikes beat one large one of the
-// same total. That leak is worth about a realm at twenty bodies, which was
-// measured before it was closed.
-//
-// Spent as strikes, the ceiling is exact. A side's damage in a round can never
-// exceed `MAX_NUMBERS_MULTIPLIER` strikes from its best member, whatever it
-// brought. Bodies past the budget still stand, still get hit, and still have to
-// be cut through - so numbers buy TIME rather than force, which is what a
-// crowd actually is. The fractional part of the budget is a seeded draw, so a
-// side of two lands a second strike about a third of the time rather than
-// always or never.
-//
-// A side of one is priced at exactly one strike from its own power, so a
+// AND IT IS SPENT AS STRIKES, NOT AS POWER. The multiplier is the number of
+// strikes the side lands in a round, each at the striker's own undiluted weight.
+// Scaling power instead would let a hundred people each contribute a hundredth
+// of the budget, and because damage is concave in advantage a hundred small
+// strikes beat one large one of the same total - a leak worth about a realm at
+// twenty bodies, measured before it was closed. Spent as strikes the ceiling is
+// exact, so numbers buy TIME rather than force. The fractional part of the
+// budget is a seeded draw. A side of one is exactly one strike, so a
 // one-against-one melee is the two-party arithmetic unchanged.
 //
-// NEITHER CONSTANT IS INVENTED
-// ----------------------------
-// The exponent is fixed by the edge table that already exists. `EDGE_VALUES`
-// has priced `numbers` at 1.35 since before this section did, and that price is
-// a statement about the commonest case there is: a second body. So the exponent
-// is whatever makes two equal bodies come out at exactly 1.35, and nothing else
-// was free to choose.
+// NEITHER CONSTANT IS INVENTED. `EDGE_VALUES` has priced `numbers` at 1.35 since
+// before this section existed, so the exponent is whatever makes two equal bodies
+// come out at 1.35 and nothing was free to choose. The cap is two - deliberately
+// the same figure as `WITHIN_REALM_PEAK` - because a realm is worth four, and if
+// numbers alone could reach four then a big enough mob beats anybody one rung up.
+// It saturates near five equal bodies; the sixth through the six-hundredth are
+// witnesses.
 //
-// The cap is the load-bearing one and it is set below a realm on purpose. A
-// realm is worth four. If numbers alone could reach four, then a big enough mob
-// beats anybody one rung up, and "a realm above is categorically unfightable"
-// becomes a sentence in a README that the engine contradicts. The cap is two -
-// deliberately the same figure as `WITHIN_REALM_PEAK`, so that turning up in
-// numbers is worth, at its absolute ceiling, exactly what climbing an entire
-// realm's worth of sub-ranks is worth, and never what crossing into the realm
-// above is worth.
+// WHICH DOES NOT MAKE ANYBODY INVINCIBLE. Within a realm numbers decide, and
+// quickly. Across a realm `MAX_EDGE_MULTIPLIER` is six against a realm's four, so
+// preparation can overturn a realm that no number of bodies alone could.
 //
-// It saturates near five equal bodies. The sixth through the six-hundredth are
-// witnesses. That is the intended reading and it is what stops a mob.
+// AND COORDINATION DOES NOT CROSS A REALM. Numbers are counted against the
+// LADDER: a member a full major realm below the best thing facing them buys their
+// side no strikes at all, however many turn up. Without this the sub-rank curve
+// leaks the realm back open, because `WITHIN_REALM_PEAK` puts a realm's
+// Perfection at half the next realm's Early and a headcount walks through a
+// two-fold gap. Two realms remains `no_contest`, which is rule 1.
 //
-// WHICH DOES NOT MAKE ANYBODY INVINCIBLE
-// --------------------------------------
-// Two things keep the ceiling from becoming a floor under the strong, and both
-// were already in this file:
-//
-//   - Within a realm numbers decide, and quickly. Two peers at one rung get
-//     about a third again as many strikes as the one, and twice as much body to
-//     cut through, and the one loses. That is the ordinary way anybody on this
-//     ladder is killed and it does not stop being true at the top of it.
-//   - Across a realm, bodies are not the answer and something brought is.
-//     `MAX_EDGE_MULTIPLIER` is six, above the four a realm costs, so a side that
-//     laid a formation, chose the ground and moved first can overturn a realm
-//     that no number of bodies alone could. The lesson the engine teaches is
-//     that you do not solve a realm with a crowd, you solve it with preparation,
-//     and the crowd is what holds the ground while you do.
-//
-// AND COORDINATION DOES NOT CROSS A REALM
-// ---------------------------------------
-// One further restriction, and it is the one the setting cares about most.
-// Numbers are counted against the LADDER, not against each other: a member
-// standing a full major realm below the best thing facing them buys their side
-// no strikes at all, however many of them turn up. They are still in the fight
-// - they can still be hit, they still have to be cut through, and if everybody
-// above them falls the budget comes to them - but they do not add to it.
-//
-// Without this the sub-rank curve leaks the realm back open. `WITHIN_REALM_PEAK`
-// puts a realm's Perfection at half the next realm's Early, so six cultivators
-// at the top of one realm against one at the bottom of the next is only a two-
-// fold gap and a headcount walks through it. That is exactly the case the world
-// says is impossible, so the count refuses to cross the boundary and the ratio
-// never gets the chance.
-//
-// What still crosses a realm is what somebody BROUGHT. `MAX_EDGE_MULTIPLIER` is
-// six against a realm's four, so one cultivator with a formation, the ground and
-// the first move can overturn a realm that any number of their friends could
-// not. Bodies buy time; preparation buys the realm.
-//
-// Two realms remains `no_contest`, which is rule 1 and is not this section's to
-// revisit.
-//
-// WHAT SOMEBODY IS CARRYING IS NOT A SPECIAL CASE
-// -----------------------------------------------
-// The strongest people in this world are frequently standing on an object, and
-// there is deliberately NO code here that knows that. There is no branch on who
-// somebody is, no rule about institutions, and nothing anywhere that reads a
-// faction tier. An object made by somebody who crossed is written down with a
-// rank, `CombatantInput.artifactOrdinal` prices it as that rank, and every
-// consequence anybody wants from it falls out of the same arithmetic that
-// resolves two farmhands with sticks. Take the object away and its bearer
-// prices out as an ordinary cultivator at their ordinal, with no residue,
-// because there was never anything else there.
-//
-// What that produces is worth stating, since it is the whole reason the rating
-// is on the ladder scale rather than on a scale of its own: a rated object is
-// worth a second body of that rank, and a second body is the exact unit numbers
-// are counted in above. So an object at the bearer's own realm answers roughly
-// one more person, which is why the ordinary plan - two of you, arriving
-// together - stops being sufficient against somebody holding one, and why the
-// number it takes goes up by about one rather than by an order. None of that is
-// written anywhere. It is what the arithmetic does.
-// ═════════════════════════════════════════════════════════════════════════
+// WHAT SOMEBODY IS CARRYING IS NOT A SPECIAL CASE. No branch on who somebody is,
+// no rule about institutions, nothing that reads a faction tier. A rated object
+// is worth a second body of that rank, which is the exact unit numbers are
+// counted in above - so an object at the bearer's own realm answers roughly one
+// more person. None of that is written anywhere; it is what the arithmetic does.
 
 /**
  * What a second equal body is worth, as an exponent on the body count.
- *
- * Derived, not chosen: `EDGE_VALUES.numbers` is the price this module already
- * put on having more people than the other side, so two equal bodies must come
- * out at exactly that and the exponent is whatever does it. Deriving it here
- * rather than writing 0.433 down means the two cannot drift apart later.
  */
 export const NUMBERS_EXPONENT = Math.log(EDGE_VALUES.numbers) / Math.log(2);
 
 /**
  * Hard ceiling on what turning up in numbers can ever be worth.
- *
- * Two, and the number is the whole argument. A realm is worth four. A cap at or
- * above four would mean a large enough crowd beats somebody a realm above them,
- * and the hierarchy would be a suggestion. A cap at two says a crowd is worth,
- * at most, what climbing from a realm's Early to its Perfection is worth -
- * which is `WITHIN_REALM_PEAK`, deliberately the same figure - and never what
- * crossing into the next realm is worth.
- *
- * Saturates at about five equal bodies. Everybody past the fifth is a witness.
  */
 export const MAX_NUMBERS_MULTIPLIER = 2;
 
 /**
  * Advantage at which a strike stops being an exchange and becomes a removal.
- *
- * `MAX_EDGE_MULTIPLIER` again, and for its own reason: it is the cap on
- * everything the weaker party could possibly have brought. A gap wider than
- * that is by this module's own definition one that nothing carried into the
- * encounter would have closed, so there is nothing left for a die to decide.
- * This is what lets somebody at a large advantage clear attackers off
- * themselves between exchanges instead of grinding through a health bar each,
- * and it is why a mob does not get to trade its way through an elder.
  */
 export const OVERWHELMING_ADVANTAGE = MAX_EDGE_MULTIPLIER;
 
 /**
  * How many people one use of an art lands on.
- *
- * The counts are the whole of the area mechanic and they are the same for
- * everybody. Nothing here reads a rank, a faction or a name: a bandit whose
- * wide swing reaches three reaches three, and so does a Grand Ascension
- * cultivator whose does. What separates them is the ordinary power arithmetic
- * applied once per person the art reached - which is exactly the point, because
- * against somebody far enough above them each of those becomes an overwhelming
- * removal rather than a scratch.
- *
- * `field` is unbounded on purpose. An art that lands on a PLACE does not have a
- * headcount in it; the catalog's own joke about Deity Transformation cultivators
- * being asked not to know Hollow Mountain Decree in inhabited places is only
- * funny if the answer is "everyone who was there".
  */
 export const REACH_TARGETS: Readonly<Record<TechniqueReach, number>> = {
     single: 1,
@@ -2893,11 +2248,6 @@ export interface SideStrength {
 
 /**
  * Price a side from its priced members.
- *
- * Pure, and separate from the resolution so the arithmetic can be read and
- * tested on its own. Hand it only the members who are actually engaged; someone
- * categorically outclassed by everyone opposite is not a smaller contribution,
- * they are not a contribution.
  */
 export function sideStrength(powers: readonly CombatantPower[]): SideStrength {
     if (powers.length === 0) {
@@ -2916,12 +2266,6 @@ export function sideStrength(powers: readonly CombatantPower[]): SideStrength {
 
 /**
  * How many of a side's people actually land something this round.
- *
- * The whole of `numbersMultiplier`, spent. The integer part is guaranteed and
- * the remainder is a seeded draw, so a pair lands its second strike about a
- * third of the time - the difference between "two people hit twice as often"
- * (false, and it breaks the ladder) and "two people hit rather more often than
- * one" (true, and it is what `EDGE_VALUES.numbers` has always said).
  */
 export function strikesThisRound(strength: SideStrength, available: number, rng: CultivationRNG): number {
     if (available <= 0) return 0;
@@ -2931,25 +2275,11 @@ export function strikesThisRound(strength: SideStrength, available: number, rng:
     return Math.max(1, Math.min(available, whole + extra));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A COMBATANT IS STANDING BEHIND
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Something a combatant is under the protection of, expressed as a
- * disqualification rather than a stat.
- *
- * The hook exists because the top of this world is not defended by being
- * strong. Each apex holds an immortal object, and none of the three is a
- * weapon: one makes its holder impossible to lie to about where anything is, one
- * fixes the ground it stands on, one settles who somebody is without appeal.
- * What they do is make the ordinary approaches stop working - and the ordinary
- * approaches are `Edge`s, which this module already itemises. So an aegis is
- * written as "these things you brought do not apply here", which is exactly the
- * shape those objects have.
- *
- * Nothing in `src/data` is wired to this yet and this module does not invent an
- * artifact catalog. It is the seam a catalog attaches to.
+ * Something a combatant is under the protection of, expressed as a disqualification
+ * rather than a stat.
  */
 export interface Aegis {
     id: string;
@@ -2972,17 +2302,10 @@ export interface Aegis {
 }
 
 /**
- * A side that is being reinforced, and therefore does not have to win.
- *
- * The attacker's win condition against a house is not points, it is a clock.
- * Somebody standing in their own hall with an administration under them has
- * people a province away opening seals on their behalf from the moment the
- * first blow lands, so an assault has to finish inside a window or it has not
- * failed narrowly, it has failed.
- *
- * The engine holds the window and nothing else. What arrives, and how many
- * rounds a given hierarchy is worth, is the world layer's arithmetic - this
- * module must not know how many courts an institution has.
+ * A side that is being reinforced, and therefore does not have to win. The engine
+ * holds the window and nothing else: what arrives, and how many rounds a given
+ * hierarchy is worth, is the world layer's arithmetic - this module must not know
+ * how many courts an institution has.
  */
 export interface Reinforcement {
     /** Rounds this side has to still be standing after. Then it has held. */
@@ -2991,9 +2314,7 @@ export interface Reinforcement {
     note: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // INPUT
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface SideMember {
     combatant: CombatantInput;
@@ -3029,9 +2350,7 @@ export interface MeleeContext {
     vector?: AttackVector;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // OUTPUT
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What became of one person. Deliberately finer than the side's outcome,
@@ -3099,17 +2418,8 @@ export interface MeleeResult {
     combatants: MeleeCombatantOutcome[];
     /**
      * Every strike. `result.weapon` on each carries what that strike did to the
-     * striker's rated object, so a caller reads breakages off this list rather
-     * than off a second field.
-     *
-     * The gap that used to be stated here is closed. A melee now re-prices a
-     * combatant the moment their object goes, exactly as `resolveConfrontation`
-     * does: the weapon comes off the input, `assessPower` runs again, and the
-     * rest of the fight - including the second person a wide art reaches in the
-     * same action - is fought at the new figure. It cost nothing to fix and it
-     * costs nothing to have, because no caller in `src/` builds a melee with a
-     * weapon in it yet; what it buys is that the day one does, the two paths do
-     * not quietly disagree about "bring a bad weapon and you brought nothing".
+     * striker's rated object, so a caller reads breakages off this list rather than
+     * off a second field.
      */
     exchanges: ExchangeRecord[];
     /** Final HP, keyed by combatant id. The caller writes these. */
@@ -3127,9 +2437,7 @@ export interface MeleeResult {
     narrationHint: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // RESOLUTION
-// ─────────────────────────────────────────────────────────────────────────
 
 interface Fighter {
     input: CombatantInput;
@@ -3160,21 +2468,6 @@ function withFactor(power: CombatantPower, source: string, factor: number, note:
 
 /**
  * Resolve a confrontation between two or more sides.
- *
- * Many against one, many against many, and - because a side of one is priced at
- * exactly its own power - one against one, which comes out as the two-party
- * arithmetic with an initiative roll in front of it. `resolveConfrontation` is
- * untouched and remains the right call for a duel.
- *
- * The order of business is the order of the five rules, as it is upstairs. The
- * gap is read first and can end the whole thing; then rounds run, each living
- * combatant striking once, with every side's offence scaled by what its numbers
- * are actually worth; then each side's intent and each loser's tradition decide
- * what happened to them; then the social consequences are seeded.
- *
- * No branch anywhere favours anybody. The same function resolves a court's
- * seniors clearing out a bandit camp and three woken ancestors arriving on an
- * apex, and neither of them is the player.
  */
 export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): MeleeResult {
     if (sides.length < 2) {
@@ -3218,7 +2511,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
     const living = () => fighters.filter(f => f.state === 'standing');
     const enemiesOf = (f: Fighter) => living().filter(o => o.sideIndex !== f.sideIndex);
 
-    // ── RULE 1, at the level of a person. ──
+    // RULE 1, at the level of a person.
     // Somebody two major realms under everybody opposite them is not a weak
     // contributor, they are not a contributor. They cannot land anything and
     // they do not count toward what their side brings.
@@ -3260,13 +2553,13 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
         return assemble(sides, fighters, hp, injuries, exchanges, ctx, winner);
     }
 
-    // ── Initiative, rolled once so the order is stable across the whole melee. ──
+    // Initiative, rolled once so the order is stable across the whole melee.
     const order = rollInitiative(
         fighters.map(f => ({ id: f.input.id, name: f.input.name, ordinal: f.input.realmOrdinal })),
         ctx.rng
     ).map(entry => byId.get(entry.id)!);
 
-    // ── Rounds. ──
+    // Rounds.
     const roundBudget = meleeRoundBudget(sides);
     for (let round = 0; round < roundBudget; round++) {
         const activeSides = new Set(living().map(f => f.sideIndex));
@@ -3307,7 +2600,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
             if (striker.state !== 'standing') continue;
             if (!acting.has(striker.input.id)) continue;
 
-            // ── How far this one use reaches. ──
+            // How far this one use reaches.
             // The area mechanic in its entirety: one action, resolved once per
             // person the art lands on, with every strike priced by the ordinary
             // arithmetic. It deliberately does NOT touch the strike budget - a
@@ -3439,7 +2732,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
             if (new Set(living().map(f => f.sideIndex)).size < 2) break;
         }
 
-        // ── The stall. Somebody who only had to last has lasted. ──
+        // The stall. Somebody who only had to last has lasted.
         // Checked at the end of a round rather than during it, so a window of
         // one means "you get one round", and an assault that finishes inside it
         // still finishes.
@@ -3464,19 +2757,9 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
 
 /**
  * Who a striker goes after.
- *
- * Anybody they are categorically below is not a target, because they cannot
- * touch them. Among the rest: the most hurt first, which is what focus fire
- * actually is - a side that has opened somebody up finishes them rather than
- * spreading the damage evenly and finishing nobody - and then the weakest,
- * because the cheapest body to remove is the one to remove.
  */
 /**
  * Everybody this striker could hit, best first.
- *
- * One ordering serves both cases: a single-target art takes the head of this
- * list, and an area art takes as much of it as the art reaches. So a wide art
- * lands on the people a striker would have chosen anyway, in that order.
  */
 function orderTargets(
     striker: Fighter,
@@ -3616,7 +2899,7 @@ function assemble(
         };
     });
 
-    // ── The side outcome is the worst thing that happened to the losers. ──
+    // The side outcome is the worst thing that happened to the losers.
     const losers = combatants.filter(c => {
         const side = sideOutcomes.find(s => s.id === c.sideId)!;
         return side.defeated;

@@ -1,116 +1,27 @@
 /**
  * Guest studentship: what a house will teach somebody it has not taken.
  *
- * The sibling of `what-a-house-asks-of-somebody-it-cannot-order.ts`, at the
- * other end of the ladder. That file answers "the house has run out of rungs
- * for you and has to negotiate". This one answers the question underneath the
- * whole bottom of the world:
+ * AND IT COSTS THE HOUSE NOTHING, which is the half that makes it safe: a house
+ * can afford to teach an outsider its lower material precisely BECAUSE the deep
+ * material is behind membership. Nobody is afraid of a guest leaving - they were
+ * never shown the thing worth stealing.
  *
- *   > A teacher is one of the two ways past a manual's ceiling, and a nobody
- *   > has nobody to ask.
+ * A guest is on the station roll and never the house roll (`faction-roll.ts`
+ * filters on `rankIndex === null` rather than on a faction id), and therefore
+ * KEEPS THEIR OWN HOUSE: not a transfer, not a secondment, not a defection, so
+ * `docs/world/climbing/past-the-ceiling.md`'s departure economy does not fire.
  *
- * ── WHY A HOUSE DOES THIS, AND IT IS NOT CHARITY ─────────────────────────
+ * *"A house lends a guest from what it holds in quantity, and never from what it
+ * holds in ones."* That is {@link WORKING_ROAD_CAP} doing the work - a physical
+ * reason rather than a tier - so the deepest thing on a shelf is closed by
+ * construction and a house always keeps its best.
  *
- * Two reasons, and both are load-bearing.
- *
- *   A PIPELINE. A house that admits by adoption cannot advertise, cannot hold
- *   an admission day and cannot find the once-in-a-century outsider who is
- *   extraordinary at exactly its principle. Letting people sit in is how it
- *   looks at them. An admission bar tells a house somebody's rung; a year of
- *   watching them work tells it what they are like.
- *
- *   AND IT COSTS THEM NOTHING, WHICH IS THE HALF THAT MAKES IT SAFE. A house
- *   can afford to teach an outsider its lower material precisely BECAUSE the
- *   deep material is behind membership. Nobody is afraid of a guest leaving.
- *   They were never shown the thing worth stealing.
- *
- * `docs/world/houses/dao-houses.md` is why this is coherent rather than generous:
- * "Specialisation is not ownership". A house does not own its principle -
- * everyone else interacts with it clumsily and without noticing - so passing on
- * part of it gives away nothing the house could have kept.
- *
- * ── THE MECHANISM IS A ROLL THAT IS NOT THE HOUSE ROLL ───────────────────
- *
- * Not a membership tier, not a rung below Outer Disciple, and nothing that
- * touches `sect_members`. The shape already exists in this world and is
- * described in `false-immortals.ts` in one line - "entered on the station roll
- * and never on the house roll" - and `faction-roll.ts` already treats a Guest
- * as "a position outside the rungs, held by somebody the house cannot order",
- * filtering on `rankIndex === null` rather than on a faction id so that a
- * second body granting one needs no change.
- *
- * A guest therefore KEEPS THEIR OWN HOUSE. This is not a transfer, not a
- * secondment and not a defection, which is most of the complexity gone:
- * `docs/world/climbing/past-the-ceiling.md`'s departure economy - releases, oaths, what
- * you may never teach again - does not fire at all, because nothing is being
- * left. It is also why the arrangement is tolerated: an apex has no grievance
- * against a house that borrowed its disciple for a year and gave them back.
- *
- * ── WHAT A GUEST GETS, WHICH IS ACCESS AND NOTHING ELSE ──────────────────
- *
- * The house spends teaching time. It does not spend anything else. No
- * protection at a crossing, no backing in a quarrel, no standing, no stipend,
- * no rung, no liability. {@link WHAT_A_GUEST_PLACE_IS_NOT} is engine-authored
- * and is never empty, because the position has a specific and interesting
- * vulnerability that has to be legible BEFORE somebody accepts it: a guest is
- * away from their own protection, among people who owe them nothing. Somebody
- * who leans on a guest is not leaning on the house, and the house will treat it
- * as somebody else's disciple having a problem.
- *
- * That is the same fact as keeping your own house, read from the other side.
- * Your protection is still your own house because you are still theirs - and
- * your own house is not here.
- *
- * ── WHERE THE LINE BETWEEN SHALLOW AND DEEP COMES FROM ───────────────────
- *
- * Not from a policy and not from a number invented here. `copiesOf` in
- * `engine/world/manuals.ts` already bands a shelf by how many copies of each
- * book a house physically keeps, and it bands it steeply: eight to twenty of
- * the intake primer, three to seven of the ordinary working road, two or three
- * of the inner shelf, one at the top. So:
- *
- *   > A house lends a guest from what it holds in quantity, and never from what
- *   > it holds in ones.
- *
- * That is {@link WORKING_ROAD_CAP} doing the work, and it is a physical reason
- * rather than a tier - the same discipline AGENTS.md asks of any count. It also
- * means the deepest thing on a shelf is closed by construction, whatever that
- * shelf's height, so a house always keeps its best.
- *
- * ── AND THEREFORE NOT EVERY HOUSE TAKES GUESTS ───────────────────────────
- *
- * Taking guests is a fact about a house rather than a policy of the setting,
- * and it falls out of the same comparison with no flag and no branch: a house
- * takes guests when its shelf reaches ABOVE the line it can afford to show.
- * A house whose whole library sits at or below that line has nothing held back,
- * so opening anything opens everything, and it does not.
- *
- * Measured over the catalog, without any per-house authoring:
- *
- *     17 of 34 bodies would take a guest
- *      6 of the 7 dao houses would; the House of Held Names would not,
- *        because its entire shelf caps at 13 and there is nothing behind it
- *      the Hollow Court would not, having one book and it is the top of the
- *        world; the Kiln Wardens teach nothing at all
- *
- * A tenth house wanting a different arrangement changes a column. There is no
- * `if (factionId === ...)` below and there must never be one.
- *
- * ── THE HOME HOUSE HAS A VIEW, AND IT IS ALSO READ OFF COLUMNS ───────────
- *
- * Three answers from two existing columns, in {@link homeStanceOn}: a house
- * FORBIDS a guest place at somebody it is feuding with or contesting a claim
- * against; it SENDS somebody where it knows itself short of a book
- * (`production.waitingOn === 'shelf'`) and the host holds one; otherwise it
- * PERMITS, which is the ordinary answer and means indifference or confidence.
- * Going anyway against a forbid is a real act against your own house and the
- * grudge ledger owns the row - nothing here writes it.
- *
- * ── NOTHING HERE DECIDES ANYTHING, AND NOTHING HERE DRAWS ────────────────
- *
- * No RNG, no window, no write. It is a deterministic function of the catalog
- * and two integers, the way `dutyTermsFor` and `approachFrom` are. Whether a
- * house is standing in front of the player is somebody else's question.
+ * Measured over the catalog with no per-house authoring: 17 of 34 bodies would
+ * take a guest; 6 of the 7 dao houses would; the House of Held Names would not,
+ * because its shelf caps at 13 and there is nothing behind it; the Hollow Court
+ * would not, having one book and it is the top of the world; the Kiln Wardens
+ * teach nothing at all. A tenth house wanting a different arrangement changes a
+ * column - there is no `if (factionId === ...)` below and there must never be one.
  */
 
 import {
@@ -125,16 +36,14 @@ import { favourStanceOf } from '../../data/cultivation/a-favour-skips-the-admiss
 import { doorsOf, housesWithTwoDoors } from '../birth/spending-a-word-to-place-a-child.js';
 import { WORKING_ROAD_CAP } from '../world/manuals.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE POSITION IS NOT
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Everything a guest place does not carry, said before anybody accepts one.
- *
- * Engine-authored and constant, because it is constant: the house is spending
- * teaching time and nothing else, at every house, for every guest. A caller
- * must show this beside the offer rather than after it.
+ * Everything a guest place does not carry, said before anybody accepts one. The
+ * house spends teaching time and nothing else - no protection at a crossing, no
+ * backing in a quarrel, no standing, stipend, rung or liability. Engine-authored
+ * and never empty, because a guest is away from their own protection among people
+ * who owe them nothing, and that has to be legible BEFORE somebody accepts.
  */
 export const WHAT_A_GUEST_PLACE_IS_NOT: readonly string[] = [
     'No rung. You are on no ladder here and hold no rank, so nothing anybody '
@@ -159,9 +68,7 @@ export const WHAT_A_GUEST_PLACE_IS_NOT: readonly string[] = [
     + 'off the shelves.'
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE SHELF, SPLIT
-// ─────────────────────────────────────────────────────────────────────────
 
 /** One art the house would put in front of somebody it has not taken. */
 export interface GuestOpening {
@@ -208,9 +115,6 @@ function shelfEntriesOf(house: SectEntry): ShelfEntry[] {
 /**
  * The deepest rung anything on this house's shelf carries somebody to, or null
  * where it teaches no road at all.
- *
- * Roads only. An art with no cap carries nobody anywhere and cannot be the
- * measure of how much a house is holding back.
  */
 export function shelfTopOf(factionId: string): number | null {
     const house = getSect(factionId);
@@ -226,14 +130,6 @@ export function shelfTopOf(factionId: string): number | null {
 /**
  * Whether this house has anything to hold back, and therefore whether it takes
  * guests at all.
- *
- * One comparison. A house whose shelf runs past what it can afford to show has
- * a shallow end it can open at no cost; a house whose whole library sits at or
- * below that line would be showing everything, and does not open the door.
- *
- * A body that teaches nothing has nothing to hold back either, so `null` from
- * {@link shelfTopOf} is a no - which is the right answer for the two powers
- * that take no applicants and teach nobody.
  */
 export function takesGuests(factionId: string): boolean {
     // A house that PUBLISHES a door below its membership bar has already
@@ -245,66 +141,21 @@ export function takesGuests(factionId: string): boolean {
     return top !== null && top > WORKING_ROAD_CAP;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE HOUSE THAT PUBLISHES ITS GUEST DOOR
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * A door a house states, below its membership bar - and it is this same
- * position under the catalog's older name.
- *
- * `SECT_ADMISSION.guestFromOrdinal` has been in the catalog from early on, with
- * a comment saying it "wants lifting into the schema as a proper rank below
- * index 0 by whoever owns that". **It does not want that, and this file is the
- * answer to it.** A rank below index 0 would put the person on the house
- * ladder, and the whole difficulty recorded beside that comment - that adding a
- * rung silently moves every member down one and re-derives every band - is the
- * shape of the world telling you the position is not a rung at all. Somebody
- * inside a house, being taught, who is not a disciple, is off the ladder by
- * construction: entered on a roll that is not the house roll.
- *
- * Which is exactly what guest studentship already is. So they are one concept
- * with two names, and this is the merge rather than a second tier beside the
- * first. What a published door changes is not the STATUS - a person on it holds
- * no rung, draws nothing, owes nothing and may walk out, the same as any guest
- * anywhere - but three things about how it is entered and left:
- *
- *   IT IS ADVERTISED. Everywhere else a guest place is an arrangement somebody
- *   has to be in a position to ask for. Here it is the house's published
- *   intake, which is why {@link housesWithAPublishedDoor} is what the world
- *   should make nameable to somebody who has heard nothing else: a house whose
- *   entire model is "walk up the mountain" is a house everybody's village has
- *   heard of, or the model does not work.
- *
- *   IT STANDS AT A STATED RUNG rather than wherever the shelf happens to
- *   permit, and at the one house that has one, that rung is the floor.
- *
- *   AND THE BAR BEHIND IT DOES NOT BEND. Elsewhere the end of a guest term is
- *   a house deciding to take somebody its bar would have refused. Here it is
- *   not: the house has been carrying you so that you can MEET the bar, and it
- *   declines to move it in the same words every time. See
- *   {@link houseWouldOfferMembership}, which is where that difference is the
- *   only branch in this file that reads a published door.
- *
- * `doorsOf` in `engine/birth/spending-a-word-to-place-a-child.ts` already
- * derives the two doors and already exists to stop them being collapsed. It is
- * read here rather than restated, so a second house acquiring a published door
- * needs no change anywhere.
+ * A door a house states, below its membership bar - and it is this same position
+ * under the catalog's older name.
  */
 export interface PublishedDoor {
     /** The rung the house takes somebody in at. Zero, at the one that has one. */
     atOrdinal: number;
-    /**
-     * WHAT PASSING COSTS, and it is not a second door.
-     *
-     * `docs/world/houses/origin.md` settles this and the wording matters: the house
-     * has ONE door and it stands at the floor. The figure everybody quotes as
-     * its bar is the test at the far end of the probation, and the thing that
-     * has never moved for anybody is that test rather than the doorway. Read
-     * off `SECT_ADMISSION.minOrdinal` through `doorsOf`, which is why this
-     * survived a working-tree change that moved the sect row's own
-     * `admissionOrdinal` to the floor.
-     */
+/**
+ * WHAT PASSING COSTS, and it is not a second door. `docs/world/houses/origin.md`
+ * settles it: the house has ONE door and it stands at the floor, and the figure
+ * everybody quotes as its bar is the test at the far end of the probation. Read
+ * off `SECT_ADMISSION.minOrdinal` through `doorsOf`.
+ */
     membershipOrdinal: number;
     /**
      * Whether this is the only such door in the world. Counted, never asserted -
@@ -314,13 +165,6 @@ export interface PublishedDoor {
     theOnlyOneInTheWorld: boolean;
     /**
      * Whether a word from somebody high enough moves anything here.
-     *
-     * `favourStanceOf`'s own answer. At a house whose door is already at the
-     * floor there is nothing to skip and nothing to buy, which is why a
-     * placement here is the one placement in the catalog where nobody ends up
-     * carrying a debt - and that property is not special to this house at all
-     * once the concepts are merged. It is what a guest place is everywhere.
-     * This house is simply where it was first written down.
      */
     aFavourBuysNothingHere: boolean;
 }
@@ -339,23 +183,16 @@ export function publishedDoorOf(factionId: string): PublishedDoor | null {
 
 /**
  * Every house whose guest door is advertised rather than arranged.
- *
- * The set the world should make nameable to a cultivator who has heard nothing
- * else, because an intake that works by people walking up requires that people
- * have heard where to walk. Consumed by the origin knowledge seeding.
  */
 export function housesWithAPublishedDoor(): string[] {
     return housesWithTwoDoors().map(d => d.factionId).sort();
 }
 
 /**
- * What the house will show a guest.
- *
- * Two clauses and no third. A road is open when the house holds it in quantity
- * ({@link WORKING_ROAD_CAP}); an art with no cap is open when it is shallow
- * enough to be shown at the house's own door, which is what
- * `admissionOrdinal` already says. And the deepest thing on the shelf is never
- * open, whatever its height, because a house always keeps its best.
+ * What the house will show a guest. Two clauses and no third: a road is open when
+ * the house holds it in quantity ({@link WORKING_ROAD_CAP}); an art with no cap is
+ * open when it is shallow enough to be shown at the house's own door. The deepest
+ * thing on the shelf is never open, whatever its height.
  */
 export function whatAHouseWillShowAGuest(factionId: string): GuestOpening[] {
     const house = getSect(factionId);
@@ -384,10 +221,6 @@ export function whatAHouseWillShowAGuest(factionId: string): GuestOpening[] {
 /**
  * What the house keeps, and why - so that a refusal at the far end names what
  * membership would change rather than saying no.
- *
- * The reason is read off the same two facts that closed it: a road above the
- * line is something the house holds in ones, and an art above the door is
- * something it shows people it has taken.
  */
 export function whatAHouseKeepsBack(factionId: string): GuestWithholding[] {
     const house = getSect(factionId);
@@ -411,21 +244,10 @@ export function whatAHouseKeepsBack(factionId: string): GuestWithholding[] {
     return out;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // HOW LONG THEY WATCH
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Years on the roll before the house has seen enough to decide about somebody.
- *
- * The term is not a price for the shelf - a guest may learn from the first day,
- * which is the whole of what is being offered. It is the pipeline: how long a
- * house looks at a person before it is willing to say anything about them.
- *
- * Read off how much is behind the door, because that is exactly what the house
- * is being careful about. A body sitting on the deepest library in the province
- * watches somebody for a generation; a body with an inner shelf and nothing
- * more makes its mind up in a decade.
  */
 export function guestTermYears(factionId: string): number {
     const top = shelfTopOf(factionId);
@@ -433,19 +255,10 @@ export function guestTermYears(factionId: string): number {
     return Math.max(1, top - WORKING_ROAD_CAP);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT YOUR OWN HOUSE THINKS ABOUT IT
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Your own house's view of you studying somewhere else.
- *
- * Three answers, two columns, no enumeration. A house that is feuding with the
- * host, or that has a hand on the same contested claim, forbids it - not out of
- * policy but because the host is its problem. A house that knows itself short
- * of a book sends you, which makes the term an investment and leaves you owing
- * them for it. Everything else permits, which is the ordinary answer and covers
- * both indifference and confidence.
  */
 export type GuestStance = 'sends' | 'permits' | 'forbids';
 
@@ -467,9 +280,7 @@ export function homeStanceOn(homeFactionId: string, hostFactionId: string): Gues
     return 'permits';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE PLACE ITSELF
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface GuestPlace {
     factionId: string;
@@ -504,12 +315,8 @@ export interface GuestPlace {
 }
 
 /**
- * What one house would offer somebody it has not taken, or null when it has
- * nothing to offer.
- *
- * Null in exactly two cases and both are honest: the house has nothing held
- * back, so a guest place would be its whole library; or it holds depth and
- * nothing shallow enough to show anybody.
+ * What one house would offer somebody it has not taken, or null when it has nothing
+ * to offer.
  */
 export function guestPlaceAt(
     factionId: string,
@@ -545,12 +352,6 @@ export function guestPlaceAt(
 
 /**
  * Every house in the world that would let this person sit in.
- *
- * Sorted by how much is actually on the table for them, then by how much the
- * house is holding back - so a caller taking the head of the list gets the
- * place worth walking to rather than the alphabetically first one.
- * Deterministic; there is no draw here and no gating on what the player has
- * heard of. That gate belongs to the caller, which holds the knowledge rows.
  */
 export function housesThatWouldTakeAGuest(
     ordinal: number,
@@ -571,25 +372,17 @@ export function housesThatWouldTakeAGuest(
     return out;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AND THEN ONE DAY SOMEBODY ASKS YOU TO CHOOSE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Whether the house has seen enough, and taken enough of an interest, to put
  * membership to a guest.
  *
- * Two conditions and both are things the guest did rather than things that
- * happened to them. The term has run, so the house has watched a whole stretch
- * of somebody's life; and they have taken up everything the house opened,
- * which is the moment there is nothing further to give them without taking
- * them in. Nothing random, nothing hidden, and no favour required.
- *
- * What the offer costs is not this function's business and is enormous: it is
- * leaving your own house, with everything `docs/world/climbing/past-the-ceiling.md` says
- * about releases, oaths and what you may never teach again. Part of what is
- * being offered on the other side is the thing a guest never had, which is
- * somebody answering when something happens to you.
+ * AND THE BAR BEHIND IT DOES NOT BEND. Elsewhere the end of a guest term is a
+ * house deciding to take somebody its bar would have refused; here the house has
+ * been carrying you so that you can MEET the bar, and it declines to move it in
+ * the same words every time. What the offer costs is not this function's business
+ * and is enormous - it is leaving your own house.
  */
 export function houseWouldOfferMembership(
     place: GuestPlace,
@@ -602,7 +395,7 @@ export function houseWouldOfferMembership(
     const held = new Set(heldTechniqueIds);
     if (!place.opens.every(o => held.has(o.techniqueId))) return false;
 
-    // ── AND AT A HOUSE THAT PUBLISHES ITS DOOR, THE BAR IS STILL THE BAR ──
+    // AND AT A HOUSE THAT PUBLISHES ITS DOOR, THE BAR IS STILL THE BAR
     //
     // The only branch in this file that reads a published door, and it is the
     // difference the catalog is most emphatic about. Everywhere else the end of

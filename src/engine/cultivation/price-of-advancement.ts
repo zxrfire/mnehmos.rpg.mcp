@@ -1,69 +1,10 @@
 /**
  * The Price of Advancement.
  *
- * > A cultivator cannot carry everything they were into what they are becoming.
- *
- * Crossing a realm boundary is a severance. What is on the other side is not a
- * larger version of the cultivator who set out, and something has to be left
- * behind to make the difference. Every tradition explains it differently - a
- * heart demon, a severance, or simply the cost - and none of them can prevent
- * it.
- *
- * The price falls at every REALM BOUNDARY, never at a sub-rank step, and what
- * it takes is never a stat. It is a person who knew you and stops knowing you,
- * a memory you were using to stay yourself, a technique you had mastered gone
- * as if never learned, or in the worst cases your name.
- *
- * Two properties of this system are load-bearing and easy to get wrong:
- *
- *  1. IT IS ROLLED, NOT GUARANTEED. "The path is soaked in blood, but it is not
- *     evenly distributed blood." Some cultivators climb four realms and lose
- *     nothing and are insufferable about it. Others lose a brother at
- *     Foundation Establishment and never get another thing taken. A guaranteed
- *     price would be a tax; a rolled one is a fear, and fear is the point.
- *
- *  2. THE CULTIVATOR NEVER CHOOSES. When the roll goes against you the engine
- *     selects from what the run ACTUALLY accumulated - real bonds with real
- *     NPCs, real memories, real techniques in the database - and then you are
- *     told. The horror is that it is legible: you can read the ledger and see
- *     the shape of who you used to be.
- *
- * The odds move, and they move on things the player can act on, which is what
- * makes the system a decision rather than a die roll:
- *
- *   Fortune           - the attribute that can legally come up zero decides
- *                       whether the crossing notices you on the way past.
- *   Sect protection   - a sect spending real resources on a disciple's
- *                       crossing. This is most of why anyone tolerates a sect,
- *                       and it is why sects let you know precisely what the
- *                       protection cost them.
- *   Preparation       - the right pill, a stable site, dense qi, an unhurried
- *                       crossing. Cultivators who break through in a cave they
- *                       chose live differently from cultivators who break
- *                       through in a ditch because something was chasing them.
- *   The Severed path  - paid in advance, on their own terms. They cross clean.
- *                       That is the whole argument of their path, and it works.
- *   Foundation        - severance reaches into structure. A foundation with
- *                       holes in it is easier to reach into.
- *
- * ── The price is not divestment, and they must not be conflated ──────────
- * An ascending cultivator knows nothing goes through with them, so the years
- * before a crossing are spent burying, sealing, and building inheritances
- * gated for whoever proves worth them. That is the in-world author of the
- * entire inheritance economy - and it is a DIFFERENT thing from this file.
- *
- *   The price       what mattered, taken involuntarily, at a boundary.
- *   Divestment      what the cultivator chose to leave, deliberately, before
- *                   ever reaching one.
- *
- * The full collection at a True Immortal crossing takes what is still held; it
- * cannot reach what was already given away, which is precisely why divesting
- * is rational. Keep the two separate in state and in the ledger: a grave built
- * on purpose and a grave made of what a crossing tore out are not the same
- * object, and confusing them would make the inheritance economy incoherent.
- *
- * No I/O, no database, no LLM. The caller supplies candidates drawn from real
- * rows and applies whatever comes back.
+ * The price is not divestment and the two must not be conflated. An ascending
+ * cultivator knows nothing goes through with them, so the years before a crossing
+ * are spent burying, sealing and building inheritances - which is the in-world
+ * author of the entire inheritance economy, and a DIFFERENT thing from this file.
  */
 
 import {
@@ -85,9 +26,7 @@ import {
 import { foundationEffect, foundationOf } from './foundation.js';
 import type { CultivationRNG } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // BOUNDARY INDEXING
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Ordinals a cultivator crosses FROM to change realm: 12, 16, 20, ... 40. */
 export const TOLL_BOUNDARY_ORDINALS: readonly number[] = REALM_TIERS.slice(0, -1).map(
@@ -97,9 +36,6 @@ export const TOLL_BOUNDARY_ORDINALS: readonly number[] = REALM_TIERS.slice(0, -1
 /**
  * Which instalment this is, counting from 0 at the 12 -> 13 crossing into
  * Foundation Establishment. Returns -1 for an ordinal that is not a boundary.
- *
- * This is the number the world bible is quoting when it says a Void Refinement
- * cultivator "has crossed five boundaries and rolled five times".
  */
 export function tollBoundaryIndex(fromOrdinal: number): number {
     return TOLL_BOUNDARY_ORDINALS.indexOf(fromOrdinal);
@@ -110,7 +46,6 @@ export function isTolled(fromOrdinal: number): boolean {
     return isRealmBoundary(fromOrdinal) && fromOrdinal < MAX_ORDINAL;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // TUNING
 // Calibrated against the world bible's own arithmetic: a Void Refinement
 // cultivator has rolled five times and "most do not" still have a family, so
@@ -119,7 +54,6 @@ export function isTolled(fromOrdinal: number): boolean {
 // across those five, which clears something roughly 89% of the time - while
 // still leaving "some climb four realms and lose nothing" at about one run in
 // eight. Both halves of that sentence have to be true.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Risk at the first boundary, 12 -> 13 into Foundation Establishment. */
 export const TOLL_BASE_RISK = 0.3;
@@ -128,14 +62,6 @@ export const TOLL_RISK_PER_BOUNDARY = 0.05;
 
 /**
  * Risk removed per point of Fortune. Zero Fortune buys nothing, by design.
- *
- * Read this as "the crossing happened to pass over lightly", not as "this
- * cultivator is harder to charge". Nothing about a
- * fortunate person makes them structurally more difficult to reach into; they
- * are simply less likely to be noticed at the moment they cross. That framing
- * is why Fortune survives here while it has been removed from breakthrough
- * odds and tribulation survival, which are causal outcomes that luck has no
- * business buying.
  */
 export const TOLL_FORTUNE_RELIEF = 0.08;
 /** Risk removed by a sect spending everything it has on one crossing. */
@@ -155,39 +81,30 @@ export const TOLL_AMBIENT_RISK: Record<AmbientQi, number> = {
 };
 
 /**
- * Floor and ceiling. Never zero and never certain, for the same reason
- * breakthrough odds are clamped: a crossing is never merciful and never
- * exhaustive. The Severed path is the single documented exception and it
- * bypasses the clamp entirely, because crossing clean is the whole argument of
- * that path and it is supposed to work.
+ * Floor and ceiling. Never zero and never certain, for the same reason breakthrough
+ * odds are clamped: a crossing is never merciful and never exhaustive. The Severed
+ * path is the single documented exception and it bypasses the clamp entirely,
+ * because crossing clean is the whole argument of that path and it is supposed to
+ * work.
  */
 export const MIN_TOLL_RISK = 0.02;
 export const MAX_TOLL_RISK = 0.95;
 
 /**
  * The first boundary at which a crossing can reach a cultivator's NAME.
- *
- * Crossing FROM 24 enters Deity Transformation - "Body and soul merge. You are
- * no longer human." Below that the name is still attached to something the
- * crossing can see as a person. This is the "rarely, and only at high boundaries"
- * clause, and it is why asking a Void Refinement cultivator what their mother's
- * name was tells you which kind you are talking to.
  */
 export const NAME_ELIGIBLE_FROM_ORDINAL = 24;
 
 /**
- * Selection weight the name carries once eligible, against the summed weights
- * of every bond, memory and technique the run has accumulated. Deliberately
- * small: a well-connected cultivator with forty bonds will almost never lose
- * their name, and a hollow one with two will lose it often. The severance takes
- * what is there.
+ * Selection weight the name carries once eligible, against the summed weights of
+ * every bond, memory and technique the run has accumulated. Deliberately small: a
+ * well-connected cultivator with forty bonds will almost never lose their name, and
+ * a hollow one with two will lose it often. The severance takes what is there.
  */
 export const NAME_BASE_WEIGHT = 1.5;
 export const NAME_WEIGHT_PER_BOUNDARY = 1;
 
-// ─────────────────────────────────────────────────────────────────────────
 // CONTEXT
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * A candidate as callers hand it in. `weight` is optional here and defaults to
@@ -224,12 +141,8 @@ export interface TollConditions {
     nameAlreadyTaken?: boolean;
     /**
      * Close the account instead of charging an instalment: take EVERYTHING the
-     * cultivator still had, the name included. Set by the True Immortal
-     * crossing and nothing else. What falls back is the spirit tide.
-     *
-     * Overrides `severed` - the Severed cut their own bonds in advance, which
-     * makes the final collection cheap for them, not absent. Whatever they
-     * still hold at the Lid still goes.
+     * cultivator still had, the name included. Set by the True Immortal crossing
+     * and nothing else. What falls back is the spirit tide.
      */
     collectInFull?: boolean;
     /**
@@ -245,9 +158,7 @@ export interface TollContext extends TollConditions {
     ambient: AmbientQi;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // EVALUATION
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface TollModifier {
     source: string;
@@ -256,16 +167,6 @@ export interface TollModifier {
 
 /**
  * Charge the toll for a successful realm-boundary crossing.
- *
- * Consumes EXACTLY THREE samples from `ctx.rng` on every path - the risk roll,
- * the category roll and the item roll - whatever the outcome. The fixed sample
- * count is deliberate: it means a caller may hand this the same stream it used
- * for the breakthrough itself without the toll's outcome shifting anything
- * drawn afterwards, and it means adding a candidate category later will not
- * invalidate existing replays.
- *
- * Throws if asked to charge a sub-rank step. Nothing is exacted
- * on the small steps, and a caller that thinks otherwise has a bug.
  */
 export function evaluateToll(
     cultivator: Pick<Cultivator, 'realmOrdinal' | 'attributes'> &
@@ -320,7 +221,7 @@ export function evaluateToll(
     const toOrdinal = Math.min(MAX_ORDINAL, fromOrdinal + 1);
     const frame = { fromOrdinal, toOrdinal, boundaryIndex, risk, modifiers, roll: riskRoll };
 
-    // ── The last crossing, completed. Everything goes. ──
+    // The last crossing, completed. Everything goes.
     if (ctx.collectInFull) {
         const everything = collectEverything(cultivator, ctx);
         return {
@@ -389,10 +290,6 @@ export function evaluateToll(
 
 /**
  * Everything the cultivator still had, taken at once.
- *
- * No weighting and no selection: the account is closed, so the order is simply
- * the deterministic candidate order with the name last, because the name is the
- * thing that stops being true when the rest has already gone.
  */
 function collectEverything(
     cultivator: Partial<Pick<Cultivator, 'name'>>,
@@ -482,24 +379,13 @@ function computeTollModifiers(
     return modifiers;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // SELECTION
 // What gets taken, and why that one.
-// ─────────────────────────────────────────────────────────────────────────
 
 const KIND_ORDER: readonly TollCandidate['kind'][] = ['bond', 'memory', 'technique'] as const;
 
 /**
  * Choose what the crossing takes.
- *
- * Weighted by how much each thing mattered, because the world bible is
- * unambiguous that the toll "is always something that *mattered*". A higher
- * weight is MORE likely to be taken, not less - the severance is not looking for
- * the cheapest item, it is looking for the one holding you together.
- *
- * Candidates are sorted by (kind, id) before weighting so that a caller's query
- * order - which is not part of game state - can never change the outcome.
- * Returns null when there is nothing left worth taking.
  */
 function selectToll(
     cultivator: Partial<Pick<Cultivator, 'name'>>,
@@ -609,9 +495,7 @@ function describeTakenKind(kind: TollKind): string {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // INSPECTION
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Toll risk without rolling, for a UI that wants to show a player what

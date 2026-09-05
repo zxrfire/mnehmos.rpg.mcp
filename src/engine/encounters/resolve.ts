@@ -1,23 +1,11 @@
 /**
  * Turning a drawn row into something that happened.
  *
- * The authority boundary, stated as code. Two questions, answered differently:
- *
- *   "did the world do something to them?"   the engine answers, here, in numbers
- *   "what do they do about it?"             the PLAYER answers, so the engine
- *                                           stops and hands control back
- *
- * So an entry that `interrupts` produces no automatic deltas at all. Bandits on
- * the road do not silently take spirit stones - they are standing there, and
- * paying, fighting or leaving is the turn. An entry that does not interrupt is
- * the opposite case by definition: it happened while the cultivator was busy
- * with something else, so the engine settles it and reports what it settled.
- *
- * Nothing here resolves a fight. Combat needs artifact rows and a battle
- * history the pure layer does not hold, so a hostile encounter is PRICED - the
- * gap, the damage multiplier, whether walking away is available - and handed
- * over as a `Confrontation` for the caller to put through `resolveMelee`, or
- * not. Pricing without resolving is the honest half this layer can do alone.
+ * An entry that `interrupts` produces no automatic deltas at all - bandits on
+ * the road do not silently take spirit stones, they are standing there, and
+ * paying, fighting or leaving is the turn. An entry that does not interrupt
+ * happened while the cultivator was busy, so the engine settles it and reports
+ * what it settled.
  */
 
 import { encounterDamage, encounterThreatRegard, fillSummary } from '../../data/cultivation/encounters.js';
@@ -133,17 +121,13 @@ export function resolveOccurrence(input: ResolveInput): EncounterOccurrence {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // STANCE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Where the hostile half stands, straight off the regard band.
- *
- * `docs/world/houses/discovery.md`, made mechanical: something nine or more rungs up
- * is not a fight that was lost. It is a fight that was never offered. Being
- * ignored by it is the encounter, and there is no branch here on who or what
- * it is - only on the size of the number, which is the whole doctrine.
+ * `docs/world/houses/discovery.md` made mechanical: something nine or more rungs
+ * up is not a fight that was lost, it is a fight that was never offered. No
+ * branch here on who or what it is, only on the size of the number.
  */
 export function stanceFor(entry: EncounterEntry, band: string | null): EncounterStance {
     if (entry.threatOrdinal === null || band === null) return 'none';
@@ -152,9 +136,7 @@ export function stanceFor(entry: EncounterEntry, band: string | null): Encounter
     return 'engaged';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE ENGINE SETTLES ON ITS OWN
-// ─────────────────────────────────────────────────────────────────────────
 
 function incidentalDeltas(
     input: ResolveInput,
@@ -199,9 +181,7 @@ function zeroDeltas(): EncounterDeltas {
     return { hp: 0, spiritStones: 0, satiety: 0, rations: 0 };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LINE THE NARRATOR GETS
-// ─────────────────────────────────────────────────────────────────────────
 
 function eventFor(
     input: ResolveInput,
@@ -240,11 +220,6 @@ function eventFor(
 
 /**
  * The terms, stated as facts.
- *
- * Engine-authored and complete, because a player deciding whether to refuse
- * needs to know what refusing is worth. `posture` is the one line that carries
- * standing: a house tells its bottom rung where to stand and asks its elders
- * what should be done, and nobody ever explains which of those is happening.
  */
 function dutyLine(duty: Duty | null): string {
     if (!duty) return '';
@@ -321,7 +296,6 @@ function summaryFor(input: ResolveInput, stance: EncounterStance): string {
     return filled;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 
 function numberIn(values: Record<string, string | number>, key: string): number {
     const raw = values[key];

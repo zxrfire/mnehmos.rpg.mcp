@@ -1,51 +1,16 @@
 /**
  * The one crossing that is given rather than made.
  *
- * ── WHY THIS EXISTS, AND WHY IT IS HERE RATHER THAN IN THE CATALOG ───────
- *
  * `immortal-items.ts` has described The Unearned Step in full since it was
- * written - what it does, what a grade caps, what it costs socially, and what
- * it leaves behind - and its own `ENGINE_GAPS` entry says plainly that nothing
- * implements it: *"There is no `PillEffect` for advancing a rank. [...] What is
- * missing is the effect, not room for it."* Measured: `promote_realm` has zero
- * consumers in `src/` outside the catalog that declares it and one test that
- * reads the catalog. `AGENTS.md` calls that shape by name - a module nothing
- * calls is not a feature - and this is its smaller sibling, an EFFECT nothing
- * can apply.
+ * written and its own `ENGINE_GAPS` entry says plainly that nothing implements
+ * it: *"There is no `PillEffect` for advancing a rank. [...] What is missing is
+ * the effect, not room for it."* Measured, `promote_realm` has zero consumers in
+ * `src/` outside the catalog that declares it.
  *
- * It matters now because of what the Step is FOR. The design owner's ruling:
- *
- *   > don't forget that crossing deals damage too (unless via admin panel) or
- *   > the immortal pill that lets you skip a ordinal - that's the diff between
- *   > the immortal pill and the ones that give you qi, the qi ones you still
- *   > have to cross and risk it.
- *
- * So the Step is the exemption that gives the crossing toll its meaning. A qi
- * pill hands you accumulation and you still have to strike the wall, roll it,
- * and pay `bodyCost` for arriving. The Step hands you the far side. With the
- * toll built and the Step unbuildable, the toll would have had an exemption
- * list with nothing on it, and the distinction the owner is drawing would exist
- * only in a document.
- *
- * ── WHAT IS DECIDED HERE AND WHAT IS NOT ─────────────────────────────────
- *
- * Every rule below is quoted from the catalog's own `contract`, not invented:
- * one boundary, never a within-realm rung, never two; grade caps the
- * DESTINATION rather than the distance; 41 and above is a hard stop for
- * everybody by any route; once per cultivator for life; and taking it below
- * Perfection still crosses, with the skipped accumulation landing as a
- * permanently poor foundation.
- *
- * What is deliberately NOT decided here is the Price of Advancement. The
- * catalog's own note ends: *"The remaining engine decision is what the Price of
- * Advancement does about a boundary crossed without accumulation. Content has
- * answered the social half [...] and deliberately not the arithmetic."* A
- * crossing taken this way never reaches `evaluateToll`, because it never
- * reaches `attemptBreakthrough` at all, and that is the honest state of it
- * rather than a ruling. Leaving it open is the point: it is the design owner's
- * to settle, and the alternative is this file quietly settling it.
- *
- * Pure. State in, a verdict out, no mutation and no I/O. The caller writes.
+ * What is deliberately NOT decided here is the Price of Advancement. A crossing
+ * taken this way never reaches `evaluateToll`, because it never reaches
+ * `attemptBreakthrough` at all. Leaving it open is the point - it is the design
+ * owner's to settle, and the alternative is this file quietly settling it.
  */
 
 import {
@@ -61,11 +26,6 @@ import type { ImmortalGrade } from '../../data/cultivation/immortal-items.js';
 
 /**
  * The highest realm each grade may deliver somebody INTO.
- *
- * Straight off the catalog's `grades` prose, which states the top crossing each
- * one enables: lower 24 to 25, middle 28 to 29, higher 36 to 37. Expressed as
- * the realm rather than as the ordinal, because that is how the catalog states
- * it and because a realm survives the ladder being re-cut.
  */
 export const STEP_CEILING_BY_GRADE: Readonly<Record<ImmortalGrade, RealmKey>> = {
     lower: 'deity_transformation',
@@ -75,29 +35,11 @@ export const STEP_CEILING_BY_GRADE: Readonly<Record<ImmortalGrade, RealmKey>> = 
 
 /**
  * The rung nothing may deliver anybody to, by any route, ever.
- *
- * `THE_LAST_REALM_IS_UNBUYABLE` in the catalog: *"No object, at any grade, from
- * any source, in any circumstance, delivers anybody to ordinal 41 or above.
- * Tribulation Transcendence is walked to or it is not reached."* A hard stop
- * rather than a modifier, which is why it is checked separately from the grade
- * ceiling instead of being folded into it.
  */
 export const NOTHING_IS_GIVEN_AT_OR_ABOVE = 41;
 
 /**
  * What the far side of a given crossing is worth to stand on.
- *
- * The catalog: *"Taken below Perfection it still crosses, and the skipped
- * accumulation lands as a permanently poor `foundationQuality` on the far
- * side."*
- *
- * `incomplete` rather than a new band, and it is the schema's own words that
- * decide it: *"rushed; part of the structure was never formed"*. That is the
- * catalog's sentence from the other side - the accumulation was skipped rather
- * than completed - and the social half of the catalog's answer, *they stall,
- * visibly, for the rest of a much longer life*, is a description of somebody
- * standing on one. Adding a tenth band for this would be a parallel catalog for
- * an important thing, which `AGENTS.md` forbids by name.
  */
 export const FOUNDATION_A_GIVEN_CROSSING_LEAVES: FoundationQuality = 'incomplete';
 
@@ -119,10 +61,6 @@ export interface StepVerdict {
     toOrdinal: number;
     /**
      * The foundation the far side leaves, or null where it leaves none.
-     *
-     * Null when the crossing did not lay one to begin with - the caller
-     * persists a foundation the way it persists any other, and
-     * `persistFoundation` refuses to overwrite an existing one.
      */
     foundationQuality: FoundationQuality | null;
     /** Engine-authored, factual. Never narration. */
@@ -137,11 +75,6 @@ export function atPerfectionOfTheirRealm(ordinal: number): boolean {
 
 /**
  * Spend one Unearned Step, and say what it did.
- *
- * `alreadyTaken` is the caller's, read off whatever it keeps the once-per-life
- * record on. It is an input rather than something this derives, because
- * `ONCE_IN_A_LIFE` is a fact about a whole life and this function sees one
- * moment of it.
  */
 export function takeTheUnearnedStep(input: {
     fromOrdinal: number;

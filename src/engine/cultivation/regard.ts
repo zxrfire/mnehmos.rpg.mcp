@@ -1,61 +1,15 @@
 /**
  * Regard - the one generic answer the world gives, keyed on how far above or
- * below the ask somebody is standing.
+ * below a gate the asker stands.
  *
- * THE PROBLEM THIS IS THE ANSWER TO
- * ---------------------------------
  * Measured, not guessed: across a sixteen-position by thirty-ask sweep,
- * twenty-three of the thirty asks returned an identical answer at every height
- * on the ladder. `I gather what herbs I can find` gave a False Immortal at
- * ordinal 45 exactly what it gave a beginner at ordinal 0 - seven days bent
- * over the ground, one stalk - because every catalog was using its rung column
- * as a floor and for nothing else. `I take any work I can get` was WORSE at
- * height, because the only thing above the mortal ceiling was an empty list
- * with no reason attached.
+ * twenty-three of the thirty asks returned an identical answer at every height on
+ * the ladder. `I gather what herbs I can find` gave a False Immortal at ordinal
+ * 45 exactly what it gave a beginner at ordinal 0, because every catalog was
+ * using its rung column as a floor and for nothing else.
  *
- * The combat resolver was never the defect. `combatPowerForOrdinal` is a steep
- * curve and the apex simulations rest on it. The defect was that nothing
- * outside combat read the ladder at all.
- *
- * THE MECHANISM, WHOLE
- * --------------------
- * Every content record already carries exactly one number saying what rung it
- * is pitched at. This module names that number once, subtracts, and looks the
- * difference up in `REGARD_BANDS`:
- *
- *     gap  = asker's ordinal - the rung the record is pitched at
- *     band = the row of REGARD_BANDS whose window contains gap
- *
- * and the band carries every multiplier an ordinary resolver needs: how much
- * comes back, how long it takes, what it costs, and what a fight here does.
- * There is no per-catalog rule and there must never be one.
- *
- * TWO BANDS, BECAUSE THERE ARE TWO ANSWERERS
- * ------------------------------------------
- * The world meets you as your apparent rung. The ground meets you as your
- * real one. A False Immortal walking a market as a mortal is offered porter
- * work like anybody else - and carries the load in a tenth of the time and
- * takes no damage doing it, because the sacks do not care what the room
- * believes. So:
- *
- *   social band   (apparent ordinal + approach pressure)
- *       -> offered, refused, priceMultiplier, reaction
- *   physical band (real ordinal, no pressure at all)
- *       -> yieldMultiplier, durationMultiplier, damageMultiplier
- *
- * With no approach supplied the two are the same band and nothing changes.
- *
- * WHAT THE NARRATOR MAY SUPPLY, AND WHAT IT MAY NOT
- * -------------------------------------------------
- * An `Approach` is context: tone, leverage, audience, a concealed rung, how
- * much time they gave it. It resolves to two bounded numbers - an apparent
- * ordinal, and a pressure clamped to +/- `APPROACH_PRESSURE_LIMIT` rungs. It
- * cannot name an outcome, cannot exceed two rungs of influence, and cannot
- * touch the physical band at all. Threatening a herbalist does not make the
- * mountain give up a better flower.
- *
- * Pure. No I/O, no database, no RNG - regard is a deterministic function of
- * two integers and an optional record column.
+ * The band carries every multiplier an ordinary resolver needs. There is no
+ * per-catalog rule and there must never be one.
  */
 
 import {
@@ -72,9 +26,7 @@ import {
 } from '../../schema/cultivation.js';
 import { MAX_ORDINAL, clampOrdinal, rankName } from './realms.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE ASKER
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Who is standing there. A bare number is accepted everywhere a full asker is,
@@ -93,16 +45,10 @@ function toAsker(input: RegardAskerInput): RegardAsker {
     return typeof input === 'number' ? { ordinal: input } : input;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE APPROACH, REDUCED TO TWO NUMBERS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Whether a concealed rung survives the room.
- *
- * Two ways it does not: somebody present is at or above the real rung and is
- * paying attention, or the audience is the kind that looks hard. A crowd of
- * farmers does not see through anything; a hall of peers does.
  */
 export function concealmentHolds(actualOrdinal: number, approach?: Approach): boolean {
     if (!approach?.concealed) return false;
@@ -126,10 +72,6 @@ export function apparentOrdinal(actualOrdinal: number, approach?: Approach): num
 
 /**
  * Tone plus leverage, clamped to +/- two rungs.
- *
- * Deliberately small. Posture and a purse move how somebody is met by about as
- * much as two rungs of the ladder, and never more: the whole point of the
- * ladder is that it is not negotiable.
  */
 export function approachPressure(approach?: Approach): number {
     if (!approach) return 0;
@@ -139,18 +81,10 @@ export function approachPressure(approach?: Approach): number {
     return Math.max(-APPROACH_PRESSURE_LIMIT, Math.min(APPROACH_PRESSURE_LIMIT, raw));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE GATE - the one column every catalog already has
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The gate columns, in the order they are believed.
- *
- * Each catalog names its rung differently for good domain reasons; naming them
- * once here is what keeps every resolver from reaching for its own. A record
- * that carries none of them has no gate, and a gateless record is met as
- * `matched` by everybody - which is the right answer for a thing that is not
- * pitched at a rung at all.
  */
 const GATE_COLUMNS = [
     'gateOrdinal',
@@ -188,9 +122,7 @@ export function gateOrdinalOf(record: unknown): number | null {
     return null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE RESOLVER
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface Regard {
     /** The rung the ask is pitched at. */
@@ -256,10 +188,6 @@ function scaleGap(gap: number, span: number | undefined): number {
 
 /**
  * The whole answer, for one asker against one gate.
- *
- * `gate` of null means the record is not pitched at a rung; it comes back
- * `matched` with every multiplier at one, which is the identity answer and
- * exactly what a resolver that has never heard of regard was already doing.
  */
 export function regardFor(
     gate: number | null,
@@ -323,7 +251,7 @@ export function regardFor(
 function fillReaction(template: string, gap: number, apparent: number): string {
     const magnitude = Math.abs(gap);
     return template
-        // ── THE NOUN GOES WITH THE NUMBER ───────────────────────────────
+        // THE NOUN GOES WITH THE NUMBER
         //
         // "Pitched 1 rungs from where they stand" - found in play, on a hunt.
         // `{gap} rungs` is one phrase and filling the number without the noun
@@ -351,16 +279,10 @@ export function regardOf(record: unknown, asker: RegardAskerInput): Regard {
     return regardFor(gateOrdinalOf(record), asker, regardProfileOf(record));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // POOL FILTERS - the shape every catalog draw wants
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What the world actually puts in front of this asker.
- *
- * The refusal at the top is the half that was missing. A record the asker has
- * outgrown is dropped, and the caller is expected to say so rather than return
- * an unexplained empty list - `refusalsFor` gives it the reasons.
  */
 export function offeredTo<T>(records: readonly T[], asker: RegardAskerInput): T[] {
     return records.filter(record => regardOf(record, asker).offered);
@@ -381,12 +303,6 @@ export function refusalsFor<T>(
 
 /**
  * Offered where possible, everything reachable where not.
- *
- * The graceful-degradation rule, stated once. A draw narrowed to what the
- * asker has not outgrown is the right answer whenever anything survives the
- * narrowing; when nothing does, refusing to answer at all would be a worse
- * lie than answering with what is there. Callers that want the refusal instead
- * check `offeredTo(...).length === 0` themselves.
  */
 export function narrowToOffered<T>(records: readonly T[], asker: RegardAskerInput): readonly T[] {
     const offered = offeredTo(records, asker);

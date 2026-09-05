@@ -1,34 +1,22 @@
 import type Database from 'better-sqlite3';
 
 /**
- * Cultivation (xianxia) persistence subsystem.
+ * Cultivation persistence: the cultivator record, the survival ratchet,
+ * techniques, alchemy, sects, and the permadeath run ledger. Idempotent and safe
+ * on every startup; wired into `migrate()` in migrations.ts.
  *
- * SQLite is the source of truth for the entire cultivation surface: the
- * cultivator record, the survival ratchet (satiety / meridian injuries /
- * lifespan), techniques, alchemy, sects, and the permadeath run ledger. The
- * runtime agent narrates from these rows; it never asserts them.
+ * Two load-bearing shape decisions:
  *
- * Idempotent; safe on every startup. Wired into migrate() in migrations.ts:
- *   import { migrateCultivation } from './migrations.cultivation.js';
- *   // ...at the end of migrate():
- *   migrateCultivation(db);
+ * 1. Injuries get their own table rather than a JSON blob on `cultivators`. A
+ *    blob would force a read-modify-write of the cultivator row for every pill
+ *    taken, and make "how many untreated injuries" an application-side scan
+ *    instead of an indexed COUNT.
  *
- * Two shape decisions worth stating up front, because they are load-bearing:
- *
- * 1. Injuries get their own table rather than a JSON blob on `cultivators`.
- *    Untreated injuries are queried (count them, are any crippling?) and
- *    mutated (treat exactly this one) far more often than they are read as a
- *    whole. A blob would force a read-modify-write of the cultivator row for
- *    every pill taken, and would make "how many untreated injuries" an
- *    application-side scan instead of an indexed COUNT.
- *
- * 2. `cultivators.run_id` carries no FOREIGN KEY, while `runs.cultivator_id`
- *    does. The relationship is genuinely circular - a run belongs to a
- *    cultivator and a cultivator belongs to a run - and SQLite can only
- *    satisfy a cycle with deferred constraints plus a mandatory transaction
- *    around every insert. Since a run is always started *for* an existing
- *    cultivator, the cultivator side is the safe one to enforce; the back
- *    reference is a plain indexed column.
+ * 2. `cultivators.run_id` carries no FOREIGN KEY while `runs.cultivator_id`
+ *    does. The relationship is genuinely circular and SQLite can only satisfy a
+ *    cycle with deferred constraints plus a mandatory transaction around every
+ *    insert. A run is always started for an existing cultivator, so that side is
+ *    the safe one to enforce.
  */
 export function migrateCultivation(db: Database.Database): void {
     db.exec(`
@@ -507,50 +495,42 @@ export function migrateCultivation(db: Database.Database): void {
 /**
  * Columns added to cultivation tables after their first release.
  *
- * CREATE TABLE IF NOT EXISTS is a no-op on a database that already has the
- * table, so a column added to the DDL above reaches new databases only. Every
- * post-release column therefore needs an explicit, guarded ALTER here - the
- * same shape runMigrations() in migrations.ts uses for the `characters` table.
- * Checking PRAGMA table_info rather than catching the duplicate-column error
- * keeps startup quiet on the overwhelmingly common already-migrated path.
+ * CREATE TABLE IF NOT EXISTS is a no-op on a database that already has the table,
+ * so a column added to the DDL above reaches new databases ONLY and every
+ * post-release column needs an explicit guarded ALTER here. PRAGMA table_info
+ * rather than catching the duplicate-column error, so startup stays quiet on the
+ * already-migrated path.
  */
 function addCultivationColumns(db: Database.Database): void {
     const cultivatorColumns = (
         db.prepare('PRAGMA table_info(cultivators)').all() as { name: string }[]
     ).map(col => col.name);
 
-    // Where the cultivator is. Nullable with no default: an existing world has
-    // no recorded locations, and inventing one for every legacy row would be
-    // the engine asserting geography it never simulated.
+    // Nullable with no default: inventing a location for every legacy row would
+    // be the engine asserting geography it never simulated.
     if (!cultivatorColumns.includes('location')) {
         console.error('[Migration] Adding location column to cultivators table');
         db.exec('ALTER TABLE cultivators ADD COLUMN location TEXT;');
     }
 
-    // The foundation laid at the 12 -> 13 crossing. NOT NULL with a default of
-    // 'none' rather than nullable: every cultivator has a foundation, and for
-    // the overwhelming majority of them - everyone still in Qi Condensation,
-    // which is most of the world - the honest value is that they have not laid
-    // one. NULL would mean "unknown", and the engine is never unsure.
+    // NOT NULL defaulting to 'none' rather than nullable: NULL would mean
+    // "unknown", and the engine is never unsure. Most of the world has not laid
+    // one, and 'none' says exactly that.
     if (!cultivatorColumns.includes('foundation_quality')) {
         console.error('[Migration] Adding foundation_quality column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN foundation_quality TEXT NOT NULL DEFAULT 'none';");
     }
 
-    // The result of the last crossing: none | false_immortal | true_immortal.
-    // Durable because both non-'none' values are permanent facts about the
-    // cultivator - one bars every further attempt, the other is the only thing
-    // in this engine that permits ending a run without dying.
+    // Durable because both non-'none' values are permanent: one bars every
+    // further attempt, the other is the only thing that ends a run without dying.
     if (!cultivatorColumns.includes('immortal_status')) {
         console.error('[Migration] Adding immortal_status column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN immortal_status TEXT NOT NULL DEFAULT 'none';");
     }
 
-    // Understanding. Both default to an empty array rather than NULL, and no
-    // backfill is possible or wanted: an insight must name the achievement
-    // that produced it, so there is nothing honest to invent for a row written
-    // before the subsystem existed. Having comprehended nothing is the
-    // ordinary case anyway - most cultivators live and die that way.
+    // Empty array rather than NULL, and no backfill is possible: an insight must
+    // name the achievement that produced it, so there is nothing honest to invent
+    // for an older row. Having comprehended nothing is the ordinary case.
     if (!cultivatorColumns.includes('insights')) {
         console.error('[Migration] Adding insights column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN insights TEXT NOT NULL DEFAULT '[]';");
@@ -562,11 +542,9 @@ function addCultivationColumns(db: Database.Database): void {
     }
 
     // Existence. These four were in CultivatorSchema before they were in the
-    // table, which meant every load silently reset them to their defaults and
-    // every save dropped them - a cultivator could be sealed or missing in
-    // memory and read back as an ordinary living person. The schema defaults
-    // are exactly right as column defaults: a row written before existence
-    // states existed IS an ordinary living person.
+    // table, so every load silently reset them and every save dropped them - a
+    // cultivator could be sealed in memory and read back as an ordinary living
+    // person. The schema defaults are exactly right as column defaults.
     if (!cultivatorColumns.includes('existence_state')) {
         console.error('[Migration] Adding existence_state column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN existence_state TEXT NOT NULL DEFAULT 'alive';");
@@ -588,20 +566,17 @@ function addCultivationColumns(db: Database.Database): void {
         db.exec('ALTER TABLE cultivators ADD COLUMN body_id TEXT;');
     }
 
-    // Which road they walk. NOT NULL with a default rather than nullable: every
-    // cultivator walks one of exactly two, and 'tradition-drawn' is what every
-    // row written before the Cut Road existed always was. The column decides
-    // whether soul-directed arts do anything to this person, so it has to be
-    // durable - a tradition that reset to a default on every read would make a
-    // carver killable by an art that cannot touch them.
+    // Which road they walk. Durable because the column decides whether
+    // soul-directed arts do anything to this person: a tradition that reset on
+    // every read would make a carver killable by an art that cannot touch them.
+    // 'tradition-drawn' is what every row before the Cut Road always was.
     if (!cultivatorColumns.includes('tradition_id')) {
         console.error('[Migration] Adding tradition_id column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN tradition_id TEXT NOT NULL DEFAULT 'tradition-drawn';");
     }
 
-    // Confrontations survived. Denormalised from `combat_records` because
-    // `assessPower` asks for it on every exchange and a COUNT per strike is a
-    // scan nobody needs. The table stays authoritative; this is the index.
+    // Denormalised from `combat_records`, which stays authoritative, because
+    // `assessPower` asks for it on every exchange.
     if (!cultivatorColumns.includes('battles_survived')) {
         console.error('[Migration] Adding battles_survived column to cultivators table');
         db.exec('ALTER TABLE cultivators ADD COLUMN battles_survived INTEGER NOT NULL DEFAULT 0;');
@@ -612,51 +587,42 @@ function addCultivationColumns(db: Database.Database): void {
         db.exec('ALTER TABLE cultivators ADD COLUMN battles_won INTEGER NOT NULL DEFAULT 0;');
     }
 
-    // Where they were born - the third thing dealt at creation, beside the
-    // spirit root and the attributes. NOT NULL with a default rather than
-    // nullable, because everyone was born somewhere and 'thin_county' is both
-    // the overwhelming majority of births and the honest reading of every row
-    // written before this axis existed: no teacher, no manual, no vein.
-    //
-    // The column exists because the field does. A schema default with no
-    // column behind it would have Zod filling `origin` on every read while the
-    // value never survived a save, which is this repository's most-repeated
-    // bug and is exactly the shape it takes.
+    // Where they were born. NOT NULL with a default because everyone was born
+    // somewhere, and 'thin_county' is both the majority of births and the honest
+    // reading of an older row. The column exists because the field does: a schema
+    // default with no column behind it has Zod filling the value on every read
+    // while it never survives a save, which is this repo's most-repeated bug.
     if (!cultivatorColumns.includes('origin_tier')) {
         console.error('[Migration] Adding origin_tier column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN origin_tier TEXT NOT NULL DEFAULT 'thin_county';");
     }
 
-    // A plain fact, carried so a child can have two parents. The default is
-    // the reading of a row written before the axis existed and is legibly
-    // arbitrary - a coin flip has no majority, which is the difference from
-    // origin_tier above.
+    // Carried so a child can have two parents. The default is legibly arbitrary -
+    // a coin flip has no majority, which is the difference from origin_tier.
     if (!cultivatorColumns.includes('sex')) {
         console.error('[Migration] Adding sex column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN sex TEXT NOT NULL DEFAULT 'female';");
     }
 
-// The bleed clock. NOT NULL defaulting to 0, which is the honest reading
-    // of every row written before it existed: nobody was bleeding out, because
-    // until this column there was no such thing. A cultivator already sitting
-    // at three untreated injuries starts their ninety days from the next turn
-    // rather than retroactively, which is the forgiving reading and the only
-    // one the data supports - the row does not record when the third wound was
-    // taken, and inventing that date would be the engine asserting history.
+    // NULLABLE: 98 births in a hundred carry nothing, so an old row reads as the
+    // ordinary case rather than as a value nobody chose.
+    if (!cultivatorColumns.includes('physique')) {
+        console.error('[Migration] Adding physique column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN physique TEXT;');
+    }
+
+// The bleed clock. A cultivator already at three untreated injuries starts
+    // their ninety days from the next turn rather than retroactively: the row does
+    // not record when the third wound was taken, and inventing that date would be
+    // the engine asserting history.
     if (!cultivatorColumns.includes('bleeding_turns')) {
         console.error('[Migration] Adding bleeding_turns column to cultivators table');
         db.exec('ALTER TABLE cultivators ADD COLUMN bleeding_turns INTEGER NOT NULL DEFAULT 0;');
     }
 
-    // What the wound is CALLED, as a key into the authored wound table.
-    //
-    // The engine has minted it for a long time - `resolveDeviation` and the
-    // crossing path both pass `ordinaryWoundFor(...)` - and the repository
-    // dropped it on the floor, because there was no column to put it in. So
-    // every wound the player carried came back with `woundType: null` and the
-    // UI could not name a single one of them, including the crippling ones.
-    // Nullable, because null is the honest reading of every row written before
-    // this: an ordinary wound of its severity, which is what they were.
+    // What the wound is CALLED, as a key into the authored wound table. Nullable,
+    // because null is the honest reading of an older row: an ordinary wound of its
+    // severity.
     const injuryColumns = (
         db.prepare('PRAGMA table_info(cultivator_injuries)').all() as { name: string }[]
     ).map(col => col.name);
@@ -669,10 +635,9 @@ function addCultivationColumns(db: Database.Database): void {
         db.prepare('PRAGMA table_info(runs)').all() as { name: string }[]
     ).map(col => col.name);
 
-    // Admin-touched runs are excluded from the death ledger and from balance
-    // statistics. The audit_logs row written alongside is the authoritative
-    // justification for the flag; this column exists so the ledger's exclusion
-    // is an indexed read rather than a LIKE scan across every audit row.
+    // Admin-touched runs are excluded from the death ledger and balance
+    // statistics. The audit_logs row alongside is the authoritative justification;
+    // this column makes the exclusion an indexed read rather than a LIKE scan.
     if (!runColumns.includes('admin')) {
         console.error('[Migration] Adding admin column to runs table');
         db.exec('ALTER TABLE runs ADD COLUMN admin INTEGER NOT NULL DEFAULT 0;');

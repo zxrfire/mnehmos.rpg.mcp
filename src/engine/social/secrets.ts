@@ -1,75 +1,16 @@
 /**
  * Secrets: a lifecycle, and who is holding each one.
- *
- * ── Relationship to the existing secret system ────────────────────────────
- * `src/storage/repos/secret.repo.ts` and the `secrets` table already exist and
- * are not duplicated here. That system owns the CONTENT of a secret - its
- * name, its public and hidden descriptions, its world, its sensitivity, its
- * leak patterns. It is a good fit for what it does and this module leaves it
- * alone.
- *
- * What it does not have, and what the spec requires, is two things:
- *
- *   1. **A lifecycle.** The existing model is a boolean: `revealed`, plus the
- *      condition that flipped it. That cannot express a secret that was
- *      *stolen* rather than discovered, *traded* for something, *leaked* by a
- *      third party, deliberately *suppressed* after the fact, *falsified* so
- *      that what circulates is wrong, or *misunderstood* by the person who now
- *      has it. Those are different situations with different consequences.
- *
- *   2. **Holders.** `revealed` is a global flag: once true, it is true for
- *      everyone. But a secret is almost never known to everyone or to nobody -
- *      it is known to four people, suspected by a fifth, and held in a
- *      falsified version by a sixth who paid for it.
- *
- * So this module adds a per-holder layer on top: one {@link SecretHolding} per
- * (secret, holder) pair, each with its own status and its own version, plus an
- * append-only {@link SecretEvent} log of every transition. `secretId` points at
- * the existing `secrets` row; nothing here restates its content.
- *
- * ── The player is not privileged ──────────────────────────────────────────
- * The player is a holder like any other. **The player must not automatically
- * know what the simulation knows**: what they know about a secret is whatever
- * holding names them, and if there is no holding, they know nothing - however
- * long the secret has been in the database and however central it is.
- *
- * ── The engine records; it does not adjudicate ────────────────────────────
- * Any status may follow any other. There is no legality table, because whether
- * a secret *could* have gone from suppressed back to leaked is a question
- * about the fiction, and the fiction is the narrator's. The engine's
- * contribution is that whatever happened is written down, dated, attributed,
- * and still there in forty years.
  */
 
 import { byId, stableId, type DayIndex } from './common.js';
 
-// ─────────────────────────────────────────────────────────────────────────
-// LIFECYCLE
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * Where a secret stands with respect to one holder.
- *
- *   `unknown`       they have no idea. Storable, so "she still does not know"
- *                   is a fact with a date rather than an absence.
- *   `suspected`     they think something is there without having it.
- *   `discovered`    they found it out legitimately - saw it, worked it out,
- *                   were told by someone entitled to tell them.
- *   `stolen`        taken from someone who was keeping it. The distinction
- *                   from `discovered` matters because somebody was robbed.
- *   `traded`        obtained in exchange for something. Information is a
- *                   resource in this world, and this is what it looks like
- *                   when it is priced.
- *   `leaked`        it got out. Nobody meant this holder to have it.
- *   `suppressed`    they had it and it has been forced back down - by
- *                   threat, by an oath, by a sect ruling, by a memory being
- *                   taken at a realm boundary.
- *   `falsified`     what they hold is a version somebody altered on purpose.
- *   `misunderstood` they have it and have it wrong, with nobody at fault.
- *
- * The last two are why `heldVersion` exists: those holders are acting on
- * something that is not the secret, and the engine has to be able to hand the
- * narrator what they actually think.
+ * Where a secret stands with respect to one holder. `unknown` is storable, so "she
+ * still does not know" is a dated fact rather than an absence. `stolen` is apart
+ * from `discovered` because somebody was robbed, and `traded` because information
+ * here has a price. `suppressed` is having had it and been forced back down.
+ * `falsified` and `misunderstood` are why `heldVersion` exists: those holders are
+ * acting on something that is not the secret.
  */
 export type SecretStatus =
     | 'unknown'
@@ -101,12 +42,9 @@ export const HOLDING_STATUSES: readonly SecretStatus[] = Object.freeze([
 export type SecretHolderKind = 'character' | 'faction' | 'public';
 
 /**
- * One (secret, holder) pair.
- *
- * `heldVersion` is null when the holder has the secret as it really is. When
- * it is set, that string is what they will act on - and the engine keeps the
- * two apart so that a falsified secret can be sold onward, believed, and
- * eventually discovered to have been wrong.
+ * One (secret, holder) pair. `heldVersion` is null when the holder has the
+ * secret as it really is; set, it is what they act on, kept apart so a
+ * falsified secret can be sold onward, believed, and later found wrong.
  */
 export interface SecretHolding {
     id: string;
@@ -128,11 +66,9 @@ export interface SecretHolding {
 }
 
 /**
- * An append-only transition.
- *
- * The history is the valuable part: a secret that is currently `suppressed`
- * but was `leaked` for two years in between is a very different problem from
- * one that was never out, and only the log can tell them apart.
+ * An append-only transition. The history is the valuable part: a secret now
+ * `suppressed` that was `leaked` for two years in between is a different
+ * problem from one never out, and only the log can tell them apart.
  */
 export interface SecretEvent {
     id: string;
@@ -146,10 +82,6 @@ export interface SecretEvent {
     /** What happened, in plain words. */
     note: string;
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// CREATION AND TRANSITION
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface HoldingInput {
     secretId: string;
@@ -194,13 +126,10 @@ export interface TransitionInput {
 }
 
 /**
- * Move a holding to a new status and emit the log entry.
- *
- * Pure: returns a new holding and a new event, and mutates nothing. Any
- * transition is permitted - see the header note on why the engine does not
- * adjudicate. `acquiredOnDay` is preserved, because when this holder first
- * came into contact with the secret does not change just because their
- * relationship to it did.
+ * Move a holding to a new status and emit the log entry, mutating nothing. Any
+ * transition is permitted; see the header. `acquiredOnDay` is preserved,
+ * because when this holder first met the secret does not change when their
+ * relationship to it does.
  */
 export function transitionHolding(
     holding: SecretHolding,
@@ -241,10 +170,6 @@ export function isDistorted(holding: SecretHolding): boolean {
     return DISTORTED_STATUSES.includes(holding.status);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE LEDGER
-// ─────────────────────────────────────────────────────────────────────────
-
 export interface HoldingQuery {
     status?: SecretStatus;
     statuses?: readonly SecretStatus[];
@@ -257,11 +182,9 @@ export interface HoldingQuery {
 }
 
 /**
- * Per-holder secret state, indexed both ways.
- *
- * Mirrors the SQLite indexes in `migrations.social.ts`. The two queries that
- * matter are `holdersOf(secret)` - who could give this away - and
- * `heldBy(holder)` - what does this person have to trade. Both are O(matches).
+ * Per-holder secret state, indexed both ways. Mirrors the SQLite indexes in
+ * `migrations.social.ts`. The two queries that matter are `holdersOf` - who
+ * could give this away - and `heldBy` - what this person has to trade.
  */
 export class SecretLedger {
     private readonly holdings = new Map<string, SecretHolding>();
@@ -309,11 +232,8 @@ export class SecretLedger {
     }
 
     /**
-     * Whether a specific holder actually has a specific secret.
-     *
      * The gate the presentation layer must go through before showing anything
-     * to anyone. A secret existing in the database is not the same as the
-     * player having it, and this is the function that keeps those apart.
+     * to anybody: a secret existing in the database is not the player having it.
      */
     isKnownTo(secretId: string, holderId: string): boolean {
         const holding = this.statusFor(secretId, holderId);

@@ -4,9 +4,7 @@ import { ConcentrationState, ConcentrationStateSchema } from '../../schema/conce
 export class ConcentrationRepository {
     constructor(private db: Database.Database) { }
 
-    /**
-     * Start concentration on a spell
-     */
+    /** Start concentration on a spell */
     create(concentration: ConcentrationState): void {
         const valid = ConcentrationStateSchema.parse(concentration);
 
@@ -30,9 +28,7 @@ export class ConcentrationRepository {
         });
     }
 
-    /**
-     * Get active concentration for a character
-     */
+    /** Get active concentration for a character */
     findByCharacterId(characterId: string): ConcentrationState | null {
         const stmt = this.db.prepare(`
             SELECT * FROM concentration WHERE character_id = ?
@@ -52,9 +48,7 @@ export class ConcentrationRepository {
         });
     }
 
-    /**
-     * Break concentration (delete the record)
-     */
+    /** Break concentration (delete the record) */
     delete(characterId: string): boolean {
         const stmt = this.db.prepare(`
             DELETE FROM concentration WHERE character_id = ?
@@ -63,9 +57,7 @@ export class ConcentrationRepository {
         return result.changes > 0;
     }
 
-    /**
-     * Check if a character is concentrating
-     */
+    /** Check if a character is concentrating */
     isConcentrating(characterId: string): boolean {
         const stmt = this.db.prepare(`
             SELECT COUNT(*) as count FROM concentration WHERE character_id = ?
@@ -74,9 +66,7 @@ export class ConcentrationRepository {
         return row.count > 0;
     }
 
-    /**
-     * Get all active concentrations (for debugging/admin)
-     */
+    /** Get all active concentrations (for debugging/admin) */
     findAll(): ConcentrationState[] {
         const stmt = this.db.prepare(`SELECT * FROM concentration`);
         const rows = stmt.all() as ConcentrationRow[];

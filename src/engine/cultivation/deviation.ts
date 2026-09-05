@@ -1,53 +1,15 @@
 /**
  * Qi deviation (走火入魔) - cultivation going wrong inside the body.
  *
- * Two things cause it, and they are structurally different:
- *
- *  1. WHO YOU ARE. A dual root holds two elements that destroy each other. The
- *     conflict is not a situation you can leave; it is standing inside your own
- *     meridians for the entire run. `SpiritRoot.deviationRisk` is that standing
- *     per-check probability, and it is why a dual root is a worse draw than its
- *     1.0 cultivation speed suggests.
- *
- *  2. WHAT YOU CHOSE TO CULTIVATE. Practising an art whose element overcomes
- *     one of yours in the wuxing cycle is a choice - usually made because the
- *     manual was the only one available, or the only one worth having. That is
- *     the classic xianxia trade: take the fire manual you found, or stay weak.
- *     `conflictsWithRoot` is the arbiter and this module prices the decision.
- *
- * Deviation is not instant death. It tears meridians and burns accumulated
- * progress, which is worse in a slow way: it moves you toward the three-
- * untreated-injuries state where the *next* fight is what kills you.
- *
- * ══ IT IS THE PRICE OF AN ACT, NEVER A CLOCK ══════════════════════════════
- *
  * Ruled by the design owner: *"Idle shouldn't RANDOMLY accumulate injuries.
- * Injuries come from what you DO. Events, right?"* **A wound has a cause you
- * can point at.**
+ * Injuries come from what you DO. Events, right?"* A wound has a cause you can
+ * point at, so nothing here fires on its own: `deviationRisk` prices a danger and
+ * `rollDeviation` tests it, and both wait to be asked by something that happened.
+ * There is no third caller and there must not be one that keys on the calendar.
  *
- * Nothing in this module fires on its own. `deviationRisk` prices a DANGER and
- * `rollDeviation` tests it, and both wait to be asked by something that
- * happened: `time-skip.ts` asks on the check grid *while the cultivator is
- * drawing qi* and not otherwise, and `technique-manage.ts` asks when somebody
- * opens or practises an art that fights their root. There is no third caller
- * and there must not be one that keys on the calendar alone.
- *
- * ── WHAT THIS FILE USED TO CLAIM, AND THE PART THAT SURVIVES ─────────────
- *
- * Cause 1 above says a conflicting root "is not a situation you can leave; it
- * is standing inside your own meridians for the entire run", and the time skip
- * read that as licence to roll every thirty days regardless of what the body
- * was doing. Measured through `ADMIN advance_days`: a body that did nothing at
- * all took better than one wound a year and died of qi deviation inside a
- * decade, whatever it paid for food.
- *
- * The sentence is kept because it is still true, and what it means is now
- * exact. **A conflicting root is a STATE and a state raises what an act costs.
- * It does not act.** Same for the other two standing terms below - untreated
- * wounds and qi past a bottleneck are facts about a body, and they make
- * drawing qi more dangerous rather than making time dangerous. Only
- * `CONFLICTING_TECHNIQUE_RISK` is an act in its own right, and it has always
- * been gated on there being an art in hand.
+ * The time skip used to roll every thirty days regardless. Measured through
+ * `ADMIN advance_days`, a body that did nothing at all took better than one wound
+ * a year and died of qi deviation inside a decade, whatever it paid for food.
  */
 
 import {
@@ -61,52 +23,23 @@ import { createInjury, scarTempering, untreatedInjuryCount } from './injuries.js
 import { ordinaryWoundFor } from './which-wound-an-ordinary-injury-is.js';
 import type { CultivationRNG } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // RISK CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Added risk for cultivating an art whose element overcomes one of the root's.
+ * Added risk for cultivating an art whose element overcomes one of the roots.
+ * Measured, treated against untreated, 24 lives each:
  *
- * Set at 0.12 - larger than any root's innate risk - because it must dominate.
- * A clean single root that picks up a conflicting manual should be taking on
- * *more* danger than a dual root simply existing, otherwise "cultivate the
- * wrong element" reads as free and the wuxing table becomes decoration.
+ *   dual_metal_wood   treated 0.76 wounds/yr, 0 of 24 dead, ordinal 7
+ *                     untreated 1.39 wounds/yr, 24 of 24 dead, ordinal 2.3
+ *   muddled_five      treated 0.20 wounds/yr, 0 of 24 dead, ordinal 7
+ *                     untreated 0.56 wounds/yr, 24 of 24 dead, ordinal 2.7
  */
 export const CONFLICTING_TECHNIQUE_RISK = 0.12;
 
 /**
- * Added risk per untreated meridian injury. Small individually; the point is
- * the feedback loop - deviation causes injuries, injuries make deviation more
- * likely, and a run that starts sliding keeps sliding.
- *
- * ── The root cliff, measured, and the decision to keep this ──────────────
- *
- * Hand-played runs reported every deviation-prone root dying at ordinal 2-3
- * while single roots reached 16, which is a cliff rather than the rate
- * difference the roots advertise. Twenty-four seeds per root over twenty years
- * through the real time skip, fed throughout, varying ONE thing - whether the
- * wounds get closed once a year - reproduced it exactly and located it here:
- *
- *   dual_metal_wood    treated: 0.76 wounds/yr, 0 of 24 dead, ordinal 7
- *                    untreated: 1.39 wounds/yr, 24 of 24 dead, ordinal 2.3
- *   muddled_five       treated: 0.20 wounds/yr, 0 of 24 dead, ordinal 7
- *                    untreated: 0.56 wounds/yr, 24 of 24 dead, ordinal 2.7
- *
- * Every dangerous root shows the same pair. The entire distance between them is
- * one to five spirit stones a year of medicine, against a worst-case village
- * wage of 21.6 stones a year. The escalation is not too steep; it is exactly
- * steep enough to be lethal to somebody with an empty purse and survivable to
- * somebody with a full one, which is what a compounding penalty is for.
- *
- * So this constant stays as it is. The defect it was blamed for was that a
- * bottom-rung cultivator had no way to reach those few stones at all - foraging
- * priced items nothing could sell, which `market.ts` is the answer to. Fixing
- * the money leaves the danger intact; softening the danger would have made the
- * root draw cosmetic, which is the one outcome that would cost the game
- * something it cannot get back.
- *
- * Guarded in `tests/engine/cultivation/root-cliff.test.ts`, both arms.
+ * Added risk per untreated meridian injury. Small individually; the point is the
+ * feedback loop - deviation causes injuries, injuries make deviation more likely,
+ * and a run that starts sliding keeps sliding.
  */
 export const RISK_PER_UNTREATED_INJURY = 0.02;
 
@@ -127,9 +60,7 @@ export const DEVIATION_PROGRESS_LOSS: Record<InjurySeverity, number> = {
     crippling: 0.6
 };
 
-// ─────────────────────────────────────────────────────────────────────────
 // RISK CALCULATION
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface DeviationRiskSource {
     source: string;
@@ -162,10 +93,6 @@ export interface DeviationRiskOptions {
 
 /**
  * Per-check probability of qi deviation.
- *
- * A "check" is one deviation interval, not one day - see
- * DEVIATION_CHECK_DAYS in `time-skip.ts`. Handing this a daily cadence would
- * make a dual root's 0.08 lethal within a season.
  */
 export function deviationRisk(
     cultivator: Pick<Cultivator, 'spiritRoot' | 'injuries'>,
@@ -229,9 +156,7 @@ export function deviationRisk(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ROLLING AND RESOLUTION
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface DeviationCheck {
     deviated: boolean;
@@ -283,13 +208,8 @@ export interface DeviationResolutionContext {
 }
 
 /**
- * Turn a failed deviation check into consequences: one meridian injury, a bite
- * out of accumulated progress, and some HP.
- *
- * Pure - returns deltas, applies nothing. Progress loss is expressed as a
- * fraction of what has been accumulated rather than a flat amount, so it hurts
- * proportionally at every point on a ladder whose costs span four orders of
- * magnitude.
+ * Turn a failed deviation check into consequences: one meridian injury, a bite out
+ * of accumulated progress, and some HP.
  */
 export function resolveDeviation(
     cultivator: Pick<Cultivator, 'cultivationProgress' | 'hp' | 'maxHp'>,

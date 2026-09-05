@@ -1,71 +1,14 @@
 /**
  * Whether the thing you found is for you.
- *
- * The axis the game was missing, and the one that makes going out to look the
- * rational core of it rather than a diversion from cultivating.
- *
- * ── The claim ────────────────────────────────────────────────────────────
- *
- * Comprehension and consumables are SUITED TO A PERSON. A manual you cannot
- * read teaches nothing however long you sit with it. A pill outside its band
- * does nothing. A cultivator sealed in a sect library with everything money
- * can buy still only climbs if they happen to be suited to what that library
- * holds - which is the province of the prodigy and is why everybody else goes
- * out. They are not looking for treasure. They are looking for a fit, and
- * nobody can tell them in advance whether a given door has one behind it.
- *
- * That single fact converts three things at once:
- *
- *   danger      a survival threshold stops being an obstacle and becomes a
- *               wager. You go in because what fits you might be in there
- *   a miss      finding something excellent and useless TO YOU is a real
- *               outcome and a good encounter, not a failed one
- *   rumour      "there is a fire-root manual three provinces over" is worth
- *               more than stones, and only to a fire root. Information becomes
- *               an economy rather than colour
- *
- * ── The miss must be legible ─────────────────────────────────────────────
- *
- * The single most important line in this file is the one that says a thing is
- * fine and is not for you. A player who walks out of a tomb with a heaven-grade
- * manual and no idea why nothing is happening has been cheated by the
- * interface, not by the world. So {@link assessFit} always returns a stated
- * reason per axis, and the summary says plainly which axis missed.
- *
- * ── Consumables and comprehension ────────────────────────────────────────
- *
- * `Find.grade` is aligned to the pill bands the cultivation layer ships -
- * mortal/earth/heaven/immortal/chaos at 1.35/1.25/1.18/1.12/1.08, each halving
- * every eight rungs above its own realm. `Find.domain` is a dao domain key,
- * matched against what the seeker holds, and should be one of the distinct
- * non-element domains that layer's `roadsWalked` counts. Both are restated
- * here rather than imported so this file stays free of the database; if the
- * two ever disagree, that layer is right and this one changes.
- *
- * ── What this file does NOT own ──────────────────────────────────────────
- *
- * It does not decide what a manual teaches, what a pill does, or whether a
- * breakthrough succeeds. Those are `src/engine/cultivation/`'s, and the dao
- * minimums and realm-banded pill falloff being built there are the mechanical
- * half of this same idea. This file answers one question - does this fit this
- * person - and it answers it the way every other catalog question is answered,
- * over columns that already exist. If the two ever disagree, the cultivation
- * layer is right and this one changes.
  */
 
 import { regardFor } from '../cultivation/regard.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TWO SIDES
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The person looking, reduced to the axes a fit is judged on.
- *
- * Structural, and every field optional except the rung, because a caller that
- * does not know somebody's insights should get an honest "cannot tell" on that
- * axis rather than a silent pass.
  */
 export interface Seeker {
     ordinal: number;
@@ -83,10 +26,6 @@ export type FindKind = 'manual' | 'method' | 'pill' | 'inheritance' | 'object' |
 
 /**
  * The thing behind the door, reduced to what it demands.
- *
- * Assembled by the caller from whatever catalog the find came out of -
- * `techniques.ts`, `pills.ts`, an inheritance trial's `age_and_talent` gate.
- * Nothing here is authored in this module; it is a shape, not a table.
  */
 export interface Find {
     id: string;
@@ -104,13 +43,6 @@ export interface Find {
     rootGrades?: readonly string[];
     /**
      * Pill grade, for anything consumed rather than studied.
-     *
-     * Aligned to the bands the cultivation layer now ships: each grade has a
-     * base potency factor, and that factor HALVES every
-     * `PILL_HALVING_RUNGS` above the realm the pill was refined for. So a
-     * mortal-grade pill is worth a great deal at its own rung and nothing at
-     * all eight realms up, which is why a cultivator cannot simply buy their
-     * way up the ladder with cheap pills.
      */
     grade?: PillGrade;
     /**
@@ -125,10 +57,6 @@ export type PillGrade = 'mortal' | 'earth' | 'heaven' | 'immortal' | 'chaos';
 
 /**
  * Base potency factor per grade, against 1 for taking nothing.
- *
- * Restated from the cultivation layer rather than re-derived. If the two ever
- * disagree, that layer is right and this table changes - it is here only so
- * that "is this pill any use to me" can be answered without a database.
  */
 export const PILL_GRADE_FACTOR: Readonly<Record<PillGrade, number>> = {
     mortal: 1.35,
@@ -143,10 +71,6 @@ export const PILL_HALVING_RUNGS = 8;
 
 /**
  * What a pill is actually worth to somebody standing this far off its band.
- *
- * Returns a factor against 1. At its own rung it is the grade's full factor;
- * `PILL_HALVING_RUNGS` above, half the excess; and so on, so it approaches 1 -
- * which is "it does nothing" - rather than ever going negative.
  */
 export function pillPotencyFor(
     grade: PillGrade,
@@ -191,24 +115,19 @@ export interface FitAxis {
     note: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE READING
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Does this fit this person.
- *
- * Reach is judged first and separately, because "too far above you to attempt"
- * and "not written for you" are different facts and collapsing them would lose
- * the one that matters: a thing at your own rung that does not suit you is the
- * discovery this whole system exists to deliver, and it must not be reported
- * as being merely too strong.
+ * Does this fit this person. Reach is judged first and separately, because "too
+ * far above you to attempt" and "not written for you" are different facts, and a
+ * thing at your own rung that does not suit you is the discovery this whole
+ * system exists to deliver - it must not be reported as merely too strong.
  */
 export function assessFit(find: Find, seeker: Seeker): Suitability {
     const grade = clampOrdinal(find.gradeOrdinal);
     const axes: FitAxis[] = [];
 
-    // ── reach ───────────────────────────────────────────────────────────
+    // reach
     const regard = regardFor(grade, seeker.ordinal);
     const reachMiss =
         regard.band === 'unreachable' || regard.band === 'overmatched'
@@ -222,7 +141,7 @@ export function assessFit(find: Find, seeker: Seeker): Suitability {
         note: regard.reaction
     });
 
-    // ── element ─────────────────────────────────────────────────────────
+    // element
     const wants = normalise(find.elements);
     const draws = normalise(seeker.elements);
     let elementVerdict: FitAxis['verdict'] = 'match';
@@ -246,7 +165,7 @@ export function assessFit(find: Find, seeker: Seeker): Suitability {
     }
     axes.push({ axis: 'element', verdict: elementVerdict, note: elementNote });
 
-    // ── root grade ──────────────────────────────────────────────────────
+    // root grade
     const grades = normalise(find.rootGrades);
     if (grades.length > 0) {
         const held = (seeker.rootGrade ?? '').toLowerCase();
@@ -262,7 +181,7 @@ export function assessFit(find: Find, seeker: Seeker): Suitability {
         });
     }
 
-    // ── comprehension ───────────────────────────────────────────────────
+    // comprehension
     if (find.domain) {
         const need = find.domainDegree ?? 1;
         const held = seeker.insights?.[find.domain];
@@ -279,7 +198,7 @@ export function assessFit(find: Find, seeker: Seeker): Suitability {
         });
     }
 
-    // ── band, for anything consumed rather than studied ─────────────────
+    // band, for anything consumed rather than studied
     if (find.kind === 'pill' && find.grade) {
         const potency = pillPotencyFor(find.grade, grade, seeker.ordinal);
         const base = PILL_GRADE_FACTOR[find.grade] ?? 1;
@@ -332,11 +251,6 @@ function verdictFrom(reachMiss: Fit | null, axes: readonly FitAxis[]): Fit {
 
 /**
  * The sentence.
- *
- * `unsuited` is the one that had to be written carefully: it states that the
- * thing is good, states which axis missed, and states that sitting with it
- * will not help - because the failure mode this replaces is a player holding
- * something excellent and quietly concluding the game is broken.
  */
 function lineFor(find: Find, fit: Fit, axes: readonly FitAxis[]): string {
     const missed = axes.filter(a => a.axis !== 'reach' && a.verdict === 'miss');
@@ -365,10 +279,6 @@ function lineFor(find: Find, fit: Fit, axes: readonly FitAxis[]): string {
 
 /**
  * The best of a haul, for whoever is holding it.
- *
- * An expedition returns several things and the interesting question is not
- * what the pile is worth - it is whether ANY of it was for them. Returns null
- * for an empty haul, which is a real result.
  */
 export function bestFor(finds: readonly Find[], seeker: Seeker): { find: Find; suitability: Suitability } | null {
     let best: { find: Find; suitability: Suitability } | null = null;
@@ -385,19 +295,10 @@ export function bestFor(finds: readonly Find[], seeker: Seeker): { find: Find; s
 const FIT_ORDER: readonly Fit[] = ['suited', 'partly', 'out_of_reach', 'unsuited', 'outgrown'];
 
 /**
- * Tags that mean "there is something here somebody could be suited to".
- *
- * `corpse` and `grave` were the omission. What somebody stronger was practising
- * is still on them, and a body carrying a canon holds a fit in exactly the way
- * a ruin's shelf does - it is the one acquisition route with no institutional
- * prerequisite whatsoever, which is why it is the rogue's road. Leaving it out
- * meant the whole of route 3 was invisible to the fit machinery.
- *
- * It is also the route where a miss is most instructive, and that is the reason
- * to surface it rather than a reason to hide it: the manual on a body was
- * written for the person who was carrying it. Killing somebody four rungs above
- * you and taking their canon is a wonderful afternoon that changes nothing, and
- * the fit assessment should say so in the same breath as the loot list.
+ * Tags that mean "there is something here somebody could be suited to". Read off
+ * the catalog's own tags: a market stall and a bandit do not hold a fit; a manual
+ * in a lost grade, an inheritance trial, a refining method on a wall and a body
+ * that was carrying a canon do.
  */
 const FIT_BEARING_TAGS: readonly string[] = [
     'technique',
@@ -422,18 +323,12 @@ const FIT_BEARING_TAGS: readonly string[] = [
 
 /**
  * Whether an encounter row can hold something a person could be suited to.
- *
- * Read off the catalog's own tags. A market stall and a bandit do not hold a
- * fit; a manual in a lost grade, an inheritance trial, a refining method on a
- * wall and a body that was carrying a canon do, and those are exactly the rows
- * tagged for it.
  */
 export function mayHoldAFit(tags: readonly string[]): boolean {
     const set = new Set(tags);
     return FIT_BEARING_TAGS.some(tag => set.has(tag));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 
 function normalise(values: readonly string[] | undefined): string[] {
     return (values ?? []).map(v => v.trim().toLowerCase()).filter(v => v.length > 0);

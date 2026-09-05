@@ -54,9 +54,7 @@ interface MemoryRow {
 export class NpcMemoryRepository {
     constructor(private db: Database.Database) {}
 
-    // ============================================================
     // RELATIONSHIP METHODS
-    // ============================================================
 
     /**
      * Get relationship between PC and NPC
@@ -73,9 +71,7 @@ export class NpcMemoryRepository {
         return this.rowToRelationship(row);
     }
 
-    /**
-     * Create or update relationship between PC and NPC
-     */
+    /** Create or update relationship between PC and NPC */
     upsertRelationship(relationship: Omit<NpcRelationship, 'firstMetAt' | 'lastInteractionAt' | 'interactionCount'> & {
         firstMetAt?: string;
         lastInteractionAt?: string;
@@ -123,9 +119,7 @@ export class NpcMemoryRepository {
         return this.getRelationship(relationship.characterId, relationship.npcId)!;
     }
 
-    /**
-     * Get all NPCs a character has interacted with
-     */
+    /** Get all NPCs a character has interacted with */
     getCharacterRelationships(characterId: string): NpcRelationship[] {
         const stmt = this.db.prepare(`
             SELECT * FROM npc_relationships
@@ -136,9 +130,7 @@ export class NpcMemoryRepository {
         return rows.map(row => this.rowToRelationship(row));
     }
 
-    /**
-     * Get all characters who have interacted with an NPC
-     */
+    /** Get all characters who have interacted with an NPC */
     getNpcRelationships(npcId: string): NpcRelationship[] {
         const stmt = this.db.prepare(`
             SELECT * FROM npc_relationships
@@ -149,13 +141,9 @@ export class NpcMemoryRepository {
         return rows.map(row => this.rowToRelationship(row));
     }
 
-    // ============================================================
     // CONVERSATION MEMORY METHODS
-    // ============================================================
 
-    /**
-     * Record a conversation memory
-     */
+    /** Record a conversation memory */
     recordMemory(memory: Omit<ConversationMemory, 'id' | 'createdAt'>): ConversationMemory {
         const now = new Date().toISOString();
         const stmt = this.db.prepare(`
@@ -178,9 +166,7 @@ export class NpcMemoryRepository {
         };
     }
 
-    /**
-     * Get conversation history between PC and NPC
-     */
+    /** Get conversation history between PC and NPC */
     getConversationHistory(
         characterId: string,
         npcId: string,
@@ -225,9 +211,7 @@ export class NpcMemoryRepository {
         return rows.map(row => this.rowToMemory(row));
     }
 
-    /**
-     * Get recent interactions across all NPCs for a character
-     */
+    /** Get recent interactions across all NPCs for a character */
     getRecentInteractions(characterId: string, limit: number = 10): ConversationMemory[] {
         const stmt = this.db.prepare(`
             SELECT * FROM conversation_memories
@@ -239,9 +223,7 @@ export class NpcMemoryRepository {
         return rows.map(row => this.rowToMemory(row));
     }
 
-    /**
-     * Search memories by topic
-     */
+    /** Search memories by topic */
     searchByTopic(characterId: string, topic: string): ConversationMemory[] {
         // SQLite JSON search - topics is stored as JSON array
         const stmt = this.db.prepare(`
@@ -254,9 +236,7 @@ export class NpcMemoryRepository {
         return rows.map(row => this.rowToMemory(row));
     }
 
-    // ============================================================
     // HELPER METHODS
-    // ============================================================
 
     private rowToRelationship(row: RelationshipRow): NpcRelationship {
         return {

@@ -1,35 +1,13 @@
 /**
- * Shared primitives for the social memory layer.
+ * Shared primitives for the social memory layer, which is STORAGE and not
+ * simulation. Three rules hold across this directory:
  *
- * This layer is STORAGE, not simulation. Four modules sit on top of this file
- * - relationships, the grudge ledger, knowledge, and secrets - and their job
- * is to make sure the world remembers things exactly and durably. The LLM does
- * the reasoning: whether a grudge is worth acting on, whether an NPC is
- * trustworthy, how a faction responds. The engine's job is to guarantee that
- * forty years later the record is still there, unchanged, and queryable.
- *
- * Three consequences shape everything in this directory:
- *
- * ── Nothing here decays, weights, or scores ───────────────────────────────
- * There is no intensity curve, no reputation scalar, no incentive threshold.
- * A grudge does not get quietly smaller because time passed, because a decay
- * function is the engine making a judgement about how much someone still
- * cares. Records change when an EVENT changes them, and events are written
- * down.
- *
- * ── Nothing here ranks people by cultivation ──────────────────────────────
- * There is deliberately no realm ordinal, no power comparison and no strength
- * import anywhere in this module. A character's importance is stored - as a
- * relationship type, a role, a significance - and is never derived from where
- * they stand on the ladder. That is what lets a master who has been surpassed
- * by their own disciple remain the most important person in that disciple's
- * life, and lets a mortal grandmother outrank a Core Formation elder in the
- * only ledger that matters.
- *
- * ── Randomness is engine-owned ────────────────────────────────────────────
- * When something genuinely needs to be random, it comes from
- * {@link socialRoll}, which is seeded and reproducible. The LLM never picks
- * its own roll, consciously or otherwise.
+ * - Nothing decays, weights or scores. A decay function is the engine judging
+ *   how much somebody still cares; records change when an EVENT changes them.
+ * - Nothing ranks people by cultivation: no realm ordinal, no power comparison,
+ *   no strength import - which is what lets a master surpassed by his own
+ *   disciple stay the most important person in that disciple's life.
+ * - Randomness is engine-owned. {@link socialRoll} is seeded and reproducible.
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
@@ -39,9 +17,8 @@ export { DAYS_PER_YEAR };
 
 /**
  * An absolute day index on the world calendar - the same grid the cultivation
- * time-skip keys to. Every dated record in this layer uses it, so "forty years
- * later" is arithmetic rather than a date library, and a record written before
- * a thirty-year seclusion is trivially comparable to one written after it.
+ * time-skip keys to, so "forty years later" is arithmetic and a record written
+ * before a thirty-year seclusion compares to one written after it.
  */
 export type DayIndex = number;
 
@@ -54,13 +31,10 @@ export function daysForYears(years: number): number {
 }
 
 /**
- * A seeded roll for the rare social question that is genuinely chance -
- * whether a passer-by happened to overhear, which of two couriers arrived
- * first.
- *
- * Exists so that no caller is ever tempted to let the narrating model decide a
- * random outcome. Same run seed and same coordinates always produce the same
- * stream, so a replay of a saved world reproduces it exactly.
+ * A seeded roll for the rare social question that is genuinely chance - whether
+ * a passer-by overheard, which of two couriers arrived first. Exists so no
+ * caller is tempted to let the narrating model decide a random outcome; same
+ * seed and coordinates replay a saved world exactly.
  */
 export function socialRoll(
     runSeed: string,
@@ -70,30 +44,20 @@ export function socialRoll(
     return forStream(runSeed, `social.${stream}`, ...coords);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// NUMBERS
-// ─────────────────────────────────────────────────────────────────────────
-
 export function clamp01(n: number): number {
     if (!Number.isFinite(n)) return 0;
     return Math.max(0, Math.min(1, n));
 }
 
 /**
- * Round to four decimals.
- *
- * Applied to every stored number so that a value written, persisted to SQLite,
- * read back and compared is the same value. Float drift is a real source of
- * "the record changed and nobody touched it".
+ * Round to four decimals. Applied to every stored number so a value written,
+ * persisted to SQLite and read back compares equal - float drift is a real
+ * source of "the record changed and nobody touched it".
  */
 export function round4(n: number): number {
     if (!Number.isFinite(n)) return 0;
     return Math.round(n * 1e4) / 1e4;
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// IDENTITY
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * FNV-1a, 32-bit. Not cryptographic and not trying to be - it turns a tuple of
@@ -110,12 +74,9 @@ function fnv1a(input: string): string {
 }
 
 /**
- * A deterministic id for a stored social record.
- *
- * Identical inputs always produce an identical id, on every machine and every
- * replay, with no PRNG consumed. Records are compared field by field across
- * save/load in the tests, and a random id would make every such comparison
- * vacuously fail.
+ * A deterministic id for a stored social record, consuming no PRNG. The tests
+ * compare records field by field across save/load, and a random id would make
+ * every one of those comparisons vacuously fail.
  */
 export function stableId(prefix: string, ...parts: (string | number)[]): string {
     const body = parts.map(p => String(p)).join('');

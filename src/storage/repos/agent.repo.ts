@@ -24,9 +24,7 @@ import {
     CompetencySource
 } from '../../schema/agent.js';
 
-// ============================================================================
 // ROW TYPES (snake_case from SQLite)
-// ============================================================================
 
 interface AgentRow {
     id: string;
@@ -100,9 +98,7 @@ interface CallRow {
     created_at: string;
 }
 
-// ============================================================================
 // ROW → ENTITY MAPPERS
-// ============================================================================
 
 function rowToAgent(row: AgentRow): Agent {
     const competencyOverride = row.competency_override
@@ -188,9 +184,7 @@ function rowToCall(row: CallRow): AgentCall {
     });
 }
 
-// ============================================================================
 // REPOSITORY
-// ============================================================================
 
 export class AgentRepository {
     constructor(private db: Database.Database) {}

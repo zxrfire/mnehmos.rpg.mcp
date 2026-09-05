@@ -1,66 +1,11 @@
 /**
  * What a capped cultivator does next.
  *
- * `techniqueExhausted` in `cultivation.ts` stops a cultivator dead at their
- * manual's `cap`. Not a taper - a multiplier of zero. This module is the other
- * half of that: the arithmetic behind the doors out, specified in
- * [`docs/world/climbing/past-the-ceiling.md`](../../../docs/world/climbing/past-the-ceiling.md) as routes 1b and 7.
- *
- * Nothing here is a new subsystem. Every rule below is a function of something
- * the engine already reads:
- *
- *   the cap          `capOf`'s realm geometry, restated where realms live
- *   a partial set    `shardPower` - the ONE piece of "a piece is worth less
- *                    than the whole" arithmetic in this repo
- *   who may read it  `daoGate`'s shape and `daoMatches`' judgement
- *   who may write it the same, one standing higher
- *
- * ── THE FOUR REASONS A MANUAL FAILS SOMEBODY ─────────────────────────────
- *
- * There are now four, they are independent, and the whole design rests on a
- * player being able to tell which one bit. Collapsing any two of them loses
- * the fact that matters:
- *
- *   cap           it is for you, you can read it, and it ENDS. Another book.
- *                 `techniqueExhausted`. Fixed by going somewhere.
- *   suitability   it is sound and it is not written for your root. Nothing
- *                 fixes it, ever. `assessFit`, in the encounters layer.
- *   dao standing  you have not walked far enough along its road to begin it
- *                 at all. {@link manualGate}. Fixed by living, not by sitting.
- *   the opening   you can begin it and the first stretch is uphill.
- *                 {@link openingMultiplier}. Fixed by the years.
- *
- * Every function in this file returns its own reason string for exactly that
- * reason. A refusal without an attributable cause reads as an arbitrary
- * system, and the lesson a player draws from an arbitrary system is to sit
- * longer - which is the precise opposite of what the corridor is for.
- *
- * ── WHY THE MEASURE IS REALMS AND NOT RUNGS ──────────────────────────────
- *
- * Measured off the live catalog rather than assumed. Seventeen cultivation
- * manuals; above `requiredOrdinal` 13 the widest `cap - requiredOrdinal` is 4,
- * and the two wider than that (13 and 8 rungs) both sit inside Qi Condensation,
- * which is one realm thirteen rungs deep. In REALMS every manual in the world
- * spans exactly one. That is not a tuning choice - `capOf` is
- * `realmForOrdinal(requiredOrdinal).ordinalEnd + 1`, so a manual carries you
- * through its realm and one rung over the boundary, and the succession of books
- * is a fact about realm geometry.
- *
- * So {@link realmsSpannedBy} is the honest measure of "is this book
- * exceptional", it reads 1 for the entire current catalog, and every gate keyed
- * on it is INERT today in exactly the way `DAO_GATE_FROM_ORDINAL` is inert.
- * The day the data layer authors a two-realm manual, the gates fire on their
- * own without anybody remembering to wire them up.
- *
- * ── WHAT THIS MODULE DOES NOT DO ─────────────────────────────────────────
- *
- * It does not decide whether a manual suits a root. That is `assessFit` in
- * `../encounters/suitability.ts`, and the two are deliberately independent: a
- * perfectly suited manual still runs out and an ill-suited one teaches nothing
- * at any height. It does not write to anything. And it never asserts a manual
- * into existence on a narrator's say-so - {@link deriveContinuation} is the
- * only thing in this repo that creates an art at runtime, and it is a pure
- * function of a seeded stream.
+ * Measured off the live catalog rather than assumed: seventeen cultivation
+ * manuals, and above `requiredOrdinal` 13 the widest `cap - requiredOrdinal` is
+ * 4. Every manual in the world spans exactly one realm, and that is not a tuning
+ * choice - `capOf` is `realmForOrdinal(requiredOrdinal).ordinalEnd + 1`, so the
+ * succession of books is a fact about realm geometry.
  */
 
 import { MAX_ORDINAL, rankName } from './realms.js';
@@ -97,14 +42,12 @@ import type { TechniqueGrade } from '../../schema/cultivation.js';
 // special case at the top of the scale and there must not be one."
 import { shardPower } from '../world/possessions.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE SHAPE OF A MANUAL
 //
 // Structural, not imported. `src/engine/cultivation/**` holds no dependency on
 // `src/data/**` and this module does not introduce one - a caller assembles
 // this from whatever catalog the book came out of, exactly as `GatedTechnique`
 // is assembled for `daoGate`.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** A cultivation manual, reduced to what its ceiling is a function of. */
 export interface CappedManual {
@@ -135,16 +78,9 @@ export interface CappedManual {
 export interface GatedManual extends CappedManual, GatedTechnique {
     grade: TechniqueGrade;
     /**
-     * The comprehension the CATALOG says this manual cannot be worked without,
-     * if it says anything. Read by `assessFit` in the encounters layer, which
-     * is where it is enforced.
-     *
-     * Present here only so {@link manualDaoRequirement} can stand down. A
-     * manual that states its own comprehension gate has answered the question
-     * "how much understanding does this ask for", and the span curve must not
-     * stack a second, harder answer on top of it - five reasons a book can fail
-     * somebody is four too many, and two of them measuring the same thing is
-     * how a system starts reading as arbitrary.
+     * The comprehension the CATALOG says this manual cannot be worked without, if
+     * it says anything. Read by `assessFit` in the encounters layer, which is where
+     * it is enforced.
      */
     domain?: string | null;
     domainDegree?: number;
@@ -155,25 +91,11 @@ export interface ExtendableManual extends GatedManual {
     /**
      * NO LONGER READ, and kept only so a caller passing a catalog row still
      * typechecks.
-     *
-     * It encoded an opt-in allowlist: certain manuals were extendable and the
-     * rest were not. That is the wrong model. Writing the next stage is
-     * something a CULTIVATOR does to the book in front of them, not a property
-     * an author blesses certain rows with - so extension is available by
-     * default and what varies is whether anybody could manage it, which is what
-     * the new-ground curve measures.
-     *
-     * @deprecated Read `notExtendableReason` instead.
      */
     derivable?: boolean;
     /**
-     * Why this particular manual cannot be extended, however deep the reader,
-     * or null/absent for the ordinary case where it can.
-     *
-     * The opt-OUT, and the half of the old model worth keeping. These are the
-     * interesting refusals - the ones where "you cannot write the next stage"
-     * is a fact about the book rather than about the reader. The catalog's
-     * `NOT_DERIVABLE_NOTES` are already exactly this and are read verbatim.
+     * Why this particular manual cannot be extended, however deep the reader, or
+     * null/absent for the ordinary case where it can.
      */
     notExtendableReason?: string | null;
     /** The catalog's current name for the field above. Read as a fallback. */
@@ -197,7 +119,6 @@ export {
     type OpeningPenalty
 };
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A MANUAL IS: A SEQUENCE OF STAGES
 //
 // The correction that reshaped this module, and it simplified more than it
@@ -223,7 +144,7 @@ export {
 //   write it yourself. That is one mechanism with three doors rather than two
 //   parallel systems, and `effectiveCapOf` was already most of it.
 //
-// ── Volumes and stages are the same idea at different grain ──────────────
+// Volumes and stages are the same idea at different grain
 //
 // Stated carefully, because the tidy version is false. A volume is a PHYSICAL
 // container and a stage is a UNIT OF METHOD, and they do not divide evenly:
@@ -233,7 +154,7 @@ export {
 // without it the book stops earlier" - and both therefore run through
 // `shardPower` rather than through two different pieces of arithmetic.
 //
-// ── A written stage is transmissible ─────────────────────────────────────
+// A written stage is transmissible
 //
 // "It can be passed on from master to student personally (or even written
 // down)." So a derivation is not a private trick. It is how a manual actually
@@ -245,14 +166,9 @@ export {
 // any other, so `canTransmit` in `../encounters/acquisition.ts` already carries
 // it from master to student, and its "you cannot be shown further than the
 // teacher went" rule is exactly right for it.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * One stage of a manual: the unit a manual grows by, and one rung of ceiling.
- *
- * This is what a derivation PRODUCES. It is not a technique row and must not be
- * persisted as one - see the note on {@link writeNextStage} for what the
- * storage layer actually needs.
  */
 export interface Stage {
     /** The manual this is a stage OF. Stages do not exist on their own. */
@@ -264,21 +180,12 @@ export interface Stage {
     number: number;
     /**
      * Who wrote it, or null for the stages the manual has always had.
-     *
-     * The field that makes a library a history. A house holding stage 14 of
-     * something, written four hundred years ago by somebody whose name is on
-     * it, is a fact this column produces rather than one anybody authored.
      */
     authorId: string | null;
     /** Day it was written. Null for the stages the manual was found with. */
     writtenOnDay: number | null;
     /**
      * How much of it failed to survive being written down, 0..1.
-     *
-     * High for a newly written stage on purpose: one person's working notes are
-     * not a house's polished canon. This is what makes a derived stage harder
-     * for the NEXT reader than the stages before it, and it is the honest cost
-     * of a library that grew by accretion.
      */
     opacity: number;
 }
@@ -297,10 +204,6 @@ export function stagesWrittenOf(manual: Pick<CappedManual, 'requiredOrdinal' | '
 
 /**
  * How many parts of an ordered work are held from the beginning, unbroken.
- *
- * The contiguity rule, and it is the whole reason stages are numbered: nobody
- * practises stage fifteen without fourteen. Holding the first and third volumes
- * of a canon is holding the first volume, plus a book you cannot read yet.
  */
 export function contiguousRun(ordered: readonly string[], held: ReadonlySet<string>): number {
     let run = 0;
@@ -311,7 +214,6 @@ export function contiguousRun(ordered: readonly string[], held: ReadonlySet<stri
     return run;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // E1. THE SCATTERED SET
 //
 // Route 1b. A canon that exists only as separated volumes in three different
@@ -321,20 +223,21 @@ export function contiguousRun(ordered: readonly string[], held: ReadonlySet<stri
 //
 // There is deliberately no second cap field anywhere - a partial set's ceiling
 // is DERIVED, here, from how many volumes are held, using `shardPower`.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface EffectiveCap {
     /** What to feed `CultivationOptions.techniqueCap`. Null means uncapped. */
     cap: number | null;
     /** The complete work's own ceiling, for comparison. */
     wholeCap: number | null;
-    /**
-     * How far the manual has been written BY ANYBODY, catalog plus every stage
-     * added since. The world fact, as against `cap`, which is this holder's.
-     *
-     * These two used to be the same number and silently stopped being one the
-     * first time a stage was written. See {@link writtenTo}.
-     */
+/**
+ * How far the manual has been written BY ANYBODY, catalog plus every stage since.
+ *
+ * A runtime-written art used to be absent from the compiled catalog, so
+ * `getTechnique` missed it, `techniqueCap` fell to `NO_MANUAL_CEILING` and a
+ * cultivator who wrote their own continuation was bricked - measured by the verb
+ * layer as `PROGRESS 0 -> 0`. A manual that GAINS A STAGE stays catalogued, but
+ * "stays catalogued" is not "the catalog knows how far it now goes".
+ */
     writtenTo: number | null;
     /** Stages beyond the catalog's that this holder actually stands on. */
     stagesHeld: number;
@@ -350,42 +253,9 @@ export interface EffectiveCap {
 
 /**
  * The ceiling of what somebody is actually holding.
- *
- * A single-volume work, or a complete set, returns the manual's own cap. Each
- * missing volume drops it by one rung, through {@link shardPower}, so there is
- * one piece of that arithmetic in this repo and not two.
- *
- * An UNCAPPED work that is scattered is the interesting case and it is
- * deliberately not a special case: the notional whole is the top of the ladder,
- * and each missing volume comes off that. Three quarters of the top prize in
- * the setting is a very good book with a ceiling, which is the outcome route 1b
- * is for - and the bitter version of it, where the complete work turns out to
- * be unsuited and you now own three quarters of something you cannot read, is
- * `assessFit`'s to say and not this function's.
  */
 /**
  * How far this manual has been written BY ANYBODY.
- *
- * ── THE FACT THAT STOPPED BEING FREE ─────────────────────────────────────
- *
- * `stagesWrittenOf(manual)` is `cap - requiredOrdinal`, and that is exact for a
- * catalog row precisely BECAUSE no stage has been written yet. The moment one
- * is, the catalog's cap and the manual's real ceiling disagree - and the
- * catalog is the only thing the rate layer can currently reach, so a manual
- * that just gained a stage would go on reporting the ceiling it had before.
- *
- * That is the stage model's version of a defect the row model had in a worse
- * form: a runtime-written art was not in the compiled catalog at all, so
- * `getTechnique` missed it, `techniqueCap` fell to `NO_MANUAL_CEILING` and a
- * cultivator who wrote their own continuation was bricked by it. Measured by
- * the verb layer as `PROGRESS 0 -> 0`. A manual that GAINS A STAGE stays
- * catalogued, which is most of why this model is the right one - but "stays
- * catalogued" is not "the catalog knows how far it now goes", and this is the
- * seam.
- *
- * So the ceiling is composed rather than read: the catalog's own written
- * stages, plus every stage recorded against the manual since. Whatever
- * resolves `techniqueCap` must call this, not `manual.cap`.
  */
 export function writtenTo(
     manual: Pick<CappedManual, 'cap'>,
@@ -402,12 +272,6 @@ export function effectiveCapOf(
     heldVolumeIds: readonly string[] = [],
     /**
      * Stages written beyond the catalog's that THIS holder stands on.
-     *
-     * Contiguity applies here exactly as it does to volumes: a stage past the
-     * end of the book is worth nothing to somebody who has not got to the end
-     * of the book, so this is ignored for a holder missing any part of the
-     * work. Ignoring it is the honest answer rather than a simplification -
-     * nobody practises stage 14 while stuck at stage 2.
      */
     stagesHeldSince = 0
 ): EffectiveCap {
@@ -516,7 +380,6 @@ export function effectiveCapOf(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // E2b. THE STANDING A MANUAL ASKS BEFORE IT CAN BE TAKEN UP
 //
 // The corridor is meant to be leapfroggable by finding an exceptional book,
@@ -534,7 +397,6 @@ export function effectiveCapOf(
 // It composes with suitability rather than competing with it. Fit asks "is this
 // written for me". Standing asks "am I far enough along to read it". Two
 // independent axes, and both carry their reason.
-// ─────────────────────────────────────────────────────────────────────────
 
 const STANDING_ORDER: Record<DaoStanding, number> = { none: 0, leaning: 1, dao: 2 };
 
@@ -545,10 +407,6 @@ function deeper(a: DaoStanding, b: DaoStanding): DaoStanding {
 
 /**
  * Standing a manual's REACH demands, independent of its grade.
- *
- * One realm asks nothing - that is every book in the world and the ordinary
- * case. Two asks for a leaning. Three or more asks for a full Dao, which is the
- * same bar `chaos` grade sets and the same bar derivation sets.
  */
 export function spanStanding(realmsSpanned: number): DaoStanding {
     if (realmsSpanned <= ORDINARY_REALM_SPAN) return 'none';
@@ -563,25 +421,17 @@ export interface ManualRequirement {
     realmsSpanned: number;
     gradeStanding: DaoStanding;
     spanStanding: DaoStanding;
-    /**
-     * True when the manual states its own comprehension gate, so the span
-     * curve stood down in favour of it. See {@link GatedManual.domain}.
-     */
+/**
+ * True when the manual states its own comprehension gate, so the span curve
+ * stands down. A manual that states its own gate has answered "how much
+ * understanding does this ask for", and the span curve must not stack a second,
+ * harder answer on top of it.
+ */
     spanDeferredToCatalog: boolean;
 }
 
 /**
  * What this manual asks of a reader before they may begin it at all.
- *
- * The deeper of two independent asks. `GRADE_REQUIREMENT` is why top-grade
- * manuals sit in ruins unread; the span requirement is why an exceptional one
- * cannot simply be handed to a novice as a shortcut.
- *
- * THE CATALOG WINS. A wide manual that authors its own `domain`/`domainDegree`
- * has already said how much understanding it asks for, in the field `assessFit`
- * enforces. The span curve is the DEFAULT for a wide manual that says nothing -
- * so a book authored wide and ungated is not a free shortcut, and a book
- * authored wide and gated is gated exactly once, in the place its author chose.
  */
 export function manualDaoRequirement(manual: GatedManual): ManualRequirement {
     const realmsSpanned = realmsSpannedBy(manual);
@@ -606,10 +456,6 @@ export interface ManualGateResult {
     permitted: boolean;
     /**
      * Machine-readable reason when refused; null when permitted.
-     *
-     * `daoGate`'s own vocabulary, extended rather than duplicated, so the two
-     * refusals read alike: `no_matching_dao` when the road is not deep enough,
-     * `wrong_dao` when it is deep and it is a different road.
      */
     reason: 'no_matching_dao' | 'wrong_dao' | null;
     requirement: ManualRequirement;
@@ -620,11 +466,6 @@ export interface ManualGateResult {
 
 /**
  * Whether this cultivator's road permits them to BEGIN this manual.
- *
- * `daoGate`'s shape, applied to learning rather than to breaking through, and
- * reading the same `daoMatches`. Refusal is a statement about the reader and
- * not about the book: the pages are legible, the qi is there, and the reader
- * has not been anywhere that would let the meaning arrive.
  */
 export function manualGate(dao: DaoAssessment, manual: GatedManual): ManualGateResult {
     const requirement = manualDaoRequirement(manual);
@@ -689,7 +530,6 @@ function reachClause(requirement: ManualRequirement): string {
         : 'is written for somebody who has walked a road';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // E2. WHETHER THE CONTINUATION CAN BE WRITTEN
 //
 // Route 7, the prodigy's road, and the only route whose output is
@@ -700,7 +540,6 @@ function reachClause(requirement: ManualRequirement): string {
 // somebody who stands at `dao` in the subject a manual is about does not need
 // the pages. A LEANING is enough to read an immortal-grade art and is not
 // enough to extend one, and that distinction is the whole gate.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What a derivation attempt is refused for, when it is. */
 export type DerivationRefusal =
@@ -717,12 +556,6 @@ export type DerivationRefusal =
     /**
      * Nobody has ever written anything at this height, so there is nothing to
      * compose against.
-     *
-     * The far end of the new-ground curve, and a refusal rather than a very
-     * large price - which is what stops derivation being a general escape from
-     * the corridor. Above the last taught book the world holds almost nothing,
-     * and a road with no precedent at all is not a hard derivation, it is the
-     * crossing, and the crossing is not a book.
      */
     | 'no_precedent';
 
@@ -739,11 +572,8 @@ export interface DerivationCheck {
 export const DERIVATION_STANDING: DaoStanding = 'dao';
 
 /**
- * Whether this cultivator's road permits them to write this manual's
- * continuation rather than find it.
- *
- * Shaped exactly like `daoGate` and reusing `daoMatches`, so the two refusals
- * read alike and a caller that already renders one renders the other.
+ * Whether this cultivator's road permits them to write this manual's continuation
+ * rather than find it.
  */
 export function canExtend(
     dao: DaoAssessment,
@@ -840,7 +670,6 @@ export function canExtend(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // E3. WRITING IT
 //
 // The one genuinely new mechanism in `past-the-ceiling.md`, and the one most likely to
@@ -865,19 +694,12 @@ export function canExtend(
 // road, not the way missing content gets papered over. If that set ever grows
 // to cover the choke points, the corridor has been abolished rather than
 // opened.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Years of work a derived rung costs.
- *
- * Charged per rung of new ceiling, and readable BEFORE the work is committed -
- * "never hide the cap" cuts both ways, and a price a player can only discover
- * by paying it is the same failure as a ceiling they can only discover by
- * hitting it. Deliberately not drawn from the stream for that reason.
  */
 export const DERIVATION_YEARS_PER_RUNG = 12;
 
-// ─────────────────────────────────────────────────────────────────────────
 // NEW GROUND
 //
 // "Obviously it gets harder as you go up cuz you're on new ground."
@@ -911,45 +733,25 @@ export const DERIVATION_YEARS_PER_RUNG = 12;
 //   Suited by construction. The price is years and possibility, never stones,
 //   never rank, never standing in a house. The moment difficulty becomes a
 //   resource cost this stops being the one door money cannot open.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What the world holds at or above the rung being written for.
- *
- * Supplied by the caller, not read here: `src/engine/cultivation/**` holds no
- * dependency on `src/data/**` and this does not introduce one. Build it with
- * {@link precedentAt} from the catalog's own ordinals.
  */
 export interface Precedent {
-    /**
-     * How many arts in the world are written for the target rung or above.
-     *
-     * The measure of how much there is to compose against. Zero means nobody
-     * has ever written anything at this height, which is a refusal rather than
-     * a penalty - see `no_precedent`.
-     */
+/**
+ * How many arts in the world are written for the target rung or above.
+ *
+ * PASS CULTIVATION MANUALS, NOT EVERY ART. The catalog is mostly dao arts, which
+ * have no cap and would dilute the count past meaning. Measured: counting
+ * everything leaves 13 arts standing at ordinal 44 and the curve inert across the
+ * whole ladder; counting manuals leaves 2, which is the scarcity the corridor
+ * actually describes.
+ */
     artsAtOrAbove: number;
 }
 
 /**
  * Arts at or above the target rung, counted off the ordinals a caller holds.
- *
- * PASS CULTIVATION MANUALS, NOT EVERY ART. What a derivation composes against
- * is the body of work on the road it is extending, and the whole catalog is
- * mostly dao arts - which have no cap, are not on this ladder, and would
- * dilute the count past the point of meaning. Measured: counting everything
- * leaves 13 arts standing at ordinal 44 and the curve inert across the entire
- * ladder; counting manuals leaves 2, which is the scarcity the corridor
- * actually describes.
- *
- *   precedentAt(
- *       TECHNIQUES.filter(t => classOf(t) === 'cultivation')
- *                 .map(t => t.requiredOrdinal),
- *       targetOrdinal
- *   )
- *
- * Kept here so every caller counts the same thing the same way rather than
- * each deciding what "precedent" means.
  */
 export function precedentAt(
     artOrdinals: readonly number[],
@@ -962,28 +764,11 @@ export function precedentAt(
 
 /**
  * Manuals at or above the target that count as a well-walked road.
- *
- * Eight, calibrated against the live catalog rather than picked. Counting the
- * 22 cultivation manuals the world holds, the number standing at or above a
- * rung runs 18 at Foundation, 9 at 29, 7 at 33, 4 at 37, 2 at 42 and 1 at the
- * summit - so eight puts the floor of the curve just below the middle of the
- * ladder and lets it bite exactly where the corridor narrows.
- *
- * The resulting price: 12 years anywhere below rung 33, 18 at 33, 36 at 37,
- * and 54 near the top. Low down that is a long project on a road with
- * precedent everywhere; high up it is most of a mortal life spent writing
- * where four books exist.
  */
 export const PRECEDENT_WELL_WALKED = 8;
 
 /**
  * How much thin ground multiplies the work, at its very thinnest.
- *
- * Four, so a derivation with one lonely precedent costs about five times what
- * one with a full shelf behind it costs. Sized against the price it scales:
- * `DERIVATION_YEARS_PER_RUNG` is 12, so the range runs from twelve years low
- * on the ladder to sixty near the top of what is writable at all - the
- * difference between a long project and most of a mortal life.
  */
 export const DERIVATION_THINNESS_COST = 4;
 
@@ -1008,14 +793,8 @@ export function derivationYears(precedent: Precedent): number {
 
 /**
  * WHAT USED TO BE HERE: `DerivedManual`, a complete technique row this module
- * invented, with its own id, name, grade, element and a `provenance: 'derived'`
- * the data layer was asked to admit.
- *
- * It was the wrong model and it is gone. A derivation is not a new book - it is
- * the next STAGE of the book already in hand, so what comes out is a
- * {@link Stage} belonging to an existing manual, and the manual's own cap moves
- * up one rung. See the note on {@link writeNextStage} for what that means for
- * storage, which is materially less than a new row per derivation.
+ * invented, with its own id, name, grade, element and a `provenance: 'derived'` the
+ * data layer was asked to admit.
  */
 
 export interface DerivationRequest {
@@ -1027,20 +806,10 @@ export interface DerivationRequest {
     dao: DaoAssessment;
     /**
      * What the world holds at or above the rung being written for.
-     *
-     * REQUIRED, and deliberately not optional with a generous default: a
-     * caller that forgot it would get the cheapest derivation in the game at
-     * the exact height where it should be hardest, which is the failure this
-     * whole curve exists to prevent. Build it with {@link precedentAt}.
      */
     precedent: Precedent;
     /**
      * Stages already written against this manual beyond the catalog's own.
-     *
-     * REQUIRED IN EFFECT even though it defaults to 0: without it a cultivator
-     * extending a manual that somebody already extended would write the stage
-     * that exists rather than the one after it, and the ceiling would never
-     * move past the first derivation. Read it off the stages table.
      */
     stagesWrittenSince?: number;
 }
@@ -1072,14 +841,6 @@ export type DerivationResult =
 
 /**
  * Write the continuation.
- *
- * Deterministic in `(runSeed, cultivatorId, source.id, dao.subject)` and
- * nothing else - not the day, not the ordinal, not how many times it was
- * attempted. A cultivator who tries again gets the same book, because the book
- * is a fact about their road and roads do not reroll.
- *
- * Returns a refusal rather than throwing, so a caller can put {@link canDerive}
- * and this behind one verb.
  */
 export function writeNextStage(request: DerivationRequest): DerivationResult {
     const { runSeed, cultivatorId, source, dao } = request;
@@ -1173,7 +934,6 @@ export function writeNextStage(request: DerivationRequest): DerivationResult {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 
 function clampOrdinal(ordinal: number): number {
     if (!Number.isFinite(ordinal)) return 0;

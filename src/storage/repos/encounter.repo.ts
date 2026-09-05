@@ -2,17 +2,10 @@ import Database from 'better-sqlite3';
 import { Encounter, EncounterSchema, DEFAULT_GRID_BOUNDS } from '../../schema/encounter.js';
 
 /**
- * EncounterRepository - Persistence layer for combat encounters
- *
- * PHASE 1: Position Persistence
- * - Positions are stored within the tokens JSON
- * - Terrain obstacles are stored in a separate terrain column
- * - Grid bounds define valid coordinate ranges
- *
- * Storage format:
- * - tokens: JSON array of TokenSchema (includes position, movementSpeed, size)
- * - terrain: JSON object with obstacles and difficultTerrain arrays
- * - grid_bounds: JSON object with minX, maxX, minY, maxY, minZ?, maxZ?
+ * Persistence for combat encounters. Three columns carry JSON: `tokens` is an
+ * array of TokenSchema including position, movementSpeed and size; `terrain`
+ * holds obstacles and difficultTerrain arrays; `grid_bounds` holds
+ * minX/maxX/minY/maxY and optional minZ/maxZ.
  */
 export class EncounterRepository {
     constructor(private db: Database.Database) {
@@ -86,13 +79,7 @@ export class EncounterRepository {
             })
         );
     }
-    /**
-     * Save combat state to database
-     * PHASE 1: Now persists positions, terrain, and grid bounds
-     *
-     * @param encounterId The encounter ID
-     * @param state The CombatState object (includes participants with positions)
-     */
+    /** Save combat state, including participant positions, terrain and grid bounds. */
     saveState(encounterId: string, state: any): void {
         const stmt = this.db.prepare(`
             UPDATE encounters
@@ -129,13 +116,7 @@ export class EncounterRepository {
         return result.changes > 0;
     }
 
-    /**
-     * Load combat state from database
-     * PHASE 1: Now restores positions, terrain, and grid bounds
-     *
-     * @param encounterId The encounter ID
-     * @returns CombatState object with all spatial data, or null if not found
-     */
+    /** Load combat state with all spatial data, or null when the encounter is unknown. */
     loadState(encounterId: string): any | null {
         const row = this.findById(encounterId);
         if (!row) return null;

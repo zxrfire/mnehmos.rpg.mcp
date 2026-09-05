@@ -1,84 +1,6 @@
 /**
  * The order the two consents came in, the power to make a refusal stick, and
  * whether the person goes along with an arrangement they did not make.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * TWO ROUTES, AND THE ORDER OF CONSENT IS THE WHOLE DIFFERENCE
- * ═════════════════════════════════════════════════════════════════════════
- *
- *   FAMILY FIRST   The house answers before there is anything between the two
- *                  people. A no here is an answer to a question and costs
- *                  nobody anything. Its failure mode is the person refusing
- *                  something already agreed, which is where somebody runs.
- *
- *   PERSON FIRST   The two of them arrive with something already made. A no
- *                  here is not declining a proposal - it is taking away
- *                  something that exists. That writes a grudge against the
- *                  house.
- *
- * THE GATE IS CATEGORICAL AND NOT A THRESHOLD. It is not that a refusal after
- * a yes is heavier; it is that an ordinary refusal opens nothing at all.
- * Houses refuse constantly and must be able to without accumulating enemies,
- * or the world fills up with records that mean nothing. What can be refused
- * without cost is a question. What cannot is a thing two people already have.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHOSE REFUSAL EVEN MATTERS, WHICH IS THE SAME AXIS AS A REPRISAL
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A family's approval is worth exactly what the family can make stick, and
- * `social-leverage/what-a-house-does-when-it-catches-you.ts` already answers
- * that question from the other side, in one sentence this file does not
- * restate:
- *
- *   > Backing protects you from exactly the people who have something to lose,
- *   > and is worth nothing against somebody who has nothing.
- *
- * So `canTheyBeMadeToPayForActing` is called rather than reimplemented, with
- * the parties in the positions the match puts them in: the FAMILY is the
- * aggrieved party deciding whether it can do anything, and the SUITOR's own
- * backing is what it would be doing it against. Four positions come out of
- * that one call and a second fact, and none of them is a new rule:
- *
- *                  | family that cannot act | family that can act
- *   ---------------|------------------------|---------------------
- *   suitor backed  | disregard, or press    | a negotiation
- *   suitor unbacked| a negotiation          | elope, or give up
- *
- * ── AND THREE OF THE FOUR ARE OTHER PEOPLE'S MODULES ────────────────────
- *
- *   PRESSING THEM   is coercion, and coercion is `resolveAttempt` with
- *                   leverage on the table. A match agreed under threat is a
- *                   match plus a wrong, and the wrong is priced by the ledger.
- *                   There is no marriage-specific pressure mechanic here.
- *   ELOPING         is running, with two people in it and a pursuer who can
- *                   act. The pursuit is the reprisal machinery, the debt is
- *                   the ledger, the talk is the rumour layer, and being
- *                   unbacked afterwards is what the world already does to
- *                   anybody with no house. Nothing about it is elopement.
- *   GIVING UP       is a real outcome and not a failure state. Somebody who
- *                   wanted this, could not have it, and knows exactly why is
- *                   the ordinary result of being outmatched in a world built
- *                   on being outmatched.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * AND WHETHER THE PERSON GOES ALONG WITH IT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A fact about who they are, and DERIVED rather than stored. There is no
- * `compliance` number here, no obedience axis and no flag: a field that exists
- * only to answer this question would be unreadable - nobody looking at the
- * person would know it was there - and it would be a second measure of a
- * person beside the ones the world already keeps.
- *
- * What already differentiates people is what they WANT and who they already
- * have a tie to, both of which are on the roster and both of which are legible
- * in the person's own entry. Somebody with a want the match serves goes along
- * with it; somebody with a want it forecloses does not; somebody already
- * standing at `DEFINING_STANDING` toward another person refuses hardest. A
- * reader of that person could have guessed, which is the test.
- *
- * Pure. Rows in, an answer out.
  */
 
 import type { DayIndex } from '../social/common.js';
@@ -98,9 +20,7 @@ import {
 import { bandForGap } from '../cultivation/regard.js';
 import { DEFINING_STANDING } from '../world/when-somebody-does-not-come-back.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TWO ROUTES
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Which consent came first, which is the only thing that separates the two.
@@ -117,10 +37,11 @@ export type TheRoute =
 /**
  * Whether a refusal by the house opens an account at all.
  *
- * The categorical gate, and it is deliberately one line with nothing in it but
- * the route. It is not a threshold on what was staked and must not become one:
- * a house declining a proposal has declined a proposal, and a house refusing a
- * match the two of them already made has taken something away.
+ * THE GATE IS CATEGORICAL AND NOT A THRESHOLD, and it must not become one. It is
+ * not that a refusal after a yes is heavier - an ordinary refusal opens nothing
+ * at all. Houses refuse constantly and must be able to without accumulating
+ * enemies, or the world fills up with records that mean nothing. A house
+ * refusing a match the two of them already made has taken something away.
  */
 export function aRefusalOpensAnAccount(route: TheRoute): boolean {
     return route === 'person first';
@@ -128,14 +49,6 @@ export function aRefusalOpensAnAccount(route: TheRoute): boolean {
 
 /**
  * What a house refusing something the two of them already made leaves behind.
- *
- * `whatADeedLeaves` prices it and this decides only the three facts it asks
- * for. `promised` is the step that already exists for a word given first, and
- * the person's yes is exactly what the house is overriding; `irreversible` is
- * true because what is taken is a thing that existed rather than an offer that
- * was refused.
- *
- * Returns null on the other route, which is the common case.
  */
 export function whatRefusingAMatchTheyAlreadyMadeLeaves(input: {
     route: TheRoute;
@@ -185,9 +98,7 @@ export function accountsARefusalOpens(left: WhatADeedLeaves | null): readonly Ob
     return left?.opens ?? [];
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A HOUSE CAN MAKE STICK
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What is left when the house says no, given who the two parties are.
@@ -215,23 +126,6 @@ export interface TheStandingBetweenThem {
     theSuitorsBacking: Backing;
     /**
      * Whether the suitor is above the family in a way nothing they do reaches.
-     *
-     * Read with {@link theSuitorIsPastWhatTheyCouldReach}, which asks the one
-     * band function this engine has. It is still the caller's to supply,
-     * because it is a fact about two people rather than about a match - but it
-     * has a right answer and there is now one way to get it.
-     *
-     * ── THE DIRECTION IS THE WHOLE OF IT ─────────────────────────────────
-     *
-     * This asks whether the FAMILY can reach the SUITOR, so the gap is read
-     * from the family's side. A caller that reads it from the suitor's side is
-     * asking a different question and will get a different answer: measured in
-     * play, a rung-44 cultivator putting a match to a house whose people stand
-     * at 29 read `beneath` looking down (`dismissed` wants seventeen rungs) and
-     * `unreachable` looking up (which wants nine), and the code took the
-     * looking-down reading and told an immortal to elope or give up. The two
-     * bands are not mirror images, so which way round the gap is measured
-     * decides the answer, and only one of the two is the question being asked.
      */
     theSuitorIsOutOfTheirReach: boolean;
 }
@@ -239,11 +133,12 @@ export interface TheStandingBetweenThem {
 /**
  * Whether nothing this family does reaches the person they are refusing.
  *
- * `bandForGap` is the engine's one answer to how far apart two parties stand
- * and it is called rather than restated. `unreachable` is `REGARD_BANDS`' own
- * word for a gap where the party looking up is not dealt with at all - the row
- * carries `offered: false, refused: true, yieldMultiplier: 0` - which is
- * exactly "their no follows from nothing".
+ * Asks whether the FAMILY can reach the SUITOR, so the gap is read from the
+ * family's side. Measured in play, a rung-44 cultivator putting a match to a
+ * house standing at 29 read `beneath` looking down (`dismissed` wants seventeen
+ * rungs) and `unreachable` looking up (which wants nine), and the code took the
+ * looking-down reading and told an immortal to elope or give up. The two bands
+ * are not mirror images, so which way round the gap is measured decides it.
  */
 export function theSuitorIsPastWhatTheyCouldReach(
     theFamilyReachesTo: number,
@@ -262,10 +157,6 @@ export interface WhatTheHousesNoIsWorth {
 
 /**
  * What a house's refusal is actually worth, and therefore what is left.
- *
- * One call to `canTheyBeMadeToPayForActing` with the parties in the positions
- * a match puts them in, plus the caller's reading of whether the suitor is
- * simply out of reach. Nothing here reads a rung.
  */
 export function whatTheHousesNoIsWorth(
     standing: TheStandingBetweenThem
@@ -314,18 +205,14 @@ export function whatTheHousesNoIsWorth(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AND WHETHER THE PERSON GOES ALONG WITH IT
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What this person has of their own, as the two things the world already keeps.
- *
- * NOT A PERSONALITY MODEL AND MUST NOT BECOME ONE. Both fields are counted off
- * rows that exist for other reasons - goal rows and relationship standings -
- * so a reader of the person's own entry could have predicted the answer, which
- * is the whole test. A `compliance` number here would be invisible to that
- * reader and would be a second measure of somebody beside the ones we keep.
+ * NOT A PERSONALITY MODEL AND MUST NOT BECOME ONE: both fields are counted off
+ * rows that exist for other reasons - goal rows and relationship standings - so
+ * a reader of the person's own entry could have predicted the answer. A
+ * `compliance` number here would be invisible to that reader.
  */
 export interface WhatThePersonHasOfTheirOwn {
     /** Open wants this match would serve. Counted off their goal rows. */
@@ -334,10 +221,6 @@ export interface WhatThePersonHasOfTheirOwn {
     wantsItForecloses: number;
     /**
      * How strongly they already stand toward somebody who is not the match.
-     *
-     * `NpcRecord.standing`, on -1..+1, unmodified. Compared against
-     * `DEFINING_STANDING`, which is the world's own bar for a tie that decides
-     * what somebody does, and is not restated here.
      */
     standingTowardSomebodyElse: number;
 }
@@ -359,11 +242,6 @@ export interface ThePersonsOwnAnswer {
 
 /**
  * Whether somebody accepts a match their house agreed to.
- *
- * The order of the tests is the order of how immovable each reason is. A tie
- * already standing at the world's own defining bar is the hardest, a want the
- * match forecloses is next, and everything after that is somebody with nothing
- * of their own in the way.
  */
 export function whetherTheyGoAlongWithIt(
     theirs: WhatThePersonHasOfTheirOwn

@@ -1,68 +1,13 @@
 /**
  * Knowledge: objective reality kept strictly apart from what anybody thinks.
- *
- * The spec requires a maintained distinction between five things:
- *
- *     objective reality
- *     what an NPC knows
- *     what an NPC believes
- *     what an NPC suspects
- *     what the public believes
- *
- * They are five stored states, not five views of one state. That separation is
- * the entire module, and it exists to buy two properties that are otherwise
- * impossible:
- *
- *   1. **Characters can act rationally on incorrect information.** An NPC who
- *      believes the wrong person killed their brother is not confused or badly
- *      written - they are reasoning correctly from a false premise that is
- *      written down, dated, attributed to a source, and still on file forty
- *      years later. The narrator is handed the belief, never the fact.
- *
- *   2. **Power never implies omniscience.** There is no query in this file
- *      that takes a realm, a rank, or any measure of strength, and none that
- *      could. A Nascent Soul elder finds out what happened by having been told,
- *      the same as a farmhand. If they were not told, they do not know, and no
- *      amount of cultivation changes that.
- *
- * ── The rule about `Fact` ─────────────────────────────────────────────────
- * {@link Fact} is objective reality. It is written once by the engine and is
- * never handed to a character-facing code path. Everything an NPC or the
- * player gets comes from {@link KnowledgeRecord}. The two comparison helpers
- * at the bottom of this file - {@link recordAccuracy} and
- * {@link KnowledgeLedger.compareToReality} - are the ENGINE's own omniscient
- * view, for tests, audits and the moment the truth is finally revealed. If a
- * decision path ever consumes them, every character in the world silently
- * becomes omniscient and the layer becomes decoration.
- *
- * ── The player is not privileged ──────────────────────────────────────────
- * The player is a holder like any other. There is no player id in this file
- * and no branch that would read one. The player must not automatically know
- * what the simulation knows: what they know is whatever records name them as
- * holder, and nothing else.
- *
- * ── What this module does not do ──────────────────────────────────────────
- * It does not spread rumours, distort them, or decide who tells whom. There is
- * no propagation model and no distortion algorithm. When a character learns
- * something, the narrator says so and the engine writes it down, including
- * whatever the claim has become on the way. Provenance is stored so that
- * "where did this come from, and did anyone ever actually see it" stays
- * answerable.
  */
 
 import { byId, clamp01, round4, stableId, type DayIndex } from './common.js';
 
-// ─────────────────────────────────────────────────────────────────────────
-// LAYER 1 - OBJECTIVE REALITY
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * A thing that is true.
- *
- * Engine-owned. Frozen on creation, never revised - if the world changes, that
- * is a new fact with a later day, not an edit to this one, because a record
- * of what used to be true is how the engine explains a belief that was
- * reasonable when it was formed.
+ * A thing that is true. Engine-owned, frozen on creation and never revised - a
+ * changed world is a new fact with a later day, because a record of what used
+ * to be true is how the engine explains a belief that was once reasonable.
  */
 export interface Fact {
     id: string;
@@ -104,20 +49,8 @@ export function recordFact(input: FactInput): Fact {
     });
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// LAYERS 2-5 - WHAT SOMEBODY HOLDS
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
  * How firmly a holder holds a claim.
- *
- * The three positive stances are stored distinctly rather than collapsed into
- * a confidence float, because they behave differently in play and a narrator
- * reads them differently: a character acts on what they KNOW, argues from what
- * they BELIEVE, and investigates what they SUSPECT. `ignorant` is a real,
- * writable stance - "she has been told repeatedly and does not accept it" is
- * different from having no record at all, and only one of the two is worth
- * a scene.
  */
 export type Stance = 'knows' | 'believes' | 'suspects' | 'ignorant';
 
@@ -125,11 +58,8 @@ export type Stance = 'knows' | 'believes' | 'suspects' | 'ignorant';
 export type HolderKind = 'character' | 'public';
 
 /**
- * Where the claim came from.
- *
- * `fabricated` is a first-class source: a deliberate lie, told by someone with
- * a reason, is one of the most consequential things that can enter this table,
- * and flagging it at the source is what lets the engine later answer whether
+ * Where the claim came from. `fabricated` is a first-class source: flagging a
+ * deliberate lie where it enters is what lets the engine answer later whether
  * any of this was ever true.
  */
 export type SourceKind =
@@ -142,18 +72,9 @@ export type SourceKind =
     | 'divined'
     | 'confessed'
     /**
-     * Read out of somebody's mind without their agreement.
-     *
-     * Its own kind rather than `confessed`, which means somebody dealing with
-     * you about their own business and would be a lie about how this was got.
-     * Every other kind is capped below `known`, so filing a soul search under
-     * one of them would silently degrade what was taken out of a mind into
-     * hearsay.
-     *
-     * ADDING A KIND MEANS EDITING `stageCeilingFor` IN THE SAME BREATH. Its
-     * switch ends in `default: 'whisper'`, so a kind added here and forgotten
-     * there does not fail - it caps at the bottom of the ladder and the
-     * mechanic quietly stops working.
+     * Read out of somebody's mind without their agreement. Its own kind because
+     * `confessed` would be a lie about how it was got, and every other kind is
+     * capped below `known`, which would degrade it into hearsay.
      */
     | 'taken'
     | 'fabricated';
@@ -169,16 +90,6 @@ export interface KnowledgeSource {
 
 /**
  * One claim, held by one holder.
- *
- * `claimKey` groups competing versions of the same topic, so "what do people
- * think happened at the Low Fall" is one indexed lookup that returns every
- * incompatible answer at once. `statement` is what THIS holder holds, and is
- * allowed to contradict the fact, the public, and everybody else.
- *
- * A `public` holder is how "what the public believes" is stored: the same row
- * shape, with a holder id like `public:sweptground` or `public:azure_cloud`.
- * A region believing something is the same kind of object as a person
- * believing it, which means every query works on both without special cases.
  */
 export interface KnowledgeRecord {
     id: string;
@@ -187,8 +98,8 @@ export interface KnowledgeRecord {
     claimKey: string;
     /**
      * The fact this claim corresponds to, when there is one. NULL is the
-     * important case: a belief about something that never happened has no
-     * fact to point at, and that is the most dangerous row in the table.
+     * important case: a belief about something that never happened, which is
+     * the most dangerous row in the table.
      */
     factId: string | null;
     stance: Stance;
@@ -199,8 +110,7 @@ export interface KnowledgeRecord {
     source: KnowledgeSource;
     acquiredOnDay: DayIndex;
     /**
-     * 0..1 how sure the holder is. Stored, not computed: it is what they were
-     * told or how convinced they came away, and nothing in this engine
+     * 0..1 how sure the holder is. Stored, not computed: nothing in this engine
      * recalculates it behind their back.
      */
     confidence: number;
@@ -267,22 +177,9 @@ export function recordPublicBelief(
     });
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// CHANGING YOUR MIND
-// ─────────────────────────────────────────────────────────────────────────
-
 /**
- * Append-only record of somebody's position changing.
- *
- * Kept because discovering that a long-held belief was false is a narratable
- * event in its own right, and one of the main ways this world produces "I
- * could have done something differently". Deleting the superseded version
- * deletes the regret.
- *
- * Whether the holder accepts the new information is the NARRATOR's call, not
- * a computed one. `accepted: false` is a legitimate and common outcome: "I
- * told him the truth and he did not believe me" is a real scene, and the
- * engine records it as faithfully as it records the other kind.
+ * Append-only record of somebody's position changing. Deleting the superseded
+ * version deletes the regret, so nothing here removes one.
  */
 export interface KnowledgeRevision {
     id: string;
@@ -313,11 +210,8 @@ export interface ReviseInput {
 }
 
 /**
- * Supersede a held claim.
- *
- * Returns the old record marked superseded, the new record if there is one,
- * and the revision entry. The caller stores all three - the old row is never
- * removed from the ledger.
+ * Supersede a held claim. The caller stores all three returned pieces - the old
+ * row is never removed from the ledger.
  */
 export function reviseKnowledge(
     previous: KnowledgeRecord,
@@ -358,10 +252,6 @@ export function reviseKnowledge(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE ENGINE'S OMNISCIENT VIEW
-// ─────────────────────────────────────────────────────────────────────────
-
 export interface AccuracyReport {
     /** True when the held statement matches the fact's. */
     statementMatches: boolean;
@@ -376,12 +266,9 @@ export interface AccuracyReport {
 }
 
 /**
- * How wrong a held claim is.
- *
- * Engine-only. For tests, audits, and the moment a revelation is adjudicated.
- * No character-facing path may call this, and no stored field caches it - a
- * cached accuracy flag is an omniscience leak waiting for the one query that
- * forgets why it was there.
+ * How wrong a held claim is. ENGINE ONLY: no character-facing path may call it
+ * and no stored field caches it - a cached accuracy flag is an omniscience leak
+ * waiting for the one query that forgets why it was there.
  */
 export function recordAccuracy(record: KnowledgeRecord, fact: Fact | null): AccuracyReport {
     if (!fact) {
@@ -410,10 +297,6 @@ export function recordAccuracy(record: KnowledgeRecord, fact: Fact | null): Accu
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE LEDGER
-// ─────────────────────────────────────────────────────────────────────────
-
 export interface KnowledgeQuery {
     stance?: Stance;
     stances?: readonly Stance[];
@@ -427,11 +310,9 @@ export interface KnowledgeQuery {
 }
 
 /**
- * Indexed store of the five layers.
- *
- * Facts and held claims live in separate maps with separate accessors, so
- * there is no query that accidentally returns reality when it was asked for
- * opinion. The indexes mirror the SQLite indexes in `migrations.social.ts`.
+ * Indexed store of the five layers. Facts and held claims live in separate maps
+ * with separate accessors, so no query can return reality when it was asked for
+ * opinion. Indexes mirror the SQLite indexes in `migrations.social.ts`.
  */
 export class KnowledgeLedger {
     private readonly facts = new Map<string, Fact>();
@@ -445,8 +326,6 @@ export class KnowledgeLedger {
 
     private readonly revisions: KnowledgeRevision[] = [];
 
-    // ── Layer 1 ──────────────────────────────────────────────────────────
-
     addFact(fact: Fact): Fact {
         this.facts.set(fact.id, fact);
         index(this.factsByClaim, fact.claimKey, fact.id);
@@ -455,10 +334,8 @@ export class KnowledgeLedger {
     }
 
     /**
-     * Objective reality. ENGINE ONLY.
-     *
-     * Named `truth` rather than `getFact` so that a call site reading it in a
-     * character-facing code path is conspicuous in review.
+     * Objective reality. ENGINE ONLY. Named `truth` rather than `getFact` so a
+     * call site in a character-facing code path is conspicuous in review.
      */
     truth(factId: string): Fact | null {
         return this.facts.get(factId) ?? null;
@@ -477,8 +354,6 @@ export class KnowledgeLedger {
             .map(id => this.facts.get(id)!)
             .sort((a, b) => a.onDay - b.onDay || byId(a, b));
     }
-
-    // ── Layers 2-5 ───────────────────────────────────────────────────────
 
     addRecord(record: KnowledgeRecord): KnowledgeRecord {
         this.records.set(record.id, record);
@@ -501,11 +376,8 @@ export class KnowledgeLedger {
     }
 
     /**
-     * Everything one holder holds. The narrator's brief for a scene.
-     *
-     * Takes no measure of the holder's power, and there is no overload that
-     * would - a Grand Ascension cultivator gets exactly the rows that name
-     * them as holder.
+     * Everything one holder holds. The narrator's brief for a scene. Takes no
+     * measure of the holder's power, and there is no overload that would.
      */
     heldBy(holderId: string, query: KnowledgeQuery = {}): KnowledgeRecord[] {
         return this.resolve(this.byHolder.get(holderId), query);
@@ -542,12 +414,9 @@ export class KnowledgeLedger {
     }
 
     /**
-     * The distinct versions of a topic currently in circulation, and who holds
-     * each.
-     *
-     * The question a player pays an information broker to answer: not "what
-     * happened", which nobody can sell, but "what are people saying, and who
-     * is saying it".
+     * The distinct versions of a topic in circulation, and who holds each. The
+     * question a player pays an information broker to answer: not "what
+     * happened" but "what are people saying, and who is saying it".
      */
     disagreementsAbout(
         claimKey: string,
@@ -575,11 +444,9 @@ export class KnowledgeLedger {
     }
 
     /**
-     * Walk a claim back to its origin, newest first.
-     *
-     * The last entry is the root. If the root's source is `witnessed`, someone
-     * actually saw it. If it is `fabricated` or `assumed`, nobody ever did -
-     * and that is a discovery worth a session.
+     * Walk a claim back to its origin, newest first. The last entry is the
+     * root: `witnessed` means somebody actually saw it, `fabricated` or
+     * `assumed` means nobody ever did.
      */
     provenance(recordId: string): KnowledgeRecord[] {
         const chain: KnowledgeRecord[] = [];
@@ -609,14 +476,10 @@ export class KnowledgeLedger {
             .sort((a, b) => a.onDay - b.onDay || byId(a, b));
     }
 
-    // ── Engine-only comparison ───────────────────────────────────────────
-
     /**
-     * How far a held claim is from reality. ENGINE ONLY.
-     *
-     * Deliberately requires the record id rather than the record, so a caller
-     * has to be holding this ledger - and therefore has to be engine code -
-     * to reach it at all.
+     * How far a held claim is from reality. ENGINE ONLY, and it takes the
+     * record id rather than the record so a caller has to be holding this
+     * ledger - and therefore has to be engine code - to reach it at all.
      */
     compareToReality(recordId: string): AccuracyReport | null {
         const record = this.records.get(recordId);

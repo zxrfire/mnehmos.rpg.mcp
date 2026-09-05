@@ -51,9 +51,7 @@ interface EventRow {
 export class EventInboxRepository {
   constructor(private db: Database.Database) {}
 
-  /**
-   * Push an event to the inbox
-   */
+  /** Push an event to the inbox */
   push(event: Omit<GameEvent, 'id' | 'createdAt' | 'consumedAt'>): number {
     const stmt = this.db.prepare(`
       INSERT INTO event_inbox (event_type, payload, source_type, source_id, priority, expires_at)
@@ -72,9 +70,7 @@ export class EventInboxRepository {
     return result.lastInsertRowid as number;
   }
 
-  /**
-   * Poll for unread events, ordered by priority then time
-   */
+  /** Poll for unread events, ordered by priority then time */
   poll(limitOrOptions: number | EventPollOptions = 20): GameEvent[] {
     const options = typeof limitOrOptions === 'number'
       ? { limit: limitOrOptions }
@@ -107,9 +103,7 @@ export class EventInboxRepository {
     return rows.map(row => this.rowToEvent(row));
   }
 
-  /**
-   * Mark events as consumed (read)
-   */
+  /** Mark events as consumed (read) */
   markConsumed(ids: number[]): number {
     if (ids.length === 0) return 0;
     
@@ -125,9 +119,7 @@ export class EventInboxRepository {
     return result.changes;
   }
 
-  /**
-   * Poll and immediately mark as consumed (atomic)
-   */
+  /** Poll and immediately mark as consumed (atomic) */
   pollAndConsume(limitOrOptions: number | EventPollOptions = 20): GameEvent[] {
     const events = this.poll(limitOrOptions);
     const ids = events.map(e => e.id!).filter(Boolean);
@@ -137,9 +129,7 @@ export class EventInboxRepository {
     return events;
   }
 
-  /**
-   * Get recent event history (including consumed)
-   */
+  /** Get recent event history (including consumed) */
   getHistory(options: {
     limit?: number;
     eventType?: EventType;
@@ -172,9 +162,7 @@ export class EventInboxRepository {
     return rows.map(row => this.rowToEvent(row));
   }
 
-  /**
-   * Clean up old consumed events
-   */
+  /** Clean up old consumed events */
   cleanup(olderThanDays: number = 7): number {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - olderThanDays);
@@ -189,9 +177,7 @@ export class EventInboxRepository {
     return result.changes;
   }
 
-  /**
-   * Get count of pending (unconsumed) events
-   */
+  /** Get count of pending (unconsumed) events */
   getPendingCount(): number {
     const stmt = this.db.prepare(`
       SELECT COUNT(*) as count FROM event_inbox

@@ -1,62 +1,15 @@
 /**
- * How well a manual is written, and how much of it the reader actually takes.
+ * How well a manual is written, and how much of it the reader actually takes out.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * TWO AXES, AND WHY THIS IS THE SECOND ONE
- * ═══════════════════════════════════════════════════════════════════════════
+ * The bottom of the ladder is deliberately free of this: `corrupt` and `crude`
+ * demand nothing, so nobody is punished for reading a bad book - they are simply
+ * slow, and the existing clocks decide whether slow is fatal. THERE IS NO DEATH
+ * RULE IN THIS FILE and there must never be one.
  *
- * A manual covers a realm to Perfection and stops. That is `requiredOrdinal`
- * and `cap`, it is COVERAGE, and `docs/world/climbing/manuals.md` settles it. This file
- * is the other axis:
- *
- *   A TRASH CORE FORMATION MANUAL AND AN EXCELLENT ONE COVER THE SAME RUNGS.
- *
- * The player-facing sentence the axis exists to produce is "I have a trash Core
- * Formation technique. I can continue, but it is going to take eighty years."
- * Both halves are load-bearing. It has to be genuinely bad, and it has to still
- * work, because a bad book that stops you locks every ordinary cultivator out
- * of the world.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHY NOT `grade`
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Grade was the obvious candidate and it cannot carry this. `GRADE_ORDINAL_BANDS`
- * in `data/cultivation/techniques.ts` binds grade to `requiredOrdinal` and
- * `GRADE_QI_BANDS` binds it to `qiCost`, and the content suite enforces both on
- * every row. Grade IS the height statement. So the market's 0-13 primer and an
- * apex house's 0-13 intake canon both open at ordinal 0 and are therefore both
- * necessarily `mortal` - the one pair the axis exists to separate is the one
- * pair grade is structurally unable to separate. See `ManualQualitySchema`.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * A BOOK MAKES A DEMAND, AND THAT IS WHAT STOPS THIS BEING A SHOPPING LIST
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * "A mediocre person wouldn't understand a manual from a Tribulation
- * Transcendence cultivator either." A better book is denser, not longer, so the
- * better it is the more it asks of whoever opens it. A reader who cannot meet
- * the demand spends the years anyway and takes very little out, and the
- * arithmetic below makes that WORSE than a plain book matched to them - the
- * realised multiplier falls under 1 - because the time was spent and nothing
- * was understood.
- *
- * The bottom of the ladder is deliberately free of this. `corrupt` and `crude`
- * demand nothing, so nobody is ever punished for reading a bad book. They are
- * simply slow, and the existing clocks - `stagnationYearsForOrdinal` and
- * `lifespanForOrdinal` - decide whether slow is fatal. THERE IS NO DEATH RULE
- * IN THIS FILE and there must never be one; running out of time is the clocks
- * that already exist doing their job against a smaller number.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHAT THIS FILE IS AND IS NOT
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * It is the single authority on what a quality tier is worth. It is NOT a
- * fourth resolver: rate, breakthrough odds and combat power each keep their own
- * one authority - `computeCultivationRate`, `computeBreakthroughOdds`,
- * `assessPower` - and each reads one number out of `readManual`. Nothing else
- * in the codebase may interpret a `ManualQuality` name.
+ * A SHELF IS NOT A BOOK. Pricing an origin at the top of its shelf made a
+ * mediocre child of a Dao house climb SLOWER than a retainer's child, because the
+ * house's worked canon was over their head - measured, the top tier reached
+ * ordinal 9 where sect_retainer reached 12.
  */
 
 import type { Cultivator, ManualQuality } from '../../schema/cultivation.js';
@@ -65,7 +18,6 @@ import { getSpiritRoot } from './spirit-roots.js';
 import { understandingEffects, MAX_DEGREE, type RelevanceContext } from './understanding.js';
 import type { FoundationQuality } from '../../schema/cultivation.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TIERS
 //
 // Sized against the terms that already exist rather than against intuition.
@@ -74,29 +26,19 @@ import type { FoundationQuality } from '../../schema/cultivation.js';
 // quality spread of x0.45 to x1.8 on the rate is the largest single non-realm
 // term in the game, which is correct - the book you practise is the thing you
 // spend every day of your life on - and it is still less than one rung.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface ManualQualityTier {
     /** Multiplier on the cultivation rate, before the reader is considered. */
     rate: number;
     /**
      * Flat modifier on breakthrough odds, before the reader is considered.
-     *
-     * NOT the book teaching the crossing. `triggersHeavenlyTribulation` takes
-     * an ordinal and nothing else, and no manual can change what is waiting.
-     * This is the foundation the book spent the whole realm building, arriving
-     * at the boundary with you. Preparation, never instruction.
      */
     preparation: number;
     /** Multiplier on the technique factor in `assessPower`. */
     power: number;
     /**
-     * What the book asks of whoever opens it, on the 0..5 insight-degree
-     * ladder, so the demand is measured in a unit the game already has.
-     *
-     * Zero at the bottom two tiers ON PURPOSE. A plain book is plain; it has no
-     * depth to miss. This is what guarantees an untalented cultivator can
-     * always proceed on something.
+     * What the book asks of whoever opens it, on the 0..5 insight-degree ladder, so
+     * the demand is measured in a unit the game already has.
      */
     demand: number;
     /** Human-facing, for the rate breakdown and the odds ledger. */
@@ -158,36 +100,21 @@ export const MANUAL_QUALITY_ORDER: readonly ManualQuality[] =
 
 /**
  * Index on that ladder, for comparisons.
- *
- * A TOTAL ORDER, AND NOT THE SAME SHAPE AS `gradeRank` ANY MORE. This used to
- * say it mirrored it. It does not: the grade ladder has a tie at the top -
- * immortal and chaos are peers - and this one has no ties at all, because how
- * good a copy is admits no equals. A book is worse, the same, or better.
  */
 export function manualQualityRank(quality: ManualQuality): number {
     return MANUAL_QUALITY_ORDER.indexOf(quality);
 }
 
 /**
- * What a copy made by somebody who never mastered the art comes out as.
- *
- * One step down, and no further than `corrupt`. This is not authored per
- * manual and must not be: it is the copying rule in `world/manuals.ts` -
- * "only somebody who took the book to its end" can reproduce one - meeting the
- * quality axis, and a bad copy falls out of the two of them without anybody
- * writing a row for it.
- *
- * It also produces the scarcity curve on its own. Mass copying needs masters,
- * masters of a high book barely exist, so nothing above the middle of the
- * ladder ever becomes stock. A bad book up there is `corrupt` - damaged - and
- * never `crude`, because there was never a crowd to wear it down.
+ * What a copy made by somebody who never mastered the art comes out as. One step
+ * down and no further than `corrupt`, and not authored per manual: it is the
+ * copying rule in `world/manuals.ts` meeting the quality axis.
  */
 export function degradedCopy(quality: ManualQuality): ManualQuality {
     const i = manualQualityRank(quality);
     return MANUAL_QUALITY_ORDER[Math.max(0, i - 1)];
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE READER BRINGS
 //
 // Measured in insight degrees, the ladder `understanding.ts` already uses, so
@@ -202,7 +129,6 @@ export function degradedCopy(quality: ManualQuality): ManualQuality {
 //                     nothing to it, which is already this file's rule.
 //   FOUNDATION        what the last realm left them standing on. Small, because
 //                     a foundation is preparation rather than comprehension.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Insight degrees a foundation is worth when reading something difficult. */
 const FOUNDATION_COMPREHENSION: Record<FoundationQuality, number> = {
@@ -234,11 +160,6 @@ export interface ReaderComprehension {
 
 /**
  * How much depth this reader can take out of a difficult book.
- *
- * A missing `attributes` reads as the schema pivot rather than as zero: most
- * callers in the world layer carry a partial cultivator, and pricing them as
- * comprehending nothing would make every NPC in the world unable to read a
- * `sound` manual, which is the ordinary case and must not be.
  */
 export function readerComprehension(
     reader: ManualReader,
@@ -268,29 +189,23 @@ export function readerComprehension(
 }
 
 /**
- * What a reader with no attribute block is priced at.
- *
- * The schema pivot, which is also `INSIGHT_PIVOT` in `breakthrough.ts`. Stated
- * here rather than imported because importing it would close a cycle -
- * `breakthrough.ts` reads this file.
+ * What a reader with no attribute block is priced at. A missing `attributes`
+ * reads as the schema pivot rather than as zero: most world-layer callers carry a
+ * partial cultivator, and pricing them as comprehending nothing would make every
+ * NPC unable to read a `sound` manual, which is the ordinary case.
  */
 export const DEFAULT_READER_INSIGHT = 2;
 
 /**
- * How fast the unread part of a book is wasted, per degree of shortfall.
- *
- * 0.35 as a divisor coefficient: one degree short realises 74% of the book,
- * three degrees short 49%. Sized so that a mediocre reader on a `pristine`
- * canon lands at 1.8 x 0.49 = 0.88, which is BELOW the 1.0 of a `sound` book
- * matched to them. That inequality is the design requirement - a manual far
- * above you is a paperweight, and reading it is worse than reading one pitched
- * at you - so it is the thing to preserve if these numbers are ever retuned.
+ * How fast the unread part of a book is wasted, per degree of shortfall. 0.35 as
+ * a divisor coefficient: one degree short realises 74% of the book, three degrees
+ * short 49%. Sized so a mediocre reader on a `pristine` canon lands at
+ * 1.8 x 0.49 = 0.88, BELOW the 1.0 of a `sound` book matched to them. That
+ * inequality is the design requirement and is what to preserve on a retune.
  */
 export const SHORTFALL_COST_PER_DEGREE = 0.35;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE READING
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface ManualReading {
     quality: ManualQuality;
@@ -327,23 +242,6 @@ export const NO_MANUAL_DECLARED: ManualReading = {
 
 /**
  * What this book is worth to this reader.
- *
- * The three effects are NOT symmetric, and the asymmetry is deliberate:
- *
- *   RATE scales straight through the realisation, so an unread book is
- *   actively worse than a plain one. The years were spent. That is the cost.
- *
- *   PREPARATION scales through it too, because the foundation the book built
- *   is exactly the part that was not built. A reader who took nothing out
- *   arrives at the crossing with nothing extra - not with a penalty, because
- *   they did still practise something.
- *
- *   POWER interpolates from 1 instead, because an art you do not understand is
- *   an art you do not use. Being handed a great method does not make you worse
- *   in a fight; it just does not make you better.
- *
- * The bottom two tiers demand nothing, so their realisation is always 1 and all
- * three lines are simply the tier. A bad book is slow, and never a trap.
  */
 export function readManual(
     manual: { quality?: ManualQuality | null } | null | undefined,
@@ -380,27 +278,6 @@ export function readManual(
 
 /**
  * The best book on a shelf that reaches this far, for this reader.
- *
- * A SHELF IS NOT A BOOK, and conflating them produced a genuinely perverse
- * result: pricing an origin at the top of its shelf made a mediocre child of a
- * Dao house climb SLOWER than a retainer's child, because the house's worked
- * canon was over their head and the retainer's working book was not. Measured,
- * the top tier reached ordinal 9 where sect_retainer reached 12 - taken under
- * the single `great_house` row that is now `dao_house_bloodline` and two
- * siblings, so the figures are traceable to a table that no longer exists.
- *
- * That is the paperweight rule applied where it does not belong. It is correct
- * for a book somebody HOLDS - a ruin find, a stolen canon, the one object in
- * the room - because there is nothing else to read. It is wrong for an
- * institution, which holds a shelf: `docs/world/climbing/manuals.md` says rank reaches
- * up the shelf and that admission buys something and never the core, so what a
- * house hands a disciple is the best thing they can actually work.
- *
- * So: the highest tier at or below `best` that this reader gets the most out
- * of, ties going to the better book because it is also worth more at a crossing
- * and in a fight. A prodigy reaches the top of the shelf; somebody ordinary
- * takes the working book and is not punished for having been born somewhere
- * good.
  */
 export function bestReadable(best: ManualQuality, reader: ManualReader): ManualQuality {
     let chosen = best;
@@ -432,13 +309,6 @@ function round1(n: number): number {
 
 /**
  * Can this reader tell the two books apart before spending a decade on one?
- *
- * The setting wants the scene where somebody who has practised a market primer
- * picks up a house's version of the same rungs and can SEE that it is better.
- * They can, up to the point where the better book stops being legible to them:
- * you cannot recognise depth you could not have used.
- *
- * Pure, no roll, no state. The narrator asks and gets an answer.
  */
 export function canTellApart(
     a: { quality?: ManualQuality | null } | null | undefined,

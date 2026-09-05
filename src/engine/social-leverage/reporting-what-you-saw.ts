@@ -1,23 +1,10 @@
 /**
  * What somebody does about a thing they watched you do.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE RULING
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * The design owner, on the servant who worked out that an Outer Disciple does
- * not speak for the house and went back to what they were doing:
- *
- *   > or rat him out to the punishment elder
- *
- * Which is what a person would actually do, and it is what turns a false decree
- * from a standing tick into an event. Forging a mandate cost 3.36 standing and
- * nothing else; the servant is the only witness, they know exactly what they
- * saw, and they have somewhere to take it.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * IT IS A READING, NOT A CERTAINTY AND NOT A DIE ROLL
- * ═══════════════════════════════════════════════════════════════════════════
+ * The design owner, on the servant who worked out that an Outer Disciple does not
+ * speak for the house: *"or rat him out to the punishment elder"*. Forging a
+ * mandate cost 3.36 standing and nothing else; the servant is the only witness,
+ * and they have somewhere to take it.
  *
  * Ruled in the same breath, and it is the whole of the gameplay:
  *
@@ -27,32 +14,14 @@
  *   > mattered more than THAT you tried it.
  *
  * So there is no RNG in this file. Every branch reads a row that already exists
- * for other reasons - the relationship the encounter layer accumulates, the
- * open obligations either way, the rival tie the world seeded - and the three
- * people the owner named fall out of them rather than being enumerated:
+ * for other reasons, and a tenth reason is another row rather than another branch.
  *
- *   A SERVANT WHO OWES YOU may swallow it. You hold an open row over them and
- *   spending it costs them more than telling costs you.
- *   ONE WHO RESENTS YOU takes it straight up the hill. A negative standing, a
- *   rival tie, a grievance on the record - any of the three is a reason, and a
- *   tenth reason is another row rather than another branch.
- *   ONE WHO IS FRIGHTENED OF YOU says nothing and remembers. The remembering is
- *   the part that matters and it is not a mood: it is a row, held by them,
- *   about you, that somebody can read in forty years.
- *
- * ── AND FEAR IS NOT WHAT SILENCES SOMEBODY ───────────────────────────────
- *
- * Worth stating because the obvious model has it backwards. Being frightened of
- * you is a reason not to CONFRONT you, and reporting is precisely the route
- * that avoids confrontation - you take it to somebody bigger than both of you.
- * So fear does not damp this and must not: what silences a witness is owing you
- * something, or there being nowhere to take it, and those are different facts
- * with different rows behind them.
- *
- * That also keeps the rule the whole setting runs on: a large enough rung buys
- * advantage and never exemption. A player who is terrifying still gets reported
- * by somebody who dislikes them, because the person they are reported TO is
- * terrifying as well.
+ * AND FEAR IS NOT WHAT SILENCES SOMEBODY, because the obvious model has it
+ * backwards: being frightened of you is a reason not to CONFRONT you, and
+ * reporting is the route that avoids confrontation. What silences a witness is
+ * owing you something, or there being nowhere to take it. That also keeps the
+ * rule the setting runs on - a large enough rung buys advantage and never
+ * exemption - because the person they report TO is terrifying as well.
  */
 
 import type { ObligationRecord } from '../social/grudges.js';
@@ -99,11 +68,10 @@ export interface WhatHappensNext {
 /**
  * Where a complaint about this person goes.
  *
- * The room, and then the exception that makes the room mean something: nobody
- * is brought a complaint about themselves. Where the offender holds the
- * punishment hall it goes over their head, and where there is neither a holder
- * nor a head above them it goes nowhere - which is a real answer and is what
- * being the most senior person in a small house buys.
+ * The room, and then the exception that makes the room mean something: nobody is
+ * brought a complaint about themselves. Where there is neither a holder nor a
+ * head above them it goes nowhere, which is a real answer and is what being the
+ * most senior person in a small house buys.
  */
 export function whereAComplaintGoes(input: {
     portfolios: readonly APortfolio[];
@@ -112,9 +80,8 @@ export function whereAComplaintGoes(input: {
 }): string | null {
     const holder = whoAnswersAbout(input.portfolios, THE_ROOM_COMPLAINTS_GO_TO);
     if (holder !== null && holder !== input.aboutId) return holder;
-    // Their own room, or no room. The head is in every room - `whoseCallItIs`
-    // keeps them there deliberately, so that a portfolio never puts its holder
-    // beyond their own head.
+    // The head is in every room - `whoseCallItIs` keeps them there deliberately,
+    // so that a portfolio never puts its holder beyond their own head.
     return input.headId !== null && input.headId !== input.aboutId ? input.headId : null;
 }
 
@@ -137,10 +104,10 @@ export function whatStandsBetween(
 /**
  * What this particular person does about what they just watched.
  *
- * Pure, and deliberately ordered. The debt is checked before the resentment
- * because a person who owes you and dislikes you is a person who owes you -
- * that is what an obligation IS, and a model where it never binds anybody is a
- * ledger nobody has a reason to write into.
+ * Pure, and deliberately ordered. THE DEBT IS CHECKED BEFORE THE RESENTMENT,
+ * because a person who owes you and dislikes you is a person who owes you - that
+ * is what an obligation IS, and a model where it never binds anybody is a ledger
+ * nobody has a reason to write into.
  */
 export function whatTheWitnessDoesAboutIt(input: {
     witness: TheWitness;

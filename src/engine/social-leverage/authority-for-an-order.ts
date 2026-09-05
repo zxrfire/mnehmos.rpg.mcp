@@ -1,26 +1,14 @@
 /**
  * On what authority an order is given, and whether the house recognises it.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE DEFECT
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * `handleOrder` tested one thing: `powersAt(rankIndex, rankCount)` includes
- * `order`, and `canOrder(giver, receiver)` puts the receiver lower on the
- * ladder. Both are correct and neither is the question a person asks when
- * somebody tells them to do something, which is **who says so**.
- *
- * So every order in the game was the same order. An elder who held the
+ * `handleOrder` tested only `powersAt` and `canOrder`, which are both correct and
+ * neither is the question a person asks when told to do something: **who says
+ * so**. So every order in the game was the same order, and an elder who held the
  * punishment hall and an elder who held nothing gave identical instructions at
- * identical prices, and *"on what authority?"* had no answer because nothing
- * had been claimed.
+ * identical prices.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE PLAYER'S OWN WORDS DECIDE WHICH QUESTION IS ASKED
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * There is no legitimacy table here and there must not be one. What the engine
- * tests is the CLAIM the sentence makes:
+ * There is no legitimacy table here. What is tested is the CLAIM the sentence
+ * makes:
  *
  *     "I order you to sweep the yard"        a personal order. The claim is
  *                                            rank, and the ladder answers it.
@@ -28,36 +16,19 @@
  *                                            an office, and the house's own
  *                                            portfolios answer it.
  *
- * Which means a player who claims nothing is never caught out, a player who
- * claims something they hold is obeyed, and a player who claims something they
- * do not hold has said a specific false thing in front of people who can check.
- * That last case is the whole point: it is only available because they reached
- * for it.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * TWO FIELDS ARE CALLED "OFFICE". READING THE WRONG ONE IS A LEAK
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * **HARD RULE, and it is the reason this comment is here rather than only in a
- * report.** Jurisdiction is `APortfolio` in
- * `what-an-elder-is-in-charge-of.ts`, derived from `roomsFor` and dealt
- * deterministically. It is a fact about who runs which room, and members know
- * it - `whoIsInChargeOfWhat` says so outright: *"a player has to be able to
- * work out whose door to knock on before knocking."*
- *
- * `Sect.office` in `schema/cultivation.ts` is a DIFFERENT FIELD ENTIRELY. It is
- * the Protector's chair, it sits off the ladder, and the design owner ruled
- * that a member does not know whether their house has one or who it is:
+ * TWO FIELDS ARE CALLED "OFFICE", AND READING THE WRONG ONE IS A LEAK.
+ * **HARD RULE.** Jurisdiction is `APortfolio` in `what-an-elder-is-in-charge-of.ts`
+ * and members know it. `Sect.office` in `schema/cultivation.ts` is a DIFFERENT
+ * FIELD: the Protector's chair, off the ladder, and the design owner ruled that a
+ * member does not know whether their house has one or who it is:
  *
  *   > anything that shows a house's people to a player reads `ranks` and must
  *   > NOT read this field... the ordinary member genuinely does not know...
  *   > an empty chair and a filled one look identical from inside the house.
  *
- * So **nothing in this file, and nothing that answers "on what authority?",
- * may read `Sect.office`.** Doing so would tell a member whether their house
- * has a Protector, which is precisely the thing they are not told. The next
- * person here will see two fields with the same word on them and reach for the
- * wrong one; this paragraph is what stands between them and that.
+ * So **nothing that answers "on what authority?" may read `Sect.office`.** The
+ * next person here will see two fields with the same word on them and reach for
+ * the wrong one; this paragraph is what stands between them and that.
  */
 
 import { type RoomPurpose, purposeOf } from '../../engine/world/architecture.js';
@@ -71,28 +42,19 @@ import {
 } from './what-an-elder-is-in-charge-of.js';
 
 /**
- * What a sentence claimed.
- *
- * `personal` is the default everywhere, because it is what an order is unless
- * somebody reaches for something bigger, and because the cheap branch has to be
- * the one an unrecognised label falls through to.
+ * What a sentence claimed. `personal` is the default everywhere, because it is
+ * what an order is unless somebody reaches for something bigger, and because the
+ * cheap branch has to be the one an unrecognised label falls through to.
  */
 export type AuthorityClaim = 'personal' | 'delegated';
 
 /**
  * The rooms a house has, read off the rooms it actually has.
  *
- * `seedSectLibraries`' neighbour `growCompound` already builds every house's
- * interior at world creation and pushes each room into `state.locations`, so
- * the compound is not something to recompute - it is something to look up.
- * Each room stores `data.purpose` and `purposeOf` is the existing reader for
- * it; `data.factionId` says whose it is.
- *
- * Reading state rather than rebuilding it is the point. A recomputation would
- * need `CompoundInput`, which only `seeding.ts` knows how to project and only
- * privately, and a second projection of eight columns is exactly how two
- * sources of truth start disagreeing. This way a house that has lost a room, or
- * gained one, answers with what it has.
+ * Read state rather than rebuild it: a recomputation would need `CompoundInput`,
+ * which only `seeding.ts` knows how to project and only privately, and a second
+ * projection of eight columns is how two sources of truth start disagreeing. This
+ * way a house that has lost a room, or gained one, answers with what it has.
  */
 export function theRoomsThisHouseHas(
     locations: readonly LocationRecord[],
@@ -138,18 +100,13 @@ export interface AuthorityForAnOrder {
 /**
  * Whether this person may give this order, on the authority they claimed.
  *
- * Pure. It decides nothing about rank - `canOrder` and `powersAt` are the
- * ladder's and are checked by the caller as they always were. What this adds is
- * the second question, which the ladder cannot answer and which is the one a
- * person actually asks.
+ * It decides nothing about rank - `canOrder` and `powersAt` are the ladder's and
+ * are checked by the caller as they always were.
  *
- * ── A PERSONAL ORDER IS ALWAYS LEGITIMATE, AND THAT IS NOT A LOOPHOLE ────
- *
- * Somebody senior telling somebody junior to do something IS a thing they may
- * do; the ladder already priced it and `resolveAct` already charges for it. The
- * asymmetry this introduces is only that a personal order buys less - it is one
- * person's word rather than the house's - and that claiming the house's word
- * without holding it is a thing that can be checked.
+ * A PERSONAL ORDER IS ALWAYS LEGITIMATE, AND THAT IS NOT A LOOPHOLE. Somebody
+ * senior telling somebody junior to do something IS a thing they may do. The
+ * asymmetry is only that a personal order buys less, and that claiming the
+ * house's word without holding it is a thing that can be checked.
  */
 export function whetherTheyMayGiveThisOrder(input: {
     claim: AuthorityClaim;
@@ -173,8 +130,6 @@ export function whetherTheyMayGiveThisOrder(input: {
         };
     }
 
-    // ── DELEGATED, WHICH IS A CLAIM ABOUT A ROOM ─────────────────────────
-    //
     // Holding nothing is the commonest case and is not a failure of rank: most
     // people on a house's roll run no room, and an elder can hold a rung and no
     // portfolio. What makes this illegitimate is not seniority, it is that the
@@ -192,8 +147,7 @@ export function whetherTheyMayGiveThisOrder(input: {
     }
 
     // A claim with no room named is a claim to whatever they run, which is a
-    // true statement when they run anything. Somebody who holds the punishment
-    // hall saying "by order of the sect" has not overreached.
+    // true statement when they run anything.
     if (under === null) {
         return {
             claim: 'delegated',

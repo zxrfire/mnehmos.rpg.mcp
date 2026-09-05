@@ -1,24 +1,17 @@
 /**
- * Anthropic (Claude) provider - the primary/default runtime agent.
+ * Anthropic (Claude) provider - the primary/default runtime agent. Messages API,
+ * auth by `x-api-key` (NOT a bearer token) plus the pinned `anthropic-version`.
  *
- * Uses the Messages API: POST https://api.anthropic.com/v1/messages
- * Auth is `x-api-key` (NOT a bearer token) plus the pinned `anthropic-version`
- * header. Native fetch, same error-classification and replay-capture contract as
- * every other provider.
+ * Wire-shape differences from the OpenAI Chat Completions providers, absorbed
+ * here so callers never see them:
  *
- * Wire-shape differences from the OpenAI Chat Completions providers, all of them
- * absorbed here so callers never see them:
- *
- *   1. The system prompt is a TOP-LEVEL `system` parameter, not a message with
- *      role 'system'. Incoming ChatMessage[] therefore has its system turns
- *      hoisted out and merged.
+ *   1. The system prompt is a TOP-LEVEL `system` parameter, so incoming system
+ *      turns are hoisted out of ChatMessage[] and merged.
  *   2. `max_tokens` is REQUIRED - a request without it is rejected.
- *   3. The reply is `content: [{type:'text', text}, ...]` blocks, which must be
- *      concatenated to produce the single `.text` the interface promises.
- *   4. Usage is `input_tokens` / `output_tokens`, not prompt/completion.
- *   5. `stop_reason` uses Anthropic's vocabulary ('end_turn', 'max_tokens', ...)
- *      and is normalized onto the provider-neutral finishReason vocabulary the
- *      runtime already stores for OpenAI ('stop', 'length', ...).
+ *   3. The reply is `content: [{type:'text', text}, ...]` blocks to concatenate.
+ *   4. Usage is `input_tokens` / `output_tokens`.
+ *   5. `stop_reason` uses Anthropic's vocabulary and is normalized onto the
+ *      provider-neutral finishReason vocabulary ('stop', 'length', ...).
  */
 
 import {

@@ -1,21 +1,5 @@
 /**
  * Ambient spiritual energy.
- *
- * Where you cultivate matters roughly as much as what you cultivate. Ambient qi
- * is a 6x swing on progress rate (thin 0.5x to spirit_tide 3x) and a 35-point
- * swing on breakthrough odds (thin -0.15 to spirit_tide +0.20). It is the main
- * lever a player has over a fate they otherwise cannot negotiate with: you
- * cannot change your spirit root, but you can walk to a better mountain.
- *
- * The distribution is deliberately miserly - half the world is `thin` - so that
- * finding a dense-qi cave is an event rather than scenery.
- *
- * LOCATION STABILITY: ambient qi must be a pure function of (seed, location,
- * day). If it were drawn from a sequential stream, reading the same cave twice
- * on the same afternoon would give different answers and the world would
- * shimmer. {@link ambientForLocationOnDay} derives a dedicated sub-stream from
- * exactly those three coordinates, so re-reads are free and idempotent, and the
- * time-skip can sample day 900's ambient without having simulated day 899.
  */
 
 import {
@@ -26,16 +10,10 @@ import {
 } from '../../schema/cultivation.js';
 import { forStream } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // TABLE ACCESS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Canonical iteration order for the weight table.
- *
- * Pinned here rather than relying on `Object.keys(AMBIENT_QI_WEIGHTS)` so that
- * a future reordering of the schema literal - a harmless-looking edit - cannot
- * silently shift every ambient roll in every existing replay.
  */
 export const AMBIENT_QI_ORDER: readonly AmbientQi[] = [
     'thin', 'normal', 'spirit_tide', 'dense'
@@ -43,11 +21,6 @@ export const AMBIENT_QI_ORDER: readonly AmbientQi[] = [
 
 /**
  * Bands that exist but the world never rolls.
- *
- * `sealed_vein` is absent from AMBIENT_QI_ORDER above, which is the structural
- * guarantee that no amount of travelling, waiting or re-reading can produce
- * one: `rollAmbientQi` only ever walks the rollable order. A sealed vein is a
- * place a caller declares, not a band a cultivator can wander into.
  */
 export const SITE_ONLY_BANDS: readonly AmbientQi[] = ['sealed_vein'] as const;
 
@@ -77,9 +50,7 @@ export function ambientProbability(ambient: AmbientQi): number {
     return AMBIENT_QI_WEIGHTS[ambient] / AMBIENT_WEIGHT_TOTAL;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ROLLING
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Draw an ambient band from a uniform [0,1) sample.
@@ -100,12 +71,7 @@ export function rollAmbientQi(sample: number): AmbientQi {
 
 /**
  * The ambient qi at a location on a given day.
- *
- * Stable: same (seed, locationId, day) always yields the same band, no matter
- * how many times it is asked or in what order. `day` is floored, so fractional
- * in-world times within one day agree.
  */
-// ─────────────────────────────────────────────────────────────────────────
 // GEOLOGY, AND THE WEATHER ON TOP OF IT
 //
 // Ambient qi is anchored to what the ground under a place actually holds. The
@@ -115,7 +81,7 @@ export function rollAmbientQi(sample: number): AmbientQi {
 // This was wrong for a while and the bug is worth recording. `rollAmbientQi`
 // sampled one global distribution for every location, using the place only as
 // a seed input, so a drawn-down province came up `dense` roughly one month in
-// twenty and a rich vein came up `thin` half the time. Standing in Sweptground
+// twenty and a rich vein came up `thin` half the time. Standing in Burnt Earth
 // for ninety days was enough to watch it turn from "thin, and it always has
 // been" into "thick enough to notice on the first breath".
 //
@@ -131,7 +97,7 @@ export function rollAmbientQi(sample: number): AmbientQi {
 // property of the ground under your feet - so they carry the same small weight
 // everywhere.
 //
-// ── The half of that fix which is still not wired ───────────────────────
+// The half of that fix which is still not wired
 //
 // Measured in a live run, and recorded here because the code above reads as
 // though the problem is solved and from inside the module it is:
@@ -162,14 +128,9 @@ export function rollAmbientQi(sample: number): AmbientQi {
 //
 // `tests/engine/cultivation/ground-in-the-skip.test.ts` holds the engine half
 // of this down and states the caller half it cannot reach.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Where each band sits on the 0..1 density axis.
- *
- * These are the density a location would have to hold for that band to be its
- * ordinary weather. Read alongside `AMBIENT_QI_RATE_MULTIPLIER`: a place at
- * 0.78 is one whose vein sustains double rate as its normal condition.
  */
 export const BAND_DENSITY_CENTRE: Record<'thin' | 'normal' | 'dense', number> = {
     thin: 0.1,
@@ -186,20 +147,11 @@ export const DENSITY_SPREAD = 0.14;
 
 /**
  * Share of months that are a spirit tide, anywhere at all.
- *
- * Not geology. A tide is somebody finishing, and the ground has no opinion
- * about that, so a swept-out province is exactly as likely to catch one as a
- * sect's own mountain. Deliberately small - it is the best thing that can
- * happen to a cultivator, and it happens because someone else's life ended.
  */
 export const TIDE_SHARE = 0.015;
 
 /**
  * The band weights a location of this density actually experiences.
- *
- * Returns a full weight table over the rollable bands. `sealed_vein` is absent
- * for the same reason it is absent from AMBIENT_QI_ORDER: it is a place, not a
- * forecast.
  */
 let weightCacheKey = Number.NaN;
 let weightCacheValue: Record<string, number> | null = null;
@@ -257,10 +209,6 @@ export function rollAmbientAtDensity(sample: number, density: number): AmbientQi
 
 /**
  * Skew of the implied-density draw. Cubed, so most places come out poor.
- *
- * The world is late and mostly drawn down; a location picked at random is far
- * likelier to be swept ground than a vein somebody would fight over. A linear
- * draw would make rich ground ordinary, which is the opposite of the setting.
  */
 export const IMPLIED_DENSITY_SKEW = 3;
 export const IMPLIED_DENSITY_FLOOR = 0.06;
@@ -268,17 +216,6 @@ export const IMPLIED_DENSITY_RANGE = 0.76;
 
 /**
  * A stable baseline for a location the caller knows nothing else about.
- *
- * Drawn ONCE from (runSeed, locationId) and never again, so the ground under a
- * named place is a fact about that place for the whole run. This is what makes
- * "the qi is thin here, and it always has been" a sentence the engine is
- * entitled to hand the narrator.
- *
- * It is a fallback and it is worse than the real thing: the world layer knows
- * the actual `spiritualDensity` of its locations, and a caller holding one
- * should pass it rather than let the engine guess. But guessing ONCE per place
- * is categorically better than re-rolling the band every thirty days, which is
- * what produced a drawn-down province turning rich for a season.
  */
 export function impliedDensityFor(runSeed: string, locationId: string): number {
     const u = forStream(runSeed, 'geology', locationId).next();
@@ -287,18 +224,6 @@ export function impliedDensityFor(runSeed: string, locationId: string): number {
 
 /**
  * The geology a declared band implies - the inverse of `typicalAmbientFor`.
- *
- * A catalog says what a place IS ("the deepest vein anyone has kept" is dense);
- * the engine works in densities. This is the one conversion between them, and
- * it exists so the two scales cannot drift: the centres here are the same
- * constants the weather kernel varies around.
- *
- * `spirit_tide` is not a geology - it is a fixed share of every month at any
- * density - so a place that declares it is read as rich ground that tides
- * often, which is the only sense the word has as a standing property.
- * `sealed_vein` reads the same, and sealing itself travels separately as
- * `SiteConditions.sealed`, because whether a pocket is open is a fact about the
- * world rather than about the rock.
  */
 export function densityForBand(band: AmbientQi): number {
     switch (band) {
@@ -323,15 +248,6 @@ export function typicalAmbientFor(density: number): AmbientQi {
 
 /**
  * Whether today's band is what this place ordinarily gives.
- *
- * Exists for the narrator, and specifically so it stops making permanent
- * claims out of temporary facts. "The qi is thin here; it always has been" is
- * a statement about the GROUND, and it is only true when thin is what the
- * ground gives - a merely thin month in ordinary country deserves "the air is
- * poor this season", which is a different sentence and an honest one.
- *
- * The engine should never hand narration language that outlives the fact it
- * describes, and this is the flag that lets it avoid doing so.
  */
 export function isTypicalForGround(band: AmbientQi, density: number): boolean {
     return band === typicalAmbientFor(density);
@@ -367,23 +283,15 @@ export interface SiteConditions {
     sealed?: boolean;
     /**
      * USABLE qi here, 0..1 - the world layer's `spiritualDensity`, not its
-     * `qiDensity`. The distinction is load-bearing: a sealed ruin sits on a
-     * pocket nothing has drawn on and offers nobody any of it until the seal
-     * is open, so the vein is rich and the usable density is nil.
-     *
-     * This is the CENTRE the month's weather varies around. Omit it only when
-     * the location genuinely is not known.
+     * `qiDensity`. The distinction is load-bearing: a sealed ruin sits on a pocket
+     * nothing has drawn on and offers nobody any of it until the seal is open, so
+     * the vein is rich and the usable density is nil.
      */
     density?: number;
 }
 
 /**
  * How often ambient conditions are re-rolled during a long simulation.
- *
- * Weather-for-qi. Re-rolling daily would produce a digest full of noise and
- * make rate arithmetic pointless; re-rolling yearly would make location choice
- * a one-time decision. A month is the granularity at which "the tide came in
- * and I pushed for the breakthrough" is a story rather than a coin flip.
  */
 export const AMBIENT_REFRESH_DAYS = 30;
 
@@ -406,25 +314,12 @@ export function ambientForBlock(
     return ambientForLocationOnDay(runSeed, locationId, ambientBlockStart(day), opts);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // DESCRIPTION
 // Engine-authored factual phrasing. The narrator dresses these up; it does not
 // get to invent a spirit tide that the engine did not roll.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Rate multiplier implied by an ERA's qi density, 0..1.
- *
- * The world layer's `world_eras` carries a density that only ever falls, and
- * this is how that number becomes cultivation arithmetic. It exists so the
- * upper stratum of the world can be derived HONESTLY: a Grand Ascension
- * ancient is not an exemption in the maths, they are somebody who walked the
- * same cost curve in an age whose open-world baseline was richer than
- * anything now available.
- *
- * Anchored on the present-day bands so the two scales cannot drift apart, and
- * deliberately reaching past `sealed_vein` at the top: the first ages were
- * richer in the open air than a preserved pocket is today.
  */
 const ERA_DENSITY_ANCHORS: readonly { density: number; multiplier: number }[] = [
     { density: 0.15, multiplier: 0.5 },  // scoured ground, thin

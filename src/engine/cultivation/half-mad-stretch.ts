@@ -1,61 +1,9 @@
 /**
  * What somebody does with a month they were not entirely steering.
  *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE RULING
- * ═══════════════════════════════════════════════════════════════════════════
- *
- *   > half madness (but also give you a temp buff... so you are temporarily a
- *   > few ordinals stronger, and whatever you do then, that will be good)
- *
- * The madness and the buff are one bargain, not a buff with a tax bolted on.
- * Somebody swallowed a chaos-grade object, came up carrying a stranger's
- * strength, and spent thirty days doing things at a rung that is not theirs
- * while not being altogether the one choosing.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHY THIS DOES NOT BREAK THE AGENCY RULE, AND WHERE THE LINE ACTUALLY IS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * AGENTS.md forbids the engine deciding on a lucid character's behalf and makes
- * exactly one exception: **a mad cultivator does not act; things are narrated
- * as having happened.** The test it gives is not whether the player chose, it
- * is whether the CHARACTER COULD HAVE. Here they could not - and the decision
- * did not vanish, it moved upstream to the only place it belongs: **they
- * swallowed the pill.** A cost you bought is not a cost imposed on you.
- *
- * Two things the same rule demands, and both are structural here rather than
- * left to a caller's good manners:
- *
- * - **The outcomes are not only bad.** *"You might run into a ruin in your
- *   madness and come out rich."* Half these rows are somebody's best month.
- * - **Nothing is ever refused because of this.** The stretch is resolved and
- *   handed back as an account of what happened. No surface may read it and
- *   start declining sentences - that would be the engine taking a turn from a
- *   lucid player, which is the defect this exception is NOT.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * WHY IT RESOLVES IN ONE PASS
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Thirty days that somebody did not steer is precisely the thing the time-skip
- * primitive exists for: *"the agent must never be required to simulate time day
- * by day"*, resolved deterministically and handed back as a digest the narrator
- * renders. A live thirty-day window would need a scheduler, would put the
- * player at a keyboard for a month of turns they are not allowed to choose, and
- * would be a worse rendering of the same fiction.
- *
- * So the whole stretch is drawn at the moment the object is swallowed, at the
- * ELEVATED standing, and what comes back is what they did.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * THE TABLE IS OPEN
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Same shape as `grade-spread.ts` and for the same reason: a row carries its
- * own consequence, `key` is a bare string, and adding a thing a half-mad
- * cultivator might do next month is adding one entry to one array. What NPCs
- * and players do is emergent and must never become an enum.
+ * Thirty days nobody steered is what the time-skip primitive exists for -
+ * *"the agent must never be required to simulate time day by day"* - resolved
+ * deterministically and handed back as a digest.
  */
 
 import type { CultivationRNG } from './rng.js';
@@ -71,11 +19,6 @@ export interface StretchContext {
     standsAt: number;
     /**
      * How much larger than their own body they read while carrying it.
-     *
-     * PASSED IN RATHER THAN DERIVED FROM `standsAt`, because the rung is a
-     * staircase and the ratio is not: near the top of the ladder the whole gain
-     * is smaller than one rung, and re-deriving it off the rung would report it
-     * as nothing. `liftFromCarrying` is where it comes from.
      */
     bodyMultiplier: number;
     /** Their pool, so a cost can be a share of it rather than a flat number. */
@@ -111,11 +54,6 @@ export const DEEDS_MAX = 3;
 /**
  * Progress a month of unbroken sitting is worth, as a share of their OWN next
  * rung's requirement.
- *
- * Their own, not the elevated one, because what they are accumulating toward is
- * the rung in front of them. The lift shows up as the SIZE of the share - a
- * body reading several times its own gathers at that rate - which is the same
- * arithmetic the ground and the pools already use, rather than a second bonus.
  */
 export const A_MONTH_OF_NOT_STOPPING = 0.25;
 
@@ -130,12 +68,10 @@ function lift(ctx: StretchContext): number {
 }
 
 /**
- * What a month like this produces.
- *
- * Every row is scaled by how much larger they were reading, so the same table
- * is a good month for a Void Refinement cultivator and the single most
- * consequential month of a nobody's life. That asymmetry is not authored; it
- * falls out of `lift`, which falls out of the battery being a fixed size.
+ * What a month like this produces. Same shape as `grade-spread.ts`: a row carries
+ * its own consequence and `key` is a bare string, so adding a thing a half-mad
+ * cultivator might do is one entry in one array. What NPCs and players do is
+ * emergent and must never become an enum.
  */
 export const WHAT_A_HALF_MAD_STRETCH_DOES: readonly StretchRow[] = [
     {

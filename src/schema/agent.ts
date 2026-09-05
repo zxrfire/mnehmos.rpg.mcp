@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import { PROVIDER_NAMES } from '../agent/provider/config.js';
 
-// ============================================================================
 // AGENT - LLM-driven character bindings
-// ============================================================================
 
 // PROVIDER_NAMES is the one place the provider union is declared; deriving
 // the schema from it keeps zod, the DB CHECK, and the factory in step.
@@ -50,9 +48,7 @@ export const AgentSchema = z.object({
 });
 export type Agent = z.infer<typeof AgentSchema>;
 
-// ============================================================================
 // PROMPT SLICE - modular system-prompt fragments
-// ============================================================================
 
 export const AgentSliceKindSchema = z.enum([
     'persona',
@@ -77,9 +73,7 @@ export const AgentPromptSliceSchema = z.object({
 });
 export type AgentPromptSlice = z.infer<typeof AgentPromptSliceSchema>;
 
-// ============================================================================
 // SECRET - agent-private knowledge (separate from npc_voice narrative notes)
-// ============================================================================
 
 export const AgentSecretImportanceSchema = z.enum(['low', 'medium', 'high', 'critical']);
 export type AgentSecretImportance = z.infer<typeof AgentSecretImportanceSchema>;
@@ -93,9 +87,7 @@ export const AgentSecretSchema = z.object({
 });
 export type AgentSecret = z.infer<typeof AgentSecretSchema>;
 
-// ============================================================================
 // JOURNAL - first-person log
-// ============================================================================
 
 export const AgentJournalKindSchema = z.enum([
     'response',
@@ -117,9 +109,7 @@ export const AgentJournalEntrySchema = z.object({
 });
 export type AgentJournalEntry = z.infer<typeof AgentJournalEntrySchema>;
 
-// ============================================================================
 // CALL - audit + replay log of every LLM call
-// ============================================================================
 
 export const AgentCallStatusSchema = z.enum([
     'ok',
@@ -157,9 +147,7 @@ export const AgentCallSchema = z.object({
 });
 export type AgentCall = z.infer<typeof AgentCallSchema>;
 
-// ============================================================================
 // CREATE/UPDATE input types - repo accepts these, fills in id/timestamps
-// ============================================================================
 
 export const AgentCreateInputSchema = z.object({
     id: z.string().optional(),

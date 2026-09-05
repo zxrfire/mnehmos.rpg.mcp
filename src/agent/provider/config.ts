@@ -1,30 +1,16 @@
 /**
- * Runtime provider configuration.
+ * Runtime provider configuration. THE ONLY MODULE ALLOWED TO INTERPRET A PROVIDER
+ * NAME STRING - everything else takes a resolved `ProviderName` or asks here for
+ * a neutral fact, which is what keeps provider-specific logic out of the engine.
  *
- * ARCHITECTURAL CONTRACT (context.md - "Provider abstraction"):
- * This module is the ONLY place in the codebase that is allowed to interpret a
- * provider *name string*. Everything else - the engine, the MCP tools, the agent
- * runtime - takes an already-resolved `ProviderName` or asks this module for a
- * neutral fact about a provider (which env var configures it, what its default
- * model is). That is what keeps "no provider-specific logic in the game engine"
- * true as providers are added.
- *
- * Provider selection is CONFIGURATION, never code:
- *
- *     runtime_provider = claude
- *     runtime_provider = ollama
- *     ollama_model     = <model>
- *
- * Resolution precedence (highest wins):
- *   1. explicit argument (a caller that already knows, e.g. a stored agent row)
+ * Resolution precedence, highest wins:
+ *   1. explicit argument (e.g. a stored agent row)
  *   2. environment       (RUNTIME_PROVIDER, then RPG_RUNTIME_PROVIDER)
- *   3. config file       (config/runtime.json - same `runtime_provider` keys)
+ *   3. config file       (config/runtime.json, same keys)
  *   4. default           ('anthropic')
  *
- * The environment layer is where `.env` lands: src/server/index.ts loads the
- * project-root `.env` through dotenv before anything reads process.env, so an
- * operator setting `RUNTIME_PROVIDER=ollama` in `.env` is picked up here with
- * no extra plumbing.
+ * `.env` lands in the environment layer: src/server/index.ts loads it through
+ * dotenv before anything reads process.env.
  */
 
 import { readFileSync } from 'fs';
@@ -38,9 +24,8 @@ export type ProviderName = typeof PROVIDER_NAMES[number];
 export const DEFAULT_PROVIDER: ProviderName = 'anthropic';
 
 /**
- * Friendly aliases. `claude` is the name the design docs and players use; the
- * wire/vendor name is `anthropic`. Accepting both here means no other module
- * ever has to know they are the same thing.
+ * `claude` is the name the design docs and players use; the wire name is
+ * `anthropic`. Accepting both here means no other module has to know.
  */
 const PROVIDER_ALIASES: Readonly<Record<string, ProviderName>> = {
     anthropic: 'anthropic',
@@ -51,9 +36,8 @@ const PROVIDER_ALIASES: Readonly<Record<string, ProviderName>> = {
 };
 
 /**
- * The env var that configures each provider - used verbatim in "not configured"
- * errors so the operator is told exactly what to set. Ollama needs no secret, so
- * its configuration knob is its base URL rather than a key.
+ * Used verbatim in "not configured" errors. Ollama needs no secret, so its knob
+ * is its base URL rather than a key.
  */
 export const PROVIDER_CONFIG_ENV: Readonly<Record<ProviderName, string>> = {
     anthropic: 'ANTHROPIC_API_KEY',
@@ -71,8 +55,7 @@ export const PROVIDER_CONFIG_OPTION: Readonly<Record<ProviderName, string>> = {
 };
 
 /**
- * Whether the provider requires a secret before it can be used at all.
- * Ollama is self-hosted local inference: it is available as soon as it is
+ * Ollama is self-hosted local inference and is available as soon as it is
  * enabled, which is why initialize() must not gate it on a key.
  */
 export const PROVIDER_REQUIRES_API_KEY: Readonly<Record<ProviderName, boolean>> = {
@@ -90,11 +73,7 @@ export const PROVIDER_MODEL_ENV: Readonly<Record<ProviderName, string>> = {
     openrouter: 'OPENROUTER_MODEL'
 };
 
-/**
- * Model used when neither the caller, the env, nor the config file names one.
- * These are defaults, not policy - every one is overridable per agent row and
- * by the env vars above.
- */
+/** Used when neither caller, env nor config file names one. Overridable per agent row. */
 export const PROVIDER_DEFAULT_MODEL: Readonly<Record<ProviderName, string>> = {
     anthropic: 'claude-opus-5',
     ollama: 'llama3.1',
@@ -171,10 +150,7 @@ export function isProviderName(value: unknown): value is ProviderName {
     return typeof value === 'string' && (PROVIDER_NAMES as readonly string[]).includes(value);
 }
 
-/**
- * Neutral accessor: the sentence to show an operator when a provider is not
- * configured. Lives here so no caller has to map a name to an env var itself.
- */
+/** The sentence to show an operator when a provider is not configured. */
 export function describeProviderConfiguration(name: ProviderName): string {
     const envVar = PROVIDER_CONFIG_ENV[name];
     const option = PROVIDER_CONFIG_OPTION[name];
@@ -185,9 +161,8 @@ export function describeProviderConfiguration(name: ProviderName): string {
 }
 
 /**
- * Load config/runtime.json if it exists. A missing or malformed file is not an
- * error: the config file is the *lowest*-priority source, so an operator who
- * never creates one must still get a working default.
+ * A missing or malformed file is not an error: this is the LOWEST-priority
+ * source, so an operator who never creates one still gets a working default.
  */
 export function loadRuntimeConfigFile(env: Record<string, string | undefined> = process.env): RuntimeConfigFile | null {
     const path = env[RUNTIME_CONFIG_PATH_ENV] ?? resolve(process.cwd(), RUNTIME_CONFIG_FILE);
@@ -225,11 +200,9 @@ function nonEmpty(value: unknown): string | null {
 }
 
 /**
- * Resolve the active runtime provider and its model.
- *
- * Throws on an explicitly-configured but unrecognized provider name - a typo in
- * `RUNTIME_PROVIDER` should fail loudly at startup, not silently fall back to a
- * different (possibly paid) provider than the operator asked for.
+ * Throws on an explicitly-configured but unrecognized name: a typo in
+ * `RUNTIME_PROVIDER` must fail loudly at startup rather than silently fall back
+ * to a different, possibly paid, provider.
  */
 export function resolveRuntimeProviderConfig(
     input: RuntimeProviderConfigInput = {}
@@ -237,7 +210,7 @@ export function resolveRuntimeProviderConfig(
     const env = input.env ?? process.env;
     const configFile = input.configFile === undefined ? loadRuntimeConfigFile(env) : input.configFile;
 
-    // ── provider ──────────────────────────────────────────────────────────
+    // provider
     let provider: ProviderName = DEFAULT_PROVIDER;
     let providerSource: ConfigSource = 'default';
 
@@ -256,7 +229,7 @@ export function resolveRuntimeProviderConfig(
         providerSource = 'config_file';
     }
 
-    // ── model (per-provider, same precedence ladder) ──────────────────────
+    // model (per-provider, same precedence ladder)
     let model = PROVIDER_DEFAULT_MODEL[provider];
     let modelSource: ConfigSource = 'default';
 

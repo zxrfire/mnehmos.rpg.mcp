@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-/**
- * Travel terrain types for navigation and movement
- */
+/** Travel terrain types for navigation and movement */
 export const TravelTerrainSchema = z.enum([
     'paved',       // Roads, city streets - fast travel
     'dirt',        // Dirt roads, well-worn paths - normal travel
@@ -11,9 +9,7 @@ export const TravelTerrainSchema = z.enum([
 ]);
 export type TravelTerrain = z.infer<typeof TravelTerrainSchema>;
 
-/**
- * Exit represents a connection between two rooms
- */
+/** Exit represents a connection between two rooms */
 export const ExitSchema = z.object({
     direction: z.enum([
         'north',

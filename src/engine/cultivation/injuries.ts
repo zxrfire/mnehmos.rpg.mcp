@@ -1,41 +1,5 @@
 /**
  * Meridian injuries - the game's ratchet.
- *
- * Injuries do not heal on their own. There is no long rest, no hit dice, no
- * overnight recovery. An injury stays untreated until a pill, a healer or a
- * long seclusion clears it, and while untreated it drags on the cultivation
- * rate, on breakthrough odds, and on what a blow actually lands in a fight.
- *
- * ── A CHANNEL WOUND DOES NOT KILL YOU ────────────────────────────────────
- *
- * Design owner: "torn meridians should not kill, they don't make you bleed out.
- * it should be the same as a torn muscle irl. very VERY annoying, but you don't
- * die. but you probably lose combat effectiveness of some sort or maybe
- * cultivation speed (but not comprehension)."
- *
- * This module used to own the predicate for a lethal rule - three or more
- * untreated wounds, fatal if you fought and fatal in ninety days if you did
- * not. There is no lethal rule now. `isLethalInjuryState` is retained under a
- * name that no longer describes it (see there) and reports the state in which a
- * body stops coping: it will not mend itself, and everything it does is worse.
- *
- * ── AND THE TWO FAMILIES ARE NOT ONE SCALE ───────────────────────────────
- *
- * The above is about CHANNEL wounds - torn meridians, scorched channels, and
- * every untyped wound the engine mints, which is what `permanent: false` means
- * in `data/cultivation/wounds.ts`. They impair and they do not take anything
- * back.
- *
- * The other family - a broken foundation, a cracked core, a crippled nascent
- * soul - are wounds of the CULTIVATION rather than of the
- * body, and they cost a rung. They were never on the bleed clock
- * (`bleedingInjuryCount` has always excluded them) and removing the lethality
- * does not touch them: what they do is close a road, through
- * `blocksAdvancement` and the broken statuses, and that is a separate question
- * with a separate answer. `docs/world/climbing/injuries.md` names the split.
- *
- * A crippling torn meridian is still a channel wound and is still survivable.
- * Do not let severity slide one family into the other.
  */
 
 import {
@@ -49,7 +13,6 @@ import {
 import { getWoundType, isPermanentWound, woundNature } from '../../data/cultivation/wounds.js';
 import type { CultivationRNG } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // PENALTY CEILINGS
 // Penalties stack additively, which without a ceiling means four crippling
 // injuries produce a 200% cultivation penalty and a negative rate. Rather than
@@ -57,7 +20,6 @@ import type { CultivationRNG } from './rng.js';
 // mathematically inverted. The caps are deliberately brutal but survivable, so
 // that "treat your injuries" stays a live decision instead of the run simply
 // being over.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Maximum fraction of cultivation rate that injuries can strip. */
 export const MAX_INJURY_CULTIVATION_PENALTY = 0.9;
@@ -73,9 +35,7 @@ function severityRank(severity: InjurySeverity): number {
     return INJURY_SEVERITY_ORDER.indexOf(severity);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // CREATION
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface CreateInjuryParams {
     severity: InjurySeverity;
@@ -90,29 +50,12 @@ export interface CreateInjuryParams {
     description?: string;
     /**
      * Which authored wound this is, as a key into `data/cultivation/wounds.ts`.
-     *
-     * Supply it wherever the engine knows what it just did to somebody. It is
-     * what makes the wound a record the narrator reads rather than a phrase it
-     * invents, and it is how a mental wound gets into this list at all - a
-     * heart demon is a row in that table, minted through this same function,
-     * carried in this same array.
-     *
-     * Omitted is legitimate and means an ordinary wound of its severity, which
-     * is what every wound the engine minted before the table existed was.
      */
     woundType?: string | null;
 }
 
 /**
  * Mint an injury with its penalties taken from INJURY_WEIGHTS.
- *
- * Penalties are copied onto the record rather than looked up by severity at
- * read time, so a future balance pass to INJURY_WEIGHTS does not retroactively
- * rewrite the wounds in a save file. What you took is what you carry.
- *
- * The id comes from the supplied seeded RNG, never from `crypto.randomUUID`:
- * injuries surface inside BreakthroughResult and TimeSkipResult, and those
- * objects must be byte-identical across replays of the same seed.
  */
 export function createInjury(params: CreateInjuryParams, rng: CultivationRNG): Injury {
     const weights = INJURY_WEIGHTS[params.severity];
@@ -160,10 +103,6 @@ export function defaultInjuryDescription(severity: InjurySeverity, source: Injur
 
 /**
  * Roll a severity from a seeded stream.
- *
- * `escalate` shifts the distribution upward and is how the engine expresses
- * "this went wrong at a realm boundary" or "this is the fourth lightning
- * strike" without needing a separate table per caller.
  */
 export function rollInjurySeverity(rng: CultivationRNG, escalate = false): InjurySeverity {
     const roll = rng.next();
@@ -177,9 +116,7 @@ export function rollInjurySeverity(rng: CultivationRNG, escalate = false): Injur
     return 'crippling';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // QUERYING
-// ─────────────────────────────────────────────────────────────────────────
 
 export function untreatedInjuries(injuries: readonly Injury[]): Injury[] {
     return injuries.filter(i => !i.treated);
@@ -194,21 +131,12 @@ export function untreatedInjuryCount(injuries: readonly Injury[]): number {
 /**
  * Untreated wounds that are actually still OPEN - the channel family.
  *
- * A permanent wound is untreated for life by definition: nothing closes a
- * severed meridian or a rooted heart demon, so `treated` stays false forever
- * and the wound goes on costing, correctly. What it must not do is put somebody
- * into the open-channels state, because that state is "you are carrying wounds
- * nobody has closed" and a maiming is not that. Counted the old way, a
- * cultivator who came out of the Deity Transformation wall maimed, half mad and
- * short a span read as three open channels from three conditions none of which
- * is one - and back when that state was lethal it gave them ninety days to
- * live.
- *
- * The lethality is gone and this exclusion is not, because it was never really
- * about the clock: `permanent: true` is the line between a wound of the body
- * and a wound of the cultivation, and the two are not one scale.
- * `aggregateInjuryPenalties` deliberately still counts permanent wounds - they
- * are supposed to make everything harder forever. Only this count skips them.
+ * A permanent wound is untreated for life by definition, so `treated` stays false
+ * forever and it goes on costing, correctly. What it must NOT do is put somebody
+ * into the open-channels state, which means "you are carrying wounds nobody has
+ * closed". Counted the old way, a cultivator who came out of the Deity
+ * Transformation wall maimed, half mad and short a span read as three open
+ * channels from three conditions none of which is one.
  */
 export function bleedingInjuryCount(injuries: readonly Injury[]): number {
     let count = 0;
@@ -230,16 +158,11 @@ export function woundsOfNature(
 
 /**
  * Whether this person carries a wound nothing in the world closes.
- *
- * The predicate the world layer wants when it asks "is this somebody who was
- * ruined by a crossing rather than merely hurt recently", and the one a
- * narrator should consult before writing anybody as recovering.
  */
 export function hasPermanentWound(injuries: readonly Injury[]): boolean {
     return injuries.some(i => isPermanentWound(i.woundType));
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A WOUND REACHES, AND THE ONE AXIS IT MUST NOT
 //
 // A wound takes two things and there is no third:
@@ -267,7 +190,6 @@ export function hasPermanentWound(injuries: readonly Injury[]): boolean {
 // The temptation whenever a penalty is added is to dim everything at once
 // because that feels serious. A wound is a fact about the body.
 // See `docs/world/climbing/injuries.md`.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface InjuryPenalties {
     /** Fraction of cultivation rate lost, in [0, MAX_INJURY_CULTIVATION_PENALTY]. */
@@ -280,9 +202,9 @@ export interface InjuryPenalties {
     /**
      * True once the count of OPEN channel wounds reaches
      * CRIPPLING_UNTREATED_INJURIES - the point at which the body stops mending
-     * itself. Not a death flag: it used to be the lethal-if-you-fight threshold
-     * and nothing kills anybody for it now. Permanent wounds are excluded; they
-     * cost forever and they are not open channels. See `bleedingInjuryCount`.
+     * itself. Not a death flag: it used to be the lethal-if-you-fight threshold and
+     * nothing kills anybody for it now. Permanent wounds are excluded; they cost
+     * forever and they are not open channels. See `bleedingInjuryCount`.
      */
     lethalThresholdReached: boolean;
     /** Untreated wounds nothing in the world closes. They never stop costing. */
@@ -330,18 +252,6 @@ export function aggregateInjuryPenalties(injuries: readonly Injury[]): InjuryPen
 /**
  * Whether this cultivator is carrying CRIPPLING_UNTREATED_INJURIES or more open
  * channel wounds - the state in which a body has stopped coping.
- *
- * NOTHING ABOUT THIS IS LETHAL, AND THE NAME IS A LEFTOVER. It used to mean
- * "one more fight and you die" and it means "this body will not mend itself and
- * everything it tries is worse". The name is kept because half a dozen modules
- * import it and renaming exported symbols across a shared tree sweeps up other
- * people's unfinished work; migrate to `isCrippledByInjuries` as files come
- * free.
- *
- * Standing here is survivable indefinitely. It is meant to be intolerable
- * rather than fatal: the rate is a fraction of what it was, the body no longer
- * knits back up, and a fight goes badly. Being worth curing is the whole design
- * of the state.
  */
 export function isLethalInjuryState(cultivator: Pick<Cultivator, 'injuries'>): boolean {
     return bleedingInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
@@ -350,7 +260,6 @@ export function isLethalInjuryState(cultivator: Pick<Cultivator, 'injuries'>): b
 /** The name `isLethalInjuryState` should have. Same predicate. */
 export const isCrippledByInjuries = isLethalInjuryState;
 
-// ─────────────────────────────────────────────────────────────────────────
 // TEMPERING - EXPERIENCE AS A FORM OF POWER
 //
 // The charter requires that surviving hardship produce a mechanical
@@ -380,7 +289,6 @@ export const isCrippledByInjuries = isLethalInjuryState;
 // The broader charter items under "experience is power" - enemies made,
 // reputation, changed relationships, combat judgement - are not modelled here.
 // They belong to the social and combat layers, which own that state.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Tempering earned per closed wound, by how badly it went. */
 export const TEMPERING_PER_SCAR: Record<InjurySeverity, number> = {
@@ -392,7 +300,6 @@ export const TEMPERING_PER_SCAR: Record<InjurySeverity, number> = {
 /** Hard ceiling on tempering, as a flat probability. Judgement, not talent. */
 export const MAX_TEMPERING = 0.06;
 
-// ─────────────────────────────────────────────────────────────────────────
 // AND THE OTHER SIDE OF IT: SCAR ATTRITION
 //
 // Tempering alone made a closed wound a pure asset, and that turned the whole
@@ -420,21 +327,12 @@ export const MAX_TEMPERING = 0.06;
 //     ladder unable to do what a prodigy who walked up it could. That is the
 //     single most load-bearing consequence in the balance of the last realm:
 //     see `assessLastCrossing` in breakthrough.ts.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Closed wounds a body absorbs before the scarring starts to cost.
- *
- * Three, which is what a clean climb through the mortal realms produces and
- * about what tempering can pay for at its cap. Below it the old contract is
- * untouched: healing is a pure return on having paid.
- *
- * Measured, not chosen. The people who arrive at the top of the ladder carry a
- * median of four closed wounds - the ones who took more mostly died at the wall
- * that gave them the fourth - so the plateau sits one below that median on
- * purpose. It is the line that decides which prodigies can still afford the
- * last crossing when they get there, and putting it anywhere else makes that
- * either everybody or nobody.
+ * Closed wounds a body absorbs before the scarring starts to cost. Measured, not
+ * chosen: the people who arrive at the top of the ladder carry a median of four
+ * closed wounds - the ones who took more mostly died at the wall that gave them
+ * the fourth - so the plateau sits one below that median on purpose.
  */
 export const SCAR_PLATEAU = 4;
 /** Fraction of cultivation rate each closed wound past the plateau costs. */
@@ -505,48 +403,16 @@ export function scarTempering(injuries: readonly Injury[]): Tempering {
 
 /**
  * The multiplier scar tissue puts on a cultivation rate, ready to fold in.
- *
- * Separate from `aggregateInjuryPenalties` on purpose: that function prices
- * OPEN wounds and its figure is labelled as such everywhere it surfaces. Scar
- * tissue is a different fact about the same body and gets its own line, so a
- * rate breakdown never says "no untreated injuries" beside a number that is
- * not one.
  */
 export function scarRateMultiplier(injuries: readonly Injury[]): number {
     return 1 - scarTempering(injuries).rateAttrition;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // TREATMENT
 // Pure: every function returns a new array; the input is never mutated.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Mark one injury treated by id. Unknown ids are a no-op, not an error.
- *
- * A PERMANENT WOUND IS NEVER TREATED, and refusing it here rather than in the
- * callers is what makes the wound table's word good. Every permanent row says
- * in its own `treatment` field that nothing in the world closes it - a parted
- * meridian, an unfinished cultivation base, a rooted heart demon - and a
- * treatment path that quietly closed one anyway would make that text a
- * decoration.
- *
- * It had teeth beyond the prose, and the shape of those teeth has changed. It
- * used to be that `isHalted` read the failure table's gravest wound, so a
- * healer being handed enough money could have undone a permanent BAR by
- * accident - caught by the ceiling sweep, which heals everything it can every
- * iteration. Nothing the failure table mints halts anybody now: only a realm's
- * own break closes a road, and nothing closes one of those except a crossing or
- * the rarest medicine there is. So the sweep can no longer walk somebody back
- * onto the ladder through this door.
- *
- * The refusal still matters, and now for the plain reason rather than the
- * mechanical one: a permanent wound is permanent. A parted meridian, an
- * unfinished cultivation base and a rooted heart demon each say in their own
- * `treatment` field that nothing in the world closes them, and they go on
- * costing rate, odds and combat power for the rest of the life. Being
- * un-halting does not make an unfinished base survivable or cheap; it means the
- * ladder is open to somebody who will find the next wall far worse than it was.
  */
 export function treatInjury(injuries: readonly Injury[], injuryId: string): Injury[] {
     return injuries.map(injury =>
@@ -569,20 +435,13 @@ export interface TriageResult {
  */
 export function treatWorstInjury(
     injuries: readonly Injury[],
-    /**
-     * What is being applied, and to whom.
-     *
-     * Omitted means "no grade stated", which treats everything triable - the
-     * behaviour every caller had before the two axes existed, kept so that a
-     * harness or a design guard can still ask "what is the worst one" without
-     * pricing medicine.
-     *
-     * Supplied, it enforces the design owner's ruling: the rarity of the
-     * medicine scales with the severity of the injury AND the realm of the
-     * injured. Before it, a Nascent Soul with crippling torn meridians bought
-     * thirty days of village splints for fourteen stones and walked out whole.
-     * See `what-grade-of-medicine-a-wound-needs.ts`.
-     */
+/**
+ * What is being applied, and to whom. `reaches` enforces the design owner's
+ * ruling: the rarity of the medicine scales with the severity of the injury AND
+ * the realm of the injured. Before it, a Nascent Soul with crippling torn
+ * meridians bought thirty days of village splints for fourteen stones and walked
+ * out whole. See `what-grade-of-medicine-a-wound-needs.ts`.
+ */
     reaches?: (severity: InjurySeverity) => boolean
 ): TriageResult {
     let worst: Injury | null = null;

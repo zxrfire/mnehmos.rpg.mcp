@@ -153,7 +153,7 @@ export class SectRepository {
         `);
     }
 
-    // ── CATALOG ──────────────────────────────────────────────────────────
+    // CATALOG
 
     upsert(sect: Sect): Sect {
         const valid = SectSchema.parse(sect);
@@ -183,7 +183,7 @@ export class SectRepository {
         return this.deleteStmt.run(id).changes > 0;
     }
 
-    // ── MEMBERSHIP ───────────────────────────────────────────────────────
+    // MEMBERSHIP
 
     /**
      * Enrol a cultivator. Membership is exclusive (a unique index enforces

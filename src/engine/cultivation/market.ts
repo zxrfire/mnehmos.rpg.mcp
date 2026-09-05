@@ -1,72 +1,24 @@
 /**
  * Selling - the missing half of the market.
  *
- * ── What was wrong ───────────────────────────────────────────────────────
+ * A pure pricing function: no catalog, no database, and no knowledge of any
+ * particular kind of item. There is no second price table here and there must
+ * never be one - a sale is the buy board read from the other side.
  *
- * Found by playing, not by reading. Foraging works, the pouch is real, and the
- * engine prices every stalk as it goes in: "one Qi Grass, mortal grade, worth
- * about 2 spirit stones." Nothing anywhere converted that back into stones. The
- * price board is one-directional - twenty-five lines, all of them things to buy
- * - and "I sell a Qi Grass" reached the party resolver and came back "no
- * knowledge record and nobody co-located".
- *
- * So the one trade a cultivator at the bottom of the ladder actually has - walk
- * into the hills, come back with something worth money - did not exist, and
- * alchemy had no economic point either, because a pill you cannot sell is a pill
- * you refined for nothing. That is most of why the bottom of the economy reads
- * as unfundable.
- *
- * ── What this is, and what it deliberately is not ────────────────────────
- *
- * It is a pure pricing function and nothing else. It holds no catalog, reads no
- * database, and knows about no particular kind of item: the caller passes the
- * list value the item's own catalog row already carries, and the row itself so
- * that `regardOf` can read the rung it is pitched at out of whichever column
- * that catalog happens to use (`harvestOrdinal` for a herb, `requiredOrdinal`
- * for a pill). There is no second price table here and there must never be one -
- * a sale is the buy board read from the other side.
- *
- * The margin is one constant applied through the ordinary regard multiplier,
- * which means the interesting behaviour falls out rather than being written:
- *
- *   selling something pitched at your own rung    ~60% of list
- *   selling something well beneath you            ~78% - nobody haggles with you
- *   selling something several rungs above you     ~20% - the room can see that
- *                                                  you cannot hold it, and prices
- *                                                  accordingly
- *
- * That last row is the one worth keeping. A beginner who finds a heaven-grade
- * herb is not robbed by a special case; they are met by the same table that
- * decides whether a job is offered to them.
- *
- * ── What the engine has no answer for yet ────────────────────────────────
- *
- * Selling something far above your rung should attract attention - a fence who
- * talks, a sect that hears, somebody waiting on the road out. `rogues.ts`
- * describes exactly that happening and the engine models none of it. The price
- * knows; nothing else does.
+ *   at your own rung        ~60% of list
+ *   well beneath you        ~78% - nobody haggles with you
+ *   several rungs above     ~20% - the room can see you cannot hold it
  */
 
 import { regardOf, type Regard, type RegardAskerInput } from './regard.js';
 
 /**
  * The buyer's cut at ordinary terms, as a fraction of list.
- *
- * 0.4 - a buyer pays about three fifths of what a thing is worth, which is the
- * usual figure for anyone selling to a trade rather than to an end user, and is
- * large enough to be a real reason to refine or hold rather than a rounding
- * error. It is deliberately one number: the whole variation between one sale
- * and another comes from regard, so there is exactly one place to tune this and
- * no per-catalog exception anywhere.
  */
 export const BUYER_MARGIN = 0.4;
 
 /**
  * The least any buyer will offer, as a fraction of list.
- *
- * Nobody gets nothing for a real object. Below this the transaction stops being
- * a bad price and becomes a refusal, and a refusal that arrives disguised as an
- * offer of zero is the worst of both.
  */
 export const SALE_FLOOR_FRACTION = 0.1;
 
@@ -115,10 +67,6 @@ export interface SaleQuote {
 
 /**
  * Price a lot of one item, for one seller, at one counter.
- *
- * Pure. Same inputs, same quote, every time - there is no roll in a sale and
- * there should not be one: haggling that is a die roll makes the board a
- * slot machine, and the ladder is supposed to be the thing that decides.
  */
 export function quoteSale(input: SaleInput): SaleQuote {
     const quantity = Number.isFinite(input.quantity) ? Math.max(0, Math.floor(input.quantity)) : 0;
@@ -186,10 +134,6 @@ function round1(n: number): number {
 
 /**
  * The whole pouch, priced.
- *
- * Convenience for the commonest ask - "I sell what I gathered" - and nothing
- * more: it is `quoteSale` per lot plus a sum. The caller supplies the rows and
- * their list values, because the engine holds no catalog.
  */
 export interface SaleLot {
     itemId: string;

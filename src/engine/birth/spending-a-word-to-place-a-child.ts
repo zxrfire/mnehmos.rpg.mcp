@@ -1,98 +1,15 @@
 /**
  * Spending a word to place a child - the favour that skips an admission bar.
  *
- * `src/data/cultivation/a-favour-skips-the-admission-bar.ts` says WHAT a
- * favour is and which houses will take one. It is a catalog and it states
- * plainly that nothing reads it. This is the module that reads it, and it does
- * exactly two things with it:
+ * THREE THINGS ARE CALLED A FAVOUR AND THEY ARE NOT THE SAME. (1) admission,
+ * which is this file; (2) internal patronage, which hands an already-admitted
+ * disciple the top of the shelf and moves a shelf, never a gate; (3) the ledger
+ * favour in `social/grudges.ts`. (1) and (3) meet exactly once, here: spending
+ * an admission favour WRITES a ledger favour with the cause
+ * `sponsored_admission`. (2) never touches either.
  *
- *   AT CHARACTER CREATION   which doors a family's word could open that the
- *                           applicant's own ordinal does not, which is the
- *                           counterpart to `placementsWithinReach` in
- *                           `engine/cultivation/origin.ts`
- *   IN A LIFE               what it costs to spend one on your own child, as
- *                           ordinary rows for the social ledgers
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE PROBLEM, MEASURED RATHER THAN ASSERTED
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `placementsWithinReach` applies two hard conditions: the house is within the
- * family's `placement.reach`, AND the applicant already meets the house's own
- * admission ordinal. A child has an ordinal of zero until they have cultivated,
- * so at the age the top tier is placed, the second condition throws away every
- * house with a bar above the floor. What survives is the handful that admit at
- * zero - and those take anybody, so the greatest name in the province buys a
- * place its holder could have had by walking up.
- *
- * That is what the favour exists to fix, and this module is where the fix is
- * legible from code rather than from prose.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * NOTHING HERE IS A NEW RULE
- * ═════════════════════════════════════════════════════════════════════════
- *
- * No bar is altered, no ordinal is conferred, no faction gets a branch. Every
- * answer below is derived from `favourStanceOf`, which is itself derived from
- * `SECT_ADMISSION`, so a change to a house's bar moves this with it and there
- * is no second copy of anybody's admission figure anywhere in this file.
- *
- * What a word buys is the BAR AND NOTHING ELSE. It confers no rank - the
- * receiving house's ladder is climbed from the bottom like everybody else's,
- * which is `OriginPlacement.entryRankIndex` being nailed to 0 and asserted -
- * and it confers no progress. The child still has to survive the teaching, and
- * `WASHING_OUT` in `bodies-that-cannot-keep-their-members-children.ts` says
- * what happens to them when they do not.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE THREE THINGS CALLED A FAVOUR, WHICH ARE NOT THE SAME THING
- * ═════════════════════════════════════════════════════════════════════════
- *
- * This word is overloaded in this repository and the three senses have been
- * conflated before. They are:
- *
- *   1. THIS ONE, the admission favour. Somebody high enough says a word and a
- *      house suspends its own bar for one person, once, at the gate. It is
- *      spent from OUTSIDE a house, by somebody who is not in it, on somebody
- *      who is not in it yet.
- *
- *   2. INTERNAL PATRONAGE - `docs/world/climbing/manuals.md`, "The chosen". A house
- *      that has decided a disciple is worth it hands them the top of the shelf
- *      years before their rank reaches it. That happens INSIDE a house, to
- *      somebody already admitted, and it is bounded by how many copies of the
- *      top book the house owns. It moves a shelf, never a gate.
- *
- *   3. THE LEDGER ENTRY - `ObligationKind` `'favor'` in
- *      `engine/social/grudges.ts`, an obligation owed TO its holder. That is
- *      not an act at all, it is the record an act leaves behind.
- *
- * (1) and (3) meet exactly once, here: spending an admission favour WRITES a
- * ledger favour, with the cause `sponsored_admission` that vocabulary already
- * carries. They are cause and receipt, not rivals. (2) never touches either.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE PAVILION HAS TWO DOORS AND ONLY ONE OF THEM IS THE DOOR
- * ═════════════════════════════════════════════════════════════════════════
- *
- * This has been got wrong twice, so {@link doorsOf} exists to make it hard to
- * get wrong a third time.
- *
- *   `minOrdinal`         MEMBERSHIP. It has never moved, for anybody, ever.
- *   `guestFromOrdinal`   THE REAL DOOR, standing at the floor, and it is the
- *                        only one in the world.
- *
- * The Pavilion's `powerOrdinal` also stands above every origin's placement
- * reach, including the top tier's - so no family's name reaches it, nobody is
- * ever placed there, and a child of the strongest house in the world has not
- * heard it named at home. That makes it simultaneously the most open door in
- * the setting and the only one that cannot be opened for anybody, and the way
- * to say it without contradicting yourself is:
- *
- *   IT IS ALREADY OPEN AND NEEDS NO OPENING.
- *
- * A favour buys nothing there because there is nothing to buy. You walk up.
- *
- * Pure. Deterministic. No I/O, no database, no LLM.
+ * `minOrdinal` is MEMBERSHIP and has never moved for anybody;
+ * `guestFromOrdinal` is the real door.
  */
 
 import {
@@ -106,9 +23,7 @@ import { createFavor, type ObligationRecord } from '../social/grudges.js';
 import type { KnowledgeInput } from '../social/knowledge.js';
 import { createRelationship, type Relationship } from '../social/relationships.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE DOORS A HOUSE HAS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Every way into one house, kept apart.
@@ -166,9 +81,7 @@ export function housesWithTwoDoors(): Doors[] {
         .filter((d): d is Doors => d !== undefined && d.guestFromOrdinal !== null);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // HOW A CHILD AT ORDINAL ZERO GETS IN, IF THEY DO
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The four answers, in the terms a parent standing at a gate is asking in.
@@ -195,10 +108,6 @@ const FROM_STANCE: Record<FavourAnswer, HowAChildGetsIn> = {
 
 /**
  * What it would take to get a person at ordinal zero into this house.
- *
- * Answers for any body the favour catalog knows, which is wider than `SECTS`:
- * the Kiln Court is a court rather than a sect and has an authored stance, so
- * asking about it here gets the right answer rather than `undefined`.
  */
 export function howAChildAtZeroGetsIn(factionId: string): HowAChildGetsIn | undefined {
     const stance = favourStanceOf(factionId);
@@ -207,17 +116,6 @@ export function howAChildAtZeroGetsIn(factionId: string): HowAChildGetsIn | unde
 
 /**
  * The whole sect catalog, sorted by what a child at the floor would need.
- *
- * Reported rather than counted: a caller that wants a number takes the length
- * of the list it cares about, and no number is written down in this file or in
- * any prose that quotes it. The catalog is the authority on its own size.
- *
- * NOTE THAT THIS IS THE SECTS ONLY, and the world has one more body that
- * cannot take a child: the Kiln Court is in `COURTS`, not in `SECTS`, so it is
- * absent from every list here while having exactly the same answer as the Root
- * Sill. Ask {@link howAChildAtZeroGetsIn} about it by id. A tally that treats
- * the two postings as two rows of the sect catalog is off by one and has been
- * written down that way before.
  */
 export interface WhoCanHoldAChildAtZero {
     /** No word needed. The door is already at the floor. */
@@ -260,28 +158,19 @@ export function couldHoldAChildAtZero(): string[] {
     return [...walksUp, ...needsAWord];
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // AT CHARACTER CREATION
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The doors a word would open that standing alone does not.
  *
- * The counterpart to `placementsWithinReach`, and deliberately DISJOINT from
- * it. That function returns houses the applicant already qualifies for; this
- * one returns houses they do not, and only the ones a word actually reaches.
- * A house appears in exactly one of the two lists, never both, so a caller can
- * concatenate them without deduplicating and a reader can see at a glance what
- * the word was worth.
+ * The counterpart to `placementsWithinReach` and deliberately DISJOINT from it:
+ * that returns houses the applicant already qualifies for, this returns the ones
+ * they do not. A house appears in exactly one of the two, never both, so a
+ * caller can concatenate them without deduplicating.
  *
- * Three conditions, all hard:
- *
- *   1. The house is within the family's `placement.reach`. A word does not
- *      travel further than the name behind it, and reach is origin.ts's number.
- *   2. The applicant does NOT already meet the house's lowest door. Where they
- *      do, there is nothing to buy - which is the whole of the Pavilion's
- *      answer and the reason it never appears here.
- *   3. The house's own stance is that a word moves its bar.
+ * Three conditions: within the family's `placement.reach`; the applicant does
+ * NOT already meet the house's lowest door; and the house's own stance is that
+ * a word moves its bar.
  */
 export function placementsAWordWouldOpen(
     key: OriginTierKey,
@@ -303,11 +192,6 @@ export function placementsAWordWouldOpen(
 
 /**
  * What this origin's name is worth at this age, said in one object.
- *
- * The honest account of the opening position that `openingPosition` cannot
- * give, because it reports `vouchers` as a count and says nothing about what a
- * voucher reaches. A tier with vouchers and no `wordWouldOpen` has capacity it
- * cannot spend.
  */
 export interface WhatTheNameReaches {
     origin: OriginTierKey;
@@ -350,7 +234,6 @@ export function whatTheNameReaches(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // IN A LIFE: SPENDING ONE ON YOUR OWN CHILD
 //
 // The other half of the mechanic, and the half that had nowhere to live. A
@@ -364,7 +247,6 @@ export function whatTheNameReaches(
 // placing a child on a friend's word, with the identity going to the friend
 // and to nobody else. That is this function, with `told` set to the one person
 // asked - which is the default and, on that case, the whole of the drama.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Why the word could not be spent, when it could not.
@@ -391,14 +273,12 @@ export interface SpendAWordInput {
     childId: string;
     /** The house being asked. */
     houseId: string;
-    /**
-     * The one person who is asked, personally, and who will hold the record.
-     *
-     * REQUIRED, and deliberately not the faction id. A favour runs through a
-     * person and never through an institution - "nobody writes to the Hollow
-     * Court about a child" - so a caller that has no name to put here does not
-     * have a favour, they have a letter.
-     */
+/**
+ * The one person who is asked, personally, and who will hold the record.
+ * REQUIRED, and deliberately not the faction id: a favour runs through a person
+ * and never through an institution, so a caller with no name to put here does
+ * not have a favour, they have a letter.
+ */
     askedOfId: string;
     onDay: DayIndex;
     /** The child's ordinal at the gate. Zero for a newborn, which is the point. */
@@ -409,23 +289,15 @@ export interface SpendAWordInput {
 
 /**
  * Everything one spent word produces, as rows for the ledgers that own them.
- *
- * Deltas out, nothing written. This module holds no ledger and mutates
- * nothing: the caller owns the `ObligationLedger`, the `RelationshipLedger`
- * and the knowledge table, and decides whether any of this is committed.
  */
 export interface WordSpent {
     houseId: string;
     askerId: string;
     childId: string;
     /**
-     * The receipt. Held by the person who was asked, about the person who
-     * asked - `kind: 'favor'` is an obligation owed TO its holder, and the
-     * cause `sponsored_admission` is the vocabulary the ledger already has.
-     *
-     * `terms` is null and `dueOnDay` is null on purpose, and that is the
-     * catalog's own position rather than an omission: houses at this level do
-     * not name a price, because naming one makes it a transaction that ends.
+     * The receipt. Held by the person who was asked, about the person who asked -
+     * `kind: 'favor'` is an obligation owed TO its holder, and the cause
+     * `sponsored_admission` is the vocabulary the ledger already has.
      */
     obligation: ObligationRecord;
     /**
@@ -435,17 +307,11 @@ export interface WordSpent {
      * the mirror of this one.
      */
     tie: Relationship;
-    /**
-     * Who is told. Exactly one row, held by exactly one person.
-     *
-     * There is deliberately no public-belief row here and there must never be
-     * one. A word is spent in private between two people, and the discretion
-     * needs no enforcement because naming the asker burns the namer's own face
-     * in front of the people whose trust is their entire position. The child
-     * is not on this list either - `whatTheChildKnows` on the Hollow Court's
-     * row is the statement of that, and it is the sharpest thing the mechanic
-     * produces.
-     */
+/**
+ * Who is told. Exactly one row, held by exactly one person. There is deliberately
+ * no public-belief row and there must never be one: naming the asker burns the
+ * namer's own face in front of the people whose trust is their whole position.
+ */
     told: KnowledgeInput[];
 }
 

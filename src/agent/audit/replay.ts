@@ -70,7 +70,7 @@ export async function replayCall(
         createdAt: call.createdAt
     };
 
-    // ─── Dry mode: no LLM call, just re-surface stored data ───
+    // Dry mode: no LLM call, just re-surface stored data
     if (!input.model) {
         return {
             callId: call.id,
@@ -79,7 +79,7 @@ export async function replayCall(
         };
     }
 
-    // ─── Live mode: direct provider call with the override model ───
+    // Live mode: direct provider call with the override model
     const agent = deps.agentRepo.findById(call.agentId);
     if (!agent) {
         return { error: true, message: `Agent for original call is gone: ${call.agentId}` };

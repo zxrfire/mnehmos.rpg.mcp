@@ -233,6 +233,47 @@ resources to use it, choose the wrong path, become politically isolated, or neve
 understand what they have. Conversely an ordinary character can reach extraordinary
 heights through persistence, comprehension, opportunity, and unconventional methods.
 
+#### And they are two different things, from two different places
+
+The paragraph above ran them together for as long as it existed. They are separate axes
+with separate origins, and `physiques.ts` exists because only one of the two was built:
+
+| | what it is | where it comes from |
+|---|---|---|
+| spirit root | what you can cultivate | rolled at birth, `spirit-roots.ts` |
+| bloodline | a species ability that came down a line | descent only, `engine/world/hunting-a-spirit-beast.ts` |
+| physique | what the body IS | rolled at birth, `physiques.ts`, and never inherited |
+
+A bloodline is beast-derived by construction - the event at the top of its ladder is a
+beast reaching `BEAST_CHANGE_ORDINAL` and then marrying - so it can never be the answer
+for somebody whose family has no such ancestor, which is everybody. A physique is what
+that person has instead.
+
+**A physique is a property of a person, read by whatever consumes it, and owned by none
+of them.** The same ruling `docs/world/what-the-genre-does-and-whether-we-model-it.md`
+makes about primal yin. Three things read it, each reading a number off the catalog row:
+
+- `computeCultivationRate` - a factor beside the spirit root's own, read off the
+  cultivator rather than out of the options bag, because that is the difference between
+  a property of a body and something a caller hands in.
+- `lifespanCeilingFor` in `survival.ts` for a played cultivator, and `createNpc` /
+  `setRealm` for everybody else, both through `lifespanWithPhysique`.
+- `useAFurnaceTechnique`, as `OneBeingDrawnOff.drawnOff` - a bare multiplier, so that
+  file is never told which physique produced it or that physiques exist.
+
+**Nothing branches on WHICH physique somebody has**, and that is asserted rather than
+agreed to: `tests/engine/cultivation/physiques.test.ts` scans every `.ts` file under
+`src/` for the catalog's own key strings and fails if any file but the catalog and the
+wire schema names one. The yin and yang rows carry identical numbers for the same reason
+- the pair differs in prose and in nothing a resolver can see, and the furnace mechanic
+stays sex-neutral because `worksBetween` remains the only rule about who an art of that
+kind can work between.
+
+**Rarity is a population statement.** 200 births in ten thousand carry something, and
+fewer people are STANDING with one than were born with one, because the two rows worth
+anything to somebody else are the two that do not last.
+`scripts/probe-a-body-somebody-was-born-as.ts` carries the measurement and the caveat.
+
 ### Battle experience is tracked
 
 A veteran and a novice at identical cultivation must not fight identically. Track combat

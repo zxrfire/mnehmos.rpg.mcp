@@ -1,84 +1,14 @@
 /**
  * A fight that has started and has not ended: the state between two rounds.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * WHY THIS EXISTS
- * ═════════════════════════════════════════════════════════════════════════
- *
  * `resolveConfrontation` settles a whole fight in one call, which is right for
  * two people meeting on a road at the far end of a time skip and wrong for the
- * person playing. The design owner's ruling:
+ * person playing.
  *
- *   > combat should also of course resolve across multiple turns to give the
- *   > player agency (fleeing, how, to where, using what ability, or item?). if
- *   > you fought and it resolves in one turn and you died it would be
- *   > unsatisfying cuz there's nothing you can do about it.
- *
- * The complaint is precise and it is not about fairness. A death you could not
- * have seen coming and could not have run from is unsatisfying; a death you
- * walked into with the numbers in front of you is the game working. So this
- * module holds a fight open, shows the state that lets somebody know they are
- * losing BEFORE they have lost, and makes getting out a real and priced act.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * IT IS NOT A SECOND COMBAT SYSTEM, AND THAT IS THE WHOLE CONSTRAINT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Every number here comes out of `combat.ts` through the same functions the
- * one-call resolver uses:
- *
- *   whether there is a fight  `theGapDecidesItAlone` - the categorical gap,
- *                             asked before anything is rolled, in both
- *                             directions, exactly as `resolveConfrontation`
- *                             asks it.
- *   the blows                 `resolveConfrontationRound`, which is the body of
- *                             `resolveConfrontation`'s own loop. There is one
- *                             copy of the physics and both entrances call it.
- *   getting away              `attemptFlight`, which has had real arithmetic
- *                             since it was written and had no caller anywhere
- *                             in `src/engine/` or `src/web/`.
- *   what the ending meant     `concludeConfrontation` and `stalemate`, so a
- *                             fight carried over six turns ends in the same
- *                             vocabulary as one settled in a single call, and
- *                             the tradition still decides whether a destroyed
- *                             body was an ending.
- *
- * Nothing in this file decides an outcome. It decides WHOSE TURN IT IS, which
- * is the only thing the two entrances legitimately differ about.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE PLAYER IS NOT THE ONLY ONE WHO CHOOSES
- * ═════════════════════════════════════════════════════════════════════════
- *
- * AGENTS.md: a rule that binds the player and not NPCs is the same defect as
- * one that binds NPCs and not the player. So the other side picks a posture
- * too, out of the same three, through {@link howTheyAreFighting} - and it is
- * derived from what they WANT rather than chosen off a list of behaviours.
- * Somebody nearly finished covers up; somebody about to finish it commits.
- * A third reason to press needs no code, only a different want.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * DETERMINISM
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Each round draws from its OWN named sub-stream, `fight` keyed on the fight's
- * id and the round index - which is what `rng.ts` built named streams for. Two
- * consequences, both wanted:
- *
- *   - No existing draw anywhere moves, because nothing else has ever used this
- *     stream name. A new draw on an existing stream is a regression until
- *     proved otherwise; this is not one.
- *   - Round four is the same round four whether the player took it immediately
- *     or thought about it for a week, and whether they guarded or pressed on
- *     round three. The posture changes the arithmetic, never which numbers came
- *     up.
- *
- * It also means a fight taken a round at a time is NOT byte-identical to the
- * same pairing put through `resolveConfrontation`, and it must not be: they are
- * different streams because they are different events. What is identical is the
- * function that turns two priced bodies and a roll into a wound.
- *
- * Pure. No database, no clock, no I/O. The caller owns the row it is stored in.
+ * A fight taken a round at a time is NOT byte-identical to the same pairing put
+ * through `resolveConfrontation`, and it must not be - they are different streams
+ * because they are different events. What is identical is the function that turns
+ * two priced bodies and a roll into a wound.
  */
 
 import type { AmbientQi, Injury, Technique } from '../../schema/cultivation.js';
@@ -106,17 +36,10 @@ import {
 } from './combat.js';
 import { forStream, type CultivationRNG } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE GROUND, WHICH IS WHAT "BACK OFF TO WHERE" IS ASKING ABOUT
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Somewhere a flight could carry you, as the world already knows it.
- *
- * Supplied by the caller off real place rows. This module never invents one:
- * an empty list is a legitimate and important state - it is a fight in the
- * middle of nowhere - and the honest answer to "back off to where" is then
- * "away from them, and that is all you know".
  */
 export interface WayOut {
     id: string;
@@ -131,9 +54,7 @@ export interface FightGround {
     waysOut: readonly WayOut[];
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE FIGHT
-// ─────────────────────────────────────────────────────────────────────────
 
 /** One side of an unfinished fight, and what they brought to it. */
 export interface FightSide {
@@ -152,34 +73,6 @@ export interface FightSide {
 
 /**
  * A fight in progress. Holds no functions, so a caller may serialise it.
- *
- * DELIBERATELY NOT A DATABASE ROW HERE. Where an unfinished fight is kept is
- * the caller's decision and it is a real one.
- *
- * ── TWO UNFINISHED THINGS, ONE SHAPE, TWO LIFETIMES ──────────────────────
- *
- * This repository now has two kinds of undertaking that outlive a turn, and
- * they want the same TYPE and opposite storage:
- *
- *   a build on the stocks   `web/half-built-craft.ts` keeps it in
- *                           `cultivator_flags`, a durable per-cultivator
- *                           document. Correct: you lay a keel, find you are
- *                           four hides short, go and hunt for a season, and
- *                           come back to the same hull.
- *   a fight                 in memory on the service, the treatment
- *                           `SeclusionCrossroads` gets and for the same reason.
- *                           A fight is happening NOW. Persisting one would let
- *                           a player walk out mid-swing, cultivate for ten
- *                           years, and come back to find the same person still
- *                           standing there with their arm raised - which is not
- *                           a fight, it is a saved game.
- *
- * The shared discipline is the one thing worth copying between them: the state
- * is a plain serialisable record with no functions and no live object
- * references in it, so where it is kept is a decision the caller makes rather
- * than one the type forces. Losing an in-memory fight costs the player nothing
- * they were not already losing, because losing it is the fight ending where it
- * stood.
  */
 export interface UnfinishedFight {
     /** Stable for the life of the fight. Half of every round's stream key. */
@@ -188,14 +81,12 @@ export interface UnfinishedFight {
     seed: string;
     /** Rounds already fought. The next one is this index. */
     roundsFought: number;
-    /**
-     * Rounds before it is called a stalemate.
-     *
-     * `MAX_EXCHANGES`, which is the same budget `resolveConfrontation` runs on
-     * and is set where it is so that an even fight only just runs out. A fight
-     * carried across turns must not last longer than the same fight settled in
-     * one call, or a player who is losing could simply keep typing.
-     */
+/**
+ * Rounds before it is called a stalemate. `MAX_EXCHANGES`, the same budget
+ * `resolveConfrontation` runs on: a fight carried across turns must not last
+ * longer than the same fight settled in one call, or a player who is losing could
+ * simply keep typing.
+ */
     roundBudget: number;
     aggressor: FightSide;
     defender: FightSide;
@@ -214,17 +105,10 @@ export interface UnfinishedFight {
     openedOnTurn: number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE PLAYER SAYS BACK
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The answers a person standing in a fight can give.
- *
- * Every one of them is a sentence somebody types rather than a control they
- * click, and each maps onto something the engine could already price. There is
- * no `wait` and no `do nothing`: a round is spent whatever happens, and an
- * answer that spends it on nothing would be a worse `guard`.
  */
 export type FightAnswer =
     /** Swing. The ordinary round, and what happens when nobody chose. */
@@ -233,52 +117,11 @@ export type FightAnswer =
     | { kind: 'guard' }
     /** "I let him hit me." Spend the round on the blow and wear what comes. */
     | { kind: 'press'; vector?: AttackVector }
-    /**
-     * "I spare him." Stop, with them still alive, because you chose to.
-     *
-     * ── MERCY IS A RISK YOU TAKE, NOT A VIRTUE THAT IS REWARDED ─────────
-     *
-     * Nothing here makes it safe and nothing here makes it good. What it does
-     * is give the sentence a route, because the engine had none: `attack` with
-     * `goal: 'humiliate'` has always been able to end a fight at
-     * `'humiliation'` - this engine's own words, *"beaten and deliberately let
-     * go"* - and the only way to ask for it was to declare at the outset that
-     * humiliating them was the point. Somebody who set out to kill and then
-     * did not could not stop.
-     *
-     * TWO ANSWERS, AND THE ENGINE PICKS BETWEEN THEM BY COMPARING WHAT IS LEFT
-     * OF THE TWO BODIES. No new constant: the fight already holds both running
-     * totals and both pools, and the question is the plain one.
-     *
-     *   you are ahead and     there is something to let go of. The fight ends
-     *   they have been hurt   at `finishOutcome`'s `humiliation`, they live,
-     *                         and `seedObligations` opens the GRAVE grudge it
-     *                         has always opened for that outcome. A spared
-     *                         enemy walks away holding an account against you,
-     *                         and every mechanism in this engine that reads a
-     *                         living person with a grudge now has somebody to
-     *                         run.
-     *   anything else         they are still standing over you, or untouched,
-     *                         and there is nothing yet to spare. The round is
-     *                         spent with your hand held - `guard`, exactly as
-     *                         a shout is - and they swing into it. Offering
-     *                         mercy to somebody who has not finished with you
-     *                         costs you a round and buys nothing, which is the
-     *                         honest answer rather than a punishment.
-     *
-     * ── WHY IT IS NOT A CHEAP WAY OUT OF A FIGHT ────────────────────────
-     *
-     * Because of what it leaves standing. `break_off` prices getting away and
-     * leaves a `slight` or `serious` grudge from somebody who ran; this ends a
-     * fight you are winning and leaves a `grave` one from somebody who was
-     * beaten and knows whose decision it was that they are alive. The trade is
-     * a fight you might have finished against a permanent enemy who can act,
-     * and the engine does not have a view about which of those is better.
-     *
-     * The grudge is not softened for the sparing and must never be. This
-     * engine already says being let go is worse than being finished for some
-     * people, and `wouldTheyKneel` reads the state that produces.
-     */
+/**
+ * "I spare him." Stop, with them still alive, because you chose to. The grudge is
+ * not softened for the sparing and must never be: this engine already says being
+ * let go is worse than being finished for some people.
+ */
     | { kind: 'spare' }
     /** "I back off." Turn your back, at a price, toward somewhere or nowhere. */
     | { kind: 'break_off'; toward?: string | null }
@@ -290,30 +133,10 @@ const POSTURE_OF: Readonly<Record<'strike' | 'guard' | 'press', RoundAct>> = Obj
     strike: 'strike', guard: 'guard', press: 'press'
 });
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE OTHER SIDE IS DOING
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * How somebody who is not the player fights this round.
- *
- * MODELLED AS A WANT, NOT AS A TABLE OF BEHAVIOURS. Two facts about the
- * situation decide it, and both are already on the running totals:
- *
- *   they are nearly done      cover up. Below the floor at which this engine
- *                             already says a fight ends, somebody is trying to
- *                             still be there at the end of the round.
- *   they are nearly finishing  commit. When the other body is under that same
- *                             floor, the round that ends it is worth taking a
- *                             blow for.
- *
- * One threshold, read from both sides, and it is `WITHDRAW_HP_FRACTION` - the
- * number this engine already uses for "the price has stopped being worth it".
- * Nothing new is tuned here, and a third reason to press would need a different
- * want rather than another branch.
- *
- * `willWithdraw` on the intent still decides whether they break off outright;
- * this is only what they do while they are still in it.
  */
 export function howTheyAreFighting(
     theirHp: number,
@@ -329,18 +152,13 @@ export function howTheyAreFighting(
     return 'strike';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHO WOULD COME IF YOU SHOUTED
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Somebody standing close enough to hear, and what they are to you.
- *
- * Built by the caller off records the world already keeps. There is no
- * would-they-come number anywhere in this engine and there must not be one, for
- * the same reason `ConfrontationIntent.yields` gives about submission: whether
- * somebody answers is a fact about who they are, and every fact about who
- * somebody is already lives somewhere.
+ * Somebody standing close enough to hear, and what they are to you. Built by the
+ * caller off records the world already keeps. There is no would-they-come number
+ * anywhere in this engine and there must not be one: whether somebody answers is
+ * a fact about who they are, and every such fact already lives somewhere.
  */
 export interface CouldBeCalled {
     id: string;
@@ -348,10 +166,6 @@ export interface CouldBeCalled {
     realmOrdinal: number;
     /**
      * What they already are to the caller, -1..1, off the relationship row.
-     *
-     * Not a friendliness stat invented for this: it is the same standing the
-     * rest of the world reads, and somebody who owes you nothing and likes you
-     * no better than anyone else sits at 0 and does not come.
      */
     standing: number;
     /** True when this is somebody whose job is the ground - a house's people here. */
@@ -360,22 +174,6 @@ export interface CouldBeCalled {
 
 /**
  * What a shout is worth: whether anybody comes, and what it leaves you owing.
- *
- * TWO GATES AND NEITHER IS NEW.
- *
- *   CAN THEY   the categorical gap, from `combat.ts`, read the other way round.
- *              Somebody who prices as `helpless` against the person on top of
- *              you has nothing to offer but company, and this world's whole
- *              thesis is that willingness does not close a realm.
- *   WILL THEY  `PATRON_STANDING` is the number the world already uses for "a
- *              relationship worth answering a call on", and this is the same
- *              question at the level of a person. Somebody whose job is this
- *              ground answers regardless of what they think of you, because
- *              they are not answering you.
- *
- * What it costs: the round, always, because shouting is not swinging. And an
- * obligation, when somebody actually comes - `REAL_OPTIONS` has said "seek
- * protection, and accept the debt" since before there was any way to do it.
  */
 export interface WhoAnswered {
     /** Everybody who heard, with what each of them could and would do. */
@@ -391,12 +189,6 @@ export interface WhoAnswered {
     answered: CouldBeCalled | null;
     /**
      * Whether their arrival ends it.
-     *
-     * True only when the answerer prices the ATTACKER as helpless - the same
-     * `assessGap` verdict, from the third party's side. Somebody who merely
-     * outclasses the attacker makes it a fight the attacker may still want;
-     * somebody two realms over makes it not a fight at all, and the attacker
-     * leaves. Nothing else stops a fight here, because nothing else should.
      */
     endsIt: boolean;
     line: string;
@@ -458,9 +250,7 @@ export function whoAnsweredTheShout(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // ONE TURN OF A FIGHT
-// ─────────────────────────────────────────────────────────────────────────
 
 /** What one turn of a held-open fight did. */
 export interface FightTurn {
@@ -489,11 +279,6 @@ export interface FightTurnContext {
     turn: number;
     /**
      * Who is standing close enough to hear a shout, and how to price them.
-     *
-     * Absent means the caller has no world loaded, in which case shouting is
-     * honestly answered with "there is nobody within the sound of it" rather
-     * than with a refusal - the same treatment the crossroads gives an unnamed
-     * person outside the cave.
      */
     couldBeCalled?: readonly CouldBeCalled[];
     priceThem?: (who: CouldBeCalled) => CombatantPower;
@@ -501,10 +286,6 @@ export interface FightTurnContext {
 
 /**
  * Open a fight and hold it.
- *
- * Returns a finished result when the gap settles it before anything is rolled,
- * because that is not a fight and holding it open would be a lie about what the
- * engine did. Otherwise the fight is standing and the player has a turn.
  */
 export function openFight(input: {
     id: string;
@@ -567,10 +348,6 @@ export function openFight(input: {
 
 /**
  * Take one turn of a fight that is standing.
- *
- * The player answers; the other side answers for itself; the round resolves
- * through the same function `resolveConfrontation` uses. Nothing here softens
- * anything: an answer that was a bad idea is resolved as the bad idea it was.
  */
 export function takeAFightTurn(
     fight: UnfinishedFight,
@@ -592,7 +369,7 @@ export function takeAFightTurn(
         fight.hp[mine.input.id], mine.input.maxHp
     );
 
-    // ── BREAKING OFF ─────────────────────────────────────────────────────
+    // BREAKING OFF
     //
     // The load-bearing answer, and the one the whole ruling is about. It is
     // `attemptFlight`, which has priced this since it was written and which
@@ -650,7 +427,7 @@ export function takeAFightTurn(
         });
     }
 
-    // ── LETTING SOMEBODY GO ──────────────────────────────────────────────
+    // LETTING SOMEBODY GO
     //
     // See {@link FightAnswer}'s `spare` member for the argument. The gate is a
     // comparison of the two bodies as they now stand and introduces no number
@@ -713,7 +490,7 @@ export function takeAFightTurn(
         });
     }
 
-    // ── SHOUTING ─────────────────────────────────────────────────────────
+    // SHOUTING
     //
     // Costs the round whatever happens, which is the whole of what makes it a
     // decision rather than a free extra. Whether anybody comes is read off the
@@ -755,7 +532,7 @@ export function takeAFightTurn(
         });
     }
 
-    // ── THE THREE POSTURES ───────────────────────────────────────────────
+    // THE THREE POSTURES
     const act = POSTURE_OF[answer.kind];
     const vector = answer.kind === 'strike' || answer.kind === 'press'
         ? answer.vector ?? mine.vector
@@ -775,36 +552,10 @@ export function takeAFightTurn(
     return afterRound(fight, round, answer.kind, theirAct, ctx, {});
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // PLUMBING
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The body as it NOW stands, for pricing.
- *
- * ── WHY THIS EXISTS, AND IT IS THE DIFFERENCE A MULTI-TURN FIGHT MAKES ───
- *
- * `assessPower`'s `condition` factor reads `combatant.hp`, so what somebody can
- * bring falls away as they are hurt. `resolveConfrontation` prices both sides
- * ONCE at the top and re-prices only when a weapon comes apart - its own comment
- * says why that would otherwise be "a claim the engine made and did not honour".
- * The same argument applies to the body and the one-call path does not make it:
- * inside a single call, somebody on their last legs swings exactly as hard as
- * they did on the first exchange.
- *
- * That is survivable when a whole fight is one call and eight exchanges pass in
- * an instant. It is not survivable here, because the whole claim of a held-open
- * fight is that the player can SEE they are losing - and a state line reporting
- * 15 of 120 beside a flight chance that has not moved since the first round is
- * a number that looks like information and is not.
- *
- * So the running total is folded onto the row before every pricing. This is not
- * a second combat system: it is the same `assessPower`, asked about the body
- * that is actually standing there.
- *
- * The one-call resolver is deliberately NOT changed to match. Re-pricing between
- * its exchanges would move the outcome of every fight in the world, which is a
- * balance decision for a person rather than a fix to make in passing.
  */
 function asItNowStands(side: FightSide, hp: Record<string, number>): CombatantInput {
     const now = hp[side.input.id];
@@ -846,11 +597,6 @@ function roundCtx(
 
 /**
  * Fold a resolved round back into the fight and say what it left.
- *
- * The budget is checked LAST, so a round that finished somebody still finishes
- * them on the final one. A fight that runs out is a stalemate in exactly the
- * sense `resolveConfrontation` means it - neither could finish it - which is
- * why it goes through the same function rather than a second ending.
  */
 function afterRound(
     fight: UnfinishedFight,
@@ -954,10 +700,6 @@ function concludeFrom(
 
 /**
  * Which way out the player meant.
- *
- * A description, never an id, because that is the rule for every other target
- * in this game. An unrecognised name is not a refusal: they are running, and
- * running toward somewhere they cannot name is still running.
  */
 export function wayOut(ground: FightGround, named: string | null): WayOut | null {
     if (ground.waysOut.length === 0) return null;
@@ -973,22 +715,13 @@ export function wayOut(ground: FightGround, named: string | null): WayOut | null
         || wanted.includes(w.name.toLowerCase())) ?? null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT THE PLAYER IS OWED BEFORE THEY ANSWER
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * The state a player needs to know they are losing before they have lost.
- *
- * This is the other half of the ruling and it is not decoration. "If you fought
- * and it resolves in one turn and you died it would be unsatisfying cuz there's
- * nothing you can do about it" is a complaint about INFORMATION as much as
- * about turns: a turn you cannot see is worth no more than no turn at all.
- *
- * Every figure here is one the engine already computed. Nothing is rounded into
- * a mood word, and the flight chance is stated as the number rather than as
- * "you could probably get away", because the whole claim of this game is that
- * the numbers are the honest part.
+ * The state a player needs to know they are losing before they have lost. The
+ * whole claim of a held-open fight is that the player can SEE it, and a state line
+ * reporting 15 of 120 beside a flight chance that has not moved since the first
+ * round is a number that looks like information and is not.
  */
 export function whereThisFightStands(
     fight: UnfinishedFight,

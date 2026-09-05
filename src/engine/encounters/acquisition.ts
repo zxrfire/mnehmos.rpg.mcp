@@ -1,42 +1,12 @@
 /**
- * Getting hold of a manual, and being told in the same breath whether it was
- * for you.
+ * Getting hold of a manual, and being told in the same breath whether it would
+ * be any use.
  *
- * `assessFit` answers "does this fit this person" and was reachable from the
- * encounter path only. Everything else that hands somebody a book - a grave
- * prize, a corpse's inventory, a bought volume, a trial's reward, a teacher who
- * agrees to transmit it - decided fit independently or not at all. That is the
- * exact failure `escapes.md` names: a player walks out of a tomb with a
- * heaven-grade manual, nothing happens, and the lesson they learn is to sit
- * longer instead of going further.
- *
- * So this module is one funnel. Every acquisition path calls
- * {@link assessAcquisition}, which is the only place the four independent
- * reasons a manual can fail somebody are assembled in one answer:
- *
- *   reach + fit    `assessFit`. It is sound and it is not written for you.
- *   standing       `manualGate`. You have not walked far enough to begin it.
- *   the ceiling    `effectiveCapOf`. It is for you and it ENDS - and if it is
- *                  a scattered work, it ends lower than the whole does.
- *   the opening    `openingPenalty`. You can begin it and the start is uphill.
- *
- * Each carries its own reason, and {@link AcquisitionReport.lines} puts them in
- * one list so a caller can say all of them out loud at once. A refusal a player
- * cannot attribute reads as an arbitrary system.
- *
- * ── THE MISS IS THE POINT ────────────────────────────────────────────────
- *
- * Most of what anybody finds will not suit them, and this module must never
- * soften that. It does not rank, it does not suggest, and it never generates a
- * find to suit the seeker - the caller supplies what is actually in the room
- * and the verdict falls where it falls. `Suitability.line` already says that a
- * thing is sound and is not for you; nothing here rewrites it.
- *
- * ── WHAT THIS MODULE DOES NOT DO ─────────────────────────────────────────
- *
- * It does not persist, price, or move anything. Whether the corpse is looted,
- * the volume is bought or the teacher is paid is the verb layer's. This answers
- * only what the thing is worth to the person in front of it.
+ * Most of what anybody finds will not suit them and this module must never
+ * soften that: it does not rank, does not suggest, and never generates a find to
+ * suit the seeker. The load-bearing property is that a caller gets ALL of the
+ * reasons in one response - a player must never acquire something and find out
+ * the second reason afterwards.
  */
 
 import {
@@ -62,17 +32,10 @@ import { rankName } from '../cultivation/realms.js';
 import { guidanceMultiplier } from '../cultivation/cultivation.js';
 import type { DaoAssessment } from '../cultivation/dao.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // E6. ONE BUILDER, SO THE ACQUISITION PATHS CANNOT DISAGREE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The catalog columns a manual puts in front of a reader.
- *
- * Structural rather than `TechniqueEntry`, on purpose: a manual somebody
- * DERIVED is not a catalog row and must be assessable by exactly the same
- * machinery as one that is. A `TechniqueEntry` and a `DerivedManual` both
- * satisfy this.
  */
 export interface ManualLike {
     id: string;
@@ -95,16 +58,6 @@ export interface ManualLike {
 
 /**
  * The one `Find` builder.
- *
- * Three acquisition paths existed and each assembled its own `Find`, which is
- * how a corpse's manual and a shelf's manual could come to demand different
- * things of the same reader. There is one function now, and it reads the
- * catalog's `rootGrades` and `domain` - the fields that were authored precisely
- * so the root and comprehension axes fire, instead of every miss reading as an
- * element miss.
- *
- * `gradeOrdinal` is `requiredOrdinal`: what a manual is worth, to somebody, is
- * the rung it was written for.
  */
 export function findFromManual(manual: ManualLike): Find {
     return {
@@ -119,9 +72,7 @@ export function findFromManual(manual: ManualLike): Find {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // E4. FIT ON EVERY ACQUISITION, NOT ONLY ON AN ENCOUNTER FIND
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Where a manual is coming from. Colour for the report, never a rule. */
 export type AcquisitionRoute =
@@ -191,10 +142,6 @@ export type AcquisitionRefusal =
 
 /**
  * Everything that stands between this cultivator and this manual, at once.
- *
- * The load-bearing property is that a caller gets ALL of it in one response
- * rather than discovering the second reason after acting on the first. A player
- * must never acquire something and find out later.
  */
 export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
     const { manual, seeker, route } = input;
@@ -228,7 +175,7 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
     const refusals: AcquisitionRefusal[] = [];
     const lines: string[] = [];
 
-    // ── fit ─────────────────────────────────────────────────────────────
+    // fit
     // First, and never softened. It is the one refusal nothing ever fixes.
     if (suitability.fit === 'unsuited') refusals.push('unsuited');
     else if (suitability.fit === 'out_of_reach') refusals.push('out_of_reach');
@@ -236,7 +183,7 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
     else if (suitability.fit === 'partly') refusals.push('partly_suited');
     lines.push(suitability.line);
 
-    // ── standing ────────────────────────────────────────────────────────
+    // standing
     if (standing === null) {
         refusals.push('standing_not_assessed');
     } else if (!standing.permitted) {
@@ -244,7 +191,7 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
         lines.push(standing.detail);
     }
 
-    // ── the ceiling ─────────────────────────────────────────────────────
+    // the ceiling
     const techniqueCap = ceiling.cap;
     const raisesTheCeiling = techniqueCap === null || techniqueCap > ordinal;
     if (!raisesTheCeiling) {
@@ -259,7 +206,7 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
         lines.push(ceiling.line);
     }
 
-    // ── the opening ─────────────────────────────────────────────────────
+    // the opening
     // Not a refusal. A cost, and one a player must be able to read before
     // committing the decade rather than after.
     if (opening.multiplier < 1) {
@@ -301,15 +248,9 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
 }
 
 /**
- * The best of a haul, and honestly.
- *
- * An expedition returns several things and the interesting question is never
- * what the pile is worth - it is whether ANY of it was for them. Returns null
- * for an empty haul, which is a real result and a common one.
- *
- * Ordered by fit and then by how much ceiling it buys, so a suited book that
- * ends one rung up does not outrank a suited book that ends five up. It never
- * reorders to flatter: an all-unsuited haul returns an unsuited best.
+ * The best of a haul, and honestly. Ordered by fit and then by how much ceiling
+ * it buys, and it never reorders to flatter: an all-unsuited haul returns an
+ * unsuited best. Null for an empty haul, which is a real and common result.
  */
 export function bestAcquisition(
     manuals: readonly ManualLike[],
@@ -340,7 +281,6 @@ function acquisitionRank(report: AcquisitionReport): number {
     return usable * 100 + FIT_RANK[report.suitability.fit] * 10 + ceiling;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE LIVING TEACHER
 //
 // Different people specialise in different things, and a method reaches a
@@ -359,7 +299,6 @@ function acquisitionRank(report: AcquisitionReport): number {
 // carries is the book's, reduced to where the teacher themselves stopped - the
 // one honest limit on this route, and the reason a house's best elder is not a
 // substitute for the house's library.
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface Transmitter {
     id: string;
@@ -406,10 +345,6 @@ export interface TransmissionCheck {
 
 /**
  * Whether this person can transmit this manual to this student.
- *
- * Access first - do they hold it, will they, and did they get far enough into
- * it to have anything to show. Then the ordinary judgement: `assessAcquisition`,
- * the same one a book found in a tomb goes through.
  */
 export function canTransmit(
     teacher: Transmitter,
@@ -491,30 +426,21 @@ export function canTransmit(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // DERIVATION, THROUGH THE SAME FUNNEL
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Whether writing the continuation is on the table, reported in the same shape
- * as every other route.
- *
- * The one thing worth saying loudly here: a manual whose continuation this
- * cultivator could write is a real answer to being capped, and it is the answer
- * available to somebody with no resources at all. Callers should offer it in
- * the same breath as the misses, because a player holding four books that are
- * not for them and a road they have walked for eighty years should be told the
- * fourth option exists.
+ * Whether writing the continuation is on the table, reported in the same shape as
+ * every other route.
  */
 export function extensionOption(
     dao: DaoAssessment,
     manual: ManualLike,
     /**
-     * What the world holds at or above the rung this would write for. Omitted
-     * skips the new-ground check, which is right for a caller only asking
-     * whether the ROAD permits it - but a caller about to offer the verb
-     * should supply it, or it will offer a derivation the world has no ground
-     * for. Build it with `precedentAt`.
+     * What the world holds at or above the rung this would write for. Omitted skips
+     * the new-ground check, which is right for a caller only asking whether the
+     * ROAD permits it - but a caller about to offer the verb should supply it, or
+     * it will offer a derivation the world has no ground for. Build it with
+     * `precedentAt`.
      */
     precedent?: Precedent
 ): DerivationCheck {

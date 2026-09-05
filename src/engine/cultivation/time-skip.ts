@@ -1,58 +1,11 @@
 /**
  * The long-simulation primitive.
  *
- * "I cultivate for ten years" must resolve in ONE deterministic pass, with no
- * per-day LLM involvement, and hand back an account the narrator can render.
- * That requirement drives the entire design of this file:
- *
- * ── Why it is not a per-day loop ──────────────────────────────────────────
- * 3650 iterations is not slow, but 3650 iterations that each allocate a rate
- * breakdown, an ambient sample and a death check is 3650 x garbage for a
- * result that is piecewise constant. Instead the simulation steps in ADAPTIVE
- * CHUNKS: at every point it computes the next day on which anything can
- * possibly change - the next deviation check, the next ambient refresh, the day
- * breakthrough eligibility is reached, the day lifespan runs out - and jumps
- * straight there. A ten-year skip lands in roughly 120 steps.
- *
- * ── Why chunking cannot change the outcome ────────────────────────────────
- * Every stochastic event is keyed to an ABSOLUTE DAY INDEX on a fixed grid, and
- * draws from `forStream(seed, <system>, day)`. The deviation check on day 900
- * is the same roll whether the simulation arrived there in one jump or three
- * hundred. Chunk boundaries are themselves pure functions of state. So the
- * chunking is an optimisation that provably cannot alter results - which is
- * what makes "same seed + same input => byte-identical result" testable rather
- * than aspirational.
- *
- * ── Why it stops early ────────────────────────────────────────────────────
- * A decade of unattended simulation that quietly killed you, or quietly walked
- * you past the sect elder who wanted to recruit you, is not a feature. Death, a
- * breakthrough that leaves a wound, a major encounter, and crossing the lethal
- * untreated-injury threshold all return control to the player with the skip
- * truncated and the reason stated.
- *
- * ── What the caller applies ───────────────────────────────────────────────
- * Pure: the input cultivator is never mutated. Everything the skip produced
- * comes back as data for the caller to persist, and none of it should ever be
- * recovered by reading the engine's own prose:
- *
- *   injuriesSustained  the real Injury records, ids and all, chronological
- *   tolls              what each boundary crossing took
- *   foundationEstablished  the foundation laid, if 12 -> 13 was crossed
- *   deltas             net change for the values where a delta is meaningful
- *   endState           absolute values for the three counters that RESET
- *   events             the digest, for the narrator and only for the narrator
- *
- * The split between `deltas` and `endState` is not cosmetic. Starvation turns
- * clear the moment there is food, the bleed clock clears the moment a wound is
- * closed, and years-at-realm returns to zero on any advance, so "before plus
- * delta" is not merely imprecise for those three, it is wrong. They are
- * reported absolute. Everything in `deltas` is a true net change that inverts
- * correctly.
- *
- * `events` are engine-authored summaries for a narrator to render. They are
- * NOT a data channel: a caller that parses a summary string to decide what to
- * write to the database has inverted the project's central rule, and will
- * silently break the next time someone rewords a sentence.
+ * The four location thresholds - entry, survival, operational, mastery - had been
+ * calibrated across every place in the world and nothing read them at the point
+ * where somebody was actually standing somewhere. Measured: an ordinal 0
+ * cultivator was put inside a compound whose survival bar is 19, cultivated for
+ * seven months, gained a full rank, and was never touched.
  */
 
 import {
@@ -134,63 +87,22 @@ import {
 } from './survival.js';
 import { forStream } from './rng.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // EVENT CADENCE
 // All three grids are multiples of the 30-day ambient block, which keeps the
 // chunk boundaries sparse and the digest readable. Rates are per CHECK, not
 // per day: a dual root's 0.08 innate deviation risk fires roughly once every
 // three years of seclusion, which is a hazard. Fired daily it would be a
 // death sentence inside a season.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Days between qi-deviation checks, ON DAYS THE CULTIVATOR IS CULTIVATING.
  *
- * ══ A WOUND HAS A CAUSE YOU CAN POINT AT ══════════════════════════════════
- *
- * Ruled by the design owner, and it reverses what this file used to do:
- *
- * > *"Idle shouldn't RANDOMLY accumulate injuries. Injuries come from what you
- * > DO. Events, right?"*
- *
- * A wound is what an act cost. Something happened - you cultivated, you
- * crossed a boundary, you fought, you swallowed something, you practised an
- * art that fights your root - and the wound is the price of it. **A body
- * sitting still is not accumulating torn meridians out of the air**, and a die
- * rolled against the calendar is exactly that.
- *
- * This check used to fire every thirty days regardless, which made the clock
- * the enemy. Measured through `ADMIN advance_days` at idle focus: an untreated
- * body took better than one wound a year having done nothing whatever, hit the
- * three-wound threshold in 780 days, and died of `qi_deviation` inside a
- * decade whatever it paid for food. That is not a hard world; it is a world in
- * which "stand still and survive" is impossible, in a game whose whole subject
- * is spending decades.
- *
- * ── WHAT DID NOT CHANGE, AND WHY THAT IS THE WHOLE OF IT ─────────────────
- *
- * `deviationRisk` is untouched and every contributor it prices still counts.
- * The owner's axis is EVENT against STATE, and the sort falls out cleanly:
- *
- *   - Practising an art that overcomes your root is an ACT, and
- *     `CONFLICTING_TECHNIQUE_RISK` was already gated on `techniqueElement`.
- *   - A conflicting ROOT, untreated wounds, and qi accumulated past a
- *     bottleneck are STATES. **A state raises what an act costs; it does not
- *     fire on its own.** `deviation.ts` argues a conflicting root is "standing
- *     inside your own meridians for the entire run", and that stays true - it
- *     is a standing multiplier on the danger of drawing qi, not a clock that
- *     runs while you sleep.
- *
- * So the risk arithmetic keeps every term, and only the FIRING CONDITION moved.
- * A cultivator practising anything rolls exactly what they always rolled, on
- * the same day grid, off the same per-day stream - the streams are keyed on the
- * absolute day, so a skipped day perturbs nothing downstream and a cultivating
- * run is bit-identical to before this change.
- *
- * Rates are per CHECK, not per day: a dual root's 0.08 innate risk fires
- * roughly once every three years OF SECLUSION, which is a hazard. Fired daily
- * it would be a death sentence inside a season; fired against the calendar it
- * was a death sentence for doing nothing.
+ * Ruled by the design owner, and it reverses what this file used to do: the check
+ * used to fire every thirty days regardless, which made the clock the enemy.
+ * Measured through `ADMIN advance_days` at idle focus, an untreated body took
+ * better than one wound a year having done nothing whatever, hit the three-wound
+ * threshold in 780 days, and died of `qi_deviation` inside a decade whatever it
+ * paid for food.
  */
 export const DEVIATION_CHECK_DAYS = 30;
 /** Days between "did something find you out here" checks. */
@@ -203,7 +115,6 @@ export const ENCOUNTER_CHANCE = 0.2;
 /** Of encounters, the fraction serious enough to interrupt seclusion. */
 export const MAJOR_ENCOUNTER_FRACTION = 0.35;
 
-// ─────────────────────────────────────────────────────────────────────────
 // FORTUNE
 //
 // Luck generates opportunity, not success. Fortune appears in this file and
@@ -227,7 +138,6 @@ export const MAJOR_ENCOUNTER_FRACTION = 0.35;
 // of the cultivator or goes past. Once something has arrived, Fortune has no
 // further say - it does not touch the damage, the severity, the deviation
 // roll, the breakthrough, or the tribulation.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Base probability of an opportunity being drawn, before Fortune. */
 export const OPPORTUNITY_BASE_CHANCE = 0.1;
@@ -256,10 +166,10 @@ export const DISTURBANCE_PASSES_PER_FORTUNE = 0.12;
 
 /**
  * Chance that a major encounter arrives at a moment the cultivator can simply
- * withdraw from: the elder took the other road, the patrol is facing the wrong
- * way. It changes whether the confrontation happens, never who would win it.
- * The encounter still interrupts either way, and any fight that does happen is
- * resolved by the combat layer at full strength.
+ * withdraw from: the elder took the other road, the patrol is facing the wrong way.
+ * It changes whether the confrontation happens, never who would win it. The
+ * encounter still interrupts either way, and any fight that does happen is resolved
+ * by the combat layer at full strength.
  */
 export const CLEAN_WITHDRAWAL_BASE = 0.1;
 export const CLEAN_WITHDRAWAL_PER_FORTUNE = 0.12;
@@ -274,9 +184,7 @@ function fortuneOf(attributes: { fortune: number }): number {
  *  chunker; it should never be reached, and the simulation reports it if it is. */
 const MAX_ITERATIONS = 100_000;
 
-// ─────────────────────────────────────────────────────────────────────────
 // CONTEXT
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface TimeSkipContext {
     /** The run seed. Every sub-stream in the skip derives from this. */
@@ -284,43 +192,16 @@ export interface TimeSkipContext {
     /** Where the cultivator is sitting. Drives location-stable ambient qi. */
     locationId: string;
     /**
-     * USABLE qi at that location, 0..1 - the world layer's `spiritualDensity`.
-     * The month's ambient varies AROUND this rather than being drawn from a
-     * global distribution, which is what keeps a thin province thin and stops
-     * a decade of seclusion quietly becoming a decade somewhere else.
-     *
-     * Omitted falls back to the old unanchored draw, which is the
-     * unknown-location path and should not be taken by anyone who has a map.
+     * USABLE qi at that location, 0..1 - the world layer's `spiritualDensity`. The
+     * month's ambient varies AROUND this rather than being drawn from a global
+     * distribution, which is what keeps a thin province thin and stops a decade of
+     * seclusion quietly becoming a decade somewhere else.
      */
     locationDensity?: number;
     /** The location is a sealed pocket nothing has drawn on. */
     sealed?: boolean;
     /**
      * The identity this cultivator's PER-CULTIVATOR draws are keyed on.
-     *
-     * Four things in this file derive a stream from who the cultivator is
-     * rather than only from the run: the latent affinity behind prodigy
-     * recognition, the recognition gate itself, the narrowed pick among
-     * candidates, and the 0.2 suitability draw that decides which
-     * comprehensions are takeable at all. All four keyed on `cultivator.id`,
-     * and a played run's row id is a `randomUUID()` - so the same seed
-     * produced different prodigies, different roads and different
-     * comprehension, which breaks the charter line that a seed is a life.
-     *
-     * It was LATENT rather than new: until `ctx.understanding` was populated
-     * the candidate set was always empty, so nothing downstream of it ever
-     * ran. It started mattering the moment that field was wired up.
-     *
-     * Mirrors `EncounterRequest.rollIdentity` in `src/web/encounters.ts`
-     * deliberately, rather than inventing a second convention for the same
-     * problem - the encounter layer hit this first and its answer is the
-     * house answer. Same rule applies here: a caller with a genuinely stable
-     * id (an NPC out of the catalog, a fixture) should leave this alone and
-     * get the old behaviour, and a caller whose id is random must pass
-     * something seed-stable.
-     *
-     * DEFAULTS TO `cultivator.id`, which is correct for every caller whose id
-     * is already stable and preserves their results exactly.
      */
     rollIdentity?: string;
     /** Turn number the skip begins on, stamped onto injuries. */
@@ -336,11 +217,12 @@ export interface TimeSkipContext {
     techniqueElement?: Element | null;
     /** Days of provisions carried. Each ration refills satiety to full. */
     rations?: number;
-    /**
-     * The cultivator is on grain abstinence (辟穀) and does not eat. Without
-     * this, or a very large ration stock, a multi-year skip ends in starvation
-     * around day 55 - which is correct, and is why the pill exists.
-     */
+/**
+ * The cultivator is on grain abstinence (辟穀) and does not eat. Note that this
+ * scales the THRESHOLD and never skips a draw: every sample is taken
+ * unconditionally to keep the stream aligned across cultivators, and sealing must
+ * not shift what anybody else would have rolled.
+ */
     grainAbstinence?: boolean;
     /** Attempt breakthroughs automatically when eligible. Default true. */
     autoBreakthrough?: boolean;
@@ -348,17 +230,6 @@ export interface TimeSkipContext {
     randomEvents?: boolean;
     /**
      * Scales how often those rolls land, without switching them off. Default 1.
-     *
-     * A shut door is not a ward, and it is also not nothing - the two facts
-     * only fit together on a dial. `randomEvents` alone could say "the world
-     * reaches you" or "the world does not exist", and closed-door seclusion is
-     * neither: it is the world reaching you at a small fraction of the usual
-     * rate. Callers pass `sealedDoorFraction()` rather than a number of their
-     * own.
-     *
-     * Note that this scales the THRESHOLD and never skips a draw. Every sample
-     * below is taken unconditionally to keep the stream aligned across
-     * cultivators; sealing must not shift what anybody else would have rolled.
      */
     randomEventScale?: number;
     /**
@@ -375,18 +246,8 @@ export interface TimeSkipContext {
      */
     foundation?: Omit<FoundationConditions, 'ambient'>;
     /**
-     * 道心 - how much of this cultivator's record is unfinished, 0..1, and how
-     * many accounts that is.
-     *
-     * `daoHeartFor(...)` in `server/consolidated/cultivation-support.ts` is the
-     * one derivation and both this path and `strikeBarrier` take it from there.
-     * A skip that crosses a wall must price a record the same way a deliberate
-     * strike does, or seclusion is the cheap door and a player who found it
-     * would be climbing a different ladder from the world.
-     *
-     * Omitted is zero and books no line, which is the honest reading for the
-     * NPC and sweep callers: the engine holds no database, so a caller with no
-     * ledger in hand has nothing to say about anybody's record.
+     * 道心 - how much of this cultivator's record is unfinished, 0..1, and how many
+     * accounts that is.
      */
     daoHeart?: number;
     daoHeartOpen?: number;
@@ -397,39 +258,17 @@ export interface TimeSkipContext {
      * particular", for which the insight chance is exactly zero.
      */
     understanding?: Omit<DiscoveryContext, 'survived'>;
-    /**
-     * Roads the WORLD has put within this cultivator's reach - ground they can
-     * stand on, a carving they can read, a spent material, an object fit for
-     * their path. Not the arts in their hands: the gate reads those off
-     * `knownTechniques` itself, for a player and an NPC alike.
-     *
-     * The caller supplies it because the engine holds no map, exactly as
-     * `understanding` and `thresholds` are supplied. `discoveryContextFor` in
-     * `server/consolidated/cultivation-support.ts` builds it from the same rows
-     * it builds `daoGrounds` from, so the thing a player can COMPREHEND at a
-     * place and the thing that place lets them WALK cannot disagree.
-     *
-     * Omitted means the world put nothing in reach, which is the honest answer
-     * for a caller with no world and the right one for a test harness.
-     */
+/**
+ * Roads the WORLD has put within this cultivator's reach - ground they can get
+ * at, a material spent on them, a house they are inside.
+ *
+ * The same facts as `daoGrounds`, read the other way: that says what a place puts
+ * within reach to COMPREHEND, this says what it puts within reach to WALK, and
+ * the two must never be able to disagree about which places those are.
+ */
     roadsWithinReach?: readonly RoadWithinReach[];
     /**
      * What standing here does to a body that has no business being here.
-     *
-     * The four location thresholds - entry, survival, operational, mastery -
-     * have existed and been calibrated across every place in the world for a
-     * long time, and nothing read them at the point where somebody was
-     * actually standing somewhere. Measured: an ordinal 0 cultivator was put
-     * inside a compound whose survival bar is 19, cultivated for seven months,
-     * gained a full rank, and was never touched. The bars said "below survival
-     * you get in and die" and the simulation had no way to make that true.
-     *
-     * This is that way. The caller - which is the only layer with a map - reads
-     * the location, prices the gap, and hands the result down as two numbers
-     * and a reason. The engine holds no map and still does not.
-     *
-     * Death is NOT decided here. Damage lands on HP like any other damage and
-     * `survival.ts` remains the only place a run ends.
      */
     hostility?: {
         /**
@@ -448,9 +287,7 @@ export interface TimeSkipContext {
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE SIMULATION
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Simulate `days` of elapsed time for one cultivator.
@@ -467,35 +304,11 @@ export function simulateTimeSkip(
     const turn = Math.max(0, Math.floor(ctx.turn ?? 0));
     /**
      * The turn this whole stretch resolves on.
-     *
-     * A seclusion is ONE turn however many years it covers, and `applyTimeSkip`
-     * books the result as `run.turn + 1`. Every record minted inside the loop
-     * used to be stamped `turn + Math.floor(elapsed)` instead - a turn number
-     * plus a day count, two different units added together. Played live: a run
-     * standing on turn 31 carried an injury stamped `sustainedOnTurn: 73`,
-     * which is 31 plus the 42 days that had elapsed when the deviation landed,
-     * and reads as a wound taken forty-two turns in the future.
-     *
-     * The day is not lost by this: achievements carry `onDay` and every event
-     * carries its absolute day. It was only ever the turn that was wrong, and
-     * a turn is the only thing these fields are.
      */
     const resolvesOnTurn = turn + 1;
 
     /**
      * Roads the world has put in reach, in the shape the dao gate reads.
-     *
-     * Taken from `ctx.roadsWithinReach` when a caller supplies it, and
-     * otherwise DERIVED from the dao grounds already sitting in
-     * `ctx.understanding`. The derivation is not a convenience: `src/web/game.ts`
-     * builds its context with `discoveryContextFor(...).context` and passes only
-     * that, so a new top-level field would have reached the MCP tool surface and
-     * never the played game - which is precisely the world-binds-one-side split
-     * this whole change exists to close, reintroduced one layer down.
-     *
-     * The two lists are the same facts. `daoGrounds` says what a place puts
-     * within reach to COMPREHEND; this says what it puts within reach to WALK,
-     * and they must never be able to disagree about which places those are.
      */
     const roadsWithinReach: readonly RoadWithinReach[] =
         ctx.roadsWithinReach
@@ -517,30 +330,12 @@ export function simulateTimeSkip(
     const hostility = ctx.hostility;
 
     /**
-     * Whether this span is spent DRAWING QI, which is the act qi deviation is
-     * the price of. See the banner over `DEVIATION_CHECK_DAYS`.
-     *
-     * Read off the focus multiplier because that is what "how the time is being
-     * spent" already means: seclusion, steady practice and cultivating on the
-     * road are all fractions of the same act, and `idle` is the absence of it.
-     * `advance_days` and `work` are the two callers that pass zero, and both
-     * are somebody spending a span on something other than the method.
-     *
-     * DEFAULTS TO TRUE, via `DEFAULT_OPTIONS.focusMultiplier`. Every caller
-     * that passes no options at all - NPC stubs, fixtures, the calibration
-     * sweeps - is a cultivator cultivating, and gets exactly the behaviour it
-     * always had.
-     *
-     * Note what this deliberately does NOT read: `rate.perDay`. Ground too
-     * strong to work in returns nothing (`hostility.inert`) and a body still
-     * practising in it is still practising - the act is what is priced, not the
-     * yield. Pricing the yield would make bad ground a place to hide from the
-     * consequences of drawing qi, which is the opposite of what those bars are
-     * for.
+     * Whether this span is spent DRAWING QI, which is the act qi deviation is the
+     * price of. See the banner over `DEVIATION_CHECK_DAYS`.
      */
     const drawingQi = (ctx.options?.focusMultiplier ?? 1) > 0;
 
-    // ── Working state. A shallow copy; the input is never touched. ──
+    // Working state. A shallow copy; the input is never touched.
     const startAge = cultivator.age;
     const startYearsAtRealm = cultivator.yearsAtCurrentRealm;
 
@@ -576,10 +371,6 @@ export function simulateTimeSkip(
 
     /**
      * The ground under this place, resolved once.
-     *
-     * Geology does not change during a seclusion, and re-deriving it on every
-     * chunk meant seeding a fresh PRNG a hundred-odd times per simulated
-     * decade - which tripled the cost of a skip for a value that is constant.
      */
     const groundDensity = ctx.locationDensity ?? impliedDensityFor(ctx.seed, ctx.locationId);
 
@@ -590,15 +381,6 @@ export function simulateTimeSkip(
     let deathCause: DeathCause | null = null;
     /**
      * What took the last point of HP, when it was not violence.
-     *
-     * `survival.ts` reads an empty bar as `combat_defeat` unless somebody who
-     * watched it empty says otherwise, and a seclusion is the one place where
-     * nothing is hitting anybody. Played live: a cultivator sat down, took
-     * three qi deviations over the stretch, died of them, and went into the
-     * death ledger as "killed in combat" in a run containing no combat at all.
-     *
-     * Set only by the loss that actually reaches zero, so a deviation in year
-     * one cannot put its name on a bandit in year nine.
      */
     let hpDepletedBy: DeathCause | null = null;
     /** Fractional HP mended but not yet whole. See the recovery block below. */
@@ -617,22 +399,12 @@ export function simulateTimeSkip(
     let depletionAnnounced = false;
     /**
      * Seeded from the entry state, not from false.
-     *
-     * The interrupt is for ENTERING starvation. A cultivator who begins a skip
-     * already starving has been told once and chose to continue, and stopping
-     * them again every five days would mean they could never actually die of
-     * it - which would turn a real consequence into a nag.
      */
     let starvationAnnounced =
         !stillNeedsToEat(cultivator.realmOrdinal, cultivator.injuries) ||
         (cultivator.satiety <= 0 && (ctx.rations ?? 0) <= 0);
     /**
      * Seeded from the entry state, exactly as starvation is.
-     *
-     * The interrupt is for ENTERING the bleed. Somebody who began the skip
-     * already at the lethal untreated count has been told, and chose to sit
-     * down anyway; stopping them every chunk would mean they could never
-     * actually bleed out, which is the trap this whole clock exists to open.
      */
     let bleedAnnounced = untreatedInjuryCount(cultivator.injuries) >= CRIPPLING_UNTREATED_INJURIES;
 
@@ -717,15 +489,8 @@ export function simulateTimeSkip(
     };
 
     /**
-     * Turn something that actually happened into an achievement, and possibly
-     * into understanding.
-     *
-     * Every call site is a place where the simulation had ALREADY resolved
-     * something out of the ordinary. Nothing here fires on a schedule, and
-     * there is no path into this function that a cultivator can reach by
-     * spending time or stones. If the cultivator's circumstances open no
-     * candidate comprehension, the achievement is still recorded and no
-     * insight comes of it - which is the ordinary case.
+     * Turn something that actually happened into an achievement, and possibly into
+     * understanding.
      */
     const comprehend = (
         kind: Parameters<typeof recordAchievement>[0]['kind'],
@@ -789,7 +554,7 @@ export function simulateTimeSkip(
 
         const absDay = startDay + elapsed;
 
-        // ── 1. Breakthrough, if the accumulated progress permits one. ──
+        // 1. Breakthrough, if the accumulated progress permits one.
         if (ranksOnDayFor !== absDay) {
             ranksOnDayFor = absDay;
             ranksOnDay = 0;
@@ -817,7 +582,7 @@ export function simulateTimeSkip(
                 },
                 { ranksGainedThisTurn: ranksOnDay }
             );
-            // ── WAITING IS STILL WORTH MORE THAN STRIKING ────────────────
+            // WAITING IS STILL WORTH MORE THAN STRIKING
             //
             // An unattended skip used to strike the instant the gate opened,
             // which is by construction the WORST legal moment: no overflow has
@@ -843,7 +608,7 @@ export function simulateTimeSkip(
             // and a player who wants the gamble can still take it deliberately
             // through `breakthrough`, which this does not touch.
             //
-            // ── AND THE LINE HAS TO SAY WHAT ACTUALLY HAPPENS ────────────
+            // AND THE LINE HAS TO SAY WHAT ACTUALLY HAPPENS
             //
             // It used to end "The attempt is yours to make whenever you want
             // it", which is not true and was the last thing a lot of
@@ -925,7 +690,7 @@ export function simulateTimeSkip(
                     daysSinceAdvance = 0;
                     realmClockBase = 0;
 
-                    // ── WHAT ARRIVING COST THE BODY ──────────────────────
+                    // WHAT ARRIVING COST THE BODY
                     //
                     // The design owner's ruling, and the second of the two
                     // callers that has to honour it. See `bodyCost` on
@@ -1055,7 +820,7 @@ export function simulateTimeSkip(
             }
         }
 
-        // ── 2. How far can we safely jump? ──
+        // 2. How far can we safely jump?
         //
         // `ordinal` rather than `cultivator.realmOrdinal`: the LIVE rung, which
         // a skip that advances ranks changes underneath itself. Passing the
@@ -1077,7 +842,7 @@ export function simulateTimeSkip(
             }
         );
 
-        // ── 2b. Say it, if there is no book. ──
+        // 2b. Say it, if there is no book.
         //
         // The one fact a stalled cultivator most needs and was never given.
         // Eleven of twelve measured lives sat through fifty years of correct
@@ -1132,7 +897,7 @@ export function simulateTimeSkip(
             randomEvents
         });
 
-        // ── 3. Apply the chunk. ──
+        // 3. Apply the chunk.
         //
         // Ground they cannot work in gives up nothing, however long they sit in
         // it. That is the `survival <= x < operational` band from `locations.ts`
@@ -1180,7 +945,7 @@ export function simulateTimeSkip(
             chunk
         ).bleedingTurns;
 
-        // ── THE BODY MENDS ──────────────────────────────────────────────
+        // THE BODY MENDS
         //
         // HP only ever went down, and it killed people who were not in any
         // danger. Measured: ordinal 13, age 38 of 100, full belly, ZERO
@@ -1195,7 +960,7 @@ export function simulateTimeSkip(
         //   at zero HP - the death gate below owns that, and a body cannot mend
         //     its way back across it inside the chunk that emptied it.
         //
-        // ── AND A THIRD GATE THAT WAS HERE AND HAD TO GO ─────────────────
+        // AND A THIRD GATE THAT WAS HERE AND HAD TO GO
         //
         // Open channels at the crippling count used to block mending outright,
         // which was defensible while such a cultivator was dead in ninety days
@@ -1260,8 +1025,8 @@ export function simulateTimeSkip(
             starvationTurns = fed.starvationTurns;
             rations = fed.rations;
 
-            // ── A resource is about to run out and something can still be
-            // done about it. ──
+            // A resource is about to run out and something can still be
+            // done about it.
             //
             // This is its own category of interrupt, and it was missing. Every
             // other interrupt is a thing that HAPPENED to the cultivator -
@@ -1311,7 +1076,7 @@ export function simulateTimeSkip(
 
         const newAbsDay = startDay + elapsed;
 
-        // ── 4. Grid checks that land exactly on this day. ──
+        // 4. Grid checks that land exactly on this day.
         if (drawingQi && onGrid(newAbsDay, DEVIATION_CHECK_DAYS)) {
             const check = rollDeviation(
                 { spiritRoot: cultivator.spiritRoot, injuries },
@@ -1441,7 +1206,7 @@ export function simulateTimeSkip(
                     withdrawal < CLEAN_WITHDRAWAL_BASE + fortune * CLEAN_WITHDRAWAL_PER_FORTUNE;
                 interrupted = true;
                 interruptReason = 'major_encounter';
-                // ── AN INTERRUPT IS A QUESTION, NOT A BULLETIN ───────────
+                // AN INTERRUPT IS A QUESTION, NOT A BULLETIN
                 //
                 // Measured across about 350 in-world years: interrupted this
                 // way roughly thirty times, met somebody once. Nobody arrives
@@ -1540,13 +1305,13 @@ export function simulateTimeSkip(
             }
         }
 
-        // ── 5. A rare meditative state, if the circumstances are exceptional. ──
+        // 5. A rare meditative state, if the circumstances are exceptional.
         //
         // Zero chance for a cultivator in ordinary qi practising nothing in
         // particular, which is most of them. This grid can never award
         // anything for time served: every term in the chance is a fact about
         // where they are, what they are practising, or how well they read.
-        // ── Recognition. Not a roll: a fact arriving. ──
+        // Recognition. Not a roll: a fact arriving.
         //
         // The first time something a cultivator was ALWAYS going to be
         // extraordinary at comes within reach, it is simply obvious to them.
@@ -1636,7 +1401,7 @@ export function simulateTimeSkip(
             }
         }
 
-        // ── 6. A temporal phenomenon. Information, never capability. ──
+        // 6. A temporal phenomenon. Information, never capability.
         //
         // These do not touch a single number on the cultivator. What comes out
         // is a belief with no fact behind it, handed to the knowledge layer,
@@ -1670,7 +1435,7 @@ export function simulateTimeSkip(
             }
         }
 
-        // ── 7. Did any of that kill us? ──
+        // 7. Did any of that kill us?
         if (checkDeath()) break;
     }
 
@@ -1721,10 +1486,8 @@ export function simulateTimeSkip(
     };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // CHUNKING
 // The whole optimisation, and the whole determinism argument, lives here.
-// ─────────────────────────────────────────────────────────────────────────
 
 interface ChunkInputs {
     elapsed: number;
@@ -1746,11 +1509,6 @@ interface ChunkInputs {
 
 /**
  * Days to advance before anything can possibly change.
- *
- * Every candidate is a pure function of current state, so the sequence of chunk
- * boundaries for a given (seed, input) is fixed - which is exactly why the
- * adaptive stepping cannot perturb any roll. Always at least 1, so the loop
- * cannot stall.
  */
 function nextChunk(input: ChunkInputs): number {
     const candidates: number[] = [
@@ -1793,9 +1551,7 @@ function onGrid(day: number, interval: number): boolean {
     return day > 0 && day % interval === 0;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // FOOD
-// ─────────────────────────────────────────────────────────────────────────
 
 interface FoodState {
     satiety: number;
@@ -1870,9 +1626,7 @@ function consumeFood(
     return { satiety, starvationTurns, rations, rationsUsed };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // HELPERS
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Ages are derived from integer day counters and then rounded, so that a skip
@@ -1885,11 +1639,6 @@ function roundYears(years: number): number {
 
 /**
  * Whole days from `current` years to `limit` years.
- *
- * The epsilon absorbs the float residue in `(limit - current) * 365`: without
- * it a distance that is truly 20 days computes as 20.0000000001 and ceils to
- * 21, stepping the simulation one day past a death threshold that the tests -
- * and the player - expect to land exactly on the documented number.
  */
 function daysUntilYear(limit: number, current: number): number {
     return Math.ceil((limit - current) * DAYS_PER_YEAR - 1e-6);

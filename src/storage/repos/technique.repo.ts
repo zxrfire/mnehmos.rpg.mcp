@@ -159,7 +159,7 @@ export class TechniqueRepository {
         `);
     }
 
-    // ── CATALOG ──────────────────────────────────────────────────────────
+    // CATALOG
 
     upsert(technique: Technique): Technique {
         const valid = TechniqueSchema.parse(technique);
@@ -213,7 +213,7 @@ export class TechniqueRepository {
         return this.deleteStmt.run(id).changes > 0;
     }
 
-    // ── PER-CULTIVATOR ───────────────────────────────────────────────────
+    // PER-CULTIVATOR
 
     /**
      * Learn an art. Re-learning never lowers mastery: a cultivator who reads

@@ -1,33 +1,17 @@
 /**
- * How much of the world can reach you while you do a thing.
+ * How much of the world can reach you while you do a thing. One table rather
+ * than a set of branches: `exposure` (against 1.0 for standing in the open),
+ * `unreachable` by the catalog's own tags and kinds, and `lean` toward a
+ * direction before the entries are looked at.
  *
- * This is the whole of the "weighted by what they are doing" half of the
- * selection, and it is one table rather than a set of branches. Each row says
- * three things and nothing else:
+ * `sealed` has exposure zero and that is load-bearing. Closed-door seclusion is
+ * the game's existing bargain - safety bought with every chance that would have
+ * found you - and a sealed door produces no occurrences, ever.
  *
- *   exposure       how often anything happens at all, against 1.0 for standing
- *                  in the open in an ordinary place
- *   unreachable    what cannot get to you here, by the catalog's OWN tags and
- *                  kinds - there is no road entry in a cave because you are not
- *                  on the road, and no market in a cave because there is no
- *                  market
- *   lean           which direction this activity tends, before the entries are
- *                  looked at. See `valence.ts` for why direction is drawn first
- *
- * ── The one number that matters ──────────────────────────────────────────
- *
- * `sealed` has exposure zero, and that is load-bearing rather than tidy.
- * Closed-door seclusion is the game's existing bargain - safety bought with
- * every chance that would have found you - and this layer must not quietly
- * take the safety half away. A sealed door produces no occurrences, ever.
- *
- * `seclusion` is the other end of the same idea and the reason this module
- * exists. An open-door decade is not a black box: at 0.06 exposure something
- * finds the cave roughly once every four years, which over a twenty-year
- * seclusion is a handful of arrivals and, because most of what can reach a
- * sitting cultivator interrupts, one or two returns of control. That is the
- * intended rate. It is not "you will be left alone", and it is not "you may
- * never sit down".
+ * `seclusion` is the other end and the reason this module exists: at 0.06
+ * exposure something finds the cave roughly once every four years, so a
+ * twenty-year open-door seclusion is a handful of arrivals and one or two
+ * returns of control. That is the intended rate.
  */
 
 import type { EncounterEntry, EncounterKind } from '../../data/cultivation/encounters.js';
@@ -38,16 +22,10 @@ import type {
     Locatability
 } from './types.js';
 
-// ─────────────────────────────────────────────────────────────────────────
 // CADENCE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Days between checks across a long span.
- *
- * A divisor of the 30-day ambient block and of the 90-day encounter grid the
- * time-skip already uses, so an encounter day is always a day the simulation
- * was going to stop on anyway.
  */
 export const ENCOUNTER_GRID_DAYS = 15;
 
@@ -55,13 +33,8 @@ export const ENCOUNTER_GRID_DAYS = 15;
 export const SPAN_ENCOUNTER_CHANCE = 0.18;
 
 /**
- * Probability that the ACT of doing something produces an encounter, at
- * exposure 1.0, independent of how many days it took.
- *
- * Two cadences rather than one, because the honest denominator changes. For a
- * decade in a cave the denominator is elapsed time; for walking to the next
- * village it is the walk. A single per-day rate makes a one-day action almost
- * eventless and a long one relentless, and the world does not work either way.
+ * Probability that the ACT of doing something produces an encounter, at exposure
+ * 1.0, independent of how many days it took.
  */
 export const TURN_ENCOUNTER_CHANCE = 0.11;
 
@@ -70,27 +43,15 @@ export const MAX_OCCURRENCES_PER_WINDOW = 6;
 
 /**
  * Probability that one unheard world event turns up on the cultivator.
- *
- * Per FACT, not per day, and that is the whole calibration. The world's own
- * event volume is what should decide how often the world reaches somebody: a
- * quiet decade produces few candidates and few arrivals, a war produces many of
- * both, and nothing has to be tuned twice. A grid-based rate had the opposite
- * property - it made a long seclusion relentless regardless of whether anything
- * was actually happening out there.
  */
 export const ARRIVAL_PER_FACT_CHANCE = 0.06;
 
 /**
  * How many unheard facts one window may draw against.
  *
- * The per-fact rate above is calibrated on THE WORLD'S EVENT VOLUME - "a quiet
- * decade produces few candidates, a war produces many". The list it is actually
- * handed is the unheard BACKLOG, which is a different quantity: a fact from
- * year three is still a candidate in year ninety, so the set grows for as long
- * as the run lasts and the rate drifts from "what is happening" to "everything
- * that ever happened and never reached you".
- *
- * What that did to the played game, measured on 20-year windows, 40 seeds:
+ * `ARRIVAL_PER_FACT_CHANCE` is calibrated on the world's EVENT VOLUME, but the
+ * list handed here is the unheard BACKLOG, which grows for as long as the run
+ * lasts. Measured on 20-year windows, 40 seeds:
  *
  *     pending    sealed cut    open cut    open median days lived
  *           0       3 / 40      30 / 40                     2117
@@ -98,40 +59,21 @@ export const ARRIVAL_PER_FACT_CHANCE = 0.06;
  *         150      11 / 40      40 / 40                      756
  *         400      23 / 40      40 / 40                      256
  *
- * A player who has been alive a while cannot sit. Reported from live play as
- * six consecutive twenty-year seclusions, every one truncated, 120 years of
- * intent buying four years of life against a hundred-year lifespan - at a wall
- * that is passable if you can spend the time.
- *
- * Twenty-four is the volume a window may see at once, and the rest STAY
- * PENDING - nothing is consumed that did not arrive, so a consequence that
- * reached nobody in year three can still reach them in year nine, which is the
- * property `consumeArrivals` exists to keep. The bound is on how much of the
+ * A player who has been alive a while cannot sit. The rest STAY PENDING -
+ * nothing is consumed that did not arrive - so the bound is on how much of the
  * backlog can land on one sitting, not on what the world remembers.
  */
 export const MAX_ARRIVAL_CANDIDATES = 24;
 
 /**
- * How much a door stops the world, which is much less than it stops the road.
+ * How much a door stops the world, which is much less than it stops the road. A
+ * separate exposure from `PROFILES`: that asks whether the cultivator walked
+ * into something, this asks whether something already happening reached here.
  *
- * A separate exposure from the one above, and the separation is the point.
- * `exposure` asks "did the cultivator walk into something"; a door answers that
- * almost completely. This asks "did something already happening reach here",
- * and a war crossing the valley, a vein failing, or a sect arriving to look for
- * a cave does not care that the cave is shut. Seclusion is 0.55 rather than
- * 0.06 for exactly that reason - it is the mechanism behind "you surface to a
- * world that moved".
- *
- * `sealed` is LOW AND NOT ZERO, and the difference matters more than the size
- * of the number. A shut door is not a ward: a rogue cultivator barges into the
- * cave, somebody arrives at it needing help, a house comes looking. At zero,
- * closed-door seclusion stopped being a trade and became a dominant strategy -
- * everything that can end a run arrives through these tables, so a player who
- * sealed was simply safe, and the correct play was to never open the door.
- *
- * A twentieth of an open seclusion. Over a month it is nothing; over the thirty
- * years somebody actually seals for, something eventually happens, which is the
- * point.
+ * `sealed` is LOW AND NOT ZERO, and the difference matters more than the size.
+ * At zero, closed-door seclusion stopped being a trade and became a dominant
+ * strategy - everything that can end a run arrives through these tables, so a
+ * player who sealed was simply safe.
  */
 const ARRIVAL_EXPOSURE: Readonly<Record<EncounterActivity, number>> = {
     seclusion: 0.55,
@@ -145,40 +87,21 @@ const ARRIVAL_EXPOSURE: Readonly<Record<EncounterActivity, number>> = {
 
 /**
  * How much of an open seclusion a shut door lets through.
- *
- * Read off the table rather than chosen, because TWO separate systems have to
- * agree about the door: the encounter tables here, and the time-skip's own
- * random events, which run on their own grid and knew nothing about sealing
- * until they were handed this. A second hand-written constant over there
- * would have drifted from this one within a month, and the symptom would have
- * been a door that was airtight in one system and ordinary in the other.
  */
 export function sealedDoorFraction(): number {
     return PROFILES.sealed.exposure / PROFILES.seclusion.exposure;
 }
 
 /**
- * What is left of the world once you have hidden the door.
+ * What is left of the world once you have hidden the door. Not a rate reduction
+ * but a RUNG FILTER: after it, only somebody at your own realm or above can find
+ * the place at all, so the value of hiding scales with who you are.
  *
- * Concealing an entrance is not a rate reduction, it is a RUNG FILTER: after
- * it, only somebody standing at your own realm or above can find the place at
- * all. Everybody below simply walks past a hillside.
- *
- * So the value of hiding scales with who you are, which is the right shape and
- * costs nothing to state - a Qi Condensation cultivator hiding their cave has
- * excluded almost nobody, because almost everybody is at or above them; a Void
- * Refinement cultivator hiding theirs has excluded the world.
- *
- * The fraction is read off the ladder's own population shape rather than
- * chosen. The realm bands fall by roughly an order of magnitude as they climb -
- * measured across seeded worlds as 306, 73, 33, 22, 11, 7, 4, 2, 2 - so the
- * share standing at or above a given rung falls off a cliff in the middle of
- * the ladder, which is exactly where hiding a door starts being worth the
- * trouble.
- *
- * Returns the share of cultivators at or above `ordinal`, floored so that a
- * hidden door is never perfectly safe: somebody is always above you, and near
- * the top the people who remain are precisely the ones you cannot refuse.
+ * Read off the ladder's own population shape rather than chosen - the realm
+ * bands fall by roughly an order of magnitude as they climb, measured across
+ * seeded worlds as 306, 73, 33, 22, 11, 7, 4, 2, 2. Floored, so a hidden door is
+ * never perfectly safe: near the top the people who remain are precisely the
+ * ones you cannot refuse.
  */
 export function concealmentScale(ordinal: number): number {
     // Cumulative share at or above the first rung of each realm, from the
@@ -192,9 +115,7 @@ export function arrivalExposure(activity: EncounterActivity): number {
     return ARRIVAL_EXPOSURE[activity] ?? 1;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE TABLE
-// ─────────────────────────────────────────────────────────────────────────
 
 export interface ActivityProfile {
     readonly id: EncounterActivity;
@@ -305,20 +226,10 @@ export function activityProfile(activity: EncounterActivity): ActivityProfile {
 export const ENCOUNTER_ACTIVITIES: readonly EncounterActivity[] =
     Object.keys(PROFILES) as EncounterActivity[];
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHERE THEY ARE STANDING
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What the place does to the rate.
- *
- * One multiplier off `environment.danger`, which the world layer already
- * maintains per location. Deliberately shallow - a quiet county lane is 0.75
- * and the worst ground in the world is 1.65, a spread of about two. Danger
- * should change WHAT happens far more than HOW OFTEN, and the pool bias below
- * is where that belongs; a steep rate curve here made an ordinary road twice
- * as eventful as a village and buried the composition difference under it.
- * Nothing here reads a place name.
  */
 export function placeRateMultiplier(place: EncounterPlace): number {
     const danger = clamp01(place.danger ?? 0.25);
@@ -327,10 +238,6 @@ export function placeRateMultiplier(place: EncounterPlace): number {
 
 /**
  * What the place does to the pool.
- *
- * A ruin puts ruins in front of you; a settlement puts people and paperwork.
- * Keyed off `LocationKind`, which every location already carries, so a new
- * place needs no encounter work at all - it inherits the row for its kind.
  */
 const PLACE_KIND_BIAS: Readonly<Record<string, Partial<Record<EncounterKind, number>>>> = {
     settlement: { commerce: 2.2, dao_house: 2, sect_event: 1.5, spirit_beast: 0.3, ruin: 0.6 },
@@ -346,7 +253,7 @@ const PLACE_KIND_BIAS: Readonly<Record<string, Partial<Record<EncounterKind, num
     sealed_domain: { ruin: 2.5, misfortune: 1.5, commerce: 0.05 },
     region: {},
     portal: {},
-    // ── INTERIORS ────────────────────────────────────────────────────────
+    // INTERIORS
     // Being inside a compound is not being on its ground. There are no
     // bandits in a scripture pavilion and no spirit beasts in a refectory;
     // what is in there is the house, which is why every interior row is
@@ -364,16 +271,10 @@ export function placeKindBias(place: EncounterPlace): Partial<Record<EncounterKi
     return PLACE_KIND_BIAS[place.kind] ?? {};
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // REACH
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Can this entry get to somebody doing this, here.
- *
- * Only exclusions, and every one of them reads a column the catalog already
- * has. A predicate that needed a new column would be a sign that the exclusion
- * is really a set piece.
  */
 export function reaches(
     entry: EncounterEntry,
@@ -397,18 +298,10 @@ export function reaches(
     return true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHO KNOWS WHERE YOU ARE
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * Kinds that need to know your name, or at least your address.
- *
- * A sect messenger, an auditor, a rival with a grudge, a debt collector and a
- * press gang all have to FIND you. A landslide does not, a beast does not, and
- * your own circulation reversing certainly does not. That distinction is the
- * whole of locatability and it needs no new column: the catalog's `kind`
- * already separates the people from the world.
  */
 const NEEDS_TO_FIND_YOU: readonly EncounterKind[] = [
     'sect_event',
@@ -420,12 +313,6 @@ const NEEDS_TO_FIND_YOU: readonly EncounterKind[] = [
 
 /**
  * Share of the people-shaped entries that get through, by locatability.
- *
- * `hidden` is not zero on purpose. Somebody stumbles across a cave now and
- * again, and a world where disappearing is perfect is a world where the
- * correct play is always to disappear. It is low enough that going somewhere
- * nobody knows is a real and legible choice with a real cost: nothing social
- * reaches you, including the help.
  */
 const SOCIAL_REACH: Readonly<Record<Locatability, number>> = {
     known: 1,
@@ -454,22 +341,6 @@ export function locatabilityApplies(activity: EncounterActivity): boolean {
 
 /**
  * Whether this entry stops what the cultivator was doing.
- *
- * The catalog's `interrupts` column is the entry's own answer, and for anybody
- * out in the world it is the whole answer. A shut door is the one thing that
- * changes it, and it changes it in one direction only.
- *
- * A cultivator in seclusion is not participating. Something that came FOR them
- * still gets them up - a body at the mouth of the cave, a formation that
- * failed, their own circulation reversing - because none of that required them
- * to go and look. Everything else did: a sealed hall two valleys over
- * interrupts a traveller because the traveller can walk to it, and does not
- * interrupt somebody sitting in a cave, because they did not. It is reported
- * when they come out, which is what "you surface to a world that moved" is
- * made of.
- *
- * Stated over columns the catalog already has, so a new entry inherits the
- * behaviour without anybody deciding anything about it.
  */
 export function interruptsThrough(entry: EncounterEntry, activity: EncounterActivity): boolean {
     if (!entry.interrupts) return false;
@@ -479,7 +350,6 @@ export function interruptsThrough(entry: EncounterEntry, activity: EncounterActi
     return entry.simEventKind === 'qi_deviation' || entry.simEventKind === 'injury_sustained';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHO ELSE IS ON THE GROUND, AND WHICH WAY IT CUTS
 //
 // The design owner's rule: "the encounter rate isn't simply a function of
@@ -514,7 +384,6 @@ export function interruptsThrough(entry: EncounterEntry, activity: EncounterActi
 // Both terms are clamped so a sealed cave can never reach zero - a shut door is
 // not a ward, that is committed and tested, and this must not make it one by
 // arithmetic.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Kinds that come looking for a person. Bounded below by COMPANY_FLOOR. */
 const TARGETED_KINDS: ReadonlySet<EncounterKind> = new Set<EncounterKind>([
@@ -530,10 +399,6 @@ const COLLATERAL_KINDS: ReadonlySet<EncounterKind> = new Set<EncounterKind>([
 
 /**
  * The company a place is keeping, as a headcount the terms below can read.
- *
- * Twelve is "a busy place" rather than a tuned figure: it is about the
- * population of the market towns in the shipped world, so a town saturates the
- * curve and a cave with two people in it barely moves it.
  */
 const COMPANY_FULL_AT = 12;
 
@@ -543,12 +408,6 @@ const COMPANY_CEILING = 1.45;
 
 /**
  * What the company on this ground does to one entry's weight.
- *
- * Returns 1 - no opinion - for a place with no company recorded, which is every
- * caller that has not loaded a world and is the honest answer rather than a
- * guess. Also 1 for every kind that is neither targeted nor collateral: sect
- * business, commerce and dao houses are not what anybody is being protected
- * FROM, and a busy house arguably carries more of them, not less.
  */
 export function companyEffect(entry: EncounterEntry, place: EncounterPlace): number {
     const company = place.company;

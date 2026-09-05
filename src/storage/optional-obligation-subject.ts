@@ -1,126 +1,54 @@
 /**
  * `obligations.subject_id` becomes nullable, and accounts resting on nothing go.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * WHY THE COLUMN HAD TO CHANGE
- * ═════════════════════════════════════════════════════════════════════════
+ * After this runs there is exactly one stored representation of no-name and it
+ * is NULL. `NO_NAME_ON_IT` and `hasANameOnIt` stay as the read path.
  *
- * An account can be open against nobody. `accounts-with-no-name.ts` is the
- * state and the reason: somebody who knows they were wronged and cannot say by
- * whom holds a real record with a real weight and no subject, and that is what
- * makes a killing with no witness have a consequence.
+ * THE GUARD IS `notnull` ON THE COLUMN, not whether the column exists. Both
+ * shapes have a `subject_id` and only one still refuses NULL. SQLite cannot
+ * relax a NOT NULL with an ALTER, so editing the `CREATE TABLE IF NOT EXISTS` in
+ * `migrations.social.ts` alone would give a fresh database the nullable column
+ * and leave every existing one rejecting NULL - two schemas behind one
+ * migration. Re-runnable from any state, including one where a previous attempt
+ * died between the copy and the rename.
  *
- * NULL is the honest way to store that. The column was `TEXT NOT NULL`, so the
- * empty string carried it for exactly as long as it took to get this written -
- * and an empty string is the shape of defect AGENTS.md files under *a field
- * nothing writes*: it reads as a value, and every query around it goes on
- * answering with total confidence.
+ * THE NEW SCHEMA IS DERIVED FROM THE OLD ONE. Do not write a second copy of the
+ * `obligations` DDL here: the rebuild reads the table's own
+ * `sqlite_master.sql` and changes exactly one token, and the indexes are read
+ * back off `sqlite_master` and replayed, so a rebuild carries forward whatever
+ * the table actually had.
  *
- * **After this runs there is exactly one stored representation of no-name, and
- * it is NULL.** `NO_NAME_ON_IT` and `hasANameOnIt` stay as the read path so
- * nothing outside that module compares to either form.
+ * THE ORDER MATTERS. `obligation_participants` holds `FOREIGN KEY
+ * (obligation_id) REFERENCES obligations(id) ON DELETE CASCADE` and the caller
+ * turns enforcement on (`db.ts`), so dropping `obligations` with enforcement on
+ * would cascade every participant row out of existence. Enforcement goes off
+ * around the rebuild, OUTSIDE the transaction because `PRAGMA foreign_keys` is a
+ * no-op inside one, and `foreign_key_check` runs before it goes back on. Drop
+ * first, then rename: the other order asks SQLite to rewrite references to a
+ * table name that is about to be taken.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * WHY IT IS A REBUILD, AND WHY THE GUARD IS THE CONSTRAINT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * SQLite cannot relax a NOT NULL with an ALTER. Editing the `CREATE TABLE IF
- * NOT EXISTS` in `migrations.social.ts` alone would give a fresh database the
- * nullable column and leave every existing one rejecting NULL - two schemas
- * behind one migration, which is worse than either.
- *
- * So the guard is **`notnull` on the column**, not whether the column exists.
- * Both shapes have a `subject_id`; only one of them still refuses NULL, and
- * that is the only question worth asking. Re-runnable from any state,
- * including one where a previous attempt died between the copy and the rename.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE NEW SCHEMA IS DERIVED FROM THE OLD ONE, NOT WRITTEN OUT AGAIN
- * ═════════════════════════════════════════════════════════════════════════
- *
- * A second copy of the `obligations` DDL in this file would be a second place
- * for it to drift, and it would go stale the first time somebody adds a column
- * in `migrations.social.ts` and does not think to look here. So the rebuild
- * reads the table's own `sqlite_master.sql` and changes exactly one token in
- * it. Whatever the table is on the day this runs is what it stays, minus the
- * constraint.
- *
- * The same for the indexes: they are read back off `sqlite_master` and
- * replayed, so a rebuild carries forward every index the table had rather than
- * the ones this file remembered about.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE ORDER MATTERS, AND SQLITE IS UNFORGIVING ABOUT IT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `obligation_participants` holds `FOREIGN KEY (obligation_id) REFERENCES
- * obligations(id) ON DELETE CASCADE`, and the caller turns enforcement on
- * (`db.ts`, `pragma('foreign_keys = ON')`). **Dropping `obligations` with
- * enforcement on would cascade every participant row out of existence.** So
- * enforcement goes off around the rebuild - outside the transaction, because
- * `PRAGMA foreign_keys` is a no-op inside one - and `foreign_key_check` runs
- * before it goes back on.
- *
- * Drop first, then rename. The other order asks SQLite to rewrite references
- * to a table name that is about to be taken, and the rename would then have to
- * be done with `legacy_alter_table` on to stop it rewriting the child's FK
- * clause on the way past.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * AND AN ACCOUNT RESTING ON AN EVENT NOTHING HOLDS IS DELETED
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `triggering_event_id` is the ground-truth row an account rests on, and it has
- * been unconstrained since it was written. A row naming an event the world does
- * not hold is not evidence to be preserved - it is the corruption a constraint
- * would exist to prevent, and the world it belongs to regenerates from its
- * seed. So the rebuild drops them and reports how many, because the COUNT is
- * the useful part: a large number says something is actively writing bad
- * references, and a small one says this was history.
- *
- * ── The parent is `world_chronicle`, and the schema comment says otherwise ──
- *
- * `migrations.social.ts` documents the column as `world_facts.id`. **It is not,
- * and a foreign key written to that comment would delete the entire ledger.**
- * Measured on a played database:
+ * THE PARENT OF `triggering_event_id` IS `world_chronicle`, NOT `world_facts`.
+ * They are different subsystems - see `migrations.world.ts`'s header on the
+ * collision - and a foreign key written to the wrong one would delete the entire
+ * ledger. Measured on a played database:
  *
  *     world_facts       0 rows        2 of 2 obligations orphaned
  *     world_chronicle   102 rows      0 of 2 obligations orphaned
  *
- * The two tables are different subsystems and `migrations.world.ts` says so in
- * its own header: `world_facts` is the social layer's claim-keyed
- * objective-reality table that BELIEFS file against, and the dated event log a
- * deed lands in is `world_chronicle`. So the orphan test here is against the
- * chronicle, and the schema comment is corrected in the same commit.
- *
- * ── Why there is still no FOREIGN KEY on it ────────────────────────────────
- *
- * **SQLite will not accept one, and the reason is structural rather than
- * fixable here.** `world_chronicle`'s primary key is `(world_id, id)` - fact
- * ids are per-world sequential text, `f1`, `f2`, so `id` alone is not unique
- * and two worlds in one database both hold an `f1`. A foreign key needs its
- * parent columns to be a primary key or carry a unique index, so:
+ * THERE IS STILL NO FOREIGN KEY ON IT, and SQLite will not accept one:
+ * `world_chronicle`'s primary key is `(world_id, id)` because fact ids are
+ * per-world sequential text, so `id` alone is not unique and
  *
  *     FOREIGN KEY (triggering_event_id) REFERENCES world_chronicle(id)
  *     -> SQLITE_ERROR: foreign key mismatch, on the first insert
  *
- * The composite form is accepted and is the shape the constraint wants:
- *
- *     FOREIGN KEY (world_id, triggering_event_id)
- *       REFERENCES world_chronicle(world_id, id)
- *
- * which needs a `world_id` on `obligations`, and therefore needs every writer
- * of an obligation in the repository to supply one. That is a real change and
- * a good one; it is not this file's to make unilaterally. **When it is made,
- * the `ON DELETE` clause should not be `CASCADE`**: an account that outlives
- * the record of what caused it is a real thing in this world - a grudge whose
- * origin nobody can produce - and deleting a world fact must not silently
- * delete somebody's reason to be angry. `SET NULL` is the clause that says
- * that. Deleting rows that never had a valid reference, which is what this
- * file does, is a different act from cascading away rows that did.
- *
- * Until then the sweep below is the enforcement that is actually available,
- * and it runs on every startup.
+ * The composite form is accepted but needs a `world_id` on `obligations` and
+ * therefore every writer in the repository to supply one. WHEN THAT IS DONE THE
+ * `ON DELETE` CLAUSE MUST BE `SET NULL`, NOT `CASCADE`: an account that outlives
+ * the record of what caused it is a real thing here - a grudge whose origin
+ * nobody can produce - and deleting a world fact must not silently delete
+ * somebody's reason to be angry. Until then the sweep below is the only
+ * enforcement available, and it runs on every startup.
  */
 
 import type Database from 'better-sqlite3';
@@ -239,22 +167,16 @@ export function makeTheObligationSubjectOptional(
 /**
  * Delete accounts whose triggering event `world_chronicle` does not hold.
  *
- * The design owner, on why this is a delete and not a reconciliation: *the good
+ * Design owner, on why this is a delete and not a reconciliation: *the good
  * thing about a game is we can just nuke the stuff created from gameplay
- * because we have pre-seeded sects and npcs. This isn't mission critical
- * data.* A world regenerates from its seed; an account pointing at nothing does
- * not become correct by being kept.
+ * because we have pre-seeded sects and npcs. This isn't mission critical data.*
  *
- * Two things it deliberately does not do.
- *
- * **It leaves a NULL `triggering_event_id` alone.** That is not a broken
- * reference, it is an account nobody attached one to - most of the ledger, and
- * every row written before `a-deed-enters-the-world-as-a-fact.ts` existed.
- *
- * **And it leaves everything alone when the chronicle is empty.** A database
- * whose world tables have not been written yet is not a database full of
- * corruption; it is one where the world has not been persisted. Deleting the
- * ledger on that reading is how a migration eats a save.
+ * Two things it deliberately does NOT do. It leaves a NULL
+ * `triggering_event_id` alone - that is an account nobody attached one to, which
+ * is most of the ledger. And it leaves everything alone when the chronicle is
+ * empty: a database whose world tables have not been written yet is not
+ * corrupt, and deleting the ledger on that reading is how a migration eats a
+ * save.
  */
 function dropAccountsRestingOnNothing(db: Database.Database): number {
     const chronicle = db.prepare(

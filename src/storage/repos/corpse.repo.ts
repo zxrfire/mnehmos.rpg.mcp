@@ -9,10 +9,7 @@ import {
 } from '../../schema/corpse.js';
 import { InventoryRepository } from './inventory.repo.js';
 
-/**
- * FAILED-004: Corpse Repository
- * Manages corpses, loot generation, and harvesting
- */
+/** Corpses, loot generation, and harvesting. */
 
 interface CorpseRow {
     id: string;
@@ -68,9 +65,7 @@ export class CorpseRepository {
         this.inventoryRepo = new InventoryRepository(db);
     }
 
-    /**
-     * Create a corpse when a character dies
-     */
+    /** Create a corpse when a character dies */
     createFromDeath(characterId: string, characterName: string, characterType: 'pc' | 'npc' | 'enemy' | 'neutral', options: {
         encounterId?: string;
         position?: { x: number; y: number };
@@ -111,9 +106,6 @@ export class CorpseRepository {
         return this.findById(id)!;
     }
 
-    /**
-     * Get corpse by ID
-     */
     findById(id: string): Corpse | null {
         const stmt = this.db.prepare(`SELECT * FROM corpses WHERE id = ?`);
         const row = stmt.get(id) as CorpseRow | undefined;
@@ -121,9 +113,6 @@ export class CorpseRepository {
         return this.rowToCorpse(row);
     }
 
-    /**
-     * Get corpse for a specific character
-     */
     findByCharacterId(characterId: string): Corpse | null {
         const stmt = this.db.prepare(`
             SELECT * FROM corpses
@@ -135,9 +124,6 @@ export class CorpseRepository {
         return this.rowToCorpse(row);
     }
 
-    /**
-     * Get all corpses in an encounter
-     */
     findByEncounterId(encounterId: string): Corpse[] {
         const stmt = this.db.prepare(`
             SELECT * FROM corpses
@@ -147,9 +133,6 @@ export class CorpseRepository {
         return rows.map(r => this.rowToCorpse(r));
     }
 
-    /**
-     * Get corpses in a region
-     */
     findByRegion(worldId: string, regionId: string): Corpse[] {
         const stmt = this.db.prepare(`
             SELECT * FROM corpses
@@ -159,9 +142,6 @@ export class CorpseRepository {
         return rows.map(r => this.rowToCorpse(r));
     }
 
-    /**
-     * Get corpses at or near a specific position
-     */
     findNearPosition(worldId: string, x: number, y: number, radius: number = 3): Corpse[] {
         const stmt = this.db.prepare(`
             SELECT * FROM corpses
@@ -176,9 +156,6 @@ export class CorpseRepository {
         return rows.map(r => this.rowToCorpse(r));
     }
 
-    /**
-     * Add item to corpse inventory
-     */
     addToCorpseInventory(corpseId: string, itemId: string, quantity: number = 1): void {
         const stmt = this.db.prepare(`
             INSERT INTO corpse_inventory (corpse_id, item_id, quantity, looted)
@@ -188,9 +165,6 @@ export class CorpseRepository {
         stmt.run(corpseId, itemId, quantity, quantity);
     }
 
-    /**
-     * Get items in corpse inventory
-     */
     getCorpseInventory(corpseId: string): Array<{ itemId: string; quantity: number; looted: boolean }> {
         const stmt = this.db.prepare(`
             SELECT * FROM corpse_inventory
@@ -204,9 +178,7 @@ export class CorpseRepository {
         }));
     }
 
-    /**
-     * Get unlootable items from corpse
-     */
+    /** Get unlootable items from corpse */
     getAvailableLoot(corpseId: string): Array<{ itemId: string; quantity: number }> {
         const stmt = this.db.prepare(`
             SELECT * FROM corpse_inventory
@@ -350,9 +322,7 @@ export class CorpseRepository {
         return { success: true, currency, transferred };
     }
 
-    /**
-     * Generate loot for a corpse based on creature type
-     */
+    /** Generate loot for a corpse based on creature type */
     generateLoot(corpseId: string, creatureType: string, cr?: number): {
         itemsAdded: Array<{ name: string; quantity: number }>;
         currency: { gold: number; silver: number; copper: number };
@@ -515,9 +485,7 @@ export class CorpseRepository {
         return { success: true, quantity: resource.quantity, resourceType, itemId, transferred };
     }
 
-    /**
-     * Process corpse decay based on time passed
-     */
+    /** Process corpse decay based on time passed */
     processDecay(hoursAdvanced: number): { corpseId: string; oldState: CorpseState; newState: CorpseState }[] {
         const changes: { corpseId: string; oldState: CorpseState; newState: CorpseState }[] = [];
         const stmt = this.db.prepare(`SELECT * FROM corpses WHERE state != 'gone'`);
@@ -549,9 +517,6 @@ export class CorpseRepository {
         return changes;
     }
 
-    /**
-     * Update corpse state
-     */
     updateState(corpseId: string, newState: CorpseState): void {
         const now = new Date().toISOString();
         const stmt = this.db.prepare(`
@@ -560,9 +525,7 @@ export class CorpseRepository {
         stmt.run(newState, now, now, corpseId);
     }
 
-    /**
-     * Clean up gone corpses
-     */
+    /** Clean up gone corpses */
     cleanupGoneCorpses(): number {
         // Delete corpse inventory first
         const deleteInventory = this.db.prepare(`
@@ -576,9 +539,6 @@ export class CorpseRepository {
         return result.changes;
     }
 
-    /**
-     * Mark corpse as loot generated
-     */
     private markLootGenerated(corpseId: string, currency?: { gold: number; silver: number; copper: number }): void {
         const now = new Date().toISOString();
         if (currency && (currency.gold > 0 || currency.silver > 0 || currency.copper > 0)) {
@@ -594,13 +554,8 @@ export class CorpseRepository {
         }
     }
 
-    // ============================================================
     // LOOT TABLE OPERATIONS
-    // ============================================================
 
-    /**
-     * Create a loot table
-     */
     createLootTable(table: Omit<LootTable, 'id' | 'createdAt' | 'updatedAt'>): LootTable {
         const now = new Date().toISOString();
         const id = uuid();
@@ -630,9 +585,6 @@ export class CorpseRepository {
         return this.findLootTableById(id)!;
     }
 
-    /**
-     * Find loot table by ID
-     */
     findLootTableById(id: string): LootTable | null {
         const stmt = this.db.prepare(`SELECT * FROM loot_tables WHERE id = ?`);
         const row = stmt.get(id) as LootTableRow | undefined;
@@ -640,9 +592,6 @@ export class CorpseRepository {
         return this.rowToLootTable(row);
     }
 
-    /**
-     * Find loot table by creature type
-     */
     findLootTableByCreatureType(creatureType: string, cr?: number): LootTable | null {
         // First try to find in database
         const stmt = this.db.prepare(`SELECT * FROM loot_tables`);
@@ -687,18 +636,13 @@ export class CorpseRepository {
         return null;
     }
 
-    /**
-     * List all loot tables
-     */
     listLootTables(): LootTable[] {
         const stmt = this.db.prepare(`SELECT * FROM loot_tables`);
         const rows = stmt.all() as LootTableRow[];
         return rows.map(r => this.rowToLootTable(r));
     }
 
-    // ============================================================
     // HELPER METHODS
-    // ============================================================
 
     private rollQuantity(min: number, max: number): number {
         return Math.floor(Math.random() * (max - min + 1)) + min;
