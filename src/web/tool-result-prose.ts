@@ -963,10 +963,10 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         //     Whatever else is true of this place, the ground here has nothing
         //     further to give somebody at this rank.
         //
-        // Played at Dragonvein Rock - a named rock, on a named vein head, in the
+        // Played at The Sounding - a named rock, on a named vein head, in the
         // Drowned Reach - and reported by the design owner as a sentence about
         // nothing. It is not the narrator's doing: `composeNarrationUser` sends
-        // `Place: Dragonvein Rock` in the SCENE header and then orders the model to
+        // `Place: The Sounding` in the SCENE header and then orders the model to
         // narrate the facts EXACTLY, so an anonymous fact narrates anonymously,
         // and the model has no licence to go and fetch the name back. The
         // anonymity entered here, on `lines`, with both names sitting two fields
@@ -975,7 +975,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         // The province is named as well as the place because THE FACT IS THE
         // PROVINCE'S. `groundHereStillGives` is `canAdvanceHere(regionId, …)`,
         // read off the region's `localCeilingOrdinal` - so what is exhausted is
-        // the Drowned Reach, and Dragonvein Rock is the one place in it the catalog
+        // the Drowned Reach, and The Sounding is the one place in it the catalog
         // calls "the best ground in the province". The same turn told the player
         // the air was dense. Both were true and the sentence made them look like
         // a contradiction, purely by refusing to say which one it was about.

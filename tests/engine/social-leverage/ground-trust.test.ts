@@ -60,7 +60,7 @@ function noAuthority() {
     return reading(
         [
             makeLocation({ id: 'r', name: 'The Drowned Reach', kind: 'region', data: { politics: 'no_authority' } }),
-            makeLocation({ id: 'g', name: 'Bronze Bell Cape', kind: 'settlement', parentId: 'r' })
+            makeLocation({ id: 'g', name: 'Bellhead', kind: 'settlement', parentId: 'r' })
         ],
         'g'
     );

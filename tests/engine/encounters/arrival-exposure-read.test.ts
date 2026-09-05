@@ -23,7 +23,7 @@ import {
 
 const read = (over: Partial<Parameters<typeof theArrivalReadFor>[0]> = {}) =>
     theArrivalReadFor({
-        placeName: 'Dragonvein Rock',
+        placeName: 'The Sounding',
         locatability: 'private',
         heads: 2,
         realmOrdinal: 8,

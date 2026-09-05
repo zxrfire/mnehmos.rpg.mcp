@@ -771,13 +771,14 @@ function applyDemography(
 
         // A place, not the container - and never the container.
         //
-        // Falling back to the region node when a province has nowhere
-        // habitable left looks like a loud last resort and is not one:
-        // sealings and rising thresholds empty a province's habitable list
-        // over centuries, so past a few hundred years EVERY birth there lands
-        // on the container. Measured, people standing on containers fall
-        // 243 -> 14 by year 250 and climb to 265 by year 600 - a normal path
-        // wearing a last resort's label.
+        // This used to fall back to the region node when a province had nowhere
+        // habitable left, described as a loud last resort. It was loud, and it
+        // was also wrong: sealings and rising thresholds empty a province's
+        // habitable list over centuries, so past a few hundred years EVERY birth
+        // in that province landed on its container. Measured, the count of
+        // people standing on containers fell 243 -> 14 by year 250 and then
+        // climbed to 265 by year 600, which is not a last resort firing, it is
+        // the normal path.
         //
         // People are born where people can live. So the province is chosen from
         // the ones that HAVE somewhere, and if nowhere in the world does, then
@@ -1325,20 +1326,20 @@ function reasonSummary(reason: FosteringReason): string {
  *
  * ── A ROTATION, NOT A DRAW ────────────────────────────────────────────────
  *
- * **Never a random draw.** Picking `living / 40` people a year with
- * replacement leaves a seventh of everybody NEVER LOOKED AT over a
- * hundred-year lifespan, and gives nobody a guaranteed look at the age their
- * walk finally clears a rung. That bites hardest at exactly one place: ordinal
- * 12 to 13, where lifespan goes from a hundred years to two hundred. Somebody
- * whose walk would carry them across at ninety, and who is not drawn in their
- * last decade, dies at a hundred in Qi Condensation having been able to cross
- * the whole time - and the rung they missed was the one that buys the years to
- * go further.
+ * This used to pick `living / 40` people at random each year. A draw with
+ * replacement over a hundred-year lifespan leaves a seventh of everybody NEVER
+ * LOOKED AT, and it gives nobody a guaranteed look at the age their walk
+ * finally clears a rung. That bites hardest at exactly one place: ordinal 12 to
+ * 13, where lifespan goes from a hundred years to two hundred. Somebody whose
+ * walk would carry them across at age ninety and who is not drawn in their last
+ * decade dies at a hundred, in Qi Condensation, having been able to cross the
+ * whole time - and the rung they failed to reach was the one that would have
+ * bought them the years to go further.
  *
- * Measured on a live world at three thousand years, a draw put 356 of 492
- * living people BELOW the ordinal the rules already granted them at their own
- * age, ceiling and rank: a distribution produced by a coin rather than by the
- * ladder.
+ * Measured on a live world at three thousand years, before this: 356 of 492
+ * living people were standing BELOW the ordinal the rules already granted them
+ * at their own age, ceiling and rank. The distribution was not being produced by
+ * the ladder, it was being produced by a coin.
  *
  * So the roster is sliced by a stable hash of the id and one slice is walked per
  * year: every living person is reviewed once every `ADVANCEMENT_REVIEW_YEARS`
@@ -2139,10 +2140,11 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
 
         // In reach of the gate, which means the same province.
         //
-        // Not "the seat IS the npc's location, or its direct parent". That
-        // holds only while factions sit on region nodes and everybody stands
-        // on one; with real settlements and real sect grounds the seat is a
-        // SIBLING of the npc's village, and such a filter matches nobody.
+        // This used to accept a seat that WAS the npc's location or its direct
+        // parent. Both of those were true only while factions were seated on
+        // region nodes and everybody was standing on one; with real settlements
+        // and real sect grounds the seat is a sibling of the npc's village, not
+        // its parent, and the filter matched nobody.
         const home = regionOf(state, npc.locationId);
         const options = admitting.filter(f =>
             npc.cultivation.realmOrdinal >= Number(f.resources.admission_ordinal ?? 0) &&
@@ -3514,13 +3516,13 @@ const TEMPLATES: Template[] = [
 
             // ── THE KILLER IS DRAWN FIRST, AND THAT IS THE WHOLE FIX. ──
             //
-            // Drawing the VICTIM uniformly and then looking for somebody who
-            // could do it keeps every individual result plausible - `couldKill`
-            // holds the killer commensurate - and gets the RATE badly wrong: a
-            // Void Refinement cultivator is picked as often as a Qi
-            // Condensation one while having fifty times the span to lose. A
-            // realm's lifespan is the whole of what a high realm buys, and a
-            // uniform victim draw quietly cancels it.
+            // This used to draw the VICTIM uniformly from everybody alive and
+            // then look for somebody who could do it. `couldKill` kept the
+            // killer commensurate, so the result was never absurd - but the
+            // RATE was, because a Void Refinement cultivator was picked as
+            // often as a Qi Condensation one while having fifty times the span
+            // to lose. A realm's lifespan is the whole of what a high realm
+            // buys, and this was quietly cancelling it.
             //
             // Measured over forty centuries on two seeds, residence in a band
             // as a share of that realm's own span:
@@ -3619,12 +3621,12 @@ const TEMPLATES: Template[] = [
         apply(state, day, rng) {
             // ── What is left to be opened ────────────────────────────────
             //
-            // Not the sealed ruins alone: those are a FIXED endowment. The
-            // prior ages seed them, nothing ever makes another, and this
-            // template empties one per firing - so over two thousand years it
-            // fires thirteen times. That is not a weight problem, it is the
-            // stock running out around year four hundred and the template
-            // returning null for the rest of the run.
+            // This used to read the sealed ruins alone, which is a FIXED
+            // endowment: the prior ages seed them, nothing ever makes another,
+            // and the template empties one per firing. Measured over two
+            // thousand years it fired thirteen times, which is not a weight
+            // problem - it is the stock running out around year four hundred
+            // and the template returning null for the rest of the run.
             //
             // The world does keep making places worth going into; it just was
             // not counting them. `faction_fell` leaves a compound standing and

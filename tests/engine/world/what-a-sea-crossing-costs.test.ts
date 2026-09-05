@@ -55,7 +55,7 @@ describe('you cannot stop where you like', () => {
     it('makes a rock in the middle a different lane at the same length', () => {
         // Same days, same weather, and a materially different proposition,
         // because a hull that has passed a landfall is running for that
-        // landfall rather than for where it started. This is why Thousand Sail Harbour
+        // landfall rather than for where it started. This is why Halfwater
         // exists at all and why the eastern passage is the busiest water in
         // the world at twenty-one days while a shorter lane is feared.
         expect(commitDayOf(ROCK_IN_THE_MIDDLE)).toBe(8);

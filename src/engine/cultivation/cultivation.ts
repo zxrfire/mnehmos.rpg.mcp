@@ -886,6 +886,24 @@ export interface CultivationOptions {
      */
     guideOrdinal?: number | null;
     /**
+     * Multiplier from somebody practising the SAME art beside them.
+     *
+     * Named for what it measures and not for who supplies it: a dao
+     * partnership is the one thing that supplies it today, and the channel is
+     * open to any art that `requiresPeople` more than one. The peer-level term
+     * `guideOrdinal` cannot express this and was never meant to - guidance is
+     * worth a great deal from above and nothing at all from a peer, by design,
+     * so somebody at the same rung reads as zero through it. What practising
+     * alongside supplies is not instruction; it is the other half of a
+     * mechanism.
+     *
+     * Who is eligible and what the pairing is worth are decided by
+     * `cultivateWithADaoPartner`
+     * (`engine/social-leverage/an-art-that-needs-two-people.ts`). This field
+     * only carries the answer in. 1 - the default - is practising alone.
+     */
+    sharedPracticeBonus?: number | null;
+    /**
      * The ground under them and who else is drawing on it. Drives crowding and
      * the barren-ground ceiling - see the THE GROUND banner.
      *
@@ -900,7 +918,7 @@ const DEFAULT_OPTIONS: Required<
     Omit<
         CultivationOptions,
         'techniqueElement' | 'techniqueSubject' | 'techniqueCap' | 'techniqueSpan'
-        | 'techniqueQuality' | 'guideOrdinal' | 'ground'
+        | 'techniqueQuality' | 'guideOrdinal' | 'ground' | 'sharedPracticeBonus'
     >
 > = {
     techniqueBonus: 1,
@@ -1047,6 +1065,18 @@ export function computeCultivationRate(
             source: 'focus',
             label: 'Focus',
             multiplier: nonNegative(options.focusMultiplier)
+        },
+        {
+            // The other half of a two-person art, and NOT a second guidance
+            // term - see `sharedPracticeBonus`. 1 for almost everybody in the
+            // world, which is what practising alone means.
+            source: 'shared_practice',
+            label: opts.sharedPracticeBonus === null
+                || opts.sharedPracticeBonus === undefined
+                || opts.sharedPracticeBonus === 1
+                ? 'Practising alone'
+                : 'Practising the same art beside somebody',
+            multiplier: nonNegative(opts.sharedPracticeBonus ?? 1)
         },
         {
             // Soft. Somebody above you is worth a great deal and somebody at or

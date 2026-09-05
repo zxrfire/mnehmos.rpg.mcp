@@ -184,3 +184,40 @@ export function familyStep(text: string, input: string): PlannedAction | null {
 
     return null;
 }
+
+// -------------------------------------------------------------------------
+// AND SITTING AN ART WITH THE PERSON YOU MARRIED
+//
+// A dao partnership is the household layer's own subject seen from the
+// cultivation side, which is why its vocabulary sits here beside the match's
+// rather than in the cultivation block: the words a player says about it are
+// `wife`, `husband`, `partner` - the match's nouns - and the verb they attach
+// to is the ordinary sitting verb.
+// -------------------------------------------------------------------------
+
+/**
+ * Who is sitting the art alongside them, or undefined.
+ *
+ * Two shapes, and the second is why this is a function rather than one
+ * alternation: a player names a person ("with Shen Yuqing") or names the role
+ * ("with my wife"), and a role has to come back as a searchable string the
+ * caller can match a roster row against. The role words come back verbatim
+ * for that reason - resolving `my wife` to a row needs the tie table, which
+ * this layer does not have and must not guess at.
+ *
+ * `with` or `alongside` is REQUIRED. A bare trailing noun on a sitting verb is
+ * a place far more often than a person, and reading "I cultivate in the
+ * eastern cave" as a partner would answer an ordinary request with a refusal
+ * about a marriage.
+ */
+export function whoIsSittingWithThem(input: string): string | undefined {
+    const named =
+        /\b(?:with|alongside|beside|together with)\s+(?:my\s+)?(.{2,60}?)\s*[.!?]?$/i
+            .exec(input);
+    if (!named) return undefined;
+    const who = cleanPlace(named[1]);
+    if (who === undefined || who.length < 2) return undefined;
+    // A partner noun on its own is the answer. Anything else is taken as a
+    // name and handed on for the roster to resolve or refuse by name.
+    return who;
+}

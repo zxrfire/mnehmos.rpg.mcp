@@ -984,7 +984,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'Everybody at the quay explains the port by its rate. The rate is the advertisement. What people are actually buying is the certainty that the transaction ends with them walking away holding money, and almost nobody says that out loud because saying it means admitting what happens everywhere else.'
         },
         practice: 'A price given at the rail is held for the length of a tide and not one hour longer, said aloud, in front of whoever is standing there, and written into the book the same minute. The port has never negotiated in a room.',
-        grievance: 'That the Thousand Treasure Pavilion sends buyers to Thousand Sail Harbour, uses the peace the Rail pays for, and posts its own auction terms on the quay without contributing a stone to the watch.',
+        grievance: 'That the Thousand Treasure Pavilion sends buyers to Halfwater, uses the peace the Rail pays for, and posts its own auction terms on the quay without contributing a stone to the watch.',
         fear: 'Becoming worth taking. Every proposal that would make the port larger is heard by the Factors as a proposal to make it a party, and a party has enemies, and enemies is the one thing the Rail cannot hold forty acres against.',
         lateness: 'Not late at all, and it is the only body in the catalog of which that is true: it inherited nothing, built what it stands in, and has no dark nodes because it has no diagram. Which is also its weakness - there is no ancestor to wake and no gift to spend, so a bad decade ends it.',
         disagreement: 'Whether to open a second anchorage on the northern crossing. The Rail Master says a network is a party and a party gets taken; two Factors say a port that cannot grow is a port waiting for somebody to build a better one.',
@@ -994,7 +994,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         production: {
             reliableOrdinal: 13, currentCount: 34, peakOrdinal: 21, peakCount: 1, yearsSinceLastPeak: 22,
             climbingToward: 17, waitingOn: 'access',
-            note: 'There is no ground under the port, so nobody at Thousand Sail Harbour advances on the air: every rung anybody there has climbed was bought out of a chest, which makes this the only house in the catalog whose production is a straight function of its wage bill. The watch sits at Foundation because that is what the port pays for, and it will sit there until either the rate or the traffic changes.'
+            note: 'There is no ground under the port, so nobody at Halfwater advances on the air: every rung anybody there has climbed was bought out of a chest, which makes this the only house in the catalog whose production is a straight function of its wage bill. The watch sits at Foundation because that is what the port pays for, and it will sit there until either the rate or the traffic changes.'
         },
         distinctSentence: 'Says its price out loud in front of whoever is standing there, holds it for one tide, and has never once revised the book after the fact.'
     },

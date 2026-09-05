@@ -86,7 +86,7 @@ describe('who holds the ground', () => {
             kind: 'region',
             data: { politics: 'no_authority' }
         });
-        const town = place('t', 'Bronze Bell Cape', { parentId: 'r' });
+        const town = place('t', 'Bellhead', { parentId: 'r' });
         const read = whoHoldsTheGround([region, town], 't');
 
         expect(read.holding).toBe('no_authority');

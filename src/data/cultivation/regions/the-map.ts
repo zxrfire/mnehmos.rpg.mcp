@@ -22,7 +22,7 @@
  *                               there is no vein under it, so there is nothing
  *                               in the air. Nobody holds it and nobody can.
  *                               The one exception is forty acres of island in
- *                               the middle of it - see `Thousand Sail Harbour` in the
+ *                               the middle of it - see `Halfwater` in the
  *                               places list - and the exception proves the
  *                               rule, because what makes that island holdable
  *                               is that holding it would make it worthless.

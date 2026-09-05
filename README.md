@@ -47,54 +47,6 @@ npm run play
 Copy `.env.example` to `.env` to see every option. There are no paid tiers, no turn
 limits, and no metering - it is your machine.
 
-### On Windows, with Ollama
-
-`play.ps1` in the project root does the whole thing, and tells you which of the four
-usual problems you have hit rather than failing at the server:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\play.ps1
-```
-
-Windows blocks local scripts by default, which is why that line is spelled out in full.
-To type just `.\play.ps1` from then on, allow your own scripts once:
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
-
-It installs dependencies if they are missing, **fetches the sentence model if it is
-absent** (see below), checks Ollama is answering and that the model you asked for is
-actually pulled — listing what *is* installed when it is not — builds, and opens the
-browser.
-
-```powershell
-.\play.ps1 -Model gemma4:31b -Port 8850   # a different model, a different port
-.\play.ps1 -Admin                         # roster, world map, register, ADMIN verbs
-.\play.ps1 -NoModel                       # the engine narrates; Ollama not needed
-.\play.ps1 -SkipBuild                     # you just built and you are impatient
-```
-
-**It is gitignored**, because ports, model names and database paths are per-machine and a
-committed one becomes somebody else's ports. If it is not in your checkout, the four
-things it does are: `npm install`, `npm run models:fetch`, `npm run build`, then
-`node dist/web/server.js` with `RUNTIME_PROVIDER=ollama`, `OLLAMA_MODEL`,
-`OLLAMA_BASE_URL` and `PORT` set.
-
-### The sentence model, which is not in the repository
-
-The game reads your sentences in tiers, and the last of them is a local embedding model
-that is **fetched, never committed** — it is large, and this is a fork:
-
-```bash
-npm run models:fetch    # ~180 MB, once
-```
-
-Without it everything still runs and plain English reads measurably worse: *"I'll take
-the manual"* stops reaching the verb it means. `play.ps1` fetches it for you. If you
-start the server by hand and see **the sentence model did not open** in the log, this is
-what it wants.
-
 ### Or with Docker
 
 If you would rather containerise it, `docker compose up` brings up the same GUI plus an

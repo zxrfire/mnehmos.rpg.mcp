@@ -176,6 +176,7 @@ engine has always had, that no typed English sentence could reach.**
 | `seal` | six houses holding a sealed ancestor with a written `wakeCondition` and `wakeCost`, the strongest at forty-four | no verb at all |
 | `offer` | `IMMORTAL_CHANNELS`, `MillennialOffering`, `IMMORTAL_MOTIVE` on why an offering buys two words | no verb at all |
 | `news` | the whole world ledger - every ranking, refusal, duel and house opening closed ground the simulation has ever written | four phrasings of "what news is there" deflecting into the `recall` listing, which is an inventory of what the player already held |
+| `craft` | the bill, the slip, the rung gate and the launch in `engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.ts`, live for houses on the yearly world pass, plus the whole player half in [`half-built-craft.ts`](half-built-craft.ts) - complete, tested, and with no importer in `src/` | `refine`'s branch owns the words `make`, `craft`, `cook` and `brew`, so a sentence about a carriage either reached a cauldron listing or fell to `unclear`. The world built spirit boats and the player could not lay a keel |
 
 The `recall` case is the one that says most about how to look for these. It was found by a
 **rank-band sweep** - standing a character at each rung and typing what somebody at that
@@ -740,6 +741,69 @@ first.
 
 ---
 
+### A scene has people in it, and the engine says so rather than asking for it
+
+The prose was dry because there was no person in the prompt. Measured by playing a pinned
+world and printing the phase-3 user message verbatim: three rounds of a fight, two other
+people in the square throughout, and the whole person-content of the prompt was
+*"You are on 36 of 40; Kong Liekuan is on 39 of 43."* Being taken into a house came back as
+*"Taken on by <house>, ranked Skin"* - the most personal event in the setting, with nobody
+in it. **That is a fact about a channel, not about prose**, and no instruction to the
+narrator could have fixed it.
+
+[`scene-person-readings.ts`](scene-person-readings.ts) is the channel and it runs **once at
+the end of every turn**, over everybody standing here, involved or not.
+
+- **It reads no verb, no intent and no cause.** What it reads is *what moved, for whom, as a
+  fraction of what they had*. Being robbed, being given something, being admitted, being
+  refused and watching somebody else be killed are five values of two numbers, and a tenth
+  kind of moment needs no branch.
+- **The engine decides whether somebody speaks; the narrator decides what they say.**
+  `whatThisAsksOfThem` in [`moved-to-speak.ts`](../engine/social-leverage/moved-to-speak.ts)
+  weighs the moment against what answering it would cost - the rung gap, whether their own
+  people are standing there, what is left of them - and returns `aloud`. There is no table
+  of phrases anywhere, and there must not be.
+- **`moved` is SIGNED and the weight is its magnitude.** A gift and a robbery of the same
+  fraction reach the same band and cost the same to answer. The epigraph governs the engine,
+  not the people in it: an implementation with more to say about harm than about generosity
+  has smuggled in a moral weighting, and it would read plausibly every time. A test asserts
+  the two sides have the same band count and the same thresholds.
+- **Silence is an output.** `reticenceOf` is drawn from the person's id alone - present for
+  everybody, stable forever, no seeder pass, uncorrelated with open-handedness - and it
+  multiplies the weight rather than switching anything. Most people say nothing, and the
+  reading says what the not-saying looked like.
+
+Three things it must keep getting right.
+
+**Nobody has to feed it.** The movement is a SNAPSHOT: the square as the turn opens against
+the square as it closes. A verb written next year that empties somebody's purse puts a person
+in the prose without its author knowing this file exists. What a snapshot cannot see the TURN
+reads for itself, in the same place - the fight it is standing in (a bout's damage never
+reaches the roster projection), the person the plan pointed at, and whether anybody who was
+here is now dead. **None of those is a producer channel**, and a `declared` field that verbs
+had to remember would be the defect AGENTS.md names: a verb that forgot is indistinguishable
+from a verb that decided not to.
+
+**A count is not three sentences.** Measured: being admitted in front of three people
+produced three lines word for word identical except for the name. That is the tic the channel
+exists to avoid, and lifting the SPEAKERS out by name did not fix it - two witnesses to a
+killing then gave two sentences identical but for the name, both ending *"They answer it out
+loud."* So somebody this turn touched gets a person's sentence and the room gets one line
+carrying three counts: how many watched, how many of them answered, and how many are of the
+same house as the person it happened to. The third is the one thing that separates one
+watcher from another without inventing any state - read off `sectId` and nothing else - and
+it is what makes a square that answers rather than one that watches. Which of them is yelling
+is not a fact the engine holds, and the counts are the licence to write one of them doing it.
+
+**The discovery gate holds.** A name is printed only where `isAwareOf` allows it, exactly as
+`company()` does. Somebody the player cannot name is a shape at a standing, and they still
+speak: being in the room is permission to see somebody, never to know who they are.
+
+It writes `lines` and `prose` and deliberately not `required`. Both front doors say the same
+thing, and somebody's bearing is not a fact a player cannot play without.
+
+---
+
 ### A run does not open with nobody in it
 
 `seedStartingAwareness` has always given a new cultivator the county. It gave them
@@ -893,6 +957,89 @@ Three things it must keep getting right:
   which is a threat and is a different sentence the parser already labels. Found by playing:
   without it every demand went to the resolver at `leverage: none` and the ruling's first
   half was not being read at all.
+
+### A theft's `topic` is a thing, and it is taken off the field before anything reads it
+
+`interact` carries `topic` for one purpose everywhere else in this package: *the subject
+somebody is being asked about*. `demandOf` and four `askAround` short-circuits all read it
+that way. A theft needs the same field for a different fact - **which of their things is
+being taken** - and the two uses cannot be told apart by any predicate over the string.
+
+So `GameService.interact` moves it off `topic` into a local on the one branch where it
+means something else, at the top, before any of the five readers see it. Guarding five
+branches instead would leave a sixth to be remembered. Measured before the split existed:
+`I steal the spirit boat from Cao Nuolin` was answered by Cao Nuolin turning *"spirit
+boat"* over once and saying something true about the weather, and the taking never ran.
+
+Three things this feeds, and none of them is new machinery:
+
+| | |
+|---|---|
+| [`object-theft.ts`](object-theft.ts) | which of their things is within reach, and moving it. Possession, never ownership; and the **mooring follows the thing**, because a hull whose possessor moved and whose `mooredAt` did not says it is at its owner's dock and in the thief's hands at once |
+| `whatALiftTook` | one act, one thing. A theft that names something of theirs takes that and leaves the purse; a theft that names nothing takes the purse exactly as it always did |
+| the reprisal and the ledger | untouched. `resolveAttempt` says whether it landed, `whatTheyDoAboutBeingWronged` says what they do, `createObligation` writes one row. What the object adds is a third reading of the severity - `howBadlyThisIsMissed`, off the row's own `significance` - joining the existing heavier-stands comparison rather than replacing it |
+
+**A moored craft was invisible to every possession query in the engine**, which is why the
+coercion sweep takes a beaten person's sword and leaves their boat at the dock. `mintCraft`
+sets `possessorId: null` forever and records the place in `data.mooredAt`. That invariant
+was upheld by nobody ever setting the field; a theft sets it, so `bestObjectHeldBy` in
+`engine/world/gatherings.ts` now skips a `conveyance` tag rather than relying on the
+absence. Nothing in any existing world changes: no row carries both that tag and a
+possessor today.
+
+### A taking is decided by ownership, not by vocabulary
+
+> Saying "take" about something that is not yours - and is not genuinely free, like an
+> apple in the middle of nowhere - is stealing.
+
+The row above recognises a theft by the words in it, which is correct for the words in it.
+This is the class where there are none. Measured on this table:
+
+| said | reached | should have |
+|---|---|---|
+| "I relieve him of his purse" | `unclear` | a taking |
+| "I collect what I am owed from his rooms" | `sect` | a taking |
+| "I pick up the manual on my way out" | `learn_technique` | a taking |
+| "I help myself to what is on the rack" | `site` | a taking |
+| "I take my own sword" | `unclear` | nothing; it is already in your hands |
+
+Against a model the same corpus came back worse in a different direction - *"I relieve him
+of his purse"* reached **`give`**, which is the worst thing this layer can produce: the
+player tried to rob somebody and the engine was told they handed something over.
+`narrator.ts` guards a model against exactly that inversion and says why; this was it
+running the other way, through the deterministic table where nothing was watching.
+
+**No vocabulary fix works and none was attempted.** "Take", "collect", "pick up" and "help
+myself" are the ordinary words for handling your own possessions and have to keep working
+when the thing IS yours; enumerating polite theft verbs is a treadmill whose class stays
+open. So the reader recognises only that a taking was said
+([`whatATakingNames`](verb-pattern-table.ts)) and routes it to
+[`a-taking-is-decided-by-ownership.ts`](a-taking-is-decided-by-ownership.ts) with
+`intent: 'take'`, which asserts nothing.
+
+| state | what happens |
+|---|---|
+| **yours** | nothing. A free action that says it is already in your hands, no day, no row moved |
+| **theirs** | `GameService.interact` rewrites the intent to `steal` at the top and everything below is the existing theft path, untouched. There is one theft rule and this is not a second one |
+| **nobody's** | a find. A tracked row nobody holds and nobody owns, standing where you are, moves on `how: 'found'`; possession moves and ownership does not, so the provenance says where it was picked up |
+
+**The order of evidence is the design.** Rows first, sentence second: a row is a fact and a
+possessive is a claim, so somebody who says "his sword" over a sword they are holding is
+holding their own. The sentence is read for one enum - `mine` / `somebody-elses` / `unsaid`
+- and only where the world has no row to answer with, which is what a purse is. Even then
+it supplies *somebody else's* and never who; who is whoever the world says is here, which
+is what `interact` with no target has always meant.
+
+**And nothing here reads as moral.** A taking that reaches no row is told there is nothing
+of that description belonging to anybody standing here, with what there is named beside it.
+That is the record, not a permission.
+
+**What it defers to, by name rather than by ordering.** The taking row runs above the sect
+and site steps because both were eating one of the measured sentences, which puts it above
+five rows that own a portable-thing noun: the pill branch, the site prize, `RIDING`,
+`OFFERING_TO_BUY`, the house's own shelf, and the theft row itself. Each is vetoed
+explicitly, and the theft row keeps every sentence it already read - the gap being fixed is
+the demonstrated one.
 
 ### `recall` resolves against the holder, never against the world
 
@@ -1672,7 +1819,7 @@ the world there is no such place, so it is the best-connected root, **named in e
 heading** - an unlabelled origin makes every distance on the page unreadable.
 `cultivator.location` is free text by design (see `schema/cultivation.ts`) and is used as
 the origin only on an exact name match to a place that has at least one link. That guard
-was added after a live world matched `Sixmile`, a settlement holding no links, and reported
+was added after a live world matched `Six Li`, a settlement holding no links, and reported
 every distance in the world as "no route".
 
 ### Where the cultivator is standing is not where distances start
@@ -1927,6 +2074,8 @@ verb](telling-a-wrong.ts).
 - [`standing.ts`](standing.ts) - who is entitled to commit a house, and what the refusal says
 - [`pending-summons.ts`](pending-summons.ts) - the ask a house has left standing, and what saying no to it costs before you say it
 - [`house-property-theft.ts`](house-property-theft.ts) - taking a thing your own house owns, and why possession moves while ownership does not
+- [`object-theft.ts`](object-theft.ts) - taking one named thing off somebody who is not your own house, and why a moored craft was out of reach of every possession query in the engine
+- [`craft-verbs.ts`](craft-verbs.ts) - the joint between the player's sentence and the bill of materials, and where a launched craft becomes a row
 - [`register.ts`](register.ts) - the standing register, and the only place to change it
 - [`places.ts`](places.ts) - the world map view, and the rule against inventing geography
 - [`ground-that-teaches-a-road.ts`](ground-that-teaches-a-road.ts) - dao ground as a player meets it, and what a ground that will not teach says instead

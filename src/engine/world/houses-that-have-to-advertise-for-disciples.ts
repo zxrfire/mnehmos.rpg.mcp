@@ -48,7 +48,7 @@
  * Live rosters, five seeds, 586 NPCs each:
  *
  *     Hollow Bell Wanderers   bar 0, power 20   19.6 members   LARGEST roster
- *     The Thousand Sail Harbour Rail      bar 0, power 21   14.0
+ *     The Halfwater Rail      bar 0, power 21   14.0
  *     The Weir Office         bar 2, power 21   14.8
  *     ...
  *     The Longbough Grove     bar 13, power 27   4.0           SMALLEST roster

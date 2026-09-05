@@ -33,6 +33,7 @@
 
 import { combatPowerForOrdinal } from '../engine/cultivation/combat.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
+import { insightName, integrateInsight } from '../engine/cultivation/understanding.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
@@ -43,9 +44,17 @@ import {
 } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
-import type { AmbientQi, Cultivator, Run, TimeSkipResult } from '../schema/cultivation.js';
+import type {
+    AmbientQi,
+    Cultivator,
+    InsightDomain,
+    Run,
+    TimeSkipResult
+} from '../schema/cultivation.js';
 import {
+    type CultivationRepos,
     isGuidingErrorBody,
+    persistUnderstanding,
     tollConditionsFor
 } from '../server/consolidated/cultivation-support.js';
 import { copiesHeldBy, handleListAvailable } from '../server/consolidated/technique-manage.js';
@@ -135,6 +144,55 @@ export function doorScaleOverStretch(
     return hidden ? throughTheDoor * concealmentScale(setByOrdinal) : throughTheDoor;
 }
 
+/**
+ * The comprehension a dao partner further along the road hands over.
+ *
+ * Written through `integrateInsight` and `persistUnderstanding` and not by
+ * touching the insight array: those two are the one place a comprehension is
+ * formed and the one place it is saved, and the keying by (domain, subject) is
+ * what makes a second sitting on the same road a DEEPENING rather than a
+ * duplicate. So a partnership that lasts years walks somebody up one road
+ * instead of handing them the same glimpse repeatedly.
+ *
+ * `'teacher'` access and `'extraordinary_instruction'`, which is the existing
+ * kind for being taught by somebody who did not have to. Returns the sentence
+ * to print, or null where the road was already carried as far as it goes -
+ * nothing was granted in that case and nothing should be claimed.
+ */
+function grantAnInsightFromAPartner(
+    repos: CultivationRepos,
+    cultivator: Cultivator,
+    road: { subject: string; domain: InsightDomain },
+    partnerName: string
+): string | null {
+    const achievement = {
+        id: `dao-partner-${cultivator.id}-${road.domain}-${road.subject}-${Math.floor(cultivator.age)}`,
+        kind: 'extraordinary_instruction' as const,
+        onDay: 0,
+        turn: 0,
+        summary: `Sat the same art with ${partnerName}, who is further along the same road.`,
+        detail: { partner: partnerName, subject: road.subject }
+    };
+    const taken = integrateInsight(cultivator.insights ?? [], {
+        domain: road.domain,
+        subject: road.subject,
+        access: { kind: 'teacher', label: partnerName },
+        opening: `sitting the same art beside ${partnerName}, who has been further down it`
+    }, achievement);
+
+    // Already as far down this road as the degrees go. Nothing was granted, so
+    // nothing is written and nothing is said.
+    if (!taken.deepened && (cultivator.insights ?? []).some(
+        i => i.domain === road.domain && i.subject === road.subject
+    )) {
+        return null;
+    }
+
+    persistUnderstanding(repos, cultivator.id, [taken.insight], [achievement]);
+    return `And something on the road came clear that had not been: ${insightName(taken.insight)}, `
+        + `off ${partnerName}, who had already passed the place you were standing.`;
+}
+
 export const seclusionVerbs = {
     /**
      * Cultivating, provisioned out of the purse.
@@ -170,6 +228,31 @@ export const seclusionVerbs = {
              * sentence saying what the player committed to.
              */
             resuming?: SeclusionCrossroads;
+            /**
+             * The dao partner sitting the same art beside them for the whole
+             * stretch.
+             *
+             * Set only by `cultivateWithYourDaoPartner`, which is the one
+             * place that establishes a partnership - married, on one roll,
+             * walking one dao, and the art able to work between them. Nothing
+             * here rechecks any of that.
+             *
+             * `bonusDays` is what `cultivateWithADaoPartner` returned for the
+             * PLAYER and `theirBonusDays` what it returned for the partner;
+             * the two differ whenever one of them is behind the other, which
+             * is the point of the mechanic. This method's only job with either
+             * is to turn a flat day figure into the rate term that spends it
+             * over the span actually lived - the stretch is not lengthened by
+             * having company. `insight` is non-null only where the draw landed
+             * and the player is the one who was behind.
+             */
+            daoPartner?: {
+                id: string;
+                name: string;
+                bonusDays: number;
+                theirBonusDays: number;
+                insight: { subject: string; domain: InsightDomain } | null;
+            };
         } = {}
     ): Promise<Execution> {
         const sealed = options.sealed ?? false;
@@ -260,7 +343,15 @@ export const seclusionVerbs = {
             options: {
                 focusMultiplier: 1,
                 ...terms,
-                ground: this.groundFor(provisioned)
+                ground: this.groundFor(provisioned),
+                // The flat day figure the pure function returned, spent over
+                // the span actually lived. `lived` and not `days`: a stretch a
+                // wound cut short at day four did not get thirty days of
+                // company out of it, and dividing by what was asked for would
+                // pay a bonus for years nobody sat.
+                ...(options.daoPartner && lived > 0
+                    ? { sharedPracticeBonus: 1 + options.daoPartner.bonusDays / lived }
+                    : {})
             },
             understanding: this.understandingFor(run, provisioned),
             techniqueElement: null,
@@ -384,6 +475,50 @@ export const seclusionVerbs = {
         // A purse being spent is the definition of a fact a player cannot play
         // without, so it takes the same treatment `method_ceiling` already has.
         (facts.required ??= []).push(provisioning.line);
+
+        // ── AND WHO WAS SITTING THERE WITH THEM ──────────────────────────
+        //
+        // Required for the same reason the purse is: most of what a dao partner
+        // is worth is a rate term, and a rate term nobody prints is a rate term
+        // nobody has. The sentences say what it bought and decide none of it -
+        // `sharedPracticeBonus` above and `cultivateWithADaoPartner` before it already
+        // did.
+        //
+        // BOTH figures, because they are routinely different and the difference
+        // is the mechanic. A player who is the one behind should be able to see
+        // that they got the larger share, and a player who is the one ahead
+        // should be able to see that they did not - otherwise the reason to
+        // take a partner from lower down the ladder is invisible from either
+        // side of it.
+        if (options.daoPartner) {
+            const partner = options.daoPartner;
+            const days_ = (n: number) => `${n} day${n === 1 ? '' : 's'}' progress`;
+            facts.lines.unshift(
+                `${partner.name} sat the same art beside you for the whole stretch. You came out `
+                + `${days_(partner.bonusDays)} ahead of where you would have alone`
+                + (partner.theirBonusDays === partner.bonusDays
+                    ? ', and so did they.'
+                    : `, and they came out ${days_(partner.theirBonusDays)} ahead of theirs - `
+                      + 'whichever of you is further back on the road takes the larger share of '
+                      + 'it.')
+            );
+            facts.required.push(facts.lines[0]);
+
+            // The other half of what a partner further along is worth, and the
+            // half that is not a rate. Written to the row here rather than
+            // returned, because `applyTimeSkip` has already saved the stretch
+            // and an insight granted after it is an insight the next turn can
+            // see.
+            if (partner.insight) {
+                const took = grantAnInsightFromAPartner(
+                    this.repos, applied.cultivator, partner.insight, partner.name
+                );
+                if (took !== null) {
+                    facts.lines.unshift(took);
+                    facts.required.push(took);
+                }
+            }
+        }
 
         // ── AND ANYTHING THAT STOPPED THE STRETCH ────────────────────────
         //

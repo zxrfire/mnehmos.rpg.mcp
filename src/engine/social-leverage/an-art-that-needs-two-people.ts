@@ -1,20 +1,15 @@
 /**
- * An art that cannot be practised alone, and what it does to everybody in it.
+ * An art that cannot be practised alone, and what it does to both people.
  *
  * `requiresPeople` and `runsOn` are the two fields that say what such an art
  * is, and between them they carve out the two roads this file resolves:
  *
- *     runsOn: 'the_others'    a DRAIN. One person draws, and the others supply
- *                             the qi and gain nothing. The genre's furnace.
- *     runsOn: 'everyone'      a PARTNERSHIP. Everybody in the room supplies it
- *                             and everybody in the room gains.
- *
- * **`requiresPeople` is a COUNT, and nothing here is written for two.** A rite
- * worked on four is the same statement as a rite worked on one with a different
- * number in it: {@link FurnaceUseInput.subjects} is a list, every draw is per
- * person, and a pair is a list of length one rather than a case with its own
- * code path. The moment a two-branch appears here, the count has stopped being
- * a count.
+ *     requiresPeople: 2, runsOn: 'the_others'    a DRAIN. The second person
+ *                                                supplies the qi and gains
+ *                                                nothing. The genre's furnace.
+ *     requiresPeople: 2, runsOn: 'everyone'      a PARTNERSHIP. Everybody in
+ *                                                the room supplies it and
+ *                                                everybody in the room gains.
  *
  * Both live here rather than in two files, because they share the one
  * eligibility test and because the contrast is the design: a reader who finds
@@ -24,7 +19,9 @@
  * `.runsOn` - so an array worked by nine is the same statement with a
  * different number in it and needs no new axis.
  *
- * ── WHO AN ART OF THIS KIND CAN WORK BETWEEN ────────────────────────────
+ * ═══════════════════════════════════════════════════════════════════════════
+ * WHO AN ART OF THIS KIND CAN WORK BETWEEN
+ * ═══════════════════════════════════════════════════════════════════════════
  *
  * `requiresPeople` says how many, and the CATEGORY says whether it matters who.
  * The two are separate axes and the separation is load-bearing: an art of
@@ -55,14 +52,16 @@
  * own house, the ground it happened on - and that is ordinary witness-based
  * concealment, the same as any other deed.
  *
- * ── WHETHER ANYBODY AGREED IS NOT DECIDED HERE ──────────────────────────
+ * ═══════════════════════════════════════════════════════════════════════════
+ * CONSENT IS NOT DECIDED HERE
+ * ═══════════════════════════════════════════════════════════════════════════
  *
  * Whether the subject agreed, or was forced and could not stop it, is settled
  * before {@link useAFurnaceTechnique} is called - by ordinary agreement between
  * two players, or by a combat resolution that ended in `goal: 'coerce'`
  * reaching `submission` (`engine/cultivation/combat.ts`). That module owns "was
  * somebody made to" and there must not be a second answer to it living here.
- * {@link FurnaceUseInput.type} is a report of what already happened,
+ * `consent` on {@link FurnaceUseInput} is a report of what already happened,
  * not a roll - and `sameHouse` and `married` on
  * {@link DaoPartnershipInput} are reported for the same reason.
  *
@@ -79,7 +78,9 @@
  * mechanism that already exists for exactly this reason rather than a second
  * one built beside it.
  *
- * ── CONCEPTION, AND WHAT IT DELIBERATELY DOES NOT DO ────────────────────
+ * ═══════════════════════════════════════════════════════════════════════════
+ * CONCEPTION, AND WHAT IT DELIBERATELY DOES NOT DO
+ * ═══════════════════════════════════════════════════════════════════════════
  *
  * `conceived` is a single roll on a caller-owned stream, matching
  * `rollSpiritRoot`'s convention: the caller passes a `[0,1)` sample rather
@@ -89,8 +90,8 @@
  * conceived exactly as any other child in this world is: as a fact the caller
  * carries forward into `birth.ts` and `lineage.ts` on its own timeline. What
  * this file hands back is only the one bit those layers need to know to start -
- * that this act, between the actor and this person, on this day, is where it
- * began - and {@link DaoPartnershipResult.insight} is handed back on the same contract
+ * that this act, between these two people, on this day, is where it began -
+ * and {@link DaoPartnershipResult.insight} is handed back on the same contract
  * for the same reason.
  */
 
@@ -117,36 +118,23 @@ import type { ObligationInput } from '../social/grudges.js';
 export const worksBetween: (a: Sex, b: Sex) => boolean = canBeTheTwoParentsOf;
 
 /**
- * What kind of use this was. Reported, not rolled - see the header.
+ * How the use came about. Reported, not rolled - see the header.
  *
- * `offered` covers any use everybody agreed to, whatever each of them wanted
- * out of it. `coerced` is used only once a `submission` has been reached
- * elsewhere; nothing here checks that it was.
- *
- * Named for the KIND of thing that happened rather than for whether somebody
- * agreed: the genre's word for this is a furnace, and a house that teaches the
- * rite is choosing between two rites, not filling in a form.
+ * `offered` covers any use both parties agreed to, regardless of what either
+ * of them wanted from it. `coerced` is used only once a `submission` has
+ * already been reached elsewhere; nothing here checks that it was.
  */
-export type FurnaceUseType = 'offered' | 'coerced';
+export type FurnaceConsent = 'offered' | 'coerced';
 
-/** The one drawing. */
-export interface TheOneDrawing {
-    personId: string;
-    name: string;
-    sex: Sex;
-}
-
-/**
- * One person being drawn off, with the two draws that belong to them.
- *
- * The samples are per PERSON rather than per use, because each of them is a
- * separate body: two furnaces in one rite conceive or die independently, and
- * one shared sample would make them a single coin flip wearing two names.
- */
-export interface OneBeingDrawnOff {
-    personId: string;
-    name: string;
-    sex: Sex;
+export interface FurnaceUseInput {
+    actorId: string;
+    actorName: string;
+    actorSex: Sex;
+    subjectId: string;
+    subjectName: string;
+    subjectSex: Sex;
+    onDay: DayIndex;
+    consent: FurnaceConsent;
     /**
      * `[0,1)`. Caller-owned stream, matching `rollSpiritRoot`'s convention -
      * give conception its own named draw so it never shifts anything else
@@ -155,25 +143,10 @@ export interface OneBeingDrawnOff {
     conceptionSample: number;
     /**
      * `[0,1)`. Its own named draw, exactly as `conceptionSample` is - read
-     * only when the use is `coerced`, so a caller resolving a willing use may
-     * pass any finite number and it is never touched.
+     * only when `consent === 'coerced'`, so a caller resolving a willing use
+     * may pass any finite number and it is never touched.
      */
     deathSample: number;
-}
-
-/**
- * One actor, and everybody the rite is worked on.
- *
- * `subjects` is a list because `requiresPeople` is a COUNT: an art worked by
- * nine is the same statement as an art worked by two with a different number
- * in it, and the header says so. A two-person rite is a one-element list and
- * behaves exactly as it did.
- */
-export interface FurnaceUseInput {
-    actor: TheOneDrawing;
-    subjects: readonly OneBeingDrawnOff[];
-    onDay: DayIndex;
-    type: FurnaceUseType;
 }
 
 /**
@@ -220,167 +193,111 @@ export const FURNACE_DAYS_STOLEN_COERCED = 150;
  */
 export const FURNACE_COERCED_DEATH_CHANCE = 0.1;
 
-/** What the rite did to one of the people it was worked on. */
-export interface WhatItDidToOneOfThem {
-    personId: string;
-    name: string;
-    /** False when the art cannot work between this person and the actor. */
-    eligible: boolean;
-    /** Rolled only where `eligible`. */
-    conceived: boolean;
-    /** Always false on a willing use - see {@link FURNACE_COERCED_DEATH_CHANCE}. */
-    died: boolean;
-}
-
 export interface FurnaceUseResult {
-    /** True when the art answers between the actor and at least one subject. */
+    /** False when the art could not work between these two on sex alone. */
     eligible: boolean;
-    /** True when the art fired on anybody. False whenever `eligible` is false. */
+    /** True when the art actually fired. False whenever `eligible` is false. */
     happened: boolean;
+    /** Rolled only when `happened`. Always false otherwise. */
+    conceived: boolean;
     /**
-     * One row per subject, in the order they were given, INCLUDING the ones
-     * the art could not work on.
-     *
-     * A caller resolving a two-person rite reads `each[0]`. A caller resolving
-     * nine reads nine rows, and the ones it could not work on are present and
-     * say so rather than being silently absent - a missing row and a refused
-     * one are different facts, and a list that drops the refusals cannot be
-     * counted against the list that was handed in.
-     */
-    each: readonly WhatItDidToOneOfThem[];
-    /**
-     * Total days of cultivation this use moves, at the ACTOR's own rate,
-     * summed over everybody it worked on.
-     *
-     * The caller adds this to the actor and subtracts each subject's own share
-     * from that subject - which is `daysStolen / the number it worked on`, and
-     * is why `each` carries the eligibility: the divisor is the people it
-     * actually drew from, not the people who were standing there.
+     * Days of cultivation this use moves, at the ACTOR's own rate. Zero
+     * unless `happened`. The caller passes it to `accrueProgress` twice -
+     * once as a gain for the actor, once as a loss (negated) for the subject,
+     * both against the actor's rate, because that is whose rate the technique
+     * runs at. This file computes only the day figure, never the qi.
      */
     daysStolen: number;
     /**
-     * The grudges this use opens, one per coerced subject it worked on.
-     *
-     * Empty on a willing use. The caller writes them to each subject's
-     * obligation ledger; nothing here touches state. Still written for
-     * somebody who died - a killing is exactly the case `grudges.ts`'
-     * inheritance machinery exists for, and the account simply opens with
-     * nobody left alive to hold it in person.
+     * True when the draw killed the subject. Always false on a willing use -
+     * see {@link FURNACE_COERCED_DEATH_CHANCE}. The caller runs the ordinary
+     * death pipeline (`engine/world/legacy.ts`) when this is true; this file
+     * does not touch state and does not remove anybody from the world.
      */
-    grudges: readonly ObligationInput[];
+    subjectDied: boolean;
+    /**
+     * The grudge this use opens, or null.
+     *
+     * Non-null exactly when `consent === 'coerced'` and `happened`. The
+     * caller writes it to the subject's obligation ledger; nothing here
+     * touches state. Still written when `subjectDied` - a killing is exactly
+     * the case `grudges.ts`' inheritance machinery exists for, and the account
+     * simply opens with nobody left alive to hold it in person.
+     */
+    grudge: ObligationInput | null;
     /** Engine truth, one line. Never narration. */
     line: string;
 }
 
 /**
- * Work a furnace technique, on however many people it takes.
+ * Use a furnace technique between two people.
  *
- * Pure: the people and a day in, a decision out. The caller is the one holding
- * the world - it writes the grudges, applies `daysStolen` to the actor and its
- * share to each subject, runs the death pipeline for anybody who `died`, and
- * decides what a `conceived` becomes in `birth.ts` and `lineage.ts`.
+ * Pure: two people and a day in, a decision out. The caller is the one
+ * holding the world - it writes the grudge, applies `daysStolen` to both
+ * cultivators' progress, runs the death pipeline where `subjectDied`, and
+ * decides what a `conceived` result becomes in `birth.ts` and `lineage.ts`.
  */
 export function useAFurnaceTechnique(input: FurnaceUseInput): FurnaceUseResult {
-    const coerced = input.type === 'coerced';
-
-    // Eligibility is PER PERSON, because the art answers between the actor and
-    // each of them separately. A rite worked on four where it answers between
-    // three of them is three-quarters of a rite, not a refusal: the alternative
-    // is that one ineligible body in a circle silently voids the whole thing,
-    // which is a rule nobody wrote and nobody could see.
-    const each: WhatItDidToOneOfThem[] = input.subjects.map(who => {
-        const eligible = worksBetween(input.actor.sex, who.sex);
-        const died = eligible && coerced && who.deathSample < FURNACE_COERCED_DEATH_CHANCE;
-        return {
-            personId: who.personId,
-            name: who.name,
-            eligible,
-            // Somebody who did not survive the draw was not left carrying
-            // anything. Conception is a fact about a body that lived past it.
-            conceived: eligible && !died && who.conceptionSample < FURNACE_CONCEPTION_CHANCE,
-            died
-        };
-    });
-
-    const worked = each.filter(row => row.eligible);
-    const perPerson = coerced ? FURNACE_DAYS_STOLEN_COERCED : FURNACE_DAYS_STOLEN_WILLING;
-
-    if (worked.length === 0) {
+    const eligible = worksBetween(input.actorSex, input.subjectSex);
+    if (!eligible) {
         return {
             eligible: false,
             happened: false,
-            each,
+            conceived: false,
             daysStolen: 0,
-            grudges: [],
-            line: input.subjects.length === 1
-                ? 'The art does not answer between the two of them. Nothing happened.'
-                : 'The art answers between the actor and none of them. Nothing happened.'
+            subjectDied: false,
+            grudge: null,
+            line: 'The art does not answer between the two of them. Nothing happened.'
         };
     }
 
-    const grudges: ObligationInput[] = coerced
-        ? worked.map(row => ({
-            kind: 'grudge' as const,
-            holderId: row.personId,
-            subjectId: input.actor.personId,
-            cause: 'violated' as const,
-            severity: 'unforgivable' as const,
-            onDay: input.onDay,
-            description: row.died
-                ? `${input.actor.name} used ${row.name} as a furnace by force, and it killed them.`
-                : `${input.actor.name} used ${row.name} as a furnace by force.`,
-            participants: [input.actor.personId, row.personId],
-            tags: ['furnace', 'coerced', ...(row.died ? ['killed'] : [])]
-        }))
-        : [];
+    const conceived = input.conceptionSample < FURNACE_CONCEPTION_CHANCE;
+
+    if (input.consent === 'offered') {
+        return {
+            eligible: true,
+            happened: true,
+            conceived,
+            daysStolen: FURNACE_DAYS_STOLEN_WILLING,
+            subjectDied: false,
+            grudge: null,
+            line: conceived
+                ? `${input.subjectName} was the furnace, willingly, and it took.`
+                : `${input.subjectName} was the furnace, willingly.`
+        };
+    }
+
+    const subjectDied = input.deathSample < FURNACE_COERCED_DEATH_CHANCE;
+
+    const grudge: ObligationInput = {
+        kind: 'grudge',
+        holderId: input.subjectId,
+        subjectId: input.actorId,
+        cause: 'violated',
+        severity: 'unforgivable',
+        onDay: input.onDay,
+        description: subjectDied
+            ? `${input.actorName} used ${input.subjectName} as a furnace by force, and it killed them.`
+            : `${input.actorName} used ${input.subjectName} as a furnace by force.`,
+        participants: [input.actorId, input.subjectId],
+        tags: ['furnace', 'coerced', ...(subjectDied ? ['killed'] : [])]
+    };
 
     return {
         eligible: true,
         happened: true,
-        each,
-        daysStolen: perPerson * worked.length,
-        grudges,
-        line: theLineFor(input, worked)
+        // A furnace who did not survive the draw was not left carrying
+        // anything. Conception is a fact about a body that lived past it.
+        conceived: subjectDied ? false : conceived,
+        daysStolen: FURNACE_DAYS_STOLEN_COERCED,
+        subjectDied,
+        grudge,
+        line: subjectDied
+            ? `${input.actorName} forced it on ${input.subjectName}, and it killed them.`
+            : conceived
+                ? `${input.actorName} forced it on ${input.subjectName}, and it took.`
+                : `${input.actorName} forced it on ${input.subjectName}.`
     };
-}
-
-/**
- * One sentence of engine truth about a rite worked on any number of people.
- *
- * Split out because the two-person wording is the one a reader meets almost
- * always and it must not read like a report about a list. One subject gets a
- * sentence about a person; more than one gets a sentence about a count.
- */
-function theLineFor(
-    input: FurnaceUseInput,
-    worked: readonly WhatItDidToOneOfThem[]
-): string {
-    const dead = worked.filter(row => row.died).length;
-    const took = worked.filter(row => row.conceived).length;
-    const forced = input.type === 'coerced';
-
-    if (worked.length === 1) {
-        const who = worked[0];
-        if (!forced) {
-            return who.conceived
-                ? `${who.name} was the furnace, willingly, and it took.`
-                : `${who.name} was the furnace, willingly.`;
-        }
-        if (who.died) return `${input.actor.name} forced it on ${who.name}, and it killed them.`;
-        return who.conceived
-            ? `${input.actor.name} forced it on ${who.name}, and it took.`
-            : `${input.actor.name} forced it on ${who.name}.`;
-    }
-
-    const many = `${worked.length} of them`;
-    if (!forced) {
-        return took === 0
-            ? `${many} were the furnace, willingly.`
-            : `${many} were the furnace, willingly, and it took on ${took}.`;
-    }
-    const killed = dead === 0 ? '' : ` It killed ${dead}.`;
-    const conceived = took === 0 ? '' : ` It took on ${took}.`;
-    return `${input.actor.name} forced it on ${many}.${killed}${conceived}`;
 }
 
 
@@ -408,7 +325,7 @@ function theLineFor(
  *
  * None of the three is decided here. `sameHouse` and `married` are reported by
  * the caller off the roster and the tie table, in the same way {@link
- * FurnaceUseType} is reported rather than rolled; the dao is compared here,
+ * FurnaceConsent} is reported rather than rolled; the dao is compared here,
  * because comparing two dao is a structural question about a pair and
  * `daoDistance` is the one function that answers it.
  *
