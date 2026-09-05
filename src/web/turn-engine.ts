@@ -576,6 +576,10 @@ import type { LocationRecord } from '../engine/world/locations.js';
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX } from '../engine/world/qi-scale.js';
 import { whatDidNotHappen } from './unresolved-attempt-denials.js';
 import {
+    theDescriptionThisIs,
+    whoTheDescriptionFits
+} from './a-target-can-be-a-description.js';
+import {
     factsForEat,
     factsForGather,
     factsForInteraction,
@@ -10553,8 +10557,65 @@ ${fit.line}`;
 
     somebodyAtHand(query: string, cultivator: Cultivator): RosterEntry | null {
         const wanted = query.trim();
-        if (!POINTING.test(wanted)) return null;
         const here = this.present(cultivator);
+
+        // A TARGET IS A DESCRIPTION, AND EVERY VERB THAT TAKES ONE GETS IT HERE.
+        //
+        // Asked before POINTING because POINTING is a LIST OF NOUNS and this is
+        // the general question. "the youngest girl", "the oldest man", "you,
+        // void refinement cultivator" are on no list and never will be, and the
+        // design owner's point about them is that the verb is beside the point:
+        // *and replace kill with other verb too*.
+        //
+        // A pronoun is excluded because it is an anaphor and not a description -
+        // see the branch below, which is the one place "her" may be answered.
+        const described = A_PRONOUN_FOR_SOMEBODY_ALREADY_NAMED.test(wanted)
+            ? null
+            : theDescriptionThisIs(wanted);
+        if (described) {
+            const narrowed = described.sex !== null || described.rank !== null
+                || described.alignment !== null || described.realmKey !== null
+                || described.standing !== null || described.sameHouse
+                || described.tie !== null;
+            // An ordering with nothing narrowed is what `whoTheNearestFaceIs`
+            // already answers, and it answers it better: it prefers a face the
+            // player can put a name to. One reading of "nearest", not two.
+            if (!narrowed && described.end === 'nearest') {
+                return this.whoTheNearestFaceIs(cultivator, here);
+            }
+            const mine = positionIn(this.repos, cultivator.id);
+            const fits = whoTheDescriptionFits({
+                description: described,
+                candidates: here,
+                observer: {
+                    ordinal: cultivator.realmOrdinal,
+                    sectId: mine?.sectId ?? null,
+                    rankIndex: mine?.rankIndex ?? null
+                },
+                alignmentOf: sectId =>
+                    sectId ? this.repos.sects.getById(sectId)?.alignment ?? null : null,
+                rankIndexOf: (sectId, rankTitle) => {
+                    if (!sectId || !rankTitle) return null;
+                    const at = this.repos.sects.getById(sectId)?.ranks
+                        .findIndex(rung => rung.toLowerCase() === rankTitle.toLowerCase());
+                    return at === undefined || at < 0 ? null : at;
+                },
+                tiesTo: id => (this.atHand?.npcs ?? [])
+                    .find(npc => npc.id === cultivator.id)?.relationships
+                    .filter(tie => tie.targetId === id)
+                    .map(tie => tie.kind)
+                    ?? []
+            });
+            if (fits.length > 0) {
+                return here.find(row => row.id === fits[0].id) ?? null;
+            }
+            // A description that fits nobody standing here is an ANSWER. Falling
+            // through would hand back the last of the crowd order, which is the
+            // silent retarget `acts-over-a-set.ts` measured on a set.
+            if (narrowed) return null;
+        }
+
+        if (!POINTING.test(wanted)) return null;
 
         // A pronoun is an ANAPHOR and never a description. See
         // `A_PRONOUN_FOR_SOMEBODY_ALREADY_NAMED`: the only person "her" can

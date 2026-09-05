@@ -499,12 +499,57 @@ The design owner: **you should be able to join one and lead one**, and it should
 the sect mechanic or of marriage rather than being a fourth kind of grouping. You go to
 ruins, or elsewhere, together.
 
-What that would reuse: membership and rank already say who answers to whom; a match already
-binds two people; `convergence.ts` already makes a ruin a place that is only periodically
-reachable, and the far rooms are out of reach of anybody who intends to walk out - which is
-the clearest reason in the setting to bring somebody. `requiresPeople` is already on the
-technique rows for the same reason.
+**A party has no required size.** The design owner: *"the party mechanic doesn't REQUIRE 2,
+you can have a bunch of single dudes."* It is not the paired-art mechanic with a different
+name - `requiresPeople: 2` says a particular RITE needs a partner, and a party is just who is
+travelling with you: one person, or six unattached ones, or a married pair and four
+strangers. Do not put a floor on it and do not derive it from a bond.
+
+What it would reuse: membership and rank already say who answers to whom; `convergence.ts`
+already makes a ruin periodically reachable with far rooms out of reach of anybody who
+intends to walk out, which is the clearest reason in the setting to bring somebody at all.
 
 The thing to avoid is a party being a new noun with its own rules. A party is **who is
 travelling with you**, and what it changes is what the ground does to a group rather than to
 one person.
+
+### And what a party is for that one person is not
+
+The design owner, on the arrangement everybody in this genre knows: **forcing lesser
+cultivators to go first in a ruin so they die and eat the traps**.
+
+It is a good test of whether the party is a real mechanic or a list of names, because it needs
+nothing new. Going into a site is already a read against a **claimant** -
+`readAdmission` says what the ground does to a body of that size and `readGates` says whether
+that person satisfies the locks somebody built, both of them pure, both of them keyed on who
+is being measured. Sending somebody else through the door first is the same two reads run
+against a different claimant, with what comes back landing on them.
+
+So the parts are: a party (who is with you), `coerce` (already the route for making somebody
+do a thing they would not choose), and the site reads (already pure and already per-person).
+Nothing about the trope should be written as its own case, and if it needs one, the party is
+the thing that is wrong.
+
+What it must **not** become is a "fodder" flag on a person, or a site option called
+*send someone in*. The player says who goes in. Whether that person goes is `coerce`'s
+question and turns on what it costs them to refuse; what happens to them in there is the
+site's question and turns on their own rung. A disciple who outranks the trap walks back out,
+and that is the same rule as the one that kills the mortal.
+
+## Somebody dying says something
+
+The design owner: **the dude should die with a message (unless you're so strong you just one
+shot them). some sorta dying breath or before that** - and, on where it comes from, *that
+falls out of npc's talking*.
+
+It does, and it did not: `scene-person-readings.ts` priced the dead INTO the scene - a killing
+is the loudest thing that can happen to the people who merely watched it - and then gave them
+no line of their own. So the person a killing happened to was the one person in the room with
+nothing to say about it.
+
+The exception is the design owner's and it needs no number of its own.
+`HELPLESS_REALM_GAP` is the combat module's existing statement of when a confrontation stopped
+being one: at two major realms it resolves in a single action with nothing contested and no
+exchange rolled. Somebody who never got an exchange never got a moment to speak in either.
+Below it there were rounds, and a person with rounds in them has a last thing to say - whether
+they say it is the ordinary cost question every other person in the scene is put through.
