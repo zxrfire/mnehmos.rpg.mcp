@@ -160,7 +160,7 @@ export function pairProtectors(
 // A house's ground is read as open ground on a vein, so a house whose ground
 // INCLUDES closed ground is invisible here. The Weir Office has refused four
 // applications to open the cut face and has not written down why, and the
-// Sleeper is walled into that face at ordinal 30 - which is the plainest truce
+// sealed ancestor is walled into that face at ordinal 30 - the plainest truce
 // in the catalog and this module cannot produce it, because a `sealed_only`
 // entry is filtered out one line above. Giving a faction a "and the sealed
 // pockets it holds the grant over" fact would fix it and is a catalog change

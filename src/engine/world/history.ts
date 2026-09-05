@@ -771,7 +771,7 @@ const GIVEN_TAIL = [
  */
 const PLACE_HEAD = [
     'Cold', 'Black', 'Green', 'White', 'Jade', 'Iron', 'Bronze', 'Azure', 'Vermilion',
-    'Deep', 'Thin', 'Broken', 'Old', 'Dry', 'Salt', 'Cloud', 'Frost', 'Ash',
+    'Deep', 'Thin', 'Broken', 'Old', 'Dry', 'Salt', 'Cloud', 'Frost', 'Grey',
     'Nine', 'Seven', 'Three', 'Autumn', 'Grain', 'Silent', 'Hidden', 'Bitter'
 ] as const;
 
