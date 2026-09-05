@@ -438,7 +438,7 @@ async function theWoundedCharacter(): Promise<void> {
     const status = await say(game, 'status');
     const looked = await say(game, 'I look around');
     const statesTheCondition = /meridian injur|untreated/i.test(status);
-    const statesTheClock = /give out|days|bleed/i.test(looked);
+    const statesTheClock = /give out|\bdays\b|bleed/i.test(looked);
     line(`  status names the wound:   ${statesTheCondition ? 'yes' : 'NO'}`);
     line(`  and something names the clock: ${statesTheClock ? 'yes' : 'NO'}`);
     const warned = statesTheCondition && statesTheClock;

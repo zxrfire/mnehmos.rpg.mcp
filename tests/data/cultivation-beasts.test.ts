@@ -658,7 +658,7 @@ describe('what gives a changed beast away', () => {
         // costume.
         const uncanny = [
             /hands are wrong/i, /wrong hands/i, /wears? .{0,20}shape badly/i,
-            /shape badly/i, /blinks?/i, /unnatural/i, /uncann/i, /grotesq/i,
+            /shape badly/i, /blinks?\b/i, /unnatural/i, /uncann/i, /grotesq/i,
             /not quite (?:human|right|a person)/i, /inhuman/i, /too still/i,
             /unnervin/i, /something is off/i,
             // `wrong` only where it is about a body. The Sleeper's carvers
