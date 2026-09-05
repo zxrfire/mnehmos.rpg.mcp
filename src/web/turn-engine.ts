@@ -2239,31 +2239,24 @@ export class GameService {
             return only;
         }
 
-        // THE ORDER MAY NOT WORK AT ALL, and a reader that noticed says so
-        // rather than picking one. The design owner: *if the sentence order is
-        // incoherent, say it, like a human would.* Before anything is spent,
-        // because that is the whole of what it buys.
-        if (plan.orderMakesNoSense !== undefined) {
-            const objection = `${plan.orderMakesNoSense} Say it the other way round and it runs.`;
-            const refusal = this.freeAction(run, plan.action.action, factsForRefusal(
-                'That order does not work.',
-                objection,
-                `the reading layer rejected the ORDER of "${rawInput.slice(0, 80)}" rather than `
-                + 'any act in it. Nothing was spent and no step was run.'
-            ));
-            // REQUIRED, for the reason the question beside it is. A turn whose
-            // only fact is an objection hands a narrator nothing to describe,
-            // and a narrator handed nothing writes the acts anyway - measured
-            // on the fork, which is why that has the same line.
-            (refusal.facts.required ??= []).push(objection);
-            return refusal;
-        }
-
-        // A READER THAT SAID SO DECIDED THE ORDER. Merely emitting steps does
-        // not: phase 1 asks for them in the order the SENTENCE put them, so a
-        // step list is a transcription unless the reader says otherwise. See
-        // `orderDecided` on the plan.
-        const budget = whatThisTurnMayRun(steps, rawInput, plan.orderDecided === true);
+        // WHOSE ORDER IT IS.
+        //
+        // The design owner, settling it: *if the order is wrong, we don't try
+        // to determine it, we just act confused. the llm should just try it in
+        // the order and give back whatever error the world state gave.*
+        //
+        // So a reader that can reason gets its order run, and the engine does
+        // not second-guess it or ask a model to predict whether it will work.
+        // Running "I break through and then cultivate for a year" in the order
+        // given answers with the barrier's own refusal - *not enough has
+        // accumulated: 0 of 101443 qi-units* - which is a better sentence than
+        // anything a reader could have said about the order in advance, and it
+        // is TRUE rather than predicted.
+        //
+        // A pattern table cannot reason about order at all, and the design
+        // owner ruled on that half too: *asking is okay cuz an embedding can't
+        // tell, that's too hard and would make it too brittle.* So it asks.
+        const budget = whatThisTurnMayRun(steps, rawInput, plan.source === 'model');
         const done: Execution[] = [];
         let stoppedOn: PlanStep | null = null;
         /** Whether the step that stopped the plan had LANDED. See `howTheStepWent`. */

@@ -12,7 +12,6 @@ import {
     parseIntent,
     validatePlan,
     type ActionName,
-    type Plan,
     type PlannedAction
 } from './actions.js';
 import {
@@ -33,8 +32,6 @@ import {
     theWholeSentenceAsAPlan,
     spendsSomething,
     stepsInTheResponse,
-    theReaderSaysItDecidedTheOrder,
-    whyTheReaderSaysTheOrderCannotWork,
     theClauseThisStepQuotes,
     type PlanStep,
     type PlanWithSteps
@@ -627,12 +624,7 @@ export class ProviderNarrator implements Narrator {
         // code it reached before.
         const asSteps = stepsInTheResponse(raw, input);
         if (asSteps !== null && asSteps.length > 0) {
-            return await this.aPlanRatherThanAVerb(
-                asSteps,
-                input,
-                theReaderSaysItDecidedTheOrder(raw),
-                whyTheReaderSaysTheOrderCannotWork(raw)
-            );
+            return await this.aPlanRatherThanAVerb(asSteps, input);
         }
 
         // The gate. An unknown action name, a `days` of 1e9, a `realmOrdinal`
@@ -677,11 +669,7 @@ export class ProviderNarrator implements Narrator {
      */
     private async aPlanRatherThanAVerb(
         fromTheReader: readonly PlanStep[],
-        input: string,
-        /** Whether the reader said it worked the order out. Carried, never inferred. */
-        orderDecided = false,
-        /** The reader's objection to the order, where it made one. */
-        orderMakesNoSense: string | null = null
+        input: string
     ): Promise<PlanWithSteps> {
         // THE SENTENCE SAYS HOW MANY ACTS ARE IN IT
         const whole = await theWholeSentenceAsAPlan(
@@ -782,10 +770,6 @@ export class ProviderNarrator implements Narrator {
             action: headline.action,
             steps: checked,
             droppedClauses: dropped,
-            // Only where the reader answered every clause it was given. A plan
-            // the engine had to backfill is not an order anybody worked out.
-            orderDecided: orderDecided && dropped.length === 0,
-            ...(orderMakesNoSense === null ? {} : { orderMakesNoSense }),
             // `model` when nothing was declined, because the model chose every
             // verb that ran; `fallback` when something was, because at least one
             // of them is the reading the player would have got with no model.
@@ -797,11 +781,26 @@ export class ProviderNarrator implements Narrator {
     /**
      * Phase 1 with no model in it, wearing whatever note said why.
      */
-    private async deterministically(input: string, note: string): Promise<Plan> {
+    /**
+     * The reading a player would have got with no model at all.
+     *
+     * It COMPOSES, the same way `DeterministicNarrator` does. Both of these are
+     * the deterministic tier and a sentence does not become one act because a
+     * provider timed out: this returned the table's single verb, which is the
+     * LAST clause's, so a model failure turned "I sit for a year and take work
+     * for a season" into a season of work with the year silently gone.
+     */
+    private async deterministically(input: string, note: string): Promise<PlanWithSteps> {
         const read = await readTheSentence(input);
+        const whole = await theWholeSentenceAsAPlan(
+            input,
+            [{ action: read.action }],
+            async clause => (await readTheSentence(clause)).action
+        );
         return {
             action: read.action,
             source: 'fallback',
+            ...(whole.steps.length > 1 ? { steps: whole.steps } : {}),
             note: withTheTierFailure(note, read.tierFailure)
         };
     }
