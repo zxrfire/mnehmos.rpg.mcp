@@ -1,7 +1,7 @@
 <!-- tier: 3 -->
 
 > **Before you add or change anything here, read
-> [`../../docs/world/INDEX.md`](../../docs/world/INDEX.md).** It lists every section of the
+> [`../../../docs/world/INDEX.md`](../../../docs/world/INDEX.md).** It lists every section of the
 > setting bible against the question it answers, and every file in this directory against
 > the design question that file settles. A large share of this world's design rationale is
 > in the header comments of these `.ts` files, where no search of `docs/` reaches it - the

@@ -29,14 +29,14 @@ export const TITLE_TRANSLATIONS: readonly TitleTranslation[] = [
         interest: 'Grant fees are priced by rank, and every band it can push upward is revenue. The Office has never submitted the claim to the Ledger for certification.'
     },
     {
-        party: 'The Kettle Assay House',
+        party: 'The Iron Gate Assay House',
         mapping: 'A third table used for insurance: Standing Cut is read one rank low, at Qi Condensation Perfection, because a carver with no formations and no alchemy fights like a weaker cultivator.',
         interest: 'The Stonewright Consortium underwrites escort contracts and pays out on deaths. Its table is the only one anybody uses commercially, and it is the one that gets outsiders killed.'
     },
     {
         party: 'The House of the Narrow Hour',
         mapping: 'Declines to publish a table on the grounds that a rank is a position in a convergence rather than a title, and that both other tables are answering a question nobody asked.',
-        interest: 'It has one reader in the Marches, who has been asked for a mapping eleven times and has refused eleven times, and whose refusal is itself quoted in the Ledger\'s case notes.'
+        interest: 'It has one reader in the Silent Cliffs, who has been asked for a mapping eleven times and has refused eleven times, and whose refusal is itself quoted in the Ledger\'s case notes.'
     }
 ];
 
@@ -65,7 +65,7 @@ export const RANK_MISREADINGS: readonly {
         systematicDirection:
             'Outsiders read Standing Cut low, consistently, in the same direction, because "first course" sounds like "Early". Carvers are therefore systematically underestimated by about two stages in the province next door, which is survivable for the carver and not for the person who challenged them.',
         recordedIncident:
-            'The Scarwater duel, eleven years ago: a Sword Elder\'s disciple of the Azure Cloud Pavilion at Foundation Perfection accepted a challenge from a "first-course Standing Cut" carver on the assumption that first course meant Early Foundation. It did not. The carver was within a stage of him and immune to the soul-pressure art he opened with, and he died in the street at Scarwater in front of forty people. The Ninefold Ledger case note is the only document in the world that states the sub-division mismatch plainly, and the Kettle Assay House has not revised its insurance table since.'
+            'The Clear River Ford duel, eleven years ago: a Sword Elder\'s disciple of the Azure Cloud Pavilion at Foundation Perfection accepted a challenge from a "first-course Standing Cut" carver on the assumption that first course meant Early Foundation. It did not. The carver was within a stage of him and immune to the soul-pressure art he opened with, and he died in the street at Clear River Ford in front of forty people. The Ninefold Ledger case note is the only document in the world that states the sub-division mismatch plainly, and the Iron Gate Assay House has not revised its insurance table since.'
     }
 ];
 
@@ -78,7 +78,7 @@ export const PLACERS = {
     what:
         'Someone who can look at a cultivator from the other tradition and say, accurately, where inside a realm they sit. The realm is free - anyone can see that. The position inside it is the entire product.',
     whoSellsIt:
-        'The Ninefold Ledger, as a second line of business beside ancestral certification, and about nine independents at Scarwater and Kettle who work the border road and undercut it.',
+        'The Ninefold Ledger, as a second line of business beside ancestral certification, and about nine independents at Clear River Ford and Iron Gate who work the border road and undercut it.',
     priceNote:
         'Ledger placement of a single foreign cultivator costs more than a month of cave rent on a decent vein, and is still cheaper than being wrong once.',
     reliability:

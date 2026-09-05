@@ -6,7 +6,7 @@
  *
  *   1. The spine - centre, west, east, north, south - was a comment at the top
  *      of `regions.ts` and nothing in the data, so nothing could group by it.
- *   2. The Drowned Reach was written as coasts. Every place in it was an edge,
+ *   2. The Drowned Sea was written as coasts. Every place in it was an edge,
  *      and the busiest water in the world had nowhere on it a scene could go.
  *   3. A trade layer with no source would have been merchants conjuring stock,
  *      which is the parallel-system mistake AGENTS.md names. Every cargo row
@@ -65,7 +65,7 @@ describe('the map has a compass on it', () => {
     });
 
     it('keeps the interior out of the compass', () => {
-        // The Blown Ground is between the four arms and inside none of them.
+        // The Burial Sands is between the four arms and inside none of them.
         // Filing it north or east to complete a set would make a vacuum into
         // a suburb, which is the thing its own section comment argues against.
         //
@@ -132,7 +132,7 @@ describe('the south has ships in the middle of it', () => {
 
     it('puts places on open water and not only on coasts', () => {
         const names = south.places.map(p => p.name);
-        for (const middle of ['Halfwater', 'The Roads', 'The Long Middle', 'Salt Reach']) {
+        for (const middle of ['Silver Island', 'Waiting Sails', 'Boundless Sea', 'Salt Fields']) {
             expect(names, `${middle} is not on the map`).toContain(middle);
         }
         // A province of edges is a province with a hole in the middle of it.
@@ -143,9 +143,9 @@ describe('the south has ships in the middle of it', () => {
 
     it('keeps the water the worst ground in the world even with a port on it', () => {
         // A market in the middle of it must not quietly make the sea liveable.
-        // Everything at Halfwater is bought out of a chest, exactly as before.
+        // Everything at Silver Island is bought out of a chest, exactly as before.
         expect(south.localCeilingOrdinal).toBe(2);
-        const port = south.places.find(p => p.name === 'Halfwater')!;
+        const port = south.places.find(p => p.name === 'Silver Island')!;
         expect(port.ambient).toBe('thin');
         for (const r of REGIONS) {
             if (r.id === SOUTH_REGION_ID) continue;

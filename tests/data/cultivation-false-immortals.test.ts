@@ -487,15 +487,15 @@ describe('the dao protector office', () => {
         expect(THE_OFFICE.theChairIsAPieceOfKnowledge).toMatch(/scarcer|rarer/i);
     });
 
-    it('retracts the Sweptground chair in place rather than deleting it', () => {
-        const retraction = THE_VACANCY.theSweptgroundEntryWasWrongAndIsRetracted;
+    it('retracts the Burnt Earth chair in place rather than deleting it', () => {
+        const retraction = THE_VACANCY.theBurntEarthEntryWasWrongAndIsRetracted;
         expect(retraction).toMatch(/has no chair and never had one/i);
         expect(retraction).toMatch(/SUCCEEDED/);
         // The retraction says which qualifier was wrong, so the mistake is not
         // available to be made again.
         expect(retraction).toMatch(/crossing record, which is the wrong qualifier/i);
         // And the struck line is not still sitting in the residue list.
-        expect(THE_VACANCY.whatTheResidueLooksLike.join(' ')).not.toMatch(/Sweptground/);
+        expect(THE_VACANCY.whatTheResidueLooksLike.join(' ')).not.toMatch(/Burnt Earth/);
     });
 
     it('is open rather than abolished, with concrete residue to prove it', () => {

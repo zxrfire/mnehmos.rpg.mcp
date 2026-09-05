@@ -373,7 +373,7 @@ commonest outcome - that nobody below ever learns which of the three it was.
 
 **So the great crossings in the records did not leave empty chairs. They left no reserved
 chair at all**, and a house in that position is not holding a vacancy, it simply has no such
-post. Azure Cloud sent Ru Anjing 380 years ago. Sweptground sent the First Abbot 2,600 years
+post. Azure Cloud sent Ru Anjing 380 years ago. Burnt Earth sent the First Abbot 2,600 years
 ago. The Storm Tyrant Court sent the First Tyrant 3,400 years ago. The Hollow Court has sent
 six. Not one of those houses is short a Protector. Their people succeeded.
 

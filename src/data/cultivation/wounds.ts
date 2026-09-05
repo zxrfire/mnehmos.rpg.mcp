@@ -1,101 +1,5 @@
 /**
  * The wound table - every way a person in this world can be hurt, as data.
- *
- * A wound is a ROW, never a phrase. That is the whole reason this file exists,
- * and it is the same rule already enforced on breakthroughs and on place names:
- * the narrator reads what happened to somebody out of a record, and cannot
- * invent it. "Half mad from a heart demon at the Nascent Soul wall" has to be a
- * `woundType` that resolves here, with an authored description, or it is a
- * hallucination wearing the engine's voice.
- *
- * ── ONE LIST, TWO NATURES ────────────────────────────────────────────────
- *
- * Every person carries one list of wounds and it may be empty. A healthy
- * cultivator has nothing here and that is the ordinary case.
- *
- * `injuries.ts` already had severity, source, `treated` and the two penalties,
- * and all of it was physical. Heart demons, madness and half-madness are the
- * SAME KIND OF RECORD with a different nature - so they are rows in this table
- * with `nature: 'mental'`, carried in the same array, read by the same
- * aggregation. A parallel "mental affliction" system beside the injury list is
- * the exact mistake this project keeps almost making, and it would mean nothing
- * downstream ever noticed a mad elder, because nothing downstream reads a
- * second list.
- *
- * ── PERMANENCE IS A PROPERTY OF THE TYPE, NOT OF THE ROW ─────────────────
- *
- * Three states, and they are genuinely different:
- *
- *   open        `treated: false`, and something could close it. Drags on
- *               cultivation and breakthrough odds until it does. The ratchet.
- *   closed      `treated: true`. Scar tissue - worth a little judgement,
- *               and past `SCAR_PLATEAU` worth less than nothing. See
- *               `scarTempering`.
- *   permanent   `permanent: true` HERE, in the type. Nothing closes it, ever,
- *               so it stays `treated: false` for the rest of the life and goes
- *               on costing. What it must NOT do is count toward the bleed-out
- *               clock: a cultivator whose left meridians were burned away at
- *               the Deity Transformation wall is maimed for good and is not
- *               bleeding to death from it. `bleedingInjuryCount` in
- *               `injuries.ts` is the predicate that draws that line.
- *
- * ── WHAT WOULD TREAT IT, EVEN WHERE NOTHING CAN ──────────────────────────
- *
- * Every row says what would answer it. Several say that nothing in the world
- * currently can, and that is a deliberate and useful answer rather than a gap:
- * it is the difference between a wound nobody has got around to curing and a
- * wound the setting says is not curable. A player who asks a physician about a
- * rooted heart demon should be told the second thing, and told it out of this
- * table.
- *
- * ── STRUCTURAL-REPAIR MEDICINE, AND WHY MOST PEOPLE NEVER SEE ANY ────────
- *
- * NOT YET BUILT. Specified here because this is the file the wounds it would
- * answer live in, and because the design point matters more than the item.
- *
- * The broken statuses below - a cracked core, a crippled nascent soul, a
- * failed integration - each name a pill grade that would repair them. That
- * medicine is meant to be RARE TO A DEGREE WHERE MOST PEOPLE JUST LIVE WITH IT.
- * The test is not what a dose costs; it is what fraction of the cultivators
- * carrying a structural break are ever repaired, and the answer has to be
- * almost none. If a meaningful share of them get fixed, the medicine is too
- * available whatever its price in stones.
- *
- * That is what makes it an apex advantage, and the advantage is sharper than
- * affordability: apex clans and Dao houses are very nearly the only places the
- * stuff EXISTS, so for everybody else the question of paying for it never comes
- * up. A dose handed to a promising junior is access to an outcome that is
- * otherwise unavailable at any price, which is why that favour is worth what it
- * is worth.
- *
- * Four grades - mortal, earth, heaven, immortal - matching the scheme every
- * other consumable uses. The immortal grade is sent down from above the Lid and
- * cannot be made on this side. Repair reaches ordinal 40 and stops: getting to
- * 41 is your own effort, helpers are allowed at that crossing and medicine is
- * not, which is why `imperfect-tribulation-body` is the one break with no
- * treatment behind it at all.
- *
- * WHEN IT IS BUILT, THE HIGH GRADES MUST BE TRACKED. `docs/world/things/items.md`'s
- * term of art: a heaven- or immortal-grade repair pill is a ROW with a holder
- * and a provenance, never a fungible count, because where a specific one went
- * is exactly the sort of thing somebody should be able to find out two
- * centuries later. Low grades may be counted.
- *
- * The population consequence is the point and should be allowed to stand: the
- * provinces are full of people at every rung who quietly stopped, at an ordinal
- * far below their age, who do not attempt anything any more and have a reason
- * nobody asks about.
- *
- * ── THE TABLE IS EXPECTED TO GROW ────────────────────────────────────────
- *
- * Adding a wound is adding a row. Nothing indexes this table positionally,
- * nothing hardcodes its length, and no consumer switches on the full set of
- * keys - `getWoundType` returns null for an unknown key and callers treat that
- * as "an ordinary wound of its severity", which is what every row written
- * before this table existed genuinely is.
- *
- * Inert data. Nothing here rolls, resolves or decides. The engine owns the
- * outcome; this file only says what the outcomes are called and what they mean.
  */
 
 import { z } from 'zod';
@@ -107,13 +11,6 @@ import type { InjurySeverity } from '../../schema/cultivation.js';
 
 /**
  * Physical or mental, and nothing else.
- *
- * Deliberately only two. A foundation that has been blown apart is a physical
- * wound and a burnt span is a physical wound, because both are things that
- * happened to a body, and inventing a 'structural' and a 'temporal' nature
- * beside these two would put the engine back in the business of maintaining a
- * taxonomy nobody reads. What distinguishes those wounds is the FIELD they
- * move - `foundationQuality`, `age` - not a third word here.
  */
 export const WoundNatureSchema = z.enum(['physical', 'mental']);
 export type WoundNature = z.infer<typeof WoundNatureSchema>;
@@ -147,11 +44,6 @@ export const WoundTypeSchema = z.object({
     treatment: z.string().min(40),
     /**
      * What somebody who has this is LIKE to meet.
-     *
-     * The field that makes the failure table produce people rather than
-     * corpses. An NPC carrying this wound is playable from this sentence: it
-     * says what a player sitting across a table from them would actually
-     * encounter, which is the whole point of surviving a crossing badly.
      */
     presentation: z.string().min(80)
 });
@@ -213,62 +105,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
     // 'Incomplete cultivation' below, which is where its mechanics went, and
     // `docs/world/climbing/injuries.md` for the two families it was sitting between.
 
-    // ─────────────────────────────────────────────────────────────────
     // THE BROKEN STATUSES - one per realm boundary
-    //
-    // The population the setting most needed and could not previously
-    // produce: a cultivator who CROSSED and can never cross again. They are
-    // at the new rung. They made it. They are finished.
-    //
-    // These are statuses carried on top of an ordinal, never a rank of their
-    // own - somebody who cracks going into Tribulation Transcendence is at
-    // ordinal 41 with a broken step, not at "half-step 41". The ladder keeps
-    // its rungs and the world can still tell the difference between a 41 who
-    // is climbing and a 41 who is done, because the difference is written on
-    // the person rather than into the ladder.
-    //
-    // ── HOW THEY ARE NAMED, WHICH IS A RULE AND NOT A STYLE ─────────
-    //
-    // Each names the structure ITS OWN crossing was for, so the status reads
-    // as a diagnosis rather than a label. A healer's words: plain, physical,
-    // clinical, and about the specific thing that did not take. Two words
-    // where two will do - a participle and the thing - and the key derives
-    // from the name, so the id can never drift from what the row prints.
-    //
-    // AND A TERM BELONGING TO ONE REALM NEVER APPEARS IN ANOTHER'S NAME.
-    // That is the rule the table has actually broken, twice, and it is worth
-    // stating as a prohibition rather than a preference:
-    //
-    //   - 'A shattered foundation' was minted at six walls, none of which
-    //     builds a foundation. A Body Integration cultivator came out of the
-    //     joining carrying a Foundation Establishment word for a structure
-    //     that realm was not constructing. It is now 'Scattered cultivation',
-    //     which borrows from nobody because a cultivation base is what every
-    //     rung on the ladder has.
-    //   - 'A failed body joining' named the right realm and said it in plain
-    //     English. It became 'An unstable joining' on the reasoning that
-    //     'failed' is a verdict rather than a diagnosis, and it is now
-    //     'A failed integration' - the design owner's ruling, and it overturns
-    //     that reasoning rather than forgetting it: what the break has to say
-    //     is that the body is not fully integrated and parts of it do not work
-    //     right, and 'failed' says that where 'unstable' only implies it.
-    //     'Integration' is also the term Body Integration actually owns.
-    //     An earlier attempt said 'unsealed seam', on the grounds that
-    //     `killRequirement` has returned 'seam' as a remnant kind since long
-    //     before this table existed - but the seam is the MECHANISM the
-    //     crossing welds, not the thing it builds, and every other row here
-    //     names the thing.
-    //
-    // The same principle got 'a spoiled temper' rejected for 'damaged spirit
-    // sense': name the failure of the SPECIFIC FORMATION, never a mood and
-    // never a metaphor. Ask what the realm forms, then name that not forming.
-    //
-    // Pinned by test, both halves - the realm each name may borrow from, and
-    // the derivation of the key. See `boundary-trials.test.ts`.
-    //
-    // Adding a realm means adding a row here and one line in
-    // `BROKEN_STATUS_FOR_TRIAL`. Nothing else knows these apart.
-    // ─────────────────────────────────────────────────────────────────
     {
         key: 'broken-foundation',
         nature: 'physical',
@@ -400,23 +237,6 @@ export const WOUND_TYPES: readonly WoundType[] = [
             'A cultivator whose progress does not match their history at all: decades of work behind them and a rate that reads like somebody half their standing. They know precisely why and it is not a story they tell.'
     },
     // Its sibling, and the row that replaced 'a ruined dantian'.
-    //
-    // WHY IT IS NOT NAMED FOR THE CORE, which is the whole point of the
-    // rename. The old row said the reservoir cracked rather than the channels,
-    // and this setting has exactly one word for that organ and exactly one
-    // wound to it: 'A cracked core'. That row is a BROKEN STATUS - the thing
-    // `the_condensation` was for, failing to take, on somebody who crossed and
-    // arrived - and it closes the road. This one is minted on the FAILURE side
-    // at six walls, five of which form no core at all, and it must not close
-    // anything. Two wounds could not share the name, and the failure-side one
-    // could not keep the borrowed word, so it names what every rung on the
-    // ladder actually has: a cultivation base. Same move as 'A shattered
-    // foundation' -> 'Scattered cultivation', for the same reason, one row up.
-    //
-    // Scattered against incomplete is the whole difference: that base came
-    // apart and was laid again out of the wreckage, this one was never
-    // finished. `foundationQuality` carries the two apart - 'rebuilt' there,
-    // 'incomplete' here.
     {
         key: 'incomplete-cultivation',
         nature: 'physical',
@@ -508,29 +328,6 @@ const BY_KEY = new Map<string, WoundType>(WOUND_TYPES.map(w => [w.key, w]));
 
 /**
  * Keys that have been retired, and the row that carries their meaning now.
- *
- * `woundType` is a nullable string on a persisted injury row, so retiring a key
- * does not retire the rows already carrying it - there are worlds in flight with
- * 'ruined-dantian' written into them, and without this they would come back
- * nameless, un-permanent and priced as an ordinary wound of their severity.
- *
- * A RENAME AND NEVER A RECLASSIFICATION. Both sides of every entry here must
- * agree on nature, permanence, severity and whether the wound halts, so
- * resolving one cannot change what anybody is carrying - only what it is
- * called. Pinned by test on every entry.
- *
- * Note what is NOT here: 'ruined-dantian' does not resolve to 'cracked-core',
- * however plainly that ruling reads as one wound. A cracked core is a broken
- * status and it closes the road, so that mapping would halt a saved population
- * the ladder has never refused. It resolves to the row its mechanics went to.
- *
- * The six below are the broken statuses renamed on the owner's ruling that a
- * break should say what the realm confers and this one does not: a crippled
- * nascent soul cannot survive outside the body, a failed integration leaves
- * parts that do not work right, an imperfect tribulation body has flaws a true
- * one does not. These ARE halting wounds on both sides of the arrow, which is
- * why `blocksAdvancement` and `brokenStatusOf` resolve through here - a saved
- * cultivator who was halted must stay halted across the rename.
  */
 export const RETIRED_WOUND_KEYS: Readonly<Record<string, string>> = {
     'ruined-dantian': 'incomplete-cultivation',
@@ -550,15 +347,6 @@ export function currentWoundKey(key: string | null | undefined): string | null {
 
 /**
  * The authored row for a wound key, or null.
- *
- * Null is a legitimate answer and every caller must handle it: a wound row
- * written before this table existed carries no key at all, and it is an
- * ordinary wound of its severity. Never throw here - a save file older than
- * this file is not a bug.
- *
- * Retired keys resolve here rather than at the call sites, so every reader of a
- * saved row - name, permanence, nature, treatment, the narrator - is correct
- * from the moment the world loads and without waiting for the repair pass.
  */
 export function getWoundType(key: string | null | undefined): WoundType | null {
     if (!key) return null;

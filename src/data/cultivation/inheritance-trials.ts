@@ -1,93 +1,6 @@
 /**
- * Inheritance trials and graves: what is actually behind the door, and the
- * three completely different questions a door can ask.
- *
- * `encounters.ts` produces the summary line that says an inheritance ground
- * has opened. It says nothing about what is in it, because from outside there
- * is nothing to say. This file holds the inside, and the whole point of the
- * shape below is that the inside stays where it is until somebody walks in.
- *
- * WHY TRIALS AND GRAVES ARE ONE FILE
- * ----------------------------------
- * They are not the same thing and the record shapes differ, which is why
- * `SiteSchema` is a discriminated union rather than one flattened object. A
- * trial was calibrated for a claimant by somebody who intended to be inherited
- * from. A grave was arranged for nobody. What they share is the only two
- * pieces of machinery that must never be duplicated: the three gate kinds, and
- * the accessor pair that keeps the interior out of the pre-entry view. Two
- * copies of that accessor pair in two files is exactly the leak this file
- * exists to prevent, so there is one copy and it serves both.
- *
- * THREE KINDS OF GATE, AND THEY ARE DIFFERENT IN KIND
- * ---------------------------------------------------
- * Not three difficulty numbers. Three unrelated questions:
- *
- *   strength         An ordinal, and a stated physical test at that ordinal.
- *                    A strike absorbed, a pressure held, a seal broken. Enough
- *                    power passes it reliably; below the ordinal there is no
- *                    clever route, and every strength gate says so in
- *                    `noWorkaround` so nothing downstream is tempted to add
- *                    one.
- *
- *   age_and_talent   What the run accumulated or was dealt: years, root grade,
- *                    foundation quality, an attribute, comprehension in a
- *                    named domain. Twice as strong and shallow fails these,
- *                    and `strengthDoesNotHelp` says why for each one. The
- *                    attribute measure deliberately does not accept `fortune`
- *                    at the schema level, so a talent gate can never quietly
- *                    become a luck roll.
- *
- *   fate             Not a check against the sheet at all. Being somewhere
- *                    nobody could have scheduled, having refused something,
- *                    carrying an obligation you did not take on, being the
- *                    wrong person on a day when wrong is the qualification.
- *                    `characterStat` is `z.null()` on every fate gate: the
- *                    schema itself refuses to hold a stat, because a hidden
- *                    luck number is a thing players grind and this is not
- *                    supposed to be grindable. See `FATE_IS_NOT_A_STAT`.
- *
- * WHAT THE LIGHTNING TOOK
- * -----------------------
- * The rule that decides what a grave holds is how the occupant died, and it
- * runs the opposite way to intuition. Heavenly tribulation destroys nearly
- * everything a cultivator was carrying, so a tribulation grave is a short
- * list - and every item on it survived the heaviest thing in the world, which
- * is a warranty no forge and no auction house can issue. Anybody who died some
- * other way, in bed at four hundred, in a duel over a survey line, interred by
- * a sect that could afford the masonry, leaves a full inventory that nothing
- * has ever tested.
- *
- * So the rich crypt is usually the weaker one. Grave-readers know this and
- * price accordingly. Raiding parties do not, which is why raiding parties go
- * to the rich crypt. See `WHAT_THE_LIGHTNING_TOOK` and `GRAVE_CONTENTS_BANDS`;
- * the bands are data so the tests assert against the same table the entries
- * were authored from.
- *
- * THE INTERIOR IS GATED
- * ---------------------
- * Every entry is split into `outside` and `interior`. The outside is the
- * marker, the rumour, what the last party said on the way in, and for a grave
- * the manner of death, which is the single most useful thing a knowledgeable
- * party reads off a headstone and the thing an ignorant one walks straight
- * past. The interior is the chamber, the gates, the contents, and how it kills
- * people.
- *
- * `outsideViewOf` returns a type that has no `interior` key, so the compiler
- * refuses the leak before any test has to catch it. `enterSite` returns the
- * whole entry and is named as a deliberate act. The server layer should hold
- * only `outsideViewOf` until the engine has recorded an entry.
- *
- * Naming follows the awareness precedent in `hierarchy.ts`: below `named`,
- * `outsideViewOf` withholds the attribution and the rumour, because a rumour
- * is how a name reaches somebody and a player with no knowledge record has not
- * had it reach them yet.
- *
- * A RESTING PLACE IS NOT A GRAVE
- * ------------------------------
- * The chambers in `sealed-ancestors.ts` are a third category and are not in
- * this file. The occupant is not dead, the site was not left to be found, and
- * opening one is a waking rather than a recovery. `A_RESTING_PLACE_IS_NOT_A_GRAVE`
- * states the separation; the tests enforce that no entry here sits on one.
+ * Inheritance trials and graves: what is actually behind the door, and the three
+ * completely different questions a door can ask.
  */
 
 import { z } from 'zod';
@@ -117,18 +30,8 @@ export const THE_THREE_GATES = {
 } as const;
 
 /**
- * The rule that keeps `fate` honest, stated once and enforced by the schema
- * rather than by discipline.
- *
- * A fate gate holds `characterStat: null`, which is not documentation: it is a
- * `z.null()` and nothing can be put there. The moment a fate condition reads a
- * number off the sheet it becomes a thing to farm, and a farmable coincidence
- * is not a coincidence, it is a stat check with atmosphere on it.
- *
- * `fortune` exists on the sheet and is used by the engine elsewhere. It is not
- * used here, and the age-and-talent attribute measure does not accept it
- * either, so there is no route by which either of the two non-strength gate
- * kinds can degrade into a luck roll.
+ * The rule that keeps `fate` honest, stated once and enforced by the schema rather
+ * than by discipline.
  */
 export const FATE_IS_NOT_A_STAT = {
     rule: 'A fate gate reads world state, never the character sheet. `characterStat` is null at the schema level on every one of them.',
@@ -257,57 +160,10 @@ export const GateSchema = z.discriminatedUnion('kind', [
 ]);
 export type Gate = z.infer<typeof GateSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT SORT OF PLACE IT IS
-//
-// `kind` is the RECORD SHAPE - a trial has a prize somebody arranged, a grave
-// has an occupant and an inventory nobody arranged - and it must stay a
-// two-member discriminator because the two records genuinely differ. It is not
-// a statement about what the place was, and for a long time it was the only
-// statement this file made, which left twenty-four entries reading as two sorts
-// of thing when what is actually in them is a bench on burned ground, a
-// courier yard, a refining hall, a curriculum cut into a ledge and a clan
-// undercroft.
-//
-// `character` is the other axis and it is orthogonal on purpose: an archive can
-// be a trial or a grave, and so can a workshop. Anything that walks the catalog
-// looking for variety should read this, and anything that switches on the
-// record shape should read `kind`.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What the category is called, and why it is not called ruins any more.
- *
- * "Ruin" was a plain English word doing work for something that now spans an
- * abandoned sect mountain, an inheritance somebody about to ascend left
- * addressed to a claimant, and a dead man's one-room cave. Two of those three
- * are not ruined and nobody would call them that.
- *
- * CLOSED GROUND is the term, and it was picked to match the register this
- * catalog already writes in rather than to sound impressive. The good names
- * here are concrete and slightly administrative - the Ninefold Ledger, the
- * Measured Span, the Unlit Gate, the Deep Survey, the Girdle of Nine Stones -
- * and none of them reaches for grandeur. So: ground that is closed. It says
- * what the category has in common, which is a door and something behind it, and
- * it says nothing about how the door got there, which is the part that varies.
- *
- * It also names the axis. `THE_THREE_WAYS_GROUND_IS_CLOSED` was already using
- * this vocabulary before the category needed a name, and what a place does over
- * time is stop being closed, which is a sentence the term makes available.
- *
- * Two sub-terms for the ends of the scale, and they are what people in the
- * world actually say:
- *
- *   A SHUT CAVE   the smallest thing that qualifies. One room, one door, one
- *                 person, a lifespan that ran out behind it.
- *   AN EMPTY SEAT the largest. A house's mountain with nobody in it, which is
- *                 the thing most people mean when they say ruin and is the only
- *                 one of these that a province remembers the opening of.
- *
- * Deliberately NOT `sealed ground`, which was the other candidate: `sealed` is
- * a boolean on `LocationRecord`, `sealed_domain` is a `LocationKind`, and
- * `sealed-ancestors.ts` is a live catalog of people behind doors. A fourth
- * meaning of the word would have been unreadable within a month.
  */
 export const WHY_CLOSED_GROUND = {
     term: 'closed ground',
@@ -325,11 +181,6 @@ export const WHY_CLOSED_GROUND = {
 
 /**
  * A ruin is typically more epic than a cave.
- *
- * The correction that produced this section, in the design owner's own terms: a
- * dead cultivator's sealed cave is real and it is THE BOTTOM OF A SCALE rather
- * than the model for the category. The word should mostly conjure something
- * with scale to it.
  */
 export const A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE = {
     correction:
@@ -342,35 +193,6 @@ export const A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE = {
 
 /**
  * Where a piece of closed ground came from.
- *
- * A FLOOR AND NOT A TAXONOMY. The design owner has asked repeatedly for many
- * different types and has said the named ones are a starting point, so this
- * list is expected to grow and nothing downstream may assume it is complete -
- * every switch on it has a default.
- *
- * These are not the same kind of place and must not read the same:
- *
- *   `abandoned_by_a_house` is the big end and probably the commonest thing
- *   anybody means. Something HAPPENED to it: a war, a vein that failed, a line
- *   that ended. It has architecture, a planned layout, defences built against
- *   an enemy rather than against weather, and whatever the evacuation could not
- *   carry. The danger in one is decay and whatever moved in afterwards. The
- *   world produces these on its own - a house the simulation destroys leaves
- *   its mountain behind, which is the reserve being fed by the ordinary
- *   business of houses falling.
- *
- *   `left_addressed` is DELIBERATE, and it is a completely different object.
- *   Somebody at a great height arranged for what they had to be found later, by
- *   the right person, and addressed it rather than merely leaving it lying
- *   there. It can carry conditions on who may take it, a trial rather than a
- *   hazard, a message, an intent. THE DANGER IS THAT THE PERSON WHO BUILT IT
- *   MEANT TO SORT APPLICANTS AND THE CLAIMANT MAY NOT BE WHO THEY WERE SORTING
- *   FOR. An inheritance that is a ruin with better contents has thrown away the
- *   only thing that makes it interesting.
- *
- *   `a_door_nobody_opened_again` is the small end. One person, one door, a
- *   lifespan that ran out behind it, everything they owned still inside, and
- *   nobody told.
  */
 export const RuinOriginSchema = z.enum([
     'abandoned_by_a_house',
@@ -387,11 +209,6 @@ export type RuinOrigin = z.infer<typeof RuinOriginSchema>;
 
 /**
  * How big the thing is, which decides more than it looks like it should.
- *
- * See `A_RUIN_IS_TYPICALLY_MORE_EPIC_THAN_A_CAVE`. The ordering is meaningful
- * and `partiesItTakes`, `aHouseCanClaimIt` and `itsExistenceIsPublic` are read
- * off it rather than stated per entry, so a new place cannot disagree with the
- * scale it declares.
  */
 export const RuinScaleSchema = z.enum(['one_room', 'a_building', 'a_compound', 'a_mountain']);
 export type RuinScale = z.infer<typeof RuinScaleSchema>;
@@ -431,21 +248,6 @@ export const WHAT_SCALE_DECIDES: Readonly<Record<RuinScale, {
 
 /**
  * How much of the arrangement still binds.
- *
- * THE AXIS, and the reason `left_addressed` and `abandoned_by_a_house` are not
- * two catalogs. An inheritance is a ruin plus an intent and intent has a
- * half-life; what wears it out is that the trial enforcing it IS A LIVE
- * FORMATION, and formations weaken. See `INTENT_HAS_A_HALF_LIFE` and
- * `how-far-gone-a-formation-is.ts`, which owns the clock.
- *
- *   `addressed`       Somebody arranged this for a claimant and the arrangement
- *                     still runs. The trial can still refuse people.
- *   `lapsed`          It was addressed and the sorting no longer works. The
- *                     conditions are still cut into the wall and nothing is
- *                     enforcing them, so the place admits whoever turns up -
- *                     which is what a ruin is.
- *   `never_addressed` Nobody arranged anything. A house left, or a man died, or
- *                     the sky did it.
  */
 export const IntentStandingSchema = z.enum(['addressed', 'lapsed', 'never_addressed']);
 export type IntentStanding = z.infer<typeof IntentStandingSchema>;
@@ -487,29 +289,10 @@ export const RuinCharacterSchema = z.enum([
 ]);
 export type RuinCharacter = z.infer<typeof RuinCharacterSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE THREE WAYS GROUND IS CLOSED
-//
-// A gate is a question the DOOR asks the claimant about themselves. Access is
-// a fact about the GROUND: what it does to a body standing in it, whether or
-// not there is a door and whether or not anybody set anything. Most graves in
-// this catalog have no gate at all and every one of them still has an access
-// band, which is why this is not a fourth gate kind - it would be a gate that
-// half the entries could not carry.
-//
-// It is also not a new mechanism. `LocationThresholds` in the world layer has
-// carried `entry`/`survival` from the beginning and means exactly this; what
-// the world layer had no way to say, and what the design owner asked for, is
-// the other two.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * The rung at which somebody is an elder somewhere.
- *
- * Core Formation, and the ladder's own note on that realm is the argument:
- * "Sects stop recruiting you and start negotiating with you." Below it a person
- * is somebody's disciple however senior they feel; at it they are a body a
- * house seats rather than trains. Stated once here so no entry re-derives it.
  */
 export const ELDER_FLOOR_ORDINAL = 17;
 
@@ -569,10 +352,6 @@ export type RuinAccess = z.infer<typeof RuinAccessSchema>;
 
 /**
  * Whether the body that goes in is the body that gains.
- *
- * False under a cap and under an elder floor, and that is the whole of what
- * those two have in common. A narrator that wants to say why somebody is
- * standing outside a door they could open should read this.
  */
 export function entrantIsTheBeneficiary(access: RuinAccess): boolean {
     return access.admits === 'anyone_who_survives_it';
@@ -599,11 +378,6 @@ export interface AdmissionReading {
 
 /**
  * What this ground does to a body at this ordinal.
- *
- * `admitted` and `survives` are two answers and not one, because the ordinary
- * case is a place that admits everybody and kills most of them. Collapsing
- * them would turn every minimum into a locked door, which is precisely what a
- * minimum is not.
  */
 export function readAdmission(access: RuinAccess, ordinal: number): AdmissionReading {
     if (access.admits === 'nobody_above_the_line' && ordinal > access.ceilingOrdinal) {
@@ -786,11 +560,11 @@ export const GraveInteriorSchema = z.object({
     /** May be empty. An unguarded grave is the ordinary case. */
     gates: z.array(GateSchema),
     /**
-     * Where the gate came from. `placed` is somebody's work, `accreted` grew
-     * on the site after the fact, and `circumstance` is neither: the gate is a
-     * property of the situation rather than of the ground, which is what a
-     * site four days off any track has instead of a door. `none` is the
-     * ordinary case and means the grave is open to anybody who finds it.
+     * Where the gate came from. `placed` is somebody's work, `accreted` grew on the
+     * site after the fact, and `circumstance` is neither: the gate is a property of
+     * the situation rather than of the ground, which is what a site four days off
+     * any track has instead of a door. `none` is the ordinary case and means the
+     * grave is open to anybody who finds it.
      */
     gateOrigin: z.enum(['placed', 'accreted', 'circumstance', 'none']),
     contents: z.array(GraveGoodSchema).min(1),
@@ -862,17 +636,6 @@ export const GRAVE_CONTENTS_BANDS = {
 
 /**
  * The third category, kept out of this file on purpose.
- *
- * A sealed ancestor's chamber is not a grave. The occupant is not dead, the
- * site was not left to be found, nothing in it was arranged for a claimant,
- * and opening one is a waking rather than a recovery, with an entirely
- * different set of consequences and an entirely different catalog
- * (`sealed-ancestors.ts`) holding them.
- *
- * The distinction is load-bearing rather than tidy. A party that treats a
- * resting place as a grave is robbing somebody who is going to be awake in a
- * minute, and a party that treats a grave as a resting place leaves the best
- * find of their career on the floor because they are frightened of it.
  */
 export const A_RESTING_PLACE_IS_NOT_A_GRAVE = {
     rule: 'A chamber in `sealed-ancestors.ts` holds a live person and is not in this catalog under any circumstances.',
@@ -912,7 +675,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             marker: 'A double gate in a hillside, cut for people rather than for effect, with a worn step and a bar socket on the inside face. The stone around the sockets is polished to a shine by four centuries of hands and nothing else about it is decorated at all.',
             rumour: 'The ascetics call it the low gate and say it is where a dead order used to test its intake, which is why nobody serious goes: an intake test is for children, and everything worth having is behind the intake test rather than at it.',
             attributedTo: 'An order the Nine Peaks absorbed the remnants of, whose name the ascetics use and do not write down',
-            lastPartySaid: 'Three from a Scarwater culling crew went in saying it was an afternoon and that the only risk was the walk. All three were at Qi Condensation and none of them had been told what the intake ordinal of a Foundation-grade order looks like.',
+            lastPartySaid: 'Three from a Clear River Ford culling crew went in saying it was an afternoon and that the only risk was the walk. All three were at Qi Condensation and none of them had been told what the intake ordinal of a Foundation-grade order looks like.',
             whatAKnowledgeablePartyReads: 'An intake gate is calibrated for the intake of the sect that cut it, and a Foundation-grade order tested its applicants at Foundation. The bar socket is on the inside, so it was barred by the people running the test and not by the applicants, which means the test was supervised and the supervision is what is missing now. Nothing supervises it. It simply runs.',
             whatAnIgnorantPartyConcludes: 'That an outer gate is the easy one, because in a living sect the outer gate is where the fourteen-year-olds queue. The word outer is doing all the work in that sentence and it is a word about position rather than difficulty.',
             startingAwareness: 'named',
@@ -926,7 +689,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     kind: 'strength',
                     ordinal: 13,
                     test: 'The plate discharges the accumulated pressure of the hall into whoever has both hands on it, in one push, at the load an applicant at Foundation Establishment Early was expected to hold for a count of six. It is not a trick and there is nothing to read. It is a measured amount of force applied to a body, and the measurement has not changed since the order that took it stopped existing.',
-                    below: 'Below Foundation the body has nothing to spread the load through, and what happens is the thing the channels were cut to drain. Qi Condensation cultivators are killed by it outright at the lower layers and crippled at the upper ones, which is the outcome the Scarwater crew got and the reason two of them are in the margins catalog now.',
+                    below: 'Below Foundation the body has nothing to spread the load through, and what happens is the thing the channels were cut to drain. Qi Condensation cultivators are killed by it outright at the lower layers and crippled at the upper ones, which is the outcome the Clear River Ford crew got and the reason two of them are in the margins catalog now.',
                     noWorkaround: 'There is no approach, no partial contact and no way to take it in stages. The plate is the door and the door is one event. Parties have tried levering the pivot, which discharges it into the lever and then into them.'
                 }
             ],
@@ -1060,7 +823,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         },
         factionIds: ['house-tally-court', 'house-ninefold-ledger', 'sect-sweptground-temple'],
         outside: {
-            marker: 'A stone bench and a stone table on the burned ground at Sweptground, both original, both cut for somebody to sit at one and put documents on the other. There is no building. Debts sworn on this ground do not settle and never have.',
+            marker: 'A stone bench and a stone table on the burned ground at Burnt Earth, both original, both cut for somebody to sit at one and put documents on the other. There is no building. Debts sworn on this ground do not settle and never have.',
             rumour: 'The monks say the bench is where the old house heard cases and that sitting on it is bad luck, which is the Temple being polite. The Ledger says nothing about the bench in any document anybody outside the Ledger has read.',
             attributedTo: 'The Tally Court',
             lastPartySaid: 'A Ledger circuit arbiter sat at it nine years ago on her own initiative, spent two hours, stood up and wrote nothing. She has been asked and says that it was not a matter for the house.',
@@ -1099,7 +862,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     below: 'Nothing happens. That is the failure state, and it is worse than a hostile one: the claimant sits, reads, works, does not get it, and leaves believing the bench is inert, which is the account every party who has failed it has given and the reason the Temple thinks it is furniture.'
                 }
             ],
-            howItKills: 'It does not, and that is the trap. Nobody has ever died at the bench. What it costs is the thing a karma house always charged: a reader who gets far enough to be entered as having read, and then stops, is entered as having taken the matter up, and the Sweptground ground does not discharge what is sworn on it. Two of the four people known to have got that far carry an obligation they cannot identify and cannot pay, and one of them is a bloodline in the eastern towns.',
+            howItKills: 'It does not, and that is the trap. Nobody has ever died at the bench. What it costs is the thing a karma house always charged: a reader who gets far enough to be entered as having read, and then stops, is entered as having taken the matter up, and the Burnt Earth ground does not discharge what is sworn on it. Two of the four people known to have got that far carry an obligation they cannot identify and cannot pay, and one of them is a bloodline in the eastern towns.',
             prize: {
                 techniqueIds: [
                     // Forty-one benches for settling what is owed between people, and
@@ -1196,7 +959,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                 ],
                 other: [
                     'The house\'s terminal convention, on the hall floor, which is what makes the nine answering gates in the world usable rather than lethal by anyone who holds it.',
-                    'Four working terminals, and the standing ability to reach a courier yard in the Low Fall from wherever the other ends of them are. The Measured Span has spent nine hundred years and a great deal of money on the problem this solves.'
+                    'Four working terminals, and the standing ability to reach a courier yard in the Jade Gorge from wherever the other ends of them are. The Measured Span has spent nine hundred years and a great deal of money on the problem this solves.'
                 ],
                 immortalItemId: null
             },
@@ -1386,17 +1149,6 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     // and did not explain the pairing.
                     'sixteen-thread-command',
                     // The wide-span treasure, and the only door onto it.
-                    //
-                    // It is here rather than anywhere else because the gates
-                    // agree. The door opens for somebody a house wrote an
-                    // account of an event without troubling to name, and the
-                    // book was written by somebody who held one method from
-                    // the foundation to the integrated body and appears never
-                    // to have learned that everybody else changes books - which
-                    // is not a thing that happens to a person with colleagues.
-                    // Its own gate is `domain: 'void'` at the deepest degree
-                    // the catalog uses, and a comprehension of absence is what
-                    // this door has always been measuring.
                     'single-road-treatise'
                 ],
                 other: [
@@ -1440,9 +1192,9 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                 {
                     kind: 'fate',
                     coincidence: 'carries_an_obligation',
-                    worldStateCheck: 'Does the claimant carry an obligation whose counterparty no longer exists, that they did not take on and cannot identify? The vault reads the obligation rather than the person: the branded bloodline satisfies it by descent, and so does anybody who swore on the burned ground at Sweptground, and so does anybody who was made surety for somebody else by a party that has since been dissolved.',
+                    worldStateCheck: 'Does the claimant carry an obligation whose counterparty no longer exists, that they did not take on and cannot identify? The vault reads the obligation rather than the person: the branded bloodline satisfies it by descent, and so does anybody who swore on the burned ground at Burnt Earth, and so does anybody who was made surety for somebody else by a party that has since been dissolved.',
                     characterStat: null,
-                    whyItCannotBeFarmed: 'The requirement is that the counterparty is gone, and a person cannot arrange to owe something to a dissolved house, because the swearing has to have happened while the house was alive and every such house is two millennia dead. The only live routes into the category are inheritance, which is descent, and the Sweptground bench, which produces the obligation as a side effect of a failure rather than as a reward for one. Nobody has ever obtained one on purpose. Two people have obtained one by trying to get something else.',
+                    whyItCannotBeFarmed: 'The requirement is that the counterparty is gone, and a person cannot arrange to owe something to a dissolved house, because the swearing has to have happened while the house was alive and every such house is two millennia dead. The only live routes into the category are inheritance, which is descent, and the Burnt Earth bench, which produces the obligation as a side effect of a failure rather than as a reward for one. Nobody has ever obtained one on purpose. Two people have obtained one by trying to get something else.',
                     whoHasEverPassed: 'Nobody, in the whole recorded history of the eastern towns. The branded families satisfy the condition and none of them has ever known the vault was a vault, which is the entire situation in one sentence.',
                     below: 'The steps are not there. From the yard it is a brick surround over filled ground, and a claimant who does not carry the obligation can dig it out and find soil, which two people have done.'
                 }
@@ -1536,7 +1288,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         },
         factionIds: ['sect-bone-lantern-cult', 'sect-lantern-hall'],
         outside: {
-            marker: 'A cleared circle in the burn zone, forty paces across. The burnt floor inside it has not been disturbed since the catastrophe and the burnt floor outside it is walked flat. Nothing grows in either. Crews have used the edge as a landmark for four generations and none of them steps in, for reasons nobody in the Marches has ever been able to state.',
+            marker: 'A cleared circle in the burn zone, forty paces across. The burnt floor inside it has not been disturbed since the catastrophe and the burnt floor outside it is walked flat. Nothing grows in either. Crews have used the edge as a landmark for four generations and none of them steps in, for reasons nobody in the Silent Cliffs has ever been able to state.',
             rumour: 'Gleaners say the circle takes people and that it is one of the honest hazards, meaning one that does not pretend. The Bone Lantern Cult has sent parties and describes it, in its own vocabulary, as ground that is still owed something.',
             attributedTo: null,
             lastPartySaid: 'Six people have walked into the circle in recorded memory. Five of them walked out, unhurt, within a minute, and reported that there was nothing there. The sixth did not come out and there is no body.',
@@ -1579,14 +1331,13 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         }
     },
 
-    // ── the two apex doors ────────────────────────────────────────────
-    // Everything above holds a heaven- or immortal-grade inheritance and is
-    // gated in that band. These two are the only sites in the catalog set at
-    // the top of the ladder, and they are set there because the arts behind
-    // them were written by people standing at Grand Ascension and above. The
-    // gate ordinals are not decoration: a party that can beat the door can
-    // also, by construction, survive being at the door, and nothing here
-    // adjusts downward for a party that cannot.
+    // the two apex doors Everything above holds a heaven- or immortal-grade
+    // inheritance and is gated in that band. These two are the only sites in the
+    // catalog set at the top of the ladder, and they are set there because the arts
+    // behind them were written by people standing at Grand Ascension and above. The
+    // gate ordinals are not decoration: a party that can beat the door can also, by
+    // construction, survive being at the door, and nothing here adjusts downward
+    // for a party that cannot.
     {
         id: 'trial-the-fourth-branch-station',
         kind: 'trial',
@@ -1680,7 +1431,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         factionIds: ['apex-long-cut', 'court-ninth-face'],
         outside: {
             marker: 'A ring of boundary stones on high open ground, set at a spacing nobody local uses, enclosing about two hundred paces of ground on which nothing grows and nothing has for a very long time. Four of the stones are cut on the faces that point inward. From outside the ring the four faces cannot be seen at all.',
-            rumour: 'The Marches will tell you it is where the authorisations are taken, and that a person is walked up there and left, and that whoever walks up does not walk down. All three parts are true and none of them is what the stones are for.',
+            rumour: 'The Silent Cliffs will tell you it is where the authorisations are taken, and that a person is walked up there and left, and that whoever walks up does not walk down. All three parts are true and none of them is what the stones are for.',
             attributedTo: 'The Long Cut',
             lastPartySaid: 'Nobody organises an entry. Herders cross the ring every season on the shortest line between two grazings and have done for centuries, and not one of them has ever had a reason to walk to a stone and look at the side facing away from them.',
             whatAKnowledgeablePartyReads: 'A ring is an enclosure and an enclosure has an inside. Cutting on the inward faces means the cutting was done by somebody who was already inside and expected the reader to be inside too, and the only people who have ever been inside that ring on purpose are candidates who were walked up there to attempt the last crossing. Four faces means four of them stopped on the way to their own death and cut something, which is not a thing a person does casually.',
@@ -1733,15 +1484,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         }
     },
 
-    // ── ground that is closed against strength ────────────────────────
-    //
-    // Four entries whose access band is a CAP, and the reason differs at
-    // every one of them, which is the whole requirement: an array with a
-    // calibrated range, a ward that classifies by weight, a floor over a
-    // void, and a door that only knows one kind of token. A cap makes a
-    // site a thing somebody has to be SENT into, and the four of them
-    // together are the argument that this is a property of ground rather
-    // than one rule wearing four hats.
+    // ground that is closed against strength
     {
         id: 'trial-the-beds-that-read-weight',
         kind: 'trial',
@@ -2039,7 +1782,7 @@ export const GRAVES: readonly Grave[] = [
         burial: 'interred_by_a_sect',
         outside: {
             marker: 'A dressed chamber front in a hillside above an arterial branch, faced in worked stone, with a course of inscription along the lintel giving a name, a rank at the end of Tribulation Transcendence, a date, and the words that he sat. The masonry is maintained. Somebody comes.',
-            rumour: 'Nothing in the Low Fall knows what the court is, so the rumour is that a very old cultivator is buried up there and that whoever put him there had money. Both halves are true and neither is the interesting part.',
+            rumour: 'Nothing in the Jade Gorge knows what the court is, so the rumour is that a very old cultivator is buried up there and that whoever put him there had money. Both halves are true and neither is the interesting part.',
             attributedTo: 'Shen Guyi',
             lastPartySaid: 'Two parties are known to have gone in. The second, forty years ago, was eleven people out of three sects who pooled the cost of the approach and said openly that a Tribulation Transcendence interment was the largest single haul available in the province.',
             whatAKnowledgeablePartyReads: 'That he sat. The lintel says it and the lintel is not being poetic: he reached the end of the ladder and did not attempt the crossing, so nothing he owned was ever tested by anything, and he had eleven years of knowing he was going to die in which to give away everything with a name on it. What is behind that stonework is the residue of a very long life and not one item of it has been through anything.',
@@ -2163,7 +1906,7 @@ export const GRAVES: readonly Grave[] = [
         burial: 'scar_field',
         outside: {
             marker: 'Eleven li of high ground that has not held qi in ninety years and will not again. There is no stone, no name and no mound, because there is nothing to put one over. The boundary of it is exact and visible from a distance in the way the vegetation stops.',
-            rumour: 'The Marches knows what it is. It is the most recent attempt anybody in either province can date and everybody local can point at it, and what they will tell you is that a person went up there alone one spring and the sky came down on her.',
+            rumour: 'The Silent Cliffs knows what it is. It is the most recent attempt anybody in either province can date and everybody local can point at it, and what they will tell you is that a person went up there alone one spring and the sky came down on her.',
             attributedTo: 'Yun Baiheng',
             lastPartySaid: 'Nobody has organised an entry, because there is no entry. Gleaners walk the scar every few years on the way to somewhere else and pick things up off the surface, which is exactly the correct method and none of them thinks of it as a dig.',
             whatAKnowledgeablePartyReads: 'A failed crossing leaves no body and almost no goods, and everything still lying on that ground went through the heaviest event that occurs anywhere in the world and is still an object. There are perhaps three things on eleven li of ground. Each of them is warranted by the only test that is not somebody\'s opinion, and no forge, no assay house and no auction in either province can issue the equivalent claim about anything.',
@@ -2524,8 +2267,8 @@ export const GRAVES: readonly Grave[] = [
         mannerOfDeath: 'killed_in_a_fight',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'The resealed part of the sorting-yard ruin at Hollowmarket, which is a wall the Company put back thirty years ago with its own hands and works alongside every day. There is no marker. His name is on the Company\'s wager board, which was never taken down, with the amount still written next to it.',
-            rumour: 'Every Gleaner knows. He went in on a wager and did not come back, the Company sealed it again and raised the wager, and that is the whole of the region\'s risk assessment and is told as a joke about the Marches.',
+            marker: 'The resealed part of the sorting-yard ruin at Willow Village, which is a wall the Company put back thirty years ago with its own hands and works alongside every day. There is no marker. His name is on the Company\'s wager board, which was never taken down, with the amount still written next to it.',
+            rumour: 'Every Gleaner knows. He went in on a wager and did not come back, the Company sealed it again and raised the wager, and that is the whole of the region\'s risk assessment and is told as a joke about the Silent Cliffs.',
             attributedTo: 'Deep Gleaner Xun',
             lastPartySaid: 'Nobody has gone in after him in thirty years. Two crews have discussed it seriously and both stopped at the same place, which is that a recovery is indistinguishable from an entry and the Company would have to decide which it was afterwards.',
             whatAKnowledgeablePartyReads: 'That there is a grave immediately behind the wall and something else deeper in, and that they are two different things. He is a man who died thirty years ago carrying a full deep-diving kit; what is further in is not a grave and is not his and is not in this catalog. Confusing the two is the specific error that gets a recovery crew killed, because a party that has decided it is going in to fetch a body treats the far chambers as background.',
@@ -2534,7 +2277,7 @@ export const GRAVES: readonly Grave[] = [
             advertisedOrdinal: null
         },
         interior: {
-            scene: 'Six paces behind the wall, in the fourth chamber, on the floor. He got that far in and no further and he was not moved afterwards. His lamp is beside him, burned out. Everything he took in is on him, because he was thirty years dead in a sealed room and nothing in the Marches has been in there since.',
+            scene: 'Six paces behind the wall, in the fourth chamber, on the floor. He got that far in and no further and he was not moved afterwards. His lamp is beside him, burned out. Everything he took in is on him, because he was thirty years dead in a sealed room and nothing in the Silent Cliffs has been in there since.',
             arrangedForAFinder: false,
             gates: [
                 {
@@ -2626,7 +2369,7 @@ export const GRAVES: readonly Grave[] = [
             attributedTo: null,
             lastPartySaid: 'Nobody. There is no attempt record, no camp, no pit and no path. Whoever finds it will be the first party to stand there in six hundred years.',
             whatAKnowledgeablePartyReads: 'That everything about the site is wrong for a planted one. A forgery is placed where people look, because a forgery has to be found; this is four days from a track on a spur with no reason to be walked. The correct reading is available only to somebody standing there, which is the whole difficulty with the category.',
-            whatAnIgnorantPartyConcludes: 'That a body under an overhang with a full pouch is the ordinary grave the Marches is full of, worth a fair price, and that the small unlabelled box in the middle of the inventory is a curio. This is also what two of the three parties who have handled a genuine one concluded.',
+            whatAnIgnorantPartyConcludes: 'That a body under an overhang with a full pouch is the ordinary grave the Silent Cliffs is full of, worth a fair price, and that the small unlabelled box in the middle of the inventory is a curio. This is also what two of the three parties who have handled a genuine one concluded.',
             startingAwareness: 'unaware',
             advertisedOrdinal: null
         },
@@ -2647,16 +2390,8 @@ export const GRAVES: readonly Grave[] = [
             gateOrigin: 'circumstance',
             contents: [
                 {
-                    // THE TOP PRIZE IN THE SETTING, on a body, unprotected,
-                    // in a pouch with four changes of clothing.
-                    //
-                    // It is here rather than behind a door because of what he
-                    // was: somebody who came down and stopped somewhere, at
-                    // thirty-three, of injuries. The canon ends at forty-five.
-                    // He was twelve rungs short of finishing the book he was
-                    // carrying and there is no indication anywhere on him that
-                    // he knew what it was worth, which is the ordinary way the
-                    // most valuable things in this world change hands.
+                    // THE TOP PRIZE IN THE SETTING, on a body, unprotected, in a
+                    // pouch with four changes of clothing.
                     what: 'A sixth manual, at the bottom of the pouch, water-damaged along one edge and folded rather than cased. It is the only thing he was carrying that nobody has been able to price.',
                     proven: false,
                     survived: null,
@@ -2730,8 +2465,8 @@ export const GRAVES: readonly Grave[] = [
         mannerOfDeath: 'duel',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'Two cairns eleven paces apart on a surveyed line above Scarwater, both raised by the same party on the same afternoon, both with a stone standing at the head and neither with a name on it. The Anchorhold\'s perimeter mark is on the rock between them and was there first.',
-            rumour: 'Everybody local knows what happened, has an opinion about who was in the right, and can name both parties. It was twelve years ago and there are people in Scarwater who were there.',
+            marker: 'Two cairns eleven paces apart on a surveyed line above Clear River Ford, both raised by the same party on the same afternoon, both with a stone standing at the head and neither with a name on it. The Anchorhold\'s perimeter mark is on the rock between them and was there first.',
+            rumour: 'Everybody local knows what happened, has an opinion about who was in the right, and can name both parties. It was twelve years ago and there are people in Clear River Ford who were there.',
             attributedTo: 'Two Core Formation cultivators of the Pavilion and the Consortium',
             lastPartySaid: 'Nobody has opened either. There is no reason to think there is anything in them and the families are alive and local.',
             whatAKnowledgeablePartyReads: 'Two Core Formation cultivators died in a duel over a survey line twelve years ago and were cairned where they fell by the survivors, which means both of them went into the ground with everything they had on that day and none of it has been through anything except an afternoon. It is a fair haul at a fair price and it is exactly what it looks like.',
@@ -2746,14 +2481,13 @@ export const GRAVES: readonly Grave[] = [
             gateOrigin: 'none',
             contents: [
                 {
-                    // The manual that makes the site read differently, on the
-                    // body of one of the two. Both of them were at the same
-                    // rung, both died on the same afternoon, and the canon says
-                    // the pairing ends when one of you does and that the
-                    // survivor does not reliably survive it. The official
-                    // account is a duel over a survey line, everybody local can
-                    // name both parties, and nobody has ever asked why the
-                    // second cairn was needed.
+                    // The manual that makes the site read differently, on the body
+                    // of one of the two. Both of them were at the same rung, both
+                    // died on the same afternoon, and the canon says the pairing
+                    // ends when one of you does and that the survivor does not
+                    // reliably survive it. The official account is a duel over a
+                    // survey line, everybody local can name both parties, and
+                    // nobody has ever asked why the second cairn was needed.
                     what: 'A worn earth-grade canon in the pouch of the cairn on the western side, on a method for two people cultivating as one circuit, with two names written inside the cover in the same hand.',
                     proven: false,
                     survived: null,
@@ -2820,9 +2554,9 @@ export const GRAVES: readonly Grave[] = [
         mannerOfDeath: 'died_of_injuries',
         burial: 'left_where_they_fell',
         outside: {
-            marker: 'A man in a ditch off the Kettle circuit with his contract still in his coat, three years there, found and reported twice by people who did not want the trouble of moving him. The village has a note of it.',
+            marker: 'A man in a ditch off the Iron Gate circuit with his contract still in his coat, three years there, found and reported twice by people who did not want the trouble of moving him. The village has a note of it.',
             rumour: 'He is known about. He took a culling notice priced off an old survey, the notice was wrong by four ranks, and the village has not amended it and does not intend to.',
-            attributedTo: 'A culler of the Kettle circuit',
+            attributedTo: 'A culler of the Iron Gate circuit',
             lastPartySaid: 'Two people have gone through his pockets and both left the contract, which is the only object at the site anybody has any use for and neither of them could read.',
             whatAKnowledgeablePartyReads: 'That there is nothing here, and that the contract in his coat is the mispriced notice and is evidence, and that a party who takes it to the Weir Office is doing something for somebody rather than for themselves.',
             whatAnIgnorantPartyConcludes: 'The same. Nobody is wrong about this grave. It is in the catalog because a file about inheritance needs the floor of the distribution in it, and the floor is a man in a ditch with a splint on and a contract that killed him.',
@@ -2876,13 +2610,12 @@ export const GRAVES: readonly Grave[] = [
         }
     },
 
-    // ── the two that carry a forbidden art ────────────────────────────
-    // Both of these exist because the arts on them exist. A forbidden art is
-    // never taught and never cached, so the only way a copy is anywhere is
-    // that somebody was carrying it when they stopped, and the entries below
-    // are the somebodies. Neither of them is a villain with a plan; both are
-    // people who took a shorter road, got further along it than anybody
-    // expected, and were charged for it on schedule.
+    // the two that carry a forbidden art Both of these exist because the arts on
+    // them exist. A forbidden art is never taught and never cached, so the only way
+    // a copy is anywhere is that somebody was carrying it when they stopped, and
+    // the entries below are the somebodies. Neither of them is a villain with a
+    // plan; both are people who took a shorter road, got further along it than
+    // anybody expected, and were charged for it on schedule.
     {
         id: 'grave-the-collector-in-arrears',
         kind: 'grave',
@@ -3046,14 +2779,7 @@ export const GRAVES: readonly Grave[] = [
         }
     },
 
-    // ── the shallowest sort, and the sort under a battle ──────────────
-    //
-    // Two entries that exist because the catalog had nothing at either
-    // end of the range. A border post is the sort of ruin that gets found
-    // first and is worth least, which is what the shallow end of a
-    // reserve actually looks like; a field where two houses stopped each
-    // other is the sort nobody built and nobody left, and it has an
-    // ordinary minimum with a hard number on it.
+    // the shallowest sort, and the sort under a battle
     {
         id: 'grave-the-post-at-the-upper-ford',
         kind: 'grave',
@@ -3224,25 +2950,12 @@ export const GRAVES: readonly Grave[] = [
 /** Everything in this file, as one addressable set. */
 export const SITES: readonly Site[] = [...INHERITANCE_TRIALS, ...GRAVES];
 
-// ─────────────────────────────────────────────────────────────────────────
 // ACCESSORS
-//
-// Two of them matter. `outsideViewOf` returns a type with no `interior` key,
-// so a caller that has only the outside view cannot reach the inside even by
-// mistake, and the compiler says so before any test runs. `enterSite` returns
-// the whole entry and is named as a deliberate act, because it is one.
-// ─────────────────────────────────────────────────────────────────────────
 
 const SITE_BY_ID: ReadonlyMap<string, Site> = new Map(SITES.map(s => [s.id, s]));
 
 /**
  * What a party can have without going in.
- *
- * The type is deliberately not derived from `Site` by omission: it is written
- * out, so adding a field to an interior can never widen this by accident.
- * A grave carries the manner of death and the burial here because both are
- * legible from the marker, and the manner of death is the one reading that
- * separates a party who knows the world from one who does not.
  */
 export type SiteOutsideView =
     | {
@@ -3265,12 +2978,6 @@ export type SiteOutsideView =
 
 /**
  * The pre-entry face, and nothing else.
- *
- * Below `named` the attribution and the rumour are withheld, following the
- * awareness rule in `hierarchy.ts`: a rumour is how a name reaches somebody,
- * and a cultivator with no knowledge record has not had it reach them. The
- * marker survives at every awareness, because a marker is a physical object
- * standing in a place and is not knowledge about anybody.
  */
 export function outsideViewOf(id: string, awareness: Awareness = 'named'): SiteOutsideView | undefined {
     const site = SITE_BY_ID.get(id);

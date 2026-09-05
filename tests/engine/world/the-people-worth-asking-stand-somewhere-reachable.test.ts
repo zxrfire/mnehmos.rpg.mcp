@@ -29,7 +29,7 @@
  *
  * The cause was one function. `seatLocationId` matched `faction.territory`
  * against region ids and place names - but `territory` is PROSE ("Terraced
- * peaks above Low Fall gorge, and the vein under it, taken off somebody else
+ * peaks above the gorge at Green Water City, and the vein under it, taken off somebody else
  * nineteen centuries ago"), so no branch of that search could ever fire and
  * every figure fell through to the region fallback. Its own callers' comment
  * said "They are placed at their faction's seat" the whole time.

@@ -1,46 +1,5 @@
 /**
  * Alchemy - the pill catalog.
- *
- * Pills are the only reliable way to undo damage in this game, and the reason
- * a run's economy exists. Every entry satisfies `PillSchema`.
- *
- * POTENCY UNITS
- * -------------
- * `potency` is deliberately effect-relative; `POTENCY_UNITS` below is the
- * authoritative statement of what the number means per effect, so the engine
- * and the runtime agent never have to guess:
- *
- *   heal_hp            → HP restored
- *   restore_qi         → qi restored
- *   treat_injury       → number of injuries marked treated, worst first
- *   boost_breakthrough → flat addition to breakthrough probability (0..1)
- *   advance_progress   → cultivation progress in qi-units
- *   extend_lifespan    → years added to the lifespan ceiling
- *   sate_hunger        → satiety points restored (max is SATIETY_MAX = 100)
- *   grain_abstinence   → days during which hunger stops accruing at all
- *   cleanse_deviation  → severity levels of qi deviation cleared
- *
- * BALANCE
- * -------
- * Grade drives value and toxicity together. A higher-grade pill is strictly
- * more expensive (disjoint, ascending value bands) and may be strictly more
- * poisonous (rising toxicity ceilings), so spamming heaven-grade medicine at
- * Foundation Establishment is a way to die of the cure. Within a grade, the
- * pills that touch progression sit at the top of both the value and toxicity
- * ranges, because buying advancement should always cost more than buying
- * survival. Which effects those are is `ADVANCEMENT_EFFECTS` below, and it is
- * exported rather than restated so that the doc, the tests and the lore audit
- * cannot each hold a different opinion about it.
- *
- * THE TWO THE GAME NAMES DIRECTLY
- * -------------------------------
- * `MINOR_HEALING_PILL_ID` is in every starting inventory: one pill, twelve HP,
- * and then the player is on their own.
- *
- * `GRAIN_ABSTINENCE_PILL_ID` is the answer to the hunger logistics problem -
- * ten years without eating - and it is priced at the very top of heaven grade
- * on purpose. Acquiring it is a mid-game goal, not a shopping trip: nine
- * thousand spirit stones is three hundred times the starting purse.
  */
 
 import type { Pill, PillEffect, TechniqueGrade } from '../../schema/cultivation.js';
@@ -67,18 +26,6 @@ export const POTENCY_UNITS: Record<PillEffect, string> = {
 /**
  * Spirit-stone value window per grade. Ascending and disjoint UP TO THE PEERS,
  * where the two windows deliberately overlap.
- *
- * Chaos and immortal are the same magnitude of power (`GRADE_POWER` in
- * `techniques.ts`), so grade does not move the window: **a chaos pill opens
- * where an immortal pill opens.** What moves an individual row inside the
- * shared window is scarcity and what the object turns out to be worth, and
- * those are facts about the row rather than about the grade.
- *
- * The chaos ceiling is higher and the reason is not power. It is that the
- * objects up there are singular, and a singular thing prices at what the only
- * market that matters will pay. Read the band as "a chaos pill may cost
- * anything an immortal pill may cost, and the rarest of them cost more than
- * anything else in the world" - never as "chaos outranks immortal".
  */
 export const PILL_VALUE_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 5, max: 99 },
@@ -90,15 +37,6 @@ export const PILL_VALUE_BANDS: Record<TechniqueGrade, Band> = {
 
 /**
  * Most toxic a pill of each grade may be. Rising, and level across the peers.
- *
- * Toxicity is the KNOWN price, printed on the tin, and a peer-magnitude
- * medicine puts a peer-magnitude load on the body whoever refined it - so the
- * two top grades share a ceiling rather than chaos getting a higher one.
- *
- * What separates them is not on this axis at all. An immortal pill's cost is
- * the number below and nothing else; a chaos pill charges the same number and
- * then does whatever `grade-spread.ts` draws, which is the unknown part and is
- * not expressible as a ceiling.
  */
 export const PILL_TOXICITY_CEILING: Record<TechniqueGrade, number> = {
     mortal: 1.5,
@@ -110,38 +48,6 @@ export const PILL_TOXICITY_CEILING: Record<TechniqueGrade, number> = {
 
 /**
  * The effects that buy ADVANCEMENT rather than survival.
- *
- * One exported set, because three places were entitled to an opinion about
- * this and two of them were wrong. `economy.md` enumerated it in prose, the
- * lore audit hardcoded its own copy, and the catalog was priced to a third
- * reading - which is how "buying advancement always costs more than buying
- * survival" came to be contradicted in two grades by a catalog that was
- * actually obeying it.
- *
- * THE TEST THAT SEPARATES THEM is not "does it keep you alive". It is: does
- * this return you to where you were, or take you somewhere you could not
- * otherwise get?
- *
- *   survival     heal, treat, cleanse, restore qi, a meal. You are back where
- *                you started, which is the whole of what you paid for.
- *   advancement  progress, breakthrough odds, lifespan - and abstinence.
- *
- * `extend_lifespan` is the precedent and it settles the argument. Lifespan is
- * the plainest survival there is - it is literally not dying - and the doc has
- * always filed it under advancement, because what it actually buys is YEARS TO
- * CULTIVATE IN. Grain abstinence is the identical argument at a shorter
- * horizon: it converts stones directly into uninterrupted cultivation, and
- * mechanically it is the precise thing that makes a decade of seclusion
- * possible instead of a death by starvation around day fifty-five.
- *
- * The catalog had already decided this. In every grade where one exists, the
- * abstinence pill is the single most expensive pill in its grade, above even
- * lifespan. The author priced it as advancement; only the enumeration said
- * otherwise. So the rule was never wrong - its list was incomplete.
- *
- * `sate_hunger` stays survival, and the line between them is exactly the test
- * above: filling a belly for a day returns you to where you were, and removing
- * hunger for a year does not.
  */
 export const ADVANCEMENT_EFFECTS: ReadonlySet<PillEffect> = new Set<PillEffect>([
     'boost_breakthrough',
@@ -155,32 +61,7 @@ export function isAdvancement(effect: PillEffect): boolean {
     return ADVANCEMENT_EFFECTS.has(effect);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT MODERN ALCHEMY CAN DO ABOUT A LIFESPAN
-//
-// Two limits, and they are one fact stated twice: a refinement is bounded by
-// the refiner. Nothing any living alchemist can set holds longer than three
-// hundred years, and nothing any living alchemist can set holds AT ALL in a
-// body past Nascent Soul. Above that height the body is doing something the
-// refinement was not made for, and it does not take.
-//
-// THIS IS A RULE ABOUT REFINEMENT, NOT ABOUT AN OBJECT, which is the whole
-// reason it is written this way. There is no branch anywhere on a pill's
-// identity, its grade, its name or who is holding it. The discriminating
-// question is who made it - and that is a real property with a real answer,
-// carried in `NOT_REFINABLE_BELOW_THE_LID_PILL_IDS` in the same idiom
-// `RECOVERED_RECIPE_IDS` uses next door. A pill nobody alive refined is not
-// exempt because it is special. It is outside the rule because the rule is
-// about living alchemists and no living alchemist made it.
-//
-// The consequence is the shape the setting wants. A cultivator at Core
-// Formation can buy years, expensively, up to three hundred. A cultivator at
-// Deity Transformation cannot buy a single one at any price, from anybody, and
-// the only thing in the world that would work for them is an object that was
-// made in an age that could make it. That is why time is the scarcest thing at
-// the top of the world, and it falls out of two numbers rather than out of a
-// claim.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** The end of Nascent Soul, read off the ladder rather than retyped. */
 const NASCENT_SOUL_END_ORDINAL = REALM_TIERS
@@ -199,11 +80,6 @@ export const MODERN_REFINEMENT = {
 
 /**
  * Pills no living alchemist can produce, with the reason each.
- *
- * A marker with no reason attached is the same silence in a different place -
- * the discipline `NO_SURVIVING_COPY_NOTES` is held to in `techniques.ts`. Keep
- * this set tiny; it is the exemption from the only ceiling the medicine
- * economy has, and one entry is currently the whole of it.
  */
 export const NOT_REFINABLE_BELOW_THE_LID_PILL_IDS: ReadonlySet<string> = new Set([
     'pill-immortal-longevity'
@@ -215,12 +91,8 @@ export const NOT_REFINABLE_NOTES: Readonly<Record<string, string>> = {
 } as const;
 
 /**
- * The years a lifespan pill actually buys this body, which is not always the
- * years printed on it.
- *
- * Returns 0 where the refinement will not take. Callers get a number and never
- * have to know why; `lifespanRefusalReason` is the sentence for the ones that
- * have to tell somebody.
+ * The years a lifespan pill actually buys this body, which is not always the years
+ * printed on it.
  */
 export function lifespanYearsFor(pill: Pill, ordinal: number): number {
     if (pill.effect !== 'extend_lifespan') return 0;
@@ -242,11 +114,6 @@ export function lifespanRefusalReason(pill: Pill, ordinal: number): string | nul
 /** Every run starts holding exactly one of these. */
 /**
  * The one pill in the catalog nobody is meant to want.
- *
- * Named as a constant like the starter healing pill because the same three
- * places have to agree about it - the row, the swallow path and the decision
- * an NPC makes about carrying one - and a string typed three times is a
- * silent no-op the third time.
  */
 export const SOUL_QUENCHING_PILL_ID = 'pill-soul-quenching';
 
@@ -260,12 +127,6 @@ export const GRAIN_ABSTINENCE_PILL_ID = 'pill-grain-abstinence';
 
 /**
  * The one a poor cultivator can actually buy.
- *
- * The abstinence ladder has three rungs and this is the bottom one: a year at
- * ninety stones, against ten years at nine thousand and a lifetime at ninety
- * thousand. Without it the whole mechanism was a heaven-grade purchase, which
- * put the answer to long seclusion out of reach of exactly the people whose
- * only asset is time.
  */
 export const MORTAL_GRAIN_ABSTINENCE_PILL_ID = 'pill-hollow-reed-fasting';
 
@@ -419,22 +280,6 @@ export const PILLS: readonly Pill[] = [
     },
     {
         // THE BOTTOM RUNG OF THE ABSTINENCE LADDER, and it was missing.
-        //
-        // The Grain Abstinence Pill at 9,000 stones is the designed answer to
-        // long seclusion, and it was the ONLY answer. Measured against a best
-        // village wage of 108 stones a year with 15 going on food, it is
-        // ninety-six years of unbroken full-time labour for one pill - against
-        // a Qi Condensation lifespan of a hundred years. The thing every poor
-        // cultivator needs most was priced beyond every poor cultivator, with
-        // nothing under it.
-        //
-        // This is what is under it. One year, ninety stones, about a year of a
-        // villager's savings, and ten of them are a decade - at a tenth of the
-        // heaven-grade pill's convenience and rather more than a tenth of its
-        // cost in health. That premium is the right shape: the expensive pill
-        // buys ten uninterrupted years in one swallow, and this one buys the
-        // same decade in ten instalments, each of which has to be planned for
-        // and paid for again.
         id: MORTAL_GRAIN_ABSTINENCE_PILL_ID,
         name: 'Hollow Reed Fasting Pill',
         grade: 'mortal',
@@ -796,43 +641,6 @@ export const PILLS: readonly Pill[] = [
     },
     {
         // THE RUIN MEDICINE, and it was always this row.
-        //
-        // This entry used to read three thousand years at a toxicity that had
-        // killed the recipient, and a second row was briefly added beside it
-        // for "the thousand-year medicine". That was the parallel-catalog
-        // mistake AGENTS.md forbids, committed against a single object: two
-        // pills nobody could have told apart in play. They are one thing, and
-        // this is it.
-        //
-        // WHAT CHANGED AND WHY.
-        //
-        //   3,000 -> 1,000  Nothing refined below the Lid exceeds three hundred
-        //                   years - see `MODERN_REFINEMENT` - so a three-thousand
-        //                   figure sitting above the ruin medicine made the ruin
-        //                   medicine unremarkable. One categorical object at a
-        //                   thousand, and nothing between it and three hundred,
-        //                   is the whole of the ladder above the modern line.
-        //   35 -> 0         Every other rung here is a bargain with a price
-        //                   attached: twenty years at a toxicity that makes the
-        //                   third dose worthless, three hundred at a toxicity
-        //                   that is the tree's opinion of the transaction. This
-        //                   one asks nothing, at any rung, and no living
-        //                   alchemist can explain how - because no living
-        //                   alchemist made it.
-        //   880k -> 1M      The ceiling of what this catalog can price. The most
-        //                   valuable object anybody can name, and not for sale.
-        //
-        // A FLAT THOUSAND AT ANY LEVEL, and the flatness prices it without a
-        // rule. A thousand years is a rounding error to somebody with a century
-        // of ambition and decisive to somebody at the top of the ladder facing a
-        // crossing that consumes tens of thousands of years of their span.
-        // Nothing anywhere branches on who swallows it; the object sorts its own
-        // market.
-        //
-        // It is in `NOT_REFINABLE_BELOW_THE_LID_PILL_IDS` and its formula names
-        // an extinct flower, so `recipe-immortal-longevity` is readable,
-        // complete and unfillable. See `lost-ages.ts` for who holds one, who
-        // spent theirs, and what is left of the flower anywhere in the world.
         id: 'pill-immortal-longevity',
         name: 'Immortal Longevity Pill',
         grade: 'chaos',

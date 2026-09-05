@@ -1,72 +1,6 @@
 /**
- * False Immortals: what they do with the time, the office that used to exist,
- * and the two ways they leave the world.
- *
- * `docs/world/climbing/immortals.md` covers the Immortal World as a place, what crosses
- * the Lid and the two crossings nobody makes. It does NOT cover the office, the
- * vacancy, the offer, or how a seat is identified - those are here and nowhere
- * else. This is the largest single body of design rationale in the catalog that
- * has no doc beside it; `docs/world/INDEX.md` says so.
- *
- * THE ONE THING TO UNDERSTAND
- * ---------------------------
- * A False Immortal is not rare because the world stopped making them. The world
- * makes them at roughly the rate the crossing record implies - the recorded span
- * is about four thousand four hundred years and holds something like nine
- * completed crossings, and a completed crossing lands on one of two rungs. They
- * are rare because they do not REMAIN. The rarity is in the residence and never
- * in the production, and every piece of this file is that sentence with names
- * attached.
- *
- * THE OPEN AXIS
- * -------------
- * Rank is shut at ordinal 45 and shut permanently - the Lid does not open twice
- * for the same name. The dao is not shut. Nothing in the understanding layer
- * reads an ordinal; insight has no ceiling tied to the ladder, and a False
- * Immortal keeps going deeper for as long as there is anywhere deeper to go.
- *
- * So what they actually have is one open axis and a fixed number of years, and
- * what they do with both is LEGACY. Three forms, and they are the whole of the
- * behaviour of everyone in this catalog:
- *
- *   protector      legacy through an institution. You outlive the house that
- *                  raised you and become the reason it survives, typically the
- *                  house that raised you in the first place. The most social of
- *                  the three and the only one the record has a name for. The
- *                  post is tiered: at an ordinary sect it is a job and it is
- *                  filled, and at the top of the world it is reserved for a
- *                  False Immortal and has been empty for eight hundred years.
- *                  It is not abolished. See `THE_OFFICE` and `THE_VACANCY`.
- *   peak           legacy through understanding. Going as deep as the axis
- *                  allows, for its own sake, with nobody to show it to. This is
- *                  what "went exploring and did not come back" almost always
- *                  is: not sightseeing, but going where the answer is.
- *   transmission   legacy through handing it on. Students where there are
- *                  students, and carved stone where there are not.
- *
- * AND THEN THE MADNESS
- * --------------------
- * Which is not boredom, is not decay, and is not age. It is what a mind does
- * when the only open axis closes or when the thing the depth was being left to
- * stops existing. Understanding is what holds a False Immortal together; a dao
- * has a peak and reaching it is a real event with a date; a house can fall and
- * a carving can go unread. `MADNESS_STAGES` sets the pace in years and
- * `LegacyState` decides how fast it is actually walked.
- *
- * NOBODY CAN BANK ONE
- * -------------------
- * And the mechanical fact under the whole institution: the seal band runs from
- * Void Refinement to Tribulation Transcendence, and a False Immortal is one
- * rung above the top of it. No sect has ever held one as a reserve, because no
- * sect could. Every protector in this file was there by choice, was free to
- * leave at any hour, and did. See `THE_SEAL_CANNOT_REACH_THEM`.
- *
- * WHAT THE PRESENT DAY HAS
- * ------------------------
- * No serving protector anywhere in the world, an office that several houses are
- * still holding open, exactly one person alive who is eligible for it, and a
- * good reason why he is the wrong man for it. See `THE_PRESENT_COUNT`. He is
- * also, unbidden and on no schedule, doing the half of it that mattered.
+ * False Immortals: what they do with the time, the office that used to exist, and
+ * the two ways they leave the world.
  */
 
 import { z } from 'zod';
@@ -98,14 +32,14 @@ export const THE_OPEN_AXIS = {
         'So there are two ways it goes wrong and they produce the same curve at different speeds. The dao finishes, which is path two failing by succeeding. Or the legacy fails: the house falls, the students die, the carving is never read by anybody. Path one fails by being outlived, which is why protectors are so heavily over-represented among the ones the world remembers going mad - an institution is somebody else\'s and institutions fall.',
     thisIsAlreadyTrueInTheEngine:
         // CORRECTED. This used to read "`discoverableInsights` reads the spirit
-        // root and nothing else", which was true when it was written and has
-        // not been true for some time: the function is now fully access-shaped
-        // and reads `readableManuals`, `teachers`, `artifacts`, `inheritances`,
-        // `tradition`, `locationTags` and `survived` alongside the root. The
-        // claim the file actually needs is the one about CEILINGS, and that
-        // half is intact - which matters more now that cultivation manuals
-        // carry a `cap` and rank is gated by the book in your hands. Dao is
-        // the axis that has no such ceiling, and that asymmetry is the point.
+        // root and nothing else", which was true when it was written and has not
+        // been true for some time: the function is now fully access-shaped and
+        // reads `readableManuals`, `teachers`, `artifacts`, `inheritances`,
+        // `tradition`, `locationTags` and `survived` alongside the root. The claim
+        // the file actually needs is the one about CEILINGS, and that half is
+        // intact - which matters more now that cultivation manuals carry a `cap`
+        // and rank is gated by the book in your hands. Dao is the axis that has no
+        // such ceiling, and that asymmetry is the point.
         'None of this needs building. Insight degree has no ordinal ceiling, `formInsight` never looks at a rung, and no cultivation manual\'s `cap` touches comprehension - a cap stops a RANK, never an understanding. What `discoverableInsights` does read is access: manuals in reach, teachers, artifacts, inheritances, tradition, the ground underfoot and what has been survived. So a False Immortal is limited by what they can get at, exactly as everybody else is, and not by how high they stand. The engine already treats rank and dao as independent; this file is the setting saying out loud what that independence means for the one population that has hit the end of one axis and not the other.'
 } as const;
 
@@ -166,12 +100,6 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
 
 /**
  * Whether the legacy still has somewhere to go.
- *
- *   holding    the work is being done and the depth still has a landing.
- *   finished   the axis closed. The peak of their own dao was reached, or the
- *              transmission is complete and there is nobody further to hand it
- *              to. Success, and it is the more dangerous of the two.
- *   failed     the house fell, the students died, the carving went unread.
  */
 export const LegacyStateSchema = z.enum(['holding', 'finished', 'failed']);
 export type LegacyState = z.infer<typeof LegacyStateSchema>;
@@ -289,18 +217,8 @@ export const MADNESS_STAGES: readonly MadnessStage[] = [
 ];
 
 /**
- * Which stage a False Immortal is at, given years since their crossing and
- * whether their legacy still has somewhere to go.
- *
- * Years set the pace. Legacy sets the speed: a finished axis or a failed
- * legacy advances the trajectory by one stage, which is the whole design of the
- * curve in a single line of code. Somebody whose house fell at thirty thousand
- * years presents as though they were at sixty.
- *
- * Pure, total, and clamped at both ends. Above the span it returns the last
- * stage rather than throwing, because a caller asking about a year past the
- * rung's figure is asking about somebody who is dead and should get the last
- * true answer rather than an exception.
+ * Which stage a False Immortal is at, given years since their crossing and whether
+ * their legacy still has somewhere to go.
  */
 export function madnessStageAt(
     yearsSinceCrossing: number,
@@ -320,10 +238,6 @@ export function stageIndex(stageId: string): number {
 
 /**
  * Whether somebody with this remainder can ever reach this stage at all.
- *
- * The answer is no far more often than anybody expects, and it is the reason
- * the world is not full of the fourth stage: a remainder short of a band's
- * floor means the span runs out first, and the person dies lucid.
  */
 export function canEverReach(remainderYears: number, stageId: string): boolean {
     const stage = MADNESS_STAGES.find(s => s.id === stageId);
@@ -362,13 +276,13 @@ export const THE_OFFICE = {
     whatItIs:
         'A very long favour, dressed as a post. A house with a False Immortal standing on it writes the arrangement up as an appointment, gives it a title, enters it on a roll and keeps it in the ceremonies, because a house cannot administer a courtesy and has no other vocabulary available. None of that makes it an appointment, and every house that has ever held one has understood the difference perfectly and gone on writing it the other way.',
     theWordDoesTwoJobs:
-        'And before any of that: most houses in the world that have a dao protector have somebody in the post right now, and none of them is a False Immortal. At an ordinary sect the position is a job - a Nascent Soul who does not travel, a Core Formation veteran who has been there forty years, somebody whose whole function is to be in the compound when something arrives. It is filled, it is unremarkable, and nobody thinks of it as exotic. The Marches and the Low Fall already disagree about what a realm name means without either of them having met anybody to ask; this is the same phenomenon at a smaller scale, and the two senses of the phrase almost never meet because the people who use one are not in rooms with the people who use the other.',
+        'And before any of that: most houses in the world that have a dao protector have somebody in the post right now, and none of them is a False Immortal. At an ordinary sect the position is a job - a Nascent Soul who does not travel, a Core Formation veteran who has been there forty years, somebody whose whole function is to be in the compound when something arrives. It is filled, it is unremarkable, and nobody thinks of it as exotic. The Silent Cliffs and the Jade Gorge already disagree about what a realm name means without either of them having met anybody to ask; this is the same phenomenon at a smaller scale, and the two senses of the phrase almost never meet because the people who use one are not in rooms with the people who use the other.',
     theReservedPost:
         'What is empty is the other one. At the top of the world the post is reserved: the house will not fill it with anybody who is not a False Immortal, and it has therefore been empty for a very long time. That refusal is what makes the emptiness mean something - a house with a vacant protector\'s chair is not short of strong people, it is declining to pretend that a strong person is the same thing.',
     onlyAHouseThatProducedOneCanHaveOne:
-        'And there is a structural reason the reserved post exists where it does, which nobody wrote down because it falls out of the office being internal. A protector is typically one of your own who crossed and came back, so only a house that has itself produced somebody who came back can expect one at all. Note the exact words, because an earlier draft of this entry got them wrong and put a chair at Sweptground: the qualifying fact is CAME BACK, not GOT THROUGH. A completed crossing produces a True Immortal who left and no chair at all. Only a crossing that stopped half way leaves a person a house could seat. So the crossing record is the wrong instrument and reads too generously - it counts departures and vacancies together, and the two are opposite outcomes. The qualifying fact is never a position in a hierarchy either, and that comes apart at the sharpest case in the world: the house with more completed crossings behind it than the rest of the top of the world put together holds from nobody, sits on no grant table, and is on nobody\'s list of the institutions that run anything.',
+        'And there is a structural reason the reserved post exists where it does, which nobody wrote down because it falls out of the office being internal. A protector is typically one of your own who crossed and came back, so only a house that has itself produced somebody who came back can expect one at all. Note the exact words, because an earlier draft of this entry got them wrong and put a chair at Burnt Earth: the qualifying fact is CAME BACK, not GOT THROUGH. A completed crossing produces a True Immortal who left and no chair at all. Only a crossing that stopped half way leaves a person a house could seat. So the crossing record is the wrong instrument and reads too generously - it counts departures and vacancies together, and the two are opposite outcomes. The qualifying fact is never a position in a hierarchy either, and that comes apart at the sharpest case in the world: the house with more completed crossings behind it than the rest of the top of the world put together holds from nobody, sits on no grant table, and is on nobody\'s list of the institutions that run anything.',
     whatACrossingLeavesBehind:
-        'Which produces the reading that is worth having, because it is the opposite of failure - but it has to be said in three parts rather than one, and collapsing them is the mistake this entry used to make. A crossing has three outcomes and only the middle one produces a chair. FIRST: somebody goes all the way and becomes a True Immortal, and there is nothing left here at all. No chair was ever reserved, because there is nobody a chair could have been for - the person is gone and not coming back, and a house in this position is not holding a vacancy, it simply has no such office. That is the commonest cited case and it is every name anybody can point to: the Azure Cloud Pavilion sent Ru Anjing three hundred and eighty years ago, the Sweptground Temple sent the First Abbot two thousand six hundred years ago, the Storm Tyrant Court sent the First Tyrant three thousand four hundred years ago, and the Hollow Court has sent six. Not one of those houses is short a protector. Their people succeeded. SECOND: somebody stops half way and becomes a False Immortal, and the house finds out. Only this produces a reserved chair, because only this leaves a person in the world who could conceivably stand in it, and the house holds the post open for them and for nobody else. THIRD, and by a wide margin the commonest of the three: somebody becomes a False Immortal and nobody below ever learns which of the outcomes it was. There is no chair, and the house does not know it is missing one. See `CROSSING_PRACTICE` for why - a crossing happens in a cave nobody was told about, and the default state afterwards is that the people who supplied three hundred years of it cannot say whether their candidate completed, died, or is sitting somewhere in seclusion.',
+        'Which produces the reading that is worth having, because it is the opposite of failure - but it has to be said in three parts rather than one, and collapsing them is the mistake this entry used to make. A crossing has three outcomes and only the middle one produces a chair. FIRST: somebody goes all the way and becomes a True Immortal, and there is nothing left here at all. No chair was ever reserved, because there is nobody a chair could have been for - the person is gone and not coming back, and a house in this position is not holding a vacancy, it simply has no such office. That is the commonest cited case and it is every name anybody can point to: the Azure Cloud Pavilion sent Ru Anjing three hundred and eighty years ago, the Burnt Earth Temple sent the First Abbot two thousand six hundred years ago, the Storm Tyrant Court sent the First Tyrant three thousand four hundred years ago, and the Hollow Court has sent six. Not one of those houses is short a protector. Their people succeeded. SECOND: somebody stops half way and becomes a False Immortal, and the house finds out. Only this produces a reserved chair, because only this leaves a person in the world who could conceivably stand in it, and the house holds the post open for them and for nobody else. THIRD, and by a wide margin the commonest of the three: somebody becomes a False Immortal and nobody below ever learns which of the outcomes it was. There is no chair, and the house does not know it is missing one. See `CROSSING_PRACTICE` for why - a crossing happens in a cave nobody was told about, and the default state afterwards is that the people who supplied three hundred years of it cannot say whether their candidate completed, died, or is sitting somewhere in seclusion.',
     theChairIsAPieceOfKnowledge:
         'Which is what a reserved chair actually is, and it is worth stating separately because it is not obvious from the ceremonies. A house holding one is not telling you it was strong enough to produce somebody; half the houses in either province have an ascended ancestor on a wall and no chair anywhere. It is telling you the house KNOWS what became of one of its own - that the person stopped rather than finished, and is still out there. That is a piece of knowledge almost nobody in the world has about anybody, it is rarer than the crossing itself, and it is the second of the two filters that make the post empty everywhere: False Immortals are scarce, and knowing about one is scarcer. A house with a chair has a reason it knows, and the reason is worth asking about.',
     itIsVacantAndNotAbolished:
@@ -417,8 +331,8 @@ export const THE_VACANCY = {
         'An entry on a roll with the name column empty, which the Ninefold Ledger will certify as a valid standing office and has certified twice in four centuries for houses that wanted it on paper.',
         'A hall in the Nine Peaks compound that the ascetics still call the ninth guest\'s, which is the only trace of the last occupant anybody outside the Order would recognise.'
     ],
-    theSweptgroundEntryWasWrongAndIsRetracted:
-        'A sixth item stood here and has been struck, and the retraction is kept rather than quietly deleted because the error is instructive. It read: "at Sweptground, four monks, a plain wall, and a chair that has been reserved for two thousand six hundred years." The Sweptground Temple has no chair and never had one. Their only immortal SUCCEEDED - the First Abbot went all the way, which makes him a True Immortal who left rather than a False Immortal who stopped, and a house in that position is not holding a vacancy open because there was never anybody it could be held open for. The line was written from the crossing record, which is the wrong qualifier: a completed crossing produces a departure, and only a False Immortal produces a chair. See `whatACrossingLeavesBehind`, which now separates the three outcomes this entry collapsed into one.',
+    theBurntEarthEntryWasWrongAndIsRetracted:
+        'A sixth item stood here and has been struck, and the retraction is kept rather than quietly deleted because the error is instructive. It read: "at Burnt Earth, four monks, a plain wall, and a chair that has been reserved for two thousand six hundred years." The Burnt Earth Temple has no chair and never had one. Their only immortal SUCCEEDED - the First Abbot went all the way, which makes him a True Immortal who left rather than a False Immortal who stopped, and a house in that position is not holding a vacancy open because there was never anybody it could be held open for. The line was written from the crossing record, which is the wrong qualifier: a completed crossing produces a departure, and only a False Immortal produces a chair. See `whatACrossingLeavesBehind`, which now separates the three outcomes this entry collapsed into one.',
     itCouldBeFilledTomorrow:
         'And that is the point of writing it as a vacancy. The post is live wherever it is reserved. The houses that hold it open would fill it, several have the quarters ready, and the terms would be recognisable to anybody who has read the eleven instruments. Nothing about the world prevents it. The only missing element is the person, and the person is exactly what a cultivator who survives the last crossing becomes.',
     theShapeOfItRightNow:
@@ -427,11 +341,6 @@ export const THE_VACANCY = {
 
 /**
  * How an offer would actually be made, if there were anybody to make it to.
- *
- * This exists because it is the answer to the question a run reaches at
- * ordinal 45: there is one rung above and it is shut, and the three legacy
- * paths are what is left. Path one is the only one an institution can hand you,
- * and this is the shape of the handing.
  */
 export const THE_OFFER = {
     theDefaultIsYourOwnHouse:
@@ -454,13 +363,10 @@ export const THE_OFFER = {
         'Legacy through an institution, which is the only one of the three paths that somebody else can hand you. The other two are available to any False Immortal anywhere and require nobody\'s agreement. This one requires a house, and a house that is worth outliving is a genuinely scarce thing.'
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
-// DEPARTURE
-// The mechanism the world arithmetic assumes and nothing in the data
-// performed. `immortalStock` in `engine/world/ladder-odds.ts` multiplies
-// production by mean residence and gets one to three standing; this is what
-// the residence figure is actually made of.
-// ─────────────────────────────────────────────────────────────────────────
+// DEPARTURE The mechanism the world arithmetic assumes and nothing in the data
+// performed. `immortalStock` in `engine/world/ladder-odds.ts` multiplies production
+// by mean residence and gets one to three standing; this is what the residence
+// figure is actually made of.
 
 export const DEPARTURE = {
     theArithmeticItServes:
@@ -532,11 +438,6 @@ export const DEPARTURE_DESTINATIONS: readonly {
 
 /**
  * Whether a residence of this many years is unusual for a False Immortal.
- *
- * Against the world layer's mean rather than against the rung's span, because
- * the rung's span is not what removes them. Anything past the mean is already
- * remarkable and anything past twice it has no precedent in the record except
- * the one man currently doing it.
  */
 export function residenceIsExceptional(
     yearsResident: number,
@@ -618,17 +519,8 @@ export const FalseImmortalEndSchema = z.enum([
 export type FalseImmortalEnd = z.infer<typeof FalseImmortalEndSchema>;
 
 /**
- * Where the protector came from, and it decides almost everything about how
- * the arrangement reads.
- *
- *   internal   one of the house's own, who crossed from it and came back. The
- *              norm by a wide margin, and it generates almost no record at all,
- *              because a house writes its own ancestor standing on its own
- *              mountain up as continuity rather than as an event.
- *   external   somebody else's existence on your ground. Rare, possible, and
- *              awkward in ways an internal one never is - and it produces
- *              instruments, disputes, correspondence and gossip, which is why
- *              the surviving record is so heavily skewed toward it.
+ * Where the protector came from, and it decides almost everything about how the
+ * arrangement reads.
  */
 export const RecruitmentSchema = z.enum(['internal', 'external']);
 export type Recruitment = z.infer<typeof RecruitmentSchema>;
@@ -792,7 +684,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         },
         carving: {
             id: 'carving-under-the-burned-seat',
-            where: 'Under the burned seat at Sweptground, behind the seal the Tally Court cut in its last year, on ground where debts sworn do not settle and never have since.',
+            where: 'Under the burned seat at Burnt Earth, behind the seal the Tally Court cut in its last year, on ground where debts sworn do not settle and never have since.',
             whatItIs:
                 'Her account of the arterial system and where its output goes, cut into the wall of the Court\'s own seat chamber over about a century, finished a hundred years before the house ended. It is the only thing she ever wrote down and it is not a technique. It is a survey of the thing every institution in the world is now quietly losing to.',
             script: 'tally_hand',
@@ -814,7 +706,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'The Tally Court was ended by its own auditors within a century of her going down, which they could not have attempted while she was standing in the building, and every account of the ending that survives is theirs. The Ledger has held her figures ever since without knowing they are hers, in volumes it has never opened, in a hand it can read.',
         whatSurvives: [
             'nine sealed volumes in the Ninefold Ledger vault index with no subject line, which almost certainly contain her figures',
-            'a wall under the burned seat at Sweptground that nobody has looked at in twenty-three centuries',
+            'a wall under the burned seat at Burnt Earth that nobody has looked at in twenty-three centuries',
             'a branded bloodline in the eastern towns carrying an obligation nobody can identify, entered by a house that was totalling what the crossings had taken and had her arithmetic to do it with'
         ],
         servingNow: false
@@ -822,7 +714,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
     {
         id: 'fi-deng-ru',
         name: 'Deng Ru',
-        calledBy: 'The Guest at Kettle',
+        calledBy: 'The Guest at Iron Gate',
         crossedYearsAgo: 44_000,
         remainderAtCrossingYears: null,
         remainderNote:
@@ -837,18 +729,18 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             recruitment: 'external',
             recruitmentNote:
                 'External, and the Span never once put it that way, because the Span never put it any way at all. He was entered on a station roll rather than a house roll, which is what the Span does with a surveyor it has hired for a season, and nobody ever revised the entry in eleven hundred years. It is the least ceremonious arrangement in the catalog and it worked better than any of the others.',
-            title: 'The Guest at Kettle, entered on the station roll and never on the house roll',
+            title: 'The Guest at Iron Gate, entered on the station roll and never on the house roll',
             fromYearsAgo: 4_600,
             toYearsAgo: 3_500,
             whatTheHouseSupplied:
                 'Terminals. Twenty-two closed and nine answering, a survey listing thirty-one, and a house that would talk about nothing else for as long as anybody would sit there. It was the last subject in the world he still had an appetite for, and the Span gave him eleven hundred years of it without ever once asking him for anything.',
             whatTheHouseGot:
-                'Eleven hundred years of a guest at Kettle station who was never described as anything more than that, and nine amended entries in the true-distance table, which is the part the Span does not know it got.',
+                'Eleven hundred years of a guest at Iron Gate station who was never described as anything more than that, and nine amended entries in the true-distance table, which is the part the Span does not know it got.',
             theOrderThatWasGiven: null
         },
         carving: {
             id: 'carving-under-the-kettle-plaster',
-            where: 'On the north wall of the second room at Kettle station, faced over with lime plaster during a rebuild four hundred years ago by masons who recorded the wall as bearing old cutting of no interest.',
+            where: 'On the north wall of the second room at Iron Gate station, faced over with lime plaster during a rebuild four hundred years ago by masons who recorded the wall as bearing old cutting of no interest.',
             whatItIs:
                 'A folding: how two known places are brought against each other and walked across, cut out in full by somebody who remembered doing it as a matter of ordinary travel. About two thirds of the face was recorded in a station notebook before the plaster went on, by a clerk who copied it because it was there and did not understand a character of it.',
             script: 'ordinary',
@@ -862,7 +754,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         end: 'went_mad',
         endedYearsAgo: 3_500,
         endNote:
-            'Over about a century he answered less, and then not at all, and one spring he walked out of Kettle station and down the eastern road toward a terminal that stopped existing eleven thousand years ago. The station book has one line in the ordinary hand recording that the Guest departed on that date, and no further entry of any kind. Nobody went after him. Nobody at the station thought anything had happened, because from inside the building nothing had: a very old man had stopped being talkative and then had gone somewhere, which is what very old men do.',
+            'Over about a century he answered less, and then not at all, and one spring he walked out of Iron Gate station and down the eastern road toward a terminal that stopped existing eleven thousand years ago. The station book has one line in the ordinary hand recording that the Guest departed on that date, and no further entry of any kind. Nobody went after him. Nobody at the station thought anything had happened, because from inside the building nothing had: a very old man had stopped being talkative and then had gone somewhere, which is what very old men do.',
         whichExitItReallyWas:
             'The record would call it going looking and this catalog calls it the trajectory, and the distinction rests on the eleven hundred years before it rather than on the walk. A man who spends a century answering less and then leaves for a place that is not there has not decided anything. He has arrived somewhere.',
         stageAtEndId: 'stage-the-settled-error',
@@ -871,7 +763,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'Nine entries of the true-distance table carry corrections in the Span\'s own hand, unsigned, all made in one season, and they are the only original figures the house has ever produced. The Span believes they are a recovered Wide Age correction, which in every sense that matters they are: he took them himself, correctly, when the network ran. Every courier contract and freight span in two provinces has been priced off them for eleven hundred years and the Span cannot find the error, because there is no error in them.',
         whatSurvives: [
             'nine corrected entries in the true-distance table, unsigned, in the Span\'s own hand, which price every courier contract in two provinces',
-            'a line in the Kettle station book recording that the Guest departed, with no entry before it and none after',
+            'a line in the Iron Gate station book recording that the Guest departed, with no entry before it and none after',
             'about two thirds of a folding, copied by a clerk who did not understand it, circulating as a recovered fragment with no attribution',
             'the original under lime plaster on the north wall of a room the Span uses daily'
         ],
@@ -992,7 +884,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         office: {
             factionId: null,
             factionNote:
-                'A Counting Age house squatting in a Standing Age compound in the high Low Fall. Its name is cut on its own boundary stone in Standing hand prose, which nobody can read, so the house is nameless for exactly the reason everything else about the site is: the record is there and cannot be opened.',
+                'A Counting Age house squatting in a Standing Age compound in the high Jade Gorge. Its name is cut on its own boundary stone in Standing hand prose, which nobody can read, so the house is nameless for exactly the reason everything else about the site is: the record is there and cannot be opened.',
             recruitment: 'external',
             recruitmentNote:
                 'External, and the house never knew by how much. It took in a courteous stranger of no stated age who could show its disciples things nobody else in the world could show them, and it did not occur to anybody to ask when he had crossed, because the question has no ordinary answer and the house had no ordinary reason to want one. He had been across for longer than every institution in the world put together.',
@@ -1007,7 +899,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         },
         carving: {
             id: 'carving-the-practice-yard',
-            where: 'The floor of the practice yard of an intact, unlooted, never-resettled Standing Age compound in the high Low Fall, which local practice says you do not go to.',
+            where: 'The floor of the practice yard of an intact, unlooted, never-resettled Standing Age compound in the high Jade Gorge, which local practice says you do not go to.',
             whatItIs:
                 'A complete dao, cut in courses across roughly four hundred paces of dressed floor over twelve hundred years. It is the largest single body of carved dao in either province by an enormous margin and there is no second place. The characters are cut cleanly throughout, in one hand, at one standard, from the first course to the last.',
             script: 'own_hand',
@@ -1030,7 +922,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'The house is gone and the compound is not. It stands intact, unlooted and never resettled, at node counts far above what anybody now can light, and the reason is neither haunting nor formation: a compound where everybody starved in place with the doors standing open is a thing local practice has a rule about, and the rule has held for four thousand years without anybody remembering what it is for.',
         whatSurvives: [
             'a complete carved dao across four hundred paces of practice yard floor, of which the first third has been read once and the rest never',
-            'an intact Standing Age compound in the high Low Fall that nobody enters, at node counts nobody can light',
+            'an intact Standing Age compound in the high Jade Gorge that nobody enters, at node counts nobody can light',
             'the house record of the hundred and ten years, kept to the end, in a hand that deteriorates - the only first-hand account of the fourth stage in existence',
             'a boundary stone carrying the house name in Standing hand prose, which is the reason nobody can say whose compound it is'
         ],
@@ -1097,15 +989,12 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
     }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE REGISTER OF POSSIBLE FALSE IMMORTALS
-// What the marks above actually produce in the world. Every entry in the
-// catalog left something still working, an institution that notices things
-// wrote a line about who it might have been, and the lines cannot be closed.
-// The register is maintained and never used. It is also where the one living
-// candidate sits, as one line among several, and nothing here may give
-// anybody a way to tell his line from the rest of them.
-// ─────────────────────────────────────────────────────────────────────────
+// THE REGISTER OF POSSIBLE FALSE IMMORTALS What the marks above actually produce in
+// the world. Every entry in the catalog left something still working, an
+// institution that notices things wrote a line about who it might have been, and
+// the lines cannot be closed. The register is maintained and never used. It is also
+// where the one living candidate sits, as one line among several, and nothing here
+// may give anybody a way to tell his line from the rest of them.
 
 export const THE_CANDIDATE_REGISTER = {
     whatItIs:
@@ -1128,14 +1017,11 @@ export const THE_CANDIDATE_REGISTER = {
         'Exactly one, and what makes it unusual is not that it is likelier. It is that it has a name attached, which most lines do not. Every line on the admissions list goes blank after the date, because that is what the document is - the Court takes somebody in and the record ends there - and his goes blank in the ordinary way rather than in a pointed one. What sits against his name and not against most of the others is one word, written by whoever noticed that a man admitted at that bar six centuries ago has not since been seen doing any of the things somebody of that standing does where people can watch. That is reasoning rather than a hunch, and it still gets nobody past the first of the three questions. See `whoKnowsWhat.apexBlindSpot` in `wanderers.ts` for the list as the institutions actually hold it. Nothing in this file distinguishes that line from the others and nothing anywhere should.'
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
-// IDENTIFYING A SEAT
-// The one crack in the Court's opacity, and it lives here rather than in the
-// sect data because it is the knowledge model the present-day material above
-// rests on. The information exists outside those mountains. It is held by the
-// category of person who has no price, which is a different and better
-// problem than an unknowable one.
-// ─────────────────────────────────────────────────────────────────────────
+// IDENTIFYING A SEAT The one crack in the Court's opacity, and it lives here rather
+// than in the sect data because it is the knowledge model the present-day material
+// above rests on. The information exists outside those mountains. It is held by the
+// category of person who has no price, which is a different and better problem than
+// an unknowable one.
 
 export const IDENTIFYING_A_SEAT = {
     admissionIsNotUniform:
@@ -1197,13 +1083,8 @@ export const IDENTIFYING_A_SEAT = {
 } as const;
 
 /**
- * The entries whose marks are still readable or still in use, which is what
- * an institution could actually notice and write a line about.
- *
- * Derived rather than listed, so it stays true as the catalog changes. A
- * carving nobody can read and a carving nobody has ever seen generate nothing,
- * which is why the register is shorter than the catalog and why most of what
- * has been across leaves no line at all.
+ * The entries whose marks are still readable or still in use, which is what an
+ * institution could actually notice and write a line about.
  */
 export function marksThatGenerateCandidateLines(): FalseImmortalRecord[] {
     return FALSE_IMMORTALS.filter(f =>
@@ -1299,21 +1180,13 @@ export const THE_PRESENT_COUNT = {
         'Which has to be said in the same breath, because there is stone with his cutting on it in three places and it is a different act. A lecture needs a surface, he works on whatever is there, and he does not take it away with him afterwards - so what is left is an afternoon\'s working, cut where the afternoon happened, in the ordinary hand of the province, for people who were in the room and had it shown to them first. See `LU_SHENG_CARVINGS`. Nobody cut those for posterity and none of them is a dao laid out in order; they are the residue of transmission rather than a substitute for it, and the difference is the whole of why he can leave one lying about on a river stone and not think about it again.'
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE LIVING ONE'S FACES
-// The only carvings in this file by somebody who is still walking around,
-// and the only route by which anything at ordinal 45 reaches a reader who
-// was not in the room. Same type, same field, same route as the seven
+// THE LIVING ONE'S FACES The only carvings in this file by somebody who is still
+// walking around, and the only route by which anything at ordinal 45 reaches a
+// reader who was not in the room. Same type, same field, same route as the seven
 // above: a face somebody cut. See `allDaoCarvings`.
-// ─────────────────────────────────────────────────────────────────────────
 
 /**
  * What he has to lose, which is the fact these faces are actually about.
- *
- * Stated here rather than in `wanderers.ts` because it is a claim about the
- * top of the world and it is checked against the resolver rather than argued.
- * No arithmetic lives in this block and none may: it reports what the harness
- * returned and points at the rows that produced it.
  */
 export const THE_ARTS_ARE_THE_WHOLE_INVENTORY = {
     heHoldsNothing:
@@ -1331,13 +1204,6 @@ export const THE_ARTS_ARE_THE_WHOLE_INVENTORY = {
 /**
  * Three faces, three arts, and the reason a reader gets less off them than a
  * student got in the room.
- *
- * The route is the ordinary one - `yieldedTechniqueIds`, the same field the
- * seven historical entries use - and nothing about these being cut by somebody
- * still alive changes how they are read, held or found. What it changes is the
- * one thing worth noticing: for the first time in the record, the author could
- * simply have been asked. See `ABOVE_THE_LID_TRANSMISSION.andTheFacesHeLeavesBehind`
- * in `techniques.ts` for why that costs the reader rather than saving them.
  */
 export const LU_SHENG_CARVINGS: readonly DaoCarving[] = [
     {
@@ -1426,18 +1292,6 @@ export function servingProtectors(): FalseImmortalRecord[] {
 
 /**
  * Every face cut by anybody who has been over the Lid, in one list.
- *
- * The carving route is defined as `DaoCarving.yieldedTechniqueIds` in this
- * file, and it always was - the route is the kind of thing, not the array it
- * happens to be reachable through. Seven of these hang off a record in
- * `FALSE_IMMORTALS` because their authors are gone and a record is the only
- * place a fact about them can live. Three do not, because their author is
- * still walking around and does not belong in a catalog of endings.
- *
- * Anything asking "what can a face hand somebody" must ask here rather than
- * walking `FALSE_IMMORTALS`, or it will quietly answer for two thirds of the
- * faces in the world. `scripts/audit-lore.ts` and the technique-routes suite
- * both read this.
  */
 export function allDaoCarvings(): DaoCarving[] {
     return [

@@ -1,28 +1,5 @@
 /**
- * Wandering figures: people who belong to nothing and are therefore worth
- * asking.
- *
- * `docs/world/houses/asking.md` ends on the rule this file exists to embody: what
- * closes a mouth is position, not power. An official has more to lose by
- * talking than he could gain. A patriarch answers for a sect. A guest elder is
- * paid by somebody. All of them are careful, and their care scales with how
- * much they have.
- *
- * Somebody with no sect, no title, no lease, no obligations and nothing anyone
- * can do to them is under no such pressure, and will simply say things - not as
- * a favour, not because the asking was skilful, but because it cost nothing and
- * they were already talking.
- *
- * That is not a shortcut and must never be built as one. A wanderer is rare,
- * hard to recognise before they matter, and under no obligation to be accurate,
- * current, serious or consistent. They may answer the first question and ignore
- * the second. What they say may be two centuries out of date and delivered as
- * though it were this morning. They may be wrong and not care.
- *
- * Every entry here is `unaware` to an ordinary cultivator: not hard to find,
- * unknown to exist. See `hierarchy.ts` for the awareness ladder and the rule
- * that a name may not be spoken in narration to somebody who has no record of
- * it.
+ * Wandering figures: people who belong to nothing and are therefore worth asking.
  */
 
 import { z } from 'zod';
@@ -104,18 +81,6 @@ export type Incident = z.infer<typeof IncidentSchema>;
 
 /**
  * The only ceiling on his behaviour, and it is not in this world.
- *
- * He does not care about any consequence the mortal world can produce, and he
- * is correct not to: nothing below the Lid can reach him. What he does care
- * about is that an act outrageous enough will bring an old immortal down to
- * kill him, at a price they would pay and he knows they would pay.
- *
- * The line is drawn by WHOSE INTEREST an act crosses, never by how much damage
- * it does - which is why, from below, his restraint looks arbitrary. He robs a
- * top sect on a whim and then declines something that appears smaller, and
- * nobody watching can derive the rule. Only somebody who understands what is
- * above the Lid can, which makes his behaviour a piece of evidence about the
- * shape of the world for anyone able to read it.
  */
 export const RestraintSchema = z.object({
     principle: z.string().min(150),
@@ -155,21 +120,6 @@ export type Restraint = z.infer<typeof RestraintSchema>;
 
 /**
  * Why he is wandering, and it is logistical rather than tragic.
- *
- * He is not cursed, shunned or brooding. He outlived his enemies, most of whom
- * died of things that had nothing to do with him, and the handful of people he
- * would actually want to talk to are in seclusion for another sixty years.
- * That is the whole of it.
- *
- * So walking the mortal world is not a hobby and not a search for meaning: it
- * is the only conversation available. Which reframes the generosity entirely -
- * he likes somebody because they are there, present and interesting for an
- * afternoon, and that is scarcer in his life than any object. Stealing a pill
- * for a stranger costs him nothing and is the most interesting thing to have
- * happened to him in a decade.
- *
- * Never write him as lonely. He is cheerful, curious and unbothered, and has
- * not once mentioned any of this. The reader can do the arithmetic.
  */
 export const IsolationSchema = z.object({
     enemies: z.string().min(120),
@@ -202,12 +152,6 @@ export type Isolation = z.infer<typeof IsolationSchema>;
 
 /**
  * One of the four he simply does not like.
- *
- * Not a feud. At their scale a real quarrel would be a geological event and
- * this is nothing of the sort - he finds one of them irritating and always
- * has. Keep it petty. It is what turns four beings who have stopped
- * participating in the world into people, and it undercuts nothing, because
- * there is nothing at stake in it at all.
  */
 export const PettyDislikeSchema = z.object({
     /** Which of the four. */
@@ -242,11 +186,11 @@ export const WandererSchema = z.object({
     /** What most people who know anything call him. */
     commonName: z.string().min(1),
     /**
-     * Where he stands, on the same ladder as everybody else. False Immortal is
-     * a rank rather than a condition, so he sorts into the ordinary power table
-     * above every Tribulation Transcendence in the world - which is the whole
-     * difficulty he presents. It is also the last ordinal he will ever hold:
-     * the rung above it is legal, occupied, and shut against his name.
+     * Where he stands, on the same ladder as everybody else. False Immortal is a
+     * rank rather than a condition, so he sorts into the ordinary power table above
+     * every Tribulation Transcendence in the world - which is the whole difficulty
+     * he presents. It is also the last ordinal he will ever hold: the rung above it
+     * is legal, occupied, and shut against his name.
      */
     lastOrdinal: z.number().int().min(0).max(MAX_ORDINAL),
     crossingOutcome: CrossingOutcomeSchema,
@@ -259,10 +203,10 @@ export const WandererSchema = z.object({
     incomplete: z.string().min(80),
     /**
      * A property of what he now is rather than a technique he uses. He is not
-     * fixed, and changes when it suits him for reasons that are barely
-     * reasons. Never give it a name or list it as a capability: a man who did
-     * not entirely come back is not going to have a fixed face, and he has
-     * never once remarked on it.
+     * fixed, and changes when it suits him for reasons that are barely reasons.
+     * Never give it a name or list it as a capability: a man who did not entirely
+     * come back is not going to have a fixed face, and he has never once remarked
+     * on it.
      */
     notFixed: z.object({
         howItReads: z.string().min(150),
@@ -281,11 +225,6 @@ export const WandererSchema = z.object({
         rankHeld: z.string().min(1),
         /**
          * A rank previously held, where the current one replaced something.
-         *
-         * Null is the ordinary case. It is set where the honorary rank is not a
-         * courtesy extended to an outsider but the residue of a real position
-         * somebody can no longer occupy, which is a different relationship and
-         * reads as one the moment it is stated.
          */
         formerRank: z.string().nullable(),
         whatItAmountsTo: z.string().min(150),
@@ -296,15 +235,6 @@ export const WandererSchema = z.object({
     }),
     /**
      * Who knows any of the above.
-     *
-     * The Court does not brief anybody and never has, so every fact in this
-     * affiliation is held by five people: the four Seats and him. It leaks only
-     * where he leaks it, which he does carelessly, in the wrong order, to
-     * whoever is in front of him - and that is the only channel there is.
-     *
-     * The consequence for play is worth stating plainly: a cultivator cannot
-     * research this. There is no archive, no register entry and no rumour with
-     * a source, and anybody claiming otherwise is repeating something he said.
      */
     whoKnows: z.string().min(150),
     /** Why he is not there, which is the whole logic of him. */
@@ -334,11 +264,11 @@ export const WandererSchema = z.object({
     }),
     inheritances: z.array(MobileInheritanceSchema),
     /**
-     * A secret with an explicit holder set, which is what the secret lifecycle
-     * in `src/engine/social/secrets.ts` is for: the inheritors and the Court
-     * members who already know are the holders, and an outsider can only be
-     * `unknown`, `suspected`, `leaked` into, or `misunderstood`. Nothing new is
-     * invented here; this records who holds it and what breaking it costs.
+     * A secret with an explicit holder set, which is what the secret lifecycle in
+     * `src/engine/social/secrets.ts` is for: the inheritors and the Court members
+     * who already know are the holders, and an outsider can only be `unknown`,
+     * `suspected`, `leaked` into, or `misunderstood`. Nothing new is invented here;
+     * this records who holds it and what breaking it costs.
      */
     secrecy: z.object({
         /** As he actually put it. Once, offhand, and never repeated. */
@@ -371,21 +301,6 @@ export const WandererSchema = z.object({
     }),
     /**
      * Chosen by fate, which at his level is not a figure of speech.
-     *
-     * From outside the selection looks arbitrary and no method can be built on
-     * it - that part is true and load-bearing. What is NOT true is that there
-     * is nothing there. Every one of them has something real. It is usually
-     * latent rather than demonstrated, it is not legible to observers, and it
-     * is frequently not legible to the inheritor either.
-     *
-     * Which is why the inheritances are not merely treasure. The engine models
-     * a latent slope that is rolled from the run seed and never surfaced
-     * (`affinityFor` in `engine/cultivation/dao.ts`), and it models access as a
-     * hard filter rather than a modifier: without something to comprehend
-     * from, a Dao is not harder, it is absent. His inheritances are exposure,
-     * handed to exactly the people for whom exposure will matter. He is doing
-     * the single most valuable thing anybody could do for these people,
-     * casually, without method, and without thinking of it as anything.
      */
     inheritors: z.object({
         chosenBy: z.string().min(150),
@@ -539,8 +454,8 @@ export const WANDERERS: readonly Wanderer[] = [
                     'It is not a place. He picks it up and puts it down somewhere else when it suits him, for reasons that are very probably not reasons. Directions to it are worthless inside a decade, so anybody treating it as a site - surveying, sealing, watching, mapping - is wasting their life, and several have. This is also most of why the accounts of him are incoherent.',
                 lastMovedYearsAgo: 7,
                 contradictoryAccounts: [
-                    'A Hollow Bell wanderer found it in a dry cistern under a ruined granary in the Low Fall, ninety years ago, and could take anybody to the spot',
-                    'A Gleaners crew found what is plainly the same cache in a burn-zone chamber in the Quiet Marches forty years ago, and can also take anybody to the spot',
+                    'A Hollow Bell wanderer found it in a dry cistern under a ruined granary in the Jade Gorge, ninety years ago, and could take anybody to the spot',
+                    'A Gleaners crew found what is plainly the same cache in a burn-zone chamber in the Silent Cliffs forty years ago, and can also take anybody to the spot',
                     'A Clear River ferryman describes finding it in a boat locker that was not his boat, twelve years ago, and has never been believed by anybody'
                 ]
             }
@@ -636,7 +551,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 'The afternoon that reorganises somebody else entirely is, to him, an afternoon. He will remember them fondly and inaccurately, will confuse two of them a century later, and may not notice that one has died. None of that is coldness. It is the arithmetic of a very long life, and he has never remarked on it.',
             regulars: [
                 {
-                    place: 'The Bell and Ford, an inn at Scarwater on the border road',
+                    place: 'The Bell and Ford, an inn at Clear River Ford on the border road',
                     person: 'Old Tan, who has run it since he was thirty-one',
                     yearsThere: 41,
                     timesServed: 9,
@@ -808,9 +723,9 @@ export const WANDERERS: readonly Wanderer[] = [
             },
             {
                 yearsAgo: 19,
-                where: 'A waystation on the marked road at Sixmile, in the Quiet Marches',
+                where: 'A waystation on the marked road at Six Li, in the Silent Cliffs',
                 what: 'He spent a winter repainting stakes on the burn edge because the Wardens were two people short and it was something to do. He gave no name that anybody wrote down, took paint and food, worked the season, and left in spring without mentioning where he was going.',
-                consequence: 'The Sixmile Wardens remember a competent drifter who was better on the edge than he had any business being, and have never connected him to anything. Their survey that year is the most accurate they have.',
+                consequence: 'The Six Li Wardens remember a competent drifter who was better on the edge than he had any business being, and have never connected him to anything. Their survey that year is the most accurate they have.',
                 heNeverLearned: false
             },
             {

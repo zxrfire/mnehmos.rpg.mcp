@@ -28,7 +28,7 @@ import {
 import { ENCOUNTERS, requireEncounter } from '../../../src/data/cultivation/encounters.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 
-const village: EncounterPlace = { id: 'v', name: 'Sweptground', kind: 'settlement', danger: 0.2 };
+const village: EncounterPlace = { id: 'v', name: 'Burnt Earth', kind: 'settlement', danger: 0.2 };
 const road: EncounterPlace = { id: 'r', name: 'the low road', kind: 'wilds', danger: 0.45 };
 const cave: EncounterPlace = { id: 'c', name: 'a cave', kind: 'cave', danger: 0.3 };
 

@@ -27,7 +27,7 @@ function theKilling() {
         cause: 'killed_kin',
         severity: 'unforgivable',
         onDay: daysForYears(20),
-        description: 'Killed his younger sister over a spirit vein claim at the Low Fall.',
+        description: 'Killed his younger sister over a spirit vein claim at the Jade Gorge.',
         triggeringEventId: 'fact_low_fall',
         participants: ['mei', 'elder_shan'],
         tags: ['public']
@@ -57,7 +57,7 @@ describe('records', () => {
                 cause: 'saved_life',
                 severity: 'grave',
                 onDay: daysForYears(21),
-                description: 'Carried him out of the collapsed ruin at Scarwater.'
+                description: 'Carried him out of the collapsed ruin at Clear River Ford.'
             })
         );
         ledger.put(
@@ -124,7 +124,7 @@ describe('nothing expires', () => {
             settleObligation(record, {
                 resolution: 'avenged',
                 onDay: daysForYears(64),
-                note: 'Forty-four years later, on a road outside Sweptground.'
+                note: 'Forty-four years later, on a road outside Burnt Earth.'
             })
         );
 

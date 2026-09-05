@@ -29,6 +29,12 @@ import { makeCultivator, makeInjuries } from './fixtures.js';
 
 const EXPECTED_FACTOR_ORDER = [
     'spirit_root',
+    // The body itself, beside the root because it is the same kind of fact:
+    // dealt once at birth, never earned and never chosen. Present for everybody,
+    // at a multiplier of 1 for the 98 people in a hundred who were born as
+    // nothing in particular - a term a player cannot see is a term they cannot
+    // reason about. `engine/cultivation/physiques.ts`.
+    'physique',
     // What you were dealt, then where you have got to. Both are "what this
     // body is", which is why they sit together at the front, ahead of
     // everything that is circumstance.

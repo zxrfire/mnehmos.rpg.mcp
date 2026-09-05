@@ -1,97 +1,6 @@
 /**
- * What a house moves its people on: the rungs, what a house has of each, and
- * the very small number of craft that are objects with names.
- *
- * A sect puts parties on the road constantly - after beasts, to a marriage, to
- * a war, to collect tribute from a subsidiary, to find out why a subsidiary
- * stopped sending it. This file is how they get there, and it is one table
- * rather than a boat table beside a carriage table because the whole argument
- * is that they are the same kind of row with different numbers in it.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * THE LINE THIS FILE IS ORGANISED AROUND, AND IT IS NOT A TRANSPORT RULE
- * ═════════════════════════════════════════════════════════════════════════
- *
- * `docs/world/things/items.md` decides how anything in this world is stored:
- * counted where nobody cares which one, tracked where the movement of this
- * specific object is an event somebody should be able to find out about two
- * centuries later. Conveyances obey it exactly, and the grade at which they
- * flip is the grade at which everything flips.
- *
- *   BELOW HEAVEN GRADE   a quantity. A line on the house: four at earth grade.
- *                        No id, no ordinal, no provenance, nothing to
- *                        recognise. Losing one is an expense.
- *   AT HEAVEN GRADE      an `ObjectRecord` with an id, an ordinal on the same
- *                        0..46 ladder a person stands on, a provenance chain,
- *                        and a name people say.
- *
- * **Most transport in this world carries no ordinal at all, and that is the
- * point.** If every row in this file were rated the common case would have been
- * made special, and the rating would say nothing. It says something precisely
- * because almost nothing has one.
- *
- * That is also why the boat works as a signal. `docs/world/houses/trust.md`
- * says a retinue of spirit boats is believed because assembling one is beyond
- * almost everybody - its strength is the cost of faking it, not any
- * verification. Read that section rather than this paragraph; what this file
- * adds is that the thing being signalled now exists, was built by somebody, and
- * can be lost.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * RANGE IS AN AXIS AND NOT A RUNG
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Do not read this table worst-to-best. A house at the top of the world holds
- * a boat AND carriages, because the carriage is for getting across a district
- * without mounting an expedition to do it and nobody takes the expensive thing
- * out for the short trip. Owning a carriage is not evidence of poverty; owning
- * only carriages is. `range` and the ordinal are separate fields and neither
- * implies the other, and `unsuitedFor` in the engine is what says the wrong
- * choice costs something in both directions.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHERE THE ROWS COME FROM, WHICH IS MOSTLY NOT FROM HERE
- * ═════════════════════════════════════════════════════════════════════════
- *
- * Almost nothing in this file is new machinery, and the parts that would have
- * been the most tempting to invent were already built:
- *
- *   THE BEAST IN THE TRACES is a beast. `BEAST_CHANGE_ORDINAL` in `beasts.ts`
- *   is 29 and it does the whole of the work: below it an animal, at and above
- *   it somebody with a shape and a voice who can decline. So a mount or a
- *   draught beast is necessarily under 29, and there is no taming rule here
- *   reaching past that line. Riding something above it is either an arrangement
- *   between two parties or it is keeping a person, and a house that does the
- *   second has told you what it is.
- *
- *   THE MOUNT IS NOT BUILT. It is caught, by the party that goes out after it,
- *   through `engine/world/hunting-a-spirit-beast.ts`. It is the one rung of the
- *   ladder with no recipe and that is worth noticing rather than filling in.
- *
- *   WHO CAN BUILD ONE is `refiningOrdinalFor` in
- *   `engine/cultivation/who-can-refine-a-grade-of-medicine.ts` - the rule that
- *   a cultivator cannot work materials above their realm. Nothing about a hull
- *   is special-cased into it. Heaven grade wants Void Refinement, which is a
- *   few dozen hands in the world, and that is why tracked craft are rare: a
- *   number read off the population rather than one anybody chose.
- *
- *   WHAT A WRECK LEAVES is `shatter`/`ruin` in `engine/world/possessions.ts`
- *   and `FRAGMENTS_AT_OR_ABOVE` (45) in
- *   `engine/cultivation/whether-a-weapon-survives-being-used.ts`. Every craft
- *   in this file is under 45, so a wrecked one is RUINED - the row survives
- *   with its owner, its claims and its whole chain, and mints no salvage. There
- *   is no special rule for a broken boat and there must not be one.
- *
- *   FLIGHT ON A BLADE is `gale-riding-sword-flight` in `techniques.ts`, gated
- *   on `subject: 'sword'` and read by `couldFlyOnTheirOwnBlade`. It is in this
- *   table because it is a way of getting there and it is the only row that is
- *   nobody's property.
- *
- * A CRAFT IS MOORED, NEVER CARRIED. Every tracked row below has a null
- * `possessorId`, and that is load-bearing rather than tidy: `bestObjectHeldBy`
- * in `engine/world/gatherings.ts` arms an NPC with the highest-`power` object
- * they POSSESS, so a craft with a possessor would be a boat somebody swings in
- * a bout. Owned by a house, moored at a place, held by nobody.
+ * What a house moves its people on: the rungs, what a house has of each, and the
+ * very small number of craft that are objects with names.
  */
 
 import { makeObject } from '../../engine/world/possessions.js';
@@ -110,11 +19,6 @@ import type {
 
 /**
  * Every kind of conveyance in the world.
- *
- * Eight rows and two of them are tracked. If a later pass makes that three out
- * of nine the signal has been diluted; if it makes it five out of nine the
- * signal is gone and `trust.md`'s expensive-signal section is aspirational
- * again.
  */
 export const CONVEYANCES: readonly Conveyance[] = [
     {
@@ -211,7 +115,7 @@ export const CONVEYANCES: readonly Conveyance[] = [
             'Built to hold together over a province rather than a district, with a core in the '
             + 'frame and a beast in the traces that most houses could not take. Still an amount '
             + 'rather than an object: a house has four of these and could not tell you which of '
-            + 'them went to Kettle last spring.'
+            + 'them went to Iron Gate last spring.'
     },
     {
         id: 'conv-carriage-heaven',
@@ -273,33 +177,7 @@ export function trackedConveyanceKinds(): readonly Conveyance[] {
     return CONVEYANCES.filter(c => c.holding === 'tracked');
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT A HOUSE HAS OF THE COUNTED ONES
-//
-// A line on the entity and nothing else: an untracked thing is just an amount
-// somebody has. Fully recorded, fungible, and with no story - any one is any
-// other, there is nothing to recognise and nobody to ask about it.
-//
-// THIS IS NOT A SECOND COUNTER, AND MUST NOT BECOME ONE.
-// `FactionRecord.resources` and `NpcRecord.resources` in
-// `engine/world/world-state.ts` are already `Record<string, number>` with
-// free-form keys and a stated convention, and this is four functions agreeing
-// on a key over that map. No new field is added anywhere, and no count in this
-// file goes near `transferPossession`.
-//
-// GRADE DECIDES THE SIDE, AND NOTHING MOVES IT. An earth-grade carriage is an
-// earth-grade carriage for its whole existence. It does not become an
-// individual by being old, by being famous, by surviving something or by
-// belonging to somebody important; there is no earning your way across the
-// line, and a build does not promote what went into it. Crafting CREATES, and
-// the output's grade is the recipe's. The only grade movement anywhere in this
-// world is downward, and it is `shardPower`.
-//
-// FOR WHOEVER LANDS THE GENERAL COUNTED-STOCK MODEL. What a conveyance needs
-// from it is exactly holder, kind, grade and count - the same four fields
-// everything else counted needs - and when that module exists these four
-// functions are the adapter to delete, not a model to reconcile.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** The resource key a counted conveyance is held under. */
 export function countedHoldingKey(conveyanceId: string): string {
@@ -308,10 +186,6 @@ export function countedHoldingKey(conveyanceId: string): string {
 
 /**
  * How many of these a body has.
- *
- * Returns 0 for a tracked kind rather than throwing, because the honest answer
- * to "how many named carriages does this house have as a quantity" is none:
- * those are rows, and they are counted by looking them up.
  */
 export function countedHolding(
     resources: Readonly<Record<string, number>>,
@@ -324,11 +198,6 @@ export function countedHolding(
 
 /**
  * Move a count. Arithmetic, deliberately, and never a transfer.
- *
- * `transferPossession` is for a singular thing that moves once and leaves a
- * link in a chain behind it. A carriage leaving a house is a number going down
- * by one, there is nothing to recognise and nobody to be asked about it, and
- * putting an amount through the tracked path is how a ledger fills with rubble.
  */
 export function adjustCountedHolding(
     resources: Readonly<Record<string, number>>,
@@ -342,18 +211,6 @@ export function adjustCountedHolding(
 
 /**
  * The counted conveyance a transport line on the price board actually is.
- *
- * TWO CATALOGS THAT WERE ALWAYS ABOUT THE SAME OBJECTS, JOINED. `PRICES` in
- * `mortal-world.ts` has carried a mule at fourteen stones and a cart at thirty
- * since it was written - *the single largest purchase most mortals ever make* -
- * and this file has carried what a mount and a carriage DO to a road. Nothing
- * connected them, so buying the mule answered that there is no row in this
- * engine for holding one, and `whatTheyCouldRide` offered a tracked craft that
- * no player could come to own. Both halves existed; the join did not.
- *
- * A lookup against a closed catalog and nothing more. It reads no prose, it
- * decides no price, and a third transport row added to the board is either in
- * this table or it is not a thing you can put under you.
  */
 export const CONVEYANCE_ON_THE_PRICE_BOARD: Readonly<Record<string, string>> = Object.freeze({
     'price-mule': 'conv-mount-mortal',
@@ -367,23 +224,6 @@ export function conveyanceSoldAs(priceId: string): Conveyance | undefined {
 
 /**
  * The words somebody actually says when they want one.
- *
- * AGENTS.md: if a near-synonym works, the phrasing that fails is a bug. The
- * board calls it a mule and the catalog calls it a broken spirit beast, and a
- * player says *I buy a horse* - which was refused with the look people give
- * somebody asking for a thing that is not sold, over an animal that is priced,
- * stocked and rideable.
- *
- * A closed list of words against a closed list of rows, which is the same kind
- * of lookup `resolvePrice` and `resolvePill` already are. It does not scan
- * prose and it decides nothing but which row was meant.
- *
- * DELIBERATELY NARROW. "beast" is not here, because it would take "I buy a
- * beast core" off the medicine board; nor is "trap". Every word in it has to
- * be one that means a thing you get on and nothing else, because this runs
- * ahead of the board's own fuzzy match - a whole word against a closed list is
- * stronger evidence than a prefix against a name, which is how "I buy a
- * carriage" was answering with the fixed rate for moving a corpse.
  */
 const WHAT_PEOPLE_CALL_THEM: Readonly<Record<string, string>> = Object.freeze({
     horse: 'price-mule',
@@ -399,11 +239,6 @@ const WHAT_PEOPLE_CALL_THEM: Readonly<Record<string, string>> = Object.freeze({
 
 /**
  * The price row somebody meant, or undefined.
- *
- * Matches a whole word so "a cartographer" is not a cart and "the beast tide"
- * is not a mule, and it deliberately answers with a PRICE row rather than a
- * conveyance: what is being asked for is a purchase, and the purchase is the
- * board's business.
  */
 export function priceRowForSomethingToRide(said: string): string | undefined {
     const words = said.toLowerCase().match(/[a-z]+/g) ?? [];
@@ -416,11 +251,6 @@ export function priceRowForSomethingToRide(said: string): string | undefined {
 
 /**
  * Everything counted this body holds, as conveyances.
- *
- * The read half of {@link adjustCountedHolding}, for a caller asking what is
- * actually under somebody. A house and a person answer it the same way,
- * because both carry a free-form `Record<string, number>` and this is four
- * functions agreeing on a key over it.
  */
 export function countedConveyancesHeld(
     resources: Readonly<Record<string, number>>
@@ -433,10 +263,6 @@ export function countedConveyancesHeld(
 
 /**
  * What a house has, in the words somebody asking would get back.
- *
- * A count is only worth storing if it is answerable, and this is what makes it
- * answerable. The tracked craft are answerable differently - by name - and are
- * deliberately not in this sentence.
  */
 export function describeCountedHoldings(
     resources: Readonly<Record<string, number>>
@@ -458,20 +284,7 @@ export function describeCountedHoldings(
         .join(', ') + '.';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE BILLS OF MATERIALS
-//
-// A grade and a count per line, never a named material, because a hull wants
-// bulk that holds under load and does not care which animal it came off. See
-// the header of `building-a-conveyance-out-of-what-a-hunt-brings-back.ts` for
-// why that is the whole difference between this and `recipes.ts`.
-//
-// The counts are a decision and are pinned by
-// `tests/data/what-a-house-moves-its-people-on.test.ts`. What they are
-// defending: a hull is a SCHEDULE, not an errand - a house works at one over
-// years and hunts for it the whole time - and a core is the line that more of
-// something else cannot meet.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const CONVEYANCE_RECIPES: readonly ConveyanceRecipe[] = [
     {
@@ -497,18 +310,10 @@ export const CONVEYANCE_RECIPES: readonly ConveyanceRecipe[] = [
             // A HEAVEN-GRADE CORE IN AN EARTH-GRADE CARRIAGE, AND IT IS NOT A
             // MISTAKE. Measured off `BEAST_MATERIALS`: there is no core below
             // heaven grade anywhere in the world, and there cannot be, because
-            // `BEAST_CORE_ORDINAL` is 17 and a core is condensed cultivation
-            // rather than a part of an animal. So the cheapest core obtainable
-            // is a heaven-grade one, and every conveyance with a core in it is
-            // paying that price whatever else it is made of.
-            //
-            // Which produces the shape the economy wants without anybody
-            // choosing it: the step from a drawn carriage to a shod one is not
-            // a step in material, it is the step at which a house has to send
-            // people out after something that will kill them. Note also that
-            // this does not promote the carriage - it is an earth-grade
-            // carriage, counted, forever. Grade is the recipe's and never the
-            // material's.
+            // `BEAST_CORE_ORDINAL` is 17 and a core is condensed cultivation rather
+            // than a part of an animal. So the cheapest core obtainable is a
+            // heaven-grade one, and every conveyance with a core in it is paying
+            // that price whatever else it is made of.
             { wants: 'a core for the frame, so the whole of it answers as one thing', grade: 'heaven', count: 1, mustBeCore: true }
         ],
         workDays: 150,
@@ -559,33 +364,12 @@ export function recipeForConveyance(conveyanceId: string): ConveyanceRecipe | un
 
 /**
  * Rungs of the ladder nobody builds.
- *
- * Three of them, for three different reasons, and every one is a pointer at a
- * system that already exists rather than a gap: walking is not made, flight is
- * a technique in `techniques.ts`, and a mount is caught by a hunting party
- * through `engine/world/hunting-a-spirit-beast.ts`. The mount is the
- * interesting one - it is the only conveyance a house with nothing can acquire,
- * and it costs the one thing a poor house has, which is people willing to go
- * out.
  */
 export function conveyancesNobodyBuilds(): readonly Conveyance[] {
     return CONVEYANCES.filter(c => recipeForConveyance(c.id) === undefined);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE CRAFT THAT ARE OBJECTS
-//
-// Ordinary `ObjectRecord`s from the ordinary factory, ordered by `power`
-// descending exactly as `artifacts.ts` orders its own table, because the
-// ordering is the argument here too: a house's hull and an apex's hull are the
-// same row with different numbers in one column.
-//
-// `possessorId` is null on every one. A craft is moored, not carried.
-// `data.builtYearsAgo` carries the age rather than an absolute day, because a
-// catalog row cannot know what day it is and a seeder placing these can. A
-// house whose best craft is its oldest is a house in decline, and that reading
-// costs nothing to store.
-// ─────────────────────────────────────────────────────────────────────────
 
 function craft(init: {
     id: string;
@@ -630,7 +414,7 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
         ownerId: 'sect-azure-cloud-pavilion',
         ownerName: 'Azure Cloud Pavilion',
         conveyanceId: 'conv-spirit-boat',
-        mooredAt: 'the terraces above the Low Fall gorge',
+        mooredAt: 'the terraces above the Jade Gorge gorge',
         builtYearsAgo: 96,
         significance: 'legendary',
         tags: ['boat'],
@@ -733,10 +517,6 @@ export function housesWithACraft(): readonly string[] {
 
 /**
  * The conveyance kind a tracked craft is an instance of.
- *
- * Stored on `data` rather than derived from the name, because the name is the
- * thing people say and names drift. `undefined` where a row was written badly,
- * which the suite catches.
  */
 export function kindOfCraft(craftRow: ObjectRecord): Conveyance | undefined {
     const id = craftRow.data.conveyanceId;

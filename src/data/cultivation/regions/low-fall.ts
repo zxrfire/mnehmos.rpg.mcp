@@ -1,12 +1,12 @@
 /**
- * The Low Fall: the centre, the only province with a road to every other one,
+ * The Jade Gorge: the centre, the only province with a road to every other one,
  * and the only one in the world with no ceiling on it.
  *
  * Everything the world has that is about this province is here - the map row,
  * the vocabulary it wrote and everybody else borrowed, and the nine catchment
  * prefectures inside it. A prefecture is a subdivision of the province that
  * holds it, so it lives with the province rather than in a table of its own:
- * Nine Peaks is IN the Low Fall, and a change to the Low Fall should touch one
+ * Nine Peaks is IN the Jade Gorge, and a change to the Jade Gorge should touch one
  * file.
  */
 
@@ -25,14 +25,14 @@ import {
 } from './region-ids.js';
 
 const STANDARD_BANDS: LocalRankBand[] = standardBandsWith(
-    'The Low Fall wrote the standard vocabulary and has never had cause to notice that it is a vocabulary rather than the thing itself.',
-    'Trivially self-consistent here, and the Low Fall mistakes that for the sub-ranks being real. Asked to place a foreign cultivator inside a realm, its experts guess, and are confident.'
+    'The Jade Gorge wrote the standard vocabulary and has never had cause to notice that it is a vocabulary rather than the thing itself.',
+    'Trivially self-consistent here, and the Jade Gorge mistakes that for the sub-ranks being real. Asked to place a foreign cultivator inside a realm, its experts guess, and are confident.'
 );
 
 /** The centre of the world, as the map holds it. */
 export const THE_LOW_FALL: Region = {
     id: HOME_REGION_ID,
-    name: REGION_NAME.LOW_FALL,
+    name: REGION_NAME.JADE_GORGE,
     role: 'home',
     bearing: 'centre',
     traditionId: 'tradition-drawn',
@@ -45,7 +45,7 @@ export const THE_LOW_FALL: Region = {
         'Institutions outlast people, because a vein outlasts the cultivator who took it, so a sect can be formidable with no formidable members',
         'The whole apparatus of arbitration, oath-witnessing and certification exists because holdings must be provable to be defensible',
         'A surveyable vein is a vein that can be granted, so this is the only province in the world with a grant book, and therefore the only one with tenants, renewals, and a reason to be polite',
-        'Everything that has to cross the world crosses here: four roads meet in one gorge and there is no fifth, which is why the Low Fall taxes traffic it never generated and why every other province resents it in the same words'
+        'Everything that has to cross the world crosses here: four roads meet in one gorge and there is no fifth, which is why the Jade Gorge taxes traffic it never generated and why every other province resents it in the same words'
     ],
     register: {
         colour: 'green-grey: wet slate roofs, river haze, terraced hillsides that stay green into autumn',
@@ -64,7 +64,7 @@ export const THE_LOW_FALL: Region = {
     },
     cultivation: {
         method:
-            'Ordinary drawing: sit on ground that has qi in the air and take it in. The Low Fall invented the standard vocabulary because it is the kind of place where the standard method works.',
+            'Ordinary drawing: sit on ground that has qi in the air and take it in. The Jade Gorge invented the standard vocabulary because it is the kind of place where the standard method works.',
         ambientRateMultiplier: 1,
         methodRateMultiplier: 1,
         deviationRiskModifier: 0,
@@ -82,7 +82,7 @@ export const THE_LOW_FALL: Region = {
     ambientProfile: { thin: 52, normal: 35, dense: 12, spirit_tide: 1 },
     localCeilingOrdinal: MAX_ORDINAL,
     ceilingNote:
-        'No regional ceiling. The Low Fall holds veins good enough that a Grand Ascension cultivator could advance here, and the practical limit is that all of them are owned.',
+        'No regional ceiling. The Jade Gorge holds veins good enough that a Grand Ascension cultivator could advance here, and the practical limit is that all of them are owned.',
     veinStatus:
         'Eleven surveyed veins, four of them rich, all claimed. The great sects are old because they hold veins and hold veins because they were old enough to take them.',
     politics: 'competing_sects',
@@ -110,15 +110,15 @@ export const THE_LOW_FALL: Region = {
     branches: [
         {
             parentSectId: 'sect-gleaners-company',
-            localName: 'The Hollowmarket Factor at Scarwater',
+            localName: 'The Willow Village Factor at Clear River Ford',
             doesHere:
-                'Sells Marches salvage into the Low Fall market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Marches has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
+                'Sells Silent Cliffs salvage into the Jade Gorge market: sealed-site finds, scar-ground herbs, and the occasional manual in a grade the Silent Cliffs has no teacher for. Buys nothing and is watched by the Bone Lantern Cult, which considers the trade its own.'
         },
         {
             parentSectId: 'sect-stonewright-consortium',
             localName: 'The Gorge Assay',
             doesHere:
-                'Assays and cuts to the Stonewright standard at the head of the eleven veins, and is the only reason a Low Fall grant can be priced at all. It holds no ground, sets the rate from nine cities away, and every sect in the province quotes a figure it did not set.'
+                'Assays and cuts to the Stonewright standard at the head of the eleven veins, and is the only reason a Jade Gorge grant can be priced at all. It holds no ground, sets the rate from nine cities away, and every sect in the province quotes a figure it did not set.'
         },
         {
             parentSectId: 'sect-hollow-bell-wanderers',
@@ -128,17 +128,17 @@ export const THE_LOW_FALL: Region = {
         }
     ],
     places: [
-        { name: PLACE.LOW_FALL, kind: 'city', ambient: 'normal', note: 'The province town under the gorge, and the Azure Cloud Pavilion\'s market.' },
+        { name: PLACE.GREEN_FALL, kind: 'city', ambient: 'normal', note: 'The province town under the gorge, and the Azure Cloud Pavilion\'s market.' },
         {
-            name: PLACE.SCARWATER,
+            name: PLACE.STONE_FORD,
             kind: 'market_town',
             ambient: 'thin',
-            note: 'The last ford before the border road, and where Marches goods are sold.',
+            note: 'The last ford before the border road, and where Silent Cliffs goods are sold.',
             // THE LEG THE PROVINCE ROAD DOES NOT COVER, and it is the
             // reason this field exists rather than an illustration of it.
             //
-            // The `trade_route` to the Quiet Marches below quotes its
-            // eleven days as "the border road from Scarwater to Kettle" -
+            // The `trade_route` to the Silent Cliffs below quotes its
+            // eleven days as "the border road from Clear River Ford to Iron Gate" -
             // so the figure starts at the ford, and the stretch from the
             // province town out to the ford has never been priced by
             // anything. `daysOnTheRoadTo` charged a player one flat day
@@ -157,26 +157,27 @@ export const THE_LOW_FALL: Region = {
             connections: [
                 {
                     kind: 'road',
-                    otherPlaceName: PLACE.LOW_FALL,
+                    otherPlaceName: PLACE.GREEN_FALL,
                     description:
                         'The gorge road down from the province town to the ford, worked by carts in both directions every day of the year, and the stretch every quoted figure for the western road silently leaves off the front of itself.',
                     travelDays: 2
                 }
             ]
         },
-        { name: PLACE.SWEPTGROUND, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Bound Word.' },
+        { name: PLACE.CLEAR_CREEK_VILLAGE, kind: 'village', ambient: 'thin', note: 'Rice on the gorge floor, a mill, and one road down to the province town.' },
+        { name: PLACE.BURNT_EARTH, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Bound Word.' },
         { name: PLACE.NINE_PEAKS, kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' },
     ],
     exports: [
-        'refined pills and formulae, which the Marches cannot make at all',
+        'refined pills and formulae, which the Silent Cliffs cannot make at all',
         'manuals to heaven grade, and living teachers for them',
         'assayed spirit stones, cut to the Stonewright standard',
         'arbitration, certification and oath witnessing, all of which travel'
     ],
     imports: [
-        'sealed-site salvage out of the Marches burn zones',
+        'sealed-site salvage out of the Silent Cliffs burn zones',
         'scar-ground herbs that only fruit on dead ground',
-        'people: the Marches sends its young, and nobody on this side calls it an import'
+        'people: the Silent Cliffs sends its young, and nobody on this side calls it an import'
     ],
     priceMultiplier: 1,
     hazards: [
@@ -188,49 +189,49 @@ export const THE_LOW_FALL: Region = {
             kind: 'trade_route',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The border road from Scarwater to Kettle: eleven days by cart, four by Measured Span courier where the Span still runs it. Salvage and people out; pills, stones and grain in.',
+                'The border road from Clear River Ford to Iron Gate: eleven days by cart, four by Measured Span courier where the Span still runs it. Salvage and people out; pills, stones and grain in.',
             travelDays: 11
         },
         {
             kind: 'refugee_flow',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'A steady drift of Marches-born carvers arriving at Scarwater with split hands, a cough, and a title nobody here prices correctly. Sweptground Temple takes most of them; the Crimson Abyss Hall recruits the rest.',
+                'A steady drift of Silent Cliffs-born carvers arriving at Clear River Ford with split hands, a cough, and a title nobody here prices correctly. Burnt Earth Temple takes most of them; the Crimson Abyss Hall recruits the rest.',
             travelDays: 11
         },
         {
             kind: 'shared_institution',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The Stonewright Consortium and Sweptground Temple both hold Marches outposts, and the Gleaners\' Company keeps a factor at Scarwater. Those three offices are the whole formal relationship between the regions.',
+                'The Stonewright Consortium and Burnt Earth Temple both hold Silent Cliffs outposts, and the Gleaners\' Company keeps a factor at Clear River Ford. Those three offices are the whole formal relationship between the regions.',
             travelDays: 11
         },
         {
             kind: 'unsettled_border',
             otherRegionId: ADJACENT_REGION_ID,
             description:
-                'The Anchorhold has surveyed to the burn edge and no further, so the last forty li before Kettle are on nobody\'s survey. Oaths sworn there do not bind, which several parties on both sides find useful.',
+                'The Anchorhold has surveyed to the burn edge and no further, so the last forty li before Iron Gate are on nobody\'s survey. Oaths sworn there do not bind, which several parties on both sides find useful.',
             travelDays: 11
         },
         {
             kind: 'trade_route',
             otherRegionId: EAST_REGION_ID,
             description:
-                'Six days down the gorge road to Ninewatch, and it is the busiest stretch of ground in the world: every pill, manual and assayed stone the Low Fall sells goes east, and every stone it uses to price them was rated in an eastern assay hall.',
+                'Six days down the gorge road to Cloud Gate, and it is the busiest stretch of ground in the world: every pill, manual and assayed stone the Jade Gorge sells goes east, and every stone it uses to price them was rated in an eastern assay hall.',
             travelDays: 6
         },
         {
             kind: 'unsettled_border',
             otherRegionId: EAST_REGION_ID,
             description:
-                'The Anchorhold has never carried a survey past the watershed, so the whole eastern boundary is a matter of habit. Nothing sworn on the far side binds, which is why every arrangement the Low Fall makes with a city is a lease with a deposit rather than an oath.',
+                'The Anchorhold has never carried a survey past the watershed, so the whole eastern boundary is a matter of habit. Nothing sworn on the far side binds, which is why every arrangement the Jade Gorge makes with a city is a lease with a deposit rather than an oath.',
             travelDays: 6
         },
         {
             kind: 'trade_route',
             otherRegionId: NORTH_REGION_ID,
             description:
-                'Seventeen days over the pass to Rimefall, shut five months a year, carrying grain and timber up and ice-cut stones down. Everything the White Stair eats comes over this road and everybody in the Low Fall knows it.',
+                'Seventeen days over the pass to Cold Peak, shut five months a year, carrying grain and timber up and ice-cut stones down. Everything the White Stair eats comes over this road and everybody in the Jade Gorge knows it.',
             travelDays: 17
         },
         {
@@ -244,7 +245,7 @@ export const THE_LOW_FALL: Region = {
             kind: 'trade_route',
             otherRegionId: SOUTH_REGION_ID,
             description:
-                'Nine days down the river to the mouth and out to Watering, which is where the Low Fall\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Fordhall will take a hull that far and refuses to go further.',
+                'Nine days down the river to the mouth and out to Sweet Spring Island, which is where the Jade Gorge\'s river ends and stops being a river. Salt up, pills and grain down, and the Clear River Fordhall will take a hull that far and refuses to go further.',
             travelDays: 9
         }
     ],
@@ -256,13 +257,13 @@ export const THE_LOW_FALL: Region = {
     ],
     crossingNotes: [
         'Coming in from anywhere, the noise is the first thing: sect patrols, courier traffic, and four separate parties claiming the same road.',
-        'The air is wet. A carver arriving from the Marches usually stops within sight of the ford and has to be told what they are feeling.',
+        'The air is wet. A carver arriving from the Silent Cliffs usually stops within sight of the ford and has to be told what they are feeling.',
         'Medicine is purchasable. A Clear Meridian Pill is sixty stones and in stock, which no shop in three of the four provinces around this one can say.',
         'Somebody asks whose you are within an hour, and the question is not rude and is not idle: there is a book, your answer goes in it, and the answer decides which of eleven veins you are allowed to sit on.'
     ]
 };
 
-// ─── prefectures of the Low Fall: catchments ─────────────────────────────
+// ─── prefectures of the Jade Gorge: catchments ─────────────────────────────
 
 export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     {
@@ -270,8 +271,8 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         name: 'The Gorge Head',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'catchment',
-        seat: PLACE.LOW_FALL,
-        places: [PLACE.LOW_FALL],
+        seat: PLACE.GREEN_FALL,
+        places: [PLACE.GREEN_FALL],
         heldByFactionId: 'sect-azure-cloud-pavilion',
         delegatedFromId: null,
         subHoldings: [
@@ -292,7 +293,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'Held outright and openly since the year Ru Anjing crossed, on no grant from anyone, with a front gate, a recruitment cycle and a published rank list.',
         discrepancy: 'record_names_the_wrong_holder',
         note:
-            'The only catchment in the province where the paper says tenant and the ground says apex. Both parties have found the silence comfortable for three hundred and eighty years and the Low Fall reads it as whatever suits the speaker.'
+            'The only catchment in the province where the paper says tenant and the ground says apex. Both parties have found the silence comfortable for three hundred and eighty years and the Jade Gorge reads it as whatever suits the speaker.'
     },
     {
         id: 'prefecture-nine-peaks',
@@ -311,7 +312,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             }
         ],
         onPaper:
-            'The oldest continuous grant in the Low Fall, twelve-year cycle, whole vein output above a fixed local allowance taken quarterly, three disciples upward per cycle.',
+            'The oldest continuous grant in the Jade Gorge, twelve-year cycle, whole vein output above a fixed local allowance taken quarterly, three disciples upward per cycle.',
         onTheGround:
             'The same, and the Order has never seen a renewal document: the confirmation is spoken, by somebody who walks in without being announced.',
         discrepancy: 'none',
@@ -363,7 +364,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'The same, and the Frostmirror has been writing to the Third Sill about the cold-arterial figures for eleven years and has had four replies drafted and none of them sent. The glacier itself is seventeen days over the pass in the White Stair, and the Court has never sat in the province the register puts it in.',
         discrepancy: 'none',
         note:
-            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Long Cold runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two catchments over it on the Low Fall book because the arterial is Low Fall rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
+            'One of the two catchments that hold from the Survey directly, which is the whole of the Survey\'s remaining presence on its own ground now that the Eleven is administered from elsewhere - and both of them are exclaves. The Long Cold runs under the glacier and out beneath the floating stone, so it leaves the province, and the Survey carries the two catchments over it on the Jade Gorge book because the arterial is Jade Gorge rather than because the ground is. Nobody has ever proposed correcting it, because correcting it would mean stating in writing that the Survey holds one province, four arterials and two pieces of somewhere else.'
     },
     {
         id: 'prefecture-floating-stone',
@@ -387,15 +388,15 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'The Court can no longer reach the bottom of its own vein and has not said so upward. The eleventh share has not been drawn in sixty years and the Keeper is fairly sure somebody is drawing it.',
         discrepancy: 'holds_less_than_recorded',
         note:
-            'The one place in the province where the register and the ground disagree by an amount somebody has actually measured, and the man who measured it has been a Second Mark for nineteen walks because his figures keep disagreeing with the apportionment calculated off them. Like the Cold Head it is an exclave: the stone hangs over a storm in the White Stair, on the far side of a pass that is shut five months a year, and the Court\'s one Low Fall tenant is a sinkhole hall under a town nine days from anything the Court can see.'
+            'The one place in the province where the register and the ground disagree by an amount somebody has actually measured, and the man who measured it has been a Second Mark for nineteen walks because his figures keep disagreeing with the apportionment calculated off them. Like the Cold Head it is an exclave: the stone hangs over a storm in the White Stair, on the far side of a pass that is shut five months a year, and the Court\'s one Jade Gorge tenant is a sinkhole hall under a town nine days from anything the Court can see.'
     },
     {
         id: 'prefecture-scarwater',
-        name: 'The Scarwater Catchment',
+        name: 'The Clear River Ford Catchment',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'catchment',
-        seat: PLACE.SCARWATER,
-        places: [PLACE.SCARWATER],
+        seat: PLACE.STONE_FORD,
+        places: [PLACE.STONE_FORD],
         heldByFactionId: null,
         delegatedFromId: null,
         subHoldings: [
@@ -406,12 +407,12 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             },
             {
                 factionId: 'sect-gleaners-company',
-                holds: 'The Hollowmarket Factor at Scarwater, a shopfront for Marches salvage.',
+                holds: 'The Willow Village Factor at Clear River Ford, a shopfront for Silent Cliffs salvage.',
                 delegatedFromId: 'sect-weir-office'
             }
         ],
         onPaper:
-            'Surveyed by the Anchorhold to the burn edge and no further, so the last forty li before the Marches border sit on no certified survey and the catchment has no closing line.',
+            'Surveyed by the Anchorhold to the burn edge and no further, so the last forty li before the Silent Cliffs border sit on no certified survey and the catchment has no closing line.',
         onTheGround:
             'Run by the Clear River Fordhall, which holds no grant, keeps the fords open, takes a toll it has no authority to take, and is the reason the border road works at all.',
         discrepancy: 'no_holder_of_record',
@@ -420,11 +421,11 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-sweptground',
-        name: PLACE.SWEPTGROUND,
+        name: PLACE.BURNT_EARTH,
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'catchment',
-        seat: PLACE.SWEPTGROUND,
-        places: [PLACE.SWEPTGROUND],
+        seat: PLACE.BURNT_EARTH,
+        places: [PLACE.BURNT_EARTH],
         heldByFactionId: 'sect-sweptground-temple',
         delegatedFromId: null,
         subHoldings: [
@@ -437,7 +438,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'Carried on the apportionment with a nil figure against it, because there is no vein under it and never was, so the Keeper of the Eleven has nothing to apportion and has printed a zero for two hundred years.',
         onTheGround:
-            'A temple, a treaty vault, and the largest concentration of Marches refugees in the province, on ground chosen for having nothing anybody needs to grant.',
+            'A temple, a treaty vault, and the largest concentration of Silent Cliffs refugees in the province, on ground chosen for having nothing anybody needs to grant.',
         discrepancy: 'none',
         note:
             'The one catchment whose security is that it is worthless. Everything else in the province is defended by a document or by a belief; this is defended by a zero in a column.'

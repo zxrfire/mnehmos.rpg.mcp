@@ -1,134 +1,6 @@
 /**
  * The medicine that mends a cracked cultivator, and the fixed set of it that
  * exists.
- *
- * ── WHAT THIS IS FOR, AND THE ONE THING IT IS FOR ────────────────────────
- *
- * A crossing can end five ways and exactly one of them is this table's market:
- * BROKEN SUCCESS. The cultivator got across, arrived at the new rung, and the
- * structure the crossing was supposed to build did not take. They are not a
- * failure - they are somebody who paid too much for a rung they actually
- * reached, and the road forward is shut behind them because the next thing
- * cannot be built on a broken version of the last one.
- *
- * That is the whole of what these four objects answer. Everything else that
- * comes out of a bad crossing is somebody else's medicine:
- *
- *   torn meridians, a scorched channel   ordinary pills, ordinary money.
- *                                        `pills.ts` has answered this since it
- *                                        was written and must go on answering
- *                                        it. Somebody who crossed CLEANLY and
- *                                        is merely hurt is not a customer here.
- *   a heart demon, a fixed premise       nothing in this file. A failure with
- *                                        sequelae leaves a person at their
- *                                        previous perfection carrying a mental
- *                                        wound; it does not crack them, and a
- *                                        structural repair has nothing to
- *                                        reach for.
- *   an unfinished base, a severed        `wounds.ts` says plainly that nothing
- *   meridian                             answers these, which is a deliberate
- *                                        answer rather than a gap.
- *
- * The gate in code is `BROKEN_STATUSES` in
- * `engine/cultivation/what-goes-wrong-at-a-realm-boundary.ts`. If a wound key
- * is not in that list, no row here touches it, and there is no second opinion
- * anywhere about which wounds are structural.
- *
- * ── WHY THIS IS NOT A ROW IN `pills.ts`, WHICH IS A FAIR QUESTION ────────
- *
- * AGENTS.md forbids a parallel catalog for important things, and the first cut
- * of this work tried to obey it literally by adding four rows to `PILLS` with a
- * new `repair_structure` effect. That does not work, and the reasons are
- * mechanical rather than aesthetic:
- *
- *   THE GRADE WORD MEANS A DIFFERENT THING HERE. A pill's grade says what realm
- *   it is PITCHED AT, and `pillBandOrdinal` reads it that way everywhere. A
- *   repair grade says what break it REACHES, which is a ceiling rather than a
- *   band, and the two would be the same column carrying two meanings.
- *
- *   THE PRICE BANDS CANNOT HOLD IT. `PILL_VALUE_BANDS` runs 5 to 1,000,000
- *   stones across five grades, disjoint and ascending, and the cheapest thing
- *   in this file is three hundred thousand. A mortal-grade row at that price
- *   would flip `gradeTradeTier('mortal')` to barter, which would take
- *   `commodityMarketCeiling` with it and close the open pill market the middle
- *   of the ladder runs on. That is not a tuning problem; the catalogs are
- *   measuring different things.
- *
- *   THE SEEDER WOULD SCATTER IT. `seedPillStock` places a barter pill on any
- *   house working near its band at 18% a house. These are supposed to be
- *   almost nowhere, and being almost nowhere is the entire design.
- *
- * `immortal-items.ts` is the precedent and it is the same argument: a catalog
- * of its own, because the effect is not expressible by `PillEffect` and the
- * economy does not reach the objects. The rule this file is careful to keep is
- * the one that actually matters - THERE IS NO SECOND HIERARCHY OF FORCE HERE.
- * Nothing in this file wins a fight, changes a roll, or gives its holder an
- * exemption from anything. It is four consumables and a list of who has them.
- *
- * ── FOUR GRADES, AND EACH ONE STOPS SOMEWHERE ────────────────────────────
- *
- * The same four words every other catalog uses. What differs is that grade here
- * is a CEILING, and the ceilings are the design:
- *
- *   mortal     reaches the end of Foundation Establishment. Re-lays a
- *              foundation that set wrong.
- *   earth      reaches the end of Core Formation. Knits a cracked core, and
- *              anything below it.
- *   heaven     reaches the end of Deity Transformation, AND THAT IS WHERE
- *              EVERYTHING MADE ON THIS SIDE STOPS. Nothing below immortal grade
- *              repairs a break above ordinal 28, at any price, from anybody.
- *   immortal   reaches the end of Grand Ascension. Cannot be made here. Sent
- *              down, and the number in the world is what has been sent.
- *
- * And nothing reaches 41. Not a shortage - a rule: getting into Tribulation
- * Transcendence is your own effort, helpers are allowed at that crossing and
- * medicine is not, so `imperfect-tribulation-body` is the one break with no
- * treatment behind it at all. `REPAIRED_IN_THE_CRUCIBLE` states the same rule
- * from the other side, and the two must never disagree.
- *
- * ── RARE TO A DEGREE WHERE MOST PEOPLE JUST LIVE WITH IT ─────────────────
- *
- * The test is not the price. It is what fraction of the cultivators carrying a
- * structural break are ever mended, and the answer has to be almost none. Two
- * independent scarcities enforce it and both are needed:
- *
- *   THERE ARE VERY FEW DOSES. `STRUCTURAL_REPAIR_HOLDINGS` below is the whole
- *   of what stands in the world. Count it; it is not a large number.
- *
- *   AND ALMOST NOBODY STANDS WHERE ONE WOULD BE SPENT ON THEM. A house holds
- *   its doses for its own. A commoner who cracks is not a buyer who cannot meet
- *   the price - they are outside the market entirely, because it is not sold to
- *   them at any figure. `who-a-house-will-spend-a-repair-dose-on.ts` is that
- *   standard, and it is a standard rather than a story: rank, standing, and
- *   what the house has already put into them.
- *
- * The ordinary end for the rest is not a long quiet life. It is death at the
- * wall: the road is shut, the settling clock goes on running, and the lifespan
- * the rung granted them runs out at that rung, because there is no further
- * crossing to buy more with. That is what "most people just live with it"
- * actually costs, and it is why a dose is worth what it is worth.
- *
- * ── WHAT THE ENGINE DOES NOT PRODUCE YET, AND SAYING SO ──────────────────
- *
- * THE MORTAL GRADE CURRENTLY HAS NO PATIENTS. `ARRIVES_BROKEN_CHANCE` sets the
- * first wall - the setting of the foundation - to exactly zero, on the stated
- * ground that every run starts there and `assessFoundation` already owns what a
- * badly-laid foundation is worth. So `broken-foundation` is a wound the table
- * names and nothing in the engine hands out, and a Second Pour Pill is a real
- * object with, at present, nobody to take it.
- *
- * That is written down rather than quietly patched, because it is somebody
- * else's decision: the rate lives in the crossing layer and moving it is a
- * balance change with measured consequences at every wall above. The row stays,
- * because the wound row stays, and if the first wall ever starts breaking people
- * the medicine for it is already here.
- *
- * ── INERT ────────────────────────────────────────────────────────────────
- *
- * No arithmetic here. What a dose costs, what it reaches and what moves it are
- * computed in `engine/cultivation/what-structural-repair-medicine-can-reach.ts`
- * from the ladder's own income and lifespan curves. This file says what exists
- * and who is holding it, and nothing else.
  */
 
 import { z } from 'zod';
@@ -140,10 +12,6 @@ import { TechniqueGradeSchema } from '../../schema/cultivation.js';
 
 /**
  * What actually moves one of these, by grade.
- *
- * Three terms, and they are three different economies rather than three price
- * points. `docs/world/things/items.md` draws the line: a thing is cash-priced exactly
- * where it is fungible and barter-only exactly where it is singular.
  */
 export const RepairTermsSchema = z.enum([
     /**
@@ -194,15 +62,6 @@ export const StructuralRepairMedicineSchema = z.object({
     /**
      * How many the whole world successfully refines in a century, or null where
      * nobody can make one at all.
-     *
-     * These are the supply side of the rarity, and they are small enough to
-     * read as strange: the world produces well under one of the middle grade
-     * per century, against a population that breaks somebody at that wall every
-     * few decades. That gap is the design, and it is why a house holding one is
-     * holding something it cannot replace on any horizon it plans over.
-     *
-     * Each figure is the dated record divided by the age of the record rather
-     * than a target - `theRecord` below is where it comes from.
      */
     refinedPerCentury: z.number().min(0).nullable(),
     terms: RepairTermsSchema,
@@ -219,13 +78,7 @@ export const StructuralRepairMedicineSchema = z.object({
 });
 export type StructuralRepairMedicine = z.infer<typeof StructuralRepairMedicineSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE FOUR
-//
-// Named for what each re-lays rather than for what it cures, in the same
-// register the broken statuses use: a healer's words, plain and physical and
-// about the specific thing that did not take.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = [
     {
@@ -322,20 +175,7 @@ export const STRUCTURAL_REPAIR_MEDICINES: readonly StructuralRepairMedicine[] = 
     }
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE SENT-DOWN LEDGER
-//
-// The immortal grade cannot be made here, so its supply is not a rate. It is a
-// count, fixed by what has arrived, and it only ever goes down. Every figure
-// below is a fact somebody in the world could in principle establish - the two
-// apex bureaucracies count their standing stock to the unit and minute it - so
-// this is a ledger rather than an assertion, and the standing register reads
-// its total straight off it.
-//
-// The arithmetic is deliberately NOT done here. `sentDownLedgerTotals` in the
-// engine adds it up, and the test asserts the parts reconcile, so a holdings
-// edit that forgets to move a number fails loudly rather than quietly.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const SentDownSpendingSchema = z.object({
     /** How long ago, in years. The record is dated; that is the point of it. */
@@ -351,12 +191,6 @@ export type SentDownSpending = z.infer<typeof SentDownSpendingSchema>;
 
 /**
  * Everything the record says has ever come down, and what became of it.
- *
- * ELEVEN, ACROSS THE WHOLE DATED RECORD OF BOTH PROVINCES. Three spent, one
- * that a holder cannot account for, and seven standing. That is the entire
- * supply of the only medicine that reaches a break above ordinal 28, against a
- * world that produces broken cultivators at every crossing above it, every
- * generation, forever.
  */
 export const SENT_DOWN_EVER_ARRIVED = 11;
 
@@ -386,10 +220,6 @@ export const SENT_DOWN_SPENDINGS: readonly SentDownSpending[] = [
 
 /**
  * The one nobody can produce.
- *
- * `docs/world/things/items.md`: an inventory read from a list rather than from the
- * shelf is a house that has decided not to look. This is that, and it is the
- * best thing in the ledger.
  */
 export const SENT_DOWN_UNACCOUNTED = {
     heldByFactionId: 'apex-long-cut',
@@ -398,23 +228,7 @@ export const SENT_DOWN_UNACCOUNTED = {
         'The schedule carries eight arrivals against the Long Cut across two thousand six hundred years and the standing entry reads two. Three are accounted for by the spending above and by the two the Long Cut holds; the eighth was receipted, entered, and has not been seen since a hand-over ninety years ago. The Long Cut has not amended the schedule, because amending it would require somebody to write down which of the two figures is wrong.'
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
 // WHO HAS WHAT, AT THE START OF THE WORLD
-//
-// The authored opening position, and it is ONLY the opening position. What a
-// house is holding right now is a question about the world rather than about
-// this file: the seeder turns every row below into live records in
-// `state.objects`, and `who-holds-the-structural-repair-medicine.ts` is what
-// answers "what does this house have today", after however many centuries of
-// spending, gifting and losing.
-//
-// TRACKED OR COUNTED, on the line `docs/world/things/items.md` draws. Heaven and
-// immortal grade are ROWS: a holder, a provenance chain, and a record that
-// survives the object being swallowed, because where a specific one went is
-// exactly the sort of thing somebody should be able to find out two centuries
-// later. Mortal and earth grade are COUNTS on the holder, because a house that
-// keeps two of the cheap one keeps a number rather than two stories.
-// ─────────────────────────────────────────────────────────────────────────
 
 export const RepairHoldingSchema = z.object({
     factionId: z.string(),
@@ -426,11 +240,6 @@ export const RepairHoldingSchema = z.object({
     whyStillHeld: z.string().min(80),
     /**
      * Who inside the holder can decide to spend one.
-     *
-     * Short answers are the interesting ones. "The head of the house." and
-     * "Nobody, currently, which is the whole of the situation." are both real
-     * entries, and a minimum length that forced them to be padded would be a
-     * schema making the content worse.
      */
     whoDecides: z.string().min(15)
 });

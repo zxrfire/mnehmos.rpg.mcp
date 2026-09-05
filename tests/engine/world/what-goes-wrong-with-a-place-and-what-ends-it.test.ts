@@ -48,7 +48,7 @@ const WORLD_SEED = 'what-goes-wrong';
 
 function ground(qiDensity = QI_DENSITY_DEFAULT) {
     return makeLocation({
-        id: 'loc-district', name: 'Kettle', kind: 'settlement', qiDensity
+        id: 'loc-district', name: 'Iron Gate', kind: 'settlement', qiDensity
     });
 }
 
@@ -80,7 +80,7 @@ describe('what goes wrong with a place', () => {
     describe('a district its holder has shut', () => {
         it('is not proposed while there is anything left to gather', () => {
             expect(districtsTheirHolderHasShut(
-                [standing(ground(), { holder: { id: 'h', name: 'Kettle Hall' } })], 0
+                [standing(ground(), { holder: { id: 'h', name: 'Iron Gate Hall' } })], 0
             )).toEqual([]);
         });
 
@@ -94,7 +94,7 @@ describe('what goes wrong with a place', () => {
         it('wants both bands gone, because game left is a reason to let people on', () => {
             const herbsOnly = stripped(ground(), ['herb']);
             expect(districtsTheirHolderHasShut(
-                [standing(herbsOnly, { holder: { id: 'h', name: 'Kettle Hall' } })], 0
+                [standing(herbsOnly, { holder: { id: 'h', name: 'Iron Gate Hall' } })], 0
             )).toEqual([]);
         });
 
@@ -104,7 +104,7 @@ describe('what goes wrong with a place', () => {
             // nothing anywhere branches on which.
             const bare = stripped(ground(), ['herb', 'beast_material']);
             const [shut] = districtsTheirHolderHasShut(
-                [standing(bare, { holder: { id: 'sect-kettle', name: 'Kettle Hall' } })], 0
+                [standing(bare, { holder: { id: 'sect-kettle', name: 'Iron Gate Hall' } })], 0
             );
             expect(shut.cause.decidedById).toBe('sect-kettle');
             expect(shut.stops).toContain(STOPS_GATHERING);
@@ -173,7 +173,7 @@ describe('what goes wrong with a place', () => {
             // sentence: a little under once a generation per province - rare
             // enough to be remembered, common enough that a five-century world
             // has had a run of them.
-            const region = makeLocation({ id: 'reg', name: 'The Marches', kind: 'region' });
+            const region = makeLocation({ id: 'reg', name: 'The Silent Cliffs', kind: 'region' });
             let failures = 0;
             const tries = 2000;
             for (let i = 0; i < tries; i++) {
@@ -185,7 +185,7 @@ describe('what goes wrong with a place', () => {
         });
 
         it('stops the food and blames nobody', () => {
-            const region = makeLocation({ id: 'reg', name: 'The Marches', kind: 'region' });
+            const region = makeLocation({ id: 'reg', name: 'The Silent Cliffs', kind: 'region' });
             // Draw until one lands rather than pinning a stream to a coincidence.
             let famine = null;
             for (let i = 0; i < 500 && famine === null; i++) {
@@ -210,7 +210,7 @@ describe('what goes wrong with a place', () => {
             const bare = stripped(ground(), ['herb', 'beast_material']);
             const proposed = whatIsWrongWithPlacesToday({
                 ground: [standing(bare, {
-                    holder: { id: 'sect-kettle', name: 'Kettle Hall' },
+                    holder: { id: 'sect-kettle', name: 'Iron Gate Hall' },
                     holderIsAtWar: true,
                     holderFightingNames: ['Bone Hall'],
                     isTheHoldersSeat: true
@@ -231,8 +231,8 @@ describe('what goes wrong with a place', () => {
             // Two famines in one province is one famine.
             const bare = stripped(ground(), ['herb', 'beast_material']);
             const twice = [
-                standing(bare, { holder: { id: 'h', name: 'Kettle Hall' } }),
-                standing(bare, { holder: { id: 'h', name: 'Kettle Hall' } })
+                standing(bare, { holder: { id: 'h', name: 'Iron Gate Hall' } }),
+                standing(bare, { holder: { id: 'h', name: 'Iron Gate Hall' } })
             ];
             const proposed = whatIsWrongWithPlacesToday({
                 ground: twice, regions: [], onDay: 0, rng: forStream('x', 'y')

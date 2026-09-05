@@ -458,7 +458,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         yearsAgo: 2600,
         attestation: 'secure',
         attestationNote:
-            'A face number and a work rank, which is a complete name in the Marches and reads as a filing reference to everybody in the Low Fall. The schedule carries it in the same column as any other completed face, dated, with nothing in the reason column.',
+            'A face number and a work rank, which is a complete name in the Silent Cliffs and reads as a filing reference to everybody in the Jade Gorge. The schedule carries it in the same column as any other completed face, dated, with nothing in the reason column.',
         answers: 'answers',
         juniority: 1,
         manner:
@@ -602,7 +602,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         alsoCalled: 'the first Weigher',
         kind: 'founder',
         factionId: 'sect-halfwater-rail',
-        whatTheyWere: 'A Watering factor who worked out that the middle of the eastern passage was the only place four parties who would not sit in a room together all had to stop anyway, and put a weigh house on it.',
+        whatTheyWere: 'A Sweet Spring Island factor who worked out that the middle of the eastern passage was the only place four parties who would not sit in a room together all had to stop anyway, and put a weigh house on it.',
         yearsAgo: 90,
         attestation: 'secure',
         attestationNote: 'Attested by the rate book, which begins in her hand on a dated page and has not been broken since, and by four separate refusals to raise the rate recorded in the margins with the names of the parties who asked.',

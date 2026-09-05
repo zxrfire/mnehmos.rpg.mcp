@@ -10,6 +10,25 @@ cruelty.
 The engineering contracts that implement all of this live next to the code they govern.
 Start from [`../../context.md`](../../context.md).
 
+## Rulings from the design owner, written down as they were made
+
+Five documents at this level rather than in a topic folder, because each one cuts across
+several. `INDEX.md` indexes the topic folders; these are listed here.
+
+- [`what-the-genre-does-and-whether-we-model-it.md`](what-the-genre-does-and-whether-we-model-it.md)
+  - the rulings. Ownership decides theft, the remainder of an act is gated by what the
+  player knows, beauty is not charm, the dao heart is consistency rather than virtue, a
+  Protector is a role, and ambiguity should be asked about rather than guessed at.
+- [`normal-in-the-cultivation-world.md`](normal-in-the-cultivation-world.md) - the trope
+  corpus, both signs. Also carrying capacity, Fortune theft, the tomb rush, and talismans.
+- [`what-an-art-is-worth.md`](what-an-art-is-worth.md) - why two arts at the same level are
+  not the same art, and the three things a technique row cannot yet say.
+- [`what-each-dao-house-teaches.md`](what-each-dao-house-teaches.md) - technique families
+  for all eight domains, in the houses' own register.
+- [`traits-not-archetypes.md`](traits-not-archetypes.md) - motivation as traits plus dao
+  plus circumstance, and why there must be no `Protector` class.
+- [`the-map-in-four-layers.md`](the-map-in-four-layers.md) - region, sect, area, room.
+
 > **Looking for where something is written down? Go to [`INDEX.md`](./INDEX.md), not to this
 > table.** This file lists the material by subject; `INDEX.md` lists it by the *question* -
 > every section in this directory against the situation it answers, plus the design

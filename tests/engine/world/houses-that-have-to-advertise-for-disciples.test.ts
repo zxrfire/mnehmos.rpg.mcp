@@ -60,7 +60,7 @@ function field(): DoorInTheField[] {
 }
 
 const WALL = {
-    placeName: 'Kettle',
+    placeName: 'Iron Gate',
     ground: 'market_town' as const,
     placeProvinceId: 'province-a',
     onDay: 400,
@@ -175,8 +175,8 @@ describe('the wall', () => {
         // Different window, different draw. Asserted on the stream rather than
         // on the outcome, because two draws from nine houses may honestly
         // coincide and a test that demanded they differ would be flaky.
-        expect(forStream('x', 'recruiting_bills', 'Kettle', 4).seed)
-            .not.toBe(forStream('x', 'recruiting_bills', 'Kettle', 5).seed);
+        expect(forStream('x', 'recruiting_bills', 'Iron Gate', 4).seed)
+            .not.toBe(forStream('x', 'recruiting_bills', 'Iron Gate', 5).seed);
         expect(nextWindow.every(b => b.opensOnDay > WALL.onDay)).toBe(true);
     });
 
@@ -261,7 +261,7 @@ describe('the draw perturbs nothing', () => {
         ];
         expect(after).toEqual(before);
 
-        expect(forStream('run', 'recruiting_bills', 'Kettle', 4).seed)
-            .not.toBe(forStream('run', 'breakthrough', 'Kettle', 4).seed);
+        expect(forStream('run', 'recruiting_bills', 'Iron Gate', 4).seed)
+            .not.toBe(forStream('run', 'breakthrough', 'Iron Gate', 4).seed);
     });
 });

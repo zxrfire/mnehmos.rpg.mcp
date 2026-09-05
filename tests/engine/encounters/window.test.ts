@@ -20,9 +20,9 @@ import {
     type EncounterRollInput
 } from '../../../src/engine/encounters/index.js';
 
-const village: EncounterPlace = { id: 'v', name: 'Sweptground', kind: 'settlement', danger: 0.2, qiDensity: 12 };
+const village: EncounterPlace = { id: 'v', name: 'Burnt Earth', kind: 'settlement', danger: 0.2, qiDensity: 12 };
 const road: EncounterPlace = { id: 'r', name: 'the low road', kind: 'wilds', danger: 0.45, qiDensity: 20 };
-const cave: EncounterPlace = { id: 'c', name: 'a cave above Sweptground', kind: 'cave', danger: 0.3, qiDensity: 30 };
+const cave: EncounterPlace = { id: 'c', name: 'a cave above Burnt Earth', kind: 'cave', danger: 0.3, qiDensity: 30 };
 
 function who(ordinal: number, fortune = 1) {
     return { id: 'c1', realmOrdinal: ordinal, fortune, maxHp: 60, hp: 60, spiritStones: 40 };
@@ -375,7 +375,7 @@ describe('the people seam', () => {
 describe('the discovery rule', () => {
     const factions = [
         { id: 'sect-a', name: 'The Lantern Hall' },
-        { id: 'sect-b', name: 'Ninefold Marches', known: true }
+        { id: 'sect-b', name: 'Ninefold Silent Cliffs', known: true }
     ];
 
     it('says an unheard name only when a person said it, and records that they did', () => {

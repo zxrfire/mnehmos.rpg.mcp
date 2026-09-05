@@ -3,7 +3,7 @@
  * two provinces that have any.
  *
  * The rows are not here. A prefecture is a subdivision of one province, so the
- * Low Fall's nine catchments live in `low-fall.ts` and the Quiet Marches' six
+ * Jade Gorge's nine catchments live in `low-fall.ts` and the Silent Cliffs' six
  * face districts live in `quiet-marches.ts`, and this file is the contract and
  * the joining. The other four provinces have no prefectures because there is
  * nothing under them to subdivide, which is a fact about those provinces

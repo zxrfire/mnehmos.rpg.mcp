@@ -1,4 +1,5 @@
-<!-- tier: 2 -->
+<!-- tier: 3 -->
+<!-- no-catalog: a design ruling about how the engine is built, not a description of a catalog -->
 
 # What the genre does, and whether we model it
 
@@ -26,8 +27,9 @@ anywhere that stops somebody acting because of what they are.
 
 | Trope | Where it stands |
 |---|---|
-| **Furnace / cauldron** (爐鼎) - drawing another cultivator off | `an-art-that-needs-two-people.ts` + `furnace-technique.ts`, complete. **Reachable now** via `coerce/furnace`; had no caller at all until this pass. |
-| **Primal yin / yang** (元阴/元阳) - taking what somebody has only once | Not modelled. It is a PROPERTY OF A PERSON, not part of any one act: a one-time thing they either still hold or do not. It does NOT require a furnace rite - a forced marriage takes it, a willing wedding night takes it, the furnace art takes it and converts it. So it belongs beside the person and is read by whatever consumes it, never owned by the module that happens to consume it most. Making it a furnace field would be the bespoke version. |
+| **Furnace / cauldron** (爐鼎) - drawing another cultivator off | `an-art-that-needs-two-people.ts` + `furnace-technique.ts`, complete. **THE SENTENCE reaches a coercion; the MECHANIC still has no caller.** This row used to say "Reachable now via `coerce/furnace`" and that was measured false: `COERCION_INTENT_PATTERNS` does route the phrasing, and `CoercionIntent` in `how-a-player-says-each-coercion.ts` holds only `submit | hand_over | talk | tame | swallow`, so `combat-verbs.ts` acts on `hand_over` and `swallow` and prints the rest as a label. `useFurnaceTechnique` has zero importers in `src/`. What is reachable is a submission with the word furnace written next to it. |
+| **Primal yin / yang** (元阴/元阳) - taking what somebody has only once | Not modelled. The shape it should take is now built once, next door: `physiques.ts` is this ruling carried out, and a one-time thing beside a person is the same shape as a permanent one. It is a PROPERTY OF A PERSON, not part of any one act: a one-time thing they either still hold or do not. It does NOT require a furnace rite - a forced marriage takes it, a willing wedding night takes it, the furnace art takes it and converts it. So it belongs beside the person and is read by whatever consumes it, never owned by the module that happens to consume it most. Making it a furnace field would be the bespoke version. |
+| **Special physique** (体质 / 灵体) - the body somebody is BORN as | `engine/cultivation/physiques.ts`. **Modelled now.** The same ruling as primal yin above, carried out: a property of a person, read by the cultivation rate, the lifespan ceiling and the furnace draw, owned by none of them, and nothing anywhere branches on which one it is. It is what gives the furnace and primal-yin paths a target with a CAUSE - a body worth crossing a province for - and what somebody carrying it knows about themselves. Reachable both ways: your own on your own sheet, somebody else's only once you have stood in front of them. |
 | **Crippling cultivation / taking a core** | Parser reaches it; `attack` and `coerce/hand_over` both route. The core is a realm boundary already. |
 | **Forced marriage** | **Reachable now** via `coerce/marry`. Read as `propose` at every tier before this pass - the forcing was deleted on the way in. |
 | **Forcing something down somebody's throat** | `coerce/swallow`, already there. |
@@ -82,6 +84,46 @@ The refusal text must not read as moral. *"You cannot do that"* is wrong. *"You 
 four of them; one is standing here; the rest are somewhere in Cloud River territory"* is
 right. The remainder is also the better story: the cousins two provinces away now hold
 an account and know the name.
+
+### Built, and where each half lives
+
+| | |
+|---|---|
+| the reading | `theSetThisNames` in [`src/web/acts-over-a-set.ts`](../../src/web/acts-over-a-set.ts). Pure, over the words. Four ways of naming a set - the square, somebody's own people, a house, a rank - and one expansion behind all four, because a branch that fires for families and not for other sets is the mistake this ruling exists to prevent. |
+| the gates | `theSetAsThisCultivatorKnowsIt`, same file. The two that already exist, as predicates: `isPresent` is co-location and `hasHeardOf` is `knowledge.ts`. Presence is its own discovery for the square and nowhere else - a face you cannot name is still a face you can swing at. |
+| the remainder | `whatTheActDidNotReach`, same file, and **null is the important return**. `TheSetAsKnown` has no field for the set as the world holds it, which is the enforcement rather than a rule written beside one - the same device as `Sighting`, which has no name field. |
+| the act | `attackOverASet` in `combat-verbs.ts`, which runs each reachable member through the ordinary single-target `attack` against the world the member before them left, and stops where the world stops it. |
+
+**It is one costly act.** `a-sentence-can-be-more-than-one-call.ts` spends at most one a
+turn and asks which comes first where a sentence holds two; the expansion happens in the
+engine, after the plan is fixed, so the budget sees a single `attack` step whose target is
+a description and nothing in that law changes. The reason it should be one is
+`oneClauseIsOneAct`'s: *"which of these six first?"* asks the player to re-say a sentence
+they already said as one act.
+
+**A fight is still played rather than reported.** Where a member becomes a contest that is
+still standing, the loop stops there, that member is the fight the player is in, and the
+rest of the set is named. Where the gap settles a member one-sidedly - the extermination
+case - it settles and the loop goes on.
+
+Two things found by building it, both worth having written down:
+
+- **A family cannot produce a remainder on turn one.** `applyHouseholds` puts a household
+  in ONE place, so across nine seeded worlds every living kin tie of anybody standing in a
+  square was also standing in it. A `kin_of` remainder needs a world that has since moved
+  somebody; a house is split by construction and shows the same mechanism today.
+- **A relationship row outlives the person on the end of it**, which is what makes an
+  inherited grudge possible - and the first version of this reported a woman dead since
+  world creation as a member of the family the act did not reach. A corpse is not a person
+  the set was ever about, and the filter is `status === 'alive'`, the same one `npcsAt` and
+  `npcsInFaction` already apply.
+
+And the vocabulary: *"I exterminate his family"* reached `unclear` while *"I kill his
+family"* routed correctly, so 灭门's own words - exterminate, wipe out, slaughter,
+massacre - are now in the attack table. A reader that can say the one-person version of an
+act and not the many-person version has taken a side.
+
+Played on a pinned world: `tests/web/an-act-over-a-set.test.ts`.
 
 ## The dao heart, which is where both halves of this document are charged
 
@@ -352,24 +394,33 @@ real contradiction, whenever it lands, is the moment their Dao stops being their
 The design owner: a Protector for many sects is a **beast, probably ordinal 29 or above**,
 and the beast has to be friendly to the sect.
 
-`beasts.ts` states the premise that makes this work, and it also states the obstacle:
+`beasts.ts` today says a beast has *"no manual, no teacher, **no sect** and no pills"*, and
+sits on the best ground it can hold.
 
-> One ladder, always. A beast at ordinal 19 is Core Formation Late... What differs is the
-> road, not the rungs. A beast has no manual, no teacher, **no sect** and no pills. **It sits
-> on the best ground it can hold** and does not die, for a very long time.
+**That line is the thing to change, not to work around.** The design owner's ruling:
 
-So a beast with a sect is an exception to that file's own rule, and under "Nothing in the
-lore is bespoke" it may not simply be asserted. It has to come from something.
+> Change the language about no sect. Maybe the beast and the sect are long-term friends.
+> That's a xianxia thing.
 
-**It does, and from one line of the premise.** A beast sits on the best ground it can hold.
-A sect wants the best ground it can hold. **They want the same mountain.** Neither can remove
-the other - a sect cannot drive off something at 33, and a beast gains nothing by eating
-disciples on ground it already holds - so what forms is not friendship. It is a standing
-arrangement: nobody moves, nobody starts anything, and whoever comes at the sect meets the
-thing living above it.
+It is - the guardian the founder befriended, that has been on the mountain for a thousand
+years, that the disciples grew up around. An earlier draft of this section had the
+arrangement as a cold standoff between two things that could not remove each other, and
+that is too cynical and rules out the version the genre actually uses most.
 
-That is why the Protector is old, why it does not take orders, and why a sect will not
-discuss it.
+So a Protector bond is a real relationship with a history, and it can be any of several
+things - a debt, a friendship, a founder's oath, or a truce that hardened. What it is NOT
+is ownership: the beast does not take orders, which is why a sect will not discuss it and
+why it cannot simply be told to fight.
+
+The ground premise still does the work of explaining WHY they are in the same place - a
+beast sits on the best ground it can hold and a sect wants the best ground it can hold, so
+they were always going to meet. What happened after that meeting is the history, and it
+varies.
+
+**When you change `beasts.ts`'s line, change it honestly**: the point that file was making
+is that a beast has no *transmission* - no manual, no teacher, no institution, no method
+that was taught to it. That remains true of a beast with a friend in a sect. It is the
+"no sect" clause specifically that overreached.
 
 ### A beast's element is what it IS, not what it rolled
 
@@ -402,7 +453,9 @@ AGENTS.md: rarity is a population statement, not a price. Measured in the catalo
 |---|---|
 | beast kinds at ordinal 29+ | **6** |
 | beast kinds below 29 | 13 |
-| sects | **38** |
+| sects | **35** (this said 38; `SECTS.length` is 35) |
+| of the six, ones that can end up in a chair | **2** |
+| houses that get a Protector | **3** |
 
 There are not enough high beasts for many sects to have one, and that is the whole answer.
 The rate is not chosen: it is **how many high-ordinal beasts happen to be sitting on ground
@@ -410,6 +463,19 @@ a sect also wanted**, which lands on a handful. Do not add a probability for thi
 number comes out wrong, the thing to change is how many such beasts the world holds or how
 much top-tier ground there is, because those are facts about the world and a percentage is
 not.
+
+**Measured, once the pairing existed.** Four of the six at 29 or above cannot end up beside
+a house, and each for a reason the catalog already stated rather than one written for this:
+the Leviathan and the Sleeper are `sealed_only` and a compound is not inside closed ground;
+the Reader is `indifferent` to veins, which is the catalog saying it never ends up beside
+anybody; and the Thing Under Nine Peaks is `demonic` - it is drinking the Ascetic Order's
+vein, which is why the ground is contested rather than why it is held. That leaves the White
+Ape with the Azure Cloud Pavilion and the Millennial Tortoise with the Clear River Fordhall,
+both on a shared element. The third chair is not a beast at all: the Nine Abyss Flame Sect
+seats the Kindler, its own ancestor sealed at strength, which `sealed-ancestors.ts` was
+already calling `kind: 'protector'`.
+
+`src/engine/world/house-protector-pairing.ts` is the derivation and it takes no seed.
 
 ### What it gives the game
 
@@ -422,3 +488,60 @@ not.
 - **Something to lose.** A Protector that dies, leaves, or is turned is a sect suddenly
   standing on ground it cannot hold - and every neighbour can read that as easily as the
   player can.
+
+
+---
+
+## Ambiguity is an answer, and asking is a free turn
+
+The design owner:
+
+> At some point we can accept ambiguity means ambiguity, and the LLM should ask to clarify.
+
+This repo already believes it in one place and should believe it generally.
+`a-sentence-can-be-more-than-one-call.ts` records the ruling for a sentence holding two
+costly acts - *"if the model is told this it should ask which to do first, because it can't
+do both"* - and the reasoning there is the whole argument:
+
+- **Asking costs nothing.** A question is a free turn.
+- **Guessing costs the player their life.** The wrong verb spends days, a wound, or the run.
+- **The question is not a refusal.** Nothing failed. The turn understood the sentence, which
+  is the opposite of the failure the reading layer exists to remove.
+
+So: **where a sentence has two readings and the engine cannot tell which, say both and
+ask.** Not "the thought does not resolve" - that is the answer for a sentence with no act
+in it, and the wrong answer for a sentence with two.
+
+Two things keep it honest:
+
+- **Ask in the player's own terms, never in enum names.** A list of verbs is a parser
+  asking; a game asks *"the elder, or the one beside him?"*
+- **Do not ask when one reading is obviously right.** A question every third turn teaches
+  the player the game does not understand them, which is worse than an occasional wrong
+  guess. The bar is genuine ambiguity - and everything in this document about binding
+  pronouns, plural pointing and ownership exists so most sentences never reach the question.
+
+
+---
+
+## Taking a disciple is not modelled, and it is the largest hole on the giving side
+
+Measured: `planDiscipleIntake` in `engine/cultivation/leadership.ts` is a SECT running an
+intake. `spending-a-word-to-place-a-child.ts` is placing a child at a house. **There is
+nothing for one person taking another as their disciple** - the master-and-disciple tie,
+which the genre treats as the strongest bond a cultivator has.
+
+So `I take him on as my disciple` reaches no verb. It used to reach `attack`, because
+`take on` is in `ATTACK_SUBJECT_VERBS` and means picking a fight; that misroute is fixed and
+what is left is an honest gap.
+
+It matters more than one sentence because of what it would carry:
+
+- It is the tie an extraction talisman travels along - you give one to **your own**, and
+  that is the whole reason the deep rooms are gated socially rather than by money.
+- It is the obligation behind "their enemies become your enemies".
+- It is what makes hiding a junior's talent, taking the blame for one, or teaching them just
+  enough to be useful into acts with a price rather than sentiments.
+
+Everything it would need exists: obligations, standing, the knowledge gate, and a favour
+ledger that already carries `shielded_crossing` and `spared` as causes.

@@ -14,12 +14,23 @@
  * `rankName(beast.ordinal)` is the only reading anybody gets, and it is the
  * reading that matters.
  *
- * What differs is the road, not the rungs. A beast has no manual, no teacher,
- * no sect and no pills. It sits on the best ground it can hold and does not
- * die, for a very long time, and that is the whole method. This is NOT a third
- * tradition: it has no transmission, no institutions and no quarrel with
- * anybody, so it does not belong in `traditions.ts`. It is what the ladder
- * looks like when nothing about it is taught.
+ * What differs is the road, not the rungs. A beast has no manual, no teacher
+ * and no pills. It sits on the best ground it can hold and does not die, for a
+ * very long time, and that is the whole method. This is NOT a third tradition:
+ * it has no transmission and no institutions, so it does not belong in
+ * `traditions.ts`. It is what the ladder looks like when nothing about it is
+ * taught.
+ *
+ * THAT IS ABOUT TRANSMISSION, AND IT IS NOT A STATEMENT THAT IT HAS NO SECT.
+ * This paragraph used to say "no sect" and it overreached. A beast sits on the
+ * best ground it can hold and a house wants the best ground it can hold, so the
+ * two were always going to meet, and what happened after that meeting varies: a
+ * debt, a founder's oath, a truce that hardened, or the guardian that has been
+ * on the mountain since before the compound and that the disciples grew up
+ * around. What it is NOT is ownership - it takes no orders, which is why a
+ * house will not discuss the arrangement and cannot simply send it at anybody.
+ * The chair such a thing stands in is `HouseProtectorSchema`, and a beast is
+ * one of several occupants it takes; see `house-protector-pairing.ts`.
  *
  * Two consequences the catalog leans on:
  *
@@ -114,6 +125,7 @@
 
 import { z } from 'zod';
 import {
+    ElementSchema,
     RegardProfileSchema,
     SectAlignmentSchema,
     TechniqueGradeSchema,
@@ -384,6 +396,25 @@ export const BeastSchema = z.object({
     ordinal: z.number().int().min(0).max(MAX_ORDINAL),
     /** Same biome vocabulary the herb catalog uses, so ground resolves once. */
     biome: HerbBiomeSchema,
+    /**
+     * What it is made of, on the same seven the spirit roots and the manuals
+     * use. Null for the animals that are not made of anything in particular.
+     *
+     * HARDCODED BY SPECIES, AND NOTHING ROLLS IT. A fox is fire the way a fox
+     * has four legs: 火狐, 雷鹏, 玄武. The design owner's ruling, and it is the
+     * repo's own rule against inventing a system where a fact will do.
+     *
+     * NOT `ability.kind`, which is a capability axis - defence, movement,
+     * breath - and answers a different question. The Reader's ability is
+     * `breath` and its element is fire; the two are orthogonal and a reader
+     * that collapses them will report a tortoise as having no element because
+     * its ability is `defence`.
+     *
+     * NOTHING MAY BRANCH ON WHICH ELEMENT THIS IS. It exists to be compared
+     * against a house's, which `house-elemental-character.ts` derives off that
+     * house's manuals. An `element === 'fire'` anywhere is a defect.
+     */
+    element: ElementSchema.nullable(),
     persistence: BeastPersistenceSchema,
     veinRelation: VeinRelationSchema,
     /** Typical number encountered together. One means solitary. */
@@ -510,7 +541,7 @@ export const THE_BEAST_ROAD = {
     whyTheyAreHunted:
         'The core is the cultivation, condensed and portable. Killing an old beast is the only way to take centuries off something that will not sell them, which is why every province has a culling trade and why nothing above the change is naive about people.',
     death:
-        `Below ordinal ${BEAST_CHANGE_ORDINAL} the body is the whole of them. No nascent soul leaves, no seam regrows, and nothing comes back, and a beast that is killed is finished - a simplicity neither human tradition has, and the reason the culling trade works at all. Past the change none of that holds, because what is standing there is a person: it dies exactly the way anybody at its rung dies, soul and all, and anybody who takes the body for the ending will find out otherwise. Measured by playing rather than asserted - a confrontation with the Reader at Sweptground returns the ordinary nascent soul survival path, because the resolver is reading a rung and does not care what shape is standing on it.`,
+        `Below ordinal ${BEAST_CHANGE_ORDINAL} the body is the whole of them. No nascent soul leaves, no seam regrows, and nothing comes back, and a beast that is killed is finished - a simplicity neither human tradition has, and the reason the culling trade works at all. Past the change none of that holds, because what is standing there is a person: it dies exactly the way anybody at its rung dies, soul and all, and anybody who takes the body for the ending will find out otherwise. Measured by playing rather than asserted - a confrontation with the Reader at Burnt Earth returns the ordinary nascent soul survival path, because the resolver is reading a rung and does not care what shape is standing on it.`,
     whatTheyLack: [
         'alchemy, formations and any art that has to be written down or shown',
         'allies, except the ones that share a herd and mostly do not help',
@@ -719,11 +750,12 @@ export const BEASTS: readonly Beast[] = [
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'beast-stubble-hare',
-        name: 'Stubble Hare',
+        name: 'Grass Hare',
         nature: 'ordinary',
         disposition: 'neutral',
         ordinal: 0,
         biome: 'farmland',
+        element: null,
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 6,
@@ -746,6 +778,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 5,
         biome: 'forest',
+        element: 'metal',
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
@@ -763,11 +796,12 @@ export const BEASTS: readonly Beast[] = [
     },
     {
         id: 'beast-cave-drain-bat',
-        name: 'Drain Bat',
+        name: 'Qi-Devouring Bat',
         nature: 'herd',
         disposition: 'neutral',
         ordinal: 6,
         biome: 'cave',
+        element: null,
         persistence: 'open_world',
         veinRelation: 'follows',
         groupSize: 400,
@@ -794,6 +828,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'demonic',
         ordinal: 3,
         biome: 'forest',
+        element: null,
         persistence: 'open_world',
         veinRelation: 'follows',
         groupSize: 9,
@@ -816,6 +851,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 8,
         biome: 'spirit_vein',
+        element: 'wood',
         persistence: 'vein_only',
         veinRelation: 'drains',
         groupSize: 30,
@@ -838,6 +874,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 11,
         biome: 'mountain',
+        element: 'earth',
         persistence: 'thin_remnant',
         veinRelation: 'follows',
         groupSize: 20,
@@ -851,7 +888,7 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Nothing individually. Twenty of them moving in one direction is a landscape event, and the villages between are not a consideration to them.',
         materialIds: ['mat-ox-horn'],
-        note: 'Placid for decades and then, once, not. Marches herds are half the size of the ones in the old Low Fall surveys and about as heavy, which nobody has explained.'
+        note: 'Placid for decades and then, once, not. Silent Cliffs herds are half the size of the ones in the old Jade Gorge surveys and about as heavy, which nobody has explained.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -865,6 +902,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'demonic',
         ordinal: 10,
         biome: 'marsh',
+        element: 'water',
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
@@ -887,6 +925,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'demonic',
         ordinal: 13,
         biome: 'deep_forest',
+        element: null,
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
@@ -909,6 +948,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'demonic',
         ordinal: 19,
         biome: 'glacier',
+        element: 'ice',
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
@@ -936,6 +976,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 17,
         biome: 'high_peak',
+        element: 'lightning',
         persistence: 'vein_only',
         veinRelation: 'holds',
         groupSize: 1,
@@ -964,11 +1005,12 @@ export const BEASTS: readonly Beast[] = [
         // hunting window in which every target deserved it is a window with no
         // decision in it.
         id: 'beast-cairn-hound',
-        name: 'Cairn Hound',
+        name: 'Grave Hound',
         nature: 'territorial',
         disposition: 'righteous',
         ordinal: 18,
         biome: 'mountain',
+        element: 'earth',
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
@@ -999,6 +1041,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 20,
         biome: 'mountain',
+        element: 'metal',
         persistence: 'open_world',
         veinRelation: 'holds',
         groupSize: 1,
@@ -1021,6 +1064,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 26,
         biome: 'spirit_vein',
+        element: 'earth',
         persistence: 'vein_only',
         veinRelation: 'drains',
         groupSize: 1,
@@ -1052,6 +1096,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'righteous',
         ordinal: 31,
         biome: 'lake_bottom',
+        element: 'water',
         persistence: 'vein_only',
         veinRelation: 'holds',
         groupSize: 1,
@@ -1074,6 +1119,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 38,
         biome: 'abyss',
+        element: 'water',
         persistence: 'sealed_only',
         veinRelation: 'holds',
         groupSize: 1,
@@ -1113,6 +1159,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'righteous',
         ordinal: 29,
         biome: 'mountain',
+        element: 'metal',
         persistence: 'vein_only',
         veinRelation: 'holds',
         groupSize: 1,
@@ -1122,15 +1169,15 @@ export const BEASTS: readonly Beast[] = [
             name: 'Gorge Stride',
             kind: 'movement',
             what:
-                'Holds and crosses sheer rock as though it were level ground, which is most of why the gorge above the Low Fall is its and not anybody else’s.'
+                'Holds and crosses sheer rock as though it were level ground, which is most of why the gorge above the Jade Gorge is its and not anybody else’s.'
         },
         hard: 'It will talk, and it is better at it than the disciples sent to do it. It knows what the gorge is worth, knows that nobody the sect can field is within three realms of it, and has never once opened first. The arrangement holds because it is the cheaper of the two things it could be doing.',
         materialIds: [],
-        note: 'Holds the gorge above the Low Fall, charges passage in salt and in news, and has kept every arrangement it has made for a hundred and forty years.'
+        note: 'Holds the gorge above the Jade Gorge, charges passage in salt and in news, and has kept every arrangement it has made for a hundred and forty years.'
     },
     {
         id: 'beast-nine-tailed-reader',
-        name: 'The Reader at Sweptground',
+        name: 'The Reader at Burnt Earth',
         nature: 'intelligent',
         // It trades genuinely, has never broken terms, and has never once
         // forgiven a breach. Both halves of that are neutral: it prices
@@ -1138,6 +1185,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 29,
         biome: 'ruins',
+        element: 'fire',
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
@@ -1179,6 +1227,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'demonic',
         ordinal: 33,
         biome: 'spirit_vein',
+        element: 'earth',
         persistence: 'sealed_only',
         veinRelation: 'drains',
         groupSize: 1,
@@ -1207,6 +1256,7 @@ export const BEASTS: readonly Beast[] = [
         disposition: 'neutral',
         ordinal: 30,
         biome: 'cave',
+        element: 'earth',
         persistence: 'sealed_only',
         veinRelation: 'holds',
         groupSize: 1,
@@ -1218,7 +1268,7 @@ export const BEASTS: readonly Beast[] = [
             what:
                 'Has grown into the working face itself, so anything done to it is done to nine hundred years of mountain first.'
         },
-        hard: 'It is walled into a working face on the Marches side, it is past the change, and it has been awake for some of the nine hundred years. Carvers who have cut near it report the dust hanging wrong and stop taking that grant.',
+        hard: 'It is walled into a working face on the Silent Cliffs side, it is past the change, and it has been awake for some of the nine hundred years. Carvers who have cut near it report the dust hanging wrong and stop taking that grant.',
         materialIds: ['mat-sleeper-seam-core'],
         note: 'The Weir Office has refused four applications to open the face and has not given a reason in writing, which is itself the longest entry in the grant ledger.'
     }
@@ -1234,7 +1284,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     // ── mortal: the culling trade, which is most of the trade ─────────
     {
         id: 'mat-hare-pelt',
-        name: 'Stubble Hare Pelt',
+        name: 'Grass Hare Pelt',
         grade: 'mortal',
         sourceBeastId: 'beast-stubble-hare',
         taking: 'kill',
@@ -1282,7 +1332,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-drain-bat-membrane',
-        name: 'Drain Bat Membrane',
+        name: 'Qi-Devouring Bat Membrane',
         grade: 'mortal',
         sourceBeastId: 'beast-cave-drain-bat',
         taking: 'scavenge',
@@ -1328,7 +1378,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         value: 180,
         rarityWeight: 48,
         harvestOrdinal: 11,
-        description: 'The one beast material the Quiet Marches can supply in quantity, and the reason Kettle has a horn market at all.'
+        description: 'The one beast material the Silent Cliffs can supply in quantity, and the reason Iron Gate has a horn market at all.'
     },
     {
         id: 'mat-core-taker-jaw',
@@ -1380,7 +1430,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-cairn-hound-tooth',
-        name: 'Cairn Hound Tooth',
+        name: 'Grave Hound Tooth',
         grade: 'earth',
         sourceBeastId: 'beast-cairn-hound',
         taking: 'scavenge',
@@ -1430,7 +1480,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-cairn-hound-core',
-        name: 'Cairn Hound Core',
+        name: 'Grave Hound Core',
         grade: 'heaven',
         sourceBeastId: 'beast-cairn-hound',
         taking: 'kill',
@@ -1550,7 +1600,7 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         value: 120_000,
         rarityWeight: 1,
         harvestOrdinal: 30,
-        description: 'A core that has grown into worked stone rather than sitting in a body, which no Low Fall alchemist has a method for and no Marches carver will sell. Both facts are the entire market.'
+        description: 'A core that has grown into worked stone rather than sitting in a body, which no Jade Gorge alchemist has a method for and no Silent Cliffs carver will sell. Both facts are the entire market.'
     }
 ] as const;
 
@@ -1604,24 +1654,24 @@ export const BEAST_TIDES: readonly BeastTide[] = [
     },
     {
         id: 'tide-dead-verge-advance',
-        name: 'The Dead Verge Advance',
+        name: 'Nine Hundred Paces Advance',
         regionId: 'region-quiet-marches',
         cause:
             'The burn edge moved about nine hundred paces since the survey was drawn, and the thin population living behind it ran out of ground with anything in it at all. Nothing is driving them and there is nothing at the back of it to kill.',
         causeKnownLocally: true,
         precursors: [
-            'the Sixmile Wardens repainted the stakes twice in one year and the second repaint was not published',
-            'horn prices at Kettle fell, because everything arriving at market was undersized and everyone could see it',
-            'hares reached the sorting yard at Hollowmarket, which they have no business doing and had not done before'
+            'the Six Li Wardens repainted the stakes twice in one year and the second repaint was not published',
+            'horn prices at Iron Gate fell, because everything arriving at market was undersized and everyone could see it',
+            'hares reached the sorting yard at Willow Village, which they have no business doing and had not done before'
         ],
         minOrdinal: 0,
         maxOrdinal: 11,
         driverBeastId: null,
         beastIds: ['beast-stubble-hare', 'beast-stone-ox', 'beast-grey-wolf-pack'],
         whoAbsorbsIt:
-            'Kettle, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
+            'Iron Gate, which has a grant queue and an assay house and no pill trade, so the injuries are treated the mortal way at a splint and a month per casualty.',
         aftermath:
-            'Nothing in it is worth taking, everything in it has to be killed anyway, and the district ends the season poorer than it started. This is the tide the Marches actually gets, and it is not a story anybody tells.'
+            'Nothing in it is worth taking, everything in it has to be killed anyway, and the district ends the season poorer than it started. This is the tide the Silent Cliffs actually gets, and it is not a story anybody tells.'
     }
 ] as const;
 

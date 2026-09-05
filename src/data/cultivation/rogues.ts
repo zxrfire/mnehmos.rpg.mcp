@@ -371,7 +371,7 @@ export const ROGUE_TRADES: readonly RogueTrade[] = [
         pay: {
             basis: 'monthly',
             cash: 1_125,
-            note: 'The listed formation-hand wage less the unbacked deduction, and the steadiest cash in this file. Impossible in the Quiet Marches, where formations do not run.'
+            note: 'The listed formation-hand wage less the unbacked deduction, and the steadiest cash in this file. Impossible in the Silent Cliffs, where formations do not run.'
         },
         risk: 'moderate',
         whoPays: 'Any sect maintaining a compound it did not build, which is all of them. Node work is endless and no institution has enough hands for it.',
@@ -481,7 +481,7 @@ export const BOUNTIES: readonly Bounty[] = [
         id: 'bounty-standing-yard',
         what: 'A standing purse on whatever keeps taking the sorting yard\'s dogs',
         posterFactionId: 'sect-gleaners-company',
-        posterNote: 'The Hollowmarket factor, renewed every season for eleven years without ever being claimed.',
+        posterNote: 'The Willow Village factor, renewed every season for eleven years without ever being claimed.',
         purseCash: 2_000,
         evidence: 'The animal, and the dogs stopping.',
         honoured: 'reliably',
@@ -491,11 +491,11 @@ export const BOUNTIES: readonly Bounty[] = [
         id: 'bounty-weir-grant',
         what: 'Clearing a burn-edge chamber before a grant is issued over it',
         posterFactionId: 'sect-weir-office',
-        posterNote: 'The Weir Office at Kettle, posted at the grant queue, paid out of the grant fee before the grant exists.',
+        posterNote: 'The Weir Office at Iron Gate, posted at the grant queue, paid out of the grant fee before the grant exists.',
         purseCash: 8_000,
         evidence: 'A Warden walks it afterwards and signs.',
         honoured: 'reliably',
-        catch: 'Paid in grant days at the assay rate rather than cash, which is worth more and cannot be eaten. Marches takers regard this as normal and Low Fall visitors do not.'
+        catch: 'Paid in grant days at the assay rate rather than cash, which is worth more and cannot be eaten. Silent Cliffs takers regard this as normal and Jade Gorge visitors do not.'
     },
     {
         id: 'bounty-consortium-road',
@@ -646,7 +646,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['medicine', 'talisman', 'material'],
         side: 'sells',
         regionId: 'region-low-fall',
-        places: [PLACE.SCARWATER, PLACE.NINE_PEAKS],
+        places: [PLACE.STONE_FORD, PLACE.NINE_PEAKS],
         trust: 'mixed',
         stock: 'A mule, a fixed loop of eleven villages walked twice a year, and whatever the last market town had cheap.',
         catch: 'He will be back in six months, which is the only guarantee on offer and is genuinely worth something. It is also six months.',
@@ -658,7 +658,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['medicine'],
         side: 'sells',
         regionId: 'region-low-fall',
-        places: [PLACE.LOW_FALL, PLACE.SCARWATER],
+        places: [PLACE.GREEN_FALL, PLACE.STONE_FORD],
         trust: 'sound',
         stock: 'Genuine refinements, made by somebody who spent nine years on a bellows and was never let near a cauldron officially.',
         catch: 'No guild seal, so the pills are real and unprovable. Anybody caught reselling them into a sect town is the Guild\'s problem and then his.',
@@ -670,9 +670,9 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['medicine', 'material'],
         side: 'both',
         regionId: 'region-low-fall',
-        places: [PLACE.SCARWATER],
+        places: [PLACE.STONE_FORD],
         trust: 'sound',
-        stock: 'Her husband\'s stock, sold down over nine years, plus what she buys off diggers coming out of the Marches at a price they accept because it is cash today.',
+        stock: 'Her husband\'s stock, sold down over nine years, plus what she buys off diggers coming out of the Silent Cliffs at a price they accept because it is cash today.',
         catch: 'The good half of the stock went first. What is left is the part nobody wanted in year one and she will tell you that if you ask.',
         factionIds: ['sect-clear-river-alliance']
     },
@@ -682,9 +682,9 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['material', 'manual'],
         side: 'buys',
         regionId: 'region-quiet-marches',
-        places: [PLACE.HOLLOWMARKET, PLACE.KETTLE],
+        places: [PLACE.GRAVE_MARKET, PLACE.IRON_GATE],
         trust: 'mixed',
-        stock: 'Buys by weight, sorts, and sells onward to the Low Fall at four times what he paid, which is public knowledge and changes nothing.',
+        stock: 'Buys by weight, sorts, and sells onward to the Jade Gorge at four times what he paid, which is public knowledge and changes nothing.',
         catch: 'He is the only buyer within four days\' walk and everybody selling to him knows the onward price. That is the trade, and the resentment is part of the price.',
         factionIds: ['sect-gleaners-company']
     },
@@ -694,7 +694,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['manual', 'material', 'talisman'],
         side: 'both',
         regionId: 'region-low-fall',
-        places: [PLACE.LOW_FALL],
+        places: [PLACE.GREEN_FALL],
         trust: 'mixed',
         stock: 'Nothing. He values what you are holding, for cash, in a back room, and knows exactly which floor would take it and at what reserve.',
         catch: 'His valuations are honest and his other customer is the Pavilion. Twice a year something he valued turns up in a catalogue before the owner meant to sell it.',
@@ -706,7 +706,7 @@ export const DEALERS: readonly Dealer[] = [
         deals: ['stones'],
         side: 'both',
         regionId: 'region-low-fall',
-        places: [PLACE.SCARWATER, PLACE.SWEPTGROUND],
+        places: [PLACE.STONE_FORD, PLACE.BURNT_EARTH],
         trust: 'bad',
         stock: 'Cash for stones and stones for cash, at a rate that is always a little worse than the market-town rate and always defensible.',
         catch: 'The rate is fine. The weighing is not, and a Consortium assay hall four days away would find it, which is four days away.',
@@ -740,10 +740,10 @@ export type AuctionVenue = z.infer<typeof AuctionVenueSchema>;
 export const AUCTION_VENUES: readonly AuctionVenue[] = [
     {
         id: 'auction-low-fall-floor',
-        name: 'The public floor at Low Fall',
+        name: 'The public floor at Green Water City',
         runByFactionId: 'sect-thousand-treasure-pavilion',
         regionId: 'region-low-fall',
-        places: [PLACE.LOW_FALL],
+        places: [PLACE.GREEN_FALL],
         cadence: 'Quarterly, with a preview two days before, and the preview has not been open to the public in eight years.',
         entryBondStones: 20,
         protections: [
@@ -760,7 +760,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
         name: 'The reserved floor',
         runByFactionId: 'sect-thousand-treasure-pavilion',
         regionId: 'region-low-fall',
-        places: [PLACE.LOW_FALL],
+        places: [PLACE.GREEN_FALL],
         cadence: 'The same day, after the public floor closes, in a room off it.',
         entryBondStones: 300,
         protections: [
@@ -773,24 +773,24 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
     },
     {
         id: 'auction-scarwater-kerb',
-        name: 'The Scarwater kerb',
+        name: 'The Clear River Ford kerb',
         runByFactionId: null,
         regionId: 'region-low-fall',
-        places: [PLACE.SCARWATER],
+        places: [PLACE.STONE_FORD],
         cadence: 'The evening after the Pavilion\'s factor has taken his pick, on the street, until it is dark.',
         entryBondStones: 0,
         protections: [
             'None whatsoever, stated openly by everybody present and understood as the price of no bond'
         ],
-        whatSells: 'Whatever the factor declined, sold fast by people who need cash before they walk back to the Marches.',
+        whatSells: 'Whatever the factor declined, sold fast by people who need cash before they walk back to the Silent Cliffs.',
         sectlessNote: 'This is where most sectless cultivators actually sell, and where most of them are robbed. The robbery happens on the road out rather than at the kerb, which everybody knows and nobody has solved.'
     },
     {
         id: 'auction-kettle-yard',
-        name: 'The Kettle assay yard disposal',
+        name: 'The Iron Gate assay yard disposal',
         runByFactionId: 'sect-weir-office',
         regionId: 'region-quiet-marches',
-        places: [PLACE.KETTLE],
+        places: [PLACE.IRON_GATE],
         cadence: 'Once a season, when forfeited grants and unclaimed salvage are cleared.',
         entryBondStones: 5,
         protections: [
@@ -798,14 +798,14 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
             'Every lot is assayed first, and the assay is published with the lot'
         ],
         whatSells: 'Forfeited grant days, the tools of people who did not come back, and salvage nobody claimed inside the year.',
-        sectlessNote: 'The cheapest way into the Marches economy and the only auction in the world where a lot is routinely paid for in grant days rather than stones.'
+        sectlessNote: 'The cheapest way into the Silent Cliffs economy and the only auction in the world where a lot is routinely paid for in grant days rather than stones.'
     },
     {
         id: 'auction-hollowmarket-manifest',
-        name: 'The Hollowmarket manifest sale',
+        name: 'The Willow Village manifest sale',
         runByFactionId: 'sect-gleaners-company',
         regionId: 'region-quiet-marches',
-        places: [PLACE.HOLLOWMARKET],
+        places: [PLACE.GRAVE_MARKET],
         cadence: 'Whenever the sorting yard is full, which is about every six weeks.',
         entryBondStones: 0,
         protections: [
@@ -813,7 +813,7 @@ export const AUCTION_VENUES: readonly AuctionVenue[] = [
             'Weight is checked in front of the buyer, and disputes are settled by reweighing and nothing else'
         ],
         whatSells: 'Salvage by weight, in lots too large for an individual, to dealers who will break them up.',
-        sectlessNote: 'Buyers here are dealers rather than cultivators. A rogue is on the selling side, is offered the yard rate, and takes it because the alternative is carrying it four days to Kettle.'
+        sectlessNote: 'Buyers here are dealers rather than cultivators. A rogue is on the selling side, is offered the yard rate, and takes it because the alternative is carrying it four days to Iron Gate.'
     }
 ];
 
@@ -864,7 +864,7 @@ export const ROAD_CUSTOMS: readonly RoadCustom[] = [
         id: 'custom-shares',
         custom: 'Equal shares to everyone who went in, one extra share to whoever brought the site, and a dead hand\'s share goes to whoever carried their pouch out.',
         keptBy: 'Independent crews, copied off the Company manifest rule and kept because it settles the argument before it starts.',
-        breakingIt: 'A crew that shorts a share does not get another crew. The Marches is small and the sorting yard is one yard.'
+        breakingIt: 'A crew that shorts a share does not get another crew. The Silent Cliffs is small and the sorting yard is one yard.'
     },
     {
         id: 'custom-dead-pouch',

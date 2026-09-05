@@ -90,9 +90,15 @@ describe('a place road is stated once and read both ways', () => {
         }
     });
 
-    it('is case- and article-insensitive the way every other place lookup is', () => {
-        expect(placeRoadDays('scarwater', 'low fall')).toBe(2);
-        expect(placeRoadDays('  Low Fall  ', 'Scarwater')).toBe(2);
+    it('is case- and whitespace-insensitive the way every other place lookup is', () => {
+        // This asserted `placeRoadDays('scarwater', 'low fall')` for a while
+        // after both names left the gazetteer in the province rename, and the
+        // guard does not scan `tests/`, so nothing pointed at it. Neither end
+        // of either declared road carries an article, so the article half of
+        // the old name is exercised at `loosePlaceKey` and not here.
+        expect(placeRoadDays('clear river ford', 'GREEN WATER CITY')).toBe(2);
+        expect(placeRoadDays('  Green Water City  ', 'Clear River Ford')).toBe(2);
+        expect(placeRoadDays('orchid terrace', 'Orchid Valley')).toBe(1);
     });
 });
 
@@ -135,9 +141,9 @@ describe('a place road is not a second distance', () => {
         // Most pairs have no row and should not. The reader says so by
         // returning null, which `daysOnTheRoadTo` already documents as meaning
         // "unpriced", never "free" and never "you cannot go".
-        expect(placeRoadDays(PLACE.SWEPTGROUND, PLACE.NINE_PEAKS)).toBeNull();
-        expect(placeRoadDays(PLACE.LOW_FALL, 'somewhere that is not a place')).toBeNull();
-        expect(placeRoadDays(null, PLACE.LOW_FALL)).toBeNull();
+        expect(placeRoadDays(PLACE.BURNT_EARTH, PLACE.NINE_PEAKS)).toBeNull();
+        expect(placeRoadDays(PLACE.GREEN_FALL, 'somewhere that is not a place')).toBeNull();
+        expect(placeRoadDays(null, PLACE.GREEN_FALL)).toBeNull();
 
         const withRoads = REGIONS.flatMap(r => r.places).filter(p => (p.connections ?? []).length > 0);
         const allPlaces = REGIONS.flatMap(r => r.places);
@@ -161,7 +167,7 @@ describe('the kind is the engine LinkKind and not a second vocabulary', () => {
     it('refuses a province-scale kind', () => {
         const bad = RegionPlaceConnectionSchema.safeParse({
             kind: 'trade_route',
-            otherPlaceName: PLACE.LOW_FALL,
+            otherPlaceName: PLACE.GREEN_FALL,
             description: 'A description that is comfortably longer than the forty characters the schema asks for.',
             travelDays: 3
         });
@@ -171,12 +177,12 @@ describe('the kind is the engine LinkKind and not a second vocabulary', () => {
 
 describe('what is next to somewhere', () => {
     it('answers from either end without the caller knowing which end declared it', () => {
-        expect(placesNextTo(PLACE.LOW_FALL).map(p => p.name)).toContain(PLACE.SCARWATER);
-        expect(placesNextTo(PLACE.SCARWATER).map(p => p.name)).toContain(PLACE.LOW_FALL);
+        expect(placesNextTo(PLACE.GREEN_FALL).map(p => p.name)).toContain(PLACE.STONE_FORD);
+        expect(placesNextTo(PLACE.STONE_FORD).map(p => p.name)).toContain(PLACE.GREEN_FALL);
     });
 
     it('returns nothing for a place with no stated neighbour, and does not throw', () => {
-        expect(placesNextTo(PLACE.SWEPTGROUND)).toEqual([]);
+        expect(placesNextTo(PLACE.BURNT_EARTH)).toEqual([]);
         expect(placesNextTo('not a place at all')).toEqual([]);
         expect(placesNextTo(null)).toEqual([]);
     });

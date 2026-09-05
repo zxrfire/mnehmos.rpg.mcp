@@ -12,7 +12,7 @@
 
 export const HOME_REGION_ID = 'region-low-fall';
 /**
- * The Quiet Marches, and the name is historical: it was the only adjacent
+ * The Silent Cliffs, and the name is historical: it was the only adjacent
  * region when there were two. It is now the western one of four, and the id is
  * left alone because a great deal of content outside this file names it.
  */

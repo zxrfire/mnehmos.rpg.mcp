@@ -27,10 +27,10 @@ interface Fact {
 }
 
 const facts: Fact[] = [
-    { id: 'f1', day: 100, magnitude: 0.8, kind: 'war', summary: 'The Lantern Hall took the Gapwater vein from Ninefold.', consequence: 'The road past the ford has been shut for a season and nobody will say by whom.' },
+    { id: 'f1', day: 100, magnitude: 0.8, kind: 'war', summary: 'The Lantern Hall took the Jade Face vein from Ninefold.', consequence: 'The road past the ford has been shut for a season and nobody will say by whom.' },
     { id: 'f2', day: 300, magnitude: 0.4, kind: 'death', summary: 'Elder Shen of the Lantern Hall died.', consequence: 'A body was found on the low road and nobody is saying whose it was.' },
     { id: 'f3', day: 500, magnitude: 0.1, kind: 'trade', summary: 'A price moved.', consequence: 'Salt is a little dearer.' },
-    { id: 'f4', day: 700, magnitude: 0.65, kind: 'collapse', summary: 'Ninefold Marches folded its outer gate.', consequence: 'A village that used to pay a tithe has stopped, and the tithe collector has not come back.' }
+    { id: 'f4', day: 700, magnitude: 0.65, kind: 'collapse', summary: 'Ninefold Silent Cliffs folded its outer gate.', consequence: 'A village that used to pay a tithe has stopped, and the tithe collector has not come back.' }
 ];
 
 function candidates(reported: string[] = []) {

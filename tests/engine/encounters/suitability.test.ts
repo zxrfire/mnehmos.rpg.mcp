@@ -255,9 +255,9 @@ describe('the send-off', () => {
 describe('nobody watching', () => {
     it('gives an unattached cultivator the same direction, worse', () => {
         const sign = unattachedSignFor({
-            seed: 's', onDay: 100, studentId: 'c1', stalled: true, placeName: 'Sweptground'
+            seed: 's', onDay: 100, studentId: 'c1', stalled: true, placeName: 'Burnt Earth'
         })!;
-        expect(sign.line).toContain('Sweptground');
+        expect(sign.line).toContain('Burnt Earth');
         expect(sign.sourceKind).toBe('inferred');
         expect(sign.refusable).toBe(true);
         // No authority, and nobody to ask a follow-up question of.
@@ -266,7 +266,7 @@ describe('nobody watching', () => {
 
     it('offers nothing when there is nothing to notice', () => {
         expect(unattachedSignFor({
-            seed: 's', onDay: 100, studentId: 'c1', stalled: false, placeName: 'Sweptground'
+            seed: 's', onDay: 100, studentId: 'c1', stalled: false, placeName: 'Burnt Earth'
         })).toBeNull();
     });
 });

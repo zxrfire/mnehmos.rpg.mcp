@@ -136,7 +136,7 @@ because it is never handed one.
 located. Seeing inverts that: you know exactly where a thing is and have no idea what it
 is called. There is currently nowhere to record that, so a sighting is a read and not a
 knowledge row, and **a player cannot yet set out for something they have only seen.** The
-setting already knows what that would look like - a Blown Ground finder *"sells the
+setting already knows what that would look like - a Burial Sands finder *"sells the
 location once and does not lead the buyer to it; the buyer takes the direction and the
 distance and finds it themselves"* - so the shape exists and the machinery does not.
 
@@ -387,7 +387,7 @@ Two elders talking on the other side of a courtyard wall. Not to the player, not
 player, and not moderated for an audience. They use names, shorthand, half-sentences and a
 shared history neither is going to summarise. One of them is annoyed.
 
-> "- and if the Marches send another, we send it back with the same answer."
+> "- and if the Silent Cliffs send another, we send it back with the same answer."
 >
 > "You will not be the one answering. Ninefold has already been asked."
 >

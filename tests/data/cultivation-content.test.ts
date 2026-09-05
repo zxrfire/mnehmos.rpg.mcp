@@ -1227,7 +1227,7 @@ describe('ancestral records', () => {
         expect(claiming.length, 'this must stay rare').toBeLessThanOrEqual(6);
         const trueClaims = claiming.filter(id => SECT_ANCESTRY[id].claimIsTrue);
         // Four powers hold immortal ancestors: the two apexes are not sects, so
-        // among sects it is Azure Cloud, Sweptground, Storm Tyrant and the Court.
+        // among sects it is Azure Cloud, Burnt Earth, Storm Tyrant and the Court.
         expect(trueClaims.length).toBeGreaterThanOrEqual(2);
         expect(trueClaims.length).toBeLessThanOrEqual(5);
     });

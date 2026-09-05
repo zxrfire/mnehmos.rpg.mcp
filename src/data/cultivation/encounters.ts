@@ -1,52 +1,5 @@
 /**
  * Encounter and opportunity tables for the time-skip simulation.
- *
- * "I cultivate for ten years" is resolved in one deterministic pass, and this
- * is the table that pass draws from. Nothing here is prose: `summaryTemplate`
- * is an ENGINE-AUTHORED FACTUAL SUMMARY with `{token}` slots the engine fills
- * with resolved numbers. The runtime agent turns the resulting fact line into
- * narration; it never invents the facts, and it never sees a sentence here that
- * was already trying to be a story.
- *
- * Compare `SimEventSchema.summary` in `src/schema/cultivation.ts` - a filled
- * template is exactly what belongs in that field.
- *
- * WEIGHTING
- * ---------
- * `weight` is a relative draw weight within the set of entries whose ordinal
- * range contains the cultivator. Ranges overlap heavily on purpose: a Qi
- * Condensation cultivator meets bandits and untouched herb patches, a Nascent
- * Soul cultivator meets sect wars and sealed tombs, and the handful of entries
- * that span the whole ladder - qi deviation, being robbed in seclusion - are
- * the reminders that nothing is ever fully outgrown.
- *
- * `threatOrdinal` is the realm ordinal of whatever is hostile, or null when the
- * entry is not a fight. The engine compares it to the cultivator's own ordinal;
- * the power multipliers in `realms.ts` are steep enough that a four-rank gap is
- * not a hard fight, it is a death.
- *
- * RUINS ARE THE CORE LOOP
- * -----------------------
- * This is a late age. Most veins have been drawn down, whole regions were
- * killed outright by old wars, and nobody has ascended in living memory. A
- * sealed site is a pocket of qi that nothing has drawn on, along with whatever
- * its owner did not get to take out - manuals in grades no living teacher can
- * transmit, refining methods nobody alive devised, and formations still
- * drawing on a vein that was rich when it was tapped.
- *
- * That makes digging the only realistic path upward for a cultivator born
- * without talent, or born somewhere poor, so the `ruin` and `grave` entries
- * below are the heaviest
- * block in the table by weight, not a garnish on it. They are also the most
- * specific way to die: seals punish the wrong opening method, guardian
- * formations have been running for two ages without tiring, corpses in the
- * inner chambers are still cultivating, and inheritance trials were calibrated
- * for the disciples of a sect that no longer exists.
- *
- * Ruins are ordinary. A village granary is built against a wall it did not
- * make; farmers plough up fragments and sell them by weight; a child's toy is a
- * spirit tool with the qi long gone out of it. Nobody finds this remarkable,
- * and the summaries here should not either.
  */
 
 import {
@@ -103,12 +56,6 @@ export const EncounterEntrySchema = z.object({
     tags: z.array(z.string()),
     /**
      * The generic column.
-     *
-     * Absent on nearly every entry: the bands read `minOrdinal`, which is what
-     * the entry is pitched at, and `threatOrdinal` is what an entry's damage is
-     * priced off separately. Present on the handful of entries that are never
-     * outgrown - qi deviation, being robbed in seclusion - where `span` is how
-     * "nothing is ever fully outgrown" is said in data rather than in a branch.
      */
     regard: RegardProfileSchema.optional()
 });
@@ -442,14 +389,11 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['hostile', 'beast', 'herb', 'avoidable']
     },
 
-    // ═══════════════════════════════════════════════════════════════════
-    // SPIRIT BEASTS: THE ROAD THEY ARE ON
-    // Beasts climb the same ladder, so they sit on the same veins, they
-    // suffer the same Late Age, and the ones in the sealed places have had
-    // no competition and no interruptions for two ages. `threatOrdinal`
-    // means for a beast exactly what it means for a person. The catalog
-    // behind these entries is `beasts.ts`.
-    // ═══════════════════════════════════════════════════════════════════
+    // SPIRIT BEASTS: THE ROAD THEY ARE ON Beasts climb the same ladder, so they sit
+    // on the same veins, they suffer the same Late Age, and the ones in the sealed
+    // places have had no competition and no interruptions for two ages.
+    // `threatOrdinal` means for a beast exactly what it means for a person. The
+    // catalog behind these entries is `beasts.ts`.
     {
         id: 'enc-thin-district-beasts',
         name: 'What a Poor District Has Instead of Monsters',
@@ -632,14 +576,13 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         summaryTemplate:
             'A cultivator dead approximately {days} days is found at {place}, at {threatRank} in life. Storage pouch intact: {stones} spirit stones and {loot}. Cause of death: {cause}.',
         tokens: ['days', 'place', 'threatRank', 'stones', 'loot', 'cause'],
-        // `corpse` because it is one, and `technique` because it HOLDS one.
-        // The two tags mean different things and the distinction is worth
-        // keeping: `corpse` and `grave` say what a row is ABOUT, and
-        // `technique` says the row can actually hand a method over. A row that
-        // concerns a grave without holding anything - enforcers arriving over
-        // a robbed one, somebody offering terms outside one - carries the
-        // first and not the second, which is what keeps `mayHoldAFit` honest
-        // about the difference.
+        // `corpse` because it is one, and `technique` because it HOLDS one. The two
+        // tags mean different things and the distinction is worth keeping: `corpse`
+        // and `grave` say what a row is ABOUT, and `technique` says the row can
+        // actually hand a method over. A row that concerns a grave without holding
+        // anything - enforcers arriving over a robbed one, somebody offering terms
+        // outside one - carries the first and not the second, which is what keeps
+        // `mayHoldAFit` honest about the difference.
         tags: ['loot', 'safe', 'foreshadowing', 'corpse', 'technique']
     },
     {
@@ -1063,14 +1006,11 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['opportunity', 'cultivation-rate', 'timed', 'competition']
     },
 
-    // ═══════════════════════════════════════════════════════════════════
-    // THE LATE AGE: GRAVES AND GRAVE-READERS
-    // A grave is not a burial. Cultivators carry everything they own,
-    // most of them die somewhere remote, and all of it stays where they
-    // fell. A grave is indifferent and therefore kills more people than
-    // an inheritance does: nothing on a corpse is calibrated to whoever
-    // finds it. And sects keep records of where their people died.
-    // ═══════════════════════════════════════════════════════════════════
+    // THE LATE AGE: GRAVES AND GRAVE-READERS A grave is not a burial. Cultivators
+    // carry everything they own, most of them die somewhere remote, and all of it
+    // stays where they fell. A grave is indifferent and therefore kills more people
+    // than an inheritance does: nothing on a corpse is calibrated to whoever finds
+    // it. And sects keep records of where their people died.
     {
         id: 'enc-grave-recent-death',
         name: 'Somebody Died Here',
@@ -1166,13 +1106,10 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['grave', 'hostile', 'feud-seed', 'unavoidable']
     },
 
-    // ═══════════════════════════════════════════════════════════════════
-    // QI IS A CONTESTED RESOURCE
-    // A region supports only so many cultivators, and qi drawn by one is
-    // not available to another. Everyone can do the arithmetic. Nobody
-    // defends the conclusion out loud, and the practice has never quite
-    // been stamped out.
-    // ═══════════════════════════════════════════════════════════════════
+    // QI IS A CONTESTED RESOURCE A region supports only so many cultivators, and qi
+    // drawn by one is not available to another. Everyone can do the arithmetic.
+    // Nobody defends the conclusion out loud, and the practice has never quite been
+    // stamped out.
     {
         id: 'enc-valley-overdrawn',
         name: 'Too Many Drawing on One Valley',
@@ -1249,14 +1186,11 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['contested-qi', 'hostile', 'atrocity', 'reputation', 'feud-seed']
     },
 
-    // ═══════════════════════════════════════════════════════════════════
-    // DAO HOUSES
-    // The obstacle here is civil authority, not combat strength. Every one
-    // of these can be solved by killing somebody, and the summary is
-    // written so that the engine's real question is what happens
-    // afterwards. `threatOrdinal` is null on most of them on purpose: the
-    // party standing in the way is not the threat.
-    // ═══════════════════════════════════════════════════════════════════
+    // DAO HOUSES The obstacle here is civil authority, not combat strength. Every
+    // one of these can be solved by killing somebody, and the summary is written so
+    // that the engine's real question is what happens afterwards. `threatOrdinal`
+    // is null on most of them on purpose: the party standing in the way is not the
+    // threat.
     {
         id: 'enc-ledger-audit-notice',
         name: 'Audit Notice',
@@ -1556,21 +1490,10 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // The genre's thesis, expressed as a weight table.
     // ═══════════════════════════════════════════════════════════════════
     {
-        // THE CORPSE ROW, and it is the cheapest high-value row in the
-        // catalog: `mayHoldAFit` has read the `corpse` tag since it was
-        // written and no entry anywhere carried one, so route 3 - what a dead
-        // cultivator was practising is still on them - was unreachable.
-        //
-        // `economy.md` already writes the dilemma this exists to put in front
-        // of a player: "An inheritance can refuse you. A grave never does,
-        // which is exactly why graves kill." A body does not assess anybody. It
-        // hands over whatever it was carrying, suited or not, and the manual on
-        // it was written for the person who died holding it rather than for
-        // the person who found them.
-        //
-        // Deliberately not a fight. `threatOrdinal` is null: what is dangerous
-        // here is the decision and whatever killed them, and neither is in the
-        // room.
+        // THE CORPSE ROW, and it is the cheapest high-value row in the catalog:
+        // `mayHoldAFit` has read the `corpse` tag since it was written and no entry
+        // anywhere carried one, so route 3 - what a dead cultivator was practising
+        // is still on them - was unreachable.
         id: 'enc-what-they-were-practising',
         name: 'A Body, and What Was On It',
         kind: 'grave',
@@ -1718,30 +1641,11 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         tags: ['tribulation', 'unavoidable', 'lethal']
     },
 
-    // ═══════════════════════════════════════════════════════════════════
-    // ABOVE THE LID
-    // Two bands the rest of this table's assumptions do not survive, and
-    // the honest fix is different KINDS of entry rather than bigger
-    // numbers. `threatOrdinal` is null on every one of them, which is not
-    // an oversight: nothing below the Lid meaningfully threatens either
-    // rung, and an entry that pretended otherwise would be the table
-    // arguing with the resolver.
-    //
-    // AT 45 THE WORLD IS STILL REACHABLE
-    // Somebody here lives in it permanently - holds an office, lectures,
-    // leaves faces behind, is met in inns. So the encounters are people:
-    // somebody wants something from them, somebody has found something
-    // they put down, or a house would like them to be its. The one at this
-    // rung holds no object of any kind, which is why nothing here is a
-    // thing that could be taken off him.
-    //
-    // AT 46 THE WORLD IS A STOPWATCH
-    // `isExpelledFromBelow` is true up there and
-    // `BREATHS_IN_THE_LOWER_REALM` is ten to fifteen, so anything at this
-    // rung is being expelled for the whole of the time it is here. These
-    // are not meetings. They are errands with a fuse, and most of them are
-    // shaped by the fact that the errand cannot be finished.
-    // ═══════════════════════════════════════════════════════════════════
+    // ABOVE THE LID Two bands the rest of this table's assumptions do not survive,
+    // and the honest fix is different KINDS of entry rather than bigger numbers.
+    // `threatOrdinal` is null on every one of them, which is not an oversight:
+    // nothing below the Lid meaningfully threatens either rung, and an entry that
+    // pretended otherwise would be the table arguing with the resolver.
     {
         id: 'enc-a-house-makes-an-approach',
         name: 'A House Makes an Approach',
@@ -1975,20 +1879,7 @@ function clampOrdinal(ordinal: number): number {
  * rather than blanked, so a missing fact is loud in the log instead of quietly
  * becoming an empty string the agent then narrates around.
  */
-// ─────────────────────────────────────────────────────────────────────────
 // WHAT AN ENCOUNTER COSTS
-//
-// Two different questions, both answered by the same generic resolver.
-//
-//   "is this entry pitched at me"    -> gate is `minOrdinal`
-//   "what does the thing in it cost" -> gate is `threatOrdinal`
-//
-// The second is the one that was missing. `minOrdinal`/`maxOrdinal` already
-// decided WHICH entries could fire, so the draw moved with the ladder; what
-// never moved was the price of the fight once it fired. Roadside bandits cost
-// a Qi Condensation cultivator a real wound and cost a False Immortal nothing,
-// and until now the engine had no way to say the second half.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** How the entry itself is pitched: is it still being drawn for this asker. */
 export function encounterRegard(entry: EncounterEntry, asker: RegardAskerInput): Regard {

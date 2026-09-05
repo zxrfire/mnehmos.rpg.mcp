@@ -194,15 +194,15 @@ describe('provinces, arterials and prefectures', () => {
 
     it('CONTRAST BEATS ADDITION: a prefecture is a different kind of object in each province', () => {
         // The claim `making-places-different.md` makes and the one this whole
-        // section is most likely to violate. A Low Fall holding is a surveyed
-        // catchment; a Marches holding is a face district. If somebody ever
-        // adds a catchment to the Marches, the two provinces have started to
+        // section is most likely to violate. A Jade Gorge holding is a surveyed
+        // catchment; a Silent Cliffs holding is a face district. If somebody ever
+        // adds a catchment to the Silent Cliffs, the two provinces have started to
         // blur and this is where it shows.
         for (const pref of prefecturesOf(LOW_FALL_PROVINCE_ID)) {
-            expect(pref.kind, `${pref.id} is in the Low Fall and is not a catchment`).toBe('catchment');
+            expect(pref.kind, `${pref.id} is in the Jade Gorge and is not a catchment`).toBe('catchment');
         }
         for (const pref of prefecturesOf(QUIET_MARCHES_PROVINCE_ID)) {
-            expect(pref.kind, `${pref.id} is in the Marches and is not a face district`)
+            expect(pref.kind, `${pref.id} is in the Silent Cliffs and is not a face district`)
                 .toBe('face_district');
         }
     });
@@ -210,7 +210,7 @@ describe('provinces, arterials and prefectures', () => {
     it('NO SECTS IN THE MARCHES: every district holder is staff or a contractor, never a tenant', () => {
         // The region claims there is no intermediate institution of any kind.
         // That claim is now territorial and therefore checkable: nothing in
-        // the Marches may hold ground as a `subsidiary`, which is the relation
+        // the Silent Cliffs may hold ground as a `subsidiary`, which is the relation
         // a leased sect has.
         for (const pref of prefecturesOf(QUIET_MARCHES_PROVINCE_ID)) {
             const holders = [
@@ -307,7 +307,7 @@ describe('provinces, arterials and prefectures', () => {
         expect(court.apexId).not.toBe(getProvince(LOW_FALL_PROVINCE_ID)!.heldByApexId);
     });
 
-    it('the driven schedule covers exactly the Long Cut provinces, with the Marches last', () => {
+    it('the driven schedule covers exactly the Long Cut provinces, with the Silent Cliffs last', () => {
         const longCut = APEX_INSTITUTIONS.find(a => a.id === 'apex-long-cut')!;
         expect([...DRIVEN_PROVINCE_SCHEDULE_ORDER].sort())
             .toEqual([...longCut.holdsProvinceIds].sort());

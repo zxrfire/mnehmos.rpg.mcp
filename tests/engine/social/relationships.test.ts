@@ -125,7 +125,7 @@ describe('surviving decades', () => {
         rel = recordRelationshipEvent(rel, {
             onDay: daysForYears(11),
             kind: 'abandoned',
-            summary: 'Left the sect without a word after the Sweptground affair.',
+            summary: 'Left the sect without a word after the Burnt Earth affair.',
             significance: 'defining',
             tags: ['estrangement']
         });
@@ -158,13 +158,13 @@ describe('surviving decades', () => {
             onDay: daysForYears(11),
             type: 'former_disciple',
             attitude: 'quiet resentment',
-            appendHistory: 'The Sweptground affair. He chose the sect.'
+            appendHistory: 'The Burnt Earth affair. He chose the sect.'
         });
 
         expect(rel.attitude).toBe('quiet resentment');
         // "He was not always like this" stays answerable from the record alone.
         expect(rel.history).toContain('Took him in off the road.');
-        expect(rel.history).toContain('The Sweptground affair.');
+        expect(rel.history).toContain('The Burnt Earth affair.');
     });
 
     it('keeps ended ties rather than deleting them', () => {

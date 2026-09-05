@@ -123,7 +123,7 @@ describe('migrateSocial', () => {
             cause: 'killed_kin',
             severity: 'unforgivable',
             onDay: daysForYears(20),
-            description: 'Killed his sister at the Low Fall.',
+            description: 'Killed his sister at the Jade Gorge.',
             triggeringEventId: 'fact_low_fall'
         });
         insert.run(toRow(grudge));
@@ -228,7 +228,7 @@ describe('migrateSocial', () => {
         const fact = recordFact({
             claimKey: 'who_killed_yun_mei',
             onDay: daysForYears(20),
-            statement: 'Lord Hai killed Yun Mei at the Low Fall.',
+            statement: 'Lord Hai killed Yun Mei at the Jade Gorge.',
             detail: { killer: 'lord_hai' },
             subjects: ['lord_hai', 'yun_mei']
         });
@@ -250,7 +250,7 @@ describe('migrateSocial', () => {
             holderId: 'yun_qi',
             claimKey: 'who_killed_yun_mei',
             stance: 'believes',
-            statement: 'Bo Lan killed Yun Mei at the Low Fall.',
+            statement: 'Bo Lan killed Yun Mei at the Jade Gorge.',
             detail: { killer: 'bo_lan' },
             factId: fact.id,
             confidence: 0.9,

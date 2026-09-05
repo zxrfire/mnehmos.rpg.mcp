@@ -169,7 +169,7 @@ function tinyWorld(): WorldState {
     const state = createWorld({ seed: 'roads-test', presentYear: 1000, regionCount: 0 });
     state.locations.push(makeLocation({
         id: 'loc-region-low-fall',
-        name: 'The Low Fall',
+        name: 'The Jade Gorge',
         kind: 'region',
         data: { catalogRegionId: 'region-low-fall' }
     }));
@@ -252,7 +252,7 @@ describe('seeding the ground', () => {
         }));
         const seeded = seedPlacesThatTeachADao(state);
         // Only the provinces this world actually has. A ground is IN a province
-        // and a catalog with no Drowned Reach in it does not get the Salt Hall.
+        // and a catalog with no Drowned Sea in it does not get the Salt Hall.
         expect(seeded.length).toBe(
             PLACES_THAT_TEACH_A_DAO.filter(
                 p => p.regionId === 'region-low-fall' || p.regionId === 'region-white-stair'

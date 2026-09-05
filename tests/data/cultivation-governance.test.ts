@@ -173,7 +173,7 @@ describe('the four governance models', () => {
         expect(REGION_GOVERNANCE['region-quiet-marches'].joining).toMatch(/process/i);
 
         // Every faction seated in a region uses a model consistent with it:
-        // the Marches has no federated leases anywhere.
+        // the Silent Cliffs has no federated leases anywhere.
         const marches = getRegion('region-quiet-marches')!;
         for (const id of marches.factionIds) {
             expect(getParentage(id)!.governance, `${id} is leased inside a directly ruled province`)
@@ -188,7 +188,7 @@ describe('the four governance models', () => {
         expect(DIRECT_RULE.staffing.length).toBeGreaterThan(80);
         expect(DIRECT_RULE.brittleness.length).toBeGreaterThan(80);
         expect(DIRECT_RULE.legalism.length).toBeGreaterThan(100);
-        // No client sects: nothing in the Marches holds a lease from the apex.
+        // No client sects: nothing in the Silent Cliffs holds a lease from the apex.
         const marchesLeases = Object.values(FACTION_PARENTAGE)
             .filter(p => p.governance === 'administered' && p.relation === 'subsidiary');
         expect(marchesLeases.length, 'a direct ruler has no subsidiaries').toBe(0);
@@ -289,7 +289,7 @@ describe('above the map', () => {
             // ancient ones buy unreachability with unnameability and their
             // courts inherit both; the Azure Cloud Pavilion has a front gate,
             // a public ladder and a recruitment cycle, so its court is a place
-            // in the Low Fall that people can name and walk to. Requiring
+            // in the Jade Gorge that people can name and walk to. Requiring
             // every court to be unnameable was requiring every apex to be
             // hidden, one level down, without saying so.
             const above = getApexInstitution(c.apexId)!;

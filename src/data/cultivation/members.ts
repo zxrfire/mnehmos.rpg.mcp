@@ -1,105 +1,5 @@
 /**
  * Members - the people inside the institutions, at human scale.
- *
- * THE GAP THIS FILLS
- * ------------------
- * The world catalog is complete at the top and empty in the middle. It has
- * apexes, Dao houses, sealed ancestors, a False Immortal and twenty-eight
- * factions with grievances - and until this file, nobody the player could
- * actually know. Every named figure was enormous or institutional.
- *
- * That breaks the design's emotional argument. A grudge that persists for
- * decades, a debt repaid forty years late, and the Price of Advancement taking
- * somebody at a crossing all require a person who was worth losing. Without a
- * roster at the bottom of the ladder, the toll takes a stranger, and a stranger
- * costs nothing.
- *
- * So: named people at every rank of every faction that recruits, weighted hard
- * toward the bottom, because the bottom is where the player starts and where
- * almost everybody is.
- *
- * WHAT A PERSON IS HERE
- * ---------------------
- * Six fields and no more: a name, a rank, a realm, one thing they want, one
- * thing they are afraid of, and one concrete detail. A person who takes ten
- * lines is not reusable, and this catalog exists to be reused - the narrator
- * reaches for these people repeatedly across a run, and they have to fit in a
- * prompt beside everything else.
- *
- * Two roles carry a little more, because the design asks something specific of
- * them:
- *
- *   rival    carries `rivalry`, and the load-bearing field is `beatableBecause`.
- *            Every existing power in the world is untouchable by construction -
- *            a Dao house cannot be fought, a sect cannot be beaten by one
- *            person, and the answer to "why did the stronger party not simply
- *            kill them" is always institutional. A rival here is the opposite:
- *            personal, at the player's altitude, and genuinely defeatable, with
- *            the reason written down so nobody has to invent plot armour or
- *            plot frailty later.
- *
- *   master   carries `teaching`, which is `asking.md`'s three limits made
- *            explicit: what they know, what they may say, and what it costs
- *            them to say it. Those are different limits and all three apply.
- *            Masters here are competent rather than formidable, frequently out
- *            of their depth about the wider world, and capable of a straight
- *            answer inside the part they actually hold.
- *
- * RULES THIS FILE KEEPS
- * ---------------------
- * - NOBODY IS FLAGGED IMPORTANT. There are no chosen ones and no hidden
- *   prodigies marked as such. Where somebody is exceptional it is legible only
- *   in what they do, and the catalog never says so. `people.md` is explicit
- *   that exceptional NPCs emerge from the same inputs as anybody else and never
- *   from a flag, and a `notable: true` column would be that flag.
- * - REALMS ARE PLAUSIBLE FOR RANK AND FACTION. Enforced by `rankRealmBand`,
- *   which is derived from the faction's own admission bar and its production
- *   tier in `faction-character.ts` rather than asserted by hand. Most people
- *   here are at Qi Condensation. Foundation Establishment is notable. Core
- *   Formation is a senior figure. Above Nascent Soul the file holds one person
- *   per ordinary house, plus the whole of the Hollow Court's ladder, which
- *   admits at Void Refinement and goes up from there.
- * - NAMES VARY BY REGION. The Low Fall uses clan surnames with one- or
- *   two-syllable given names; the Quiet Marches uses tool-names and
- *   face-numbers and has no clan names at all. See `customs.naming` in
- *   `regions.ts`. A Marches-born person carrying two names in the Low Fall
- *   style is announcing that they are leaving.
- * - EVERY FACTION HAS SOMEBODY WHO IS GOOD COMPANY. `tone.md` requires humour
- *   and requires it to come from character. `goodCompany` marks who it is
- *   available from; it is a fact about their manner, not about their worth.
- * - THESE ARE CONTENT, NOT SIMULATION. Small durable records the narrator
- *   reasons from. Nothing here is a live agent, nothing here has state, and the
- *   engine owns every decision as usual.
- *
- * - A CLOSED GATE IS NOT AN EMPTY COMPOUND. This file used to hold nobody from
- *   the two factions that take no applicants, on the reasoning that they were
- *   facts about the world rather than doors. That conflated two different
- *   statements. `recruits` says whether a player can join; it says nothing
- *   about whether anybody is standing there, and a `powerOrdinal` is by
- *   definition a claim that a specific person exists and will answer. The Kiln
- *   Wardens hold nine hundred formation nodes with nine hundred lit, which is
- *   staffed work, and the zero in their production count is stated in
- *   `faction-character.ts` to be a failure of the outside record rather than a
- *   census. They have a roster here now. They are met at a gate and turned
- *   around; they are not joined, and nobody in them is a peer, a rival or a
- *   master.
- *
- *   The Hollow Court used to be the one faction with nobody here, and that
- *   was wrong in a way worth stating, because it cost the world its apex. Its
- *   people are on this list now, projected from `hollow-court-roster.ts` at the
- *   bottom of the file. ABSENT AND WITHHELD ARE DIFFERENT FACTS: what is true
- *   about the Court is not that it has no members, it is that nobody outside it
- *   can name them - a statement about awareness, which the `Awareness` ladder
- *   already expresses, rather than a hole in a catalog. An empty roster is not
- *   something a player can play against; a house that will not say is.
- *
- * - AND AN UNBACKED BODY IS NOT AN UNSTAFFED ONE. The last two rosters written
- *   were the Halfwater Rail's and the Sink Carriers', which had between them
- *   nine ranks, two published figures, a rate book with ninety-one years in it,
- *   a wall of tally boards, and nobody. Both recruit, both take anybody, and a
- *   player could join either and meet not one person - which is the same defect
- *   as the closed-gate one above, arriving from the other direction. Governance
- *   describes what holds a body up. It says nothing about who is standing in it.
  */
 
 import { z } from 'zod';
@@ -114,25 +14,14 @@ import { groundReachOf, servantBarOf } from './the-three-floors-a-house-admits-a
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * What this person is TO A PLAYER, which is not a statement about their
- * importance and not a ranking.
- *
- *   peer    somebody the player can meet on level ground and become a friend,
- *           a debtor, a rival or a corpse with. Most of the catalog.
- *   rival   personal opposition at the player's altitude, and beatable.
- *   master  somebody who will teach, inside stated limits.
- *   senior  a rank-holder the player deals with rather than fights.
+ * What this person is TO A PLAYER, which is not a statement about their importance
+ * and not a ranking.
  */
 export const FactionMemberRoleSchema = z.enum(['peer', 'rival', 'master', 'senior']);
 export type FactionMemberRole = z.infer<typeof FactionMemberRoleSchema>;
 
 /**
  * Personal opposition, which is the thing the world otherwise cannot supply.
- *
- * `beatableBecause` is the whole point of the object. It is written in advance
- * so that a defeat is a consequence of something true about the person rather
- * than a narrator's mercy, and so that a player who works the weakness out has
- * actually worked something out.
  */
 export const RivalrySchema = z.object({
     /** What the quarrel is actually over. Personal, never institutional. */
@@ -182,33 +71,10 @@ export const MemberSchema = z.object({
     /** Whether they are pleasant to be around. A fact about manner. */
     /**
      * The faction's strongest member, and not a product of its pipeline.
-     *
-     * `rankRealmBand` caps a rank at what the faction can reliably produce,
-     * which is the right rule for everybody the faction actually made. It is the
-     * wrong rule for the one person it did not: an inherited elder, somebody who
-     * arrived already formed, or the last survivor of a richer age. On most of
-     * this catalog the two figures are far apart - a faction standing at 33
-     * whose pipeline tops out near 28 - and that distance is the Late Age, not
-     * a data error.
-     *
-     * So an outlier is exempt from the band and asserted to sit exactly on the
-     * faction's `powerOrdinal`, because that number is defined as this person.
-     * At most one per faction.
      */
     outlier: z.boolean(),
     /**
      * Why they are above what the faction can produce. Null when they are not.
-     *
-     *   inherited   came with the compound, or with the vein, or with a merger
-     *   remnant     one of several left from a larger predecessor, and the
-     *               reason this matters is that remnants come in cores. A sect
-     *               squatting in somebody else's compound frequently squats in
-     *               it with somebody else's elders, and a faction can therefore
-     *               have a whole band of people its own ground could never have
-     *               made - which is what a lit-node count of eleven out of
-     *               sixty-three looks like from the inside.
-     *   arrived     climbed elsewhere and walked in already formed
-     *   last_of_age the only one still standing from a richer period
      */
     outlierReason: z.enum(['inherited', 'remnant', 'arrived', 'last_of_age']).nullable(),
     goodCompany: z.boolean(),
@@ -217,39 +83,7 @@ export const MemberSchema = z.object({
 });
 export type Member = z.infer<typeof MemberSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────
 // PLAUSIBILITY
-//
-// What a rank can plausibly stand at, derived rather than asserted, so the
-// catalog cannot drift away from the factions it describes.
-//
-// Three inputs, all of them already in the world:
-//
-//   admissionOrdinal   the bar at the front gate. Nobody in a faction stands
-//                      below it, because that is what the bar is.
-//   reliableOrdinal    what the faction can currently turn out from its own
-//                      intake (`faction-character.ts`). This, plus one realm of
-//                      slack, is the ceiling for anybody in this catalog - a
-//                      member above it would be a member the faction could not
-//                      have produced, which is a claim needing its own story.
-//   powerOrdinal       the strongest member who will actually answer. It caps
-//                      the ceiling from above, which matters for the small
-//                      factions: the Sixmile Wardens' best Warden is at
-//                      Foundation Establishment and that is the top of them.
-//
-// The curve between the bottom rank and the top is deliberately loose in both
-// directions:
-//
-//   LEAD  every rank's ceiling sits a little ahead of its own position, because
-//         a low-rank member who is simply strong is an ordinary thing - a
-//         transfer, a late admission, somebody who arrived already made.
-//   LAG   every rank's floor sits a little behind, because rank is bought with
-//         service as often as with qi, and the outer disciple of thirty years
-//         is the most characteristic person in the setting.
-//   HEADROOM guarantees four rungs of room above the admission bar at every
-//         rank, so a faction with a high bar and a low pipeline is not left
-//         with a band of width zero.
-// ─────────────────────────────────────────────────────────────────────────
 
 /** Rungs of slack above the admission bar, at every rank. */
 const HEADROOM = 4;
@@ -259,27 +93,6 @@ const LEAD = 0.22;
 const LAG = 0.35;
 /**
  * The first rank the DISCIPLE bar governs.
- *
- * A house's rank 0 is its menial tier - Sword Servant, Herb Boy, Coal Hand,
- * Applicant, Guest of the Grove - and those people are not admitted disciples.
- * They are servants, and the whole point of such a tier is that somebody can
- * be there without being on the disciple track. So `admissionOrdinal` applies
- * from rank 1 upward.
- *
- * It does NOT follow that rank 0 has no bar. It has its own, and at a strong
- * house it is high, because serving an apex buys its ground and its qi and
- * the queue for that is full. `servantBarOf` is that floor and
- * `the-three-floors-a-house-admits-at.ts` derives it. Flooring rank 0 at
- * ordinal 0, as this constant briefly did, opened the door of the strongest
- * house in the region to an uncultivated nobody - and that floor is read as a
- * live bar by `sect-leadership.ts` and `promotion-inside-a-house.ts`, so it
- * was the door standing open rather than a catalog nicety.
- *
- * Thirty-two of thirty-four houses have a menial tier. The two that do not are
- * the Hollow Court, whose rank 0 is Outer Disciple, and the Kiln Wardens,
- * whose rank 0 is Warden: both admit at or above the rung where sects stop
- * recruiting you and start negotiating with you, so neither has anybody who
- * would be a servant. That is derived rather than listed - see `hasMenialTier`.
  */
 const FIRST_RANK_THE_DISCIPLE_BAR_GOVERNS = 1;
 
@@ -328,13 +141,7 @@ export function rankRealmBand(factionId: string, rankIndex: number): RealmBand |
     return { minOrdinal, maxOrdinal: Math.max(minOrdinal, maxOrdinal) };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE CATALOG
-//
-// Ordered as `sects.ts` is ordered: Low Fall righteous, neutral, demonic; then
-// the Dao houses; then the Quiet Marches. Within a faction, from the bottom
-// rank upward, because that is the order the player meets them in.
-// ─────────────────────────────────────────────────────────────────────────
 
 const AUTHORED_MEMBERS: readonly Member[] = [
     // ═══════════════════════════════════════════════════════════════════
@@ -463,14 +270,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         factionId: 'sect-azure-cloud-pavilion',
         rankIndex: 4,
         rank: 'Sword Elder',
-        // 24 before the grand elder landed, and the change is arithmetic
-        // rather than a revision of who she is. `rankRealmBand` reads
-        // `rankIndex / (ranks.length - 1)`, so a longer ladder makes each rung
-        // a smaller share of the climb: the Sword Elder band ran 13-25 on a
-        // six-rung ladder and runs 10-23 on a seven-rung one. She was one over
-        // the new ceiling and is now at the top of it, which is where she
-        // already was - the most senior plain elder in the house, below the
-        // man who stepped aside and the woman he stepped aside for.
+        // 24 before the grand elder landed, and the change is arithmetic rather
+        // than a revision of who she is. `rankRealmBand` reads `rankIndex /
+        // (ranks.length - 1)`, so a longer ladder makes each rung a smaller share
+        // of the climb: the Sword Elder band ran 13-25 on a six-rung ladder and
+        // runs 10-23 on a seven-rung one. She was one over the new ceiling and is
+        // now at the top of it, which is where she already was - the most senior
+        // plain elder in the house, below the man who stepped aside and the woman
+        // he stepped aside for.
         realmOrdinal: 23,
         role: 'senior',
         wants: 'a decision, in either direction, from four people who have not been able to reach one in eleven years',
@@ -482,59 +289,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rivalry: null,
         teaching: null
     },
-    // ── THE GRAND ELDER, WHO STEPPED ASIDE ───────────────────────────────
-    //
-    // Ordinal 39, unnamed, and both of those are the point.
-    //
-    // WHY HE EXISTS. A house with somebody at 41 leading and nobody between 24
-    // and 41 is a house whose entire route past Grand Ascension runs through
-    // one woman, and it was one death away from having none. Measured: six
-    // people in the world could carry a cultivator at 38 any further, five of
-    // them Hollow Court and the sixth Ru Anwei. He is the seventh, and he makes
-    // the Pavilion two deep rather than one.
-    //
-    // AND HE EXPLAINS HER RATHER THAN MERELY STANDING NEXT TO HER. A house
-    // holding a 39 and a 41 needs a reason the 41 leads, and the reason is a
-    // succession rather than an arrangement of numbers: he stepped aside. See
-    // `docs/world/houses/offices-and-succession.md` - grand elder is first
-    // among equals of the elders, one spot only, and it is where a head
-    // retires to.
-    //
-    // WHY `rankIndex: 4` TODAY, AND WHERE HE IS GOING. **This is a holding
-    // position and it is scheduled to move.** The rung was chosen because the
-    // Pavilion's `ranks` array is a contract - `governance-and-water-rights.ts`
-    // spells it out: every member is pinned to an index, the stipend array is
-    // parallel to it, and `rankRealmBand` derives every band from position in
-    // it, so inserting a rung silently moves every Azure Cloud member and
-    // re-bands every rank in every house through `t = rankIndex / (len - 1)`.
-    //
-    // That reasoning about the contract is right and the conclusion was not the
-    // design owner's, who overruled it: *"let the grand elder be above the
-    // elders. grand is not an office, it is a title. just with elder in it."*
-    // **Grand modifies the title the way it modifies any title** - a Grand
-    // Elder is an Elder one rung up - so it belongs IN the array, above the
-    // elder rung and below the head, and this row moves to it.
-    //
-    // THE INSERT HAS NOW LANDED, and this row moved with it. The Pavilion's
-    // ladder carries `Grand Sword Elder` at index 5, between `Sword Elder` and
-    // `Pavilion Master`, and he sits in it. The rest of the blast radius went
-    // in the same commit - `elderRungOf` counting from the top instead of by
-    // two thirds, `canReachReserves` defined as elder standing, the thirty-four
-    // head-pinned members, and the pyramid in both arms.
-    //
-    // WHAT THE MOVER NEEDS TO KNOW ABOUT HIS SEEDING, because it is worth
-    // keeping and is easy to lose: `grantBooksToMembers` hands him the
-    // **Heaven-Conversing Primordial Canon**, which no shelf in the world
-    // holds. Nobody arranged that. `roadThatCarriedThemHere` picks an unowned
-    // book when a house's shelf cannot reach its own person, and the Pavilion's
-    // stops far below 39 - so the mechanism independently produces the thing
-    // `outlierReason: 'arrived'` claims. It survives the move as long as he
-    // stays above what the shelf teaches, which the new rung does not change.
-    // If it ever stops happening, that is a real finding rather than a detail.
-    //
-    // UNNAMED, which this catalog already supports and the Hollow Court's four
-    // seats already do. It gives the Pavilion depth without another authored
-    // figure to keep true.
+    // THE GRAND ELDER, WHO STEPPED ASIDE
     {
         id: 'member-azure-cloud-grand-elder',
         // The Pavilion's own word for the seat. Not "Grand Elder" - no house
@@ -565,27 +320,6 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
     // THE PERSON THE PAVILION'S WHOLE POSITION RESTS ON, WHO HAS NO POSITION.
-    //
-    // `crossings.ts` carries her inside a prose field on somebody else's
-    // channel - `thePersonItAnswersFor.who` - which made her the clearest
-    // instance of the gap this row exists to close: the Pavilion's whole
-    // position rests on a specific living person being alive, and that person
-    // was nowhere a player could stand next to her.
-    //
-    // WHAT IS TAKEN FROM THE CATALOG AND WHAT IS DELIBERATELY OMITTED. Her
-    // rung, her age and her house are stated identically in `crossings.ts` and
-    // in the Pavilion's own sect entry, and are uncontested. What her
-    // RELATIONSHIP to Ru Anjing is, is not: `crossings.ts` calls her the
-    // younger sister, and six other files give that description to Ru Anwei,
-    // who stands at 41 and holds the Edge. That disagreement is being settled
-    // elsewhere and is not settled here - so this row carries the three facts
-    // every file agrees on and says nothing about whose sister anybody is.
-    // Nothing downstream needs it.
-    //
-    // No office, because no file gives her one. Four hundred and forty-seven
-    // years at Core Formation Perfection holding nothing is the whole
-    // character: a person of no standing whose health is asked after by people
-    // who have no other reason to ask.
     {
         id: 'member-ru-anxi',
         name: 'Ru Anxi',
@@ -800,7 +534,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'River Disciple',
         realmOrdinal: 7,
         role: 'peer',
-        wants: 'to be taken on the border road run to Scarwater once, to see it',
+        wants: 'to be taken on the border road run to Clear River Ford once, to see it',
         fears: 'land, which he says as though it were an ordinary thing to be afraid of',
         detail: 'Has never slept more than one night away from water in his life and offers this as a qualification.',
         outlier: false,
@@ -817,14 +551,14 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'River Disciple',
         realmOrdinal: 9,
         role: 'rival',
-        wants: 'the Ford Master\'s seat at Scarwater, which is the only seat on the border road',
+        wants: 'the Ford Master\'s seat at Clear River Ford, which is the only seat on the border road',
         fears: 'that the River Elders are right and he cannot read water',
         detail: 'Has twice reported another disciple\'s smuggling to the Ford Master, been thanked both times, and promoted neither.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
         rivalry: {
-            grievance: 'Somebody the Ford Master likes is going to get Scarwater, and Fang Lianzhou has decided in advance who it is.',
+            grievance: 'Somebody the Ford Master likes is going to get Clear River Ford, and Fang Lianzhou has decided in advance who it is.',
             beatableBecause: 'His entire method is information, and he has no allies to give him any - the Alliance settles debts in crossings and nobody owes him one. Cornered without a river at his back he is a nine-layer cultivator with a boat pole, and he knows it, which is why he has never once started anything on land.'
         },
         teaching: null
@@ -868,7 +602,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Sweptground Temple --------------------------------------------
+    // --- Burnt Earth Temple --------------------------------------------
     {
         id: 'member-tan-wu',
         name: 'Tan Wu',
@@ -894,9 +628,9 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Lamp Novice',
         realmOrdinal: 3,
         role: 'peer',
-        wants: 'eleven days\' cart fare back to Kettle, to fetch her brother',
+        wants: 'eleven days\' cart fare back to Iron Gate, to fetch her brother',
         fears: 'that the cough is the thing that decides it and not the fare',
-        detail: 'Rinses her mouth with vinegar before every meal, which no Low Fall native does and which nobody at the Temple has asked her about.',
+        detail: 'Rinses her mouth with vinegar before every meal, which no Jade Gorge native does and which nobody at the Temple has asked her about.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -928,7 +662,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Inner Monk',
         realmOrdinal: 12,
         role: 'peer',
-        wants: 'a posting to the Kettle Mission, eleven days away',
+        wants: 'a posting to the Iron Gate Mission, eleven days away',
         fears: 'that he wants it because it is eleven days from his family\'s creditors',
         detail: 'Cuts his own hair rather than let anybody do it, badly, in front of a polished pan, on the first of the month.',
         outlier: false,
@@ -1154,7 +888,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Factor',
         realmOrdinal: 15,
         role: 'rival',
-        wants: 'the Scarwater rate desk, which decides what the entire border road pays',
+        wants: 'the Clear River Ford rate desk, which decides what the entire border road pays',
         fears: 'an audit of the nineteen percent',
         detail: 'Keeps a private book of who has bought below rate and from whom, and it is more accurate than the Consortium\'s own.',
         outlier: false,
@@ -1254,7 +988,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'senior',
         wants: 'the Council Seat that has stood vacant for nine years',
         fears: 'that it is vacant because the Grand Steward prefers it vacant',
-        detail: 'Has been running the Low Fall floor for nine years and signs every document "acting", including his own correspondence.',
+        detail: 'Has been running the Jade Gorge floor for nine years and signs every document "acting", including his own correspondence.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -1456,7 +1190,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Stray',
         realmOrdinal: 3,
         role: 'peer',
-        wants: 'the Sweptground Temple to have said yes, which it did not, for reasons nobody explained',
+        wants: 'the Burnt Earth Temple to have said yes, which it did not, for reasons nobody explained',
         fears: 'the Crimson Abyss Hall, which keeps a list of who was refused where and has her on it',
         detail: 'Keeps her four refusal chits in a wallet and produces them to strangers as credentials.',
         outlier: false,
@@ -1643,22 +1377,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- Kiln Wardens ------------------------------------------------------
-    // A closed gate is not an empty compound. The Wardens take no applicants,
-    // and the header of this file used to read that as nobody being here at
-    // all - but nine hundred nodes held and nine hundred lit is staffed work,
-    // the zero in their `production.currentCount` is stated to be a failure of
-    // the outside record rather than a census, and the single most-described
-    // thing about them in nine hundred years is a Warden standing at that gate.
-    //
-    // So they are met, and they are not joined: every person here is `senior`,
-    // there is nobody to fight and nobody who will teach, and none of them
-    // carries a personal name. `named-figures.ts` is explicit that no Warden
-    // name has ever been recorded and that the Wardens do not appear to be
-    // withholding one, so these people are known the way the province actually
-    // knows them - by post, by number, and by the one thing each was seen to
-    // do. `regions.ts` allows exactly this: sect titles in place of names once
-    // somebody holds rank.
+    // --- Kiln Wardens ------------------------------------------------------ A
+    // closed gate is not an empty compound. The Wardens take no applicants, and the
+    // header of this file used to read that as nobody being here at all - but nine
+    // hundred nodes held and nine hundred lit is staffed work, the zero in their
+    // `production.currentCount` is stated to be a failure of the outside record
+    // rather than a census, and the single most-described thing about them in nine
+    // hundred years is a Warden standing at that gate.
     {
         id: 'member-kiln-warden-water',
         name: 'The Warden who gave him the water',
@@ -1769,13 +1494,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-third-cut-at-scarwater',
-        name: 'The Third Cut at Scarwater',
+        name: 'The Third Cut at Clear River Ford',
         factionId: 'sect-the-severed',
         rankIndex: 2,
         rank: 'Third Cut',
         realmOrdinal: 17,
         role: 'rival',
-        wants: 'the cutting house at Low Fall, which is four times the size of his',
+        wants: 'the cutting house at Green Water City, which is four times the size of his',
         fears: 'nothing he will name, which is the doctrine and is also not true',
         detail: 'Recites what he has given up to applicants, in order, as a sales pitch. The fourth item is a daughter.',
         outlier: false,
@@ -1947,7 +1672,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 12,
         role: 'rival',
         wants: 'the Gleaners\' Company driven off the border sites entirely',
-        fears: 'the Company\'s factor at Scarwater, personally and by name',
+        fears: 'the Company\'s factor at Clear River Ford, personally and by name',
         detail: 'Has killed two Gleaners in six years, can name them both, and does, at length, when drinking.',
         outlier: false,
         outlierReason: null,
@@ -2058,12 +1783,6 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
 
     // --- Orchid Court ------------------------------------------------------
-    //
-    // Six on the roster and five here, which is the whole house: it is a
-    // household before it is a school and has never been larger. Note what is
-    // NOT here - nobody between the Matriarch at 34 and the two on the last
-    // volume at 30 and 29, because the road stops at 33 and the gap above it
-    // is the point of the place.
     {
         id: 'member-shu-lianzhi',
         name: 'Shu Lianzhi',
@@ -2245,28 +1964,8 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // ═══════════════════════════════════════════════════════════════════
-    // DAO HOUSES
-    // Smaller rosters, because a house is a profession before it is a
+    // DAO HOUSES Smaller rosters, because a house is a profession before it is a
     // faction and the bottom of one is a clerk rather than a disciple.
-    //
-    // AND BECAUSE A HOUSE IS A FAMILY. It does not recruit; it adopts, and
-    // adoption here means the name. Everybody in a house carries the house
-    // family's name, which is why the surnames in this block repeat and why
-    // they are the founders' own: Yan Duo of the Ninefold Ledger, Cao Xun of
-    // the Narrow Hour, Lin Zhao of the Bound Word, Gu Yao of Held Names, Fu
-    // Chang of the Measured Span, Xu Ping of the Anchorhold. The trade names
-    // the house; the family names the people. The Quiet Cut's founder is
-    // unrecorded and the Chu are known by nothing except that they are all
-    // Chu, which for that house is the trade working correctly.
-    //
-    // A man adopted in becomes a Yan or a Fu and there is no second option.
-    // The one exception is a woman who married in and declined to change, and
-    // there are exactly two of them here on purpose: Cao Duan, who holds the
-    // Ninefold Book without carrying the Yan, and Xu Zhengsu, an Anchorhold
-    // Xu inside the House of Held Names. Both are small, visible refusals to
-    // be absorbed, and they only read as that while they stay rare.
-    // ═══════════════════════════════════════════════════════════════════
 
     // --- The Ninefold Ledger -----------------------------------------------
     {
@@ -2295,7 +1994,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 12,
         role: 'peer',
         wants: 'to be moved off placement work and onto debt arbitration',
-        fears: 'placing a Marches carver low and reading about the outcome',
+        fears: 'placing a Silent Cliffs carver low and reading about the outcome',
         detail: 'Has one placement she got wrong four years ago; the man who relied on it is dead, and she keeps the case note in her own desk.',
         outlier: false,
         outlierReason: null,
@@ -2374,7 +2073,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'master',
         wants: 'an apprentice who will still be here in forty years',
         fears: 'the discipline dying with the eleven',
-        detail: 'Is the house\'s only reader in the Quiet Marches, has refused to publish a rank table eleven times, and can list the eleven occasions in order.',
+        detail: 'Is the house\'s only reader in the Silent Cliffs, has refused to publish a rank table eleven times, and can list the eleven occasions in order.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2567,7 +2266,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 10,
         role: 'peer',
         wants: 'a span of her own to hold',
-        fears: 'the Scarwater station never opening, which is nine years late',
+        fears: 'the Clear River Ford station never opening, which is nine years late',
         detail: 'Walks everywhere at a measured pace and counts, cannot stop, and has stopped apologising for it.',
         outlier: false,
         outlierReason: null,
@@ -2584,7 +2283,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 15,
         role: 'peer',
         wants: 'the border road courier run, which is four days rather than eleven',
-        fears: 'the last forty li before Kettle, which are on nobody\'s survey',
+        fears: 'the last forty li before Iron Gate, which are on nobody\'s survey',
         detail: 'Has walked the unsurveyed forty li twice, will not do it a third time, and will not say why.',
         outlier: false,
         outlierReason: null,
@@ -2600,7 +2299,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Span Master',
         realmOrdinal: 21,
         role: 'master',
-        wants: 'the Scarwater station opened in his lifetime',
+        wants: 'the Clear River Ford station opened in his lifetime',
         fears: 'that the Clear River Alliance is right that it would end them, because he thinks it would',
         detail: 'Carries the chain itself on every journey, physically, and it weighs eleven catties.',
         outlier: false,
@@ -2720,7 +2419,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Ticketed',
         realmOrdinal: 7,
         role: 'peer',
-        wants: 'forty days at the Gapwater face instead of eleven',
+        wants: 'forty days at the Jade Face instead of eleven',
         fears: 'the dust-lung, which took her father at forty-one',
         detail: 'Rinses with vinegar four times a day rather than the usual two, and it has taken the enamel off her front teeth.',
         outlier: false,
@@ -2751,7 +2450,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-kettle-shen',
-        name: 'Kettle Shen',
+        name: 'Iron Gate Shen',
         factionId: 'sect-weir-office',
         rankIndex: 3,
         rank: 'Under-Warden of the Weir',
@@ -2772,15 +2471,15 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-gapwater-yun',
-        name: 'Gapwater Yun',
+        name: 'Jade Face Yun',
         factionId: 'sect-weir-office',
         rankIndex: 6,
         rank: 'Weir Master',
         realmOrdinal: 17,
         role: 'senior',
         wants: 'nothing to change',
-        fears: 'the Low Fall working out what the two faces are worth',
-        detail: 'Is the strongest thing anybody in the Marches has seen, has never left the region, and has been told what he would count for outside it and did not believe it.',
+        fears: 'the Jade Gorge working out what the two faces are worth',
+        detail: 'Is the strongest thing anybody in the Silent Cliffs has seen, has never left the region, and has been told what he would count for outside it and did not believe it.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2788,7 +2487,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- The Sixmile Wardens -------------------------------------------------
+    // --- The Six Li Wardens -------------------------------------------------
     {
         id: 'member-stakes',
         name: 'Stakes',
@@ -2850,13 +2549,13 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'master',
         wants: 'the survey copied, so that it stops being one shed and one map',
         fears: 'the shed',
-        detail: 'Keeps the only complete map of safe ground in the region in an unlocked shed at Sixmile, explains this once, free, and is visibly tired of explaining it.',
+        detail: 'Keeps the only complete map of safe ground in the region in an unlocked shed at Six Li, explains this once, free, and is visibly tired of explaining it.',
         outlier: false,
         outlierReason: null,
         goodCompany: true,
         rivalry: null,
         teaching: {
-            knows: 'Every safe route through the Marches, and how to read ground that looks like ordinary heath and is not.',
+            knows: 'Every safe route through the Silent Cliffs, and how to read ground that looks like ordinary heath and is not.',
             mayNotSay: 'She will not let the survey out of the shed, because there is one copy of it and nine hundred stakes depend on it.',
             costsThem: 'A day spent teaching is a day the stakes are not repainted, and the burn edge moves about a pace a year regardless of who is busy.'
         }
@@ -2871,7 +2570,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'senior',
         wants: 'the Weir Office to pay for the paint its grantees walk in on',
         fears: 'dying and taking the uncopied parts of the survey with him',
-        detail: 'Is the strongest Warden in the region and would be an outer disciple in the Low Fall, has been told so, and now says it first, as a joke.',
+        detail: 'Is the strongest Warden in the region and would be an outer disciple in the Jade Gorge, has been told so, and now says it first, as a joke.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -2922,7 +2621,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Gleaner',
         realmOrdinal: 7,
         role: 'peer',
-        wants: 'eleven days\' cart fare to Scarwater and a start on the other side',
+        wants: 'eleven days\' cart fare to Clear River Ford and a start on the other side',
         fears: 'arriving there and being read one rank low by the insurance table',
         detail: 'Has the fare, in imported stones, and has had it for three years.',
         outlier: false,
@@ -2957,7 +2656,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-hollowmarket-zhai',
-        name: 'Hollowmarket Zhai',
+        name: 'Willow Village Zhai',
         factionId: 'sect-gleaners-company',
         rankIndex: 3,
         rank: 'Company Factor',
@@ -2977,21 +2676,15 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: {
             knows: 'Sealed-site work, what a burn zone does to a body over a season, and the price of everything the region produces.',
             mayNotSay: 'The layout of the three worked nodes at the front of the ruin, because being the ones who know the way in is the Company\'s only advantage.',
-            costsThem: 'Every gleaner he trains properly is one who survives long enough to buy a cart fare to Scarwater, and eleven have.'
+            costsThem: 'Every gleaner he trains properly is one who survives long enough to buy a cart fare to Clear River Ford, and eleven have.'
         }
     },
 
-    // --- The Halfwater Rail ---------------------------------------------------
-    //
-    // The port had a rate book, a watch, a seam nobody has solved and nobody
-    // standing at the rail. Names follow the Drowned Reach's own custom - a
-    // person at sea is named for where they came aboard and nobody asks past
-    // that - which at a port everybody passes through produces a roll of
-    // landfalls rather than a roll of clans, and says something true: there is
-    // no such thing as a Halfwater family.
+    // --- The Silver Island Rail
+    // ---------------------------------------------------
     {
         id: 'member-dryrun-ping',
-        name: 'Dryrun Ping',
+        name: 'The Bitter Crossing Ping',
         factionId: 'sect-halfwater-rail',
         rankIndex: 0,
         rank: 'Rail Hand',
@@ -3008,7 +2701,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-sui-out-of-bellhead',
-        name: 'Sui out of Bellhead',
+        name: 'Sui out of Bronze Bell Cliff',
         factionId: 'sect-halfwater-rail',
         rankIndex: 1,
         rank: 'Watch',
@@ -3020,7 +2713,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'rival',
         wants: 'the Pavilion\'s buyers off the quay, or paying for the watch that keeps them upright on it',
         fears: 'the seam, which is the word the port uses to avoid saying it cannot help her above her own rung',
-        detail: 'Checks the Watering Floor\'s papers line by line at the rail, which is legal, slow, and the only thing she has.',
+        detail: 'Checks the Sweet Spring Island Floor\'s papers line by line at the rail, which is legal, slow, and the only thing she has.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -3032,7 +2725,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-farside-wen',
-        name: 'Farside Wen',
+        name: 'The Far Shore Wen',
         factionId: 'sect-halfwater-rail',
         rankIndex: 2,
         rank: 'Weigher',
@@ -3057,7 +2750,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     },
     {
         id: 'member-nie-out-of-salt-reach',
-        name: 'Nie out of Salt Reach',
+        name: 'Nie out of the Salt Fields',
         factionId: 'sect-halfwater-rail',
         rankIndex: 3,
         rank: 'Rail Factor',
@@ -3077,9 +2770,9 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // --- The Sink Carriers ----------------------------------------------------
+    // --- Sand Well Carriers ----------------------------------------------------
     //
-    // Marches naming throughout - tool-names and face-numbers, no clan names -
+    // Silent Cliffs naming throughout - tool-names and face-numbers, no clan names -
     // and at the shed the tool is a water skin, so the roll reads like a kit
     // list. Every one of them is priced by the same four-day figure, which is
     // the shed's real gate and not the three questions at the door.
@@ -3168,7 +2861,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         role: 'master',
         wants: 'water at the nine-day point, and has four dry soundings and a carver he is still paying',
         fears: 'that the Waterman is right, and a fixed point on that ground is a debt that outlives the thing it buys',
-        detail: 'Pays a Marches carver out of his own share to sound nine days out, has four holes and no water, and has not told the shed - nor has the other Route Elder paying.',
+        detail: 'Pays a Silent Cliffs carver out of his own share to sound nine days out, has four holes and no water, and has not told the shed - nor has the other Route Elder paying.',
         outlier: false,
         outlierReason: null,
         goodCompany: false,
@@ -3180,17 +2873,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // ══════════════════════════════════════════════════════════════════
     // THE STRONGEST MEMBER OF EACH FACTION
-    //
-    // One per recruiting faction, at that faction's own ordinal, holding its
-    // top rank. These are the people `powerOrdinal` has always been referring
-    // to; until now the number named nobody and the cast stopped well short of
-    // it, so a reader took the roster for the faction.
-    //
-    // Marked `outlier` because none of them came out of the pipeline that
-    // produced everybody above: see the field comment on `MemberSchema`.
-    // ══════════════════════════════════════════════════════════════════
 
     {
         id: 'member-ru-anwei',
@@ -3252,7 +2935,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         realmOrdinal: 24,
         role: 'senior',
         wants: 'the fords kept open',
-        fears: 'a Measured Span station at Scarwater, which would make every ford on the river a formality',
+        fears: 'a Measured Span station at Clear River Ford, which would make every ford on the river a formality',
         detail: 'Still runs a boat, personally, on the least profitable crossing the Alliance keeps, and will not say why the Alliance keeps it.',
         outlier: true,
         outlierReason: 'last_of_age',
@@ -3528,7 +3211,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Weir Master',
         realmOrdinal: 21,
         role: 'senior',
-        wants: 'the Gapwater survey to come back wrong in the good direction',
+        wants: 'the Jade Face survey to come back wrong in the good direction',
         fears: 'that the face is finite and that he has the figure, which he has not circulated',
         detail: 'Carries the current page of the grant book on his person at all times and will produce it mid-sentence, including at meals.',
         outlier: true,
@@ -3579,7 +3262,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // its production line is a straight function of its wage bill.
     {
         id: 'member-halfwater-yue',
-        name: 'Halfwater Yue',
+        name: 'Silver Island Yue',
         factionId: 'sect-halfwater-rail',
         rankIndex: 5,
         rank: 'Rail Master',
@@ -3736,13 +3419,12 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         teaching: null
     },
 
-    // ── the Nine Peaks remnant core ────────────────────────────────────
-    // Eleven of sixty-three formation nodes lit, and a production figure
-    // seven rungs below where the Order stands. Both numbers have the same
-    // cause: the Order did not make these people either. They came with the
-    // mountains, from the house that held them before, and they are why a
-    // sect whose pipeline tops out at twenty-one has a band at twenty-five
-    // and above. This is what a remnant core is, and it is not rare.
+    // the Nine Peaks remnant core Eleven of sixty-three formation nodes lit, and a
+    // production figure seven rungs below where the Order stands. Both numbers have
+    // the same cause: the Order did not make these people either. They came with
+    // the mountains, from the house that held them before, and they are why a sect
+    // whose pipeline tops out at twenty-one has a band at twenty-five and above.
+    // This is what a remnant core is, and it is not rare.
     {
         id: 'member-shi-lianzhen',
         name: 'Shi Lianzhen',
@@ -3947,45 +3629,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
 // THE HOLLOW COURT, ON THE SAME ROLL AS EVERYBODY ELSE
-//
-// This file used to say the Court was the one faction with nobody in it, and
-// the seeder had a function of its own to stand it up as a result. Two
-// mechanisms for one question - who is in a house - which is the shape this
-// project keeps having to undo, and it cost exactly what that shape always
-// costs: the world held eleven anonymous bodies at the Court while the
-// register printed eleven named ones, and they were not the same people.
-//
-// ABSENT AND WITHHELD ARE DIFFERENT FACTS, and the old arrangement encoded the
-// wrong one. The Court has a roster; the ground truth is a number and the
-// engine knows it. What is true about the Court is that NOBODY OUTSIDE IT
-// KNOWS, and that is a statement about awareness rather than about data - so
-// it belongs to the `Awareness` ladder that already gates whether a thing may
-// be named, not to an empty array here. See `hollow-court-roster.ts` for the
-// people themselves and `HOW_THE_COURT_IS_SEEN` for what the province has
-// instead of them.
-//
-// The concealment is a consequence of what the Court is for rather than a
-// policy it adopted: a body whose single purpose is getting its own members
-// over the last crossing has no reason to tell the province anything, deaths
-// included. So the outside picture does not merely stop short - it goes STALE,
-// and somebody can carry a name that stopped meaning anything a century ago.
-//
-// WHY THE MAPPING RATHER THAN A REWRITE. The roster's own shape carries things
-// no other house needs - the alias somebody works under outside, what they were
-// famous for before the gate, how far along the road they are - and those are
-// real content that would be lost by flattening them into six fields. So the
-// authoring stays there and this is the projection onto the shape every
-// consumer already reads.
-//
-// THE GUEST IS NOT ON THIS LIST, and the omission is the content. He holds an
-// honorary title that binds him to nothing, he stands off the ladder entirely
-// (`rankIndex` is null on him and on nobody else), and he is a wanderer with
-// his own record in `wanderers.ts` - so placing him at the Court's seat as a
-// member would put the strongest person in the world permanently on a mountain
-// the rest of his file says he is not on.
-// ─────────────────────────────────────────────────────────────────────────
 
 const COURT_MEMBERS: readonly Member[] = HOLLOW_COURT_ROSTER
     .filter((m): m is typeof m & { rankIndex: number } => m.rankIndex !== null)
@@ -4016,10 +3660,6 @@ const COURT_MEMBERS: readonly Member[] = HOLLOW_COURT_ROSTER
 
 /**
  * Everybody the catalogs name, in one list.
- *
- * One list because there is one question. A second store of people is a second
- * answer to "who is in this house", and the seeder reading only the first one
- * is how the apex of the setting ended up populated by strangers.
  */
 export const MEMBERS: readonly Member[] = [...AUTHORED_MEMBERS, ...COURT_MEMBERS];
 
@@ -4071,13 +3711,9 @@ export function getMembersByRole(role: FactionMemberRole): Member[] {
 }
 
 /**
- * People a cultivator at this ordinal can actually meet on level ground:
- * close enough that neither party is unfightable, which is the band where
- * friendship, debt and murder are all still available.
- *
- * The default spread of four rungs is one realm at the top of the ladder and
- * a third of Qi Condensation at the bottom, which is about right - a Layer 2
- * and a Layer 6 are peers, a Layer 2 and a Foundation cultivator are not.
+ * People a cultivator at this ordinal can actually meet on level ground: close
+ * enough that neither party is unfightable, which is the band where friendship,
+ * debt and murder are all still available.
  */
 export function getPeersAt(ordinal: number, spread = 4): Member[] {
     const clamped = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));

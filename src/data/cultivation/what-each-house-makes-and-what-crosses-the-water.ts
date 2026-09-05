@@ -29,8 +29,8 @@
  * `exports` list per province and the faction catalog says what every body
  * does. So `artisansOf` FALLS BACK to the province's exports for any house
  * without a row here, and the fallback is not a shortcut - it is the
- * derivation, made executable. A Wide Field house with no row makes what the
- * Wide Field exports, because that is what there is to make on that ground
+ * derivation, made executable. A Yellow Plain house with no row makes what the
+ * Yellow Plain exports, because that is what there is to make on that ground
  * with those materials.
  *
  * Rows exist only where the craft is SPECIFIC enough that the province's list
@@ -103,13 +103,13 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     {
         factionId: 'sect-cinnabar-crucible-guild',
         craft: 'Refining. Four furnaces, a fixed price list, and the only alchemy anybody in two provinces can buy over a counter.',
-        whoTheyAre: 'The guild IS its artisans - there is no distinction here between a member and a maker, and a Guild rank is a furnace rank. Its cold branch at Rimefall is four furnaces and a price list and nothing else.',
+        whoTheyAre: 'The guild IS its artisans - there is no distinction here between a member and a maker, and a Guild rank is a furnace rank. Its cold branch at Cold Peak is four furnaces and a price list and nothing else.',
         makes: [
             'the healing, gathering and clear-meridian pills that the whole price table is anchored against',
             'crossing pills bought by every house in the province for its own people, at a price nobody negotiates',
             'furnace time, sold by the day to anybody who brings their own formula and their own materials'
         ],
-        cannotMake: 'Anything at all in the Quiet Marches, and this is the single largest fact about the world\'s pill trade. A refinement needs ambient qi to hold its shape while it sets, and in the Marches it does not set - so every pill in that province is imported eleven days by cart, and the Guild has tried and abandoned a western furnace three times.',
+        cannotMake: 'Anything at all in the Silent Cliffs, and this is the single largest fact about the world\'s pill trade. A refinement needs ambient qi to hold its shape while it sets, and in the Silent Cliffs it does not set - so every pill in that province is imported eleven days by cart, and the Guild has tried and abandoned a western furnace three times.',
         soldOutside: 'To everybody, at the list price, without exception and without discount, which is the Guild\'s entire reputation and the reason its list is quoted in provinces it has never operated in.'
     },
     {
@@ -121,7 +121,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
             'mortal medicine that works on mortals, sold at prices a village can raise',
             'the only cultivated stock of four herbs that everybody else has to find'
         ],
-        cannotMake: 'Scar-ground herbs, which will not fruit on healthy land at any price and are the one thing the Hall has to buy from the Marches and the Wide Field. Nine warm springs cannot reproduce ground that something died on.',
+        cannotMake: 'Scar-ground herbs, which will not fruit on healthy land at any price and are the one thing the Hall has to buy from the Silent Cliffs and the Yellow Plain. Nine warm springs cannot reproduce ground that something died on.',
         soldOutside: 'Freely, and the Hall prices mortal medicine below cost on purpose, which two of its own elders have argued about for thirty years without either of them winning.'
     },
     {
@@ -131,7 +131,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
         makes: [
             'assayed spirit stones cut to the Stonewright standard, which is the currency everything else in this file is priced in',
             'the published rate itself, which is the only export in the world that arrives before the goods do',
-            'the insurance table that reads a Marches title one rank low, which is a product and gets people killed'
+            'the insurance table that reads a Silent Cliffs title one rank low, which is a product and gets people killed'
         ],
         cannotMake: 'Its own stones. The Consortium holds no vein and cuts what other people dig, so it is the wealthiest body in two provinces and owns none of the material it is wealthy from.',
         soldOutside: 'It sells nothing else. Every stone it touches belongs to somebody when it arrives and to somebody when it leaves, and the Consortium takes the cut and the rate.'
@@ -139,19 +139,19 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
     {
         factionId: 'sect-gleaners-company',
         craft: 'Not making - recovering. The Company is the one body here whose product was made by somebody who is dead.',
-        whoTheyAre: 'Diggers and sorters. The barrow yard at Hollowmarket is a sorting floor rather than a workshop and the distinction is the whole of the Marches: a province that cuts its qi out of stone does not have artisans in the ordinary sense, it has extractors.',
+        whoTheyAre: 'Diggers and sorters. The barrow yard at Willow Village is a sorting floor rather than a workshop and the distinction is the whole of the Silent Cliffs: a province that cuts its qi out of stone does not have artisans in the ordinary sense, it has extractors.',
         makes: [
-            'sorted sealed-site salvage, priced at Hollowmarket before it goes to Kettle',
-            'scar-ground herbs that only fruit on dead ground, which are the Low Fall\'s single largest import from the west',
+            'sorted sealed-site salvage, priced at Willow Village before it goes to Iron Gate',
+            'scar-ground herbs that only fruit on dead ground, which are the Jade Gorge\'s single largest import from the west',
             'nothing that did not already exist, which is stated plainly in the Company\'s own manifest rule'
         ],
-        cannotMake: 'Anything whatsoever. There is no forge, no furnace and no bed in the Marches that works, because alchemy will not set and the ambient will not hold a refinement - so the region\'s entire economy is moving other people\'s finished goods and other ages\' leavings.',
-        soldOutside: 'By weight, on a published manifest rule, to the Kettle Assay House and to its own factor at Scarwater, and to the Thousand Treasure Pavilion when the Pavilion sends a buyer.'
+        cannotMake: 'Anything whatsoever. There is no forge, no furnace and no bed in the Silent Cliffs that works, because alchemy will not set and the ambient will not hold a refinement - so the region\'s entire economy is moving other people\'s finished goods and other ages\' leavings.',
+        soldOutside: 'By weight, on a published manifest rule, to the Iron Gate Assay House and to its own factor at Clear River Ford, and to the Thousand Treasure Pavilion when the Pavilion sends a buyer.'
     },
     {
         factionId: 'sect-halfwater-rail',
         craft: 'Making nothing, and that is the whole of the port. What the Rail produces is the transaction.',
-        whoTheyAre: 'Coopers, ropewalkers, a cistern crew and eleven caulkers, and every one of them is maintenance rather than manufacture. The port makes barrels, cordage and repairs because a hull that cannot be repaired at Halfwater is a hull that stops coming.',
+        whoTheyAre: 'Coopers, ropewalkers, a cistern crew and eleven caulkers, and every one of them is maintenance rather than manufacture. The port makes barrels, cordage and repairs because a hull that cannot be repaired at Silver Island is a hull that stops coming.',
         makes: [
             'water casks and sealed stone jars, which are the binding constraint on every passage in the province',
             'cordage, canvas and hull repair, sold at the same fortieth as everything else',
@@ -168,7 +168,7 @@ export const HOUSE_ARTISANS: readonly HouseArtisans[] = [
             'water skins, pitched and stitched, forty to sixty of which are a string',
             'nothing else at all, because a body that has to rewalk its own route every season cannot carry a workshop'
         ],
-        cannotMake: 'Anything that needs a fixed place to make it in. That is the Blown Ground\'s governing fact applied to a trade: a workshop is a fixed point, a fixed point is under nine feet of sand within a decade, and the shed itself has been rebuilt four times around a stack of boards.',
+        cannotMake: 'Anything that needs a fixed place to make it in. That is the Burial Sands\'s governing fact applied to a trade: a workshop is a fixed point, a fixed point is under nine feet of sand within a decade, and the shed itself has been rebuilt four times around a stack of boards.',
         soldOutside: 'Nothing is sold. The skins go out full and come back empty and are restitched, and a carrier who loses one pays for it out of their share.'
     }
 ];
@@ -229,11 +229,11 @@ export function housesWithAWrittenCraft(): readonly string[] {
 export const SEA_LANES: readonly SeaLane[] = [
     {
         id: 'lane-eastern-passage',
-        fromPlace: PLACE.WATERING,
-        toPlace: PLACE.NINEWATCH,
+        fromPlace: PLACE.SWEETSPRING_ISLE,
+        toPlace: PLACE.CLOUD_GATE,
         expectedDays: 21,
         openMonthsPerYear: 9,
-        // Halfwater at nine days is the reason this is the busiest water in the
+        // Silver Island at nine days is the reason this is the busiest water in the
         // world and the reason the port exists at all: it is the only lane with
         // a landfall inside the commit point, so it is the only long crossing
         // anybody can turn back from having already gone most of the way.
@@ -242,11 +242,11 @@ export const SEA_LANES: readonly SeaLane[] = [
     },
     {
         id: 'lane-the-northern-capes',
-        fromPlace: PLACE.SALT_REACH,
-        toPlace: 'Rimefall inlet',
+        fromPlace: PLACE.THE_SALT_FIELDS,
+        toPlace: 'Cold Peak inlet',
         expectedDays: 34,
         openMonthsPerYear: 2,
-        // Nothing. Eleven days of it is The Long Middle, and about one hull in
+        // Nothing. Eleven days of it is Boundless Sea, and about one hull in
         // five does not arrive - which the province knows and the trade
         // continues anyway, because the alternative is seventeen days over a
         // pass that is shut five months a year and a toll at the gorge.
@@ -255,8 +255,8 @@ export const SEA_LANES: readonly SeaLane[] = [
     },
     {
         id: 'lane-the-river-mouth',
-        fromPlace: 'The river mouth below Low Fall',
-        toPlace: PLACE.WATERING,
+        fromPlace: 'The river mouth below Green Water City',
+        toPlace: PLACE.SWEETSPRING_ISLE,
         expectedDays: 9,
         openMonthsPerYear: 12,
         // Coastal the whole way, which is why the Clear River Alliance will
@@ -306,12 +306,12 @@ export const SEA_CARGO: readonly Cargo[] = [
         laneId: 'lane-the-river-mouth',
         direction: 'outbound',
         carriedByFactionId: 'sect-clear-river-alliance',
-        boughtBy: 'Everybody at Halfwater, and the Guild does not send a factor - it sells at the list price at Low Fall and the port pays the carriage, which is why a pill costs more than twice as much on the quay as it does in the Guild hall.',
-        whyByWater: 'There is no road. The Drowned Reach is water, so every grain of food and every pill in it arrived on a hull, and this is the only regular service between the land and the water at all.'
+        boughtBy: 'Everybody at Silver Island, and the Guild does not send a factor - it sells at the list price at Green Water City and the port pays the carriage, which is why a pill costs more than twice as much on the quay as it does in the Guild hall.',
+        whyByWater: 'There is no road. The Drowned Sea is water, so every grain of food and every pill in it arrived on a hull, and this is the only regular service between the land and the water at all.'
     },
     {
         id: 'cargo-salt-north',
-        what: 'Salt, in quantity, raked off the drying flats at Salt Reach',
+        what: 'Salt, in quantity, raked off the drying flats at the Salt Fields',
         madeByFactionId: null,
         laneId: 'lane-the-river-mouth',
         direction: 'inbound',
@@ -327,7 +327,7 @@ export const SEA_CARGO: readonly Cargo[] = [
         direction: 'inbound',
         carriedByFactionId: 'sect-halfwater-rail',
         boughtBy: 'The port itself, and then everybody at it. Stones out here are not savings and not fuel - they are the ground, so the largest single buyer of stones in the world is a market with no vein under it.',
-        whyByWater: 'The road east goes through the gorge and is taxed there. A hull out of Ninewatch reaches Halfwater in twelve days having paid nobody, which is the whole of why the port is on that lane and not on a coast.'
+        whyByWater: 'The road east goes through the gorge and is taxed there. A hull out of Cloud Gate reaches Silver Island in twelve days having paid nobody, which is the whole of why the port is on that lane and not on a coast.'
     },
     {
         id: 'cargo-ice-stones-south',
@@ -336,7 +336,7 @@ export const SEA_CARGO: readonly Cargo[] = [
         laneId: 'lane-the-northern-capes',
         direction: 'outbound',
         carriedByFactionId: 'sect-halfwater-rail',
-        boughtBy: 'The Thousand Treasure Pavilion\'s floor at Watering and the Stonewright assay at Kettle, both of which pay a premium for stones that assay high and neither of which will insure the carriage.',
+        boughtBy: 'The Thousand Treasure Pavilion\'s floor at Sweet Spring Island and the Stonewright assay at Iron Gate, both of which pay a premium for stones that assay high and neither of which will insure the carriage.',
         whyByWater: 'The pass is shut five months a year and the five months it is shut are the five months the stones can be moved. This lane is open two months a year and both of them are inside that window, which is the only reason a route that loses one hull in five carries anything at all.'
     },
     {
@@ -346,7 +346,7 @@ export const SEA_CARGO: readonly Cargo[] = [
         laneId: 'lane-eastern-passage',
         direction: 'outbound',
         carriedByFactionId: 'sect-thousand-treasure-pavilion',
-        boughtBy: 'The Watering Floor first and the eastern auction houses after, and the Pavilion\'s appraisers are the only people in the world who can date a thing that has been underwater and will not say how.',
+        boughtBy: 'The Sweet Spring Island Floor first and the eastern auction houses after, and the Pavilion\'s appraisers are the only people in the world who can date a thing that has been underwater and will not say how.',
         whyByWater: 'An island is the top of something people used to walk on, so the material only exists where the hulls are, and nothing about it can be got at from a road.'
     },
     {
@@ -391,7 +391,7 @@ export const SEA_TRADERS: readonly {
     {
         factionId: 'sect-clear-river-alliance',
         whatKindOfOperator: 'A river body that goes to sea reluctantly and only as far as the first landfall. It is the only regular service between the land and the water, and it has never lost a hull, which is the same fact twice.',
-        whereItWillNotGo: 'One landfall past Watering, on the stated principle that a ferryman who cannot see both banks is a passenger. The Alliance has been offered the eastern passage four times.',
+        whereItWillNotGo: 'One landfall past Sweet Spring Island, on the stated principle that a ferryman who cannot see both banks is a passenger. The Alliance has been offered the eastern passage four times.',
         howItIsPaid: 'In crossings owed rather than in cash, wherever it can arrange it, which is how it prices a ford and is the only pricing the Alliance has ever used.'
     },
     {
@@ -408,7 +408,7 @@ export const SEA_TRADERS: readonly {
     },
     {
         factionId: 'house-measured-span',
-        whatKindOfOperator: 'Not a carrier and the reason the others survive. Nine gate stations, no two within a month\'s walk and all of them an hour apart, including Farside on a shore three weeks\' sail out.',
+        whatKindOfOperator: 'Not a carrier and the reason the others survive. Nine gate stations, no two within a month\'s walk and all of them an hour apart, including The Far Shore on a shore three weeks\' sail out.',
         whereItWillNotGo: 'It carries goods for nobody. The Span moves people and letters through a door on its own cycle, four days in nine and never in a storm, and a consignment has never once gone through one.',
         howItIsPaid: 'A gate fee, in stones, priced by true rather than walked distance, which nobody outside the Span can verify and everybody pays.'
     }
@@ -450,7 +450,7 @@ export const HALFWATER_TERMS = {
     },
 
     abovePartiesGuaranteeThemselves:
-        'Above the watch, the Rail does not police anybody and says so at the gate. A high cultivator at Halfwater is protected by what they are and by who would come for them, which is why it is usually quiet up there: nobody robs a Nascent Soul cultivator, because everybody knows what that person will do and how long they will take about it. When it does happen it is spectacular, it is a private war, and the port neither stops it nor is party to it.',
+        'Above the watch, the Rail does not police anybody and says so at the gate. A high cultivator at Silver Island is protected by what they are and by who would come for them, which is why it is usually quiet up there: nobody robs a Nascent Soul cultivator, because everybody knows what that person will do and how long they will take about it. When it does happen it is spectacular, it is a private war, and the port neither stops it nor is party to it.',
 
     theSeam: {
         ordinalFrom: 17,
@@ -458,7 +458,7 @@ export const HALFWATER_TERMS = {
         what:
             'Somebody above what the watch can hold, with nobody in the world who would come for them. Deterrence needs an avenger and a rogue at Core Formation frequently has none, so the port\'s two regimes leave a gap exactly the width of one realm.',
         whatHappensThere:
-            'The last three killings on the quay were all of that shape and the Factors have discussed each as an incident rather than as the pattern. It is the one thing a player could exploit at Halfwater, and the one thing a player could fall into.'
+            'The last three killings on the quay were all of that shape and the Factors have discussed each as an incident rather than as the pattern. It is the one thing a player could exploit at Silver Island, and the one thing a player could fall into.'
     },
 
     whyNobodyTakesIt:

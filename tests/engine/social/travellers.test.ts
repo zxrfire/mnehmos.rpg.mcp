@@ -25,9 +25,9 @@ const HERE = 'region-home';
 
 const PLACES: TravellerPlace[] = [
     { id: 'Nextvillage', name: 'Nextvillage', regionId: HERE },
-    { id: 'Kettle', name: 'Kettle', regionId: 'region-far' },
-    { id: 'Hollowmarket', name: 'Hollowmarket', regionId: 'region-far' },
-    { id: 'Sixmile', name: 'Sixmile', regionId: 'region-far' }
+    { id: 'Iron Gate', name: 'Iron Gate', regionId: 'region-far' },
+    { id: 'Willow Village', name: 'Willow Village', regionId: 'region-far' },
+    { id: 'Six Li', name: 'Six Li', regionId: 'region-far' }
 ];
 
 function draw(occasion: string, extra: Partial<Parameters<typeof passingThrough>[0]> = {}) {

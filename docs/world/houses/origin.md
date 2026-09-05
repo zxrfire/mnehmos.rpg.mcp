@@ -189,8 +189,8 @@ in doing so implements neither: it names houses in your own region whose
 `admissionOrdinal` is at the floor, and the Pavilion's `admissionOrdinal` is its
 **membership bar**, not its door. So the Pavilion is nameable to nobody at birth anywhere.
 
-**Measured, in a played run.** A cultivator born in the Quiet Marches travelled to the Low
-Fall, stood in the gorge, and asked *what sects are there*. The answer was the two houses
+**Measured, in a played run.** A cultivator born in the Silent Cliffs travelled to the Jade
+Gorge, stood in the gorge, and asked *what sects are there*. The answer was the two houses
 from the province they had left. Asking around about the Pavilion by name returned village
 gossip about strangers. A previous attempt to fix it by naming every house with a floor
 door wherever it sat turned four tests red against the passage above, and was correctly

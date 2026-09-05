@@ -7,13 +7,13 @@
  *                 veins, sects hold single veins at sufferance. Stable because
  *                 subsidiaries compete for standing rather than for veins, and
  *                 a parent that wants one gone stops renewing rather than
- *                 attacking. This is the Low Fall.
+ *                 attacking. This is the Jade Gorge.
  *
  *   administered  a power holds its territory itself: no client sects, no
  *                 courts, no leases. Nothing is skimmed and it gets its own
  *                 reports, but it does all the work, owns every act by name,
  *                 and has no feeder - so it recruits directly. This is the
- *                 Quiet Marches, and it is taut: five provinces on a posted
+ *                 Silent Cliffs, and it is taut: five provinces on a posted
  *                 staff small enough to name.
  *
  *   deference     direct rule by respect. A small sect administers only what
@@ -150,12 +150,12 @@ export const UnbackedReasonSchema = z.enum([
     'arrangement_that_is_not_patronage',
     'not_worth_the_trouble_yet',
     /**
-     * Added for the Sink Carriers, and the existing six could not carry it.
+     * Added for Sand Well Carriers, and the existing six could not carry it.
      *
      * Every other reason here is about the BODY - too poor, too far, too
      * useful, holding something nobody wants to disturb. This one is about
-     * the GROUND, and the distinction is the whole of why the Blown Ground
-     * is a different object from the Drowned Reach: a grant runs twelve years
+     * the GROUND, and the distinction is the whole of why the Burial Sands
+     * is a different object from the Drowned Sea: a grant runs twelve years
      * and a surfacing is open for one season to about nine, so there is
      * nothing there that could be the subject of the instrument. Nobody has
      * declined to take the Carriers. Nobody has had anything to take, and
@@ -755,7 +755,7 @@ export const CourtSchema = z.object({
      * The prefectures whose holders hold from it, by id, from `regions.ts`.
      *
      * `grantsInRegionId` said which province a court's clients are in and
-     * nothing finer, so "the Third Sill grants in the Low Fall" was true of
+     * nothing finer, so "the Third Sill grants in the Jade Gorge" was true of
      * four courts at once and named no ground. This is the ground. A court
      * with an empty list is administering something that is not a tenancy -
      * the Kiln administers a datum nobody draws on, which is why its list is
@@ -945,7 +945,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         alignmentDoctrine:
             'A grant is a contract with three obligations and alignment is not one of them. Pay the tribute, send the people up when they are asked for, and fight when the Survey fights - meet those and the Survey does not care what you are, in the strict sense of the words: there is no line on the form and no clerk whose job it would be. A demonic sect that pays, sends and fights is a good counterparty and a righteous one that does none of the three is a bad one, and the Survey has said as much to a righteous house, in one line, in writing, and it was the last time anybody asked. The levy is the term with teeth, because it is the one that gets somebody else\'s disciples killed for the Survey\'s quarrel, and it is the term a sect actually refuses over. Behind the contract sits the reasoning the province has never put together: a seat with somebody in it is a counterparty and an empty one is not. A sect on a vein has a name, an interest in continuing and something that can be taken back - it can be written to, warned, and if what it does starts arriving at the Survey, replaced by the simple method of recognising whoever ended it. Nobody can be written to on ground nobody holds, and what comes off such ground arrives in provinces the Survey does deal with. So it prefers a bad order to no order, and none of that is inability: the Survey could end any of them in an afternoon and every one of them knows the figure. What it will not do is make a hole and then be the nearest thing to it.',
         whetherItsWordSkipsABar:
-            'It will, anywhere in its own arrangement, and it does not have to ask twice - a tenant holding a twelve-year grant does not refuse the body that renews it, and everybody in the Low Fall understands that a Survey request is a request in form only. It is the same realpolitik it runs on territory, applied to a person, and the Survey does not pretend otherwise. What it takes is not stones: it is a term added to what the house already owes, unstated, uncollected and available, so a house that has been done a favour by the Survey is a house that will be asked for something later and will not be in a position to weigh it. What it will not do is push at a bar that cannot move, and it knows exactly which those are - a request to place a child at the Frostmirror comes back in one line saying the arts would kill them.',
+            'It will, anywhere in its own arrangement, and it does not have to ask twice - a tenant holding a twelve-year grant does not refuse the body that renews it, and everybody in the Jade Gorge understands that a Survey request is a request in form only. It is the same realpolitik it runs on territory, applied to a person, and the Survey does not pretend otherwise. What it takes is not stones: it is a term added to what the house already owes, unstated, uncollected and available, so a house that has been done a favour by the Survey is a house that will be asked for something later and will not be in a position to weigh it. What it will not do is push at a bar that cannot move, and it knows exactly which those are - a request to place a child at the Frostmirror comes back in one line saying the arts would kill them.',
         howItConductsItselfWithTheOtherApexes:
             'Unshockable, and specifically not cynical about it - the Survey has principles and has costed them, which is a different thing from not having any. It has had the Pavilion\'s argument put to it before, by bodies that no longer exist, and it answers the same way every time in the same number of words. What it does not do is treat the Pavilion as amusing. A body that says out loud what everyone has agreed not to say is a problem rather than a joke, and this one has a living immortal behind it, so the Survey has quietly restructured two procedures around never being made to answer in public and has never explained why either changed. With the Long Cut it is different and much older: they agree entirely that the axis is irrelevant and disagree entirely about whether you delegate at all, they have both known the other\'s answer for eleven hundred years, and neither has ever raised it.',
         instability:
@@ -1012,7 +1012,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             intact: true
         },
         holds:
-            'The arterial system: not the eleven veins of the Low Fall but the four beneath them that the eleven branch from, and the datum every survey in the province is ultimately measured against without knowing whose datum it is.',
+            'The arterial system: not the eleven veins of the Jade Gorge but the four beneath them that the eleven branch from, and the datum every survey in the province is ultimately measured against without knowing whose datum it is.',
         holdsProvinceIds: ['province-low-fall'],
         holdsPrefectureIds: [],
         courtIds: ['court-kiln'],
@@ -1042,7 +1042,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'an elder returns from a journey nobody was told about, promotes two disciples, and stops attending the sect council'
         ],
         description:
-            'The institution that holds the water. It does not appear in any market-town account of the world, its name is not spoken at an outer gate, and the sects of the Low Fall experience it as the weather: grants that are renewed, occasionally are not, and are never explained. It is ancient in the way the province is not, it survived whatever made the age late, and it regards a four-hundred-year-old sect mountain the way that sect regards a tenant farmer with a good record.'
+            'The institution that holds the water. It does not appear in any market-town account of the world, its name is not spoken at an outer gate, and the sects of the Jade Gorge experience it as the weather: grants that are renewed, occasionally are not, and are never explained. It is ancient in the way the province is not, it survived whatever made the age late, and it regards a four-hundred-year-old sect mountain the way that sect regards a tenant farmer with a good record.'
     },
     {
         id: 'apex-long-cut',
@@ -1058,7 +1058,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             description:
                 'Three sealed cases in the seat chamber, and the Long Cut publishes the count. It has published a decreasing count for eleven hundred years, which is the most honest thing any institution in the setting does and also an extremely effective deterrent.',
             buys:
-                'Three emergencies, and everyone knows it is three, so the Marches has arranged itself carefully around never being the fourth.',
+                'Three emergencies, and everyone knows it is three, so the Silent Cliffs has arranged itself carefully around never being the fourth.',
             cannotRestock:
                 'The founder drove the Nail through and did not come back. What is in the cases is what there is.'
         },
@@ -1076,7 +1076,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         whetherItsWordSkipsABar:
             'It will, and it prices it honestly, which is the difference between the two of them. The Long Cut employs rather than grants so it cannot lean on a tenant - what it has is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Long Cut regards as evidence that it sets them correctly rather than as evidence that nobody dares.',
         howItConductsItselfWithTheOtherApexes:
-            'Patient in the specific way of a body that keeps records. The Long Cut does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Marches\' silent arrangements legible by contrast, and the Long Cut has had to answer questions about the Weir Office twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken the only administration that has ever moved and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
+            'Patient in the specific way of a body that keeps records. The Long Cut does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Silent Cliffs\' silent arrangements legible by contrast, and the Long Cut has had to answer questions about the Weir Office twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken the only administration that has ever moved and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
         instability:
             'The Nail cannot be moved, so the Long Cut cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         whatItHasTakenFromOtherPatrons:
@@ -1091,13 +1091,13 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             id: 'sent-ninth-nail',
             name: 'The Ninth Nail',
             description:
-                'A nail, and it is genuinely a nail: a hand span of dull metal that the founder of the Long Cut drove through from the other side rather than sent. It is the only object in the Marches that does not move, and every perimeter in five provinces is surveyed off it.',
+                'A nail, and it is genuinely a nail: a hand span of dull metal that the founder of the Long Cut drove through from the other side rather than sent. It is the only object in the Silent Cliffs that does not move, and every perimeter in five provinces is surveyed off it.',
             uses: [
                 'comprehension at the last realm - it was driven through the Lid from above, so it is a worked example of the crossing that can be held in the hand, and the Cut tradition holds this to be worth more than any manual',
                 'a channel upward, in one direction only: things can be said along it, and nothing has ever been said back'
             ],
             asAnArtifact:
-                'It is a fixed point in a world where nothing else is fixed, which sounds academic until somebody tries to move, fold or unmake ground near it and finds that they cannot. The Marches has never lost a perimeter within sight of it. Anyone holding it holds ground absolutely, which is worth having whether or not they ever intend to look upward.',
+                'It is a fixed point in a world where nothing else is fixed, which sounds academic until somebody tries to move, fold or unmake ground near it and finds that they cannot. The Silent Cliffs has never lost a perimeter within sight of it. Anyone holding it holds ground absolutely, which is worth having whether or not they ever intend to look upward.',
             reserveTerms:
                 'The Long Cut cannot move it and has stopped pretending that this is a policy. It is where it is. The seat was built around it afterwards.',
             ifUncovered:
@@ -1106,7 +1106,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             intact: true
         },
         holds:
-            'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Quiet Marches is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
+            'Driven ground, directly: every province where the qi went into the stone rather than staying in the air, of which the Silent Cliffs is one and not the largest, administered face by face with no client sects, no leases and no vassals anywhere in the arrangement.',
         holdsProvinceIds: [
             'province-quiet-marches',
             'province-coldwater-cut',
@@ -1134,11 +1134,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         ],
         actsWithoutAttribution: [
             'the Weir Office abruptly stops issuing grants for a season and gives no reason, having been given none',
-            'a burn zone the Gleaners have worked for forty years is suddenly staked and posted, and the stakes are not Sixmile work',
+            'a burn zone the Gleaners have worked for forty years is suddenly staked and posted, and the stakes are not Six Li work',
             'a face nobody could work is found open, worked out and abandoned, with the spoil stacked in courses too neat for a local crew'
         ],
         description:
-            'The other apex, over the other tradition, and it does not do any of this the way the Deep Survey does. The Long Cut grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Quiet Marches. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
+            'The other apex, over the other tradition, and it does not do any of this the way the Deep Survey does. The Long Cut grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Silent Cliffs. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
     },
     {
         id: 'apex-azure-cloud',
@@ -1197,7 +1197,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             intact: true
         },
         holds:
-            'The gorge vein at Low Fall and the terraced peaks above it, held outright and openly, on no grant from anyone, since the year Ru Anjing crossed.',
+            'The gorge vein at Green Water City and the terraced peaks above it, held outright and openly, on no grant from anyone, since the year Ru Anjing crossed.',
         // No province, and the emptiness is `heritage: 'recent'` written as
         // territory. A province is something a house accumulates over an age.
         holdsProvinceIds: [],
@@ -1231,7 +1231,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'Alone among the three, this ladder is public and the sect runs an ordinary outer courtyard beneath it. A Sword Servant swept the same stones as everyone else and can name the Pavilion Master on sight, which is precisely the exposure the other two apexes were built to avoid, and precisely why the province thinks of the Pavilion as reachable in a way the Survey and the Cut never are.',
         startingAwareness: 'named',
         awarenessSources: [
-            'Any market town in the Low Fall. The Pavilion is a place with a road to it and a recruitment cycle, and the crossing is the proudest story the province has.'
+            'Any market town in the Jade Gorge. The Pavilion is a place with a road to it and a recruitment cycle, and the crossing is the proudest story the province has.'
         ],
         actsWithoutAttribution: [
             'It does not need to. Alone among the three it acts in its own name, which is a luxury and, increasingly, a liability - every refusal it makes is attributable, dated and remembered by whoever was refused.'
@@ -1272,9 +1272,9 @@ export const COURTS: readonly Court[] = [
             ordinal: 44,
             yearsAgo: 160,
             end: 'declined',
-            note: 'Reached the end of Tribulation Transcendence in the Sill\'s own service and spent his last eleven years divesting, exactly the way somebody preparing to cross divests: artifacts, manuals, stones, given away in a recorded order. Then he did not attempt it. He sat, and old age took him at a rung nobody has stood on in the Low Fall since. He never said why, and the one time he was asked he said that he had thought about it. The Sill has been a court for a hundred and sixty years rather than something else because of that decision, and does not discuss it.'
+            note: 'Reached the end of Tribulation Transcendence in the Sill\'s own service and spent his last eleven years divesting, exactly the way somebody preparing to cross divests: artifacts, manuals, stones, given away in a recorded order. Then he did not attempt it. He sat, and old age took him at a rung nobody has stood on in the Jade Gorge since. He never said why, and the one time he was asked he said that he had thought about it. The Sill has been a court for a hundred and sixty years rather than something else because of that decision, and does not discuss it.'
         },
-        administers: 'The third arterial vein, which the eleven surveyed veins of the Low Fall branch from.',
+        administers: 'The third arterial vein, which the eleven surveyed veins of the Jade Gorge branch from.',
         grantsInRegionId: 'region-low-fall',
         // Two catchments and the sects beneath them. The Gorge Head is NOT
         // here and is still on the Sill's own book: the page was never struck
@@ -1292,7 +1292,7 @@ export const COURTS: readonly Court[] = [
                 id: 'court-officer-ruan-kezhen',
                 name: 'Ruan Kezhen',
                 title: 'the Third Lord',
-                office: 'Signs the eleven grants and, four times in the last century, the non-renewals. He has never been to the Low Fall and has never had to be.',
+                office: 'Signs the eleven grants and, four times in the last century, the non-renewals. He has never been to the Jade Gorge and has never had to be.',
                 realmOrdinal: 38,
                 apexRank: 'Course Keeper',
                 wants: 'to hand the third arterial on to whoever comes next without having been made to answer the Frostmirror in person',
@@ -1346,7 +1346,7 @@ export const COURTS: readonly Court[] = [
         ],
         startingAwareness: 'unaware',
         description:
-            'The office the Low Fall actually holds from, though no sect in the province would put it that way and most would deny the framing. Grants are issued in writing, renewed on a twelve-year cycle, and delivered by a courier who does not stay for an answer. The Sill has never been to the province. It has never needed to.'
+            'The office the Jade Gorge actually holds from, though no sect in the province would put it that way and most would deny the framing. Grants are issued in writing, renewed on a twelve-year cycle, and delivered by a courier who does not stay for an answer. The Sill has never been to the province. It has never needed to.'
     },
     {
         id: 'court-kiln',
@@ -1467,7 +1467,7 @@ export const COURTS: readonly Court[] = [
         apexId: 'apex-azure-cloud',
         startingAwareness: 'named',
         description:
-            'The Azure Cloud Pavilion\'s own court, on the mist terraces below the gorge, running the runoff of the vein Ru Anjing worked and teaching the Pavilion\'s forms to the people the terraces sent back. It is the youngest court in the world by nine centuries and the only one that was never posted: it grew, on water nobody wanted, and was re-described afterwards. Four people hold it - a Court Warden one rung under Grand Ascension whose own register entry still reads placement, an elder who has quietly taught nineteen students the terraces later took back, a disciple keeping channel figures nobody else can read, and a servant who knows the walking time to every sect in the province because he gives it to everybody the Mist cannot take. The Low Fall calls it a feeder and has not revised the figure in a hundred and fifty years.',
+            'The Azure Cloud Pavilion\'s own court, on the mist terraces below the gorge, running the runoff of the vein Ru Anjing worked and teaching the Pavilion\'s forms to the people the terraces sent back. It is the youngest court in the world by nine centuries and the only one that was never posted: it grew, on water nobody wanted, and was re-described afterwards. Four people hold it - a Court Warden one rung under Grand Ascension whose own register entry still reads placement, an elder who has quietly taught nineteen students the terraces later took back, a disciple keeping channel figures nobody else can read, and a servant who knows the walking time to every sect in the province because he gives it to everybody the Mist cannot take. The Jade Gorge calls it a feeder and has not revised the figure in a hundred and fifty years.',
         // The youngest court in the world by nine hundred years, and the only
         // one whose apex did not appoint it: the Mist became a court the way
         // the Pavilion became an apex, by one person going further than the
@@ -1483,11 +1483,11 @@ export const COURTS: readonly Court[] = [
         grantsInRegionId: 'region-low-fall',
         // Inside the Gorge Head rather than beside it. The youngest court in
         // the world administers a sub-holding of its own apex's catchment,
-        // which is why the Low Fall keeps calling it a feeder.
+        // which is why the Jade Gorge keeps calling it a feeder.
         grantsInPrefectureIds: ['prefecture-gorge-head'],
         embodiedByFactionId: 'sect-azure-mist-court',
         transferNote:
-            'Not a transfer - a promotion, and the only one in the catalog. The Mist was a feeder sect under the Azure Cloud Pavilion and is now the Pavilion\'s court, on the same ground, with the same four people, doing the same work. Nothing about it changed except the figure everybody was using for it, which had been wrong for a hundred and fifty years. The Low Fall has not adjusted and still calls it a feeder.',
+            'Not a transfer - a promotion, and the only one in the catalog. The Mist was a feeder sect under the Azure Cloud Pavilion and is now the Pavilion\'s court, on the same ground, with the same four people, doing the same work. Nothing about it changed except the figure everybody was using for it, which had been wrong for a hundred and fifty years. The Jade Gorge has not adjusted and still calls it a feeder.',
         officesNote:
             'Four offices for four people, and they were invented in an afternoon, which shows. The Mist ran on the Pavilion\'s own disciple ladder for three centuries - Court Warden, Mist Elder, Outer Disciple, Mist Servant - because it was a feeder and a feeder does not need office names. A court does, so it has them now, and every one of them is a flat description of the task: the person who keeps the roll, the person who teaches the second attempt, the person who walks the channels, the person who answers the gate. Nobody at the Mist uses them. The old titles are what everybody still says out loud, including in correspondence with the Pavilion, and correcting it has never been anybody\'s job.',
         roster: [
@@ -1498,7 +1498,7 @@ export const COURTS: readonly Court[] = [
                 // way the Kiln does: the province has been reading the real
                 // title for three centuries without knowing it was one.
                 title: 'Court Warden',
-                office: 'Holds the recall roll: every disciple the terraces sent down, what they failed at, and what happened to them after. It is the only such record in the Low Fall and the Pavilion has never asked to see it.',
+                office: 'Holds the recall roll: every disciple the terraces sent down, what they failed at, and what happened to them after. It is the only such record in the Jade Gorge and the Pavilion has never asked to see it.',
                 realmOrdinal: 37,
                 apexRank: 'Sword Elder',
                 wants: 'the recall rate put in front of somebody at the terraces who can read it',
@@ -1531,12 +1531,12 @@ export const COURTS: readonly Court[] = [
                 id: 'court-officer-kong-zhaoyu',
                 name: 'Kong Zhaoyu',
                 title: 'Keeper of the Terrace Gate',
-                office: 'Answers the gate. The Mist is the one door in the Low Fall that has never turned anybody away for standing, and he is the reason people know that.',
+                office: 'Answers the gate. The Mist is the one door in the Jade Gorge that has never turned anybody away for standing, and he is the reason people know that.',
                 realmOrdinal: 4,
                 apexRank: 'Inner Disciple',
                 wants: 'to be sent up to the terraces once, to see them',
                 fears: 'being sent up and recalled, like everybody else here',
-                detail: 'Knows the walking time to every sect in the Low Fall in hours, because he gives the figure to everybody the Mist cannot take.'
+                detail: 'Knows the walking time to every sect in the Jade Gorge in hours, because he gives the figure to everybody the Mist cannot take.'
             }
         ]
     },
@@ -1545,7 +1545,7 @@ export const COURTS: readonly Court[] = [
         name: 'The Ninth Face Court',
         apexId: 'apex-long-cut',
         // The Ninth Face Court's tenants are small - the Weir Office at Nascent Soul
-        // Early - so this is far above what the Marches requires. A court of the
+        // Early - so this is far above what the Silent Cliffs requires. A court of the
         // Long Cut is not sized against its province.
         powerOrdinal: 37,
         highWaterMark: {
@@ -1553,9 +1553,9 @@ export const COURTS: readonly Court[] = [
             ordinal: 44,
             yearsAgo: 90,
             end: 'attempted',
-            note: 'The Face took her to the end of Tribulation Transcendence on driven ground, which is the thing a court exists to be able to do once, and she went up alone in the spring and attempted the crossing. There is a scar in the high Marches, eleven li of ground that has not held qi since, and there is no body, because a failed crossing does not leave one. It is the most recent attempt anybody in either province can date, and the Long Cut has not authorised a candidate since.'
+            note: 'The Face took her to the end of Tribulation Transcendence on driven ground, which is the thing a court exists to be able to do once, and she went up alone in the spring and attempted the crossing. There is a scar in the high Silent Cliffs, eleven li of ground that has not held qi since, and there is no body, because a failed crossing does not leave one. It is the most recent attempt anybody in either province can date, and the Long Cut has not authorised a candidate since.'
         },
-        administers: 'The driven ground of the Quiet Marches and four provinces beyond it that the Marches has never heard named.',
+        administers: 'The driven ground of the Silent Cliffs and four provinces beyond it that the Silent Cliffs has never heard named.',
         grantsInRegionId: 'region-quiet-marches',
         // Every district in the province, because there is nobody to delegate
         // to. A federated court grants to sects; this one schedules faces.
@@ -1569,7 +1569,7 @@ export const COURTS: readonly Court[] = [
         ],
         embodiedByFactionId: null,
         officesNote:
-            'The Long Cut ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Weir Office book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Quiet Marches has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Long Cut has never seen why one would.',
+            'The Long Cut ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Weir Office book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Silent Cliffs has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Long Cut has never seen why one would.',
         roster: [
             {
                 id: 'court-officer-qiao-shendu',
@@ -1586,18 +1586,18 @@ export const COURTS: readonly Court[] = [
                 id: 'court-officer-chi-yuanru',
                 name: 'Chi Yuanru',
                 title: 'Assessor of the Four Faces',
-                office: 'Rates driven ground across the four provinces the Marches has never heard named, and decides which faces enter the course at all.',
+                office: 'Rates driven ground across the four provinces the Silent Cliffs has never heard named, and decides which faces enter the course at all.',
                 realmOrdinal: 33,
                 apexRank: 'Face Master',
-                wants: 'the Marches promoted out of the schedule\'s bottom band, where it has sat for two hundred years',
-                fears: 'that the Gapwater figure she has is the right one',
-                detail: 'Has the Weir Office\'s own unpublished survey of how much workable stone is left at Gapwater, obtained by asking for it, and the Office does not know she kept the copy.'
+                wants: 'the Silent Cliffs promoted out of the schedule\'s bottom band, where it has sat for two hundred years',
+                fears: 'that the Jade Face figure she has is the right one',
+                detail: 'Has the Weir Office\'s own unpublished survey of how much workable stone is left at Jade Face, obtained by asking for it, and the Office does not know she kept the copy.'
             },
             {
                 id: 'court-officer-mo-xingzhi',
                 name: 'Mo Xingzhi',
                 title: 'Face Master of the Eleven Li',
-                office: 'Holds a face that cannot be worked: eleven li of high Marches that has not held qi in ninety years. She walks it four times a year and records that it is unchanged.',
+                office: 'Holds a face that cannot be worked: eleven li of high Silent Cliffs that has not held qi in ninety years. She walks it four times a year and records that it is unchanged.',
                 realmOrdinal: 30,
                 apexRank: 'Face Master',
                 wants: 'the face struck off the course, which she has never requested',
@@ -1608,12 +1608,12 @@ export const COURTS: readonly Court[] = [
                 id: 'court-officer-shao-kang',
                 name: 'Shao Kang',
                 title: 'the Twenty-Year Hand',
-                office: 'Walks into Kettle once every twenty years, countersigns the Weir Office grant book, adjusts the schedule, and is gone inside a day.',
+                office: 'Walks into Iron Gate once every twenty years, countersigns the Weir Office grant book, adjusts the schedule, and is gone inside a day.',
                 realmOrdinal: 26,
                 apexRank: 'Set Hand',
                 wants: 'to be asked once what the countersignature is for',
                 fears: 'nothing about the errand, which he has now run four times',
-                detail: 'Has never been offered lodging in Kettle, has never corrected a Weir Master who described the countersignature as an internal formality of the Office\'s own devising, and has written a note about it in the margin of the schedule on all four visits.'
+                detail: 'Has never been offered lodging in Iron Gate, has never corrected a Weir Master who described the countersignature as an internal formality of the Office\'s own devising, and has written a note about it in the margin of the schedule on all four visits.'
             }
         ],
         startingAwareness: 'unaware',
@@ -1630,7 +1630,7 @@ export const COURTS: readonly Court[] = [
 const NO_TERMS = null;
 
 export const FACTION_PARENTAGE: Record<string, Parentage> = {
-    // ── holders of a Low Fall vein, from the Third Sill ────────────────
+    // ── holders of a Jade Gorge vein, from the Third Sill ────────────────
     // ── the two Azure feeders ──────────────────────────────────────────
     // The Pavilion grants to these two and to nobody else, which makes its
     // structure the smallest of the three apexes and the only one where the
@@ -1701,7 +1701,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         governance: 'unassailable',
         relation: 'apex',
         parentFactionId: null,
-        holds: 'The gorge vein at Low Fall and the terraced peaks above it, outright, on no grant from anyone. The Pavilion was a Third Sill tenant for fifteen hundred years and stopped being one in the year Ru Anjing crossed.',
+        holds: 'The gorge vein at Green Water City and the terraced peaks above it, outright, on no grant from anyone. The Pavilion was a Third Sill tenant for fifteen hundred years and stopped being one in the year Ru Anjing crossed.',
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -1716,14 +1716,14 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         governance: 'federated',
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
-        holds: 'The deepest vein in the province, held on the oldest continuous grant in the Low Fall.',
+        holds: 'The deepest vein in the province, held on the oldest continuous grant in the Jade Gorge.',
         terms: {
             tributeStonesPerYear: 0,
             inKind: ['the entire vein output above a fixed local allowance, taken quarterly', 'maintenance of the workings, at the Order\'s own cost'],
             disciplesPerCycle: 3,
-            // Was "the only pipeline in the Low Fall that reliably produces
+            // Was "the only pipeline in the Jade Gorge that reliably produces
             // Nascent Soul", which the production catalog shows is false: six
-            // other Low Fall houses reliably reach that realm and three reach
+            // other Jade Gorge houses reliably reach that realm and three reach
             // the one above it. What is true of the Order and of nothing else
             // is the second half of the first clause - it is the one house in
             // the catalog waiting on nothing except years.
@@ -1870,7 +1870,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Sill grants to a demonic sect on the same terms as anyone else because tribute is tribute, and the Sweptground Temple has been told this to its face by a courier who did not stay to discuss it.'
+        note: 'The Sill grants to a demonic sect on the same terms as anyone else because tribute is tribute, and the Burnt Earth Temple has been told this to its face by a courier who did not stay to discuss it.'
     },
     'sect-storm-tyrant-court': {
         factionId: 'sect-storm-tyrant-court',
@@ -1890,7 +1890,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Deep Survey\'s second body in the Low Fall, and the only one of the two that does anything. It held on probation directly from the Survey for two centuries and was then raised to answer as a court, because the lightning curriculum is the one thing in the province nobody can replace and the Survey would rather administer such a thing than lease it - and the probation was carried across rather than lifted, which is a shape nobody is comfortable with. It stands beside the Kiln Court, which takes nothing, issues nothing and answers nothing downward, and the Storm Tyrant finds that intolerable in a way it has never put in writing. The Kiln has never commented.'
+        note: 'The Deep Survey\'s second body in the Jade Gorge, and the only one of the two that does anything. It held on probation directly from the Survey for two centuries and was then raised to answer as a court, because the lightning curriculum is the one thing in the province nobody can replace and the Survey would rather administer such a thing than lease it - and the probation was carried across rather than lifted, which is a shape nobody is comfortable with. It stands beside the Kiln Court, which takes nothing, issues nothing and answers nothing downward, and the Storm Tyrant finds that intolerable in a way it has never put in writing. The Kiln has never commented.'
     },
     'sect-crimson-abyss-hall': {
         factionId: 'sect-crimson-abyss-hall',
@@ -1986,7 +1986,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             andAfterwards:
                 'They go back higher, into a Long Cut arrangement that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Root Sill is closer to being a career here than it is four provinces away, and the roll is why.',
             andBeingPassedOver:
-                'Cuts deeper here, because the roll is public and the Kiln\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Marches that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
+                'Cuts deeper here, because the roll is public and the Kiln\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Silent Cliffs that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
             andWhatTheTermIsWorthAfterwards:
                 'The same precedence, and a sharper version of it, because the Long Cut ranks people by faces worked and deaths avoided and has no vocabulary for standing at all. A returning appointee is a Hand again on paper and is first in the queue in every room, and nobody has ever written down why - the Course Keepers have simply started giving them the faces nobody else is given. What the Long Cut has acquired without noticing is a credential its own ladder cannot express, held by the only people in its whole arrangement who went somewhere uncomfortable on purpose, and it is the one thing across five provinces of driven ground that is not decided by a schedule.'
         },
@@ -2004,7 +2004,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         note: 'Not a faction. A posting, and since the schism a posting under a different apex. It holds the roll and the founding posting order that names the first four Wardens; the ground, the datum, the nine hundred nodes and the perimeter stayed behind with the half that accepted the reposting, and the two have had no correspondence since. Every unexplained thing about the Wardens - the lit nodes, the refusal to recruit, the absent grievance, the nine hundred years without a single recorded exchange - is what an outside observer sees when they mistake staff for an institution.'
     },
 
-    // ── the Quiet Marches stack ───────────────────────────────────────
+    // ── the Silent Cliffs stack ───────────────────────────────────────
     'sect-weir-office': {
         factionId: 'sect-weir-office',
         governance: 'administered',
@@ -2017,7 +2017,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Not a sect and not a tenant: a bureau. The Office issues grants because the Long Cut has delegated the counter work to a local staff of eleven, and its famous discretion extends exactly as far as the schedule it is given. The absolute hegemon of the Quiet Marches is a clerk\'s office with a stamp, and every carver in the region has organised their entire life around the stamp without once asking whose it is.'
+        note: 'Not a sect and not a tenant: a bureau. The Office issues grants because the Long Cut has delegated the counter work to a local staff of eleven, and its famous discretion extends exactly as far as the schedule it is given. The absolute hegemon of the Silent Cliffs is a clerk\'s office with a stamp, and every carver in the region has organised their entire life around the stamp without once asking whose it is.'
     },
     'sect-gleaners-company': {
         factionId: 'sect-gleaners-company',
@@ -2063,7 +2063,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     // field was added to carry.
     //
     // The Rail is unbacked because it is USEFUL to everybody, so taking it
-    // costs the taker more than it gains: whoever held Halfwater would hold
+    // costs the taker more than it gains: whoever held Silver Island would hold
     // forty acres of rock, because the traffic is the asset and the traffic
     // is there for the neutrality. Its protection is not a garrison and not
     // a patron, it is the standing interest of every party that trades there,
@@ -2072,7 +2072,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     // that stopped needing it stops having a reason to protect it.
     //
     // The Carriers are unbacked because there is nothing there to hold. Not
-    // poverty: the Blown Ground has the best air outside the White Stair on
+    // poverty: the Burial Sands has the best air outside the White Stair on
     // it. It is that a surfacing is open for a season to about nine years and
     // every holding instrument in this world runs twelve, so the apparatus
     // that turns force into authority has nothing to bite on. Nobody has
@@ -2318,7 +2318,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'Funded by settlements that are becoming too poor to fund it, with no patron and a published schedule for waking its own ancestor that is, on paper, its entire strategic reserve.',
         unbackedReason: null,
         independenceStance: null,
-        note: 'The Anchorhold has noticed that the datum stone every measurement in the province is taken from is itself a marker referring to a survey the house does not hold. It has never published this, three Wardens of the Survey know, and it is the closest any Low Fall institution has come to naming the thing above them.'
+        note: 'The Anchorhold has noticed that the datum stone every measurement in the province is taken from is itself a marker referring to a survey the house does not hold. It has never published this, three Wardens of the Survey know, and it is the closest any Jade Gorge institution has come to naming the thing above them.'
     },
     'house-lantern-hall-placeholder': {
         factionId: 'sect-lantern-hall',
@@ -2446,7 +2446,7 @@ export function arrivalStateFor(_fromFactionId: string, toInstitutionId: string)
 // DIRECT RULE
 // No feeder, so it recruits itself. The Long Cut commits to the wide option:
 // it tests everybody, on a schedule, and the schedule is the most ordinary
-// and most frightening document in the Quiet Marches.
+// and most frightening document in the Silent Cliffs.
 // -------------------------------------------------------------------------
 
 export const DIRECT_RULE = {
@@ -2456,7 +2456,7 @@ export const DIRECT_RULE = {
     intake:
         'Every child in every administered province is tested at seven, in the village, by a clerk with a register and a piece of driven stone. It takes a morning. The results are written down, the register goes back to the Ninth Face, and about one child in nine hundred is collected within the year.',
     intakeNote:
-        'There is no competition, no tournament, no sponsor and no recommendation, because there is no subsidiary to run one. The Marches does not have a route upward; it has an appointment it was given at seven and either passed or did not, and adults who were not collected can look up their own entry.',
+        'There is no competition, no tournament, no sponsor and no recommendation, because there is no subsidiary to run one. The Silent Cliffs does not have a route upward; it has an appointment it was given at seven and either passed or did not, and adults who were not collected can look up their own entry.',
     staffing:
         'About forty posted staff for five provinces, plus local bureaus like the Weir Office. It is not enough, everyone in the administration knows it is not enough, and the schedule is written to be survivable rather than adequate.',
     brittleness:
@@ -2511,7 +2511,7 @@ export const AZURE_CLOUD_INTAKE = {
     theGambleIsThePoint:
         'Which makes the programme a wager rather than a recruitment pipeline, and the Pavilion accepts it in those terms. Most of what it takes will not come to much. It pays for that, absorbs it, and keeps going, because the occasional person who comes out of the far end justifies the entire century of expenditure - and because the Pavilion is the only institution in the world that can currently afford to be wrong this often.',
     theLossRate: {
-        testedEachYear: 'Two to three thousand, across the Low Fall and four provinces beyond it.',
+        testedEachYear: 'Two to three thousand, across the Jade Gorge and four provinces beyond it.',
         takenOnProbationEachYear: 'Between nine and fourteen. The number is set by what the Pavilion can house, feed and walk through the round rather than by how many pass.',
         confirmedEachYear: 'Three or four. Everybody else is carried for years first and then sent home.',
         stillThereAtTwenty: 'Two, on average, counting the ones who were kept for reasons other than promise.',
@@ -2747,30 +2747,30 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
         traditionId: 'tradition-cut',
         hostFactionId: 'sect-stonewright-consortium',
         provides:
-            'The only carver the Consortium has ever retained: he reads driven stone the assay house cannot price, which is how the Kettle branch stopped being cheated on salvage lots within a season of his arrival.',
+            'The only carver the Consortium has ever retained: he reads driven stone the assay house cannot price, which is how the Iron Gate branch stopped being cheated on salvage lots within a season of his arrival.',
         receives:
-            'Stones, in quantity, paid weekly rather than by grant day - the only arrangement in the Marches that lets a carver cultivate without the Weir Office - and passage on Consortium carts.',
+            'Stones, in quantity, paid weekly rather than by grant day - the only arrangement in the Silent Cliffs that lets a carver cultivate without the Weir Office - and passage on Consortium carts.',
         term: 'A written agreement of five years, the only guest arrangement in either province that has ever been put on paper, and it names no penalty for either side.',
         hostRisk:
             'He is Keystone, immune to every soul-directed art the Consortium\'s own guards know, and the Consortium\'s insurance table reads him a rank low, which means it has systematically underpriced its own guest elder.',
         guestRisk:
-            'Working for a Low Fall institution has made him unwelcome at the Kettle grant queue, and if the agreement lapses he goes back to a region where the Office decides whether he advances.',
+            'Working for a Jade Gorge institution has made him unwelcome at the Iron Gate grant queue, and if the agreement lapses he goes back to a region where the Office decides whether he advances.',
         leaveClause:
             'Five years, then nothing. He has said he will not renew and the Consortium has not decided whether to believe him, because he says that every year.'
     },
     {
         id: 'guest-the-twice-worked-woman',
-        name: 'The woman at Sixmile, who gives no name',
+        name: 'The woman at Six Li, who gives no name',
         realmOrdinal: 26,
         traditionId: 'tradition-cut',
         hostFactionId: 'sect-sixmile-wardens',
         provides:
             'She walks the burn edge once a month and tells the Wardens where the stakes are now wrong, which is the only reason the survey has stayed accurate as the ground moved.',
         receives:
-            'Nothing the Wardens can afford: paint, a shed, and the fact that nobody in Sixmile asks her anything at all.',
+            'Nothing the Wardens can afford: paint, a shed, and the fact that nobody in Six Li asks her anything at all.',
         term: 'No term, no agreement, and no discussion of one in nineteen years.',
         hostRisk:
-            'The Wardens are fairly sure she is Twice-Worked - a seam and a circulation both - which makes her one of perhaps eleven people in the world and means somebody, eventually, will come looking for her at Sixmile.',
+            'The Wardens are fairly sure she is Twice-Worked - a seam and a circulation both - which makes her one of perhaps eleven people in the world and means somebody, eventually, will come looking for her at Six Li.',
         guestRisk:
             'Neither tradition will have her, so a militia that owns nothing and asks nothing is the best arrangement available, and it depends entirely on the Wardens continuing not to ask.',
         leaveClause:
@@ -2899,7 +2899,7 @@ export function getSubsidiariesOf(parentId: string): Parentage[] {
 
 /**
  * Walk upward from a faction to whatever is at the top. Returns the chain of
- * ids, which for a third-tier subsidiary in the Marches is four long and for
+ * ids, which for a third-tier subsidiary in the Silent Cliffs is four long and for
  * an unaffiliated league is one.
  */
 export function chainToApex(factionId: string): string[] {

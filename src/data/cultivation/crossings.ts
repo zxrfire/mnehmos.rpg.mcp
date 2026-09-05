@@ -1,34 +1,6 @@
 /**
- * How the last crossing is actually attempted, and who still has somebody
- * answering from the other side of it.
- *
- * Two subjects, and they explain each other.
- *
- * THE PRACTICE
- * ------------
- * Almost everybody attempts the crossing in a cave in the middle of nowhere
- * and tells nobody where. Not modesty: a crossing is the most exposed moment
- * of a cultivator's life - committed, occupied, and drawing heavenly lightning
- * that can be seen for a very long way - and anybody with a grudge and the
- * sense to wait has been waiting for exactly this. Announcing the location is
- * handing a century-old feud its opportunity.
- *
- * The practice is completely ordinary. Everybody knows it, nobody discusses
- * it, and it is not considered cowardice by anyone. It is also why the record
- * of the last crossing is so thin: people simply stop being seen, and there is
- * nobody who could say which of the four things happened to them.
- *
- * THE CHANNEL
- * -----------
- * Immortal-realm consumables can only come down from above and cannot be made
- * or reordered here. So an institution that holds them has a channel, and a
- * channel means somebody up there who is still answering.
- *
- * That, and not vein wealth or realm distribution, is the real hierarchy of
- * the world: whether anyone above the Lid is still answering when you call.
- * Two administering bodies can call and get objects. One body can call and get
- * accounts of the crossing itself, which is the only thing it wants. Everybody
- * else has a hall of tablets.
+ * How the last crossing is actually attempted, and who still has somebody answering
+ * from the other side of it.
  */
 
 import { z } from 'zod';
@@ -143,25 +115,6 @@ export const ImmortalChannelSchema = z.object({
     /**
      * Present only on a personal channel: WHO it answers for, why that makes it
      * answer so often, and what being that person exposes the house to.
-     *
-     * THIS USED TO BE CALLED `theClock` AND HELD A COUNTDOWN. The field named
-     * the sister as a Core Formation cultivator with about fifty years left and
-     * built the Pavilion's whole tension on her dying. The design owner has
-     * retired that: the sister stands at ordinal 41, and the tension is not
-     * that she runs out - *"at core formation someone is gonna come and grab
-     * the 45 sword"*. Somebody at Core Formation holding the one channel in the
-     * world whose stock RISES is a kidnapping that has not happened yet, and
-     * the setting cannot support that, so the person a channel answers for
-     * stands at the last realm. Even there she is weak RELATIVE TO WHAT SHE
-     * GUARDS, which is a live problem somebody can act on rather than a
-     * countdown that only elapses.
-     *
-     * Note what this is NOT. There are four channel holders in this file and she
-     * is not a single point of failure for the world - only for the Pavilion,
-     * whose distinction is a rising supply rather than a lone one.
-     *
-     * Renamed rather than repurposed, because a field called `theClock` holding
-     * something that is not a clock is how the next reader gets it wrong.
      */
     thePersonItAnswersFor: z.object({
         who: z.string().min(60),
@@ -311,31 +264,6 @@ export const IMMORTAL_MOTIVE = {
     whatTheOfferingActuallyIs:
         'Not a great honour a sect has earned. The cheapest possible acknowledgement, costing the giver nothing whatsoever, and the sects have built entire ceremonies around it because it is all they were ever going to get. A body that spends its principal for a decade to receive two words is not being rewarded; it is being answered at the minimum rate.',
     // THE SUPERLATIVE CAME OFF, AND THE MEASUREMENT IS WHY.
-    //
-    // This field used to end by calling the Azure Cloud Pavilion the strongest
-    // institution in the world. The catalog does not support it. By declared
-    // `powerOrdinal` the Hollow Court stands at 44 and Azure Cloud at 41, with
-    // the Severed at 38 and three courts at 36 to 37 - so it is ONE OF the
-    // strongest, with three houses inside four rungs of it and a body above it
-    // that is not the same kind of body at all. The Court takes no beginners:
-    // its floor is Void Refinement and evidence of a plausible crossing, so it
-    // admits the nearly-arrived, and ranking a house that raises nobody against
-    // houses that raise everybody is what makes that comparison feel wrong.
-    //
-    // Note what that does NOT settle, because the temptation is to over-read
-    // it. Admissions explain the Court's VOLUME. They do not establish that the
-    // Court contributes nothing to the crossings it counts, and nothing in the
-    // world could: the counterfactual - that same cultivator without the Court -
-    // is not observable by anybody. The causal claim is unproven and so is the
-    // null one, the province credits them, and that credit is not obviously
-    // wrong. Leave it a live dispute. Never build a statistic that subtracts a
-    // selection effect: count who was admitted and who crossed, and stop, or
-    // the engine is asserting a counterfactual it cannot see.
-    //
-    // What replaces it is smaller, truer and specific: the Pavilion is the one
-    // holder of the four whose stock GOES UP. `immortal-items.ts` says the four
-    // cannot be put in a single order at all and that this is the point, and a
-    // superlative fights that.
     theExceptionAndWhy:
         'Ru Anjing is the rule producing an exception rather than a fact about one woman. She has a living sister - a real relationship with a real person who is alive right now - and that is the only category of thing that reliably outweighs the sum above. Everything downstream follows from it: she answers every nine to fourteen years instead of once an age, she sends as much as she can manage at the only grade she can reach, and the Azure Cloud Pavilion is the one holder in the world whose stock rises - because of sisterly love rather than because of anything the sect did.',
     readTheApexesThisWay: [
@@ -346,19 +274,8 @@ export const IMMORTAL_MOTIVE = {
     ]
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE ARCHIVE IS THE CLAIM
-// A sect that has lost its ancestor's name has severed the only thing that
-// would ever have made them answer.
-//
-// `theCounterExample` below is the Hollow Court, and it is the design record
-// for why the Court's records matter. Somebody looking for exactly this
-// searched `docs/` for it, found nothing, invented an answer and relayed it to
-// another agent before it was retracted. The doc half is
-// `docs/world/climbing/past-the-ceiling.md`, "The Hollow Court is the exception to all
-// of it"; the roster half is `hollow-court-roster.ts`. Change one, read the
-// others. Indexed in `docs/world/INDEX.md`.
-// ─────────────────────────────────────────────────────────────────────────
+// THE ARCHIVE IS THE CLAIM A sect that has lost its ancestor's name has severed the
+// only thing that would ever have made them answer.
 
 export const ARCHIVE_AS_CLAIM = {
     thePrinciple:
@@ -425,7 +342,7 @@ export const PAVILION_SURPLUS = {
     theQuietProblem:
         'Every object placed outside creates somebody who owes the Pavilion a realm, and the Pavilion has never decided what it wants that to be. It is not building a faction, it is not charging, and it has not asked for anything back - so it is accumulating obligations at a rate its own Sword Elders describe as untidy and nobody has proposed a use for.',
     whoHasNoticed: [
-        'The Stonewright Consortium, whose Kettle and Low Fall houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
+        'The Stonewright Consortium, whose Iron Gate and Green Water City houses see the second-order flow - stones not spent on medicine that should have been bought - and cannot account for it.',
         'The Ninefold Ledger, because unexplained advancements cluster around Pavilion allies and each one opens a lineage audit that finds nothing wrong and no explanation.',
         'The Thousand Treasure Pavilion, which has noticed the opposite of a thing: not one of these has ever come to auction from a sect that plainly has more than it needs.',
         'The Deep Survey, which holds three objects, keeps a register on the subject, and has no explanation whatever for how a single sect in a single province has nine.'
@@ -434,32 +351,7 @@ export const PAVILION_SURPLUS = {
         'That the flow has a name and an address, and that the name is in the Pavilion.'
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────
-// LINEAGE STANDING
-// Two axes, not one, and they interact.
-//
-//   count      how many immortals a house has sent up across its history.
-//              This drives RESILIENCE: more channels means more chances that
-//              any of them is still answering, and no single silence is fatal.
-//
-//   depletion  how worn the connection and its yield are NOW: how long since
-//              anything came down, how much of what did is spent, how thin the
-//              answers have become.
-//
-// The world counts the first axis and treats it as the prestige, using the
-// tiers in `docs/world/climbing/immortals.md`: one immortal is a supreme lineage, two
-// extraordinary, three legendary, four or more in succession very nearly
-// mythical. That reckoning is public and undisputed. The second axis is not
-// public at all, and it is the one that decides how an institution behaves.
-//
-// And there are two more that cut across both: VOLUME, how much is actually
-// held, and GRADE CEILING, the best of it that can be reached for. Those two
-// point in opposite directions for the Pavilion and for the apexes, which is
-// why THE FOUR CANNOT BE PUT IN A SINGLE ORDER. Sorting by remaining channel
-// is still the right question to ask about resilience; it is not a ranking,
-// and `byVolume` and `byGradeCeiling` will disagree with it and with each
-// other. Any tool that renders one of these as a league table is wrong.
-// ─────────────────────────────────────────────────────────────────────────
+// LINEAGE STANDING Two axes, not one, and they interact.
 
 export const LineageTierSchema = z.enum([
     'supreme',            // 1
@@ -481,32 +373,12 @@ export const LineageStandingSchema = z.object({
     mostRecentCrossingYearsAgo: z.number().int().min(1),
     /**
      * Who made the most recent one, where the house still has the name.
-     *
-     * Only the latest is named, deliberately. A house that produced six across
-     * four thousand years does not remember six people - it remembers the last
-     * one and a number, and the older names have gone the way names go.
-     *
-     * They are not founders. A crossing is somebody the house produced, which
-     * is a different thing from whoever built it; most houses here have both,
-     * and the two are rarely the same person.
      */
     mostRecentCrossingName: z.string().nullable(),
     /** One line on who they were before they crossed. */
     mostRecentCrossingNote: z.string().min(60).nullable(),
     /**
      * Every crossing this house has ever had, one entry each, oldest first.
-     *
-     * `count` is a number and a number is not a roster. That distinction has
-     * already cost this catalog once: the Hollow Court's six were carried as a
-     * count plus a line reading "five more in succession", and everything
-     * downstream reported three of its people as names that had gone. They had
-     * not gone; nobody had written them down.
-     *
-     * So the roll sits beside the count and a test asserts they agree. Nobody at
-     * this rung is a remainder. A house may withhold a NAME - several do, and
-     * that is a fact about the house rather than a gap - but it may not withhold
-     * that somebody existed, and every entry here carries a title even where the
-     * name is refused.
      */
     roll: z.array(z.object({
         /**
@@ -552,12 +424,12 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             { title: 'The Second Seat who went from the north mountain', yearsAgo: 3_600, was: 'Second Seat, with the first standing protector the Court ever posted', afterCrossing: 'still_above' },
             { title: 'The First Seat who held the vein six hundred years and then went from it', yearsAgo: 2_900, was: 'First Seat, and the longest holder of that chair in the Court\'s record', afterCrossing: 'still_above' },
             // She is filed as the Third Seat because that is the chair she held
-            // longest and the one the Court still calls her by. It is not the
-            // chair she went from. SEAT_ORDER ranks by ordinal descending, so
-            // every crossing above her moved her up a place - and she stood
-            // protector at four of them. By the time it was her turn there was
-            // nobody left in front of her, which is the whole shape of her life:
-            // she reached First Seat by outlasting the reason the chair mattered.
+            // longest and the one the Court still calls her by. It is not the chair
+            // she went from. SEAT_ORDER ranks by ordinal descending, so every
+            // crossing above her moved her up a place - and she stood protector at
+            // four of them. By the time it was her turn there was nobody left in
+            // front of her, which is the whole shape of her life: she reached First
+            // Seat by outlasting the reason the chair mattered.
             { title: 'The Third Seat who stood protector at four crossings and was First by her own', yearsAgo: 2_100, was: 'Third Seat for most of it and First Seat by the end, having watched four others go up from in front of her', afterCrossing: 'still_above' },
             { title: 'The Fourth Seat who waited two hundred years for three protectors to be free at once', yearsAgo: 1_300, was: 'Fourth Seat, ready long before the Court could spare the people to stand for her', afterCrossing: 'died_above' },
             { title: 'Yin Que', yearsAgo: 600, was: 'Second Seat at four hundred and eleven, and holder of it for ninety years', afterCrossing: 'still_above' }
@@ -608,7 +480,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         mostRecentCrossingYearsAgo: 2_600,
         mostRecentCrossingName: 'Bai Zhuo',
         mostRecentCrossingNote:
-            'Cut his own road, in the Marches, on driven ground, with no patron and a posted staff that did not notice until it was over. The Nail was already there and had been for a long time.',
+            'Cut his own road, in the Silent Cliffs, on driven ground, with no patron and a posted staff that did not notice until it was over. The Nail was already there and had been for a long time.',
         roll: [
             // Both at twenty-six hundred years, which the Court's own schedule
             // records without comment and which nobody outside has ever been
@@ -651,18 +523,6 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             'One ancestor, light depletion and a rising stock produces the opposite of rationing: the Pavilion gives pills away more freely than any institution in history, because they are income rather than principal. That is also why its refusal doctrine is under strain, why eleven disciples petitioned inside a year of the last grant, and why the Master who authorises one is now named in a book that reads less like a confession every decade.'
     },
     // A CROSSING RECORD AND EXPLICITLY NOT A PROTECTOR QUALIFIER.
-    //
-    // The First Tyrant went ALL THE WAY. That makes him a True Immortal who
-    // left, which produces a departure and no chair - the same category as the
-    // Sweptground Temple's First Abbot, and the reason neither house has a
-    // protector's seat. See `THE_OFFICE.whatACrossingLeavesBehind`: only a
-    // crossing that STOPPED half way leaves somebody a house could seat, and
-    // the crossing record counts departures and vacancies together, which is
-    // exactly why it is the wrong instrument for the chair.
-    //
-    // This row exists because the crossing itself is real, is cited in
-    // `false-immortals.ts`, and had no entry. It says what came of it, which
-    // is nothing.
     {
         factionId: 'sect-storm-tyrant-court',
         count: 1,
@@ -768,73 +628,13 @@ export function hasAnsweringChannel(factionId: string): boolean {
     return CHANNEL_BY_FACTION.get(factionId)?.kind === 'answering_channel';
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// THE ANCESTOR WHO MIGHT ANSWER
-// The largest deterrent in the setting, and it is not a weapon, an ancestor
-// or a count. It is a question nobody can answer and everybody has an opinion
-// about, which turns out to be worth more than an answer would be.
-//
-// This is a rule about anybody who crossed and stayed attentive - it applies
-// wherever `claimsLivingAncestor` and `claimIsTrue` are both set, and the
-// Azure Cloud Pavilion is the clearest instance rather than the subject.
-// ─────────────────────────────────────────────────────────────────────────
+// THE ANCESTOR WHO MIGHT ANSWER The largest deterrent in the setting, and it is not
+// a weapon, an ancestor or a count. It is a question nobody can answer and
+// everybody has an opinion about, which turns out to be worth more than an answer
+// would be.
 
 /**
  * What a true living ascended ancestor is worth to the house that has one.
- *
- * Not a power level. A house with somebody genuinely above the Lid who has not
- * stopped paying attention holds a deterrent that no assembly answers and no
- * object counters, and that nobody can price - including the house itself.
- *
- * WHAT IS MEASURED, AND WHAT IT TOOK TO MEASURE IT
- * An earlier draft quoted figures that came from a broken harness, and the
- * correction is worth keeping because of what it turned up. The resolver would
- * not settle one person against a mobilised house at all: it returned a
- * stalemate in every seed, with her standing near full and most of them dead at
- * her feet, because a striker could only ever remove one body a round. That was
- * not a fact about her. It was a missing mechanic - nothing in the engine could
- * hit more than one person at a time, which is a poor model of this world at
- * every rung and an absurd one at the top.
- *
- * With area attacks in, the case resolves, and these are the numbers: somebody
- * at the last rung carrying an art that lands on more than one person takes any
- * mobilised apex in the region a hundred times in a hundred, in about two
- * rounds. Carrying a single-target art she takes none of them, which is the
- * more interesting half - what makes her unanswerable is not the rung on its
- * own, it is the rung and an art wide enough to use it.
- *
- * The gradient one rung down says it more sharply still, and the reason is not
- * the crowd. Lu Sheng stands at forty-five and holds no immortal object at all,
- * having stopped being close to the Hollow Court a long time ago, so his arts
- * are the whole of his inventory. With a wide one he takes the Deep Survey
- * every time, the Azure Cloud Pavilion seven times in eight, and the Long Cut
- * four times in five.
- *
- * Read that ordering against what each house is carrying rather than who it is:
- *
- *   the Deep Survey    head 43, the Datum Lamp rated 43   - he takes it always
- *   the Azure Cloud    head 41, the Standing Edge at 45   - seven times in eight
- *   the Long Cut       head 42, the Ninth Nail at 45      - four times in five
- *
- * It tracks the OBJECT and not the head. The Deep Survey has the highest rung
- * in the region and the weakest thing in its hands, and it is the one that
- * never holds. The Long Cut has a lesser head and a forty-five, and it is the
- * only house in the world that has ever been measured stopping somebody above
- * the Lid - one time in five, by withdrawal rather than by killing him, because
- * he is never killed in any of it.
- *
- * AND THE PROVINCE STANDING BEHIND THEM IS NOT PART OF THE FIGHT
- * This is the part worth being exact about. Mean damage dealt to him, by source,
- * over two hundred seeds: the apex head, and nothing else. Not "less". Zero.
- * The Deep Survey's sealed ancestor at forty-four - the best weapon any house in
- * the region owns, spent once, ever - lands nothing at all. The courts land
- * nothing, the clients land nothing, and removing six high-ordinal bodies from a
- * side including that forty-four moves the result by about two points.
- *
- * So a mobilised apex against somebody above the Lid is not a battle that is
- * lost. It is a duel with a crowd standing around it. The province is not
- * outweighed; it is irrelevant, and the only question in the room is what the
- * one person at the front is holding.
  */
 export const THE_ANCESTOR_WHO_MIGHT_ANSWER = {
     theThingNobodyWantsToTest:
@@ -852,5 +652,5 @@ export const THE_ANCESTOR_WHO_MIGHT_ANSWER = {
     andItIsTheSameShapeAsASEAL:
         'Which makes it the same instrument as a sealed ancestor, one tier up and with the uncertainty inverted. A seal is a weapon whose existence is uncertain and whose loyalty is known; this is a weapon whose existence is known and whose willingness is not. Both deter, neither can be verified without spending it, and a house that had to find out would learn the answer at the same moment as everybody else.',
     theClearestInstance:
-        'The Azure Cloud Pavilion, which is why it is the one apex nobody has ever pressed. Ru Anjing made the most recent confirmed crossing in the world, there are witnesses alive who watched it, the objects she sent back are in a catalog, and she spent eleven documented years divesting into that sect on behalf of one specific person - one of the years on a chamber and a man nobody was told about, put under to stand behind the sister she was leaving in charge. That is not the file of somebody about to lose interest, and every apex in the region has read it. The Pavilion has never once referred to her in correspondence, which the Low Fall reads as grief and every rival reads correctly.'
+        'The Azure Cloud Pavilion, which is why it is the one apex nobody has ever pressed. Ru Anjing made the most recent confirmed crossing in the world, there are witnesses alive who watched it, the objects she sent back are in a catalog, and she spent eleven documented years divesting into that sect on behalf of one specific person - one of the years on a chamber and a man nobody was told about, put under to stand behind the sister she was leaving in charge. That is not the file of somebody about to lose interest, and every apex in the region has read it. The Pavilion has never once referred to her in correspondence, which the Jade Gorge reads as grief and every rival reads correctly.'
 } as const;
