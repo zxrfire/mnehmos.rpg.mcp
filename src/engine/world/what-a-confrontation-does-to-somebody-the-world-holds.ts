@@ -82,7 +82,7 @@ import {
     markDead,
     upsertRelationship
 } from './npc-state.js';
-import type { ObligationInput } from '../social/grudges.js';
+import type { InheritanceRelation, ObligationInput } from '../social/grudges.js';
 import {
     theAccountsAFightOpens,
     whatFollowsFromTheBout,
@@ -91,6 +91,7 @@ import {
 import { recordPermanentWounds } from './recording-the-day-a-wound-was-taken.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
 import type { WorldState } from './world-state.js';
 
 /**
@@ -190,6 +191,11 @@ export interface WhatItDidToThem {
      */
     opens: ObligationInput[];
     /**
+     * Who the dead left, heirs and blood both. The ledger half of the played
+     * path writes its own rows and has to write them about the same people.
+     */
+    theyLeft: readonly { id: string; relation: InheritanceRelation }[];
+    /**
      * Engine truth, in the words the ledger uses. The caller decides whether a
      * narrator sees it; this decides only what is true.
      */
@@ -197,7 +203,8 @@ export interface WhatItDidToThem {
 }
 
 const NOTHING: WhatItDidToThem = {
-    wrote: false, wounds: 0, died: false, handoff: null, facts: [], lines: [], opens: []
+    wrote: false, wounds: 0, died: false, handoff: null, facts: [], lines: [],
+    opens: [], theyLeft: []
 };
 
 /**
@@ -357,9 +364,18 @@ export function whatTheConfrontationDidToThem(
     // `principalCannotHoldIt` is implicit and is the bout module's rule: the
     // people are read only where the loser died, because the dead hold nothing
     // and somebody ruined and living already holds their own record.
-    const opens = accountsFor(state, input, at, handoff, facts);
+    const theyLeft = handoff
+        ? whoTheyLeave({
+            dead: state.npcs[at],
+            heirs: handoff.heirs,
+            stillHere: id => state.npcs.some(n => n.id === id && n.status === 'alive')
+        })
+        : [];
+    const opens = accountsFor(state, input, at, { died, theyLeft }, facts);
 
-    return { wrote: true, wounds: input.wounds.length, died, handoff, facts, lines, opens };
+    return {
+        wrote: true, wounds: input.wounds.length, died, handoff, facts, lines, opens, theyLeft
+    };
 }
 
 /**
@@ -373,7 +389,7 @@ function accountsFor(
     state: WorldState,
     input: WhatTheFightDecided,
     at: number,
-    handoff: DeathHandoff | null,
+    dead: { died: boolean; theyLeft: readonly { id: string; relation: InheritanceRelation }[] },
     facts: readonly HistoricalFact[]
 ): ObligationInput[] {
     if (!input.lost) return [];
@@ -385,7 +401,7 @@ function accountsFor(
     const followed = whatFollowsFromTheBout({
         terms: input.terms ?? 'open',
         outcome: input.outcome,
-        loserDied: handoff !== null,
+        loserDied: dead.died,
         witnesses: input.witnesses ?? 0,
         theirHouse: house
             ? {
@@ -396,7 +412,7 @@ function accountsFor(
                 ranked: them.factionRankIndex >= 0
             }
             : null,
-        theirPeople: handoff?.heirs ?? []
+        theirPeople: dead.theyLeft
     });
 
     return theAccountsAFightOpens({

@@ -1117,8 +1117,12 @@ export async function handleSpawnEncounter(
             maxQi,
             age: 20 + args.ordinal * 4,
             location,
-            // AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU
-            ...(house ? { sectId: house.id } : {}),
+            // AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU. The
+            // entry rank comes with the house: a house answers for somebody it
+            // has invested in, and `ranked` is how every reader asks that, so a
+            // house membership with no rung on it would leave this person's
+            // house doing nothing at all about whatever is done to them.
+            ...(house ? { sectId: house.id, sectRank: house.ranks[0] } : {}),
             spiritStones: STARTING_SPIRIT_STONES * (1 + args.ordinal)
         });
         // The rank change takes the same road every rank change takes.
