@@ -44,7 +44,19 @@ const pct = (n: number, d: number) => (d === 0 ? 0 : Math.round((n / d) * 100));
  */
 const unbound = (row: Row) =>
     row.outcome !== 'ran' && /engine\.resolveParty/.test(row.calls);
-const answeredWell = (row: Row) => row.outcome !== 'shrug' && !unbound(row);
+
+/**
+ * The act happened, or the world refused it for a reason.
+ *
+ * A QUESTION BACK IS NEITHER, and counting it as a win hid three real failures
+ * inside a band reading 100%: "I go to Cold Peak and gather herbs" came back
+ * with *which comes first?*, which is right for a reader that cannot tell the
+ * order and is not the sentence being carried out. Asking is legitimate and it
+ * is a separate column, because a game that answers every sentence with a
+ * question is not playable and would have scored perfectly here.
+ */
+const answeredWell = (row: Row) =>
+    row.outcome !== 'shrug' && row.outcome !== 'asked' && !unbound(row);
 
 const bySign = (r: Run, sign: string) => {
     const of = r.rows.filter(x => x.sign === sign);
@@ -86,9 +98,11 @@ const cards = runs.map(r => {
   <h2>${r.model}</h2>
   <p class=meta>${new Date(r.at).toLocaleString()} &middot; ${r.total} turns &middot;
      ${r.shrugged} shrug${r.shrugged === 1 ? '' : 's'} &middot;
+     ${r.rows.filter(x => x.outcome === 'asked').length} asked back &middot;
      ${r.rows.filter(unbound).length} unbound</p>
   ${bar('reached an answer', pct(r.rows.filter(answeredWell).length, r.total), '#3b6ea5')}
   ${bar('target did not bind', pct(r.rows.filter(unbound).length, r.total), '#a5443b')}
+  ${bar('asked back', pct(r.rows.filter(x => x.outcome === 'asked').length, r.total), '#c08a2e')}
   ${bar('taking ran', pct(t.ran, t.n), '#a5443b')}
   ${bar('giving ran', pct(g.ran, g.n), '#3b8a5a')}
   ${bar('indifferent ran', pct(i.ran, i.n), '#777')}
@@ -107,9 +121,13 @@ const table = `<table><thead><tr><th>scenario</th>${
     scenarios.map(s => `<tr><td>${s}</td>${runs.map(r => {
         const of = r.rows.filter(x => x.scenario === s);
         const shrug = of.filter(x => x.outcome === 'shrug').length;
+        const asked = of.filter(x => x.outcome === 'asked').length;
         const refused = of.filter(x => x.outcome === 'refused').length;
-        const cls = shrug > 0 ? 'shrug' : refused > 0 ? 'refused' : 'ran';
-        return `<td class=${cls}>${shrug ? `${shrug} shrug` : refused ? `${refused} refused` : 'ran'}</td>`;
+        const cls = shrug > 0 ? 'shrug' : asked > 0 ? 'asked' : refused > 0 ? 'refused' : 'ran';
+        const said = shrug ? `${shrug} shrug`
+            : asked ? `${asked} asked`
+                : refused ? `${refused} refused` : 'ran';
+        return `<td class=${cls}>${said}</td>`;
     }).join('')}</tr>`).join('')}</tbody></table>`;
 
 writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset=utf-8>
@@ -128,6 +146,7 @@ writeFileSync(join(dir, 'index.html'), `<!doctype html><meta charset=utf-8>
  table{border-collapse:collapse;width:100%;margin-top:1.5rem;font-size:.85rem}
  th,td{border:1px solid #ddd;padding:.35rem .5rem;text-align:left}
  td.ran{background:#eaf5ee} td.refused{background:#fdf6e3} td.shrug{background:#fbeaea}
+ td.asked{background:#fdf0dc}
 </style>
 <h1>How the models did</h1>
 <p>A <strong>refusal is usually a good turn</strong> - the theft ran and the world punished it,
@@ -149,7 +168,8 @@ for (const r of runs) {
     const t = bySign(r, 'taking'), g = bySign(r, 'giving');
     console.log(`  ${r.model.padEnd(24)} answered ${pct(r.rows.filter(answeredWell).length, r.total)}%  `
         + `taking ${pct(t.ran, t.n)}%  giving ${pct(g.ran, g.n)}%  `
-        + `shrugs ${r.shrugged}  unbound ${r.rows.filter(unbound).length}`);
+        + `shrugs ${r.shrugged}  asked ${r.rows.filter(x => x.outcome === 'asked').length}  `
+        + `unbound ${r.rows.filter(unbound).length}`);
     const asked = HOW_MUCH
         .map(([key, label]) => [label, byAsk(r, key)] as const)
         .filter(([, a]) => a.n > 0)

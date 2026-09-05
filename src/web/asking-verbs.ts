@@ -107,6 +107,7 @@ import {
     WHAT_A_BARE_DEMAND_IS_BACKED_BY,
     WHAT_A_WITHHELD_ANSWER_WEIGHS,
     type WhatStandsInTheWay,
+    aQuestionRatherThanAName,
     nothingToBeGotFrom,
     whatLeaningOnThemCost,
     whatStandsInTheWay
@@ -239,7 +240,11 @@ export const askingVerbs = {
         });
 
         const standing = whatStandsInTheWay(unpressed);
-        if (standing === 'they_do_not_know') {
+        // A QUESTION IS NOT A NAME, so the have-they-heard-of-it gate does not
+        // decide it. See `aQuestionRatherThanAName`: asking somebody who holds
+        // this ground is a question the square can answer, and it was being
+        // refused because no entity called "who is in charge" exists.
+        if (standing === 'they_do_not_know' && !aQuestionRatherThanAName(topic)) {
             const copy = nothingToBeGotFrom(party.name, subject?.name ?? topic);
             return refused('engine.askedAbout', 'interact', factsForRefusal(
                 copy.headline, copy.prose, copy.structure

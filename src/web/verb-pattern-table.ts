@@ -1857,6 +1857,17 @@ const COERCION_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['submit', /\b(?:kidnap|kidnaps|kidnapping|kidnapped|abduct|abducts|abducting|abducted|seize|seizes|seizing|seized|carry off|carries off|carrying off|drag(?:s|ging)? (?:him|her|them|it) off)\b/],
     ['submit', /\b(?:tie|ties|tying|tied|bind|binds|binding|bound|chain|chains|chaining|chained|shackle|shackles|shackling|shackled|rope|ropes|roping|roped)\s+(?:him|her|them|it)\s*(?:up|down)?\b/],
     ['submit', /\btake(?:s|n|ing)?\s+(?:him|her|them|it)\s+(?:prisoner|captive|hostage)\b/],
+    // SENT SOMEWHERE AHEAD OF YOU, which is the oldest arrangement in the
+    // genre: the weaker party walks in first and the traps are spent on
+    // them. It reached `resolvePlace`, which looked for somewhere called
+    // "ruin ahead of me" and told the player nobody knew what they meant -
+    // confidently wrong, which is worse than a refusal.
+    ['submit', /\b(?:make|makes|making|made|force|forces|forcing|forced|send|sends|sending|sent|order|orders|ordering|ordered|push|pushes|pushing)\b[^.!?]*\b(?:go|goes|going|walk|walks|walking|step|steps|stepping|enter|enters|entering|climb|climbs|climbing|head|heads|heading)\s+(?:in|into|inside|down|up|ahead|first|through|out|on)\b/],
+    // And said the short way, with no verb of motion in it at all. WHAT IS
+    // SENT HAS TO BE A PERSON: `send a sword down through the Lid` and `send
+    // word down to my sect` are offerings, and a pattern that read any noun
+    // here took both of them.
+    ['submit', /\b(?:send|sends|sending|sent|push|pushes|pushing|pushed)\s+(?:him|her|them|the \w+ one|the \w+ ones)\s+(?:in|ahead|first|through)\b/],
     ['submit', /\b(?:coerce|coerces|coercing|browbeat|browbeats|browbeating)\b/],
     ['submit', /\b(?:force|forces|forcing|make|makes|making)\b\s+(?:\w+\s+){0,8}?(?:to\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve me|swear to me)\b/],
     ['submit', /\bmake (?:him|her|them|it) (?:mine|obey|kneel|submit|yield)\b/],
@@ -1879,7 +1890,7 @@ const COERCE_SUBJECT_VERBS =
  * over the ledger" names a merchant, not a merchant-to-hand- over-the-ledger.
  */
 const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
-    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be|as|up|down|prisoner|captive|hostage)\b.*$/i;
+    /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be|as|up|down|prisoner|captive|hostage|go|goes|going|walk|walks|walking|step|steps|stepping|enter|enters|entering|climb|climbs|head|heads)\b.*$/i;
 
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 
