@@ -70,7 +70,11 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // untouched and still reaches the read.
     ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b/],
     // ANSWERING A SUMMONS, AND SAYING NO TO ONE
-    ['summons', /\b(?:what|which|why|whether|how much|how bad)\b[^.!?]*\b(?:refus\w+|declin\w+|saying no|turn(?:ing)? (?:it|them) down)\b|\b(?:what|which)\b[^.!?]*\b(?:summons|called me in|sent for me|been asked of me|they want of me|asked of me)\b|\b(?:what (?:am i|have i) been (?:asked|called)|who sent for me|what was i (?:asked|called) (?:for|in for)|what does the (?:house|sect|order|clan|school) want (?:of|from) me)\b/],
+    // A SUMMONS IS ALWAYS THE PLAYER'S OWN. "what happens if he refuses" is the
+    // condition on a threat, and it reached this row because the row asks only
+    // for a question word and a refusal word somewhere after it. Same guard as
+    // the refuse row below and for the same reason.
+    ['summons', /\b(?:what|which|why|whether|how much|how bad)\b[^.!?]*\b(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )(?:refus\w+|declin\w+|saying no|turn(?:ing)? (?:it|them) down)\b|\b(?:what|which)\b[^.!?]*\b(?:summons|called me in|sent for me|been asked of me|they want of me|asked of me)\b|\b(?:what (?:am i|have i) been (?:asked|called)|who sent for me|what was i (?:asked|called) (?:for|in for)|what does the (?:house|sect|order|clan|school) want (?:of|from) me)\b/],
     // `turn ... down` takes its object in the middle - "I turn them down" is how a
     // person says it and "I turn down them" is not - so the particle has to be
     // reachable across a short object. Bounded at two words so it cannot span a
@@ -79,7 +83,11 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // word and is neither a refusal nor the speaker's - measured, it reached
     // `sect/refuse` and answered a threat with a summons. The negated idiom is the
     // whole of the false positive, so the guard is on it and nothing else.
-    ['refuse', /(?<!cannot )(?<!can not )(?<!can't )(?<!could not )(?<!couldn't )(?<!unable to )\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|ignore the summons|ignores the summons|do not answer|don'?t answer|no answer)\b/],
+    // AND THE SPEAKER IS THE ONE REFUSING. "I make it clear what happens if he
+    // refuses" is a threat with a condition in it, and it reached a summons
+    // because the word was there. A third-person subject in front of the verb
+    // is somebody else's refusal, and a summons is only ever the player's own.
+    ['refuse', /(?<!cannot )(?<!can not )(?<!can't )(?<!could not )(?<!couldn't )(?<!unable to )(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|ignore the summons|ignores the summons|do not answer|don'?t answer|no answer)\b/],
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
