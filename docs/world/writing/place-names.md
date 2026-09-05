@@ -140,6 +140,21 @@ Two consequences:
   carries a motion where Gorge, Cliffs, Plain, Sea and Sands are all static. And it
   passes this file's own test - swap it with the province next door and something
   becomes false immediately, because there is no stair on a plain.
+- **Never weld the two into one word.** English toponyms do - Blackpool, Sheffield,
+  Sweptfall, Coldmouth, Halfroof, Cutbank - and a type noun fused into its modifier stops
+  being a type noun, which is the whole of what this section is for. A generator and two
+  name tables were producing nothing but welded compounds while obeying every other rule
+  on this page, and the result read as a Yorkshire moor. *Half Roof*, *Cold Well*, *Cut
+  Bank*, *Swept Fall*: the same names, and the second set reads as translated.
+- **A gerund is the same failure in another coat.** *Digging* and *Gleaning* are English
+  place names (Reading, Barking). Name what the work leaves rather than the work: *Turned
+  Ground*, *The Picked Edge*.
+- **And a site's name should not be English furniture.** *The Empty Frame*, *The Burned
+  Bench*, *The Chalked Board*, *The Unlocked Box* obey the no-type-noun licence below and
+  still read as a National Trust sign, because a frame, a bench, a board and a box carry
+  no myth and the modifier answers the question instead of asking it. The image is
+  usually already in the site's own description: what the frame in the relay yard is for
+  is that the staff sweep around it, so it is *The Swept Gate*.
 - **A site is allowed to have no type noun**, and a colloquial name should not have one.
   [`tone.md`](tone.md#naming-conventions) already rules this for ruins: what people who are
   afraid of somewhere call it carries neither a type noun nor any poetry. *The Short Road*

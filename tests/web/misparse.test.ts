@@ -2999,7 +2999,7 @@ describe('a site can be named the way the game named it', () => {
      *
      * "what ruins are near" prints the places by NAME - "The ones you have
      * names for are Handworn Gate, The Bench
-     * at the Burned Seat, The Empty Frame..." - and the
+     * at the Burned Seat, The Swept Gate..." - and the
      * parser accepted only the id slug, which is never shown anywhere. So
      * typing back a name the game had just printed reached nothing at all,
      * while `trial-the-swept-frame` answered to "swept frame".
@@ -3043,7 +3043,7 @@ describe('a site can be named the way the game named it', () => {
     /** And the whole sentence still routes, not just the name lookup. */
     it('routes an approach to a named site to the site verb', () => {
         expect(parseIntent('I approach The Slow Door').action).toBe('site');
-        expect(parseIntent('I go into The Empty Frame').action).toBe('site');
+        expect(parseIntent('I go into The Swept Gate').action).toBe('site');
     });
 });
 

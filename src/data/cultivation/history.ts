@@ -1223,7 +1223,7 @@ export type LocalResidue = z.infer<typeof LocalResidueSchema>;
 export const LOCAL_RESIDUE: readonly LocalResidue[] = [
     // ── sealed compounds ──────────────────────────────────────────────
     {
-        siteName: 'Ninebell',
+        siteName: 'Nine Bells',
         kind: 'ruin',
         whatTheySay:
             'They rang them out on the last night so the country would know. Nine bells, one for each hall, and when the last one stopped that was the seal taken.',
@@ -1262,7 +1262,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The ground there has been cold for centuries and the name is older than the sealing, so the name is not a claim about the present and never was. What the diggers are reading is real temperature variation in a wall that catches sun, and the rule they built on it is a rule about weather that works.'
     },
     {
-        siteName: 'Coldwell',
+        siteName: 'Cold Well',
         kind: 'ruin',
         whatTheySay:
             'The well is good and the well is theirs. They left it outside the wall on purpose, for whoever came after, and that is why it has never gone bad.',
@@ -1275,7 +1275,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The well is outside the wall, it is still good, and it is the only reason anybody camps there. Whether it was left deliberately cannot be established and the courtesy is maintained by people who have never met and do not need the answer.'
     },
     {
-        siteName: 'Halfroof',
+        siteName: 'Half Roof',
         kind: 'ruin',
         whatTheySay:
             'What is standing is what they wanted standing. A house that is shut properly does not come down by halves.',
@@ -1301,7 +1301,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The roster was kept for two years after the sealing and the last page is legible. What is not established is who was keeping it or why they stopped, and the two years is the only interior fact about a sealed compound that anybody in the present can read directly.'
     },
     {
-        siteName: 'Fivewinter',
+        siteName: 'Five Winters',
         kind: 'ruin',
         whatTheySay:
             'It answered for five winters. People went up each year to see, and the fifth year it answered and the sixth year it did not, and the ones who went up the sixth year came back and said so and were not believed.',
@@ -1394,7 +1394,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The name is possessive, records a keeper, and has outlasted both the waystation and the road it served. Whether Hemu declined to leave or simply died before the road did is not recoverable and the practice does not depend on which.'
     },
     {
-        siteName: 'Cutbank',
+        siteName: 'Cut Bank',
         kind: 'scar',
         whatTheySay:
             'Look at the edge. Ground does not do that. Something cut it and whatever cut it was not weather and it was not water.',
@@ -1433,7 +1433,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The old entry survives in the surveys and every local knows better. A stale record that is still authoritative because it is the record is the ordinary way the deep past reaches a mortal household, and it reaches it as a bill.'
     },
     {
-        siteName: 'Threeyear',
+        siteName: 'Three Years',
         kind: 'scar',
         whatTheySay:
             'Three years before anybody would cross. Nobody decided that. Everybody waited three years and then somebody went and then everybody went.',
@@ -1446,7 +1446,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The interval was agreed by nobody and observed by everybody, which is what the name records. It is the clearest instance in the catalog of a rule with no author, and it is enforced by nothing but the fact that the first person to cross would be the first person to cross.'
     },
     {
-        siteName: 'Whitewater',
+        siteName: 'White Water',
         kind: 'scar',
         whatTheySay:
             'The stream off it runs pale. It has always run pale. You can drink it and people do and there is a family that will tell you their children are the better for it.',
