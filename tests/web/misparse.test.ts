@@ -1956,7 +1956,7 @@ describe('institutions acting on each other', () => {
          * your word to an institution reaches the thing that models giving your
          * word rather than the thing next to it.
          */
-        ['I swear an oath to the House of the Bound Word', 'oath', 'swear']
+        ['I swear an oath to the House of the Unbroken Tally', 'oath', 'swear']
     ];
 
     for (const [typed, action, intent] of TWELVE) {

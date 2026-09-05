@@ -1174,7 +1174,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whatIsDownThere: 'A filing room. Several thousand live obligations with nobody holding them, in a brick vault under a working yard, and not one thing in it that was ever meant to injure a person.',
             whatItDoesToSomebodyShortOfIt: 'Nothing, and it cannot be forced either, so a mortal and an immortal get exactly the same result from trying. The danger at this site is all downstream of holding the position, which is a thing a person acquires rather than survives.'
         },
-        factionIds: ['house-tally-court', 'house-bound-word', 'house-ninefold-ledger'],
+        factionIds: ['house-tally-court', 'house-unbroken-tally', 'house-ninefold-ledger'],
         outside: {
             marker: 'A vault head in the eastern towns, brick, in the corner of a yard behind a dyer\'s, with the surround cut in a pattern the dyer\'s family has repainted for six generations without knowing it is writing.',
             rumour: 'The towns say the branded families keep something in the yard, which the branded families deny, and the denial is honest: they know the vault is there and none of them has ever been able to open it.',

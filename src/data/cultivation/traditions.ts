@@ -223,11 +223,11 @@ export const TRADITION_WAR = {
     marchesAccount:
         'That the Drawn drained the province deliberately to end the quarrel, and that the Cut Road exists because a few people learned to work what was left rather than die of it. Taught in the Silent Cliffs as the founding fact of the region.',
     trueAccount:
-        'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Bound Word\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
+        'Both traditions were working the same vein at the weir simultaneously, under a treaty that permitted it, and the terms were incompatible with the vein rather than with either party\'s good faith. The qi inverted. The treaty was witnessed and is still in the Unbroken Tally\'s vault, unpublished, because the alternative to both official accounts is that the most famous agreement the house ever sealed killed a province.',
     discoverableTraces: [
         'the weir nodes are cut into stone, which is Cut Road work, on a site the Jade Gorge account says the Drawn never held',
         'the burn edge radiates from the weir rather than from any battlefield, and no engagement of any size is recorded within forty li of it',
-        'the Bound Word\'s vault index lists a treaty of that year with both traditions as parties and no subject line',
+        'the Unbroken Tally\'s vault index lists a treaty of that year with both traditions as parties and no subject line',
         'the Ninefold Ledger has an arbitration case from eighty years later in which both regions sued the same third party and then jointly withdrew'
     ]
 } as const;

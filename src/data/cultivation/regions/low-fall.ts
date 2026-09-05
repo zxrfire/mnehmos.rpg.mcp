@@ -104,7 +104,7 @@ export const THE_LOW_FALL: Region = {
         'sect-crimson-abyss-hall',
         'sect-nine-abyss-flame-sect',
         'house-ninefold-ledger',
-        'house-bound-word',
+        'house-unbroken-tally',
         'house-anchorhold'
     ],
     branches: [
@@ -165,7 +165,7 @@ export const THE_LOW_FALL: Region = {
             ]
         },
         { name: PLACE.CLEAR_CREEK_VILLAGE, kind: 'village', ambient: 'thin', note: 'Rice on the gorge floor, a mill, and one road down to the province town.' },
-        { name: PLACE.BURNT_EARTH, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Bound Word.' },
+        { name: PLACE.BURNT_EARTH, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Unbroken Tally.' },
         { name: PLACE.NINE_PEAKS, kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' },
     ],
     exports: [
@@ -252,7 +252,7 @@ export const THE_LOW_FALL: Region = {
     trueHereFalseThere: [
         'A holding can be granted. This is the only province with a surveyed vein under it, so it is the only one with a grant book, a renewal cycle, a tenant, and a reason for anybody to be polite to anybody.',
         'A pill above mortal grade can be bought over a counter, today, in four towns, and the counter is not a monopoly.',
-        'An oath binds. The Bound Word witnesses on certified ground and there is certified ground here, which there is nowhere else in the world.',
+        'An oath binds. The Unbroken Tally witnesses on certified ground and there is certified ground here, which there is nowhere else in the world.',
         'Sitting still on ordinary ground, in the open, makes measurable progress - and it goes on making it all the way to the top of the ladder, which no other province can say at any rung.'
     ],
     crossingNotes: [
@@ -430,9 +430,9 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: null,
         subHoldings: [
             {
-                factionId: 'house-bound-word',
+                factionId: 'house-unbroken-tally',
                 holds: 'The treaty vault, which is a building rather than ground.',
-                delegatedFromId: 'house-bound-word'
+                delegatedFromId: 'house-unbroken-tally'
             }
         ],
         onPaper:

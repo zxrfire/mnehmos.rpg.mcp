@@ -976,7 +976,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         name: 'Lin Zhao',
         alsoCalled: 'the First Oathwright',
         kind: 'founder',
-        factionId: 'house-bound-word',
+        factionId: 'house-unbroken-tally',
         whatTheyWere: 'The first to make a promise structural rather than punitive, and the first to sign last.',
         yearsAgo: 3200,
         attestation: 'secure',

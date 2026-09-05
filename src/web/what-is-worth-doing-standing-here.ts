@@ -12,7 +12,8 @@ import {
     SAY_TO_GUARD,
     SAY_TO_KEEP_SWINGING,
     SAY_TO_PRESS,
-    SAY_TO_SHOUT
+    SAY_TO_SHOUT,
+    SAY_TO_YIELD
 } from './fight-answers.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { whatToSayAboutTheCure, type TheCure } from './what-would-close-this-wound.js';
@@ -408,6 +409,16 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             'Wear what is coming so that what you are throwing lands. The genre\'s own '
             + 'move, and it is the one that trades your remaining rounds for their remaining '
             + 'body.'));
+
+        // THE OTHER WAY OUT, and the one a player who has never read a
+        // xianxia novel does not know is on the table. Breaking off is leaving
+        // and this is staying and handing them the decision, which is a
+        // different price and sometimes the only one that can be paid.
+        add(situation('fight_yield', SAY_TO_YIELD, 'yield',
+            'Stop, and go down. It ends the fight and it does not end it on your terms: '
+            + 'what a surrender is worth is decided by the person still standing, and by what '
+            + 'they came here for. Somebody who came to kill has been handed somebody who is '
+            + 'not fighting back.'));
 
         add(situation('fight_shout', SAY_TO_SHOUT, 'call_for_help',
             'Spend the round on a shout. Who comes is a fact about who is standing '

@@ -470,7 +470,7 @@ export const WANDERERS: readonly Wanderer[] = [
             forbidden:
                 'Everybody else, without exception: their sect, their master, their family, their disciples and whoever is buying.',
             motive:
-                'Not fear, since there is no consequence in the world he would mind and he knows it. He simply does not want to be gossiped about. It is a preference, expressed once, of the same weight as preferring a corner table - and it is obeyed more completely than most oaths sworn in front of the Bound Word.',
+                'Not fear, since there is no consequence in the world he would mind and he knows it. He simply does not want to be gossiped about. It is a preference, expressed once, of the same weight as preferring a corner table - and it is obeyed more completely than most oaths sworn in front of the Unbroken Tally.',
             whyLegendsAreIncoherent:
                 'Because the accurate sources are precisely the ones not talking. Everything circulating in high cultivator circles comes from the outer ring: a sighting, a secondhand account, an incident witnessed at a distance and reconstructed wrongly by somebody with half of it. The people who could correct any of it are inheritors, who will not, and Court Seats, who do not speak to anybody. So the versions multiply, contradict each other, and are never once tested against somebody who knows.',
             breachConsequence:

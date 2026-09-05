@@ -123,6 +123,24 @@ export type FightAnswer =
  * let go is worse than being finished for some people.
  */
     | { kind: 'spare' }
+/**
+ * "I kneel." The other side of `spare`, and it had no other side.
+ *
+ * An NPC can go down on one knee in front of the player - `wouldTheyKneel`
+ * decides it, and `what-is-worth-doing-standing-here.ts` offers to make them
+ * turn out their pockets afterwards. The player could not do it back, which
+ * left begging for mercy, one of the commonest moves in the genre, reachable
+ * by nobody. Measured: "I kneel" reached `coerce`, because every phrasing of
+ * kneeling in the corpus was about making somebody ELSE do it.
+ *
+ * WHAT IT MEANS IS NOT THE PLAYER'S TO DECIDE, which is the whole difference
+ * between this and `break_off`. Yielding hands the ending to the person still
+ * standing, and their own goal is what it becomes: somebody who came to kill
+ * kills, and somebody who came to drive you off drives you off. Nothing is
+ * softened for the kneeling, on the same argument `spare` already makes from
+ * the other end.
+ */
+    | { kind: 'yield' }
     /** "I back off." Turn your back, at a price, toward somewhere or nowhere. */
     | { kind: 'break_off'; toward?: string | null }
     /** "I shout for the wardens." Spend the round on a shout. */
@@ -487,6 +505,54 @@ export function takeAFightTurn(
             preamble:
                 `${theirs.input.name} is not beaten, so there is nothing yet to spare. `
                 + 'The round goes on your guard.'
+        });
+    }
+
+    // GOING DOWN ON ONE KNEE
+    //
+    // The mirror of the branch above, and deliberately built from the same
+    // parts: the gate is a comparison of the two bodies as they now stand, and
+    // the ending is `concludeFrom`'s rather than one chosen here. What flips is
+    // who is named the winner, because that is the whole of what yielding does.
+    if (answer.kind === 'yield') {
+        const mineLeft = fight.hp[mine.input.id] / Math.max(1, mine.input.maxHp);
+        const theirsLeft = fight.hp[theirs.input.id] / Math.max(1, theirs.input.maxHp);
+        // Behind, and having actually paid something. Kneeling while ahead and
+        // untouched is not submission, it is leaving - and leaving has a verb.
+        const nothingLeftToArgueWith = mineLeft < theirsLeft
+            && fight.hp[mine.input.id] < mine.input.maxHp;
+
+        if (nothingLeftToArgueWith) {
+            return {
+                fight: null,
+                // THEIR goal, carried in unchanged. `spare` restates the goal
+                // because the player is choosing the ending; here they are
+                // giving that choice away, so nothing may be restated.
+                finished: concludeFrom(fight, theirs.input.id, mine.input.id, 'down', ctx),
+                playerAct: 'yield',
+                theirAct,
+                exchanges: [],
+                flight: null,
+                fleeingToward: null,
+                shout: null,
+                line:
+                    `You stop, and go down. What that is worth is ${theirs.input.name}'s to `
+                    + 'decide now, and they came here for something.'
+            };
+        }
+
+        // Nothing has been taken off you yet, so there is nothing to give in.
+        // The round is spent with the hand held, and they take it.
+        const held = resolveConfrontationRound(
+            asRound(playerIsAggressor ? fight.aggressor : fight.defender, minePower, 'guard', fight.hp),
+            asRound(playerIsAggressor ? fight.defender : fight.aggressor, theirPower, theirAct, fight.hp),
+            fight.hp, fight.injuries,
+            roundCtx(fight, ctx, rng)
+        );
+        return afterRound(fight, held, 'yield', theirAct, ctx, {
+            preamble:
+                'You are not beaten, and going down in front of somebody who has not beaten '
+                + 'you reads as a trick. The round goes on your guard.'
         });
     }
 

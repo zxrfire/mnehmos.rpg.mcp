@@ -1712,7 +1712,7 @@ export const THE_CONTRACT = {
         'a witness fee to a Dao house, since an unwitnessed contract binds nobody and the beast knows the law better than most disciples do'
     ],
     witnessing:
-        'A contract of this kind is witnessed the way any other agreement is - a house of the Bound Word takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
+        'A contract of this kind is witnessed the way any other agreement is - a house of the Unbroken Tally takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
     whyItIsRare:
         'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail the first below Void Refinement, which is nearly all of them - the other party has to be one of a handful of things in the world.',
     howItBreaks: [

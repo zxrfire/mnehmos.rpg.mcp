@@ -1702,13 +1702,15 @@ const PASSAGE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
  * witnesses one. A bare `swear to` and a bare `pledge to` used to be enough,
  * which made "I swear to be more careful" a contract with a house in it.
  *
- * `my word` stays only WITH A RECIPIENT. Giving your word to a house is the
- * ordinary way this is said and `coverage.test.ts` pins it; "I give my word on
- * it" is somebody promising to be careful, and it was writing a contract.
+ * `my word` stays, with or without a recipient. The design owner: *I give my
+ * word is an oath to whoever you're talking to. it's just not one punishable by
+ * lightning strikes* - so it IS this verb, and the recipient falls back to
+ * whoever the player is dealing with. What separates it from a dao oath is the
+ * party on the other end and nothing about the phrasing.
  */
 export const AN_OATH = new RegExp([
     '\\b(?:oath|oaths|oathwright|vow|vows|indenture|indentured)\\b',
-    '\\b(?:my|our|his|her|their)\\s+word\\s+to\\b',
+    '\\b(?:my|our|his|her|their)\\s+word\\b',
     // And the READ of one already given, which names no recipient because the
     // whole question is who the recipient was: "who holds my word".
     '\\b(?:holds?|holding|held)\\s+(?:my|our|his|her|their)\\s+word\\b',
@@ -3018,7 +3020,7 @@ function planIntent(input: string): PlannedAction {
 
     // The oath phrasings are here rather than in a verb of their own, and that is
     // the finding rather than a shortcut. "I swear an oath to the House of the
-    // Bound Word" reached the INTERACT table and was answered by walking the player
+    // Unbroken Tally" reached the INTERACT table and was answered by walking the player
     // over and describing them - and the act it names is JOINING. The catalog says
     // so in its own admission requirement, which for that house reads "forty years
     // of intended service, sworn in front of a Warden of Terms before any training

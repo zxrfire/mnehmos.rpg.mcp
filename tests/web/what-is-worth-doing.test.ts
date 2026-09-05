@@ -1017,7 +1017,8 @@ describe('a fight is what is happening, and the square stops being the subject',
     it('answers the fight and nothing else', () => {
         const out = whatIsWorthDoingStandingHere(inAFight());
         expect(out.map(a => a.id).sort()).toEqual([
-            'fight_break_off', 'fight_guard', 'fight_press', 'fight_shout', 'fight_strike'
+            'fight_break_off', 'fight_guard', 'fight_press', 'fight_shout', 'fight_strike',
+            'fight_yield'
         ].sort());
         // Not one entry about the square survives, and that is the rule rather
         // than a side effect: the market stall, the wall and the road out of
@@ -1028,11 +1029,13 @@ describe('a fight is what is happening, and the square stops being the subject',
         }
     });
 
-    it('offers every one of the five, so the other four are discoverable at all', () => {
+    it('offers every one of them, so the rest are discoverable at all', () => {
         // The whole point. A player who only knows `attack` has been given one
-        // option and told it is a turn - `guard`, `press`, `break_off` and
-        // `call_for_help` were reachable by guessing and by nothing else.
-        expect(whatIsWorthDoingStandingHere(inAFight())).toHaveLength(5);
+        // option and told it is a turn - `guard`, `press`, `break_off`,
+        // `call_for_help` and `yield` were reachable by guessing and by nothing
+        // else. The count is asserted rather than the list because the list is
+        // asserted above: what this pins is that NONE of them is dropped.
+        expect(whatIsWorthDoingStandingHere(inAFight())).toHaveLength(6);
     });
 
     it('puts the price on the way out rather than a mood word', () => {
@@ -1068,9 +1071,9 @@ describe('a fight is what is happening, and the square stops being the subject',
         // about the place, including the one place-fact that switches this
         // whole file off, may take the row back.
         expect(whatIsWorthDoingStandingHere(inAFight({ ambient: 'dense' })))
-            .toHaveLength(5);
+            .toHaveLength(6);
         expect(whatIsWorthDoingStandingHere(inAFight({ aboveTheLid: true })))
-            .toHaveLength(5);
+            .toHaveLength(6);
     });
 
     it('outranks even a body that is starving, because a round does not wait', () => {

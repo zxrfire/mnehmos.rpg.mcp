@@ -2244,8 +2244,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: null,
         note: 'Sighted something eighty years ago that it has not published, and has quietly declined two commissions from parties it will not name.'
     },
-    'house-bound-word': {
-        factionId: 'house-bound-word',
+    'house-unbroken-tally': {
+        factionId: 'house-unbroken-tally',
         governance: 'outside',
         relation: 'outside',
         parentFactionId: null,
@@ -2737,7 +2737,7 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
         guestRisk:
             'If the Pavilion loses its grant she loses the only decent vein she has legal access to, and she is old enough that starting again elsewhere is not a plan.',
         leaveClause:
-            'She may walk out at any time, including during a siege, and no oath, contract or obligation exists that anyone could point at afterwards. The Pavilion knows this, has considered asking her to swear something with the Bound Word, and has concluded that asking would itself end the arrangement.'
+            'She may walk out at any time, including during a siege, and no oath, contract or obligation exists that anyone could point at afterwards. The Pavilion knows this, has considered asking her to swear something with the Unbroken Tally, and has concluded that asking would itself end the arrangement.'
     },
     {
         id: 'guest-third-face-ren',

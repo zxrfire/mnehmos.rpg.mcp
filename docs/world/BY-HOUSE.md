@@ -274,9 +274,9 @@ session somebody wrote down design that was already in the catalog.
 
 **Constants most about it:** `WHY_ACCOUNTS_DISAGREE`, `DAO_HOUSE_DISPUTES`, `DAO_HOUSES`, `THE_LID`, `TITLE_TRANSLATIONS`
 
-### The House of the Bound Word
+### The House of the Unbroken Tally
 
-`house-bound-word` · its entry: [`sects.ts:2243`](../../src/data/cultivation/sects.ts)
+`house-unbroken-tally` · its entry: [`sects.ts:2243`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`members.ts`](../../src/data/cultivation/members.ts) 5 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 2
   …and 5 more files.

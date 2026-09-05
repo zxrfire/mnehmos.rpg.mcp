@@ -211,12 +211,12 @@ export const AGES: readonly Age[] = [
             'They knew the ground was being killed and they did it anyway, and the surviving arguments for it are not stupid. The Burning Age position, stated plainly in three separate places, is that the decline made the arithmetic unavoidable: a region carries so many cultivators, the number is falling, and a party that declines to act on that is choosing to be the one that is culled. Everybody who acted on it was individually correct and collectively catastrophic, and every institution that came out of it knows this and none of them will say it in a room.',
         howItEnded: {
             statement:
-                'The Burning Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Bound Word does not hold one.',
+                'The Burning Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Unbroken Tally does not hold one.',
             truth: 'unresolved',
-            heldBy: ['house-bound-word', 'house-ninefold-ledger', 'apex-deep-survey', 'apex-long-cut'],
+            heldBy: ['house-unbroken-tally', 'house-ninefold-ledger', 'apex-deep-survey', 'apex-long-cut'],
             evidence: [
                 'the practice changed within about a decade across both provinces and every tradition, which is not how customs change and is exactly how instruments do',
-                'the Bound Word holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
+                'the Unbroken Tally holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
                 'grant language in nine unrelated houses converges on the same four clauses in the same order within a generation',
                 'the Jade Gorge counts its years from it, so at minimum somebody at the time was certain enough to reset a calendar'
             ],
@@ -607,7 +607,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
     {
         id: 'origin-built',
         name: 'The Built Account',
-        heldBy: ['house-narrow-hour', 'house-ninefold-ledger', 'house-bound-word'],
+        heldBy: ['house-narrow-hour', 'house-ninefold-ledger', 'house-unbroken-tally'],
         currency: 'institutional',
         account:
             'That somebody built it. The ladder is a work, the boundaries are its joints, and the tribulation is its enforcement. The three houses that hold this hold it for three incompatible reasons and are not allies about it: the fate house because a structure that prunes is a structure somebody shaped, the karma house because a charge that specific is a term, and the oath house because a rule with an enforcement clause is an agreement whether or not anybody signed it.',
@@ -617,7 +617,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
             'thirteen at the bottom and four above, which reads as a design choice and nothing else',
             'the Price of Advancement takes something specific rather than something proportional, which is a term and not a weather',
             'the tribulation arrives, which is to say something responds, and a response requires a responder even if nobody can name one',
-            'the Bound Word can demonstrate that an oath sworn on unfixed ground does not bind, which establishes that the world enforces terms against ground rather than against intent'
+            'the Unbroken Tally can demonstrate that an oath sworn on unfixed ground does not bind, which establishes that the world enforces terms against ground rather than against intent'
         ],
         theProblem:
             'No builder, no site, no method, no tool and no artifact of the building, in eleven thousand years of digging, by a world whose entire economy is digging. The Built account has never produced a single object. Its holders answer that a work this size would not leave the kind of debris anybody is looking for, which is true and is also exactly what an unfalsifiable position sounds like, and all three houses know it.',
@@ -1045,9 +1045,9 @@ export const CALENDARS: readonly Calendar[] = [
             statement:
                 'The Standing Count is dated from an event for which no instrument survives, whose convening nobody can name, and which may not have been a single event at all.',
             truth: 'unresolved',
-            heldBy: ['house-bound-word', 'house-anchorhold', 'house-ninefold-ledger'],
+            heldBy: ['house-unbroken-tally', 'house-anchorhold', 'house-ninefold-ledger'],
             evidence: [
-                'no instrument bearing the name survives and the Bound Word does not hold one, which for that house is an extraordinary admission',
+                'no instrument bearing the name survives and the Unbroken Tally does not hold one, which for that house is an extraordinary admission',
                 'the eleven subsidiary agreements of that decade refer to terms they do not restate',
                 'the practice changed across both provinces within about a decade, which is instrument speed and not custom speed',
                 'the calendar itself was reset, which means somebody at the time was certain enough to make everybody renumber'

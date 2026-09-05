@@ -143,6 +143,29 @@ export const THE_ANSWER_IS_TO_SHOUT =
 export const THE_ANSWER_IS_TO_SPARE =
     /\b(?:spare(?:s|d)? (?:him|her|them|his life|her life|their life|the boy|the girl)|spare(?:s|d)?\s*$|let(?:s|ting)? (?:him|her|them) (?:go|live|off|be|walk|stand|up)|let (?:him|her|them) (?:go|live)|show(?:s|ing)? (?:him|her|them )?mercy|have mercy|mercy on (?:him|her|them)|stay(?:s|ing)? my (?:hand|blade|sword)|stay my hand|hold(?:s|ing)? my (?:hand|blade|sword)|do(?:es)? not finish (?:him|her|them)|don'?t finish (?:him|her|them)|will not finish (?:him|her|them)|won'?t finish (?:him|her|them)|leave(?:s|ing)? (?:him|her|them) (?:alive|be|breathing|standing)|stop(?:s|ping)? short|enough[.!]*\s*$|it(?:'s| is) enough)\b/i;
 
+/**
+ * Going down on one knee, which is not backing off and not blocking.
+ *
+ * The three it has to stay clear of are all in this file. Breaking off is
+ * leaving and this is staying; guarding is spending the round on not being hit
+ * and this is stopping; and `spare` is the same act from the other end, so
+ * every phrasing here is about the speaker's OWN knees. That is why the object
+ * forms are excluded: `make him kneel` is a coercion and belongs to
+ * `how-a-player-says-each-coercion.ts`, which owns it and had all of it.
+ */
+export const THE_ANSWER_IS_TO_YIELD =
+    /\b(?:i )?(?:yield(?:s|ing)?|surrender(?:s|ing)?|submit(?:s|ting)?|give(?:s)? (?:up|in)|giving (?:up|in)|stand(?:s|ing)? down|kneel(?:s|ing)?|go(?:es|ing)? down on (?:one|my) knee|beg(?:s|ging)? for (?:mercy|my life)|throw(?:s|ing)? (?:down )?my (?:sword|blade|weapon)|drop(?:s|ping)? my (?:sword|blade|weapon)|ask(?:s|ing)? for mercy|plead(?:s|ing)? for (?:mercy|my life)|spare me|let me live|i (?:am|'m) beaten|you win)\b/i;
+
+/**
+ * Somebody else's knees, which is the opposite act and shares every word.
+ *
+ * "I make him kneel" is a coercion, `how-a-player-says-each-coercion.ts` owns
+ * it, and it read as a surrender until this was here - the sentence is about
+ * kneeling and the reader had no way to tell whose.
+ */
+export const MAKING_SOMEBODY_ELSE_DO_IT =
+    /\b(?:make|makes|making|made|force|forces|forcing|forced|beat|beats|beating|have|has)\s+(?:him|her|them|it|everyone|everybody)\b/i;
+
 /** Swinging again, which is the ordinary round and needs no special handling. */
 export const THE_ANSWER_IS_TO_KEEP_SWINGING =
     /\b(?:attack(?:s|ing)?|strike(?:s|ing)?|struck|hit(?:s|ting)?|swing(?:s|ing)?|cut(?:s|ting)?|stab(?:s|bing)?|slash(?:es|ing)?|punch(?:es|ing)?|kick(?:s|ing)?|fight(?:s|ing)? on|keep(?:s|ing)? (?:fighting|going|at it|swinging)|again\b|press(?:es|ing)? the attack|finish (?:him|her|them|it)|kill (?:him|her|them|it)|end (?:him|her|them|it))\b/i;
@@ -154,6 +177,7 @@ export const SAY_TO_BREAK_OFF = 'I back off';
 export const SAY_TO_SHOUT = 'I call for help';
 export const SAY_TO_KEEP_SWINGING = 'I keep swinging';
 export const SAY_TO_SPARE = 'I spare him';
+export const SAY_TO_YIELD = 'I yield';
 
 // ─────────────────────────────────────────────────────────────────────────
 // READING ONE
@@ -189,6 +213,13 @@ export function whatTheySaidInTheFight(said: string): FightAnswer | null {
     }
     if (THE_ANSWER_IS_TO_SHOUT.test(line)) {
         return { kind: 'call_for_help', to: whoTheyCalledFor(line) };
+    }
+    // Above pressing and guarding, both of which own words a surrender uses -
+    // "I give in" against "I give him the hit", "I stand down" against "I
+    // stand my ground" - and below breaking off, which is the other way of
+    // ending it and the one whose failure kills somebody.
+    if (THE_ANSWER_IS_TO_YIELD.test(line) && !MAKING_SOMEBODY_ELSE_DO_IT.test(line)) {
+        return { kind: 'yield' };
     }
     if (THE_ANSWER_IS_TO_PRESS.test(line)) return { kind: 'press' };
     if (THE_ANSWER_IS_TO_GUARD.test(line)) return { kind: 'guard' };

@@ -18,7 +18,7 @@
  *   Ninefold Ledger     'sealed escrow of obligations that outlive their parties'
  *   Held Names          'name custody, an annual fee, payable in advance and
  *                        famously never refunded'
- *   Bound Word          'custody of the treaty vault, with certified copies
+ *   Unbroken Tally          'custody of the treaty vault, with certified copies
  *                        issued to any party to a treaty'
  *   Measured Span       'storage certification, without which no storage ring
  *                        sells at full value'
@@ -228,7 +228,7 @@ export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
             'It will not take an entry it cannot audit later, and it will not take a claimant\'s word over the book. Three wrong phrases and the entry is marked contested, which in this house means it stops being collectible by anybody at all.'
     },
     {
-        factionId: 'house-bound-word',
+        factionId: 'house-unbroken-tally',
         derivedFrom: 'custody of the treaty vault, with certified copies issued to any party to a treaty',
         annualFeeStones: 14,
         minimumTermYears: 100,

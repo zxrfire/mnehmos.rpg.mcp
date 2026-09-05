@@ -305,7 +305,7 @@ describe('the indenture is the contract shape the ledger already has', () => {
     });
 
     it('names a witness, which is what makes the contract bind anybody', () => {
-        expect(answer.indenture!.witnessFactionId).toBe('house-bound-word');
+        expect(answer.indenture!.witnessFactionId).toBe('house-unbroken-tally');
     });
 
     it('has no premier witness for the one house the oathwright refuses', () => {

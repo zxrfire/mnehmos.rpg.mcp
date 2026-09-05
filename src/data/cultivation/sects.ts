@@ -1459,11 +1459,11 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             'No seat worth naming: cutting houses at the edge of six cities, all of them rented, three portable formation nodes, and a founding ledger entry whose identifying columns cut themselves. Its arts are severance and disappearance - the shadow gait, the tithe palm, the meridian-devouring art, the severed name finger, the hollow body - and a Severed cultivator fights like somebody who has already decided what they are willing to lose, because they have, and it is written down. The doctrine is the most coherent argument in the region and it works: every crossing takes something eventually, so pay it deliberately, cut the bonds and the memories and the name in advance at a time of your choosing, and cross every boundary clean. They climb faster than anybody in the catalog and their attrition is the worst, because most of them stop being people before they stop being cultivators, and the house regards that objection as sentimental rather than incorrect.',
         ambition: {
             wants:
-                'The Bound Word\'s founding oath against witnessing for the Severed dissolved, so that its agreements can be witnessed like anyone else\'s.',
-            blockedBy: ['house-bound-word', 'sect-lantern-hall'],
+                'The Unbroken Tally\'s founding oath against witnessing for the Severed dissolved, so that its agreements can be witnessed like anyone else\'s.',
+            blockedBy: ['house-unbroken-tally', 'sect-lantern-hall'],
             wouldCost:
-                'Nothing it can pay, which is the problem: the Bound Word wants the oath gone too and cannot revise its own instruments, and the dissolution method for an oath whose parties are all dead has never worked and is still taught. Meanwhile every contract the Severed sign is unwitnessed, which prices their work about a third above what it is worth.',
-            contestedWith: ['house-bound-word'],
+                'Nothing it can pay, which is the problem: the Unbroken Tally wants the oath gone too and cannot revise its own instruments, and the dissolution method for an oath whose parties are all dead has never worked and is still taught. Meanwhile every contract the Severed sign is unwitnessed, which prices their work about a third above what it is worth.',
+            contestedWith: ['house-unbroken-tally'],
             movedOn:
                 'The Nameless have paid for four separate readings of the founding text by three houses, and all four came back saying the same thing, which they have stopped commissioning.'
         }
@@ -2240,8 +2240,8 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             'The House does not avenge. It publishes the sighting it had already cast on the killer, in full, including the parts the killer had paid other people to keep quiet.'
     },
     {
-        id: 'house-bound-word',
-        name: 'The House of the Bound Word',
+        id: 'house-unbroken-tally',
+        name: 'The House of the Unbroken Tally',
         alignment: 'righteous',
         powerOrdinal: 31,
         ranks: ['Witness', 'Sworn Clerk', 'Oathwright', 'Warden of Terms', 'Elder Oathwright', 'Grand Oathwright', 'Keeper of the Standing Word'],
@@ -2269,7 +2269,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'A treaty vault holding agreements between parties who are all dead, several of which are still binding on people who have never read them.'
         },
         description:
-            'Oath halls at every border crossing of consequence and a treaty vault at Burnt Earth, all of it the house\'s own and none of it on anybody\'s grant, which is what lets it witness between parties who are at war. Its dao is oaths made structural: three thousand eight hundred years of the discipline means a Bound Word witness does not threaten anybody who breaks a promise, the promise is simply built into them afterwards, and removing it removes some of them with it. Every treaty in the region is in that vault, every sect succession is sworn in front of them, no ruler has yet found a way to hold a border without them, and the reason they look like a formality is that the enforcement has never had to be demonstrated in public - which is exactly what a working deterrent looks like. The house pays for the discipline in speed and in rigidity: a contested reading takes a year, its members are individually unimpressive fighters, and it cannot revise its own oaths even when the terms have become absurd, which is why a founding clause forbidding it to witness for the Severed is costing it a fortune it can see and cannot touch.',
+            'Oath halls at every border crossing of consequence and a treaty vault at Burnt Earth, all of it the house\'s own and none of it on anybody\'s grant, which is what lets it witness between parties who are at war. Its dao is oaths made structural: three thousand eight hundred years of the discipline means a Unbroken Tally witness does not threaten anybody who breaks a promise, the promise is simply built into them afterwards, and removing it removes some of them with it. Every treaty in the region is in that vault, every sect succession is sworn in front of them, no ruler has yet found a way to hold a border without them, and the reason they look like a formality is that the enforcement has never had to be demonstrated in public - which is exactly what a working deterrent looks like. The house pays for the discipline in speed and in rigidity: a contested reading takes a year, its members are individually unimpressive fighters, and it cannot revise its own oaths even when the terms have become absurd, which is why a founding clause forbidding it to witness for the Severed is costing it a fortune it can see and cannot touch.',
         ambition: {
             wants:
                 'Its own founding oath against witnessing for the Severed dissolved, which it has wanted for two centuries and cannot do.',
@@ -2334,7 +2334,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             surrendered:
                 'Every oath you were carrying, which is dissolved or assumed by the house, and your line - your children are Bound, sworn at naming, and cannot leave without the house witnessing that too.',
             naming:
-                'The family is Lin, from Lin Zhao onward, and the Bound Word is what the Lin do rather than who they are: a treaty is witnessed by a Lin and filed under the house, and the two are not the same signature. A man adopted in takes the name in the same sitting his oath is sworn, and the house holds the name change to be the more binding of the two instruments.',
+                'The family is Lin, from Lin Zhao onward, and the Unbroken Tally is what the Lin do rather than who they are: a treaty is witnessed by a Lin and filed under the house, and the two are not the same signature. A man adopted in takes the name in the same sitting his oath is sworn, and the house holds the name change to be the more binding of the two instruments.',
             lastTaken:
                 'Two hundred and ten years ago, and he is the current Keeper of the Standing Word, which the Strict Hall mentions rather often.',
             costOfTheForm:
@@ -2366,7 +2366,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         ],
         signatureTechniqueId: 'quiet-cut-severing-stroke',
         specialities: ['forbidden', 'movement', 'attack'],
-        rivals: ['house-ninefold-ledger', 'house-held-names', 'house-narrow-hour', 'house-bound-word', 'sect-the-severed'],
+        rivals: ['house-ninefold-ledger', 'house-held-names', 'house-narrow-hour', 'house-unbroken-tally', 'sect-the-severed'],
         territory: 'No seat that anyone has proved. Work is taken and delivered through third parties.',
         recruits: true,
         compound: {
@@ -2707,7 +2707,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         ],
         signatureTechniqueId: 'anchor-stance-of-fixed-ground',
         specialities: ['defense', 'cultivation'],
-        rivals: ['house-measured-span', 'house-bound-word'],
+        rivals: ['house-measured-span', 'house-unbroken-tally'],
         territory: 'The fixed survey: eleven containment perimeters, four scars, and the standard weights.',
         recruits: true,
         compound: {
@@ -2721,7 +2721,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         ambition: {
             wants:
                 'Containment extended to the fourth scar, which has never been perimetered and is the only one still moving.',
-            blockedBy: ['house-measured-span', 'house-bound-word'],
+            blockedBy: ['house-measured-span', 'house-unbroken-tally'],
             wouldCost:
                 'A levy on settlements that are already too poor to fund the eleven perimeters it has, and the Measured Span will argue the survey rather than the need, because a fourth perimeter closes the last open approach to two of its terminals. The Datum faction holds that the survey is the house\'s only real duty and that a twelfth perimeter is how the eleventh gets dropped.',
             contestedWith: ['house-measured-span'],
@@ -2935,14 +2935,14 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
         subject: 'Whether an oath binds to a person or to a place.',
         positions: [
             {
-                houseId: 'house-bound-word',
+                houseId: 'house-unbroken-tally',
                 position:
                     'The seal binds the sworn party. Ground is a convenience of the ceremony and nothing more, and the Anchorhold\'s claim otherwise is an attempt to charge rent on other people\'s promises.'
             },
             {
                 houseId: 'house-anchorhold',
                 position:
-                    'An oath sworn on unsurveyed ground has held in no recorded instance. The Bound Word knows this, has known it for eight centuries, and continues to witness on unfixed ground for the fee.'
+                    'An oath sworn on unsurveyed ground has held in no recorded instance. The Unbroken Tally knows this, has known it for eight centuries, and continues to witness on unfixed ground for the fee.'
             }
         ],
         consequence:
@@ -3116,7 +3116,7 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: [],
         requirement: 'A sighting cast on the applicant by the House, at the applicant\'s expense, which the applicant is not shown.'
     },
-    'house-bound-word': {
+    'house-unbroken-tally': {
         minOrdinal: 5,
         minInsight: 3,
         minCharm: 2,

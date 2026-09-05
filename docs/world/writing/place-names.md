@@ -199,7 +199,7 @@ checked, and what it decided:
   Abysses - Crimson Abyss Hall and Nine Abyss Flame Sect - are two unrelated demonic
   houses reaching for the same stock word, which is what demonic houses do.
 - **The five Dao houses keep their formula.** *The House of the Narrow Hour*, *of the
-  Bound Word*, *of the Quiet Cut*, *of Held Names*, *of the Measured Span*: each names
+  Unbroken Tally*, *of the Quiet Cut*, *of Held Names*, *of the Measured Span*: each names
   the dao rather than the ground, which is the second register, and the house noun in
   front is what stops it being the article-plus-abstraction that was struck out of
   `artifacts.ts`. A treasure with no noun saying what it is has nothing holding it up; a

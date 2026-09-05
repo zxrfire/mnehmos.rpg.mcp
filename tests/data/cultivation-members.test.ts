@@ -615,7 +615,7 @@ describe('a dao house is a family', () => {
      * A house does not recruit; it adopts, and adoption here is the name. So a
      * house roll is one surname repeated, and the surname is the founder's -
      * Yan Duo of the Ninefold Ledger, Cao Xun of the Narrow Hour, Lin Zhao of
-     * the Bound Word, Gu Yao of Held Names, Fu Chang of the Measured Span, Xu
+     * the Unbroken Tally, Gu Yao of Held Names, Fu Chang of the Measured Span, Xu
      * Ping of the Anchorhold. The Quiet Cut's founder is unrecorded and the Chu
      * are known by nothing except that they are all Chu.
      *

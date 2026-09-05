@@ -65,7 +65,7 @@ export const THE_WIDE_FIELD: Region = {
         missingDisciplines: [
             {
                 discipline: 'oath-binding',
-                reason: 'A Bound Word oath binds to certified ground and the Anchorhold has never carried a survey east of the watershed. An oath sworn in the Yellow Plain is a promise and nothing else, which is why every arrangement here is a lease with a deposit and why the province regards the Jade Gorge habit of swearing things as a charming affectation.'
+                reason: 'A Unbroken Tally oath binds to certified ground and the Anchorhold has never carried a survey east of the watershed. An oath sworn in the Yellow Plain is a promise and nothing else, which is why every arrangement here is a lease with a deposit and why the province regards the Jade Gorge habit of swearing things as a charming affectation.'
             },
             {
                 discipline: 'containment',

@@ -1005,7 +1005,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         discoverableTraces: [],
         standingNote: 'The House holds that an ancestor who crossed is by definition outside the convergence and therefore not worth sighting for, which is either doctrine or sour grapes.'
     },
-    'house-bound-word': {
+    'house-unbroken-tally': {
         ancestors: [
             { name: 'The First Oathwright', fate: 'dead', realmOrdinal: null, yearsAgo: 3_780, afterCrossing: null, rememberedFor: 'Swore the house\'s founding oath, which is still binding and is why the house cannot witness for the Severed.' },
             { name: 'Warden of Terms Lin Ke', fate: 'dead', realmOrdinal: null, yearsAgo: 500, afterCrossing: null, rememberedFor: 'Read a treaty back to two sects until both withdrew from a war they had already started.' }

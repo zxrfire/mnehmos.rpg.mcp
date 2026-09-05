@@ -263,7 +263,7 @@ export const SETTLEMENTS: readonly Settlement[] = [
         kind: 'city',
         name: 'City',
         typicalPopulation: '80,000 upward',
-        contains: ['an auction house', 'a Stonewright assay hall', 'nine gates, all registering', 'a Bound Word oath hall', 'more cultivators than anybody has counted'],
+        contains: ['an auction house', 'a Stonewright assay hall', 'nine gates, all registering', 'a Unbroken Tally oath hall', 'more cultivators than anybody has counted'],
         cultivatorCanGet: ['heaven-grade goods at auction, occasionally', 'certification, arbitration and oath witnessing', 'work at every risk level', 'anonymity, which is unavailable anywhere smaller'],
         lacks: ['cheap anything', 'ground worth cultivating on inside the walls', 'patience with a Qi Condensation cultivator'],
         note: 'The only places where a low-realm cultivator is genuinely unremarkable, which is either a relief or an insult depending on the person.'

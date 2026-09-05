@@ -446,14 +446,14 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         id: 'rumour-oaths-cannot-be-broken',
         saying: 'Swear at the hall and that is the end of it. It is not a promise, it is a fact about you afterwards.',
         saidBy: 'a merchant explaining why the fee is worth it',
-        aboutId: 'house-bound-word',
+        aboutId: 'house-unbroken-tally',
         aboutName: 'the oath hall',
         accuracy: 'garbled',
         underneath: 'An oath binds to ground, and there is a house whose whole trade is that ground can be unfixed, which means an oath sworn in the wrong place has nothing to bind to. The merchant\'s version has lost the condition, which is the only part that matters.',
         consequence: 'Oaths get sworn cheaply in unsurveyed places by people who think the words are doing the work, and the resulting disputes are a steady income for the arbitration benches.',
         floorOrdinal: 6,
         regionId: null,
-        insiderFactionId: 'house-bound-word'
+        insiderFactionId: 'house-unbroken-tally'
     },
     {
         id: 'rumour-azure-cloud-takes-anybody',

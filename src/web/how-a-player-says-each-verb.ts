@@ -100,7 +100,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
     // sentences that should.
     oath: [
         'I swear a dao oath to them',
-        'I swear a dao oath before the Bound Word',
+        'I swear a dao oath before the Unbroken Tally',
         'what oaths am I carrying',
         'I break the dao oath I swore',
         'I want out of the oath I am under',

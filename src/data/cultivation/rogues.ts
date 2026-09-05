@@ -831,7 +831,7 @@ export const AUCTION_ACCESS = {
     ],
     theWayAround: [
         'Bid as somebody\'s agent, which works and means that somebody knows exactly what you are holding',
-        'Buy the guarantee: a Bound Word bond can stand in for a faction seal, and is priced against the penalty clause rather than the lot',
+        'Buy the guarantee: a Unbroken Tally bond can stand in for a faction seal, and is priced against the penalty clause rather than the lot',
         'Buy it afterwards from whoever did win it, at a markup, which is a large part of what the kerb is for'
     ],
     theRealConstraint:

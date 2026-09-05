@@ -536,7 +536,7 @@ describe('a contract is rare, costly and mutual', () => {
         expect(THE_CONTRACT.whatTheCultivatorGives.join(' ')).toMatch(/share of their own draw/i);
         expect(THE_CONTRACT.whatItIsWorth).toMatch(/tax|permanent/i);
         // It binds only when witnessed, like every other agreement.
-        expect(THE_CONTRACT.witnessing).toMatch(/Bound Word|witness/i);
+        expect(THE_CONTRACT.witnessing).toMatch(/Unbroken Tally|witness/i);
         // And it can end, in stated ways, one of which is being outgrown.
         expect(THE_CONTRACT.howItBreaks.length).toBeGreaterThanOrEqual(3);
         expect(THE_CONTRACT.howItBreaks.join(' ')).toMatch(/outgrow/i);

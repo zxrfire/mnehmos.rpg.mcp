@@ -2085,11 +2085,11 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         }
     },
 
-    // --- The House of the Bound Word ----------------------------------------
+    // --- The House of the Unbroken Tally ----------------------------------------
     {
         id: 'member-lin-shouzhen',
         name: 'Lin Shouzhen',
-        factionId: 'house-bound-word',
+        factionId: 'house-unbroken-tally',
         rankIndex: 0,
         rank: 'Witness',
         realmOrdinal: 7,
@@ -2106,7 +2106,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lin-muyan',
         name: 'Lin Muyan',
-        factionId: 'house-bound-word',
+        factionId: 'house-unbroken-tally',
         rankIndex: 1,
         rank: 'Sworn Clerk',
         realmOrdinal: 12,
@@ -2123,7 +2123,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lin-liangfu',
         name: 'Lin Liangfu',
-        factionId: 'house-bound-word',
+        factionId: 'house-unbroken-tally',
         rankIndex: 2,
         rank: 'Oathwright',
         realmOrdinal: 18,
@@ -3336,7 +3336,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     {
         id: 'member-lin-anren',
         name: 'Lin Anren',
-        factionId: 'house-bound-word',
+        factionId: 'house-unbroken-tally',
         rankIndex: 6,
         rank: 'Keeper of the Standing Word',
         realmOrdinal: 31,

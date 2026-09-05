@@ -53,7 +53,7 @@ const html: string = renderRegisterHtml(reg);
  *
  * The decode is not cosmetic. `esc` turns a double quote into `&quot;`, and the
  * moment an entry started quoting the catalog's own distinct sentence - the
- * House of the Bound Word cannot say "I promise" in conversation - every
+ * House of the Unbroken Tally cannot say "I promise" in conversation - every
  * assertion that the sentence reached the page failed on correct escaping.
  */
 function text(source: string): string {

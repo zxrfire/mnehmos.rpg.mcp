@@ -655,7 +655,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         },
         distinctSentence: 'Advises four thrones from a hall with no walls, sits facing away from whoever is talking, and cannot say which of its own two contradictory records of the scar year is true.'
     },
-    'house-bound-word': {
+    'house-unbroken-tally': {
         knownFor: {
             outside: 'Ceremony. The witnesses at a signing, the ones who make a succession feel official.',
             actuallyGoodAt: 'Enforcement. A broken oath is structural rather than punitive - removing it removes some of the person - and no ruler in the region has found a way to hold a border without them.',
@@ -1062,14 +1062,14 @@ export const DORMANT_ARTS: readonly DormantArt[] = [
     // is no longer walking. The houses are not distressed about this in the way a
     // sect would be. It is the form working as designed, and they say so.
     {
-        factionId: 'house-bound-word',
+        factionId: 'house-unbroken-tally',
         techniqueId: 'sixteen-thread-command',
         howItGotHere:
             'Deposited in the treaty vault by the parties to a nullification, four ages ago, as part of the settlement - the House took custody of the method on the understanding that custody is not use, and has held it under the same terms ever since. It is catalogued as an exhibit rather than as a book.',
         evidence:
             'Three voided agreements in its own vault, each with the sworn party named, the witnessing oathwright named, and a marginal note in the oathwright\'s hand recording that the signatory\'s hand moved and the signatory did not. The House does not treat these as disputed. It treats them as the reason the method is in the vault.',
         howTheHouseTalksAboutIt:
-            'Plainly, and slightly too often. The Bound Word regards holding the one art that makes a witnessed agreement meaningless as the strongest possible argument for its own necessity, and every oathwright can recite what it does. None of them can do it, and the House has never pretended the two facts are related.',
+            'Plainly, and slightly too often. The Unbroken Tally regards holding the one art that makes a witnessed agreement meaningless as the strongest possible argument for its own necessity, and every oathwright can recite what it does. None of them can do it, and the House has never pretended the two facts are related.',
         terms:
             'Swear to the House first - a real oath, witnessed, with a penalty clause the House writes - and then ask. It will teach on those terms to almost anybody, because a party bound by an oathwright\'s own clause is the one kind of person it is not afraid to hand this to. What it will not do is teach somebody who has sworn nothing, and that refusal is doctrine rather than caution.'
     },

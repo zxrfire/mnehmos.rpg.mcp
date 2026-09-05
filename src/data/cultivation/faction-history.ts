@@ -328,10 +328,10 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         id: 'event-the-founding-oath-and-the-severed',
         yearsAgo: 500,
         provinceId: null,
-        what: 'A founding oath of the House of the Bound Word forbids it to witness for the Severed. The Severed have offered, repeatedly, at rising fees, and the House has refused every time.',
-        parties: ['house-bound-word', 'sect-the-severed'],
+        what: 'A founding oath of the House of the Unbroken Tally forbids it to witness for the Severed. The Severed have offered, repeatedly, at rising fees, and the House has refused every time.',
+        parties: ['house-unbroken-tally', 'sect-the-severed'],
         accounts: {
-            'house-bound-word':
+            'house-unbroken-tally':
                 'The oath binds and the House will not test it, and the fee it is refusing is one it can see and count. That is the whole of the House\'s character in one transaction: an oathwright house that broke a founding oath for money would be selling nothing afterwards, so it declines a fortune annually and considers the declining to be the product.',
             'sect-the-severed':
                 'The Severed keep offering because the refusal is the most useful thing anybody does for them. A house of oaths that will not witness a severance is a house conceding, publicly and at cost, that what the Severed do is real and permanent and takes - which is precisely the doctrine, argued for free, five hundred years running, by somebody who thinks they are refusing.'
@@ -837,8 +837,8 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'It holds that sightings cast on itself are worthless because it stands outside its own convergence, which is a real technical claim and would be a good one. The likelier reading is that the house has never accepted a sighting it disliked, and the record of discarded self-sightings is available and has been for centuries. Nobody outside has read it, because reading it requires believing the house is worth auditing.',
         sharedEvents: []
     },
-    'house-bound-word': {
-        factionId: 'house-bound-word',
+    'house-unbroken-tally': {
+        factionId: 'house-unbroken-tally',
         origin:
             'Oath halls at every border crossing of consequence and the treaty vault at Burnt Earth, holding a vault of treaties binding on people who have never read them. Oathwright training takes forty years and the house will not shorten it, which is the founding decision and has never been reopened.',
         whyTheGapIs:

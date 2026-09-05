@@ -274,14 +274,14 @@ describe('the phrase is the player\'s, not the engine\'s', () => {
     });
 
     it('a house that keeps a book runs out of patience; one that does not, cannot count reliably', () => {
-        const strict = custodyTermsFor('house-bound-word')!;
+        const strict = custodyTermsFor('house-unbroken-tally')!;
         const loose = custodyTermsFor('sect-thousand-treasure-pavilion')!;
         expect(strict.attemptsAllowed).toBeLessThan(loose.attemptsAllowed);
         expect(strict.keepsWrittenRecord).toBe(true);
         expect(loose.keepsWrittenRecord).toBe(false);
 
         // And running out closes the entry against everybody, not just the fraud.
-        let record = deposit({ factionId: 'house-bound-word', wrongAttempts: 0 });
+        let record = deposit({ factionId: 'house-unbroken-tally', wrongAttempts: 0 });
         for (let i = 0; i < strict.attemptsAllowed; i += 1) {
             record = recordWrongPhrase(record, strict, 2_000).record;
         }
@@ -701,16 +701,16 @@ describe('one life puts it aside and another life collects it', () => {
         h.purses.set('a', 60_000);
         handleLegacy(
             h.deps({ cultivator: { id: 'a', spiritStones: 60_000, realmOrdinal: 24 } as never }),
-            'lodge', 'the Bound Word', 'a boat with no name', 0
+            'lodge', 'the Unbroken Tally', 'a boat with no name', 0
         );
-        const terms = custodyTermsFor('house-bound-word')!;
+        const terms = custodyTermsFor('house-unbroken-tally')!;
         const fraud = h.deps({ cultivator: { id: 'f', spiritStones: 0 } as never, runId: 'run-f' });
         for (let i = 0; i < terms.attemptsAllowed; i += 1) {
-            handleLegacy(fraud, 'claim', 'the Bound Word', `guess ${i} at the words`, 0);
+            handleLegacy(fraud, 'claim', 'the Unbroken Tally', `guess ${i} at the words`, 0);
         }
         // The right words, too late, said by somebody else entirely.
         const heir = h.deps({ cultivator: { id: 'h', spiritStones: 0 } as never, runId: 'run-h' });
-        const late = handleLegacy(heir, 'claim', 'the Bound Word', 'a boat with no name', 0);
+        const late = handleLegacy(heir, 'claim', 'the Unbroken Tally', 'a boat with no name', 0);
         expect(late.refused).toBe(true);
         expect(late.facts.lines.join(' ')).toContain('closed');
     });

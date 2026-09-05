@@ -3560,7 +3560,24 @@ ${noticed}`;
 
         // ── GIVING ONE ───────────────────────────────────────────────────
         const scope = this.scopeFor(cultivator);
-        const query = (target ?? '').trim();
+        let query = (target ?? '').trim();
+        // WHOEVER THEY WERE TALKING TO, where the sentence named nobody.
+        //
+        // The design owner: *I give my word is an oath to whoever you're
+        // talking to.* Somebody mid-conversation who says it has not left the
+        // recipient out, they have left it obvious, and the engine already
+        // knows who that is - `FLAG_LAST_ADDRESSED` is the same row the
+        // pronoun resolver reads for "her". Only where there is nobody at all
+        // does the refusal below stand, and there it is the honest answer: a
+        // word given to nobody binds nobody.
+        if (query.length < 2) {
+            const addressed = readFlag(this.db, cultivator.id, FLAG_LAST_ADDRESSED);
+            const talkingTo = addressed
+                ? this.present(cultivator).find(row => row.id === addressed)
+                : undefined;
+            if (talkingTo) query = talkingTo.name;
+        }
+
         if (query.length < 2) {
             return refused('engine.resolveParty', 'oath', factsForRefusal(
                 'A word given to whom?',
@@ -3577,11 +3594,11 @@ ${noticed}`;
         // dao oath is defined as one sworn TO this house - the design owner:
         // *just for simplicity make them have to swear to the oath dao house* -
         // and a house you must swear to, that nobody has heard of, is a verb
-        // with no way in. Measured: "I swear a dao oath to the Bound Word"
+        // with no way in. Measured: "I swear a dao oath to the Unbroken Tally"
         // came back as a stranger asking who that is.
         //
         // Exempted HERE and not by seeding awareness, which was tried. The
-        // house is called The House of the Bound Word, `bound word` is oath
+        // house is called The House of the Unbroken Tally, `bound word` is oath
         // vocabulary, and putting it in the player's known-sect list sent every
         // sentence naming it to this verb instead of `sect`.
         const oathHouse = getSect(THE_OATHWRIGHT_HOUSE);
