@@ -158,7 +158,7 @@ function capitalised(word: string): string {
 }
 
 /** A list, rendered the way somebody would say it. */
-function andList(items: readonly string[]): string {
+export function andList(items: readonly string[]): string {
     if (items.length === 0) return 'nothing';
     if (items.length === 1) return items[0];
     return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;

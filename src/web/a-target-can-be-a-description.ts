@@ -183,6 +183,13 @@ const FILLER = new Set([
     'front', 'standing', 'one', 'ones', 'person', 'people', 'someone', 'somebody',
     'anyone', 'anybody', 'cultivator', 'cultivators', 'sect', 'sects', 'other',
     'others', 'from', 'who', 'is', 'are', 'most', 'and',
+    // The possessive in front of a title, which is how half of them are said:
+    // *my senior brother*, *our elder*. Safe because every title that MEANS
+    // something by the possessive - "my master", "my disciple" - is a `TITLES`
+    // key and is taken out whole before this loop runs. Measured: without it
+    // "my senior brother" failed to parse as a description at all and reached
+    // the NAME resolver, which asked the room who that was.
+    'my', 'our',
     // A vocative, and the commonest opening of a xianxia address: *you, void
     // refinement cultivator*. Not the third-person pronouns - "her" and "them"
     // are anaphors, they mean whoever was last dealt with, and the resolver
@@ -439,4 +446,61 @@ export function theWordsThisPersonAnswersTo(input: {
         if (fits[0]?.id === who.id) found.push(phrase);
     }
     return found;
+}
+
+/**
+ * What a description ASKED FOR, in words, for the case where nobody is it.
+ *
+ * The other direction of `theDescriptionThisIs`, and it exists because a
+ * description that fits nobody was reaching the answer built for a NAME that
+ * fits nobody. Those are different failures with different answers: a name
+ * nobody holds gets *who is that?*, and it is the right answer, because a name
+ * is a thing the speaker might have got wrong. A description is not got wrong.
+ * "The elder" in a room with no elder in it is a correct sentence about a room
+ * that does not contain one, and the honest reply says which - measured in
+ * play, it said `Shen Peixue does not know the name, and asks who that is`,
+ * about a phrase that was never a name.
+ *
+ * Built off the same fields the parser fills, so an axis added there turns up
+ * here rather than being silently unsayable.
+ */
+export function whatTheDescriptionAskedFor(what: ADescription): string {
+    // A HEAD NOUN, THEN WHAT NARROWS IT, which is the order somebody says it
+    // in. Built the other way first, and it produced "senior to you in your own
+    // house, man" - every axis appended to a list, which is a shape no person
+    // uses out loud.
+    const tier = what.realmKey === null
+        ? null
+        : REALM_TIERS.find(row => row.key === what.realmKey) ?? null;
+    const sexWord = what.sex === null ? null : PLAINEST_WORD_FOR[what.sex];
+
+    const head = what.rank !== null
+        ? what.rank
+        : tier !== null
+            ? `${tier.name} cultivator`
+            : sexWord ?? 'somebody';
+
+    // The sex is an adjective wherever something else is already the noun, and
+    // the noun itself where nothing is.
+    const adjective = sexWord !== null && head !== sexWord ? `${what.sex} ` : '';
+    const article = /^[aeiou]/i.test(adjective || head) ? 'an' : 'a';
+    const noun = head === 'somebody' && adjective === ''
+        ? 'somebody'
+        : `${article} ${adjective}${head}`;
+
+    const narrowing: string[] = [];
+    if (what.standing !== null) {
+        narrowing.push(what.sameHouse
+            ? `${what.standing === 'above' ? 'senior' : 'junior'} to you in your own house`
+            : `standing ${what.standing} you`);
+    } else if (what.sameHouse) {
+        narrowing.push('of your own house');
+    }
+    if (what.alignment !== null) narrowing.push(`out of a ${what.alignment} house`);
+    if (what.tie !== null) narrowing.push(`who is ${what.tie} to you`);
+
+    const body = narrowing.length === 0 ? noun : `${noun} ${narrowing.join(', ')}`;
+    // The ordering goes in front of the whole phrase: the youngest of nobody is
+    // still nobody, and "the youngest" is how a person opens the sentence.
+    return what.end === null ? body : `the ${what.end}, ${body}`;
 }

@@ -308,6 +308,7 @@ import {
     resolveSect,
     resolveTechnique,
     matchScore,
+    andList,
     MATCH_THRESHOLD,
     type KnowledgeScope
 } from './entities.js';
@@ -586,6 +587,7 @@ import {
 import { theSetThisNames } from './acts-over-a-set.js';
 import {
     theDescriptionThisIs,
+    whatTheDescriptionAskedFor,
     whoTheDescriptionFits
 } from './a-target-can-be-a-description.js';
 import {
@@ -11320,6 +11322,30 @@ ${fit.line}`;
     ): { said: string; offeredAName: boolean } {
         const here = this.present(cultivator);
         const where = placeName(cultivator);
+
+        // A DESCRIPTION IS NOT A NAME THAT MISSED. Asked first, because
+        // everything below this is built for somebody who typed a name and got
+        // it wrong - it offers near matches and has people ask who that is,
+        // which is right for a name and absurd for a phrase that was never one.
+        // "The elder" in a room with no elder is a correct sentence about the
+        // room, and it gets told what the room has instead.
+        const asked = theDescriptionThisIs(query);
+        if (asked !== null && here.length > 0) {
+            const wanted = whatTheDescriptionAskedFor(asked);
+            const known = here.filter(row =>
+                this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id));
+            const instead = known.length > 0 ? known : here;
+            return {
+                said: `Nobody standing in ${where} is ${wanted}. `
+                    + (known.length > 0
+                        ? `What is here is ${andList(known.map(row => row.name))}, and none of them is that.`
+                        : `There ${instead.length === 1 ? 'is one person' : `are `
+                          + `${instead.length} people`} about, and not one of them answers `
+                          + 'to it.'),
+                offeredAName: false
+            };
+        }
+
         if (here.length === 0) {
             return {
                 said: `You say it aloud in ${where} and ${where} carries on as it was. `

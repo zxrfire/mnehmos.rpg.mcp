@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
     theDescriptionThisIs,
+    whatTheDescriptionAskedFor,
     whoTheDescriptionFits,
     type SomebodyDescribable
 } from '../../src/web/a-target-can-be-a-description';
@@ -192,5 +193,39 @@ describe('a title, which is how people are addressed here', () => {
             person({ id: 'blood', sex: 'male', realmOrdinal: 2 }),
             person({ id: 'stranger', sex: 'male', realmOrdinal: 2 })
         ], byBlood)).toEqual(['blood']);
+    });
+});
+
+
+describe('what a description asked for, when nobody is it', () => {
+    /**
+     * A description that fits nobody used to reach the answer built for a NAME
+     * that fits nobody, which asked the room who that was - about a phrase that
+     * was never a name. Measured in play: *the elder*, in a room whose ranks
+     * were Skin and Applicant, got `does not know the name, and asks who that
+     * is`.
+     */
+    const asked = (phrase: string): string =>
+        whatTheDescriptionAskedFor(theDescriptionThisIs(phrase)!);
+
+    it('says what the phrase wanted, as a person would say it', () => {
+        expect(asked('the elder')).toBe('an elder');
+        expect(asked('the youngest girl')).toBe('the youngest, a woman');
+        expect(asked('the demonic cultivator')).toBe('somebody out of a demonic house');
+    });
+
+    /**
+     * THE SEX IS AN ADJECTIVE WHERE SOMETHING ELSE IS THE NOUN. Built the other
+     * way first, every axis appended to a list, and it produced "senior to you
+     * in your own house, man".
+     */
+    it('puts the head noun first and what narrows it after', () => {
+        expect(asked('my senior brother')).toBe('a man senior to you in your own house');
+        expect(asked('the female elder')).toBe('a female elder');
+    });
+
+    it('names a realm by its own name', () => {
+        expect(asked('you, void refinement cultivator'))
+            .toBe('a Void Refinement cultivator');
     });
 });
