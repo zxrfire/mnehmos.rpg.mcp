@@ -49,6 +49,46 @@ Avoid constant melodrama. Avoid telling the player they are special. Avoid guara
 that every action produces an event. The world is sometimes mundane, and that is what buys
 the extraordinary its weight.
 
+### Incoherent and coherent-and-stupid are two different failures
+
+> **SOME INVALID ACTS ARE INCOHERENT. OTHERS ARE COHERENT AND STUPID.**
+> Not everything should be a blank look. That is way too boring.
+
+They were getting the same answer, and it is worth being able to tell them apart.
+
+**Incoherent** is a sentence the engine cannot read. *"I flumbux the greeble."* There is
+nothing to be witty about: say it did not resolve, offer what is live here, and move on.
+
+**Coherent and stupid** is a sentence the engine reads perfectly and cannot carry out.
+*"I seduce the rock."* Nothing about it is unclear - the verb is there, the target is
+there, and the only thing missing is somebody able to receive it. That is not a parse
+failure and it must not read as one. Answer it.
+
+The answer is flat, not jokey, and the funny part is not written by whoever writes the
+sentence - **it is written by the square.** Somebody was standing there. Saying who is
+funnier than any invention, truer, and different every time, because the square is:
+
+> You go through with it, and it goes as well as it was ever going to. The rock is not
+> somebody who could say yes, which is what the act wanted. Nothing about the rock is
+> different afterwards, and nothing about you is either.
+>
+> Qiu Liexue, Lu Zhenya and one other watch the whole thing. One of them will tell it
+> wrong somewhere else, and their version is the one that travels.
+
+Non-exhaustive on purpose: a thing is only the commonest case. An act aimed at the dead,
+at an idea, at a place, at somebody four provinces away is the same shape - the sentence
+was clear and there was nobody to take it.
+
+### Nobody says "a blank look"
+
+> Think Anakin asking for Obi-Wan Kenobi. *Who is Obi-Wan? You mean old Ben? Someone
+> else?*
+
+Asked a name they do not know, a person does not stare. They **offer** - the nearest thing
+they have, with the question left in it, and they let you sort it out. A name got slightly
+wrong is the commonest mistake a player makes and it was being answered with somebody going
+back to what they were doing.
+
 ---
 
 ## Guidance for the narrator

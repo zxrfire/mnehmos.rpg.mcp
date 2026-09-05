@@ -576,6 +576,10 @@ import type { LocationRecord } from '../engine/world/locations.js';
 import { QI_DENSITY_DEFAULT, QI_DENSITY_MAX } from '../engine/world/qi-scale.js';
 import { whatDidNotHappen } from './unresolved-attempt-denials.js';
 import {
+    isASocialIntent,
+    whatCameOfTryingIt
+} from './an-act-that-is-coherent-and-stupid.js';
+import {
     howTheyCarryIt,
     whatTheyFeelAboutYou
 } from '../engine/social-leverage/what-they-feel-about-you.js';
@@ -3476,9 +3480,12 @@ ${noticed}`;
         cultivator: Cultivator,
         query: string,
         scope: KnowledgeScope,
-        action: ActionName
+        action: ActionName,
+        /** The social intent, where the sentence carried one. */
+        intent?: string,
     ): Execution {
         const here = this.present(cultivator);
+
         const nameable = here
             .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
             .map(row => row.name);
@@ -3488,6 +3495,22 @@ ${noticed}`;
         // those - and saying "there are people here and you have no name for any
         // of them" leaks nothing either, which is the sentence `whoWouldTeach`
         // already uses for the same situation.
+        // WHAT THE ACT WANTED, where the sentence carried a social intent.
+        //
+        // The design owner: *not everything should be a blank look. that's way
+        // too fucking boring.* Naming what the act needed is true whatever the
+        // player aimed it at - a rock, a door, a steward who is not here - and
+        // it does not require the engine to work out which, which it cannot.
+        // Classifying the target was tried and dropped: "the rock" and "the
+        // gate steward" are the same shape and only one of them is absurd.
+        // NOT WHERE SOMEBODY OFFERED A NAME. "You mean me?" and "nothing here
+        // is that" are two people arguing, and the offer is the better answer:
+        // a name got slightly wrong is the commonest mistake there is.
+        const look = this.blankLook(cultivator, query);
+        const wanted = !look.offeredAName && intent !== undefined && isASocialIntent(intent)
+            ? ` ${whatCameOfTryingIt(intent, nameable)}`
+            : '';
+
         const nextMove = nameable.length > 0
             ? ` Whoever you meant, the people here you could actually put it to are `
               + `${nameable.slice(0, 4).join(', ')}.`
@@ -3499,7 +3522,7 @@ ${noticed}`;
 
         return refused('engine.resolveParty', action, factsForRefusal(
             'Nobody by that name.',
-            this.blankLook(cultivator) + nextMove,
+            look.said + wanted + nextMove,
             `"${query}" matched nobody: no knowledge record for that name and nobody `
             + `standing here it could have meant. ${here.length} `
             + `${here.length === 1 ? 'person is' : 'people are'} present and `
@@ -3644,7 +3667,9 @@ ${noticed}`;
                 return this.askAround(run, cultivator, atHand[atHand.length - 1], topic, scope);
             }
         }
-        if (!party) return this.nobodyByThatName(cultivator, query, scope, 'interact');
+        if (!party) {
+            return this.nobodyByThatName(cultivator, query, scope, 'interact', intent);
+        }
 
         this.noteEncounter(
             cultivator, run, party, 'witnessed', `Approached at ${placeName(cultivator)}.`
@@ -11023,26 +11048,75 @@ ${fit.line}`;
     /**
      * The blank look, which is the answer.
      */
-    private blankLook(cultivator: Cultivator): string {
+    /**
+     * A name nobody here answers to, and what somebody standing there does
+     * about it.
+     *
+     * The design owner: *PEOPLE DON'T ACTUALLY SAY BLANK LOOK. think anakin
+     * asking for obi wan kenobi - who is obi wan? you mean old ben? someone
+     * else?*
+     *
+     * That is the whole of it. Somebody asked a name you do not know does not
+     * stare, they OFFER: they say the nearest thing they have and let you sort
+     * it out. This used to have three endings and all three were the person
+     * going back to what they were doing.
+     *
+     * The near match is `matchScore` under its own threshold - the same scorer
+     * the resolver just failed with, read the other way round. Nothing is
+     * invented and nothing is leaked: the only names offered are ones this
+     * cultivator can already say.
+     */
+    private blankLook(
+        cultivator: Cultivator,
+        query: string
+    ): { said: string; offeredAName: boolean } {
         const here = this.present(cultivator);
         const where = placeName(cultivator);
         if (here.length === 0) {
-            return `You say it aloud in ${where} and ${where} carries on as it was. ` +
-                'Whatever you meant by it, there is nothing here that answers to it.';
+            return {
+                said: `You say it aloud in ${where} and ${where} carries on as it was. `
+                    + 'Whatever you meant by it, there is nothing here that answers to it.',
+                offeredAName: false
+            };
         }
 
         const witness = here.find(
             row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
         );
         if (!witness) {
-            return `Nobody in ${where} answers to that name. The nearest person hears the ` +
-                'words out the way people hear out a sentence with a hole in it, and goes ' +
-                'back to what they were doing.';
+            return {
+                said: `Nobody in ${where} answers to that name. The nearest person hears the `
+                    + 'words out the way people hear out a sentence with a hole in it, and '
+                    + 'goes back to what they were doing.',
+                offeredAName: false
+            };
         }
 
-        return `Nobody in ${where} answers to that name. ${witness.name} hears you say it ` +
-            'and waits a moment, in case the rest of it is coming, and then goes back to ' +
-            'what they were doing.';
+        // THE NEAREST THING THEY HAVE, if the sentence was close to one.
+        // The witness is IN the candidates, and is usually the answer: somebody
+        // asked for a name one letter off their own is exactly the person who
+        // says "you mean me?".
+        const near = here
+            .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
+            .map(row => ({ row, score: matchScore(query, row.name) }))
+            .filter(one => one.score > 0)
+            .sort((a, b) => b.score - a.score)[0];
+
+        if (near) {
+            return {
+                said: near.row.id === witness.id
+                    ? `${witness.name} does not know the name, and then wonders whether you `
+                      + 'meant them. They say their own name back to you, with the question in it.'
+                    : `${witness.name} does not know the name. "${near.row.name}?" they offer, `
+                      + 'and waits to be told whether that was who you meant.',
+                offeredAName: true
+            };
+        }
+        return {
+            said: `${witness.name} does not know the name, and says so - not as a refusal, as `
+                + 'a person who would tell you if they could. They ask who that is.',
+            offeredAName: false
+        };
     }
 
     /**
