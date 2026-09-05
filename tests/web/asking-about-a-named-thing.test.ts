@@ -60,7 +60,7 @@ describe('asking about a named thing reaches the verb that reads one', () => {
     it.each([
         ['tell me about the Gleaners Company', 'Gleaners Company'],
         ['tell me about Shen Wanshi', 'Shen Wanshi'],
-        ['tell me about Fourhands', 'Fourhands'],
+        ['tell me about Four Graves', 'Four Graves'],
         ['tell me about the Lesser Qi-Gathering Manual', 'Lesser Qi-Gathering Manual'],
         ['tell me more about Shen Wanshi', 'Shen Wanshi'],
         ['what can you tell me about Shen Wanshi', 'Shen Wanshi'],
@@ -207,7 +207,7 @@ describe('asking who would take you reaches the register of who would', () => {
         expect(namesNoHouse('the intake in two days')).toBe(true);
         expect(namesNoHouse('Gleaners Company')).toBe(false);
         expect(namesNoHouse('Azure Dew Sect')).toBe(false);
-        expect(namesNoHouse('The Halfwater Rail')).toBe(false);
+        expect(namesNoHouse('The Silver Island Rail')).toBe(false);
     });
 });
 
@@ -235,9 +235,9 @@ describe('taking an intake is being taken on, not opening a treasury', () => {
     });
 
     it.each([
-        ['I take the intake at the Halfwater Rail', 'Halfwater Rail'],
-        ['I take the Halfwater Rail intake', 'Halfwater Rail'],
-        ['I sign up for the intake at Halfwater', 'Halfwater'],
+        ['I take the intake at the Silver Island Rail', 'Silver Island Rail'],
+        ['I take the Silver Island Rail intake', 'Silver Island Rail'],
+        ['I sign up for the intake at Silver Island', 'Silver Island'],
         ['I present myself at the Hollow Bell Wanderers intake', 'Hollow Bell Wanderers']
     ])('%s carries the house the paper named', (said, house) => {
         expect(whoseIntakeItIs(said), said).toBe(house);
@@ -350,7 +350,7 @@ describe('played, through the whole service', () => {
         const { game } = await makeGameInWorld({ seed: 'intake', worldSeed: 'world-askscratch' });
         await game.newRun('Wen Shuyi');
         await game.act('I look around');
-        await game.act('I travel to Fourhands');
+        await game.act('I travel to Four Graves');
 
         const wall = await game.act('what is posted here');
         const named = /^(.+?) is holding an intake/m.exec(wall.narration)?.[1];

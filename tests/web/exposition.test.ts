@@ -95,7 +95,7 @@ describe('resolved entities describe behaviour, not schema', () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Villager');
         const repos = ensureCultivationDb();
-        const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Sweptground' };
+        const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Burnt Earth' };
 
         const sect = resolveSect(repos, LOCAL_SECT.name, scope, null)!;
         expect(sect).not.toBeNull();
@@ -124,7 +124,7 @@ describe('resolved entities describe behaviour, not schema', () => {
         const { db, game } = makeGame();
         const { cultivator } = await game.newRun('Disciple');
         const repos = ensureCultivationDb();
-        const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Sweptground' };
+        const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Burnt Earth' };
 
         const outsider = resolveSect(repos, LOCAL_SECT.name, scope, null)!;
         const insider = resolveSect(repos, LOCAL_SECT.name, scope, LOCAL_SECT.id)!;
@@ -149,12 +149,12 @@ describe('resolved entities describe behaviour, not schema', () => {
             ) VALUES (
                 'npc-tall', NULL, 'The Tall One', 'npc', 'single_metal',
                 '{"might":3,"insight":3,"fortune":2,"charm":3}', 30,
-                0, 300, 300, 90, 90, 100, 0, 700, 5, 40000, NULL, NULL, 'Sweptground',
+                0, 300, 300, 90, 90, 100, 0, 700, 5, 40000, NULL, NULL, 'Burnt Earth',
                 '[]', '[]', 1, NULL, NULL, @now, @now
             )
         `).run({ now });
 
-        const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Sweptground' };
+        const scope = { gate: new KnowledgeGate(db), holderId: cultivator.id, here: 'Burnt Earth' };
         const seen = resolveCultivator(repos, 'The Tall One', cultivator.id, scope, 0)!;
 
         const perceived = seen.facts.join(' ');
@@ -196,7 +196,7 @@ describe('nothing structural reaches the model', () => {
                 structure: ['realmOrdinal=30 (Void Refinement Early), alignment=demonic, admissionOrdinal=21.'],
                 prose: ''
             },
-            { place: 'Sweptground', ambient: 'thin', awareness: [] }
+            { place: 'Burnt Earth', ambient: 'thin', awareness: [] }
         );
 
         expect(message).toContain('Somebody is here');

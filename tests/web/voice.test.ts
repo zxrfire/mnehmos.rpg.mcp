@@ -198,7 +198,7 @@ describe('no system voice anywhere a player can reach', () => {
         'I look around.',
         'I cultivate for thirty days.',
         `I examine ${LOCAL_SECT.name}.`,
-        'I travel to Scarwater.',
+        'I travel to Clear River Ford.',
         'I wait.',
         'I forage for herbs.',
         'I take work for a season',

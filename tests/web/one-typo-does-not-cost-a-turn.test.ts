@@ -70,9 +70,9 @@ describe('what the repair refuses to do', () => {
     });
 
     it('leaves capitalised names alone, because a name reaches the engine verbatim', () => {
-        const said = 'I travel to Low Fall';
+        const said = 'I travel to Green Water City';
         expect(respellForTheVerbTable(said, vocabulary).text).toBe(said);
-        expect(parseIntent(said).target).toBe('Low Fall');
+        expect(parseIntent(said).target).toBe('Green Water City');
     });
 
     it('puts a respelt NAME back before it reaches the engine', () => {
@@ -160,8 +160,8 @@ describe('a typo does not cost a turn', () => {
         ['I cultivat for a month', 'cultivate'],
         ['I cultvate for a month', 'cultivate'],
         ['I culitvate for a month', 'cultivate'],
-        ['I trael to Low Fall', 'move'],
-        ['I travvel to Low Fall', 'move'],
+        ['I trael to Green Water City', 'move'],
+        ['I travvel to Green Water City', 'move'],
         ['I swalow a healing pill', 'consume_pill'],
         ['I go into closed-door seclusion for a monht', 'seclude']
     ])('%s reaches %s', (said, want) => {
@@ -175,7 +175,7 @@ describe('a sentence that already parses is never touched', () => {
     const WORKED = [
         'I look around', 'what is my situation', 'I cultivate for a month',
         'I go into closed-door seclusion for a month', 'I try to break through',
-        'I travel to Low Fall', 'I talk to the nearest cultivator',
+        'I travel to Green Water City', 'I talk to the nearest cultivator',
         'I examine the stele', 'I train', 'I make a pill', 'I look for herbs',
         'I take whatever work there is', 'what can I buy', 'I eat',
         'I sell my herbs', 'what sects are there', 'I attack the nearest cultivator',

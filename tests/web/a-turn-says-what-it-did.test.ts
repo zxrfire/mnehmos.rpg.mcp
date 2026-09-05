@@ -43,7 +43,7 @@ describe('asking what there is to do reaches the surface written for it', () => 
      *   "what is there to do"   -> look
      *
      * The other three reached `guidance` and its opening line, which is the
-     * answer all nine were asking for: "Millrun, at Qi Condensation Layer 1.
+     * answer all nine were asking for: "Old River Village, at Qi Condensation Layer 1.
      * What is live for you here". A player cannot tell a game that answers
      * three of nine from a game that has no such surface at all.
      */
@@ -105,7 +105,7 @@ describe('a question about an act is not the act, whichever layer chose the verb
         // The guard is about mood, not about the verb. Nothing here bans a
         // journey; `AGENTS.md` is explicit that the answer to "may I" is
         // always "yes, and here is what it costs".
-        expect(parseIntent('I leave for Wheatgate').action).toBe('move');
+        expect(parseIntent('I leave for Autumn Gate').action).toBe('move');
     });
 });
 
@@ -115,7 +115,7 @@ describe('a turn that spends the body says what it spent', () => {
      * purse, a bowl of millet on sale for one cash, and seven foraging turns:
      * satiety 100 -> 44 -> 30 -> 16 -> 2 -> 0 -> five turns starving -> dead.
      * Every turn printed two sentences and neither was about hunger. The
-     * killing turn printed "5 days bent over the ground around Millrun. Found
+     * killing turn printed "5 days bent over the ground around Old River Village. Found
      * and pouched: one Nine-Node Calamus" and shipped `alive: false` in the
      * same result; the death was discovered on the NEXT input, as a 409.
      *
@@ -157,7 +157,7 @@ describe('the asker can look at themselves', () => {
      *
      *   > I examine myself / my injuries / my meridians / my body /
      *   >   my spirit root / my foundation / my cultivation
-     *   "You go over Millrun looking for it and it is not the kind of place
+     *   "You go over Old River Village looking for it and it is not the kind of place
      *    that has one."
      *
      * The engine held every one of those facts and printed them well, one

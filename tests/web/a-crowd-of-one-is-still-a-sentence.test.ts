@@ -55,7 +55,7 @@ function pluralSlips(text: string): string[] {
 describe('the company sentence at the counts where plural stops being true', () => {
     it('says one other person is about, in the singular, with no phantom others', () => {
         const company: Company = { named: [], strangers: [{ ordinal: 0 }], total: 1 };
-        const facts = factsForCompany(standingIn('Thirdwall', 0), company);
+        const facts = factsForCompany(standingIn('Three Walls', 0), company);
         const prose = facts.prose;
 
         expect(pluralSlips(prose)).toEqual([]);
@@ -68,7 +68,7 @@ describe('the company sentence at the counts where plural stops being true', () 
         // One stranger, far enough above to be singled out - so the crowd the
         // old sentence described was the empty remainder.
         const company: Company = { named: [], strangers: [{ ordinal: NOTABLE }], total: 1 };
-        const prose = factsForCompany(standingIn('Thirdwall', 0), company).prose;
+        const prose = factsForCompany(standingIn('Three Walls', 0), company).prose;
 
         expect(pluralSlips(prose)).toEqual([]);
         // Standing is still what is said about them; that is the whole point of
@@ -82,7 +82,7 @@ describe('the company sentence at the counts where plural stops being true', () 
             strangers: [{ ordinal: NOTABLE }, { ordinal: 0 }],
             total: 2
         };
-        const prose = factsForCompany(standingIn('Thirdwall', 0), company).prose;
+        const prose = factsForCompany(standingIn('Three Walls', 0), company).prose;
 
         expect(prose).not.toMatch(/\bthe others\b/);
         expect(prose).not.toMatch(/\bare about\b/);
@@ -95,7 +95,7 @@ describe('the company sentence at the counts where plural stops being true', () 
             strangers: [{ ordinal: 0 }, { ordinal: 0 }, { ordinal: 0 }],
             total: 3
         };
-        const prose = factsForCompany(standingIn('Thirdwall', 0), company).prose;
+        const prose = factsForCompany(standingIn('Three Walls', 0), company).prose;
 
         expect(prose).toMatch(/\bare about\b/);
         expect(prose).toMatch(/three others/i);
@@ -103,7 +103,7 @@ describe('the company sentence at the counts where plural stops being true', () 
 
     it('answers an empty square without inventing anybody', () => {
         const company: Company = { named: [], strangers: [], total: 0 };
-        const prose = factsForCompany(standingIn('Thirdwall', 0), company).prose;
+        const prose = factsForCompany(standingIn('Three Walls', 0), company).prose;
 
         expect(prose).toMatch(/nobody is about/i);
         expect(pluralSlips(prose)).toEqual([]);

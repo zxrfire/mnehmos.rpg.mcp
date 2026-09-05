@@ -87,7 +87,7 @@ describe('a run does not open with nobody', () => {
 function village(ordinals: readonly number[]): WorldState {
     const state = createWorld({ seed: 'faces', skipPriorAges: true, regionCount: 0 });
     state.locations.push(makeLocation({
-        id: 'home', name: 'Wheatgate', kind: 'settlement', qiDensity: 0.4
+        id: 'home', name: 'Autumn Gate', kind: 'settlement', qiDensity: 0.4
     }));
     ordinals.forEach((ordinal, i) => {
         let npc = createNpc(state.seed, {
@@ -101,7 +101,7 @@ function village(ordinals: readonly number[]): WorldState {
     return state;
 }
 
-const player = { id: 'pc', name: 'Probe', location: 'Wheatgate', realmOrdinal: 0 } as Cultivator;
+const player = { id: 'pc', name: 'Probe', location: 'Autumn Gate', realmOrdinal: 0 } as Cultivator;
 
 describe('who a childhood actually puts in front of you', () => {
     it('takes the neighbours before the notables', () => {

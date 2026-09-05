@@ -61,7 +61,7 @@ import { CultivationRNG } from '../../src/engine/cultivation/rng';
  * Wherever the player actually is.
  *
  * Read off the row rather than named. Every run used to open in the same
- * village, so "Sweptground" was correct by construction; births are drawn from
+ * village, so "Burnt Earth" was correct by construction; births are drawn from
  * the seed now, and a hardcoded village silently put every one of these
  * witnesses in a different province from the person they were supposed to be
  * standing next to - which reads as a channel that stopped working.
@@ -70,7 +70,7 @@ function playerPlace(db: Database.Database): string {
     const row = db
         .prepare("SELECT location FROM cultivators WHERE kind = 'pc' ORDER BY rowid DESC LIMIT 1")
         .get() as { location: string | null } | undefined;
-    return row?.location ?? 'Sweptground';
+    return row?.location ?? 'Burnt Earth';
 }
 
 /** Put somebody in the same place as the player. */
@@ -264,15 +264,15 @@ describe('the stratum gate', () => {
 
 describe('locality decides how often, never whether', () => {
     it('joins a free-text place to the region it sits in', () => {
-        expect(regionOfPlace('Sweptground')).toBe('region-low-fall');
-        expect(regionOfPlace('Kettle')).toBe('region-quiet-marches');
-        expect(regionOfPlace('  low fall  ')).toBe('region-low-fall');
+        expect(regionOfPlace('Burnt Earth')).toBe('region-low-fall');
+        expect(regionOfPlace('Iron Gate')).toBe('region-quiet-marches');
+        expect(regionOfPlace('  the jade gorge  ')).toBe('region-low-fall');
         expect(regionOfPlace('nowhere in particular')).toBeNull();
         expect(regionOfPlace(null)).toBeNull();
     });
 
     it('reads the same row as local here and regional elsewhere', () => {
-        const kettle = LORE.find(entry => entry.name === 'Kettle')!;
+        const kettle = LORE.find(entry => entry.name === 'Iron Gate')!;
         expect(bandFor(kettle, { regionId: 'region-quiet-marches' })).toBe('local');
         expect(bandFor(kettle, { regionId: 'region-low-fall' })).toBe('regional');
         // An unknown place narrows nothing rather than excluding everything.
@@ -765,7 +765,7 @@ describe('what the player actually reads', () => {
         speaker: null,
         names: [
             { kind: 'sect' as const, id: 'a', name: 'The Third Sill Court' },
-            { kind: 'place' as const, id: 'b', name: 'Kettle' }
+            { kind: 'place' as const, id: 'b', name: 'Iron Gate' }
         ],
         note: 'n',
         confidence: 0.2,
@@ -775,7 +775,7 @@ describe('what the player actually reads', () => {
     it('performs the exchange instead of describing it', () => {
         const prose = hearingProse(overheard);
         expect(prose).toContain('The Third Sill Court');
-        expect(prose).toContain('Kettle');
+        expect(prose).toContain('Iron Gate');
         expect(prose).not.toMatch(/a fragment|it contained/i);
     });
 

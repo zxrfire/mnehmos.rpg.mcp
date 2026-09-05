@@ -47,7 +47,7 @@ async function typed(line: string) {
 
 async function newRun() {
     const created = await handleCultivationManage(
-        { action: 'create_cultivator', name: 'Shen Yue', seed: 'admin-words', location: 'Sweptground' },
+        { action: 'create_cultivator', name: 'Shen Yue', seed: 'admin-words', location: 'Burnt Earth' },
         { sessionId: 'test' }
     );
     const text = created.content[0].text;

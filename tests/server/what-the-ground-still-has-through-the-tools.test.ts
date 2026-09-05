@@ -28,7 +28,7 @@ const admin = async (args: Record<string, unknown>) => (await adminResult(args))
 async function standingAt(ordinal: number, seed: string) {
     process.env.ADMIN_MODE = 'true';
     const created = await cultivation({
-        action: 'create_cultivator', name: 'Forager', seed, location: 'Sweptground'
+        action: 'create_cultivator', name: 'Forager', seed, location: 'Burnt Earth'
     });
     expect(created.error).toBeUndefined();
     if (ordinal > 0) {
@@ -54,12 +54,12 @@ describe('what the ground still has, through the tools', () => {
 
         expect(result.error).toBeUndefined();
         expect(result.ground, 'the tool surface never asked the world').not.toBeNull();
-        expect(result.ground.place).toBe('Sweptground');
+        expect(result.ground.place).toBe('Burnt Earth');
         expect(result.ground.capacity).toBeGreaterThan(0);
         expect(result.ground.remaining).toBeLessThanOrEqual(result.ground.capacity);
         // A player must be able to ask what a place still has and be answered
         // in a sentence rather than by inferring it from a falling yield.
-        expect(result.ground.stillHas).toContain('ground around Sweptground');
+        expect(result.ground.stillHas).toContain('ground around Burnt Earth');
     }, 180_000);
 
     it('is a ceiling on the haul and never a floor under it', async () => {

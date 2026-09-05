@@ -5,7 +5,7 @@
  * TWO MEASUREMENTS, AND THE SECOND ONE IS WHY THE LABEL EXISTS
  * ═════════════════════════════════════════════════════════════════════════
  *
- * Found by playing at The Sounding, with a model reading the sentences:
+ * Found by playing at Dragonvein Rock, with a model reading the sentences:
  *
  *   "any work going?"              -> the MARKET read. Millet at one cash, a
  *                                     ferry crossing, manuals at six and nine.

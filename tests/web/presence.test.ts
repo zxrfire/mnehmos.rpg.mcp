@@ -1,12 +1,12 @@
 /**
  * The people who are actually standing there.
  *
- * Found by playing: nineteen souls at Sweptground, and the player could not see
+ * Found by playing: nineteen souls at Burnt Earth, and the player could not see
  * one of them. `/api/admin/roster` reported them with real locations while
  * `interact` found nobody present and every social path dead-ended.
  *
  * The cause was a key mismatch, not a missing feature. A cultivator's
- * `location` is free text by design - `"Sweptground"` - and a world NPC's is a
+ * `location` is free text by design - `"Burnt Earth"` - and a world NPC's is a
  * location id - `loc-region-low-fall-sweptground`. Co-location compared the two
  * and never matched, so the world's population was invisible to the half of the
  * game that talks to people.
@@ -45,12 +45,12 @@ describe('the join between a place name and a world location', () => {
         await game.newRun('Ke Yan');
         const world = (await game.loadWorld())!;
 
-        const named = world.locations.find(l => l.name === 'Sweptground');
-        expect(named, 'the seeded world should contain Sweptground').toBeDefined();
+        const named = world.locations.find(l => l.name === 'Burnt Earth');
+        expect(named, 'the seeded world should contain Burnt Earth').toBeDefined();
 
         // The exact comparison that used to fail.
-        expect(worldLocationFor(world, 'Sweptground')?.id).toBe(named!.id);
-        expect(named!.id).not.toBe('Sweptground');
+        expect(worldLocationFor(world, 'Burnt Earth')?.id).toBe(named!.id);
+        expect(named!.id).not.toBe('Burnt Earth');
     }, 60_000);
 
     it('tolerates the article and the keyed form', async () => {

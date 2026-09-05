@@ -333,7 +333,7 @@ describe('played: writing one out and selling it', () => {
         });
         // Nowhere anybody stands. `move` refuses a name that is not a place,
         // so the row is set directly - a precondition, not an outcome.
-        repos.cultivators.update(id, { location: 'The Dead Verge' });
+        repos.cultivators.update(id, { location: 'Nine Hundred Paces' });
 
         const before = repos.cultivators.getById(id)!.spiritStones;
         const said = await game.act('I sell a copy of the Void-Piercing Sword Domain');

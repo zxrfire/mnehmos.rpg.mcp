@@ -31,7 +31,7 @@ import { drawBirth } from '../../src/engine/birth/birth';
  * Where the default harness seed actually births somebody.
  *
  * Derived rather than named. Every run used to open in the same village, so
- * writing "Sweptground" here was correct by construction; with birth origins
+ * writing "Burnt Earth" here was correct by construction; with birth origins
  * drawn from the seed it would be correct by luck, and luck is what this file
  * exists to stop relying on.
  */
@@ -307,7 +307,7 @@ describe('being in the room counts', () => {
     it('does not resolve somebody standing somewhere else', async () => {
         const { db, game } = makeGame();
         await game.newRun('Villager');
-        placeStranger(db, 'The Low Fall');
+        placeStranger(db, 'The Jade Gorge');
 
         const result = await game.act('I speak with The Stranger.');
         expect(refusedCall(result)).not.toBeNull();
@@ -327,7 +327,7 @@ describe('being in the room counts', () => {
         // it is a step rather than a duplicate.
         expect(gate.stageOf(cultivator.id, 'place', NEIGHBOUR_PLACE)).toBe('encountered');
 
-        const place = gate.awareness(cultivator.id, 'place').find(row => row.name === 'Scarwater');
+        const place = gate.awareness(cultivator.id, 'place').find(row => row.name === 'Clear River Ford');
         expect(place).toMatchObject({ sourceKind: 'witnessed', stance: 'knows' });
 
         // And the older, weaker record is still on file. Nothing in this layer
@@ -348,10 +348,17 @@ describe('the prompt never carries the answer key', () => {
             cultivator,
             run: game.state().run as never,
             ambient: 'thin',
-            awareness: gate.awareness(cultivator.id)
+            awareness: gate.awareness(cultivator.id),
+            // The square, through the same gate. A stranger in it must reach
+            // the prompt as a count and never as a face.
+            present: game.company(cultivator)
         });
 
         expect(summary).toContain('HAS HEARD OF');
+        expect(summary).toContain('STANDING HERE');
+        for (const stranger of game.company(cultivator).strangers) {
+            expect(stranger).not.toHaveProperty('name');
+        }
         expect(summary).toContain(aHouseTheyKnow(gate, cultivator.id).name);
         for (const sect of SECTS) {
             if (isLocal(sect.id)) continue;

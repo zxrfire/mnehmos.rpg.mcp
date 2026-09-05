@@ -3,7 +3,7 @@
  *
  * The defect: `whoHoldsTheGround` had two callers in `src/`, both in the NPC
  * simulation, so the fact that changes a player's odds was one the played game
- * would not say. Measured on a fresh run at the Meet on The Blown Ground, five
+ * would not say. Measured on a fresh run at Wind Market on The Burial Sands, five
  * ways of asking gave five wrong answers - an NPC resolve failure, the
  * province's realm ceiling twice, the player's own sect standing, and unclear.
  *
@@ -26,9 +26,9 @@ import { whoAnswersForThisGround } from '../../src/web/ground-holder-lines';
 import { TOLD_THE_NAME_AT } from '../../src/engine/world/ruin-gatekeepers';
 import { makeLocation } from '../../src/engine/world/locations';
 
-const LOW_FALL = makeLocation({ id: 'r', name: 'The Low Fall', kind: 'region' });
+const LOW_FALL = makeLocation({ id: 'r', name: 'The Jade Gorge', kind: 'region' });
 const DROWNED = makeLocation({
-    id: 'sea', name: 'The Drowned Reach', kind: 'region', data: { politics: 'no_authority' }
+    id: 'sea', name: 'The Drowned Sea', kind: 'region', data: { politics: 'no_authority' }
 });
 
 /** The four grounds, read through the real chain rather than fabricated. */
@@ -42,11 +42,11 @@ const GROUNDS = {
     ],
     no_authority: [
         DROWNED,
-        makeLocation({ id: 'g', name: 'Bellhead', kind: 'settlement', parentId: 'sea' })
+        makeLocation({ id: 'g', name: 'Bronze Bell Cliff', kind: 'settlement', parentId: 'sea' })
     ],
     no_holder_of_record: [
         LOW_FALL,
-        makeLocation({ id: 'g', name: 'Scarwater', kind: 'settlement', parentId: 'r' })
+        makeLocation({ id: 'g', name: 'Clear River Ford', kind: 'settlement', parentId: 'r' })
     ],
     unrecorded: [
         makeLocation({ id: 'r', name: 'Somewhere', kind: 'region' }),
@@ -109,7 +109,7 @@ describe('who answers for this ground', () => {
 /**
  * And the sentence a person types reaches it.
  *
- * Measured on a fresh run standing on The Blown Ground, before this: five
+ * Measured on a fresh run standing on The Burial Sands, before this: five
  * phrasings, five wrong answers. Two of them are the interesting ones and both
  * were ORDERING rather than a missing pattern - "I ask ..." was swallowed by
  * the asking branch, which requires a person and was finding one inside "who

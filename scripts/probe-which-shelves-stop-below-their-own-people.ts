@@ -83,7 +83,7 @@ for (const [id, n] of [...perHouse.entries()].sort((a, b) => b[1] - a[1])) {
 // short by one or two rungs is that sentence, not a hole.
 //
 // A `peakOrdinal` can also be a single historical figure rather than a
-// pipeline. The Sweptground Temple reads short by 21 because an abbot crossed
+// pipeline. The Burnt Earth Temple reads short by 21 because an abbot crossed
 // from it two and a half thousand years ago; the shelf is not failing to
 // reproduce him.
 //

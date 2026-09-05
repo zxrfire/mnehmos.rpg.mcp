@@ -75,7 +75,7 @@ Three columns below carry the failure modes this repository keeps hitting:
 <!-- BEGIN GENERATED: summary -->
 
 **56 verbs.** 17 of them take nothing from the player,
-27 spend in-world time and can therefore kill, and
+26 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
 A verb the deterministic parser cannot reach is playable only where a provider is
@@ -119,7 +119,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`wait`](#wait) | `days` | time | yes | - | - |
 | [`work`](#work) | `days` `target` | time | yes | - | - |
 | [`market`](#market) | - | nothing | yes | yes | - |
-| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [14](#sect) |
+| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [16](#sect) |
 | [`site`](#site) | `target` `intent` | time | yes | - | [4](#site) |
 | [`legacy`](#legacy) | `intent` `target` `days` | time | yes | - | [5](#legacy) |
 | [`petition`](#petition) | `target` `intent` `topic` | nothing | yes | yes | [3](#petition) |
@@ -440,7 +440,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 Takes `intent`, `target`, `topic`.
 
-Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`.
+Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`.
 
 ### `site`
 

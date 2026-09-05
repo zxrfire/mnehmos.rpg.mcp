@@ -1,3 +1,37 @@
+> # 天道无情
+>
+> The Way of Heaven is without feeling.
+>
+> Heaven does not reward a good act or punish a bad one. Both are acts. Each has
+> effects, and the effects follow from what was done, not from what it deserved.
+
+A rescue and a killing are the same kind of event here. Each is written down, each is
+held by whoever holds it, each is read by whatever reads it. The engine computes what
+follows. It does not grade.
+
+The world already runs this way:
+
+- A grudge is an account, not a verdict. It records who did what to whom, and what it
+  would cost to settle.
+- A house's response is read off its alignment and its interest. A righteous house and a
+  demonic one both answer; they answer differently, and neither answer is the world's
+  opinion of the act.
+- Reputation is what people know, not what is true about somebody's character.
+- Talent is rolled once. How somebody plays does not change it.
+- A rung buys advantage, not exemption.
+- Death is permanent for the virtuous and the wicked alike.
+- The same seed rules the same way with a model attached and without.
+
+In the code: anything that decides what somebody deserves is a defect. That includes a
+fallback that hands out an answer, a narrator that settles an outcome, a check that is
+always true, and any figure moved because the attempt was admirable or the sentence was
+well put.
+
+This is not an instruction to make the game harsh. Harshness is also a view. The engine
+does not have one.
+
+---
+
 # AGENTS.md - Working Agreement for Coding Agents
 
 The single guide for any AI coding agent (Claude Code, Codex, Cursor, Aider, …)
@@ -117,6 +151,63 @@ you want is an item.
 
 ---
 
+## Read the genre before you read the sentence
+
+Xianxia has its own conventions, and they are not the conventions of contemporary
+Western fantasy. A reader who applies the second set to the first gets the material
+wrong in a specific and predictable direction: it treats the genre's ordinary
+furniture as atrocity, and softens it.
+
+What is routine here: a tomb is found and everybody runs in. The dead are looted and
+their remains are worth something. A body is fought over and claimed. A cultivator is
+made to swallow something, made to hand over what they have, made to sit an art they
+did not choose, stripped of the core that is the whole of what they are. Sects go to
+war over a cave. None of that is a transgression the story pauses on. It is Tuesday,
+and the genre's own protagonists do most of it.
+
+This is not an argument for cruelty and it is not a licence to write gratuitously. It
+is a statement about what the setting IS, and it has two concrete consequences for
+code in this repository.
+
+**A reader may not soften an act into a milder one.** `parseIntent` and the phase-1
+classifier route what was said. "I take his purse" is a theft, "I force her to marry
+me" is a coercion, and reading either as something politer is not caution - it is the
+engine never learning what was tried, and the account that should have opened against
+the player never opening. The phase-1 prompt names this as the one failure that cannot
+be recovered downstream, and it is the reason. Route it, and let the engine be the
+thing that says no.
+
+**The narrator may not editorialise.** Prose that flinches at an ordinary act of the
+setting is telling the player the world disapproves, and the world has no opinion.
+That is the epigraph at the top of this file, applied to a sentence: 天道无情. A
+rescue and a killing are the same kind of event, each has effects, and the effects
+follow from what was done rather than from what it deserved.
+
+The people, on the other hand, are not heaven. They beg, resent, are grateful, and
+are afraid, and a house that catches you answers - as `what-a-house-does-when-it-
+catches-you.ts` already does. Consequence is the whole of the world's response, and
+it is not the same thing as judgement.
+
+**Where this bites in practice.** Two measurements, both from the same afternoon:
+
+- `furnace-technique.ts` is a complete pipeline - the act, the ledger, what the house
+  does when it catches you, the conception handed to `birth.ts` - and it had no caller
+  anywhere in `src/web/`. Its wholesome counterpart, `what-a-dao-partner-is-for.ts`,
+  had just been wired. One mechanic, two signs, and only the comfortable one was
+  reachable by a sentence.
+- "I force her to marry me" reached `propose` at every tier. Not because a reader
+  flinched: `COERCION_INTENT_PATTERNS` has rows for swallowing, handing over and
+  submitting, and no row for marriage, so `propose` was the only marriage-shaped verb
+  in the closed set. **A vocabulary that can only say the polite version of an act has
+  taken a side**, whatever the code around it does.
+
+So when adding a mechanic, ask the question this repo already asks - is it reachable
+by a sentence somebody would type - and then ask it again about the version of that
+mechanic somebody would use to get ahead at another person's expense. If only one of
+the two is reachable, the engine has an opinion.
+
+---
+
 ## Measuring, and being honest about what you measured
 
 Most of the setting's load-bearing claims are now numbers produced by the engine rather
@@ -209,31 +300,38 @@ NPC simulation follows the same economy:
 ## Layout
 
 ```
-src/
-├── engine/               # README.md - implementation philosophy, the five pillars
-│   ├── cultivation/      # README.md - THE CORE. Realm ladder, spirit roots,
-│   │                     #   breakthrough, the Price of Advancement, qi deviation,
-│   │                     #   injuries, existence states, survival/death, time-skip.
-│   │                     #   Pure functions. No DB, no I/O, no MCP.
-│   ├── world/            # README.md - places, capability predicates, opportunity
-│   │                     #   windows, history, lineage, possessions, time
-│   ├── social/           # README.md - relationships, grudges, knowledge and
-│   │                     #   belief, secrets. Storage, never simulation
-│   └── {combat,magic,spatial,worldgen,strategy,perception}/  # Retained substrate
-├── schema/cultivation.ts # Zod contracts + survival constants (single source of truth
-│                         #   for balance numbers - never hardcode them elsewhere)
-├── data/cultivation/     # README.md - content catalogs, grade bands, provenance
-├── storage/              # README.md - migrations, idempotent ALTER, repo conventions
-├── web/                  # README.md - the narrator's three-phase split and the
-│                         #   authority boundary in code
-├── server/consolidated/  # Action-routed MCP tool handlers (index.ts = registry)
-├── agent/provider/       # README.md - provider abstraction and config precedence
-├── agent/{prompt,runtime,audit}/  # NPC agent composition, invocation, replay
-└── math/                 # Dice, algebra, physics
-
-docs/world/               # README.md - the setting bible, split by topic and tiered
-tests/                    # Mirrors src/
+src/                      # README.md - the index. Every folder below has one too.
+├── web/                  # the front door: sentence -> verb -> engine -> prose.
+│                         #   The authority rule as type signatures
+├── engine/               # what is true and what follows
+│   ├── cultivation/      # THE CORE. Realm ladder, roots, breakthrough, the Price of
+│   │                     #   Advancement, deviation, injuries, survival, time-skip.
+│   │                     #   Pure functions. No DB, no I/O, no MCP
+│   ├── world/            # places, capability predicates, opportunity windows,
+│   │                     #   history, lineage, possessions, time
+│   ├── social/           # relationships, grudges, knowledge and belief, secrets
+│   ├── social-leverage/  # what moves somebody, what a deed leaves, what a house does
+│   ├── encounters/       # what the world puts in front of somebody
+│   ├── birth/, household/  # who is born, and what a match costs
+│   └── {spatial,worldgen,strategy,perception,dsl}/  # retained substrate
+├── data/cultivation/     # the catalogs: sects, people, places, techniques, beasts
+│   └── regions/          # one file per region of the map
+├── schema/               # the shapes that cross a boundary. Zod, and the balance
+│                         #   constants - never hardcode those elsewhere
+├── storage/              # SQLite and migrations
+│   └── repos/            # one class per table. Nothing above this writes SQL
+├── server/               # the MCP process
+│   ├── consolidated/     # the tool surface. One file per tool, action-routed
+│   ├── state/            # the two server-lifetime singletons. The WORLD seed lives here
+│   └── transport/        # stdio and HTTP
+├── agent/                # provider abstraction, the runtime loop, prompt slices
+└── math/, utils/, services/   # helpers with no game knowledge in them
 ```
+
+**Every folder with code in it has a README**, and its file table is generated from each
+file's own opening line by `scripts/folder-index.ts`, so the index cannot drift from the
+code. `tests/docs/every-link-resolves.test.ts` checks that every relative link in `docs/`
+and in a `src/` README still resolves - 1,932 of them.
 
 Each `README.md` above is the contract for the directory it sits in. Read it before
 editing that directory; update it in the same commit if you change the contract.
@@ -301,7 +399,28 @@ Raise it only when the machine is yours alone.
   matching and guiding errors. Follow `src/server/consolidated/character-manage.ts` and
   register in `src/server/consolidated/index.ts`.
 
-### Writing style in docs and comments
+### Comments earn their keep
+
+> *"I would have made it shorter, but I did not have the time."*
+> - Pascal
+
+**Code should be self-documenting.** Name things so the code says what it does, and reserve
+comments for what the code cannot say: an exception, a measurement, a defect the shape was
+chosen against, an ordering that is load-bearing, a thing the next person will otherwise
+"tidy" and break.
+
+If a comment restates the code beneath it, delete the comment. If it explains what a good
+name would have explained, fix the name instead.
+
+**This repository is currently the counter-example.** Measured across `src/`: **129,488
+comment lines against 187,797 code lines - 0.69, or 41% of the file by line.** One file sits
+at 7.46 (1,619 comment lines over 217 of code). Agents match the code they read far more
+strongly than the rule they are told, so every long header teaches the next author to write
+one. Bringing a file down when you are already editing it is real work, not tidying.
+
+What this does NOT mean: stripping the measurements. The headers that record *what was
+played, what broke, and what the number was* are the most valuable prose here and they are
+why this engine is not full of re-introduced defects. Keep the finding; cut the retelling.
 
 Use plain **hyphens** (`-`). Do not use em-dashes or en-dashes anywhere in this repo -
 not in Markdown, not in code comments, not in commit messages, not in player-facing
@@ -2449,6 +2568,67 @@ function can return either, `== null` covers both and says so on purpose.
 **And a two-part condition wants both parts exercised.** If one half being permanently true
 would still let the tests pass, the tests are pinning the other half only - which is exactly
 what happened here.
+
+### A worktree lives under `.claude/`, never beside the repository
+
+**A control arm goes in `.claude/worktrees/<name>`, and comes out when you are done.**
+Not `../rpg-wt-control`, not `../_wt-people`, not anywhere else on the parent directory.
+
+Two of those were found sitting as siblings of the repository holding 46 MB between them,
+weeks stale, and neither was a worktree at all - `git worktree list` knew about
+neither, so `git worktree prune` could never have reclaimed them. They were plain copies
+somebody made for a two-arm measurement and walked away from.
+
+**Why it has to be inside.** A sibling directory is invisible from every tool that knows
+about this project: it is not in `git status`, not in `git worktree list`, not in
+`.gitignore`, and not in any sweep anybody would think to run. The owner found these by
+looking at the parent folder with their own eyes, which is the only way they could have
+been found. Under `.claude/` they are one `ls` from the thing that made them.
+
+```bash
+git worktree add .claude/worktrees/<name> <commit>     # registered, prunable
+# ... measure ...
+git worktree remove .claude/worktrees/<name>           # or prune if it is gone
+```
+
+**Use `git worktree`, not `cp -r`.** A registered worktree shares the object store, so it
+costs almost nothing and `git worktree list` can find it. A copy costs the whole tree,
+holds a `node_modules`, and is indistinguishable from a project.
+
+**And it is a temporary, not an output.** Whatever you measured belongs in your report as
+numbers. A directory left behind so somebody can go and look at the evidence later is a
+directory nobody will ever look at, and it will still be there in a month.
+
+### A blob you commit is not a file you changed
+
+`git hash-object -w` plus `git update-index --cacheinfo` is how you commit HEAD-plus-your-hunk
+out of a contended file without carrying somebody else's work. It writes an object and an
+index entry. **It does not touch the working tree.**
+
+So the commit lands, the push succeeds, and the file on disk still does not have your
+change in it. Nobody's editor shows it. The owner opened the repository in PyCharm,
+looked at the top of `AGENTS.md`, and the thing that had just been committed and pushed
+was not there.
+
+It is worse than a no-op, because the working tree now reads as a REVERT of what you
+committed: your paths show as modified, and the modification is the absence of your own
+edit. The next bare commit from that tree removes it, and the diff will look deliberate.
+
+**Do both, in this order:**
+
+```bash
+# 1. edit the working tree normally, so disk is right and the editor shows it
+# 2. build HEAD-plus-your-hunk separately, and commit THAT
+GIT_INDEX_FILE=$IDX git read-tree HEAD
+h=$(git hash-object -w "$SCRATCH/yourfile")
+GIT_INDEX_FILE=$IDX git update-index --cacheinfo 100644,$h,path/to/yourfile
+GIT_INDEX_FILE=$IDX git commit
+git reset -- path/to/yourfile
+```
+
+**Check it afterwards, because the failure is silent.** `git show HEAD:<path> | head` against
+`head <path>` is the whole test: if they disagree about your change, the working tree is
+the one that is wrong.
 
 ### The scratchpad is shared between agents in a session
 

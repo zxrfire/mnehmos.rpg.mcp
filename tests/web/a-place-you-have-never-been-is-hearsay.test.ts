@@ -41,10 +41,10 @@ function place(over: {
     hereNow?: boolean;
 }) {
     return {
-        name: over.name ?? 'Kettle',
+        name: over.name ?? 'Iron Gate',
         kind: 'market_town',
         ambient: 'thin' as const,
-        regionName: 'The Quiet Marches',
+        regionName: 'The Silent Cliffs',
         travelDays: 4,
         localCeilingOrdinal: 12,
         hereNow: over.hereNow ?? false,
@@ -66,8 +66,8 @@ function place(over: {
 function read(rows: ReturnType<typeof place>[]) {
     const out = whereCouldTheyGo({
         ordinal: 0,
-        placeName: 'Hollowmarket',
-        regionName: 'The Quiet Marches',
+        placeName: 'Willow Village',
+        regionName: 'The Silent Cliffs',
         localCeilingOrdinal: 12,
         reachable: rows,
         unplaceable: 0
@@ -110,7 +110,7 @@ describe('what the travel list may say about a place nobody has been to', () => 
     });
 
     it('still says when nobody draws on it, which is the row worth travelling for', () => {
-        const { prose } = read([place({ name: 'the Low Fall vein', occupants: 0, supportedDraw: 30 })]);
+        const { prose } = read([place({ name: 'the Jade Gorge vein', occupants: 0, supportedDraw: 30 })]);
         expect(prose).toMatch(/[Nn]obody is said to draw on it/);
     });
 
@@ -122,7 +122,7 @@ describe('what the travel list may say about a place nobody has been to', () => 
      */
     it('says empty ground is empty in the engine channel too', () => {
         const { prose, engineRows } = read([
-            place({ name: 'the Low Fall vein', occupants: 0, supportedDraw: 47 })
+            place({ name: 'the Jade Gorge vein', occupants: 0, supportedDraw: 47 })
         ]);
         expect(prose).toMatch(/[Nn]obody is said to draw on it/);
         expect(engineRows).toContain('nothing said to be drawing on it');
@@ -151,8 +151,8 @@ describe('what the travel list may say about a place nobody has been to', () => 
      */
     it('reads as report rather than as measurement', () => {
         const { prose } = read([
-            place({ name: 'Kettle', occupants: 9, supportedDraw: 7 }),
-            place({ name: 'Sixmile', occupants: 5, supportedDraw: 7 })
+            place({ name: 'Iron Gate', occupants: 9, supportedDraw: 7 }),
+            place({ name: 'Six Li', occupants: 5, supportedDraw: 7 })
         ]);
         expect(prose).toMatch(/spoken of|said to|nobody speaks of/);
     });

@@ -52,7 +52,7 @@ const DEFLECTIONS = [
 /** What a real answer to each question has to mention. */
 const RELEVANT = {
     'WHY AM I STUCK': /ceiling|carries you|no further|manual|technique|cap|as far as|stopped|exhaust/i,
-    'WHERE CAN I GO': /places?:|travel|days|road|region|vein|Sweptground|Low Fall|Marches|nearby/i,
+    'WHERE CAN I GO': /places?:|travel|days|road|region|vein|Burnt Earth|Jade Gorge|Silent Cliffs|nearby/i,
     'WHO CAN TEACH ME': /teach|master|guide|elder|instruct|stands at .* and could|above you/i,
     'WHO WOULD TAKE ME': /sect|admits|accept|join|apply|serves no/i
 };

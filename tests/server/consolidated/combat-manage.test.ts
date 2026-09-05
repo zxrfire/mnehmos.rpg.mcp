@@ -43,7 +43,7 @@ function realmStart(key: string): number {
 }
 
 async function newCultivator(name = 'Shen Yue', seed = 'combat-seed') {
-    const created = await cultivation({ action: 'create_cultivator', name, seed, location: 'Sweptground' });
+    const created = await cultivation({ action: 'create_cultivator', name, seed, location: 'Burnt Earth' });
     expect(created.error).toBeUndefined();
     return created;
 }

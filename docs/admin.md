@@ -477,7 +477,7 @@ Fourteen, and the three `READ` ones - `help`, `roster`, `audit_log` - write noth
 mutation and returns what the engine actually did.
 
 **Arguments are `key=value`**, and a value runs to the **next key**, not to the next space,
-so a multi-word name needs no quoting: `set_location location=The Dead Verge` works, and so
+so a multi-word name needs no quoting: `set_location location=The Jade Face` works, and so
 does the quoted form.
 
 **A rung may be named rather than numbered.** Every `ordinal` argument accepts a number, a

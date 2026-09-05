@@ -96,7 +96,7 @@ function cache(overrides: Partial<CacheRecord> = {}): CacheRecord {
         kind: 'cache',
         id: 'cache::run-a::1',
         buriedByRunId: 'run-a',
-        place: 'Kettle Ford',
+        place: 'Iron Gate Ford',
         ground: 'waystation',
         burial: { ground: 'waystation', daysSpent: 7, burierOrdinal: 6, anchored: false, watchers: 0 },
         buriedOnWorldDay: 1_000,
@@ -385,14 +385,14 @@ describe('a thing left behind outlives the life that left it', () => {
     it('a cache is readable with the run that buried it gone from the runs table', () => {
         const db = makeDb();
         const ledger = new LegacyLedger(db);
-        ledger.write(cache(), 'A cache at Kettle Ford', 1_000);
+        ledger.write(cache(), 'A cache at Iron Gate Ford', 1_000);
 
         // There is no run row and there never has to be: `cultivation_sites`
         // carries no foreign key on run_id, on purpose.
         expect(db.prepare('SELECT COUNT(*) AS n FROM runs').get()).toEqual({ n: 0 });
 
         // And the read is not scoped to a run, which is the whole point.
-        const found = ledger.cachesAt('the Kettle Ford');
+        const found = ledger.cachesAt('the Iron Gate Ford');
         expect(found.length).toBe(1);
         expect(found[0].buriedByRunId).toBe('run-a');
     });
@@ -508,14 +508,14 @@ describe('a burned vault is a hole in the ground and not a third kind of thing',
         for (let i = 0; i < 200 && converted === null; i += 1) {
             const reading = readDeposit(record, `burn-${i}`, 1_000 + 4_000 * DAYS_PER_YEAR);
             if (!reading?.fate || reading.fate.fate !== 'destroyed_vault_intact') continue;
-            converted = vaultAsACache(record, reading.fate, 'Low Fall', 'cache::from-deposit::1');
+            converted = vaultAsACache(record, reading.fate, 'Green Water City', 'cache::from-deposit::1');
         }
         expect(converted, 'no seed in 200 produced a burned vault').not.toBeNull();
         expect(converted!.kind).toBe('cache');
         expect(converted!.goods).toEqual(record.goods);
         expect(converted!.fromDepositId).toBe(record.id);
         // And it is now ground, so the spatial machinery owns it from here.
-        expect(converted!.ground).toBe(groundOf('Low Fall'));
+        expect(converted!.ground).toBe(groundOf('Green Water City'));
     });
 
     it('every other fate leaves nothing to dig', () => {
@@ -523,7 +523,7 @@ describe('a burned vault is a hole in the ground and not a third kind of thing',
         for (let i = 0; i < 60; i += 1) {
             const reading = readDeposit(record, `no-burn-${i}`, 1_000 + 4_000 * DAYS_PER_YEAR);
             if (!reading?.fate || reading.fate.fate === 'destroyed_vault_intact') continue;
-            expect(vaultAsACache(record, reading.fate, 'Low Fall', 'x')).toBeNull();
+            expect(vaultAsACache(record, reading.fate, 'Green Water City', 'x')).toBeNull();
         }
     });
 });
@@ -608,7 +608,7 @@ describe('one life puts it aside and another life collects it', () => {
             ledger,
             mover,
             cultivator: { id: 'a', spiritStones: 5_000, realmOrdinal: 24, name: 'A' } as never,
-            here: 'Kettle Ford',
+            here: 'Iron Gate Ford',
             worldSeed: seed,
             worldDay: 100_000,
             runId: 'run-a',
@@ -755,7 +755,7 @@ describe('one life puts it aside and another life collects it', () => {
         h.purses.set('a', 500);
         const buried = handleLegacy(h.deps({ watchers: 2 }), 'bury', undefined, undefined, 7);
         expect(buried.facts.lines.join(' ')).toContain('2 people were');
-        const [row] = h.ledger.cachesAt('Kettle Ford') as CacheRecord[];
+        const [row] = h.ledger.cachesAt('Iron Gate Ford') as CacheRecord[];
         expect(row.burial.watchers).toBe(2);
     });
 });
@@ -807,7 +807,7 @@ describe('what a player types to leave something behind', () => {
         for (const sentence of [
             'I leave the sect',
             'I leave the Azure Cloud Pavilion',
-            'I leave for the Kettle Ford',
+            'I leave for the Iron Gate Ford',
             'I dig for roots along the bank',
             'I claim the reward',
             'I collect my stipend',

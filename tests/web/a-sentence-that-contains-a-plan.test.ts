@@ -206,7 +206,7 @@ describe('a turn spends at most one costly act', () => {
 /**
  * FOUND BY PLAYING, and it fired BOTH mechanisms at once. Typed:
  *
- *   > I go to Ninewatch and then sit down and cultivate for a year
+ *   > I go to Cloud Gate and then sit down and cultivate for a year
  *
  * The turn asked which came first AND the single-verb clause reporter said
  * "Ran move. Not run: sit down" - two rulings, contradicting each other, on one
@@ -244,7 +244,7 @@ describe('where the player said the order, the turn takes it and asks nothing', 
 /**
  * THE COORDINATOR'S PLAYED TURN, PINNED.
  *
- *   > I rob Cao Antao and then run away to Ninewatch
+ *   > I rob Cao Antao and then run away to Cloud Gate
  *
  * The theft landed - `taken`, a reprisal, a serious wound - and lifted nothing,
  * because the man had nothing. The journey was never this turn's: the player
@@ -259,12 +259,12 @@ describe('a step that landed is not reported as a step that failed', () => {
         const { game } = await playing([
             STEPS(
                 { action: 'interact', target: 'Bai Zhenru', intent: 'steal', said: 'rob Bai Zhenru' },
-                { action: 'move', target: 'Ninewatch', said: 'run away to Ninewatch' }
+                { action: 'move', target: 'Cloud Gate', said: 'run away to Cloud Gate' }
             )
         ]);
         await game.newRun('Probe');
 
-        const turn = await game.act('I rob Bai Zhenru and then run away to Ninewatch');
+        const turn = await game.act('I rob Bai Zhenru and then run away to Cloud Gate');
 
         // The theft is the turn's one costly act; the journey was sequenced for
         // later by the player's own "and then" and is named as such.
@@ -422,7 +422,7 @@ describe('a clause that says why says when', () => {
     // The other half of the rule, and the reason bare `to` is not a purpose
     // word: an infinitive of motion is not a plan with two halves.
     it('leaves a sentence with no order between its halves alone', () => {
-        expect(theSentenceSaysItsOwnOrder('I go to Ninewatch')).toBe(false);
+        expect(theSentenceSaysItsOwnOrder('I go to Cloud Gate')).toBe(false);
         expect(theSentenceSaysItsOwnOrder('I sit for a year and take work for a season')).toBe(false);
         expect(theSentenceSaysItsOwnOrder('I talk to the elder')).toBe(false);
     });
@@ -560,7 +560,7 @@ describe('the sentence composes wherever the reader’s split went wrong', () =>
     const SAID = "I take Cao Antao's purse, press it into Shen Liefeng's hand, and walk away";
     const THEFT = { action: 'interact', target: 'Cao Antao', intent: 'steal' };
     const GIVE = { action: 'give', target: 'Shen Liefeng' };
-    const WALK = { action: 'move', target: 'Sixmile' };
+    const WALK = { action: 'move', target: 'Six Li' };
 
     async function planOf(steps: unknown[]) {
         const provider = new ScriptedProvider({

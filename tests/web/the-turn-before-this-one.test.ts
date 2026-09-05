@@ -291,7 +291,7 @@ describe('the vocabulary, which is closed and small', () => {
         for (const said of [
             'I keep going north',
             'I keep my head down and work the water for a year',
-            'I carry on down the road to Ninewatch',
+            'I carry on down the road to Cloud Gate',
             'I stay at the inn',
             'I go on foot',
             'I attack him again'

@@ -4,7 +4,7 @@
  * Reported from play, with the target standing in the square:
  *
  *     > ADMIN encounter claire ordinal=29
- *     ADMIN · ENCOUNTER SPAWNED   Opponent: claire   Standing at: Ninewatch
+ *     ADMIN · ENCOUNTER SPAWNED   Opponent: claire   Standing at: Cloud Gate
  *     > I coerce claire to hand over her stuff, all of it
  *     Nobody in particular.
  *     Unresolved party: no subject named for a confrontation.

@@ -74,7 +74,7 @@ describe('somewhere quiet to sit', () => {
      */
     it('leaves the neighbouring verbs alone', () => {
         expect(parseIntent('I travel to Nine Peaks').action).toBe('move');
-        expect(parseIntent('I go into the mountains to Scarwater').action).toBe('move');
+        expect(parseIntent('I go into the mountains to Clear River Ford').action).toBe('move');
         expect(parseIntent('I look for herbs').action).toBe('gather');
         expect(parseIntent('I pick the mushrooms by the quiet stream').action).toBe('gather');
     });

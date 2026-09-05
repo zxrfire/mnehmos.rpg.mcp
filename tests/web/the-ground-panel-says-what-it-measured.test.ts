@@ -83,7 +83,7 @@ function panelText(ground: GroundLike | null): string {
 }
 
 const MASKED: GroundLike = {
-    placeName: 'Thirdwall',
+    placeName: 'Three Walls',
     supported: null,
     drawing: null,
     heads: 10,
@@ -93,13 +93,13 @@ const MASKED: GroundLike = {
 };
 
 const READABLE: GroundLike = {
-    placeName: 'Sweptground',
+    placeName: 'Burnt Earth',
     supported: 13,
     drawing: 58,
     heads: 52,
     share: 0.22413793103448276,
     barren: false,
-    line: 'Sweptground comfortably carries a draw of 13, and 52 are drawing on it. '
+    line: 'Burnt Earth comfortably carries a draw of 13, and 52 are drawing on it. '
         + 'Qi drawn by one is not available to another, so cultivation here runs at 22% '
         + 'of what this ground would give somebody sitting on it alone.'
 };
@@ -135,13 +135,13 @@ describe('the ground panel on the cultivator sheet', () => {
 
     it('says nothing about a share when nothing is being shared thin', () => {
         const text = panelText({
-            placeName: 'Sixmile',
+            placeName: 'Six Li',
             supported: 30,
             drawing: 5,
             heads: 5,
             share: 1,
             barren: false,
-            line: 'Sixmile comfortably carries a draw of 30, and 5 are drawing on it. '
+            line: 'Six Li comfortably carries a draw of 30, and 5 are drawing on it. '
                 + 'Nothing here is being shared thin.'
         });
         expect(text).not.toMatch(/\d+\s*%/);
@@ -165,7 +165,7 @@ describe('losing the person who could read the vein', () => {
         const before = panelText({ ...READABLE, heads: 52, share: 0.2241379310344827 });
         const after = panelText({
             ...MASKED,
-            placeName: 'Sweptground',
+            placeName: 'Burnt Earth',
             heads: 49,
             line: 'What gets to you here comes grudgingly, and has to be worked for.'
         });

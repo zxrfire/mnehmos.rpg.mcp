@@ -1,9 +1,9 @@
 /**
  * "Where should I start" is a direction question wearing the word `where`.
  *
- * Played by a fresh nobody in Watering: **"I've got thirty stones and no idea
+ * Played by a fresh nobody in Sweet Spring Island: **"I've got thirty stones and no idea
  * what I'm doing. Where should I start?"** came back as a gazetteer - nine
- * places Watering could be left for, each with its qi rate. The player was not
+ * places Sweet Spring Island could be left for, each with its qi rate. The player was not
  * asking for a destination.
  *
  * `ASKING_WHAT_IS_POSSIBLE` is the rule that already existed for this family,

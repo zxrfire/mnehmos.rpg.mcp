@@ -2,7 +2,7 @@
  * The most basic question in any roleplaying game, and the game could not
  * answer it.
  *
- * Played at The Sounding with a model narrating, on a freshly built `dist/`:
+ * Played at Dragonvein Rock with a model narrating, on a freshly built `dist/`:
  *
  *   > how much do I have left?
  *   "The thought does not resolve." - "You turn the thought over... but it does

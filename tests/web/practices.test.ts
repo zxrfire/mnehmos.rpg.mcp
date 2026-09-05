@@ -36,7 +36,7 @@ function placePerson(
     name: string,
     ordinal: number,
     sectId: string | null,
-    where = 'Sweptground'
+    where = 'Burnt Earth'
 ) {
     const now = new Date().toISOString();
     db.prepare(`

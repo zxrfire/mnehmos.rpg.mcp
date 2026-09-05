@@ -181,8 +181,8 @@ describe('travellers show up', () => {
         const traveller = passingThrough({
             rng: forStream('fixed', 'traveller'),
             unknownPlaces: [
-                { id: 'Kettle', name: 'Kettle', regionId: 'far' },
-                { id: 'Sixmile', name: 'Sixmile', regionId: 'far' }
+                { id: 'Iron Gate', name: 'Iron Gate', regionId: 'far' },
+                { id: 'Six Li', name: 'Six Li', regionId: 'far' }
             ],
             hereRegionId: 'home',
             traffic: 1,

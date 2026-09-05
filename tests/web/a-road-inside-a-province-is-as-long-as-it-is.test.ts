@@ -46,7 +46,7 @@ async function daysSpentOn(
 
 describe('a road inside a province costs what the catalog says', () => {
     it('spends the stated days walking from the province town to the ford', async () => {
-        const stated = placeRoadDays(PLACE.LOW_FALL, PLACE.SCARWATER);
+        const stated = placeRoadDays(PLACE.GREEN_FALL, PLACE.STONE_FORD);
         expect(stated, 'the catalog states no road, so there is nothing to measure').not.toBeNull();
         // The claim is only interesting because it is NOT the flat day. If the
         // authored figure ever moved to one, this test would pass while
@@ -58,28 +58,28 @@ describe('a road inside a province costs what the catalog says', () => {
 
         // Stand at the province town first, whatever the birth dealt, so the
         // journey being measured is the one the catalog priced.
-        await game.act(`I travel to ${PLACE.LOW_FALL}`);
-        expect((await game.state()).cultivator.location).toContain(PLACE.LOW_FALL);
+        await game.act(`I travel to ${PLACE.GREEN_FALL}`);
+        expect((await game.state()).cultivator.location).toContain(PLACE.GREEN_FALL);
 
-        const spent = await daysSpentOn(game, `I travel to ${PLACE.SCARWATER}`);
-        expect((await game.state()).cultivator.location).toContain(PLACE.SCARWATER);
+        const spent = await daysSpentOn(game, `I travel to ${PLACE.STONE_FORD}`);
+        expect((await game.state()).cultivator.location).toContain(PLACE.STONE_FORD);
         expect(spent).toBe(stated);
     });
 
     it('walks it back for the same price, off the one row the catalog states', async () => {
-        // The road is declared on Scarwater and read from both ends. A player
+        // The road is declared on Clear River Ford and read from both ends. A player
         // walking back up the gorge is the only place that distinction is
         // observable, and a one-way road is a bug `linkLocations` already
         // names as one.
         const { game } = await makeGameInWorld({ seed: 'place-road-back', worldSeed: WORLD });
         await game.newRun('Probe');
 
-        await game.act(`I travel to ${PLACE.SCARWATER}`);
-        expect((await game.state()).cultivator.location).toContain(PLACE.SCARWATER);
+        await game.act(`I travel to ${PLACE.STONE_FORD}`);
+        expect((await game.state()).cultivator.location).toContain(PLACE.STONE_FORD);
 
-        const back = await daysSpentOn(game, `I travel to ${PLACE.LOW_FALL}`);
-        expect(back).toBe(placeRoadDays(PLACE.SCARWATER, PLACE.LOW_FALL));
-        expect(back).toBe(placeRoadDays(PLACE.LOW_FALL, PLACE.SCARWATER));
+        const back = await daysSpentOn(game, `I travel to ${PLACE.GREEN_FALL}`);
+        expect(back).toBe(placeRoadDays(PLACE.STONE_FORD, PLACE.GREEN_FALL));
+        expect(back).toBe(placeRoadDays(PLACE.GREEN_FALL, PLACE.STONE_FORD));
     });
 
     it('still spends the flat day where the catalog prices nothing', async () => {
@@ -87,14 +87,14 @@ describe('a road inside a province costs what the catalog says', () => {
         // pair with no stated road falls through exactly as it did before this
         // existed - the player goes, and it costs the one day everything
         // unpriced costs.
-        expect(placeRoadDays(PLACE.LOW_FALL, PLACE.SWEPTGROUND)).toBeNull();
+        expect(placeRoadDays(PLACE.GREEN_FALL, PLACE.BURNT_EARTH)).toBeNull();
 
         const { game } = await makeGameInWorld({ seed: 'place-road-none', worldSeed: WORLD });
         await game.newRun('Probe');
 
-        await game.act(`I travel to ${PLACE.LOW_FALL}`);
-        const spent = await daysSpentOn(game, `I travel to ${PLACE.SWEPTGROUND}`);
-        expect((await game.state()).cultivator.location).toContain(PLACE.SWEPTGROUND);
+        await game.act(`I travel to ${PLACE.GREEN_FALL}`);
+        const spent = await daysSpentOn(game, `I travel to ${PLACE.BURNT_EARTH}`);
+        expect((await game.state()).cultivator.location).toContain(PLACE.BURNT_EARTH);
         expect(spent).toBe(SHORT_ACTION_DAYS);
     });
 });

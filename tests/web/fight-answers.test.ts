@@ -162,7 +162,7 @@ describe('the order the five are read in', () => {
 
 describe('back off to where', () => {
     it('reads the place out of the sentence', () => {
-        expect(whereTheyAreHeaded('I back off toward Scarwater')).toBe('Scarwater');
+        expect(whereTheyAreHeaded('I back off toward Clear River Ford')).toBe('Clear River Ford');
         expect(whereTheyAreHeaded('I run for the Nine Peaks')).toBe('Nine Peaks');
         expect(whereTheyAreHeaded('I retreat back to the ford')).toBe('ford');
     });
@@ -176,8 +176,8 @@ describe('back off to where', () => {
     });
 
     it('carries the destination into the answer', () => {
-        const read = whatTheySaidInTheFight('I break off and run for Scarwater');
-        expect(read).toEqual({ kind: 'break_off', toward: 'Scarwater' });
+        const read = whatTheySaidInTheFight('I break off and run for Clear River Ford');
+        expect(read).toEqual({ kind: 'break_off', toward: 'Clear River Ford' });
     });
 });
 

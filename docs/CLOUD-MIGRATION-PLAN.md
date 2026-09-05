@@ -144,7 +144,7 @@ to convert behind, repository by repository, without touching 30 handlers.
   synchronous-query event-loop blocking that would otherwise let one user's worldgen stall
   every other user on the instance.
 - **In-memory state moves out.** `CombatManager` and `WorldManager`
-  ([combat-manager.ts:82](../src/server/state/combat-manager.ts#L82)) are module singletons
+  (`combat-manager.ts`, removed in the cultivation fork; [`world-manager.ts`](../src/server/state/world-manager.ts) is the surviving one) are module singletons
   holding `Map`s that die on redeploy and cannot be shared across replicas. They are
   already keyed `${sessionId}:${encounterId}`, so the key shape survives - re-key to
   `${campaignId}:${encounterId}` and back them with Redis.
@@ -194,7 +194,9 @@ state (it is in Redis/Postgres, not process memory).
 
 ### Phase 4 - VTT frontend · ~4-6 weeks
 
-The engine is well-positioned here. [combat-grid.ts](../src/engine/spatial/combat-grid.ts)
+The engine is well-positioned here. The spatial layer - `combat-grid.ts` before the
+cultivation fork, now [`engine.ts`](../src/engine/spatial/engine.ts) and the `room_nodes`
+table -
 already provides bounds and position validation, obstacle and difficult-terrain sets,
 diagonal and terrain movement cost, AoE resolution, size-category tile occupancy, and
 `hasLineOfSight()` at line 684 - which is what fog of war derives from. The spatial work

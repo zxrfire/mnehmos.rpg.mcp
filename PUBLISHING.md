@@ -1,6 +1,6 @@
 # Bastion - Publishing Workflow
 
-*Canonical home for the Bastion publishing convention. This workflow originated in [`bastion-website-spec.md`](./bastion-website-spec.md) §7; it lives here so it doesn't drift inside a longer spec and can be referenced as a standalone procedure.*
+*Canonical home for the Bastion publishing convention. This workflow originated in [`bastion-website-spec.md`](docs/bastion/bastion-website-spec.md) §7; it lives here so it doesn't drift inside a longer spec and can be referenced as a standalone procedure.*
 
 ---
 

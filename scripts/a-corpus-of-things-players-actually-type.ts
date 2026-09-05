@@ -43,8 +43,8 @@ export const CORPUS: Command[] = [
     ...P('breakthrough', 'I try to break through', 'I attempt a breakthrough', 'breakthrough', 'I push for the next realm', 'I try to advance a rank'),
     ...O('breakthrough', 'I force the bottleneck', 'I make my attempt at the next layer', 'time to break the barrier'),
 
-    ...P('move', 'I travel to Low Fall', 'I go to Nine Peaks', 'travel to Halfwater', 'I head for the market town', 'I walk to Low Fall'),
-    ...O('move', 'I set out for Nine Peaks', 'I leave for Halfwater', 'I make my way to Low Fall', 'take me to Nine Peaks'),
+    ...P('move', 'I travel to Green Water City', 'I go to Nine Peaks', 'travel to Silver Island', 'I head for the market town', 'I walk to Green Water City'),
+    ...O('move', 'I set out for Nine Peaks', 'I leave for Silver Island', 'I make my way to Green Water City', 'take me to Nine Peaks'),
 
     ...P('interact', 'I talk to the nearest cultivator', 'I speak with the elder', 'I greet Liang Nuoru', 'I ask the merchant about the road'),
     ...O('interact', 'I strike up a conversation with the steward', 'I introduce myself to the elder', 'I have a word with Liang Nuoru'),

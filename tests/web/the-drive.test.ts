@@ -55,7 +55,7 @@ const UNBLOCKED = {
     ordinal: 4,
     manual: techniqueCeiling(4, 13),
     manualCap: 13,
-    regionName: 'The Low Fall',
+    regionName: 'The Jade Gorge',
     localCeilingOrdinal: 20,
     canAdvanceHere: true,
     ambient: 'normal' as const,
@@ -138,7 +138,7 @@ describe('why progress has stopped', () => {
 
     it('reports the province ceiling as a fact about the province', () => {
         const read = whyProgressHasStopped({ ...UNBLOCKED, canAdvanceHere: false });
-        const line = read.lines.find(l => l.includes('The Low Fall'));
+        const line = read.lines.find(l => l.includes('The Jade Gorge'));
         expect(line).toContain(rankName(20));
         expect(line).toContain(rankName(4));
     });
@@ -195,7 +195,7 @@ describe('who would teach this cultivator', () => {
         const read = whoWouldTeach({
             name: 'Shi Wanjun',
             ordinal: 4,
-            placeName: 'Ninewatch',
+            placeName: 'Cloud Gate',
             sectName: 'Azure Dew Sect',
             above: [MASTER],
             manualState: 'teaching'
@@ -210,7 +210,7 @@ describe('who would teach this cultivator', () => {
         const read = whoWouldTeach({
             name: 'Shi Wanjun',
             ordinal: 4,
-            placeName: 'Ninewatch',
+            placeName: 'Cloud Gate',
             sectName: 'Azure Dew Sect',
             above: [MASTER],
             manualState: 'teaching'
@@ -226,7 +226,7 @@ describe('who would teach this cultivator', () => {
         const read = whoWouldTeach({
             name: 'Shi Wanjun',
             ordinal: 4,
-            placeName: 'Ninewatch',
+            placeName: 'Cloud Gate',
             sectName: 'Azure Dew Sect',
             above: [STRANGER],
             manualState: 'teaching'
@@ -245,7 +245,7 @@ describe('who would teach this cultivator', () => {
         const read = whoWouldTeach({
             name: 'Shi Wanjun',
             ordinal: 4,
-            placeName: 'Ninewatch',
+            placeName: 'Cloud Gate',
             sectName: 'Azure Dew Sect',
             above: [STRANGER, { ...STRANGER, realmOrdinal: 7 }],
             manualState: 'teaching'
@@ -260,7 +260,7 @@ describe('who would teach this cultivator', () => {
         const read = whoWouldTeach({
             name: 'Shi Wanjun',
             ordinal: 4,
-            placeName: 'Ninewatch',
+            placeName: 'Cloud Gate',
             sectName: null,
             above: [],
             manualState: 'teaching'
@@ -272,7 +272,7 @@ describe('who would teach this cultivator', () => {
         const read = whoWouldTeach({
             name: 'Shi Wanjun',
             ordinal: 4,
-            placeName: 'Ninewatch',
+            placeName: 'Cloud Gate',
             sectName: null,
             above: [STRANGER],
             manualState: 'teaching'
@@ -287,10 +287,10 @@ describe('who would teach this cultivator', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 const HOME: Destination = {
-    name: 'Wheatgate',
+    name: 'Autumn Gate',
     kind: 'market_town',
     ambient: 'normal',
-    regionName: 'The Wide Field',
+    regionName: 'The Yellow Plain',
     travelDays: null,
     localCeilingOrdinal: 38,
     hereNow: true,
@@ -298,10 +298,10 @@ const HOME: Destination = {
 };
 
 const NEIGHBOUR: Destination = {
-    name: 'The Low Fall',
+    name: 'The Jade Gorge',
     kind: 'province',
     ambient: null,
-    regionName: 'The Low Fall',
+    regionName: 'The Jade Gorge',
     travelDays: 12,
     localCeilingOrdinal: 20,
     hereNow: false,
@@ -315,10 +315,10 @@ describe('where this cultivator could go', () => {
         // around that the engine never said.
         const read = whereCouldTheyGo({
             ordinal: 1,
-            placeName: 'Wheatgate',
-            regionName: 'The Wide Field',
+            placeName: 'Autumn Gate',
+            regionName: 'The Yellow Plain',
             localCeilingOrdinal: 38,
-            reachable: [HOME, { ...HOME, name: 'Millrun', kind: 'village', hereNow: false }],
+            reachable: [HOME, { ...HOME, name: 'Old River Village', kind: 'village', hereNow: false }],
             unplaceable: 0
         });
         expect(read.lines.join('\n')).not.toMatch(/\b0 days\b/);
@@ -327,8 +327,8 @@ describe('where this cultivator could go', () => {
     it('prices a province, which is the scale the catalog actually prices', () => {
         const read = whereCouldTheyGo({
             ordinal: 1,
-            placeName: 'Wheatgate',
-            regionName: 'The Wide Field',
+            placeName: 'Autumn Gate',
+            regionName: 'The Yellow Plain',
             localCeilingOrdinal: 38,
             reachable: [HOME, NEIGHBOUR],
             unplaceable: 0
@@ -342,8 +342,8 @@ describe('where this cultivator could go', () => {
         // reports another region's number as though it were this one's.
         const read = whereCouldTheyGo({
             ordinal: 1,
-            placeName: 'Wheatgate',
-            regionName: 'The Wide Field',
+            placeName: 'Autumn Gate',
+            regionName: 'The Yellow Plain',
             localCeilingOrdinal: 38,
             reachable: [NEIGHBOUR],
             unplaceable: 0
@@ -358,8 +358,8 @@ describe('where this cultivator could go', () => {
         // road and spend a discovery the player was meant to earn.
         const read = whereCouldTheyGo({
             ordinal: 1,
-            placeName: 'Wheatgate',
-            regionName: 'The Wide Field',
+            placeName: 'Autumn Gate',
+            regionName: 'The Yellow Plain',
             localCeilingOrdinal: 38,
             reachable: [HOME],
             unplaceable: 3
@@ -370,14 +370,14 @@ describe('where this cultivator could go', () => {
     it('puts ground that is not this ground first', () => {
         const read = whereCouldTheyGo({
             ordinal: 1,
-            placeName: 'Wheatgate',
-            regionName: 'The Wide Field',
+            placeName: 'Autumn Gate',
+            regionName: 'The Yellow Plain',
             localCeilingOrdinal: 38,
             reachable: [HOME, NEIGHBOUR],
             unplaceable: 0
         });
         // Line 0 is where they are standing; line 1 is the first destination.
-        expect(read.lines[1]).toContain('The Low Fall');
+        expect(read.lines[1]).toContain('The Jade Gorge');
     });
 });
 
@@ -473,8 +473,8 @@ describe('the three questions reach the three reads', () => {
      * player's own region all reported as zero days away.
      *
      * The choice this restores is a real one and the numbers are the catalog's:
-     * from The Wide Field, The Low Fall is 6 days away and carries to the top
-     * of the ladder, and The Drowned Reach is 21 days away and carries nobody
+     * from The Yellow Plain, The Jade Gorge is 6 days away and carries to the top
+     * of the ladder, and The Drowned Sea is 21 days away and carries nobody
      * past the second rung.
      */
     it('prices a province the player can place, in days off the catalog', async () => {
