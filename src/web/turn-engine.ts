@@ -10767,7 +10767,13 @@ ${fit.line}`;
 
         for (const person of here) {
             if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
-                named.push({ name: person.name, ordinal: person.realmOrdinal });
+                named.push({
+                    name: person.name,
+                    ordinal: person.realmOrdinal,
+                    sex: person.sex ?? null,
+                    age: person.age,
+                    rank: person.sectRank ?? null
+                });
             } else {
                 strangers.push({ ordinal: person.realmOrdinal });
             }

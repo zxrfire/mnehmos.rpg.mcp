@@ -865,9 +865,31 @@ export function factsForCompany(
 /**
  * Who is standing here, split by whether the player can put a name to them.
  */
+/**
+ * What a person in a square looks like to somebody standing in it.
+ *
+ * The design owner, on why a target phrase resolving is not the whole job:
+ * *this should fall out of making names but also characteristics visible to the
+ * LLM*. A classifier that is shown only names can only produce a name, so
+ * "the youngest woman here" is a sentence the player can type and the phase-1
+ * reader has no grounds to write - it does not know which of them is a woman
+ * and it does not know which is young.
+ *
+ * Every field is one the description resolver reads back, and nothing here is
+ * anything a person in the square could not see for themselves.
+ */
+export interface SomebodyInTheSquare {
+    name: string;
+    ordinal: number;
+    sex: string | null;
+    age: number;
+    /** Their rank in their house, where they wear one visibly. */
+    rank: string | null;
+}
+
 export interface Company {
     /** People the player has a knowledge record for. Nameable. */
-    named: { name: string; ordinal: number }[];
+    named: SomebodyInTheSquare[];
     /** People they can see and cannot name. Described by standing only. */
     strangers: { ordinal: number }[];
     /** Everybody present, including whoever did not fit in the two lists. */
