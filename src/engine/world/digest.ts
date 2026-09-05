@@ -348,6 +348,7 @@ const FALLBACK: Partial<Record<HistoricalEventKind, string>> = {
     zone_forbidden: 'The animals will not go in, and neither will anyone sensible.',
     migration: 'Two of the hamlets on the low road are empty.',
     opportunity: 'Prices have moved and nobody can say why.',
+    said_in_public: 'Somebody said something in a full room, and it is still being repeated.',
     catastrophe: 'Something was heard a long way off, and the birds went.',
     spirit_tide: 'For a few days everything was easier, and then it was not.',
     ascension: 'The sky did something people are still arguing about.'

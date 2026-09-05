@@ -42,6 +42,17 @@ export type HistoricalEventKind =
     | 'oath_sworn'
     | 'debt_incurred'
     | 'opportunity'
+    /**
+     * Somebody said a thing out loud where people could hear it.
+     *
+     * The record of an UTTERANCE and never of what it was about: the engine
+     * refusing to carry an act out does not unsay it, and words that reached
+     * nothing still reached the ears in the room. What happens to it afterwards
+     * is the ordinary business of `what-people-are-saying.ts`, which is to say
+     * it gets repeated, it gets bigger, somebody attaches it to the wrong name,
+     * and eventually it arrives somewhere the speaker was not.
+     */
+    | 'said_in_public'
     // Institutions
     | 'faction_founded'
     | 'faction_fallen'

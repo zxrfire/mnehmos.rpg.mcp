@@ -864,6 +864,7 @@ import { daoPartnerVerbs } from './what-a-dao-partner-is-for.js';
 import { siteVerbs } from './site-verbs.js';
 import { institutionVerbs } from './institution-verbs.js';
 import { howTheyTookIt } from '../engine/social/how-they-took-what-you-said.js';
+import { costsTheAskerNothing } from './asking-is-not-doing.js';
 import {
     realmIndexOf
 } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
@@ -2540,6 +2541,107 @@ export class GameService {
     }
 
     private async execute(
+        action: PlannedAction,
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        rawInput = ''
+    ): Promise<Execution> {
+        const done = await this.carryOut(action, run, cultivator, ambient, rawInput);
+        // REFUSING TO CARRY IT OUT DOES NOT UNSAY IT. Here rather than in any
+        // one verb because it is true of all of them: the engine declining an
+        // act settles what the world DOES and settles nothing about what the
+        // room heard. See `theWorldHeardYouSayIt`.
+        if (done.outcome === 'refused') {
+            this.theWorldHeardYouSayIt(action, cultivator, done);
+        }
+        return done;
+    }
+
+    /**
+     * The utterance, put into the world's own record.
+     *
+     * A refused act is a sentence somebody said in a room with people in it,
+     * and that is a fact whatever the engine did about the act. Written as
+     * `said_in_public` with the named house on it, so that everything already
+     * built for facts applies without being told this one is different:
+     * `circulating` picks it up, `airtimeOf` decides how much it gets repeated,
+     * and the distortions - inflated, misattributed, invented - are the reason
+     * it arrives at the named house as *some lunatic has declared war on us*
+     * rather than as a flag somebody set.
+     *
+     * Four conditions, and not one of them names a verb.
+     *
+     * Somebody has to have heard it. It has to have named something THE WORLD
+     * HOLDS - "I ask after Nowhereville" named nothing, and a boast about
+     * nothing is not a boast. And it has to have been an act rather than a
+     * question: `costsTheAskerNothing` already owns that split, and reading it
+     * here rather than growing a second list is what keeps a look at somebody
+     * from entering the record as a declaration about them. Measured before
+     * this: a refused ASK wrote a fact, and the turn afterwards offered to
+     * carry on with it.
+     */
+    private theWorldHeardYouSayIt(
+        action: PlannedAction,
+        cultivator: Cultivator,
+        into: Execution
+    ): void {
+        if (!this.atHand) return;
+        if (costsTheAskerNothing(action)) return;
+        const named = (action.target ?? '').trim();
+        if (named.length === 0) return;
+        const heard = this.present(cultivator);
+        if (heard.length === 0) return;
+
+        // WHAT THEY NAMED, AND ONLY WHERE THE WORLD HAS IT. A house, or
+        // somebody standing here - the two things a sentence in this game can
+        // be about. Neither, and there is nothing for the room to repeat.
+        const house = this.factionMeant(named, cultivator);
+        const person = house
+            ? null
+            : this.present(cultivator).find(row =>
+                row.name.toLowerCase() === named.toLowerCase()) ?? null;
+        if (!house && !person) return;
+        const about = house?.name ?? person!.name;
+
+        const deed = aDeedEntersTheWorld(this.atHand, {
+            kind: 'said_in_public',
+            // Words, and the ledger's lightest band. What makes a boast travel
+            // is being repeated, which `airtimeOf` decides, and not this.
+            weight: 'slight',
+            workedOut: true,
+            day: Math.floor(this.atHand.currentDay),
+            locationId: this.worldPlaceOf(cultivator),
+            place: placeName(cultivator),
+            actors: [
+                { id: cultivator.id, name: cultivator.name, role: 'said it' },
+                ...(person ? [{ id: person.id, name: person.name, role: 'was named' }] : [])
+            ],
+            factionIds: house ? [house.id] : [],
+            summary:
+                `${cultivator.name} said they would ${action.action} ${about}, at `
+                + `${placeName(cultivator)}, in front of ${heard.length} `
+                + `${heard.length === 1 ? 'person' : 'people'}. Nothing came of it.`,
+            unattributed:
+                'Somebody stood up in a full room and announced what they were going to do '
+                + 'about somebody who was not there.',
+            data: { saidAbout: about, wouldHave: action.action }
+        });
+        this.worldDirty = true;
+        into.calls.push({
+            name: 'world.aDeedEntersTheWorld',
+            action: action.action,
+            summary:
+                `${deed.fact.id} (said_in_public, ${deed.weight}, magnitude `
+                + `${deed.fact.magnitude.toFixed(2)}, ${deed.fact.visibility}) written on day `
+                + `${deed.fact.day}. The act was refused; the saying of it was not. `
+                + `${heard.length} heard it`
+                + `, and it names ${house?.id ?? person!.id}.`,
+            ok: true
+        });
+    }
+
+    private async carryOut(
         action: PlannedAction,
         run: Run,
         cultivator: Cultivator,
