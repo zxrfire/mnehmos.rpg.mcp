@@ -58,6 +58,25 @@ describe('what a set-shaped target names', () => {
     });
 
     /**
+     * The design owner: *i kill members of all righteous sects/demonic sects*.
+     * A leaning is not thirty-five sentences about thirty-five houses, and it is
+     * the shape a campaign in this genre is actually declared in. It has to be
+     * read before a house, or "all the righteous sects" is a house called
+     * "righteous" - a name no house has, and a set of thirty-five the player
+     * plainly meant.
+     */
+    it('reads a leaning as a set, and before it reads a house', () => {
+        expect(theSetThisNames('all righteous sects'))
+            .toMatchObject({ kind: 'of_alignment', alignment: 'righteous' });
+        expect(theSetThisNames('every demonic cultivator'))
+            .toMatchObject({ kind: 'of_alignment', alignment: 'demonic' });
+        expect(theSetThisNames('all of the demonic houses'))
+            .toMatchObject({ kind: 'of_alignment', alignment: 'demonic' });
+        // And a house named in full is still a house.
+        expect(theSetThisNames('all of Iron Gate Sect')?.kind).toBe('members_of');
+    });
+
+    /**
      * The guard against this swallowing the sentences that already work. A
      * pointer at one person, a name, and a rank in the singular are all
      * `somebodyAtHand`'s and must stay there.
