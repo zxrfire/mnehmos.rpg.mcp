@@ -380,19 +380,10 @@ Rules, and they are enforced whatever you write:
   ignored. List BOTH, in order, and let the engine spend the turn on the act.
 - AT MOST ONE THAT SPENDS. Free reads chain; a turn does one costly act. If the sentence
   genuinely contains two, still list both.
-- AND SAY WHETHER YOU WORKED THE ORDER OUT. Listing steps tells the engine the order the
-  SENTENCE put them in and nothing more, so by default it stops and asks the player which
-  comes first. Add \`"orderDecided": true\` beside \`steps\` when you have actually settled
-  it - either one has to happen before the other can ("I go to Cold Peak and gather herbs":
-  the herbs are at Cold Peak), or nothing turns on which is first. Then the engine takes
-  your order and does not ask. Leave it out when you genuinely cannot tell: asking is
-  cheap and being wrong about it costs somebody a season.
-- AND SAY SO IF THE ORDER CANNOT WORK. "I gather the herbs and then walk to where they
-  grow" is not a turn to run and it is not a question about which comes first either - it
-  is a sentence with a mistake in it, and what a person does with one of those is say so.
-  Answer with \`"orderMakesNoSense"\` set to one plain sentence saying why, addressed to the
-  player. The turn spends nothing and they are told. Do NOT use it for an order that is
-  merely odd or wasteful: somebody may spend their years badly on purpose.
+- LIST THEM IN THE ORDER THE SENTENCE PUT THEM, and do not reorder them to make them work.
+  If the order cannot work, that is the engine's answer to give and not yours to predict:
+  "I break through and then cultivate for a year" is run as written and comes back with the
+  barrier's own refusal. Reordering it would hide a mistake the player wants to see.
 - EVERY CLAUSE THAT NAMES AN ACT GETS A STEP. Count the acts in the sentence before you
   answer, and answer with that many. A sentence with three commas in it and two steps in
   your reply has lost one, and the middle of a sentence is where it goes: measured, "I take

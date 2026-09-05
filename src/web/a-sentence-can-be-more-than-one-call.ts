@@ -39,37 +39,6 @@ export interface PlanWithSteps extends Plan {
      */
     readonly steps?: readonly PlanStep[];
     /**
-     * The reader WORKED OUT the order, as against transcribing the sentence's.
-     *
-     * The distinction is the whole of it, and it is easy to miss. Phase 1 asks
-     * for one step per act *in that order* - the order the sentence put them -
-     * so a step list is a TRANSCRIPTION by default and says nothing about
-     * whether anything turns on which happens first. Absent or false, the turn
-     * asks; a pattern table can never set it, because it cannot reason about
-     * order at all.
-     *
-     * The design owner: *the llm should reason what comes first, right? or if
-     * the order doesn't matter* - and, on the other tier, *asking is okay cuz
-     * an embedding can't tell, that's too hard and would make it too brittle*.
-     * So the question goes to whoever can answer it, and the player is asked
-     * only when nobody could.
-     */
-    readonly orderDecided?: boolean;
-    /**
-     * The reader's own words for why the order the sentence gives cannot work.
-     *
-     * The design owner: *if the sentence order is incoherent, say it, like a
-     * human would, that's the heuristic (for the llm)* - and *the non llm path
-     * would do the same anyway*, which it does, because a table that cannot
-     * reason about order asks about it and asking is the same conversation.
-     *
-     * "I gather the herbs and then walk to where they grow" is not a turn to
-     * spend and it is not a question about which comes first either. It is a
-     * sentence with a mistake in it, and what a person does with one of those
-     * is say so. Present means the turn spends nothing and says this back.
-     */
-    readonly orderMakesNoSense?: string;
-    /**
      * Steps the reading layer declined and removed, in the player's own words.
      */
     readonly droppedClauses?: readonly PlanStep[];
@@ -121,34 +90,7 @@ export function stepsInTheResponse(raw: unknown, input: string): PlanStep[] | nu
     return steps;
 }
 
-/**
- * Whether the reader says it WORKED OUT the order rather than transcribing it.
- *
- * One optional boolean beside `steps`, and it has to be said out loud to count:
- * a reader that answers only with steps has told us the sentence's order and
- * nothing about whether anything turns on it. See `PlanWithSteps.orderDecided`.
- */
-export function theReaderSaysItDecidedTheOrder(raw: unknown): boolean {
-    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return false;
-    return (raw as { orderDecided?: unknown }).orderDecided === true;
-}
 
-/** The most of a reader's objection that is worth carrying back to the player. */
-const AN_OBJECTION_IS_A_SENTENCE = 240;
-
-/**
- * The reader's reason the sentence's order cannot work, or null.
- *
- * Prose, bounded, and never parsed - the same contract every other line the
- * engine takes from a reader has.
- */
-export function whyTheReaderSaysTheOrderCannotWork(raw: unknown): string | null {
-    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
-    const said = (raw as { orderMakesNoSense?: unknown }).orderMakesNoSense;
-    if (typeof said !== 'string') return null;
-    const clean = said.replace(/\s+/g, ' ').trim();
-    return clean.length === 0 ? null : clean.slice(0, AN_OBJECTION_IS_A_SENTENCE);
-}
 
 function arrayOfSteps(raw: unknown): unknown[] | null {
     if (Array.isArray(raw)) return raw;

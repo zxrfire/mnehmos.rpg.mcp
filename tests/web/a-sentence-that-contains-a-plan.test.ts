@@ -24,6 +24,24 @@ function planning(plans: string[]): LLMProvider {
     return new ScriptedProvider({ plans, narrations: ['The moment passes.'] });
 }
 
+/**
+ * A game whose PLAN comes from the table and whose NARRATION comes from a
+ * model, which is what the fork's own tests need: the question is the
+ * deterministic tier's, and the thing it has to survive is a narrator.
+ *
+ * The plan text is deliberately not a plan. `ProviderNarrator` rejects it and
+ * falls back to reading the sentence itself, so `source` is `fallback` and the
+ * order is nobody's decision - while `narrate` still goes to the provider.
+ */
+async function askedRatherThanReasoned(narrations: string[], seed = 'plan-seed') {
+    const provider = new ScriptedProvider({ plans: ['not a plan at all'], narrations });
+    return await makeGameInWorld({
+        worldSeed: 'plan-world',
+        seed,
+        narrator: new ProviderNarrator(provider, { model: 'test-model', timeoutMs: 5000 })
+    });
+}
+
 async function playing(plans: string[], seed = 'plan-seed') {
     const provider = planning(plans);
     return await makeGameInWorld({
@@ -93,21 +111,45 @@ describe('one sentence, several engine calls', () => {
     });
 });
 
-describe('who answers which comes first', () => {
+describe('whose order it is', () => {
     /**
-     * The design owner, settling which layer owns the question:
+     * The design owner, settling it:
      *
-     *   > this needs to be two steps without an LLM ... but the llm should
-     *   > reason what comes first, right? or if the order doesn't matter
-     *   > ... asking is okay cuz an embedding can't tell, that's too hard and
-     *   > would make it too brittle
+     *   > if the order is wrong, we don't try to determine it, we just act
+     *   > confused. the llm should just try it in the order and give back
+     *   > whatever error the world state gave, right?
      *
-     * A step list on its own is a TRANSCRIPTION - phase 1 asks for the acts in
-     * the order the sentence put them - so it says nothing about whether
-     * anything turns on which is first. `orderDecided` is the reader saying it
-     * worked that out, and it has to be said out loud.
+     * So a reader that can reason gets its order RUN, and the engine neither
+     * reorders it nor asks a model to predict whether it will work. This
+     * replaced two channels that did the predicting - a flag saying the reader
+     * had settled the order, and a sentence saying it could not work - because
+     * the world's own answer is true where a prediction is only plausible.
      */
-    it('asks when the reader only transcribed the sentence', async () => {
+    it('runs a backwards order and lets the world refuse it', async () => {
+        const { game } = await playing([
+            STEPS(
+                { action: 'breakthrough', said: 'I break through' },
+                { action: 'cultivate', days: 365, said: 'cultivate for a year' }
+            )
+        ]);
+        await game.newRun('Probe');
+        const before = game.state().run.elapsedDays;
+
+        const turn = await game.act('I break through and then cultivate for a year');
+
+        // THE BARRIER ANSWERED, which is what the player asked for and what no
+        // reader could have said in advance and been sure of. The row is the
+        // engine's own record of it; a scripted narrator can overwrite prose
+        // and cannot overwrite this.
+        const asked = turn.toolCalls.find(row => row.name === 'engine.canAttemptBreakthrough');
+        expect(asked, JSON.stringify(turn.toolCalls.map(row => row.name))).toBeDefined();
+        expect(asked!.summary).toContain('The barrier does not move.');
+        expect(turn.toolCalls.some(row => row.name === 'engine.whichComesFirst')).toBe(false);
+        // And the year is not spent on a crossing that did not happen.
+        expect(game.state().run.elapsedDays).toBe(before);
+    });
+
+    it('runs a workable order in the order it was given', async () => {
         const { game } = await playing([
             STEPS(
                 { action: 'move', intent: 'travel', target: 'Cold Peak', said: 'I go to Cold Peak' },
@@ -116,42 +158,23 @@ describe('who answers which comes first', () => {
         ]);
         await game.newRun('Probe');
         const turn = await game.act('I go to Cold Peak and gather herbs');
-        expect(turn.narration).toContain('Which comes first?');
-    });
-
-    it('takes the order where the reader says it settled it', async () => {
-        const { game } = await playing([
-            JSON.stringify({
-                steps: [
-                    { action: 'move', intent: 'travel', target: 'Cold Peak', said: 'I go to Cold Peak' },
-                    { action: 'gather', said: 'gather herbs' }
-                ],
-                orderDecided: true
-            })
-        ]);
-        await game.newRun('Probe');
-        const turn = await game.act('I go to Cold Peak and gather herbs');
 
         expect(turn.narration).not.toContain('Which comes first?');
-        // The first act ran and the second is named rather than dropped, which
-        // is the same bound the question was protecting: one costly act a turn.
         expect(turn.narration).toContain('still ahead of you');
     });
 
     /**
-     * A DECLARATION IS NOT A LICENCE TO RUN EVERYTHING. The exposure has to be
-     * the same as typing the first clause on its own, and it is: that sentence
-     * spends its own act with no question either.
+     * AND THE BOUND IS STILL THE BOUND. Not asking is not a licence to run
+     * everything: the exposure has to be the same as typing the first clause
+     * on its own, and it is - that sentence spends its own act with no question
+     * either.
      */
-    it('still spends only one costly act when the order was settled', async () => {
+    it('still spends only one costly act', async () => {
         const { game } = await playing([
-            JSON.stringify({
-                steps: [
-                    { action: 'work', days: 90, said: 'take work for a season' },
-                    { action: 'gather', said: 'gather herbs' }
-                ],
-                orderDecided: true
-            })
+            STEPS(
+                { action: 'work', days: 90, said: 'take work for a season' },
+                { action: 'gather', said: 'gather herbs' }
+            )
         ]);
         await game.newRun('Probe');
         const ran = (await game.act('I take work for a season and gather herbs'))
@@ -160,76 +183,10 @@ describe('who answers which comes first', () => {
     });
 });
 
-describe('an order that cannot work', () => {
-    /**
-     * The design owner: *if the sentence order is incoherent, say it, like a
-     * human would, that's the heuristic (for the llm)* - and *the non llm path
-     * would do the same anyway*, which it does: a table that cannot reason
-     * about order asks about it, and asking is the same conversation.
-     *
-     * This is a third answer and not a shade of the other two. "I gather the
-     * herbs and then walk to where they grow" is not a turn to spend, and it is
-     * not a question about which comes first either. It is a sentence with a
-     * mistake in it.
-     */
-    it('spends nothing and says why, in the words the reader used', async () => {
-        const { game } = await playing([
-            JSON.stringify({
-                steps: [
-                    { action: 'gather', said: 'gather the herbs' },
-                    { action: 'move', intent: 'travel', target: 'Cold Peak', said: 'walk to Cold Peak' }
-                ],
-                orderMakesNoSense:
-                    'The herbs are at Cold Peak, so you cannot gather them before you get there.'
-            })
-        ]);
-        await game.newRun('Probe');
-        const before = game.state().run.elapsedDays;
-
-        const turn = await game.act('I gather the herbs and then walk to Cold Peak');
-
-        expect(game.state().run.elapsedDays).toBe(before);
-        expect(turn.narration).toContain('cannot gather them before you get there');
-        expect(turn.narration).not.toContain('Which comes first?');
-    });
-
-    /**
-     * REQUIRED, for the reason the question beside it is. A turn whose only
-     * fact is an objection hands a narrator nothing to describe, and a narrator
-     * handed nothing writes the acts anyway.
-     */
-    it('survives a narrator that writes something else entirely', async () => {
-        const provider = new ScriptedProvider({
-            plans: [JSON.stringify({
-                steps: [
-                    { action: 'gather', said: 'gather the herbs' },
-                    { action: 'move', intent: 'travel', target: 'Cold Peak', said: 'walk there' }
-                ],
-                orderMakesNoSense: 'You cannot pick them before you are standing over them.'
-            })],
-            narrations: ['You gather the herbs, and then you walk up to Cold Peak.']
-        });
-        const { game } = await makeGameInWorld({
-            worldSeed: 'plan-world', seed: 'plan-seed',
-            narrator: new ProviderNarrator(provider, { model: 'test-model', timeoutMs: 5000 })
-        });
-        await game.newRun('Probe');
-
-        const turn = await game.act('I gather the herbs and then walk to Cold Peak');
-        expect(turn.narration).toContain('before you are standing over them');
-        expect(game.state().run.elapsedDays).toBe(0);
-    });
-});
 
 describe('a turn spends at most one costly act', () => {
     it('two costly acts ask which comes first, and spend nothing', async () => {
-        const { game } = await playing([
-            STEPS(
-                { action: 'look', said: 'see who is about' },
-                { action: 'cultivate', days: 365, said: 'sit for a year' },
-                { action: 'work', days: 90, said: 'take work for a season' }
-            )
-        ]);
+        const { game } = await askedRatherThanReasoned(['(scripted)']);
         await game.newRun('Probe');
         const before = game.state().run.elapsedDays;
 
@@ -260,17 +217,9 @@ describe('a turn spends at most one costly act', () => {
      * the next years of somebody's life are spent is exactly what it is for.
      */
     it('and the question survives a narrator that writes something else entirely', async () => {
-        const provider = new ScriptedProvider({
-            plans: [STEPS(
-                { action: 'cultivate', days: 365, said: 'sit for a year' },
-                { action: 'work', days: 90, said: 'take work for a season' }
-            )],
-            narrations: ['You settle in for the year, and afterwards you take the work.']
-        });
-        const { game } = await makeGameInWorld({
-            worldSeed: 'plan-world', seed: 'plan-seed',
-            narrator: new ProviderNarrator(provider, { model: 'test-model', timeoutMs: 5000 })
-        });
+        const { game } = await askedRatherThanReasoned([
+            'You settle in for the year, and afterwards you take the work.'
+        ]);
         await game.newRun('Probe');
 
         const turn = await game.act('I sit for a year and take work for a season');
@@ -279,13 +228,7 @@ describe('a turn spends at most one costly act', () => {
     });
 
     it('the free read before the question still runs, so the question is informed', async () => {
-        const { game } = await playing([
-            STEPS(
-                { action: 'look', said: 'see who is about' },
-                { action: 'cultivate', days: 365, said: 'sit for a year' },
-                { action: 'work', days: 90, said: 'take work' }
-            )
-        ]);
+        const { game } = await askedRatherThanReasoned(['(scripted)']);
         await game.newRun('Probe');
         const turn = await game.act('look about, sit a year, take work');
 
@@ -294,15 +237,11 @@ describe('a turn spends at most one costly act', () => {
     });
 
     it('the question is answered in one word, and the chosen act then runs', async () => {
-        const { game } = await playing([
-            STEPS(
-                { action: 'cultivate', days: 365, said: 'sit for a year' },
-                { action: 'work', days: 90, said: 'take work for a season' }
-            ),
-            // Phase 1 must not be reached on the answering turn. If it were,
-            // this fixture would run and the assertion below would fail.
-            JSON.stringify({ action: 'look' })
-        ]);
+        // The fork is the deterministic tier's, so the question is raised from
+        // there. Phase 1 must not be reached on the ANSWERING turn either, and
+        // is not: the provider's plan text is never a plan, so a turn that
+        // reached it would read the word "work" as a verb and spend a season.
+        const { game } = await askedRatherThanReasoned(['(scripted)']);
         await game.newRun('Probe');
         await game.act('I sit for a year and take work for a season');
 
