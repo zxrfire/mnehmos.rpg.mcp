@@ -60,7 +60,7 @@ export const ACTION_NAMES = [
      * `whatArrivingOnThisSays` is what a watcher at the far gate reads off the
      * arrival. None of it had a caller. `ride` was a LABEL on `move` - one of
      * five intents, every one of which resolved through the same flat
-     * one-day journey - so "I ride to Scarwater" and "I walk to Scarwater"
+     * one-day journey - so "I ride to Clear River Ford" and "I walk to Clear River Ford"
      * were the same event with a different word on the log, and "I ride the
      * horse" asked after a place called `horse`.
      *
@@ -158,6 +158,31 @@ export const ACTION_NAMES = [
     'breakthrough',
     'train_technique',
     'refine',
+    /**
+     * Making a thing out of what a hunt brought back.
+     *
+     * ── WHY IT IS ITS OWN MEMBER AND NOT A WIDENED `refine` ──────────────
+     *
+     * Because a cauldron and a yard ask opposite questions of a material, and
+     * `building-a-conveyance-out-of-what-a-hunt-brings-back.ts` opens by saying
+     * so: a recipe names a herb and refuses a substitute, a bill names a GRADE
+     * AND A COUNT and does not care which animal it came off. One is an errand,
+     * the other is a schedule. Routing both to `refine` would have made
+     * `resolveRecipe` look for a pill called "a carriage".
+     *
+     * ── AND THE MODULES WERE ALREADY THERE ───────────────────────────────
+     *
+     * The engine half is live: `the-world-changing-on-its-own.ts` lays keels
+     * for houses, starves them of cores and launches hulls on the yearly pass.
+     * The player's half - `web/half-built-craft.ts` - was complete and tested
+     * and had NO IMPORTER IN `src/`, because the wiring lands in files several
+     * agents hold at once and it never got applied. Its own header says so and
+     * says to check by grepping for `planTheBuild` before believing it.
+     *
+     * So this member is the whole of what was missing between a world that
+     * builds and a player who cannot.
+     */
+    'craft',
     'gather',
     /**
      * Going out after something that is not a person.
@@ -663,6 +688,45 @@ export const ACTION_NAMES = [
      */
     'request',
     /**
+     * 护法: standing over somebody else's crossing while they cannot defend it.
+     *
+     * ── WHY IT IS A MEMBER RATHER THAN AN INTENT ON SOMETHING ────────────
+     *
+     * Because the two verbs it could plausibly have hidden under both mean
+     * something else, and hiding it would have cost the mechanic:
+     *
+     *   `interact`   free on three intents, costly on eight, and its `intent`
+     *                is a free label nothing branches on. This spends a span
+     *                measured in months, can leave a crippling wound, and
+     *                resolves ANOTHER PERSON'S breakthrough. A verb whose
+     *                whole safety argument is that nothing downstream reads
+     *                its label cannot carry an act with a resolver behind it.
+     *   `breakthrough`  is the speaker's own crossing. This one is somebody
+     *                else's, and the speaker is the only person in the room
+     *                who is not attempting anything.
+     *
+     * What it reaches was already whole and had no caller anywhere in `src/`:
+     * `standing-guard-over-somebody-elses-crossing.ts` - `wouldStandGuard`,
+     * `protectionBonus`, `standingGuardCost`, `resolveVigil` - together with
+     * the `protection` field `computeBreakthroughOdds` has carried since it
+     * was written and nothing ever supplied. `shielded_crossing` was already a
+     * `FavorCause`. Every piece existed except the sentence.
+     *
+     * ── AND IT IS THE HALF OF THE SURFACE THAT WAS MISSING ───────────────
+     *
+     * Measured against the genre's own tropes, `parseIntent` reached a verb
+     * for 15 of 20 TAKING sentences and 3 of 10 GIVING ones. The engine had
+     * many ways to say harm and almost none to say help, which is a view, and
+     * this file's epigraph says the engine does not have one. See
+     * `standing-guard.ts`.
+     *
+     * It is not the soft option. `resolveVigil` rolls a wound against
+     * `VIGIL_RISK_AT_FULL_EXPOSURE`, the severity is `crippling` wherever the
+     * exposure share reaches half, and standing a realm BELOW the attempt is
+     * the most exposed anybody can be.
+     */
+    'guard',
+    /**
      * Proposing a match, and answering one that has been put to you.
      *
      * The other half of the life this game models. A cultivator climbs, stalls
@@ -861,6 +925,18 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
     'cultivate', 'seclude', 'breakthrough', 'train_technique',
     'move', 'gather', 'hunt', 'wait', 'work', 'refine', 'eat',
     /**
+     * Building spends days at a bench and the days are a real span - the food
+     * clock, the world tick and the encounter window all run over them, the
+     * same as they do for a stretch of foraging.
+     *
+     * On the list although two of `craft`'s four branches cost nothing (the
+     * listing and the refusals). This list is deliberately WIDER than the
+     * truth: it is a floor on what a MISPARSE may reach, and a sentence
+     * misread into a bench that quietly ate a month is exactly what it exists
+     * to stop. `costsTheAskerNothing` is not asked of this verb anywhere.
+     */
+    'craft',
+    /**
      * The three ways of covering ground that are not walking, and all three
      * spend real days off the catalog's own `travelDays` rather than the flat
      * one `move` spends.
@@ -947,6 +1023,13 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
      * under this list.
      */
     'request',
+    /**
+     * A watch is a span of months standing beside somebody else's crossing,
+     * and `resolveVigil` can take a crippling wound off the person keeping it.
+     * Both halves of this list's own sentence - it spends in-world time, and it
+     * can therefore kill.
+     */
+    'guard',
 ] as const;
 
 /**
@@ -998,6 +1081,10 @@ export const FALLBACK_ACTION: ActionName = 'unclear';
 /** Actions that take a duration in days. Every other action ignores one. */
 export const TIMED_ACTIONS: readonly ActionName[] = [
     'cultivate', 'seclude', 'work', 'provision', 'legacy',
+    // How long they said they would stand there. The protector module refuses
+    // to invent a length for a crossing and says so - the span is the player's
+    // own and is read off their own sentence.
+    'guard',
     // Raising somebody is a stretch of years and the sentence names it.
     // The verb is the decision; the clock is the one every other stretch
     // is spent on.
@@ -1108,6 +1195,11 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
      * nobody.
      */
     'request',
+    /**
+     * Who is being guarded. Resolved off who is standing in the square, because
+     * a watch is kept in the same room as the crossing.
+     */
+    'guard',
     /**
      * Who is being told. Resolved through the same knowledge-gated party lookup
      * `interact` and `request` use, and refused with the same guiding refusal
@@ -1345,7 +1437,7 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
 // is the instrument rather than the world. **Costly in this file has always
 // meant SPENDS - a turn, a day, or the purse. It has never meant CAN HURT
 // YOU.** `I buy a Lesser Qi-Gathering Manual` scores costly. So does
-// `I travel to Mudsummer`. The design owner's complaint that started it -
+// `I travel to Grain Rain`. The design owner's complaint that started it -
 // everything reads as safe - is about harm, and until now nothing in `src/`
 // split safe from dangerous at all.
 //
@@ -1525,6 +1617,14 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      * list is a floor on a misparse and this one is a description.
      */
     refine: [],
+    /**
+     * Unlike the cauldron, a bench does spend the days, and they run through
+     * `shortSkip` - so the encounter window is over them and a bench in a bad
+     * place can end a run. What it cannot do is hurt the body on its own:
+     * `launch` risks the MATERIALS and nothing else, and a hull that does not
+     * hold leaves a yard full of firewood rather than a wound.
+     */
+    craft: ['a_span_of_days'],
     gather: ['a_span_of_days'],
     /**
      * The only verb on the strip that carries both, and it is the honest shape
@@ -1629,6 +1729,14 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      * touches the body.
      */
     request: ['a_span_of_days'],
+    /**
+     * Both channels, and the second is the whole argument for the verb. The
+     * span is months; `resolveVigil` rolls an ordinary wound off what came down
+     * for somebody else, at `crippling` wherever the exposure share reaches
+     * half. A watch kept a realm below a tribulation rung is the most dangerous
+     * generous act in the game.
+     */
+    guard: ['a_span_of_days', 'the_crossing'],
     propose: ['a_span_of_days'],
     decline: ['a_span_of_days'],
     /**

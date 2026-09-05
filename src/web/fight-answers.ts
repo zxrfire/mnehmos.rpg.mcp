@@ -115,6 +115,34 @@ export const THE_ANSWER_IS_TO_BREAK_OFF =
 export const THE_ANSWER_IS_TO_SHOUT =
     /\b(?:call(?:s|ing)? (?:out )?for (?:help|aid|somebody|someone|anyone|anybody|the\b[\w\s]{0,24})|shout(?:s|ing)? for|scream(?:s|ing)? for|yell(?:s|ing)? for|cry(?:ing)? (?:out )?for (?:help|aid)|cries for|call(?:s|ing)? (?:the|for the|on)\s+[\w\s]{2,24}|shout(?:s|ing)? (?:out )?(?:to|at)\s+[\w\s]{2,24}|help[!.]*\s*$|somebody help|someone help|get help|(?:call|fetch|summon)(?:s|ing)? (?:the )?(?:guards?|wardens?|watch|elders?|sect|house))\b/i;
 
+/**
+ * Letting somebody go.
+ *
+ * ── THE HALF OF THE FIGHT VOCABULARY THAT DID NOT EXIST ──────────────────
+ *
+ * Measured against the genre's own tropes, `parseIntent` reached a verb for 15
+ * of 20 TAKING sentences and 3 of 10 GIVING ones, and `I spare him` and `I let
+ * him go` were both `unclear` - inside a fight AND out of one. `combat.ts` has
+ * had the ending the whole time and calls it in its own words: *"beaten and
+ * deliberately let go, in front of people. The genre's engine."* The only way
+ * to ask for it was to declare at the OPENING that humiliating them was the
+ * point, so a player who set out to kill somebody and then decided not to had
+ * no sentence, and the fight ran to a body.
+ *
+ * ── IT SITS ABOVE THE STRIKE LIST AND BELOW EVERYTHING ELSE ──────────────
+ *
+ * Above `keep swinging`, which owns `finish him`, `end him` and `kill him` and
+ * would take `I don't finish him` on the word `finish`. Below breaking off,
+ * because `I let him go and back off` is somebody leaving. Below pressing and
+ * guarding, because `let him hit me` is a press and shares the word `let`.
+ *
+ * Every phrasing needs a stopping word AND an object or a plain stop. `I spare`
+ * with nothing after it is here; `I spare a thought` is not a fight answer and
+ * matches nothing, because the object list is people.
+ */
+export const THE_ANSWER_IS_TO_SPARE =
+    /\b(?:spare(?:s|d)? (?:him|her|them|his life|her life|their life|the boy|the girl)|spare(?:s|d)?\s*$|let(?:s|ting)? (?:him|her|them) (?:go|live|off|be|walk|stand|up)|let (?:him|her|them) (?:go|live)|show(?:s|ing)? (?:him|her|them )?mercy|have mercy|mercy on (?:him|her|them)|stay(?:s|ing)? my (?:hand|blade|sword)|stay my hand|hold(?:s|ing)? my (?:hand|blade|sword)|do(?:es)? not finish (?:him|her|them)|don'?t finish (?:him|her|them)|will not finish (?:him|her|them)|won'?t finish (?:him|her|them)|leave(?:s|ing)? (?:him|her|them) (?:alive|be|breathing|standing)|stop(?:s|ping)? short|enough[.!]*\s*$|it(?:'s| is) enough)\b/i;
+
 /** Swinging again, which is the ordinary round and needs no special handling. */
 export const THE_ANSWER_IS_TO_KEEP_SWINGING =
     /\b(?:attack(?:s|ing)?|strike(?:s|ing)?|struck|hit(?:s|ting)?|swing(?:s|ing)?|cut(?:s|ting)?|stab(?:s|bing)?|slash(?:es|ing)?|punch(?:es|ing)?|kick(?:s|ing)?|fight(?:s|ing)? on|keep(?:s|ing)? (?:fighting|going|at it|swinging)|again\b|press(?:es|ing)? the attack|finish (?:him|her|them|it)|kill (?:him|her|them|it)|end (?:him|her|them|it))\b/i;
@@ -125,6 +153,7 @@ export const SAY_TO_PRESS = 'I take the hit and swing';
 export const SAY_TO_BREAK_OFF = 'I back off';
 export const SAY_TO_SHOUT = 'I call for help';
 export const SAY_TO_KEEP_SWINGING = 'I keep swinging';
+export const SAY_TO_SPARE = 'I spare him';
 
 // ─────────────────────────────────────────────────────────────────────────
 // READING ONE
@@ -163,6 +192,9 @@ export function whatTheySaidInTheFight(said: string): FightAnswer | null {
     }
     if (THE_ANSWER_IS_TO_PRESS.test(line)) return { kind: 'press' };
     if (THE_ANSWER_IS_TO_GUARD.test(line)) return { kind: 'guard' };
+    // Above the strike list, which owns `finish him`, `end him` and `kill him`
+    // and would take every negated form of all three.
+    if (THE_ANSWER_IS_TO_SPARE.test(line)) return { kind: 'spare' };
     if (THE_ANSWER_IS_TO_KEEP_SWINGING.test(line)) return { kind: 'strike' };
     return null;
 }

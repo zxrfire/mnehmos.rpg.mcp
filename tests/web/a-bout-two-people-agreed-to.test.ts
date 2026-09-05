@@ -195,7 +195,22 @@ describe('and the world answers', () => {
                 db.prepare('DELETE FROM cultivator_injuries WHERE cultivator_id = ?')
                     .run(cultivator.id);
                 await game.act('I spar with someone of my own rank');
-                held = obligations(db).filter(row => row.subject_id === cultivator.id);
+                // ── THE ROW THIS TEST IS ABOUT, SELECTED BY WHAT IT IS ───
+                //
+                // A fight now writes two kinds of account about the loser and
+                // this searches for one of them. `whatTheLoserNowHoldsAboutYou`
+                // persists what `seedObligations` decided - the grudge the
+                // person you beat holds, computed and dropped for as long as
+                // played fights have existed - and it lands on almost every
+                // bout, so a search that stops at "any row about the player"
+                // stops on the first spar and never reaches the rare event
+                // this test exists for. Its rows carry no terms tag, because
+                // the resolver never knew what was agreed; the account opened
+                // because the bout went PAST what was agreed carries one, and
+                // that tag is its whole content.
+                held = obligations(db).filter(row =>
+                    row.subject_id === cultivator.id
+                    && (JSON.parse(row.tags) as string[]).includes('agreed'));
             }
 
             if (held.length === 0) continue;
@@ -295,7 +310,14 @@ describe('and the world answers', () => {
             for (let fights = 0; fights < 8 && rows.length === 0; fights++) {
                 if (!cultivatorRow(db, cultivator.id).alive) break;
                 await game.act('I attack someone of my own rank');
-                rows = obligations(db);
+                // The terms row, selected by the tag that is its content. A
+                // fight now writes two kinds of account about the loser - see
+                // the note in the agreed-bout case above - and a bare
+                // `obligations(db)` picks whichever the table hands back
+                // first, which is an ordering accident rather than a subject.
+                rows = obligations(db).filter(row =>
+                    (JSON.parse(row.tags) as string[]).some(
+                        tag => tag === 'open' || tag === 'agreed'));
             }
             if (rows.length > 0) {
                 ledger = db.prepare(

@@ -548,6 +548,21 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
                         ? { action: 'sect', intent: 'standing', topic: 'leaving' }
                         : { action: 'sect', intent: 'standing' };
 
+        case 'guard':
+            // ── ASKING ABOUT A WATCH IS THE ROSTER OF WHO WOULD KEEP ONE ──
+            //
+            // The target is DROPPED, and that is what makes it a read.
+            // `GameService.standGuard` with a name spends the span and resolves
+            // somebody else's crossing; with none it walks the square through
+            // `wouldStandGuard` and says who would stand, which is the answer
+            // "would anybody guard my breakthrough" was actually asking for.
+            //
+            // Without this case the default below answered a question about a
+            // protector with `assess` - the weather where the player is
+            // standing. That is the deflection failure this module exists to
+            // stop, and it reads like an answer.
+            return { action: 'guard', intent: 'ask' };
+
         case 'learn_technique':
             // What the book would take, which is a read of the same facts the
             // refusal is built from. See `GameService.whatItWouldTake`.
@@ -580,7 +595,7 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
         case 'move':
         case 'ride':
         case 'fold':
-            // Where they could go, priced. "Could I ride to Kettle" and "how
+            // Where they could go, priced. "Could I ride to Iron Gate" and "how
             // far can I fold" are both questions about the map rather than
             // journeys, and the destinations read answers each with the roads
             // the catalog states and the days on them.
@@ -590,7 +605,7 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
         case 'oath':
             // Both have a read as their DEFAULT intent, by the rule stated at
             // INTENT_ACTIONS: the board, and what the swearer already carries.
-            // Dropping the intent reaches it. "What would passage to Kettle
+            // Dropping the intent reaches it. "What would passage to Iron Gate
             // cost" is the board, and the board is a price list.
             return { action: plan.action, ...(plan.target ? { target: plan.target } : {}) };
 

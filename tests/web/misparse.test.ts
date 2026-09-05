@@ -429,8 +429,8 @@ describe('every verb is reachable from plain English', () => {
         // The three ways of covering ground that are not walking, and a word
         // given. All four were engine modules with no caller; `ride` was a
         // label on `move` that resolved through the same flat journey.
-        ride: 'I ride to Scarwater',
-        fold: 'I fold space to Kettle',
+        ride: 'I ride to Clear River Ford',
+        fold: 'I fold space to Iron Gate',
         passage: 'what does the Span board say',
         oath: 'what oaths am I carrying',
         provision: 'I stock up on provisions',
@@ -439,13 +439,18 @@ describe('every verb is reachable from plain English', () => {
         breakthrough: 'break through',
         train_technique: 'I practise the Lid-Watching Stance technique',
         refine: 'I brew a pill in the cauldron',
+        // The bench, which is the cauldron's neighbour and shares its verbs.
+        // The noun is what separates them: `make`, `craft` and `cook` beside an
+        // alchemical noun are the cauldron and keep it, and a bill is reached
+        // only by naming a thing a yard makes.
+        craft: 'I build a carriage',
         gather: 'forage for herbs',
         hunt: 'I go hunting',
         eat: 'I buy a meal',
         wait: 'I wait',
         work: 'find work',
         market: 'what is for sale',
-        move: 'travel to the Low Fall',
+        move: 'travel to the Jade Gorge',
         interact: 'I bribe the gate steward',
         investigate: 'examine the inscription',
         assess: 'could I survive that cave',
@@ -507,7 +512,11 @@ describe('every verb is reachable from plain English', () => {
         // with the whole proposition swallowed into the party name - and, on
         // the phrasing naming a theft, reached `interact/steal` and pointed an
         // attempt at the person being warned.
-        tell: 'I tell him that Cao Antao killed his brother'
+        tell: 'I tell him that Cao Antao killed his brother',
+        // 护法, and the phrasing chosen is the one that had to be taken off
+        // `breakthrough`: it carries the word, and it is about somebody
+        // else's crossing rather than the speaker's own.
+        guard: 'I watch over his breakthrough'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {
@@ -1161,7 +1170,7 @@ describe('reaching an inheritance ground', () => {
             ['is it safe to go in', 'assess'],
             ['size up the valley', 'assess'],
             ['examine the inscription', 'investigate'],
-            ['travel to the Low Fall', 'move'],
+            ['travel to the Jade Gorge', 'move'],
             ['what happened here', 'look'],
             ['I look for a sect that will take me', 'sect'],
             ['I take the sect treasury and leave in the night', 'sect'],
@@ -2569,7 +2578,7 @@ describe('a place whose name begins with "the"', () => {
             .toBe('the-sealed-compound-at-blackbank');
         expect(loosePlaceKey('the sealed compound at Blackbank'))
             .toBe(loosePlaceKey('sealed compound at Blackbank'));
-        expect(loosePlaceKey('Low Fall')).toBe(loosePlaceKey('the Low Fall'));
+        expect(loosePlaceKey('The Jade Gorge')).toBe(loosePlaceKey('Jade Gorge'));
     });
 
     it('does not quietly rename a place that merely starts with those letters', () => {
@@ -2963,7 +2972,7 @@ describe('the noun is right and the verb is wrong', () => {
      * these are the sentences most at risk from the two broadest additions.
      */
     it('does not swallow the verbs it sits next to', () => {
-        expect(parseIntent('I travel to Low Fall').action).toBe('move');
+        expect(parseIntent('I travel to Green Water City').action).toBe('move');
         expect(parseIntent('what can I buy').action).toBe('market');
         expect(parseIntent('what sects are there').action).toBe('sect');
         expect(parseIntent('I look around').action).toBe('look');
@@ -3068,7 +3077,7 @@ describe('the plainest things a player says', () => {
      * sentence that merely contains the word keeps its own meaning.
      */
     it('does not let a bare verb swallow a longer sentence', () => {
-        expect(parseIntent('I travel to Low Fall').action).toBe('move');
+        expect(parseIntent('I travel to Green Water City').action).toBe('move');
         expect(parseIntent('what am I carrying').action).toBe('inventory');
         expect(parseIntent('I look around').action).toBe('look');
         expect(parseIntent('I attack Cao Nuozhi').action).toBe('attack');

@@ -165,6 +165,17 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want to try alchemy with what I have',
         'I cook a healing pill'
     ],
+    // Every one of these names the thing. `build` and `make` on their own are
+    // how somebody says half a dozen other intentions - making an offer, making
+    // their way south - and an exemplar without the noun would pull all of them
+    // in, which is the failure the header's third rule is about.
+    craft: [
+        'I build a carriage',
+        'I lay down the keel of a spirit boat',
+        'I put a cart together out of the hides I took',
+        'I go back to the carriage on the stocks and work on it',
+        'I want to finish the boat I started'
+    ],
     gather: [
         'I go out and pick herbs',
         'I forage on the hillside',
@@ -452,6 +463,14 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I ask him for the manual',
         'I want him to put in a word for me',
         'I ask her to let me into the house'
+    ],
+    guard: [
+        'I stand guard while she crosses',
+        'I watch over his breakthrough',
+        'I protect her while she attempts it',
+        'I act as her dao protector',
+        'I keep watch over the crossing',
+        'who would stand guard for me'
     ],
     propose: [
         'I propose a match to the Xu',
