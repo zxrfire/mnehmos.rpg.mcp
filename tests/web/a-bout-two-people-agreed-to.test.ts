@@ -176,7 +176,17 @@ describe('and the world answers', () => {
     it('opens an account against a player who goes too far in an agreed bout', async () => {
         let found: { rows: OpenAccount[]; playerId: string; standing: number | null } | null = null;
 
-        const seeds = Array.from({ length: 30 }, (_, n) => `bout-${n}`);
+        // ── POOLED, NOT WIDENED ──────────────────────────────────────────
+        //
+        // Thirty was enough while the search stopped at "any account about the
+        // player", because a fight wrote exactly one kind. It now writes two -
+        // see the note below - so the search has to walk past the common one
+        // to reach the rare one this test is about, and thirty seeds started
+        // landing on the wrong side of the draw in a pooled run while passing
+        // on its own. `makeGame` does not pin the WORLD, so what the file
+        // before it left behind is part of the sample; the bar is unchanged
+        // and the sample is bigger, which is the fix AGENTS.md names.
+        const seeds = Array.from({ length: 80 }, (_, n) => `bout-${n}`);
         for (const seed of seeds) {
             if (found) break;
             const { db, game, repos } = makeGame({ seed, worldEnabled: true });
