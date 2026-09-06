@@ -195,7 +195,7 @@ const SECTS = [
   { id: 'sect_serpent', name: 'Nine Serpent Pavilion', ranks: ['Servant', 'Initiate', 'Venom Disciple', 'Elder', 'Hall Master'] },
   { id: 'sect_ember', name: 'Crimson Ember Hall', ranks: ['Cinderhand', 'Emberhand', 'Flame Disciple', 'Elder', 'Hall Master'] },
   { id: 'sect_frost', name: 'Frostroot Valley', ranks: ['Tender', 'Rootkeeper', 'Valley Disciple', 'Elder', 'Valley Lord'] },
-  { id: 'sect_ledger', name: 'Iron Ledger Guild', ranks: ['Clerk', 'Factor', 'Broker', 'Ledger Master'] }
+  { id: 'sect_ledger', name: 'Iron Ledger Hall', ranks: ['Clerk', 'Factor', 'Broker', 'Ledger Master'] }
 ];
 const LOCATIONS = ['Greenwater Town', 'Stonefall Market', 'Azure Cloud Peak', 'Bitter Sea Coast', 'The Thousand Steps', 'The Drawn Fields', 'Nameless Ravine', 'Frostroot Valley', 'Serpent Hollow', 'Cangyan Ruins'];
 const DEATH_CAUSES = ['combat_defeat', 'lifespan_exhausted', 'untreated_injuries', 'starvation', 'failed_breakthrough', 'qi_deviation', 'heavenly_tribulation', 'stagnation_aging', 'obviously_fatal_choice'];

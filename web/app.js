@@ -1020,7 +1020,7 @@ function renderWarnings() {
     items.push({
       level: 'critical',
       mark: '✕',
-      title: `HP ${fmtInt(hp)} / ${fmtInt(maxHp)}`,
+      title: `Health ${fmtInt(hp)} / ${fmtInt(maxHp)}`,
       body: 'There is no death save in this game.'
     });
   }
@@ -1532,7 +1532,7 @@ function renderSheet() {
     ${raw(daoSection(d))}
 
     <section class="sheet__group">
-      <h3 class="sheet__label">Vitals</h3>
+      <h3 class="sheet__label">Body and soul</h3>
       ${bodiless
         ? raw(html`<div class="vital-line tone-odd">
             <div class="vital-line__top">
@@ -1572,7 +1572,7 @@ function renderSheet() {
     </section>
 
     <section class="sheet__group">
-      <h3 class="sheet__label">Mortality</h3>
+      <h3 class="sheet__label">Lifespan and settling</h3>
       ${raw(meter({
         name: 'Age',
         value: age,
@@ -2367,7 +2367,7 @@ function showTimeSkip(skip, narration, merged) {
   const deltaDefs = [
     ['cultivationProgress', 'Progress', 0, false],
     ['realmOrdinal', 'Ranks', 0, false],
-    ['hp', 'HP', 0, false],
+    ['hp', 'Health', 0, false],
     ['qi', 'Qi', 0, false],
     ['satiety', 'Satiety', 0, false],
     ['spiritStones', 'Stones', 0, false],
@@ -2661,7 +2661,7 @@ function pickerBody() {
   return html`
     <div class="pick">
       <div>
-        <div class="section__label">Unit</div>
+        <div class="section__label">Counted in</div>
         <div class="pick__units" id="pick-units">
           ${raw(['days', 'months', 'years'].map((u) => html`
             <button class="pick__unit" type="button" data-unit="${u}" aria-pressed="${PICKER.unit === u ? 'true' : 'false'}">${titleise(u)}</button>`).join(''))}
