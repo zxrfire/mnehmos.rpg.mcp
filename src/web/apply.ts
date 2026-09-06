@@ -22,16 +22,44 @@
  *   persistToll             the price of a crossing - and the delete behind it
  *
  * This module owns only the ordering and the transaction.
+ *
+ * ── AND THE THREE WRITES THE PLAY LOOP WAS NOT MAKING ────────────────────
+ *
+ * The tool path at `cultivation-manage.ts` was a second copy of this function,
+ * and the copies had drifted in exactly three load-bearing ways. Everything a
+ * player did through the command bar went down one write short of everything
+ * the same action did through the tool:
+ *
+ *   persistImmortalStatus  A skip can resolve the last crossing.
+ *                          `migrations.cultivation.ts` says that column is what
+ *                          enforces the Lid bar - a `false_immortal` is what
+ *                          bars every further attempt - so a played life that
+ *                          crossed could cross AGAIN. The Lid opened twice.
+ *   persistVisions         Beliefs with no fact behind them, computed by the
+ *                          engine and discarded by the play loop.
+ *   recordRankGained       The peak-rank ledger row, so a played life's peak
+ *                          survived its later decline only on the tool path.
+ *
+ * The injuries too: the copy wrote `id`, `cultivationPenalty`,
+ * `breakthroughPenalty` and `treated`, and this one dropped all four, so a
+ * played wound came back with the engine's penalties gone.
+ *
+ * They are here now, which is a BEHAVIOUR CHANGE and not a tidy-up: the play
+ * loop starts enforcing a bar it has never enforced.
  */
 
 import type { Cultivator, Run, TimeSkipResult } from '../schema/cultivation.js';
 import { describeDeath } from '../engine/cultivation/survival.js';
 import {
     persistFoundation,
+    persistImmortalStatus,
     persistToll,
     persistUnderstanding,
+    persistVisions,
+    recordRankGained,
     skipEndState,
-    type CultivationRepos
+    type CultivationRepos,
+    type TollApplication
 } from '../server/consolidated/cultivation-support.js';
 import type { Injury } from '../schema/cultivation.js';
 
@@ -50,6 +78,14 @@ export interface ApplySkipResult {
     injuries: Injury[];
     /** Engine-authored lines for every price a crossing exacted. */
     tollLines: string[];
+    /**
+     * What each toll actually removed, in the order the tolls came.
+     *
+     * Reported so a caller can show that what the ledger names was genuinely
+     * deleted rather than merely recorded - which is the difference between a
+     * crossing that took something and a crossing that said it did.
+     */
+    tollApplications: TollApplication[];
     /** Comprehensions written this skip, and the achievements behind them. */
     understanding: { insights: number; achievements: number };
 }
@@ -73,19 +109,25 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
     const ranksGained = Math.max(0, end.realmOrdinal - before.realmOrdinal);
     const nextTurn = run.turn + 1;
     const tollLines: string[] = [];
+    const tollApplications: TollApplication[] = [];
     let understanding = { insights: 0, achievements: 0 };
 
     const persist = repos.db.transaction(() => {
         for (const injury of injuries) {
             repos.cultivators.addInjury(before.id, {
+                // The engine's own record, whole. Its id, its name and its two
+                // penalties were all being dropped here and written on the tool
+                // path, so one wound meant two different things depending on
+                // which door the player came through.
+                id: injury.id,
                 severity: injury.severity,
                 source: injury.source,
                 description: injury.description,
                 sustainedOnTurn: injury.sustainedOnTurn,
-                // What the wound is called. The engine mints it and this layer
-                // used to drop it, so every wound a player carried read
-                // `woundType: null` and nothing could name it.
-                woundType: injury.woundType
+                woundType: injury.woundType,
+                cultivationPenalty: injury.cultivationPenalty,
+                breakthroughPenalty: injury.breakthroughPenalty,
+                treated: injury.treated
             });
         }
 
@@ -97,7 +139,7 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
         // was exacted for. `persistToll` is what turns "the crossing took your
         // Nine Severing Threads" from an assertion into a delete.
         for (const toll of skip.tolls ?? []) {
-            persistToll(repos, run, before.id, toll);
+            tollApplications.push(persistToll(repos, run, before.id, toll));
             tollLines.push(tollLine(toll));
         }
 
@@ -107,6 +149,14 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
         // cannot upgrade a cracked foundation into a flawless one.
         if (skip.foundationEstablished) {
             persistFoundation(repos, before.id, skip.foundationEstablished);
+        }
+
+        // THE LID. A skip can resolve the last crossing, and the ordinal does
+        // not encode the result. `immortal_status` is what bars every further
+        // attempt; without this write a played life that crossed could cross
+        // again.
+        if (skip.immortalStatusGained) {
+            persistImmortalStatus(repos, before.id, skip.immortalStatusGained);
         }
 
         // ── What they understood, which was being thrown away ──────────────
@@ -124,6 +174,9 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
         understanding = persistUnderstanding(
             repos, before.id, skip.insightsGained, skip.achievements
         );
+        // Beliefs with no fact behind them. They go to the knowledge layer and
+        // never to the cultivator's capability.
+        persistVisions(repos.db, skip.visions);
 
         // Deltas are computed against the row as it stands AFTER the advance,
         // because advanceRealm zeroes progress and the stagnation clock; these
@@ -183,6 +236,10 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
         repos.runs.advanceDays(run.id, skip.simulatedDays);
         repos.runs.incrementTurn(run.id, 1);
 
+        // The peak survives the decline, and the death. Stamped at the moment
+        // the rank is reached, which is here.
+        if (ranksGained > 0) recordRankGained(repos.db, before.id, nextTurn, ranksGained);
+
         if (skip.died && skip.deathCause) {
             repos.cultivators.markDead(
                 before.id,
@@ -203,6 +260,7 @@ export function applyTimeSkip(repos: CultivationRepos, input: ApplySkipInput): A
         run: repos.runs.getById(run.id)!,
         injuries,
         tollLines,
+        tollApplications,
         understanding
     };
 }

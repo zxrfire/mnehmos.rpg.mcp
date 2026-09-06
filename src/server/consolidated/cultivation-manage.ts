@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { applyTimeSkip } from '../../web/apply.js';
 import { randomUUID } from 'crypto';
 import {
     PLAYER_ROLL_IDENTITY,
@@ -99,15 +100,12 @@ import {
     persistFoundation,
     persistImmortalStatus,
     persistToll,
-    persistUnderstanding,
-    persistVisions,
     ranksGainedThisTurn,
     readJsonFlag,
     recordRankGained,
     resolveActiveRun,
     round2,
     round4,
-    skipEndState,
     summariseInjury,
     summariseInsight,
     daoHeartConditions,
@@ -673,116 +671,22 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     });
 
     // ── PERSISTENCE. Everything the simulation decided, or nothing at all. ──
+    //
+    // ONE WRITER. This was a second copy of `applyTimeSkip` - the same
+    // transaction over the same repos - and the copies had drifted in four
+    // load-bearing ways, all of them writes this side made and the play loop
+    // did not: the Lid bar, the visions, the peak-rank ledger row, and the
+    // engine's own injury ids and penalties. So the same action persisted
+    // differently depending on whether it came through a tool or the command
+    // bar, and `apply.ts`'s header has said since it was written that the two
+    // must not disagree. They cannot now: there is one of them.
     const before = cultivator;
-    const end = skipEndState(before, result);
-    // The engine's own records, ids and penalties intact. Nothing is inferred
-    // from its narration any more.
-    const injuries = result.injuriesSustained;
-    const ranksGained = Math.max(0, end.realmOrdinal - before.realmOrdinal);
-    const nextTurn = run.turn + 1;
+    const applied = applyTimeSkip(repos, { before, run, skip: result });
+    const injuries = applied.injuries;
+    const tollApplications = applied.tollApplications;
 
-    const tollApplications: TollApplication[] = [];
-
-    const persist = repos.db.transaction(() => {
-        for (const injury of injuries) {
-            repos.cultivators.addInjury(before.id, {
-                id: injury.id,
-                severity: injury.severity,
-                source: injury.source,
-                description: injury.description,
-                sustainedOnTurn: injury.sustainedOnTurn,
-                woundType: injury.woundType,
-                cultivationPenalty: injury.cultivationPenalty,
-                breakthroughPenalty: injury.breakthroughPenalty,
-                treated: injury.treated
-            });
-        }
-
-        if (ranksGained > 0) {
-            repos.cultivators.advanceRealm(before.id, ranksGained);
-        }
-
-        // A skip can cross 12 -> 13 and can resolve the last crossing. Both
-        // results are facts about the cultivator that the ordinal does not
-        // encode, and a 'false_immortal' in particular is what bars every
-        // further attempt - losing it would let the Lid open twice.
-        if (result.foundationEstablished) {
-            persistFoundation(repos, before.id, result.foundationEstablished);
-        }
-        if (result.immortalStatusGained) {
-            persistImmortalStatus(repos, before.id, result.immortalStatusGained);
-        }
-
-        // Every instalment charged during the skip, in the same
-        // transaction as the ranks it charged them for. The application result
-        // is kept so the response can show that what the ledger names was
-        // genuinely removed, not merely recorded.
-        for (const toll of result.tolls ?? []) {
-            tollApplications.push(persistToll(repos, run, before.id, toll));
-        }
-
-        // Deltas are computed against the row as it stands AFTER the advance,
-        // so the stored state equals the simulated state exactly rather than
-        // approximately. advanceRealm zeroes progress and the stagnation clock;
-        // these deltas put back whatever the simulation actually ended on.
-        const mid = repos.cultivators.getById(before.id)!;
-        repos.cultivators.applyDeltas(before.id, {
-            hp: end.hp - mid.hp,
-            qi: end.qi - mid.qi,
-            satiety: end.satiety - mid.satiety,
-            starvationTurns: end.starvationTurns - mid.starvationTurns,
-            bleedingTurns: end.bleedingTurns - mid.bleedingTurns,
-            // A DELTA, not an end state. The purse is the one field here that is
-            // not exclusively the skip's, and writing it absolutely reverts any
-            // spend made between the caller's snapshot and this call - which is how
-            // a bribe came to report "10 spirit stones went with it" and leave the
-            // player one stone richer. `web/apply.ts` carries the measurement and
-            // the argument; this is the same write on the tool path, and its header
-            // states that the two paths must not disagree about what a skip
-            // persists.
-            spiritStones: end.spiritStones - before.spiritStones,
-            cultivationProgress: end.cultivationProgress - mid.cultivationProgress,
-            age: end.age - mid.age,
-            yearsAtCurrentRealm: end.yearsAtCurrentRealm - mid.yearsAtCurrentRealm
-        });
-
-        // Comprehension, and the events that produced it. Written in the same
-        // transaction as the rest of the skip: an insight the engine formed
-        // that the row does not show is the same failure as a breakthrough the
-        // narrator invented, and this write path was missing entirely - the
-        // column existed, the engine filled the field, and nothing carried it
-        // to rest.
-        persistUnderstanding(repos, before.id, result.insightsGained, result.achievements);
-        // Visions are beliefs with no fact behind them. They go to the
-        // knowledge layer, never to the cultivator's capability.
-        persistVisions(repos.db, result.visions);
-
-        repos.techniques.tickCooldowns(before.id, Math.floor(result.simulatedDays));
-
-        // The run clock must be advanced BEFORE the run is closed: advanceDays
-        // and incrementTurn only touch active runs, and a death stops the clock
-        // at the day it happened, not at the day that was asked for.
-        repos.runs.advanceDays(run.id, result.simulatedDays);
-        repos.runs.incrementTurn(run.id, 1);
-        if (ranksGained > 0) recordRankGained(repos.db, before.id, nextTurn, ranksGained);
-
-        if (result.died && result.deathCause) {
-            repos.cultivators.markDead(
-                before.id,
-                result.deathCause,
-                nextTurn,
-                describeDeath(result.deathCause, {
-                    name: before.name,
-                    realmOrdinal: end.realmOrdinal,
-                    age: end.age
-                })
-            );
-        }
-    });
-    persist();
-
-    const after = repos.cultivators.getById(before.id)!;
-    const runAfter = repos.runs.getById(run.id)!;
+    const after = applied.cultivator;
+    const runAfter = applied.run;
 
     // STEP 4: what the arrivals left behind, AFTER the skip.
     let arrivalsRecorded: ReturnType<typeof recordEncounters> | null = null;
