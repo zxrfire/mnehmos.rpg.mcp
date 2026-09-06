@@ -50,7 +50,8 @@ export function migrateWorld(db: Database.Database): void {
       id TEXT PRIMARY KEY,
       seed TEXT NOT NULL,                            -- every stochastic system derives from this
       current_day INTEGER NOT NULL DEFAULT 0,        -- absolute day
-      version INTEGER NOT NULL DEFAULT 1,
+      version INTEGER NOT NULL DEFAULT 1,           -- SCHEMA version. Not the revision.
+      revision INTEGER NOT NULL DEFAULT 0,           -- bumped by every committed transition
       next_npc_seq INTEGER NOT NULL DEFAULT 1,
       next_effect_seq INTEGER NOT NULL DEFAULT 1,
       next_process_seq INTEGER NOT NULL DEFAULT 1,
@@ -917,6 +918,17 @@ function addWorldColumns(db: Database.Database): void {
     // world stops replacing its dead, the roster empties over a few centuries,
     // and the simulation reports a collapse that is an artefact of the save.
     const runtimeColumns = columnsOf('world_runtime');
+
+    // The world's own counter, bumped by every committed transition, so a
+    // process holding a cached WorldState can tell whether it is still the
+    // world. NOT `version`, which is the SCHEMA version the loader migrates
+    // against - see `world-revision.ts` for why a second meaning on that column
+    // would make every load compare a revision to a schema number.
+    if (!runtimeColumns.includes('revision')) {
+        console.error('[Migration] Adding revision column to world_runtime table');
+        db.exec('ALTER TABLE world_runtime ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;');
+    }
+
     if (!runtimeColumns.includes('population_target')) {
         console.error('[Migration] Adding population_target column to world_runtime table');
         db.exec('ALTER TABLE world_runtime ADD COLUMN population_target INTEGER NOT NULL DEFAULT 0;');

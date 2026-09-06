@@ -216,6 +216,11 @@ import {
 import { getArtifact } from '../data/cultivation/artifacts.js';
 import { applyTimeSkip } from './apply.js';
 import { settleWhatTheyWereCarrying, type EstateOutcome } from './estate-settlement.js';
+import {
+    commitOneTransition,
+    type TransitionContext
+} from '../server/state/transition-runner.js';
+import { forgetWorld, writeTheWorldNow } from '../server/state/cultivation-world.js';
 import { somebodyDidThis } from '../engine/world/estate-at-death.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
@@ -12133,6 +12138,46 @@ ${fit.line}`;
         const now = this.currentRun();
         if (now.cultivator.alive || !now.cultivator.deathCause) return null;
 
+        // THE FIRST TRANSITION. Before this, settling a death committed five
+        // times with no transaction at all - the run enshrined, the objects
+        // moved, the NPC row written, the ledger written, and the body emptied
+        // in two more statements - so a failure between any two left a
+        // cultivator dead with a full pouch, or an emptied pouch with no grave.
+        // Now it is one boundary: all of it, or none, and the world write is
+        // inside it rather than deferred to the end of the turn.
+        const world = this.atHand;
+        const done = commitOneTransition({
+            db: this.db,
+            at: world === null ? null : {
+                id: world.id,
+                state: world,
+                append: state => writeTheWorldNow(state),
+                forget: () => forgetWorld(world.id)
+            },
+            onDay: world === null ? 0 : Math.floor(world.currentDay),
+            body: ctx => this.settleTheEstateInside(now, ctx)
+        });
+        return done.result;
+    }
+
+    /**
+     * The body of the death transition.
+     *
+     * Synchronous, and every one of its writes is: `settleWhatTheyWereCarrying`
+     * and everything it reaches were verified to contain no await, which is why
+     * this could be brought inside a boundary without touching `act()`.
+     */
+    private settleTheEstateInside(
+        now: { cultivator: Cultivator; run: Run },
+        ctx: TransitionContext
+    ): EstateOutcome {
+        const deathCause = now.cultivator.deathCause;
+        if (deathCause === null) {
+            throw new Error(
+                'settleTheEstateInside was reached with no death cause. Its caller checks, so '
+                + 'this is a second caller that did not.'
+            );
+        }
         const settled = settleWhatTheyWereCarrying({
             db: this.db,
             world: this.atHand,
@@ -12150,13 +12195,27 @@ ${fit.line}`;
             // Being in the same town when somebody starves is not standing
             // over them; killing them is. Everything else goes into the
             // ground, which is what the Late Age is made of.
-            standingOver: somebodyDidThis(now.cultivator.deathCause)
+            standingOver: somebodyDidThis(deathCause)
                 ? this.present(now.cultivator).map(row => ({ id: row.id, name: row.name }))
                 : [],
             // A failed crossing leaves a scar and nothing to search.
             leavesBody: now.cultivator.deathCause !== 'heavenly_tribulation'
         });
-        if (settled.worldDirty) this.worldDirty = true;
+        // NOT `this.worldDirty = true`. The world write happens inside this
+        // transaction, so setting the turn-wide flag as well would make `act()`
+        // flush the same world a second time at :2013 - and a test asserting
+        // "one death, one commit" would read two with nothing to explain it.
+        if (settled.worldDirty) {
+            ctx.markWorldChanged();
+            this.worldDirty = false;
+        }
+        // What the death left behind, for whoever has to be told. Ids and not
+        // prose: the fact rows are already in the world this transition wrote,
+        // and a second copy of their wording here would be two accounts of one
+        // death.
+        for (const factId of settled.factIds) {
+            ctx.emit({ kind: 'fact', factId, day: ctx.onDay, summary: '' });
+        }
         return settled;
     }
 

@@ -5,6 +5,7 @@
 import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import { getDb } from '../../storage/index.js';
+import { readWorldRevision } from './world-revision.js';
 import {
     advanceWorldForPlay,
     loadCultivationCatalog,
@@ -52,6 +53,21 @@ export interface WorldSummary {
 
 /** Worlds held open in this process, by world id. */
 const loaded = new Map<string, WorldHandle>();
+/** What revision each held handle was loaded at. See `open`. */
+const revisionOf = new Map<string, number>();
+
+/**
+ * Hold a handle, and record what revision it is of.
+ *
+ * ONE PATH, because the two maps must never disagree: a handle held with no
+ * recorded revision looks stale on every read and is evicted the moment
+ * anything asks for it, which silently turns a cache into a reload loop.
+ */
+function hold(handle: WorldHandle): WorldHandle {
+    loaded.set(handle.id, handle);
+    revisionOf.set(handle.id, readWorldRevision(getDb(), handle.id));
+    return handle;
+}
 /** Which world a run lives in. Resolved from `world_runs`, then cached. */
 const runToWorld = new Map<string, string>();
 /** The world new runs enter. Persisted implicitly as "the first one created". */
@@ -67,6 +83,7 @@ const repos = new WeakMap<Database.Database, WorldStateRepository>();
  */
 export function resetCultivationWorlds(): void {
     loaded.clear();
+    revisionOf.clear();
     runToWorld.clear();
     activeId = null;
     catalog = null;
@@ -118,7 +135,7 @@ export async function createWorld(options: CreateWorldOptions = {}): Promise<Wor
 
     const handle: WorldHandle = { id: seeded.state.id, seed, state: seeded.state };
     repo().saveWorld(handle.state);
-    loaded.set(handle.id, handle);
+    hold(handle);
     if (options.makeActive !== false) activeId = handle.id;
 
     return summarise(handle, true);
@@ -129,8 +146,8 @@ export async function createWorld(options: CreateWorldOptions = {}): Promise<Wor
  */
 export async function activeWorld(): Promise<WorldHandle> {
     if (activeId !== null) {
-        const held = loaded.get(activeId);
-        if (held) return held;
+        // Through `open` and not off the map: `open` is where the staleness
+        // check lives, and a second door past it is a cache nobody validates.
         const reopened = await open(activeId);
         if (reopened) return reopened;
         // The active id no longer resolves - a database swap, or a deletion.
@@ -184,14 +201,21 @@ export function listWorlds(): WorldSummary[] {
  */
 async function open(worldId: string): Promise<WorldHandle | null> {
     const held = loaded.get(worldId);
-    if (held) return held;
+    // A HELD HANDLE IS NOT AUTOMATICALLY THE WORLD. This map is process-global
+    // and nothing else revalidates it, so another process, a migration or a
+    // test that wrote through the repository leaves it holding a world that is
+    // no longer the one on disk - and the next append writes the stale copy
+    // back over the real one. The revision is what makes that answerable.
+    if (held) {
+        if (readWorldRevision(getDb(), worldId) === revisionOf.get(worldId)) return held;
+        loaded.delete(worldId);
+        revisionOf.delete(worldId);
+    }
 
     const store = repo();
     const state = store.loadWorld(worldId);
     if (state) {
-        const handle: WorldHandle = { id: state.id, seed: state.seed, state };
-        loaded.set(handle.id, handle);
-        return handle;
+        return hold({ id: state.id, seed: state.seed, state });
     }
 
     const known = store.listWorlds().find(row => row.id === worldId);
@@ -204,8 +228,7 @@ async function open(worldId: string): Promise<WorldHandle | null> {
     });
     const handle: WorldHandle = { id: seeded.state.id, seed: known.seed, state: seeded.state };
     store.saveWorld(handle.state);
-    loaded.set(handle.id, handle);
-    return handle;
+    return hold(handle);
 }
 
 function summarise(handle: WorldHandle, active: boolean): WorldSummary {
@@ -336,6 +359,28 @@ export async function worldForRun(run: Run): Promise<WorldState> {
     const handle = await worldHandleFor(run);
     catchUp(handle, run, 0);
     return handle.state;
+}
+
+/**
+ * Write a world back, synchronously, with the state already in hand.
+ *
+ * For a caller INSIDE a transition, which cannot await. `appendWorld` and never
+ * `saveWorld` - see `transition-runner.ts` ruling 2.
+ */
+export function writeTheWorldNow(state: WorldState): void {
+    repo().appendWorld(state);
+}
+
+/**
+ * Drop a cached world so the next touch reloads it.
+ *
+ * For a transition whose transaction rolled back: SQLite is clean and the
+ * in-memory graph the body already mutated is not. See `transition-runner.ts`
+ * ruling 3.
+ */
+export function forgetWorld(worldId: string): void {
+    loaded.delete(worldId);
+    revisionOf.delete(worldId);
 }
 
 /**
