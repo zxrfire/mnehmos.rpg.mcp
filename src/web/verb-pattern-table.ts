@@ -1011,6 +1011,31 @@ export const WHAT_THIS_GROUND_MAKES = new RegExp(
 );
 
 /**
+ * Asking who stands BEHIND a house, which is asked before anybody moves on one.
+ *
+ * Not the same question as who holds the ground, and it must be checked before
+ * it: that one asks whose patch this is, and this asks whether there is
+ * somebody above them who would answer. A player who asks the second and gets
+ * the first has been told the wrong thing confidently.
+ *
+ * The bare form - no house named - is the general question, which has no single
+ * answer and says so. See `noHouseStandsHighest`.
+ */
+export const WHO_STANDS_BEHIND_THEM = new RegExp(
+    [
+        String.raw`\bwho (?:stands |is )?(?:behind|above|over)\b[^.?]*\b(?:them|it|the\b|that\b)`,
+        String.raw`\bwho (?:would |could |will )?(?:answer|answers|speak|speaks|vouch|vouches|come) for\b`,
+        String.raw`\b(?:do|does|has|have)\b[^.?]*\b(?:they|it|the \w+)\b[^.?]*\bimmortal (?:ancestor|backing|behind)\b`,
+        String.raw`\b(?:an? )?immortal ancestors?\b[^.?]*\b(?:have|has|hold|holds|behind|above)\b`,
+        String.raw`\bwhat (?:lineage|ancestry|ancestors?|crossings?)\b[^.?]*\b(?:do|does|has|have|they|it)\b`,
+        String.raw`\bhow many (?:immortals?|crossings?|ancestors?)\b`,
+        String.raw`\bwhich house (?:is|stands) (?:the )?(?:greatest|highest|strongest|first)\b`,
+        String.raw`\bwho (?:is|are) (?:the )?(?:greatest|highest) house`
+    ].join('|'),
+    'i'
+);
+
+/**
  * Asking who holds the ground somebody is standing on.
  */
 export const WHO_ANSWERS_FOR_THIS_GROUND = new RegExp(
@@ -3320,6 +3345,20 @@ function planIntent(input: string): PlannedAction {
     // off it as well - a sentence that says both is asking about the goods.
     if (WHAT_THIS_GROUND_MAKES.test(text)) {
         return { action: 'look', intent: 'what_is_made_here' };
+    }
+
+    // WHO IS ABOVE THEM. Checked before the ground read, because both name a
+    // house and only one of them is about the patch underfoot.
+    if (WHO_STANDS_BEHIND_THEM.test(text)) {
+        const house = extractSubject(
+            input,
+            /behind|above|over|answers? for|speaks? for|vouch(?:es)? for|of/i
+        );
+        return {
+            action: 'look',
+            intent: 'who_is_above_them',
+            ...(house ? { target: house } : {})
+        };
     }
 
     // WHO LEADS IT, which is not a request to be found one

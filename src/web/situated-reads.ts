@@ -2,7 +2,7 @@
  * What the world volunteers to somebody standing here.
  */
 
-import { getSect, getTechnique } from '../data/cultivation/index.js';
+import { APEX_INSTITUTIONS, COURTS, SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
     REGIONS,
@@ -107,6 +107,7 @@ import {
     theStructureOfWhatIsMadeHere,
     whatThisGroundMakes
 } from './what-this-ground-makes-and-what-leaves-it.js';
+import { noHouseStandsHighest, whoStandsBehindThem } from './who-stands-behind-them.js';
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
 import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
 import { type SomebodyAbove, whoWouldTeach } from './who-would-teach-this-cultivator.js';
@@ -1349,6 +1350,70 @@ export const situatedReads = {
             theLinesForWhatIsMadeHere(read)
         );
         facts.structure.push(theStructureOfWhatIsMadeHere(read));
+        return this.freeAction(run, 'look', facts);
+    },
+
+    /**
+     * WHO STANDS BEHIND A HOUSE, WHICH IS ASKED BEFORE ANYBODY MOVES ON ONE.
+     *
+     * `crossings.ts` carries every crossing every house has ever produced,
+     * whether anything still comes down and at what grade, and what the count
+     * buys in silences the house can survive - and seven of its readers had no
+     * caller. See `who-stands-behind-them.ts` for why the read is gated and why
+     * the gate is the point rather than a difficulty dial.
+     */
+    /**
+     * What any body in the world is called, across the three catalogs that
+     * hold one. `getSect` knows a third of them.
+     */
+    nameOfAnyBody(this: GameService, factionId: string): string {
+        const named = (row: { id: string; name: string }): boolean => row.id === factionId;
+        return SECTS.find(named)?.name
+            ?? COURTS.find(named)?.name
+            ?? APEX_INSTITUTIONS.find(named)?.name
+            ?? factionId;
+    },
+
+    whoStandsBehindThatHouse(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        named: string | undefined
+    ): Execution {
+        // NO HOUSE NAMED, so the question is the general one - and the general
+        // one has no single answer, which is answered rather than dodged.
+        if (!named || named.trim().length < 3) {
+            // EVERY KIND OF BODY, because the three orderings mix sects with
+            // apex institutions and a court, and `getSect` knows only the
+            // first. Falling back to the id put `apex-long-cut` in front of a
+            // player, which is the raw-id leak the register bans.
+            const spread = noHouseStandsHighest(id => this.nameOfAnyBody(id));
+            const facts = factsForToolResult('Nobody stands highest.', spread.lines);
+            facts.structure.push(spread.structure);
+            return this.freeAction(run, 'look', facts);
+        }
+
+        const house = this.factionMeant(named, cultivator);
+        if (!house) {
+            return this.noPartyNamed(
+                'look', named, cultivator,
+                'You have no house of that name.',
+                'You go to ask who stands behind them and cannot say who they are.'
+            );
+        }
+
+        const read = whoStandsBehindThem({
+            factionId: house.id,
+            houseName: house.name,
+            readerOrdinal: cultivator.realmOrdinal
+        });
+        const facts = factsForToolResult(
+            read.standing
+                ? `${house.name}, and who is above them.`
+                : `Nobody is above ${house.name}.`,
+            read.lines
+        );
+        facts.structure.push(read.structure);
         return this.freeAction(run, 'look', facts);
     }
 };

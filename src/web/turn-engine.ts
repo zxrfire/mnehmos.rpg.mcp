@@ -3255,6 +3255,12 @@ ${noticedWaiting}`;
                     ));
                 }
 
+                // WHO IS ABOVE A HOUSE, WHICH IS ASKED BEFORE MOVING ON ONE.
+                if (action.intent === 'who_is_above_them') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return this.whoStandsBehindThatHouse(run, cultivator, action.target);
+                }
+
                 // WHAT THIS GROUND MAKES AND WHAT LEAVES IT ON THE WATER.
                 if (action.intent === 'what_is_made_here') {
                     this.atHand = this.atHand ?? await this.loadWorld();
