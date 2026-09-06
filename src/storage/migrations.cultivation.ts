@@ -583,6 +583,14 @@ function addCultivationColumns(db: Database.Database): void {
         db.exec("ALTER TABLE cultivators ADD COLUMN insights TEXT NOT NULL DEFAULT '[]';");
     }
 
+    // NULL rather than a default object: carrying no seal is the ordinary case
+    // and an empty seal is not the same thing as no seal. Nothing to backfill -
+    // nobody in an older save was ever sealed, because nothing could seal them.
+    if (!cultivatorColumns.includes('qi_seal')) {
+        console.error('[Migration] Adding qi_seal column to cultivators table');
+        db.exec('ALTER TABLE cultivators ADD COLUMN qi_seal TEXT;');
+    }
+
     if (!cultivatorColumns.includes('achievements')) {
         console.error('[Migration] Adding achievements column to cultivators table');
         db.exec("ALTER TABLE cultivators ADD COLUMN achievements TEXT NOT NULL DEFAULT '[]';");

@@ -554,6 +554,24 @@ export const CultivatorSchema = z.object({
 
     injuries: z.array(InjurySchema).default([]),
 
+    /**
+     * A qi seal laid on this person, or null for everybody who carries none.
+     *
+     * The design owner: *"seals already exist, so prisoners are just sealed and
+     * thrown into a qi poor area"*, *"just do it as a person, make it easy."*
+     *
+     * STORED, because it changes - it goes on, it runs, and it comes off. It
+     * takes the ability to DRAW and nothing else: not the pool, not the ceiling
+     * on the pool, and not what is already in them. See
+     * `a-qi-seal-is-put-on-a-person.ts`, which owns every rule about it.
+     */
+    qiSeal: z.object({
+        liftsOnDay: z.number().nullable().default(null),
+        byId: z.string().nullable().default(null),
+        note: z.string().default(''),
+        sinceDay: z.number().default(0)
+    }).nullable().default(null),
+
     // Wealth and standing.
     spiritStones: z.number().int().min(0).default(STARTING_SPIRIT_STONES),
     sectId: z.string().nullable().default(null),

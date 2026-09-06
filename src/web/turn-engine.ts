@@ -603,6 +603,7 @@ import {
     type GroundEntitlement
 } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import { aSealHereMeansAnUndrawnPocket } from '../engine/world/locations.js';
+import { whatThisPersonCanDrawFrom } from '../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 import {
     whatABodyCanCarry,
     whatAllOfThatTakes,
@@ -11067,7 +11068,16 @@ ${fit.line}`;
         const record = worldLocationFor(this.atHand, cultivator.location);
         if (!record) return null;
         return {
-            density: record.environment.spiritualDensity,
+            // WHAT THIS PERSON CAN DRAW, which is the ground unless somebody
+            // has sealed them. One read, here, because this is the single
+            // place the world's density crosses into the simulation - every
+            // skip takes its band from it. A seal that had to be remembered at
+            // ten call sites would be forgotten at one of them.
+            density: whatThisPersonCanDrawFrom({
+                density: record.environment.spiritualDensity,
+                seal: cultivator.qiSeal ?? null,
+                onDay: Math.floor(this.atHand.currentDay)
+            }),
             occupantOrdinals: [
                 ...npcsAt(this.atHand, record.id).map(npc => npc.cultivation.realmOrdinal),
                 cultivator.realmOrdinal

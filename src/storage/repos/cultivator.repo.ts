@@ -57,6 +57,7 @@ interface CultivatorRow {
     feuds: string;
     known_techniques: string;
     insights: string;
+    qi_seal: string | null;
     achievements: string;
     battles_survived: number;
     battles_won: number;
@@ -247,7 +248,7 @@ export class CultivatorRepository {
                 hp, max_hp, qi, max_qi, satiety, starvation_turns, bleeding_turns,
                 age, years_at_current_realm,
                 spirit_stones, sect_id, sect_rank, location, feuds, known_techniques,
-                insights, achievements, battles_survived, battles_won,
+                insights, qi_seal, achievements, battles_survived, battles_won,
                 existence_state, soul_state, identity_continuity, body_id,
                 alive, death_cause, died_on_turn,
                 created_at, updated_at
@@ -257,7 +258,7 @@ export class CultivatorRepository {
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns, @bleedingTurns,
                 @age, @yearsAtCurrentRealm,
                 @spiritStones, @sectId, @sectRank, @location, @feuds, @knownTechniques,
-                @insights, @achievements, @battlesSurvived, @battlesWon,
+                @insights, @qiSeal, @achievements, @battlesSurvived, @battlesWon,
                 @existenceState, @soulState, @identityContinuity, @bodyId,
                 @alive, @deathCause, @diedOnTurn,
                 @createdAt, @updatedAt
@@ -277,7 +278,7 @@ export class CultivatorRepository {
                 age = @age, years_at_current_realm = @yearsAtCurrentRealm,
                 spirit_stones = @spiritStones, sect_id = @sectId, sect_rank = @sectRank,
                 location = @location, feuds = @feuds, known_techniques = @knownTechniques,
-                insights = @insights, achievements = @achievements,
+                insights = @insights, qi_seal = @qiSeal, achievements = @achievements,
                 battles_survived = @battlesSurvived, battles_won = @battlesWon,
                 existence_state = @existenceState, soul_state = @soulState,
                 identity_continuity = @identityContinuity, body_id = @bodyId,
@@ -776,6 +777,9 @@ export class CultivatorRepository {
             location: c.location ?? null,
             feuds: JSON.stringify(c.feuds),
             insights: JSON.stringify(c.insights),
+            // Null, not 'null': a seal nobody has is an absent row and not a
+            // stored word. `qiSeal` reads it straight back as null.
+            qiSeal: c.qiSeal ? JSON.stringify(c.qiSeal) : null,
             achievements: JSON.stringify(c.achievements),
             battlesSurvived: c.battlesSurvived,
             battlesWon: c.battlesWon,
@@ -844,6 +848,7 @@ export class CultivatorRepository {
             feuds: JSON.parse(row.feuds),
             knownTechniques: JSON.parse(row.known_techniques),
             insights: JSON.parse(row.insights),
+            qiSeal: row.qi_seal ? JSON.parse(row.qi_seal) : null,
             achievements: JSON.parse(row.achievements),
             battlesSurvived: row.battles_survived,
             battlesWon: row.battles_won,
