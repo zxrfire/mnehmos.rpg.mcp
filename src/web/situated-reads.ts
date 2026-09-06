@@ -4,7 +4,13 @@
 
 import { getSect, getTechnique } from '../data/cultivation/index.js';
 import { getMembersOf } from '../data/cultivation/members.js';
-import { REGIONS, canAdvanceHere, placeRoadDays, requireRegion } from '../data/cultivation/regions.js';
+import {
+    REGIONS,
+    canAdvanceHere,
+    placeRoadDays,
+    regionIdOfPlace,
+    requireRegion
+} from '../data/cultivation/regions.js';
 import { getSectsTeaching } from '../data/cultivation/sects.js';
 import { capOf, carriesTo, classOf } from '../data/cultivation/techniques.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
@@ -96,6 +102,11 @@ import {
     horizonInDays,
     whatCanBeSeenFromUpThere
 } from './what-you-can-see-from-up-there.js';
+import {
+    theLinesForWhatIsMadeHere,
+    theStructureOfWhatIsMadeHere,
+    whatThisGroundMakes
+} from './what-this-ground-makes-and-what-leaves-it.js';
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
 import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
 import { type SomebodyAbove, whoWouldTeach } from './who-would-teach-this-cultivator.js';
@@ -1292,5 +1303,52 @@ export const situatedReads = {
             + 'Reading this cost nothing: no time passed, nothing spent, nothing learned.'
         );
         return this.freeAction(run, 'list_techniques', facts);
+    },
+
+    /**
+     * WHAT IS MADE HERE, AND WHAT LEAVES ON THE WATER.
+     *
+     * The trade layer had no sentence. `what-each-house-makes-and-what-crosses-
+     * the-water.ts` carries who makes what, three named lanes with weather and
+     * landfalls, six cargoes with a maker and a carrier and a buyer, and four
+     * operators who disagree about what they are doing - and every reader in it
+     * had no caller outside the catalog's own index. A player standing in a
+     * market could not ask where one thing on the counter came from.
+     *
+     * FREE, because it is a look. The market verbs price things and spend days;
+     * this says where they come from, which is the same kind of answer
+     * `whoAnswersHere` gives about a claim.
+     */
+    whatIsMadeHere(this: GameService, run: Run, cultivator: Cultivator): Execution {
+        const regionId = regionIdOfPlace(cultivator.location) ?? null;
+        const region = regionId === null ? undefined : REGIONS.find(r => r.id === regionId);
+        if (!region) {
+            return this.freeAction(run, 'look', factsForRefusal(
+                'No province owns this ground on the record.',
+                'You ask what is made here and there is no province behind the question. The '
+                + 'ground you are on is not on anybody\'s list of what a place produces, which '
+                + 'is what open road means.',
+                `regionIdOfPlace("${cultivator.location}") found nothing. Nothing spent, no `
+                + 'time passed.'
+            ));
+        }
+
+        const read = whatThisGroundMakes({
+            provinceId: region.id,
+            provinceName: region.name,
+            exports: region.exports,
+            housesHere: region.factionIds.map(id => ({
+                id,
+                name: (getSect(id) as { name?: string } | undefined)?.name ?? id
+            })),
+            nameOfHouse: id => (getSect(id) as { name?: string } | undefined)?.name ?? id
+        });
+
+        const facts = factsForToolResult(
+            `${region.name}, and what comes off it.`,
+            theLinesForWhatIsMadeHere(read)
+        );
+        facts.structure.push(theStructureOfWhatIsMadeHere(read));
+        return this.freeAction(run, 'look', facts);
     }
 };

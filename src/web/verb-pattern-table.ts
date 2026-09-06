@@ -982,6 +982,35 @@ export const PLACE_HISTORY_PATTERNS: readonly RegExp[] = [
 ];
 
 /**
+ * Asking what this ground makes, and what leaves it.
+ *
+ * The trade layer was written whole - who makes what, three named lanes with
+ * weather and landfalls on them, six cargoes with a maker and a carrier and a
+ * buyer - and had no sentence anywhere. A player standing in a market could not
+ * ask where one thing on the counter came from.
+ *
+ * Both halves of the question, because people ask it both ways round: what is
+ * MADE here, and what COMES or GOES from here. It has to sit above the market
+ * verbs, which answer "what is for sale" - a different question with a price on
+ * it - and it must not eat them, which is why every branch names the ground or
+ * the water rather than the goods.
+ */
+export const WHAT_THIS_GROUND_MAKES = new RegExp(
+    [
+        String.raw`\bwhat (?:do(?:es)?|is|are)?\s*(?:this |the |they )?(?:province|region|place|ground|land|area|valley|city|town)\b[^.?]*\b(?:make|makes|made|produce|produces|export|exports|sell|sells|ship|ships)\b`,
+        String.raw`\bwhat (?:is|are|gets?) (?:made|produced|grown|refined|forged|exported|shipped) (?:around )?here\b`,
+        String.raw`\bwhat (?:do|does) (?:they|people|anybody|anyone) make (?:around )?here\b`,
+        // The water half, which is the part nothing else in the table touches.
+        String.raw`\bwhat (?:crosses|comes (?:in |up )?(?:on|over|across) the water|goes (?:out )?(?:on|over|across) the water|moves on the water)\b`,
+        String.raw`\bwhat (?:is|comes|goes) (?:on|off) the (?:hulls?|boats?|ships?|barges?)\b`,
+        String.raw`\bwhat (?:comes|arrives) (?:in|up) (?:the |from the )?(?:river|sea|coast|water|port|quay)\b`,
+        String.raw`\bwhat (?:is|are) (?:the )?(?:trade|trades|cargo|cargoes|goods) (?:here|on this water|on the water)\b`,
+        String.raw`\bwhat (?:leaves|ships out of|comes out of) (?:this|the) (?:province|region|place|port|coast)\b`
+    ].join('|'),
+    'i'
+);
+
+/**
  * Asking who holds the ground somebody is standing on.
  */
 export const WHO_ANSWERS_FOR_THIS_GROUND = new RegExp(
@@ -3285,6 +3314,13 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+
+    // WHAT THIS GROUND MAKES, and what leaves it on the water. Above the
+    // holder read because both name the ground, and this one names what comes
+    // off it as well - a sentence that says both is asking about the goods.
+    if (WHAT_THIS_GROUND_MAKES.test(text)) {
+        return { action: 'look', intent: 'what_is_made_here' };
+    }
 
     // WHO LEADS IT, which is not a request to be found one
     if (WHO_ANSWERS_FOR_THIS_GROUND.test(text)) {

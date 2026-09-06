@@ -3246,6 +3246,12 @@ ${noticedWaiting}`;
                     ));
                 }
 
+                // WHAT THIS GROUND MAKES AND WHAT LEAVES IT ON THE WATER.
+                if (action.intent === 'what_is_made_here') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return this.whatIsMadeHere(run, cultivator);
+                }
+
                 // WHO ANSWERS FOR THIS GROUND, ASKED FOR DELIBERATELY.
                 if (action.intent === 'holder') {
                     this.atHand = this.atHand ?? await this.loadWorld();
