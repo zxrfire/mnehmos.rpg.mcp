@@ -18,6 +18,8 @@ import {
     takenByStandingOverIt,
     type CouldObject
 } from './ownership-transfer.js';
+import { whatAChangeOfHandsLeaves } from './what-a-change-of-hands-leaves.js';
+import type { ObligationInput } from '../social/grudges.js';
 import { whatIsBehindIt, type WhatIsBehindIt } from './sheltering.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 
@@ -60,6 +62,15 @@ export interface ThingChangedHands {
     /** The rung it stands at. Unchanged - capture is not damage. */
     ratedAt: number | null;
     line: string;
+    /**
+     * What this thing changing hands left between the parties.
+     *
+     * A settlement is watched by both sides, so the losing party knows: this is
+     * the one place `knownToTheLoser` is answered by the event rather than by a
+     * discovery roll. The caller pools these - a hold of eleven things is one
+     * account, at the weight of the worst thing that went.
+     */
+    opens: ObligationInput[];
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -191,12 +202,13 @@ export function settleTheSpoils(
 
         if (canScatter) {
             const carrier = survivors[rng.int(0, survivors.length - 1)];
+            // Everybody else who walked out of the same door. They know what
+            // the hold contained and they know who left with it, which is
+            // the whole of what standing to raise it means here.
+            const objectors = survivors.filter(other => other.id !== carrier.id);
             state.objects[at] = carriedOff(object, {
                 by: carrier,
-                // Everybody else who walked out of the same door. They know what
-                // the hold contained and they know who left with it, which is
-                // the whole of what standing to raise it means here.
-                objectors: survivors.filter(other => other.id !== carrier.id),
+                objectors,
                 from: input.loser,
                 war: input.war,
                 onDay: input.onDay
@@ -210,7 +222,24 @@ export function settleTheSpoils(
                 toId: carrier.id,
                 toName: carrier.name,
                 ratedAt: object.power,
-                line: `${carrier.name} walked out of the ${input.loser.name} with ${object.name}.`
+                line: `${carrier.name} walked out of the ${input.loser.name} with ${object.name}.`,
+                // The house is gone, so it is not the house that minds. The
+                // people who watched it go do, one account each, and the
+                // dissolved body holds nothing - which is the whole of
+                // "objects are dead, people are alive" at a settlement.
+                opens: whatAChangeOfHandsLeaves({
+                    objectId: object.id,
+                    objectName: object.name,
+                    how: 'stolen',
+                    significance: object.significance,
+                    onDay: input.onDay,
+                    from: null,
+                    to: { id: carrier.id, name: carrier.name },
+                    knownToTheLoser: true,
+                    othersWhoLostBy: objectors,
+                    note: `${carrier.name} walked out of the ${input.loser.name} with `
+                        + `${object.name} while they were standing there.`
+                })
             });
             continue;
         }
@@ -230,7 +259,23 @@ export function settleTheSpoils(
             toId: input.winner.id,
             toName: input.winner.name,
             ratedAt: object.power,
-            line: `The ${input.winner.name} took ${object.name} off the ${input.loser.name}.`
+            line: `The ${input.winner.name} took ${object.name} off the ${input.loser.name}.`,
+            // The house held together, so the house is the party that lost it
+            // and the party that holds the account - the same holder
+            // `whatYourOwnHouseOpensAboutYou` writes, and what
+            // `whatAHouseWillDoAboutIt` reads.
+            opens: whatAChangeOfHandsLeaves({
+                objectId: object.id,
+                objectName: object.name,
+                how: 'looted',
+                significance: object.significance,
+                onDay: input.onDay,
+                from: { id: input.loser.id, name: input.loser.name },
+                to: { id: input.winner.id, name: input.winner.name },
+                knownToTheLoser: true,
+                note: `The ${input.winner.name} took ${object.name} off the `
+                    + `${input.loser.name} at the end of ${input.war}.`
+            })
         });
     }
 

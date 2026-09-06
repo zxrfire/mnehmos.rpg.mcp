@@ -388,7 +388,12 @@ export function applyPressure(
                         .map(m => m.toId)
                         .filter((id): id is string => id !== null && id !== settled.winnerId)
                 },
-                deaths: []
+                deaths: [],
+                // A hold changing hands is the other thing a war leaves, and
+                // for a long time it left nothing: measured over three worlds
+                // at two hundred years, 193 things changed hands and not one
+                // account of any object cause was ever opened.
+                opens: settled.opens
             });
         }
         // Wars that reached the day they were scheduled to end. BEFORE the

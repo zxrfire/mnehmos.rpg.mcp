@@ -88,6 +88,7 @@ import {
     whatYourOwnHouseOpensAboutYou
 } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import type { ObligationInput, Severity } from '../engine/social/grudges.js';
+import { howBadlyThisIsMissed } from '../engine/world/what-a-change-of-hands-leaves.js';
 import {
     type ObjectRecord,
     isTracked,
@@ -148,21 +149,11 @@ export function whichHoldingTheyMeant(
 }
 
 /**
- * How badly the house takes losing this, from what the row already says.
- *
- * `significance` is the world's own measure of how much a thing matters and it
- * is set where the object is made, so nothing is scored here - which is what
- * `grudges.ts` requires: severity is decided once, by whoever knows what was
- * done. A legendary holding is the house's inheritance; a significant one is
- * somebody's working copy.
+ * Re-exported. It moved to `what-a-change-of-hands-leaves.ts`, next to the rest
+ * of what a thing moving leaves behind, because the world's own transfers ask
+ * the same question and an engine module cannot import this one.
  */
-export function howBadlyThisIsMissed(object: ObjectRecord): Severity {
-    switch (object.significance) {
-        case 'legendary': return 'grave';
-        case 'significant': return 'serious';
-        default: return 'slight';
-    }
-}
+export { howBadlyThisIsMissed };
 
 /**
  * What each answer sounds like, in the house's own voice.

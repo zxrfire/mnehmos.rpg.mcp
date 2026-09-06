@@ -202,6 +202,7 @@ export * from './capability.js';
 export * from './opportunities.js';
 export * from './what-is-true-of-a-place-right-now.js';
 export * from './possessions.js';
+export * from './what-a-change-of-hands-leaves.js';
 export * from './lineage.js';
 export * from './npc-state.js';
 export * from './memory.js';

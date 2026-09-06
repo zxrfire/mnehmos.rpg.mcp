@@ -1923,6 +1923,22 @@ what-is-true-of-a-place-right-now.ts
                  than switched on `kind` downstream. The board stays infinite:
                  the price moves and the shelf never does
 possessions.ts   possession / ownership / claim / knowledge, plus provenance
+what-a-change-of-hands-leaves.ts
+                 what is left between two people when a thing changes hands, as
+                 `ObligationInput` rows for whoever holds a ledger. Read off the
+                 `AcquisitionMode` already on the link rather than off a second
+                 table - a taking puts the account on the party it came off, a
+                 gift and a loan put it on the party that was handed it, and a
+                 purchase leaves nothing because it was settled at the table.
+                 Measured before it existed, over three worlds at 200 years: 193
+                 things changed hands and 0 of the 1,714 accounts those worlds
+                 opened were about an object. `robbery`, `gifted_resource` and
+                 `lent_resource` had been in `grudges.ts` since it was written
+                 with nothing in the world writing one. `oneAccountEach` is the
+                 half that has to be here rather than at the write: rows that
+                 differ only in severity derive the same id, so a hold of eleven
+                 things would otherwise be weighed by whichever object the loop
+                 reached last
 object-damage.ts THE ONE ANSWER to "is this thing damaged, and how badly". A
                  hull, a sabre, a carriage, a plate and a manual all go through
                  `whatBecomesOfIt`, whose input type carries NO `ObjectKind` -
@@ -1973,7 +1989,13 @@ war-spoils.ts    and what the ending does, which is mostly to change hands.
                  with living members and nobody to hold them. There is
                  deliberately no `willFlee` field and no stored loser, and
                  `holdsTogether` stays a boolean - this file has no business
-                 knowing how the answer was reached
+                 knowing how the answer was reached. A settlement now also
+                 leaves an ACCOUNT, on `ThingChangedHands.opens` and out through
+                 `WarSettlement.opens` and `PressureEvent.opens` - the same door
+                 the war dead leave by. Who holds it is the split this world
+                 turns on: a house that held together holds it itself, and a
+                 house that broke up holds nothing, because the people who
+                 watched their hold walk out are the ones still alive to mind
 lineage.ts       the parent-descendant edge and what travels down it
 reading-a-lineage-off-a-name.ts
                  what a surname is worth against a house's roll. Corroboration

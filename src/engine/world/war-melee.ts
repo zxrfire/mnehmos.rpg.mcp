@@ -16,6 +16,7 @@ import { makeFact, type HistoricalFact } from './history.js';
 import type { NpcRecord } from './npc-state.js';
 import { isRuined, ruin } from './possessions.js';
 import type { ObligationInput } from '../social/grudges.js';
+import { oneAccountEach } from './what-a-change-of-hands-leaves.js';
 import { whatTheConfrontationDidToThem } from './what-a-confrontation-does-to-somebody-the-world-holds.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
@@ -205,6 +206,14 @@ export interface WarSettlement {
     moved: ThingChangedHands[];
     fact: HistoricalFact;
     line: string;
+    /**
+     * What losing the hold left, pooled to one account per pair.
+     *
+     * The same channel a war's dead leave by, for the same reason: the world
+     * has no obligation ledger, so an account it decides goes out with the
+     * result for whoever holds a database.
+     */
+    opens: ObligationInput[];
 }
 
 export interface WhatTheWarsDid {
@@ -516,7 +525,13 @@ function settleOneWar(
         scattered,
         moved,
         fact,
-        line
+        line,
+        // Stamped with the fact AFTER it is appended, so the id
+        // `createObligation` derives is stable against the settlement rather
+        // than against the day - two settlements the same day between the same
+        // pair would otherwise be one row.
+        opens: oneAccountEach(moved.flatMap(m => m.opens))
+            .map(row => ({ ...row, triggeringEventId: fact.id }))
     };
 }
 
