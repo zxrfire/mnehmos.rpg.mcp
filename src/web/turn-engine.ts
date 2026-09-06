@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { everybodyDrawingHere } from '../engine/people/there-is-one-kind-of-person.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import type { ManualQuality, SectAlignment } from '../schema/cultivation.js';
 import type { ManualBand } from '../engine/cultivation/cultivation.js';
@@ -11083,10 +11084,25 @@ ${fit.line}`;
                 seal: cultivator.qiSeal ?? null,
                 onDay: Math.floor(this.atHand.currentDay)
             }),
-            occupantOrdinals: [
-                ...npcsAt(this.atHand, record.id).map(npc => npc.cultivation.realmOrdinal),
-                cultivator.realmOrdinal
-            ]
+            // EVERYBODY DRAWING HERE, from both stores. This used to be the
+            // world's people plus the asker and NO stored cultivators, while
+            // `othersPresent` a few lines away counted both - so one square was
+            // one number for who you could speak to and a different number for
+            // how thin the qi was. `how-crowded-this-ground-is.ts` states in
+            // its own input type that it wants everyone drawing, the asker
+            // included, and this was the count that was wrong.
+            occupantOrdinals: everybodyDrawingHere({
+                inTheWorld: npcsAt(this.atHand, record.id),
+                onRunSheets: [
+                    cultivator,
+                    ...this.repos.cultivators.roster().filter(row =>
+                        row.id !== cultivator.id
+                        && row.alive
+                        && (row.location ?? '').trim().toLowerCase()
+                            === (cultivator.location ?? '').trim().toLowerCase())
+                ],
+                onDay: Math.floor(this.atHand.currentDay)
+            })
         };
     }
 
