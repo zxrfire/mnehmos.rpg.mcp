@@ -10,6 +10,15 @@ import { idsForFaction } from './hierarchy.js';
  *
  * Keep this sorted. The ordering is asserted by the tests, and an entry filed
  * in the wrong place is the one kind of error in this file a reader cannot see.
+ *
+ * EVERY ROW CARRIES AN ORDINAL, and that is a rule rather than a habit of this
+ * table. These are finished things: a hand has already been applied to each one,
+ * so how strong it is has a single answer, on the same ladder people are
+ * measured on. A grade would be the wrong measurement here - a grade says what
+ * the stuff is and leaves the maker out, which is only an open question while
+ * the stuff is still a material. See the rule above `ObjectKind` in
+ * `src/engine/world/possessions.ts`. An artifact row with no ordinal is a
+ * defect, and nothing that mints one anywhere in `src/` may leave it null.
  */
 /**
  * The two ways an object at forty-five comes to be in the world.

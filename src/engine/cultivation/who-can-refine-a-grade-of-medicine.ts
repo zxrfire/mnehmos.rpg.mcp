@@ -10,6 +10,14 @@
  * Note what the catalog is careful about and this file must not undo: it has no
  * price field and must never have one, because a price would imply the economy
  * reaches those objects. Nothing here quotes a figure for anything.
+ *
+ * AND THIS TABLE IS WHY A MATERIAL CANNOT CARRY AN ORDINAL. The grade names what
+ * the stuff is; the rung it finishes at is a fact about the hand, and the hands
+ * that may touch a grade span every rung from the floor here to the top of the
+ * ladder. Two cauldrons working the same heaven-grade materials do not produce
+ * the same object. So a material has a grade and a finished artifact has an
+ * ordinal, and neither is a conversion of the other - the rule is written out
+ * above `ObjectKind` in `src/engine/world/possessions.ts`.
  */
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';

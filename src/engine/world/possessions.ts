@@ -95,6 +95,37 @@ export interface OwnershipClaim {
 // OBJECTS
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * A GRADE IS WHAT A MATERIAL IS. AN ORDINAL IS WHAT A FINISHED THING STANDS AT.
+ *
+ * They are two different measurements and neither converts into the other.
+ *
+ * A GRADE - mortal, earth, heaven, immortal, chaos - says what the stuff is. It
+ * cannot say what a thing made out of it is worth, because that depends on the
+ * hand that worked it: the same heaven-grade ore is a heaven-grade sword in one
+ * pair of hands and scrap in another, and `who-can-refine-a-grade-of-medicine.ts`
+ * is the table that decides which. So a material carries a grade and no ordinal.
+ *
+ * AN ORDINAL is one rung on the ladder people are measured on, and it is what a
+ * FINISHED artifact carries. A finished thing has already had a maker's hand
+ * applied to it, so "how strong is this sword" has exactly one answer, and
+ * `combat.ts` prices it as a body of that rank standing beside its holder.
+ *
+ * Two consequences, both of which have been broken here:
+ *
+ *   AN ORDINAL ON A MATERIAL is a claim the world cannot make. What a lot of ore
+ *   becomes is not known until somebody works it.
+ *   NULL ON A FINISHED ARTIFACT is a defect, not a statement that the thing is
+ *   harmless. Measured in a seeded world: 91 of 235 artifacts carried none, all
+ *   of them departure talismans, priced null because they are no use in a fight
+ *   - which is a different question from what rung the thing is. A row with no
+ *   ordinal reads as an unfinished thing to everything that looks at it.
+ *
+ * Null is still the right answer for a great many rows, and each for a reason
+ * this rule already gives: a material has a grade instead; a pill, a coin and a
+ * manual are not finished artifacts; and a ruined or spent thing no longer
+ * stands anywhere - see `ruin` and `shardPower`.
+ */
 export type ObjectKind =
     | 'artifact'
     | 'manual'
@@ -129,10 +160,12 @@ export function keptAs(significance: ObjectSignificance): KeptAs {
 /**
  * HOW MUCH A THING OF THIS GRADE IS WORTH BOOKKEEPING.
  *
- * The design owner: *"group pills and manuals together, it's all items"*, *"I
- * don't see why any of them should remain separate"*, and - on the shape the
- * rule should have - *"the pill logic (esp the immortal pill logic) should fall
- * out of its IMPORTANCE."*
+ * A grade is a fact about the STUFF, so this reads the grade and nothing else.
+ * What a finished thing made from it stands at is the other measurement and is
+ * not derivable from here - see the rule above `ObjectKind`.
+ *
+ * The design owner, on the shape the rule should have: *"the pill logic (esp
+ * the immortal pill logic) should fall out of its IMPORTANCE."*
  *
  * So it falls out, here, once, for every noun in the world. A pill, a manual, a
  * cauldron, a sword and a lot of ore are all objects, they are all graded on
@@ -196,8 +229,16 @@ export interface ObjectRecord {
     knownOwnershipBy: string[];
 
     /**
-     * What it is worth in a fight, on the same ladder a person is measured on, or
-     * null for the great majority of things that are not worth anything in one.
+     * WHAT IT STANDS AT: one rung on the ladder a person is measured on.
+     *
+     * The name says power and the field is an ordinal - `combat.ts` reads it as
+     * `ratedOrdinal` and hands it to `combatPowerForOrdinal`, and `object-damage.ts`
+     * calls it `standsAt`, which is the repo's word for this. Renaming it is
+     * pending on `src/web/turn-engine.ts` being free to edit.
+     *
+     * Required on a finished artifact. Null where the thing has a grade instead,
+     * is not a finished artifact, or has been ruined or spent. See the
+     * grade-and-ordinal rule above `ObjectKind`.
      */
     power: number | null;
 

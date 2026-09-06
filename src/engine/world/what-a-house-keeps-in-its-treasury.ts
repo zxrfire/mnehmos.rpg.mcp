@@ -197,10 +197,11 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
                 possessorId: null,
                 ownerId: house.id,
                 ownerName: name,
-                // A CAULDRON IS A TREASURE AND NOT ONLY A TOOL. `power: null`
-                // is `possessions.ts` saying a thing is worth nothing in a
-                // fight, and a house's furnace is exactly the object people go
-                // to war over and hide behind. See `whatACauldronIsWorthInAFight`.
+                // A CAULDRON IS A TREASURE AND NOT ONLY A TOOL, and it is a
+                // finished artifact, so it stands somewhere on the ladder like
+                // every other one. A house's furnace is exactly the object
+                // people go to war over and hide behind. See
+                // `whatACauldronIsWorthInAFight`.
                 power: whatACauldronIsWorthInAFight(grade),
                 locationId: roomFor(
                     whereInTheHouseItSits('artifact', howMuchACauldronIsWorthTracking(grade), ['cauldron'])

@@ -79,14 +79,25 @@ export function bestTalismanAHandCanCut(crafterOrdinal: number): TechniqueGrade 
 }
 
 /**
- * What a strike talisman hits for.
+ * The rung folded into the paper, which is what the finished slip stands at.
  *
  * The MAKER's strength and not the burner's, which is the whole point of the
- * object: the strike was paid for when it was made, and holding it is holding
- * somebody else's arm for one swing.
+ * object: the act was paid for when it was cut, and holding one is holding
+ * somebody else's arm for a moment.
+ *
+ * BOTH SLIPS STAND HERE, not only the strike. A finished thing has had a hand
+ * applied to it and therefore has one answer to how strong it is - see the
+ * grade-and-ordinal rule in `possessions.ts`. A way-out slip that was priced at
+ * null read as an unfinished thing, and 91 of the 235 artifacts in a seeded
+ * world were that one row.
  */
-export function whatTheStrikeLandsAt(crafterOrdinal: number): number {
+export function whatWasFoldedIn(crafterOrdinal: number): number {
     return Math.max(0, Math.floor(crafterOrdinal));
+}
+
+/** What a strike talisman hits for: the rung folded in, swung by whoever holds it. */
+export function whatTheStrikeLandsAt(crafterOrdinal: number): number {
+    return whatWasFoldedIn(crafterOrdinal);
 }
 
 /**
@@ -127,7 +138,7 @@ export interface CuttingATalisman {
  * that seeds a heaven-grade slip into a ruin has no crafter to check.
  */
 export function cutATalisman(input: CuttingATalisman): ObjectRecord {
-    const power = input.what === 'a_strike' ? whatTheStrikeLandsAt(input.crafterOrdinal) : null;
+    const power = whatWasFoldedIn(input.crafterOrdinal);
     return makeObject({
         id: input.id,
         name: input.name,
@@ -146,7 +157,9 @@ export function cutATalisman(input: CuttingATalisman): ObjectRecord {
             grade: input.grade,
             cutBy: input.crafterId,
             cutOnDay: input.onDay,
-            foldedInAt: input.crafterOrdinal,
+            // The rung folded in is the slip's own ordinal and is not repeated
+            // here. It was, and a second copy of a number is a number that
+            // drifts.
             ...(input.what === 'a_way_out'
                 ? { carriesWalkingDays: howFarTheWayOutCarries(input.crafterOrdinal) }
                 : {}),
