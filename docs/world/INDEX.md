@@ -720,7 +720,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `IMMORTAL_CHANNELS` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 8 | 4 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 8 | 19 |
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 8 | 82 |
-| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 10 | 21 |
+| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 10 | 22 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 47 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 14 | 17 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
@@ -734,7 +734,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 33 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 34 | 148 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 48 | 59 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 62 | 309 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 62 | 311 |
 
 <!-- END GENERATED: design-constants -->
 

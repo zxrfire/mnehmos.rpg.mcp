@@ -3270,6 +3270,12 @@ ${noticedWaiting}`;
                     ));
                 }
 
+                // WHAT A HOUSE HAS TO ITS NAME.
+                if (action.intent === 'what_they_hold') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return this.whatThatHouseHolds(run, cultivator, action.target);
+                }
+
                 // WHO IS ABOVE A HOUSE, WHICH IS ASKED BEFORE MOVING ON ONE.
                 if (action.intent === 'who_is_above_them') {
                     this.atHand = this.atHand ?? await this.loadWorld();

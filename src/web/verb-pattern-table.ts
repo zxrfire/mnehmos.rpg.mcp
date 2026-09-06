@@ -1039,6 +1039,56 @@ export const WHAT_THIS_GROUND_MAKES = new RegExp(
 );
 
 /**
+ * Which house a holdings question is about, or undefined for the asker's own.
+ *
+ * `extractSubject` returns everything after the marker, which on this question
+ * is the name plus the verb that finished the sentence - "Azure Dew Sect have",
+ * "sect hold" - and a pronoun where the sentence used one: "in their vault".
+ *
+ * A NAME AND NOT A PHRASE. The trailing verb is cut because it is never part of
+ * anybody's name, and a bare pronoun is dropped entirely - "what is in their
+ * vault" names nobody, and the useful reading of it is the house the asker
+ * belongs to, which the caller supplies by having no target rather than by this
+ * inventing one.
+ */
+function theHouseBeingAskedAbout(input: string): string | undefined {
+    const said = extractSubject(input, /(?:does|do|has|have)\s+(?:the\s+)?|of|for|is|are/i);
+    if (said === undefined) return undefined;
+    const trimmed = said
+        .replace(/\s+(?:have|has|hold|holds|own|owns|got|keep|keeps|worth)\s*$/i, '')
+        .replace(/^(?:in|at|on)\s+/i, '')
+        .trim();
+    if (trimmed.length < 3) return undefined;
+    // A pronoun is not a name. "their vault", "its coffers" - the sentence
+    // named nobody and the asker means their own house.
+    if (/^(?:their|its|his|her|the|our|this|that)\b/i.test(trimmed)) return undefined;
+    return trimmed;
+}
+
+/**
+ * Asking what a house HAS - its purse, its shelves and its ground.
+ *
+ * Distinct from who stands behind them, which is about who is ABOVE a house,
+ * and checked before it so that "what does the Azure Cloud Pavilion have" is
+ * not answered with a list of its ancestors. Both are questions about a body
+ * and only one of them is about its wealth.
+ *
+ * Deliberately not the market read: "what is for sale here" is a counter with
+ * prices on it, and this is a body's own vault, which is not for sale and is
+ * the point of asking.
+ */
+export const WHAT_A_HOUSE_HAS = new RegExp(
+    [
+        String.raw`\bwhat (?:do(?:es)?|has|have)\b[^.?]*\b(?:sect|house|clan|pavilion|hall|court|order|temple|alliance|palace|terrace|fortress|grove|valley|market)\b[^.?]*\b(?:have|hold|holds|own|owns|got|worth|keep|keeps)\b`,
+        String.raw`\bhow (?:rich|wealthy|poor) (?:is|are)\b`,
+        String.raw`\bwhat (?:is|are) (?:in )?(?:their|its|the) (?:vault|treasury|coffers|reserves|shelves|hold)\b`,
+        String.raw`\bwhat (?:do(?:es)?|have|has) they (?:have|hold|holds|own|owns|got|keep|keeps) (?:to (?:their|its) name|in (?:the )?(?:vault|treasury|coffers))\b`,
+        String.raw`\bwhat (?:a |the )?house (?:has|holds|owns) to (?:its|their) name\b`
+    ].join('|'),
+    'i'
+);
+
+/**
  * Asking who stands BEHIND a house, which is asked before anybody moves on one.
  *
  * Not the same question as who holds the ground, and it must be checked before
@@ -3394,6 +3444,17 @@ function planIntent(input: string): PlannedAction {
     // off it as well - a sentence that says both is asking about the goods.
     if (WHAT_THIS_GROUND_MAKES.test(text)) {
         return { action: 'look', intent: 'what_is_made_here' };
+    }
+
+    // WHAT A HOUSE HAS. Before the who-is-above read, so that "what does the
+    // Azure Cloud Pavilion have" is not answered with a list of its ancestors.
+    if (WHAT_A_HOUSE_HAS.test(text)) {
+        const house = theHouseBeingAskedAbout(input);
+        return {
+            action: 'look',
+            intent: 'what_they_hold',
+            ...(house ? { target: house } : {})
+        };
     }
 
     // WHO IS ABOVE THEM. Checked before the ground read, because both name a

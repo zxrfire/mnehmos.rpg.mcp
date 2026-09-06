@@ -113,6 +113,8 @@ import {
     whatThisGroundMakes
 } from './what-this-ground-makes-and-what-leaves-it.js';
 import { noHouseStandsHighest, whoStandsBehindThem } from './who-stands-behind-them.js';
+import { whatAHouseHasToItsName } from './what-a-house-has-to-its-name.js';
+import { positionIn } from './standing.js';
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
 import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
 import { type SomebodyAbove, whoWouldTeach } from './who-would-teach-this-cultivator.js';
@@ -1384,6 +1386,57 @@ export const situatedReads = {
             ?? COURTS.find(named)?.name
             ?? APEX_INSTITUTIONS.find(named)?.name
             ?? factionId;
+    },
+
+    /**
+     * WHAT A HOUSE HAS TO ITS NAME - its purse, its shelves and its ground.
+     *
+     * The question anybody asks about a body before they join it, rob it, or
+     * move against it. Every part of the answer already existed and none of it
+     * was reachable; see `what-a-house-has-to-its-name.ts`.
+     */
+    whatThatHouseHolds(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        named: string | undefined
+    ): Execution {
+        // NAMING NOBODY MEANS YOUR OWN, which is what "what is in the vault"
+        // asks. The pattern drops a pronoun rather than passing it on, so this
+        // is reached by the sentences that genuinely named no house.
+        const mine = named === undefined || named.trim().length < 3
+            ? positionIn(this.repos, cultivator.id)
+            : null;
+        const house = mine === null
+            ? this.factionMeant(named, cultivator)
+            : { id: mine.sectId, name: mine.sectName, kind: 'sect' as const };
+
+        if (!house) {
+            return mine === null && named !== undefined
+                ? this.noPartyNamed(
+                    'look', named, cultivator,
+                    'You have no house of that name.',
+                    'You go to ask what they are sitting on and cannot say who they are.'
+                )
+                : this.freeAction(run, 'look', factsForRefusal(
+                    'You are on nobody\'s roll.',
+                    'You go to ask what the house is sitting on and there is no house it would '
+                    + 'be. Somebody else\'s vault is a question you can put by naming them.',
+                    'No membership and no faction named. Read only, nothing spent.'
+                ));
+        }
+
+        const read = whatAHouseHasToItsName({
+            world: this.atHand,
+            house: this.atHand?.factions.find(row => row.id === house.id) ?? null,
+            houseName: house.name,
+            factionId: house.id,
+            readerOrdinal: cultivator.realmOrdinal,
+            today: Math.floor(this.atHand?.currentDay ?? run.elapsedDays)
+        });
+        const facts = factsForToolResult(`${house.name}, and what it sits on.`, read.lines);
+        facts.structure.push(read.structure);
+        return this.freeAction(run, 'look', facts);
     },
 
     whoStandsBehindThatHouse(
