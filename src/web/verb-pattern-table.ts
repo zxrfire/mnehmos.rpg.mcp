@@ -79,7 +79,8 @@ import {
     usedAsVerb,
     namedAfter,
     inTheCharactersThePatternsUse,
-    isBareDuration
+    isBareDuration,
+    outsideAnyName
 } from './sentence-parts.js';
 
 // The closed action set and the six lists that class it. Everything here was
@@ -2456,6 +2457,16 @@ function aDemandWithAnActPromisedBehindIt(input: string): PlannedAction | null {
 
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
+    // THE SAME SENTENCE WITH ITS PROPER NAMES TAKEN OUT, for the branches that
+    // anchor on a CATEGORY noun. A word doing duty inside a name is not that
+    // word being used as a category - five catalogued places were measurably
+    // eaten this way before it was generalised. See `outsideAnyName`, which
+    // states each of them and what it cost.
+    //
+    // Used narrowly and never as a replacement for `text`: a branch that reads
+    // a verb, a number or a whole phrasing wants the sentence somebody typed.
+    // Only the noun ANCHORS read this.
+    const bare = outsideAnyName(input);
 
     // Before everything, because every branch below that reads a number reads
     // it through a scanner that cannot see a sign.
@@ -2579,7 +2590,13 @@ function planIntent(input: string): PlannedAction {
             // Said the way a person says it, where the body part is what makes
             // it violence rather than the verb. See `VIOLENCE_TO_A_BODY`.
             || VIOLENCE_TO_A_BODY.test(input)
-            || VIOLENCE_WITH_NO_OTHER_READING.test(text)
+            // Read off `bare`, because these verbs are also nouns and some of
+            // them are place names. Measured: "I travel to Knife Edge" came
+            // back as an ATTACK on somebody called Edge, twelve phrasings out
+            // of twelve, so nothing could be said about that place at all.
+            // A verb somebody actually typed survives the strip; a capitalised
+            // name does not. See `outsideAnyName`.
+            || VIOLENCE_WITH_NO_OTHER_READING.test(bare)
             || CRIPPLING_SOMEBODY.test(input))
         // AND IT IS NOT BEING SWORN. See `SWEARING_IT_RATHER_THAN_DOING_IT`:
         // the oath wrapper is read before what it wraps, so a promise to kill
@@ -3043,8 +3060,11 @@ function planIntent(input: string): PlannedAction {
         // about the town rather than about a thing. "what does this town have
         // to trade" walked the player over to talk to somebody.
         || /\b(?:what|which) (?:does|do|has|have) (?:this|the|that) (?:town|place|village|city|settlement|market)\b[^.?!]*\b(?:have|sell|sells|trade|deal|offer|stock)\b/.test(text)
+        // The noun read off `bare`: "I go to Wind Market" reached the board and
+        // never moved anybody, seven phrasings in twelve, because a town was
+        // called Market. The verb is still read off the sentence as typed.
         || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|show|find|go to|look at|look over|head to|walk to')
-            && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))
+            && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(bare))
         // WHO, rather than WHAT
         || /\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/.test(text)
         // OFFERING, which is how a player asks it when somebody is standing in
@@ -3345,7 +3365,7 @@ function planIntent(input: string): PlannedAction {
     }
 
     // ── move: one action, several ways of going ──
-    const moveIntent = matchIntent(text, MOVE_INTENT_PATTERNS);
+    const moveIntent = matchIntent(bare, MOVE_INTENT_PATTERNS);
     if (moveIntent) {
         const destination = extractDestination(input);
 

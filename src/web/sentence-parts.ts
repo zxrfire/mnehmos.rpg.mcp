@@ -417,3 +417,49 @@ export function isBareDuration(input: string): boolean {
     }
     return true;
 }
+
+/**
+ * THE SENTENCE WITH ITS PROPER NAMES TAKEN OUT.
+ *
+ * A word doing duty inside a NAME is not that word being used as a category,
+ * and this table is full of branches that anchor on a category noun. Every one
+ * of them is a place a proper name can be eaten.
+ *
+ * ── MEASURED, FIVE TIMES, BEFORE IT WAS GENERALISED ──────────────────────
+ *
+ * It was found once - "I travel to Four Graves" reached the inheritance-site
+ * listing and never moved anybody, because `graves` is a site noun - and fixed
+ * locally, inside `siteStep`. A pass over the whole catalog immediately found
+ * four more that the local fix did not reach, each with the same shape and a
+ * different verb family:
+ *
+ *   Knife Edge     `knife`    12 of 12 phrasings became an ATTACK on "Edge"
+ *   Wind Market    `market`   7 of 12 reached the board and never moved
+ *   Stone Shadow   `shadow`   every travel phrasing became move/FOLLOW
+ *   Iron Ridge Mission `mission`  "what does it teach" reached the errand board
+ *
+ * Those names were changed, which fixes those names. This fixes the CLASS: any
+ * branch that anchors on a category noun can ask the sentence with its names
+ * removed, and stop eating the next one somebody writes.
+ *
+ * ── A NAME IS TWO CAPITALISED WORDS OR MORE ──────────────────────────────
+ *
+ * Deliberately. One would take the first word of every sentence and every
+ * over-capitalised noun a player types. Two is what a place in this world is
+ * actually called - and a name the catalog knows is unaffected either way,
+ * because the readers that resolve a name by name run first and anchor it.
+ *
+ * KNOWN LIMIT, stated rather than hidden: somebody typing entirely in lower
+ * case gives no signal to read, and "i travel to four graves" still anchors.
+ * Fixing that wants the world's own place list, which a pattern table does not
+ * have and should not hold a copy of. It is the reason those five names moved
+ * as well: this narrows the class, and a name that carries no category word
+ * cannot be eaten by either route.
+ */
+export function outsideAnyName(input: string): string {
+    return input.replace(A_NAME_RATHER_THAN_A_NOUN, ' ').toLowerCase();
+}
+
+/** Two or more capitalised words in a row. What a place in this world is called. */
+const A_NAME_RATHER_THAN_A_NOUN =
+    /\b[A-Z][a-z']+(?:\s+(?:of|the|and|a)\s+|\s+)(?:[A-Z][a-z']+)(?:\s+[A-Z][a-z']+)*\b/g;

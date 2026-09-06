@@ -114,3 +114,61 @@ describe('and no place in the catalog is swallowed by a category', () => {
         expect(swallowed, 'a category noun ate a place name').toEqual([]);
     });
 });
+
+describe('and the class is retired, not the five names', () => {
+    /**
+     * The five that were MEASURED as broken, each against a different verb
+     * family, kept here as retired names.
+     *
+     * They were all renamed - a place should not carry a game category, which
+     * is a coin-flip for the model that classifies a sentence as well as for
+     * the table that parses it. But renaming five names fixes five names. What
+     * this holds is that the CLASS is gone: `outsideAnyName` is asked by every
+     * branch that anchors on a category noun, so the next name somebody writes
+     * cannot be eaten by one.
+     *
+     * If this file is ever the only thing standing between a rename and a
+     * regression, that is the point of it.
+     */
+    it.each([
+        ['Four Graves', 'graves', 'the inheritance-site listing'],
+        ['Wind Market', 'market', 'the market board'],
+        ['Stone Shadow', 'shadow', 'move/follow'],
+        ['Knife Edge', 'knife', 'an attack on somebody called Edge'],
+        ['The Iron Ridge Mission', 'mission', 'the errand board']
+    ])('%s survives every travel phrasing (was eaten by %s -> %s)', name => {
+        for (const verb of ['I travel to', 'I go to', 'I walk to', 'I head for', 'I journey to']) {
+            const parsed = parseIntent(`${verb} ${name}`) as { action: string; intent?: string };
+            expect(parsed.action, `${verb} ${name}`).toBe('move');
+            expect(parsed.intent ?? 'travel', `${verb} ${name}`).toBe('travel');
+        }
+    });
+
+    /**
+     * AND THE CATEGORIES ARE UNTOUCHED, which is the half a blunt fix loses.
+     * Every one of these is the same word being used as the category it is.
+     */
+    it.each([
+        ['what graves are near', 'site'],
+        ['what is on the market', 'interact'],
+        ['I knife the guard', 'attack'],
+        ['what missions are there', 'sect'],
+        ['I follow him', 'interact']
+    ])('%s still reaches %s', (said, action) => {
+        expect((parseIntent(said) as { action: string }).action, said).toBe(action);
+    });
+
+    /** Every catalogued name, against every phrasing a player travels with. */
+    it('leaves the whole catalog reachable, five phrasings deep', () => {
+        const swallowed: string[] = [];
+        for (const name of PLACE_NAMES) {
+            if (typeof name !== 'string') continue;
+            if (name.trim().split(/\s+/).length < 2) continue;
+            for (const verb of ['I travel to', 'I go to', 'I walk to', 'I head for', 'I journey to']) {
+                const parsed = parseIntent(`${verb} ${name}`) as { action: string };
+                if (parsed.action !== 'move') swallowed.push(`${verb} ${name} -> ${parsed.action}`);
+            }
+        }
+        expect(swallowed, 'a category noun ate a place name').toEqual([]);
+    });
+});
