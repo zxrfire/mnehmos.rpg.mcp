@@ -172,7 +172,9 @@ export {
     DEFAULT_ERRAND,
     SECT_RECRUIT_VERBS,
     SECT_INTAKE_NOUNS,
+    A_POSTED_INTAKE,
     ASKING_TO_BE_TAKEN_IN,
+    TAKING_A_POSTED_INTAKE,
     SECT_EXPEL_VERBS,
     SECT_ELDER_NOUN,
     SECT_ADMISSION_NOUNS,
@@ -186,6 +188,10 @@ export {
 export type { SectIntent } from './sect-phrasings.js';
 import {
     leadershipIntent,
+    // Locally, as well as in the re-export above: `export ... from` publishes a
+    // name without binding it in this module, and `whoseIntakeItIs` reads them.
+    A_POSTED_INTAKE,
+    TAKING_A_POSTED_INTAKE,
     SECT_INTENT_UNAMBIGUOUS,
     SIPHON_PACE_PATTERNS,
     SIPHON_TAKING_VERBS,
@@ -923,25 +929,11 @@ function theHouseInside(phrase: string | undefined): string | undefined {
 
 // TAKING AN INTAKE THE GAME ITSELF JUST POSTED
 
-/** The nouns a posted intake is pointed at by. No house is named any of them. */
-const A_POSTED_INTAKE =
-    '(?:intakes?|recruiting (?:events?|days?|drives?)|admission days?|open days?'
-    + '|recruit(?:ing|ment) (?:bills?|notices?|posters?))';
-
-/**
- * Going to one, as opposed to reading about it.
- */
-const GOING_TO_AN_INTAKE =
-    'take|takes|taking|go to|goes to|going to|attend|attends|attending|'
-    + 'sign up (?:at|for|with)|signs up (?:at|for|with)|signing up (?:at|for|with)|'
-    + 'put myself (?:forward|in front of)|present myself (?:at|to|for)|'
-    + 'turn up (?:at|to|for)|show up (?:at|to|for)|apply at|be there for|'
-    + 'walk in at|walk into';
-
-export const TAKING_A_POSTED_INTAKE = new RegExp(
-    `\\b(?:${GOING_TO_AN_INTAKE})\\b[^.!?]{0,40}?\\b${A_POSTED_INTAKE}\\b`,
-    'i'
-);
+// The two patterns live in `sect-phrasings.ts` now, beside
+// `ASKING_TO_BE_TAKEN_IN`, because all three answer one question - whether the
+// speaker is the house or the candidate - and the branch that prices a house's
+// intake POWER has to be able to consult them. Imported above; nothing outside
+// this file ever read them from here.
 
 /**
  * Which house's intake the sentence means, where it says.
@@ -2836,6 +2828,26 @@ function planIntent(input: string): PlannedAction {
         return { action: 'seclude', days: parseDuration(text) ?? DEFAULT_SECLUSION_DAYS };
     }
 
+    // ── WHAT IS NAILED TO THE WALL, AHEAD OF THE BOARD ───────────────────
+    //
+    // Measured: "I take the intake at the Silver Island Market" came back as a
+    // DUTY carrying the target "intake at the Silver Island Market" - a
+    // commission by that name, which no house has ever posted. The two
+    // branches below read the same verb. `take` is a duty-taking verb and it
+    // is also how somebody says they are turning up to be admitted, so the
+    // named-duty read fired first and `dutyNamed` handed back the whole phrase
+    // as the name of a job.
+    //
+    // Order is the fix and not a guard, because the two are not ambiguous in
+    // the other direction: `TAKING_A_POSTED_INTAKE` needs an intake noun, and
+    // "I take a commission" has none. Signing on is a narrower sentence than
+    // taking work, so it is asked first.
+    // WHAT IS NAILED TO THE WALL
+    if (TAKING_A_POSTED_INTAKE.test(text)) {
+        const house = whoseIntakeItIs(input);
+        return { action: 'sect', ...(house ? { target: house } : {}) };
+    }
+
     // the house's own board, ahead of the mortal one
     const namedDuty = usedAsVerb(text, DUTY_TAKING_VERBS) ? dutyNamed(text) : undefined;
     if (namedDuty) {
@@ -2849,11 +2861,6 @@ function planIntent(input: string): PlannedAction {
         return { action: 'sect', intent: 'standing' };
     }
 
-    // WHAT IS NAILED TO THE WALL
-    if (TAKING_A_POSTED_INTAKE.test(text)) {
-        const house = whoseIntakeItIs(input);
-        return { action: 'sect', ...(house ? { target: house } : {}) };
-    }
     if (RECRUITING_BILL_PATTERN.test(text)) {
         return { action: 'look', intent: 'bills' };
     }
