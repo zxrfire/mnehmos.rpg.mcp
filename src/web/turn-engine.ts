@@ -744,6 +744,11 @@ import {
 } from './view.js';
 import { type ObligationDb, ledgerAbout } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
+import {
+    headlineForTheLedger,
+    theLedgerAsLines,
+    whatStandsBetweenYouAndEverybody
+} from './what-stands-between-you-and-everybody.js';
 
 // TURNING A RESULT INTO SENTENCES MOVED OUT
 import {
@@ -3412,19 +3417,63 @@ ${noticed}`;
     ): Execution {
         const today = Math.floor(run.elapsedDays);
         const carried = openOathsHeldBy(this.repos, cultivator.id);
+        // AND THE WORLD'S OWN PEOPLE HAVE NAMES TOO.
+        //
+        // Two tables and a catalog were consulted and the world roster was not,
+        // so every row of the ledger written against somebody the world spawned
+        // came back as their id. Measured: *"Held against you by npc-20:
+        // humiliation, at slight. Ning Suiru noticed being leaned on..."* - the
+        // name is in the description, put there by the verb that wrote the row,
+        // and the line above it says npc-20.
+        //
+        // A raw id in player prose is the one thing the whole entity layer
+        // exists to prevent. Falling back to the id stays as the last resort:
+        // a row about somebody nothing can name is still a row, and saying so
+        // is better than dropping it.
         const nameOf = (id: string): string =>
             this.repos.cultivators.getById(id)?.name
+            ?? this.atHand?.npcs.find(person => person.id === id)?.name
             ?? SECTS.find(s => s.id === id)?.name
             ?? id;
 
         // ── WHAT THEY ARE ALREADY UNDER ──────────────────────────────────
         if (intent === 'read' || (intent !== 'swear' && intent !== 'break')) {
+            // AND WHAT STANDS THE OTHER WAY, which this read did not have.
+            //
+            // `openOathsHeldBy` is one kind out of five and one direction
+            // out of two: words this cultivator gave. The ledger also holds
+            // what is owed TO them, what is held against them, and what they
+            // hold - written by the ordinary verbs, priced by
+            // `whatYouBringToBear` on every later approach, and askable in no
+            // sentence at all. See `what-stands-between-you-and-everybody.ts`.
+            const named = target
+                ? this.partyPutTo(cultivator, target, this.scopeFor(cultivator))
+                : null;
+            const stands = whatStandsBetweenYouAndEverybody({
+                rows: ledgerAbout(this.db as unknown as ObligationDb, cultivator.id),
+                meId: cultivator.id,
+                nameOf,
+                onlyWithId: named?.id ?? null
+            });
+            const between = theLedgerAsLines(stands, named?.name ?? null);
+
             const lines: string[] = carried.length === 0
-                ? [
-                    'Nothing. No word of yours is on anybody\'s ledger, which is a lighter thing '
-                    + 'to be than it sounds: nobody is owed your service and nobody has your '
-                    + 'name written against a penalty clause.'
-                ]
+                // NOTHING EITHER WAY IS ONE SENTENCE, NOT TWO. A word given
+                // and a debt owed are different rows and their absence is the
+                // same fact, so the empty case says it once and `between` is
+                // not appended below - its own nothing-line would restate it.
+                //
+                // Only where the question named nobody. A question about one
+                // person deserves an answer about that person, and the ledger's
+                // own nothing-line is the one that names them.
+                ? (named === null && stands.nothingAtAll
+                    ? [
+                        'Nothing, in either direction: nobody is owed your service, nobody '
+                        + 'has your name written against a penalty clause, and you hold '
+                        + 'nobody else\'s. It is a lighter thing to be than it sounds '
+                        + 'and it does not last.'
+                    ]
+                    : [])
                 : carried.map(row => {
                     const owed = nameOf(row.subjectId);
                     const term = row.dueOnDay === null
@@ -3446,10 +3495,18 @@ ${noticed}`;
                 lines.push(WHERE_IT_WAS_SWORN_MAY_MATTER_AND_NOBODY_CAN_SAY);
             }
 
+            // A WORD GIVEN IS ONE KIND OUT OF FIVE. The oaths above are what
+            // this cultivator swore; `between` is everything else the ledger
+            // holds with them at one end of it, and both answer the question.
+            if (carried.length > 0 && !stands.nothingAtAll) {
+                lines.push('And what stands on the ledger besides your own word:');
+            }
+            if (!(named === null && carried.length === 0 && stands.nothingAtAll)) {
+                lines.push(...between);
+            }
+
             const facts = factsForToolResult(
-                carried.length === 0
-                    ? 'You are bound by nothing.'
-                    : `${carried.length} open oath${carried.length === 1 ? '' : 's'}.`,
+                headlineForTheLedger(carried.length, stands, named?.name ?? null),
                 lines
             );
             facts.structure.push(

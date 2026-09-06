@@ -50,7 +50,9 @@
 import { HELPLESS_REALM_GAP } from '../cultivation/combat.js';
 import type { WhatTheyCanPlace } from '../social/what-they-can-place-about-you.js';
 import type { ApproachLeverage, SectAlignment } from '../../schema/cultivation.js';
-import { SEVERITY_ORDER, severityRank, type ObligationRecord } from '../social/grudges.js';
+import {
+    SEVERITY_ORDER, severityRank, whichWayItPoints, type ObligationRecord
+} from '../social/grudges.js';
 import { whenItIsDoneToOneOfOurs } from './what-a-house-will-do-about-it.js';
 import { severityOfTheWrong, type Wrong } from './what-somebody-does-about-being-wronged.js';
 
@@ -135,11 +137,13 @@ function theyOweYou(input: WhatIsActuallyBehindYou, kind: 'debt' | 'favor'): num
     let count = 0;
     for (const record of input.ledger ?? []) {
         if (record.status !== 'open' || record.kind !== kind) continue;
-        // A debt is owed by its holder; a favour is owed to them.
-        const owed = kind === 'debt'
-            ? record.holderId === input.subjectId && record.subjectId === input.actorId
-            : record.holderId === input.actorId && record.subjectId === input.subjectId;
-        if (owed) count++;
+        // WHICH WAY IT POINTS IS `grudges.ts`'S QUESTION. A debt is owed by its
+        // holder and a favour is owed TO its holder, and that exception was
+        // restated here for as long as this read existed. Asking means a reader
+        // that gets it wrong gets it wrong in one place.
+        const points = whichWayItPoints(record);
+        if (points.sense !== 'owes') continue;
+        if (points.owerId === input.subjectId && points.owedId === input.actorId) count++;
     }
     return count;
 }

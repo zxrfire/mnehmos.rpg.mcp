@@ -281,6 +281,76 @@ export function createBloodFeud(
     return createObligation({ ...input, kind: 'blood_feud' });
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHICH WAY A ROW POINTS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A row read as a sentence about two people, rather than as two ids.
+ *
+ * `owes` is a thing one of them has to make good. `holds_against` is a thing
+ * one of them has not forgiven. Every kind is one or the other, and nothing
+ * outside this file gets to decide which.
+ */
+export type WhichWayItPoints =
+    | { readonly sense: 'owes'; readonly owerId: string; readonly owedId: string | null }
+    | {
+        readonly sense: 'holds_against';
+        readonly aggrievedId: string;
+        readonly offenderId: string | null;
+    };
+
+/**
+ * Which of the two parties is on which end of a row.
+ *
+ * ── WHY THIS IS A FUNCTION AND NOT A CONVENTION ───────────────────────────
+ *
+ * `holderId` is documented as *"the aggrieved party, the debtor, the
+ * oath-taker"* - in every one of those the holder carries the burden. `favor`
+ * INVERTS it: a favour is an obligation owed TO its holder, which is written
+ * down in a comment in `spending-a-word-to-place-a-child.ts` and restated
+ * inline in `background-as-leverage.ts`, and was nowhere a reader would look.
+ *
+ * One exception stated in two places is a rule nobody knows. It is stated here
+ * now, once, and both readers ask rather than remember - because the next
+ * reader of this ledger is a player asking what they are owed, and a reader
+ * that gets `favor` backwards tells them somebody owes them a thing they in
+ * fact owe.
+ */
+export function whichWayItPoints(record: {
+    readonly kind: ObligationKind;
+    readonly holderId: string;
+    readonly subjectId: string | null;
+}): WhichWayItPoints {
+    switch (record.kind) {
+        // The holder carries it: they are the one who has to make it good.
+        case 'debt':
+        case 'oath':
+            return { sense: 'owes', owerId: record.holderId, owedId: record.subjectId };
+
+        // AND THE ONE THAT RUNS THE OTHER WAY. A favour is owed TO its holder,
+        // so the subject is the one who has to make it good. Where the subject
+        // is null the account has no name on it and there is nobody to ask.
+        case 'favor':
+            return {
+                sense: 'owes',
+                owerId: record.subjectId ?? record.holderId,
+                owedId: record.subjectId === null ? null : record.holderId
+            };
+
+        // Nothing to make good: a thing not forgiven, or a thing known.
+        case 'grudge':
+        case 'blood_feud':
+        case 'leverage':
+        default:
+            return {
+                sense: 'holds_against',
+                aggrievedId: record.holderId,
+                offenderId: record.subjectId
+            };
+    }
+}
+
 /** Discharge a record. The only exit from the open ledger. */
 export function settleObligation(
     record: ObligationRecord,

@@ -1730,6 +1730,35 @@ const PASSAGE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
  * whoever the player is dealing with. What separates it from a dao oath is the
  * party on the other end and nothing about the phrasing.
  */
+/**
+ * Asking what the ledger holds, in either direction.
+ *
+ * A QUESTION AND NEVER AN ACT. Every shape here is somebody asking to be told,
+ * which is why `remind him that he owes me` is deliberately NOT in it: that is
+ * a thing said to somebody's face with a debt behind it, and it belongs to the
+ * pressing path where `whatYouBringToBear` prices the debt off the same rows.
+ * Reading the ledger and leaning on it are two acts and this is the free one.
+ */
+export const WHAT_IS_WRITTEN_BETWEEN_US = new RegExp([
+    // What is owed, whichever way round.
+    String.raw`^\s*(?:so\s+|and\s+)?(?:what|who|how much)\b[^.!?]{0,40}\b(?:owe|owes|owed|owing)\b`,
+    String.raw`^\s*(?:does|do|did)\s+(?:he|she|they|it|anyone|anybody|\w+)\s+owe\b`,
+    // The account as a thing rather than as a verb, and nothing else in it.
+    String.raw`^\s*(?:my|our)\s+(?:debts?|favou?rs?|obligations?|accounts?|ledger)\s*[?.!]*\s*$`,
+    // What stands between two people, which is the same question with a party on it.
+    String.raw`^\s*what\s+(?:stands|is|lies)\s+between\b`,
+    // Who is carrying something about you. The hazard direction.
+    String.raw`^\s*(?:what|who)\b[^.!?]{0,40}\b(?:held against|holds against|holding against|has against|grudges?)\b`,
+    String.raw`^\s*who\s+(?:is\s+)?(?:owed|owes)\b`
+].join('|'), 'i');
+
+/** Where a name sits in a question about the ledger. */
+const LEDGER_SUBJECT_VERBS =
+    /owes|owe|owed|owing|between me and|between us and|against|with|from|on/;
+
+/** The player, said in the way a question about themselves says it. */
+const THE_ASKER_THEMSELVES = /^\s*(?:me|myself|us|i|my|mine|ourselves)\s*$/i;
+
 export const AN_OATH = new RegExp([
     '\\b(?:oath|oaths|oathwright|vow|vows|indenture|indentured)\\b',
     '\\b(?:my|our|his|her|their)\\s+word\\b',
@@ -2831,6 +2860,32 @@ function planIntent(input: string): PlannedAction {
     if (/\b(?:eat|meal|dine|breakfast|supper|feed myself|buy food)\b/.test(text)
         || /\b(?:food|rations?)\b/.test(text)) {
         return { action: 'eat' };
+    }
+
+    // WHAT STANDS BETWEEN YOU AND SOMEBODY, WHICH IS NOT AN OATH.
+    //
+    // Above the oath gate deliberately: `AN_OATH` requires oath vocabulary, so
+    // none of these reached it and every one of them came back `unclear` on the
+    // played corpus - "what am I owed", "who owes me", "what does he owe me".
+    // The ledger is written from everywhere and was readable from nowhere.
+    //
+    // Routed to the oath verb's `read` because that is already the verb for
+    // what is written between this cultivator and other people; it was simply
+    // answering one kind out of five and one direction out of two. It is free
+    // either way, so a sentence that lands here costs the player nothing.
+    if (WHAT_IS_WRITTEN_BETWEEN_US.test(text)) {
+        // THE ASKER IS NOT THE OTHER PARTY. Every one of these questions has
+        // the player in it - "who owes ME", "held against ME" - so the subject
+        // extractor finds them and the read would narrow to rows between this
+        // cultivator and themselves, which is always none. Naming yourself is
+        // naming nobody here.
+        const said = extractSubject(input, LEDGER_SUBJECT_VERBS);
+        const withWhom = said && !THE_ASKER_THEMSELVES.test(said) ? said : undefined;
+        return {
+            action: 'oath',
+            intent: 'read',
+            ...(withWhom ? { target: withWhom } : {})
+        };
     }
 
     // A WORD GIVEN, CARRIED, OR NOT KEPT
