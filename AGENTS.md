@@ -151,76 +151,41 @@ you want is an item.
 
 ---
 
-## A name is xianxia, and it is distinct from every other name
+## A name has to be tellable from every other name
 
-Two rules, and the second is the one that gets forgotten.
+The WORLD half of naming - what register a sect, an art, a pill or a place is in,
+which type nouns exist, why `guild` is banned - is not a repo-wide rule and does
+not live here. It is in [`docs/world/writing/tone.md`](docs/world/writing/tone.md#naming-conventions),
+with places in [`place-names.md`](docs/world/writing/place-names.md) and the
+generated half in the header of `regions/ruin-and-scar-names.ts`. Read those
+before naming anything.
 
-> **Register.** A name in this world is a xianxia name: a translated-from-Chinese
-> compound, not an English abstraction. `Azure Cloud Pavilion`, `Nine Abyss Flame
-> Sect`, `Millennium Blood Ganoderma`, `Kalpa-Surviving Pill`. Not `The House of
-> the Bound Word`, `Stonewright Consortium`, `The Weir Office`, `The Key of the
-> Long Cold`.
+What belongs here is the half that is an ENGINEERING constraint, because the
+thing reading these names is a parser and a model:
 
-The tells of the wrong register: an article plus an abstraction (`The Second
-Question`); a modern institution word (`Consortium`, `Bureau`, `Exchange`,
-`Audit`, `Ledger`); an `X of the Y` construction where a compound would do
-(`Severance of the Standing Thread` against `Karmic Severing Art`); and English
-trade words standing in for Chinese ones (`Fordhall`, `Longbough`, `Anchorhold`).
+> **A type noun belongs to one kind of body. It may repeat freely inside that
+> kind and must never cross between kinds.**
 
-`guild` is banned outright. It is a fantasy-RPG institution - an independent
-professional association you register with and take jobs from - and this world
-has none. A body here is a **sect** (宗门), **hall** (殿), **pavilion** (阁),
-**alliance** (盟), **court** (府), **clan** (家族), **temple** (寺),
-**stronghold** (寨) or **market** (坊市), and which one it is tells the reader
-what it wants and who it answers to. `Gate` is allowed but not preferred: 门 is
-a real sect suffix and translators do keep it, but 宗门 -> Sect is the
-unambiguous choice.
+Five Courts that are all cultivator houses cost a reader nothing - placing one
+places the kind. A `Court` that is a sect beside a `Court` that is a mortal water
+authority makes the word carry no information, and every sentence containing it
+then has to be disambiguated from the rest of the sentence. The design owner:
+*it makes it harder for the llm. try to make it easier by picking something
+distinct.*
 
-For arts, the register is short, grandiose, slightly cryptic, and
-matter-of-fact. `Karmic Severing Art`, `Ten Thousand Corpse Heart`, `Half
-Immortal Body`, `Heavenly Road Decree`. The implication does the work, so
-nothing needs to be called supreme, ultimate or divine to land.
+The same constraint decides what a name may be renamed TO. A name a player types
+keeps the word they type: `Lesser Healing Pill` was once renamed to something
+more evocative, and the cost was that "I swallow a healing pill" stopped
+reaching it. It went back.
 
-> **Distinctness.** A type noun belongs to ONE kind of body. It may repeat
-> freely inside that kind and must never cross between kinds.
-
-The design owner, and the distinction is his: *it is not banned to have multiple
-pavilions either, esp if they are both sects aka the same type. but what gets
-confusing is courts being both sects and mortal organizations. that should NEVER
-be. it makes it harder for the llm.*
-
-So five Courts that are all cultivator houses is fine - `Azure Mist`,
-`Frostmirror`, `Orchid`, `Storm Tyrant`, `Hollow` - because a reader that has
-placed one has placed the kind. A `Court` that is a sect beside a `Court` that
-is a mortal water authority is not, because now the word carries no information
-and every sentence with it in has to be disambiguated from the rest of the
-sentence.
-
-The mortal bodies keep their own nouns - `Ward`, `Patrol`, `Caravan`, `Market` -
-and the cultivator houses keep theirs. Where a noun was found on both sides it
-was the mortal one that moved, because there are fewer of them and they are the
-ones a player meets last.
-
-**`Court` IS A RANK, NOT A DECORATION.** The design owner: *court also designates
-a sect with the strength of a court.* A house is called a Court because of what
-it can put in a room, so the word is a claim about power and not a choice of
-flavour - and it cannot be renamed away from a house that has that strength, or
-given to one that does not. `a-court-that-takes-one-sex.ts` already leans on
-this from the other side: single-sex admission exists only at Courts, because a
-gate is only interesting when what is behind it is worth wanting.
-
-Measured the hard way. Two Courts were renamed to a Stronghold and a Manor in a
-distinctness pass, and the single-sex test failed immediately; a third was made
-a Clan at power 36, which is court strength, and nothing caught it because
-nothing was asserting the rank half.
-
-Poetry is not banned; xianxia names are often poetic and that is the register.
-What is banned is a name that cannot be told from another one, because this is a
-game and somebody has to type it.
-
-`the-nouns-a-house-ends-with.test.ts` is the ratchet on the parser's side: a
-house whose type noun the parser has never heard of fails, because a list of
-words that describes a catalog only stays true if something checks.
+**Renaming is done across the whole tree at once**, because a name lives in the
+catalog, in the prose about it, in the ids and in the tests, and that is the only
+way it stays consistent. It has one failure mode: a replacement that fires INSIDE
+a longer name. `The Root` -> `Root Hollow` made `Root Hollow-Recasting Talisman`
+out of a talisman and the parser could no longer reach it at all.
+`a-rename-did-not-mangle-a-name.test.ts` is the ratchet, and
+`the-nouns-a-house-ends-with.test.ts` is the other one: the parser had ten
+hand-written lists of house words and none of them had ever heard of a guild.
 
 ---
 

@@ -349,8 +349,8 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             'The clearest case in the province of the map and the paper disagreeing without anybody lying. The Crucible Hall stands inside the Ashfall and holds from a court on the fourth arterial, so the flank has no single line anybody could draw around it.'
     },
     {
-        id: 'prefecture-frost-head',
-        name: 'Frost Head',
+        id: 'prefecture-cold-jade-basin',
+        name: 'Cold Jade Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
         seat: 'the glacier terrace',

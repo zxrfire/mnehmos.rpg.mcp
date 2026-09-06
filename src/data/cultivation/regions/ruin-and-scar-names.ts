@@ -57,8 +57,18 @@ import { z } from 'zod';
 //      and the first attempt at a fix put a space in and stopped there. The
 //      design owner's verdict on that: HALF ROOF IS NOT XIANXIA. Spacing an
 //      English village name gives an English village name. Terrace, Gorge,
-//      Cliff, Spring, Stair, Array, Garden, Eaves, Slope, Hall - what
-//      `place-names.ts` already uses, and nothing else.
+//      Cliff, Spring, Stair, Array, Garden, Eaves, Slope, Hall, Ridge, Ford,
+//      Basin, Wall, Reach, Creek, Stone, Head, Cut - what `place-names.ts`
+//      already uses, and nothing else. An administrative word is not one of
+//      them: District and Catchment were both in here and are a Prefecture
+//      (州) and a Basin now.
+//      AND THE QUALIFIER IN FRONT HAS TO BE AN IMAGE. The convention this is
+//      translated out of pairs a type noun with a colour, a material, a number
+//      or a celestial thing - Crescent Moon Valley, Hundred Flower Valley,
+//      Thousand Blade Peak, Falling Star Rainforest. A bare adjective gives a
+//      name that satisfies every rule above and is still dead on the page:
+//      Rich Soil, Long Ridge and Frost Head were all rejected for exactly that,
+//      and are Sweet Spring, Cinder Ridge and Cold Jade Basin.
 //      A gerund is the same failure in a third coat. Digging and Gleaning are
 //      English place names (Reading, Barking); name what the work leaves -
 //      Poor Man's Terrace, Thin Ridge.
@@ -100,7 +110,7 @@ export const RUIN_NAMES: readonly GeneratedPlaceName[] = [
     { name: 'Fallen Wall', source: 'what_happened', records: 'What the first party back reported, which turned out to be wrong by about eleven buildings.' },
     { name: 'Muyang', source: 'who_held_it', records: 'The house name, used flat, with no honorific and no form of words around it.' },
     { name: 'Sixty Doors', source: 'what_is_visibly_there', records: 'Counted from outside by somebody who could not get through any of them.' },
-    { name: 'Long Ridge', source: 'what_happened', records: 'The duty roster was still being kept for two years after the sealing, and the last page is legible.' },
+    { name: 'Cinder Ridge', source: 'what_happened', records: 'The duty roster was still being kept for two years after the sealing, and the last page is legible.' },
     { name: 'Sunken Ford', source: 'what_happened', records: 'Said of the seat rather than of the ground, and said the same way about a person.' },
     { name: 'Cold Spring', source: 'what_is_visibly_there', records: 'The only well outside the wall, still good, and the reason anybody camps there at all.' },
     { name: 'Bai\'s Turning', source: 'who_held_it', records: 'A path around the perimeter named for the last steward, who was not using it to get anywhere.' },
@@ -125,7 +135,7 @@ export const SCAR_NAMES: readonly GeneratedPlaceName[] = [
     { name: 'Reed Flat', source: 'what_is_visibly_there', records: 'It was not flat before, and the word does the whole of the work.' },
     { name: 'Bitter Soil', source: 'what_is_visibly_there', records: 'Stated as a fact rather than as a name, and used as one for two hundred years.' },
     { name: 'Wenzhi\'s Field', source: 'who_held_it', records: 'The farmer who held the ground, named because nobody could name what did it.' },
-    { name: 'Rich Soil', source: 'a_name_that_is_wrong', records: 'It was, and the surveys still carry the old entry, and every local knows better.' },
+    { name: 'Sweet Spring', source: 'a_name_that_is_wrong', records: 'It was, and the surveys still carry the old entry, and every local knows better.' },
     { name: 'Standing Water', source: 'what_is_visibly_there', records: 'It has not drained since, and nothing will drink it.' },
     { name: 'Three Year Ground', source: 'what_happened', records: 'The interval before anybody would cross it, agreed by nobody and observed by everybody.' },
     { name: 'Near Pass', source: 'a_name_that_is_wrong', records: 'It is the short way and it costs a day to go round, which is the joke and the warning at once.' },

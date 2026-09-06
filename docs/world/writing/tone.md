@@ -150,15 +150,59 @@ Prefer an event the catalog already records over inventing one to justify a name
   Datum Lamp* - these belong in a poetry collection, not a cultivation world. A named treasure
   is an image and what it does: *Azure Dragon Sword*, *Soul Suppressing Pagoda*.
 
-**What is already right, by kind.** Sects take Hall / Pavilion / Court / Stone Marrow Hall / Sect.
-Techniques are verb-noun compounds, often numbered - *Nine Severing Threads*, *Lid-Watching
-Stance*, *Borrowed Breath*, *void-piercing sword domain*. Pills are graded and plainly
-functional - *third-grade Meridian Knitting Pill*, *Blood-Replenishing Pill*, *Spirit Dew
-Pill*; a healing pill must never become an elixir of nine heavens. Herbs run from the vivid
-(*Corpse Silver Flower*) to the flat (*Qi Grass*), and both ends are correct.
+**What a body is called, and the word is a claim about what it is.** A house takes one of
+**Sect** (宗门) / **Hall** (殿) / **Pavilion** (阁) / **Alliance** (盟) / **Court** (府) /
+**Clan** (家族) / **Temple** (寺) / **Stronghold** (寨) / **Market** (坊市), plus the few a
+particular house has earned - Tower, Peak, Palace, Terrace, Grove, Array, Ward, Patrol,
+Caravan. Which one it is tells the reader what the body wants and who it answers to, so it is
+never chosen for sound.
+
+- **`guild` is banned outright.** It is a fantasy-RPG institution - an independent professional
+  association you register with and take jobs from - and this world has none. If someone wants
+  a ruin escorted, a treasure sold or a pill commissioned, they go to whatever body actually
+  has that capability, and each answers differently. There is no universal quest counter.
+- **`Gate` is allowed and not preferred.** 门 is a real sect suffix and translators do keep it
+  (*Heavenly Demon Gate*, *Five Elements Gate*), but 宗门 → Sect is the unambiguous choice.
+- **`Court` is a RANK.** A house is called a Court because of what it can put in a room. The
+  word is a claim about power, so it cannot be taken off a house that has that strength or
+  given to one that does not - and single-sex admission exists only at Courts, which is the
+  same fact read from the other side.
+
+**Techniques are verb-noun compounds, often numbered, and the register is short,
+grandiose, slightly cryptic, matter-of-fact.** *Karmic Severing Art*, *Ten Thousand Corpse
+Heart*, *Nine Severing Threads*, *Half Immortal Body*, *Heaven Burial Scripture*, *Great
+Freedom Art*. The implication does the work, which is why nothing has to be called supreme,
+ultimate or divine - and why `X of the Y` is wrong for an art: *Severance of the Standing
+Thread* is an English clause, *Karmic Severing Art* is a technique.
+
+**Pills are graded and plainly functional** - *third-grade Meridian Knitting Pill*,
+*Blood-Replenishing Pill*, *Spirit Dew Pill*; a healing pill must never become an elixir of
+nine heavens. **A name a player will type keeps the word they will type.** *Lesser Healing Pill* was once
+renamed to something more evocative, and the cost was the sentence "I swallow a healing pill" -
+which is what a player actually types. It was changed back. A pill that does the plain thing is
+allowed to say so; that is what "most things are ordinary" means in a place a player has to
+reach by typing.
+
+**And the name has to evoke what the thing is FOR.** The candidate that replaced it was
+*Flesh-Knitting Pill*, and the design owner's objection was not that it was unclear - it was
+that it sounds like a demonic art. Something that heals should read as restoration:
+*Blood-Replenishing*, *Marrow-Washing*, *Spring-Returning*, *Meridian Rebirth*. The register
+carries an alignment whether or not anybody intended one, so a benign effect with an ominous
+name is a bug in the same way a wrong type noun is - it tells the reader something false
+before they have read a word of what it does. Demonic arts get the demonic register, and they
+have earned it: *Corpse-Lantern Soul Forging*, *Lifespan-Devouring Heaven Theft*,
+*Meridian-Devouring Art*. Herbs run from the vivid (*Corpse Silver
+Flower*) to the flat (*Qi Grass*), and both ends are correct.
+
+**And no two names should be hard to tell apart.** Repeats inside one kind are fine - five
+Courts that are all cultivator houses cost a reader nothing, because placing one places the
+kind. What is banned is a type noun that spans kinds: a Court that is a sect beside a Court
+that is a mortal water authority makes the word carry no information, and every sentence with
+it in has to be disambiguated from the rest of the sentence. Where a noun turns up on both
+sides, the mortal body moves - there are fewer of them and a player meets them last.
 
 **A ruin has two names, and which one you get is a fact about the reader.** The colloquial
-name is what people who only ever saw it call it - *Fallen Wall*, *Half a Roof*, *The
+name is what people who only ever saw it call it - *Fallen Wall*, *Cloud Eaves*, *The
 Burn* - generated from what somebody saw, what happened there, or a name that is simply wrong.
 It carries no type noun and no poetry, **because a person naming something they are afraid of
 reaches for neither.** Do not formalise these.

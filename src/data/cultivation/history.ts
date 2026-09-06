@@ -1288,7 +1288,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'About half of one roof is above the wall line and the rest is not. Selective collapse is what an unmaintained inherited compound does and needs no intent behind it. The family\'s rule is superstition and is also the reason there is anything left to look at.'
     },
     {
-        siteName: 'Long Ridge',
+        siteName: 'Cinder Ridge',
         kind: 'ruin',
         whatTheySay:
             'They kept the duty list going after they shut the door. Two years of it. Somebody was still writing down who had the gate, and there was no gate, and there was nobody to relieve them.',
@@ -1420,7 +1420,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The name records the holder because nobody could name the cause, which the naming convention states outright. The district\'s insistence on the distinction is the residue: it is a community that has been careful with an attribution for two centuries and has forgotten that it is being careful.'
     },
     {
-        siteName: 'Rich Soil',
+        siteName: 'Sweet Spring',
         kind: 'scar',
         whatTheySay:
             'It is on the survey as good. It has never been good in anybody\'s memory. The survey is old and the survey is what the tax is worked out from, so we pay on good ground and farm none.',
