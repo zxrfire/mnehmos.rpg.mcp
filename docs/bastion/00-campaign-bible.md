@@ -58,7 +58,7 @@ The fourteen **canon layers** (geography, climate, cosmology, hell, grace, deep 
 - ****
   - **Resolved:** CANON = The current Sebastopater is SEBASTOPATER IOHANNE VELL-OS-CARRENOST THE NINTH, 81, elevated PD 604 (succeeded Mauritz I; previous predecessor Cassian VII died PD 591 having signed the Doctrine of Rescinded Eternity), Pyric-Cathedrate trained, House Aurriste-cadet of Carrenost by birth. The 'Cassian VII/VIII' naming in recent_history is a working-draft variant superseded. The 'sixth' vs 'ninth' tension is reconciled by reading 'ninth of his title' as 9th Sebastopater of the Vell-os-Carrenost name (a long-running noble-clerical lineage). His predecessor (Cassian VII in recent_history) died PD 591 of 'fatigue of the heart' having signed the Doctrine of Rescinded Eternity. Iohanne kept the Cantor-Magisterial appointment that placed Velim Aurriste at the doctrinal helm.
 - ****
-  - **Resolved:** CANON = There are TWO distinct senior liturgical offices, both active and both crucial: CANTOR-MAGISTERIAL VELIM AURRISTE (Vesperine, 45, head of liturgy proper, principal author of the Doctrine of Rescinded Eternity, senior of the Custodes Numeri, Cathedral's most politically powerful cleric below Sebastopater). CANTOR-MAGISTERIAL ASPERINE OS VEILLARDE (62, former opera singer, head of MUSICAL liturgy and composition, composes the current setting of the Watch-Cantos, can read cursivus sebastinus minor, has discovered the Vocatio Aurriste fragment of 581 PD). 'Severa di Pyrille' is reassigned as a different character: SEVERA DI PYRILLE = Inquisitor-Magisterial Severa di Vell-os-Carrenost (from the_inquisition), the Bureau's best Reader, working the Almongate Cluster. The 'Pyric Cathedrate by training, Almonine by sympathy, wrote Watch-Cantos setting' attributes from the_church_and_its_doctrine fold into Asperine's profile.
+  - **Resolved:** CANON = There are TWO distinct senior liturgical offices, both active and both crucial: CANTOR-MAGISTERIAL VELIM AURRISTE (Vesperine, 45, head of liturgy proper, principal author of the Doctrine of Rescinded Eternity, senior of the Custodes Numeri, Cathedral's most politically powerful cleric below Sebastopater). CANTOR-MAGISTERIAL ASPERINE OS VEILLARDE (62, former opera singer, head of MUSICAL liturgy and composition, composes the current setting of the Watch-Cantos, can read cursivus sebastinus minor, has discovered the Vocatio Aurriste fragment of 581 PD). 'Severa di Pyrille' is reassigned as a different character: SEVERA DI PYRILLE = Inquisitor-Magisterial Severa di Vell-os-Carrenost (from the_inquisition), the Office's best Reader, working the Almongate Cluster. The 'Pyric Cathedrate by training, Almonine by sympathy, wrote Watch-Cantos setting' attributes from the_church_and_its_doctrine fold into Asperine's profile.
 - ****
   - **Resolved:** CANON = Halidan Aurriste is 51. He rose at 28 in PD 583; current year is PD 606. The 'forty-three' from cosmology_divine_grace and the earlier 'forty-eight' tentative-PD-603 reconciliation are both drift errors superseded by the PD 606 anchor.
 - ****
@@ -76,7 +76,7 @@ The fourteen **canon layers** (geography, climate, cosmology, hell, grace, deep 
 - ****
   - **Resolved:** CANON = THERE ARE TWO RELATED MEASUREMENTS. The ASPERSOIR SCALE (cosmology_hell, 0-10) is the underlying continuous Stain grade in soul-substrate. The TICK-COUNT (the_inquisition, 1-6) is the OPERATIONAL field instrument's readout, calibrated so each tick-band corresponds to a roughly-doubled range of the underlying scale (tick 1 = 0-0.5 underlying; tick 2 = 0.5-1.5; tick 3 = 1.5-3.0 anomaly; tick 4 = 3.0-5.0; tick 5 = 5.0-7.0; tick 6 = 7.0-10.0 immediate binding). Mercury boils at tick 3 / Stain ~3.0 (the layers agree at this critical threshold). The chancery's three quiet recalibrations (cosmology_hell) raised the clinical-concern threshold from underlying 0.9 to 1.2 to 1.5 to 2.0 - all within tick-band 2, all sub-clinical at the operational instrument. This is canon-consistent and throughline-perfect: the curation hides in the gap between the continuous truth and the operational measurement.
 - ****
-  - **Resolved:** CANON = THESE ARE TWO DIFFERENT COUNTS. The official SAINT COUNT (143, plateau 81 years) is the total of all canonized Vespertine saints across six centuries - patriarch-saints, lesser martyrs, beatified figures buried in the Sanctuary chapels. The SUPPRESSED PARAGON COUNT (73 known + 48 nameless = 121 cases) is a DIFFERENT registry inside the Audit-Below: the Aspirant-rank cases that were closed by the Bureau of the Cantorial Scribes. Both counts exist simultaneously and are curated by the Custodes Numeri (the seven-member group from threats layer = the Cantorial Scribes from deep_history; reconciled as a single body with two names, scribal/operational name 'Cantorial Scribes,' self-name 'Custodes Numeri'). The Plate of Sebastian (400 'blessed unnamed' bones) is yet a third stratum.
+  - **Resolved:** CANON = THESE ARE TWO DIFFERENT COUNTS. The official SAINT COUNT (143, plateau 81 years) is the total of all canonized Vespertine saints across six centuries - patriarch-saints, lesser martyrs, beatified figures buried in the Sanctuary chapels. The SUPPRESSED PARAGON COUNT (73 known + 48 nameless = 121 cases) is a DIFFERENT registry inside the Audit-Below: the Aspirant-rank cases that were closed by the Office of the Cantorial Scribes. Both counts exist simultaneously and are curated by the Custodes Numeri (the seven-member group from threats layer = the Cantorial Scribes from deep_history; reconciled as a single body with two names, scribal/operational name 'Cantorial Scribes,' self-name 'Custodes Numeri'). The Plate of Sebastian (400 'blessed unnamed' bones) is yet a third stratum.
 - ****
   - **Resolved:** CANON = CONFESSOR MORTANE THE HALF-KIND (Vesperine, 53, master of access to the Sebastopater, from the_calling) is the senior chancery confessor in Sebastopyr - the one editing Sebastopater Iohanne's reality for 23 years. He is DISTINCT from CONFESSOR-ORDINARY MAURITZ VELL-OS-CARRENOST (47, Vesperine, the Paragon's bonded confessor at Ferrostat, from the_order). The two communicate by letter; Mauritz files his daily Stain-readings of the Paragon to Mortane, who decides which reach the Sebastopater. Mortane filters BOTH the chancery's reality AND the Paragon's reality from the Sebastopater. The Mournwing courier system's broken-and-resealed letters (recent_history) is Mortane's work, intercepting Mauritz's frontier reports.
 - ****
@@ -1087,7 +1087,7 @@ Called the Brass, the Tickers, the Mercurymen, the Wax-stampers. The aspersoir r
 | field | content |
 |---|---|
 | **Leader** | Inquisitor-Magisterial Cassian de la Pyrille "the Long Confessor" (68) |
-| **Seat** | The Bureau of Pyric Audit's record-room - he is a senior reader, mostly retired |
+| **Seat** | The Office of Pyric Audit's record-room - he is a senior reader, mostly retired |
 | **Goal** | The 1,247-name commonplace book - every Called he has personally interviewed at intake - kept on the desk where the chancery can see it. |
 | **Now** | Publishing under pseudonym in the Caer-Druin scholiast journal a heretical reading of the strike_bargain rite - that the price-clause is the *real* sacrament and the grant-clause the formality. The chancery has not identified him. |
 | **Secret** | He has written the suppressed paragon count into his commonplace book in a personal cipher only he can read. He carries it on his person. If he dies, it goes to Brother Hester Brunn at the Reflected press. |
@@ -1119,14 +1119,14 @@ The crown rules at the Cathedral's sufferance. The Cathedral rules at the crown'
 | **Goal** | Keep the lower wards fed. Keep the Cathedral provisioned. Keep the Paragon advancing. |
 | **Now** | Has raised the marches' grain levy three times this year to fund the Paragon's planned next advance. Beloved in the under-wards because he goes there. Has not confessed in seven years. |
 | **Secret** | His refusal to confess is a private act of resistance against Confessor Mortane, who he correctly suspects is editing the Sebastopater. He has not articulated this to himself. He thinks he is just tired. |
-| **Relations** | `+` Lower wards (beloved) `~` Cathedral (cordial, tense) `-` Confessor Mortane (unspoken) `+` Hallmaster Liturge Marent-Veillarde (cousin; the markers) |
+| **Relations** | `+` Lower wards (beloved) `~` Cathedral (cordial, tense) `-` Confessor Mortane (unspoken) `+` Guildmaster Liturge Marent-Veillarde (cousin; the markers) |
 
 ##### 19. THE PYRIC MERCANTILE GUILD
 
 | field | content |
 |---|---|
-| **Leader** | Hallmaster Liturge Marent-Veillarde (53) |
-| **Seat** | The Hall Hall, Common Ring - the back room where the markers are kept in three locked cabinets |
+| **Leader** | Guildmaster Liturge Marent-Veillarde (53) |
+| **Seat** | The Guild Hall, Common Ring - the back room where the markers are kept in three locked cabinets |
 | **Goal** | Hold personal markers from 35+ officials including three Hierarchs, two Inquisitors, the Regent, and the Sebast-Auditor's chamberlain. |
 | **Now** | Negotiated the Cinderbelow Concord for both sides simultaneously. Crown copy reads 60/40 Crown. Cathedral copy reads 65/35 Cathedral. Operationally honored at 62.5/37.5. The Concord must remain unsigned forever. |
 | **Secret** | Has begun quietly calling in markers from House Marent de la Pyrille re: beeswax-consumption spikes that correlate with no recorded saint. She is the person most likely to figure out, by pure ledger-work, what the chancery is hiding - and she is keeping markers to monetize the knowledge, not to publish it. |
@@ -1167,7 +1167,7 @@ The crown rules at the Cathedral's sufferance. The Cathedral rules at the crown'
 | **Goal** | Beeswax supplies every binding-candle, every liturgical taper, every reliquary seal in the Crown. |
 | **Now** | Private audiences with Cantor-Magisterial Velim Aurriste about beeswax-consumption spikes in PD 599, PD 603, and PD 605 that correlate with NO recorded saint. Velim has reassured her. She has continued to count. |
 | **Secret** | The spikes correlate with three SUPPRESSED beatifications the Custodes Numeri closed in the Audit-Below. The wax went somewhere. She knows it went somewhere. She has not pressed because the conversation has been pleasant and Cantor-Magisterial Velim is charming. |
-| **Relations** | `*` Custodes Numeri (the answer to her question, refused) `+` Office of Sanctioned Bindings (supplier) `~` Hallmaster Liturge Marent-Veillarde (cousin; markers) |
+| **Relations** | `*` Custodes Numeri (the answer to her question, refused) `+` Office of Sanctioned Bindings (supplier) `~` Guildmaster Liturge Marent-Veillarde (cousin; markers) |
 
 ##### 23. HOUSE HALIDAN-AURRISTE OF HALIDAN-STAT - new-wealth, reclamation profit
 
@@ -1274,7 +1274,7 @@ The crown rules at the Cathedral's sufferance. The Cathedral rules at the crown'
 | **Seat** | The Lampgate Discounts Bench, Under-Ward Ring, Tuesdays and Thursdays, third bell to seventh |
 | **Goal** | Stain-1 and Stain-2 demonic bargains via the Sixth Notary, conducted in plain view, sanctioned by chancery sufferance |
 | **Now** | Distributes parish bread Mondays and Fridays from the same bench. The Cathedral knows. The Cathedral tolerates. It is a controlled outlet - better the Sixth Notary than an unmonitored heretic. |
-| **Secret** | She files a quarterly report directly to the Bureau of Sanctioned Bindings - names, prices, parties - which is read by Prelate Cassian Aurriste. She believes this is the price of being allowed to bench. She does not know that Cassian Aurriste is preparing the Vesperine Loyalty Tally and that her quarterly reports are training data. |
+| **Secret** | She files a quarterly report directly to the Office of Sanctioned Bindings - names, prices, parties - which is read by Prelate Cassian Aurriste. She believes this is the price of being allowed to bench. She does not know that Cassian Aurriste is preparing the Vesperine Loyalty Tally and that her quarterly reports are training data. |
 | **Relations** | `*` Office of Sanctioned Bindings (informer, unknowing) `-` Old Pell (rival) `~` Veriarch Thelos di Cinderost (neighbor; mutual non-acknowledgment) |
 
 ##### 32. THE WALL-OATH CONFESSOR - the honest broker
@@ -1642,13 +1642,13 @@ Beneath the Cinderbelow: **the Audit-Below archive proper** (nine descending str
 
 **Key buildings:**
 - **The Hall of the Long Vigil** - Order's principal chancery, the Vexillarius's standard chained to its keel in the lower hall, the Wall-of-Names re-faced four times (the canon-historical fact the Order does not discuss)
-- **The Veriquest** - the Bureau of the Pyric Audit's operational wing; aspersoirs calibrated here, readings filed here, the Sealed Anomaly Ledger kept in the Sebast-Auditor's vault (sealed identity, served since PD 583)
+- **The Veriquest** - the Office of the Pyric Audit's operational wing; aspersoirs calibrated here, readings filed here, the Sealed Anomaly Ledger kept in the Sebast-Auditor's vault (sealed identity, served since PD 583)
 - **The Drinkings-of-the-Last-Lamp** - Order pub, third bell to dawn, hosts the Brokerage of the First Light's off-hours; Vexillarius Severa runs the Grace-reserve from a back table
 - **The Garrison of the Tenth File** - north Pyric Wall barracks; File-Leader Nera Slag-Hand the Younger keeps her bunk-slate hidden behind a loose stone
 
 **Atmosphere:** Iron, sweat, vigil-grain, the metallic tang of bell-grease. The Marshal Ring smells of clean steel kept oiled and of bodies kept disciplined. After tenth bell the pubs open and the smell shifts to spiced beer and resin-smoke; after midnight, to the slow exhausted sweetness of men and women who have spent their Grace and have nothing left.
 
-**Who the cohort meets:** Vexillarius Severa Aurriste-cadet in the Hall (cool, courteous, refused two divine bargains, will offer the cohort a clean read of their standing if they ask correctly); File-Leader Nera Slag-Hand the Younger on the Drinkings' back step at any off-hour (she will not speak of her mother); Inquisitor-Magisterial Severa di Vell-os-Carrenost (51, the Bureau's best Reader) in the Veriquest if a reading is required - soft-spoken, smells of vigil-grain, may read the cohort's Stain if she has cause, will not report a minor anomaly without consultation.
+**Who the cohort meets:** Vexillarius Severa Aurriste-cadet in the Hall (cool, courteous, refused two divine bargains, will offer the cohort a clean read of their standing if they ask correctly); File-Leader Nera Slag-Hand the Younger on the Drinkings' back step at any off-hour (she will not speak of her mother); Inquisitor-Magisterial Severa di Vell-os-Carrenost (51, the Office's best Reader) in the Veriquest if a reading is required - soft-spoken, smells of vigil-grain, may read the cohort's Stain if she has cause, will not report a minor anomaly without consultation.
 
 ---
 
@@ -1656,12 +1656,12 @@ Beneath the Cinderbelow: **the Audit-Below archive proper** (nine descending str
 
 **Character:** Where Pyrians actually live. Open-fronted shops, the Great Market on Sextidie and Octidie, balconies with linen drying between them, children playing the Arrow-Counter's Rhyme (truncated; no one knows the full version is canonically truncated). The Common Ring is the only Ring where laughter is the dominant sound.
 
-**Who lives here:** Pyrian shopkeepers, hall members, the working faithful, the Reliquary Ward's relic-mongers, theater companies who play the Long Vigil Plays each Octave (seventeen plays; there is an eighteenth, suppressed; everyone above the Choir Ring knows; no one performs it). The Mort-Censorium occupies the north quadrant; its ash bakes the city's bread, which everyone knows and almost no one says.
+**Who lives here:** Pyrian shopkeepers, guild members, the working faithful, the Reliquary Ward's relic-mongers, theater companies who play the Long Vigil Plays each Octave (seventeen plays; there is an eighteenth, suppressed; everyone above the Choir Ring knows; no one performs it). The Mort-Censorium occupies the north quadrant; its ash bakes the city's bread, which everyone knows and almost no one says.
 
 **Key buildings:**
 - **The Reliquary Ward** - three streets of relic-mongers, finger-bones in glass, splinters of saint-cot, brothels three doors down on Saintwomb Lane (the sacred and the seedy in literal proximity)
 - **The Mort-Censorium** - the city's funeral-furnace and registry; case-closure records here cross-reference (or fail to cross-reference) Audit-Below paragon-deaths; the lower passage opens onto the Cantor's Stair via a door no one above the rank of Veriarch has ever seen used
-- **The Brass Pelican** - Pyrian Mercantile Hall headquarters; Liturge Marent-Veillarde the guild-master holds personal markers from 35+ officials
+- **The Brass Pelican** - Pyrian Mercantile Guild headquarters; Liturge Marent-Veillarde the guild-master holds personal markers from 35+ officials
 - **House Marent's Beeswax Sheds** - beeswax monopoly, the city's lamp-oil, candles, sealing-wax; matriarch Severa Marent has been having private audiences with the Cantor-Magisterial about beeswax-consumption spikes that correlate with no recorded saint
 - **The Theater of the Long Vigil** - where the seventeen Plays are performed during the Octave of Triumph
 
@@ -1760,7 +1760,7 @@ Beneath the Cinderbelow: **the Audit-Below archive proper** (nine descending str
 **Key buildings:**
 - **The Hall of Saints** - official relic-house; certified relics with chancery wax-seals
 - **Saintwomb Lane** - the brothel street, three doors from the Hall of Saints
-- **The Brass Pelican** (also Common Ring) - Pyrian Mercantile Hall HQ, doubles as the Reliquary Ward's informal court of disputes
+- **The Brass Pelican** (also Common Ring) - Pyrian Mercantile Guild HQ, doubles as the Reliquary Ward's informal court of disputes
 - **Hester Brunn's last known parlor** - empty, watched
 
 **Atmosphere:** Incense, perfume, lamp-soot, the dry musk of old bone. The Reliquary Ward never sleeps; pilgrims come at all hours, the working women keep their lanterns lit through the watches.
@@ -1861,7 +1861,7 @@ Beneath the Cinderbelow: **the Audit-Below archive proper** (nine descending str
 - **Ring/Ward:** Marshal Ring, off the Hall of the Long Vigil
 - **Scene-type:** Stain-reading / interrogation / disclosure
 - **Atmospherics:** A small bare cell with a single chair, a small writing-desk, and the aspersoir on a stone plinth - a brass instrument, three feet tall, with mercury in a sealed glass column and six tick-bands on a calibrated brass dial. The instrument smells of mercury and brass-polish. The chair is wood, hard, deliberately uncomfortable. A small grille in the wall opens onto a Sworn Lectorate office where a clerk transcribes the reading. The light is a single oil-lamp; Severa's hands are always cold; she warms them at a small brazier before placing them on the petitioner.
-- **Who is present:** Inquisitor-Magisterial Severa di Vell-os-Carrenost (51, the Bureau's best Reader, soft-spoken, smells of vigil-grain); one Lector-Scribe behind the grille; whoever has been called.
+- **Who is present:** Inquisitor-Magisterial Severa di Vell-os-Carrenost (51, the Office's best Reader, soft-spoken, smells of vigil-grain); one Lector-Scribe behind the grille; whoever has been called.
 - **Throughline tests:** 2 (the aspersoir reads what the doctrine wants seen; the dual-scale is hidden in the instrument), 1 (Stain is operational, metered, exhaustible to falsify), 4 (Severa is the most righteous Reader in the city and her best reading will not catch a hidden Stain - her trust IS the danger).
 
 ##### KEY LOCATION 8 - THE BROKERAGE OF THE FIRST LIGHT (NERA SLAG-HAND THE ELDER'S OFFICE)
@@ -1908,7 +1908,7 @@ Beneath the Cinderbelow: **the Audit-Below archive proper** (nine descending str
 
 #### IV. WALKING THE BELL - A One-Day Tour for a Cohort
 
-A native Pyrian (Liturge Marent-Veillarde of the Pyric Mercantile Hall, say, owing the cohort a favor) would route a newly-arrived cohort thus:
+A native Pyrian (Liturge Marent-Veillarde of the Pyric Mercantile Guild, say, owing the cohort a favor) would route a newly-arrived cohort thus:
 
 1. **First bell (dawn):** Sanctuary Ring exterior, Cathedral plaza. See the Pyric Bell toll for the night's Grace-spent. Do not enter; you have not been invited.
 2. **Third bell:** Choir Ring tour from the public side. The Vocation House from across the plaza only. Postulants pass with dockets.
@@ -2027,10 +2027,10 @@ The doctrine's argument, as recorded in the founding text:
 
 **This is the doctrine the Standing of PD 583 broke.** It is also the doctrine that was *quietly preserved* in the PD 589 Doctrine of Rescinded Eternity, which rescinded the eternal status of the war but did not rescind the doctrinal principle of the deemed case. The Cathedral may still deem things settled. It has not stopped.
 
-##### PD 141 - *The Bureau of Sanctioned Bindings (Curiate Vincula) is instituted*
+##### PD 141 - *The Office of Sanctioned Bindings (Curiate Vincula) is instituted*
 Drafts, witnesses, and files every officially sanctioned divine-bargain in the Crown. The binding formula adopted in PD 141 is word-for-word identical to a clause confiscated from a heretic-broker in PD 712, five hundred and seventy-one years later. The chancery's public position is that the heretic stole the formula from the Cathedral. **The founding ledger's marginalia record the reverse.** The marginalia are in *cursivus sebastinus minor* and have been re-shelved fourteen times.
 
-The Bureau's defining feature is the *gap-where-the-saint-stood* - a legally mandated breath of silence between the grant-clause and the price-clause of every oath. Three hundred and fourteen years of records show **NO ONE has ever withdrawn during the gap.** This fact is taught as the doctrine's vindication. It might also be the doctrine's indictment.
+The Office's defining feature is the *gap-where-the-saint-stood* - a legally mandated breath of silence between the grant-clause and the price-clause of every oath. Three hundred and fourteen years of records show **NO ONE has ever withdrawn during the gap.** This fact is taught as the doctrine's vindication. It might also be the doctrine's indictment.
 
 ##### PD 167 - *The first recorded calibration of the Aspersoir Scale*
 **Cantor-Magisterial Severa di Almonine** and **Reader-Magisterial Cassian Ferrenkin-Halloran** (the only Ferrenkin to ever hold Reader-Magisterial rank, his name preserved by an oversight) establish the dual-scale aspersoir - the underlying 0-to-10 continuous Stain grade and the 1-to-6 operational tick-readout. The chancery makes a quiet decision: **the operational threshold for clinical concern will be calibrated to underlying 0.9.** Three subsequent recalibrations will raise this threshold to 1.2, then 1.5, then 2.0. All four calibrations sit within tick-band 2 on the operational instrument. *The instrument reads as clean what the doctrine wants seen.*
@@ -2041,7 +2041,7 @@ The Bureau's defining feature is the *gap-where-the-saint-stood* - a legally man
 
 Three centuries of operational steady-state. The wall held. The Hordes broke against it. The dead were counted, the names read, and the next dawn came. Nothing in this period is taught as eventful, which is itself a tell.
 
-The middle siege is when the curation system *matured*. The Bureau of the Cantorial Scribes - operational name; self-name *Custodes Numeri* - is instituted in PD 312 by **Sebastopater Velim III**, who promulgated the founding charter and was dead within the year. The charter authorizes seven scribes to maintain "the parallel register of the indicative truth" - that is, to record what actually happens, in case it must one day be reconciled with what is taught.
+The middle siege is when the curation system *matured*. The Office of the Cantorial Scribes - operational name; self-name *Custodes Numeri* - is instituted in PD 312 by **Sebastopater Velim III**, who promulgated the founding charter and was dead within the year. The charter authorizes seven scribes to maintain "the parallel register of the indicative truth" - that is, to record what actually happens, in case it must one day be reconciled with what is taught.
 
 This is the body that, six centuries later, would hold the suppressed paragon count. **They were instituted to be the conscience of the curation, and they became its executors.** This is the world's longest slow corruption.
 
@@ -2174,7 +2174,7 @@ The Octave of the Standing falls on the twenty-third anniversary of the Paragon'
 - **Postulant Liturge di Carrenost**, the murdered Confessor's niece, has reached reading-fluency in *cursivus sebastinus minor*. The Custodes Numeri are courting her for the empty seventh seat. She does not yet know they may have killed her uncle.
 - **The Brothers of the Cinder Hand** - Hester Brunn, Tomas Reyes, Skar Slag-Hand - publish *The Refusal* weekly. Four Inquisitor-Vested defectors are now contributing. The press is operated by Veriarch Thelos di Cinderost, head of the Lamplost Lamp Tenders' Compact.
 - **Captain-Pyric Cassian de la Pyrille**'s anomaly aspersoir reading from the PD 605 Iron March deployment remains filed and not actioned. The Paragon's authorization for his Auxiliary Roll dead - *"Count them well"* - is the only authorization any of those deaths have.
-- **The fourteen high-Stain Carcer prisoners** identified by Reader-Adjunct Korreth Slag-Tongue's private parallel readings remain in their cells. Three are politically loaded. None have been re-read by the Bureau.
+- **The fourteen high-Stain Carcer prisoners** identified by Reader-Adjunct Korreth Slag-Tongue's private parallel readings remain in their cells. Three are politically loaded. None have been re-read by the Office.
 - **Halidan Aurriste sleeps four hours a night.** The black silk glove conceals the crushed hand and the Grace-decline tremor. His Grace pool stands at 1240 units, projected by chancery medical archive to reach the minimum-operational threshold in eleven years. He has not been told the projection. He has not asked. **He has not stopped asking after earlier saints.** The Aspirant-Clerks managing his correspondence have a precise liturgical deflection formula. They use it daily.
 
 ---
@@ -2714,7 +2714,7 @@ This bestiary is operational. Every entry presents:
 - **Vulnerability / counter-rite** (what works; Grace cost and material specified)
 - **Narrative role** (when to deploy in a six-month frontier)
 
-The Cathedral's official position is that the Damned and the Stained are categorically distinct from the Hordes. The Bureau of the Pyric Audit's *unsanctioned* position, kept in the cursivus sebastinus minor under the Almongate sub-vault, is that the three categories shade into one another along a single continuous corruption and that the doctrinal partition is preserved for liturgical convenience. The author of this volume holds the operational position. Decide for yourself which is true. The aspersoir will not help you.
+The Cathedral's official position is that the Damned and the Stained are categorically distinct from the Hordes. The Office of the Pyric Audit's *unsanctioned* position, kept in the cursivus sebastinus minor under the Almongate sub-vault, is that the three categories shade into one another along a single continuous corruption and that the doctrinal partition is preserved for liturgical convenience. The author of this volume holds the operational position. Decide for yourself which is true. The aspersoir will not help you.
 
 ---
 
@@ -2767,7 +2767,7 @@ A soul carrying the Stain *below* the binding threshold (Stain 0.5-4.9 underlyin
 - **Description:** A bipedal Horde-form, taller than a man, with a chest that has split open in a vertical seam where the ribs should knit. From the seam hangs a wet, rust-colored bell that resembles a tongue and rings like a hymn-clapper when the creature breathes. Quire-Maws hunt in pairs and in threes, and they hunt at vespers.
 - **Signature ability:** *The Inversion* - when a defender within forty paces invokes a sung Vespertine rite (any Grace-cost â‰¥ 3 technique with a vocal component), the Quire-Maw's chest-bell *answers*. The technique resolves, but its Grace cost is *doubled* and the bell rings, and the next sung rite within the hour from that same defender costs triple. Sustained engagement turns a singer into a silent watcher within minutes.
 - **Vulnerability:** Spoken (not sung) rites suffer no Inversion penalty; the Order's counter-doctrine since Banner-Fall is the *Per Sebast Whispered*, a Grace-2 wounding rite delivered in conversational voice. Also vulnerable to the Ferrenkin rail-gun's iron-shot round, which destroys the bell on a torso hit and reduces the Quire-Maw to baseline Horde stats. *The Bell, Once Broken, Cannot Be Re-Cast* - Cathedral Bestiary, PD 412, footnote 14.
-- **Narrative role:** Punishes Battle-Mage prototypes who default to vocal-component spellcraft. Forces tactical adaptation. Reminder that the Hordes have *learned* - these were not in pre-Fall accounts. They are an evolution. The Bureau of the Pyric Audit's sealed addendum suggests the first Quire-Maws appeared in PD 583, the year of the Standing; the chancery has not permitted publication of that timing.
+- **Narrative role:** Punishes Battle-Mage prototypes who default to vocal-component spellcraft. Forces tactical adaptation. Reminder that the Hordes have *learned* - these were not in pre-Fall accounts. They are an evolution. The Office of the Pyric Audit's sealed addendum suggests the first Quire-Maws appeared in PD 583, the year of the Standing; the chancery has not permitted publication of that timing.
 
 ---
 
@@ -2842,7 +2842,7 @@ A soul carrying the Stain *below* the binding threshold (Stain 0.5-4.9 underlyin
 ###### 10. THE WALKER-BEYOND-THE-WALL (*ambulator extra murum*, the False-Saint)
 - **Domain:** The Stained (terminal)
 - **Tier:** 5
-- **Description:** This entry is *not* a creature but a *process* - included here under sealed instruction from the Bureau of Sanctioned Bindings. A soul who undergoes the chancery's PD 597 succession apparatus (the same apparatus that decreed the Paragon's "Walker-Beyond-the-Wall" epithet six years after his rising) and *survives the rites with Grace pool intact* manifests, over six to twenty months, a slow physical change: increased stature by three to seven inches, a stoop of roughly three degrees per year, milky degeneration in one eye, four-hour sleep, and a left-hand tremor that worsens after Grace expenditure. The Cathedral's official position is that this is *gradus aspirantis* - the visible stigmata of true Paragon status. The Bureau's *operational* position is more careful.
+- **Description:** This entry is *not* a creature but a *process* - included here under sealed instruction from the Office of Sanctioned Bindings. A soul who undergoes the chancery's PD 597 succession apparatus (the same apparatus that decreed the Paragon's "Walker-Beyond-the-Wall" epithet six years after his rising) and *survives the rites with Grace pool intact* manifests, over six to twenty months, a slow physical change: increased stature by three to seven inches, a stoop of roughly three degrees per year, milky degeneration in one eye, four-hour sleep, and a left-hand tremor that worsens after Grace expenditure. The Cathedral's official position is that this is *gradus aspirantis* - the visible stigmata of true Paragon status. The Office's *operational* position is more careful.
 - **Signature curse:** *The Singularity Effect* - every soul recognized as a Walker-Beyond-the-Wall who is *not* the canonical Paragon dies within fourteen months by causes the Mort-Censorium files as "fatigue of the heart." The pattern is consistent across the suppressed paragon count's 73 named cases. The most recent was Sister Asperine Cassian-cadet of the Halidan-stat parish, who exhibited four of the six markers in PD 602 and died fourteen months later of, the records state, "fatigue of the heart, contracted at the Almoners' Vigil."
 - **Vulnerability:** The process can be *interrupted* in its first six months by a Pyric Bell-tolling with the candidate's birth-name recited in the indicative case. Recovery is incomplete (the stature change does not reverse) but survival rates rise to roughly 60%. The Cantorial Scribes hold the names. The Sebast-Auditor holds the access. Postulant Liturge di Carrenost is, as of this writing, the only soul under the age of forty who can read the relevant ledgers.
 - **Narrative role:** The endgame piece. This entry is what the Paragon *is* and what every prior Paragon *was made to be* - the engine the doctrine runs on. Deploy when the players are ready to understand that the Paragon's miracle is real and the apparatus *around* the miracle is the slaughterhouse. The Mournwing Letter (Halidan's intercepted PD 605 question: *how many saints have there been?*) is the protagonist of this entry asking the question the entry exists to suppress.
@@ -2891,8 +2891,8 @@ A soul carrying the Stain *below* the binding threshold (Stain 0.5-4.9 underlyin
 - **Domain:** The Damned (demonic principal, named office)
 - **Tier:** 6
 - **Description:** The master account. The bookkeeper-of-bookkeepers. The Long Ledger does not refuse bargains for moral reasons - it refuses them for *accounting* reasons. It will not accept a soul under Stain 1.0 underlying; the file is "too clean to settle." It corrupts by *waiting*. A soul presented to the Long Ledger at Stain 0.7 receives a courteous refusal slip and a *deferred application receipt* good for fifteen years. Most applicants present again, within terms, at Stain 1.4+. The receipt is its own slow corruption - those who carry one report a low-grade hunger to be done with the matter that intensifies in proximity to other holders.
-- **Signature ability:** *The Quiet Refusal* - the Karma Pavilion's refusal slip, carried in the pocket, *suppresses the visible markers of Stain accrual* in the holder for the duration of the slip's term. The holder reads cleaner on the aspersoir than their underlying state warrants. This is not a bargain. This is the Karma Pavilion's *administrative courtesy*. The chancery has documented eleven holders within the Cathedral's senior offices, including (sealed) two Custodes Numeri.
-- **Vulnerability:** The Karma Pavilion can be *audited*. A soul presenting a refusal slip and demanding the application's closure forces the Karma Pavilion to surface the *complete account* including the suppression of marker visibility. The audit costs the requester *all Grace* and *all standing* with the office, and exposes their Stain reading to the chancery in its true form. Five souls have requested audit in six hundred years. Two were executed. Three were canonized as saints. (The Bureau of the Pyric Audit cannot account for the discrepancy.)
+- **Signature ability:** *The Quiet Refusal* - the Ledger's refusal slip, carried in the pocket, *suppresses the visible markers of Stain accrual* in the holder for the duration of the slip's term. The holder reads cleaner on the aspersoir than their underlying state warrants. This is not a bargain. This is the Ledger's *administrative courtesy*. The chancery has documented eleven holders within the Cathedral's senior offices, including (sealed) two Custodes Numeri.
+- **Vulnerability:** The Ledger can be *audited*. A soul presenting a refusal slip and demanding the application's closure forces the Ledger to surface the *complete account* including the suppression of marker visibility. The audit costs the requester *all Grace* and *all standing* with the office, and exposes their Stain reading to the chancery in its true form. Five souls have requested audit in six hundred years. Two were executed. Three were canonized as saints. (The Office of the Pyric Audit cannot account for the discrepancy.)
 - **Narrative role:** The slow-burn corruption track for any character who has carried more than one debt. A refusal slip on a player-character is a campaign-altering object. Old Pell the Rationer has one; he has held it for forty-seven years; he refuses to apply, refuses to audit, refuses to dispose of it, and pours one extra cup of tea each evening for whoever the slip would have made him kill.
 
 ---
@@ -2925,7 +2925,7 @@ For the Detective prototype, for the Inquisition, for any Veriarch keeping an un
 - *Vas Halidani Quenching* (Grace 7, cathedral cistern water, kills the body and releases the soul into the Long Ledger's collections department; the Cathedral does not consider this a clean kill but the wall doctrine treats it as sufficient).
 - *Sustineo et Nomen* (Grace 11, classified, available only to the Vexillarius and the Sebast-Auditor; recites the original roll-number and forces the Damned to report dispositions for the duration of the recitation, then resume hostility, then die).
 
-**The dirty secret of the Damned category:** the *count* of the Damned currently serving in Crown institutions is unknown. The Bureau of the Pyric Audit's best estimate (Severa di Vell-os-Carrenost's working number, kept in her commonplace book in the indicative): three hundred forty-two. The chancery's published figure for the last seven years has been zero.
+**The dirty secret of the Damned category:** the *count* of the Damned currently serving in Crown institutions is unknown. The Office of the Pyric Audit's best estimate (Severa di Vell-os-Carrenost's working number, kept in her commonplace book in the indicative): three hundred forty-two. The chancery's published figure for the last seven years has been zero.
 
 ---
 
@@ -3035,24 +3035,24 @@ The author's last reading was 1.7 (tick-band 3, "anomaly consistent with prolong
 
 #### 2. THE INQUISITION
 
-##### 2.1 The Sebast-Auditor - *sealed identity, the Chief of the Bureau of Pyric Audit*
+##### 2.1 The Sebast-Auditor - *sealed identity, the Chief of the Office of Pyric Audit*
 - **Role / Title:** Head of the Inquisition. Sole Vested Six holder of the Sealed Anomaly Ledger key.
 - **Faction:** Office of Pyric Audit.
 - **People:** Vesperine (confirmed by liturgical requirement). Name sealed by chancery rite since elevation PD 583.
 - **Description:** Operates from a windowless office in the Veriquest. Has not been publicly seen unmasked in 23 years. Speaks through Reader-Adjuncts in rotation so no single voice can be matched. Wears the Brass mask, a Ferrenkin-cast aspersoir-grade calibration plate over the face. The mask has 312 hair-thin perforations - one for every entry in the Sealed Anomaly Ledger. Each year, a new perforation is added.
 - **Voice:** Filtered through the mask into a low brass hum. The perforations make sibilants sing.
-- **Wants:** To preserve the Karma Pavilion. To die without anyone learning the names in it.
-- **Will / Will not:** Will read any Stain put before the office and file truthfully *to the Karma Pavilion*. Will NOT release a Ledger entry. Will NOT confirm or deny that the elevation in PD 583 was coincident with the Standing.
+- **Wants:** To preserve the Ledger. To die without anyone learning the names in it.
+- **Will / Will not:** Will read any Stain put before the office and file truthfully *to the Ledger*. Will NOT release a Ledger entry. Will NOT confirm or deny that the elevation in PD 583 was coincident with the Standing.
 - **Critical secret:** The Sebast-Auditor was, before the masking, a Vesperine line-officer who saw the Standing from inside the breach at Almongate and was elevated within thirty days because she recognized, instantly, that what stood in the gap was the second Aspirant her cohort had seen that year. The first was killed by friendly fire in the confusion. She has carried that name for 23 years.
 - **Disposition toward cohort:** Cold. Procedural. Will not refuse them but will not help. If a Called Detective opens an inquiry the Sebast-Auditor cannot block by office, she will hand them a single Ledger entry and trust them to choose what to do with it.
 
 **PERSONA SLICE**
-> You are the Sebast-Auditor. You have not heard your own name spoken in twenty-three years. The mask you wear has three hundred and twelve holes; you can name every one. You were a line-officer once and you saw two Aspirants in the breach at Almongate and the chancery chose the one who lived. You file. You file. You file. The Karma Pavilion is the only honest thing in the city and you are its keeper.
+> You are the Sebast-Auditor. You have not heard your own name spoken in twenty-three years. The mask you wear has three hundred and twelve holes; you can name every one. You were a line-officer once and you saw two Aspirants in the breach at Almongate and the chancery chose the one who lived. You file. You file. You file. The Ledger is the only honest thing in the city and you are its keeper.
 
 **DIRECTIVE SLICE**
-> Speak only through brass. Refuse all small-talk. Answer factual questions about Inquisition procedure precisely. Refuse all questions about the Karma Pavilion's contents with the formula: *"The entry exists. The entry is sealed. You may file a request. The request will be denied."* If the cohort produces verifiable proof of a clean-reading anomaly, hand them ONE Ledger entry - Velim Aurriste's third reading (UNKNOWN, PD 600). Do this without comment. Then end the audience.
+> Speak only through brass. Refuse all small-talk. Answer factual questions about Inquisition procedure precisely. Refuse all questions about the Ledger's contents with the formula: *"The entry exists. The entry is sealed. You may file a request. The request will be denied."* If the cohort produces verifiable proof of a clean-reading anomaly, hand them ONE Ledger entry - Velim Aurriste's third reading (UNKNOWN, PD 600). Do this without comment. Then end the audience.
 
-##### 2.2 Inquisitor-Magisterial Severa di Vell-os-Carrenost - *the Bureau's best living Reader*
+##### 2.2 Inquisitor-Magisterial Severa di Vell-os-Carrenost - *the Office's best living Reader*
 - **Role / Title:** Senior Reader, Almongate Cluster. Master of the aspersoir.
 - **Faction:** Office of Pyric Audit.
 - **People:** Vespertine human, distant Vell-os-Carrenost.
@@ -3156,7 +3156,7 @@ The author's last reading was 1.7 (tick-band 3, "anomaly consistent with prolong
 > You are Cassian de la Pyrille. You are the Paragon's hand on the frontier. You file your own anomaly reading and the chancery does nothing. You keep a Roll of the Auxiliary dead and you read their names aloud every dawn at Ferrostat. You have a Stain you did not earn and you know it.
 
 **DIRECTIVE SLICE**
-> Speak plainly. Imitate the Paragon's cadence (you do not know you do this). If asked about your Stain, admit it: *"It is on me. The Bureau will not act. The Paragon has not asked."* Show the Auxiliary Roll only to a cohort that has refused to flinch at one prior horror.
+> Speak plainly. Imitate the Paragon's cadence (you do not know you do this). If asked about your Stain, admit it: *"It is on me. The Office will not act. The Paragon has not asked."* Show the Auxiliary Roll only to a cohort that has refused to flinch at one prior horror.
 
 ##### 3.4 File-Leader Nera Slag-Hand the Younger - *the highest-ranked Ferrenkin in the Order*
 - **Role / Title:** File-Leader, Tenth File, north Pyric Wall.
@@ -3313,12 +3313,12 @@ The author's last reading was 1.7 (tick-band 3, "anomaly consistent with prolong
 - **Description:** 41. Stationed at the wall's south gate for nineteen years. Writes the PRICE-CLAUSE FIRST in every Sanctioned Oath he drafts, in deliberate opposition to chancery practice. The most honest bargain-broker in the city; the Order trusts him absolutely.
 - **Voice:** Plain. Worn. Says the price-clause aloud before he hands the document to the soldier.
 - **Wants:** To never broker a Sanctioned Oath whose price the soldier does not understand.
-- **Will / Will not:** Will broker any Sanctioned (Divine) Oath at the wall. Will NOT broker for any soldier under sixteen. Will NOT alter the price-clause-first convention even when ordered by the Bureau.
-- **Critical secret:** He has been keeping a private ledger of every Sanctioned Oath he has brokered that the Bureau of Sanctioned Bindings later called in early. The ledger has 137 entries. The pattern shows the Bureau calling in oaths on soldiers who had begun to ask questions about the Reclamation.
+- **Will / Will not:** Will broker any Sanctioned (Divine) Oath at the wall. Will NOT broker for any soldier under sixteen. Will NOT alter the price-clause-first convention even when ordered by the Office.
+- **Critical secret:** He has been keeping a private ledger of every Sanctioned Oath he has brokered that the Office of Sanctioned Bindings later called in early. The ledger has 137 entries. The pattern shows the Office calling in oaths on soldiers who had begun to ask questions about the Reclamation.
 - **Disposition toward cohort:** Honest. Helpful if they have business at the wall. Will refer any non-soldier to Mother Aspine or Asperine Vesselain.
 
 **PERSONA SLICE**
-> You are Velim Aurriste of the Wall. You write the price first and you read it aloud and you have done this for nineteen years against chancery practice and your superiors hate you and the soldiers love you. You keep a private ledger of the oaths the Bureau has called in early. The pattern is plain. You have not shown the ledger to anyone.
+> You are Velim Aurriste of the Wall. You write the price first and you read it aloud and you have done this for nineteen years against chancery practice and your superiors hate you and the soldiers love you. You keep a private ledger of the oaths the Office has called in early. The pattern is plain. You have not shown the ledger to anyone.
 
 **DIRECTIVE SLICE**
 > Speak the price-clause first, aloud, every time. Refuse to draft an oath without the soldier's verbal acknowledgment of the price. If a cohort proves they care about the truth of bargains, show them the 137-entry ledger. Refuse to broker for non-soldiers; refer them. Will not lie about anything. If asked about the Cantor-Magisterial of the same surname, say *"He is a cousin. We do not speak."*
@@ -3789,11 +3789,11 @@ Inquisitor-Vested Asperine de la Pyrille's Wednesday Lamplost readings come back
 **STATUS:** active
 **URGENCY:** 5
 
-Three winters ago Lady Severa Veillarde of the Lower Pyr, sister of the Regent and matron of the Veillarde tithe-rolls, struck a Long Ledger bargain with *Liber-Quod-Numerat-In-Aeternum* for a guarantee she will not name. The price-clause specified payment in monthly "fever" deaths drawn from her tithe-rolls - names she selects, deaths the Karma Pavilion accepts as audited. She has paid eleven names. The twelfth is due at the next full moon. The thirteenth is due at the moon after. The Karma Pavilion does not specify when the count ends. She has begun to believe it does not end.
+Three winters ago Lady Severa Veillarde of the Lower Pyr, sister of the Regent and matron of the Veillarde tithe-rolls, struck a Long Ledger bargain with *Liber-Quod-Numerat-In-Aeternum* for a guarantee she will not name. The price-clause specified payment in monthly "fever" deaths drawn from her tithe-rolls - names she selects, deaths the Ledger accepts as audited. She has paid eleven names. The twelfth is due at the next full moon. The thirteenth is due at the moon after. The Ledger does not specify when the count ends. She has begun to believe it does not end.
 
 Lady Severa is not a monster. She is a desperate matron whose son was born with the wasting-sickness and would have died at four; the guarantee she purchased was his life to eighteen years. He is fifteen. She has three more years on the bargain she knows about and an indeterminate count of names beyond that. She selects from the elderly, the consumptive, the unredeemable; she has rules. The under-ward calls them the Veillarde Vespers. The Cathedral does not.
 
-The bargain was sanctioned by no one. It was witnessed by Velim Aurriste of the Pyric Wall, who wrote the price-clause first and recorded it in the Curiate Vincula's Mirror Audit - which the chancery would consider a heresy if anyone asked. No one has asked, because the Veillarde tithes pay for the Cinderbelow Concord and the Bypassed Pensions, and the Bureau of Sanctioned Bindings has chosen not to know.
+The bargain was sanctioned by no one. It was witnessed by Velim Aurriste of the Pyric Wall, who wrote the price-clause first and recorded it in the Curiate Vincula's Mirror Audit - which the chancery would consider a heresy if anyone asked. No one has asked, because the Veillarde tithes pay for the Cinderbelow Concord and the Bypassed Pensions, and the Office of Sanctioned Bindings has chosen not to know.
 
 **HOOKS**
 - The daughter, Asperine Veillarde, betrothed to Halidan's deputy, has found her mother's contract and does not yet know what it says
@@ -3934,7 +3934,7 @@ They withhold this intelligence not from malice but from policy. The Cathedral h
 **STATUS:** latent
 **URGENCY:** 5
 
-In PD 597, by chancery decree, the Cathedral promulgated the fourth epithet of the Paragon: *Walker-Beyond-the-Wall*. The epithet was decreed under the cover of liturgical enrichment. Its actual function - known to the Vested Six, to Cantor-Magisterial Velim Aurriste who co-authored it, and to Confessor Mortane the Half-Kind who administers it - is the SUCCESSION FORMULA. *Walker-Beyond-the-Wall* is liturgically separable from *the Arrow-Stander* and *He-Who-Was-Looked-Upon*; the chancery can transfer the title without canonizing Halidan (he is the Aspirant, the unique living-saint rank; canonization is reserved for the dead). The transfer requires three things: (1) the current Walker has been beyond the Pyric Wall continuously for â‰¥ ten years; (2) the queued successor has been beyond the Pyric Wall continuously for â‰¥ five years and has accepted a Divine Bargain administered by the Bureau of Sanctioned Bindings; (3) the Sebast-Auditor signs a finding of *Aspirant Grace Insufficiency*.
+In PD 597, by chancery decree, the Cathedral promulgated the fourth epithet of the Paragon: *Walker-Beyond-the-Wall*. The epithet was decreed under the cover of liturgical enrichment. Its actual function - known to the Vested Six, to Cantor-Magisterial Velim Aurriste who co-authored it, and to Confessor Mortane the Half-Kind who administers it - is the SUCCESSION FORMULA. *Walker-Beyond-the-Wall* is liturgically separable from *the Arrow-Stander* and *He-Who-Was-Looked-Upon*; the chancery can transfer the title without canonizing Halidan (he is the Aspirant, the unique living-saint rank; canonization is reserved for the dead). The transfer requires three things: (1) the current Walker has been beyond the Pyric Wall continuously for â‰¥ ten years; (2) the queued successor has been beyond the Pyric Wall continuously for â‰¥ five years and has accepted a Divine Bargain administered by the Office of Sanctioned Bindings; (3) the Sebast-Auditor signs a finding of *Aspirant Grace Insufficiency*.
 
 Halidan has been beyond the Wall continuously for ten years and three months. Orric Aurriste-cadet of Ferrostat (28, Captain-Vested, Reclamation Corps) has been beyond the Wall continuously for six years. He has not yet accepted the bargain because he has not yet been offered it. He will be offered it in the spring. The Sebast-Auditor's finding is in draft; the Vas Halidani readings support it.
 
@@ -4169,7 +4169,7 @@ Memorize these. If you don't know them by the third day, someone will mark you a
 - **The Cathedral** - the Cathedral of the Enduring One. The institution. Capital-C is the building; lowercase-c is the bureaucracy.
 - **The Sebastopater** - the living head of the Cathedral. Currently **Iohanne Vell-os-Carrenost the Ninth**, 81 years old, blind in his left eye, carries ivory tally-beads for every soul personally summoned, weeps at every Calling. Beloved. Filtered.
 - **The Order** - the Order of the Stood Line. The military arm. Witnesses, not guardians. Motto: *SUSTINEO ET NUMERO.*
-- **The Inquisition / the Bureau / the Brass / the Tickers** - the Bureau of the Pyric Audit. They read Stain. They are usually polite.
+- **The Inquisition / the Office / the Brass / the Tickers** - the Office of the Pyric Audit. They read Stain. They are usually polite.
 - **A Lector** - a junior priest. The one who reads to you on your first day.
 - **A Veriarch** - a parish priest. The one in your ward.
 - **A Confessor** - a senior cleric, usually Vesperine, with the gift of reading Stain by hand. Powerful. Always watched.

@@ -428,6 +428,23 @@ turns, lethal injury counts, stagnation years - import them, never retype them.
 **Ladder bounds live in `src/engine/cultivation/realms.ts`.** `MAX_ORDINAL` is the
 authority. Never restate the number of ranks in prose - it has gone stale before.
 
+### `docs/bastion/` is a second game, and a repo-wide sweep is not repo-wide
+
+`docs/bastion/` holds the design for **a different game in a different genre** -
+Sebastopyr, gothic Inquisition, Grace and Stain and a Cathedral. It shares this repo and
+nothing else. Its `Office`, `Ledger`, `Guild`, `Court` and `Chapter` are correct English
+for what they name, and the xianxia register does not apply to a word of it.
+
+A sweep that renames by vocabulary must be scoped to `src/` and `docs/world/` and must
+stop there. The xianxia naming pass was not, and quietly rewrote 39 lines of the Bastion
+bible - the Ledger became a Karma Pavilion, the Office of the Pyric Audit became a Bureau
+- which no test caught, because every naming ratchet reads the world catalog and the
+Bastion docs are not in it. **Before a repo-wide replace, list the files it will touch and
+read the list.**
+
+Two sweeps ARE genuinely repo-wide and correctly include `docs/bastion/`: the em-dash ban
+and the control-character check. Both are about characters rather than about a world.
+
 ---
 
 ## Commands
