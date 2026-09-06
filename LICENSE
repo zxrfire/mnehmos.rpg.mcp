@@ -12,16 +12,17 @@ condition narrows the licence; it does not widen it. Because of it, this is not
 plain `PolyForm-Noncommercial-1.0.0` and should not be labelled as such.
 
 **1. Run it privately, not publicly.** You may run the software, and any work
-based on it, for yourself and on a private or local network: your own machine,
-your household, a LAN, a game with people you actually know. That is ordinary
-use and needs no permission.
+based on it, for yourself and for people you actually know: your own machine,
+your household, a LAN, a private server for your friends. **It does not matter
+whether that server is on the internet.** A private instance your friends log
+into from anywhere is ordinary use and needs no permission.
 
-What you may NOT do is make it available to the public. No internet-facing
-instance, hosted service, public server or bot that strangers can reach and use,
-whether or not you charge for it and whether or not it is advertised.
+What you may NOT do is make it PUBLIC: open to strangers, advertised, listed,
+or available to whoever turns up, whether or not you charge for it.
 
-The line is public availability, not the number of people. Four friends on your
-network is fine. One stranger off the internet is not.
+The line is public versus private. It is not local versus internet, and it is
+not the number of people. A dozen friends on a box in a datacentre is private.
+One stranger off the internet is public.
 
 **2. Do not take the credit.** If you publish, deploy, demonstrate, stream or
 write about the software or a work based on it, you must credit this project and
