@@ -305,6 +305,7 @@ describe('reachThrough', () => {
         expect(['operational', 'mastered']).toContain(r.level);
     });
 
+
     it('waives the walls somebody went around, and nothing else', () => {
         const { all, darkNodeIds } = world();
         expect(darkNodeIds.length).toBeGreaterThan(0);

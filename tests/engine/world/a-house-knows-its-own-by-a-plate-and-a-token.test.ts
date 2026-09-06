@@ -30,6 +30,9 @@ import {
     whatThePlateSays
 } from '../../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
 import { roomAuthorityOf } from '../../../src/engine/world/architecture.js';
+import { portfoliosIn } from '../../../src/engine/social-leverage/authority-for-an-order.js';
+import { whoAnswersAbout } from '../../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
+import { getSect } from '../../../src/data/cultivation/sects.js';
 
 describe('what a house issues', () => {
     it('gives every disciple a token to carry and a plate on a wall', async () => {
@@ -143,9 +146,13 @@ describe('whose job it is', () => {
      */
     it('is the room, so the office needs no registry', () => {
         expect(THE_ROOM_THE_ROLL_IS_KEPT_IN).toBe('ancestral_hall');
-        // Held here because the office machinery only deals SEALED rooms out,
-        // so the day this hall is sealed the Keeper becomes a portfolio holder
-        // automatically - and until then, deliberately, nobody holds it.
+        // NOT SEALED YET, AND THAT IS WHY THE KEEPER IS STILL ONLY A NAME.
+        // `whoIsInChargeOfWhat` deals only sealed rooms, so sealing this hall
+        // is the whole of what makes the Keeper a person somebody can go to.
+        // It was tried and reverted: offices are dealt round-robin over the
+        // sealed rooms deepest-first, so adding one shifts every holder by one
+        // and moved discipline permanently past the rung that held it. See the
+        // note on `ancestral_hall` in `architecture.ts`.
         expect(roomAuthorityOf('ancestral_hall').sealed).toBe(false);
     });
 });

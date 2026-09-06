@@ -501,6 +501,28 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     vein_chamber: { kind: 'chamber', depth: 0.7, obviousness: 0.25, qiLift: 30, sealed: false, capacityPer: 0.05, hazards: ['formation', 'pressure'] },
 
     // ── The inner end. Where the house keeps what it will not spend. ─────
+    // NOT SEALED, AND THE KEEPER IS THEREFORE STILL ONLY A NAME. MEASURED.
+    //
+    // The design owner asked for the Keeper of the Roll to be a role rather
+    // than a constant, and in this engine an office IS a sealed room dealt by
+    // `whoIsInChargeOfWhat`. So sealing this hall is the whole of the change,
+    // and it works: every house then names a real person to it.
+    //
+    // It was tried and REVERTED, because of what the deal does. Offices are
+    // handed out `sealed.map((r, i) => deciders[i % deciders.length])` over the
+    // sealed rooms sorted DEEPEST FIRST - so adding a room does not add a seat,
+    // it shifts every existing holder by one. The punishment hall is the
+    // shallowest sealed room in the table, which means it is dealt last, and
+    // adding the ancestral hall above it moved discipline permanently out of
+    // reach of the rung that used to hold it. Two played tests failed on a
+    // hard-coded name two subsystems away, and no rung in the sect could get it
+    // back.
+    //
+    // That is a fact about the DEAL and not about this room: an office ladder
+    // where the number of rooms silently reassigns who runs discipline is going
+    // to keep doing this. The Keeper wants that fixed first - portfolios keyed
+    // to a room rather than to a position in a list - and then this line is one
+    // word.
     ancestral_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, capacityPer: 0.1, hazards: [] },
     under_hall: { kind: 'vault', depth: 1, obviousness: 0.05, qiLift: 20, sealed: true, capacityPer: 0.01, hazards: ['sealed_qi', 'formation'] },
     // THE ONE ROOM CUT TO BE BAD GROUND, and the negative lift is the whole
