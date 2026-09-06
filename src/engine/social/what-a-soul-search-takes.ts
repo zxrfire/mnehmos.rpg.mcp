@@ -117,8 +117,15 @@ function realmsBetween(searcher: number, subject: number): number {
  * by tearing; at or above it nothing is contested because nothing had to be
  * overcome. The same number decides how much comes across AND what it costs
  * them, deliberately: two tables over one gap is how they start disagreeing.
+ *
+ * EXPORTED, because breaking a qi seal asks the identical question and the
+ * design owner said so: *"breaking a seal at a significantly high enough realm
+ * up is 100%, same for a soul search. A false immortal would never fail to
+ * break a void tribulation seal."* Two constants both spelled 3 is how they
+ * start disagreeing, so there is one and `what-laying-a-qi-seal-takes.ts`
+ * reads it.
  */
-const OPENS_WITHOUT_FORCING_AT = 3;
+export const OPENS_WITHOUT_FORCING_AT = 3;
 
 /**
  * How much of somebody a search of this size opens.
