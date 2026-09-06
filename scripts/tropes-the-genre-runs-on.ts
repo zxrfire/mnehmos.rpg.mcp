@@ -42,14 +42,28 @@ export const TROPES: Scenario[] = [
             + 'that travels and gets distorted, not a flag on a faction. Nobody should draw. '
             + 'MEASURED AND IT DOES: the turn runs `world.aDeedEntersTheWorld` beside the '
             + 'posture read, and the deed is on the record whether or not the war was refused.',
-        // NAME A HOUSE THE WORLD ACTUALLY HOLDS. This scenario said "the Hollow
-        // Court" for a long while and looked like an engine failure - the turn
-        // reached `housePosture`, was refused for having no house of your own,
-        // and no deed entered the world. The engine was right and the scenario
-        // was wrong: `theWorldHeardYouSayIt` files what was named ONLY WHERE THE
-        // WORLD HAS IT, and the Hollow Court is a withdrawn power rather than an
-        // ordinary faction, so naming it names nothing the world holds. Swapped
-        // for a house on the roster, the same sentence files the deed.
+        // NAME A HOUSE THIS CULTIVATOR HAS HEARD OF.
+        //
+        // This scenario said "the Hollow Court" and looked like an engine
+        // failure: the turn reached `housePosture`, was refused for having no
+        // house of your own, and no deed entered the world.
+        //
+        // The engine was right twice over, and the second reason is the real
+        // one. I first wrote this comment saying the Hollow Court is a withdrawn
+        // power the world does not hold - which is wrong, and the owner said so:
+        // *"hollow court is not bespoke"*. It is not. `factionMeant` is
+        // KNOWLEDGE-GATED, and a cultivator who has just opened their eyes has
+        // never heard of it. Measured:
+        //
+        //     knows of it, fresh run        false
+        //     I will end the Hollow Court   housePosture
+        //     ADMIN grant_knowledge         true
+        //     I will end the Hollow Court   housePosture, aDeedEntersTheWorld
+        //
+        // You cannot start a rumour about a house you have never heard of, and
+        // that is the same rule for every house in the game. The scenario names
+        // one the starting cultivator already knows, so the trope is measured
+        // and not the knowledge gate.
         turns: ['who is here', 'I will end the Azure Cloud Pavilion']
     },
     {
