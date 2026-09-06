@@ -49,7 +49,12 @@ function drought(areaId: string): AreaStatus {
         beganOnDay: BEGAN,
         reviewOnDay: BEGAN + 200,
         stops: ['millet', 'bread'],
-        priceMultiplier: 3,
+        // The scalar and the per-type dial together, because they are two
+        // columns and either can be dropped on its own. A famine that loads
+        // back with an empty map is a famine that stopped moving the food, and
+        // it reads as an ordinary market with total confidence.
+        priceMultiplier: 1,
+        priceMultiplierByCategory: { food: 4, lodging: 0.5, transport: 1.6 },
         dangerDelta: 0.05
     });
 }
@@ -102,8 +107,16 @@ describe('a status survives a save', () => {
         expect(back.stops).toEqual(['millet', 'bread']);
         expect(back.causeKnownLocally).toBe(false);
         expect(back.liftedOnDay).toBeNull();
-        expect(back.priceMultiplier).toBe(3);
+        expect(back.priceMultiplier).toBe(1);
+        expect(back.priceMultiplierByCategory)
+            .toEqual({ food: 4, lodging: 0.5, transport: 1.6 });
         expect(back.dangerDelta).toBeCloseTo(0.05, 6);
+
+        // And the war beside it, which sets no per-type dial at all, comes back
+        // with an empty map rather than an undefined - the shape every reader
+        // in the engine indexes into without a guard.
+        expect(getAreaStatus(loaded!, 'status-the-water')!.priceMultiplierByCategory)
+            .toEqual({});
 
         // And a cause somebody chose keeps who chose it.
         expect(getAreaStatus(loaded!, 'status-the-water')!.cause.decidedById)

@@ -1928,9 +1928,13 @@ fourteen statuses running, none of them reachable from the panel.
 The join is the engine's own `statusesInArea`, so the map and the played verb cannot
 disagree about what is going on. A status is true of its area **and of everything under
 it**, so a node carries its ancestors' too and `ownArea` says which are its own. Every
-figure travels - `stops`, `priceMultiplier`, `dangerDelta`, the day it began and the day it
-is next reviewed - because those are what a status *does*, and a statement without them is
-a mood rather than a mechanic. `causeKnownLocally` travels raw: this surface is admin,
+figure travels - `stops`, `priceMultiplier`, `priceMultiplierByCategory`, `dangerDelta`,
+the day it began and the day it is next reviewed - because those are what a status *does*,
+and a statement without them is a mood rather than a mechanic. **The two price fields have
+to travel together**: the dial is per type of good, `priceMultiplier` is what a type the
+status has no opinion about costs, and a famine now reads `1` there while quadrupling the
+food and halving the beds. A panel showing only the scalar reports the sharpest status in
+the world as nothing happening. `causeKnownLocally` travels raw: this surface is admin,
 and masking a cause by a knowing stage is `readStatusAtStage`'s job at the player boundary.
 
 `counts.runningStatuses` counts distinct statuses on their own areas, not the sum of the
