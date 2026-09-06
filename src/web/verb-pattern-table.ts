@@ -3413,7 +3413,22 @@ function planIntent(input: string): PlannedAction {
     }
 
     // REPUTATION IS NOT THE CHARACTER SHEET
-    if (/\b(?:my reputation|what(?:'s| is) my reputation|how am i regarded|how do (?:they|people|others) (?:see|regard|treat) me|what do people think of me|my standing|what is my standing|how am i seen)\b/.test(text)) {
+    //
+    // AND BEING READ IS A QUESTION SOMEBODY ASKS. "how do they see me" reached
+    // this and "what does the strongest one here make of me" reached nothing -
+    // the same question with one person on the end of it instead of everybody,
+    // and the form a player uses with somebody standing in front of them.
+    // Measured on the trope corpus as a blank look.
+    //
+    // It answers with STANDING, which is what the room holds about them rather
+    // than what one person privately thinks, and that is worth being honest
+    // about. The per-person read exists and is `whatTheyCanPlaceAbout` in
+    // `what-they-can-place-about-you.ts` - the mirror of a look, which that file
+    // states it answers with the two sides swapped. Wiring it to a sentence is
+    // its own piece of work; until then the general answer beats none.
+    if (/\b(?:my reputation|what(?:'s| is) my reputation|how am i regarded|how do (?:they|people|others) (?:see|regard|treat) me|what do people think of me|my standing|what is my standing|how am i seen)\b/.test(text)
+        || /\bwhat\s+do(?:es)?\s+(?:he|she|they|the \w+(?:\s+\w+){0,3}?)\s+(?:make of|think of|see in|reckon of)\s+me\b/.test(text)
+        || /\bhow\s+do(?:es)?\s+(?:he|she|they|the \w+(?:\s+\w+){0,3}?)\s+(?:see|read|regard|rate)\s+me\b/.test(text)) {
         return { action: 'sect', intent: 'standing' };
     }
 
