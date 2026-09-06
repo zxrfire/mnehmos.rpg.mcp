@@ -1485,6 +1485,12 @@ function applyPromotions(state: WorldState, day: number): number {
     for (const p of promotions) {
         const i = at.get(p.npcId);
         if (i === undefined) continue;
+        // NOT THE PLAYER'S. This was the one pass that wrote the player's world
+        // row without asking, and it did not only write a field: it appended a
+        // chronicle fact saying the house had raised them, which the next
+        // refresh of that row cannot take back. A promotion the player never
+        // earned, on the record, permanently.
+        if (!isTheWorldsToMove(state.npcs[i])) continue;
         state.npcs[i] = { ...state.npcs[i], factionRankIndex: p.toRank, updatedOnDay: day };
         recordPromotion(state, state.npcs[i], p, day);
     }

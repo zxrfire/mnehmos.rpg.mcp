@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import { getDb } from '../../storage/index.js';
 import { readWorldRevision } from './world-revision.js';
+import { SectRepository } from '../../storage/repos/sect.repo.js';
 import {
     advanceWorldForPlay,
     loadCultivationCatalog,
@@ -496,8 +497,23 @@ export function observerFor(cultivator: Cultivator, handle: WorldHandle): Observ
     };
 }
 
+/**
+ * What rung this cultivator stands on in their house.
+ *
+ * READ OFF THE MEMBERSHIP, which is where it lives. This used to be
+ * `typeof cultivator.sectRank === 'number' ? cultivator.sectRank : 0`, and
+ * `sectRank` is `z.string().nullable()` - so the test was false for every
+ * cultivator who has ever existed and the answer was 0, always.
+ *
+ * `sectThreshold` in `digest.ts` reads it to decide what a person is told: an
+ * elder is told the awkward things and an outer disciple hears the notices. So
+ * a Sect Head's world digest has been identical to an outer disciple's for the
+ * whole life of every run, and nothing looked wrong - it just quietly said less
+ * to the people the world should have been telling most.
+ */
 function rankIndexOf(cultivator: Cultivator): number {
-    return typeof cultivator.sectRank === 'number' ? cultivator.sectRank : 0;
+    const membership = new SectRepository(getDb()).getMembership(cultivator.id);
+    return membership?.rankIndex ?? 0;
 }
 
 /**
