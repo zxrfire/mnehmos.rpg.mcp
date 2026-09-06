@@ -126,7 +126,10 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { whatSomebodyIsLike } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
+import {
+    theOneThingWorthSayingAbout,
+    whatSomebodyIsLike
+} from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
@@ -11942,7 +11945,13 @@ ${fit.line}`;
                     // `whetherTheyWouldLookUp` and `howMuchTheyPlayToTheRoom`.
                     looksUp: doing !== null && whetherTheyWouldLookUp(doing.kind),
                     playsToTheRoom: row === null ? 0 : whatSomebodyIsLike(row).room,
-                    withNames: alongside
+                    withNames: alongside,
+                    // Only from the world row, never from the roster one. The
+                    // roster carries no attributes and no origin, so deriving
+                    // this from it would make the same person read differently
+                    // depending on which table the caller happened to reach -
+                    // the exact thing deriving instead of storing is for.
+                    like: row === null ? null : theOneThingWorthSayingAbout(row)
                 });
             } else {
                 strangers.push({ ordinal: person.realmOrdinal });

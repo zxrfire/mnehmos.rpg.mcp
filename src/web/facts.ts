@@ -928,6 +928,19 @@ export interface SomebodyInTheSquare {
      * you neither.
      */
     withNames: string[];
+    /**
+     * The one thing worth saying about who they are, or null for most people.
+     *
+     * Not what they are doing - `at` is that, and it changes. This is what they
+     * are LIKE, which does not, and it falls out of what the world rolled for
+     * them at birth rather than being stored anywhere. See
+     * `what-somebody-is-like-and-where-it-came-from.ts`.
+     *
+     * Printed only for the person a square hands you on arrival, which is the
+     * one place there is room for it. Asking who else is here is a roster, and
+     * a roster with a character note against every line is a briefing.
+     */
+    like: string | null;
 }
 
 export interface Company {
@@ -1023,6 +1036,11 @@ function describeCompany(
             sentences.push(met.at === null
                 ? `${met.name} is here.`
                 : `${met.name} is here, ${met.at}.`);
+            // AND ONE THING ABOUT WHO THEY ARE, where there is one. This is the
+            // person the ground chose to hand over, so it is the one place in
+            // the game with room to say what they are like as well as what they
+            // are at - and most people have nothing here, which is the point.
+            if (met.like !== null) sentences.push(`${met.name} ${met.like}.`);
             // The party is already inside the clause - "mid-conversation with
             // X" - so it is not repeated. What is worth saying is that they
             // came as a set, and only when the set is bigger than a pair.

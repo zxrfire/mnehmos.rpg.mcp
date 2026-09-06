@@ -66,6 +66,7 @@ function somebody(over: Partial<SomebodyInTheSquare> & { name: string }): Somebo
         looksUp: true,
         playsToTheRoom: 0,
         withNames: [],
+        like: null,
         ...over
     };
 }

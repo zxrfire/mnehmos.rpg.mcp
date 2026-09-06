@@ -274,3 +274,27 @@ function blend(id: string, stream: string, lean: number): number {
     const blended = lean * (1 - WHAT_NOTHING_EXPLAINS) + residue * WHAT_NOTHING_EXPLAINS;
     return Math.round(Math.max(-1, Math.min(1, blended)) * 1e4) / 1e4;
 }
+
+/**
+ * THE ONE CLAUSE A PERSON GETS, or null where there is nothing to say.
+ *
+ * `scene-person-readings.ts` already established the shape: a sentence gets at
+ * most ONE clause of disposition, and only when the reading is MARKED. Two
+ * clauses about somebody standing in a square is a character sheet read aloud,
+ * and the third time a player sees one they stop reading them.
+ *
+ * So the deeper of the two axes wins, and neither speaks below the band. Most
+ * people say nothing here, which is correct: a world where everybody is a
+ * character is a world where nobody is.
+ */
+export function theOneThingWorthSayingAbout(person: {
+    id: string;
+    identity: { origin: OriginTierKey };
+    cultivation: { attributes: InnateAttributes; realmOrdinal: number };
+}): string | null {
+    const { push, room } = whatSomebodyIsLike(person);
+    if (Math.abs(push) < MARKED && Math.abs(room) < MARKED) return null;
+    return Math.abs(push) >= Math.abs(room)
+        ? howTheyGoAtThings(push)
+        : howTheyWantItSeen(room);
+}
