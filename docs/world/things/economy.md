@@ -104,6 +104,57 @@ The Stone Marrow Hall refines raw qi into stones and sets the exchange rate, whi
 means they set the price of everything, including the price of a vein. See
 [`sects.md`](../houses/sects.md).
 
+### Only cultivators carry stones. Paying a mortal takes them out of the world
+
+**Every cultivator is a row in the database. Mortals are not.** That is not a shortcut,
+it is the line the whole economy is drawn along, and it decides where money goes:
+
+- **Paying a cultivator MOVES the stones.** They have a purse, it goes up by what yours
+  went down by, and they are still holding it next year. The person-to-person purchase
+  does this already: the buyer's row is debited, the seller's row is credited, and the
+  world NPC's purse is credited with it.
+- **Paying a mortal DESTROYS the stones.** There is nobody on the other side of the
+  counter to receive them, because the innkeeper is not simulated and never will be.
+  They leave the game.
+
+So the mortal economy is the sink, and it is a sink for the same reason it is unlimited:
+nothing is tracking it. **Mortals can sell infinite food.** You can always buy a meal, at
+a price, and no shelf anywhere runs down - which is how it works in life, where anybody
+willing to pay enough can have as much as they want of an ordinary thing.
+
+What makes that bite is the other half: **your stones are not infinite.** A price that
+rises has to be paid out of a purse that does not refill on its own, and the stones a
+famine costs you are gone rather than moved.
+
+The two are different currencies and the split is the same split: the board is quoted in
+**cash**, the mortal unit, and a cultivator pays in **stones** at `CASH_PER_STONE`. A bowl
+of millet is one cash. Nobody at the cultivator end of the ladder should ever feel a
+mortal price; what they feel is what other cultivators charge them.
+
+### And the same line decides what the goods are
+
+The split runs through the things as well as the money, and the engine already has the
+word for it: `KeptAs` is `'counted' | 'tracked'`, which `possessions.ts` glosses as *"a
+holder and a number, or a row with a history."*
+
+- **Mortal goods are counted, and effectively infinite.** A meal, a bed, a ferry crossing.
+  They have a price and no identity. There is no particular bowl of millet, no shelf that
+  runs down, and nothing to ask anybody about afterwards.
+- **Cultivator goods are tracked, and finite.** A row apiece, carrying `provenance`,
+  `claims`, an `ownerId` distinct from whoever is physically holding it, and
+  `knownOwnershipBy` - who can be asked where it came from. There is exactly one of that
+  blade, somebody lost it, and the losing is on the record.
+
+So a thing being scarce and a thing having a story are the same fact from two sides, and
+both follow from whether a cultivator is at the other end of the transaction.
+
+**Rounding, and why a meal costs a whole stone.** A cultivator has no cash balance, only
+stones, so every mortal price is paid in the smallest coin they carry. `MEAL_COST_STONES`
+is one stone against a board that puts a hot meal at six cash - the cultivator overpays by
+a wide margin and does not notice, which is correct for somebody who cannot make change
+below a hundred cash and would not stoop to it. **This is the one place the two currencies
+touch, and the rounding always favours the mortal.**
+
 ## What things cost
 
 <!-- tier: 2 trigger="a price is quoted, or the player asks what something is worth" -->
