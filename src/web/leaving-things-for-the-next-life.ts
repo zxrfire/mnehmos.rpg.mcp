@@ -48,6 +48,7 @@ import { getHerb } from '../data/cultivation/herbs.js';
 import { loosePlaceKey } from './knowledge.js';
 import { matchScore, MATCH_THRESHOLD } from './entities.js';
 import { rungAndOrdinal, type EngineFacts } from './facts.js';
+import { whatYouAreNotShowing } from './what-you-are-not-showing.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT CAN BE PUT ASIDE
@@ -1025,8 +1026,24 @@ export function legacyStep(
         return { action: 'legacy', intent: 'dig' };
     }
 
+    // PUTTING YOUR WEIGHT AWAY IS NOT PUTTING A THING IN THE GROUND.
+    //
+    // `hide` and `conceal` are anchored bury verbs, and the anchor is a legacy
+    // noun OR the word "here" - so "hiding my cultivation, I ask the strongest
+    // one HERE what he wants" was a burial. Measured on the trope corpus, where
+    // it reached `legacy/bury` and the hidden expert never got to ask anything.
+    //
+    // `what-you-are-not-showing.ts` already decides what a concealment is, for
+    // the leverage path, so this asks it rather than keeping a second list. The
+    // `noun` requirement is what keeps a real burial: "I hide my sword here"
+    // names a thing to put in the ground and is untouched; "hiding my
+    // cultivation" names nothing buriable and is somebody carrying themselves
+    // differently.
+    const puttingWeightAway = !noun && whatYouAreNotShowing(text) !== null;
+
     // Burying, said the way people actually say it.
-    if ((noun || here)
+    if (!puttingWeightAway
+        && (noun || here)
         && (usedAsVerb(text, LEGACY_BURY_VERBS_ANCHORED) || LEGACY_BURY_ANYWHERE.test(text))) {
         return { action: 'legacy', intent: 'bury', ...(days !== undefined ? { days } : {}) };
     }

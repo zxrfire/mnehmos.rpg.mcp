@@ -628,7 +628,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 <!-- BEGIN GENERATED: admin -->
 
-**15 operator actions**, reached by a line beginning `ADMIN`.
+**16 operator actions**, reached by a line beginning `ADMIN`.
 
 They are not verbs and no model reads one: an `ADMIN` line is handled before phase 1,
 read deterministically, and refused rather than improvised where the reader has no noun
@@ -636,7 +636,7 @@ for what it names. What each one takes, which phrasings reach it, and the law it
 are in [`admin.md`](admin.md) - this list is only the set, so that a new action there
 cannot go unlisted here.
 
-`roster` · `spawn_encounter` · `spawn_site` · `grant_item` · `set_ambient` · `set_location` · `advance_days` · `set_realm` · `set_age` · `grant_progress` · `grant_knowledge` · `audit_log` · `help` · `reset` · `<any playable verb>`
+`roster` · `spawn_encounter` · `spawn_site` · `grant_item` · `set_ambient` · `set_location` · `advance_days` · `set_realm` · `set_age` · `grant_progress` · `grant_knowledge` · `join_sect` · `audit_log` · `help` · `reset` · `<any playable verb>`
 
 Declared as `ADMIN_ACTIONS` in [`game.ts`](../src/web/turn-engine.ts).
 
