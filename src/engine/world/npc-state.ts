@@ -291,7 +291,24 @@ export type ActivityKind =
      * complaint this field answers was four hundred people at nothing by
      * default.
      */
-    | 'idle';
+    | 'idle'
+    /**
+     * One of them is taking something off the other.
+     *
+     * Not a fight and not a conversation. The bottom of a house is its own
+     * society with its own order in it, and that order is enforced by people
+     * who have nothing except being three months senior - a junior disciple
+     * relieved of a find, a stall told what its rent is now, a debt collected
+     * that was never lent. It is the commonest scene in the outer sect of the
+     * genre and the world had no way to say it was happening.
+     *
+     * SYMMETRIC LIKE EVERY OTHER SCENE. Both people are at `squeezing` and both
+     * name the other in `withIds`; which end of it they are on is in the note,
+     * because the engine does not need to know and the narrator does. Nothing
+     * switches on who is squeezing whom - a caller that needs to know reads
+     * `howHardTheyPush` on both of them, which is where it came from.
+     */
+    | 'squeezing';
 
 export interface NpcActivity {
     kind: ActivityKind;

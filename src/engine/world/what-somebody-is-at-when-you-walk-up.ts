@@ -53,6 +53,7 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
+import { whatSomebodyIsLike } from './what-somebody-is-like-and-where-it-came-from.js';
 import type { ActivityKind, NpcActivity, NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 
@@ -205,6 +206,10 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
         case 'idle':
             // Specific and never a default. See `ActivityKind`.
             return activity.note;
+        case 'squeezing':
+            return withNames.length === 0
+                ? activity.note
+                : `${activity.note}, and ${them} ${withNames.length === 1 ? 'is' : 'are'} the other half of it`;
     }
 }
 
@@ -235,6 +240,12 @@ export function whatTheyOpenAt(input: {
     const { npc } = input;
     const bare = (kind: ActivityKind, note: string): NpcActivity =>
         ({ kind, note, withIds: [], sinceDay: input.onDay });
+
+    // WHO THEY ARE, which is not drawn here and not stored anywhere: it falls
+    // out of what the world already rolled for them. See
+    // `what-somebody-is-like-and-where-it-came-from.ts` for why that is the
+    // opposite call from the one this file makes about activity.
+    const like = whatSomebodyIsLike(npc);
 
     // A TORN BODY FIRST. Everything costs more until the channels close, so it
     // is what somebody is at whatever else was true of them.
@@ -271,13 +282,50 @@ export function whatTheyOpenAt(input: {
             return bare('teaching', pick(input.words, [
                 'holding an audience nobody enjoys',
                 'watching somebody run a form and saying nothing, which is worse',
-                'taking a book off somebody and not giving it back yet'
+                'taking a book off somebody and not giving it back yet',
+                'hearing a petition about a resource allocation and having already decided',
+                'looking over a batch of new intake and picking one out',
+                'refusing somebody a thing the house could easily spare'
             ]));
         }
-        // The bottom of a house does its work; the middle divides between the
-        // shelves and the work, because that is what a house is for.
+        // ── AND THE BOTTOM OF A HOUSE DOES THE HOUSE'S WORK ──────────────
+        //
+        // Measured: this branch was EMPTY, so the bottom of every ladder fell
+        // through to the middle's draw and an outer disciple was as likely to
+        // be mustering a party as an inner one. Which is backwards, and the
+        // genre is specific about why: somebody has to grow the herbs, feed the
+        // beasts, keep the array lit and stand the gate, and the people who do
+        // it are the people who have not yet earned anything better. That is
+        // not colour. It is the reason the pyramid is a pyramid - the bottom is
+        // wide because the work at the bottom is what holds the rest of it up.
+        //
+        // Every one of these is a system this file's world already runs: the
+        // herb rows, the beasts, the ward standing over the compound, the
+        // gate. What an outer disciple is at is the maintenance of them.
         if (band === 'the_bottom') {
-    
+            if (input.roll < 0.16) {
+                return bare('at_the_shelves',
+                    'in the one part of the archive their token opens, which is not much of it');
+            }
+            if (input.roll < 0.24) {
+                return bare('at_a_table', 'eating with the rest of their intake, fast, because the hour is short');
+            }
+            return bare('the_work_of_their_rank', pick(input.words, [
+                'in the herb rows, thinning something worth more than they are paid in a year',
+                'mucking out a beast pen, and not paid enough to be bitten for it',
+                'walking the anchor stones of the house array with a list and a brush',
+                'carrying something heavy from one end of the compound to the other',
+                'sweeping a yard that was swept this morning',
+                'on a gate nothing has ever come through, and watching it anyway',
+                'counting a delivery in and finding it short, and deciding whether to say so',
+                // WHICH END OF IT THEY ARE ON, and it is not the roll that
+                // decides. Somebody who goes at things head on is the one
+                // holding the practice sword; somebody who goes around is the
+                // one being knocked down with it. Same yard, same hour, and the
+                // difference between the two of them is a thing about them.
+                like.push >= 0 ? 'holding the sword in what an inner disciple is calling sparring practice'
+                    : 'being knocked down repeatedly by an inner disciple who calls it practice'
+            ]));
         }
         if (input.roll < 0.3) {
             return bare('at_the_shelves', pick(input.words, [
@@ -299,8 +347,17 @@ export function whatTheyOpenAt(input: {
                 'drinking, and further into it than the hour justifies'
             ]));
         }
-        return bare('the_work_of_their_rank',
-            'at something the house has asked for, carrying it rather than deciding it');
+        // AND WHAT AN INNER DISCIPLE DOES, which is a different job: they are
+        // off the chores and onto the things that get an elder's attention,
+        // which is what they are actually competing for.
+        return bare('the_work_of_their_rank', pick(input.words, [
+            'taking an outer disciple through a form, slowly, and enjoying being asked',
+            'at a furnace, on the third attempt, with two failures cooling beside it',
+            'writing up a mission nobody has agreed to pay for yet',
+            'on the wall, on a watch that is a formality until it is not',
+            'at something the house has asked for, carrying it rather than deciding it',
+            'settling an argument between two people junior to them, badly'
+        ]));
     }
 
     if (ground === 'somewhere_goods_move') {
@@ -311,17 +368,31 @@ export function whatTheyOpenAt(input: {
         // row. A market is the busiest ground in the world and the one place
         // the sameness shows worst, so the note is drawn rather than picked off
         // a boolean. Everything here is trade; what varies is which end of it.
+        // AND WHETHER THEY ARE LOUD ABOUT IT. A market is the one ground where
+        // how much somebody plays to a room is visible from across it: the same
+        // empty purse is a person haggling at volume or a person standing at
+        // the edge of the square not approaching anything.
         return bare('trade', npc.spiritStones > 0
-            ? pick(input.roll, [
-                'in the middle of a transaction, holding the money end of it',
+            ? pick(input.roll, like.room >= 0 ? [
+                'in the middle of a transaction and making sure it is heard',
                 'arguing a price down, and enjoying it more than the saving',
                 'buying something small and asking too many questions about it',
+                'holding court over a stall they have no intention of buying from'
+            ] : [
+                'in the middle of a transaction, holding the money end of it',
+                'paying what was asked to get it over with',
+                'buying something small and not looking up while they do it',
                 'waiting on somebody who said they would be here'
             ])
-            : pick(input.roll, [
+            : pick(input.roll, like.room >= 0 ? [
+                'talking up something nobody at this counter wants',
+                'telling a stallholder what the thing is really worth',
+                'counting what is left and doing it twice',
+                'making an offer they cannot cover and enjoying the moment before it lands'
+            ] : [
                 'looking at what is on a counter and not buying',
                 'trying to sell something nobody at this counter wants',
-                'counting what is left and doing it twice',
+                'counting what is left and doing it twice, quietly',
                 'watching a stall rather than approaching it'
             ]));
     }
@@ -446,6 +517,51 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
                 // stays at it. An errand does not stop for a chat.
                 if (a.activity?.kind === 'mustering' || b.activity?.kind === 'mustering') continue;
                 if (a.activity?.kind === 'teaching' || b.activity?.kind === 'teaching') continue;
+
+                // ── AND SOME OF THESE ARE NOT CONVERSATIONS ──────────────
+                //
+                // The bottom of a house is its own society and it has its own
+                // order in it, kept by people whose whole seniority is a few
+                // months. Two people of one house standing together, one of
+                // whom goes at things head on and one of whom goes around, and
+                // the senior of the two being the one who pushes, is not a
+                // chat. It is a junior being relieved of something.
+                //
+                // NOTHING HERE PICKS A BULLY. Both ends fall out of numbers
+                // that were already true of these two people before they were
+                // put on the same square - which is the whole claim of
+                // `what-somebody-is-like-and-where-it-came-from.ts`, and the
+                // reason this reads as two particular people rather than as a
+                // scene type the world drops in at a rate.
+                const senior = a.factionRankIndex >= b.factionRankIndex;
+                const overAt = senior ? together[i]! : together[i + 1]!;
+                const underAt = senior ? together[i + 1]! : together[i]!;
+                const overIt = state.npcs[overAt]!;
+                const under = state.npcs[underAt]!;
+                const leans = whatSomebodyIsLike(overIt).push;
+                const gives = whatSomebodyIsLike(under).push;
+                if (leans > 0 && leans - gives >= WHAT_IT_TAKES_TO_LEAN_ON_SOMEBODY) {
+                    state.npcs[overAt] = {
+                        ...overIt,
+                        activity: {
+                            kind: 'squeezing',
+                            note: 'explaining to somebody junior what the arrangement is here',
+                            withIds: [under.id],
+                            sinceDay: onDay
+                        }
+                    };
+                    state.npcs[underAt] = {
+                        ...under,
+                        activity: {
+                            kind: 'squeezing',
+                            note: 'being told what the arrangement is here by somebody senior',
+                            withIds: [overIt.id],
+                            sinceDay: onDay
+                        }
+                    };
+                    continue;
+                }
+
                 const note = 'about something neither of them will repeat afterwards';
                 state.npcs[together[i]!] = {
                     ...a,
@@ -459,6 +575,16 @@ export function setWhatEverybodyIsAt(state: WorldState, onDay: number): void {
         }
     }
 }
+
+/**
+ * How much further one of two people has to lean before it stops being a
+ * conversation.
+ *
+ * Wide, deliberately. Most pairs of people are two people talking, and a world
+ * where a third of every compound is being shaken down is as untrue as one
+ * where nobody ever is.
+ */
+const WHAT_IT_TAKES_TO_LEAN_ON_SOMEBODY = 0.55;
 
 /**
  * One of several, off a roll already drawn for this person.
