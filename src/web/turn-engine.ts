@@ -124,6 +124,7 @@ import {
     whatYourOwnHouseOpensAboutYou
 } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
+import { takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
@@ -4590,16 +4591,55 @@ ${noticed}`;
                 const pace = topic === 'careful' || topic === 'steady' || topic === 'greedy'
                     ? topic
                     : undefined;
-                return this.fromToolResult(
-                    'sect_manage.siphon', 'sect',
-                    await handleSiphon({
-                        action: 'siphon',
-                        cultivatorId: cultivator.id,
-                        ...(pace ? { pace } : {}),
-                        months: Math.max(1, Math.min(240, Math.round((days ?? 30) / 30)))
-                    }),
-                    'The reserves'
+                // Measured rather than read off a field, because the tool
+                // returns two different shapes: `takenThisTime` when nobody
+                // noticed, and `keptAnyway` against `recovered` when the house
+                // reconciled and took some of it back. What the house lost is
+                // what the thief's purse gained, in both branches and in any
+                // branch added later.
+                const purseBefore = this.repos.cultivators.getById(cultivator.id)?.spiritStones ?? 0;
+                const drawn = await handleSiphon({
+                    action: 'siphon',
+                    cultivatorId: cultivator.id,
+                    ...(pace ? { pace } : {}),
+                    months: Math.max(1, Math.min(240, Math.round((days ?? 30) / 30)))
+                });
+                // ── AND IT COMES OUT OF THE HOUSE, WHICH IT DID NOT ──────
+                //
+                // `handleSiphon` prices the crime off `baseReservesFor(stipend)`
+                // - a formula on the payroll - and credits the player. It never
+                // touched the house, so the stones came from nowhere: the
+                // treasury the world actually spends from is
+                // `resources.spirit_stones`, which `gatherings.ts` pays a
+                // circle out of and `parties-under-pressure.ts` calls the
+                // treasury in as many words. Two numbers for one pot, and only
+                // one of them could go down.
+                //
+                // The formula stays where it is. It is the SHAPE of the crime -
+                // how much a house of this payroll can be bled before the hole
+                // shows - and it is what the discovery odds are built on. What
+                // is added here is that the hole is now in something.
+                const outOfTheHouse = this.takeTheSiphonedStonesOutOfTheHouse(
+                    cultivator, drawn, purseBefore
                 );
+                const siphoned = this.fromToolResult(
+                    'sect_manage.siphon', 'sect', drawn, 'The reserves'
+                );
+                // WHAT THE HOUSE ACTUALLY HOLDS, because the tool's percentage
+                // is off the payroll formula and not off the treasury. The two
+                // legitimately differ - a house can be richer or poorer than its
+                // ladder implies - and a player told "six per cent of it is
+                // gone" while half the pot went has been told the wrong thing.
+                if (outOfTheHouse) {
+                    siphoned.facts.structure.push(outOfTheHouse);
+                    siphoned.calls.push({
+                        name: 'world.takeFromTheHouse',
+                        action: 'sect',
+                        summary: outOfTheHouse,
+                        ok: true
+                    });
+                }
+                return siphoned;
             }
             // Two footings, one routine. `order` is somebody's own rank and
             // `decree` is the house's authority being claimed - the parser
@@ -8542,6 +8582,53 @@ ${opened.text}` : receipt,
                 ok: true
             }
         ];
+    }
+
+    /**
+     * Move what a siphon took out of the house it was taken from.
+     *
+     * THE HOUSE IS A PLACE AND NOT A FORMULA, which is the design owner's
+     * *"ensure each sect has their own treasury of items and spirit stones,
+     * separate from people's own stuff."* The treasury already existed and was
+     * already seeded - `resources.spirit_stones`, which the world sim pays a
+     * gathering out of and calls the treasury by name - and the one thing that
+     * never touched it was the player taking from it.
+     *
+     * A house at zero is a real state and not an error. `takeFromTheHouse`
+     * refuses to overdraw, so a bled house simply has nothing more to give, and
+     * the shortfall is recorded on the mechanical channel rather than silently
+     * conjuring stones the world does not have.
+     */
+    private takeTheSiphonedStonesOutOfTheHouse(
+        cultivator: Cultivator,
+        drawn: unknown,
+        purseBefore: number
+    ): string | null {
+        const body = drawn as { sect?: { id?: string } } | null;
+        const purseNow = this.repos.cultivators.getById(cultivator.id)?.spiritStones ?? 0;
+        const took = Math.max(0, Math.floor(purseNow - purseBefore));
+        const houseId = body?.sect?.id;
+        if (took === 0 || !houseId || !this.atHand) return null;
+
+        const house = this.atHand.factions.find(row => row.id === houseId);
+        if (!house) return null;
+
+        const moved = takeFromTheHouse(
+            Number(house.resources.spirit_stones ?? 0), took, 'siphoned'
+        );
+        house.resources.spirit_stones = moved.after;
+        this.worldDirty = true;
+
+        // What the house did not have, taken back off the thief. A player
+        // cannot end a turn holding stones that were never anywhere.
+        if (moved.cameUpShort) {
+            this.repos.cultivators.applyDeltas(cultivator.id, {
+                spiritStones: -(took - moved.moved)
+            });
+        }
+        return `The treasury itself: ${moved.account} That is the pot the world spends from - `
+            + 'a gathering is paid for out of it and a patron pays into it - and it is not the '
+            + 'payroll figure the percentage above is taken against.';
     }
 
     /**
