@@ -596,6 +596,10 @@ import {
 } from '../engine/social-leverage/what-they-feel-about-you.js';
 import { theSetThisNames } from './acts-over-a-set.js';
 import {
+    A_HOUSE_IS_NAMED,
+    A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL
+} from './what-a-house-is-called.js';
+import {
     theDescriptionThisIs,
     whatTheDescriptionAskedFor,
     whoTheDescriptionFits
@@ -1205,14 +1209,31 @@ interface RecipeRow {
 const GENERIC_PILL_PHRASE =
     /^(?:a |an |any |some |the |one |another )*(?:pills?|elixirs?|medicines?|formulae?|formulas?|recipes?|concoctions?|something|anything)\b\s*$/i;
 
-const GENERIC_HOUSE_PHRASE =
-    /^(?:any |some |a |an |one |another |new |good |strong |nearby |local )*(?:sects?|orders?|schools?|clans?|houses?|cults?|somewhere|somebody|someone|anyone|anybody)\b/i;
+/**
+ * A house said as a KIND rather than as a name: "any sect", "a good hall".
+ *
+ * The words come from `what-a-house-is-called.ts`, and it is the half of that
+ * list a player can say bare - a category word said alone means a body, and
+ * `Verdant Spring Valley` is reached by its name. Six words were written out
+ * here and the catalog ends houses with twenty-seven, which is the same defect
+ * the shared list exists to close.
+ */
+const GENERIC_HOUSE_PHRASE = new RegExp(
+    String.raw`^(?:any |some |a |an |one |another |new |good |strong |nearby |local )*`
+    + String.raw`(?:${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL}|somewhere|somebody|someone|anyone|anybody)\b`,
+    'i'
+);
 
 /**
  * The same words, but only where they are the WHOLE of what was said.
  */
-const GENERIC_HOUSE_CATEGORY_ONLY =
-    /^(?:any |some |a |an |one |another |new |good |strong |nearby |local |the )*(?:guest (?:student|studentship|place|pupil)|sects?|orders?|schools?|clans?|houses?|cults?|somewhere|anywhere|somebody|someone|anyone|anybody)(?:\s+(?:somewhere|anywhere|near(?:by)?|around(?: here)?|here|about|else))?$/i;
+const GENERIC_HOUSE_CATEGORY_ONLY = new RegExp(
+    String.raw`^(?:any |some |a |an |one |another |new |good |strong |nearby |local |the )*`
+    + String.raw`(?:guest (?:student|studentship|place|pupil)|${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL}`
+    + String.raw`|somewhere|anywhere|somebody|someone|anyone|anybody)`
+    + String.raw`(?:\s+(?:somewhere|anywhere|near(?:by)?|around(?: here)?|here|about|else))?$`,
+    'i'
+);
 
 /**
  * Which elder a sentence meant, out of the ones the house actually holds.
@@ -2805,7 +2826,11 @@ export class GameService {
                 }
                 return this.attack(
                     run, cultivator, ambient, action.target, 'coerce', 'open',
-                    action.opening ?? 'open', action.intent ?? 'submit'
+                    action.opening ?? 'open', action.intent ?? 'submit',
+                    // The thing the sentence named. Read only where somebody
+                    // yields and something has to be chosen; the resolver never
+                    // sees it. See `WHAT_THEY_WERE_MADE_TO_TAKE`.
+                    action.topic
                 );
             }
 
@@ -3370,7 +3395,7 @@ ${noticed}`;
         if (/\b(?:blood pact|blood oath|in blood)\b/.test(said)) return 'blood_pact';
         if (/\b(?:life|saved me|owe (?:him|her|them) my life)\b/.test(said)) return 'debt_of_life';
         if (/\b(?:service|serve|years|term|indenture)\b/.test(said)) return 'service_term';
-        if (/\b(?:sect|house|school|order|clan)\b/.test(said)) return 'sect_vow';
+        if (A_HOUSE_IS_NAMED.test(said)) return 'sect_vow';
         return 'other';
     }
 

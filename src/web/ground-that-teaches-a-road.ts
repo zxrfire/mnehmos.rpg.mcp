@@ -14,7 +14,7 @@
  * not name, could not be told about, and got nothing from while standing on it.
  *
  * It was found while closing a discovery leak in the travel list, which had
- * been handing fresh cultivators The Glass Field and The Nine-City Assize by
+ * been handing fresh cultivators The Glass Field and The Nine-City Roll by
  * name because open grounds seed as ordinary `wilds`. Those bare names were the
  * ONLY place a player ever saw one. Closing the leak made the absence visible;
  * it did not create it.

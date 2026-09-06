@@ -30,6 +30,7 @@ import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { loosePlaceKey, placeKey, type KnowledgeGate } from './knowledge.js';
 import { awarenessOfSite, faceOf, nameableSites, resolveSite } from './trials.js';
 import { getMembersOf } from '../data/cultivation/members.js';
+import { A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL } from './what-a-house-is-called.js';
 import { getSect } from '../data/cultivation/sects.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import {
@@ -216,8 +217,9 @@ export const MATCH_THRESHOLD = 55;
 /**
  * The ways somebody refers to their own house without naming it.
  */
-export const MY_OWN_HOUSE =
-    /^(?:my|our)\s+(?:own\s+)?(?:sect|house|order|school|clan|hall|pavilion|court)$/i;
+export const MY_OWN_HOUSE = new RegExp(
+    String.raw`^(?:my|our)\s+(?:own\s+)?(?:${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL})$`, 'i'
+);
 
 /**
  * Words that stand in for a thing rather than naming one.
@@ -1056,7 +1058,9 @@ export function resolveRankOnALadder(
     const wanted = query
         .trim()
         .replace(/^(?:the|a|an)\s+/i, '')
-        .replace(/\s+(?:here|of\s+(?:my|our|the)\s+(?:sect|house|order))\s*$/i, '')
+        .replace(new RegExp(
+            String.raw`\s+(?:here|of\s+(?:my|our|the)\s+(?:${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL}))\s*$`, 'i'
+        ), '')
         .trim();
     if (wanted.length < 3) return null;
 

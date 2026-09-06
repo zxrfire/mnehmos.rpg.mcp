@@ -82,7 +82,7 @@ import {
 } from './acts-over-a-set.js';
 import { whoTheyCarryFor } from './what-a-telling-lands-on.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY, writeObligation } from './encounters.js';
-import { resolveCultivator } from './entities.js';
+import { resolveCultivator, resolvePill } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
 import { type StandingFight, theFightStillStands } from './fight-answers.js';
 import { routesOutOfAGap, sayingWhatWouldWork } from './gap-routes.js';
@@ -243,7 +243,11 @@ export const combatVerbs = {
         /**
          * What the compliance was FOR, when the verb was `coerce`.
          */
-        wanted?: string
+        wanted?: string,
+        /**
+         * The thing the sentence named, unresolved. See `StandingFight.named`.
+         */
+        named?: string
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
         // A NAME PHASE 1 DROPPED HAS ALREADY BEEN PUT BACK
@@ -262,7 +266,7 @@ export const combatVerbs = {
         const asASet = theSetThisNames(query);
         if (asASet) {
             return await this.attackOverASet(
-                cultivator, asASet, goal, terms, opening, wanted
+                cultivator, asASet, goal, terms, opening, wanted, named
             );
         }
 
@@ -472,7 +476,8 @@ export const combatVerbs = {
             techniqueId,
             terms,
             verb: intent === 'coerce' ? 'coerce' : 'attack',
-            ...(wanted !== undefined ? { wanted } : {})
+            ...(wanted !== undefined ? { wanted } : {}),
+            ...(named !== undefined ? { named } : {})
         };
 
         // ── THE GAP CAN STILL END IT BEFORE ANYBODY MOVES ────────────────
@@ -720,7 +725,8 @@ export const combatVerbs = {
         goal: string,
         terms: BoutTerms = 'open',
         opening: 'open' | 'from_concealment' = 'open',
-        wanted?: string
+        wanted?: string,
+        named?: string
     ): Promise<Execution> {
         return this.actOverASet(
             cultivator,
@@ -730,7 +736,7 @@ export const combatVerbs = {
                 const now = this.currentRun();
                 return this.attack(
                     now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
-                    member.name, goal, terms, opening, wanted
+                    member.name, goal, terms, opening, wanted, named
                 );
             },
             {
@@ -1412,8 +1418,32 @@ export const combatVerbs = {
             return;
         }
 
-        // The only one they are carrying, or nothing. Never guessed.
-        const named = carried.length === 1 ? carried[0] : null;
+        // ── WHAT THE SENTENCE SAID, AND THEN WHAT THE POUCH ALLOWS ───────
+        //
+        // The name first. "I force him to swallow the soul-hollowing pill"
+        // says which one, and this read used to count the pouch and nothing
+        // else - so a player carrying two pills was told they "did not say
+        // which one" about a sentence that had. The count rule survives as the
+        // TAIL of the read rather than the whole of it: it is right that
+        // nothing here chooses between a healing pill and a hollowing one, and
+        // that is a rule about guessing rather than about reading.
+        const asked = held.named ? resolvePill(held.named) : null;
+        const named = (asked ? carried.find(row => row.itemId === asked.id) : undefined)
+            ?? (carried.length === 1 ? carried[0] : null);
+
+        // Named, and not in the pouch. A different answer from naming nothing:
+        // the player was understood and has not got it.
+        if (asked && !carried.some(row => row.itemId === asked.id)) {
+            const line = `You reach for ${asked.name} and it is not there. `
+                + `${held.party.name} waits, which is the only thing left to them.`;
+            execution.facts.lines.push(line);
+            execution.facts.prose = [execution.facts.prose, line].join('\n');
+            execution.facts.structure.push(
+                `coerce/swallow: "${held.named}" resolved to ${asked.id}, which is not in the `
+                + 'pouch. Nothing spent.'
+            );
+            return;
+        }
 
         if (!named) {
             const names = carried.map(row => getPill(row.itemId)?.name ?? row.itemId).join(', ');

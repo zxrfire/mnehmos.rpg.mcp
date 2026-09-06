@@ -46,7 +46,7 @@ describe('what an offer is worth is read off its grade', () => {
     it('separates money, a heaven pill and an immortal one', () => {
         const stones = whatIsBeingPutDown('5000 spirit stones', 4, []);
         const heaven = whatIsBeingPutDown('Boundless Source Pill', 4, []);
-        const immortal = whatIsBeingPutDown('Clear Mind of the Hollow Sky Pill', 4, []);
+        const immortal = whatIsBeingPutDown('Hollow Sky Clear Mind Pill', 4, []);
 
         // Money is not the medium up here and is priced at nothing, which the
         // resolver's own `PURSE_REACH` says in the other half of the engine.
@@ -140,13 +140,13 @@ describe('and an offer reaches the negotiation by being typed', () => {
         if (!named) return; // No company on this seed; nothing to measure.
 
         const result = await game.act(
-            `I offer the Clear Mind of the Hollow Sky Pill for a match with ${named[1]}`
+            `I offer the Hollow Sky Clear Mind Pill for a match with ${named[1]}`
         );
         const said = JSON.stringify(result);
 
         // The engine channel names what it weighed. Before this, the same
         // sentence produced `nothing singular at 0` however large the offer.
-        expect(said).toMatch(/Clear Mind of the Hollow Sky Pill/);
+        expect(said).toMatch(/Hollow Sky Clear Mind Pill/);
         expect(said).not.toMatch(/nothing singular/);
     });
 });

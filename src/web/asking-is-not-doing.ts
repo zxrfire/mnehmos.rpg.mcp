@@ -184,6 +184,16 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
             // refine" was already answered that way and must keep being.
             return { action: 'refine' };
 
+        case 'craft':
+            // The bench's listing, for exactly the reason the cauldron's is
+            // above: `planTheBuild` with nothing named returns every bill, the
+            // rung gate on each, and what the pouch is short of. This table
+            // went stale when `craft` joined `ACTION_NAMES` and the default
+            // caught it, so "can I build a spirit boat?" was rewritten to
+            // `assess` and answered with an ambient-qi reading of a PLACE
+            // called "spirit boat".
+            return { action: 'craft' };
+
         case 'move':
         case 'ride':
         case 'fold':

@@ -21,6 +21,7 @@ import { addToPouch } from '../../src/server/consolidated/cultivation-support.js
 import { parseIntent } from '../../src/web/verb-pattern-table.js';
 import {
     HOLLOWING_PILL_ID,
+    MINOR_HEALING_PILL_ID,
     SOUL_QUENCHING_PILL_ID
 } from '../../src/data/cultivation/pills.js';
 import { whoseHandThisBodyIsUnder } from '../../src/engine/social/a-body-under-somebody-elses-hand.js';
@@ -92,6 +93,13 @@ async function standingOverSomebody(pillId: string | null) {
     return { db, game, mark, playerId: cultivator.id };
 }
 
+/** What is left in the pouch, by catalog id. */
+function pouchIds(db: any, playerId: string): string[] {
+    return (db.prepare(
+        'SELECT item_id AS id FROM cultivator_pouch WHERE cultivator_id = ? AND quantity > 0'
+    ).all(playerId) as { id: string }[]).map(row => row.id);
+}
+
 describe('what goes down their throat', () => {
     /** THE POISON, forced on somebody else rather than taken. */
     it('puts a soul out with the quiet pill', async () => {
@@ -154,5 +162,48 @@ describe('what goes down their throat', () => {
         expect(acted.narration).toMatch(/nothing to put in it/);
         expect(mark.soulState).toBe('intact');
         expect(engineCalls(acted).some(c => c.name === 'alchemy.forced')).toBe(false);
+    }, 200_000);
+
+    /**
+     * AND THE NAME IS READ, WHICH IT WAS NOT.
+     *
+     * The pill was picked by counting the pouch - `carried.length === 1 ?
+     * carried[0] : null` - and the sentence never reached this act at all,
+     * because the coerce plan carried a target and an intent and dropped what
+     * was named. Measured before this, carrying a Lesser Healing Pill and a
+     * Hollowing Pill:
+     *
+     *   I make <them> swallow the Hollowing Pill
+     *   "You are carrying 2 different pills and did not say which one."
+     *
+     * about a sentence that had. The refusal to GUESS between a healing pill
+     * and a hollowing one is right and is kept: it is now the tail of the read
+     * rather than the whole of it.
+     */
+    it('takes the pill the sentence named, out of a pouch holding two', async () => {
+        const { db, game, mark, playerId } = await standingOverSomebody(HOLLOWING_PILL_ID);
+        addToPouch(db, playerId, MINOR_HEALING_PILL_ID, 'pill', 1);
+        expect(pouchIds(db, playerId).sort())
+            .toEqual([MINOR_HEALING_PILL_ID, HOLLOWING_PILL_ID].sort());
+
+        const acted = await game.act(`I make ${mark.name} swallow the Hollowing Pill`);
+
+        expect(acted.narration).not.toMatch(/did not say which one/);
+        expect(mark.soulState).toBe('fragmented');
+        // The one that was named is the one that was spent.
+        expect(pouchIds(db, playerId)).toEqual([MINOR_HEALING_PILL_ID]);
+    }, 200_000);
+
+    /**
+     * And naming one that is not there is a different answer from naming
+     * nothing: the player was understood and has not got it.
+     */
+    it('says so when the pill named is not in the pouch', async () => {
+        const { db, game, mark, playerId } = await standingOverSomebody(MINOR_HEALING_PILL_ID);
+        const acted = await game.act(`I make ${mark.name} swallow the Hollowing Pill`);
+
+        expect(acted.narration).toMatch(/Hollowing Pill and it is not there/i);
+        expect(mark.soulState).toBe('intact');
+        expect(pouchIds(db, playerId)).toEqual([MINOR_HEALING_PILL_ID]);
     }, 200_000);
 });

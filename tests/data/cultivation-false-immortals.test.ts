@@ -224,7 +224,7 @@ describe('the historical False Immortals', () => {
         const ambiguous = FALSE_IMMORTALS.filter(f => f.whichExitItReallyWas !== null);
         expect(ambiguous.length, 'the record should not be able to separate them everywhere')
             .toBeGreaterThanOrEqual(2);
-        expect(THE_TWO_EXITS.andTheyAreOftenTheSameExit).toMatch(/Settled Error/);
+        expect(THE_TWO_EXITS.andTheyAreOftenTheSameExit).toMatch(/Heart Demon Without Deviation/);
         expect(THE_TWO_EXITS.andTheyAreOftenTheSameExit).toMatch(/no test that separates/i);
         // And the terminals are the concrete door.
         expect(THE_TWO_EXITS.theGatesAreWhereTheyGo).toMatch(/terminal/i);
@@ -301,7 +301,11 @@ describe('carved dao', () => {
 
 describe('the madness stages', () => {
     it('parses, is ordered, contiguous, and covers the rung\'s whole span', () => {
-        expect(MADNESS_STAGES.length).toBeGreaterThanOrEqual(4);
+        // Three, by design ruling. The trajectory used to be written as five and
+        // two of the four boundaries were turns nobody in the world could date -
+        // the last person who knew them dying, and the arguing becoming the
+        // keeping - so they are described inside their bands instead.
+        expect(MADNESS_STAGES.length).toBe(3);
         for (const stage of MADNESS_STAGES) {
             expect(() => MadnessStageSchema.parse(stage), stage.id).not.toThrow();
             expect(stage.toYear, stage.id).toBeGreaterThan(stage.fromYear);
@@ -367,7 +371,7 @@ describe('the madness stages', () => {
     it('is honest about which stages anybody has actually watched', () => {
         const observed = MADNESS_STAGES.filter(s => s.observed);
         const unobserved = MADNESS_STAGES.filter(s => !s.observed);
-        expect(observed.length).toBeGreaterThanOrEqual(3);
+        expect(observed.length).toBeGreaterThanOrEqual(2);
         expect(unobserved.length, 'the far end should not be presented as established').toBe(1);
         // And the unobserved one is the last, and admits it may be wrong.
         expect(unobserved[0].id).toBe(MADNESS_STAGES[MADNESS_STAGES.length - 1].id);
@@ -933,7 +937,7 @@ describe('the present count', () => {
         const lu = getWanderer('wanderer-lu-sheng')!;
         const stage = madnessStageAt(lu.crossingYearsAgo);
         expect(stage.id, 'Lu Sheng should be in the first stage').toBe(MADNESS_STAGES[0].id);
-        // His whole remaining existence ends inside the second band.
+        // His whole remaining existence ends inside the first band.
         const atDeath = lu.crossingYearsAgo + lu.lifespanYearsRemaining;
         expect(stageIndex(madnessStageAt(atDeath).id)).toBeLessThanOrEqual(1);
         // And he can never reach the third, on the arithmetic rather than by fiat.

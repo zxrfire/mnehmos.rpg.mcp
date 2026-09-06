@@ -104,6 +104,19 @@ const MIN_REPAIRABLE = 5;
 /** How far a repair may reach. One letter, and no further. */
 const MAX_EDITS = 1;
 
+/**
+ * What is left over when a word is a vocabulary stem plus an ending.
+ *
+ * The stem guard below exists so `injury` is not truncated onto the stem
+ * `injur` that the patterns carry. It used to accept ANY remainder, and that
+ * held only while no short whole word was in the vocabulary. The day `cult`
+ * arrived with the shared house words it stopped holding: `cultivat` starts
+ * with `cult`, so the commonest misspelling of the commonest verb in the game
+ * stopped being repaired, and "I cultivat for a month" went back to `unclear`.
+ * A stem is a stem when what follows it is an ENDING.
+ */
+const AN_INFLECTION = /^(?:s|es|y|ies|ed|d|ing|ings|er|ers|or|ors|ion|ions|al|ly)$/;
+
 /** Any regex escape sequence, so the escaped character never joins a word. */
 const ANY_ESCAPE = new RegExp('\\\\.', 'g');
 
@@ -207,9 +220,11 @@ export function nearestVocabularyWord(word: string, vocabulary: ReadonlySet<stri
 
     // A stem the patterns already match. `injury` against the stem `injur` is
     // a correctly spelt word one edit from the vocabulary, and truncating it
-    // would be the repair breaking a sentence that already worked.
+    // would be the repair breaking a sentence that already worked. What
+    // follows the stem has to be an ending: see {@link AN_INFLECTION}.
     for (const known of vocabulary) {
-        if (known.length >= 4 && word.startsWith(known)) return null;
+        if (known.length >= 4 && word.startsWith(known)
+            && AN_INFLECTION.test(word.slice(known.length))) return null;
     }
 
     let best: string | null = null;

@@ -2,6 +2,7 @@
  * An inheritance ground: finding it, standing outside it, going in, taking.
  */
 
+import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
 import { getTechnique } from '../data/cultivation/index.js';
 import {
     type AdmissionReading,
@@ -1093,10 +1094,51 @@ export const siteVerbs = {
         /** Claimants this cultivator has no name for. Counted, then said once. */
         let nameless = 0;
 
+        // ── A COURT AND AN APEX HOLD GROUND TOO ──────────────────────────
+        //
+        // `repos.sects` is seeded from `SECTS` alone, so a claimant id
+        // belonging to `COURTS` or `APEX_INSTITUTIONS` was silently dropped -
+        // and with it the deed, the grudge and every player-facing line, since
+        // even the nameless fallback counts only claimants that survived this
+        // filter. Measured: The Tended Tomb is an ordinal-44 grave tended by a
+        // court and by nobody else, so emptying it produced total silence and
+        // taking was strictly better than not taking - the exact defect the
+        // block below says it exists to close. Four of the thirty sites.
+        //
+        // Resolved the way `posture` in institution-verbs.ts already does it:
+        // a house, a court and an apex are all bodies that can hold ground and
+        // hold a grudge about it, and everything downstream reads a name and
+        // an id.
+        //
+        // What still drops out is right and is left alone: eight of the thirty
+        // sites are claimed in part by a `DESTROYED_DAO_HOUSES` id, and a house
+        // that ended two thousand years ago cannot hold an account or send
+        // anybody. A site claimed by nobody living is a site nobody is wronged
+        // by, which is a fact about the site rather than a hole in this read.
         const claimants = site.factionIds
-            .map(id => ({ id, house: this.repos.sects.getById(id) }))
+            .map(id => ({
+                id,
+                house: this.repos.sects.getById(id)
+                    ?? getCourt(id)
+                    ?? getApexInstitution(id)
+            }))
             .filter((row): row is { id: string; house: NonNullable<typeof row.house> } =>
                 row.house !== undefined && row.house !== null);
+
+        // ── AND THE HISTORY CHANNEL IS NARROWER THAN THE LEDGER ──────────
+        //
+        // A grudge is a row keyed on an id and a name, so a court can hold one.
+        // A world FACT is a channel: `factionIds` is how it reaches people and
+        // the digest will only hand over the engine's own summary when every
+        // body the fact names is one the reader has a record for. Measured, the
+        // world seeds 36 factions and NOT ONE court or apex among them - so
+        // naming a court on the fact took the Clearwater Ward disciple who
+        // shares the claim on The Stopped Ground from `named` down to
+        // `unattributed`, and the theft stopped reaching the one house that
+        // could hear it. So the fact carries the claimants the world contains,
+        // and the ledger carries all of them.
+        const inTheWorld = claimants.filter(row =>
+            (this.atHand?.factions ?? []).some(faction => faction.id === row.id));
 
         // ── AND THE WORLD CONTAINS THE THEFT ─────────────────────────────
         //
@@ -1112,7 +1154,7 @@ export const siteVerbs = {
         // the house holds and it is decided exactly once; this hands the same
         // word to the fact so the two cannot disagree, and joins them by id
         // rather than by keeping two opinions.
-        const deed = this.atHand && claimants.length > 0
+        const deed = this.atHand && inTheWorld.length > 0
             ? aDeedEntersTheWorld(this.atHand, {
                 kind: 'resource_contested',
                 weight: severity,
@@ -1120,11 +1162,11 @@ export const siteVerbs = {
                 locationId: this.worldPlaceOf(cultivator),
                 place: placeName(cultivator),
                 actors: [{ id: cultivator.id, name: cultivator.name, role: 'took it' }],
-                factionIds: claimants.map(row => row.id),
+                factionIds: inTheWorld.map(row => row.id),
                 summary:
                     `${cultivator.name} emptied ${site.name}, which `
-                    + `${claimants.map(row => row.house.name).join(' and ')} `
-                    + `${claimants.length === 1 ? 'claims' : 'claim'}.`,
+                    + `${inTheWorld.map(row => row.house.name).join(' and ')} `
+                    + `${inTheWorld.length === 1 ? 'claims' : 'claim'}.`,
                 unattributed:
                     'Somebody has been up at the old ground, and whoever holds it has people on '
                     + 'the road asking.',

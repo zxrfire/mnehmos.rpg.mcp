@@ -462,14 +462,36 @@ const AFTER_THE_INTRODUCTION_PHRASE =
 const ASKING_TO_BE_TOLD =
     /\b(?:tell me|news of|word of|the name of|directions|the way to|what (?:he|she|they) knows?)\b/i;
 
+/**
+ * A PREPOSITION IS SWALLOWED AND A QUESTION WORD IS NOT, which is
+ * `parseAsk`'s own split applied to the same words. "tell me about the ruins"
+ * is a question about the ruins; "tell me where he is" is the question `where
+ * he is`, and dropping the first word of it leaves `he is` - a fragment that
+ * reads as a name, resolves to nobody, and comes back as somebody never having
+ * heard of it. `aQuestionRatherThanAName` downstream tests the head word and
+ * cannot see one that was eaten here.
+ */
 const AFTER_THE_TELLING_PHRASE =
-    /\b(?:tell me (?:about|of|where|who|what)|tell me|news of|word of|the name of|directions to|directions|the way to|what (?:he|she|they) knows? (?:about|of))\s*(?:the|a|an)?\s*/i;
+    /\b(?:tell me (?:about|of)|tell me(?=\s+(?:whether|if|what|where|who|whom|whose|how|why|when)\b)|tell me|news of|word of|the name of|directions to|directions|the way to|what (?:he|she|they) knows? (?:about|of))\s*(?:the|a|an)?\s*/i;
 
 /** What follows the phrase that named the KIND. Undefined when nothing does. */
 function objectAfter(clause: string, marker: RegExp): string | undefined {
     const hit = marker.exec(clause);
     if (!hit) return cleanObject(clause);
     return cleanObject(clause.slice(hit.index + hit[0].length).trim());
+}
+
+/**
+ * What a clause is asking to be told, or null when it is not asking that.
+ *
+ * The `telling` half of {@link classify}, exported rather than copied: a demand
+ * with a promise of harm behind it is this same read with the promise taken off
+ * the end first, and two readings of what counts as asking to be told would
+ * drift the first time somebody added a phrasing to one of them.
+ */
+export function whatIsBeingAskedToBeTold(clause: string): string | null {
+    if (!ASKING_TO_BE_TOLD.test(clause)) return null;
+    return objectAfter(clause, AFTER_THE_TELLING_PHRASE) ?? null;
 }
 
 /**

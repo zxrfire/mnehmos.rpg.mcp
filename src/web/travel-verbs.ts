@@ -147,6 +147,42 @@ function theStructureYouWereTold(game: GameService, cultivator: Cultivator) {
     });
 }
 
+/**
+ * The people an arrival introduces, whichever way the ground was covered.
+ *
+ * Three facts land on arriving: the place stops being a rumour, the house that
+ * holds the ground is written, and the people of your OWN house standing on it
+ * become nameable. `move` did all three and `ride`, `fold` and `passage` did
+ * the first two - so a Frostmirror disciple who walked to the terraces was
+ * introduced to their own people and the same disciple who bought passage to
+ * the same ground was introduced to nobody. That is the "Sword Elder who could
+ * not name one person in his own house" defect, live on three of the four ways
+ * of arriving.
+ *
+ * One reader, called from the shared arrival and from `move`, rather than the
+ * third fact living in one handler.
+ */
+function whatArrivingIntroduces(
+    game: GameService,
+    cultivator: Cultivator
+): { perceived: Perception[]; structure: string[] } {
+    const perceived: Perception[] = [];
+    const structure: string[] = [];
+
+    const told = theStructureYouWereTold(game, cultivator);
+    if (told) perceived.push(told);
+
+    const met = meetingYourOwnHouse(game, cultivator);
+    if (met) {
+        perceived.push(met.perception);
+        structure.push(
+            `on the roll and in the room: ${met.perception.names.length} newly nameable, `
+            + `${met.hiddenByHeight} withheld for height.`
+        );
+    }
+    return { perceived, structure };
+}
+
 export const travelVerbs = {
     /**
      * Going somewhere, however it was meant.
@@ -294,22 +330,11 @@ export const travelVerbs = {
 
         // ── AND WHO OF YOUR OWN IS STANDING HERE ─────────────────────────
         //
-        // Walking into your own house's ground and finding your own people
-        // is the same arrival as the two facts above it. A Sword Elder who
-        // could not name one person in his own house was the defect;
-        // `the-people-you-serve-with.ts` holds the rule and why it needs
-        // both the roll AND the room.
-        const met = meetingYourOwnHouse(this, applied.cultivator);
-        const perceived: Perception[] = [];
-        const structure = theStructureYouWereTold(this, applied.cultivator);
-        if (structure) perceived.push(structure);
-        if (met) {
-            perceived.push(met.perception);
-            facts.structure.push(
-                `on the roll and in the room: ${met.perception.names.length} newly nameable, `
-                + `${met.hiddenByHeight} withheld for height.`
-            );
-        }
+        // `the-people-you-serve-with.ts` holds the rule and why it needs both
+        // the roll AND the room. See {@link whatArrivingIntroduces}.
+        const introduced = whatArrivingIntroduces(this, applied.cultivator);
+        const perceived = introduced.perceived;
+        facts.structure.push(...introduced.structure);
 
         return {
             facts,
@@ -532,7 +557,13 @@ export const travelVerbs = {
         // AND WHOSE GROUND IT IS. The place and its holder are one arrival.
         noteWhoseGroundThisIs(this, applied.cultivator, run, arrivedAt);
 
-        return { skip, applied, world };
+        // AND WHO OF YOUR OWN IS STANDING ON IT. The third fact of an arrival,
+        // which used to live only in `move` - so the same ground reached by
+        // road introduced a disciple to their own house and the same ground
+        // reached by fold, boat or passage introduced them to nobody.
+        const introduced = whatArrivingIntroduces(this, applied.cultivator);
+
+        return { skip, applied, world, ...introduced };
     },
 
     /**
@@ -616,9 +647,10 @@ export const travelVerbs = {
             heads: 1
         });
 
-        const { skip, applied, world } = await this.arriveAfterSpending(
-            run, cultivator, journey.daysOneWay, arrivedAt
-        );
+        const { skip, applied, world, perceived, structure: introducedBy } =
+            await this.arriveAfterSpending(
+                run, cultivator, journey.daysOneWay, arrivedAt
+            );
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
 
         const lines: string[] = [
@@ -649,7 +681,8 @@ export const travelVerbs = {
             + `${walkingDays} walking day(s) -> ${journey.daysOneWay}; `
             + `saved ${journey.daysSavedAgainstWalking}; `
             + `available ${available.map(a => a.conveyance.id).join(', ')}.`,
-            ...world.structure
+            ...world.structure,
+            ...introducedBy
         );
 
         return {
@@ -671,7 +704,10 @@ export const travelVerbs = {
                 ...skipCalls('ride', skip, null),
                 ...tollCalls(applied.tollLines),
                 ...worldCalls(world)
-            ]
+            ],
+            // The same three facts an arrival on foot grants. See
+            // `whatArrivingIntroduces`.
+            perceived
         };
     },
 
@@ -697,6 +733,17 @@ export const travelVerbs = {
 
         // The fix, before the range, because a fold with nowhere to aim is not
         // a distance problem.
+        //
+        // `FoldFix` HAS A SECOND MEMBER AND IT IS MEANT TO HAVE NO PRODUCER
+        // HERE. `seen` was tried, derived from the sight horizon, and measured
+        // wrong: the horizon dwarfs the fold range at every rung on the curve -
+        // 78.7 days of sight against 6.0 of reach at the floor - so every
+        // destination inside a fold's range is inside the horizon, the check is
+        // a no-op, and anybody above the floor has a fix on every name they
+        // have ever heard. `getting-there-without-walking-it.test.ts` pins it
+        // and says so, and the module names it as the third fix it forbids.
+        // Anything that wants to produce `seen` has to be a narrower fact than
+        // "high enough to see that far".
         const stage = this.knowledge.stageOf(cultivator.id, 'place', arrivedAt);
         const fix: FoldFix | null =
             stageRank(stage) >= stageRank('encountered') ? 'stood' : null;
@@ -732,9 +779,10 @@ export const travelVerbs = {
             ));
         }
 
-        const { skip, applied, world } = await this.arriveAfterSpending(
-            run, cultivator, cost.daysSpent, arrivedAt
-        );
+        const { skip, applied, world, perceived, structure: introducedBy } =
+            await this.arriveAfterSpending(
+                run, cultivator, cost.daysSpent, arrivedAt
+            );
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
 
         const lines: string[] = [
@@ -753,7 +801,8 @@ export const travelVerbs = {
             `priceFold: fix ${fix}, range ${cost.rangeDays.toFixed(1)} day(s), `
             + `road ${walkingDays}, settling ${cost.settlingDays}, short by ${cost.landsShortBy}, `
             + `spent ${cost.daysSpent}, saved ${cost.daysSavedAgainstWalking}.`,
-            ...world.structure
+            ...world.structure,
+            ...introducedBy
         );
 
         return {
@@ -776,7 +825,10 @@ export const travelVerbs = {
                 ...skipCalls('fold', skip, null),
                 ...tollCalls(applied.tollLines),
                 ...worldCalls(world)
-            ]
+            ],
+            // The same three facts an arrival on foot grants. See
+            // `whatArrivingIntroduces`.
+            perceived
         };
     },
 
@@ -894,9 +946,10 @@ export const travelVerbs = {
         const paid = this.repos.cultivators.getById(cultivator.id)!;
         const arrivedAt = this.theWorldsNameFor(route.toPlace);
 
-        const { skip, applied, world } = await this.arriveAfterSpending(
-            run, paid, Math.max(1, quote.daysSpent), arrivedAt
-        );
+        const { skip, applied, world, perceived, structure: introducedBy } =
+            await this.arriveAfterSpending(
+                run, paid, Math.max(1, quote.daysSpent), arrivedAt
+            );
         const ambientAfter = this.ambientFor(applied.cultivator, applied.run);
 
         const lines: string[] = [
@@ -925,7 +978,8 @@ export const travelVerbs = {
             + `${cultivator.realmOrdinal} (folding floor ${FOLD_FLOOR_ORDINAL}), `
             + `${quote.daysSpent} day(s) spent, ${quote.daysSavedAgainstWalking} saved. `
             + `Witnessed by ${THE_SPAN_HOUSE_ID}.`,
-            ...world.structure
+            ...world.structure,
+            ...introducedBy
         );
 
         return {
@@ -947,7 +1001,10 @@ export const travelVerbs = {
                 ...skipCalls('passage', skip, null),
                 ...tollCalls(applied.tollLines),
                 ...worldCalls(world)
-            ]
+            ],
+            // The same three facts an arrival on foot grants. See
+            // `whatArrivingIntroduces`.
+            perceived
         };
     }
 };

@@ -25,8 +25,10 @@ import {
 } from '../engine/social/what-somebody-knows-about-themselves.js';
 import {
     askingWhatSomebodyIsAfter,
-    requestPutToSomebody
+    requestPutToSomebody,
+    whatIsBeingAskedToBeTold
 } from './what-a-request-asks-and-of-whom.js';
+import { whatAThreatPromises } from './what-a-threat-promises.js';
 // The board's own trade names, so any job the listing prints is a job a player
 // can take by naming it. See `tradeNamedIn`.
 import { OCCUPATIONS } from '../data/cultivation/mortal-world.js';
@@ -95,7 +97,12 @@ import {
 // nothing to this module's namespace.
 export * from './planned-action.js';
 import type { PlannedAction } from './planned-action.js';
-import { A_HOUSE_TYPE_NOUN } from './what-a-house-is-called.js';
+import {
+    A_HOUSE_IS_NAMED,
+    A_HOUSE_NAME_IS_SAID,
+    A_HOUSE_TYPE_NOUN,
+    A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL
+} from './what-a-house-is-called.js';
 
 // A question about an act is not the act. The mood post-pass, and the guard on
 // a quantity the engine could not read. Both were public already, so `export *`
@@ -607,7 +614,7 @@ export const GROUND_TIME_QUESTION = new RegExp([
 export function asksAfterGroundTime(text: string): boolean {
     if (GROUND_TIME_QUESTION.test(text)) return true;
     return /\b(?:chamber|vein|cave|ground|room)\b/.test(text)
-        && /\b(?:sect|house|clan|school|order)\b/.test(text)
+        && A_HOUSE_IS_NAMED.test(text)
         && /\b(?:go to|use|ask for|request|time on|cultivate in|cultivate at|sit in|where|what|how much|am i allowed|can i)\b/.test(text);
 }
 
@@ -631,8 +638,13 @@ export const SECT_THEFT_PATTERN =
 export const RECRUITING_BILL_PATTERN =
     /\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b|\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b|\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b/;
 
-export const SECT_DUTY_PATTERN =
-    /\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b|\b(?:sect|house|order|clan|school)\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b|\b(?:commissions?|assignments?|missions?|tasks?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open|are there)\b|\b(?:what|which)\b[^.!?]*\b(?:dut(?:y|ies)|missions?|commissions?|assignments?)\b|\b(?:volunteer for|sign up for|put my name down)\b/;
+export const SECT_DUTY_PATTERN = new RegExp([
+    String.raw`\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b`,
+    String.raw`\b(?:${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL})\b[^.!?]*\b(?:work|dut(?:y|ies)|commissions?|assignments?|errands?|missions?)\b`,
+    String.raw`\b(?:commissions?|assignments?|missions?|tasks?|dut(?:y|ies))\b[^.!?]*\b(?:going|available|on offer|posted|open|are there)\b`,
+    String.raw`\b(?:what|which)\b[^.!?]*\b(?:dut(?:y|ies)|missions?|commissions?|assignments?)\b`,
+    String.raw`\b(?:volunteer for|sign up for|put my name down)\b`
+].join('|'));
 
 /**
  * Taking one, said without the institution.
@@ -1154,14 +1166,14 @@ const AN_ART_NOUN = '(?:art|arts|style|technique|method|form|movement|footwork)'
 
 /** "whose art is that", the question with no claim in it. */
 export const WHOSE_ART_IS_THAT = new RegExp(
-    `\\bwhose\\s+${AN_ART_NOUN}\\b|\\bwhat\\s+(?:house|sect|school)(?:'s|s')?\\s+${AN_ART_NOUN}\\b`
+    `\\bwhose\\s+${AN_ART_NOUN}\\b|\\bwhat\\s+(?:${A_HOUSE_TYPE_NOUN})(?:'s|s')?\\s+${AN_ART_NOUN}\\b`
     // The same question with the art left implicit, which is how somebody asks
     // it about a thing they have just watched: "do I know what school that
     // comes from" is this verb's own exemplar and it reached `recall`, because
     // `do i know what` is one of the knowledge patterns and it is tested a few
     // lines below. Anchored on the house noun AND the coming-from, so "what
     // school takes people" is untouched.
-    + `|\\bwhat\\s+(?:house|sect|school|style|line)\\s+(?:that|this|it|they|he|she)\\s+(?:comes?|came|is)\\s+(?:from|out of)\\b`,
+    + `|\\bwhat\\s+(?:${A_HOUSE_TYPE_NOUN}|style|line)\\s+(?:that|this|it|they|he|she)\\s+(?:comes?|came|is)\\s+(?:from|out of)\\b`,
     'i'
 );
 
@@ -1942,6 +1954,23 @@ const COERCE_SUBJECT_VERBS =
 const WHAT_THE_COMPLIANCE_WAS_FOR_TAIL =
     /\s+(?:(?:to|into)\s+)?(?:submit|kneel|yield|bow|obey|comply|surrender|serve|swear|talk|mine|into|in\b|hand|give|pay|open|swallow|drink|eat|empty|turn|marry|wed|sit|cultivate|use|be|as|up|down|prisoner|captive|hostage|go|goes|going|walk|walks|walking|step|steps|stepping|enter|enters|entering|climb|climbs|head|heads)\b.*$/i;
 
+/**
+ * The thing a coercion names, when the sentence names one.
+ *
+ * "I force him to swallow the soul-hollowing pill" says which pill, and the
+ * plan carried target and intent and threw the name away - so the act that
+ * runs when somebody yields read the POUCH instead, and answered a sentence
+ * that named a pill with "you are carrying 2 different pills and did not say
+ * which one". The count rule is right about not guessing between a healing
+ * pill and a hollowing one; what was missing was reading what was said.
+ *
+ * Deliberately loose: what comes back is a phrase, and `resolvePill` decides
+ * whether it is anything. A pronoun resolves to nothing, which is correct -
+ * "swallow it" names no pill.
+ */
+const WHAT_THEY_WERE_MADE_TO_TAKE =
+    /\b(?:swallow|swallows|swallowing|drink|drinks|drinking|eat|eats|eating|take|takes|taking)\s+(.{2,60}?)(?:\s+(?:down|whether|against|before|after|because)\b|[.!?]|$)/i;
+
 const MOVE_SUBJECT_VERBS = /flee|escape|run|retreat|hide|withdraw|enter|infiltrate|sneak into|approach|follow|travel|go|head|walk|journey|depart|move|ride/;
 
 const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
@@ -2144,6 +2173,41 @@ function spellingVocabulary(): ReadonlySet<string> {
     return vocabulary;
 }
 
+/**
+ * A DEMAND FOR SOMETHING SOMEBODY KNOWS, WITH AN ACT PROMISED BEHIND IT.
+ *
+ * The design owner: *"coerce isn't necessarily an action, you could coerce
+ * someone too: tell me or i'll soul search. for info"*. Measured before this
+ * read: "tell me where he is or I'll soul search you" came back as
+ * `investigate` at a person called `you` - a LOOK at the addressee, which is
+ * neither half of what was said.
+ *
+ * Narrow because it needs BOTH halves, so nothing that is merely a threat or
+ * merely a question can reach it. The leverage is deliberately not set: whether
+ * the promise is worth anything is a fact about the two people, and
+ * `whatYouBringToBear` decides it.
+ *
+ * A function rather than a block, because the attack row has to be able to ask
+ * the same question. Measured with the read inlined below that row: "tell me
+ * where the elder is or I will kill you" reached `attack` at `kill`, and the
+ * engine went and killed somebody the player had only promised to kill if they
+ * were refused. That is the same distinction `SWEARING_IT_RATHER_THAN_DOING_IT`
+ * already draws for an oath, and the soul-search phrasing only escaped it
+ * because no attack verb happens to be in it.
+ */
+function aDemandWithAnActPromisedBehindIt(input: string): PlannedAction | null {
+    const promise = whatAThreatPromises(input);
+    const told = promise ? whatIsBeingAskedToBeTold(promise.withoutThePromise) : null;
+    if (!promise || told === null) return null;
+    const asked = requestPutToSomebody(promise.withoutThePromise);
+    return {
+        action: 'interact',
+        intent: 'interrogate',
+        ...(asked?.person ? { target: asked.person } : {}),
+        topic: told
+    };
+}
+
 function planIntent(input: string): PlannedAction {
     const text = input.toLowerCase().trim();
 
@@ -2213,10 +2277,14 @@ function planIntent(input: string): PlannedAction {
                 .replace(WHAT_THE_COMPLIANCE_WAS_FOR_TAIL, '')
                 .replace(HOW_THE_FIGHT_OPENED_TAIL, '')
                 .trim();
+            const thing = WHAT_THEY_WERE_MADE_TO_TAKE.exec(input)?.[1]?.trim();
             return {
                 action: 'coerce',
                 ...(who.length >= 2 ? { target: who } : {}),
                 intent: wanted[0],
+                // What was named, for the act that runs when they yield. See
+                // {@link WHAT_THEY_WERE_MADE_TO_TAKE}.
+                ...(thing && thing.length >= 2 ? { topic: thing } : {}),
                 // Coercion opened from cover is the same distinction a fight
                 // opened from cover is, and it is read the same way.
                 ...(OPENED_FROM_COVER.test(text) ? { opening: 'from_concealment' as const } : {})
@@ -2270,7 +2338,12 @@ function planIntent(input: string): PlannedAction {
         // AND IT IS NOT BEING SWORN. See `SWEARING_IT_RATHER_THAN_DOING_IT`:
         // the oath wrapper is read before what it wraps, so a promise to kill
         // somebody is a promise and falls through to the oath branch below.
-        && !SWEARING_IT_RATHER_THAN_DOING_IT.test(text)) {
+        && !SWEARING_IT_RATHER_THAN_DOING_IT.test(text)
+        // NOR OFFERED AS THE ALTERNATIVE TO ANSWERING. The same distinction as
+        // the oath: what follows *or I will* has not happened, and running it
+        // here kills somebody the player was leaning on. See
+        // {@link aDemandWithAnActPromisedBehindIt}.
+        && aDemandWithAnActPromisedBehindIt(input) === null) {
         return {
             action: 'attack',
             // The manner clause is cut off the name. "I attack him from behind"
@@ -2383,6 +2456,14 @@ function planIntent(input: string): PlannedAction {
     {
         const between = institutionalAct(text, input);
         if (between) return between;
+    }
+
+    // A DEMAND FOR SOMETHING SOMEBODY KNOWS, WITH AN ACT PROMISED BEHIND IT.
+    // Above the asking reads, because the promise is what the ordinary readers
+    // choke on. See {@link aDemandWithAnActPromisedBehindIt}.
+    {
+        const demanded = aDemandWithAnActPromisedBehindIt(input);
+        if (demanded) return demanded;
     }
 
     // ASKING A PERSON FOR SOMETHING
@@ -2956,7 +3037,8 @@ function planIntent(input: string): PlannedAction {
     }
 
     // HANDING SOMEBODY A THING
-    if (!/\b(?:sect|sects|house|houses|clan|clans|school|schools|order|orders|treasury|coffers|ancestor)\b/.test(text)) {
+    if (!A_HOUSE_IS_NAMED.test(text)
+        && !/\b(?:treasury|coffers|ancestor)\b/.test(text)) {
         const handed = whatIsBeingHandedOver(input);
         if (handed) {
             return {
@@ -2999,7 +3081,7 @@ function planIntent(input: string): PlannedAction {
 
     // The four member verbs, which need the noun so that "I leave" on its own
     // is still a movement and "my standing" outside a sect is still a status.
-    if (/\b(?:sect|order|school|clan|house|reserves?|treasur\w+|coffers)\b/.test(text)) {
+    if (A_HOUSE_IS_NAMED.test(text) || /\b(?:reserves?|treasur\w+|coffers)\b/.test(text)) {
         // Robbing the place is not resigning from it, and it is now its own
         // thing rather than a refusal: `siphon` takes from the reserves over
         // months, and the word "leave" inside a sentence about taking the
@@ -3041,7 +3123,8 @@ function planIntent(input: string): PlannedAction {
     // rather than by a second verb that would have to decide the same thing again.
     // PAYING IN, instead of serving
     if (/\b(?:donate|donation|give|gift|contribute|pay|hand over|offer)\b/.test(text)
-        && /\b(?:sect|house|clan|school|order|contribution|treasury|coffers)\b/.test(text)
+        && (A_HOUSE_IS_NAMED.test(text)
+            || /\b(?:contribution|treasury|coffers)\b/.test(text))
         && !usedAsVerb(text, SIPHON_TAKING_VERBS)) {
         const amount = parseCount(text);
         return {
@@ -3058,7 +3141,7 @@ function planIntent(input: string): PlannedAction {
     }
 
     if (/\b(?:who (?:leads|heads|runs|founded|commands)|who is (?:the )?(?:head|leader|patriarch|matriarch|master|strongest)(?: of)?|who is in charge)\b/.test(text)
-        && /\b(?:sect|house|clan|school|order|here|it|this|my|our)\b/.test(text)
+        && (A_HOUSE_IS_NAMED.test(text) || /\b(?:here|it|this|my|our)\b/.test(text))
         // Unless it is being put to a person, in which case it is a question
         // asked of somebody rather than a read of the player's own house.
         && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text)) {
@@ -3066,14 +3149,21 @@ function planIntent(input: string): PlannedAction {
     }
 
     if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted)\b/.test(text)
-        // `houses` was missing while every other noun here carried its plural, so
-        // the two plainest ways of asking this question - "which houses take
-        // people" and "tell me about the houses near here", both of them the
-        // exemplar corpus's own phrasings - fell past the listing entirely. One was
-        // answered by walking the player over to talk to somebody called "me about
-        // the houses near here"; the other reached nothing at all. A word boundary
-        // after `house` does not fall before an `s`.
-        || (/\b(?:sects?|orders?|schools?|clans?|houses?)\b/.test(text) && /\b(?:look for|find|near|nearby|around here|what|which|who|tell me about)\b/.test(text))
+        // The plural half is what the exemplar corpus actually says - "which
+        // houses take people", "tell me about the houses near here" - and it
+        // was written out by hand, so it knew five words. "which courts take
+        // people" reached nothing and "tell me about the courts near here" was
+        // answered by investigating a place called "courts near here", with six
+        // Courts in the catalog.
+        //
+        // A LISTING IS ABOUT THE CATEGORY. "tell me about the Hollow Court" is
+        // a question about ONE house and belongs to the read that answers about
+        // a named thing, so a sentence carrying a catalog name never reaches
+        // here - which the hand list used to achieve by accident, by not
+        // knowing the words `court` and `caravan`.
+        || (A_HOUSE_IS_NAMED.test(text)
+            && !A_HOUSE_NAME_IS_SAID.test(text)
+            && /\b(?:look for|find|near|nearby|around here|what|which|who|tell me about)\b/.test(text))
         // Asking who would have you, in a sentence with no house noun in it at
         // all: "who would take someone like me". See
         // {@link WHO_WOULD_TAKE_SOMEBODY_LIKE_ME}.

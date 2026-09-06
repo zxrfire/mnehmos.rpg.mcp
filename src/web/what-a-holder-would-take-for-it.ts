@@ -90,6 +90,7 @@ import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { REALM_TIERS, type RealmKey } from '../engine/cultivation/realms.js';
 import { STEP_CEILING_BY_GRADE } from '../engine/cultivation/taking-the-heaven-ascending-golden-pill.js';
 import { pillTradeTier } from '../engine/cultivation/buying-and-bartering-pills.js';
+import { isCommonlyHeld, manualIdOf, significanceOfManual } from '../engine/world/manuals.js';
 import { significanceOfPill } from '../engine/world/where-the-pills-actually-are.js';
 import type { ObjectRecord } from '../engine/world/possessions.js';
 import type { WorldState } from '../engine/world/world-state.js';
@@ -103,6 +104,8 @@ import type { Pill } from '../schema/cultivation.js';
 
 /** A thing somebody could be asked their price for, resolved off the catalog. */
 export interface TheThingAskedFor {
+    /** The catalog row's own id, which is what the possessions table stores. */
+    id: string;
     name: string;
     /** How high it carries whoever ends up with it. The asking price's unit. */
     carriesTo: number;
@@ -122,20 +125,96 @@ export interface TheThingAskedFor {
 /**
  * The thing a price is being asked for, off the catalogs that already answer.
  *
- * Deliberately fuzzy-free: the caller has already resolved the name through
- * `resolvePill`, which is the one place a pill name is matched, and hands the
- * id in. Two matchers for one catalog is how two readers come to disagree about
- * which pill somebody meant.
+ * ── ONE CATALOG WAS ASKED, AND THE OTHER DIRECTION ASKED FOUR ────────────
+ *
+ * This read used to open with `PILLS.find(...)` and return null for everything
+ * else, so "ask Ru Yanzhi what she would take for The Hidden Edge" - an
+ * ordinary power-rated row in `artifacts.ts` - came back "Nothing in the world
+ * is called that a person would barter over", which is a false sentence about
+ * the catalog. Every artifact, every volume and every manual answered the same
+ * way. Meanwhile `whatIsBeingPutDown` below already prices all of them, so a
+ * player could OFFER a rated blade and could not ASK for one.
+ *
+ * The question is the same in both directions and so is the arithmetic: how
+ * high does the thing carry whoever ends up with it. `power` for an object,
+ * the grade band for a medicine or an art, the grade's own ceiling for
+ * something from above.
+ *
+ * The pill half stays id-first: the caller has already resolved the name
+ * through `resolvePill`, which is the one place a pill name is matched, and
+ * two matchers for one catalog is how two readers come to disagree about which
+ * pill somebody meant. The other catalogs are matched here by name, exactly as
+ * `whatIsBeingPutDown` matches them.
  */
-export function theThingAskedFor(pillId: string): TheThingAskedFor | null {
-    const pill = PILLS.find(p => p.id === pillId);
-    if (!pill) return null;
-    return describePill(pill);
+export function theThingAskedFor(named: string, pillId: string | null): TheThingAskedFor | null {
+    const pill = pillId === null ? null : PILLS.find(p => p.id === pillId);
+    if (pill) return describePill(pill);
+
+    const what = named.trim().slice(0, 100).toLowerCase();
+    if (what.length < 3) return null;
+    const alike = (name: string): boolean => {
+        const bare = name.replace(/^the\s+/i, '').toLowerCase();
+        return bare === what || bare.includes(what) || what.includes(bare);
+    };
+
+    // Something from above, priced off what its own grade permits. The grade is
+    // said in front of the name - "a higher Heaven-Ascending Golden Pill" - so
+    // the words decide which ceiling, the same reading `whatIsBeingPutDown`
+    // takes.
+    const fromAbove = IMMORTAL_ITEMS.find(item => alike(item.name));
+    if (fromAbove) {
+        const ceiling = firstRungOf(STEP_CEILING_BY_GRADE[gradeNamedIn(named)]);
+        return {
+            id: fromAbove.id,
+            name: fromAbove.name,
+            carriesTo: Math.max(0, ceiling),
+            tracked: { significance: 'legendary', forOrdinal: Math.max(0, ceiling) },
+            pastTheCashLine: true
+        };
+    }
+
+    // A rated object. `power` is the one hierarchy of force in this world, and
+    // a weapon lets its holder strike at its own rung.
+    const object = ARTIFACTS.find(row => alike(row.name));
+    if (object) {
+        const power = Math.max(0, object.power ?? 0);
+        return {
+            id: object.id,
+            name: object.name,
+            carriesTo: power,
+            tracked: { significance: object.significance, forOrdinal: power },
+            // A mundane row is a KIND rather than an object - `seedArtifacts`
+            // does not even put one in the world - so it is bought and not
+            // bargained for, which is what the caller's cash-line branch says.
+            pastTheCashLine: object.significance !== 'mundane'
+        };
+    }
+
+    // A road, which carries whoever walks it exactly as far as its grade says.
+    const art = TECHNIQUES.find(row => alike(row.name));
+    if (art) {
+        const band = pillBandOrdinal(art.grade);
+        return {
+            id: art.id,
+            name: art.name,
+            carriesTo: band,
+            tracked: {
+                significance: significanceOfManual(art.id, art.cap ?? band),
+                forOrdinal: band
+            },
+            // A book four houses teach is stall stock. `isCommonlyHeld` is the
+            // one place that is decided.
+            pastTheCashLine: !isCommonlyHeld(art.id)
+        };
+    }
+
+    return null;
 }
 
 function describePill(pill: Pill): TheThingAskedFor {
     const band = pillBandOrdinal(pill.grade);
     return {
+        id: pill.id,
         name: pill.name,
         carriesTo: band,
         tracked: { significance: significanceOfPill(pill), forOrdinal: band },
@@ -159,14 +238,29 @@ function describePill(pill: Pill): TheThingAskedFor {
 export function heldByTheirHouse(
     world: WorldState | null,
     factionId: string | null,
-    pillId: string
+    thingId: string
 ): ObjectRecord | null {
     if (!world || !factionId) return null;
     return world.objects.find(o =>
-        o.kind === 'pill'
-        && o.data?.pillId === pillId
+        thisRowIs(o, thingId)
         && o.data?.spent !== true
         && (o.possessorId === factionId || o.ownerId === factionId)) ?? null;
+}
+
+/**
+ * Whether this row is the thing with that id.
+ *
+ * Three conventions, because the one possessions table stores three kinds of
+ * thing and each names its catalog row differently: an artifact keeps the
+ * catalog id as its OWN id, a pill carries `data.pillId`, and a manual carries
+ * `data.techniqueId` behind `manualIdOf`. This used to be `kind === 'pill'`
+ * and nothing else, which is why asking after anything but a pill found no
+ * holder even where the register listed one.
+ */
+export function thisRowIs(row: ObjectRecord, thingId: string): boolean {
+    return row.id === thingId
+        || row.data?.pillId === thingId
+        || manualIdOf(row) === thingId;
 }
 
 /**

@@ -9,6 +9,8 @@
  */
 
 export * from './an-attempt-to-move-somebody.js';
+export * from './background-as-leverage.js';
+export * from './what-an-answer-costs.js';
 export * from './ground-trust.js';
 export * from './what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 export * from './how-freely-somebody-parts-with-what-they-have.js';

@@ -11,9 +11,16 @@ import {
     howTheyHoldWhatTheyHave,
     oddsOf,
     openHandednessOf,
+    realmIndexOf,
     resolveAttempt,
-    whatTheyDoAboutBeingWronged
+    whatAnAnswerCosts,
+    whatTheyDoAboutBeingWronged,
+    whatYouBringToBear
 } from '../engine/social-leverage/index.js';
+import {
+    type Nearness,
+    howNearTheyStand
+} from '../engine/social/how-near-you-stand-to-somebody.js';
 import { whatItWasWorth } from '../engine/social-leverage/what-a-deed-leaves.js';
 import {
     liftIt,
@@ -104,14 +111,13 @@ import {
 } from './facts.js';
 import type { Hearing } from './hearsay.js';
 import {
-    WHAT_A_BARE_DEMAND_IS_BACKED_BY,
-    WHAT_A_WITHHELD_ANSWER_WEIGHS,
     type WhatStandsInTheWay,
     aQuestionRatherThanAName,
     nothingToBeGotFrom,
     whatLeaningOnThemCost,
     whatStandsInTheWay
 } from './making-somebody-tell-you.js';
+import { whatAThreatPromises } from './what-a-threat-promises.js';
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import { addHearing, refused, stonesNamedIn, structureCalls } from './tool-result-prose.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
@@ -120,6 +126,7 @@ import {
     heldByTheirHouse,
     howHighTheirHouseReaches,
     theThingAskedFor,
+    thisRowIs,
     whatIsBeingPutDown
 } from './what-a-holder-would-take-for-it.js';
 import { type RequestKind, requestPutToSomebody } from './what-a-request-asks-and-of-whom.js';
@@ -170,6 +177,37 @@ const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
  * How many times this cultivator has already put a request to somebody.
  */
 const askedBeforeKey = (personId: string, kind: string): string => `asked:${kind}:${personId}`;
+
+/**
+ * How near the thing being asked about stands to the person being asked.
+ *
+ * `howNearTheyStand` is the whole of it for a person. A HOUSE is read as the
+ * roll itself, which is the only band a body can stand in to one: being asked
+ * about the house that feeds you is being asked about your own people, and
+ * being asked about somebody else's is a name you have heard. Anything else -
+ * a place, an art, an object - is `distant`, because nothing about it is
+ * theirs to lose.
+ */
+function howNearTheSubjectStandsTo(
+    repos: GameService['repos'],
+    asked: RosterEntry,
+    subject: ResolvedEntity | null
+): Nearness {
+    if (!subject) return 'distant';
+    if (subject.kind === 'sect') {
+        return asked.sectId !== null && asked.sectId === subject.id ? 'house' : 'distant';
+    }
+    if (subject.kind !== 'cultivator') return 'distant';
+    const tie = tieFrom(repos, asked.id, subject.id);
+    return howNearTheyStand(
+        {
+            observerId: asked.id,
+            houseId: asked.sectId ?? null,
+            ...(tie ? { ties: [tie] } : {})
+        },
+        { id: subject.id, houseId: subject.party?.factionId ?? null }
+    ).nearness;
+}
 
 /**
  * The ground the two of them are standing on, priced for whether a stranger is
@@ -251,16 +289,21 @@ export const askingVerbs = {
             ));
         }
 
-        // What is behind it, when the sentence named nothing. A demand with
-        // nothing else on the table is backed by the asker's own name, which is
-        // both the honest reading and the ruling's own first half. See the
-        // constant: this was measured going in at `none` and the standing term
-        // was doing nothing at all.
+        // WHAT SAYING IT WOULD COST THEM, which is a fact about where the thing
+        // asked about stands to the person being asked and never about the
+        // words. `pressSomebody` decides what is behind the asking; this
+        // decides what is being asked for.
+        const near = howNearTheSubjectStandsTo(this.repos, who, subject);
+        const cost = whatAnAnswerCosts({
+            nearness: near,
+            theyWouldHaveSaidIt: standing === 'they_were_going_to_say_it'
+        });
+
         return this.pressSomebody(
             run, cultivator, ambient, party, intent,
-            leverage ?? WHAT_A_BARE_DEMAND_IS_BACKED_BY,
+            leverage,
             rawInput, null,
-            { who, topic, scope, standing }
+            { who, topic, scope, standing, ask: cost.ask, why: `${near}: ${cost.because}` }
         );
     },
 
@@ -282,26 +325,63 @@ export const askingVerbs = {
             topic: string;
             scope: KnowledgeScope;
             standing: WhatStandsInTheWay;
+            /** What it would cost them to say it. Read off where they stand to it. */
+            ask: AskWeight;
+            /** The same, in words, for the mechanical channel. */
+            why: string;
         },
         /**
          * The thing the sentence named, when it named one.
          */
         named?: string
     ): Promise<Execution> {
-        // What the ask weighs. A name somebody is sitting on is not a courtesy,
-        // whatever the sentence around it looked like - and the constant is
-        // read here rather than off the player's wording on purpose, because a
-        // price that moves with the phrasing is a price you can talk your way
-        // out of. See `making-somebody-tell-you.ts`.
-        const asked = demand ? WHAT_A_WITHHELD_ANSWER_WEIGHS : askWeightOf(rawInput);
+        // What the ask weighs. Never the words: a price that moves with the
+        // phrasing is a price you can talk your way out of. A demand carries
+        // what `whatAnAnswerCosts` read off the two of them; everything else
+        // still falls back to the sentence, which is the remaining declarer on
+        // this side and is not what the demand channel was built on.
         const them = party.party!;
         const membership = this.repos.sects.getMembership(cultivator.id);
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
         const theirSect = them.factionId ? getSect(them.factionId) : null;
+        const asked = demand ? demand.ask : askWeightOf(rawInput);
+        const ledger = openLedgerBetween(this.repos, cultivator.id, party.id);
+
+        // ── WHAT IS ACTUALLY BEHIND THE ASKING ───────────────────────────
+        //
+        // The parser labels what the sentence PUT DOWN - a purse, a threat, the
+        // asker themselves - and that stands, because it is what the player
+        // did. What it cannot label is what the player IS, and until this the
+        // gap was filled by a constant that read `name` for everybody. See
+        // `background-as-leverage.ts`.
+        const promised = whatAThreatPromises(rawInput);
+        const behind = whatYouBringToBear({
+            actorId: cultivator.id,
+            subjectId: party.id,
+            realmsOverThem:
+                realmIndexOf(cultivator.realmOrdinal) - realmIndexOf(them.realmOrdinal),
+            yourHouse: membership
+                ? {
+                    alignment: mySect?.alignment ?? null,
+                    ranked: true,
+                    reaches: howHighTheirHouseReaches(this.atHand, membership.sectId)
+                }
+                : null,
+            theirHouse: them.factionId
+                ? {
+                    alignment: theirSect?.alignment ?? null,
+                    ranked: them.ranked === true,
+                    reaches: howHighTheirHouseReaches(this.atHand, them.factionId)
+                }
+                : null,
+            ledger,
+            promised: promised?.promised ?? null
+        });
+        const brought = leverage ?? behind.leverage;
 
         // A BRIBE IS A NUMBER
-        const offered = leverage === 'coin' ? stonesNamedIn(rawInput) : null;
-        if (leverage === 'coin' && offered === null) {
+        const offered = brought === 'coin' ? stonesNamedIn(rawInput) : null;
+        if (brought === 'coin' && offered === null) {
             return refused('engine.resolveAttempt', 'interact', factsForRefusal(
                 'You did not say how much.',
                 `You get as far as suggesting there is money in it and then find you have not `
@@ -356,7 +436,7 @@ export const askingVerbs = {
             // the engine could not tell the two apart.
             theirTie: tieFrom(this.repos, party.id, cultivator.id),
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
-            ledger: openLedgerBetween(this.repos, cultivator.id, party.id),
+            ledger,
             // WHERE THIS IS HAPPENING. A term and never a gate, damped by whatever
             // tie the subject already holds, because the ruling is about the same
             // STRANGER saying the same thing.
@@ -365,11 +445,15 @@ export const askingVerbs = {
             theyWantSomethingFromYou: this.whatTheyWantOfYou(cultivator, party.id) !== null,
             ask: asked,
             ...(offered === null ? {} : { stonesOffered: offered }),
+            // What the act would do to them if it were made good on. Read only
+            // where `force` is what is on the table, and null where the promise
+            // could not have been kept.
+            ...(behind.promise ? { promised: behind.promise } : {}),
             approach: {
                 // The player's own words, recorded and echoed, never parsed for
                 // an outcome. `leverage` is what the resolver actually reads.
                 intent: rawInput.slice(0, 400),
-                ...(leverage ? { leverage } : {})
+                ...(brought === 'none' ? {} : { leverage: brought })
             },
             // The row id is a randomUUID; keying on it would make the run
             // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
@@ -440,6 +524,25 @@ export const askingVerbs = {
         const facts = factsForAttempt(
             party.name, intent, result, party.facts, wrong, priorTries
         );
+        // WHAT THE ROOM WEIGHED ABOUT THE ASKER, in the order it weighed it.
+        // Says which of the two the label came from, because a derived one and
+        // a declared one look identical in the terms and are not the same
+        // finding when this reads wrong.
+        facts.structure.push(
+            leverage
+                ? `Behind the asking: ${leverage}, off what the sentence put down. `
+                  + `What the asker's own background would have brought: ${behind.leverage}.`
+                : `Behind the asking: ${behind.leverage}, derived. ${behind.because.join(' ')}`
+        );
+        if (promised) {
+            facts.structure.push(
+                `Promised on refusal: "${promised.said}", which the world prices as `
+                + `${promised.promised.wrong}`
+                + (behind.promise
+                    ? '.'
+                    : ' - and weighs nothing here, because it could not have been kept.')
+            );
+        }
 
         // AND THEN THEY DO SOMETHING ABOUT IT
         const reprisal = await this.whatTheWrongedPartyDid(
@@ -472,7 +575,11 @@ export const askingVerbs = {
             const said = [...answered.facts.lines, ...cost.lines];
             facts.lines.push(...said);
             facts.prose = [facts.prose, ...said].join('\n\n');
-            facts.structure.push(...answered.facts.structure, ...cost.structure);
+            facts.structure.push(
+                ...answered.facts.structure,
+                ...cost.structure,
+                `What the answer would cost them - ${demand.why}`
+            );
             demandCalls.push(...answered.calls);
         }
         // AND WHAT A TAKING DID NOT MOVE
@@ -555,7 +662,7 @@ ${unnamed}`;
                     subject: party.name,
                     kind: intent,
                     ask: asked,
-                    leverage,
+                    leverage: brought === 'none' ? undefined : brought,
                     odds: result.odds,
                     terms: result.terms,
                     outcome: result.outcome,
@@ -1419,9 +1526,14 @@ ${done.lines.join(' ')}`;
             ));
         }
 
+        // The pill matcher first, then every other catalog by name. Asking after
+        // an artifact used to be refused with "Nothing in the world is called
+        // that a person would barter over", which is a false sentence about a
+        // catalog the OTHER direction has always priced. See
+        // `theThingAskedFor`.
         const asPill = resolvePill(named);
-        const thing = asPill ? theThingAskedFor(asPill.id) : null;
-        if (!asPill || !thing) {
+        const thing = theThingAskedFor(named, asPill?.id ?? null);
+        if (!thing) {
             return refused('engine.resolvePill', 'request', factsForRefusal(
                 'Nothing by that name that anybody trades.',
                 `You put the words to ${party.name} and they do not know what you are asking `
@@ -1442,20 +1554,19 @@ ${done.lines.join(' ')}`;
                 `${thing.name} is not something anybody bargains over - it is made constantly, `
                 + `it is on boards, and ${party.name} would wonder why you were asking them `
                 + `instead of a counter. "buy a ${thing.name}" is the sentence.`,
-                `${asPill.id} is commodity tier, so it has a cash price and no barter. See `
-                + 'buying-and-bartering-pills.ts.'
+                `${thing.id} is below the barter line, so it has a cash price and no barter. `
+                + 'See buying-and-bartering-pills.ts, manuals.ts and artifacts.ts.'
             ));
         }
 
         const world = this.atHand;
         const theirFaction = party.party?.factionId ?? null;
-        const onShelf = heldByTheirHouse(world, theirFaction, asPill.id);
+        const onShelf = heldByTheirHouse(world, theirFaction, thing.id);
 
         // NOT HOLDING ONE, AND WHO IS
         if (!onShelf) {
             const elsewhere = (world?.objects ?? [])
-                .filter(o => o.kind === 'pill' && o.data?.pillId === asPill.id
-                    && o.data?.spent !== true && o.ownerName)
+                .filter(o => thisRowIs(o, thing.id) && o.data?.spent !== true && o.ownerName)
                 .map(o => String(o.ownerName))
                 .filter((name, at, all) => all.indexOf(name) === at)
                 .slice(0, 4);
@@ -1470,7 +1581,7 @@ ${done.lines.join(' ')}`;
                     : 'Nothing on the register is holding one either, which is the honest answer '
                       + 'and a worse one: what would move this is finding one rather than '
                       + 'affording it.'),
-                `No unspent ${asPill.id} row against ${theirFaction ?? 'no house'}. `
+                `No unspent ${thing.id} row against ${theirFaction ?? 'no house'}. `
                 + `${elsewhere.length} holder(s) elsewhere in state.objects.`
             ));
         }
@@ -1635,7 +1746,11 @@ ${done.lines.join(' ')}`;
             // it has been, and the pouch entry is the thing `consume_pill`
             // actually spends. A barter pill has both because it has a story; a
             // bought one has only the pouch, because a commodity has none.
-            addToPouch(this.db, cultivator.id, asPill.id, 'pill', 1);
+            //
+            // Only a pill. A blade or a book that changed hands has moved on
+            // the row above and has nothing to spend, and writing one into the
+            // pouch as a pill would put a swallowable medicine in there.
+            if (asPill) addToPouch(this.db, cultivator.id, asPill.id, 'pill', 1);
             lines.push(
                 `${party.name} takes what you offered and the ${thing.name} is in your pouch. `
                 + 'It came off a shelf that is now short of one, and the record says whose it '
@@ -1664,7 +1779,7 @@ ${done.lines.join(' ')}`;
                 {
                     name: 'engine.whatItWouldTake',
                     action: 'request',
-                    summary: `${asPill.id}: bar ${answer.theHeightToReach}, offered `
+                    summary: `${thing.id}: bar ${answer.theHeightToReach}, offered `
                         + `${answer.theBestOnTheTable}, ${answer.why ?? 'price met'}; `
                         + `attempt ${result.outcome} at odds ${result.odds}.`,
                     ok: took

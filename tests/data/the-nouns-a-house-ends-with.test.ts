@@ -14,7 +14,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { SECTS } from '../../src/data/cultivation/sects';
-import { HOUSE_TYPE_NOUNS } from '../../src/web/what-a-house-is-called';
+import {
+    HOUSE_TYPE_NOUNS,
+    HOUSE_TYPE_NOUNS_THAT_STAND_ALONE
+} from '../../src/web/what-a-house-is-called';
 
 /**
  * Houses whose name ends in something that is not a type noun, each reviewed.
@@ -43,6 +46,24 @@ describe('what a house is called', () => {
             + 'HOUSE_TYPE_NOUNS, or - if the name does not end in a type noun at all - '
             + 'to NAMED_WITHOUT_A_TYPE_NOUN with the reason.'
         ).toEqual([]);
+    });
+
+    /**
+     * The half a player can say bare has to be words houses are actually
+     * called.
+     *
+     * "I resign from the hall" must reach the house; "I leave the valley" must
+     * not, because the map has an Orchid Valley on it. A noun that is not on
+     * the standing-alone half needs its house's name in front of it, which is
+     * the safe default and the one a new type noun gets by saying nothing - so
+     * what wants checking is the other direction: a word on the bare list that
+     * no house ends in would put a category on the sect verb that names
+     * nothing.
+     */
+    it('lets nothing onto the bare half that is not a type noun at all', () => {
+        const invented = HOUSE_TYPE_NOUNS_THAT_STAND_ALONE
+            .filter(word => !HOUSE_TYPE_NOUNS.includes(word));
+        expect(invented, 'A word here that no house ends in is a word from nowhere.').toEqual([]);
     });
 
     /** Longest-first, so an alternation never matches the short word inside a long one. */

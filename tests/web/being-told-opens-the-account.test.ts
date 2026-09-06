@@ -118,10 +118,18 @@ describe('a wrong the person it was done to has not heard of', () => {
         const said = await game.act('what news is there');
         expect(said.narration).toContain(cultivator.name);
 
-        const after = ledger(db);
+        // FOUND BY THE DEED AND THE DOER, not by being the only row. Two
+        // things make a bare count assert the world's composition rather than
+        // this rule, and both bit when a house was added to the catalog and the
+        // seeding shifted: a seeded world carries wrongs of its own, and the
+        // market may tell this one TWICE - `retell` swaps the doer under
+        // `misattributed`, so the same deed legitimately opens a second account
+        // against somebody who did not do it. That is the feature described at
+        // the foot of this file, not a duplicate.
+        const after = ledger(db).filter(row =>
+            row.triggering_event_id === deed.fact.id && row.subject_id === doer.id);
         expect(after, 'being told is what opened it').toHaveLength(1);
         expect(after[0].holder_id).toBe(cultivator.id);
-        expect(after[0].triggering_event_id).toBe(deed.fact.id);
         // The weight the deed was priced at, unchanged. Finding out late makes
         // a thing held, not heavier.
         expect(after[0].severity).toBe('unforgivable');
@@ -153,7 +161,8 @@ describe('a wrong the person it was done to has not heard of', () => {
             world, doer.id, doer.name, cultivator.id, cultivator.name);
 
         await game.act('what news is there');
-        const row = ledger(db)[0];
+        const row = ledger(db).find(one =>
+            one.triggering_event_id === deed.fact.id && one.subject_id === doer.id)!;
         expect(row).toBeDefined();
         expect(row.incurred_on_day).not.toBe(deed.fact.day);
         expect(row.incurred_on_day).toBeLessThan(deed.fact.day);
@@ -171,10 +180,17 @@ describe('a wrong the person it was done to has not heard of', () => {
         somethingDoneToThemBehindTheirBack(
             world, doer.id, doer.name, cultivator.id, cultivator.name);
 
+        // COUNTED FOR THE PLANTED WRONG, NOT OVER THE WHOLE LEDGER. A seeded
+        // world carries wrongs of its own and the market tells them too, so a
+        // bare row count asserts the world's composition rather than this
+        // rule - and it broke the moment a house was added to the catalog.
+        // The invariant is about the SAME telling, so it is counted per doer.
+        const forTheDoer = () => ledger(db).filter(row => row.subject_id === doer.id);
+
         await game.act('what news is there');
-        expect(ledger(db)).toHaveLength(1);
+        expect(forTheDoer()).toHaveLength(1);
         await game.act('what news is there');
-        expect(ledger(db), 'asking twice is not being wronged twice').toHaveLength(1);
+        expect(forTheDoer(), 'asking twice is not being wronged twice').toHaveLength(1);
     }, 180000);
 });
 

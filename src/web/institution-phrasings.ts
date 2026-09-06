@@ -6,6 +6,7 @@ import { PlannedAction } from './planned-action.js';
 import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 import { usedAsVerb, partyAfter } from './sentence-parts.js';
 import { ASKING_TO_BE_TAKEN_IN } from './sect-phrasings.js';
+import { A_HOUSE_BY_NAME_OR_KIND } from './what-a-house-is-called.js';
 
 // INSTITUTIONS ACTING ON EACH OTHER, AND ON THE DEAD
 
@@ -43,8 +44,17 @@ export const PETITION_NOUNS =
 /**
  * A BODY, rather than a person standing in front of you.
  */
-export const AN_INSTITUTION_IS_BEING_ASKED =
-    /\b(?:sects?|houses?|clans?|orders?|schools?|halls?|courts?|pavilions?|councils?|elders?|the (?:seat|body|institution|administration|registry)|my house|our house|the family|patriarch|matriarch|hall master|sect master|head of the)\b/;
+export const AN_INSTITUTION_IS_BEING_ASKED = new RegExp(
+    // Nine words by hand, against twenty-seven type nouns in the catalog.
+    // Measured: `I ask the Azure Dew Sect for a manual` filed a petition and
+    // `I ask the Clear River Alliance for a manual` went looking for a PERSON
+    // called Clear River Alliance - the inversion this gate exists to stop,
+    // running the other way. Same for the Burnt Earth Temple, the Bone Lantern
+    // Cult and the Ancient Bough Grove.
+    String.raw`\b(?:${A_HOUSE_BY_NAME_OR_KIND}|councils?|elders?`
+    + String.raw`|the (?:seat|body|institution|administration|registry)|my house|our house`
+    + String.raw`|the family|patriarch|matriarch|hall master|sect master|head of the)\b`
+);
 
 /**
  * The form, by name and by shape.
@@ -161,15 +171,20 @@ export const TRIBUTE_NOUNS =
  */
 export const WHERE_WE_STAND =
     new RegExp([
-        String.raw`\bwhere (?:do |does )?(?:we|my house|our house|the (?:house|sect|clan|order|school)|it) stand\b`,
-        String.raw`\bhow (?:do|does) (?:we|my house|our house|the (?:house|sect|clan|order|school)|it) stand\b`,
+        String.raw`\bwhere (?:do |does )?(?:we|my house|our house|(?:the|my|our) (?:${A_HOUSE_BY_NAME_OR_KIND})|it) stand\b`,
+        String.raw`\bhow (?:do|does) (?:we|my house|our house|(?:the|my|our) (?:${A_HOUSE_BY_NAME_OR_KIND})|it) stand\b`,
         String.raw`\b(?:our|my house'?s?|the house'?s?) (?:standing|posture|relations?|terms) with\b`,
         String.raw`\bwho (?:are|is) (?:we|my house|our house) (?:at war with|allied (?:to|with)|holding from)\b`,
         String.raw`\bare we (?:at war|allied|at peace)\b`
     ].join('|'), 'i');
 
-export const DEFECT_PATTERN =
-    /\b(?:defect(?:s|ing)? to|go(?:es|ing)? over to|went over to|transfer (?:our|the house'?s?|its|the) (?:allegiance|grant|patronage|standing)|change (?:our |the house'?s? )?patrons?|hold from|swear the (?:house|sect|clan|school) to|put (?:us|the house|the sect) under)\b/;
+export const DEFECT_PATTERN = new RegExp(
+    String.raw`\b(?:defect(?:s|ing)? to|go(?:es|ing)? over to|went over to`
+    + String.raw`|transfer (?:our|the house'?s?|its|the) (?:allegiance|grant|patronage|standing)`
+    + String.raw`|change (?:our |the house'?s? )?patrons?|hold from`
+    + String.raw`|swear (?:the|my|our) (?:${A_HOUSE_BY_NAME_OR_KIND}) to`
+    + String.raw`|put (?:us|(?:the|my|our) (?:${A_HOUSE_BY_NAME_OR_KIND})) under)\b`
+);
 
 /** The seal. Selects a read; never decides an outcome, and never whose it is. */
 export type SealIntent = 'read' | 'wake';

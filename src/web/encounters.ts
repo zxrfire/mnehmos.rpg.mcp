@@ -1062,6 +1062,31 @@ export function tieFrom(
 }
 
 /**
+ * The children this cultivator has raised, oldest tie first.
+ *
+ * `haveAChild` files the tie under `child_<parent>_<other>_<day>`, and it is
+ * the only writer of one. `placeAChild` composed a SECOND convention,
+ * `child_of_<parent>`, commented as "the id the household tie already carries"
+ * - which nothing had ever written, and which nothing checked against the
+ * first. So a player who had never used the `child` verb could place a child
+ * that did not exist, and a player who HAD raised one got a placement record
+ * pointing at an id no row carries, which that record's own comment calls "the
+ * only route a placed child has back to their own story".
+ *
+ * The rows are the answer to both halves, so this reads them.
+ */
+export function theChildrenTheyRaised(
+    repos: CultivationRepos,
+    parentId: string
+): { id: string; sinceDay: number }[] {
+    return (repos.db as unknown as DatabaseHandle).prepare(
+        'SELECT to_character_id AS id, established_on_day AS sinceDay '
+        + "FROM relationships WHERE from_character_id = ? AND type = 'child' AND active = 1 "
+        + 'ORDER BY established_on_day ASC'
+    ).all(parentId) as { id: string; sinceDay: number }[];
+}
+
+/**
  * The tie an attempt formed, written down - both sides, allowed to disagree.
  */
 export function recordTheTieAnAttemptLeft(

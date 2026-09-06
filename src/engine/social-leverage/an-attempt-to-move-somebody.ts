@@ -29,6 +29,7 @@ import type {
     Significance
 } from '../social/relationships.js';
 import type { DayIndex } from '../social/common.js';
+import { howHeavyThePromiseIs, type ThePromiseYouMade } from './background-as-leverage.js';
 import { groundWeight, type TheGroundUnderYou } from './ground-trust.js';
 import { openHandednessOf } from './how-freely-somebody-parts-with-what-they-have.js';
 
@@ -155,6 +156,17 @@ const PURSE_REACH: Record<AskWeight, number> = {
 const DISPOSITION_MAX = 0.18;
 
 /**
+ * The most a promise of harm can ever be worth.
+ *
+ * Above `PURSE_MAX`, because what somebody is afraid of reaches further than
+ * what is in their hand, and under both `TIE_WEIGHT` and a realm of standing
+ * (`RUNG_CLAMP * PER_RUNG` = 0.3), because a threat still does not change what
+ * either party IS. Shared out across the four severities the world already
+ * reads a wrong at, so there is no table of threats here.
+ */
+const THREAT_MAX = 0.24;
+
+/**
  * How far being open-handed reaches into what is being asked. It discounts COST,
  * not DANGER, which is why this is a reach table and not a flat multiplier:
  * `AskWeight` runs cost at the bottom and risk at the top, and a generous person
@@ -242,6 +254,15 @@ export interface AttemptInput {
     theyWantSomethingFromYou?: boolean;
     /** Spirit stones actually put down. Only spent when the attempt lands. */
     stonesOffered?: number;
+    /**
+     * The act promised if they refuse, in the world's own vocabulary of wrongs.
+     *
+     * Read only where `leverage` is `force`, for `purseWeight`'s reason: a
+     * threat nobody made is not on the table. `whatYouBringToBear` decides
+     * whether the promise was keepable and hands over nothing where it was not,
+     * so an empty threat reaches this as absent rather than as a small number.
+     */
+    promised?: ThePromiseYouMade | null;
     /**
      * How many times this actor has already put THIS ask to THIS subject. Lives
      * with the caller: it is a fact about a pair, not about one attempt.
@@ -422,6 +443,18 @@ export function purseWeight(input: AttemptInput): number {
 }
 
 /**
+ * What the promise of harm is worth to the person it was made to. Zero unless
+ * `force` is what is on the table, because a threat nobody made is not one.
+ * Exported so a probe can price one without resolving an attempt.
+ */
+export function threatWeight(input: AttemptInput): number {
+    if ((input.approach?.leverage ?? 'none') !== 'force') return 0;
+    const promised = input.promised;
+    if (!promised) return 0;
+    return THREAT_MAX * howHeavyThePromiseIs(promised);
+}
+
+/**
  * What kind of person the subject is about parting with things, as odds.
  *
  * DERIVED FROM THE SUBJECT'S ID WHEN THE CALLER DOES NOT SUPPLY IT. The default
@@ -476,6 +509,7 @@ export function oddsOf(input: AttemptInput): { odds: number; terms: Record<strin
         grudge: round4(grudge),
         ask: round4(ask),
         purse: round4(purseWeight(input)),
+        threat: round4(threatWeight(input)),
         room: round4(room),
         disposition: round4(dispositionWeight(input)),
         // Damped by the tie they already hold: the trust ruling is about a
@@ -930,6 +964,7 @@ export const LEVERAGE_ATTEMPT_CONSTANTS = Object.freeze({
     PURSE_MAX,
     PURSE_HALF_AT_YEARS,
     PURSE_REACH,
+    THREAT_MAX,
     DISPOSITION_MAX,
     DISPOSITION_REACH,
     DISCREET_LEVERAGE,

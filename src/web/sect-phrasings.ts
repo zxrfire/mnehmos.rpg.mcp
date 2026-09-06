@@ -4,6 +4,22 @@
 
 import { PlannedAction } from './planned-action.js';
 import { usedAsVerb, namedAfter, matchIntent } from './sentence-parts.js';
+import {
+    A_HOUSE_IS_NAMED,
+    A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL
+} from './what-a-house-is-called.js';
+
+/**
+ * What a member calls their own body, when they do not say its name.
+ *
+ * Five words were written out by hand in four rows of this file, so `what does
+ * my sect teach` reached the shelf and `what does my hall teach`, `my court`,
+ * `my cult` and `my pavilion` all reached nothing - for members of Lantern
+ * Hall, Orchid Court, the Bone Lantern Cult and Azure Cloud Pavilion. Worse on
+ * the summons row, which answered `what does the hall want of me` by going to
+ * look for a person called `hall`.
+ */
+const A_HOUSE_WORD = A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL;
 
 /** The things a member can do about their sect, in the order they are tested. */
 export type SectIntent =
@@ -74,7 +90,11 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // condition on a threat, and it reached this row because the row asks only
     // for a question word and a refusal word somewhere after it. Same guard as
     // the refuse row below and for the same reason.
-    ['summons', /\b(?:what|which|why|whether|how much|how bad)\b[^.!?]*\b(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )(?:refus\w+|declin\w+|saying no|turn(?:ing)? (?:it|them) down)\b|\b(?:what|which)\b[^.!?]*\b(?:summons|called me in|sent for me|been asked of me|they want of me|asked of me)\b|\b(?:what (?:am i|have i) been (?:asked|called)|who sent for me|what was i (?:asked|called) (?:for|in for)|what does the (?:house|sect|order|clan|school) want (?:of|from) me)\b/],
+    ['summons', new RegExp(
+        String.raw`\b(?:what|which|why|whether|how much|how bad)\b[^.!?]*\b(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )(?:refus\w+|declin\w+|saying no|turn(?:ing)? (?:it|them) down)\b`
+        + String.raw`|\b(?:what|which)\b[^.!?]*\b(?:summons|called me in|sent for me|been asked of me|they want of me|asked of me)\b`
+        + String.raw`|\b(?:what (?:am i|have i) been (?:asked|called)|who sent for me|what was i (?:asked|called) (?:for|in for)|what does (?:the|my|our) (?:${A_HOUSE_WORD}) want (?:of|from) me)\b`
+    )],
     // `turn ... down` takes its object in the middle - "I turn them down" is how a
     // person says it and "I turn down them" is not - so the particle has to be
     // reachable across a short object. Bounded at two words so it cannot span a
@@ -127,8 +147,10 @@ export const WITHOUT_ASKING = /\bwithout (?:asking|permission|leave|a word)\b/;
 /**
  * A sentence reaching for the house's own authority rather than its speaker's.
  */
-export const CLAIMING_THE_HOUSES_AUTHORITY =
-    /\b(?:by (?:the )?order of|in the name of|on the authority of|by the authority of|by decree of|as (?:the )?(?:sect|house|clan|school|order)'?s?)\b|\b(?:sect|house|clan|school|order) (?:orders?|decrees?|commands?)\b/;
+export const CLAIMING_THE_HOUSES_AUTHORITY = new RegExp(
+    String.raw`\b(?:by (?:the )?order of|in the name of|on the authority of|by the authority of|by decree of|as (?:the )?(?:${A_HOUSE_WORD})'?s?)\b`
+    + String.raw`|\b(?:${A_HOUSE_WORD}) (?:orders?|decrees?|commands?)\b`
+);
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT HAS BEEN BROUGHT TO YOU
@@ -272,8 +294,9 @@ export const SECT_ELDER_NOUN = /\b(?:elders?)\b/;
 /**
  * Where the house sets its bar.
  */
-export const SECT_ADMISSION_NOUNS =
-    /\b(?:admissions?|entry (?:bar|standard|standards|requirements?)|the (?:admission )?bar|intake (?:bar|standard)|standard (?:for|of) (?:entry|admission)|who (?:we|the house|the sect|the school) admits?|admit(?:s)? from)\b/;
+export const SECT_ADMISSION_NOUNS = new RegExp(
+    String.raw`\b(?:admissions?|entry (?:bar|standard|standards|requirements?)|the (?:admission )?bar|intake (?:bar|standard)|standard (?:for|of) (?:entry|admission)|who (?:we|(?:the|my|our) (?:${A_HOUSE_WORD})) admits?|admit(?:s)? from)\b`
+);
 
 export const SECT_ADMISSION_VERBS =
     'raise|raises|raising|lower|lowers|lowering|set|sets|setting|change|changes|changing|'
@@ -281,8 +304,9 @@ export const SECT_ADMISSION_VERBS =
     + 'move|moves|moving|reset|resets';
 
 /** Asking where the bar sits, which is the sentence before the one that moves it. */
-export const SECT_ADMISSION_QUESTION =
-    /\b(?:what (?:is|are) (?:our|the|my) (?:admission|entry|intake)|where does (?:the (?:house|sect|school)|it) admit from|how high is (?:the|our) bar)\b/;
+export const SECT_ADMISSION_QUESTION = new RegExp(
+    String.raw`\b(?:what (?:is|are) (?:our|the|my) (?:admission|entry|intake)|where does (?:(?:the|my|our) (?:${A_HOUSE_WORD})|it) admit from|how high is (?:the|our) bar)\b`
+);
 
 /**
  * What the house hands its intake, which is the most consequential thing about
@@ -291,8 +315,9 @@ export const SECT_ADMISSION_QUESTION =
 /**
  * `my sect` is in this list, and its absence was the whole bug.
  */
-export const SECT_CURRICULUM_NOUNS =
-    /\b(?:curriculum|curricula|what (?:we|they|the house|the sect|the school|my (?:sect|house|school|clan|order)) teach(?:es)?|(?:working )?library|the shelf|teaching list|what is taught|methods (?:we|the house|the sect) teach(?:es)?|(?:my|our) (?:sect|house|school|clan|order) teach(?:es)?)\b/;
+export const SECT_CURRICULUM_NOUNS = new RegExp(
+    String.raw`\b(?:curriculum|curricula|what (?:we|they|(?:the|my|our) (?:${A_HOUSE_WORD})) teach(?:es)?|(?:working )?library|the shelf|teaching list|what is taught|methods (?:we|(?:the|my|our) (?:${A_HOUSE_WORD})) teach(?:es)?|(?:my|our) (?:${A_HOUSE_WORD}) teach(?:es)?)\b`
+);
 
 export const SECT_CURRICULUM_VERBS =
     'change|changes|changing|set|sets|setting|rewrite|rewrites|rewriting|revise|revises|'
@@ -363,7 +388,7 @@ export function leadershipIntent(text: string, input: string): PlannedAction | n
     if (usedAsVerb(text, HOUSE_TAKING_VERBS)
         && !COUNTED_TIER_NOUNS.test(text)
         && (HOUSE_SHELF_NOUNS.test(text)
-            || (/\b(?:sect|house|clan|school|order)\b/.test(text) && WITHOUT_ASKING.test(text)))) {
+            || (A_HOUSE_IS_NAMED.test(text) && WITHOUT_ASKING.test(text)))) {
         const what = whatIsBeingTaken(input);
         return { action: 'sect', intent: 'take', ...(what ? { target: what } : {}) };
     }

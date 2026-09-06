@@ -542,6 +542,11 @@ institution.
 
 ```text
 an-attempt-to-move-somebody.ts          the odds, the four outcomes, the marks
+background-as-leverage.ts               what the room weighs about the asker when
+                                        the sentence put nothing down, off the
+                                        ladder, the two houses and the ledger
+what-an-answer-costs.ts                 what saying it would cost the person being
+                                        asked, off how near they stand to it
 how-freely-somebody-parts-with-what-they-have.ts
                                         one number per person, from their id and
                                         never from their house

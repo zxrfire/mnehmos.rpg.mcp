@@ -953,10 +953,18 @@ Three things it must keep getting right:
 - **A failed demand is not a failed ask.** Being refused costs a day. Being *corrected in
   public about what you are worth* is the other thing, and the sentence says so, because a
   cost nobody can see is not being charged.
-- **A bare demand is backed by `name`** - the asker's own reputation - and never by `force`,
-  which is a threat and is a different sentence the parser already labels. Found by playing:
-  without it every demand went to the resolver at `leverage: none` and the ruling's first
-  half was not being read at all.
+- **Neither side of it is a value this package declares.** What a bare demand is backed by
+  and what a withheld answer weighs were both constants here, and both were one answer wide:
+  every demand rested on the asker's own name whoever the asker was, and every answer
+  anybody ever withheld cost the same whatever it was about. `pressSomebody` now derives
+  both - [`whatYouBringToBear`](../engine/social-leverage/background-as-leverage.ts) off the
+  ladder, the two houses and the ledger, and
+  [`whatAnAnswerCosts`](../engine/social-leverage/what-an-answer-costs.ts) off how near the
+  thing asked about stands to the person being asked. The parser's own label still wins
+  where the sentence put something down, because that is what the player did; the derived
+  one fills the gap where it put nothing. Found by playing, twice: before the constants
+  every demand reached the resolver at `leverage: none`, and after them a rogue two realms
+  below read as somebody worth listening to.
 
 ### A theft's `topic` is a thing, and it is taken off the field before anything reads it
 
@@ -2099,6 +2107,24 @@ matters because a player cannot tell the two apart from the prose - which is wha
 refusal the catch-all for `interact/talk` reaching nothing. Telling somebody a wrong was
 done to them used to land here for exactly that reason, and now has [its own
 verb](telling-a-wrong.ts).
+
+**Who asks is gated. What they offer is not, and must not be.** The answer itself is now
+written by [`what-somebody-here-would-ask.ts`](what-somebody-here-would-ask.ts), and the
+two halves sit on opposite sides of the knowledge gate for different reasons. The paragraph
+prints the asker's name, and `look` will not name a stranger, so the asker stays somebody
+the player could already name. What that person can put forward is derived from two facts
+about the world - the square in front of them, and their own house's roll - and bounding it
+to the player's own awareness instead would make the whole read a mirror: a steward of a
+house of ninety would have exactly the same answer as a passing stranger, which was the
+state of it before. Nothing is stored for this; the knowledge table holds the player's
+awareness and nobody else's, and both sources are read at the moment somebody is asked.
+
+Two call sites, and the second is where the case this exists for actually lands. A name
+typed on its own reaches no verb - `Yan Shuling` and `elder yun of the weir` both route to
+`unclear` rather than to the name resolver - so wiring only the blank look would have left
+the design owner's own example answered by *the thought does not resolve*. The list of what
+is live stays in that answer beside the question; being asked what you meant and being told
+what would work are different useful things.
 
 ## Related
 

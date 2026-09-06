@@ -830,7 +830,7 @@ describe('what a player types to leave something behind', () => {
     });
 
     it('a phrase is pulled out of what the player typed, never invented', () => {
-        expect(phraseIn('I lodge it with the Karma Pavilion, the words are "three crows on the weir"'))
+        expect(phraseIn('I lodge it with the Karma Palace, the words are "three crows on the weir"'))
             .toBe('three crows on the weir');
         expect(phraseIn('I deposit it under the phrase three crows on the weir'))
             .toBe('three crows on the weir');

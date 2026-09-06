@@ -33,6 +33,7 @@ import {
     NOTHING_REPAIRS_ABOVE_ORDINAL
 } from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
 import { MATERIAL_BANDS } from '../engine/world/single-use-dao-comprehension-materials.js';
+import { whatAnArtCanRaiseTo } from '../engine/world/a-formation-stands-at-the-lower-of-the-art-and-the-builder.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { OBJECT_CEILING_BELOW_THE_LID, rankName } from '../engine/cultivation/realms.js';
 import { TechniqueGradeSchema } from '../schema/cultivation.js';
@@ -137,6 +138,27 @@ export interface RegisterItems {
 
 // THE KIND TABLE
 
+/**
+ * The arts that describe how to lay a formation, and how far up each one
+ * reaches, read off the technique catalog.
+ *
+ * A formation has no catalog of its own - what exists is the road, and the two
+ * arts currently on it are both sword arts, which is the whole of what "a sword
+ * formation" is in this engine. Naming them here is the register's only way of
+ * saying that without a second table to say it in.
+ */
+const ARTS_THAT_RAISE_ONE: string = (() => {
+    const raisers = TECHNIQUES
+        .map(t => ({ name: t.name, to: whatAnArtCanRaiseTo(t) }))
+        .filter((r): r is { name: string; to: number } => r.to !== null)
+        .sort((a, b) => a.to - b.to);
+    if (raisers.length === 0) {
+        return 'arts that describe the work, of which the catalog currently holds none';
+    }
+    return `${raisers.length} art${raisers.length === 1 ? '' : 's'} that describe the work: `
+        + raisers.map(r => `${r.name}, to ${r.to}`).join('; ');
+})();
+
 type KindFacts = Omit<RegisterItemKind, 'kind' | 'catalogued'> & { catalogued: () => number };
 
 const KINDS: Record<ObjectKind, KindFacts> = {
@@ -237,14 +259,20 @@ const KINDS: Record<ObjectKind, KindFacts> = {
     formation: {
         what: 'A made thing that stands where it was made and is never carried. Rated on the ladder people stand on, and it is the lower of the art that described it and the hand that laid it.',
         source: 'engine/world/a-formation-stands-at-the-lower-of-the-art-and-the-builder.ts',
-        // Zero, and honestly so: no technique row carries subject: "formation"
-        // yet, so nothing in the world can raise one. Six of the 138 arts carry
-        // a subject at all and all six say "sword".
+        // Zero because no catalog authors a formation. What IS authored is the
+        // art that raises one, and those are counted under `manual` with every
+        // other art - there is no second catalog of formations and there must
+        // not be one.
+        //
+        // THE LAST VERSION OF THIS COMMENT SAID NOBODY COULD RAISE ONE, and it
+        // was true when it was written and false the day two sword arts joined
+        // the formation road. So the sentence below is computed off the road
+        // rather than typed, and cannot go stale the same way again.
         catalogued: () => 0,
         keptAs: ['tracked'],
         gradeAxis: 'power, the rung it was raised at',
         ratedInPower: true,
-        provenance: 'Laid by somebody standing at a rung, out of an art that describes the work. It never gets stronger afterwards and every hole in it costs a rung.',
+        provenance: `Laid by somebody standing at a rung, out of one of the ${ARTS_THAT_RAISE_ONE}. It never gets stronger afterwards and every hole in it costs a rung.`,
         whoHolds: 'Nobody holds one. A house may own the ground it stands on; a formation still running over a dead house is owned by nobody at all.'
     },
     other: {

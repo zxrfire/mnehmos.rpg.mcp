@@ -168,7 +168,7 @@ describe('the ground under the cultivator, on the wire', () => {
  * The read above was fixed by walking the world's own location table into a
  * player-facing list with no knowledge check anywhere in it, which closed one
  * hole by opening another: a cultivator holding no record for any of them was
- * handed The Glass Field and The Nine-City Assize by name, and would have been
+ * handed The Glass Field and The Nine-City Roll by name, and would have been
  * handed any prospected find that landed on one of the three kinds.
  *
  * Those are dao grounds - `how-a-cultivator-comes-by-a-road.ts` seeds its

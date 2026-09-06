@@ -45,6 +45,7 @@ import {
     type DatabaseHandle,
     openLedgerBetween,
     recordTheTieAnAttemptLeft,
+    theChildrenTheyRaised,
     tieFrom,
     writeObligation
 } from './encounters.js';
@@ -1005,6 +1006,29 @@ export const matchVerbs = {
             ));
         }
 
+        // ── THERE HAS TO BE A CHILD ──────────────────────────────────────
+        //
+        // Read off the rows `haveAChild` wrote, the way `declineAMatch` reads
+        // the pact off `openLedgerBetween` rather than off the sentence. This
+        // used to compose `child_of_<me>` - an id nothing has ever written -
+        // so a player who had never used the `child` verb could place one: the
+        // house checks passed, a serious favour was written to the obligation
+        // ledger, a defining patron tie was recorded, and the player was told
+        // "the child is on the roll at the bottom of it". There was no child.
+        const raised = theChildrenTheyRaised(this.repos, cultivator.id);
+        if (raised.length === 0) {
+            return refused('engine.spendAWord', 'child', factsForRefusal(
+                'You have no child to place.',
+                'A word spent on a door places somebody, and there is nobody. Raising one is '
+                + 'its own stretch of years and its own sentence - "have a child with '
+                + '<somebody>" - and it is what this asks a house to take.',
+                'spendAWord not attempted: no active child tie held by this cultivator. '
+                + 'Nothing spent, no favour written.'
+            ));
+        }
+        // The eldest, which is the one a house is asked about first.
+        const childId = raised[0].id;
+
         const party = this.partyPutTo(cultivator, query, scope);
         const houseId = party?.kind === 'sect'
             ? party.id
@@ -1030,9 +1054,9 @@ export const matchVerbs = {
 
         const result = spendAWord({
             askerId: cultivator.id,
-            // The child by the id the household tie already carries. A player
-            // with no child has nothing to place, and the refusal says so.
-            childId: `child_of_${cultivator.id}`,
+            // The id the household tie actually carries, read off the row
+            // above rather than composed a second way.
+            childId,
             houseId,
             askedOfId,
             onDay: today,

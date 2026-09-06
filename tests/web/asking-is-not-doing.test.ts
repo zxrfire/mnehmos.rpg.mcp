@@ -1008,6 +1008,40 @@ describe('a closing question mark means this is not an action', () => {
     });
 
     /**
+     * A QUESTION ABOUT BUILDING REACHES THE BENCH, NOT A PLACE READ.
+     *
+     * `theReadThatAnswersIt` is a per-verb table and `craft` had no case in it,
+     * so it fell to `default: { action: 'assess', target }` - and measured,
+     * "can I build a spirit boat?" came back as
+     * `{action:'assess', target:'spirit boat'}`, which `GameService.assess`
+     * turns into `handleAssess({against:'place', place:'spirit boat'})`. The
+     * player asking whether they can lay a keel got an ambient-qi reading of a
+     * place by that name.
+     *
+     * The right free read was one call away and is the same shape `refine`
+     * already uses: dropping the target reaches the bench listing exactly as
+     * dropping it reaches the cauldron listing. The table went stale when
+     * `craft` joined `ACTION_NAMES`.
+     */
+    it('answers a question about building with the bench listing', () => {
+        for (const said of ['can I build a spirit boat?', 'what can I build']) {
+            const plan = parseIntent(said);
+            expect(plan.action, said).toBe('craft');
+            // DROPPING THE TARGET IS THE WHOLE OF IT, exactly as it is for
+            // `refine` one case above: `planTheBuild` with nothing named
+            // returns the listing, and `craft-verbs.ts` renders a listing as a
+            // free action. The plan is still a `craft`, so it is still on
+            // `TIME_CONSUMING_ACTIONS` - what makes it free is that there is
+            // nothing to build.
+            expect(plan.target, said).toBeUndefined();
+        }
+        // And deciding to build one is still the act, with its target on it.
+        const decided = parseIntent('I build a spirit boat');
+        expect(decided.action).toBe('craft');
+        expect(decided.target).toBeDefined();
+    });
+
+    /**
      * Only a mark that CLOSES the utterance counts.
      *
      * "What now? I cultivate for a year" is a question and then a decision, and

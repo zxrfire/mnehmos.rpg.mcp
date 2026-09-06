@@ -54,6 +54,11 @@
  * candidates the caller hands in, never what is done with them.
  */
 
+import {
+    A_HOUSE_TYPE_NOUN,
+    A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL
+} from './what-a-house-is-called.js';
+
 /** How a sentence named a set of people. */
 export type SetShape =
     /** The square. Everybody here is by definition present. */
@@ -129,7 +134,12 @@ const SOMEBODYS_OWN_PEOPLE = new RegExp(
  * it.
  */
 const A_WHOLE_HOUSE = new RegExp(
-    `^${ALL_OF}\\s+(?:of\\s+)?(?:the\\s+)?(?<house>.+?)(?:\\s+(?:sect|house|clan|order|school|hall|court|pavilion))?$`,
+    // The type noun comes off the end so the catalog is asked about the NAME.
+    // Eight words were written out here against the catalog's twenty-seven, so
+    // `all of the Azure Dew Sect` asked after "Azure Dew" and `all of the Bone
+    // Lantern Cult` asked after "Bone Lantern Cult" - one sentence shape,
+    // answered two ways depending on which house it was about.
+    `^${ALL_OF}\\s+(?:of\\s+)?(?:the\\s+)?(?<house>.+?)(?:\\s+(?:${A_HOUSE_TYPE_NOUN}))?$`,
     'i'
 );
 
@@ -144,7 +154,12 @@ const A_WHOLE_HOUSE = new RegExp(
 const A_LEANING_IN_THE_PLURAL = new RegExp(
     `^(?:(?:members?|people|anyone|anybody|everyone|everybody)\\s+(?:of|from|in)\\s+)?` +
     `${ALL_OF}\\s+(?:of\\s+)?(?:the\\s+)?(?<leaning>[a-z]{4,20})` +
-    `(?:\\s+(?:sects?|houses?|clans?|orders?|schools?|cultivators?|disciples?|people|ones?))$`,
+    // The house words are the shared list, not a ninth copy of it. Measured:
+    // `I kill all the demonic sects` reached the six demonic houses and `I kill
+    // all the demonic cults` was read as ONE house named "demonic cults" and
+    // refused, with the Bone Lantern Cult, the Burnt Earth Temple and the
+    // Crimson Abyss Fortress standing in the set it was asking for.
+    `(?:\\s+(?:${A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL}|cultivators?|disciples?|people|ones?))$`,
     'i'
 );
 

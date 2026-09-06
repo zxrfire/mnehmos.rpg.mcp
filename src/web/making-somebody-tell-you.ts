@@ -37,8 +37,20 @@
  * the load-bearing half and it is already the majority of the arithmetic: an
  * elder at no great rung who is owed a great deal can demand successfully, and
  * a strong stranger with a bad name may not. So this module contributes exactly
- * two things the resolver cannot know - **what the ask weighs**, and **whether
- * there was ever anything to be got** - and then gets out of the way.
+ * one thing the resolver cannot know - **whether there was ever anything to be
+ * got** - and then gets out of the way.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * AND THE TWO CONSTANTS THAT USED TO LIVE HERE WERE BOTH ONE ANSWER WIDE
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * What a withheld answer weighed, and what a bare demand was backed by, were
+ * declared here as single values - so every answer anybody ever withheld cost
+ * the same whatever it was about, and every demand rested on the asker's own
+ * name whoever the asker was. Both are now read off the two people:
+ * `what-an-answer-costs.ts` prices the ask by how near the thing asked about
+ * stands to the person being asked, and `background-as-leverage.ts` reads what
+ * is actually behind the asking. Neither is a value this file may hold.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * IT DOES NOT BYPASS THE GATE. IT CHANGES WHO OPENS IT
@@ -80,8 +92,7 @@
  * to buy a thing that was free, and they now know something about you.
  */
 
-import type { ApproachLeverage } from '../schema/cultivation.js';
-import type { AskWeight, AttemptResult } from '../engine/social-leverage/index.js';
+import type { AttemptResult } from '../engine/social-leverage/index.js';
 import type { Answer } from './asked.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -106,94 +117,6 @@ export function whatStandsInTheWay(answer: Answer): WhatStandsInTheWay {
     if (!answer.couldKnow) return 'they_do_not_know';
     return answer.reach === 'deflects' ? 'they_are_withholding' : 'they_were_going_to_say_it';
 }
-
-/**
- * What a demand for something somebody is sitting on weighs.
- *
- * `a_real_favour` - "time, money, or a word put in somewhere; costs them
- * something" - and a name somebody is reticent about is literally a word put in
- * somewhere. It is not `a_courtesy`, which is what `AskWeight` calls a name
- * given freely and is what the ordinary polite ask already is; pricing a
- * withheld answer as one would make the whole channel free.
- *
- * ── CORRECTED, AND THE FIRST ANSWER IS KEPT BECAUSE THE REASONING WAS THE BUG ──
- *
- * This was `against_their_interest` - "they end up worse off, and they can see
- * that while agreeing" - on the reasoning that `asked.ts` describes the
- * deflection it is aimed at as *"the account they owe costs more than the
- * telling"*, which sounds like exactly that sentence.
- *
- * **Measured in play at ordinal 36 against somebody reading as "plainly beneath
- * notice", and it was wrong.** The terms came back:
- *
- * ```text
- *   base                                        35
- *   the gap in standing between them            +30   (the cap; an approach
- *                                                      never changes what
- *                                                      somebody IS)
- *   charm                                        -6
- *   the weight of the thing asked for           -50
- *   how freely this person parts with things     -1
- *                                              ----
- *                                                8 in a hundred, 14 days
- * ```
- *
- * A Body Integration cultivator leaning on a nobody for a sect's name, at eight
- * percent, over a fortnight. **The ask term alone outweighed the entire standing
- * gap, so no amount of power could ever have carried it** - which is the exact
- * opposite of the ruling this file exists to implement. The mistake was reading
- * the flavour text instead of the ladder: being reticent and ending up worse off
- * are different facts, and `against_their_interest` belongs to asking somebody
- * to act against their own house rather than to asking them to say a name they
- * would rather not.
- *
- * At `a_real_favour` (resistance 0.25, three days) the same matchup reads about
- * a third, which is a live decision rather than a formality, and it leaves the
- * fortnight and the near-impossibility where they belong: on the sentences that
- * really are asking somebody to damage themselves.
- *
- * Stated as a constant rather than derived from the player's wording on
- * purpose. `askWeightOf` reads the sentence, which is right for an open-ended
- * approach and wrong here: what this ask costs them is a fact about their
- * position, and letting the phrasing move it would be the softening the agency
- * rule forbids, reachable by choosing your words.
- */
-export const WHAT_A_WITHHELD_ANSWER_WEIGHS: AskWeight = 'a_real_favour';
-
-/**
- * What is behind a demand that named nothing else.
- *
- * FOUND BY PLAYING, and it was the whole channel not working. A Void Refinement
- * cultivator leaning on a Carrier who reads as "plainly beneath notice, and
- * aware of it" came back refused at 18%, and the resolver's own account said
- * why: *"asked interrogate with nothing on the table but the asking"*. The
- * parser sets `leverage` off words like bribe and threaten, an ordinary demand
- * uses neither, so every demand went in at `none` - pressure zero - and the
- * ruling's first half was simply not being read.
- *
- *   > "whether it succeeds is whether people respect you - either via power or
- *   >  something else."
- *
- * `name` is the enum member for exactly that: **the asker's own reputation.**
- * And it is the honest one rather than a convenient one, which is the test that
- * matters here, because `ApproachLeverageSchema` is explicit that *"leverage the
- * asker does not have is a lie the room will price"*:
- *
- * - It is **not invented**. Somebody who demands a thing and puts nothing else
- *   on the table has put THEMSELVES on it. That is what the sentence means.
- * - It is **not `force`**, which is worth two and is "the credible ability to
- *   take it". That is a threat, it is a different sentence, and the parser
- *   already labels it as one. Backing a demand with force by default would let
- *   every player make an implicit threat without saying so.
- * - It is **only ever a default**. A demand that named coin, a debt, a secret or
- *   a house keeps what it named, because the player said what they were using.
- *
- * Worth one point of pressure, like coin and a favour, so it moves how somebody
- * is met and does not move what they are - which is the constraint
- * `APPROACH_PRESSURE_LIMIT` exists to hold, and it means a nobody demanding
- * things is still a nobody demanding things.
- */
-export const WHAT_A_BARE_DEMAND_IS_BACKED_BY: ApproachLeverage = 'name';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE REFUSAL THAT IS NOT ABOUT STANDING AT ALL
@@ -297,9 +220,9 @@ export function whatLeaningOnThemCost(
                 + 'noticed which of the two you thought was necessary.'
             ],
             structure: [
-                'Demand against a willing speaker: the answer was reachable at `a_courtesy` and '
-                + 'was bought at `against_their_interest`. The attempt still resolved and still '
-                + 'left its marks, which is the whole of the cost.'
+                'Demand against a willing speaker: `whatAnAnswerCosts` reads it at `a_courtesy` '
+                + 'because they were going to say it, so nothing was bought. The attempt still '
+                + 'resolved and still left its marks, which is the whole of the cost.'
             ]
         };
     }

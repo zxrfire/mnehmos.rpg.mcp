@@ -308,6 +308,15 @@ export interface StandingFight {
     verb: 'attack' | 'coerce';
     /** What the compliance was for, when the verb was `coerce`. A label only. */
     wanted?: string;
+    /**
+     * The THING the sentence named, when it named one.
+     *
+     * `wanted` is the label the parser picked - swallow, hand over - and it
+     * cannot say which pill. This is the phrase the player typed, unresolved,
+     * because what the pouch holds is a fact about the moment the fight ends
+     * and not about the moment it opened.
+     */
+    named?: string;
 }
 
 /** Whether a fight the service is holding is still this run's and this body's. */
