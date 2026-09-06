@@ -399,7 +399,7 @@ src/                      # README.md - the index. Every folder below has one to
 │   ├── social-leverage/  # what moves somebody, what a deed leaves, what a house does
 │   ├── encounters/       # what the world puts in front of somebody
 │   ├── birth/, household/  # who is born, and what a match costs
-│   └── {worldgen,strategy,perception,dsl}/  # retained D&D substrate
+│   └── {spatial,worldgen,strategy,perception,dsl}/  # retained substrate
 ├── data/cultivation/     # the catalogs: sects, people, places, techniques, beasts
 │   └── regions/          # one file per region of the map
 ├── schema/               # the shapes that cross a boundary. Zod, and the balance

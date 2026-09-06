@@ -23,6 +23,7 @@ import { DeterministicNarrator, ProviderNarrator } from '../src/web/narrator.js'
 import { OllamaProvider } from '../src/agent/provider/ollama.js';
 import { createWorld, resetCultivationWorlds } from '../src/server/state/cultivation-world.js';
 import { SCENARIOS, type Scenario } from './xianxia-scenarios.js';
+import { TROPES } from './tropes-the-genre-runs-on.js';
 
 // argv is [node, script, ...ours]; slicing is the only reliable read - matching
 // on `!== argv[1]` picked up the node executable path and silently benched the
@@ -35,6 +36,9 @@ const only = process.argv.includes('--scenario')
     ? process.argv[process.argv.indexOf('--scenario') + 1]
     : null;
 const WORLD = 'a-xianxia-run';
+// `--tropes` runs the scenes the genre is MADE of rather than the verb sweep.
+// See `tropes-the-genre-runs-on.ts` for what the two corpora each measure.
+const corpus: Scenario[] = process.argv.includes('--tropes') ? TROPES : SCENARIOS;
 
 /**
  * The engine putting the question back to the player.
@@ -94,7 +98,7 @@ const rows: Array<{
     calls: string; moved: string; narration: string;
 }> = [];
 
-for (const scenario of SCENARIOS as Scenario[]) {
+for (const scenario of corpus) {
     if (only && scenario.name !== only) continue;
     const game = await freshRun();
     out.push('='.repeat(78), `SCENARIO: ${scenario.name}   [${scenario.sign}]`,

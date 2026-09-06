@@ -148,6 +148,7 @@ Where each currently lives:
 | `world/` | Places, capability predicates, opportunity windows, history, lineage, possessions, time | [README](world/README.md) |
 | `social/` | Relationships, obligations, knowledge and belief, secrets | [README](social/README.md) |
 | `worldgen/` | Procedural generation | retained substrate |
+| `spatial/` | A* and line of sight over a graph | held for folding space |
 | `strategy/` | Nation simulation | retained substrate |
 | `perception/` | The Operator's constraint-perception lens | see `data/subsystems/` |
 
