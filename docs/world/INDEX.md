@@ -733,7 +733,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 25 | 119 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 31 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 33 | 145 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 44 | 57 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 46 | 58 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 53 | 292 |
 
 <!-- END GENERATED: design-constants -->

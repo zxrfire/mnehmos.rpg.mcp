@@ -118,6 +118,8 @@ import {
     whatStandsInTheWay
 } from './making-somebody-tell-you.js';
 import { whatAThreatPromises } from './what-a-threat-promises.js';
+import { whatYouAreNotShowing } from './what-you-are-not-showing.js';
+import { whatTheyCanPlaceAbout } from '../engine/social/what-they-can-place-about-you.js';
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import { addHearing, refused, stonesNamedIn, structureCalls } from './tool-result-prose.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
@@ -355,11 +357,35 @@ export const askingVerbs = {
         // gap was filled by a constant that read `name` for everybody. See
         // `background-as-leverage.ts`.
         const promised = whatAThreatPromises(rawInput);
+
+        // WHAT THEY CAN PLACE ABOUT YOU, which is the source of truth for how
+        // you are reached and is not the same as what you are. A concealment
+        // declared in the sentence goes to `concealmentHolds` the way an MCP
+        // caller's has always gone, and the person in front of you is the
+        // witness it is tested against - so announcing it to somebody who
+        // outranks you is announcing it.
+        //
+        // A known face wins outright, and BOTH rows say a face: a tie from THEM
+        // to YOU, and an open account between the two of you. The account has
+        // to count, because the debt and favour strands below are read off it -
+        // somebody who owes you has by construction dealt with you, and a robe
+        // that hid you from your own creditor would drop the one piece of
+        // leverage that is about the two of you and nothing else.
+        const notShowing = whatYouAreNotShowing(rawInput);
+        const theirTie = tieFrom(this.repos, party.id, cultivator.id);
+        const asTheyReadYou = whatTheyCanPlaceAbout({
+            theirOrdinal: cultivator.realmOrdinal,
+            readerOrdinal: them.realmOrdinal,
+            keepingItToThemselves: notShowing !== null,
+            hasDealtWithThemBefore: theirTie !== null || ledger.length > 0
+        });
+
         const behind = whatYouBringToBear({
             actorId: cultivator.id,
             subjectId: party.id,
             realmsOverThem:
                 realmIndexOf(cultivator.realmOrdinal) - realmIndexOf(them.realmOrdinal),
+            asTheyReadYou,
             yourHouse: membership
                 ? {
                     alignment: mySect?.alignment ?? null,
@@ -434,7 +460,7 @@ export const askingVerbs = {
             // bribe from somebody who has done you a favour is not the same
             // sentence as a bribe from a stranger, and until these were passed
             // the engine could not tell the two apart.
-            theirTie: tieFrom(this.repos, party.id, cultivator.id),
+            theirTie,
             yourTie: tieFrom(this.repos, cultivator.id, party.id),
             ledger,
             // WHERE THIS IS HAPPENING. A term and never a gate, damped by whatever
@@ -453,7 +479,18 @@ export const askingVerbs = {
                 // The player's own words, recorded and echoed, never parsed for
                 // an outcome. `leverage` is what the resolver actually reads.
                 intent: rawInput.slice(0, 400),
-                ...(brought === 'none' ? {} : { leverage: brought })
+                ...(brought === 'none' ? {} : { leverage: brought }),
+                // AND THE ROLL IS TAKEN AGAINST THE SAME PERSON THE LEVERAGE
+                // WAS. `regardFor` has read `concealed` since the bands were
+                // written; leaving it unset here while the derivation above
+                // read a concealment would price the ask as a nobody's and then
+                // roll it as an elder's. Set only where it actually held, so
+                // the resolver is told what happened rather than what was said.
+                ...(asTheyReadYou.theyCanBePlaced ? {} : {
+                    concealed: true,
+                    presentedAs: asTheyReadYou.rungTheyAreTakenFor,
+                    witnessOrdinal: them.realmOrdinal
+                })
             },
             // The row id is a randomUUID; keying on it would make the run
             // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.

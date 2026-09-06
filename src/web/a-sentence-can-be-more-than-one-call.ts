@@ -13,6 +13,7 @@ import {
     type PlannedAction
 } from './actions.js';
 import type { EngineFacts } from './facts.js';
+import { theFragmentIsOnlyTheDeclaration } from './what-you-are-not-showing.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // A STEP
@@ -160,9 +161,21 @@ export function theClausesOf(input: string): string[] {
  * - where the trailing span became a request for seclusion, because a bare
  * duration IS one, and the leading authority became an act of its own. Both
  * halves belong to the clause beside them, and neither has a verb in it.
+ *
+ * A verb is not what disqualifies a fragment, though: what does is that the
+ * fragment says how the act beside it is being done rather than naming one of
+ * its own. The concealment member below has a verb in it and is still a manner.
  */
 function thisFragmentModifiesTheActBesideIt(part: string): boolean {
-    return HOW_LONG_THE_ACT_RUNS.test(part) || ON_WHOSE_AUTHORITY.test(part);
+    return HOW_LONG_THE_ACT_RUNS.test(part)
+        || ON_WHOSE_AUTHORITY.test(part)
+        // What you are showing while you do it, which is the third thing a
+        // person puts beside an act rather than instead of one. Owned by
+        // `what-you-are-not-showing.ts` because the leverage path reads the
+        // same declaration off the same words, and two readers of one clause
+        // drift. Measured: "hiding my cultivation, tell me where the elder is"
+        // ran the concealment as a free `status()` of its own.
+        || theFragmentIsOnlyTheDeclaration(part);
 }
 
 /** How long the act beside it runs. "for a hundred days", "over three years". */

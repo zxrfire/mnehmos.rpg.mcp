@@ -48,6 +48,7 @@
  */
 
 import { HELPLESS_REALM_GAP } from '../cultivation/combat.js';
+import type { WhatTheyCanPlace } from '../social/what-they-can-place-about-you.js';
 import type { ApproachLeverage, SectAlignment } from '../../schema/cultivation.js';
 import { SEVERITY_ORDER, severityRank, type ObligationRecord } from '../social/grudges.js';
 import { whenItIsDoneToOneOfOurs } from './what-a-house-will-do-about-it.js';
@@ -86,6 +87,16 @@ export interface WhatIsActuallyBehindYou {
     readonly ledger?: readonly ObligationRecord[];
     /** The act promised if they refuse, when the sentence promised one. */
     readonly promised?: ThePromiseYouMade | null;
+    /**
+     * What the person in front of you can place about what you ARE.
+     *
+     * Absent means everything about you is on show, which is the world's
+     * default and is what every caller got before the field existed: a
+     * cultivator's weight is on them unless they put it away.
+     * `what-they-can-place-about-you.ts` is the one place that decides it, and
+     * it decides the mirror question with the same call.
+     */
+    readonly asTheyReadYou?: WhatTheyCanPlace;
 }
 
 export interface WhatYouBringToBear {
@@ -145,11 +156,24 @@ function theyOweYou(input: WhatIsActuallyBehindYou, kind: 'debt' | 'favor'): num
 export function whatYouBringToBear(input: WhatIsActuallyBehindYou): WhatYouBringToBear {
     const because: string[] = [];
 
+    // WHAT THEY CAN PLACE, WHICH IS WHAT IS WEIGHED.
+    //
+    // Not what you are. Everything below reads the rung they take you for and
+    // the house they can put you in, and where a concealment held both of those
+    // are somebody else's. One predicate covers the pair, because putting your
+    // weight away is not a thing anybody half does - see the header of
+    // `what-they-can-place-about-you.ts`.
+    const read = input.asTheyReadYou;
+    const hidden = read?.theyCanBePlaced === false;
+    const yourHouse = hidden ? null : input.yourHouse;
+    const over = read?.realmsTheyAreTakenToBeOver ?? input.realmsOverThem;
+    if (hidden && read?.whyNot) because.push(read.whyNot);
+
     // Backing is the same question in both places: a house that would not take
     // up what is done to its own is not standing behind you here either.
-    const yoursAnswers = answersForItsOwn(input.yourHouse);
+    const yoursAnswers = answersForItsOwn(yourHouse);
     const keepable = input.promised != null
-        && (input.realmsOverThem > -HELPLESS_REALM_GAP || yoursAnswers);
+        && (over > -HELPLESS_REALM_GAP || yoursAnswers);
 
     if (input.promised != null && !keepable) {
         because.push(
@@ -158,11 +182,10 @@ export function whatYouBringToBear(input: WhatIsActuallyBehindYou): WhatYouBring
         );
     }
 
-    const outreaches = input.yourHouse !== null
-        && input.yourHouse.reaches >= (input.theirHouse?.reaches ?? 0);
+    const outreaches = yourHouse !== null
+        && yourHouse.reaches >= (input.theirHouse?.reaches ?? 0);
     const debts = theyOweYou(input, 'debt');
     const favours = theyOweYou(input, 'favor');
-    const over = input.realmsOverThem;
 
     const whatIsTrue: Readonly<Partial<Record<ApproachLeverage, { holds: boolean; why: string }>>> = {
         force: {
@@ -186,7 +209,7 @@ export function whatYouBringToBear(input: WhatIsActuallyBehindYou): WhatYouBring
             why: `${favours} open favour${favours === 1 ? '' : 's'} they owe.`
         },
         name: {
-            holds: over > 0 || input.yourHouse !== null,
+            holds: over > 0 || yourHouse !== null,
             why: over > 0
                 ? `${over} major realm${over === 1 ? '' : 's'} over them, and they can see it.`
                 : 'A roll with their name on it, in a house that would not answer for them.'
