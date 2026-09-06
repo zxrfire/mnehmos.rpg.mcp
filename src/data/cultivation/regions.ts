@@ -11,7 +11,7 @@
  *   regions/region-ids.ts           the stable ids of every province and the wedge
  *   regions/local-rank-names.ts     the helper that relabels the one ladder
  *   regions/rank-translation.ts     who disputes a title, and what it costs
- *   regions/ruin-and-scar-names.ts  names for the half of the map worldgen makes
+ *   regions/what-the-people-who-saw-it-call-it.ts  names for the half of the map worldgen makes
  *
  *   regions/low-fall.ts             the centre, its vocabulary, its nine basins
  *   regions/quiet-marches.ts        the west, its vocabulary, its six face districts
@@ -37,7 +37,7 @@
 export * from './regions/region-schema.js';
 export * from './regions/region-ids.js';
 export * from './regions/local-rank-names.js';
-export * from './regions/ruin-and-scar-names.js';
+export * from './regions/what-the-people-who-saw-it-call-it.js';
 
 export * from './regions/low-fall.js';
 export * from './regions/quiet-marches.js';

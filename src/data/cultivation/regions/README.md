@@ -25,7 +25,7 @@ OPEN, so a mismatch answers with the wrong province rather than throwing.
 | [`rank-translation.ts`](./rank-translation.ts) | Who translates one province's rank vocabulary into another's, what they have riding on the answer, and what being wrong about it costs. |
 | [`region-ids.ts`](./region-ids.ts) | The stable ids of every province and of the ground between them. |
 | [`region-schema.ts`](./region-schema.ts) | The Region contract: every Zod shape a province row is built out of. |
-| [`ruin-and-scar-names.ts`](./ruin-and-scar-names.ts) | Names for the generated half of the map: what a sealed compound and a scar get called, so that neither is called by its kind. |
+| [`what-the-people-who-saw-it-call-it.ts`](./what-the-people-who-saw-it-call-it.ts) | Names for the generated half of the map: what a sealed compound and a scar get called, so that neither is called by its kind. |
 | [`the-blown-ground.ts`](./the-blown-ground.ts) | The Burial Sands: a rich vein under loose cover that moves, in the wedge the four arms leave between them, held by nobody because nothing here lasts long enough to be granted. |
 | [`the-map.ts`](./the-map.ts) | Regions - five of them, and the contrast between them is the content. |
 | [`white-stair.ts`](./white-stair.ts) | The White Stair: the qi is in the ice and the ice is going. |

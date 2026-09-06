@@ -164,7 +164,7 @@ Two consequences:
 - **Dropping the type noun does not license English furniture.** The licence above is about
   ornament, not about language. A cairn is Gaelic; an overhang, a chimney, a cellar and a
   bench are English domestic vocabulary, and a name built from them reads as an English
-  village however plain it is - the failure `ruin-and-scar-names.ts` rule 4 records under the
+  village however plain it is - the failure `what-the-people-who-saw-it-call-it.ts` rule 4 records under the
   verdict HALF ROOF IS NOT XIANXIA. A colloquial name is plain in this world's register:
   Chaotic Burial Mound, Black Wind Gap, Ghost Wail Cliff.
 

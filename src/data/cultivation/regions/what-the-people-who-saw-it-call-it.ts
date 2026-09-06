@@ -1,6 +1,14 @@
 /**
- * Names for the generated half of the map: what a sealed compound and a scar
- * get called, so that neither is called by its kind.
+ * Names for the generated half of the map: what a sealed compound and a burnt
+ * place get called, so that neither is called by its kind.
+ *
+ * THE FILE USED TO BE CALLED `ruin-and-scar-names.ts`, which is the defect it
+ * exists to prevent, committed in its own name: `ruin` and `scar` are
+ * `LocationKind` values, and the whole point below is that nobody in this world
+ * calls a place by its kind. `RUIN_NAMES` and `SCAR_NAMES` keep those words
+ * because they ARE the kinds - a table of names for locations of kind `ruin` is
+ * named correctly - and the same distinction `terminology.test.ts` draws for
+ * `toll`: mechanics may say the mechanical word, the fiction may not.
  *
  * Not `place-names.ts`, which is the one source of truth for the places the
  * catalog AUTHORS. These two tables are drawn from at world generation, by
