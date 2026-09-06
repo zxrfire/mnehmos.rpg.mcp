@@ -290,7 +290,7 @@ export interface SiteConditions {
      *
      *     seal          = people   a qi seal, taking what a person can draw
      *     locked        = room     a door with a key on it
-     *     forbidden     = site     ground that kills you at the wrong rung
+     *     forbidden     = site     enter at your own risk
      *     pocket realm  = site     a separate space, with an OPEN status
      *
      * `forbidden` was the first name tried here and it is the wrong one, which
@@ -301,12 +301,18 @@ export interface SiteConditions {
      * And forbidden is not barred, which is the other half: *"you can still
      * enter a forbidden realm - sects send people in there all the time.
      * That's what the survival levels is for. At higher cultivations forbidden
-     * realms are a walk in the park."* So it is a `LocationThresholds.survival`
-     * question and not a permission one, and the machinery for it already
-     * exists. An unopened pocket is a different thing again: rich BECAUSE
-     * nobody has been in it. Only that one makes the qi stand.
+     * realms are a walk in the park."* The owner's own summary of it is the
+     * whole rule: *"it's just like - at your own risk?"*
      *
-     * All three were `sealed`, and two of them met here. `LocationRecord.sealed`
+     * So it is a `LocationThresholds.survival` question and not a permission
+     * one, and that machinery already exists. It says nothing about how many
+     * people are on the ground - a forbidden site may be busy with a sect's
+     * expedition or empty for a century, and neither follows from the word.
+     *
+     * An unopened pocket is a different thing again: rich BECAUSE nobody has
+     * been in it. Only that one makes the qi stand.
+     *
+     * All four were `sealed`, and two of them met here. `LocationRecord.sealed`
      * means a LOCKED DOOR - `architecture.ts` writes it from `PurposeSpec.sealed`
      * and puts a `data.keyId` on the row two lines later - and this function
      * returns `sealed_vein` the moment its flag is true, BEFORE it reads any
