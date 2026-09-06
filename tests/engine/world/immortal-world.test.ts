@@ -899,7 +899,7 @@ describe('the layer survives a restart', () => {
     it('has the columns and the table in the migrated schema', () => {
         const db = new Database(':memory:');
         migrate(db);
-        for (const table of ['world_locations', 'world_factions', 'world_npcs', 'world_actors']) {
+        for (const table of ['world_locations', 'world_factions', 'world_npcs']) {
             const cols = new Set(
                 (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map(c => c.name)
             );

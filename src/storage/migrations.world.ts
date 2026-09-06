@@ -447,44 +447,6 @@ export function migrateWorld(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_world_relationships_target
       ON world_relationships(world_id, target_id);
 
-    -- ── ACTORS: WORLD-FACING HARD STATE ──────────────────────────────────
-    -- Deliberately separate from "cultivators", which owns the body (hp, qi,
-    -- satiety, injuries, progress). This owns where they are and what they are
-    -- holding. Joined on actor_id; neither duplicates the other.
-    CREATE TABLE IF NOT EXISTS world_actors (
-      world_id TEXT NOT NULL,
-      actor_id TEXT NOT NULL,
-      location_id TEXT,
-      layer TEXT NOT NULL DEFAULT 'mortal',          -- mortal|immortal
-      faction_id TEXT,
-      faction_rank_index INTEGER NOT NULL DEFAULT -1,
-      resources TEXT NOT NULL DEFAULT '{}',          -- JSON {spirit_stones: n, ...}
-      key_ids TEXT NOT NULL DEFAULT '[]',            -- JSON; sealed doors and gated links
-      updated_on_day INTEGER NOT NULL DEFAULT 0,
-      PRIMARY KEY (world_id, actor_id),
-      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_world_actors_location ON world_actors(world_id, location_id);
-
-    -- Inventory is a table rather than a JSON blob because quantity is mutated
-    -- far more often than the whole inventory is read, and "who holds this
-    -- item" is a real query once artifacts start changing hands.
-    CREATE TABLE IF NOT EXISTS world_actor_inventory (
-      world_id TEXT NOT NULL,
-      actor_id TEXT NOT NULL,
-      item_id TEXT NOT NULL,
-      name TEXT NOT NULL DEFAULT '',
-      kind TEXT NOT NULL DEFAULT 'material',         -- pill|manual|artifact|material|token|key
-      quantity INTEGER NOT NULL DEFAULT 1,
-      note TEXT NOT NULL DEFAULT '',
-      PRIMARY KEY (world_id, actor_id, item_id),
-      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_world_inventory_item
-      ON world_actor_inventory(world_id, item_id);
-
     -- ── DURABLE MEMORY ───────────────────────────────────────────────────
     -- What a person carries, which is not the same as what happened and not
     -- the same as what they believe. A memory can outlive every other trace of
@@ -565,27 +527,6 @@ export function migrateWorld(db: Database.Database): void {
     -- The advance query: unfired rows in a date window, in fire order.
     CREATE INDEX IF NOT EXISTS idx_world_effects_due
       ON world_scheduled_effects(world_id, due_on_day) WHERE fired = 0;
-
-    -- ── DURABLE PROCESSES ────────────────────────────────────────────────
-    -- Something an actor is doing continuously, stored as a rate. A thirty-year
-    -- seclusion is one row and one multiplication, not thirty years of ticks.
-    CREATE TABLE IF NOT EXISTS world_processes (
-      id TEXT NOT NULL,                              -- sequential: p1, p2, ...
-      world_id TEXT NOT NULL,
-      actor_id TEXT NOT NULL,
-      kind TEXT NOT NULL,                            -- cultivating|seclusion|travelling|...
-      started_on_day INTEGER NOT NULL,
-      ends_on_day INTEGER,                           -- NULL while open-ended
-      per_day TEXT NOT NULL DEFAULT '{}',            -- JSON {resourceKey: ratePerDay}
-      note TEXT NOT NULL DEFAULT '',
-      PRIMARY KEY (world_id, id),
-      FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_world_processes_actor
-      ON world_processes(world_id, actor_id);
-    CREATE INDEX IF NOT EXISTS idx_world_processes_open
-      ON world_processes(world_id) WHERE ends_on_day IS NULL;
 
     -- ── LINEAGE ──────────────────────────────────────────────────────────
     -- The minimum viable version: an edge, plus what travels down it. No
@@ -1002,14 +943,14 @@ function addWorldColumns(db: Database.Database): void {
     // reading of every row written before the far side existed: nobody has
     // ascended in living memory, so everything already in a saved world is
     // below the Lid.
-    for (const table of ['world_locations', 'world_factions', 'world_npcs', 'world_actors']) {
+    for (const table of ['world_locations', 'world_factions', 'world_npcs']) {
         if (!columnsOf(table).includes('layer')) {
             console.error(`[Migration] Adding layer column to ${table} table`);
             db.exec(`ALTER TABLE ${table} ADD COLUMN layer TEXT NOT NULL DEFAULT 'mortal';`);
         }
     }
 
-    for (const table of ['world_npcs', 'world_actors']) {
+    for (const table of ['world_npcs']) {
         const columns = columnsOf(table);
         if (!columns.includes('history_fact_ids')) {
             console.error(`[Migration] Adding history_fact_ids column to ${table} table`);

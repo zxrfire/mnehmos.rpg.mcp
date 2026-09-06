@@ -1,9 +1,6 @@
 import Database from 'better-sqlite3';
 import type {
-    ActorWorldState,
-    DurableProcess,
     FactionRecord,
-    InventoryItem,
     ScheduledEffect,
     WorldState
 } from '../../engine/world/world-state.js';
@@ -72,12 +69,9 @@ export class WorldStateRepository {
     private readonly insertNpcStmt: Database.Statement;
     private readonly insertGoalStmt: Database.Statement;
     private readonly insertRelationshipStmt: Database.Statement;
-    private readonly insertActorStmt: Database.Statement;
-    private readonly insertInventoryStmt: Database.Statement;
     private readonly insertMemoryStmt: Database.Statement;
     private readonly insertMemoryActorStmt: Database.Statement;
     private readonly insertEffectStmt: Database.Statement;
-    private readonly insertProcessStmt: Database.Statement;
     private readonly insertLineageStmt: Database.Statement;
     private readonly insertLineageEdgeStmt: Database.Statement;
     private readonly insertRunStmt: Database.Statement;
@@ -97,11 +91,8 @@ export class WorldStateRepository {
     private readonly selectNpcsStmt: Database.Statement;
     private readonly selectGoalsStmt: Database.Statement;
     private readonly selectRelationshipsStmt: Database.Statement;
-    private readonly selectActorsStmt: Database.Statement;
-    private readonly selectInventoryStmt: Database.Statement;
     private readonly selectMemoriesStmt: Database.Statement;
     private readonly selectEffectsStmt: Database.Statement;
-    private readonly selectProcessesStmt: Database.Statement;
     private readonly selectLineagesStmt: Database.Statement;
     private readonly selectLineageEdgesStmt: Database.Statement;
     private readonly selectRunsStmt: Database.Statement;
@@ -271,22 +262,6 @@ export class WorldStateRepository {
             )
         `);
 
-        this.insertActorStmt = db.prepare(`
-            INSERT OR REPLACE INTO world_actors (
-                world_id, actor_id, location_id, layer, faction_id, faction_rank_index,
-                resources, key_ids, updated_on_day, history_fact_ids, memory_ids
-            ) VALUES (
-                @worldId, @actorId, @locationId, @layer, @factionId, @factionRankIndex,
-                @resources, @keyIds, @updatedOnDay, @historyFactIds, @memoryIds
-            )
-        `);
-
-        this.insertInventoryStmt = db.prepare(`
-            INSERT OR REPLACE INTO world_actor_inventory
-                (world_id, actor_id, item_id, name, kind, quantity, note)
-            VALUES (@worldId, @actorId, @itemId, @name, @kind, @quantity, @note)
-        `);
-
         this.insertMemoryStmt = db.prepare(`
             INSERT OR REPLACE INTO world_memories (
                 id, world_id, owner_id, kind, summary, detail, on_day,
@@ -314,12 +289,6 @@ export class WorldStateRepository {
                 @locationId, @factionId, @repeatDays, @interrupts, @chance,
                 @fired, @firedOnDay, @data
             )
-        `);
-
-        this.insertProcessStmt = db.prepare(`
-            INSERT OR REPLACE INTO world_processes
-                (id, world_id, actor_id, kind, started_on_day, ends_on_day, per_day, note)
-            VALUES (@id, @worldId, @actorId, @kind, @startedOnDay, @endsOnDay, @perDay, @note)
         `);
 
         this.insertLineageStmt = db.prepare(`
@@ -463,11 +432,8 @@ export class WorldStateRepository {
         this.selectNpcsStmt = db.prepare('SELECT * FROM world_npcs WHERE world_id = ? ORDER BY rowid ASC');
         this.selectGoalsStmt = db.prepare('SELECT * FROM world_npc_goals WHERE world_id = ? ORDER BY rowid ASC');
         this.selectRelationshipsStmt = db.prepare('SELECT * FROM world_relationships WHERE world_id = ? ORDER BY rowid ASC');
-        this.selectActorsStmt = db.prepare('SELECT * FROM world_actors WHERE world_id = ? ORDER BY rowid ASC');
-        this.selectInventoryStmt = db.prepare('SELECT * FROM world_actor_inventory WHERE world_id = ? ORDER BY rowid ASC');
         this.selectMemoriesStmt = db.prepare('SELECT * FROM world_memories WHERE world_id = ? ORDER BY rowid ASC');
         this.selectEffectsStmt = db.prepare('SELECT * FROM world_scheduled_effects WHERE world_id = ? ORDER BY rowid ASC');
-        this.selectProcessesStmt = db.prepare('SELECT * FROM world_processes WHERE world_id = ? ORDER BY rowid ASC');
         this.selectLineagesStmt = db.prepare('SELECT * FROM world_lineages WHERE world_id = ? ORDER BY rowid ASC');
         this.selectLineageEdgesStmt = db.prepare('SELECT * FROM world_lineage_edges WHERE world_id = ? ORDER BY rowid ASC');
         this.selectRunsStmt = db.prepare('SELECT * FROM world_runs WHERE world_id = ? ORDER BY run_index ASC');
@@ -546,9 +512,7 @@ export class WorldStateRepository {
             this.writeLocations(s);
             this.writeFactions(s);
             this.writeNpcs(s);
-            this.writeActors(s);
             this.writeEffects(s);
-            this.writeProcesses(s);
             this.writeLineages(s);
             this.writeRuns(s);
             this.writeOpportunities(s);
@@ -578,10 +542,6 @@ export class WorldStateRepository {
         const relationshipsByOwner = groupBy(
             this.selectRelationshipsStmt.all(worldId) as RelationshipRow[],
             row => row.owner_id
-        );
-        const inventoryByActor = groupBy(
-            this.selectInventoryStmt.all(worldId) as InventoryRow[],
-            row => row.actor_id
         );
         const edgesByLineage = groupBy(
             this.selectLineageEdgesStmt.all(worldId) as LineageEdgeRow[],
@@ -619,15 +579,7 @@ export class WorldStateRepository {
                     (relationshipsByOwner.get(row.id) ?? []).map(rowToRelationship)
                 )
             ),
-            actors: (this.selectActorsStmt.all(worldId) as ActorRow[]).map(row =>
-                rowToActor(
-                    row,
-                    (inventoryByActor.get(row.actor_id) ?? []).map(rowToInventoryItem),
-                    (relationshipsByOwner.get(row.actor_id) ?? []).map(rowToRelationship)
-                )
-            ),
             schedule: (this.selectEffectsStmt.all(worldId) as EffectRow[]).map(rowToEffect),
-            processes: (this.selectProcessesStmt.all(worldId) as ProcessRow[]).map(rowToProcess),
             lineages: (this.selectLineagesStmt.all(worldId) as LineageRow[]).map(row =>
                 rowToLineage(row, (edgesByLineage.get(row.id) ?? []).map(rowToLineageEdge))
             ),
@@ -713,9 +665,8 @@ export class WorldStateRepository {
             'world_chronicle_actors', 'world_chronicle', 'world_eras',
             'world_location_changes', 'world_locations',
             'world_npc_goals', 'world_relationships', 'world_npcs',
-            'world_actor_inventory', 'world_actors',
             'world_memory_actors', 'world_memories',
-            'world_scheduled_effects', 'world_processes',
+            'world_scheduled_effects',
             'world_lineage_edges', 'world_lineages',
             'world_opportunities', 'world_area_statuses',
             'world_object_claims', 'world_object_provenance', 'world_objects',
@@ -732,9 +683,7 @@ export class WorldStateRepository {
         this.writeLocations(s);
         this.writeFactions(s);
         this.writeNpcs(s);
-        this.writeActors(s);
         this.writeEffects(s);
-        this.writeProcesses(s);
         this.writeLineages(s);
         this.writeRuns(s);
         this.writeAscensions(s);
@@ -982,39 +931,6 @@ export class WorldStateRepository {
         }
     }
 
-    private writeActors(s: WorldState): void {
-        for (const actor of s.actors) {
-            this.insertActorStmt.run({
-                worldId: s.id,
-                actorId: actor.actorId,
-                locationId: actor.locationId,
-                layer: actor.layer,
-                factionId: actor.factionId,
-                factionRankIndex: actor.factionRankIndex,
-                resources: JSON.stringify(actor.resources),
-                keyIds: JSON.stringify(actor.keyIds),
-                updatedOnDay: actor.updatedOnDay,
-                historyFactIds: JSON.stringify(actor.historyFactIds),
-                memoryIds: JSON.stringify(actor.memoryIds)
-            });
-
-            for (const item of actor.inventory) {
-                this.insertInventoryStmt.run({
-                    worldId: s.id,
-                    actorId: actor.actorId,
-                    itemId: item.itemId,
-                    name: item.name,
-                    kind: item.kind,
-                    quantity: item.quantity,
-                    note: item.note
-                });
-            }
-            for (const relationship of actor.relationships) {
-                this.insertRelationshipStmt.run(relationshipParams(s.id, actor.actorId, relationship));
-            }
-        }
-    }
-
     private writeEffects(s: WorldState): void {
         for (const effect of s.schedule) {
             this.insertEffectStmt.run({
@@ -1032,21 +948,6 @@ export class WorldStateRepository {
                 fired: effect.fired ? 1 : 0,
                 firedOnDay: effect.firedOnDay,
                 data: JSON.stringify(effect.data)
-            });
-        }
-    }
-
-    private writeProcesses(s: WorldState): void {
-        for (const process of s.processes) {
-            this.insertProcessStmt.run({
-                id: process.id,
-                worldId: s.id,
-                actorId: process.actorId,
-                kind: process.kind,
-                startedOnDay: process.startedOnDay,
-                endsOnDay: process.endsOnDay,
-                perDay: JSON.stringify(process.perDay),
-                note: process.note
             });
         }
     }
@@ -1666,37 +1567,6 @@ function rowToRelationship(row: RelationshipRow): NpcRelationship {
     };
 }
 
-function rowToActor(
-    row: ActorRow,
-    inventory: InventoryItem[],
-    relationships: NpcRelationship[]
-): ActorWorldState {
-    return {
-        actorId: row.actor_id,
-        locationId: row.location_id,
-        layer: toLayerKey(row.layer),
-        factionId: row.faction_id,
-        factionRankIndex: row.faction_rank_index,
-        inventory,
-        resources: parseRecord(row.resources),
-        relationships,
-        memoryIds: parseArray(row.memory_ids),
-        historyFactIds: parseArray(row.history_fact_ids),
-        keyIds: parseArray(row.key_ids),
-        updatedOnDay: row.updated_on_day
-    };
-}
-
-function rowToInventoryItem(row: InventoryRow): InventoryItem {
-    return {
-        itemId: row.item_id,
-        name: row.name,
-        kind: row.kind,
-        quantity: row.quantity,
-        note: row.note
-    };
-}
-
 function rowToMemory(row: MemoryRow): MemoryRecord {
     return {
         id: row.id,
@@ -1733,18 +1603,6 @@ function rowToEffect(row: EffectRow): ScheduledEffect {
         fired: row.fired === 1,
         firedOnDay: row.fired_on_day,
         data: parseRecord(row.data)
-    };
-}
-
-function rowToProcess(row: ProcessRow): DurableProcess {
-    return {
-        id: row.id,
-        actorId: row.actor_id,
-        kind: row.kind as DurableProcess['kind'],
-        startedOnDay: row.started_on_day,
-        endsOnDay: row.ends_on_day,
-        perDay: parseRecord(row.per_day),
-        note: row.note
     };
 }
 
@@ -2242,28 +2100,6 @@ interface RelationshipRow {
     inherited_from_id: string | null;
 }
 
-interface ActorRow {
-    actor_id: string;
-    location_id: string | null;
-    layer: string;
-    faction_id: string | null;
-    faction_rank_index: number;
-    resources: string;
-    key_ids: string;
-    updated_on_day: number;
-    history_fact_ids: string;
-    memory_ids: string;
-}
-
-interface InventoryRow {
-    actor_id: string;
-    item_id: string;
-    name: string;
-    kind: string;
-    quantity: number;
-    note: string;
-}
-
 interface MemoryRow {
     id: string;
     owner_id: string;
@@ -2297,16 +2133,6 @@ interface EffectRow {
     fired: number;
     fired_on_day: number | null;
     data: string;
-}
-
-interface ProcessRow {
-    id: string;
-    actor_id: string;
-    kind: string;
-    started_on_day: number;
-    ends_on_day: number | null;
-    per_day: string;
-    note: string;
 }
 
 interface LineageRow {

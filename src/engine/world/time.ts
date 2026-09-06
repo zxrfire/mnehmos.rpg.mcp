@@ -42,9 +42,7 @@ import {
 } from './opportunities.js';
 import {
     cloneWorld,
-    getActor,
     lineageOf,
-    upsertActor,
     upsertNpc,
     type ScheduledEffect,
     type ScheduledEffectKind,
@@ -63,15 +61,6 @@ export interface FiredEffect {
     onDay: number;
     /** Fact appended when it landed. Null when it did not. */
     factId: string | null;
-}
-
-export interface ProcessOutcome {
-    processId: string;
-    actorId: string;
-    /** Days the process was actually running inside the advanced span. */
-    days: number;
-    /** Net resource change applied to the actor. */
-    deltas: Record<string, number>;
 }
 
 export interface LifespanDeath {
@@ -164,7 +153,6 @@ export interface TimeAdvanceResult {
     interruptReason: string | null;
     interruptEffectId: string | null;
     fired: FiredEffect[];
-    processOutcomes: ProcessOutcome[];
     deaths: LifespanDeath[];
     openings: LocationOpening[];
     /** Facts in the span the observer was alive for and not present at. */
@@ -352,37 +340,6 @@ export function advanceTime(
 
     const daysAdvanced = Math.max(0, target - fromDay);
 
-    // ── 2. Durable processes, as a rate times a span. ────────────────────
-    const processOutcomes: ProcessOutcome[] = [];
-    for (const process of state.processes) {
-        const start = Math.max(process.startedOnDay, fromDay);
-        const end = Math.min(process.endsOnDay ?? target, target);
-        const span = end - start;
-        if (span <= 0) continue;
-
-        const actor = getActor(state, process.actorId);
-        if (!actor) continue;
-
-        const deltas: Record<string, number> = {};
-        const resources = { ...actor.resources };
-        for (const key of Object.keys(process.perDay).sort()) {
-            const delta = process.perDay[key] * span;
-            if (delta === 0) continue;
-            const before = resources[key] ?? 0;
-            const after = Math.max(0, before + delta);
-            resources[key] = after;
-            deltas[key] = after - before;
-            changes.push({
-                entity: 'actor', entityId: actor.actorId, field: `resources.${key}`,
-                from: before, to: after
-            });
-        }
-        if (Object.keys(deltas).length > 0) {
-            upsertActorInPlace(state, { ...actor, resources, updatedOnDay: target });
-        }
-        processOutcomes.push({ processId: process.id, actorId: process.actorId, days: span, deltas });
-    }
-
     // ── 3. Lifespans. A death date is a stored number, so this is one pass
     //       over the roster rather than anything that has to be simulated. ──
     const deaths: LifespanDeath[] = [];
@@ -497,7 +454,6 @@ export function advanceTime(
         interruptReason,
         interruptEffectId,
         fired,
-        processOutcomes,
         deaths,
         openings,
         concurrentEvents,
@@ -790,13 +746,6 @@ export function classifyWindow(
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────
 
-function upsertActorInPlace(state: WorldState, actor: ReturnType<typeof getActor>): void {
-    if (!actor) return;
-    const at = state.actors.findIndex(a => a.actorId === actor.actorId);
-    if (at >= 0) state.actors[at] = actor;
-    else state.actors.push(actor);
-}
-
 function nameFor(state: WorldState, id: string): string {
     return state.npcs.find(n => n.id === id)?.name ?? id;
 }
@@ -903,5 +852,5 @@ function buildDigest(
 
 // Re-exported so callers driving the clock do not have to reach into two
 // modules to set up the things it fires.
-export { upsertNpc, upsertActor };
+export { upsertNpc };
 export type { LocationRecord, NpcRecord, OpportunityWindow, MissedWindow, HeirRef };

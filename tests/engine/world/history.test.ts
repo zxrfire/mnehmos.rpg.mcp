@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+    fillConsequences,
     CONSEQUENCE_TEST_QUESTIONS,
     appendFact,
     causalChain,
@@ -15,7 +16,6 @@ import {
     nearMisses,
     openEra,
     queryFacts,
-    recordMajorEvent,
     recordNearMiss,
     recordUnresolved,
     resolveFact,
@@ -216,33 +216,38 @@ describe('history: the Consequence Test', () => {
 
     it('stores the event either way but reports what was left blank', () => {
         const ledger = ledgerWithEra();
-        const thin = recordMajorEvent(
-            ledger,
-            makeFact({ day: 10, kind: 'catastrophe', summary: 'A dramatic scene.' }),
-            { immediate: 'Everyone was impressed.' }
-        );
-        expect(thin.fact.id).toBe('f1');
-        expect(thin.warnings).toContain('What changed physically?');
-        expect(thin.warnings).toContain('What is still true ten years later?');
+        const thinAnswers = { immediate: 'Everyone was impressed.' };
+        const thin = appendFact(ledger, makeFact({
+            day: 10,
+            kind: 'catastrophe',
+            summary: 'A dramatic scene.',
+            consequences: fillConsequences(thinAnswers)
+        }));
+        expect(thin.id).toBe('f1');
+        expect(missingConsequences(thinAnswers)).toContain('What changed physically?');
+        expect(missingConsequences(thinAnswers))
+            .toContain('What is still true ten years later?');
 
-        const full = recordMajorEvent(
-            ledger,
-            makeFact({ day: 20, kind: 'catastrophe', summary: 'The Saltbell ridge came down.' }),
-            {
-                immediate: 'The ridge came down across the pass.',
-                physical: 'The pass is closed; a sealed structure is exposed.',
-                beneficiaries: [{ id: 'fac-1', name: 'Cold Kiln Hall', role: 'claimant' }],
-                losers: [{ id: 'fac-2', name: 'Salt Bell Court', role: 'dispossessed' }],
-                factionReactions: [{ factionId: 'fac-1', reaction: 'Sent forty disciples to hold the site.' }],
-                relationshipChanges: [{ aId: 'fac-1', bId: 'fac-2', change: 'open hostility' }],
-                opportunitiesOpened: ['The exposed structure can be entered.'],
-                opportunitiesClosed: ['The pass route to the northern markets.'],
-                rumours: ['That a Void Tribulation cultivator did it on purpose.'],
-                tenYearsLater: 'A town of eight hundred serves the excavation.'
-            }
-        );
-        expect(full.warnings).toHaveLength(0);
-        expect(full.fact.consequences?.tenYearsLater).toContain('eight hundred');
+        const fullAnswers = {
+            immediate: 'The ridge came down across the pass.',
+            physical: 'The pass is closed; a sealed structure is exposed.',
+            beneficiaries: [{ id: 'fac-1', name: 'Cold Kiln Hall', role: 'claimant' }],
+            losers: [{ id: 'fac-2', name: 'Salt Bell Court', role: 'dispossessed' }],
+            factionReactions: [{ factionId: 'fac-1', reaction: 'Sent forty disciples to hold the site.' }],
+            relationshipChanges: [{ aId: 'fac-1', bId: 'fac-2', change: 'open hostility' }],
+            opportunitiesOpened: ['The exposed structure can be entered.'],
+            opportunitiesClosed: ['The pass route to the northern markets.'],
+            rumours: ['That a Void Tribulation cultivator did it on purpose.'],
+            tenYearsLater: 'A town of eight hundred serves the excavation.'
+        };
+        const full = appendFact(ledger, makeFact({
+            day: 20,
+            kind: 'catastrophe',
+            summary: 'The Saltbell ridge came down.',
+            consequences: fillConsequences(fullAnswers)
+        }));
+        expect(missingConsequences(fullAnswers)).toHaveLength(0);
+        expect(full.consequences?.tenYearsLater).toContain('eight hundred');
     });
 });
 

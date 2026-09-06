@@ -5,28 +5,19 @@ import { migrate } from '../../../src/storage/migrations.js';
 import { migrateWorld } from '../../../src/storage/migrations.world.js';
 import {
     addItem,
-    adjustResource,
     createWorld,
     currentYear,
     dateOf,
-    getActor,
     getNpc,
     lineageOf,
-    makeActor,
     makeFaction,
-    moveActor,
     npcsAt,
     pendingEffects,
-    recordEvent,
     removeItem,
     schedule,
-    setActorFaction,
-    startProcess,
-    upsertActor,
     upsertFaction,
     upsertLineage,
     upsertNpc,
-    worldSnapshot
 } from '../../../src/engine/world/world-state.js';
 import { advanceTime, advanceYears, scheduleConcurrentEvent } from '../../../src/engine/world/time.js';
 import {
@@ -97,7 +88,7 @@ import {
     makeLocation,
     makeThresholds
 } from '../../../src/engine/world/locations.js';
-import { makeFact, queryFacts, degradeFidelity } from '../../../src/engine/world/history.js';
+import { appendFact, makeFact, queryFacts, degradeFidelity } from '../../../src/engine/world/history.js';
 
 const YEAR = 365;
 
@@ -145,8 +136,8 @@ describe('world persistence: the full migration chain', () => {
         'world_runtime', 'world_eras', 'world_chronicle', 'world_chronicle_actors',
         'world_locations', 'world_location_changes', 'world_factions',
         'world_npcs', 'world_npc_goals', 'world_relationships',
-        'world_actors', 'world_actor_inventory', 'world_memories',
-        'world_memory_actors', 'world_scheduled_effects', 'world_processes',
+        'world_memories',
+        'world_memory_actors', 'world_scheduled_effects',
         'world_lineages', 'world_lineage_edges', 'world_opportunities',
         'world_objects', 'world_object_claims', 'world_object_provenance'
     ];
@@ -406,69 +397,6 @@ describe('world state: the authoritative store', () => {
         expect(a.locations.some(l => l.kind === 'region')).toBe(true);
     });
 
-    it('tracks location, faction, inventory and resources as hard state', () => {
-        let world = createWorld({ seed: 'w-1', skipPriorAges: true, regionCount: 2 });
-        world = upsertActor(world, makeActor({ actorId: 'pc', locationId: 'loc-region-0' }));
-        world = upsertFaction(world, makeFaction({ id: 'fac-1', name: 'Cold Kiln Hall' }));
-
-        world = moveActor(world, 'pc', 'loc-region-1').state;
-        expect(getActor(world, 'pc')!.locationId).toBe('loc-region-1');
-
-        world = setActorFaction(world, 'pc', 'fac-1', 2).state;
-        expect(getActor(world, 'pc')!.factionRankIndex).toBe(2);
-
-        world = adjustResource(world, 'pc', 'spirit_stones', 500).state;
-        world = adjustResource(world, 'pc', 'spirit_stones', -120).state;
-        expect(getActor(world, 'pc')!.resources.spirit_stones).toBe(380);
-        // Resources clamp at zero. A debt is a scheduled effect, not a negative.
-        world = adjustResource(world, 'pc', 'spirit_stones', -9999).state;
-        expect(getActor(world, 'pc')!.resources.spirit_stones).toBe(0);
-
-        world = addItem(world, 'pc', { itemId: 'pill-1', name: 'Meridian Knitting Pill', kind: 'pill', quantity: 3, note: '' }).state;
-        world = removeItem(world, 'pc', 'pill-1', 2).state;
-        expect(getActor(world, 'pc')!.inventory[0].quantity).toBe(1);
-        world = removeItem(world, 'pc', 'pill-1', 5).state;
-        expect(getActor(world, 'pc')!.inventory).toHaveLength(0);
-    });
-
-    it('records an event and links it to everyone it happened to', () => {
-        let world = createWorld({ seed: 'w-2', skipPriorAges: true });
-        world = upsertNpc(world, createNpc('w-2', { id: 'npc-1', bornOnDay: 0, onDay: 0 }));
-        world = upsertActor(world, makeActor({ actorId: 'pc' }));
-
-        const out = recordEvent(world, makeFact({
-            day: 100,
-            kind: 'betrayal',
-            summary: 'The gate was opened from inside.',
-            actors: [{ id: 'npc-1', name: 'Yun Cishan', role: 'betrayer' }],
-            witnessIds: ['pc']
-        }));
-        world = out.state;
-
-        expect(getNpc(world, 'npc-1')!.historyFactIds).toContain(out.fact.id);
-        expect(getActor(world, 'pc')!.historyFactIds).toContain(out.fact.id);
-        expect(out.warnings).toHaveLength(0);   // no consequences claimed, none demanded
-    });
-
-    it('builds a snapshot scoped to one actor', () => {
-        let world = createWorld({ seed: 'w-3', skipPriorAges: true, regionCount: 1 });
-        world = upsertFaction(world, makeFaction({ id: 'fac-1', name: 'Salt Bell Court' }));
-        world = upsertActor(world, makeActor({
-            actorId: 'pc', locationId: 'loc-region-0', factionId: 'fac-1', factionRankIndex: 3,
-            resources: { spirit_stones: 40 }
-        }));
-        world = upsertNpc(world, {
-            ...createNpc('w-3', { id: 'npc-1', bornOnDay: 0, onDay: 0 }),
-            locationId: 'loc-region-0'
-        });
-
-        const snap = worldSnapshot(world, 'pc');
-        expect(snap.location!.id).toBe('loc-region-0');
-        expect(snap.actor!.factionRank).toBe('Elder');
-        expect(snap.presentNpcs.map(n => n.id)).toEqual(['npc-1']);
-        expect(npcsAt(world, 'loc-region-0')).toHaveLength(1);
-    });
-
     it('derives the date from one clock', () => {
         const world = createWorld({ seed: 'w-4', skipPriorAges: true, presentYear: 500 });
         expect(dateOf(world).year).toBe(500);
@@ -484,7 +412,6 @@ describe('world state: the authoritative store', () => {
 describe('time: advancing the clock', () => {
     function seclusionWorld() {
         let world = createWorld({ seed: 'time-1', skipPriorAges: true, regionCount: 2, presentYear: 0 });
-        world = upsertActor(world, makeActor({ actorId: 'pc', locationId: 'loc-region-0' }));
         return world;
     }
 
@@ -496,26 +423,8 @@ describe('time: advancing the clock', () => {
         expect(out.digest.headline).toContain('30');
     });
 
-    it('applies a durable process as a rate times a span, not a per-day loop', () => {
-        let world = seclusionWorld();
-        world = startProcess(world, {
-            actorId: 'pc',
-            kind: 'seclusion',
-            perDay: { cultivation_progress: 1.4, spirit_stones: -0.2 }
-        }).state;
-        world = adjustResource(world, 'pc', 'spirit_stones', 5000).state;
-
-        const out = advanceYears(world, 10);
-        const actor = getActor(out.state, 'pc')!;
-        expect(actor.resources.cultivation_progress).toBeCloseTo(1.4 * 10 * YEAR, 6);
-        expect(actor.resources.spirit_stones).toBeCloseTo(5000 - 0.2 * 10 * YEAR, 6);
-        expect(out.processOutcomes).toHaveLength(1);
-        expect(out.processOutcomes[0].days).toBe(10 * YEAR);
-    });
-
     it('is decomposable: ten years then twenty equals thirty', () => {
         let world = seclusionWorld();
-        world = startProcess(world, { actorId: 'pc', kind: 'cultivating', perDay: { progress: 1 } }).state;
         world = scheduleConcurrentEvent(world, {
             onDay: 12 * YEAR, summary: 'A war two provinces over resolved.', chance: 0.5
         }).state;
@@ -600,7 +509,6 @@ describe('time: advancing the clock', () => {
 describe('time: long actions are interrupted, not fast-forwarded', () => {
     function world() {
         let w = createWorld({ seed: 'int-1', skipPriorAges: true, regionCount: 2 });
-        w = upsertActor(w, makeActor({ actorId: 'pc', locationId: 'loc-region-0' }));
         return w;
     }
 
@@ -672,7 +580,6 @@ describe('time: a five-hundred-year run stays affordable', () => {
      */
     it('advances five centuries over a populated world in one pass', () => {
         let world = createWorld({ seed: 'soak-1', presentYear: 1000, regionCount: 8 });
-        world = upsertActor(world, makeActor({ actorId: 'pc', locationId: 'loc-region-0' }));
 
         for (let i = 0; i < 400; i++) {
             world = upsertNpc(world, createNpc('soak-1', {
@@ -897,12 +804,11 @@ describe('memory: storage, retrieval and compression', () => {
 
     it('finds memories the world record no longer supports', () => {
         let world = createWorld({ seed: 'mem-1', skipPriorAges: true });
-        const out = recordEvent(world, makeFact({
+        const fact = appendFact(world.history, makeFact({
             day: 100, kind: 'catastrophe', summary: 'The mountain at Stillshelf came down.'
         }));
-        world = out.state;
         const s = createMemoryStore();
-        rememberFact(s, 'pc', out.fact, { summary: 'There used to be a mountain here.' });
+        rememberFact(s, 'pc', fact, { summary: 'There used to be a mountain here.' });
         expect(unsupportedMemories(s, world.history, 'pc')).toHaveLength(0);
 
         // Centuries pass and the record is gone. The memory is not.

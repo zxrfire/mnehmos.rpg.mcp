@@ -347,25 +347,6 @@ export function missingConsequences(c: Partial<EventConsequences> | null | undef
     return missing;
 }
 
-export interface MajorEventResult {
-    fact: HistoricalFact;
-    /** Unanswered Consequence Test questions. Empty means the event holds up. */
-    warnings: string[];
-}
-
-/**
- * Record an event that claims to be major.
- */
-export function recordMajorEvent(
-    ledger: HistoryLedger,
-    fact: PendingFact,
-    consequences?: Partial<EventConsequences>
-): MajorEventResult {
-    const filled = consequences ? fillConsequences(consequences) : null;
-    const stored = appendFact(ledger, { ...fact, consequences: filled });
-    return { fact: stored, warnings: missingConsequences(consequences) };
-}
-
 export function fillConsequences(c: Partial<EventConsequences>): EventConsequences {
     return {
         immediate: c.immediate ?? '',
