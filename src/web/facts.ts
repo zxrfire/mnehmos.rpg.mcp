@@ -885,6 +885,20 @@ export interface SomebodyInTheSquare {
     age: number;
     /** Their rank in their house, where they wear one visibly. */
     rank: string | null;
+    /**
+     * What they are at, in one clause, or null where the world has no row.
+     *
+     * The design owner: *"they ought to all be doing something. (or doing
+     * nothing if that's their thing but that's specific not general.)"* Before
+     * this, ten people on a house's own ground - from an outer disciple to the
+     * Grand Sword Elder - produced one sentence naming them and nothing else,
+     * and every person in the world had `occupation: 'unknown'`.
+     *
+     * DERIVED and never stored: see `what-somebody-is-at-when-you-walk-up.ts`.
+     * Null for somebody who exists only as a stored roster row, which is the
+     * player's own kind and a handful of others.
+     */
+    at: string | null;
 }
 
 export interface Company {
@@ -933,11 +947,25 @@ function describeCompany(company: Company, observerOrdinal = 0): string | null {
     // Named first: these are the people the player has earned.
     const named = company.named.slice(0, COMPANY_SHOWN);
     if (named.length === 1) {
-        sentences.push(`${named[0].name} is here.`);
+        // ── WHAT THEY ARE AT, WHICH IS THE HALF THAT WAS MISSING ─────────
+        //
+        // "X is here" is a census entry. What makes a square worth standing in
+        // is that the people in it are doing something, and one person alone is
+        // the case where there is room to say what.
+        sentences.push(named[0].at === null
+            ? `${named[0].name} is here.`
+            : `${named[0].name} is here, ${named[0].at}.`);
     } else if (named.length > 1) {
         const last = named[named.length - 1].name;
         const rest = named.slice(0, -1).map(p => p.name).join(', ');
         sentences.push(`${rest} and ${last} are here.`);
+        // AND WHAT THEY ARE AT. Two at most: four clauses about four people is
+        // a list nobody reads, and the two worth having are the ones the square
+        // is arranged around - already first, because `company` sorts deepest
+        // first. They need not agree with each other about anything.
+        for (const person of named.slice(0, 2)) {
+            if (person.at !== null) sentences.push(`${person.name} is ${person.at}.`);
+        }
     }
 
     // Everybody else is a crowd, with at most one figure lifted out of it -

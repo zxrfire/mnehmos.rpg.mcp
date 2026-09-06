@@ -1013,6 +1013,13 @@ function addWorldColumns(db: Database.Database): void {
             console.error(`[Migration] Adding memory_ids column to ${table} table`);
             db.exec(`ALTER TABLE ${table} ADD COLUMN memory_ids TEXT NOT NULL DEFAULT '[]';`);
         }
+        // What somebody is at, and who with. NULL for a row nobody has set one
+        // on, which is NOT the same as idle - see `NpcRecord.activity`, where
+        // doing nothing is a specific state with a name of its own.
+        if (!columns.includes('activity')) {
+            console.error(`[Migration] Adding activity column to ${table} table`);
+            db.exec(`ALTER TABLE ${table} ADD COLUMN activity TEXT;`);
+        }
     }
 
     // What an NPC is actually carrying, as rows. `untreated_injuries` beside it

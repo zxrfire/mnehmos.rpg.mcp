@@ -196,6 +196,130 @@ export interface NpcIdentity {
     description: string;
 }
 
+/**
+ * What somebody is at, as a kind. See {@link NpcRecord.activity}.
+ *
+ * A closed set, because the whole point of it being data is that nothing
+ * branches on the string: the prose is one line per kind and the world sim
+ * moves people between kinds. A tenth kind is a row here and a line beside the
+ * other lines, and no code anywhere else.
+ */
+export type ActivityKind =
+    /** Chasing a thing they need. */
+    | 'their_own_business'
+    /** Open channels, and nothing else worth doing until they close. */
+    | 'mending'
+    /** The work of their rung, on their house's own ground. */
+    | 'the_work_of_their_rank'
+    /** Somebody in front of them being corrected. Takes people. */
+    | 'teaching'
+    /** Talking. Takes people, and is the commonest thing anybody is at. */
+    | 'talking'
+    /**
+     * At a house's shelves, looking for something to learn.
+     *
+     * `seedSectLibraries` has put real books on real shelves since it was
+     * written, gated by rank, so somebody at this is standing in front of a
+     * catalog the player can also reach - and what they walk away with is a
+     * thing that exists rather than a flavour line.
+     */
+    | 'at_the_shelves'
+    /**
+     * Getting people together for something the house is sending out.
+     *
+     * The owner's own worked example, which is the shape this whole field is
+     * for: *"on one turn (or maybe many) the outer sect disciple is being
+     * taught by an elder [...] once that's done, he goes out and takes a task
+     * and is recruiting a group to go out."* Three activities in sequence, the
+     * middle one alone and the outer two with other people in them.
+     *
+     * It reaches machinery that already exists rather than inventing any:
+     * `duties.ts` is the task, `why-a-house-puts-a-party-on-the-road.ts` is the
+     * reason, and `who-goes-out-for-a-house-and-what-comes-back.ts` is what
+     * happens to the party. Somebody at this is somebody a player can join.
+     */
+    | 'mustering'
+    /**
+     * Eating, drinking, or sitting over the remains of both.
+     *
+     * The commonest thing anybody in any world is at, and the one most likely
+     * to be happening when a stranger walks in. Takes people as often as not.
+     */
+    | 'at_a_table'
+    /**
+     * In a fight with something that is not a person, and it is going one way
+     * or the other.
+     *
+     * `hunting-a-spirit-beast.ts` is the whole machine for this and the beasts
+     * are catalogued with rungs on them, so somebody at it is in a real fight
+     * with a real thing - which a player can walk into, help with, or watch.
+     */
+    | 'fighting_a_beast'
+    /** Somewhere goods change hands. */
+    | 'trade'
+    /** Ground worth working, being worked. */
+    | 'drawing_on_the_ground'
+    /**
+     * Out on the errand they mustered for, with the party they mustered.
+     *
+     * The end of the owner's worked chain - taught, then a task taken, then a
+     * group recruited, then *"mid expedition with his party"* - and the one
+     * activity where `withIds` is the whole party rather than a companion.
+     * Everybody in it names everybody else, so walking into the middle of one
+     * reads the same whoever you looked at.
+     */
+    | 'out_with_a_party'
+    /** Between places, alone. */
+    | 'travelling'
+    /** The road, which is what a cultivator is at when nothing else is true. */
+    | 'their_practice'
+    /**
+     * Sitting with a dao rather than with an art.
+     *
+     * Distinct from `their_practice`, and the distinction is the one
+     * `understanding.ts` already draws: an art is worked at and a dao is
+     * comprehended, they accumulate on different clocks, and somebody at this
+     * is doing the thing no amount of diligence substitutes for. Dao ground and
+     * the places that teach one already exist, so somebody at it is somewhere
+     * the player could also sit.
+     */
+    | 'comprehending'
+    /**
+     * Nothing, on purpose.
+     *
+     * A specific state a specific person is in, and never a fallback. The whole
+     * complaint this field answers was four hundred people at nothing by
+     * default.
+     */
+    | 'idle';
+
+export interface NpcActivity {
+    kind: ActivityKind;
+    /**
+     * What they are actually at, in words. The thing itself, not the category.
+     *
+     * The same shape `NpcGoal.text` has and for the same reason: the KIND is
+     * what the engine reasons about and the note is what a person would say
+     * they were doing. "Sitting over the third form and not getting it" and
+     * "copying out a borrowed manual before it has to go back" are both
+     * `their_practice`, and the difference between them is the whole of what
+     * makes a square worth standing in.
+     *
+     * Written by whoever set the activity - the seeder writes plain ones, the
+     * narrator can write better - and stored verbatim.
+     */
+    note: string;
+    /**
+     * Everybody else in it, by id. Empty for the things one person does alone.
+     *
+     * Symmetric by construction: everybody named here names everybody else,
+     * so the scene reads the same whichever of them was walked up to.
+     */
+    withIds: string[];
+    /** The day they started it, so a world can tell a habit from a moment. */
+    sinceDay: number;
+}
+
 export interface NpcCultivation {
     realmOrdinal: number;
     spiritRoot: SpiritRootKey;
@@ -258,6 +382,37 @@ export interface NpcRecord {
 
     goals: NpcGoal[];
     relationships: NpcRelationship[];
+
+    /**
+     * What they are at, right now, and who with.
+     *
+     * The design owner: *"they ought to all be doing something"*, *"you seed
+     * activity and it changes obviously as they do something else"*, and *"like
+     * a sect brother might be talking to a sect sister"*.
+     *
+     * STORED AND NOT DERIVED, which was the first cut and the wrong one. A
+     * derived activity is a function of the roster and therefore the same every
+     * time you look, which is a diorama rather than a world: the point is that
+     * it CHANGES, and that the change is a thing that happened rather than a
+     * different reading of the same row. It is seeded when the world opens and
+     * rolled forward with everything else.
+     *
+     * `withIds` is the other half of it, and it is why this is a record rather
+     * than a string. People at the same compound doing the same thing WITH each
+     * other is the commonest scene in the genre, and it cannot be written as
+     * independent facts without them disagreeing about whether it is happening.
+     *
+     * N PEOPLE AND NOT TWO. A conversation is two, a lesson is a master and
+     * however many are sitting in front of them, a work party is as many as the
+     * work takes, and a duel is two with a ring of people around it. Nothing
+     * here caps it, and everybody in one names everybody else in it, so the
+     * scene reads the same whichever of them you walked up to.
+     *
+     * Null for somebody nobody has ever looked at - a row the seeder has not
+     * reached yet - and never as a way of saying they are idle. Doing nothing
+     * is `'idle'`, which is a specific state a specific person is in.
+     */
+    activity: NpcActivity | null;
 
     /** Fact ids in the world ledger. The trajectory, as durable facts. */
     historyFactIds: string[];
@@ -450,6 +605,8 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         spiritStones: Math.max(0, Math.round(opts.spiritStones ?? 0)),
         goals: [],
         relationships: [],
+        // Null until the seeder reaches them. Never a way of saying idle.
+        activity: null,
         historyFactIds: [],
         memoryIds: [],
         status: 'alive',

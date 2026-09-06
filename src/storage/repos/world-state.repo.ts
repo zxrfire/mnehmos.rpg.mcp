@@ -9,7 +9,12 @@ import type {
 } from '../../engine/world/world-state.js';
 import type { Era, HistoricalFact, HistoryLedger } from '../../engine/world/history.js';
 import type { LocationChange, LocationRecord } from '../../engine/world/locations.js';
-import type { NpcGoal, NpcRecord, NpcRelationship } from '../../engine/world/npc-state.js';
+import type {
+    NpcActivity,
+    NpcGoal,
+    NpcRecord,
+    NpcRelationship
+} from '../../engine/world/npc-state.js';
 import type { MemoryRecord, MemoryStore } from '../../engine/world/memory.js';
 import type { LineageEdge, LineageRecord } from '../../engine/world/lineage.js';
 import type { OpportunityWindow } from '../../engine/world/opportunities.js';
@@ -223,7 +228,7 @@ export class WorldStateRepository {
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
-                history_fact_ids, memory_ids
+                history_fact_ids, memory_ids, activity
             ) VALUES (
                 @id, @worldId, @name,
                 @bornOnDay, @origin, @sex, @physique, @bloodlineSpecies, @bloodlineTier,
@@ -234,7 +239,7 @@ export class WorldStateRepository {
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
-                @historyFactIds, @memoryIds
+                @historyFactIds, @memoryIds, @activity
             )
         `);
 
@@ -956,7 +961,8 @@ export class WorldStateRepository {
                 nextGoalSeq: npc.nextGoalSeq,
                 tags: JSON.stringify(npc.tags),
                 historyFactIds: JSON.stringify(npc.historyFactIds),
-                memoryIds: JSON.stringify(npc.memoryIds)
+                memoryIds: JSON.stringify(npc.memoryIds),
+                activity: npc.activity === null ? null : JSON.stringify(npc.activity)
             });
 
             for (const goal of npc.goals) {
@@ -1346,6 +1352,24 @@ function relationshipParams(
 
 // ROW MAPPING
 
+/**
+ * What somebody is at, off the column, or null.
+ *
+ * NULL and a bad row read the same way on purpose: a world written before this
+ * column existed has nobody at anything, and the seeder gives everybody one on
+ * the next open. There is no default activity, because a default is what four
+ * hundred people standing still looked like.
+ */
+function parseActivity(json: string | null): NpcActivity | null {
+    if (json === null || json.length === 0) return null;
+    try {
+        const row = JSON.parse(json) as NpcActivity;
+        return row && typeof row.kind === 'string' ? row : null;
+    } catch {
+        return null;
+    }
+}
+
 function parseArray<T>(json: string): T[] {
     return JSON.parse(json) as T[];
 }
@@ -1584,6 +1608,7 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
         relationships,
         historyFactIds: parseArray(row.history_fact_ids),
         memoryIds: parseArray(row.memory_ids),
+        activity: parseActivity(row.activity),
         status: row.status as NpcRecord['status'],
         bodyId: row.body_id,
         soulState: row.soul_state as NpcRecord['soulState'],
@@ -2167,6 +2192,7 @@ interface NpcRow {
     tags: string;
     history_fact_ids: string;
     memory_ids: string;
+    activity: string | null;
 }
 
 interface GoalRow {

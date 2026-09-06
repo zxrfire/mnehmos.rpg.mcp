@@ -125,6 +125,7 @@ import {
 } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
+import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
@@ -11902,14 +11903,33 @@ ${fit.line}`;
         const named: Company['named'] = [];
         const strangers: Company['strangers'] = [];
 
+        // WHAT EACH OF THEM IS AT, off the world row rather than the roster
+        // one. A stored roster row - the player's own kind - has no activity
+        // and reads as null, which is the honest answer for somebody the world
+        // sim has never touched.
+        const byId = new Map((this.atHand?.npcs ?? []).map(row => [row.id, row]));
+        const nameOf = (id: string): string => byId.get(id)?.name ?? 'somebody';
+
         for (const person of here) {
             if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
+                const doing = byId.get(person.id)?.activity ?? null;
                 named.push({
                     name: person.name,
                     ordinal: person.realmOrdinal,
                     sex: person.sex ?? null,
                     age: person.age,
-                    rank: person.sectRank ?? null
+                    rank: person.sectRank ?? null,
+                    // Only the people the player can already name are named
+                    // back: an activity that says "mid-conversation with
+                    // somebody" is the honest read of watching two strangers
+                    // talk, and handing over the second name would be the
+                    // knowledge gate leaking through the prose.
+                    at: doing === null ? null : whatThatLooksLike(
+                        doing,
+                        doing.withIds
+                            .filter(id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id))
+                            .map(nameOf)
+                    )
                 });
             } else {
                 strangers.push({ ordinal: person.realmOrdinal });

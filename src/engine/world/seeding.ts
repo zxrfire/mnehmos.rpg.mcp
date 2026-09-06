@@ -71,6 +71,7 @@ import { seedComprehensionMaterials } from './single-use-dao-comprehension-mater
 import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
+import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
     seedTheFamiliesStandingInAPlace,
@@ -275,6 +276,14 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // in the world is bare masonry and a body at the bottom of the ladder can
     // walk into the compound of a body at the top.
     state.objects.push(...seedHouseWards(state));
+
+    // AND WHAT EVERY ONE OF THEM IS DOING. Last, because it reads where people
+    // ended up standing and what they ended up holding. Before this, every
+    // person in the world was at nothing - `occupation: 'unknown'`, no goals -
+    // so ten people on a house's own ground, from an outer disciple to the
+    // Grand Sword Elder, all read the same way. See
+    // `what-somebody-is-at-when-you-walk-up.ts`.
+    setWhatEverybodyIsAt(state, presentDay);
     // And the medicine that mends a cracked cultivator, which is placed rather
     // than scattered: exactly the authored holdings, on exactly those bodies,
     // and nowhere else. See `who-holds-the-structural-repair-medicine.ts`.
