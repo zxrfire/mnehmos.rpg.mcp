@@ -81,7 +81,9 @@ import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { FOUNDATION_ORDINAL } from '../engine/cultivation/realms.js';
 import { type Injury } from '../schema/cultivation.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
-import { round2, writeAdminAudit } from '../server/consolidated/cultivation-support.js';
+import { round2, writeAdminAudit,
+    everythingInThePouch
+} from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
 import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
@@ -601,6 +603,11 @@ import {
     type GroundEntitlement
 } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import { aSealHereMeansAnUndrawnPocket } from '../engine/world/locations.js';
+import {
+    whatABodyCanCarry,
+    whatAllOfThatTakes,
+    whatCarryingThatIsLike
+} from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 // The ONE banding table, from `qi-scale.ts`. A second one in the encounter
 // tokens is how an encounter line and the sheet beside it came to disagree
@@ -2990,6 +2997,24 @@ ${noticedWaiting}`;
                         copiesHeldBy(this.db, cultivator.id).length > 0
                     ).line
                 ));
+                // AND WHAT THEY ARE ACTUALLY CARRYING, when it is close enough
+                // to matter. The design owner: *"objects have volume and
+                // weight"*, *"how much you can carry is limited by volume and
+                // weight by cultivation level."*
+                //
+                // Silent below seven tenths, and it names WHICH of the two ran
+                // out - a pouch of pills is heavy and small, a bundle of herbs
+                // is the reverse, and "it will not fit" and "you cannot lift
+                // it" send somebody to do two different things. See
+                // `what-a-body-can-carry-and-what-a-ring-holds.ts`.
+                const load = whatAllOfThatTakes(everythingInThePouch(this.db, cultivator.id));
+                const carrying = whatCarryingThatIsLike(
+                    load, whatABodyCanCarry(cultivator.realmOrdinal)
+                );
+                if (carrying !== null) {
+                    sheet.facts.lines.push(carrying);
+                    sheet.facts.prose = `${sheet.facts.prose}\n\n${carrying}`;
+                }
                 // AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE
                 const onProbation = probationOf(this.repos, cultivator, run);
                 if (onProbation) {

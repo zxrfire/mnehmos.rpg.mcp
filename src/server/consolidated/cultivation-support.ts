@@ -404,6 +404,21 @@ export function listCarriedArtifacts(db: Database.Database, cultivatorId: string
     return allPouchRows(db, cultivatorId).filter(entry => entry.kind === 'artifact');
 }
 
+/**
+ * EVERY row in a pouch, artifacts included.
+ *
+ * `listPouch` drops artifacts and `listCarriedArtifacts` keeps only those,
+ * because the two callers that existed each wanted one half. Weighing a pouch
+ * wants all of it: a carried blade is the heaviest thing in there and leaving
+ * it out would report a load that is not the load.
+ */
+export function everythingInThePouch(
+    db: Database.Database,
+    cultivatorId: string
+): PouchEntry[] {
+    return allPouchRows(db, cultivatorId);
+}
+
 function allPouchRows(db: Database.Database, cultivatorId: string): PouchEntry[] {
     const rows = db
         .prepare(`
