@@ -187,7 +187,7 @@ describe('the gap reads the same from both ends', () => {
 
     it('calls a two-realm gap a fight nobody is having, looking DOWN', () => {
         // The dead ternary: `realmGap <= -HELPLESS_REALM_GAP ? 'contested' : 'contested'`
-        // meant a Void Refinement cultivator looking down at Qi Condensation
+        // meant a Void Tribulation cultivator looking down at Qi Condensation
         // Layer 5 - twenty-six rungs - was told the fight was "close enough
         // that everything else decides it".
         const down = assessGap(price(30), price(4));

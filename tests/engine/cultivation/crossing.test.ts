@@ -588,7 +588,7 @@ describe('the population curve is a different shape from the prodigy curve', () 
     it('all but never produces anybody at the top of the ladder, unaided', () => {
         // The sweep above is P(outcome | everything went right). This is the
         // unconditional figure, and an ordinarily-rolled cultivator in ordinary
-        // qi all but never reaches Void Refinement, let alone the last realm.
+        // qi all but never reaches Void Tribulation, let alone the last realm.
         // That is the Late Age working, and it is why the people standing at
         // Tribulation Transcendence in the present day are CONTENT - named,
         // placed, mostly sealed or withdrawn - rather than a product of this
@@ -631,7 +631,7 @@ describe('the population curve is a different shape from the prodigy curve', () 
             ).toBeLessThan(0.01);
             expect(
                 voidRefinement.share,
-                `${ambient} makes Void Refinement an ordinary outcome`
+                `${ambient} makes Void Tribulation an ordinary outcome`
             ).toBeLessThan(0.03);
         }
         // And thin ground still produces nothing at all above Qi Condensation,

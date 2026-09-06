@@ -140,7 +140,7 @@ export function bandAfterWorth(band: RegardBand, worthCount: number): RegardBand
 /**
  * The second question. The owner's calibration, which the existing band windows
  * already land on with nothing chosen to produce it: a Core Formation cultivator
- * who offends a Void Refinement elder reads `beneath` and is worth answering; a
+ * who offends a Void Tribulation elder reads `beneath` and is worth answering; a
  * Qi Condensation nobody reads `dismissed` and is not.
  */
 export function whetherYouAreWorthTheTrouble(input: {

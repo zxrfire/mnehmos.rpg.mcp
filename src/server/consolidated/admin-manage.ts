@@ -1110,7 +1110,7 @@ export async function handleSpawnEncounter(
     const disposition = args.disposition ?? 'hostile';
     // The house that answers for them, found by the alignment asked for and
     // pitched as near this person's rung as the catalog allows - a Void
-    // Refinement elder belongs to a house that has Void Refinement people in
+    // Refinement elder belongs to a house that has Void Tribulation people in
     // it. Deterministic: same alignment and same rung, same house, every time.
     const house = args.alignment === undefined
         ? null

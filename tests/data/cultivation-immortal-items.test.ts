@@ -339,7 +339,7 @@ describe('the last realm is unbuyable', () => {
         expect(rankName(24)).toBe('Nascent Soul Perfection');
         expect(rankName(25)).toBe('Deity Transformation First Turn');
         expect(rankName(28)).toBe('Deity Transformation Final Turn');
-        expect(rankName(29)).toBe('Void Refinement First Tempering');
+        expect(rankName(29)).toBe('Void Tribulation First Tempering');
         expect(rankName(36)).toBe('Body Integration Marrow');
         expect(rankName(37)).toBe('Grand Ascension Rising Body');
         // Each clean-case departure rung is a realm boundary: advancing from it
@@ -359,12 +359,12 @@ describe('the last realm is unbuyable', () => {
             .toMatch(/spent for nothing/i);
         const ceilings = THE_LAST_REALM_IS_UNBUYABLE.theCeilings.join(' ');
         expect(ceilings).toMatch(/lower.*Deity Transformation.*24 to 25/is);
-        expect(ceilings).toMatch(/middle.*Void Refinement.*28 to 29/is);
+        expect(ceilings).toMatch(/middle.*Void Tribulation.*28 to 29/is);
         expect(ceilings).toMatch(/higher.*Grand Ascension.*36 to 37/is);
     });
 
     it('ties the rule to the admission bar and to bought inputs', () => {
-        expect(THE_LAST_REALM_IS_UNBUYABLE.whyItStopsThere).toMatch(/Void Refinement floor/i);
+        expect(THE_LAST_REALM_IS_UNBUYABLE.whyItStopsThere).toMatch(/Void Tribulation floor/i);
         expect(THE_LAST_REALM_IS_UNBUYABLE.whyItStopsThere).toMatch(/origin\.md/);
         expect(THE_LAST_REALM_IS_UNBUYABLE.whyItStopsThere).toMatch(/privilege buys inputs and never rank/i);
         expect(THE_LAST_REALM_IS_UNBUYABLE.whatItProtects).toMatch(/they walked/i);

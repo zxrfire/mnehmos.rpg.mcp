@@ -619,7 +619,7 @@ that and got it wrong because the word was in a name.
 
 **What is closed to a model is the OUTCOME, and only that.** A model may read the line and may
 phrase the answer. It may never decide what happened - refusals like *"there is no such rung"*
-or *"the Court admits at Void Refinement"* are facts about the world and are produced by code.
+or *"the Court admits at Void Tribulation"* are facts about the world and are produced by code.
 Admin lifting a gate is arranging; a model reporting a success nobody resolved is inventing a
 world, and that stays impossible by construction rather than by instruction.
 
@@ -1061,7 +1061,7 @@ outflow and volume separately** rather than reporting a single share, because th
 failure modes look different in those three numbers and identical in any one of them:
 
 - volume stable, arrivals near 100% - **too fast a turnover**, the bucket is being flushed.
-  Measured at 90-95% above Void Refinement and rejected: "arrivals should be HARD",
+  Measured at 90-95% above Void Tribulation and rejected: "arrivals should be HARD",
   "cultivation should not be easy".
 - volume falling - outflow exceeds inflow. This was the original decline.
 - volume healthy, inflow near zero - **living on inheritance**, which is where the apex
@@ -1208,7 +1208,7 @@ your change or the draw.**
 
 Measured, and it came within one command of going in as a finding. Eleven rows added to the
 member catalog - none of them standing above Nascent Soul - turned a guard red at 4 of 10
-people above Void Refinement, against a bar of half. The control arm on that seed read 22 of
+people above Void Tribulation, against a bar of half. The control arm on that seed read 22 of
 30 without the rows. Two separate instruments reproduced it identically, and the population
 was 531 against 527 either side, so the world was the same size and the band had been cut to
 a third. The baseline's spread over six seeds was 23 to 41, which put 10 nowhere near it.

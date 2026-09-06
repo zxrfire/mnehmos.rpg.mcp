@@ -73,7 +73,7 @@ describe('speed', () => {
         const floor = refiningOrdinalFor('heaven');
         expect(realmsAboveTheTrackedFloor(floor)).toBe(0);
         expect(realmsAboveTheTrackedFloor(floor - 1)).toBe(0);
-        // Void Refinement runs 29..32, so the first step is at 33.
+        // Void Tribulation runs 29..32, so the first step is at 33.
         expect(realmsAboveTheTrackedFloor(floor + 3)).toBe(0);
         expect(realmsAboveTheTrackedFloor(floor + 4)).toBe(1);
         expect(realmsAboveTheTrackedFloor(OBJECT_CEILING_BELOW_THE_LID)).toBeGreaterThan(1);

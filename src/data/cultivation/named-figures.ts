@@ -394,7 +394,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         juniority: 3,
         manner:
             'Silent, and the most requested of the six: the Ward has petitioned her about the aborted crossing eleven times over two thousand years and received nothing, which is not a refusal so much as a matter that has stopped being live for her.',
-        note: 'Two dates on one tablet, which is the whole of the evidence that a crossing can be broken off and re-attempted, and which every Void Refinement cultivator in the world would want to read.'
+        note: 'Two dates on one tablet, which is the whole of the evidence that a crossing can be broken off and re-attempted, and which every Void Tribulation cultivator in the world would want to read.'
     },
     {
         id: 'figure-he-zhaoqing',

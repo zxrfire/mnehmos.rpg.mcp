@@ -330,7 +330,7 @@ Three rules the catalog enforces, because they are world facts rather than flavo
 
 - **A core and a voice are twelve rungs apart.** `BEAST_CORE_ORDINAL` is 17, Core Formation:
   a beast condenses a core and can say nothing about it, which is the whole reason it can be
-  hunted for one. `BEAST_CHANGE_ORDINAL` is 29, Void Refinement: it takes a shape and a
+  hunted for one. `BEAST_CHANGE_ORDINAL` is 29, Void Tribulation: it takes a shape and a
   voice and is thereafter somebody. Anything offering terms has that floor under it, so it
   is never the cheap option - and it is a rare enough event that three entries in the
   catalog qualify. Read `speaks` and never the ordinal: the constant is a floor beneath

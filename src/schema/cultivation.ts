@@ -89,7 +89,7 @@ export const STAGNATION_YEARS = 50;
  *
  * Capped above at 0.25 by a hard constraint: Foundation Establishment must stay
  * at exactly the STAGNATION_YEARS floor (50/200). Within that, 0.20 was measured
- * rather than guessed: at 0.15 the Void Refinement boundary (ordinal 32) missed
+ * rather than guessed: at 0.15 the Void Tribulation boundary (ordinal 32) missed
  * by 6%, a razor edge any later tuning would flip; 0.20 clears it with margin.
  */
 export const STAGNATION_LIFESPAN_FRACTION = 0.2;

@@ -130,9 +130,17 @@ export const REALM_TIERS: readonly RealmTier[] = [
             'Body and soul merge. You are no longer human, and a whole region learns your name.'
     },
     {
+        // THE KEY IS NOT THE NAME, and this one is deliberately left behind it.
+        // The realm was called Void Refinement until alchemy took the word:
+        // *"because we added refinement i suggest renaming void refinement to
+        // void tribulation"*, and *"that's just the language, we keep
+        // everything else."* A key is an identity and changing one rewrites
+        // every save, every stored technique row and every fact in a ledger
+        // that was written years of world-time ago, to buy nothing a reader
+        // ever sees. So the display name moved and the key did not.
         key: 'void_refinement',
-        name: 'Void Refinement',
-        hanzi: '煉虛',
+        name: 'Void Tribulation',
+        hanzi: '虛劫',
         ordinalStart: 29,
         ordinalEnd: 32,
         // Temperings, not stages. Nothing is added here; the same self is put
@@ -141,7 +149,9 @@ export const REALM_TIERS: readonly RealmTier[] = [
         lifespanYears: 5000,
         powerMultiplier: 1024,
         description:
-            'Refining the self against emptiness. Most who reach here stop being described and start being rumoured.'
+            'The emptiness is put to the self rather than the self to it, four times, and what '
+            + 'comes back out is smaller and harder. Most who reach here stop being described '
+            + 'and start being rumoured.'
     },
     {
         key: 'body_integration',

@@ -56,16 +56,16 @@ export type CapabilityGrant =
     /** Deity Transformation: presence alone suppresses lesser cultivators. */
     | 'suppresses_lesser'
     /**
-     * Void Refinement: needs no ambient qi at all.
+     * Void Tribulation: needs no ambient qi at all.
      */
     | 'no_ambient_needed'
-    /** Void Refinement: dead zones, scars and voids become survivable. */
+    /** Void Tribulation: dead zones, scars and voids become survivable. */
     | 'enters_dead_zones'
     /**
-     * Void Refinement: folding space rather than crossing it.
+     * Void Tribulation: folding space rather than crossing it.
      */
     | 'spatial_folding'
-    /** Void Refinement: reads regional formation structure whole. */
+    /** Void Tribulation: reads regional formation structure whole. */
     | 'reads_formations'
     /** Body Integration: no seam between body and soul to attack. */
     | 'no_seam'

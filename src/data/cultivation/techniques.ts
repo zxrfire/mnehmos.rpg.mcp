@@ -436,7 +436,7 @@ export const ABOVE_THE_LID_TRANSMISSION = {
  * Realm-ordinal window in which each grade is learnable. Aligned to realm
  * boundaries: mortal manuals are Qi Condensation, earth manuals carry you through
  * Foundation and Core, heaven through Nascent Soul and Deity Transformation,
- * immortal through Void Refinement and Body Integration, and chaos manuals only
+ * immortal through Void Tribulation and Body Integration, and chaos manuals only
  * exist for Grand Ascension and above.
  */
 // AND THE TOP TWO BANDS OVERLAP, BECAUSE THE GRADES ARE PEERS
@@ -1105,7 +1105,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
 
     // ═══════════════════════════════════════════════════════════════════
-    // ATTACK - IMMORTAL (Void Refinement / Body Integration)
+    // ATTACK - IMMORTAL (Void Tribulation / Body Integration)
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'star-quenching-blade-domain',
@@ -1344,7 +1344,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: null,
         cooldown: 4,
         description:
-            'The cultivator hollows their own presence so that strikes pass through the space where a person is understood to be. Elementless, and the single most-copied manual in Void Refinement.'
+            'The cultivator hollows their own presence so that strikes pass through the space where a person is understood to be. Elementless, and the single most-copied manual in Void Tribulation.'
     }),
     art({
         id: 'thunder-scale-aegis',
@@ -2023,7 +2023,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'cultivation',
         grade: 'immortal',
         element: 'metal',
-        // Void Refinement is the same self put back into the emptiness and
+        // Void Tribulation is the same self put back into the emptiness and
         // taken out smaller and harder. Drawing wire is that, with tongs.
         domain: 'element',
         domainDegree: 2,
@@ -3568,7 +3568,7 @@ export const LIVING_TRANSMISSIONS: readonly LivingTransmission[] = [
         wants:
             'The name of who opened the site he took it out of, which he does not have and has wanted for two hundred years. He will teach on the strength of a credible lead and has twice taught on an incredible one.',
         whyNotTheShelf:
-            'No shelf anywhere holds it. It is a ruin manual and its only other route is a trial calibrated for the disciples of a house that no longer exists - so a living person who dug it up, read it, and survived it is the single most valuable thing at Void Refinement that a cultivator can actually walk up to and talk to.'
+            'No shelf anywhere holds it. It is a ruin manual and its only other route is a trial calibrated for the disciples of a house that no longer exists - so a living person who dug it up, read it, and survived it is the single most valuable thing at Void Tribulation that a cultivator can actually walk up to and talk to.'
     },
     {
         memberId: 'member-ru-anwei',

@@ -149,7 +149,7 @@ describe('played', () => {
     it('sells a cultivator who has stopped eating nothing at all', async () => {
         const h = await makeGameInWorld({ worldSeed: WORLD, seed: 'above-the-line' });
         const opened = await h.game.newRun('Shen Wuyou');
-        // Void Refinement. `SATIETY_BURN_BY_REALM.void_refinement` is 0.
+        // Void Tribulation. `SATIETY_BURN_BY_REALM.void_refinement` is 0.
         h.repos.cultivators.update(opened.cultivator.id, {
             realmOrdinal: 30, spiritStones: 1000
         } as never);

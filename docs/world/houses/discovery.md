@@ -27,7 +27,7 @@ The second was missing, and its absence had shaped the whole design:
 
 Which is right. Everything below this section is an account of how the world reaches a
 farm child at Qi Condensation Layer 1, and for that person it is exact and load-bearing.
-It is the wrong account of somebody who can leave the ground. **A Void Refinement
+It is the wrong account of somebody who can leave the ground. **A Void Tribulation
 cultivator does not need a carter to mention that there is a mountain over there.**
 
 ## Sections

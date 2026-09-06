@@ -84,7 +84,7 @@ describe('the rate reads the rung it is standing on', () => {
         expect(realm!.multiplier).toBeGreaterThan(1);
         // The label names the realm it priced, so a caller that forgot to pass
         // an ordinal shows "Qi Condensation intake" while standing at 30.
-        expect(realm!.label).toMatch(/Void Refinement/);
+        expect(realm!.label).toMatch(/Void Tribulation/);
     });
 
     it('reads the ladder rather than carrying a table of its own', () => {

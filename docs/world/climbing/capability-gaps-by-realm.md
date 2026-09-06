@@ -66,7 +66,7 @@ Counted off the live catalogs and `capability.ts`, not asserted.
 | Core Formation (17-20) | **0** | 6 | 3 | 14 |
 | Nascent Soul (21-24) | 2 | 2 | 3 | 13 |
 | Deity Transformation (25-28) | 4 | 1 | 5 | 10 |
-| Void Refinement (29-32) | 8 | 1 | 5 | 9 |
+| Void Tribulation (29-32) | 8 | 1 | 5 | 9 |
 | Body Integration (33-36) | 10 | 0 | 3 | 13 |
 | Grand Ascension (37-40) | 14 | 1 | 3 | 6 |
 | Tribulation Transcendence (41-44) | 15 | 0 | 4 | 10 |
@@ -259,7 +259,7 @@ what the setting claims for it.
 
 | # | Question | Verdict | Where it lives |
 |---|---|---|---|
-| 1 | perceive | **built** | `what-you-can-see-from-up-there.ts`. Ordinal 15 - `gale-riding-sword-flight`'s own requirement - is where a cultivator gets off the ground, and the discovery layer stops being entirely a matter of being told. The horizon at first flight is two travel days: your own province and nothing past it, since the shortest stated road is six. Consumed by `destinations` in `game.ts`. **The first perception capability keyed to a realm that a living player actually reaches** - `reads_formations` at Void Refinement is grant-gated and therefore off |
+| 1 | perceive | **built** | `what-you-can-see-from-up-there.ts`. Ordinal 15 - `gale-riding-sword-flight`'s own requirement - is where a cultivator gets off the ground, and the discovery layer stops being entirely a matter of being told. The horizon at first flight is two travel days: your own province and nothing past it, since the shortest stated road is six. Consumed by `destinations` in `game.ts`. **The first perception capability keyed to a realm that a living player actually reaches** - `reads_formations` at Void Tribulation is grant-gated and therefore off |
 | 2 | survive | **built** | `SATIETY_BURN_BY_REALM.foundation_establishment = 1/24` - a full belly goes from fifty days to **something over three years**. This is the single most concrete thing 13 buys and it is a genuine decision change: a multi-year seclusion stops needing a supply chain. Lifespan 100 -> 200. And you are past `BARREN_GROUND_CEILING`, which is a precondition rather than a new place opened |
 | 3 | do | **absent** | `CLASS_GRANTS.mortal = []`. Technique address band unchanged. 18 techniques and 5 recipes newly in reach - a supply increase, not a new kind of act. No residence, no formation-laying, no artifact-making, no realm-keyed disciple-taking |
 | 4 | asked of | **absent** | 1 of 8 summons entries pitched in band, 0 commissions. Membership is still the gate, and 29 of 32 houses still seat you at the bottom |
@@ -418,7 +418,7 @@ realm that stops being gated by places is the realm in which the world stops bei
 
 | Ordinal | Reach, in walking days | What that opens |
 |---|---|---|
-| 29 Void Refinement | 6.0 | the province next door, on the shortest roads |
+| 29 Void Tribulation | 6.0 | the province next door, on the shortest roads |
 | 31 | 9.2 | the nine-day roads |
 | 32 | 11.4 | the eleven-day roads |
 | 33 Body Integration | 14.2 | |
@@ -429,7 +429,7 @@ realm that stops being gated by places is the realm in which the world stops bei
 | 44 | 151.2 | the whole map, four times over |
 
 Past 38 the curve stops distinguishing anybody, because the world runs out before the range
-does. **It has nine rungs to say anything with and it says all of it between Void Refinement
+does. **It has nine rungs to say anything with and it says all of it between Void Tribulation
 and Grand Ascension** - which is roughly one person in twenty in a seeded world, and is why
 this changes nothing whatever for ordinary play.
 
@@ -495,7 +495,7 @@ implied lets it be read three ways:
 Note the direction, because it is the **exact inverse** of a personal fold. There, standing high
 buys you further. Here, standing low costs you more - and the people it costs most are the people
 it is worth most to. Somebody at or above the folding floor rides it easily and pays only the
-fare, which is why a Void Refinement cultivator buys a ticket for somewhere they have no fix on
+fare, which is why a Void Tribulation cultivator buys a ticket for somewhere they have no fix on
 and walks the rest. The cost is bounded so it never eats the saving: three days at the very
 bottom against the seventeen-day span the catalog describes still leaves fourteen days saved,
 and that margin is the feasibility of the whole feature rather than a tuning constant.

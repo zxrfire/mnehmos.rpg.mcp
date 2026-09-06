@@ -183,7 +183,7 @@ export const PASSENGER_SETTLING_AT_THE_BOTTOM = 3;
  * standing high buys you further. Here, standing low costs you more - and the
  * people it costs most are the people it is worth most to. Somebody at or above
  * the folding floor rides it easily and pays nothing but the fare, which is why
- * a Void Refinement cultivator buys a ticket only for somewhere they have no fix
+ * a Void Tribulation cultivator buys a ticket only for somewhere they have no fix
  * on.
  *
  * Never lethal, and nothing here decides that anybody dies. It returns days.

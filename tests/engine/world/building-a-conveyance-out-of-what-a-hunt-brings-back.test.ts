@@ -71,7 +71,7 @@ describe('who can do the work', () => {
         }
     });
 
-    it('puts a heaven-grade hull out of reach of everybody below Void Refinement', () => {
+    it('puts a heaven-grade hull out of reach of everybody below Void Tribulation', () => {
         const bar = requiredOrdinalForRecipe(BOAT);
         expect(canRefineGrade('heaven', bar - 1)).toBe(false);
         expect(canRefineGrade('heaven', bar)).toBe(true);
@@ -184,7 +184,7 @@ describe('the work', () => {
         const stocked = deliver(layDownKeel(BOAT), BOAT, fullBill(BOAT));
         const r = workOn(stocked, BOAT, { days: 1_000, hands: [20, 24, 28] });
         expect(r.daysWorked).toBe(0);
-        expect(r.stoppedBecause).toContain('Void Refinement');
+        expect(r.stoppedBecause).toContain('Void Tribulation');
     });
 
     it('divides the work between qualified hands and ignores the rest', () => {

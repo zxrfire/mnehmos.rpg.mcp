@@ -573,7 +573,7 @@ describe('privilege is still not visible in the outcome distribution', () => {
     });
 
     it('leaves every tier overwhelmingly short of the ladder, best birth included', () => {
-        // The Void Refinement bar moved from 2% to 5%, in step with the same
+        // The Void Tribulation bar moved from 2% to 5%, in step with the same
         // bar in `origin-outcomes.test.ts` and for the same reason, which is
         // written down beside `FAILURE_LOSS_SHAPE` in `breakthrough.ts`: the
         // cost of a failed crossing now leans toward the shallow end of its
@@ -585,7 +585,7 @@ describe('privilege is still not visible in the outcome distribution', () => {
         // The claim is "overwhelmingly short" and 95% is overwhelming. The bar
         // sits where the claim stops being true, not where the measurement is.
         for (const row of report.rows) {
-            expect(row.reachedAtLeast[29], `${row.origin} reaches Void Refinement too often`)
+            expect(row.reachedAtLeast[29], `${row.origin} reaches Void Tribulation too often`)
                 .toBeLessThan(0.05);
             expect(row.medianPeakOrdinal, `${row.origin} median is above Core Formation`)
                 .toBeLessThan(21);

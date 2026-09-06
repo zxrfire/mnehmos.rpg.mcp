@@ -5,7 +5,7 @@
  * bestiary bolted onto the setting:
  *
  *   - one ladder, so danger is a realm ordinal and nothing else
- *   - a core at Core Formation and a voice at Void Refinement are twelve rungs
+ *   - a core at Core Formation and a voice at Void Tribulation are twelve rungs
  *     apart, and the window between them is where hunting happens at all
  *   - they live where the qi is, so the good ground is contested before any
  *     sect arrives
@@ -260,9 +260,9 @@ describe('one ladder: danger is an ordinal, not a stat block', () => {
 });
 
 describe('the change, and why a talking beast is never the easy option', () => {
-    it('puts a Void Refinement floor under anything that speaks', () => {
+    it('puts a Void Tribulation floor under anything that speaks', () => {
         expect(BEAST_CHANGE_ORDINAL).toBe(29);
-        expect(rankName(BEAST_CHANGE_ORDINAL)).toMatch(/Void Refinement/);
+        expect(rankName(BEAST_CHANGE_ORDINAL)).toMatch(/Void Tribulation/);
         for (const b of BEASTS) {
             if (b.speaks) {
                 expect(b.ordinal, `${b.id} speaks below the change`).toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);

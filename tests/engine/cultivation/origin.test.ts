@@ -166,7 +166,7 @@ describe('an origin buys inputs and never rank', () => {
     });
 
     it('does not waive an institution\'s own floor, including for a Dao house', () => {
-        // The Hollow Court: Void Refinement at the floor, and nothing else
+        // The Hollow Court: Void Tribulation at the floor, and nothing else
         // counts, which includes being somebody's child.
         const hollowCourt = { id: 'sect-hollow-court', powerOrdinal: 44, admissionOrdinal: 29 };
         const localSect = { id: 'sect-local', powerOrdinal: 11, admissionOrdinal: 0 };

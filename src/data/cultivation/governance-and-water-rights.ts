@@ -1026,7 +1026,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         rankIsOrdinalDerived: false,
         ranksByRealmAboveOrdinal: 29,
         rankNote:
-            'Below Void Refinement the Survey does not rank by cultivation at all. Everyone from a village Qi Condensation intake to a Deity Transformation elder brought in from a subsidiary is Unplaced or Marked, and where they stand inside that class is decided by sponsorship, results and service. A Core Formation cultivator taking correction from a Foundation Establishment First Mark is an ordinary Tuesday and nobody in the room finds it strange. The one number a cultivator has spent their whole life raising simply does not determine where they stand here, and arriving with the opposite assumption is the mistake every intake makes in its first month.',
+            'Below Void Tribulation the Survey does not rank by cultivation at all. Everyone from a village Qi Condensation intake to a Deity Transformation elder brought in from a subsidiary is Unplaced or Marked, and where they stand inside that class is decided by sponsorship, results and service. A Core Formation cultivator taking correction from a Foundation Establishment First Mark is an ordinary Tuesday and nobody in the room finds it strange. The one number a cultivator has spent their whole life raising simply does not determine where they stand here, and arriving with the opposite assumption is the mistake every intake makes in its first month.',
         startingAwareness: 'unaware',
         awarenessSources: [
             'a sect elder who has been called upward and returned, who will not say where they went',
@@ -2502,7 +2502,7 @@ export const AZURE_CLOUD_INTAKE = {
     theTrade:
         'Two facts about the Pavilion are already established and they answer each other. It is one person deep, with about ninety disciples and six at Core Formation, and it is the richest institution in the region because a woman on the other side of the Lid loves her sister and sends what she can every nine to fourteen years. Thin on members, rich in resources. There is exactly one rational move available to an institution in that position, and the Pavilion has been making it for a century: spend the thing you have in surplus to buy the thing you lack. They are converting medicine, materials and stones into people.',
     whyNobodyElseCanDoIt:
-        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Refinement floor with evidence they could cross, and nothing else counts toward it. The Earth Vein Tower and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
+        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Tribulation floor with evidence they could cross, and nothing else counts toward it. The Earth Vein Tower and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
     itIsCircumstanceNotValues:
         'Nothing here is a difference of principle. Put the Earth Vein Tower in the Pavilion\'s position - one benefactor, an income, ninety disciples and a stock it cannot spend - and the Survey would run the same programme inside a decade, with better records. Put the Pavilion on the Survey\'s footing and it would ration exactly as hard. The programme is a consequence of a sister, and it would end the year the sending stopped.',
     theOtherReason:
@@ -2746,7 +2746,7 @@ export const GUEST_ELDERS: readonly GuestElder[] = [
         traditionId: 'tradition-drawn',
         hostFactionId: 'sect-azure-cloud-pavilion',
         provides:
-            'Presence, mostly. A Void Refinement cultivator seated at the Pavilion for eleven months of the year is a deterrent the Pavilion could not otherwise field, and she has drawn a blade for them twice in forty years.',
+            'Presence, mostly. A Void Tribulation cultivator seated at the Pavilion for eleven months of the year is a deterrent the Pavilion could not otherwise field, and she has drawn a blade for them twice in forty years.',
         receives:
             'Cave rent on the gorge vein at no charge, first refusal on anything the Pavilion recovers, and the Pavilion\'s silence about where she was for the sixty years before she arrived.',
         term: 'Renewed annually by nothing more formal than her staying, and she has left mid-year twice without notice.',

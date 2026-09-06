@@ -69,7 +69,7 @@
  *
  * Which is why the floors climb with what the ground is about rather than with
  * how impressive it is. The Grinding Ford asks almost nothing and the Doorless
- * Room asks Void Refinement, and the gap between them is not quality - it is
+ * Room asks Void Tribulation, and the gap between them is not quality - it is
  * that you cannot be taught what an absence is by a thing that is there.
  *
  * ═══════════════════════════════════════════════════════════════════════════
@@ -495,7 +495,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         description:
             'A terrace under the gorge scree where a tribulation came down on a person who did not survive it, long enough ago that the province has forgotten which. The lightning took nearly everything they were carrying, which is the ordinary rule, and it did not take the terrace, and the terrace is what is worth having.',
         what:
-            'Standing where they stood. What is on the stone is the shape of somebody in the last moment of holding something they could not hold, at a scale a living cultivator will not otherwise see, and it is not survivable to look at below Void Refinement.'
+            'Standing where they stood. What is on the stone is the shape of somebody in the last moment of holding something they could not hold, at a scale a living cultivator will not otherwise see, and it is not survivable to look at below Void Tribulation.'
     },
 
     // ── CARVING. Three worked faces, and nobody cut them for a reader. ────
@@ -551,7 +551,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         description:
             'The inner face of a drainage cut behind an abandoned holding, carrying a single running figure worked down its length and revised eleven times, each revision smaller than the last. Nobody local can read it and everybody local knows it is there. It has been variously explained as a tax record, a flood mark and a curse.',
         what:
-            'Working out what is being counted. It is a remaining span, revised as it was recalculated, by somebody who knows his own to the year and gives the figure to anybody who asks - and the thing that teaches is not the number but that it was worth revising eleven times. A cultivator below Void Refinement has no span worth the arithmetic and reads a list of numbers.'
+            'Working out what is being counted. It is a remaining span, revised as it was recalculated, by somebody who knows his own to the year and gives the figure to anybody who asks - and the thing that teaches is not the number but that it was worth revising eleven times. A cultivator below Void Tribulation has no span worth the arithmetic and reads a list of numbers.'
     },
     {
         id: 'dao-carving-the-unfinished-side',

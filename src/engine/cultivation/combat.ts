@@ -673,7 +673,7 @@ export function assessGap(subject: CombatantPower, opponent: CombatantPower): Ga
 
     // The mirror of `helpless`, and it was missing. Both arms of the ternary
     // that used to stand here read 'contested', so the condition was dead and
-    // a Void Refinement cultivator looking DOWN at Qi Condensation Layer 5 -
+    // a Void Tribulation cultivator looking DOWN at Qi Condensation Layer 5 -
     // twenty-six rungs - was told the fight was "close enough that everything
     // else decides it". Two realms is never close enough, and it has to read
     // that way from BOTH sides: the sentence the setting uses is a statement

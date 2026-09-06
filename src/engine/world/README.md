@@ -1419,7 +1419,7 @@ The two together, same seed, three thousand years:
 ```
 
 and at five hundred years across six seeds every band from Foundation Establishment to
-Void Refinement is occupied, 69-80% of the world stands at or below Qi Condensation, and
+Void Tribulation is occupied, 69-80% of the world stands at or below Qi Condensation, and
 81-143 of the people above it were born after the seeding. `tests/engine/world/
 demography.test.ts` pins both halves; `scripts/probe-who-refills-each-band.ts` is the
 measurement, and it splits every band into survivors and arrivals because a band held
@@ -1767,7 +1767,7 @@ the scope in theirs as well - *"each cultivation stage"*. Nine buckets, and they
 on the way. Nothing here can be tuned in isolation.
 
 **The arrivals share is a diagnostic, not a target.** An earlier pass in this section
-reported "90-95% of the people above Void Refinement arrived rather than being seeded" as
+reported "90-95% of the people above Void Tribulation arrived rather than being seeded" as
 good news. It was not even a turnover measure - it counts everybody not present at world
 creation, and after ten thousand years that is essentially the whole living population
 whatever the ladder is doing. The same figure read 82-94% *before* the change it was
@@ -1792,21 +1792,21 @@ the realm's own granted span that is:
   Core Formation             33.1    17.95     6.35   11.14     1.9      38%
   Nascent Soul               17.5     7.63     2.45    5.17     2.3      23%
   Deity Transformation       10.3     3.04     0.99    2.16     3.3      16%
-  Void Refinement             5.3     1.15     0.40    0.65     5.0      10%
+  Void Tribulation             5.3     1.15     0.40    0.65     5.0      10%
   Body Integration            6.2     0.39     0.04    0.39    14.6      15%
   Grand Ascension             1.5     0.05     0.00    0.03    61.0      20%
   Tribulation Transcendence   0.6     0.00     0.00    0.03    24.0       2%
 ```
 
 Residence as a share of span falls monotonically with height. Qi Condensation lives out
-100% of its hundred years; Void Refinement gets 10% of its five thousand. **A realm's
+100% of its hundred years; Void Tribulation gets 10% of its five thousand. **A realm's
 lifespan is the whole of what a high realm buys, and something was cancelling it.** The
-cause column said what: at Void Refinement 44% of departures were "killed by a person" and
+cause column said what: at Void Tribulation 44% of departures were "killed by a person" and
 33% "killed when a house came" - 77% violence against 10% of age.
 
 **The mechanism: `killing` drew the victim first, uniformly from everybody alive.**
 `couldKill` kept the killer commensurate so no result was ever absurd, but the RATE was: a
-Void Refinement cultivator was picked as often as a Qi Condensation one while having fifty
+Void Tribulation cultivator was picked as often as a Qi Condensation one while having fifty
 times the span to lose. Drawing the KILLER first inverts it with no rule about tiers and no
 exception for anybody - a killing needs somebody who can do it, most people are at the
 bottom, so most killings happen there, and somebody at Grand Ascension has perhaps one
@@ -1821,13 +1821,13 @@ person in the world who could reach them. `couldKill` is still the gate, so the 
   Core Formation               38%     39%          -        -
   Nascent Soul                 23%     26%         13%      -
   Deity Transformation         16%     20%         23%      -
-  Void Refinement              10%     15%         44%      8%
+  Void Tribulation              10%     15%         44%      8%
   Body Integration             15%     14%         32%      -
   Tribulation Transcendence     2%      9%         50%      0%
 ```
 
 The bottom two bands do not move, which is the check that this is a statement about how
-many people can reach whom rather than a protection granted to rank. Void Refinement's
+many people can reach whom rather than a protection granted to rank. Void Tribulation's
 volume goes 5.3 to 7.8 and its inflow falls from 22% of the band per century to 13%, with
 residence rising from 5.0 to 7.7 centuries - a slow-in, slow-out bucket holding a steady
 volume, which is the shape the model asks for. Tribulation Transcendence departures are
@@ -2082,7 +2082,7 @@ existed reads as anonymous and untouched - the honest default.
 
 **`convergence.ts` - the consequence half of `OpeningCycle`.** That field has been on the
 record since the location layer was written and nothing in play consumed it. The escape
-from a closing window is `spatial_folding`, an existing Void Refinement grant, and its two
+from a closing window is `spatial_folding`, an existing Void Tribulation grant, and its two
 properties do all the work: it is too high for anybody who explores ruins, and it **wanes**
 with the window, so it fails when it would matter most. Note which property that is - the
 self-cancelling part was never that the fold is short, it is who is standing in there. **Do
@@ -2090,7 +2090,7 @@ not add a consumable version.**
 
 **`how-far-somebody-can-fold-space-and-what-it-costs.ts` - the same grant, doing the thing
 it is actually for.** Range in walking days, growing with the rung: one province over at
-Void Refinement, the whole map by ordinal 38, and nothing at all below the floor. **The
+Void Tribulation, the whole map by ordinal 38, and nothing at all below the floor. **The
 scarce thing is not power, it is knowing where the far end is** - a fold needs a fix, and
 there are exactly two, ground somebody has stood on and something they have seen. There is
 no third for being told or being sold one, because a bought fix is the Open Gate Age

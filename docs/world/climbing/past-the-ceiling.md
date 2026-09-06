@@ -660,7 +660,7 @@ The Court takes people from about ordinal 29 upward, out of any house anywhere -
 if they are 250 years old or younger.**
 
 That age cap is the whole of its selection, and it is not about youth. **It is a rate test
-wearing an age limit.** Reaching Void Refinement at all puts somebody in a very small
+wearing an age limit.** Reaching Void Tribulation at all puts somebody in a very small
 population; reaching it inside 250 years says something the rung alone does not, because at
 that height a lifespan runs to thousands and most people who arrive have spent most of theirs
 getting there. Somebody who took four centuries to reach 29 has demonstrated they will not
@@ -705,7 +705,7 @@ from anywhere, and because **nobody would start a war with the Hollow Court over
 at all** - not even its most junior.
 
 And note what "most junior" means here, because it is the fact that sets the Court apart from
-every other house on the map: **an OUTER disciple of the Hollow Court is a Void Refinement
+every other house on the map: **an OUTER disciple of the Hollow Court is a Void Tribulation
 cultivator.** Its bottom rung sits at a rung most houses never reach at all, which is the
 direct consequence of recruiting from about ordinal 29 upward and taking nobody below it. So
 "they would not go to war over an outer disciple" is not a statement about somebody

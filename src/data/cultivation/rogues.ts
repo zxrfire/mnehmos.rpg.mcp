@@ -155,7 +155,7 @@ export const UNBACKED = {
  * starts calling somebody once its usual explanation - "they must be somebody's"
  * - has been checked and found to be false. The naming happens TO them.
  *
- * Above Void Refinement the word turns wary rather than admiring, and that is
+ * Above Void Tribulation the word turns wary rather than admiring, and that is
  * the point of having it. An unbacked cultivator at that height has no house to
  * restrain them and, more to the point, no house to answer for them: there is
  * nobody to send a letter to, nobody to hold responsible, and nothing to take
@@ -200,7 +200,7 @@ export const ROGUE_STANDING: readonly RogueStanding[] = [
         fromOrdinal: 29,
         called: 'a solitary',
         because:
-            'Void Refinement without a house is the thing that is not supposed to happen, '
+            'Void Tribulation without a house is the thing that is not supposed to happen, '
             + 'because it cannot be done on a book alone. Anybody standing here got the '
             + 'materials some other way, and the province would very much like to know '
             + 'which way, and cannot ask.'

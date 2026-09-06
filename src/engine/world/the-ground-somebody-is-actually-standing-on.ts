@@ -176,7 +176,7 @@ export function groundTimeShares(
     if (rooms.length === 0 || members.length === 0) return out;
 
     const budget = groundBudgetOf(rooms);
-    // What the house asks of it. A Void Refinement elder draws what a great
+    // What the house asks of it. A Void Tribulation elder draws what a great
     // many mortals do, which is the intake curve doing exactly what it is for.
     const demand = members.reduce(
         (sum, m) => sum + realmIntakeMultiplier(m.cultivation.realmOrdinal), 0);

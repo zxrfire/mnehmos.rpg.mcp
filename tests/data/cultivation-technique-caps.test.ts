@@ -325,7 +325,7 @@ describe('the houses, measured against their own books', () => {
         // that zero is a statement about INTAKE rather than about the house -
         // it takes nobody from the bottom because there is no bottom here. The
         // reasoning was sound and answered the wrong question: it admits at a
-        // Void Refinement floor, and the honest reading of "routinely" is what
+        // Void Tribulation floor, and the honest reading of "routinely" is what
         // happens to somebody after they walk in, which is that they reach the
         // top of the ladder. Four are standing there now.
         //

@@ -273,7 +273,7 @@ export const MAX_COMPLETION_CHANCE = 0.25;
 //      mortal    1.35  (+35%)  Foundation-Guiding             75
 //      earth     1.25  (+25%)  Golden Core Guiding           650
 //      heaven    1.18  (+18%)  Nascent Soul Guiding        7,500
-//      immortal  1.12  (+12%)  Void Refinement Guiding    60,000
+//      immortal  1.12  (+12%)  Void Tribulation Guiding    60,000
 //      chaos     1.08  (+8%)   Tribulation Guiding       750,000
 //
 //    The cheapest pill in the world lifts the Foundation wall by a third; the
@@ -498,7 +498,7 @@ export const FAILURE_PROGRESS_LOSS: Record<BreakthroughFailure, number> = {
 // the unaided sweep in `ladder-odds.ts` and put the new table here. And it is an
 // INFLOW lever, half of a bucket: measured over forty centuries the top's
 // problem was the OUTFLOW every time - residence as a share of the realm's own
-// span ran 100% at Qi Condensation and fell to 10% by Void Refinement, where 77%
+// span ran 100% at Qi Condensation and fell to 10% by Void Tribulation, where 77%
 // of departures were violent against 10% of age. No value of k fixes that.
 
 /**
@@ -802,7 +802,7 @@ export function roadsWalkedIncludingExposure(
  * nascent soul without a dao, and the bottom three realms stay soloable. Then one
  * more road per realm, capped:
  *
- *     into Nascent Soul 1, Deity Transformation 2, Void Refinement 3,
+ *     into Nascent Soul 1, Deity Transformation 2, Void Tribulation 3,
  *     Body Integration 4, Grand Ascension 5, Tribulation Transcendence 5,
  *     the last crossing 5
  *

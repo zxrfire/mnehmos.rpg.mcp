@@ -263,7 +263,7 @@ That module states as a design result that **nobody ever clears a ruin** - the f
 are out of reach of anybody who also intends to leave. The design owner's ruling is that
 this is wrong as stated, because it makes the deep content permanently unreachable:
 
-> That would make content impossible. This requires a Void Refinement cultivator to
+> That would make content impossible. This requires a Void Tribulation cultivator to
 > teleport you out, which is already coded. And it ought to have good stuff.
 
 So the rule is **out of reach of anybody who intends to WALK out**. Somebody who can fold
@@ -301,7 +301,7 @@ crossings to make and centuries to spend on them. The engine already holds this 
 categorical gap - a contest across four realms is a no-contest, and
 `PROTECTOR_HELPLESS_REALM_GAP` says the same from the other side.
 
-Nothing in the engine should have to say "a Void Refinement cultivator will not escort you".
+Nothing in the engine should have to say "a Void Tribulation cultivator will not escort you".
 It should fall out of what their time is worth.
 
 ### TWO DIFFERENT ITEMS, AND CONFLATING THEM GETS THE ECONOMY WRONG

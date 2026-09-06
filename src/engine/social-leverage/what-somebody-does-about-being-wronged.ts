@@ -312,7 +312,7 @@ export function howFarTheyWouldGo(
 /**
  * What a detonation costs the person it is aimed at, indexed from the
  * DETONATOR'S side: 0 is level with the offender, 3 is three realms below.
- * PINNED BY TEST - a Core Formation cultivator against a Void Refinement elder
+ * PINNED BY TEST - a Core Formation cultivator against a Void Tribulation elder
  * takes a real bite; a Qi Condensation one is a scene.
  */
 const WHAT_SPENDING_EVERYTHING_REACHES: readonly number[] = Object.freeze([

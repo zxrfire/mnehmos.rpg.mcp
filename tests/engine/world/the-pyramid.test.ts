@@ -25,7 +25,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  *
  * This file used to assert five fixed bars - Qi Condensation over 50%, the
- * share above Void Refinement under 5%, and so on. They were the wrong
+ * share above Void Tribulation under 5%, and so on. They were the wrong
  * instrument and were retired on the design owner's ruling: *"the pyramid test
  * is too restrictive. Variation is fine, as long as the SHAPE takes hold."*
  *
@@ -107,7 +107,7 @@
  * WHAT IT CATCHES TODAY, AND WHY THAT IS THE POINT
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Body Integration is larger than the Void Refinement band beneath it - 1.57 to
+ * Body Integration is larger than the Void Tribulation band beneath it - 1.57 to
  * 1.60 against 0.98 to 1.20 - on every seed, at 200 years and at 500 years, in
  * both arms of the root-conditioning control. Numbers that stable are not a
  * small-N swap.
@@ -137,7 +137,7 @@
  *     climbed into 17-20    528        climbed into 29-32    22
  *     climbed into 21-24    195        climbed into 33-44     2
  *
- * The inflow is not zero. It is roughly one arrival into Void Refinement per
+ * The inflow is not zero. It is roughly one arrival into Void Tribulation per
  * ninety years and one into Body Integration and above per thousand, and the
  * 29-32 band grows over that span rather than holding still. At a rate that
  * low, a five-hundred-year window containing no arrival is an ordinary sample
@@ -485,7 +485,7 @@ describe('the pyramid holds its shape', () => {
                 .reduce((s, k) => s + (r.count.get(k) ?? 0), 0), 0);
 
         const bottom = third(0, 3);      // Qi Condensation, Foundation, Core
-        const middle = third(3, 6);      // Nascent Soul, Deity, Void Refinement
+        const middle = third(3, 6);      // Nascent Soul, Deity, Void Tribulation
         const top = third(6, LADDER.length);  // Body Integration and above
 
         console.log(`[pyramid] thirds pooled: bottom ${bottom}, middle ${middle}, top ${top}`);

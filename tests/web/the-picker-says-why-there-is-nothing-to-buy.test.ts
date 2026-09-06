@@ -100,7 +100,7 @@ function billText(plan: ProvisioningPlan): string {
 
 // Every plan below comes out of the engine's own function rather than being
 // written by hand, so a fixture cannot quietly describe a state the engine
-// never produces. Ordinal 30 is Void Refinement; 0 is Qi Condensation.
+// never produces. Ordinal 30 is Void Tribulation; 0 is Qi Condensation.
 const FORTY_YEARS = 14_600;
 const TEN_YEARS = 3_650;
 

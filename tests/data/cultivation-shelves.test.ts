@@ -11,7 +11,7 @@
  * THE COUNTING RULE IS MEASURED, NOT AUTHORED. Nothing here assigns a road to a
  * rarity tier. Every assertion below reads the `teaches` arrays and checks that
  * what falls out of them still has the shape the setting claims - which is how
- * "every manual above the Void Refinement line is taught by exactly one house"
+ * "every manual above the Void Tribulation line is taught by exactly one house"
  * came to be a fact in `docs/world/things/items.md` rather than a policy.
  */
 import { describe, it, expect } from 'vitest';
@@ -84,12 +84,12 @@ describe('the counting rule - rarity rises with reach', () => {
         // pass adding shelves cannot quietly turn a house's private road into
         // the province's standard crossing without the suite saying so.
         for (const t of ROADS) {
-            if (capOf(t) <= 32) continue;           // at or below Void Refinement
+            if (capOf(t) <= 32) continue;           // at or below Void Tribulation
             const houses = holdersOf(t.id);
             expect(
                 houses.length,
                 `${t.id} carries to ${t.cap} and is taught by ${houses.length} houses ` +
-                `(${houses.join(', ')}). Above the Void Refinement line a road is one ` +
+                `(${houses.join(', ')}). Above the Void Tribulation line a road is one ` +
                 `house's property or nobody's.`
             ).toBeLessThanOrEqual(1);
         }

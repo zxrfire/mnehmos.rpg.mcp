@@ -61,7 +61,7 @@ const MARCHES_BANDS: LocalRankBand[] = [
     },
     {
         fromOrdinal: 29, toOrdinal: 32,
-        standardName: 'Void Refinement', localName: 'Hollowing',
+        standardName: 'Void Tribulation', localName: 'Hollowing',
         localTheory: 'Working out the last of the seam. The Silent Cliffs has the word and no instance of it.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',

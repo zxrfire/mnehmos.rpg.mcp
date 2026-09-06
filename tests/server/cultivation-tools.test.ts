@@ -1209,7 +1209,7 @@ describe('cultivation MCP tool surface', () => {
             const court = getSect('sect-hollow-court')!;
 
             // They do take applicants. The bar is the character of the place:
-            // a Void Refinement floor, and nothing else counts - which the
+            // a Void Tribulation floor, and nothing else counts - which the
             // catalog says explicitly includes being somebody's child.
             expect(court.recruits).toBe(true);
             expect(court.admissionOrdinal).toBeGreaterThanOrEqual(29);

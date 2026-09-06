@@ -156,14 +156,14 @@ export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
             'The only one of the four who still occasionally answers the gate, which is why every account of meeting a Seat is probably an account of meeting this one.'
     },
 
-    // ── Outer Disciple. Void Refinement, 29-32. Lifespan 5,000. ────────
+    // ── Outer Disciple. Void Tribulation, 29-32. Lifespan 5,000. ────────
     {
         id: 'hollow-court-huang-shu',
         name: 'Huang Shu',
         tier: 'Outer Disciple',
         rankIndex: 0,
         realmOrdinal: 30,
-        // Four centuries to Void Refinement is fast and not impossible, which is
+        // Four centuries to Void Tribulation is fast and not impossible, which is
         // the whole of why she was looked at. It is also a fourteenth of what
         // the rung gives her, so the clock is not her problem and never will be.
         ageYears: 386,
@@ -173,7 +173,7 @@ export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
             'Held a collapsing formation network alone across a bad winter after the house that owned it had already left, and was still standing at it when the relief arrived four months late. Two provinces heard about it. She has never given an account of it to anybody and the version that circulates is somebody else\'s.',
         worksOutsideAs: 'Outer Disciple Huang',
         howFarAlong:
-            'At the start of it, which at this house means the start of a road nobody below Void Refinement can open at all. She has been on the first stretch for sixty years and the Fourth Seat, who walked it most recently, is the one who comes down to her.',
+            'At the start of it, which at this house means the start of a road nobody below Void Tribulation can open at all. She has been on the first stretch for sixty years and the Fourth Seat, who walked it most recently, is the one who comes down to her.',
         detail:
             'Still keeps the winter\'s node log, in the same hand, and has never been able to say why she carried it up the mountain.'
     },

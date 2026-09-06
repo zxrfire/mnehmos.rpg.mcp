@@ -662,7 +662,7 @@ describe('rank strings agree with the ladder', () => {
     });
 
     it('uses none of the four sub-rank names the renamed realms no longer have', () => {
-        for (const name of ['Deity Transformation', 'Void Refinement', 'Body Integration', 'Grand Ascension']) {
+        for (const name of ['Deity Transformation', 'Void Tribulation', 'Body Integration', 'Grand Ascension']) {
             for (const stale of ['Early', 'Mid', 'Late', 'Perfection']) {
                 expect(CORPUS, `${name} ${stale} is a stale rank string`).not.toContain(`${name} ${stale}`);
             }

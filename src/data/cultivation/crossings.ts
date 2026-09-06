@@ -67,7 +67,7 @@ export const HOLLOW_COURT_COLLABORATION = {
     explains: [
         'The open, published address. They do not need secrecy because they have the thing secrecy is a substitute for, and four known mountains is what it looks like when a crossing does not have to be hidden.',
         'Presence measured in decades of absence. They take turns, and a protector has to be there for the whole of it - so at any given time some of them are crossing, some are standing guard, and none of them is available for anything else.',
-        'The admission bar, exactly. A Void Refinement floor plus evidence you could cross means a member is either somebody who will need protecting or somebody who can provide it. There is no third contribution, which is why nothing else counts and why being somebody\'s child explicitly does not.',
+        'The admission bar, exactly. A Void Tribulation floor plus evidence you could cross means a member is either somebody who will need protecting or somebody who can provide it. There is no third contribution, which is why nothing else counts and why being somebody\'s child explicitly does not.',
         'Why they hold the richest vein in the world and draw nothing from it: the vein is not what the work runs on.'
     ],
     theLivePossibility:
@@ -201,7 +201,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         whatItExplains: [
             'why all four are working continuously rather than waiting: they are being told things, badly, rarely, and by somebody who made it',
             'why they hold the richest vein in the world and draw nothing from it - they do not need it for what they are doing',
-            'why the bar is a Void Refinement floor and evidence of a plausible crossing, since anybody who cannot attempt one has nothing to contribute and nothing to gain',
+            'why the bar is a Void Tribulation floor and evidence of a plausible crossing, since anybody who cannot attempt one has nothing to contribute and nothing to gain',
             'why presence at the Court is measured in decades of absence, and why a cultivator admitted there stops participating in everything else the world does',
             'and, with the protector arrangement, why they are a collaboration rather than four recluses - see HOLLOW_COURT_COLLABORATION'
         ],
@@ -221,7 +221,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
         cadence:
             'Every nine to fourteen years, which is not a cadence anybody else in this file would recognise as one. The apexes measure their arrivals in ages. The Pavilion has had four in living memory and expects the next one.',
         usability:
-            'Completely usable and immediately so, and this is where the Pavilion position inverts. It has more of these objects than any institution in the world, they are all at the bottom of the range, and it therefore holds a great deal of something that will carry a cultivator into Core Formation and nothing that will carry one past Void Refinement. It is rich in quantity and poor in quality, exactly opposite to the apexes, and neither side would trade.',
+            'Completely usable and immediately so, and this is where the Pavilion position inverts. It has more of these objects than any institution in the world, they are all at the bottom of the range, and it therefore holds a great deal of something that will carry a cultivator into Core Formation and nothing that will carry one past Void Tribulation. It is rich in quantity and poor in quality, exactly opposite to the apexes, and neither side would trade.',
         gradeCeiling: 'lower',
         gradeNote:
             'All of it lower, without exception, and the reason is not stinginess: she is three hundred and eighty years across, which is nothing. A fresh immortal has neither the standing to ask for better nor the power to send it, and she sends anyway - as much as she can, as often as she can manage it, at the only grade available to her. Everybody senior at the Pavilion understands this and nobody has ever described it as a limitation of hers.',
@@ -443,7 +443,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         resilience:
             'Six channels, of which nobody knows how many are still live, and that uncertainty is survivable precisely because there are six. No single silence would end the Court, which is not true of any other holder in the world.',
         behaviour:
-            'Medium depletion at four thousand four hundred years is the anomaly, and the explanation is admissions. A Void Refinement floor plus evidence of a plausible crossing means the Court disproportionately admits people who then cross, so it is functionally the one institution in the world that converts admissions into ancestors. Age would have drained anybody else by now; volume has kept it mid-scale, and it is the top tier by the world\'s own reckoning - the single objective claim about the Court that nobody disputes.'
+            'Medium depletion at four thousand four hundred years is the anomaly, and the explanation is admissions. A Void Tribulation floor plus evidence of a plausible crossing means the Court disproportionately admits people who then cross, so it is functionally the one institution in the world that converts admissions into ancestors. Age would have drained anybody else by now; volume has kept it mid-scale, and it is the top tier by the world\'s own reckoning - the single objective claim about the Court that nobody disputes.'
     },
     {
         factionId: 'apex-earth-vein-tower',

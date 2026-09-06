@@ -156,7 +156,7 @@ describe('the Hollow Court - the house that had nobody', () => {
             // the only question they have.
             expect(m.ageYears, `${m.id} is older than ${tier.name} permits`)
                 .toBeLessThan(lifespanForOrdinal(m.realmOrdinal));
-            // And old enough for the climb. Nobody reaches Void Refinement in
+            // And old enough for the climb. Nobody reaches Void Tribulation in
             // a century, whatever their root.
             expect(m.ageYears, `${m.id} is too young for rung ${m.realmOrdinal}`)
                 .toBeGreaterThan(m.realmOrdinal * 8);

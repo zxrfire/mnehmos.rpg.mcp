@@ -958,7 +958,7 @@ describe('the Azure Cloud intake', () => {
 
     it('explains why no other apex can copy it, in their own terms', () => {
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Hollow Court/);
-        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Void Refinement/);
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Void Tribulation/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Earth Vein Tower/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Long Cut/);
         // And it does not contradict the Long Cut, which tests everybody already.

@@ -37,7 +37,7 @@ describe('the ruling, row by row', () => {
     it('puts each grade in the realm the owner named', () => {
         expect(refiningRealmNameFor('mortal')).toBe('Qi Condensation');
         expect(refiningRealmNameFor('earth')).toBe('Core Formation');
-        expect(refiningRealmNameFor('heaven')).toBe('Void Refinement');
+        expect(refiningRealmNameFor('heaven')).toBe('Void Tribulation');
         expect(REFINING_REALM_BY_GRADE.immortal).toBe('immortal');
         expect(REFINING_REALM_BY_GRADE.chaos).toBe('immortal');
     });
@@ -126,7 +126,7 @@ describe('it is not the other two grade ladders', () => {
 describe('the refusal names what would work', () => {
     it('names the realm when a realm would answer it', () => {
         const said = whyTheCauldronRefuses('heaven', 0)!;
-        expect(said).toContain('Void Refinement');
+        expect(said).toContain('Void Tribulation');
         expect(whyTheCauldronRefuses('heaven', refiningOrdinalFor('heaven'))).toBeNull();
     });
 

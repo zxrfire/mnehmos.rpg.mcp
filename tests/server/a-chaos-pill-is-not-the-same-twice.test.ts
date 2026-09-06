@@ -105,7 +105,7 @@ describe('a chaos pill is not the same twice, and an immortal one is', () => {
         // WORTH PINNING BECAUSE IT IS THE CONTRAST THAT MAKES THE RISK LEGIBLE.
         // The gap between a body and what it swallowed is a real input, and it
         // moves exactly one row of exactly one spread. A reliable grade has no
-        // row to move, so a medicine pitched at Void Refinement taken by a
+        // row to move, so a medicine pitched at Void Tribulation taken by a
         // nobody does what it says, in full, at no extra cost.
         //
         // The catalog already agreed and it is worth saying which way round:
@@ -126,7 +126,7 @@ describe('a chaos pill is not the same twice, and an immortal one is', () => {
 
     it('a nobody who swallows one is mostly holding a bomb', async () => {
         // The owner's case, played. A body at the bottom of the ladder cannot
-        // hold what a Void Refinement body holds, and the thing lets go.
+        // hold what a Void Tribulation body holds, and the thing lets go.
         let blasts = 0;
         const lives = 12;
         for (let i = 0; i < lives; i++) {

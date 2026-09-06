@@ -9,7 +9,7 @@ import type { CapabilityGrant } from './capability.js';
 // THE GRANT
 // ─────────────────────────────────────────────────────────────────────────
 
-/** The grant that makes any of this possible. Void Refinement, and no lower. */
+/** The grant that makes any of this possible. Void Tribulation, and no lower. */
 export const FOLD_GRANT: CapabilityGrant = 'spatial_folding';
 
 /**

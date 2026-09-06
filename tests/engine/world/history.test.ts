@@ -237,7 +237,7 @@ describe('history: the Consequence Test', () => {
                 relationshipChanges: [{ aId: 'fac-1', bId: 'fac-2', change: 'open hostility' }],
                 opportunitiesOpened: ['The exposed structure can be entered.'],
                 opportunitiesClosed: ['The pass route to the northern markets.'],
-                rumours: ['That a Void Refinement cultivator did it on purpose.'],
+                rumours: ['That a Void Tribulation cultivator did it on purpose.'],
                 tenYearsLater: 'A town of eight hundred serves the excavation.'
             }
         );

@@ -454,7 +454,7 @@ diffusion is why an ordinary person can hold a real opinion about a house they w
 while still being exactly the person a good forgery works on.
 
 **The Hollow Court breaks this in a better way than being invisible.** They take nobody below a
-Void Refinement floor, so **every one of their people arrives already trained somewhere else.**
+Void Tribulation floor, so **every one of their people arrives already trained somewhere else.**
 The Court is built of transfers, and it holds as many arts as it has taken people.
 
 **So a Court member performing an art shows their origin house's art** - genuinely theirs,

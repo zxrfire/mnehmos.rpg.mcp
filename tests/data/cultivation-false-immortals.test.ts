@@ -69,7 +69,7 @@ import {
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE INVARIANT UNDER EVERYTHING
-// A seal runs from Void Refinement to Tribulation Transcendence. A False
+// A seal runs from Void Tribulation to Tribulation Transcendence. A False
 // Immortal is one rung above the top of it. Nothing in the repo checked this
 // before, and the entire office depends on it.
 // ─────────────────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ describe('the seal cannot reach a False Immortal', () => {
     });
 
     it('states the band, the gap and the door out of it', () => {
-        expect(THE_SEAL_CANNOT_REACH_THEM.theBand).toMatch(/Void Refinement/);
+        expect(THE_SEAL_CANNOT_REACH_THEM.theBand).toMatch(/Void Tribulation/);
         expect(THE_SEAL_CANNOT_REACH_THEM.theBand).toMatch(/Tribulation Transcendence/);
         expect(THE_SEAL_CANNOT_REACH_THEM.theGap).toMatch(/one rung/i);
         expect(THE_SEAL_CANNOT_REACH_THEM.soNobodyBanksOne).toMatch(/No sect could|no sect could/);
@@ -659,7 +659,7 @@ describe('the register of possible False Immortals', () => {
         // Rank and outcome are internal, which is what leaves the maybe.
         expect(r.whatIsActuallyPublic).toMatch(/never been stated by anybody/i);
         // The apexes hold a record of the house, not a file on a person.
-        expect(r.soTheApexesHoldAListOfTheHouseAndNotADossier).toMatch(/Void Refinement/);
+        expect(r.soTheApexesHoldAListOfTheHouseAndNotADossier).toMatch(/Void Tribulation/);
         expect(r.soTheApexesHoldAListOfTheHouseAndNotADossier).toMatch(/nearly useless/i);
         // His line's emptiness is the document's condition, not a finding.
         expect(r.andOneLineOnItIsAlive).toMatch(/goes blank/i);
@@ -678,7 +678,7 @@ describe('the register of possible False Immortals', () => {
 
 describe('identifying a Seat of the Hollow Court', () => {
     it('makes admission visible, uneven, and useless past the mountain', () => {
-        expect(IDENTIFYING_A_SEAT.admissionIsNotUniform).toMatch(/Void Refinement/);
+        expect(IDENTIFYING_A_SEAT.admissionIsNotUniform).toMatch(/Void Tribulation/);
         expect(IDENTIFYING_A_SEAT.admissionIsNotUniform).toMatch(/already formidable/i);
         expect(IDENTIFYING_A_SEAT.admissionIsNotUniform)
             .toMatch(/stops at exactly the point the mountain starts/i);
@@ -830,7 +830,7 @@ describe('identifying a Seat of the Hollow Court', () => {
         // The bar is the Court's floor and the climb to it is centuries long,
         // against families on ordinary spans. Both halves have to be present or
         // the fact reads as a mood rather than as arithmetic.
-        expect(dead).toMatch(/Void Refinement/);
+        expect(dead).toMatch(/Void Tribulation/);
         expect(dead).toMatch(/hundred years|hundred\b/i);
         expect(dead).toMatch(/parents|brothers and sisters/i);
         expect(dead).toMatch(/ordinary spans/i);

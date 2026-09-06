@@ -170,7 +170,7 @@ the shape of it:
   market would be the whole economy.
 - **Grade is a statement about who can MAKE the thing, and that is where the price comes
   from.** A cultivator cannot work with materials above their realm - mortal grade at Qi
-  Condensation, earth at Core Formation, heaven at Void Refinement, and above that by
+  Condensation, earth at Core Formation, heaven at Void Tribulation, and above that by
   nobody living below the Lid. Price does not rise with grade because somebody decided
   higher should cost more. It rises because the population that could supply the market
   shrinks at every rung. [`items.md`](./items.md#who-is-allowed-to-make-it) carries the

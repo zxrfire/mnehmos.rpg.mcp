@@ -254,7 +254,7 @@ where it does**, and it is not an authoring convention. It is what one productio
 produces.
 
 The rule is that **a cultivator cannot work with materials above their realm.** Mortal
-grade is worked at Qi Condensation, earth at Core Formation, heaven at Void Refinement, and
+grade is worked at Qi Condensation, earth at Core Formation, heaven at Void Tribulation, and
 above that by nobody who lives here. So the supply of a grade is not a decision. It is the
 size of the population standing at its rung, and that population is the pyramid seen from
 the production side:
@@ -458,14 +458,14 @@ How many of something exist is a fact you should be able to *read off the world*
 number somebody chose. Two worked examples, both of which came out of the catalog rather than
 out of anybody's judgement:
 
-**Every cultivation manual above the Void Refinement line is taught by exactly one house.**
+**Every cultivation manual above the Void Tribulation line is taught by exactly one house.**
 Nobody decided that. It fell out of counting, and it is why "common" is now defined as *how
 widely a thing is held* rather than *how high it carries* - the two coincided by accident
 until the shelves were filled in, and then the old definition started calling the province's
 standard crossing somebody's private property.
 
 **Copies fall steeply with what a book carries**, for a reason rather than a curve: anybody
-who reached Void Refinement is already an exception, so the pool of people who could copy such
+who reached Void Tribulation is already an exception, so the pool of people who could copy such
 a thing is tiny. Scarcity at the top is a consequence of the ladder's own shape.
 
 When you need a count, look for the fact that already implies it. A number with a measurement
@@ -578,14 +578,14 @@ the reason the good grades are hard to come by at all.
 |---|---|
 | mortal | Qi Condensation |
 | earth | Core Formation |
-| heaven | Void Refinement |
+| heaven | Void Tribulation |
 | immortal | nobody in this world |
 
 Three things follow, and the third is the one that keeps getting lost:
 
 - **The maker stands above the patient.** Mortal grade is *pitched at* Foundation
   Establishment and *made at* Qi Condensation; heaven grade is pitched at Nascent Soul and
-  made at Void Refinement. So a house that can treat its own elders is a rarer thing than a
+  made at Void Tribulation. So a house that can treat its own elders is a rarer thing than a
   house that can pay for treatment, and that gap is most of what an alchemist is worth.
 - **The count is readable.** How rare heaven grade is equals how many people stand at Void
   Refinement, which is a number on the register rather than a decision. See

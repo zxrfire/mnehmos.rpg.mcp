@@ -608,7 +608,7 @@ export class CultivatorRepository {
             // `admin_manage.spawn_encounter` builds its opponent with the
             // player's `runId` and then advances it up the ladder the ordinary
             // way, so standing one person at ordinal 29 in front of a Qi
-            // Condensation player wrote "peak: Void Refinement First Tempering"
+            // Condensation player wrote "peak: Void Tribulation First Tempering"
             // onto that player's run. Measured in play: a run whose cultivator
             // had never been above 17 reported a peak of 29, and the same road
             // is taken by every NPC the world advances inside a run.

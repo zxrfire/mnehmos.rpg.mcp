@@ -61,7 +61,7 @@ const STAIR_BANDS: LocalRankBand[] = [
     },
     {
         fromOrdinal: 29, toOrdinal: 32,
-        standardName: 'Void Refinement', localName: 'The Cold Below',
+        standardName: 'Void Tribulation', localName: 'The Cold Below',
         localTheory: 'What is under the ice rather than in it. The Court holds that the curriculum it dug out describes this state and that nobody now alive has reached it, and the Court is the only party that has read the curriculum.',
         localSubdivisions: 0, standardSubdivisions: 4,
         subRankCorrespondence: 'none',

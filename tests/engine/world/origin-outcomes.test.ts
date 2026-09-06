@@ -110,7 +110,7 @@ describe('privilege is not visible in the outcome distribution', () => {
     });
 
     it('keeps every tier overwhelmingly short of the ladder even at its best', () => {
-        // The Void Refinement bar was 2% and the best-born now sit exactly on
+        // The Void Tribulation bar was 2% and the best-born now sit exactly on
         // it. It moved for a reason that is written down beside the constant:
         // `FAILURE_LOSS_SHAPE` in `breakthrough.ts` leans the cost of a failed
         // crossing toward the shallow end of its range, so a career survives
@@ -123,7 +123,7 @@ describe('privilege is not visible in the outcome distribution', () => {
         // The bar is set where the claim stops being true rather than where the
         // measurement sits, which is the mistake the 2% version made.
         for (const r of report.rows) {
-            expect(r.reachedAtLeast[29], `${r.origin} reaches Void Refinement too often`)
+            expect(r.reachedAtLeast[29], `${r.origin} reaches Void Tribulation too often`)
                 .toBeLessThan(0.05);
             expect(r.medianPeakOrdinal, `${r.origin} median is above Core Formation`)
                 .toBeLessThan(21);
@@ -263,7 +263,7 @@ describe('the last realm is reachable, and only as a conjunction', () => {
         // ── RE-DERIVED WHEN THE DAO GATE WENT LIVE, AND THIS IS THE BETTER BAR
         //
         // This asserted `peakOrdinal > 29` against 30,000 lives: one life in
-        // thirty thousand crossing the Void Refinement wall, and the whole test
+        // thirty thousand crossing the Void Tribulation wall, and the whole test
         // riding on which single life it happened to be. That was already
         // acknowledged as an existence proof "one life in thirty thousand
         // either way" beside `MAX_BOUNDARY_CHANCE`, and it is far too fragile to
@@ -287,10 +287,10 @@ describe('the last realm is reachable, and only as a conjunction', () => {
             reachedTheWall++;
             if (life.end !== 'no_road') allowedToStrike++;
         }
-        // Thin-county lives get to the Void Refinement wall at all. Without the
+        // Thin-county lives get to the Void Tribulation wall at all. Without the
         // comprehension supply in `how-a-cultivator-comes-by-a-road.ts` this was
         // two lives in sixty thousand and both were refused.
-        expect(reachedTheWall, 'no poor life reaches the Void Refinement wall')
+        expect(reachedTheWall, 'no poor life reaches the Void Tribulation wall')
             .toBeGreaterThan(0);
         // And some of them are allowed to strike at it. THIS is "not closed":
         // they got there holding roads they found in holes and on open ground,

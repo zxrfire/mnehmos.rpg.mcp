@@ -392,7 +392,7 @@ Nothing was decided. The world refused before any uncertain question arose [...]
     ADMIN set_realm ordinal=<the bar named above> - the house admits from there, and the
     bar is the house's, not this surface's.
 
-The Hollow Court admits from Void Refinement First Tempering. Shen Yuan stands at Qi
+The Hollow Court admits from Void Tribulation First Tempering. Shen Yuan stands at Qi
 Condensation Layer 1.
 ```
 
@@ -747,7 +747,7 @@ reachable spelled the surface's own way:
 ADMIN spawn_encounter name=Void-Tempering Tortoise in Human Form ordinal=29
 ```
 
-which stands up a real, nameable, attackable person at Void Refinement under that name.
+which stands up a real, nameable, attackable person at Void Tribulation under that name.
 
 What is **not** reachable is bespoke mechanics. `spawn_encounter` builds a CULTIVATOR: hp, qi
 and attributes come from the rung and a rolled spirit root, and the ladder is walked with

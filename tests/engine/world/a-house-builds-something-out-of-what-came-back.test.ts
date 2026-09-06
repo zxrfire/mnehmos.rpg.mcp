@@ -28,7 +28,7 @@ describe('a house builds something out of what came back', () => {
      *
      * POOLED, because a tracked craft is rare BY DESIGN - a heaven-grade bill
      * is forty-six pieces including two cores and seven hundred days of work
-     * by a hand at Void Refinement, and the module's own line is that almost
+     * by a hand at Void Tribulation, and the module's own line is that almost
      * nothing at heaven grade is ever built. One seed produced three and the
      * next produced none, which is what that sentence looks like from close
      * up rather than a defect. AGENTS.md: pool the sample, never widen the bar.

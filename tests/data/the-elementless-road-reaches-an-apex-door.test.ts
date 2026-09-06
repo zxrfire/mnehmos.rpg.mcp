@@ -94,7 +94,7 @@ describe('the elementless road reaches an apex door', () => {
             'undyed-core-canon',               // 17 -> 21  Core Formation
             'nascent-lotus-canon',             // 21 -> 25  Nascent Soul
             'meridian-devouring-art',          // 25 -> 29  Deity Transformation
-            'void-tide-breathing-canon'        // 29 -> 33  Void Refinement
+            'void-tide-breathing-canon'        // 29 -> 33  Void Tribulation
         ]);
         // Not one of them borrows an element. This is the whole claim.
         expect(chain.every(b => b.element === null)).toBe(true);

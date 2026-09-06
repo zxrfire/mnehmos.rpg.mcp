@@ -625,7 +625,7 @@ actually accumulated: real bonds with real people, real memories, real technique
 they are told. The horror is that it is legible - you can read the ledger and see the
 shape of who you used to be.
 
-This is why the powerful tend toward hollow. Someone at Void Refinement has crossed five
+This is why the powerful tend toward hollow. Someone at Void Tribulation has crossed five
 boundaries and rolled five times. Some of them still have a family. Most do not. Ask one
 what their mother's name was and watch which kind you are talking to.
 
@@ -739,7 +739,7 @@ enterable at all.
 | Core Formation | The reference point: a complete cultivator, mortal in kind |
 | Nascent Soul | The soul persists without the body |
 | Deity Transformation | Stops drawing qi in and starts displacing it |
-| Void Refinement | Stops needing ambient qi at all |
+| Void Tribulation | Stops needing ambient qi at all |
 | Body Integration | Stops having a seam to attack |
 | Grand Ascension | Can read and handle the Lid |
 | Tribulation Transcendence | The Lid answers back |
@@ -779,7 +779,7 @@ becomes a thing that *moves* it. Consequences:
 
 **Environmentally:** thin regions cease to matter. They carry their own conditions.
 
-### Void Refinement - no longer dependent on ambient qi
+### Void Tribulation - no longer dependent on ambient qi
 
 Refining the self against emptiness, which produces the single most consequential change
 on the ladder: **they no longer need ambient spiritual energy to sustain cultivation.**

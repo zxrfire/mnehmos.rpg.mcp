@@ -244,7 +244,7 @@ describe('the requirement curve', () => {
         const expected: Record<number, number> = {
             20: 1,  // into Nascent Soul
             24: 2,  // into Deity Transformation
-            28: 3,  // into Void Refinement
+            28: 3,  // into Void Tribulation
             32: 4,  // into Body Integration
             36: 5,  // into Grand Ascension
             40: 5,  // into Tribulation Transcendence - the cap bites here

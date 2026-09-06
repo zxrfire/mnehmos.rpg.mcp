@@ -226,6 +226,6 @@ describe('what a description asked for, when nobody is it', () => {
 
     it('names a realm by its own name', () => {
         expect(asked('you, void refinement cultivator'))
-            .toBe('a Void Refinement cultivator');
+            .toBe('a Void Tribulation cultivator');
     });
 });

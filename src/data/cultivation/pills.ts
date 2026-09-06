@@ -479,7 +479,7 @@ export const PILLS: readonly Pill[] = [
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // IMMORTAL - Void Refinement and Body Integration
+    // IMMORTAL - Void Tribulation and Body Integration
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'pill-void-source-return',
@@ -490,7 +490,7 @@ export const PILLS: readonly Pill[] = [
         toxicity: 6.0,
         value: 15_000,
         description:
-            'Draws on the emptiness a Void Refinement cultivator has learned to breathe. The pill contains almost nothing, at enormous expense.'
+            'Draws on the emptiness a Void Tribulation cultivator has learned to breathe. The pill contains almost nothing, at enormous expense.'
     },
     {
         id: 'pill-undying-flesh',
@@ -538,14 +538,14 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-void-refinement-guiding',
-        name: 'Void Refinement Guiding Pill',
+        name: 'Void Tribulation Guiding Pill',
         grade: 'immortal',
         effect: 'boost_breakthrough',
         potency: 0.25,
         toxicity: 12.0,
         value: 60_000,
         description:
-            'Twenty-five points at the boundary into Void Refinement. Fewer than a hundred are believed to exist, and their owners are all known to each other.'
+            'Twenty-five points at the boundary into Void Tribulation. Fewer than a hundred are believed to exist, and their owners are all known to each other.'
     },
     {
         id: 'pill-thousand-year-cypress',

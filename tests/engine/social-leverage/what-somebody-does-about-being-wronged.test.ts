@@ -203,7 +203,7 @@ describe('spending themselves, which is the answer that reaches upward', () => {
         expect(whatADetonationCosts(2)).toBe(0.3);
         expect(whatADetonationCosts(3)).toBe(0.12);
         expect(whatADetonationCosts(5)).toBe(0.05);
-        // Core Formation against Void Refinement is three realms: a real bite.
+        // Core Formation against Void Tribulation is three realms: a real bite.
         expect(answer(farBelow).hpFraction).toBe(0.12);
         // Qi Condensation against the same person is five: a scene.
         expect(answer({ ...farBelow, theirOrdinal: QI_CONDENSATION }).hpFraction).toBe(0.05);

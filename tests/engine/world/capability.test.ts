@@ -280,7 +280,7 @@ describe('capability: realm classes are potential, not entitlement', () => {
         expect(unprepared.survive.holds).toBe(false);
     });
 
-    it('decouples Void Refinement from the scarcity the world runs on', () => {
+    it('decouples Void Tribulation from the scarcity the world runs on', () => {
         const scar = makeLocation({
             id: 'loc-scar', name: 'the scar at Clear River Ford', kind: 'scar',
             thresholds: makeThresholds(0, 29, 33, 44),

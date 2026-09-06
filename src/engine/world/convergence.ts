@@ -90,7 +90,7 @@ export function convergenceOf(location: LocationRecord, day: number): Convergenc
 // THE ESCAPE THAT IS NEVER AVAILABLE TO THE PERSON WHO NEEDS IT
 // ─────────────────────────────────────────────────────────────────────────
 
-/** The grant that lets somebody leave late. Void Refinement, and no lower. */
+/** The grant that lets somebody leave late. Void Tribulation, and no lower. */
 export const PIERCE_GRANT: CapabilityGrant = FOLD_GRANT;
 
 /**

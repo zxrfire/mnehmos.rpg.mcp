@@ -508,7 +508,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         // find that does not match.
         discoverableTraces: [],
         standingNote:
-            'Nobody treats the Court as a house with a lineage, because it does not present as one: it names three dead women, none of them above Void Refinement, and stops. In a province with no register that costs it nothing, and two provinces away it is the reason nobody has ever thought the valley worth a second question. A house claiming nothing is a house nobody audits.',
+            'Nobody treats the Court as a house with a lineage, because it does not present as one: it names three dead women, none of them above Void Tribulation, and stops. In a province with no register that costs it nothing, and two provinces away it is the reason nobody has ever thought the valley worth a second question. A house claiming nothing is a house nobody audits.',
     },
     'sect-frostmirror-court': {
         ancestors: [

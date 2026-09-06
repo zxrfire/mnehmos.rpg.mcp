@@ -459,7 +459,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'tolerated',
         what:
-            'The only apex with a front gate and the only body above it that has one too, and neither has ever put anything to the other. The Court bar is a Void Refinement floor and evidence you could reach the last realm; the Pavilion bar is a probation standing at the floor of the ladder. They are the two published doors in the world and they open onto opposite ends of it.',
+            'The only apex with a front gate and the only body above it that has one too, and neither has ever put anything to the other. The Court bar is a Void Tribulation floor and evidence you could reach the last realm; the Pavilion bar is a probation standing at the floor of the ladder. They are the two published doors in the world and they open onto opposite ends of it.',
         since:
             'Three hundred and eighty years at most, because that is the whole age of the younger body. Nothing in either record says the two have ever formally corresponded.',
         a: {

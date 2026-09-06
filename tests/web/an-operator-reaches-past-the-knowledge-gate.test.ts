@@ -13,7 +13,7 @@
  *                     had said in front of them, where the same sentence typed
  *                     plainly is refused.
  *   IT IS NOT A       and the act behind the name still meets every bar. The
- *   BYPASS OF A RULE  Hollow Court admits at Void Refinement whether or not
+ *   BYPASS OF A RULE  Hollow Court admits at Void Tribulation whether or not
  *                     anybody has heard of it.
  *   IT DOES NOT LEAK  the very next ordinary sentence is refused again, and
  *                     nothing was written: the holder has heard of exactly what
@@ -50,7 +50,7 @@ async function withAdminMode<T>(on: boolean, fn: () => Promise<T>): Promise<T> {
  * A house at the top of the world that nobody starts having heard of.
  *
  * The Hollow Court is the right one to test with because it refuses for TWO
- * separate reasons - nobody has heard of it, and it admits at Void Refinement -
+ * separate reasons - nobody has heard of it, and it admits at Void Tribulation -
  * so a reach that lifted more than the awareness gate would be visible
  * immediately.
  */
@@ -134,7 +134,7 @@ describe('an ADMIN line reaches a name ordinary play cannot say', () => {
             // which is a fact about the world and not about awareness - so the
             // reach lifted the gate and left the rule exactly where it was.
             expect(engineCalls(forced).map(c => c.name)).not.toContain('engine.resolveSect');
-            expect(forced.narration).toMatch(/admits from Void Refinement/);
+            expect(forced.narration).toMatch(/admits from Void Tribulation/);
             expect(forced.narration).toMatch(/PRECONDITION and not a roll/);
 
             // ── AFTER, AND THIS IS THE ONE THAT MATTERS ──

@@ -149,7 +149,7 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
             'It has never appeared in a Thousand Treasure catalogue, and the Stone Marrow Hall declines to assay one on the stated grounds that an assay implies a rate. There is no price, there has never been a price, and a party who opens with an offer of stones has told the room something about themselves.',
         grades: {
             higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Marrow to Grand Ascension Rising Body - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Earth Vein Tower holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
-            middle: 'May deliver a cultivator into Void Refinement and no higher: at best Deity Transformation Final Turn to Void Refinement First Tempering, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
+            middle: 'May deliver a cultivator into Void Tribulation and no higher: at best Deity Transformation Final Turn to Void Tribulation First Tempering, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
             lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation First Turn, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Earth Vein Tower, one on the Long Cut schedule.'
         },
         effectNote:
@@ -207,14 +207,14 @@ export const THE_LAST_REALM_IS_UNBUYABLE = {
         'No object, at any grade, from any source, in any circumstance, delivers anybody to ordinal 41 or above. Tribulation Transcendence is walked to or it is not reached. There is no exception in this catalog, none in the historical record, and none that could be introduced without breaking the thing the ladder is for.',
     theCeilings: [
         'lower: may deliver into Deity Transformation. Top crossing 24 to 25.',
-        'middle: may deliver into Void Refinement. Top crossing 28 to 29.',
+        'middle: may deliver into Void Tribulation. Top crossing 28 to 29.',
         'higher: may deliver into Grand Ascension. Top crossing 36 to 37.',
         'and then nothing. Grand Ascension Rising Dao at 40 is the highest rung any object touches, and 41 upward is reachable only by the work.'
     ],
     gradeCapsDestinationNotDistance:
         'Note what the grades actually buy, because it is easy to misread: every grade performs the same single crossing, from Perfection to the Early rung above it. What a higher grade buys is permission to perform that crossing further up the ladder, not a longer journey. A higher-grade pill spent at Nascent Soul Perfection does exactly what a lower-grade one would have done there, and the difference between them is spent for nothing.',
     whyItStopsThere:
-        'Because 40 is the last rung of the mortal plane and 41 is the approach to the Lid. Everything below the sky can be given: inputs, time, teachers, medicine, a rung. The approach cannot, and that is not a rule about these objects - it is the same rule as the Hollow Court refusing to look at anybody below a Void Refinement floor with evidence they could cross, and the same rule as `origin.md` holding that privilege buys inputs and never rank. Being handed things gets you to the foot of the last climb and no further.',
+        'Because 40 is the last rung of the mortal plane and 41 is the approach to the Lid. Everything below the sky can be given: inputs, time, teachers, medicine, a rung. The approach cannot, and that is not a rule about these objects - it is the same rule as the Hollow Court refusing to look at anybody below a Void Tribulation floor with evidence they could cross, and the same rule as `origin.md` holding that privilege buys inputs and never rank. Being handed things gets you to the foot of the last climb and no further.',
     whatItProtects:
         'The meaning of the top of the ladder. If any grade could hand somebody 41, everything above 40 would be a statement about what an institution had in a vault rather than about a person, and every Tribulation Transcender in the world would be an open question about who paid for them. Instead the answer is known in advance and is the same for all of them: they walked. That is why the last realm still means something, and why the four seated at the Hollow Court are impressive in a way no holding can imitate.',
     theConsequenceForHolders:
@@ -531,7 +531,7 @@ export const ENGINE_GAPS: readonly {
         blockedBy: 'Nothing, as it turns out, and this is worth stating because it used to be the objection. `MAX_RANKS_PER_TURN = 1` in `src/schema/cultivation.ts` caps advancement at one rank per turn, and the Step grants exactly one rank - so the cap and the object agree rather than collide. What is missing is the effect, not room for it.',
         contract: [
             'It crosses exactly one realm boundary and delivers the recipient to the Early rung of the next realm. It never grants a within-realm rung and never grants two.',
-            'Grade caps the destination realm, not the distance: lower may deliver no higher than Deity Transformation (top crossing 24 to 25), middle no higher than Void Refinement (28 to 29), higher no higher than Grand Ascension (36 to 37).',
+            'Grade caps the destination realm, not the distance: lower may deliver no higher than Deity Transformation (top crossing 24 to 25), middle no higher than Void Tribulation (28 to 29), higher no higher than Grand Ascension (36 to 37).',
             'Ordinal 41 and above is unreachable by this or any object, for anybody, always. Hard stop, not a modifier.',
             'Once per cultivator for life. A second Step is consumed and does nothing.',
             'Perfection of the current realm is the clean case and is not a requirement. Taken below Perfection it still crosses, and the skipped accumulation lands as a permanently poor `foundationQuality` on the far side.'

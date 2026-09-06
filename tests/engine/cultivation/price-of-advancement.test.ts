@@ -97,7 +97,7 @@ describe('when the toll is charged at all', () => {
     });
 
     it('counts the instalments a standing cultivator has already paid', () => {
-        // The world bible's own arithmetic: Void Refinement starts at 29 and
+        // The world bible's own arithmetic: Void Tribulation starts at 29 and
         // "has crossed five boundaries and rolled five times".
         expect(boundariesCrossed(29)).toBe(5);
         expect(boundariesCrossed(0)).toBe(0);
@@ -128,7 +128,7 @@ describe('the roll', () => {
     });
 
     it('takes something from most cultivators over five boundaries', () => {
-        // "A Void Refinement cultivator has crossed five boundaries and rolled
+        // "A Void Tribulation cultivator has crossed five boundaries and rolled
         // five times. Some of them still have a family. Most do not."
         let lostSomething = 0;
         const runs = 400;

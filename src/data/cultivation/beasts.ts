@@ -46,7 +46,7 @@
  * Condensing a core and becoming a person are two events, twelve rungs apart:
  *
  *   `BEAST_CORE_ORDINAL`   17, Core Formation. It has a core.
- *   `BEAST_CHANGE_ORDINAL` 29, Void Refinement. It has a shape and a voice.
+ *   `BEAST_CHANGE_ORDINAL` 29, Void Tribulation. It has a shape and a voice.
  *
  * Between those rungs sits an animal carrying something worth more than most
  * people will earn, which cannot say a word about it. That window IS the
@@ -164,7 +164,7 @@ export const BEAST_CORE_ORDINAL = 17;
 /**
  * The ordinal at which a beast takes a shape and can speak.
  *
- * Void Refinement, which is also the rung at which heaven-grade material can
+ * Void Tribulation, which is also the rung at which heaven-grade material can
  * be worked at all - the same line `items.md` draws through the economy, met
  * from the other side. Below it a beast is an animal carrying qi, however
  * deep and however old. At and above it, it is somebody: it has a shape, it
@@ -565,7 +565,7 @@ export const ESTIMATING_A_BEAST = {
         'What the air does around it. A beast past Foundation moves qi the way a Drawn cultivator does, and it is visible at distance in cold weather.',
         'What else is living nearby. The reliable measure is absence: the ordinal is written in how far out the ordinary animals have gone.',
         'Size, which is the tell everyone uses and the worst one. Growth stops early on most roads and an old beast is often not large.',
-        'Whether it has a shape or a voice, which puts a hard floor of Void Refinement under it and admits of no argument. Almost nobody who reports one has actually seen one.'
+        'Whether it has a shape or a voice, which puts a hard floor of Void Tribulation under it and admits of no argument. Almost nobody who reports one has actually seen one.'
     ],
     standardError:
         'Reading it a rank low, from size or from an old district survey. Culling notices are written from surveys and surveys are not redrawn when a beast has a good century, so the price on the notice is the price for what used to be there.',
@@ -1714,7 +1714,7 @@ export const THE_CONTRACT = {
     witnessing:
         'A contract of this kind is witnessed the way any other agreement is - a house of the Vermilion Seal Terrace takes the fee, records the terms and holds the penalty clause. Beasts past the change insist on it more often than cultivators do, because they have less recourse and know it.',
     whyItIsRare:
-        'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail the first below Void Refinement, which is nearly all of them - the other party has to be one of a handful of things in the world.',
+        'Both sides must be able to talk, both must have something the other cannot get otherwise, and both must expect to be alive long enough for the terms to be worth writing. Most encounters fail the second condition and all of them fail the first below Void Tribulation, which is nearly all of them - the other party has to be one of a handful of things in the world.',
     howItBreaks: [
         'the beast keeps cultivating and outgrows the terms, which it will, because it never stops',
         'the cultivator loses the ground the contract was about, at which point there is nothing to share and nothing to hold',

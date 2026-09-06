@@ -169,7 +169,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
         treatment:
             'A foundation-repairing pill of immortal grade. Nothing made below the Lid has ever restored a spirit sense once it has been torn in the emptiness.',
         presentation:
-            'Void Refinement, and a reach that reports things which are not there and misses things that are. They compensate by never relying on it - they ask, they send people, they check twice - and it makes them look either extraordinarily careful or extraordinarily suspicious depending on who is describing them.'
+            'Void Tribulation, and a reach that reports things which are not there and misses things that are. They compensate by never relying on it - they ask, they send people, they check twice - and it makes them look either extraordinarily careful or extraordinarily suspicious depending on who is describing them.'
     },
     {
         key: 'failed-integration',

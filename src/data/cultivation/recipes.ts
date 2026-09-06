@@ -540,7 +540,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-void-refinement-guiding',
-        name: 'Void Refinement Guiding Pill Formula',
+        name: 'Void Tribulation Guiding Pill Formula',
         producesPillId: 'pill-void-refinement-guiding',
         ingredients: [
             { itemId: 'herb-star-fallen-iron-blossom', quantity: 1 },
@@ -696,7 +696,7 @@ const RECIPE_DATA: readonly Recipe[] = [
 // is not a loss of texture, because `requiredOrdinal` was never where a
 // formula's difficulty lived: `baseSuccessRate` carries it, in disjoint bands
 // per grade, and `refineChance` pays margin for every rung STANDING ABOVE the
-// requirement. A Void Refinement alchemist still finds the Meridian Rebirth
+// requirement. A Void Tribulation alchemist still finds the Meridian Rebirth
 // Pill harder than the Boundless Source Pill by the difference in their rates.
 //
 // The design owner's ruling is that a cultivator cannot work with materials

@@ -85,7 +85,7 @@ describe('the sentence that started this', () => {
      * "I build a boat from the hides I took", by a nobody.
      *
      * The honest answer, and it is a refusal that names a route rather than a
-     * wall: a hull is heaven-grade work, it wants Void Refinement, and here is
+     * wall: a hull is heaven-grade work, it wants Void Tribulation, and here is
      * the bill this pair of hands could take today.
      */
     it('answers the boat with the rung it wants and a bill within reach', async () => {
@@ -96,7 +96,7 @@ describe('the sentence that started this', () => {
 
         expect(plan.kind).toBe('refused');
         const said = plan.lines.join(' ');
-        expect(said).toContain('Void Refinement');
+        expect(said).toContain('Void Tribulation');
         expect(said).toContain('drawn carriage');
         expect(plan.structure.join(' ')).toContain('requires ordinal');
     });

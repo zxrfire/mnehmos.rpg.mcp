@@ -179,7 +179,7 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     fold: {
         takes: ['target'],
         says: `step across the distance instead of covering it. "target" is the destination.
-            Void Refinement and above, and only to ground the cultivator has stood on or can
+            Void Tribulation and above, and only to ground the cultivator has stood on or can
             see; the engine says so when they cannot.`
     },
     passage: {

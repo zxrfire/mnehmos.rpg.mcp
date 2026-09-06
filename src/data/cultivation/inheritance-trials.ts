@@ -789,7 +789,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     kind: 'strength',
                     ordinal: 31,
                     test: 'The hall discharges nine hundred years of stored draw into whoever reaches the plinth, in one event, as fire. There is no rising edge and no warning: the condition is proximity and the discharge is complete. It was designed to deliver two years of storage to a Core Formation candidate and it is holding four hundred and fifty times that.',
-                    below: 'Everything under Void Refinement Third Tempering is cinders, immediately, along with anything they were carrying and anything within about nine paces of them. The eighteen-year-old Gleaner contract is the most recent instance and the site is measurably cleaner for it.',
+                    below: 'Everything under Void Tribulation Third Tempering is cinders, immediately, along with anything they were carrying and anything within about nine paces of them. The eighteen-year-old Gleaner contract is the most recent instance and the site is measurably cleaner for it.',
                     noWorkaround: 'The condition is a body at the plinth. Sending a construct, a beast, a hired man or a corpse discharges it into that instead, which is a legitimate way to empty the hall and is what the Flame Sect would do if it wanted the node. It does not get anybody the thing on the plinth, because the thing on the plinth is destroyed by the discharge as well.'
                 }
             ],
@@ -1993,7 +1993,7 @@ export const GRAVES: readonly Grave[] = [
                     kind: 'strength',
                     ordinal: 29,
                     test: 'The fused ground still discharges. Four hundred years on it holds a residual that lifts and earths itself through anything crossing the last thirty paces to the body, in irregular events, at a measured output that the Karma Palace surveyed once and recorded.',
-                    below: 'Under Void Refinement the discharge is lethal on a bad interval and crippling on a good one, and the intervals are not periodic and have never been predicted by anybody. Three of the nine parties lost people to it and all three were working the outer pits when it happened, which is why the pits are where they are: nobody has ever got closer.',
+                    below: 'Under Void Tribulation the discharge is lethal on a bad interval and crippling on a good one, and the intervals are not periodic and have never been predicted by anybody. Three of the nine parties lost people to it and all three were working the outer pits when it happened, which is why the pits are where they are: nobody has ever got closer.',
                     noWorkaround: 'Insulation does not work, because what earths through a body earths through whatever the body is standing in. Two parties have tried approaching along a laid conductor and both discovered that the conductor is a better route than the ground and that they were standing on it.'
                 }
             ],
@@ -2746,7 +2746,7 @@ export const GRAVES: readonly Grave[] = [
                     kind: 'strength',
                     ordinal: 32,
                     test: 'Crossing two hundred paces of glass over standing water that the strike vitrified and did not drain. The sheet carries a person and does not carry the qi a person uses to spread their weight; anything laid on it to distribute the load is read as part of the sheet and cracks it. What the crossing costs is a continuous unshielded draw from the ground beneath, which is fen and returns nothing.',
-                    below: 'Below Void Refinement Final Tempering the sheet goes at some point between the edge and the centre, and what is under it is three feet of fen water with a glass lid that closes again. Four of the five recorded losses here are that, and none of the four was recovered, because a recovery means a second person on the same sheet.',
+                    below: 'Below Void Tribulation Final Tempering the sheet goes at some point between the edge and the centre, and what is under it is three feet of fen water with a glass lid that closes again. Four of the five recorded losses here are that, and none of the four was recovered, because a recovery means a second person on the same sheet.',
                     noWorkaround: 'The sheet has been approached from every side and it is the same sheet. Boats do not help because there is no open water; boards do not help because a load spread over boards is still a load and the glass is two fingers thick at the thinnest. Two parties have tried breaking a channel in from the edge and found that a broken sheet floods and takes what is on it to the bottom.'
                 }
             ],

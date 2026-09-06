@@ -159,7 +159,7 @@ describe('resolved entities describe behaviour, not schema', () => {
 
         const perceived = seen.facts.join(' ');
         expect(perceived).toContain('The Tall One');
-        expect(perceived).not.toContain('Void Refinement');
+        expect(perceived).not.toContain('Void Tribulation');
         expect(perceived).toMatch(/does not invite comparison|does not arise/i);
         expect(offences(perceived)).toEqual([]);
 
@@ -193,7 +193,7 @@ describe('nothing structural reaches the model', () => {
             {
                 headline: 'A courtyard.',
                 lines: ['Somebody is here, and does not look up.'],
-                structure: ['realmOrdinal=30 (Void Refinement Early), alignment=demonic, admissionOrdinal=21.'],
+                structure: ['realmOrdinal=30 (Void Tribulation Early), alignment=demonic, admissionOrdinal=21.'],
                 prose: ''
             },
             { place: 'Burnt Earth', ambient: 'thin', awareness: [] }

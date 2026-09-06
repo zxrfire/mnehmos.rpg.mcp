@@ -164,7 +164,7 @@ describe('refusing to refine', () => {
         expect(refused.error).toBe('realm_too_low');
         expect(refused.blockedByGrade).toBe(true);
         expect(refused.grade).toBe('heaven');
-        expect(refused.message).toContain('Void Refinement');
+        expect(refused.message).toContain('Void Tribulation');
     });
 
     /**

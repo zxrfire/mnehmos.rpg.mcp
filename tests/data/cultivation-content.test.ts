@@ -1116,7 +1116,7 @@ describe('the Late Age: provenance and the exploration loop', () => {
         }
         // The one that famously takes no applicants at all.
         expect(getSect('sect-kiln-wardens')!.recruits).toBe(false);
-        // The Court does recruit, and the bar is the point: Void Refinement,
+        // The Court does recruit, and the bar is the point: Void Tribulation,
         // with evidence the last realm is reachable. Nothing below that door
         // exists, which is why it reads to the province as not recruiting.
         const court = getSect('sect-hollow-court')!;

@@ -1,7 +1,7 @@
 /**
  * A cultivator's body is material, and its grade is the body's own standing.
  *
- * The design owner's statement - *a Void Refinement cultivator's core is
+ * The design owner's statement - *a Void Tribulation cultivator's core is
  * heaven-grade material* - needs no arithmetic here, because the ladder it names
  * is the ladder already in the file.
  *

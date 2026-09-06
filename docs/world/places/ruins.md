@@ -132,7 +132,7 @@ most sites is longer than most cultivators have.
 
 <!-- tier: 2 trigger="somebody is trapped by a closing window, or claims they can leave anyway" -->
 
-There is a way to leave late. `spatial_folding` is a Void Refinement capability grant,
+There is a way to leave late. `spatial_folding` is a Void Tribulation capability grant,
 written long before any of this. Two of its properties do all the work:
 
 - **It is high.** Somebody who can fold space is not a person who explores ruins. So the

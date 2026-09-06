@@ -198,7 +198,7 @@ Takes `target`, `topic`.
 
 ### `fold`
 
-step across the distance instead of covering it. "target" is the destination. Void Refinement and above, and only to ground the cultivator has stood on or can see; the engine says so when they cannot.
+step across the distance instead of covering it. "target" is the destination. Void Tribulation and above, and only to ground the cultivator has stood on or can see; the engine says so when they cannot.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'fold'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.fold` · the deterministic parser reaches it · spends in-world time.
 

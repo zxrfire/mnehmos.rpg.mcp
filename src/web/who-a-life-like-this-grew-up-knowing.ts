@@ -128,7 +128,7 @@ export const A_CHILDHOOD_REACHES: readonly { reach: number; rungs: number }[] = 
  * birth reaches, and that is still the only thing an origin buys here.
  *
  * Note what this does NOT do. It does not hand anybody a name from a realm
- * above them: a farm child in a hamlet of Void Refinement cultivators still
+ * above them: a farm child in a hamlet of Void Tribulation cultivators still
  * knows none of them, and `facesFromHome` still answers with an empty list
  * rather than with somebody out of reach. The widening is sideways, not up.
  *

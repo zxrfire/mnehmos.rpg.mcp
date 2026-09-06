@@ -144,7 +144,7 @@ describe('the two anchors are the catalog\'s figures, not chosen ones', () => {
     });
 
     it('opens a road that was shut the rung before, over most of the climb', () => {
-        // The legibility claim: climbing between Void Refinement and Grand
+        // The legibility claim: climbing between Void Tribulation and Grand
         // Ascension is supposed to keep handing somebody a destination. Counted
         // rather than asserted - of the distinct roads in the world, how many
         // come into reach across those nine rungs.

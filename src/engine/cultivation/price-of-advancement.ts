@@ -47,7 +47,7 @@ export function isTolled(fromOrdinal: number): boolean {
 }
 
 // TUNING
-// Calibrated against the world bible's own arithmetic: a Void Refinement
+// Calibrated against the world bible's own arithmetic: a Void Tribulation
 // cultivator has rolled five times and "most do not" still have a family, so
 // five unprotected rolls must usually take at least one thing. At the base
 // curve below an unmodified cultivator faces 0.30 / 0.35 / 0.40 / 0.45 / 0.50
@@ -528,7 +528,7 @@ export function computeTollRisk(
 
 /**
  * How many instalments a cultivator standing at this ordinal has already been
- * charged. The number behind "a Void Refinement cultivator has crossed five
+ * charged. The number behind "a Void Tribulation cultivator has crossed five
  * boundaries and rolled five times".
  */
 export function boundariesCrossed(ordinal: number): number {

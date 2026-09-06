@@ -39,7 +39,7 @@ import { makeGame } from './harness';
 import { whatIsBeingPutDown } from '../../src/web/what-a-holder-would-take-for-it';
 import { whatItWouldTake } from '../../src/engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell';
 
-/** Somebody standing at the Void Refinement floor, which is a real admission bar. */
+/** Somebody standing at the Void Tribulation floor, which is a real admission bar. */
 const AT_THE_FLOOR = 29;
 
 describe('what an offer is worth is read off its grade', () => {

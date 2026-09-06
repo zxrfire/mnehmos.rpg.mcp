@@ -465,7 +465,7 @@ describe('ladder odds: three numbers that are allowed to disagree', () => {
         // And the upper ladder stays what the setting says it is. Not "nobody
         // gets there" - a share, so a run that produces one is not a failure
         // and a run that produces a stratum is.
-        expect(share(29), 'Void Refinement has stopped being rare').toBeLessThan(0.03);
+        expect(share(29), 'Void Tribulation has stopped being rare').toBeLessThan(0.03);
         expect(share(41), 'the last realm has stopped being nearly mythical')
             .toBeLessThan(0.005);
 

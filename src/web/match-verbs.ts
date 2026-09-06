@@ -280,7 +280,7 @@ export const matchVerbs = {
             // barter caller passes one: what a thing is worth is a fact about
             // the person receiving it. This is the owner's Hollow Court case,
             // and it falls out of rows rather than out of a branch on a house -
-            // a member standing at the Void Refinement floor is refused stones
+            // a member standing at the Void Tribulation floor is refused stones
             // and refused a heaven-grade pill, and the one thing in the catalog
             // that reaches past her own rung is a higher Heaven-Ascending Golden Pill.
             table.push(whatIsBeingPutDown(
