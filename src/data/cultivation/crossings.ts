@@ -295,7 +295,7 @@ export const ARCHIVE_AS_CLAIM = {
         {
             case: 'holds the record and cannot read it',
             example: 'sect-nine-peaks-ascetic-order',
-            note: 'The best case in the catalog and it is already implied by the transmission work in `history.ts`: the Standing hand\'s numerals are read completely and its prose is not read at all. So the Order can state the exact weight and count of every offering ever made and cannot read the name at the top of the page. Somebody has been reading that document aloud for eight hundred years as a list of quantities.'
+            note: 'The best case in the catalog and it is already implied by the transmission work in `history.ts`: the Boundary Hand\'s numerals are read completely and its prose is not read at all. So the Order can state the exact weight and count of every offering ever made and cannot read the name at the top of the page. Somebody has been reading that document aloud for eight hundred years as a list of quantities.'
         },
         {
             case: 'wrong name, honestly held',

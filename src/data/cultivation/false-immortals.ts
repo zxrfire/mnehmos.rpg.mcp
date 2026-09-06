@@ -78,7 +78,7 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
         'The institutions know the band and do not connect it to the office. A formation master will tell you the ceiling is forty-four; an archivist will tell you the houses used to keep protectors and no longer do; and nobody has put the two sentences beside each other, because the office ended so long ago that it is filed under history rather than under formations. Somebody who puts them together has worked out why every account of the office reads the way it does.',
     theSpecification: {
         whatWouldBeNeeded:
-            'The Standing Age left a specification for holding something above the band, and it is a specification rather than a record of anything built. It calls for nine nodes of the ninth family, in one place, on ground carrying more than any vein in either province now runs.',
+            'The True Weight Age left a specification for holding something above the band, and it is a specification rather than a record of anything built. It calls for nine nodes of the ninth family, in one place, on ground carrying more than any vein in either province now runs.',
         theNinthFamily:
             'The Standing node grammar has nine families. Immovable Mountain Temple reads eight of them and can cut six. The ninth appears only on the oldest work, no living formation master can cut one, and its presence is the actual definition of a masterwork seal - which is why masterworks are inherited and never built, and why a small sect with a very old formation can be holding something enormous without the expenditure that would give it away.',
         theCount:
@@ -86,7 +86,7 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
         theGround:
             'And even in one room it would burn more than any vein in either province carries. The one that would run it is the datum itself, which the Kiln Wardens are posted on and draw nothing from, and they are staff on somebody else\'s ground rather than a sect with a decision to make.',
         nobodyEverBuiltOne:
-            'There is no evidence the specification was ever executed and good reason to think it was not. The Standing Age produced fewer crossings than any age in the record and therefore had almost nothing above the band to hold, so what survives is an engineering figure for a problem that age did not have. Nothing anywhere in this world is a sealed False Immortal, and nothing should ever be written as one.',
+            'There is no evidence the specification was ever executed and good reason to think it was not. The True Weight Age produced fewer crossings than any age in the record and therefore had almost nothing above the band to hold, so what survives is an engineering figure for a problem that age did not have. Nothing anywhere in this world is a sealed False Immortal, and nothing should ever be written as one.',
         theQualifier:
             'Which is what "not today" actually means. It is a fact about the Late Age and not a law of the world: the hand that could cut the ninth family is gone with the staffing returns that got shorter, the ground that would carry it is spoken for, and both of those are losses rather than impossibilities. The door is open by exactly the width of nine stones that cannot be moved and one skill nobody has.'
     }
@@ -294,7 +294,7 @@ export const THE_VACANCY = {
     whyNoHouseInvestigated:
         'Because from inside a house there is nothing to investigate. A vacancy is not an event. There is a seat, there is nobody in it, there has been nobody in it since before anybody now living was born, and no year can be pointed to in which anything happened. Houses do not open enquiries into the absence of a thing they never controlled the supply of.',
     thereIsLessOnOfferToo:
-        'And it is true, and it changes nothing, that a house has less to offer than it did. Every discipline practised in either province was founded in the Counting Age and not one since; the houses maintain a dao rather than build one, so what a protector would be standing on is a smaller thing than it was. That would matter if there were anybody to make the offer to. There is not, so it does not, and it should never be written as the reason.',
+        'And it is true, and it changes nothing, that a house has less to offer than it did. Every discipline practised in either province was founded in the Hundred Schools Age and not one since; the houses maintain a dao rather than build one, so what a protector would be standing on is a smaller thing than it was. That would matter if there were anybody to make the offer to. There is not, so it does not, and it should never be written as the reason.',
     theVacancyBegan:
         'Eight hundred years ago, when the Jade Register Hall lost its Kept Name to an expiring span in a chair on an ordinary afternoon. Nobody at the time knew it was the last one in the world and there is no reason they would have. The house kept the ceremonies, kept the quarters, and kept the entry on the wall until it struck it four years later for reasons that had nothing to do with any of this.',
     whatTheResidueLooksLike: [
@@ -608,7 +608,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             heldByFactionId: 'house-immovable-mountain',
             holderKnows: false,
             builtOnIt:
-                'Nothing, which is the ordinary case and worth having once. Three sign groups of the gate hand are agreed and one of the three is agreed to be a number, so what the Immovable Mountain Temple has is nine hundred characters of which it can identify roughly forty and can read none. It surveys them, records that they are unchanged, and files the entry under condition of the stones. The house has never asked why a containment house would cut gate hand on anything.',
+                'Nothing, which is the ordinary case and worth having once. Three sign groups of the Bird-Track Hand are agreed and one of the three is agreed to be a number, so what the Immovable Mountain Temple has is nine hundred characters of which it can identify roughly forty and can read none. It surveys them, records that they are unchanged, and files the entry under condition of the stones. The house has never asked why a containment house would cut the Bird-Track Hand on anything.',
             yieldedTechniqueIds: []
         },
         end: 'went_looking',
@@ -620,9 +620,9 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         stageAtEndId: 'stage-heart-demon-without-deviation',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
-            'The Girdle stood for another two thousand years and then was ended by the Immovable Mountain Temple, which broke the eastern nail itself to demonstrate that the Girdle could not hold the survey. Nobody involved on either side knew that the Girdle had been keeping an empty office for twenty centuries, and nobody has worked out since that the house the Immovable Mountain Temple\'s founders moved against had lost its deterrent before the Counting Age ended. He does not know any of it happened.',
+            'The Girdle stood for another two thousand years and then was ended by the Immovable Mountain Temple, which broke the eastern nail itself to demonstrate that the Girdle could not hold the survey. Nobody involved on either side knew that the Girdle had been keeping an empty office for twenty centuries, and nobody has worked out since that the house the Immovable Mountain Temple\'s founders moved against had lost its deterrent before the Hundred Schools Age ended. He does not know any of it happened.',
         whatSurvives: [
-            'nine hundred characters of gate hand on the inner faces of three standing stones, surveyed four times and never published',
+            'nine hundred characters of the Bird-Track Hand on the inner faces of three standing stones, surveyed four times and never published',
             'a duration entered in the Girdle survey ledger in a column meant for something else, which the Immovable Mountain Temple inherited and has never queried',
             'the office in the Girdle ceremonies, kept for two thousand years after the occupant walked out, which is why the accounts of the house are confident about a protector nobody alive ever saw'
         ],
@@ -733,7 +733,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         stageAtEndId: 'stage-heart-demon-without-deviation',
         legacyAtEnd: 'finished',
         whatBecameOfIt:
-            'Nine entries of the true-distance table carry corrections in the Span\'s own hand, unsigned, all made in one season, and they are the only original figures the house has ever produced. The Span believes they are a recovered Wide Age correction, which in every sense that matters they are: he took them himself, correctly, when the network ran. Every courier contract and freight span in two provinces has been priced off them for eleven hundred years and the Span cannot find the error, because there is no error in them.',
+            'Nine entries of the true-distance table carry corrections in the Span\'s own hand, unsigned, all made in one season, and they are the only original figures the house has ever produced. The Span believes they are a recovered Open Gate Age correction, which in every sense that matters they are: he took them himself, correctly, when the network ran. Every courier contract and freight span in two provinces has been priced off them for eleven hundred years and the Span cannot find the error, because there is no error in them.',
         whatSurvives: [
             'nine corrected entries in the true-distance table, unsigned, in the Span\'s own hand, which price every courier contract in two provinces',
             'a line in the Iron Ridge station book recording that the Guest departed, with no entry before it and none after',
@@ -857,7 +857,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         office: {
             factionId: null,
             factionNote:
-                'A Counting Age house squatting in a Standing Age compound in the high Jade Gorge. Its name is cut on its own boundary stone in Standing hand prose, which nobody can read, so the house is nameless for exactly the reason everything else about the site is: the record is there and cannot be opened.',
+                'A Hundred Schools Age house squatting in a True Weight Age compound in the high Jade Gorge. Its name is cut on its own boundary stone in Boundary Hand prose, which nobody can read, so the house is nameless for exactly the reason everything else about the site is: the record is there and cannot be opened.',
             recruitment: 'external',
             recruitmentNote:
                 'External, and the house never knew by how much. It took in a courteous stranger of no stated age who could show its disciples things nobody else in the world could show them, and it did not occur to anybody to ask when he had crossed, because the question has no ordinary answer and the house had no ordinary reason to want one. He had been across for longer than every institution in the world put together.',
@@ -872,7 +872,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         },
         carving: {
             id: 'carving-the-practice-yard',
-            where: 'The floor of the practice yard of an intact, unlooted, never-resettled Standing Age compound in the high Jade Gorge, which local practice says you do not go to.',
+            where: 'The floor of the practice yard of an intact, unlooted, never-resettled True Weight Age compound in the high Jade Gorge, which local practice says you do not go to.',
             whatItIs:
                 'A complete dao, cut in courses across roughly four hundred paces of dressed floor over twelve hundred years. It is the largest single body of carved dao in either province by an enormous margin and there is no second place. The characters are cut cleanly throughout, in one hand, at one standard, from the first course to the last.',
             script: 'own_hand',
@@ -895,9 +895,9 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'The house is gone and the compound is not. It stands intact, unlooted and never resettled, at node counts far above what anybody now can light, and the reason is neither haunting nor formation: a compound where everybody starved in place with the doors standing open is a thing local practice has a rule about, and the rule has held for four thousand years without anybody remembering what it is for.',
         whatSurvives: [
             'a complete carved dao across four hundred paces of practice yard floor, of which the first third has been read once and the rest never',
-            'an intact Standing Age compound in the high Jade Gorge that nobody enters, at node counts nobody can light',
+            'an intact True Weight Age compound in the high Jade Gorge that nobody enters, at node counts nobody can light',
             'the house record of the hundred and ten years, kept to the end, in a hand that deteriorates - the only first-hand account of the keeping in existence',
-            'a boundary stone carrying the house name in Standing hand prose, which is the reason nobody can say whose compound it is'
+            'a boundary stone carrying the house name in Boundary Hand prose, which is the reason nobody can say whose compound it is'
         ],
         servingNow: false
     },

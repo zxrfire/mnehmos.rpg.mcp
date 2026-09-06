@@ -340,7 +340,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         yearsAgo: 4400,
         attestation: 'withheld',
         attestationNote:
-            'The Court holds the name, has never said it aloud to an outsider, and does not use it internally either - four thousand years of referring to a man as "the one who went through first" is a practice rather than an omission. The name in this entry is the Immovable Mountain Temple\'s, taken off a Standing Works site register that predates the Court\'s reticence and was never meant to be interesting.',
+            'The Court holds the name, has never said it aloud to an outsider, and does not use it internally either - four thousand years of referring to a man as "the one who went through first" is a practice rather than an omission. The name in this entry is the Immovable Mountain Temple\'s, taken off a Ten Thousand Works site register that predates the Court\'s reticence and was never meant to be interesting.',
         answers: 'silent',
         juniority: 6,
         manner:
@@ -402,7 +402,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         alsoCalled: null,
         kind: 'immortal_ancestor',
         factionId: 'sect-hollow-court',
-        whatTheyWere: 'A Seat of the western mountain who crossed at the end of the Counting Age with four standing over her, the largest guard the Ward has ever fielded.',
+        whatTheyWere: 'A Seat of the western mountain who crossed at the end of the Hundred Schools Age with four standing over her, the largest guard the Ward has ever fielded.',
         yearsAgo: 1600,
         attestation: 'secure',
         attestationNote: 'Tablet, dated, four protectors named. Ninefold Karma Palace holds an independent record of the same year because two of the four owed it obligations that lapsed on the day.',
@@ -441,7 +441,7 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         yearsAgo: 3100,
         attestation: 'secure',
         attestationNote:
-            'In the Survey\'s own register, in the Standing hand, correctly. The Survey reads the hand perfectly well and still refers to her by title in every context, which is house style rather than loss - it is one of the few institutions in this file whose reticence is a choice it could reverse tomorrow.',
+            'In the Survey\'s own register, in the Boundary Hand, correctly. The Survey reads the hand perfectly well and still refers to her by title in every context, which is house style rather than loss - it is one of the few institutions in this file whose reticence is a choice it could reverse tomorrow.',
         answers: 'answers',
         juniority: 1,
         manner:
@@ -691,7 +691,7 @@ export const FOUNDERS: readonly NamedFigure[] = [
         yearsAgo: 800,
         attestation: 'unreadable',
         attestationNote:
-            'The Order has the name. It is in the founding record, in the Standing hand, and the Order reads the numerals in that document perfectly and has not read the prose in eight hundred years - so it carries a founder it can point at and cannot pronounce, and uses the title instead. Any party who reads the hand could hand it back in an afternoon.',
+            'The Order has the name. It is in the founding record, in the Boundary Hand, and the Order reads the numerals in that document perfectly and has not read the prose in eight hundred years - so it carries a founder it can point at and cannot pronounce, and uses the title instead. Any party who reads the hand could hand it back in an afternoon.',
         answers: null,
         juniority: null,
         note: 'The same document, the same hand and the same gap that makes Patriarch Meng Da a folklore problem rather than an institutional one. One unread page is doing a great deal of work at the Nine Peaks.'
@@ -1112,7 +1112,7 @@ export const HISTORICAL_FIGURES: readonly NamedFigure[] = [
     },
     {
         id: 'figure-the-standing-hand-clerks',
-        name: 'The Standing Works recopying clerks',
+        name: 'The Ten Thousand Works recopying clerks',
         alsoCalled: null,
         kind: 'historical',
         factionId: null,
@@ -1120,14 +1120,14 @@ export const HISTORICAL_FIGURES: readonly NamedFigure[] = [
         yearsAgo: 4000,
         attestation: 'secure',
         attestationNote:
-            'Attested exhaustively and read by almost nobody. The recopying programme is documented in its own convention notes, which survive, in the Standing hand, in two collections that will not lend.',
+            'Attested exhaustively and read by almost nobody. The recopying programme is documented in its own convention notes, which survive, in the Boundary Hand, in two collections that will not lend.',
         answers: null,
         juniority: null,
-        note: 'The most consequential people in the argument about where cultivation came from are a clerical office, and the Taught Account survives because nobody has put their notes on a table next to a pre-Standing fragment.'
+        note: 'The most consequential people in the argument about where cultivation came from are a clerical office, and the Given Ladder survives because nobody has put their notes on a table next to a fragment older than the programme.'
     },
     {
         id: 'figure-the-taught-teacher',
-        name: 'The teacher the Taught Account requires',
+        name: 'The teacher the Given Ladder requires',
         alsoCalled: null,
         kind: 'historical',
         factionId: null,

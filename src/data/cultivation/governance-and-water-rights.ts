@@ -1781,12 +1781,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         governance: 'federated',
         relation: 'subsidiary',
         parentFactionId: 'sect-frostmirror-court',
-        holds: 'The volcanic field furnace halls, and the refining hall with the method-script on the wall.',
+        holds: 'The volcanic field furnace halls, and the refining hall with the Furnace Script on the wall.',
         terms: {
             tributeStonesPerYear: 18_000,
             inKind: ['a standing supply of earth-grade medicine at cost, quantity unspecified and therefore unlimited'],
             disciplesPerCycle: 1,
-            buys: ['the furnace halls beside the volcanic fields, with the method-script wall in them', 'the exclusive right to refine commercially in the province, which is the Hall\'s entire business model'],
+            buys: ['the furnace halls beside the volcanic fields, with the Furnace Script wall in them', 'the exclusive right to refine commercially in the province, which is the Hall\'s entire business model'],
             renewal: 'Twelve years, and the medicine clause is renewed separately and more often, which the Hall finds ominous and correctly so.'
         },
         standing: 'strained',

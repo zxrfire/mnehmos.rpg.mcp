@@ -93,7 +93,7 @@ describe('attestation', () => {
         const stoneBearer = getNamedFigure('figure-the-stone-bearer')!;
         expect(stoneBearer.attestation).toBe('unreadable');
         expect(nameIsUsable(stoneBearer)).toBe(false);
-        expect(stoneBearer.attestationNote).toMatch(/Standing hand/);
+        expect(stoneBearer.attestationNote).toMatch(/Boundary Hand/);
         // Withheld is a policy rather than a loss, so it stays usable.
         const first = getNamedFigure('figure-shen-yuandao')!;
         expect(first.attestation).toBe('withheld');

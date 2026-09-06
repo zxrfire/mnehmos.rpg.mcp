@@ -47,7 +47,7 @@
  *
  * ── AND WHICH OF THE TWO THE HOUSE DID NOT BUILD ─────────────────────────
  *
- * `SpanRoute.inheritedTerminal` separates Wide Age work the house merely keeps
+ * `SpanRoute.inheritedTerminal` separates Open Gate Age work the house merely keeps
  * from a span it folds itself, and the two entries answer it differently for a
  * reason each states:
  *

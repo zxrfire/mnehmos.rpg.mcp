@@ -1022,7 +1022,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Outer Alchemist',
         realmOrdinal: 10,
         role: 'peer',
-        wants: 'permission to read the fourth line of the method-script on the refining hall wall',
+        wants: 'permission to read the fourth line of the Furnace Script on the refining hall wall',
         fears: 'that she has already read it and that it made no sense',
         detail: 'Keeps a tally of failed batches on the inside of her cupboard door. It stands at four hundred and eleven.',
         outlier: false,

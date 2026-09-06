@@ -521,7 +521,7 @@ fold", it is moving other people, which is work a member below the floor does al
 is thinner than its own past and is working its way back up, and `faction-character.ts` carries
 that as a live internal split rather than a mood: the Long Measure wants the closed gates
 reopened whatever it costs, the Freight faction wants the house solvent instead. What it
-genuinely cannot do is **reopen a terminal** - a permanent two-way span, Wide Age work, and a
+genuinely cannot do is **reopen a terminal** - a permanent two-way span, Open Gate Age work, and a
 different capability from a person folding. Do not write them as clerks maintaining a table they
 cannot use.
 

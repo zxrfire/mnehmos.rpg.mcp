@@ -687,7 +687,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'sect-cinnabar-crucible-sect': {
         ancestors: [
-            { name: 'Grandmaster Xie Lan', fate: 'dead', realmOrdinal: null, yearsAgo: 900, afterCrossing: null, rememberedFor: 'Read a third of the method-script on the refining hall wall and built the hall on it.' },
+            { name: 'Grandmaster Xie Lan', fate: 'dead', realmOrdinal: null, yearsAgo: 900, afterCrossing: null, rememberedFor: 'Read a third of the Furnace Script on the refining hall wall and built the hall on it.' },
             { name: 'Furnace Elder Bo', fate: 'dead', realmOrdinal: null, yearsAgo: 40, afterCrossing: null, rememberedFor: 'Died proving that the fourth line of the wall script is not a step in the method.' }
         ],
         claimsLivingAncestor: false,

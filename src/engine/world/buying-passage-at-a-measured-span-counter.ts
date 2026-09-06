@@ -139,7 +139,7 @@ export interface SpanRoute {
      * Whether this is one of the inherited terminals rather than a route the
      * house folds down itself.
      *
-     * A terminal is Wide Age work, it runs in both directions permanently, and
+     * A terminal is Open Gate Age work, it runs in both directions permanently, and
      * the Span did not build it and cannot reopen a closed one. A folded route
      * is the house's own method and needs a Span hand to work it. The
      * distinction matters to the fiction and not to the fare.

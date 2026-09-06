@@ -1050,7 +1050,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             inherited: true,
             formationNodesTotal: 27,
             formationNodesLit: 15,
-            remnant: 'A refining hall whose walls are covered in method-script; the Hall can read about a third of it and has built its whole reputation on that third.'
+            remnant: 'A refining hall whose walls are covered in Furnace Script; the Hall can read about a third of it and has built its whole reputation on that third.'
         },
         description:
             'Furnace halls beside the volcanic fields, a fixed price list nobody negotiates, and a refining hall wall it was founded on that is legible to about a third. It teaches detoxification, circulation, the needle art, the hundred-herb restoration and the molten core scripture, which is a curriculum for people who will spend their cultivation years standing at a cauldron, and the Hall treats a Core Formation grandmaster as a complete career rather than a disappointment. Everybody sees the counter and almost nobody sees the examination hall behind it: admission is by examination rather than combat, so it is one of the very few doors in the world through which a careful person with no talent for violence walks out with a trade. Every formula above earth grade in its book was recovered rather than devised, it is quietly certain that the missing steps are why the heaven-grade batches fail, and it still teaches a step that killed the Furnace Elder who proved it was not one.',

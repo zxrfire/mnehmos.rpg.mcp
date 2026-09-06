@@ -337,7 +337,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
             },
             {
                 factionId: 'sect-cinnabar-crucible-sect',
-                holds: 'The field furnace halls and the refining hall with the method-script on the wall.',
+                holds: 'The field furnace halls and the refining hall with the Furnace Script on the wall.',
                 delegatedFromId: 'sect-frostmirror-court'
             }
         ],

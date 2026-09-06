@@ -717,7 +717,7 @@ export const WANDERERS: readonly Wanderer[] = [
             {
                 yearsAgo: 60,
                 where: 'A Cinnabar Crucible Sect refining hall, during an open examination',
-                what: 'He remarked, to a journeyman he had been talking to about something else, that the fourth line of the method-script on the wall is not a step in the method. He was correct - a Furnace Elder later died proving the same thing - and he did not stay to be asked how he knew, or to learn that the Hall teaches the line to this day.',
+                what: 'He remarked, to a journeyman he had been talking to about something else, that the fourth line of the Furnace Script on the wall is not a step in the method. He was correct - a Furnace Elder later died proving the same thing - and he did not stay to be asked how he knew, or to learn that the Hall teaches the line to this day.',
                 consequence: 'The journeyman repeated it, twice, in the wrong company. He was expelled for insubordination within the year, and the Hall still teaches the fourth line.',
                 heNeverLearned: true
             },

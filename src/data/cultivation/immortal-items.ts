@@ -634,7 +634,7 @@ export const REGISTERS_COUNT_WHAT_THEY_CAN_SEE = {
     soItIsAFloor:
         'The true figure is at least that and probably a little higher, and the two parties most likely to hold something uncounted are exactly the ones the registers cannot reach: an institution that will not discuss its shelf, and an institution that keeps no accounts of any kind.',
     andEverKnownIsToo:
-        'The same applies to `everKnown`. Twenty-four Steps and seven Dealings is what the record can trace, and the record is a Standing Works inheritance with four thousand years of gaps in it. Nobody who works with these figures treats them as complete, and nobody has a better method.'
+        'The same applies to `everKnown`. Twenty-four Steps and seven Dealings is what the record can trace, and the record is a Ten Thousand Works inheritance with four thousand years of gaps in it. Nobody who works with these figures treats them as complete, and nobody has a better method.'
 } as const;
 
 // -------------------------------------------------------------------------
