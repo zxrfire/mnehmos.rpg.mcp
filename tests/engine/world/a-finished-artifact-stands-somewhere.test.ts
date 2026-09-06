@@ -126,3 +126,31 @@ describe('the one thing that legitimately stands nowhere', () => {
         expect(isRuined(wreck)).toBe(true);
     });
 });
+
+describe('and a house keeps no way out it could not have made', () => {
+    it('stocks departure slips only where somebody there can fold', async () => {
+        // Measured before the guard: seeded escape slips spanned ordinals
+        // 14..44, and `FOLD_FLOOR_ORDINAL` is 29 - so every house under it was
+        // holding paper that carries zero distance. A way out that is not one
+        // is worse than none, because a disciple handed one believes they have
+        // a way out.
+        for (const objects of await everyWorldsObjects()) {
+            const escapes = objects.filter(o =>
+                o.tags.includes('talisman') && o.tags.includes('escape'));
+            for (const slip of escapes) {
+                expect(Number(slip.data?.carriesWalkingDays ?? 0)).toBeGreaterThan(0);
+            }
+        }
+    });
+
+    it('and still stocks the strike slips, which any hand can cut', async () => {
+        let strikes = 0;
+        for (const objects of await everyWorldsObjects()) {
+            strikes += objects.filter(o =>
+                o.tags.includes('talisman') && o.tags.includes('offensive')).length;
+        }
+        // The guard is about folding, not about slips. A world with no strike
+        // slips left in it would mean the wrong thing was cut.
+        expect(strikes).toBeGreaterThan(0);
+    });
+});

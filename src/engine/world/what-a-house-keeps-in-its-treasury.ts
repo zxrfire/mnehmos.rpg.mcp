@@ -64,6 +64,7 @@ import {
 } from './possessions.js';
 import { purposeOf, type RoomPurpose } from './architecture.js';
 import {
+    couldCutAWayOut,
     cutATalisman,
     type WhatIsInTheSlip
 } from './a-talisman-is-one-act-somebody-already-paid-for.js';
@@ -318,6 +319,13 @@ function whatElseTheHouseKeeps(
     for (const grade of GRADES_A_HOUSE_STOCKS) {
         if (refiningOrdinalFor(grade) > refiningOrdinalFor(ceiling)) continue;
         for (const what of WHAT_A_HOUSE_KEEPS_SLIPS_FOR) {
+            // AND A HOUSE THAT CANNOT FOLD KEEPS NO DEPARTURE SLIPS. Measured
+            // before this guard: seeded escape slips spanned ordinals 14..44,
+            // so every house under `FOLD_FLOOR_ORDINAL` was sitting on paper
+            // that carries zero distance - a way out that is not one. The
+            // predicate that refuses them already existed and nothing called
+            // it.
+            if (what === 'a_way_out' && !couldCutAWayOut(acting)) continue;
             out.push(aStockOfSlips({
                 houseId,
                 houseName,
