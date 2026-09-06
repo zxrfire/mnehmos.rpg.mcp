@@ -89,7 +89,11 @@ function movedBetween(a: any, b: any): string {
     return bits.join('  ');
 }
 
-const slug = (only ? `${model}-only-${only}` : model).replace(/[^a-z0-9]/gi, '-');
+// The corpus is part of the slug: a trope run and a scenario run are two
+// different measurements and must not overwrite one another's results.
+const corpusTag = process.argv.includes('--tropes') ? '-tropes' : '';
+const slug = (only ? `${model}-only-${only}` : `${model}${corpusTag}`)
+    .replace(/[^a-z0-9]/gi, '-');
 const out: string[] = [`model=${model}  world=${WORLD}`, ''];
 let answered = 0, shrugged = 0, total = 0;
 /** One row per turn, for the review page. */

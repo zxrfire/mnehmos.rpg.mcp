@@ -68,7 +68,7 @@ import {
 const ACTIONS = [
     'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
     'set_ambient', 'set_location', 'advance_days', 'grant_progress', 'set_realm',
-    'set_age', 'audit_log', 'grant_knowledge', 'force', 'help'
+    'set_age', 'audit_log', 'grant_knowledge', 'join_sect', 'force', 'help'
 ] as const;
 type AdminAction = typeof ACTIONS[number];
 
@@ -759,6 +759,26 @@ const GrantProgressSchema = z.object({
 const SetRealmSchema = z.object({
     action: z.literal('set_realm'),
     ordinal: ordinalArg('The rung to stand the cultivator at. Up or down; both go through advanceRealm.'),
+    cultivatorId: z.string().optional()
+});
+
+/**
+ * Put the cultivator on a house's roll.
+ *
+ * ADMIN has been able to set a rung, an age, a location and a pouch since it
+ * existed, and could not do the one thing that decides how half the world
+ * treats somebody. Every faction-scoped read - what a house does about its own,
+ * tribute, vassalage, who is invited to a gathering, whether the world's row
+ * for the player carries a `factionId` at all - was unreachable from a test or
+ * a played probe, because there was no way to be in a sect without playing out
+ * an intake.
+ */
+const JoinSectSchema = z.object({
+    action: z.literal('join_sect'),
+    sect: z.string().min(2)
+        .describe('The house to put them on the roll of. Catalog id or name; a partial name works.'),
+    rank: z.number().int().min(0).optional()
+        .describe('Rank index, 0 being the outermost. Clamped to what the house actually has.'),
     cultivatorId: z.string().optional()
 });
 
@@ -2111,6 +2131,57 @@ export async function handleGrantProgress(
     };
 }
 
+export async function handleJoinSect(args: z.infer<typeof JoinSectSchema>): Promise<object> {
+    if (!isAdminModeEnabled()) return adminDisabled('join_sect');
+    const repos = ensureCultivationDb();
+    const resolved = resolveActiveRun(repos, { cultivatorId: args.cultivatorId });
+    if (isGuidingErrorBody(resolved)) return resolved;
+
+    const { cultivator } = resolved;
+    const asked = args.sect.trim().toLowerCase();
+    // Id first, then an exact name, then a partial. An operator types what is
+    // on the screen, and what is on the screen is the name.
+    const sect = SECTS.find(row => row.id.toLowerCase() === asked)
+        ?? SECTS.find(row => row.name.toLowerCase() === asked)
+        ?? SECTS.find(row => row.name.toLowerCase().includes(asked));
+    if (!sect) {
+        return guidingError(
+            'no_such_house',
+            `No house answers to "${args.sect}".`,
+            { tried: args.sect, houses: SECTS.slice(0, 8).map(row => row.name) }
+        );
+    }
+
+    const before = repos.sects.getMembership(cultivator.id);
+    const membership = repos.sects.addMember(sect.id, cultivator.id, args.rank ?? 0);
+    if (!membership) {
+        return guidingError(
+            'enrolment_refused',
+            `The roll would not take ${cultivator.name}.`,
+            { sectId: sect.id }
+        );
+    }
+
+    writeAdminAudit(repos, 'join_sect', resolved.run.id, {
+        sectId: sect.id, rankIndex: membership.rankIndex,
+        leftBehind: before && before.sectId !== sect.id ? before.sectId : null
+    });
+
+    return {
+        ok: true,
+        cultivator: cultivator.name,
+        sect: sect.name,
+        rank: membership.rankTitle,
+        rankIndex: membership.rankIndex,
+        leftBehind: before && before.sectId !== sect.id ? before.sectId : null,
+        note:
+            'On the roll, and nothing else moved. No intake was rolled, no probation '
+            + 'was served and no standing was earned - this writes the membership row '
+            + 'and only that. Everything that reads a faction now reads one: what the '
+            + 'house does about its own, tribute, and the world row the player carries.'
+    };
+}
+
 export async function handleSetRealm(args: z.infer<typeof SetRealmSchema>): Promise<object> {
     if (!isAdminModeEnabled()) return adminDisabled('set_realm');
     const repos = ensureCultivationDb();
@@ -2468,6 +2539,12 @@ const definitions: Record<AdminAction, ActionDefinition> = {
         handler: handleGrantProgress,
         aliases: ['progress', 'grant_qi', 'fill_progress', 'fill', 'qi_units', 'top_up'],
         description: 'FILLS THE TANK. Adds qi-units to the accumulator the engine already reads, so a breakthrough can be ATTEMPTED from where the cultivator stands. It rolls no breakthrough and claims none - the attempt is still made in play and can still fail or kill. Use with set_realm to test a crossing FROM any rung.'
+    },
+    join_sect: {
+        schema: JoinSectSchema,
+        handler: handleJoinSect,
+        aliases: ['sect_join', 'join', 'enrol', 'enroll', 'set_sect', 'membership'],
+        description: 'PUTS THE CULTIVATOR ON A HOUSE ROLL. Writes the membership row and only that: no intake is rolled, no probation is served, no standing is earned. Takes a catalog id, a name, or part of a name. This is how "I am in the Azure Cloud Pavilion" is said, and it is the one fact ADMIN could not set - which made every faction-scoped read unreachable from a test.'
     },
     set_realm: {
         schema: SetRealmSchema,

@@ -1320,7 +1320,7 @@ const ADMIN_PREFIX = /^admin(?![a-z])[:\s-]*/i;
 const ADMIN_ACTIONS = [
     'roster', 'spawn_encounter', 'spawn_site', 'grant_item',
     'set_ambient', 'set_location', 'advance_days', 'set_realm', 'set_age',
-    'grant_progress', 'grant_knowledge', 'audit_log', 'help',
+    'grant_progress', 'grant_knowledge', 'join_sect', 'audit_log', 'help',
     // Not an `admin_manage` action. It is handled here because runs are
     // written here and nowhere else; see `adminReset`.
     'reset',
