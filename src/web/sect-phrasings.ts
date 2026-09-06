@@ -266,7 +266,24 @@ export const SECT_RECRUIT_VERBS =
      * to the same question get into a save.
      */
     + 'take (?:a|an|on|in|another|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)|'
-    + 'takes (?:a|an|another|[0-9]+)|taking (?:a|an|another|[0-9]+)';
+    + 'takes (?:a|an|another|[0-9]+)|taking (?:a|an|another|[0-9]+)|'
+    /**
+     * And taking a NAMED PERSON, which the counted form above does not reach.
+     *
+     * The same phrasing gap one step over: "I take a disciple" was fixed and "I
+     * take HIM as my disciple" still fell through the whole table, which is the
+     * form anybody uses when the person is standing in front of them. Measured
+     * on the trope corpus as four blank looks in a row - "I take him as my
+     * disciple", "I make him my disciple", "I take him on as a disciple", "I
+     * take the youngest one here on as my disciple".
+     *
+     * Safe without a second guard because `SECT_INTAKE_NOUNS` still has to
+     * match: the sentence must name a disciple, a student, an apprentice. "I
+     * take him down" names none of those and is not this act.
+     */
+    + 'take (?:him|her|them|the|that|this)|takes (?:him|her|them|the|that)|'
+    + 'taking (?:him|her|them|the|that)|'
+    + 'make (?:him|her|them)|makes (?:him|her|them)|making (?:him|her|them)';
 
 /** Who is being taken in. Without one of these the sentence is not about intake. */
 export const SECT_INTAKE_NOUNS =

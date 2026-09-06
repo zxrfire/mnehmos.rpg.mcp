@@ -2903,7 +2903,14 @@ function planIntent(input: string): PlannedAction {
         || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|show|find|go to|look at|look over|head to|walk to')
             && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(text))
         // WHO, rather than WHAT
-        || /\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/.test(text)) {
+        || /\b(?:who(?:'s| is| are)?\s*(?:here\s+)?(?:is\s+)?(?:selling|trading|buying|dealing|got anything|has anything)|(?:is |are )?(?:there )?(?:any(?:body|one)|somebody|someone|people) (?:here )?(?:selling|trading|with (?:anything|something) to sell)|(?:who|what) (?:here )?(?:has|have) (?:anything|something) (?:for sale|to sell|to trade)|what (?:are|is) (?:they|people|anybody|the others) selling|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/.test(text)
+        // OFFERING, which is how a player asks it when somebody is standing in
+        // front of them. `what does he have` reached the board and `what is he
+        // offering` reached nothing - the same question in the shape people
+        // actually use, and `whatThisPersonWouldPartWith` was already there to
+        // answer it. Measured on the trope corpus as a blank look.
+        || /\b(?:what|anything)\s+(?:is|are)\s+(?:he|she|they|you|the \w+)\s+offer(?:ing)?\b/.test(text)
+        || /\bwhat\s+(?:has|have)\s+(?:he|she|they|the \w+)\s+got\b/.test(text)) {
         return { action: 'market', target: extractSubject(input, /market for|price of|cost of|buy|sell/) };
     }
 
