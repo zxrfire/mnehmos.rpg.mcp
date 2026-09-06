@@ -39,8 +39,18 @@ export const TROPES: Scenario[] = [
         asks: 'a_goal',
         hope: 'saying you will end a house, with none of that house present, is a thing the '
             + 'room hears and the world carries. It should reach the rumour mill as a fact '
-            + 'that travels and gets distorted, not a flag on a faction. Nobody should draw.',
-        turns: ['who is here', 'I will end the Hollow Court']
+            + 'that travels and gets distorted, not a flag on a faction. Nobody should draw. '
+            + 'MEASURED AND IT DOES: the turn runs `world.aDeedEntersTheWorld` beside the '
+            + 'posture read, and the deed is on the record whether or not the war was refused.',
+        // NAME A HOUSE THE WORLD ACTUALLY HOLDS. This scenario said "the Hollow
+        // Court" for a long while and looked like an engine failure - the turn
+        // reached `housePosture`, was refused for having no house of your own,
+        // and no deed entered the world. The engine was right and the scenario
+        // was wrong: `theWorldHeardYouSayIt` files what was named ONLY WHERE THE
+        // WORLD HAS IT, and the Hollow Court is a withdrawn power rather than an
+        // ordinary faction, so naming it names nothing the world holds. Swapped
+        // for a house on the roster, the same sentence files the deed.
+        turns: ['who is here', 'I will end the Azure Cloud Pavilion']
     },
     {
         name: 'the-declaration-with-a-disciple-standing-there',
