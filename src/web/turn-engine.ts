@@ -340,7 +340,10 @@ import { getHerb, type Herb } from '../data/cultivation/herbs.js';
 import { PILLS, getPill } from '../data/cultivation/pills.js';
 // Above a certain grade a pill has a value and no price. The refusal that says
 // so already existed and nothing asked it.
-import { cashRefusalReason } from '../engine/cultivation/buying-and-bartering-pills.js';
+import {
+    cashRefusalReason,
+    pillCashPrice
+} from '../engine/cultivation/buying-and-bartering-pills.js';
 import { askedAbout } from './asked.js';
 import {
     selfFactFromTopic,
@@ -7856,6 +7859,34 @@ ${opened.text}` : receipt,
             })();
 
         if (lots.length === 0) {
+            // CARRYING IT AND BEING ABLE TO PRICE IT ARE DIFFERENT ANSWERS.
+            //
+            // `lotFor` yields null for a thing money does not buy, so a pill
+            // the player is holding right now arrives here looking exactly like
+            // a pill they never had. Saying "not something you are carrying"
+            // about a thing in their pouch is a lie, and it hides the one door
+            // that IS open - `cashRefusalReason` names it, and it is the same
+            // sentence the buying counter gives.
+            // Read off the POUCH rather than off the query. A name that did
+            // not match is exactly the state this branch is in, so matching it
+            // again to explain itself would answer the same nothing twice.
+            const named = query.length >= 3 ? this.pouchEntryFor(held, query) : null;
+            const pillsHeld = (named ? [named] : held)
+                .filter(entry => entry.kind === 'pill')
+                .map(entry => getPill(entry.itemId))
+                .filter((pill): pill is NonNullable<typeof pill> => pill != null);
+            const heldPill = pillsHeld.find(pill => cashRefusalReason(pill) !== null) ?? null;
+            const noPrice = heldPill ? cashRefusalReason(heldPill) : null;
+            if (heldPill && noPrice) {
+                return refused('engine.resolveHerb', 'sell', factsForRefusal(
+                    `Nobody puts a figure on ${heldPill.name}.`,
+                    noPrice,
+                    `${heldPill.id} is grade ${heldPill.grade}, past the cash line, so `
+                    + '`pillCashPrice` yields null and no lot was quoted. It is still in the '
+                    + 'pouch. Nothing was sold and nothing was written.'
+                ));
+            }
+
             const carried = held.map(entry => this.lotFor(entry)?.name ?? entry.itemId).join(', ');
             return refused('engine.resolveHerb', 'sell', factsForRefusal(
                 'Not something you are carrying.',
@@ -10676,11 +10707,26 @@ ${fit.line}`;
         }
         const pill = getPill(entry.itemId);
         if (!pill) return null;
+        // THE CASH LINE RUNS BOTH WAYS.
+        //
+        // `pillCashPrice` says it in its own doc: *"callers must not fall back
+        // to `pill.value`: a barter pill has a value - it is the most valuable
+        // thing in the room - and it still does not have a price."* This caller
+        // fell back to `pill.value`, and it was the only reader of the line
+        // facing outward, so every grade nobody will SELL for stones could be
+        // BOUGHT off the player for stones by any counter in the world.
+        //
+        // A player could cross a negotiation to get a heaven-grade pill, type
+        // "I sell", and have the counter pay out three thousand stones for a
+        // thing that counter would not part with at any price. Null here, and
+        // `sell` says why.
+        const priced = pillCashPrice(pill);
+        if (priced === null) return null;
         return {
             itemId: pill.id,
             name: pill.name,
             item: pill,
-            listStones: pill.value,
+            listStones: priced,
             quantity: entry.quantity,
             kind: 'pill'
         };
