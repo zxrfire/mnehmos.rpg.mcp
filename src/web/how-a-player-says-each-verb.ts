@@ -37,7 +37,13 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I go and introduce myself',
         'I get into conversation with the stallholder',
         'I try to make an acquaintance here',
-        'I greet the man at the gate'
+        'I greet the man at the gate',
+        'I pull him aside for a quiet word',
+        'I chat with the innkeeper for a bit',
+        'I lie to the guard about who I am',
+        'I apologise to her for what I did',
+        'I flirt with the woman at the next table',
+        'I try to recruit him to come with me'
     ],
     investigate: [
         'I take a close look at the stone',
@@ -53,7 +59,10 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         // table was right.
         'I study the carving for a while',
         'I poke about and see what I can find out',
-        'there is something strange here and I want to understand it'
+        'there is something strange here and I want to understand it',
+        'I inspect the body',
+        'I go through the records',
+        'tell me more about that statue'
     ],
     move: [
         'I set out for the next town',
@@ -63,7 +72,14 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want to be somewhere else by evening',
         'I walk to the ford',
         'time to move on from this town',
-        'I head for the peaks'
+        'I head for the peaks',
+        'I go on foot to the village',
+        'I flee the town tonight',
+        'I follow the man who left ahead of me',
+        'I walk into the village',
+        'I press on to the capital',
+        'I walk it myself however long it takes',
+        'I return to the town I came from'
     ],
     ride: [
         'I ride to the next town',
@@ -71,14 +87,22 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I take a carriage to the market town',
         'I hire a mount for the road',
         'I go by boat rather than walk it',
-        'I fly there on my sword'
+        'I fly there on my sword',
+        'I take the spirit boat downriver',
+        'I travel on horseback',
+        'I ride a crane over the range'
     ],
     fold: [
         'I fold space to the mountain',
         'I step across the distance in one go',
         'I cross to the far province without walking it',
         'I want to be there in a single step',
-        'can I fold that far'
+        'can I fold that far',
+        'I tear space open and step through',
+        'I teleport to the peak',
+        'I blink across to the far ridge',
+        'I fold to somewhere I have already stood',
+        'I fold to the peak I can see from here'
     ],
     passage: [
         'I buy passage to the far province',
@@ -86,7 +110,9 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want a ticket out of here',
         'what would it cost to be sent through',
         'is there a counter here that sells a crossing',
-        'I book a place on the next span'
+        'I book a place on the next span',
+        'what spans run from this town',
+        'when does the next span leave'
     ],
     // A DAO OATH IS NOT AGREEING TO SOMETHING. The design owner: *nodding is
     // not an oath. that's just agreeing to an NPC proposal, or saying yes. a
@@ -104,7 +130,12 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'what oaths am I carrying',
         'I break the dao oath I swore',
         'I want out of the oath I am under',
-        'who witnessed the oath I am bound by'
+        'who witnessed the oath I am bound by',
+        'I bind myself by oath to see this done',
+        'we swear an oath of brotherhood',
+        'I swear a dao oath never to speak of this',
+        'what have I sworn and to whom',
+        'I go back on the vow I made to him'
     ],
     attack: [
         'I strike at him',
@@ -119,7 +150,13 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         // the enum. What the sentence changes is `opening`, read off the
         // sentence by the parser and never chosen by the model.
         'I sneak up on him and strike',
-        'I wait until his back is turned and go for him'
+        'I wait until his back is turned and go for him',
+        'I punch him in the face',
+        'I break his arm',
+        'I take a swing at the man',
+        'I drive the man off this ground with blows',
+        'I beat him in front of his disciples to shame him',
+        'I challenge him to a duel'
     ],
     coerce: [
         // Hands, not words. Every one of these is somebody being MADE to do a
@@ -134,7 +171,10 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         // The same act with an animal on the other side, which is what taming
         // is. There is no taming subsystem and there must not be one.
         'I tame the beast',
-        'I break the wolf in and make it mine'
+        'I break the wolf in and make it mine',
+        'I pin him down until he gives me the name',
+        'I hold him against the wall until he hands it over',
+        'I drag him back here by the collar'
     ],
     cultivate: [
         'I sit down and cultivate',
@@ -144,14 +184,19 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want to build up my cultivation',
         'I meditate and take in the qi here',
         'I want to grow stronger by training',
-        'I settle in and work at it for a year'
+        'I settle in and work at it for a year',
+        'I cultivate for ten years',
+        'I go back to my cultivation'
     ],
     seclude: [
         'I go into closed door cultivation',
         'I shut myself away and do not come out',
         'I seal myself in a cave for years',
         'nobody is to see me for a decade',
-        'I retreat from the world entirely for a stretch'
+        'I retreat from the world entirely for a stretch',
+        'I go into seclusion now',
+        'I cut myself off from everyone for a century',
+        'no visitors and no interruptions, I am in retreat'
     ],
     breakthrough: [
         'I attempt the breakthrough',
@@ -159,21 +204,33 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I push against the bottleneck',
         'I think I am ready to climb a rung',
         'I force my way up to the next layer',
-        'I want to advance to the next stage'
+        'I want to advance to the next stage',
+        'I break through now',
+        'time to make my own crossing',
+        'I go for the next realm',
+        'my base is full, I make the attempt'
     ],
     train_technique: [
         'I drill the palm art until it is smooth',
         'I practise the sword form',
         'I put hours into the technique I know',
         'I want to sharpen the art I already have',
-        'I work at the method until it is better'
+        'I work at the method until it is better',
+        'I run through the form again and again',
+        'more repetitions of the blade art',
+        'I do the same movement a thousand times',
+        'I train the sword art today'
     ],
     refine: [
         'I refine a pill',
         'I make medicine at the furnace',
         'I brew something out of these herbs',
         'I want to try alchemy with what I have',
-        'I cook a healing pill'
+        'I cook a healing pill',
+        'I light the cauldron and start a batch',
+        'I work the furnace until a pill comes out of it',
+        'can I turn this into medicine',
+        'I cook up a poison in the cauldron'
     ],
     // Every one of these names the thing. `build` and `make` on their own are
     // how somebody says half a dozen other intentions - making an offer, making
@@ -184,42 +241,69 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I lay down the keel of a spirit boat',
         'I put a cart together out of the hides I took',
         'I go back to the carriage on the stocks and work on it',
-        'I want to finish the boat I started'
+        'I want to finish the boat I started',
+        'I abandon the boat half built',
+        'I assemble the frame of the wagon',
+        'I spend three months building the boat',
+        'I set up at the bench and work on the wagon'
     ],
     gather: [
         'I go out and pick herbs',
         'I forage on the hillside',
         'I collect what grows out there',
         'I look for medicinal plants in the woods',
-        'I go harvesting for anything useful'
+        'I go harvesting for anything useful',
+        'I dig up roots and put them in my pouch',
+        'I fill a basket with whatever grows here',
+        'I cut herbs and carry them back',
+        'I chip ore out of the rock face',
+        'I harvest the spirit grass growing here'
     ],
     hunt: [
         'I hunt a spirit beast',
         'I go out after a beast worth killing',
         'I track something down for its core',
         'I take a spear into the hills after game',
-        'I want to bring down a beast'
+        'I want to bring down a beast',
+        'I go hunting',
+        'I set snares for whatever comes through',
+        'I kill a beast and bring the body back',
+        'I want the hide and bones off a beast'
     ],
     eat: [
         'I eat something',
         'I have a meal',
         'I break out the rations and eat',
         'I am hungry and want food',
-        'I get some food in me'
+        'I get some food in me',
+        'I want breakfast',
+        'I am starving',
+        'I stop for a bite',
+        'I eat a bowl of rice',
+        'I fill my belly',
+        'let me eat first'
     ],
     provision: [
         'I buy provisions for the road',
         'I stock up on rations before sitting down',
         'I lay in enough food to last',
         'I need supplies for a long stretch',
-        'I get grain in for the year'
+        'I get grain in for the year',
+        'I need a decade of rations in the pouch',
+        'I want food put away for the long haul',
+        'I stock the larder',
+        'I want a hundred days of food'
     ],
     treat: [
         'I see a physician about my wounds',
         'I get my injuries treated',
         'I want these meridians seen to',
         'I find someone to close these wounds',
-        'I go for care for what is torn'
+        'I go for care for what is torn',
+        'I am hurt and want it fixed',
+        'I get myself healed',
+        'I want the damage inside me repaired',
+        'I have somebody set my broken bones'
     ],
     buy: [
         'I buy the manual',
@@ -227,14 +311,21 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I hand over the stones for it',
         'I purchase what he is selling',
         'I would like to take that off him for the price',
-        'I want to buy a night at the inn'
+        'I want to buy a night at the inn',
+        'I spend my stones on the sword',
+        'I take the sword and settle up for it',
+        'I get the healing pill with what stones I have'
     ],
     sell: [
         'I sell the sabre',
         'I want stones for what I am carrying',
         'I offer the pill for sale',
         'I part with it for whatever it fetches',
-        'what would anybody pay me for this'
+        'what would anybody pay me for this',
+        'I turn my haul into stones',
+        'I put my herbs on the counter for stones',
+        'I sell off everything in my pouch',
+        'I find a buyer for what I gathered'
     ],
     // Every one of these is somebody parting with a thing for nothing. None of
     // them names a price, because a sentence that says what is wanted back is a
@@ -246,48 +337,75 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I press it into her hand',
         'I pass it to him',
         'I put ten stones on the table',
-        'I hand over what I am carrying to her'
+        'I hand over what I am carrying to her',
+        'I give him my spare pill and want nothing back',
+        'I let him keep the blade',
+        'I want her to have this'
     ],
     inventory: [
         'what am I carrying',
         'what is in my pack',
         'let me see my belongings',
         'check the pouch',
-        'what things do I have on me'
+        'what things do I have on me',
+        'show me my inventory',
+        'how many spirit stones do I have left',
+        'I take stock of what I own'
     ],
     consume_pill: [
         'I swallow the pill',
         'I take the medicine',
         'I use the elixir I am carrying',
-        'I down the healing pill'
+        'I down the healing pill',
+        'I take one of my pills',
+        'time to take the pill',
+        'I crack open the vial and drink it'
     ],
     list_techniques: [
         'what arts do I know',
         'which methods am I practising',
         'remind me what I have learned',
         'list the techniques I hold',
-        'what have I actually been taught'
+        'what have I actually been taught',
+        'what can I learn',
+        'what arts are open to me',
+        'show me the arts I could learn',
+        'is there anything I could learn with my spirit root'
     ],
     learn_technique: [
         'I learn the art from the manual',
         'I take up the method in this book',
         'I study the canon properly',
         'I read the manual and commit it',
-        'I want to pick up a new art'
+        'I want to pick up a new art',
+        'I begin the art this book teaches',
+        'I want to learn this technique',
+        'I start on the sword method for the first time',
+        'I read the canon until I can actually use it'
     ],
     acquisition: [
         'how does somebody like me get hold of a manual',
         'what are the ways to come by an art',
         'where would I even find a book at all',
         'how do people without money get taught',
-        'what are my options for getting a method'
+        'what are my options for getting a method',
+        'can I get the rest of this art somehow',
+        'is being taught the only way to a better art'
     ],
     ceiling: [
         'how far will this method carry me',
         'is there a limit to what I know',
         'what is the highest this art goes',
         'where does what I am practising run out',
-        'can this canon take me past the next realm'
+        'can this canon take me past the next realm',
+        'why is my progress stalled',
+        'what is stopping me from getting stronger',
+        'am I stuck',
+        'my cultivation has not moved in years, why',
+        'what is my ceiling',
+        'nothing accumulates no matter how long I sit',
+        'is it the manual or the ground that is failing me',
+        'what has to change before I can climb again'
     ],
     teacher: [
         'who would teach me',
@@ -295,21 +413,32 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I need a master',
         'who around here could show me anything',
         'I want somebody to study under',
-        'is there a teacher for someone like me'
+        'is there a teacher for someone like me',
+        'who stands above me and might pass something on',
+        'I need somebody further along to guide me'
     ],
     destinations: [
         'where could I go from here',
         'what places are within reach',
         'what is near this town',
         'where else could I be',
-        'what other ground is there'
+        'what other ground is there',
+        'what options do I have if I leave here',
+        'list the places I could travel to',
+        'what is out there worth going to',
+        'is there anywhere with better energy for cultivating',
+        'what is on the other side of these mountains'
     ],
     roads: [
         'how do I get to the mountain from here',
         'which way does the road run',
         'what is the route out of this place',
         'what road takes me there',
-        'how far is it and by which way'
+        'how far is it and by which way',
+        'what can this ground teach me',
+        'where could I comprehend something',
+        'is there ground around here that teaches a dao',
+        'does this mountain teach anything'
     ],
     // Deliberately none of these is a shrug. "I do nothing for a while" and
     // "I give it a month and see" were exemplars here and had to go: they are
@@ -322,21 +451,32 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I wait and see what happens',
         'I bide my time',
         'I stay put rather than act',
-        'I pass the time until something changes'
+        'I pass the time until something changes',
+        'I wait three days',
+        'I wait for him to come back',
+        'I wait for the storm to pass'
     ],
     work: [
         'I look for work',
         'I need money and will take a job',
         'is there anything here I can do for pay',
         'I hire myself out for a season',
-        'I take whatever labour is going'
+        'I take whatever labour is going',
+        'is anybody hiring around here',
+        'I earn my keep somewhere',
+        'I do odd jobs until I have some stones',
+        'I hire on as a caravan hand'
     ],
     market: [
         'what is for sale here',
         'is anybody selling anything',
         'show me the stalls',
         'what can I get in this place',
-        'what does this town have to trade'
+        'what does this town have to trade',
+        'is there a market in this town',
+        'what do the merchants have',
+        'I want to know the prices here',
+        'does anywhere here deal in pills'
     ],
     sect: [
         'what sects are there',
@@ -344,42 +484,75 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want to join a sect',
         'tell me about the houses near here',
         'can I sign on with one of them',
-        'what would it take to be admitted'
+        'what would it take to be admitted',
+        'I resign from the sect',
+        'I take a duty off the sect board',
+        'I draw my stipend',
+        'I want a promotion inside the sect',
+        'how does my own house see me',
+        'what has the house called me in for',
+        'I skim from the sect treasury',
+        'I pay into the house ledger',
+        'can I sit in at their house without joining'
     ],
     site: [
         'what ruins are there around here',
         'is there anything worth digging into nearby',
         'I go and look at the old gate',
         'I want to get inside the sealed place',
-        'what old ground is there to search'
+        'what old ground is there to search',
+        'I go into the tomb',
+        'I take whatever is behind the door',
+        'I look the crypt over from the threshold',
+        'I loot the tomb'
     ],
     legacy: [
         'I want to leave something behind for whoever comes after',
         'who gets my things when I die',
         'I set down what is to happen to what I hold',
         'I put my affairs in order before the end',
-        'I leave an inheritance'
+        'I leave an inheritance',
+        'I bury my stones where nobody will find them',
+        'I dig up the cache I left',
+        'who would hold something for me for two hundred years',
+        'I leave my manual with a house against a password',
+        'I want to collect the deposit my father left'
     ],
     petition: [
         'I put my case to the elders',
         'I take it up the chain to somebody who matters',
         'I ask the house for what I am owed',
         'I petition for a grant',
-        'I want this heard higher up'
+        'I want this heard higher up',
+        'I file a requisition for one of their pills',
+        'I press my claim of descent with the registry',
+        'I ask the sect for an exemption from this',
+        'who do I write to for a dispensation'
     ],
     posture: [
         'I make it plain I am not to be pushed',
         'I stand my ground where they can see it',
         'I declare where we stand',
         'I show strength so it is understood',
-        'I set the terms between us openly'
+        'I set the terms between us openly',
+        'I declare war on their house',
+        'I name them an enemy of my house',
+        'I make peace with the other sect',
+        'who is my house allied to',
+        'I put our house under a bigger one',
+        'I demand tribute from the smaller house',
+        'I want the two houses to be allies'
     ],
     seal: [
         'I seal it shut',
         'I close the gate behind me and ward it',
         'I want to read what the seal says',
         'I try to wake what is sealed in there',
-        'I put a seal on this place'
+        'I put a seal on this place',
+        'is there an ancestor sealed under our mountain',
+        'what would waking the sealed ancestor cost us',
+        'I wake the ancestor under our mountain',
+        'I go and break the seal under their mountain'
     ],
     // ── THREE OF THESE WERE ABOUT A DIFFERENT VERB, AND IT MATTERED ──────
     //
@@ -403,7 +576,9 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I send an offering up',
         'I burn incense for the one who crossed',
         'I send a word down the line to them',
-        'what is the line up to our ancestor'
+        'what is the line up to our ancestor',
+        'I leave food at the shrine for the ancestors',
+        'I perform the rites for our ascended founder'
     ],
     // EVERY ONE OF THESE HAS TO NAME THE CROSSING. `DESCENT_UNAMBIGUOUS` in
     // `institution-phrasings.ts` already had the rule and said why - *nobody
@@ -417,7 +592,12 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I leave the immortal world and return to the province',
         'I go down to the mortal world myself',
         'I take the way I came, back below the Lid',
-        'I make the descent back below'
+        'I make the descent back below',
+        'I force the Lid open and go down myself',
+        'I descend through the Lid in person',
+        'I go down below the Lid rather than send anything',
+        'I push down through the Lid to my old province',
+        'I go down myself and take what the Lid costs'
     ],
     look: [
         'I look around',
@@ -425,7 +605,13 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I take in my surroundings',
         'what is going on here',
         'I have a look about me',
-        'what can I see from here'
+        'what can I see from here',
+        'what place is this',
+        'who else is standing here',
+        'what is posted on the wall',
+        'who holds this ground',
+        'what happened in this place before I arrived',
+        'is this place busy or empty'
     ],
     status: [
         'where do I stand',
@@ -433,35 +619,49 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'what am I',
         'tell me about myself',
         'what shape am I in',
-        'what is my rank and condition'
+        'what is my rank and condition',
+        'what realm am I in',
+        'am I strong yet',
+        'how old am I'
     ],
     assess: [
         'how strong is he next to me',
         'could I take him in a fight',
         'I size the man up',
         'what is he worth against me',
-        'I weigh up whether I would win'
+        'I weigh up whether I would win',
+        'what realm is she at',
+        'is he above me or below me',
+        'how dangerous is that beast',
+        'is this place too much for me',
+        'what would happen if I fought her'
     ],
     recall: [
         'what do I know about all this',
         'who have I heard of so far',
         'what have I worked out',
         'what is in my head about this',
-        'what understanding have I come to'
+        'what understanding have I come to',
+        'what dao have I comprehended'
     ],
     recognise: [
         'whose art is that',
         'do I know what school that comes from',
         'I have seen that form somewhere before',
         'is that their house style',
-        'can I place the method he is using'
+        'can I place the method he is using',
+        'where did he learn that',
+        'is that technique from around here'
     ],
     news: [
         'what are people saying',
         'any word from elsewhere',
         'what is the talk here',
         'has anything happened in the world',
-        'what rumours are going about'
+        'what rumours are going about',
+        'what news is there',
+        'I listen for rumours',
+        'what have you heard'
     ],
     // The other direction of the same word, and the exemplars have to keep it
     // apart from `news` above and from `interact`'s ordinary conversation. Every
@@ -472,14 +672,21 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I let her know who killed her master',
         'I tell the elder what happened to his disciple',
         'I inform him that his brother is dead',
-        'I tell him that I killed his brother'
+        'I tell him that I killed his brother',
+        'I tell him whose men burned his village',
+        'I name the killer to his brother',
+        'I tell the merchant that his partner has been robbing him'
     ],
     request: [
         'I ask him to teach me',
         'I beg her to take me as a disciple',
         'I ask him for the manual',
         'I want him to put in a word for me',
-        'I ask her to let me into the house'
+        'I ask her to let me into the house',
+        'I ask her to lend me her blade',
+        'I ask the steward to introduce me to his master',
+        'I ask him to trade me the pill for my herbs',
+        'I ask her for the name of whoever sent him'
     ],
     guard: [
         'I stand guard while she crosses',
@@ -487,7 +694,8 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I protect her while she attempts it',
         'I act as her dao protector',
         'I keep watch over the crossing',
-        'who would stand guard for me'
+        'who would stand guard for me',
+        'I stand over her while she takes the tribulation'
     ],
     propose: [
         'I propose a match to the Xu',
@@ -496,7 +704,10 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I offer their family a match for one of theirs',
         'I put a marriage to the head of the clan',
         'I accept the match they have offered',
-        'I agree to the betrothal'
+        'I agree to the betrothal',
+        'I ask for her hand',
+        'can I marry her',
+        'I send a matchmaker to the Xu house'
     ],
     decline: [
         'I refuse the match',
@@ -504,7 +715,9 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I will not go through with this marriage',
         'I say no to the betrothal',
         'I run from the marriage they arranged',
-        'I walk out of the match my house made'
+        'I walk out of the match my house made',
+        'I break off the engagement',
+        'I leave the man they married me to'
     ],
     child: [
         'we have a child together',
@@ -513,6 +726,8 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I bring up my daughter myself',
         'I start a family here',
         'I place my son at the Azure Cloud Pavilion',
-        'I call in a favour to get my child into that house'
+        'I call in a favour to get my child into that house',
+        'we try for a baby',
+        'I adopt the orphan and raise her'
     ]
 };

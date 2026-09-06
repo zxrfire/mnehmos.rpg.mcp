@@ -8,9 +8,17 @@
  * vectors, so forgetting this is an error at startup rather than a silent
  * wrong answer.
  *
- * The vectors are committed. Embedding 232 exemplars costs seconds and the tier
- * has to answer a turn instantly, so the cost is paid here, once, by whoever
- * changed the corpus.
+ * The vectors are NOT committed - `.gitignore` excludes `*.f32` and
+ * `models/**/verb-corpus.json`, and this header said the opposite for long
+ * enough that the setup steps in `README.md` were written without the step that
+ * builds them. A fresh clone fetched the model, built, ran, and played with the
+ * tier dead: `readyTheTier` throws on the missing manifest, `readTheSentence`
+ * catches it and falls back to the table, and the only sign is one line in the
+ * log. Measured, that is the difference between a 90.6% reader and an 82.9% one.
+ *
+ * `npm run setup` chains fetch, build and this, and is what the README now says
+ * to run. Embedding the corpus costs seconds and the tier has to answer a turn
+ * instantly, so the cost is paid here, once, by whoever changed the corpus.
  *
  * Pass a model directory to build for one that is not the shipping model:
  *

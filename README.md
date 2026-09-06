@@ -77,9 +77,11 @@ browser.
 
 **It is gitignored**, because ports, model names and database paths are per-machine and a
 committed one becomes somebody else's ports. If it is not in your checkout, the four
-things it does are: `npm install`, `npm run models:fetch`, `npm run build`, then
-`node dist/web/server.js` with `RUNTIME_PROVIDER=ollama`, `OLLAMA_MODEL`,
-`OLLAMA_BASE_URL` and `PORT` set.
+things it does are: `npm install`, `npm run setup`, then `node dist/web/server.js`
+with `RUNTIME_PROVIDER=ollama`, `OLLAMA_MODEL`, `OLLAMA_BASE_URL` and `PORT` set.
+(`npm run setup` is `models:fetch`, `build` and `verbs:embed` in that order. The
+last of those was missing from this list for a while, and the cost is in the next
+section.)
 
 ### The sentence model, which is not in the repository
 
@@ -87,13 +89,31 @@ The game reads your sentences in tiers, and the last of them is a local embeddin
 that is **fetched, never committed** - it is large, and this is a fork:
 
 ```bash
-npm run models:fetch    # ~180 MB, once
+npm run setup    # models:fetch (~180 MB, once), build, verbs:embed
 ```
 
-Without it everything still runs and plain English reads measurably worse: *"I'll take
-the manual"* stops reaching the verb it means. `play.ps1` fetches it for you. If you
-start the server by hand and see **the sentence model did not open** in the log, this is
-what it wants.
+**Both halves are needed and only one of them is a download.** The model is fetched; the
+exemplar vectors it compares against are BUILT from
+`src/web/how-a-player-says-each-verb.ts` by `npm run verbs:embed`, and they are
+gitignored too. Fetching the model without building the vectors leaves the tier just as
+dead as not fetching it at all, and that is the state a fresh clone was in: the setup
+steps above did not mention the build step, because the script that does it said in its
+own header that the vectors were committed.
+
+Without the tier everything still runs and plain English reads measurably worse:
+*"I'll take the manual"* stops reaching the verb it means. On the command corpus the
+whole reader scores 90.6% and the pattern table alone scores 82.9%, so a dead tier costs
+about seven points of understanding, quietly. If you start the server by hand and see
+**the sentence model did not open** in the log, this is what it wants.
+
+Re-run `npm run verbs:embed` after any edit to the exemplar corpus. The tier hashes the
+corpus and refuses to load against stale vectors, so forgetting is an error at startup
+rather than a wrong answer in play.
+
+**Docker does not carry it.** The image never copies `models/`, so a container runs on
+the pattern table alone. That is a deliberate size trade and not a bug, but it is the
+same quiet degradation the Dockerfile already warns about for `NARRATOR-CORE.md`, and
+it is worth knowing which reader you are playing against.
 
 ### Or with Docker
 
