@@ -55,7 +55,13 @@ describe('a declaration nobody could carry out', () => {
      * difference between a rumour system and a system with no writer.
      */
     it('is something somebody could repeat', async () => {
-        const { game } = makeGame({ seed: 'declared', worldEnabled: true });
+        // ITS OWN SEED, AND NOT THE ONE ABOVE. A world is cached by its seed
+        // for the life of the test process, so two tests sharing one share the
+        // world - and this one then reads a history that holds the OTHER
+        // cultivator's saying and not its own. It failed that way intermittently
+        // under a full-suite run and passed alone, which is what a shared cache
+        // looks like from the outside. The test below already has its own.
+        const { game } = makeGame({ seed: 'declared-and-repeated', worldEnabled: true });
         const { cultivator } = await game.newRun('Probe');
         await game.act('I declare war on the Azure Dew Sect');
 

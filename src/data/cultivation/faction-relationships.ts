@@ -226,12 +226,27 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         }
     },
     // THE REFUSAL, AND THE ONLY TWO BODIES IN A POSITION TO NOTICE IT
+    //
+    // `shared_event`, and it was `two_bodies_nobody_joins` - a kind whose own
+    // row defines it in as many words: *"Every other court in the world is a
+    // sect [...] These two are the exception and they are THE ONLY EXCEPTION.
+    // Nobody applies to either."* The Frostmirror and the Orchid are both
+    // sects. People join both. Somebody reached for the phrase "the only two
+    // bodies" in the heading above and took the kind with "two bodies" in its
+    // name, and the register then told each of them that the other was "the
+    // only other body in the world nobody joins" - false twice over, because
+    // people join them and because the pair it is true of is elsewhere.
+    //
+    // What this row actually is, `shared_event` says exactly: one thing
+    // happened and both have an account. The `since` field below already said
+    // so - "the only thing in the North that two institutions can
+    // independently date, because each of them kept its half of it."
     {
         id: 'rel-the-court-that-went-down',
         aId: 'sect-frostmirror-court',
         bId: 'sect-orchid-court',
         aStandsTo: 'above',
-        kind: 'two_bodies_nobody_joins',
+        kind: 'shared_event',
         what:
             'A hundred and forty years ago the Frostmirror carried a grant offer down from the Survey to a household that had just lost two bands in a lifetime, on the same terms both northern courts hold on. It was refused in writing, and the household then went below the working face, onto ground the province had already given up under its own taboo. The Frostmirror kept the letter. It has never published it and has never been asked to, and the two bodies have not corresponded since.',
         since:
