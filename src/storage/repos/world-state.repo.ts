@@ -19,7 +19,13 @@ import type { MemoryRecord, MemoryStore } from '../../engine/world/memory.js';
 import type { LineageEdge, LineageRecord } from '../../engine/world/lineage.js';
 import type { OpportunityWindow } from '../../engine/world/opportunities.js';
 import type { AreaStatus } from '../../engine/world/what-is-true-of-a-place-right-now.js';
-import type { ObjectRecord, OwnershipClaim, ProvenanceEntry } from '../../engine/world/possessions.js';
+import {
+    WHAT_A_CARRIED_THING_TAKES,
+    WHAT_A_CARRIED_THING_WEIGHS,
+    type ObjectRecord,
+    type OwnershipClaim,
+    type ProvenanceEntry
+} from '../../engine/world/possessions.js';
 import type { Absence, TieAtDeparture } from '../../engine/world/when-somebody-does-not-come-back.js';
 import type { WorldRun } from '../../engine/world/legacy.js';
 import { runSeedFor } from '../../engine/world/legacy.js';
@@ -396,10 +402,12 @@ export class WorldStateRepository {
         this.insertObjectStmt = db.prepare(`
             INSERT OR REPLACE INTO world_objects (
                 id, world_id, name, kind, significance, description, power,
+                volume, weight,
                 possessor_id, owner_id, owner_name, known_ownership_by,
                 location_id, tags, data, next_claim_seq
             ) VALUES (
                 @id, @worldId, @name, @kind, @significance, @description, @power,
+                @volume, @weight,
                 @possessorId, @ownerId, @ownerName, @knownOwnershipBy,
                 @locationId, @tags, @data, @nextClaimSeq
             )
@@ -1164,6 +1172,8 @@ export class WorldStateRepository {
                 significance: object.significance,
                 description: object.description,
                 power: object.power,
+                volume: object.volume,
+                weight: object.weight,
                 possessorId: object.possessorId,
                 ownerId: object.ownerId,
                 ownerName: object.ownerName,
@@ -1897,6 +1907,11 @@ function rowToObject(
         significance: row.significance as ObjectRecord['significance'],
         description: row.description,
         power: row.power,
+        // A save written before the columns existed says nothing about size,
+        // and a thing carried in one hand is what such a row almost certainly
+        // is. Same figure the column default carries.
+        volume: row.volume ?? WHAT_A_CARRIED_THING_TAKES,
+        weight: row.weight ?? WHAT_A_CARRIED_THING_WEIGHS,
         possessorId: row.possessor_id,
         ownerId: row.owner_id,
         ownerName: row.owner_name,
@@ -2381,6 +2396,8 @@ interface ObjectRow {
     significance: string;
     description: string;
     power: number | null;
+    volume: number | null;
+    weight: number | null;
     possessor_id: string | null;
     owner_id: string | null;
     owner_name: string;
