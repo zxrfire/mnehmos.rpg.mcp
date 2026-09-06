@@ -7806,15 +7806,29 @@ ${opened.text}` : receipt,
         // sides and the engine asks the one question that does settle it: is
         // the thing being handed over something this cultivator is carrying?
         //
-        // Where it is not, and the sentence also says what was wanted in
-        // return, the player is BUYING and said it from the other end. Above
-        // both refusals below, because an empty pouch is the commonest way to
-        // be on the buying end and it used to end the turn with "selling
-        // requires having something first" - which is true, and is not what
-        // they were doing.
+        // WHICH SIDE IS THE PRICE, AND NOTHING ELSE.
+        //
+        // An earlier form of this asked whether the thing being handed over was
+        // in the pouch. That is a weak test and the owner named the case that
+        // breaks it: BUYING A SECOND COPY OF SOMETHING YOU ALREADY HOLD.
+        // Carrying a pill tells you nothing about which way a pill is moving,
+        // so pouch membership cannot decide a direction.
+        //
+        // The sentence already says it. In "X for Y" the far side is what you
+        // WANT and the near side is what you are paying with, whatever verb
+        // carried the sentence. So:
+        //
+        //   paying in coin        -> a purchase, whoever said it as selling
+        //   wanting coin back     -> a sale, and it stays here
+        //   goods for goods       -> a barter, and there is no path for it yet
+        //
+        // The owner again, on why the coin may be named at all: *"the good
+        // thing about pricing stuff in stones is the stuff not priced in stones
+        // falls naturally"*. One common unit makes the unpriceable fall out as
+        // the exception rather than as a special case, which is what
+        // `what-somebody-would-take-for-a-thing-they-will-not-sell.ts` is.
         const swap = whatIsBeingSwapped(rawInput);
-        if (swap?.got && !namesTheCoin(swap.got)
-            && (swap.given === null || this.pouchEntryFor(held, swap.given) === null)) {
+        if (swap?.got && namesTheCoin(swap.given) && !namesTheCoin(swap.got)) {
             return this.buy(run, cultivator, ambient, swap.got);
         }
 

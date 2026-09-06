@@ -21,10 +21,23 @@
  * question that settles it: is the thing being handed over something this
  * cultivator is actually carrying?
  *
- * The one thing the world does know about stones is that they are the medium of
- * exchange, because it needs that to price anything at all. That is
- * `namesTheCoin`, and it is one predicate rather than an assumption scattered
- * through two transaction paths.
+ * ── WHICH SIDE IS THE PRICE, AND NOT WHAT IS IN THE POUCH ────────────────
+ *
+ * The first form of this asked whether the thing handed over was in the pouch.
+ * The owner named the case that breaks it: BUYING A SECOND COPY OF SOMETHING
+ * YOU ALREADY HOLD. Carrying a pill says nothing about which way a pill is
+ * moving, so pouch membership cannot decide a direction.
+ *
+ * The sentence already says it. In "X for Y" the far side is what you want and
+ * the near side is what you are paying with. Paying in coin is a purchase,
+ * whoever phrased it as selling; wanting coin back is a sale; goods for goods
+ * is a barter, and there is no path for that yet, so it is left unresolved
+ * rather than resolved wrongly.
+ *
+ * The owner on why the coin may be named at all: *"the good thing about pricing
+ * stuff in stones is the stuff not priced in stones falls naturally"* and
+ * *"just don't give it a price"*. One common unit makes the unpriceable fall
+ * out of ABSENCE rather than out of a flag.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -103,6 +116,13 @@ describe('the same trade said from either end', () => {
         const bought = await game.act('I part with some stones for a pill');
         expect(calls(bought), said(bought)).toContain('storage.addToPouch');
         expect(said(bought)).toMatch(/pill is in the pouch/i);
+
+        // AND AGAIN, NOW HOLDING ONE. The case that broke the pouch test: a
+        // second copy is still a purchase, and must not read as a sale of the
+        // pill just bought. It is short of stones now, and says so.
+        const again = await game.act('I part with some stones for a pill');
+        expect(calls(again), said(again)).not.toContain('engine.resolveHerb');
+        expect(said(again)).toMatch(/short|carrying/i);
 
         // And wanting the COIN back is a sale, so it stays on the selling path
         // and answers honestly about a pouch that has no herbs in it.
