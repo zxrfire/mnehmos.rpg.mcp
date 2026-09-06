@@ -279,7 +279,7 @@ export const DAO_HOUSES_AND_THE_RECOGNITION_DOCTRINE = {
     soWhatTheApexDoesInstead:
         'It uses them, through intermediaries, in a way that creates standing in neither direction. That is not recognition and it is not patronage: it is a transaction between two parties who have both arranged not to be identifiable to the other, and it leaves no record on either side, which is exactly what both of them are paying for.',
     andWhyThatIsWorseForTheHouses:
-        'Outside the grant system means answerable to no apex and protected by none. A sect that pays, sends and fights has somebody with an interest in its continuing; a dao house has nobody at all, and if a province decides about one there is no letter anybody could write. Every dao house has a counter rather than a patron - the Karma Pavilion reads the Still Blade Peak\'s edges, Jade Register Hall holds the register of absences - and a counter is what an institution grows instead of protection when protection is not available to it.'
+        'Outside the grant system means answerable to no apex and protected by none. A sect that pays, sends and fights has somebody with an interest in its continuing; a dao house has nobody at all, and if a province decides about one there is no letter anybody could write. Every dao house has a counter rather than a patron - the Karma Palace reads the Still Blade Peak\'s edges, Jade Register Hall holds the register of absences - and a counter is what an institution grows instead of protection when protection is not available to it.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────

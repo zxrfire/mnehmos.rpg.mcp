@@ -12,7 +12,7 @@
  * ordinal of zero until they have cultivated. Without this mechanic the numbers
  * produce absurdities that nobody wrote and everybody would have to explain:
  *
- *   - A Ninefold Karma Palace child cannot enter the Karma Pavilion, which admits at 4. At
+ *   - A Ninefold Karma Palace child cannot enter the Karma Palace, which admits at 4. At
  *     seven years old they are at 0. They wait, in their own family's house.
  *   - A Dao house's name reaches perhaps thirty houses, and the ones it can
  *     actually use on a seven-year-old are EXACTLY THE FIVE THAT ADMIT AT 0 -

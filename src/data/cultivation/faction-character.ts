@@ -282,7 +282,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That every institution in the province depends on its rate and every one of them describes the Stone Marrow Hall as parasitic while doing so.',
         fear: 'That the presses are irreplaceable. It repairs them constantly, has never built a new one, and does not publish how many are still working.',
         lateness: 'Thirty-four of fifty-five nodes lit, and its refining presses are inherited machinery of a design its own artificers cannot reproduce at any price.',
-        disagreement: 'The Rate-Setters want to publish a vein index and make the price of ground explicit. The Principal holds that an explicit price for a vein is a starting gun.',
+        disagreement: 'The Rate Elders want to publish a vein index and make the price of ground explicit. The Principal holds that an explicit price for a vein is a starting gun.',
         wrongAbout: 'It believes it sets the stone rate. In four recorded shortages the rate was set by what the Thousand Treasure Pavilion would pay, and the Stone Marrow Hall published that figure a week later as its own.',
         unitOfValue: 'Spirit stones, cut and assayed, to the tenth. It is the only faction that treats its own unit as the natural one and cannot really conceive of another.',
         production: {
@@ -309,7 +309,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             reliableOrdinal: 20, currentCount: 5, peakOrdinal: 20, peakCount: 2, yearsSinceLastPeak: 0,
             note: 'At its own best, and its own best is modest. An appraiser who spends forty years on the floor arrives at Core Formation Perfection, the Pavilion is turning them out at that rung right now, and it has never in its history produced anybody higher - everything above that on the roll walked in with a price on it. Nothing here is decaying. This is a house that never had far to fall, which is exactly why a claimed ancestor is worth what it is worth.'
         },
-        distinctSentence: 'Bought its ancestors at an estate sale the Ninefold Karma Palace brokered, and is now the Karma Pavilion\'s largest client for exactly that reason.'
+        distinctSentence: 'Bought its ancestors at an estate sale the Ninefold Karma Palace brokered, and is now the Karma Palace\'s largest client for exactly that reason.'
     },
     'sect-cinnabar-crucible-sect': {
         knownFor: {
@@ -416,6 +416,29 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             note: 'The only production figure in the catalog that is set by other houses rather than by this one. Anyone who reaches Foundation Establishment is recruited away within a year by one of the sects that turned them down, and the league does not stop them - so it is not a shortage and it is not a ceiling, it is a leak, and cumulatively the Wanderers have produced a great many people who are now on somebody else\'s roll.'
         },
         distinctSentence: 'A league whose members mark where they have been rather than where they are, and which loses every promising member to the sects that refused them first.'
+    },
+    'sect-cold-sword-sect': {
+        knownFor: {
+            outside: 'Swordsmen with no house behind them, which the province says as a warning and the Sect hears as a description. Everybody in the Jade Gorge can tell you it holds from nobody; almost nobody can tell you what it teaches.',
+            actuallyGoodAt: 'Putting a refused applicant in the air. The blade flight is the one art in the province that is only ever taught on the terraces or in this yard, and the terraces will not teach it to somebody they have already sent away.',
+            theGap: 'A house known for what it does not have, and useful for a thing it does have. Nobody has ever come here for the independence.'
+        },
+        practice: 'Everybody draws at the same hour, in the open, on the side of the yard that was left open onto the drop, and nobody is corrected out loud. A visitor is handed a sword on arrival and told where to stand, which is the entire admission procedure and is performed for people who have come to buy something.',
+        grievance: 'That the terraces refuse people and then object to where those people go, and have said so twice in writing without ever putting a name to the objection.',
+        fear: 'A season in which somebody it taught is used to do something the province cannot overlook, because the Sect has no way at all to answer for one of its own.',
+        lateness: 'It found the yard, and the yard was cut for two hundred by somebody who left four of its five nodes dark. The Sect has never asked what the other four were for and has never had anybody who could have found out.',
+        disagreement: 'The Yard Elders want the road above the tempering scripture on any terms available, including terms. The Sect Master holds that a house which accepts a book accepts a renewal, and that the day the yard has something to lose is the day it stops taking people who were sent away.',
+        wrongAbout: 'It believes the terraces know it is here and have decided to leave it alone. The Pavilion has no file on it, the Third Sill Court carries the shelf as unheld, and the decision the Sect has read two centuries of restraint into was never taken by anybody.',
+        unitOfValue: 'Seasons stood in the yard. Nothing here converts into a stone, a favour or a name, because there is nobody above to spend any of them on, and the only currency the Sect has ever kept count of is how many mornings somebody has turned up.',
+        production: {
+            reliableOrdinal: 15,
+            currentCount: 7,
+            peakOrdinal: 19,
+            peakCount: 1,
+            yearsSinceLastPeak: 80,
+            note: 'A shelf that stops where the tempering scripture stops, and a figure that stops below it. The one member who went past the book did it with a living master and no page, which the Sect tells as its best story and has not repeated in eighty years. Everybody it carries to the ceiling either stays at the ceiling or leaves for a house that holds from somebody, and it has never once tried to stop one.'
+        },
+        distinctSentence: 'The only house in the province that will put a man in the air and has nobody to answer for him afterwards.'
     },
     'sect-orchid-court': {
         knownFor: {
@@ -620,15 +643,15 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         knownFor: {
             outside: 'Audits. Joyless, unavoidable, and the reason nobody can settle an inheritance without paying for a cup of tea the auditor will refuse.',
             actuallyGoodAt: 'The graph. Four thousand years of every connection anybody has had, which is why a house with no war doctrine has never been attacked twice by the same sect.',
-            theGap: 'The tea is memorable and the graph is not, and the Karma Pavilion has never once corrected anybody about which of the two makes it untouchable.'
+            theGap: 'The tea is memorable and the graph is not, and the Karma Palace has never once corrected anybody about which of the two makes it untouchable.'
         },
-        practice: 'Reckoners write in front of you and read the entry back before leaving, and they will not accept hospitality of any kind - a Karma Pavilion reckoner pays for their own tea, in a region where that is close to an insult.',
-        grievance: 'That the Iron Tally Court is remembered as corrupt on the strength of an account the Karma Pavilion wrote.',
+        practice: 'Reckoners write in front of you and read the entry back before leaving, and they will not accept hospitality of any kind - a Karma Palace reckoner pays for their own tea, in a region where that is close to an insult.',
+        grievance: 'That the Iron Tally Court is remembered as corrupt on the strength of an account the Karma Palace wrote.',
         fear: 'The nine sealed volumes. Three factions inside the house want them opened and the Keeper has never given a reason for refusing.',
         lateness: 'Thirty-one of forty-nine nodes lit; three of forty-one circuit benches unstaffed for a century; and the founding volumes for years 400 to 900 are missing and were probably destroyed internally.',
-        disagreement: 'The Circuit wants arbitration extended into criminal judgement. The Book holds that the Karma Pavilion records and never rules, and both sides quote the same founding text.',
+        disagreement: 'The Circuit wants arbitration extended into criminal judgement. The Book holds that the Karma Palace records and never rules, and both sides quote the same founding text.',
         wrongAbout: 'It believes its method can read a thread through a grave. It has never once worked, the house keeps a register of the attempts, and the register is filed under research rather than failure.',
-        unitOfValue: 'Obligations outstanding. The Karma Pavilion prices everything as a debt with a term, including friendship, which is why its arbitration is trusted and its dinners are not enjoyed.',
+        unitOfValue: 'Obligations outstanding. The Karma Palace prices everything as a debt with a term, including friendship, which is why its arbitration is trusted and its dinners are not enjoyed.',
         production: {
             reliableOrdinal: 21, currentCount: 8, peakOrdinal: 32, peakCount: 4, yearsSinceLastPeak: 400,
             note: 'Steady and unspectacular, and the house regards a spectacular member as a governance risk.'
@@ -685,7 +708,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         fear: 'The register of absences. Jade Register Hall cannot say what was removed, but it can say when, and that has been enough to ruin four clients.',
         lateness: 'Four portable nodes, all of their own making, and a set of Iron Tally Court fragments they depend on, cannot reproduce, and are visibly wearing out.',
         disagreement: 'The Trade takes any commission that pays. The Doctrine holds that severance is mercy and should be given away, and a third group has started cutting without clients at all.',
-        wrongAbout: 'It believes a clean cut leaves nothing. Every cut leaves an edge, the Karma Pavilion has been reading edges for two hundred years, and the house prices its work as though this were still a secret.',
+        wrongAbout: 'It believes a clean cut leaves nothing. Every cut leaves an edge, the Karma Palace has been reading edges for two hundred years, and the house prices its work as though this were still a secret.',
         unitOfValue: 'Connections removed, priced by age and load. It is the only faction whose unit of value is a subtraction.',
         production: {
             reliableOrdinal: 24, currentCount: 5, peakOrdinal: 33, peakCount: 2, yearsSinceLastPeak: 200,
@@ -765,7 +788,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         fear: 'That the Jade Face is finite. The Court has surveyed how much workable stone is left and has never published the figure.',
         lateness: 'Seven of twenty-six nodes lit, and the seven are cut into the stone rather than laid on the ground, which is why they still run at all; the rank of Under-Warden retains a duty at the weir gates that has had no function since the water was diverted.',
         disagreement: 'The Under-Wardens want grants issued by lot to end the queue politics. The Weir Master holds that discretion is the Court\'s only asset and that a lottery would make it a landlord.',
-        wrongAbout: 'It teaches that carving reaches ranks that ambient drawing cannot, and prices grants on it. The Karma Pavilion has certified band for band that the ladder is the same one, and the Ward has never submitted its own table for certification.',
+        wrongAbout: 'It teaches that carving reaches ranks that ambient drawing cannot, and prices grants on it. The Karma Palace has certified band for band that the ladder is the same one, and the Ward has never submitted its own table for certification.',
         unitOfValue: 'Days of face time. Every debt, wage, fine and favour in the region is denominated in grant days, and stones are simply how days are bought.',
         production: {
             reliableOrdinal: 13, currentCount: 3, peakOrdinal: 20, peakCount: 1, yearsSinceLastPeak: 60,
@@ -784,7 +807,7 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
         grievance: 'That the Clearwater Ward charges for grants and contributes nothing to the roads its grantees walk in on.',
         fear: 'That the burn edge is accelerating. Three Wardens have said so; the survey shed has the figures; nobody has recalculated them because nobody wants the answer.',
         lateness: 'Nothing inherited at all, which in the Silent Cliffs is unusual: a shed, nine hundred stakes and a survey, all of it their own work, and the survey is the only complete map of safe ground in the region.',
-        disagreement: 'The Road Wardens want to charge a toll and fund replacement paint. The Warden of the Six Mile holds that a paid road is a road people leave to avoid paying for.',
+        disagreement: 'The Road Wardens want to charge a toll and fund replacement paint. The Warden of the Six Li holds that a paid road is a road people leave to avoid paying for.',
         wrongAbout: 'They believe the original survey is accurate because it has never been wrong. It has never been checked - the burn edge has moved nine hundred paces since it was drawn and the stakes have been moved to match by hand.',
         unitOfValue: 'Stakes standing. The Wardens count their own strength, their dead and their year in painted markers, and will trade labour for paint before stones.',
         production: {
@@ -933,7 +956,7 @@ export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
         climbedWhere: 'The Weiring vein in a province two borders east, which the Stone Marrow Hall assayed, worked and published the closing figure on eighty years ago.',
         ageNote: 'Late enough to be recorded properly and early enough to still be ordinary: the Stone Marrow Hall can name the year, the vein and the surveyor, which is more than most factions at this height can do.',
         whyNobodyHasSince: 'The vein that carried him is closed, by an assay the Stone Marrow Hall published itself, and nothing on its books has carried a climb like that since. It buys its high-realm members now rather than growing them, which is a policy and not an accident.',
-        settledBelief: 'Every Rate-Setter in the house will tell you the ground for it no longer exists. They are describing their own ledger accurately and treating that as a description of the world, which is the house error in one sentence.'
+        settledBelief: 'Every Rate Elder in the house will tell you the ground for it no longer exists. They are describing their own ledger accurately and treating that as a description of the world, which is the house error in one sentence.'
     },
     'house-still-blade': {
         highestOrdinal: 33,
@@ -1077,13 +1100,13 @@ export const DORMANT_ARTS: readonly DormantArt[] = [
         factionId: 'house-ninefold-karma',
         techniqueId: 'debt-karmic-reclamation-art',
         howItGotHere:
-            'Inherited with everything else when the Karma Pavilion took the Iron Tally Court\'s position. The official version is that the method was seized and sealed; the archive shelf-mark is continuous with the Iron Tally Court\'s own numbering, which is what a transfer looks like rather than what a seizure looks like.',
+            'Inherited with everything else when the Karma Palace took the Iron Tally Court\'s position. The official version is that the method was seized and sealed; the archive shelf-mark is continuous with the Iron Tally Court\'s own numbering, which is what a transfer looks like rather than what a seizure looks like.',
         evidence:
-            'Iron Tally Court\'s case books came across with it, and they are not summaries. Forty-one collections, each with the original transaction, the generations it crossed, the person it was finally taken out of, and what was left of them. The Karma Pavilion audits its own archive on a cycle and the case books are audited with everything else, which is how it knows the run is complete.',
+            'Iron Tally Court\'s case books came across with it, and they are not summaries. Forty-one collections, each with the original transaction, the generations it crossed, the person it was finally taken out of, and what was left of them. The Karma Palace audits its own archive on a cycle and the case books are audited with everything else, which is how it knows the run is complete.',
         howTheHouseTalksAboutIt:
-            'It does not. The Karma Pavilion will confirm the holding to anybody who asks in the correct form and will not discuss it otherwise, and the internal position - that a house of karma is obliged to understand the instrument that turns inherited obligation into a single ruinous demand - is written down in one place and read by successors.',
+            'It does not. The Karma Palace will confirm the holding to anybody who asks in the correct form and will not discuss it otherwise, and the internal position - that a house of karma is obliged to understand the instrument that turns inherited obligation into a single ruinous demand - is written down in one place and read by successors.',
         terms:
-            'Bring it a debt it cannot trace. The Karma Pavilion has never been able to reconstruct what the Iron Tally Court was actually dissolved for, and the one thing it wants more than stones is the end of a thread it has followed twice and lost twice in the same century.'
+            'Bring it a debt it cannot trace. The Karma Palace has never been able to reconstruct what the Iron Tally Court was actually dissolved for, and the one thing it wants more than stones is the end of a thread it has followed twice and lost twice in the same century.'
     },
     {
         factionId: 'house-shrinking-earth',

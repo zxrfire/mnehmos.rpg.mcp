@@ -1942,7 +1942,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             inKind: ['the rate itself, set within a band the Stone Marrow Hall is given and has never published', 'refining capacity reserved for the Sill\'s own use, quantity unstated'],
             disciplesPerCycle: 0,
             buys: ['the monopoly, which is worth more than any vein in the province', 'the presses, which are maintained by somebody the Stone Marrow Hall does not employ'],
-            renewal: 'Twelve years, and the band moves each time, which is why the Stone Marrow Hall\'s Rate-Setters cannot explain their own rate to their own Council.'
+            renewal: 'Twelve years, and the band moves each time, which is why the Stone Marrow Hall\'s Rate Elders cannot explain their own rate to their own Council.'
         },
         standing: 'good',
         awarenessOfApex: 'placed',
@@ -2167,6 +2167,24 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: 'would_take_a_backer',
         note: 'The bottom of the pyramid, and the only rung on it where the word "tolerated" is not a euphemism for anything.'
     },
+    // THE ROW THAT MAKES A SWORD SCHOOL A SWORD SCHOOL. Everything else about
+    // that house is an ordinary sect entry; this field is the whole of what
+    // the design owner meant by backed by nobody, and it is a null.
+    'sect-cold-sword-sect': {
+        factionId: 'sect-cold-sword-sect',
+        governance: 'unbacked',
+        relation: 'unaffiliated',
+        parentFactionId: null,
+        holds: 'A walled yard and the dry shelf under it, with no vein beneath either and no instrument over them.',
+        terms: NO_TERMS,
+        standing: 'not_applicable',
+        awarenessOfApex: 'unaware',
+        costOfIndependence:
+            'Two things, and the second is the one the province notices. Its road stops where the tempering scripture stops, because the metal books above that are held by houses that hold from somebody and nobody copies one out for a house that owes nothing. And when one of its people is killed there is nowhere to send it: a granted sect puts a matter over the offender\'s head and waits, and this one can only send somebody. Read from the other side, that is also why a Cold Sword swordsman is left alone in an argument - there is no house up the line to be leaned on to call him off, and everybody has worked out which of the two facts they are standing in front of.',
+        unbackedReason: 'not_worth_the_trouble_yet',
+        independenceStance: 'proud',
+        note: 'Nobody has offered and nobody has refused. There is no vein under the shelf, so a grant over it would convey nothing, and the only thing in the yard worth having is sixty people who would have to be got through to reach it. The Third Sill Court has carried the shelf as unheld for two centuries and has never opened a file on it.'
+    },
     'sect-bone-lantern-cult': {
         factionId: 'sect-bone-lantern-cult',
         governance: 'unbacked',
@@ -2224,10 +2242,10 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         standing: 'not_applicable',
         awarenessOfApex: 'placed',
         costOfIndependence:
-            'It cannot be protected, only needed. The Karma Pavilion has no vein, no pipeline dependency and no patron, and its safety consists entirely of being the instrument the Third Sill uses when a boundary is disputed.',
+            'It cannot be protected, only needed. The Karma Palace has no vein, no pipeline dependency and no patron, and its safety consists entirely of being the instrument the Third Sill uses when a boundary is disputed.',
         unbackedReason: 'arrangement_that_is_not_patronage',
         independenceStance: 'would_take_a_backer',
-        note: 'The Sill\'s arbitration clause names the Karma Pavilion. The Karma Pavilion has never mentioned this to a client and prices its work as though it were an ordinary house.'
+        note: 'The Sill\'s arbitration clause names the Karma Palace. The Karma Palace has never mentioned this to a client and prices its work as though it were an ordinary house.'
     },
     'house-flowing-light': {
         factionId: 'house-flowing-light',

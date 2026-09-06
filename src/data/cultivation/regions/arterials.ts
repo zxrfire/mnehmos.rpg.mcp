@@ -47,7 +47,7 @@ export const ARTERIALS: readonly Arterial[] = [
     },
     {
         id: 'arterial-the-root',
-        name: 'Root Hollow',
+        name: 'The Root Vein',
         ordinalInSystem: 2,
         provinceId: LOW_FALL_PROVINCE_ID,
         administeredByCourtId: 'court-kiln',

@@ -525,7 +525,7 @@ export const BOUNTIES: readonly Bounty[] = [
         purseCash: 5_000,
         evidence: 'The debt, recovered, and handed to the bench rather than kept.',
         honoured: 'reliably',
-        catch: 'The Karma Pavilion honours the purse to the cash and will not tell you what the debtor is protected by. That is not withholding; the bench genuinely does not consider it part of the posting.'
+        catch: 'The Karma Palace honours the purse to the cash and will not tell you what the debtor is protected by. That is not withholding; the bench genuinely does not consider it part of the posting.'
     },
     {
         id: 'bounty-broker-grudge',

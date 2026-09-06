@@ -179,7 +179,7 @@ export const AGES: readonly Age[] = [
             heldBy: ['house-ninefold-karma', 'house-immovable-mountain', 'apex-earth-vein-tower', 'house-flowing-light'],
             evidence: [
                 'three surviving arterial figures from that century, from three institutions, agreeing to within a tenth, which is the only time in the record that any three surveys have agreed about anything',
-                'lease and grant instruments from the Karma Pavilion\'s own tally volumes stop mid-series across nine unrelated parties within about eighty years',
+                'lease and grant instruments from the Karma Palace\'s own tally volumes stop mid-series across nine unrelated parties within about eighty years',
                 'the Flowing Light Tower has case records from the century showing an abrupt collapse in the number of live possibilities its predecessors could read, which it interprets as everybody having already decided',
                 'no battle of any size is recorded for the first forty years of it, which is what a scramble looks like before it becomes a war'
             ],
@@ -755,7 +755,7 @@ export const LID_THEORIES: readonly LidTheory[] = [
         heldBy: 'house-ninefold-karma',
         throughWhichPrinciple: 'karma',
         theory:
-            'That the Lid is a term of an agreement, and the crossing is its discharge. The Karma Pavilion\'s position is that a boundary which charges something specific rather than something proportional is a clause and not a phenomenon: the Price of Advancement takes a named thing, at a named point, in a defined order, and nothing in the natural world behaves like that while every instrument in the house\'s own vault does. On this reading the ladder is an instalment schedule and the last crossing is the settlement of an account.',
+            'That the Lid is a term of an agreement, and the crossing is its discharge. The Karma Palace\'s position is that a boundary which charges something specific rather than something proportional is a clause and not a phenomenon: the Price of Advancement takes a named thing, at a named point, in a defined order, and nothing in the natural world behaves like that while every instrument in the house\'s own vault does. On this reading the ladder is an instalment schedule and the last crossing is the settlement of an account.',
         evidence: [
             'the Price of Advancement takes something specific rather than an amount, which is the signature of a term and is not the signature of a physical process',
             'the charge is not negotiable, not avoidable, and not reducible by strength, which is how the house\'s own binding instruments behave and is not how terrain behaves',
@@ -763,11 +763,11 @@ export const LID_THEORIES: readonly LidTheory[] = [
             'oaths, debts and inheritances all pull tight across generations without anybody enforcing them, which establishes that this world does in fact carry obligations that nothing visible is holding'
         ],
         cannotAnswer:
-            'An obligation has a counterparty and the Karma Pavilion cannot name one it could serve. It has never produced an instrument, a party, a witness or a date. And the body that had come closest to producing all four was destroyed by the Karma Pavilion\'s own founders, who kept the volumes and have not opened them in twenty-three hundred years, so the house\'s strongest evidence is a thing it deliberately made unavailable.',
+            'An obligation has a counterparty and the Karma Palace cannot name one it could serve. It has never produced an instrument, a party, a witness or a date. And the body that had come closest to producing all four was destroyed by the Karma Palace\'s own founders, who kept the volumes and have not opened them in twenty-three hundred years, so the house\'s strongest evidence is a thing it deliberately made unavailable.',
         theirAnswerToThat:
             'Nothing, in public. In private the house\'s position is that the founders ended the Iron Tally Court because naming a party in arrears creates an account, that an account against that particular party was judged not survivable, and that the nine sealed volumes are exactly where a responsible institution keeps a finding it cannot act on. Whether that is prudence or the largest act of cowardice in the history of the world is argued inside the house and nowhere else.',
         ifItIsTrue:
-            'Something is owed, by everybody, and the crossings are collection. It would also mean the Karma Pavilion has been sitting on the identity of the counterparty for twenty-three centuries, which is the reading its enemies prefer and which the house cannot refute without opening the volumes.'
+            'Something is owed, by everybody, and the crossings are collection. It would also mean the Karma Palace has been sitting on the identity of the counterparty for twenty-three centuries, which is the reading its enemies prefer and which the house cannot refute without opening the volumes.'
     }
 ];
 
@@ -894,7 +894,7 @@ export const DEAD_SCRIPTS: readonly DeadScript[] = [
             'Fully legible to the Ninefold Karma Palace and to nobody else, deliberately. It is not ancient enough to have died; it is a working notation that has been kept inside one institution for twenty-three hundred years because the volumes written in it are still binding on families who cannot read them.',
         readBy: ['house-ninefold-karma'],
         whyItIsLikeThat:
-            'A house that arbitrates inheritance has an obvious interest in being the only party that can read the inheritance record, and the Karma Pavilion has never pretended otherwise. It teaches the hand to auditors and to no one else, and an auditor who leaves the house is required to have never written it down.',
+            'A house that arbitrates inheritance has an obvious interest in being the only party that can read the inheritance record, and the Karma Palace has never pretended otherwise. It teaches the hand to auditors and to no one else, and an auditor who leaves the house is required to have never written it down.',
         whatIsWrittenInIt: [
             'the tally volumes, still consulted, still binding, and still accurate about families that do not know they are in them',
             'the nine sealed volumes in the house\'s own index, with no subject line'
@@ -956,7 +956,7 @@ export const WHY_ACCOUNTS_DISAGREE: readonly Claim[] = [
         heldBy: ['sect-lantern-hall', 'house-ninefold-karma'],
         evidence: [
             'two sects holding copies of the same Counting Age instrument differ in nine places, and in all nine the difference is in the direction of that sect\'s own practice',
-            'the Karma Pavilion keeps originals precisely because it worked this out early and has never allowed a volume to be recopied'
+            'the Karma Palace keeps originals precisely because it worked this out early and has never allowed a volume to be recopied'
         ],
         claimedOutcomes: [],
         fidelity: 'full'
@@ -1107,7 +1107,7 @@ export const CALENDARS: readonly Calendar[] = [
             heldBy: ['sect-lantern-hall', 'house-ninefold-karma'],
             evidence: [
                 'sect succession lists are hagiography and routinely omit short or disputed seats',
-                'an arbitration that turns on a sect\'s internal date requires the Karma Pavilion to reconstruct the seat list first, which it charges for'
+                'an arbitration that turns on a sect\'s internal date requires the Karma Palace to reconstruct the seat list first, which it charges for'
             ],
             claimedOutcomes: [],
             fidelity: 'full'
@@ -1159,7 +1159,7 @@ export const THE_CALENDAR_OFFSET: Claim = {
     evidence: [
         'twenty-eight is what every freight and border contract has used for fifteen hundred years, on no stated basis, because the first one to need a number picked one',
         'thirty-one is the Immovable Mountain Temple\'s figure, derived from the advance of a physical edge against its own survey, and it has never pressed the point',
-        'thirty-three is the Karma Pavilion\'s, derived from inheritance intervals across the border where the same estate is dated twice, and it is unpublished',
+        'thirty-three is the Karma Palace\'s, derived from inheritance intervals across the border where the same estate is dated twice, and it is unpublished',
         'the two epochs are different events of different kinds, and no third event anywhere is dated in both'
     ],
     claimedOutcomes: [
@@ -1177,7 +1177,7 @@ export const THE_CALENDAR_OFFSET: Claim = {
  */
 export const WHAT_THE_OFFSET_HIDES = [
     'The official account of the Nine Stone Array has the Immovable Mountain Temple founded to replace it. Immovable Mountain Temple publishes its own founding at two thousand nine hundred years ago and the Girdle\'s fall is dated nine hundred years ago, so the account is off by two thousand years, on two numbers both houses publish. Nobody has ever put the two on the same page, because the dates are quoted in different reckonings in different provinces and everybody assumes the discrepancy is the offset.',
-    'Cross-border inheritance intervals are computed at twenty-eight. If the Karma Pavilion\'s thirty-three is right, a class of settled estates is out by five years, several of them are out across a boundary that decides which house arbitrates, and the Karma Pavilion has known this for at least two centuries.',
+    'Cross-border inheritance intervals are computed at twenty-eight. If the Karma Palace\'s thirty-three is right, a class of settled estates is out by five years, several of them are out across a boundary that decides which house arbitrates, and the Karma Palace has known this for at least two centuries.',
     'A carver and a Jade Gorge cultivator describing the same border incident will file it in years that differ by an unverifiable amount, which is why the tradition war has two dates as well as two accounts and why nobody has noticed that the two dates are not the same event.'
 ] as const;
 

@@ -99,7 +99,7 @@ export const A_DEPOSIT_IS_NOT_A_LIFE = {
 /**
  * Why a house takes a phrase rather than a name, an heir or a token.
  *
- * Read off the Karma Pavilion's own stated limit rather than asserted here.
+ * Read off the Karma Palace's own stated limit rather than asserted here.
  */
 export const WHY_A_PHRASE_AND_NOT_A_NAME = {
     theLimit:
@@ -211,7 +211,7 @@ export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
     {
         factionId: 'house-ninefold-karma',
         derivedFrom: 'sealed escrow of obligations that outlive their parties',
-        // Seven times the gate-registration rate. The Karma Pavilion is holding goods
+        // Seven times the gate-registration rate. The Karma Palace is holding goods
         // under seal and an obligation to hand them over, against a book it
         // maintains across generations, and it prices the placement of a single
         // cultivator at seventy stones.
@@ -223,7 +223,7 @@ export const CUSTODY_TAKERS: readonly CustodyTerms[] = [
             'The auditor closes the book on her finger and tells you what the entry says about itself: the day it was lodged, and how many words were agreed. She does not tell you the words, and she does not soften it.',
         lapse: 'absorbed_and_recorded',
         counterLine:
-            'The Karma Pavilion writes the phrase against the entry, seals it, and enters the obligation in the ninefold book. It does not ask who lodged it and it will not ask who collects.',
+            'The Karma Palace writes the phrase against the entry, seals it, and enters the obligation in the ninefold book. It does not ask who lodged it and it will not ask who collects.',
         whatTheyWillNotDo:
             'It will not take an entry it cannot audit later, and it will not take a claimant\'s word over the book. Three wrong phrases and the entry is marked contested, which in this house means it stops being collectible by anybody at all.'
     },

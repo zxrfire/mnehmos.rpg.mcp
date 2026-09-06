@@ -57,9 +57,9 @@ export const THE_REMAINDER = {
     thisIsThePriceAndNotTheTrajectory:
         'State it that way and never the other way. A short remainder is what the crossing cost, charged once, at the crossing, and settled. It is not the beginning of the madness, it is not a wasting, and it does not get worse. Conflating the two would turn the trajectory into an illness, and it is not an illness - it is what a mind does with a finished project and a great deal of time.',
     andItDecidesWhetherTheTrajectoryIsEvenReachable:
-        'Which produces the quiet structural fact underneath the whole catalog. Most False Immortals come out with a few thousand years, spend them on whatever they were going to spend them on, and die inside the first stage or the second having never gone anywhere near the far end of the curve. Only a large remainder buys enough years to arrive there. So the ones the world remembers as going mad are precisely the ones the crossing barely charged, and the ones the crossing charged heavily are the ones nobody remembers at all, because they were sane for the whole of a short life and left an ordinary corpse.',
+        'Which produces the quiet structural fact underneath the whole catalog. Most False Immortals come out with a few thousand years, spend them on whatever they were going to spend them on, and die inside the first stage having never gone anywhere near the far end of the curve. Only a large remainder buys enough years to arrive there. So the ones the world remembers as going mad are precisely the ones the crossing barely charged, and the ones the crossing charged heavily are the ones nobody remembers at all, because they were sane for the whole of a short life and left an ordinary corpse.',
     theWandererIsTheWorkedCase:
-        'Lu Sheng crossed six hundred and forty years ago and holds eleven thousand years. That is about four per cent of the rung\'s figure, and it is the price of his crossing rather than anything that has happened to him since. He is roughly five per cent of the way through his own span, which by the standards of this file makes him young, and his entire remaining existence ends comfortably inside the second stage. Whatever else is ahead of him, the trajectory in this file is not. He will be recognisably the man he is now for the whole of it.'
+        'Lu Sheng crossed six hundred and forty years ago and holds eleven thousand years. That is about four per cent of the rung\'s figure, and it is the price of his crossing rather than anything that has happened to him since. He is roughly five per cent of the way through his own span, which by the standards of this file makes him young, and his entire remaining existence ends comfortably inside the first stage. Whatever else is ahead of him, the trajectory in this file is not. He will be recognisably the man he is now for the whole of it.'
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -94,8 +94,15 @@ export const THE_SEAL_CANNOT_REACH_THEM = {
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE MADNESS
-// Five stages, ordered, covering the rung's full span. The pace is years; the
-// speed is legacy.
+// Three stages, ordered, covering the rung's full span. The pace is years; the
+// speed is legacy. The names are what a Hollow Court Seat would enter in a
+// record - which faculty is being reported on and what state it is in - and not
+// titles for the stages.
+// Each of the first two has an internal turn that is NOT a band boundary: the
+// last person who knew them dies inside the first, and the defending becomes the
+// keeping inside the second. Both are described where they fall. Neither is a
+// boundary because neither is datable from outside, and a band nobody can place
+// a year on is a band the record cannot use.
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
@@ -130,76 +137,42 @@ export type MadnessStage = z.infer<typeof MadnessStageSchema>;
 
 export const MADNESS_STAGES: readonly MadnessStage[] = [
     {
-        id: 'stage-the-interval',
-        name: 'The Interval',
+        id: 'stage-dao-heart-unshaken',
+        name: 'Dao Heart Unshaken',
         fromYear: 0,
-        toYear: 2_000,
-        theAxis:
-            'Wide open and barely started. Whatever they were working on before the crossing is still the thing they are working on, and the crossing has handed them a depth of aperture they have not yet found the bottom of. Nearly everybody chooses their path inside the first century and most of them inside the first decade, without ceremony and usually without noticing they have chosen.',
-        presentation:
-            'Nothing. They are an extremely capable person of no obvious age, finishing a life they had already mostly finished: enemies still dying off, friends still alive or recently not, a world they can still navigate without correction. The one distinguishing habit is arithmetic. They know their own remaining figure to the year, they check it, and they will give it to anybody who asks without any drama attached to the giving.',
-        howItReadsFromOutside:
-            'As an old cultivator who has been through something and does not discuss it. Nobody at this stage has ever been identified as a False Immortal by observation alone, because there is nothing to observe: the power is enormous and the person is ordinary, and the two do not have to be reconciled by anyone who is not being attacked.',
-        whatMovesThemOn:
-            'The last person who knew them before the crossing dies. That is the boundary rather than any number, and it happens somewhere in the first two thousand years for everybody, because nothing below the Lid outlives that.',
-        observed: true,
-        observedNote:
-            'Directly, in the present, and by four people. The Seats of the Hollow Court have had six hundred and forty years of it and would recognise the description immediately, which is the only reason the first stage is written from life rather than reconstructed.'
-    },
-    {
-        id: 'stage-the-long-work',
-        name: 'The Long Work',
-        fromYear: 2_000,
         toYear: 20_000,
         theAxis:
-            'Deep, still descending, and now the entire content of the life. Everybody they knew is dead, the world they remember has turned over twice, and the work is the only continuous thing left. This is where the axis pays: almost everything in this world that came out of a False Immortal was made in this stage, by somebody who had eighteen thousand years and one thing to do with them.',
+            'Wide open, barely started, and by the end of the band the entire content of the life. Whatever they were working on before the crossing is still the thing they are working on, and the crossing has handed them a depth of aperture they have not yet found the bottom of. Nearly everybody chooses their path inside the first century and most of them inside the first decade, without ceremony and usually without noticing they have chosen. Two thousand years on, everybody they knew is dead, the world they remember has turned over twice, and the work is the only continuous thing left. This is where the axis pays: almost everything in this world that came out of a False Immortal was made in the back half of this stage, by somebody who had eighteen thousand years and one thing to do with them.',
         presentation:
-            'Disproportion, and nothing worse. The work gets a weight nothing else gets, and everything outside it is handled with a mild, incurious inaccuracy - names of places two centuries out of date, an assumption about who administers what that stopped being true a while ago, a fondness for one inn or one road or one person that is out of all scale to it. They are lucid, courteous, extremely good company and entirely reliable, and they do not distinguish between what they saw and what they were told about the present.',
+            'Nothing at all, and then disproportion. Early they are an extremely capable person of no obvious age, finishing a life they had already mostly finished: enemies still dying off, friends still alive or recently not, a world they can still navigate without correction. The one distinguishing habit is arithmetic. They know their own remaining figure to the year, they check it, and they will give it to anybody who asks without any drama attached to the giving. Past the death of the last person who knew them the work gets a weight nothing else gets, and everything outside it is handled with a mild, incurious inaccuracy - names of places two centuries out of date, an assumption about who administers what that stopped being true a while ago, a fondness for one inn or one road or one person that is out of all scale to it. Throughout, they are lucid, courteous, extremely good company and entirely reliable, and they do not distinguish between what they saw and what they were told about the present.',
         howItReadsFromOutside:
-            'As an extremely old person being an extremely old person, which is exactly the problem. A house holding a protector at this stage has no instrument that would tell it anything is coming, because nothing is coming yet and the presentation is indistinguishable from the presentation of a healthy one. Every office in the catalog was contracted against somebody at this stage or later, and no house ever knew which.',
+            'Early, as an old cultivator who has been through something and does not discuss it; later, as an extremely old person being an extremely old person, which is exactly the problem. Nobody at this stage has ever been identified as a False Immortal by observation alone, because there is nothing to observe: the power is enormous and the person is ordinary, and the two do not have to be reconciled by anyone who is not being attacked. A house holding a protector here has no instrument that would tell it anything is coming, because nothing is coming yet and the presentation is indistinguishable from the presentation of a healthy one. Every office in the catalog was contracted against somebody at this stage or later, and no house ever knew which.',
         whatMovesThemOn:
-            'The bottom of their own dao, or the work running out of anywhere to land. Where neither happens the stage simply continues, and a False Immortal whose legacy keeps holding stays here well past the nominal band.',
+            'The bottom of their own dao, or the work running out of anywhere to land. Where neither happens the stage simply continues, and a False Immortal whose legacy keeps holding stays here well past the nominal band. The death of the last person who knew them before the crossing moves nobody: it falls inside this stage, it happens to everybody inside the first two thousand years because nothing below the Lid outlives that, and the dao heart comes through it unshaken every time it has been watched.',
         observed: true,
         observedNote:
-            'Yes, repeatedly, and it is the stage the record is best on. Several of the seven entries in this catalog were at it during the whole of their office, and the accounts agree so completely about the presentation that they read as though somebody collated them, which nobody has.'
+            'Directly, in the present, and by four people. The Seats of the Hollow Court have had six hundred and forty years of the early face and would recognise the description immediately, which is the only reason any of this is written from life rather than reconstructed. The late face is the one the record is best on: several of the seven entries in this catalog were at it during the whole of their office, and the accounts agree so completely about the presentation that they read as though somebody collated them, which nobody has.'
     },
     {
-        id: 'stage-the-settled-error',
-        name: 'The Settled Error',
+        id: 'stage-heart-demon-without-deviation',
+        name: 'Heart Demon Without Deviation',
         fromYear: 20_000,
-        toYear: 90_000,
-        theAxis:
-            'At or past its own bottom, and this is the turn. The depth is complete and there is no rung to spend it on and nobody at that altitude to show it to, so the axis stops being a direction and starts being a possession. What was a project becomes a position, and a position is a thing to defend.',
-        presentation:
-            'Lucidity, articulacy, long and correct reasoning, from a small number of premises about the present that were true when they were acquired and have not been checked since. They are not confused and cannot be caught out on any detail, because the memory is genuinely accurate; it is simply accurate about a world four hundred generations gone, and nothing has been permitted to overwrite it. Contradicted, they do not become agitated. They restate, competently, and the person contradicting them goes away doubting themselves.',
-        howItReadsFromOutside:
-            'As authority. This is the stage that ruins institutions, and it does it without a single raised voice: a correction offered by somebody who is manifestly the most knowledgeable being in the building, accepted gratefully, written into the standard, and wrong by four thousand years. Nobody argues with it and nobody could. The damage compounds quietly in whatever the house does with numbers.',
-        whatMovesThemOn:
-            'The premises stop being defended in argument and start being acted on. There is no moment anybody could point to; the talking simply reduces and the behaviour takes over, over the course of a century or two.',
-        observed: true,
-        observedNote:
-            'Twice, both times without being recognised as anything, and one of the two is still doing damage to a table that prices freight in two provinces. The stage has never been named by any institution and this catalog is the first place it has been written down as a stage rather than as a difficult guest.'
-    },
-    {
-        id: 'stage-the-long-repetition',
-        name: 'The Long Repetition',
-        fromYear: 90_000,
         toYear: 220_000,
         theAxis:
-            'Complete and closed for a very long time, and no longer referred to. The depth is intact and undiminished and does not come up. What is left running is the shape the work made rather than the work: a habit of keeping something, worn into a mind over a hundred thousand years, with the reason it was being kept somewhere far behind.',
+            'At or past its own bottom, and this is the turn. The depth is complete and there is no rung to spend it on and nobody at that altitude to show it to, so the axis stops being a direction and starts being a possession. What was a project becomes a position, and a position is a thing to defend. Held long enough the defending stops as well: the depth is intact and undiminished and simply no longer comes up, and what is left running is the shape the work made rather than the work - a habit of keeping something, worn into a mind over a hundred thousand years, with the reason it was being kept somewhere far behind.',
         presentation:
-            'Keeping. They hold a place, walk a border, maintain a building, wait for somebody, turn people back from a path - courteously, without heat, without explanation, and without any possibility of being talked out of it. Speech narrows to a small set of things said the same way. There is no violence in it and there does not need to be: what they are doing is being in the way of something, and being in the way is the strongest position anybody in this world can occupy. Whatever is on the other side of them is simply not going to get past.',
+            'Lucidity, articulacy, long and correct reasoning, from a small number of premises about the present that were true when they were acquired and have not been checked since. They are not confused and cannot be caught out on any detail, because the memory is genuinely accurate; it is simply accurate about a world four hundred generations gone, and nothing has been permitted to overwrite it. Contradicted, they do not become agitated. They restate, competently, and the person contradicting them goes away doubting themselves. Then the talking reduces and the behaviour takes over, and what is left is keeping. They hold a place, walk a border, maintain a building, wait for somebody, turn people back from a path - courteously, without heat, without explanation, and without any possibility of being talked out of it, with speech narrowed to a small set of things said the same way. There is no violence in it and there does not need to be: what they are doing is being in the way of something, and being in the way is the strongest position anybody in this world can occupy. Whatever is on the other side of them is simply not going to get past. Nothing in any of it looks like a deviation, which is the whole of why the stage is named for the sign that is absent.',
         howItReadsFromOutside:
-            'As catastrophe with nobody to blame for it. No malice, no grievance, no plan, no demand and nothing to negotiate against - which is worse than any of those, because every instrument the world has for dealing with a powerful party assumes the party wants something. This one does not want anything. It is keeping, and it will keep for another hundred thousand years.',
+            'As authority, and eventually as catastrophe with nobody to blame for it. This is the stage that ruins institutions, and it does it without a single raised voice: a correction offered by somebody who is manifestly the most knowledgeable being in the building, accepted gratefully, written into the standard, and wrong by four thousand years. Nobody argues with it and nobody could, and the damage compounds quietly in whatever the house does with numbers. What follows has no malice, no grievance, no plan, no demand and nothing to negotiate against, which is worse than any of those, because every instrument the world has for dealing with a powerful party assumes the party wants something. This one does not want anything. It is keeping, and it will keep for another hundred thousand years.',
         whatMovesThemOn:
-            'Nothing anybody can arrange. The thing being kept stops existing entirely, or the last person who might have addressed them stops coming, and the keeping loses even its object.',
+            'Nothing anybody can arrange. The thing being kept stops existing entirely, or the last person who might have addressed them stops coming, and the keeping loses even its object. The turn inside the stage moves them nowhere and cannot be dated by anybody: the premises stop being defended in argument and start being acted on over the course of a century or two, and there is no moment any observer has ever been able to point to.',
         observed: true,
         observedNote:
-            'Once, over a hundred and ten years, by a house that starved on its own mountain while writing down every attempt. The record survives and the house does not, and it is the only first-hand account of this stage anywhere in the world.'
+            'Three times, and not once recognised as anything. Twice at the arguing, of which one is still doing damage to a table that prices freight in two provinces; once at the keeping, over a hundred and ten years, by a house that starved on its own mountain while writing down every attempt. That record survives and the house does not, and it is the only first-hand account of the keeping anywhere in the world. No institution has ever named the stage, and this catalog is the first place it has been written down as a stage rather than as a difficult guest.'
     },
     {
-        id: 'stage-the-standing-silence',
-        name: 'The Standing Silence',
+        id: 'stage-spirit-soul-withdrawn',
+        name: 'Spirit Soul Withdrawn',
         fromYear: 220_000,
         toYear: FALSE_IMMORTAL_LIFESPAN_YEARS,
         theAxis:
@@ -212,7 +185,7 @@ export const MADNESS_STAGES: readonly MadnessStage[] = [
             'The span, which is the only thing left and arrives on schedule. There is no further stage for it to move them into, and the rung\'s figure is the figure: whatever else has or has not happened by then, the years run out and that is the end of the account.',
         observed: false,
         observedNote:
-            'No. This stage is reconstructed from two accounts of the fourth and an inference about where the fourth is going, and the reconstruction is the Hollow Court\'s rather than anybody else\'s. It may simply be wrong, and the file states that rather than smoothing it, because a stage nobody has seen is exactly the sort of thing a catalog quietly turns into a fact.'
+            'No. This stage is reconstructed from what the record holds of the keeping and an inference about where the keeping is going, and the reconstruction is the Hollow Court\'s rather than anybody else\'s. It may simply be wrong, and the file states that rather than smoothing it, because a stage nobody has seen is exactly the sort of thing a catalog quietly turns into a fact.'
     }
 ];
 
@@ -256,9 +229,9 @@ export const THE_TWO_EXITS = {
     theGatesAreWhereTheyGo:
         'And the terminals are the specific door, which is worth stating because it explains a category of visitor the Shrinking Earth Pavilion has never accounted for. Nine terminals answer, four of the nine open somewhere a person can breathe, and five do not - and the person for whom walking into one is a defensible decision is precisely the person with an enormous span, no remaining rung, and a completed dao. Two of the seven in this catalog left through a gate. The Span has no entry for any of them and would not know what it was looking at.',
     theyGoMad:
-        'The other, and it does not look like leaving at all from inside the house. See `MADNESS_STAGES`. What matters here is that the trajectory removes them as reliably as the door does: a protector at the fourth stage is no longer available to anybody in any sense that an institution could use, and the institution is usually the last party to work that out.',
+        'The other, and it does not look like leaving at all from inside the house. See `MADNESS_STAGES`. What matters here is that the trajectory removes them as reliably as the door does: a protector deep in the second stage is no longer available to anybody in any sense that an institution could use, and the institution is usually the last party to work that out.',
     andTheyAreOftenTheSameExit:
-        'This is the part that defeats the record. A False Immortal at the Settled Error goes looking BECAUSE the memory is accurate: it tells them, correctly, that there is somewhere to go, and the somewhere closed eight thousand years ago. So a departure that reads as curiosity is frequently the trajectory wearing a different coat, and there is no test that separates the two from outside. The catalog marks the end it can defend and says where it cannot tell.',
+        'This is the part that defeats the record. A False Immortal at Heart Demon Without Deviation goes looking BECAUSE the memory is accurate: it tells them, correctly, that there is somewhere to go, and the somewhere closed eight thousand years ago. So a departure that reads as curiosity is frequently the trajectory wearing a different coat, and there is no test that separates the two from outside. The catalog marks the end it can defend and says where it cannot tell.',
     theThirdThingThatIsNotAnExit:
         'And the honest baseline underneath both: most of them simply run out. The crossing charges a share, the share is usually enormous, and a False Immortal with three thousand years is dead of the clock long before either exit becomes relevant. That is the commonest end by a wide margin, it removes nobody early, and it is invisible - a lifespan expiring leaves an ordinary corpse and no scar, which is why the world has never once recognised one.',
     whyTheRecordIsBiased:
@@ -643,8 +616,8 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         endNote:
             'He walked into the seventh terminal and did not come back. He said where he was going, to two people, and neither of them thought to write down that the seventh had been closed for eight thousand years by then - it is a Shrinking Earth Pavilion terminal in the eastern hills and it does not answer, and everybody in the region knows it does not answer, and he went in anyway. The Girdle recorded his departure as a departure. It recorded nothing else about it, ever, and it went on maintaining the office in its ceremonies for the next two thousand years.',
         whichExitItReallyWas:
-            'Both, and it cannot be separated. He was at the Settled Error, and the memory a man acquires at the Settled Error is accurate: he remembered the seventh terminal answering, because it did, and nothing since had been permitted to overwrite it. So he went to a door that had been shut for eighty centuries with complete confidence, and the record has it as an expedition.',
-        stageAtEndId: 'stage-the-settled-error',
+            'Both, and it cannot be separated. He was at Heart Demon Without Deviation, and the memory a man acquires there is accurate: he remembered the seventh terminal answering, because it did, and nothing since had been permitted to overwrite it. So he went to a door that had been shut for eighty centuries with complete confidence, and the record has it as an expedition.',
+        stageAtEndId: 'stage-heart-demon-without-deviation',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
             'The Girdle stood for another two thousand years and then was ended by the Immovable Mountain Temple, which broke the eastern nail itself to demonstrate that the Girdle could not hold the survey. Nobody involved on either side knew that the Girdle had been keeping an empty office for twenty centuries, and nobody has worked out since that the house the Immovable Mountain Temple\'s founders moved against had lost its deterrent before the Counting Age ended. He does not know any of it happened.',
@@ -700,10 +673,10 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         endNote:
             'She went down the arterial system to find out where the qi comes from. She said so, gave a reason, and the reason was correct - the question is the one every survey in the world has been circling for four thousand years, she was the only being alive who could have gone and looked, and going and looking was the obvious thing to do. She went down at a branch the Earth Vein Tower now numbers as the fourth and has not been reported since. There is no scar, no body and no account. Nothing about her departure was confused, hurried or strange, and it is the cleanest instance of path two in the record.',
         whichExitItReallyWas: null,
-        stageAtEndId: 'stage-the-long-work',
+        stageAtEndId: 'stage-dao-heart-unshaken',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
-            'Iron Tally Court was ended by its own auditors within a century of her going down, which they could not have attempted while she was standing in the building, and every account of the ending that survives is theirs. The Karma Pavilion has held her figures ever since without knowing they are hers, in volumes it has never opened, in a hand it can read.',
+            'Iron Tally Court was ended by its own auditors within a century of her going down, which they could not have attempted while she was standing in the building, and every account of the ending that survives is theirs. The Karma Palace has held her figures ever since without knowing they are hers, in volumes it has never opened, in a hand it can read.',
         whatSurvives: [
             'nine sealed volumes in the Ninefold Karma Palace vault index with no subject line, which almost certainly contain her figures',
             'a wall under the burned seat at Burnt Earth that nobody has looked at in twenty-three centuries',
@@ -757,7 +730,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'Over about a century he answered less, and then not at all, and one spring he walked out of Iron Ridge station and down the eastern road toward a terminal that stopped existing eleven thousand years ago. The station book has one line in the ordinary hand recording that the Guest departed on that date, and no further entry of any kind. Nobody went after him. Nobody at the station thought anything had happened, because from inside the building nothing had: a very old man had stopped being talkative and then had gone somewhere, which is what very old men do.',
         whichExitItReallyWas:
             'The record would call it going looking and this catalog calls it the trajectory, and the distinction rests on the eleven hundred years before it rather than on the walk. A man who spends a century answering less and then leaves for a place that is not there has not decided anything. He has arrived somewhere.',
-        stageAtEndId: 'stage-the-settled-error',
+        stageAtEndId: 'stage-heart-demon-without-deviation',
         legacyAtEnd: 'finished',
         whatBecameOfIt:
             'Nine entries of the true-distance table carry corrections in the Span\'s own hand, unsigned, all made in one season, and they are the only original figures the house has ever produced. The Span believes they are a recovered Wide Age correction, which in every sense that matters they are: he took them himself, correctly, when the network ran. Every courier contract and freight span in two provinces has been priced off them for eleven hundred years and the Span cannot find the error, because there is no error in them.',
@@ -823,7 +796,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
             'One thousand five hundred, which he gave the Jade Register Hall on the day he came back down because they asked, and which they entered correctly on the register wall beside the name. It is the only remainder in this catalog recorded by a party that understood exactly what it was being told, and it is under a strike.',
         path: 'protector',
         pathNote:
-            'Path one, chosen by somebody who did not have the years for anything else. Fifteen hundred is a countable life by the standards of this file - it does not reach the end of the first stage, let alone anything past it - and he knew that on the day of his crossing. So he did not attempt a dao that would need forty thousand years and did not go looking for anything that could not be reached inside a lifetime he could count. He did go looking first, for six hundred years, which is what everybody does - and then he came back, which is what almost nobody does, walked down to the house that had raised him, and stood on it for nine hundred years.',
+            'Path one, chosen by somebody who did not have the years for anything else. Fifteen hundred is a countable life by the standards of this file - under a tenth of the first stage, let alone anything past it - and he knew that on the day of his crossing. So he did not attempt a dao that would need forty thousand years and did not go looking for anything that could not be reached inside a lifetime he could count. He did go looking first, for six hundred years, which is what everybody does - and then he came back, which is what almost nobody does, walked down to the house that had raised him, and stood on it for nine hundred years.',
         office: {
             factionId: 'house-jade-register',
             factionNote:
@@ -858,7 +831,7 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         endNote:
             'The span expired, on the year he had given them, in a chair, in the afternoon, with two Keepers in the room and nothing whatever remarkable about it. He had said the year out loud eleven times across nine centuries and nobody had ever quite believed him. He was the last serving protector in the world and neither he nor the house had any idea that was what he was.',
         whichExitItReallyWas: null,
-        stageAtEndId: 'stage-the-interval',
+        stageAtEndId: 'stage-dao-heart-unshaken',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
             'It failed after he was dead and it failed because of the corpse. Nine centuries of the best material any institution in the world has ever held about the last crossing was reclassified as uncorroborated inside four years, on a reading of a body by people who had no way to know that a False Immortal whose span runs out leaves exactly that and nothing else. Jade Register Hall is still working, still respected, and is the only party in the world that has ever had the answer and thrown it away.',
@@ -915,15 +888,15 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         endNote:
             'A rockfall took the lower road about four thousand two hundred years ago and the house began going down by the eastern path instead. The eastern path was the one nobody was to use, for a reason that had been correct ninety thousand years earlier, and he turned them back at it. Courteously, without heat, without explanation, and every single time, for a hundred and ten years. Nobody was hurt and nobody was threatened. The house wrote down every attempt in a hand that gets worse toward the end, and then it starved on its own mountain, and about forty years after that a party from the valley found the compound empty and him not in it. Where he went is not recorded anywhere by anybody.',
         whichExitItReallyWas:
-            'Not ambiguous, and it is the only entry here that is not. He was at the Long Repetition before the house ever met him and had been for twenty-five thousand years, which nobody could have known and nobody did. The house did not acquire a protector who later declined. It took in somebody who was already keeping something, gave him thirteen hundred good years, and then changed which road it used.',
-        stageAtEndId: 'stage-the-long-repetition',
+            'Not ambiguous, and it is the only entry here that is not. He was already keeping before the house ever met him and had been for twenty-five thousand years, which nobody could have known and nobody did. The house did not acquire a protector who later declined. It took in somebody who was already keeping something, gave him thirteen hundred good years, and then changed which road it used.',
+        stageAtEndId: 'stage-heart-demon-without-deviation',
         legacyAtEnd: 'failed',
         whatBecameOfIt:
             'The house is gone and the compound is not. It stands intact, unlooted and never resettled, at node counts far above what anybody now can light, and the reason is neither haunting nor formation: a compound where everybody starved in place with the doors standing open is a thing local practice has a rule about, and the rule has held for four thousand years without anybody remembering what it is for.',
         whatSurvives: [
             'a complete carved dao across four hundred paces of practice yard floor, of which the first third has been read once and the rest never',
             'an intact Standing Age compound in the high Jade Gorge that nobody enters, at node counts nobody can light',
-            'the house record of the hundred and ten years, kept to the end, in a hand that deteriorates - the only first-hand account of the fourth stage in existence',
+            'the house record of the hundred and ten years, kept to the end, in a hand that deteriorates - the only first-hand account of the keeping in existence',
             'a boundary stone carrying the house name in Standing hand prose, which is the reason nobody can say whose compound it is'
         ],
         servingNow: false
@@ -974,8 +947,8 @@ export const FALSE_IMMORTALS: readonly FalseImmortalRecord[] = [
         endNote:
             'He walked down the mountain the same afternoon he was asked for something and went east. The last record of him anywhere is a Shrinking Earth Pavilion station daybook nine years later: a traveller asked which of the terminals open somewhere a person can breathe, was told the four, thanked the clerk, and left. The clerk wrote it down because the question was unusual, and the entry gives no name because the traveller did not offer one and the clerk did not ask.',
         whichExitItReallyWas:
-            'Going looking, and the catalog is reasonably confident. He was fourteen and a half thousand years across, well inside the second stage, entirely lucid on every account of him, and he asked a specific question and got a specific answer before doing anything. That is a decision rather than an arrival, and it is the difference between him and Yu Han.',
-        stageAtEndId: 'stage-the-long-work',
+            'Going looking, and the catalog is reasonably confident. He was fourteen and a half thousand years across, well inside the first stage, entirely lucid on every account of him, and he asked a specific question and got a specific answer before doing anything. That is a decision rather than an arrival, and it is the difference between him and Yu Han.',
+        stageAtEndId: 'stage-dao-heart-unshaken',
         legacyAtEnd: 'holding',
         whatBecameOfIt:
             'The Order lost five hundred years of undisturbed peace and never connected the loss to the departure. Its offering weights change abruptly in the year he left, in the direction of a house that has begun paying for things it did not previously have to pay for, and they have never changed back - which is the only evidence anywhere that he was ever there, and it is in a column of numerals that the Order reads perfectly and has never interpreted.',

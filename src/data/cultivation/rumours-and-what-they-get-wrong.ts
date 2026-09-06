@@ -67,7 +67,7 @@
  * -------------------------
  * `aboutName` is the name as the speaker actually says it, which is frequently
  * not the name in the catalog. People clip, shorten, mishear and substitute the
- * one part of a long name they can hold. A player who hears the Karma Pavilion called
+ * one part of a long name they can hold. A player who hears the Karma Palace called
  * "the Ninefold" and later reads "the Ninefold Karma Palace" in an archive has to do
  * that join themselves, and doing it is the reward.
  */
@@ -285,7 +285,7 @@ const ABOUT_CULTIVATORS: readonly Rumour[] = [
 // The rule this section obeys: nobody outside an institution knows what it is
 // FOR. They know what it does to them, which is a different fact, and they
 // reason from it. Immovable Mountain Temple's whole product is nothing happening, so
-// everybody who pays for it thinks they are paying for nothing; the Karma Pavilion
+// everybody who pays for it thinks they are paying for nothing; the Karma Palace
 // sells findings, so everybody thinks its findings are for sale.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -384,7 +384,7 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         aboutId: 'house-ninefold-karma',
         aboutName: 'the Ninefold',
         accuracy: 'invented',
-        underneath: 'The Karma Pavilion sells the finding and not the outcome, and its entire value rests on that distinction holding. It has ruled against the paying party often enough that the practice is standard and the losing party is the only source of this saying.',
+        underneath: 'The Karma Palace sells the finding and not the outcome, and its entire value rests on that distinction holding. It has ruled against the paying party often enough that the practice is standard and the losing party is the only source of this saying.',
         consequence: 'Universal, unshakeable, and repeated by the same people who commission the next assessment, because there is nothing else to commission.',
         floorOrdinal: 4,
         regionId: null,
@@ -397,8 +397,8 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
         aboutId: 'house-ninefold-karma',
         aboutName: 'the Ninefold',
         accuracy: 'true',
-        underneath: 'Correct in every part, including the detail that the refusal was procedural rather than defiant, which is the part everybody drops when they repeat it. The Karma Pavilion holds a name from a scar in its own ledgers and has released it to nobody.',
-        consequence: 'The Karma Pavilion is the only body in either province that can be relied on to have a record and be relied on not to hand it over, which is why it is used and why it is hated.',
+        underneath: 'Correct in every part, including the detail that the refusal was procedural rather than defiant, which is the part everybody drops when they repeat it. The Karma Palace holds a name from a scar in its own ledgers and has released it to nobody.',
+        consequence: 'The Karma Palace is the only body in either province that can be relied on to have a record and be relied on not to hand it over, which is why it is used and why it is hated.',
         floorOrdinal: 12,
         regionId: null,
         insiderFactionId: null

@@ -228,7 +228,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: 'Ninefold Karma Palace',
         possessorId: 'house-ninefold-karma',
         description:
-            'The case the nine sealed volumes sit in, which the Karma Pavilion commissioned and which is worth more than most of what it holds. An obligation entered into its presence binds to ground rather than to a name, so it cannot be escaped by becoming somebody else - which in a world where identity is what people shed at realm boundaries is the whole of what an oath is for. Four thousand years of the house\'s trade is inside it.',
+            'The case the nine sealed volumes sit in, which the Karma Palace commissioned and which is worth more than most of what it holds. An obligation entered into its presence binds to ground rather than to a name, so it cannot be escaped by becoming somebody else - which in a world where identity is what people shed at realm boundaries is the whole of what an oath is for. Four thousand years of the house\'s trade is inside it.',
         tags: ['forged', 'oath-bearing', 'known-to-exist']
     }),
     makeObject({
@@ -411,7 +411,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         possessorId: 'house-ninefold-karma',
         knownOwnershipBy: ['house-ninefold-karma', 'house-immovable-mountain'],
         description:
-            'The Karma Pavilion knows it holds a third of a chaos-grade canon, has known for two hundred years, and has an open standing offer for either of the other two that it has never once described in writing. It does not know the Immovable Mountain Temple has the first. Immovable Mountain Temple does know the Karma Pavilion has the third, and has said nothing, for reasons the Karma Pavilion would find entirely familiar.',
+            'The Karma Palace knows it holds a third of a chaos-grade canon, has known for two hundred years, and has an open standing offer for either of the other two that it has never once described in writing. It does not know the Immovable Mountain Temple has the first. Immovable Mountain Temple does know the Karma Palace has the third, and has said nothing, for reasons the Karma Palace would find entirely familiar.',
         tags: ['shard', 'from:heaven-conversing-primordial-canon', 'volume:3', 'sought']
     })
 ];

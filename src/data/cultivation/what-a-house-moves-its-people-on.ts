@@ -409,7 +409,7 @@ function craft(init: {
 export const TRACKED_CRAFT: readonly ObjectRecord[] = [
     craft({
         id: 'craft-the-long-answer',
-        name: 'The Long Answer',
+        name: 'The Cloud Ladder',
         power: 38,
         ownerId: 'sect-azure-cloud-pavilion',
         ownerName: 'Azure Cloud Pavilion',
@@ -426,7 +426,7 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
     }),
     craft({
         id: 'craft-the-rate-itself',
-        name: 'The Rate Itself',
+        name: 'The Iron Scale',
         power: 34,
         ownerId: 'sect-stone-marrow-hall',
         ownerName: 'Stone Marrow Hall',
@@ -436,14 +436,15 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
         significance: 'legendary',
         tags: ['boat'],
         description:
-            'Named after the only thing the Stone Marrow Hall sells, and used for the only thing worth '
+            'Named for the only thing the Stone Marrow Hall actually sells, which is the figure beside '
+            + 'the stone rather than the stone, and used for the only thing worth '
             + 'moving that fast: assayed stone, in quantity, arriving before the news that it '
             + 'was coming. It has never carried a fighting party and the Stone Marrow Hall points that '
             + 'out to everybody, at length, which is itself worth reading.'
     }),
     craft({
         id: 'craft-nothing-was-declared',
-        name: 'Nothing Was Declared',
+        name: 'The Nameless Flag',
         power: 33,
         ownerId: 'sect-thousand-treasure-pavilion',
         ownerName: 'Thousand Treasure Pavilion',
@@ -460,7 +461,7 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
     }),
     craft({
         id: 'craft-the-fourth-thing',
-        name: 'The Fourth Thing the Forge Finished',
+        name: 'The Fourth Ember',
         power: 31,
         ownerId: 'sect-ashen-forge-clan',
         ownerName: 'Ashen Forge Clan',
@@ -476,7 +477,7 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
     }),
     craft({
         id: 'craft-the-one-nobody-came-back-for',
-        name: 'The One Nobody Came Back For',
+        name: 'The Dry Hull',
         power: 29,
         // Null owner and null possessor. Somebody built it, somebody owned it,
         // and the chain has a hole where both of them should be - which is
@@ -484,7 +485,7 @@ export const TRACKED_CRAFT: readonly ObjectRecord[] = [
         ownerId: null,
         ownerName: '',
         conveyanceId: 'conv-spirit-boat',
-        mooredAt: 'a shingle bank two days off the Northern Capes, above the tide line',
+        mooredAt: 'a shingle bank two days off the Northern Islands, above the tide line',
         builtYearsAgo: 620,
         tags: ['boat', 'abandoned'],
         description:

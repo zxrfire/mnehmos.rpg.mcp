@@ -407,7 +407,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
     },
     {
         id: 'dao-ground-nine-city-assize',
-        name: 'The Nine-City Assize',
+        name: 'The Nine-City Roll',
         regionId: 'region-wide-field',
         domain: 'karma',
         subject: 'the lease',

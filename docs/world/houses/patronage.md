@@ -92,7 +92,7 @@ during a crisis is not a betrayal in any way anyone can formally object to.
 
 ## The unbacked
 
-<!-- tier: 2 trigger="the player has no house, or is dealing with somebody who has none" -->
+<!-- tier: 2 trigger="the player has no house, or is dealing with somebody who has none; or a body answers to no house - no patron, no granted ground, nobody to send when one of its own is wronged" -->
 
 Not everyone is in the stack. Some sects hold no vein from anyone, answer to nobody, and
 pay for it continuously.

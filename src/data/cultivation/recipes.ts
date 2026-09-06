@@ -505,7 +505,7 @@ const RECIPE_DATA: readonly Recipe[] = [
     },
     {
         id: 'recipe-clear-mind-of-the-hollow-sky',
-        name: 'Clear Mind of the Hollow Sky Pill Formula',
+        name: 'Hollow Sky Clear Mind Pill Formula',
         producesPillId: 'pill-clear-mind-of-the-hollow-sky',
         ingredients: [
             { itemId: 'herb-soulreturn-dew', quantity: 2 },

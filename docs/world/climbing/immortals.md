@@ -298,22 +298,22 @@ axis closes, or when the thing the depth was being left to stops existing.** Und
 is what holds a False Immortal together; a dao has a peak and reaching it is an event with a
 date; a house can fall and a carving can go unread.
 
-Five stages, in `MADNESS_STAGES`. Years set the pace; whether the legacy still holds sets
-the speed - a finished axis or a failed legacy advances the trajectory by one band, which is
+Three stages, in `MADNESS_STAGES`. The names are what a physician of this world would enter
+in a record rather than titles - which faculty is being reported on and what state it is in.
+Years set the pace; whether the legacy still holds sets the speed - a finished axis or a
+failed legacy advances the trajectory by one band, which is
 `madnessStageAt(yearsSinceCrossing, legacy)`.
 
 | Stage | Years since crossing | What it looks like |
 |---|---|---|
-| The Interval | 0 - 2,000 | Nothing. A capable person finishing a life they had mostly finished, who knows their own remaining figure to the year and will give it to anybody who asks |
-| The Long Work | 2,000 - 20,000 | Disproportion and nothing worse. The work gets a weight nothing else gets; everything outside it is handled with mild, incurious inaccuracy. Nearly everything the world has from a False Immortal was made here |
-| The Settled Error | 20,000 - 90,000 | Lucid, articulate, long correct reasoning from premises that were true when acquired and have not been checked since. This is the stage that ruins institutions, and it does it without a raised voice |
-| The Long Repetition | 90,000 - 220,000 | Keeping. A place held, a border walked, a path people are turned back from - courteously, without explanation, and without any possibility of being talked out of it |
-| The Standing Silence | 220,000 - 300,000 | Stillness. Not seclusion, not sealing, not death; the power intact and nothing addressed to them arriving. **Nobody has ever seen this** and the description is reconstructed |
+| Dao Heart Unshaken | 0 - 20,000 | Nothing, and then disproportion. Early, a capable person finishing a life they had mostly finished, who knows their own remaining figure to the year and will give it to anybody who asks. Once the last person who knew them is dead the work gets a weight nothing else gets and everything outside it is handled with mild, incurious inaccuracy. Nearly everything the world has from a False Immortal was made in the back half of this |
+| Heart Demon Without Deviation | 20,000 - 220,000 | Lucid, articulate, long correct reasoning from premises that were true when acquired and have not been checked since. This is the stage that ruins institutions, and it does it without a raised voice. Then the arguing stops and the keeping starts: a place held, a border walked, a path people are turned back from, courteously and without any possibility of being talked out of it. Nothing in it ever looks like a deviation |
+| Spirit Soul Withdrawn | 220,000 - 300,000 | Stillness. Not seclusion, not sealing, not death; the power intact and nothing addressed to them arriving. **Nobody has ever seen this** and the description is reconstructed |
 
 Two things this must not become. It is **not a monster generator** - see
 `AGE_IS_NOT_MENACE` in the sealed-ancestor catalog, which applies here in full. And it is
 **not on Lu Sheng's road**: 640 years in with 11,000 remaining, his whole existence ends
-inside the second band. He is young, he is entirely sane, and he stays that way.
+inside the first band. He is young, he is entirely sane, and he stays that way.
 
 ## The Protector
 

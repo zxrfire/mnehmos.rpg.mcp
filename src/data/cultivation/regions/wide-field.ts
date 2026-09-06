@@ -105,7 +105,7 @@ export const THE_WIDE_FIELD: Region = {
             parentSectId: 'house-ninefold-karma',
             localName: 'The Eastern Circuit',
             doesHere:
-                'Nine of the forty-one arbitration benches, sitting in cities where nothing can be sworn and everything has to be proved. It is the busiest half of the Karma Pavilion\'s work and the half its auditors least want, because an eastern case is a lease dispute rather than a thread and there is no karma in a lease.'
+                'Nine of the forty-one arbitration benches, sitting in cities where nothing can be sworn and everything has to be proved. It is the busiest half of the Karma Palace\'s work and the half its auditors least want, because an eastern case is a lease dispute rather than a thread and there is no karma in a lease.'
         },
         {
             parentSectId: 'sect-crimson-abyss-fortress',

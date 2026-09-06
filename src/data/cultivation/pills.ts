@@ -505,7 +505,7 @@ export const PILLS: readonly Pill[] = [
     },
     {
         id: 'pill-clear-mind-of-the-hollow-sky',
-        name: 'Clear Mind of the Hollow Sky Pill',
+        name: 'Hollow Sky Clear Mind Pill',
         grade: 'immortal',
         effect: 'cleanse_deviation',
         potency: 5,

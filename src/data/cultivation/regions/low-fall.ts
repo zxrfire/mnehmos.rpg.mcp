@@ -95,6 +95,7 @@ export const THE_LOW_FALL: Region = {
         'sect-verdant-spring-valley',
         'sect-nine-peaks-ascetic-order',
         'sect-clear-river-alliance',
+        'sect-cold-sword-sect',
         'sect-sweptground-temple',
         'sect-ancient-bough-grove',
         'sect-cinnabar-crucible-sect',

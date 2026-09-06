@@ -300,7 +300,7 @@ export const CROSS_TRADITION_ERRORS: readonly {
         heldBy: 'tradition-drawn',
         belief: 'That a carver who has been killed is finished, because there is nothing in there to leave.',
         truth: 'The seam persists in material. Nine years later a large enough fragment can produce somebody who remembers the argument.',
-        consequence: 'At least three Jade Gorge feuds thought closed have reopened with the same party on the other side of them, and the Karma Pavilion files these as continuations rather than new cases.'
+        consequence: 'At least three Jade Gorge feuds thought closed have reopened with the same party on the other side of them, and the Karma Palace files these as continuations rather than new cases.'
     },
     {
         heldBy: 'tradition-drawn',

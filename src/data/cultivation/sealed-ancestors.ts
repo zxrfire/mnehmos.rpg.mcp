@@ -314,7 +314,7 @@ export const THE_LINEAGE_CLAIM = {
     whichAssetYouActuallyHold:
         'So the claim decides what kind of thing a holder is sitting on. A clean claim means the instrument is usable. A murky one means it is usable only as a fraud, at the risk of annihilation, which is a completely different asset - and the sect holding it knows precisely which kind it has, has known for generations, and has never written the distinction down anywhere.',
     whereItAlreadyBites: [
-        'sect-thousand-treasure-pavilion: two bodies claiming one ancestor, at most one correctly, neither able to settle it and the Karma Pavilion refusing to certify either. If that ancestor were ever woken, the dispute ends in an afternoon, which is why the quiet claimant is quiet.',
+        'sect-thousand-treasure-pavilion: two bodies claiming one ancestor, at most one correctly, neither able to settle it and the Karma Palace refusing to certify either. If that ancestor were ever woken, the dispute ends in an afternoon, which is why the quiet claimant is quiet.',
         'sect-clear-river-alliance: a name written down later because the ceremony needed one. The Alliance would not survive its own ancestor being asked, and has no way of finding that out.',
         'sect-frostmirror-court: a claim that is probably fine, resting on records that are good rather than perfect - and the Ward has never once written down that this is one of the things it is risking when it opens the ice.'
     ]
@@ -529,8 +529,8 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
     {
         id: 'sealed-the-tally-seal',
         name: 'Whatever the Iron Tally Court sealed at Burnt Earth',
-        whereItIs: 'Under the burned seat at Burnt Earth, behind a seal that predates the Ninefold Karma Palace and was cut by the house the Karma Pavilion destroyed.',
-        sealedBy: 'Iron Tally Court, twenty-three centuries ago, for a reason that was in the volumes the Karma Pavilion took and has never opened.',
+        whereItIs: 'Under the burned seat at Burnt Earth, behind a seal that predates the Ninefold Karma Palace and was cut by the house the Karma Palace destroyed.',
+        sealedBy: 'Iron Tally Court, twenty-three centuries ago, for a reason that was in the volumes the Karma Palace took and has never opened.',
         sealedFor: 'Unknown, and the distinction matters: nobody can say whether it was sealed to keep something in, to keep something preserved, or to keep something from being read. The three cases call for three completely different responses and there is no evidence that separates them.',
         sealerFactionId: null,
         sealMaintained: false,
@@ -541,11 +541,11 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         hazard:
             'An unmaintained seal cut by a destroyed house, on ground that visibly does something to obligations sworn on it, under a temple that takes in anybody and has four monks. Nobody is maintaining it because the maintainers were dissolved twenty-three centuries ago, nobody has inspected it because inspecting it requires opening it, and the only party who could say what is behind it destroyed the party that put it there and then sealed the records.',
         opportunity:
-            'The Karma Pavilion volumes and the seal are the same question from two ends. A player who opened either would be the first person in two millennia to know what the Iron Tally Court was actually doing when it was ended, which is worth more than anything physical that might be behind the stone.',
+            'The Karma Palace volumes and the seal are the same question from two ends. A player who opened either would be the first person in two millennia to know what the Iron Tally Court was actually doing when it was ended, which is worth more than anything physical that might be behind the stone.',
         ifSheWakes:
             'If it is a person at all, it is a person whose institution was destroyed by a body that still exists and still holds the volumes. There is no duty to anybody - the Iron Tally Court is gone, and nothing the Burnt Earth monks could say would give them a claim - so what wakes is someone with a short window, no obligations, and a grievance whose defendant is genuinely still there. That is the one case in this catalog where a stale grievance has a living heir, and the Ninefold Karma Palace has never once considered that its nine sealed volumes might be the other half of a person. What she would actually do with the hours is nobody\'s to predict. The Abbot, who takes in anybody and asks nothing, would very likely be the first person she spoke to, and that is not the worst possible start.',
         nobodyIsResponsible:
-            'The Temple did not seal it, the Karma Pavilion did not seal it, and the party that did no longer exists. If it opens, the arbitration would be about who has to deal with it rather than who caused it, and the Karma Pavilion would be arbitrating a case in which it is the interested party.'
+            'The Temple did not seal it, the Karma Palace did not seal it, and the party that did no longer exists. If it opens, the arbitration would be about who has to deal with it rather than who caused it, and the Karma Palace would be arbitrating a case in which it is the interested party.'
     },
     {
         id: 'sealed-the-sorting-yard',
@@ -585,7 +585,7 @@ export const UNOWNED_ANCESTORS: readonly UnownedAncestor[] = [
         opportunity:
             'Anybody who read the original site record would know something about the Verdant Spring Valley that the Verdant Spring Valley cannot know, and could tell them - which would be worth more to the Hall than anything else in the world and is worth almost nothing to anybody else.',
         nobodyIsResponsible:
-            'The Hall holds a sub-grant on a valley and has no custodial obligation to anything under it, the Ascetic Order that granted it has never surveyed below the springs, and the party that did the sealing has been gone long enough that the question of liability has no defendant. If it opens, the arbitration is about who deals with ninety physicians and a chamber, and the Karma Pavilion would be starting from nothing.',
+            'The Hall holds a sub-grant on a valley and has no custodial obligation to anything under it, the Ascetic Order that granted it has never surveyed below the springs, and the party that did the sealing has been gone long enough that the question of liability has no defendant. If it opens, the arbitration is about who deals with ninety physicians and a chamber, and the Karma Palace would be starting from nothing.',
         ifSheWakes:
             'A wall comes down during a repair and a woman steps out into a working infirmary. Nobody there can name her, nobody can show her a line, and she does not ask them to - she can see what the building is for inside a minute, which is more than most wakings get. So there is no duty and she does not pretend there is one. What there is, is an afternoon, ninety physicians, and a person who knew the channels when they were cut and understood what they were doing to the water. The likely outcome is the generous one and it is generous precisely because nothing obliges it: she spends the hours teaching. A method the Late Age lost, a Dao transmitted directly to whichever physician was holding the trowel, or simply the answer to the question the Hall has been getting wrong since the channels started cracking. It is one of the very few ways anything actually comes back in this age, it is nobody\'s plan, and it happens because somebody was standing there.'
     }
@@ -618,7 +618,7 @@ export const SEALED_ANCESTOR_PATTERN = {
     ],
     theOneCaseWhereItWasSpent: {
         yearsAgo: 1_100,
-        who: 'A sect the Karma Pavilion records as the Verge Hall, which held a vein at the head of a valley two provinces east and does not exist now.',
+        who: 'A sect the Karma Palace records as the Verge Hall, which held a vein at the head of a valley two provinces east and does not exist now.',
         why: 'Its vein was taken by a larger neighbour in a lease dispute that the Hall lost on paper, correctly and unappealably, and it woke what it had under its mountain rather than accept the ruling.',
         whatItBought:
             'Everything it asked for, in one night. The neighbour ceased to exist as an institution - not defeated, ended - the lease was void because there was no counterparty, and the Verge Hall held its vein and the neighbour\'s with nobody in the province willing to raise the subject.',

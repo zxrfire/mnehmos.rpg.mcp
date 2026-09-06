@@ -297,7 +297,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: 'unstable',
         work: {
             occupationId: null,
-            doing: 'Reads a foundation and tells you what it is, for five stones, in a back room, with nobody else present. That is a fifteenth of what the Karma Pavilion charges to place a foreign cultivator, and he makes the comparison before you do.',
+            doing: 'Reads a foundation and tells you what it is, for five stones, in a back room, with nobody else present. That is a fifteenth of what the Karma Palace charges to place a foreign cultivator, and he makes the comparison before you do.',
             quotesPriceId: 'price-placement'
         },
         place: {
@@ -415,7 +415,7 @@ export const FALLEN: readonly Fallen[] = [
         foundationQuality: null,
         work: {
             occupationId: 'job-placer-runner',
-            doing: 'Works the border road for a placer, finding foreign cultivators willing to be assessed. The Karma Pavilion\'s tables were the first document that ever described her accurately and she has kept a copy.',
+            doing: 'Works the border road for a placer, finding foreign cultivators willing to be assessed. The Karma Palace\'s tables were the first document that ever described her accurately and she has kept a copy.',
             quotesPriceId: 'price-placement'
         },
         place: {

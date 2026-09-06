@@ -306,7 +306,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
             'sect-clearwater-ward':
                 'Carving reaches ranks that drawing does not, every carver in the Silent Cliffs knows it, and the grant book has priced it that way since there was a grant book. The Court has not submitted its table because submitting a table invites a finding, and it has been running an administration on the difference for sixty years without anybody in the region asking to see the arithmetic.',
             'house-ninefold-karma':
-                'The certification is done, it is public, and it is band for band. The Karma Pavilion did not publish a conclusion about the Clearwater Ward because the Karma Pavilion certifies what it is asked to certify and nobody in the Silent Cliffs has asked - and it regards the Court\'s never submitting as the most legible thing in the region, on the reasoning that a bureau confident of its table submits it.'
+                'The certification is done, it is public, and it is band for band. The Karma Palace did not publish a conclusion about the Clearwater Ward because the Karma Palace certifies what it is asked to certify and nobody in the Silent Cliffs has asked - and it regards the Court\'s never submitting as the most legible thing in the region, on the reasoning that a bureau confident of its table submits it.'
         },
         explains: 'the reputation'
     },
@@ -390,7 +390,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
             'house-still-blade':
                 'A clean cut leaves nothing. That is the product, it is what the price is for, and the house has believed it without interruption for nineteen centuries. It cuts its own records as doctrine, which means it cannot audit itself, which means it has repeatedly recut work it had already been paid for - and has never once read that as evidence about how much of a cut survives.',
             'house-ninefold-karma':
-                'Every cut leaves an edge, the Karma Pavilion has two hundred years of them, and it has never published because an unpublished register is leverage and a published one is a pamphlet. It regards the Still Blade Peak\'s pricing as the most reliable indicator in either province of what the house does not know, and it reprices its own arbitration fees off that.'
+                'Every cut leaves an edge, the Karma Palace has two hundred years of them, and it has never published because an unpublished register is leverage and a published one is a pamphlet. It regards the Still Blade Peak\'s pricing as the most reliable indicator in either province of what the house does not know, and it reprices its own arbitration fees off that.'
         },
         explains: 'the rivalry'
     },
@@ -629,6 +629,18 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'The bell practice is held to be two centuries old and originally a signal, which is what a practice looks like once it has been done long enough that nobody present remembers starting it. The oldest bells are forty years old. It was started by one person as a joke about being unwelcome, and the joke was good enough that it was copied before it was explained, which is how most customs of this kind actually begin.',
         sharedEvents: []
     },
+    'sect-cold-sword-sect': {
+        factionId: 'sect-cold-sword-sect',
+        origin:
+            'A shelf of dry gorge above Stone Ford with a yard already cut on it, and a swordsman who had been sent down off the terraces standing in the yard teaching four other people who had been sent down as well. It has never held a vein, never been granted anything and never written a book, and it is now in its ninth generation of doing the same thing on the same stone. What it inherited was the walls. What it started with was the refusal, and the refusal has been the intake ever since.',
+        whyTheGapIs:
+            'It never had the road. The Sect can carry somebody to the end of the tempering scripture and no further, because every metal book above that belongs to a house that holds one on terms, and none of them will copy one out for a body that owes nobody anything. The strongest person in the yard did not come up through it; he arrived already high, and the figure the Sect is listed at is his rather than the yard\'s.',
+        whatTheUnlitNodesWere:
+            'A larger diagram than the yard needs, laid by whoever cut the walls: four dark nodes stand outside the wall in a line down the shelf toward the water, which is where a vein would have been drawn from if there were one under it. Somebody expected the shelf to be worth holding. The Sect lights the one node inside the wall, uses the yard for standing in, and has never had anybody able to read the other four.',
+        whereTheWrongBeliefComesFrom:
+            'Two centuries of nothing happening is genuinely difficult to read any other way. The Sect has never been visited, taxed, offered terms or told to move, and the sensible conclusion from a long enough silence is that somebody decided. The other reading only becomes available to a person who has seen the Third Sill Court\'s map, which carries the shelf as unheld and carries no note against it at all, and nobody in the yard has ever had cause or standing to be shown a court\'s map.',
+        sharedEvents: []
+    },
     'sect-orchid-court': {
         factionId: 'sect-orchid-court',
         origin:
@@ -752,7 +764,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
         whatTheUnlitNodesWere:
             'The weir works above Iron Ridge were built by whoever cut the seven surviving nodes into the stone rather than laying them on the ground, which is why those seven still run and the other nineteen do not. The Under-Warden retains a duty at the weir gates that has had no function since the water was diverted, and the diversion is older than the Court - so the bureau is administering the remains of a working it inherited without a description.',
         whereTheWrongBeliefComesFrom:
-            'It teaches that carving reaches ranks ambient drawing cannot, and it prices grants on the difference, and every carver in the Silent Cliffs will tell you the same thing because the work genuinely is harder. Harder is not higher. The Karma Pavilion has certified band for band that it is one ladder, and the Ward has never submitted its own table - which is not concealment so much as a bureau correctly identifying that a finding it did not ask for cannot help it.',
+            'It teaches that carving reaches ranks ambient drawing cannot, and it prices grants on the difference, and every carver in the Silent Cliffs will tell you the same thing because the work genuinely is harder. Harder is not higher. The Karma Palace has certified band for band that it is one ladder, and the Ward has never submitted its own table - which is not concealment so much as a bureau correctly identifying that a finding it did not ask for cannot help it.',
         sharedEvents: ['event-the-band-for-band-certification', 'event-the-roads-and-the-grants']
     },
     'sect-six-li-patrol': {
@@ -817,11 +829,11 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
     'house-ninefold-karma': {
         factionId: 'house-ninefold-karma',
         origin:
-            'A book hall and a circuit of arbitration benches in forty-one towns, and an account of the Iron Tally Court that the Karma Pavilion wrote and everybody has believed since. Its founding volumes for a five-hundred-year stretch are missing and were probably destroyed internally, which the house records and does not explain.',
+            'A book hall and a circuit of arbitration benches in forty-one towns, and an account of the Iron Tally Court that the Karma Palace wrote and everybody has believed since. Its founding volumes for a five-hundred-year stretch are missing and were probably destroyed internally, which the house records and does not explain.',
         whyTheGapIs:
-            'Steady and unspectacular, and the house regards a spectacular member as a governance risk. An arbitration body whose strongest person is conspicuously strong stops being trusted to arbitrate, so the Karma Pavilion has never invested in a pipeline and has three of forty-one circuit benches unstaffed for a century rather than fill them quickly. The gap is a governance decision that has been taken continuously for four hundred years.',
+            'Steady and unspectacular, and the house regards a spectacular member as a governance risk. An arbitration body whose strongest person is conspicuously strong stops being trusted to arbitrate, so the Karma Palace has never invested in a pipeline and has three of forty-one circuit benches unstaffed for a century rather than fill them quickly. The gap is a governance decision that has been taken continuously for four hundred years.',
         whatTheUnlitNodesWere:
-            'The book hall is older than the Karma Pavilion and the eighteen dark nodes are under the stacks rather than under the benches, which is the wrong way round for an arbitration house and the right way round for whatever kept records there before. The missing founding volumes cover the period the house would need in order to say which.',
+            'The book hall is older than the Karma Palace and the eighteen dark nodes are under the stacks rather than under the benches, which is the wrong way round for an arbitration house and the right way round for whatever kept records there before. The missing founding volumes cover the period the house would need in order to say which.',
         whereTheWrongBeliefComesFrom:
             'It believes its method can read a thread through a grave, which follows directly from the method working on every other kind of severed connection - and it has never once worked. The house keeps a register of the attempts and files it under research rather than failure, which is the trace: a body that files two centuries of negative results as ongoing work has not concealed anything and has not learned anything either.',
         sharedEvents: ['event-two-hundred-years-of-edges', 'event-the-band-for-band-certification']
@@ -857,7 +869,7 @@ export const FACTION_HISTORY: Record<string, FactionHistory> = {
             'Deliberately opaque even internally. The house cuts its own records as doctrine, so it cannot audit its own pipeline, and it has repeatedly recut work it had already been paid for - which is the same discipline producing the gap and hiding the size of it. Nothing was lost and nothing is being waited on; the house simply cannot see itself, and has decided that is the correct trade.',
         whatTheUnlitNodesWere: null,
         whereTheWrongBeliefComesFrom:
-            'It believes a clean cut leaves nothing, which is the product, the price and nineteen centuries of unbroken practice, and no client has ever come back to say otherwise - because a client who could tell would be a client the cut did not work on. Every cut leaves an edge. The Karma Pavilion has two hundred years of them and has never published, so the one body in the world that could correct the house has a standing interest in not doing so.',
+            'It believes a clean cut leaves nothing, which is the product, the price and nineteen centuries of unbroken practice, and no client has ever come back to say otherwise - because a client who could tell would be a client the cut did not work on. Every cut leaves an edge. The Karma Palace has two hundred years of them and has never published, so the one body in the world that could correct the house has a standing interest in not doing so.',
         sharedEvents: ['event-two-hundred-years-of-edges']
     },
     'house-jade-register': {

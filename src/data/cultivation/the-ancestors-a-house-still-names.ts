@@ -315,10 +315,10 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             'Wei Zhaoyin appears in no register, ledger or sect record outside the Pavilion\'s own, in a century when the Jade Register Hall was registering at all nine gates',
             'the northern scar is dated four hundred years older than the claimed crossing, and scars do not accumulate',
             'the Ninefold Karma Palace has twice declined to certify the lineage and the Pavilion has not asked a third time',
-            'the tablet hall was bought complete, tablets included, from an estate sale the Karma Pavilion itself brokered and still has the paper for'
+            'the tablet hall was bought complete, tablets included, from an estate sale the Karma Palace itself brokered and still has the paper for'
         ],
         standingNote:
-            'It works. Nine cities treat the Pavilion as an ancient house, its bonds price accordingly, and the cost of the fraud is a standing incentive to keep the Karma Pavilion uninterested - which the Pavilion manages by being the Karma Pavilion\'s largest paying client.'
+            'It works. Nine cities treat the Pavilion as an ancient house, its bonds price accordingly, and the cost of the fraud is a standing incentive to keep the Karma Palace uninterested - which the Pavilion manages by being the Karma Palace\'s largest paying client.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -392,7 +392,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             'the rod has not been shown at a succession in three generations, and the Court now describes it instead',
             'a rod answering its description was sold through a Thousand Treasure auction two centuries ago by a seller the Pavilion will not name',
             'the Court has refused Ledger certification of its vault inventory four times, most recently in writing',
-            'Frostmirror Court has offered to pay the Karma Pavilion\'s fee itself, which the Karma Pavilion has neither accepted nor declined'
+            'Frostmirror Court has offered to pay the Karma Palace\'s fee itself, which the Karma Palace has neither accepted nor declined'
         ],
         standingNote:
             'The claim is true, the gift is gone, and the Court is spending real resources to keep anyone from establishing the second fact. Frostmirror Court knows, cannot prove it, and would like it examined by somebody whose certification the world accepts.'
@@ -674,7 +674,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-stone-marrow-hall': {
         ancestors: [
             { name: 'Principal Hou Jian', fate: 'dead', realmOrdinal: null, yearsAgo: 780, afterCrossing: null, rememberedFor: 'Set the first published exchange rate between raw qi and cut stones, which is still the basis of every price in the region.' },
-            { name: 'Rate-Setter Tuo Ming', fate: 'dead', realmOrdinal: null, yearsAgo: 150, afterCrossing: null, rememberedFor: 'Priced a vein sale that started a war, and collected the commission from both sides afterwards.' }
+            { name: 'Rate Elder Tuo Ming', fate: 'dead', realmOrdinal: null, yearsAgo: 150, afterCrossing: null, rememberedFor: 'Priced a vein sale that started a war, and collected the commission from both sides afterwards.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -777,10 +777,24 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         discoverableTraces: [
             'A divestment sequence recorded in the Ninefold Karma Palace in full, opened as a lineage audit a hundred and sixty years ago and closed unresolved, because the estate went somewhere that could not possibly have earned it and no transfer of consideration was ever found',
             'Manuals in the shed at grades no living teacher in either province teaches',
-            'A scar nobody can attribute is NOT among these, which is the part the Karma Pavilion keeps returning to: he divested like a man about to cross and then there is no crossing and no scar, only a grave'
+            'A scar nobody can attribute is NOT among these, which is the part the Karma Palace keeps returning to: he divested like a man about to cross and then there is no crossing and no scar, only a grave'
         ],
         standingNote:
-            'No hall, no tablets, and one ancestor who does not fit. The Wanderers tell the story plainly when asked and are not believed, because a sect at Core Formation obviously does not have that - which has protected the estate more reliably than any formation could. Whether Shen Guyi understood that when he chose them is the question the Karma Pavilion cannot close.'
+            'No hall, no tablets, and one ancestor who does not fit. The Wanderers tell the story plainly when asked and are not believed, because a sect at Core Formation obviously does not have that - which has protected the estate more reliably than any formation could. Whether Shen Guyi understood that when he chose them is the question the Karma Palace cannot close.'
+    },
+    'sect-cold-sword-sect': {
+        ancestors: [
+            { name: 'Bai Zhenwu', fate: 'dead', realmOrdinal: null, yearsAgo: 240, afterCrossing: null, rememberedFor: 'Sent down off the terraces without a reason being written anywhere, and taught four other people who had been sent down the same way, in a yard he did not build.' },
+            { name: 'Bai Sui', fate: 'dead', realmOrdinal: null, yearsAgo: 80, afterCrossing: null, rememberedFor: 'The only person the yard has carried past its own books, on a living master and no page, which is the story the Sect tells about itself and has not been able to repeat since.' }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'none',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote: 'Two names on a board in the yard, both of them people the terraces sent away, and no tablets, no hall and no claim of any kind. The province reads this as a house with no history and the Sect does not correct it, on the grounds that it is true.'
     },
     'sect-kiln-wardens': {
         ancestors: [
@@ -905,7 +919,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-clearwater-ward': {
         ancestors: [
             { name: 'Warden Qiu Shen', fate: 'dead', realmOrdinal: null, yearsAgo: 220, afterCrossing: null, rememberedFor: 'Took the weir works during the resettlement, wrote the grant book, and never explained why access was to be rented rather than shared.' },
-            { name: 'Weir Master Ho Lian', fate: 'dead', realmOrdinal: null, yearsAgo: 60, afterCrossing: null, rememberedFor: 'Reached Core Formation on Office grants, which remains the highest anyone has ever gone from inside the Silent Cliffs.' }
+            { name: 'Weir Master Ho Lian', fate: 'dead', realmOrdinal: null, yearsAgo: 60, afterCrossing: null, rememberedFor: 'Reached Core Formation on Ward grants, which remains the highest anyone has ever gone from inside the Silent Cliffs.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -979,8 +993,8 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     },
     'house-ninefold-karma': {
         ancestors: [
-            { name: 'First Keeper Yan Duo', fate: 'dead', realmOrdinal: null, yearsAgo: 2_290, afterCrossing: null, rememberedFor: 'Founded the Karma Pavilion the year after the Iron Tally Court ended, having been one of its auditors.' },
-            { name: 'Circuit Arbiter Tang Wei', fate: 'dead', realmOrdinal: null, yearsAgo: 400, afterCrossing: null, rememberedFor: 'Established that a debt survives the death of the borrower, in a ruling every sect now relies on and several have tried to overturn.' }
+            { name: 'First Keeper Yan Duo', fate: 'dead', realmOrdinal: null, yearsAgo: 2_290, afterCrossing: null, rememberedFor: 'Founded the Karma Palace the year after the Iron Tally Court ended, having been one of its auditors.' },
+            { name: 'Circuit Envoy Tang Wei', fate: 'dead', realmOrdinal: null, yearsAgo: 400, afterCrossing: null, rememberedFor: 'Established that a debt survives the death of the borrower, in a ruling every sect now relies on and several have tried to overturn.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
@@ -989,7 +1003,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
         partingGift: null,
         lastOffering: null,
         discoverableTraces: [],
-        standingNote: 'The Karma Pavilion certifies other houses\' ancestral claims and has never asserted one, which its rivals describe as prudence and it describes as method.'
+        standingNote: 'The Karma Palace certifies other houses\' ancestral claims and has never asserted one, which its rivals describe as prudence and it describes as method.'
     },
     'house-flowing-light': {
         ancestors: [

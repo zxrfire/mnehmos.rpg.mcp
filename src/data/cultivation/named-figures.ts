@@ -826,6 +826,20 @@ export const FOUNDERS: readonly NamedFigure[] = [
         note: 'The bells record where the league has been and nothing at all about who it is, which is the practice working exactly as designed.'
     },
     {
+        id: 'figure-bai-zhenwu',
+        name: 'Bai Zhenwu',
+        alsoCalled: null,
+        kind: 'founder',
+        factionId: 'sect-cold-sword-sect',
+        whatTheyWere: 'A swordsman the terraces sent down without writing a reason, who found a walled yard on the shelf above Stone Ford and taught four other people who had been sent down the same way.',
+        yearsAgo: 240,
+        attestation: 'secure',
+        attestationNote: 'Two centuries of people who were personally taught by somebody who was personally taught by him, in an unbroken line of about nine, in one yard. Nothing is written down and nothing needs to be: the chain is short enough that the current Sect Master can name every link in it.',
+        answers: null,
+        juniority: null,
+        note: 'His house has never claimed he was more than he was, which is unusual in this file and is not modesty: a yard that takes people somebody else sent away cannot afford a founder who would have refused them.'
+    },
+    {
         id: 'figure-the-first-cut',
         name: 'The First Cut',
         alsoCalled: null,

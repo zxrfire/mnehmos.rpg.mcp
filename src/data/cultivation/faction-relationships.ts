@@ -366,6 +366,38 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             grievance: null
         }
     },
+    // A SWORD SCHOOL HOLDS FROM NOBODY, AND THIS IS WHAT THAT LOOKS LIKE FROM
+    // THE OTHER END. `alongside` here is the absence of an instrument and not a
+    // claim of parity: the Court could have the shelf tomorrow and has never
+    // wanted it, which is a different sentence from the one the Hollow Court's
+    // three rows make with the same field.
+    {
+        id: 'rel-the-cold-sword-and-the-third-sill',
+        aId: 'sect-cold-sword-sect',
+        bId: 'court-third-sill',
+        aStandsTo: 'alongside',
+        kind: 'tolerated',
+        what:
+            'The Court administers the arterial the Jade Gorge branches from and issues every grant in the province, and it has never issued one over the shelf above Stone Ford. There is no vein under that shelf, so there is nothing an instrument could convey, and the yard standing on it holds no ground from anybody and pays nobody for it. The grant book carries the shelf as unheld, with no note against it and no file behind it.',
+        since:
+            'Two centuries, at the outside, which is as long as anybody has been standing in the yard. No document anywhere records a first refusal, an offer, or a decision of any kind.',
+        a: {
+            warmth: 'distant',
+            howTheyPutIt:
+                'The Sect holds from nobody and says so plainly when it is asked, which is not often. It has never applied to the Court, could not say who at the Court it would apply to, and has never been given a reason to find out.',
+            andSoTheyDo:
+                'Nothing whatever. It sends no roll upward, pays no tribute in stones or in people, and has never written to a court in its own name.',
+            grievance: null
+        },
+        b: {
+            warmth: 'distant',
+            howTheyPutIt:
+                'Ground with no vein under it is ground the grant book has no line for. Nobody has been wronged by the yard, nobody has asked the Court about it, and there is nothing in a body that holds nothing for a court to administer.',
+            andSoTheyDo:
+                'Carries the shelf as unheld, renews nothing, refuses nothing, and has never sent anybody up the gorge road to look at it.',
+            grievance: null
+        }
+    },
     {
         id: 'rel-the-hollow-court-and-the-earth-vein-tower',
         aId: 'sect-hollow-court',

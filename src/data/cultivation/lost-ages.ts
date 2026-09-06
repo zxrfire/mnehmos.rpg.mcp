@@ -328,7 +328,7 @@ export const LOST_MATERIALS: readonly LostMaterial[] = [
                 }
             ],
             whatIsKnownOfTheCount:
-                'Nine, and this is the one figure in the table anybody could actually establish. The jars were made to a standard and marked on the outside, the Ninefold Karma Palace has certified transfers of four of them over eleven hundred years, and a patient reader working the Karma Pavilion case notes could get to a number. Nobody has, because nobody has thought to ask how many are left rather than where to get one.'
+                'Nine, and this is the one figure in the table anybody could actually establish. The jars were made to a standard and marked on the outside, the Ninefold Karma Palace has certified transfers of four of them over eleven hundred years, and a patient reader working the Karma Palace case notes could get to a number. Nobody has, because nobody has thought to ask how many are left rather than where to get one.'
         }
     },
     {

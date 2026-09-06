@@ -26,7 +26,7 @@ export const TITLE_TRANSLATIONS: readonly TitleTranslation[] = [
     {
         party: 'Clearwater Ward',
         mapping: 'Keystone sits above Core Formation, and Standing Cut above Foundation Establishment, on the argument that a carver reached it without ambient qi and is therefore worth more.',
-        interest: 'Grant fees are priced by rank, and every band it can push upward is revenue. The Court has never submitted the claim to the Karma Pavilion for certification.'
+        interest: 'Grant fees are priced by rank, and every band it can push upward is revenue. The Court has never submitted the claim to the Karma Palace for certification.'
     },
     {
         party: 'The Iron Ridge Assay House',
@@ -36,7 +36,7 @@ export const TITLE_TRANSLATIONS: readonly TitleTranslation[] = [
     {
         party: 'Flowing Light Tower',
         mapping: 'Declines to publish a table on the grounds that a rank is a position in a convergence rather than a title, and that both other tables are answering a question nobody asked.',
-        interest: 'It has one reader in the Silent Cliffs, who has been asked for a mapping eleven times and has refused eleven times, and whose refusal is itself quoted in the Karma Pavilion\'s case notes.'
+        interest: 'It has one reader in the Silent Cliffs, who has been asked for a mapping eleven times and has refused eleven times, and whose refusal is itself quoted in the Karma Palace\'s case notes.'
     }
 ];
 
@@ -82,7 +82,7 @@ export const PLACERS = {
     priceNote:
         'Ledger placement of a single foreign cultivator costs more than a month of cave rent on a decent vein, and is still cheaper than being wrong once.',
     reliability:
-        'The Karma Pavilion publishes its own error rate, which is roughly one in six, and it is the best figure anybody has. The independents do not publish one.'
+        'The Karma Palace publishes its own error rate, which is roughly one in six, and it is the best figure anybody has. The independents do not publish one.'
 } as const;
 
 /**

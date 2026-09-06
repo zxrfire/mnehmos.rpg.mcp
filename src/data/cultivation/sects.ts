@@ -39,7 +39,7 @@
  *   Disciples"; it has people it has not spent yet.
  * - `stipend[i]` pairs with `ranks[i]`, so both arrays are the same length and
  *   the stipend never falls as rank rises.
- * - THIRTY-ONE OF THE THIRTY-FIVE CARRY A GRAND ELDER, one rung below the
+ * - THIRTY-TWO OF THE THIRTY-SIX CARRY A GRAND ELDER, one rung below the
  *   head, named in the house's own idiom like every other rung: Grand Sword
  *   Elder, Grand Quiet Elder, First Among the Nameless, Senior Council Seat.
  *   It is first among equals of the elders, one spot only, and it is where a
@@ -982,7 +982,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'An explicit price for a vein is a starting gun, which is the Principal\'s whole objection and is correct. It would also make public that in four recorded shortages the rate was set by what the Thousand Treasure Pavilion would pay and published a week later as the Stone Marrow Hall\'s own.',
             contestedWith: ['sect-thousand-treasure-pavilion'],
             movedOn:
-                'The Rate-Setters have compiled the index twice, in secret, and both copies are in the same locked house at Green Water City, which about eleven people know.'
+                'The Rate Elders have compiled the index twice, in secret, and both copies are in the same locked house at Green Water City, which about eleven people know.'
         }
     },
     {
@@ -1150,6 +1150,63 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             contestedWith: ['sect-crimson-abyss-fortress'],
             movedOn:
                 'The Road Elders have been quietly holding back three names from the bells so that the recruiters cannot follow the route, which is the first thing the league has ever concealed.'
+        }
+    },
+    // ── A SWORD SCHOOL IS A SECT THAT HOLDS FROM NOBODY ──────────────────
+    //
+    // Ruled by the design owner: *the sword school is itself a sect*, and *it
+    // is not backed by a diff sect*. So it is one more row here plus
+    // `parentFactionId: null` in `governance-and-water-rights.ts`, and nothing
+    // else - no sword-school kind and no second catalog. What that null then
+    // does is close the `a_parent` sending reasons in
+    // `why-a-house-puts-a-party-on-the-road.ts`: when one of its people is
+    // wronged there is no house above to put the matter to, and none to be
+    // leaned on to call him off either.
+    //
+    // WHAT IT FIXES, counted before it was written: every taught sword art in
+    // the world sat on the shelf of a house that holds from somebody, three of
+    // them at the Azure Cloud Pavilion, so the art that marks somebody as of a
+    // sword school came from the most backed institution on the map.
+    {
+        id: 'sect-cold-sword-sect',
+        name: 'Cold Sword Sect',
+        alignment: 'neutral',
+        powerOrdinal: 22,
+        ranks: ['Yard Hand', 'Sword Hand', 'Standing Sword', 'Yard Elder', 'First Sword', 'Sect Master'],
+        admissionOrdinal: 1,
+        stipend: [2, 7, 20, 60, 140, 260],
+        // The province's common metal road and nothing else. A house with no
+        // book of its own is a house a grant could convey nothing about, which
+        // is the whole of why it is still standing here unbacked.
+        teaches: [
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            'iron-thread-finger',
+            'hundred-cut-flying-blade',
+            'gale-riding-sword-flight'
+        ],
+        signatureTechniqueId: 'gale-riding-sword-flight',
+        specialities: ['attack', 'movement'],
+        rivals: [],
+        territory: 'A dry shelf of gorge above Stone Ford, with no vein under it and nothing granted over it.',
+        recruits: true,
+        compound: {
+            inherited: true,
+            formationNodesTotal: 5,
+            formationNodesLit: 1,
+            remnant: 'A yard walled on three sides and cut for two hundred, with the fourth side open onto the drop because whoever laid it out wanted the wind.'
+        },
+        description:
+            'A walled yard on the dry shelf above Stone Ford, one lit node out of five, and about sixty people who do nothing else but the sword. It holds no vein, teaches nothing of its own and answers to nobody: the gathering manual, the tempering scripture, the thread, the flying blade and the blade flight are the province\'s common metal road, copied and recopied, and there has never been anything here a grant could convey. That is why the shelf is unheld on the Third Sill Court\'s own map and why nobody has opened a file on it. What the Sect has instead is the one door in the Jade Gorge where somebody the terraces refused is taught to stand on their own blade, which is most of its intake and the whole of its reputation. Its road stops where the tempering scripture stops and everybody in the yard knows the year they will have to choose between staying and going somewhere that holds from somebody.',
+        ambition: {
+            wants:
+                'A road of its own above the tempering scripture, so that going further stops meaning going elsewhere.',
+            blockedBy: ['sect-azure-cloud-pavilion'],
+            wouldCost:
+                'Somebody would have to write one. The only people who have gone that far up the metal road are on the terraces and hold from the Pavilion, so what the Sect is asking for is that a granted house copy out the thing its grant is partly for. The Sect Master has asked three of them, has been answered kindly twice, and has stopped asking in writing.',
+            contestedWith: [],
+            movedOn:
+                'Two Yard Elders have spent nine years setting down what they can recall of a book neither of them was ever shown, and have not told the third.'
         }
     },
     // ── THE SECOND HOUSE THAT TAKES ONE SEX ──────────────────────────────
@@ -1775,7 +1832,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'A flood-control works built to manage water by people who plainly also used it to manage qi, running seven of its twenty-six nodes and holding both of the region\'s remaining pockets between them.'
         },
         description:
-            'Both live pockets in the Silent Cliffs, the weir works above Iron Ridge, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow gait and the tempering scripture, all of it Jade Gorge material and none of it carving, because Office members do not touch a chisel: the Ward cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge - and it prices grants on a rank table it has never dared submit to the Ninefold Karma Palace for certification.',
+            'Both live pockets in the Silent Cliffs, the weir works above Iron Ridge, and the grant book, which is the actual holding. It teaches gathering, the iron shirt, circulation, the shadow gait and the tempering scripture, all of it Jade Gorge material and none of it carving, because Ward members do not touch a chisel: the Ward cultivates by holding faces rather than working them, which every carver in the queue outside can see and none of them can do anything about. It is not a sect so much as a bureau that acquired a monopoly and never gave it back, renting the only two sites in the region where a cultivator can advance at all, by the day, against a book that is public, itemised and completely discretionary. Everything it has is positional - three people at Standing Cut and a Weir Master who would be a mid-ranking elder nobody sends for in the Jade Gorge - and it prices grants on a rank table it has never dared submit to the Ninefold Karma Palace for certification.',
         ambition: {
             wants: 'A third workable face found and brought into the grant book before Jade Face runs out.',
             blockedBy: ['court-ninth-face', 'sect-six-li-patrol'],
@@ -1819,7 +1876,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'Clearwater Ward to pay for paint, and the burn-edge figures in the survey shed recalculated by somebody who is not a Warden.',
             blockedBy: ['sect-clearwater-ward'],
             wouldCost:
-                'A toll, which is the only instrument they have and which the Warden of the Six Mile holds is a road people leave to avoid paying for. Three Wardens have said the burn edge is accelerating and the shed has the figures, and nobody has recalculated them because nobody wants the answer.',
+                'A toll, which is the only instrument they have and which the Warden of the Six Li holds is a road people leave to avoid paying for. Three Wardens have said the burn edge is accelerating and the shed has the figures, and nobody has recalculated them because nobody wants the answer.',
             contestedWith: ['sect-clearwater-ward'],
             movedOn:
                 'They have refused to stake the ground past Nine Hundred Paces twice, which is the first time in the Wardens\' history that the survey has been used as leverage rather than published.'
@@ -2044,7 +2101,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             remnant: 'A vault of tally volumes in a hand two ages old, still consulted, still binding, and still accurate about families that no longer know they are in it.'
         },
         description:
-            'A book hall at Green Water City and a circuit of arbitration benches in forty-one towns, all of it held in the house\'s own name on nobody\'s grant, which is why a house at this height is a different sort of problem from a sect at the same figure: a sect can be leaned on through whoever renews it, and the Ninefold can only be dealt with. Its dao is karma read as a graph rather than a score - favour, debt, betrayal, oath, inheritance, a killing, a rescue - and four thousand one hundred years of writing those connections down means it is the only institution alive that can see a whole thread at once, across generations, when every person standing on the thread has forgotten it exists. That is not a combat art and it is not sold as one: nobody in the region can settle an inheritance, prove a debt, open a succession or establish whether a sect really has an ancestor above the Lid without a Karma Pavilion reckoner present, which is how a house with no field doctrine at all has never been attacked twice by the same sect. What it costs is the pace - an audit takes seasons, and the Karma Pavilion is habitually too late to prevent anything - and what it cannot do is see somebody with no relationships, who is close to invisible to it, or read a thread through a grave, which has never once worked and is filed under research rather than failure. The Yan have held it since Yan Duo, which makes it a family before it is an institution, and the current Keeper of the Ninefold Book is a Cao who married in and did not change her name: the head of an adoption-only house is the one person in it who was never adopted, and the house has never once written down what it thinks about that.',
+            'A book hall at Green Water City and a circuit of arbitration benches in forty-one towns, all of it held in the house\'s own name on nobody\'s grant, which is why a house at this height is a different sort of problem from a sect at the same figure: a sect can be leaned on through whoever renews it, and the Ninefold can only be dealt with. Its dao is karma read as a graph rather than a score - favour, debt, betrayal, oath, inheritance, a killing, a rescue - and four thousand one hundred years of writing those connections down means it is the only institution alive that can see a whole thread at once, across generations, when every person standing on the thread has forgotten it exists. That is not a combat art and it is not sold as one: nobody in the region can settle an inheritance, prove a debt, open a succession or establish whether a sect really has an ancestor above the Lid without a Karma Palace reckoner present, which is how a house with no field doctrine at all has never been attacked twice by the same sect. What it costs is the pace - an audit takes seasons, and the Karma Palace is habitually too late to prevent anything - and what it cannot do is see somebody with no relationships, who is close to invisible to it, or read a thread through a grave, which has never once worked and is filed under research rather than failure. The Yan have held it since Yan Duo, which makes it a family before it is an institution, and the current Keeper of the Ninefold Register is a Cao who married in and did not change her name: the head of an adoption-only house is the one person in it who was never adopted, and the house has never once written down what it thinks about that.',
         ambition: {
             wants:
                 'The nine sealed volumes opened and entered, ending twenty-three centuries of the house not knowing what it is standing on.',
@@ -2057,7 +2114,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
         },
         principle: 'karma',
         principleDescription:
-            'Karma is a persistent relationship graph - favour, debt, betrayal, blood feud, oath, inheritance, gratitude, revenge, teacher and disciple, a killing, a rescue. The Karma Pavilion does not own it. It is simply the only institution that can see a whole thread at once, across generations, when everyone standing on the thread has forgotten it exists.',
+            'Karma is a persistent relationship graph - favour, debt, betrayal, blood feud, oath, inheritance, gratitude, revenge, teacher and disciple, a killing, a rescue. The Karma Palace does not own it. It is simply the only institution that can see a whole thread at once, across generations, when everyone standing on the thread has forgotten it exists.',
         foundedYearsAgo: 4_100,
         civilReach: [
             'debts, and which of them survived the death of the borrower',
@@ -2085,18 +2142,18 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             name: 'karmic severance',
             heldBy: 'house-still-blade',
             description:
-                'A cut connection cannot be read as a connection. The Karma Pavilion can usually tell that something was removed and roughly when, but naming what it was requires a fragment recovered from the Iron Tally Court, and the Karma Pavilion will not admit publicly that it uses one.'
+                'A cut connection cannot be read as a connection. The Karma Palace can usually tell that something was removed and roughly when, but naming what it was requires a fragment recovered from the Iron Tally Court, and the Karma Palace will not admit publicly that it uses one.'
         },
         blindSpots: [
             'open warfare: it has no field doctrine and hires the Azure Cloud Pavilion when it needs one',
             'alchemy: it does not refine, and buys medicine at retail like anyone else',
             'formations: it has never produced a formation master and lights barely two thirds of its own nodes',
             'anyone with no relationships at all, who is close to invisible to it',
-            'speed: an audit takes seasons, and the Karma Pavilion is habitually too late to prevent anything'
+            'speed: an audit takes seasons, and the Karma Palace is habitually too late to prevent anything'
         ],
         internalFactions: [
             'the Circuit, who want arbitration expanded into criminal judgement',
-            'the Book, who want the Karma Pavilion to record and never rule',
+            'the Book, who want the Karma Palace to record and never rule',
             'a quiet third group who believe the Iron Tally Court was right'
         ],
         weaknesses: [
@@ -2114,7 +2171,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             surrendered:
                 'Your own line, and every prior obligation you were standing on - the house enters them, settles them, and enters you afterwards with a clean thread, which is the single most expensive thing it does for anybody.',
             naming:
-                'The family is Yan and the house is what the Yan do: the First Keeper was Yan Duo, and every auditor on the forty-one benches today is a Yan. A man adopted in takes the name, which is what the adoption is. The current Keeper of the Ninefold Book does not carry it - she married in from the Flowing Light Tower and kept Cao - so the head of an adoption-only house is the one person in it who was never adopted, which the Circuit raises about once a decade and the Book has never answered.',
+                'The family is Yan and the house is what the Yan do: the First Keeper was Yan Duo, and every auditor on the forty-one benches today is a Yan. A man adopted in takes the name, which is what the adoption is. The current Keeper of the Ninefold Register does not carry it - she married in from the Flowing Light Tower and kept Cao - so the head of an adoption-only house is the one person in it who was never adopted, which the Circuit raises about once a decade and the Book has never answered.',
             lastTaken:
                 'Eighty years ago: a tax clerk from a town two provinces east who had reconstructed nine inheritances off the back of the collection rolls for no reason and no fee.',
             costOfTheForm:
@@ -2124,17 +2181,17 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             predecessorId: 'house-iron-tally-court',
             yearsAgo: 2_300,
             officialVersion:
-                'Iron Tally Court sold its judgements, branded debts that could not be settled, and was dissolved by a coalition of righteous sects. The Karma Pavilion was founded to do the work honestly.',
+                'Iron Tally Court sold its judgements, branded debts that could not be settled, and was dissolved by a coalition of righteous sects. The Karma Palace was founded to do the work honestly.',
             trueVersion:
-                'Iron Tally Court had begun keeping an account of what the crossings take - every cut made at every boundary, entered as a taking, with the Lid itself named as the party in arrears - and had got far enough to name what was owed. The Karma Pavilion\'s founders were Iron Tally Court auditors. They ended the Court, burned the seat, kept the volumes, and have not opened them since.',
+                'Iron Tally Court had begun keeping an account of what the crossings take - every cut made at every boundary, entered as a taking, with the Lid itself named as the party in arrears - and had got far enough to name what was owed. The Karma Palace\'s founders were Iron Tally Court auditors. They ended the Court, burned the seat, kept the volumes, and have not opened them since.',
             discoverableTraces: [
                 'the coalition named in the official account never existed as a coalition; the four sects listed were not at peace with each other that century',
-                'the Karma Pavilion\'s own vault index lists nine sealed volumes with no subject line',
-                'branded descendants still exist and the Karma Pavilion quietly pays their upkeep'
+                'the Karma Palace\'s own vault index lists nine sealed volumes with no subject line',
+                'branded descendants still exist and the Karma Palace quietly pays their upkeep'
             ]
         },
         afterwardsClause:
-            'Killing an auditor is entered as an unsettled account against the killer and their line. The Karma Pavilion does not retaliate. It records, publishes the entry, and lets every party who ever needed a Ledger seal decide what to do about a person who is in arrears to it.'
+            'Killing an auditor is entered as an unsettled account against the killer and their line. The Karma Palace does not retaliate. It records, publishes the entry, and lets every party who ever needed a Ledger seal decide what to do about a person who is in arrears to it.'
     },
     {
         id: 'house-flowing-light',
@@ -2229,7 +2286,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             surrendered:
                 'Your line and your own future as a subject: an adopted reader is entered into the house\'s own records, and the house does not permit sightings cast on itself, so the day you join is the last day anybody will look at your future.',
             naming:
-                'The family is Cao - Cao Xun, who sighted the first convergence, and Cao Yin, whose sealed account of the scar year does not match what happened - and the Flowing Light Tower is the trade rather than the line. Every reader on the hill is a Cao and a man adopted in takes it; nobody currently on the roll married in and kept anything else, though the house has sent one of its own daughters out to the Karma Pavilion and did not stop her keeping the name.',
+                'The family is Cao - Cao Xun, who sighted the first convergence, and Cao Yin, whose sealed account of the scar year does not match what happened - and the Flowing Light Tower is the trade rather than the line. Every reader on the hill is a Cao and a man adopted in takes it; nobody currently on the roll married in and kept anything else, though the house has sent one of its own daughters out to the Karma Palace and did not stop her keeping the name.',
             lastTaken:
                 'A hundred and sixty years ago, and the house has looked twice since and both times decided the talent was pattern memory rather than sighting.',
             costOfTheForm:
@@ -2382,7 +2439,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
                 'A replacement for the Iron Tally Court fragments its whole method depends on, which are visibly wearing out and cannot be reproduced.',
             blockedBy: ['house-ninefold-karma'],
             wouldCost:
-                'The only surviving Iron Tally Court material of that grade is in the Karma Pavilion\'s nine sealed volumes, which the Karma Pavilion will not open and would not hand over. Taking them means cutting a four-thousand-year-old house\'s own thread, which is the largest commission the Still Blade Peak has ever considered and the one nobody would pay for.',
+                'The only surviving Iron Tally Court material of that grade is in the Karma Palace\'s nine sealed volumes, which the Karma Palace will not open and would not hand over. Taking them means cutting a four-thousand-year-old house\'s own thread, which is the largest commission the Still Blade Peak has ever considered and the one nobody would pay for.',
             contestedWith: ['house-ninefold-karma'],
             movedOn:
                 'It has priced the job internally, three times in a century, and the figure has come down each time.'
@@ -2439,7 +2496,7 @@ export const DAO_HOUSES: readonly DaoHouseEntry[] = [
             marriage:
                 'Yes, and it is the only part of the arrangement the house performs openly, because a marriage is a connection the Still Blade Peak deliberately does not sever and is therefore the strongest thing anybody in it has.',
             surrendered:
-                'Everything that could identify you, which the house removes as a condition rather than a courtesy, and your line, which is entered nowhere at all. An adopted cutter has no prior life that can be established by any means the Karma Pavilion holds.',
+                'Everything that could identify you, which the house removes as a condition rather than a courtesy, and your line, which is entered nowhere at all. An adopted cutter has no prior life that can be established by any means the Karma Palace holds.',
             naming:
                 'The family is Chu, and the house cuts its own records, so it can no longer establish who the first Chu was - the only one of the seven whose founder is unrecoverable, by its own hand. Since no member gives a name to a client and no face is seen twice on a commission, Chu is the only name most of them ever use aloud; a man adopted in takes it and loses the other permanently, and a woman who married in and kept hers is recorded in a column with no heading.',
             lastTaken:
@@ -2832,7 +2889,7 @@ export const DESTROYED_DAO_HOUSES: readonly DestroyedDaoHouse[] = [
             'It was ended by its own auditors, who founded the Ninefold Karma Palace the following year and kept the volumes. What the Court had been doing when it was ended was totalling what the crossings had taken out of everyone, and entering the Lid as the party that owed it.',
         traces: [
             'the burned seat at Burnt Earth, where debts sworn on the ground do not settle and never have since',
-            'nine sealed volumes in the Karma Pavilion\'s own vault index, with no subject line',
+            'nine sealed volumes in the Karma Palace\'s own vault index, with no subject line',
             'a branded bloodline in the eastern towns that inherits an obligation nobody can identify or discharge',
             'standing oaths sworn to the Court, which have no surviving party to be discharged by and therefore do not lapse'
         ],
@@ -2901,7 +2958,7 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
             {
                 houseId: 'house-flowing-light',
                 position:
-                    'Debt is one shape an outcome takes and not the governing one. Possibilities narrow; a few are load-bearing; what happens is what the convergence was already going to produce. The Karma Pavilion is describing the bookkeeping and calling it the cause.'
+                    'Debt is one shape an outcome takes and not the governing one. Possibilities narrow; a few are load-bearing; what happens is what the convergence was already going to produce. The Karma Palace is describing the bookkeeping and calling it the cause.'
             },
             {
                 houseId: 'house-still-blade',
@@ -2928,7 +2985,7 @@ export const DAO_HOUSE_DISPUTES: readonly DaoHouseDispute[] = [
             }
         ],
         consequence:
-            'Nine cities require House registration and the Hall publishes a free counter-register, so a cultivator crossing between jurisdictions can be two different people on paper, which the Karma Pavilion has to arbitrate several times a year.'
+            'Nine cities require House registration and the Hall publishes a free counter-register, so a cultivator crossing between jurisdictions can be two different people on paper, which the Karma Palace has to arbitrate several times a year.'
     },
     {
         id: 'dispute-what-an-oath-binds-to',
@@ -3028,6 +3085,12 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         minOrdinal: 0,
         preferredRoots: [],
         requirement: 'Show up. Ring the bell. That is the whole ceremony.'
+    },
+    'sect-cold-sword-sect': {
+        minOrdinal: 1,
+        preferredRoots: ['single_metal', 'dual_metal_wood'],
+        requirement:
+            'Circulate once, hold a sword, and stand in the yard for a season. Nobody is asked where they came from and nothing anybody says about it is written down, which is why half the roll is people the terraces sent away and why the Sect could not produce a list of them if it were asked for one.'
     },
     // THE BAR IS NOT THE GATE HERE, AND THE REQUIREMENT SAYS SO OUT LOUD.
     //

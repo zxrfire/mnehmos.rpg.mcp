@@ -832,9 +832,9 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'hundred-cut-flying-blade',
-        // `subjects` is what an art is ABOUT, and the sword arts are the only
-        // rows in this catalog that name one. See the note beside
-        // `SWORD_SUBJECT` below for why these five and nothing else.
+        // `subjects` is what an art is ABOUT. Three roads name one: the sword,
+        // the flower, and the body. See the note beside `SWORD_SUBJECT` below
+        // for why these five swords and nothing else.
         //
         // One sliver of metal steered by intent for ten paces. A moving edge,
         // and nothing that stands anywhere - so the sword road and no other.
@@ -1220,6 +1220,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     art({
         id: 'iron-shirt-tempering',
+        subjects: ['body'],
         name: 'Iron Shirt Tempering',
         category: 'defense',
         grade: 'mortal',
@@ -1233,6 +1234,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'stone-hide-mantle',
+        subjects: ['body'],
         name: 'Stone Hide Mantle',
         category: 'defense',
         grade: 'mortal',
@@ -1246,6 +1248,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'bark-armor-circulation',
+        subjects: ['body'],
         name: 'Bark Armour Circulation',
         category: 'defense',
         grade: 'mortal',
@@ -1259,6 +1262,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'golden-bell-shroud',
+        subjects: ['body'],
         name: 'Golden Bell Shroud',
         category: 'defense',
         grade: 'earth',
@@ -1285,6 +1289,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'cold-jade-carapace',
+        subjects: ['body'],
         name: 'Cold Jade Carapace',
         category: 'defense',
         grade: 'earth',
@@ -1298,6 +1303,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'unyielding-mountain-body',
+        subjects: ['body'],
         name: 'Unyielding Mountain Body',
         category: 'defense',
         grade: 'heaven',
@@ -1328,6 +1334,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'void-hollow-body',
+        subjects: ['body'],
         name: 'Void Hollow Body',
         category: 'defense',
         grade: 'immortal',
@@ -1341,7 +1348,8 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'thunder-scale-aegis',
-        name: 'Thunder Scale Aegis',
+        subjects: ['body'],
+        name: 'Thunder Scale Armour',
         category: 'defense',
         grade: 'immortal',
         element: 'lightning',
@@ -1350,10 +1358,11 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         damage: null,
         cooldown: 5,
         description:
-            'Overlapping scales of live lightning qi that answer contact with contact. Only a mutated lightning root can wear it without the aegis grounding itself through the wearer.'
+            'Overlapping scales of live lightning qi that answer contact with contact. Only a mutated lightning root can wear it without the armour grounding itself through the wearer.'
     }),
     art({
         id: 'undying-kalpa-body',
+        subjects: ['body'],
         name: 'Undying Kalpa Body',
         category: 'defense',
         grade: 'chaos',
@@ -1367,6 +1376,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'immovable-heaven-pillar',
+        subjects: ['body'],
         name: 'Immovable Heaven Pillar',
         category: 'defense',
         grade: 'chaos',
@@ -1677,7 +1687,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'rebirth-in-the-lotus-furnace',
-        name: 'Rebirth in the Lotus Furnace',
+        name: 'Lotus Furnace Rebirth Art',
         category: 'support',
         grade: 'chaos',
         element: 'fire',
@@ -2816,6 +2826,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
     }),
     art({
         id: 'half-immortal-body',
+        subjects: ['body'],
         name: 'Half Immortal Body',
         category: 'defense',
         grade: 'chaos',
@@ -2909,6 +2920,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         // A SECOND ROAD AT 33-35, which had exactly one, wanted a mutated ice root,
         // and was held by a single house that admits nobody else.
         id: 'cinder-lung-tempering-canon',
+        subjects: ['body'],
         name: 'Cinder-Lung Tempering Canon',
         category: 'cultivation',
         grade: 'immortal',
@@ -3291,7 +3303,50 @@ export function getTechnique(id: string): TechniqueEntry | undefined {
 
 /**
  * The sword is a school, and flight on a blade belongs to it.
+ *
+ * NOBODY WHO HELD FROM NOBODY TAUGHT THE SWORD AS A SCHOOL. Counted over the
+ * shelves: the Azure Cloud Pavilion, which is `unassailable`, held three of the
+ * four taught sword arts including blade flight, and the fourth sat at the
+ * Clear River Alliance, which is `unbacked` and is a river federation holding
+ * one sword chant rather than a school. So the art that marks somebody as of a
+ * sword school came from the most backed institution on the map, which is the
+ * inverse of the picture. The Cold Sword Sect is the fix and it is DATA: an ordinary
+ * sect row whose parentage carries `parentFactionId: null`, holding no vein and
+ * no book of its own, teaching the flight to people the terraces sent away. If
+ * a shelf pass ever leaves blade flight taught only by houses that hold from
+ * somebody, the inversion is back.
+ *
+ * The fifth sword art is ruin-only and correctly taught by nobody.
  */
+/**
+ * THE BODY IS A ROAD, AND MOST DEFENSIVE ARTS ARE NOT ON IT.
+ *
+ * The design owner: *body refining is just another type of technique, it should
+ * just be tagged as body refining.* `subjects` already existed for exactly this
+ * and carried `'body'` in its own schema comment; no art had ever been given it,
+ * so the road was documented and empty.
+ *
+ * TWELVE ARTS, AND THE TEST IS WHAT IS BEING WORKED. A body art hardens the
+ * practitioner's own flesh - the iron shirt, the golden bell, the jade
+ * carapace, the bark under the skin, a lung tempered through heat, a body
+ * driven down until it is part of the world's foundation. That is 炼体, and it
+ * is why the road cuts across categories rather than following one: most of
+ * these are `defense`, one is `support` and one is `cultivation`.
+ *
+ * SIX DEFENSIVE ARTS ARE DELIBERATELY NOT ON IT, and each was read before being
+ * left off. A skin of motionless water qi is a construct held in front of a
+ * body, not a body (`Still Water Mirror Guard`). A ward that burns the incoming
+ * attack works on the attack (`Burning Heart Cinder Ward`). Two fix the GROUND
+ * or the record rather than the person (`Immovable Ground Stance`, `Nameless
+ * Witness Stance`), and one makes a second body that is explicitly not the
+ * practitioner (`Hollow Second Body`). `Foundation-Tempering Scripture` and
+ * `Stone Marrow Foundation Canon` temper the foundation, which is the
+ * cultivation base and not the flesh, whatever the masonry vocabulary suggests.
+ *
+ * The category stays what it is. A road is what an art is ABOUT; a category is
+ * what it DOES, and folding one into the other is how a catalog loses both.
+ */
+
 export const SWORD_SUBJECT = 'sword';
 
 /** Every art whose subject is the blade, strongest requirement last. */

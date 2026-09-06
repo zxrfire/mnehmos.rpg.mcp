@@ -618,7 +618,7 @@ export const WHAT_THE_LIGHTNING_TOOK = {
     whoKnowsThis:
         'Grave-readers, first and universally: it is the whole of their trade and the reason they can tell a grave from an inheritance on sight. Fallen Grain Caravan know it as a working rule without having a theory about it. Ninefold Karma Palace prices it correctly because it prices everything correctly. Raiding parties do not know it, sect expeditions know it and go to the rich crypt anyway because a scar field cannot be split nine ways, and the Thousand Treasure Pavilion catalogues by count because count is what buyers ask for.',
     theExceptionIsNotAnException:
-        'A tribulation grave with a long inventory has been salted, and the salting is always the same trick: ordinary goods laid on a real scar so the provenance rubs off on them. Two of the three frauds the Karma Pavilion has established in four centuries were exactly this.',
+        'A tribulation grave with a long inventory has been salted, and the salting is always the same trick: ordinary goods laid on a real scar so the provenance rubs off on them. Two of the three frauds the Karma Palace has established in four centuries were exactly this.',
     andAFailedCrossingLeavesNoBody:
         'The last crossing does not leave remains. What is on that ground is what fell out of a hand, and there is no body, no pouch, no arrangement and nobody to have arranged one. It is the shortest list in the world and it is the best.'
 } as const;
@@ -824,10 +824,10 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         factionIds: ['house-iron-tally-court', 'house-ninefold-karma', 'sect-sweptground-temple'],
         outside: {
             marker: 'A stone bench and a stone table on the burned ground at Burnt Earth, both original, both cut for somebody to sit at one and put documents on the other. There is no building. Debts sworn on this ground do not settle and never have.',
-            rumour: 'The monks say the bench is where the old house heard cases and that sitting on it is bad luck, which is the Temple being polite. The Karma Pavilion says nothing about the bench in any document anybody outside the Karma Pavilion has read.',
+            rumour: 'The monks say the bench is where the old house heard cases and that sitting on it is bad luck, which is the Temple being polite. The Karma Palace says nothing about the bench in any document anybody outside the Karma Palace has read.',
             attributedTo: 'Iron Tally Court',
             lastPartySaid: 'A Ledger circuit arbiter sat at it nine years ago on her own initiative, spent two hours, stood up and wrote nothing. She has been asked and says that it was not a matter for the house.',
-            whatAKnowledgeablePartyReads: 'A karma house left a working bench on ground where obligations do not discharge, which is not a monument. It is a bench that is still in session. And the Karma Pavilion, which destroyed that house and holds nine sealed volumes with no subject line, has had an arbiter sit at it and produce no record, which is the loudest thing the Karma Pavilion has ever not said.',
+            whatAKnowledgeablePartyReads: 'A karma house left a working bench on ground where obligations do not discharge, which is not a monument. It is a bench that is still in session. And the Karma Palace, which destroyed that house and holds nine sealed volumes with no subject line, has had an arbiter sit at it and produce no record, which is the loudest thing the Karma Palace has ever not said.',
             whatAnIgnorantPartyConcludes: 'That it is furniture on a burned site and the site itself is the curiosity. Parties camp on the ground, swear things to each other for the novelty of watching the oath not take, and go home without having sat down.',
             startingAwareness: 'named',
             advertisedOrdinal: null
@@ -872,7 +872,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     'karmic-thread-reading-art', 'unpayable-tally-brand',
                 ],
                 other: [
-                    'The page itself, which is the Iron Tally Court\'s total, and the identity of the party it entered as owing it. The Karma Pavilion has nine sealed volumes and has never opened them; this is the other half of that.',
+                    'The page itself, which is the Iron Tally Court\'s total, and the identity of the party it entered as owing it. The Karma Palace has nine sealed volumes and has never opened them; this is the other half of that.',
                     'Standing, at the bench, to hear anything sworn on that ground. It is a real office with no institution behind it and no way to resign.'
                 ],
                 immortalItemId: null
@@ -1179,7 +1179,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             marker: 'A vault head in the eastern towns, brick, in the corner of a yard behind a dyer\'s, with the surround cut in a pattern the dyer\'s family has repainted for six generations without knowing it is writing.',
             rumour: 'The towns say the branded families keep something in the yard, which the branded families deny, and the denial is honest: they know the vault is there and none of them has ever been able to open it.',
             attributedTo: 'Iron Tally Court',
-            lastPartySaid: 'Ninefold Karma Palace surveyed the yard forty years ago on an unrelated audit, recorded the vault head as a disused cistern, and moved on. Nobody has attempted it since, because the Karma Pavilion said it was a cistern.',
+            lastPartySaid: 'Ninefold Karma Palace surveyed the yard forty years ago on an unrelated audit, recorded the vault head as a disused cistern, and moved on. Nobody has attempted it since, because the Karma Palace said it was a cistern.',
             whatAKnowledgeablePartyReads: 'A karma house that was ended left standing oaths behind it, and an oath sworn to a party that no longer exists does not lapse, it simply has nobody to discharge it to. A vault in the middle of the bloodline that inherits an unidentifiable obligation is where the other end of those oaths is kept.',
             whatAnIgnorantPartyConcludes: 'That it is a cistern, on the authority of the institution best placed to know, which is a reasonable thing to believe and is the reason the vault has been sitting behind a dyer\'s for two thousand three hundred years.',
             startingAwareness: 'unaware',
@@ -1992,7 +1992,7 @@ export const GRAVES: readonly Grave[] = [
                 {
                     kind: 'strength',
                     ordinal: 29,
-                    test: 'The fused ground still discharges. Four hundred years on it holds a residual that lifts and earths itself through anything crossing the last thirty paces to the body, in irregular events, at a measured output that the Karma Pavilion surveyed once and recorded.',
+                    test: 'The fused ground still discharges. Four hundred years on it holds a residual that lifts and earths itself through anything crossing the last thirty paces to the body, in irregular events, at a measured output that the Karma Palace surveyed once and recorded.',
                     below: 'Under Void Refinement the discharge is lethal on a bad interval and crippling on a good one, and the intervals are not periodic and have never been predicted by anybody. Three of the nine parties lost people to it and all three were working the outer pits when it happened, which is why the pits are where they are: nobody has ever got closer.',
                     noWorkaround: 'Insulation does not work, because what earths through a body earths through whatever the body is standing in. Two parties have tried approaching along a laid conductor and both discovered that the conductor is a better route than the ground and that they were standing on it.'
                 }
@@ -2007,7 +2007,7 @@ export const GRAVES: readonly Grave[] = [
                     immortalItemId: null
                 },
                 {
-                    what: 'A jade slip in his right hand, whole, containing a chaos-grade art that no institution below the Lid can transmit and that the Karma Pavilion\'s own index does not list.',
+                    what: 'A jade slip in his right hand, whole, containing a chaos-grade art that no institution below the Lid can transmit and that the Karma Palace\'s own index does not list.',
                     proven: true,
                     survived: 'The tribulation at the last mortal boundary, in a closed hand, which is a warranty nobody in either province can issue about anything and the reason a single slip off this scar is worth more than the eleven-man haul out of a maintained interment.',
                     techniqueId: 'kalpa-fire-that-eats-heaven',
@@ -2022,7 +2022,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'It destroyed a lifetime at Grand Ascension and left two objects touching a hand. Everything a cultivator at ordinal forty owns, and there is no way to overstate that quantity, went through the boundary tribulation and did not come out, including the contents of a storage ring that itself came out. Two items. Both proven. That ratio is the rule this catalog is built on and this is the cleanest instance of it.',
-            afterwards: 'The residual is not diminishing at any measurable rate and the body is not decaying. Whoever takes the two things leaves a site that is exactly as dangerous and has nothing on it, which the Karma Pavilion will know within a season because the Karma Pavilion holds the name and has been watching who asks for it.'
+            afterwards: 'The residual is not diminishing at any measurable rate and the body is not decaying. Whoever takes the two things leaves a site that is exactly as dangerous and has nothing on it, which the Karma Palace will know within a season because the Karma Palace holds the name and has been watching who asks for it.'
         }
     },
 
@@ -2383,7 +2383,7 @@ export const GRAVES: readonly Grave[] = [
                     worldStateCheck: 'Did the claimant reach this site while doing something else? The condition is on the arrival rather than on the claimant: the site is four days off any route and has no rumour attached, so a party that got here was going somewhere else, was lost, or was following something. A party that came looking for it did not come looking for this one, because this one has never been described to anybody.',
                     characterStat: null,
                     whyItCannotBeFarmed: 'Because searching for it is what makes it not be found. There is no rumour to follow and no record to consult; the two claims in four hundred years were both forgeries and forgeries are planted where searchers go, so the entire effect of deciding to look for one of these is to arrive at the places somebody has arranged for searchers to arrive at. The Bone Lantern Cult works more graves than anybody, states plainly that it has never seen one, and does not expect to, and it is not saying that out of modesty.',
-                    whoHasEverPassed: 'Twice in recorded history, on the Karma Pavilion\'s own count, and both times by somebody who was not in the business of finding one.',
+                    whoHasEverPassed: 'Twice in recorded history, on the Karma Palace\'s own count, and both times by somebody who was not in the business of finding one.',
                     below: 'Not applicable in the ordinary way. There is no door and nothing refuses anybody: the gate is whether the claimant is ever standing here at all, and for almost every run in the world the answer is no and there is nothing to be told.'
                 }
             ],
@@ -2442,7 +2442,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing at all. He died of injuries under an overhang, so the inventory is full, ordinary, untested and long, and the object that matters is the fourth item in a list of six and looks like the least interesting thing there. This is the one entry where the catalog\'s own rule is the wrong tool: the inventory is intact and unproven exactly as the rule predicts, and the rule says nothing about the box, because nothing in the world tests one of those either.',
-            afterwards: 'The Karma Pavilion opens a lineage audit on anybody who spends one without being able to say where it came from, and it will not accept this account, because it has heard this account twice and established both as forgeries. The correct move is not to spend it, which nobody has ever managed.'
+            afterwards: 'The Karma Palace opens a lineage audit on anybody who spends one without being able to say where it came from, and it will not accept this account, because it has heard this account twice and established both as forgeries. The correct move is not to spend it, which nobody has ever managed.'
         }
     },
     {
@@ -2655,7 +2655,7 @@ export const GRAVES: readonly Grave[] = [
                     worldStateCheck: 'Whether the claimant is carrying an inherited obligation that nobody, including the claimant, can identify or discharge. The eastern branded bloodline is the known case and is not the only one; the Court entered obligations against parties who had not been born, and the entries outlived the Court, the ledger volumes and everybody who could have read them out.',
                     characterStat: null,
                     whyItCannotBeFarmed: 'Because the obligation is descent and nothing else. It cannot be bought, because the Court took consideration in kind and there is no party left to pay; it cannot be sworn into, because the oath that would do it needs a counterparty and the counterparty was dissolved twenty-three centuries ago; and it cannot be discovered by looking, because the entire diagnostic value of the thing is that the carrier does not know what it is. Ninefold Karma Palace has tried to acquire one deliberately, twice, in writing, and the file on the second attempt runs to nine years and ends without a finding.',
-                    whoHasEverPassed: 'Nobody on record. Two of the branded families are known to the Karma Pavilion by name and neither has ever been within two provinces of the watercourse, and the Karma Pavilion has never told either of them that anything about their line is unusual.',
+                    whoHasEverPassed: 'Nobody on record. Two of the branded families are known to the Karma Palace by name and neither has ever been within two provinces of the watercourse, and the Karma Palace has never told either of them that anything about their line is unusual.',
                     below: 'The body is a body and the mark is a mark. Everything on him can be taken by anybody who walks down the watercourse and picks it up, and the manual comes off him as a sealed case that does not open, has never opened for anybody, and cannot be forced, because what holds it shut is the same entry that is holding the family.'
                 }
             ],
@@ -2705,7 +2705,7 @@ export const GRAVES: readonly Grave[] = [
                 }
             ],
             whatTheDeathDidToTheContents: 'Nothing at all, which is the ordinary intact case and is doing unusual work here. He was killed by people who wanted the arithmetic to be visible rather than the goods to be gone, so they did not take a single item, and the result is a complete two-thousand-year-old collector\'s kit lying in the open in a province where a Foundation Establishment corpse gets stripped inside a season. Nobody has stripped this one because everybody who has found it has read the mark correctly enough to be frightened and not correctly enough to understand it.',
-            afterwards: 'The watercourse stays what it is and the mark on the stone does not fade, because it was cut by a house whose entire discipline was making a record outlast the parties to it. A claimant who opens the case has closed the eleventh entry in the route book, which is the transaction the whole site is, and the Karma Pavilion will know inside a year without anybody having told it.'
+            afterwards: 'The watercourse stays what it is and the mark on the stone does not fade, because it was cut by a house whose entire discipline was making a record outlast the parties to it. A claimant who opens the case has closed the eleventh entry in the route book, which is the transaction the whole site is, and the Karma Palace will know inside a year without anybody having told it.'
         }
     },
     {
