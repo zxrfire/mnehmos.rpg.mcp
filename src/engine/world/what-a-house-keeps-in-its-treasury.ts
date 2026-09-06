@@ -134,6 +134,11 @@ import {
     type ObjectSignificance
 } from './possessions.js';
 import { purposeOf, type RoomPurpose } from './architecture.js';
+import {
+    WHERE_THE_PLATES_HANG,
+    carriesATokenAt,
+    issueTo
+} from './a-house-knows-its-own-by-a-plate-and-a-token.js';
 import type { WorldState } from './world-state.js';
 
 /**
@@ -287,6 +292,31 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         // it and its heaven-grade dose is a row with a history, for the same
         // reason and by the same call.
         out.push(...whatElseTheHouseKeeps(house.id, name, roomFor, acting, today));
+
+        // ── AND WHO IT KNOWS BY NAME ─────────────────────────────────────
+        //
+        // A plate on the wall for every disciple and a token in their hand.
+        // `docs/world/houses/trust.md` has carried the whole design under its
+        // own heading since it was written and NOTHING in the engine ever made
+        // one - `'token'` was a value of `ObjectKind` that nothing produced.
+        //
+        // Issued from the rung a house starts putting its name on somebody,
+        // which is the first rung that is a disciple rather than a servant.
+        const plateRoom = roomFor(WHERE_THE_PLATES_HANG);
+        for (const member of state.npcs) {
+            if (member.factionId !== house.id) continue;
+            if (member.status !== 'alive') continue;
+            if (!carriesATokenAt(member.factionRankIndex)) continue;
+            const issued = issueTo({
+                memberId: member.id,
+                memberName: member.name,
+                houseId: house.id,
+                houseName: name,
+                plateRoomId: plateRoom,
+                onDay: today
+            });
+            out.push(issued.token, issued.plate);
+        }
     }
 
     return out;
