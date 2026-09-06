@@ -61,7 +61,15 @@ export type WhyItMoved =
     | 'siphoned'
     | 'rebuilding'
     | 'indemnity'
-    | 'upkeep';
+    | 'upkeep'
+    /**
+     * Opened to reward somebody, which the elders had to agree to.
+     *
+     * Not a stipend. A stipend is what the house owes everybody at that rung
+     * and nobody votes on it; this is the house deciding one person is owed
+     * something extra, which is a decision and therefore has a room behind it.
+     */
+    | 'reward';
 
 export interface WhatTheMovementDid {
     before: number;

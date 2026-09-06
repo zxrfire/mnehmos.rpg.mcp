@@ -157,6 +157,23 @@ So never refuse a mechanic because it would make two runs diverge. Seeded determ
 stays where it is free and useful — a world that opens the same way is easier to debug —
 but it is a convenience, not a promise.
 
+### Objects are dead. People are alive.
+
+Behaviour belongs to people. An object has no preferences, refuses nothing, and decides
+nothing - it is a fact somebody acts on. When a rule reads like "a treasury spends more
+when losing", it is in the wrong place: what is true is that the ELDERS agree to open it,
+and the war moved the elders. Ask who decided, and put the rule on them.
+
+The exceptions are the ones that were built to act: an automaton left standing in a ruin,
+a sword flown at range by the person holding its handle somewhere else. Those act because
+somebody put an actor in them, and they are rare enough to name.
+
+Measured, on the first cut of the war treasury: a 3x3 table of spending shares keyed on
+how a war was going, and a second approval path for handing out weapons, beside a
+`whetherItLeavesTheStore` that already routed exactly that request to exactly that room.
+The rewrite deleted both and added ONE fact - a war moves what a person will part with -
+entering through the same door the ledger enters by.
+
 ### One store, and the reads are computed
 
 Redux keeps a single store with pure reducers and computes the rest in selectors, and

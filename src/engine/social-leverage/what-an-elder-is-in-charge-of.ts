@@ -227,6 +227,8 @@ export function whoseCallItIs(input: {
     asking?: string | null;
     ledger?: Parameters<typeof whatTheBodyWants>[0]['ledger'];
     asOfDay?: number;
+    /** How each decider reads. Forwarded, like the ledger, and never invented here. */
+    readingOf?: (personId: string) => number;
 }): WhoseCallItIs {
     const holderId = whoAnswersAbout(input.portfolios, input.purpose);
     const everyone = whoDecidesIn({ roll: input.roll, rankCount: input.rankCount });
@@ -242,7 +244,8 @@ export function whoseCallItIs(input: {
         rankCount: input.rankCount,
         ...(input.asking === undefined ? {} : { asking: input.asking }),
         ...(input.ledger === undefined ? {} : { ledger: input.ledger }),
-        ...(input.asOfDay === undefined ? {} : { asOfDay: input.asOfDay })
+        ...(input.asOfDay === undefined ? {} : { asOfDay: input.asOfDay }),
+        ...(input.readingOf === undefined ? {} : { readingOf: input.readingOf })
     });
 
     const theirCallAlone = holderId !== null && answer.settledBy === 'the elders';

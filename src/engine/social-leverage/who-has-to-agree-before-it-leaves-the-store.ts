@@ -155,12 +155,22 @@ export function whetherItLeavesTheStore(input: {
     askerId?: string | null;
     ledger?: Parameters<typeof whatTheBodyWants>[0]['ledger'];
     asOfDay?: number;
+    /**
+     * How each decider reads on THIS question.
+     *
+     * Forwarded and never interpreted. A caller with a reason the room would
+     * answer differently - a house half burned down being asked for its swords
+     * - supplies it here rather than growing a second approval path beside this
+     * one. Defaults to the one leaning the world writes for everybody.
+     */
+    readingOf?: (personId: string) => number;
 }): WhetherItLeavesTheStore {
     const height = howHighThisGoes(input);
     const shared = {
         ...(input.askerId === undefined ? {} : { asking: input.askerId }),
         ...(input.ledger === undefined ? {} : { ledger: input.ledger }),
-        ...(input.asOfDay === undefined ? {} : { asOfDay: input.asOfDay })
+        ...(input.asOfDay === undefined ? {} : { asOfDay: input.asOfDay }),
+        ...(input.readingOf === undefined ? {} : { readingOf: input.readingOf })
     };
 
     // ── THE WHOLE BODY ───────────────────────────────────────────────────
