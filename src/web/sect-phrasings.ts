@@ -248,6 +248,30 @@ export const SIPHON_PACE_PATTERNS: ReadonlyArray<[string, RegExp]> = [
 /**
  * Reading the books, which is not the same as taking anything out of them.
  */
+/**
+ * PUTTING IN, which is the mirror of {@link SIPHON_TAKING_VERBS}.
+ *
+ * Needed because the theft pattern matches on the NOUNS as well as the verbs -
+ * treasury, coffers, reserves - which is what makes "what do the sect reserves
+ * hold" a sentence about the treasury at all. The cost of that is that any
+ * sentence with the word in it lands on the theft branch, and measured:
+ *
+ *     I give 2000 stones to the sect treasury   ->   sect/siphon
+ *
+ * A player paying INTO the house was answered by the engine reading it as a
+ * robbery. That is the inversion `questions-a-sentence-cannot-carry.ts` names
+ * as the dangerous shape - *the confident opposite* - arriving by a different
+ * route than the one that file guards.
+ *
+ * So the theft branch yields to a giving verb in verb position, exactly as the
+ * donation branch already yields to a taking one. Two lists, checked both ways,
+ * and neither direction can claim a sentence that plainly says the other.
+ */
+export const HOUSE_GIVING_VERBS =
+    'donate|donates|donating|donated|gift|gifts|gifting|gifted|contribute|contributes|'
+    + 'contributing|contributed|give|gives|giving|gave|pay|pays|paying|paid|'
+    + 'hand over|hands over|handing over|put in|puts in|putting in';
+
 export const SIPHON_TAKING_VERBS =
     'steal|steals|stealing|stole|rob|robs|robbing|loot|loots|looting|plunder|plunders|'
     + 'pilfer|pilfers|siphon|siphons|siphoning|skim|skims|skimming|embezzle|embezzles|'

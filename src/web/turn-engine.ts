@@ -124,7 +124,7 @@ import {
     whatYourOwnHouseOpensAboutYou
 } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
-import { takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
+import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
@@ -10730,7 +10730,11 @@ ${fit.line}`;
     /**
      * Paying into the house's ledger instead of serving it.
      */
-    private donate(run: Run, cultivator: Cultivator, amount: number | undefined): Execution {
+    private async donate(
+        run: Run,
+        cultivator: Cultivator,
+        amount: number | undefined
+    ): Promise<Execution> {
         const held = this.repos.sects.getMembership(cultivator.id);
         const sect = held ? this.repos.sects.getById(held.sectId) : null;
         if (!held || !sect) {
@@ -10795,6 +10799,27 @@ ${fit.line}`;
         });
         persist();
 
+        // ── AND THE COFFERS, WHICH THE LINE BELOW ALREADY CLAIMED ────────
+        //
+        // The prose has said "into the house's coffers" since it was written
+        // and nothing ever put anything there: the player's purse went down and
+        // the house's treasury did not move. The exact mirror of the siphon,
+        // which took stones out of a house that never had them.
+        //
+        // Both ends now move `resources.spirit_stones` - the pot a gathering is
+        // paid out of, a patron pays into, and a rebuilding comes out of - so a
+        // house that has been given to can spend it, and a house that has been
+        // bled cannot.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const coffers = this.atHand?.factions.find(row => row.id === sect.id) ?? null;
+        const paidIn = coffers === null
+            ? null
+            : putIntoTheHouse(Number(coffers.resources.spirit_stones ?? 0), offered, 'donation');
+        if (coffers !== null && paidIn !== null) {
+            coffers.resources.spirit_stones = paidIn.after;
+            this.worldDirty = true;
+        }
+
         const after = this.repos.sects.getMembership(cultivator.id);
         const facts = factsForToolResult(
             `${credited} contribution, bought.`,
@@ -10810,6 +10835,10 @@ ${fit.line}`;
             `donate: ${offered} stones -> ${credited} contribution at ${rate} `
             + `(median duty span ${reference} days, discount ${DONATION_DISCOUNT}, floor ${floor}).`
         );
+        facts.structure.push(paidIn === null
+            ? 'No world row for this house, so the stones left the purse and reached no '
+              + 'treasury. The line about coffers is the one thing here that is not true.'
+            : `The coffers themselves: ${paidIn.account}`);
 
         const execution = this.freeAction(run, 'sect', facts);
         execution.calls = [{

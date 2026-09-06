@@ -37,6 +37,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SECTS } from '../../src/data/cultivation/index';
+import { parseIntent } from '../../src/web/actions';
 import {
     putIntoTheHouse,
     takeFromTheHouse
@@ -77,6 +78,80 @@ describe('the arithmetic', () => {
     it('is the same store in both directions', () => {
         const paid = putIntoTheHouse(takeFromTheHouse(1_000, 400, 'stipend').after, 400, 'donation');
         expect(paid.after).toBe(1_000);
+    });
+});
+
+describe('paying in, which is the same pot', () => {
+    /**
+     * THE PROSE ALREADY SAID SO. `donate` has printed "into the house's
+     * coffers" since it was written, and nothing put anything there: the
+     * player's purse went down and the treasury did not move. The exact mirror
+     * of the siphon, which took stones out of a house that never had them.
+     */
+    it('puts the stones into the house the line says they went to', async () => {
+        const harness = await makeGameInWorld({
+            seed: 'donate-in', worldSeed: 'world-donate-in'
+        });
+        const { cultivator } = await harness.game.newRun('Giver');
+        await harness.game.act('I look around');
+        harness.repos.sects.addMember(A_HOUSE.id, cultivator.id, 0);
+        harness.repos.cultivators.update(cultivator.id, {
+            realmOrdinal: 10, sectId: A_HOUSE.id, sectName: A_HOUSE.name, spiritStones: 5_000
+        });
+
+        const before = treasuryOf(harness.game, A_HOUSE.id);
+        await harness.game.act('I donate 2000 spirit stones to the sect');
+
+        expect(treasuryOf(harness.game, A_HOUSE.id) - before).toBe(2_000);
+        expect(harness.repos.cultivators.getById(cultivator.id)!.spiritStones).toBe(3_000);
+    }, 200_000);
+
+    /**
+     * AND GIVING IS NEVER READ AS TAKING. `SECT_THEFT_PATTERN` matches on the
+     * NOUNS - treasury, coffers, reserves - so a sentence that plainly pays in
+     * was answered as a robbery for having the word in it. The confident
+     * opposite, arriving by a different route than the one
+     * `questions-a-sentence-cannot-carry.ts` guards.
+     */
+    it('never reads a payment into the treasury as a theft from it', () => {
+        for (const sentence of [
+            'I give 2000 stones to the sect treasury',
+            'I pay 500 stones into the coffers',
+            'I hand over 300 spirit stones to the sect treasury'
+        ]) {
+            expect(parseIntent(sentence).intent, sentence).toBe('donate');
+        }
+    });
+
+    /** And the theft phrasings are exactly where they were. */
+    it('leaves every way of saying the crime alone', () => {
+        for (const sentence of [
+            'I siphon from the sect treasury',
+            'I steal from the sect treasury',
+            'I skim from the coffers',
+            'what do the sect reserves hold'
+        ]) {
+            expect(parseIntent(sentence).intent, sentence).toBe('siphon');
+        }
+    });
+
+    /**
+     * THE FIGURE CARRIES, WHICH IT DID NOT. `parseCount` reads at most three
+     * digits - right for a span of days, wrong for money - so every donation of
+     * a thousand or more arrived carrying nothing and was answered with the
+     * rate table instead of the payment.
+     */
+    it('carries a figure of any size, in every way somebody says it', () => {
+        for (const sentence of [
+            'I donate 2000 spirit stones to the sect',
+            'I donate 2000 stones',
+            'I donate 2000 to the sect',
+            'I contribute 2000 spirit stones'
+        ]) {
+            const plan = parseIntent(sentence) as { intent?: string; days?: number };
+            expect(plan.intent, sentence).toBe('donate');
+            expect(plan.days, sentence).toBe(2_000);
+        }
     });
 });
 

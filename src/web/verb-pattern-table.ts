@@ -189,6 +189,7 @@ import {
     SECT_INTENT_UNAMBIGUOUS,
     SIPHON_PACE_PATTERNS,
     SIPHON_TAKING_VERBS,
+    HOUSE_GIVING_VERBS,
     DEFAULT_SIPHON_PACE,
     SECT_ORDER_VERBS,
     SECT_SUBORDINATE_NOUNS,
@@ -197,6 +198,7 @@ import {
     DEFAULT_ERRAND
 } from './sect-phrasings.js';
 import type { SectIntent } from './sect-phrasings.js';
+import { stonesNamedIn } from './tool-result-prose.js';
 
 // Institutions acting on each other, and on the dead. By name, so
 // `institutionalAct`, `matterAsked` and `isTheActItself` - private before the
@@ -980,6 +982,32 @@ export const PLACE_HISTORY_PATTERNS: readonly RegExp[] = [
     /\b(?:the )?(?:history|story|stories) of (?:this|the)\b/,
     /\bhow did (?:this|the)\b.*\b(?:end up|come to be|get like this|get this way|happen)\b/
 ];
+
+/**
+ * What a donation names, in stones.
+ *
+ * `parseCount` reads at most three digits, which is right for a span of days
+ * and wrong for money: every donation of a thousand or more silently arrived
+ * carrying no figure, so "I donate 2000 spirit stones" was answered with the
+ * rate table instead of the payment.
+ *
+ * `stonesNamedIn` is the money reader and is asked first, but it wants the noun
+ * after the figure - and "I donate 2000 to the sect" does not have one. In a
+ * sentence that has already been decided to be a donation, a bare number is the
+ * amount and can be nothing else, so the last read takes it whatever its
+ * length. That is safe HERE and would not be safe in the table at large, which
+ * is why it is a donation's own reader rather than a change to `parseCount`.
+ */
+function theFigureInADonation(text: string): number | null {
+    const inStones = stonesNamedIn(text);
+    if (inStones !== null) return inStones;
+    const bare = /\b(\d[\d,]*)\b/.exec(text);
+    if (bare) {
+        const value = Number.parseInt(bare[1].replace(/,/g, ''), 10);
+        if (Number.isFinite(value) && value > 0) return value;
+    }
+    return parseCount(text);
+}
 
 /**
  * Asking what this ground makes, and what leaves it.
@@ -3295,7 +3323,12 @@ function planIntent(input: string): PlannedAction {
         // thing rather than a refusal: `siphon` takes from the reserves over
         // months, and the word "leave" inside a sentence about taking the
         // treasury must never reach the resignation branch.
-        if (SECT_THEFT_PATTERN.test(text)) {
+        // AND IT YIELDS TO SOMEBODY PAYING IN. `SECT_THEFT_PATTERN` matches on
+        // the nouns as well as the verbs, so "I give 2000 stones to the sect
+        // treasury" reached this branch on the word `treasury` alone and was
+        // answered as a robbery. The mirror of the guard the donation branch
+        // below already carries against taking verbs.
+        if (SECT_THEFT_PATTERN.test(text) && !usedAsVerb(text, HOUSE_GIVING_VERBS)) {
             const pace = SIPHON_PACE_PATTERNS.find(([, pattern]) => pattern.test(text));
             // Whether anybody is TAKING, as opposed to standing in front of the
             // vault talking about it. `SECT_THEFT_PATTERN` matches on the nouns too
@@ -3331,11 +3364,23 @@ function planIntent(input: string): PlannedAction {
     // defection and is answered as one - by the join path, out of real state,
     // rather than by a second verb that would have to decide the same thing again.
     // PAYING IN, instead of serving
-    if (/\b(?:donate|donation|give|gift|contribute|pay|hand over|offer)\b/.test(text)
-        && (A_HOUSE_IS_NAMED.test(text)
-            || /\b(?:contribution|treasury|coffers)\b/.test(text))
+    // `donate` and `contribute` need no house word: nobody DONATES to a
+    // shopkeeper, they buy from one, so the verb alone says which door this is.
+    // Measured, `I donate 2000 stones` and `I contribute 2000 spirit stones`
+    // both reached `unclear` for want of the word "sect" - two of the plainest
+    // ways anybody says this. `give` and `pay` stay gated, because those two
+    // are said to people as often as to houses.
+    if ((/\b(?:donate|donates|donating|donation|contribute|contributes|contributing)\b/.test(text)
+        || (/\b(?:give|gift|pay|hand over|offer)\b/.test(text)
+            && (A_HOUSE_IS_NAMED.test(text)
+                || /\b(?:contribution|treasury|coffers)\b/.test(text))))
         && !usedAsVerb(text, SIPHON_TAKING_VERBS)) {
-        const amount = parseCount(text);
+        // STONES AND NOT DAYS. `parseCount` reads at most three digits, which
+        // is right for a span and wrong for money: it silently dropped every
+        // donation of a thousand or more, so "I donate 2000 spirit stones"
+        // arrived carrying no figure at all and was answered with the rate
+        // table instead of the payment.
+        const amount = theFigureInADonation(text);
         return {
             action: 'sect',
             intent: 'donate',

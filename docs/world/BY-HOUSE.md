@@ -333,7 +333,7 @@ session somebody wrote down design that was already in the catalog.
 **Read:** [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 15 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 6 · [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 3 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 3 · [`techniques.ts`](../../src/data/cultivation/techniques.ts) 3
   …and 4 more files.
 
-**Constants most about it:** `FRAGMENT_TECHNIQUE_ORIGINS`, `DESTROYED_DAO_HOUSES`, `DORMANT_ARTS`, `SECTS`, `GRADE_BASELINE_OPACITY`, `WHY_ACCOUNTS_DISAGREE`
+**Constants most about it:** `FRAGMENT_TECHNIQUE_ORIGINS`, `DESTROYED_DAO_HOUSES`, `DORMANT_ARTS`, `GRADE_BASELINE_OPACITY`, `SECTS`, `WHY_ACCOUNTS_DISAGREE`
 
 ### Nine Stone Array
 
