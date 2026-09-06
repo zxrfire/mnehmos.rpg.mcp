@@ -118,7 +118,7 @@ describe('a player builds a carriage', () => {
         const prose = (said.narration ?? '').toLowerCase();
 
         // The rung gate is `canRefineGrade`, the same one the cauldron keeps.
-        expect(prose).toContain('void refinement');
+        expect(prose).toContain('void tribulation');
         // A refusal names a route.
         expect(prose).toContain('drawn carriage');
     }, 120_000);

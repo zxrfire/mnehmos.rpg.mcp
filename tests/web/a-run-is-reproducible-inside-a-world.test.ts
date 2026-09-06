@@ -109,6 +109,8 @@ describe('a run is reproducible inside a world, not on its own', () => {
             // strictly more than it used to: every round of a multi-turn fight
             // replays identically, not just the opening exchange.
             const calls: string[] = [];
+            // Read before the exchanges, because the player may not survive them.
+            const runId = cultivatorRow(db, cultivator.id).run_id as string;
             for (let round = 0; round <= MAX_EXCHANGES; round++) {
                 const result = await game.act(
                     round === 0 ? 'I attack someone of my own rank' : 'I keep swinging'
@@ -122,8 +124,17 @@ describe('a run is reproducible inside a world, not on its own', () => {
                     // fight now reaches `aDeedEntersTheWorld`, whose summary
                     // names both parties - so the ONLY thing that differed
                     // between two identical fights was that uuid.
+                    //
+                    // AND THE RUN'S OWN ID ON THE SAME RULE, which this had not
+                    // been scrubbing. A fight that kills the player reaches
+                    // `settleWhatTheyWereCarrying`, and its summary names the
+                    // run three times - the cache key, the run the cache is
+                    // written against, and the grave. Same uuid, same argument,
+                    // and it is the only thing two identical deaths differed by.
                     c => `${c.name}/${c.action}/${c.ok}/${
-                        c.summary.split(cultivator.id).join('<player>')}`
+                        c.summary
+                            .split(cultivator.id).join('<player>')
+                            .split(runId).join('<run>')}`
                 ));
                 if (calls.some(call => call.startsWith('combat_manage.'))) break;
                 if (!cultivatorRow(db, cultivator.id).alive) break;
