@@ -22,7 +22,7 @@ would fall in. The third pass landed, and what it changed is recorded there too.
 | [Sects are the state](#sects-are-the-state) | why there is no empire layer above a name |
 | [The other nouns](#the-other-nouns) | items, pills, herbs, artifacts, manuals, techniques |
 | [Weapons](#weapons-and-which-ones-get-a-name) | which ones get a name and which ones are an iron sword |
-| [What was rejected, and why](#what-was-rejected-and-why) | the two failed passes, and the third |
+| [What a name must not be](#what-a-name-must-not-be) | the standing prohibitions |
 | [What a rename costs](#what-a-rename-costs) | the mechanics, before you start |
 
 ---
@@ -157,10 +157,16 @@ Two consequences:
   no myth and the modifier answers the question instead of asking it. The image is
   usually already in the site's own description: what the frame in the relay yard is for
   is that the staff sweep around it, so it is *The Swept Gate*.
-- **A site is allowed to have no type noun**, and a colloquial name should not have one.
-  [`tone.md`](tone.md#naming-conventions) already rules this for ruins: what people who are
-  afraid of somewhere call it carries neither a type noun nor any poetry. *The Short Road*
-  and *The Living Ice* are correct for that reason and are not exceptions to this file.
+- **A site is allowed to have no type noun**, and a colloquial name often will not have one.
+  [`tone.md`](tone.md#naming-conventions) rules this for ruins: what people who are afraid of
+  somewhere call it carries neither a type noun nor any poetry. *The Short Road* and *The
+  Living Ice* are correct for that reason and are not exceptions to this file.
+- **Dropping the type noun does not license English furniture.** The licence above is about
+  ornament, not about language. A cairn is Gaelic; an overhang, a chimney, a cellar and a
+  bench are English domestic vocabulary, and a name built from them reads as an English
+  village however plain it is - the failure `ruin-and-scar-names.ts` rule 4 records under the
+  verdict HALF ROOF IS NOT XIANXIA. A colloquial name is plain in this world's register:
+  Chaotic Burial Mound, Black Wind Gap, Ghost Wail Cliff.
 
 ## Sects are the state
 
@@ -208,8 +214,8 @@ checked, and what it decided:
   the Silver Isle Rail became **the Silver Island Market**. Nothing else moved, because
   Burnt Earth, Six Li, Sand Well and Nine Peaks all kept their names.
 - **Left, and worth naming as left:** *Stone Marrow Hall* and *Ancient Bough Grove*
-  are English compounds where the rest of the catalog is not. They are a working guild
-  and a working grove, most things are ordinary, and neither is worth the sweep.
+  are English compounds where the rest of the catalog is not. They are a working assay
+  house and a working grove, most things are ordinary, and neither is worth the sweep.
 
 ## The other nouns
 
@@ -269,66 +275,28 @@ other. They are images now - The Long Life Candle, The Nine-Knot Cord, The Cinna
 The Closed Fan - and what `undeclared` buys is unchanged, because it was never the name
 carrying it.
 
-## What was rejected, and why
+## What a name must not be
 
 <!-- tier: 3 -->
 
-Two passes over this map have been rejected by the design owner. Both are recorded because
-they are the two ways a third would go wrong, and neither is obvious from the inside.
+**Ask what happened at the place, and see whether the name is the residue of an answer.**
+If a name could be swapped with one from the province next door without anything becoming
+false, it is a label rather than a name.
 
-**Pass one left English-fen names.** *Sweptground*, *Low Fall*, *Wide Field*, *The Blown
-Ground*, *Drowned Reach*, *Ninewatch*. Every one is a competent English landscape word.
-None of them reads as translated from anywhere, and together they sound like a marsh. The
-region ids still carry these - `region-low-fall`, `region-quiet-marches` - and that is
-deliberate: an id is written into saved worlds and is not a display name.
-
-**Pass two assembled names from vocabulary lists.** *Stone Ford*, *Grave Market*, *Dead
-Stone*. The design owner's verdict was that they are terrible, and the reason is visible
-in their shape: each is one word from a stock of landscape nouns bolted to one word from a
-stock of ominous adjectives, produced to fill a quota. No story is compressed in any of
-them, so no player can ask a question about one.
-
-The tell for both failures is the same. **Ask what happened at the place, and see whether
-the name is the residue of an answer.** If the name could be swapped with a name from the
-province next door without anything becoming false, it is a label rather than a name.
-
-Standing prohibitions, all of which produced one of the above:
+Standing prohibitions:
 
 - adjective stacking, and Supreme / Divine / Sacred / Eternal
 - names that sound like sects, techniques or titles when the thing is a place
 - names that explain the lore, or that are long in order to sound powerful
 - MMORPG zone names, and anything that reads as a combination of two word lists
+- English landscape and domestic vocabulary - fen, fall, reach, cairn, overhang,
+  chimney, cellar, bench - which reads as an English village however plain it is
+- a name assembled from a stock of landscape nouns bolted to a stock of ominous
+  adjectives to fill a quota: no story is compressed in one, so no player can ask a
+  question about it
 
-### The third pass, which landed
-
-The provinces went first and are `REGION_NAME`. The settlements followed:
-
-| Was | Is | Why |
-|---|---|---|
-| Stone Ford | Clear River Ford 清河渡 | Ford is the type noun the genre uses, and it puts the town and the Clear River Alliance that keeps it under one name |
-| Grave Market | Willow Village 柳村 | the register a starting settlement is in: plain, unremarkable, no poetry |
-| The Dead Stone | Nine Hundred Paces 九百步 | the burn edge has moved about that far since the survey was drawn, which the catalog already said |
-| Green Fall | Green Water City 绿水城 | Fall is an English landscape word; the province town takes City |
-| Sweetspring Isle | Sweet Spring Island 甘泉岛 | Isle out, Island in |
-| Silver Isle | Silver Island 银岛 | the same, and it renamed the Silver Island Market with it |
-| Bronze Bell Cape | Bronze Bell Cliff 铜钟崖 | Cape out, Cliff in |
-| The Boundless | Boundless Sea 无边海 | a name with no noun in it is a mood; the article goes |
-| The Waiting Sails | Waiting Sails | the article goes |
-| The Salt Fields | Salt Fields | the article goes |
-| Deep Snow | Deep Snow Village 深雪村 | a settlement takes its settlement word |
-| Old River | Old River Village 老河村 | the same |
-| - | Clear Creek Village 清溪村 | **added.** The home province had no `village` row at all |
-
-Kept, and each was looked at: Grain Rain, Four Graves, Nine Peaks, Burnt Earth, Iron Ridge,
-Six Li, Jade Face, Cold Peak, Orchid Valley, Orchid Terrace, The Far Shore, The Bitter
-Crossing, The Living Ice, The Short Road, Wind Market, Sand Well, Long Vein, Tuo's Wall,
-Halfway Gate, Dragonvein Rock, Three Walls, Autumn Gate, Cloud Gate, Stone Shadow - and
-**The White Stair**, for the reasons under [the type noun](#the-type-noun).
-
-**Adding Clear Creek Village moved the birth pool.** `INHABITED_KINDS` in `birth.ts` draws
-on `hamlet | village | market_town | sect_town | city`, and the Jade Gorge had a city, a
-market town and two sect towns and no village, so nobody could be born in one in the home
-province. That is now four settlement kinds against three and one more row in the draw.
+Region IDS still carry retired names - `region-low-fall`, `region-quiet-marches` - and that
+is deliberate: an id is written into saved worlds and is not a display name.
 
 ## What a rename costs
 

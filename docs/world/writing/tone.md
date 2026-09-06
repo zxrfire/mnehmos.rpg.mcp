@@ -202,10 +202,16 @@ it in has to be disambiguated from the rest of the sentence. Where a noun turns 
 sides, the mortal body moves - there are fewer of them and a player meets them last.
 
 **A ruin has two names, and which one you get is a fact about the reader.** The colloquial
-name is what people who only ever saw it call it - *Fallen Wall*, *Cloud Eaves*, *The
-Burn* - generated from what somebody saw, what happened there, or a name that is simply wrong.
-It carries no type noun and no poetry, **because a person naming something they are afraid of
-reaches for neither.** Do not formalise these.
+name is what people who only ever saw it call it - *Fallen Wall*, *Cloud Eaves*, *Ash Slope* -
+generated from what somebody saw, what happened there, or a name that is simply wrong. It
+carries no poetry and often no type noun, **because a person naming something they are afraid
+of reaches for neither.** Do not formalise these.
+
+**A colloquial name is plain in THIS world's register.** Unadorned and unpoetic, and still
+translated out of the same language as everything else: Chaotic Burial Mound, Black Wind Gap,
+Ghost Wail Cliff, Dead Man's Ford. Plainness is not a licence for English domestic vocabulary -
+a cairn, an overhang, a chimney, a cellar and a bench are village furniture, and a frightened
+person here does not reach for them.
 
 The **true name** is what the place actually was: whose seat it was, what it was built to hold,
 what sealed it. Both are real and both are in use at once - the way a site can be "the old
