@@ -114,7 +114,7 @@ export function rollAmbientQi(sample: number): AmbientQi {
 // world layer holds at `env_spiritual_density = 1.0`, unsealed - the richest
 // drawable ground in the world, where `ambientWeightsForDensity(1)` puts 98.4%
 // of its weight on `dense` - was told the qi was thin, six months running. None
-// of that 1.0 was in the arguments. The same omission also means `sealed` is
+// of that 1.0 was in the arguments. The same omission also means the pocket flag is
 // never passed, so `sealed_vein` is unreachable in play.
 //
 // This is not a regression in the roll. The roll is correct and `geology.test.ts`
@@ -259,10 +259,12 @@ export function ambientForLocationOnDay(
     day: number,
     opts: SiteConditions = {}
 ): AmbientQi {
-    // A sealed site does not roll and does not refresh. What is in there has
+    // AN UNOPENED POCKET does not roll and does not refresh. What is in there has
     // been in there since somebody closed it, and it stays until it is drawn
     // down - which is what makes it something to hold rather than to visit.
-    if (opts.sealed) return 'sealed_vein';
+    // Not a locked door and not a sealed person: see `SiteConditions.anUnopenedPocket`
+    // for the three words and what confusing two of them cost.
+    if (opts.anUnopenedPocket) return 'sealed_vein';
     const wholeDay = Number.isFinite(day) ? Math.floor(day) : 0;
     const rng = forStream(runSeed, 'ambient', locationId, wholeDay);
     // Anchored to the ground, always. A caller that knows the location's real
@@ -276,11 +278,50 @@ export function ambientForLocationOnDay(
 /** What the caller knows about a place that the ambient roll does not. */
 export interface SiteConditions {
     /**
-     * This location is a pocket nothing has drawn on: an unopened ruin, a
-     * sealed vein, a secret realm. Supplied by the world layer from real
-     * state; the engine holds no map and will never infer it.
+     * This site is a POCKET REALM THAT HAS NOT BEEN OPENED.
+     *
+     * Nothing has drawn on what is in there, which is the whole reason it is
+     * rich. Supplied by the world layer from real state; the engine holds no
+     * map and will never infer it.
+     *
+     * ── FOUR WORDS, ONE PER THING ───────────────────────────────────────
+     *
+     * The design owner, settling a collision that had cost real money:
+     *
+     *     seal          = people   a qi seal, taking what a person can draw
+     *     locked        = room     a door with a key on it
+     *     forbidden     = site     ground that kills you at the wrong rung
+     *     pocket realm  = site     a separate space, with an OPEN status
+     *
+     * `forbidden` was the first name tried here and it is the wrong one, which
+     * the owner caught: *"forbidden is not every site - some sites aren't
+     * forbidden, they're actually sealed, hence pocket realm"*, *"pocket realm
+     * (open status yes no)"*.
+     *
+     * And forbidden is not barred, which is the other half: *"you can still
+     * enter a forbidden realm - sects send people in there all the time.
+     * That's what the survival levels is for. At higher cultivations forbidden
+     * realms are a walk in the park."* So it is a `LocationThresholds.survival`
+     * question and not a permission one, and the machinery for it already
+     * exists. An unopened pocket is a different thing again: rich BECAUSE
+     * nobody has been in it. Only that one makes the qi stand.
+     *
+     * All three were `sealed`, and two of them met here. `LocationRecord.sealed`
+     * means a LOCKED DOOR - `architecture.ts` writes it from `PurposeSpec.sealed`
+     * and puts a `data.keyId` on the row two lines later - and this function
+     * returns `sealed_vein` the moment its flag is true, BEFORE it reads any
+     * density, and `sealed_vein` is the richest band in the game.
+     *
+     * Measured on a seeded world: 112 `sealed` locations, ELEVEN of them
+     * genuine unopened pockets and 101 locked doors - 36 treasuries, 27
+     * discipline halls, 23 archives - every one of them reporting the best
+     * cultivation ground in the world.
+     *
+     * A guard was added at the caller that was forwarding it. This is the other
+     * half: with three facts under three names, nothing can forward one as
+     * another by accident again.
      */
-    sealed?: boolean;
+    anUnopenedPocket?: boolean;
     /**
      * USABLE qi here, 0..1 - the world layer's `spiritualDensity`, not its
      * `qiDensity`. The distinction is load-bearing: a sealed ruin sits on a pocket

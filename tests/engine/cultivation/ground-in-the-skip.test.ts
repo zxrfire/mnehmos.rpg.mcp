@@ -72,7 +72,7 @@ describe('the skip honours the ground it is handed', () => {
 
     it('still lets a sealed pocket override the geology entirely', () => {
         expect(ambientDuringSkip(
-            { seed: SEED, locationId: RICH_PLACE, locationDensity: 1.0, sealed: true }, 0
+            { seed: SEED, locationId: RICH_PLACE, locationDensity: 1.0, anUnopenedPocket: true }, 0
         )).toBe('sealed_vein');
     });
 });

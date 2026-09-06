@@ -123,10 +123,10 @@ describe('which density a skip actually uses', () => {
     it('turns dead ground into the best in the game when a seal is passed', () => {
         const dead = rungsGained({ options: { ground: { density: 0.0 } } });
         const deadAndSealed = rungsGained({
-            sealed: true, options: { ground: { density: 0.0 } }
+            anUnopenedPocket: true, options: { ground: { density: 0.0 } }
         });
         const richAndSealed = rungsGained({
-            sealed: true, options: { ground: { density: 0.95 } }
+            anUnopenedPocket: true, options: { ground: { density: 0.95 } }
         });
 
         // Not an endorsement. The measurement, so the size of the trap is on

@@ -198,8 +198,15 @@ export interface TimeSkipContext {
      * seclusion quietly becoming a decade somewhere else.
      */
     locationDensity?: number;
-    /** The location is a sealed pocket nothing has drawn on. */
-    sealed?: boolean;
+    /**
+     * This site is a POCKET REALM THAT HAS NOT BEEN OPENED.
+     *
+     * Not `sealed`, on the owner's vocabulary: seal is people, locked is a room,
+     * forbidden is ground a house bars, and a pocket realm is a separate space
+     * with an open status. Only the last makes the qi stand. See
+     * `SiteConditions.anUnopenedPocket`.
+     */
+    anUnopenedPocket?: boolean;
     /**
      * The identity this cultivator's PER-CULTIVATOR draws are keyed on.
      */
@@ -398,14 +405,14 @@ export function simulateTimeSkip(
      * ground answers next, and the name hash is what is left for a caller that
      * knows neither - which is now only a test.
      *
-     * ── AND `sealed` IS DELIBERATELY NOT JOINED HERE ─────────────────────
+     * ── AND THE POCKET FLAG IS DELIBERATELY NOT JOINED HERE ─────────────
      *
      * `ambientForLocationOnDay` short-circuits to `sealed_vein` the moment
-     * `sealed` is true, BEFORE it reads any density - and `sealed_vein` is the
-     * richest band in the game and the only one that carries anybody past
-     * ordinal 32. Passing a sealed ruin's real density alongside its seal
-     * would hand the thinnest ground in the world the best rate in it. The
-     * seal is a separate ruling and does not ride in on this one.
+     * `anUnopenedPocket` is true, BEFORE it reads any density - and `sealed_vein` is
+     * the richest band in the game and the only one that carries anybody past
+     * ordinal 32. Passing a locked vault's real density alongside a pocket flag
+     * would hand the thinnest ground in the world the best rate in it. Whether
+     * a pocket is open is a separate ruling and does not ride in on this one.
      */
     const groundDensity = ctx.locationDensity
         ?? ctx.options?.ground?.density
@@ -598,7 +605,7 @@ export function simulateTimeSkip(
         }
         const ambient = ambientForBlock(ctx.seed, ctx.locationId, absDay, {
             density: groundDensity,
-            sealed: ctx.sealed
+            anUnopenedPocket: ctx.anUnopenedPocket
         });
 
         if (autoBreakthrough) {
@@ -1707,6 +1714,6 @@ export function skipInjury(
 export function ambientDuringSkip(ctx: TimeSkipContext, absDay: number): AmbientQi {
     return ambientForBlock(ctx.seed, ctx.locationId, absDay, {
         density: ctx.locationDensity,
-        sealed: ctx.sealed
+        anUnopenedPocket: ctx.anUnopenedPocket
     });
 }

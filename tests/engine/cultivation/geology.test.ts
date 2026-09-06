@@ -140,7 +140,7 @@ describe('the weight table itself', () => {
     });
 
     it('still honours a declared sealed site over the geology', () => {
-        expect(ambientForBlock('s', 'ruin', 0, { density: 0.05, sealed: true }))
+        expect(ambientForBlock('s', 'ruin', 0, { density: 0.05, anUnopenedPocket: true }))
             .toBe('sealed_vein');
     });
 
