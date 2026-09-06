@@ -3,6 +3,7 @@
  */
 
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getTechnique } from '../data/cultivation/index.js';
 import {
     type AdmissionReading,
@@ -39,7 +40,7 @@ import {
     type SiteIntent
 } from './actions.js';
 import { applyTimeSkip } from './apply.js';
-import { type DatabaseHandle, PLAYER_ROLL_IDENTITY, writeObligation } from './encounters.js';
+import { type DatabaseHandle, PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { worldLocationFor } from './entities.js';
 import {
     type SiteFace,
@@ -1208,7 +1209,7 @@ export const siteVerbs = {
                 dueOnDay: null,
                 tags: ['site', site.kind, site.id]
             });
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
 
             // Said to the player as a fact about the world, not as a warning.
             // Whether they can name the house is the discovery layer's

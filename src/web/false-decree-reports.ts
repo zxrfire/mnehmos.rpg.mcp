@@ -27,6 +27,7 @@
  * it over the offender's head where the offender holds the room.
  */
 
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import {
     type IfCaught,
     ifCaughtAtSomethingTheHousePunishes,
@@ -50,7 +51,7 @@ import { ledgerAbout } from '../storage/repos/obligation.repo.js';
 import type { ContactPerson } from '../engine/encounters/contact.js';
 import type { SectAlignment } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
-import { type DatabaseHandle, writeObligation } from './encounters.js';
+import { type DatabaseHandle } from './encounters.js';
 
 /** The tag that says a row came out of somebody watching and telling. */
 export const REPORTED_BY_A_WITNESS = 'reported_by_a_witness';
@@ -175,7 +176,7 @@ export function reportWhatTheySaw(input: ReportInput): TheReport {
             ...opened,
             tags: [...(opened.tags ?? []), REPORTED_BY_A_WITNESS]
         });
-        writeObligation(input.repos.db as unknown as DatabaseHandle, record);
+        writeOneObligation(input.repos.db as unknown as DatabaseHandle, record);
         return { witness, what, doing, record, toId: what.toId };
     }
 
@@ -196,7 +197,7 @@ export function reportWhatTheySaw(input: ReportInput): TheReport {
             participants: [witness.id],
             tags: [KEPT_TO_THEMSELVES]
         });
-        writeObligation(input.repos.db as unknown as DatabaseHandle, record);
+        writeOneObligation(input.repos.db as unknown as DatabaseHandle, record);
         return { witness, what, doing: 'nothing', record, toId: null };
     }
 
@@ -242,6 +243,6 @@ export function settleAComplaint(
         byId: input.byId,
         note: input.note
     });
-    writeObligation(repos.db as unknown as DatabaseHandle, settled);
+    writeOneObligation(repos.db as unknown as DatabaseHandle, settled);
     return settled;
 }

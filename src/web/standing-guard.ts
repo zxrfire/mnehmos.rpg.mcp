@@ -54,6 +54,7 @@
  * to you is not available; standing there for somebody who is can end you.
  */
 
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import {
     MAX_PROTECTION_BONUS,
     protectionAsAShareOfTheBase,
@@ -82,7 +83,7 @@ import { markDead } from '../engine/world/npc-state.js';
 import { recordCrossing } from '../engine/world/recording-what-a-crossing-did.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { createObligation } from '../engine/social/grudges.js';
-import { writeObligation, type DatabaseHandle } from './encounters.js';
+import { type DatabaseHandle } from './encounters.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import { factsForRefusal, factsForToolResult } from './facts.js';
 import { refused } from './tool-result-prose.js';
@@ -493,7 +494,7 @@ export const guardVerbs = {
             // pricer, the same ledger, the same fact id on every row.
             for (const opens of deed.leaves?.opens ?? []) {
                 const record = createObligation({ ...opens, triggeringEventId: deed.fact.id });
-                writeObligation(this.db as unknown as DatabaseHandle, record);
+                writeOneObligation(this.db as unknown as DatabaseHandle, record);
                 calls.push({
                     name: 'social.createObligation',
                     action: 'guard',

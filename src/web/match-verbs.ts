@@ -3,6 +3,7 @@
  */
 
 import { favourStanceOf } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getSect } from '../data/cultivation/index.js';
 import { intakeRouteOf } from '../data/cultivation/sects.js';
 import { spendAWord, wasPlaced } from '../engine/birth/spending-a-word-to-place-a-child.js';
@@ -46,8 +47,7 @@ import {
     openLedgerBetween,
     recordTheTieAnAttemptLeft,
     theChildrenTheyRaised,
-    tieFrom,
-    writeObligation
+    tieFrom
 } from './encounters.js';
 import { factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused } from './tool-result-prose.js';
@@ -593,7 +593,7 @@ export const matchVerbs = {
             });
             for (const row of refused?.opens ?? []) {
                 const record = createObligation(row);
-                writeObligation(this.db as unknown as DatabaseHandle, record);
+                writeOneObligation(this.db as unknown as DatabaseHandle, record);
                 calls.push({
                     name: 'engine.whatRefusingAMatchTheyAlreadyMadeLeaves',
                     action: 'propose',
@@ -693,10 +693,10 @@ export const matchVerbs = {
             for (const row of [cost.onTheLedger?.reopened, cost.onTheLedger?.opened]) {
                 if (!row) continue;
                 const record = createObligation(row);
-                writeObligation(this.db as unknown as DatabaseHandle, record);
+                writeOneObligation(this.db as unknown as DatabaseHandle, record);
                 written.push(`${record.kind} at ${record.severity}, held by ${record.holderId}`);
             }
-            writeObligation(
+            writeOneObligation(
                 this.db as unknown as DatabaseHandle,
                 settleObligation(binding, {
                     resolution: 'oath_released',
@@ -794,7 +794,7 @@ export const matchVerbs = {
         const written: string[] = [];
         for (const row of leaves.left?.opens ?? []) {
             const record = createObligation(row);
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
             written.push(`${record.kind} at ${record.severity}, held by ${record.holderId}`);
         }
 
@@ -1074,7 +1074,7 @@ export const matchVerbs = {
             ));
         }
 
-        writeObligation(this.db as unknown as DatabaseHandle, result.obligation);
+        writeOneObligation(this.db as unknown as DatabaseHandle, result.obligation);
         recordTheTieAnAttemptLeft(
             this.repos, cultivator.id, askedOfId, today,
             {

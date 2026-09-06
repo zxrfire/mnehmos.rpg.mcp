@@ -16,7 +16,7 @@
  * ── WHY THIS IS NOT A REPOSITORY ─────────────────────────────────────────
  *
  * It wants to be `src/storage/repos/stage.repo.ts` and it is not one yet, for
- * the same reason `writeObligation` in `encounters.ts` is not: the tables are
+ * the same reason `writeOneObligation` in `encounters.ts` is not: the tables are
  * new, this is their only caller, and lifting them into the repository layer is
  * a move somebody who owns that directory should make rather than something to
  * assume in passing. When it happens these five functions become calls to it

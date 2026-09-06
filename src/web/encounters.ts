@@ -2,6 +2,7 @@
  * The turn loop's adapter onto `src/engine/encounters/`.
  */
 
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import {
     rollEncounters,
     arrivableFromUnheard,
@@ -649,56 +650,6 @@ export function fitOf(cultivator: Cultivator, technique: Parameters<typeof findF
 
 // -- the ledger -----------------------------------------------------------
 
-/**
- * Write an obligation row.
- */
-export function writeObligation(
-    db: DatabaseHandle | { prepare: (sql: string) => never },
-    record: ObligationRecord
-): ObligationRecord {
-    return writeObligationRow(db as DatabaseHandle, record);
-}
-
-function writeObligationRow(db: DatabaseHandle, record: ObligationRecord): ObligationRecord {
-    db.prepare(`
-        INSERT OR REPLACE INTO obligations (
-            id, kind, holder_id, subject_id, cause, severity, incurred_on_day,
-            triggering_event_id, description, participants, tags, terms, due_on_day,
-            status, settlement_resolution, settled_on_day, settled_by_id, settlement_note,
-            inheritance, generation, origin_holder_id, from_belief, recorded_on_day
-        ) VALUES (
-            @id, @kind, @holderId, @subjectId, @cause, @severity, @incurredOnDay,
-            @triggeringEventId, @description, @participants, @tags, @terms, @dueOnDay,
-            @status, @settlementResolution, @settledOnDay, @settledById, @settlementNote,
-            @inheritance, @generation, @originHolderId, @fromBelief, @recordedOnDay
-        )
-    `).run({
-        id: record.id,
-        kind: record.kind,
-        holderId: record.holderId,
-        subjectId: record.subjectId,
-        cause: record.cause,
-        severity: record.severity,
-        incurredOnDay: record.incurredOnDay,
-        triggeringEventId: record.triggeringEventId,
-        description: record.description,
-        participants: JSON.stringify(record.participants),
-        tags: JSON.stringify(record.tags),
-        terms: record.terms,
-        dueOnDay: record.dueOnDay,
-        status: record.status,
-        settlementResolution: record.settlement?.resolution ?? null,
-        settledOnDay: record.settlement?.onDay ?? null,
-        settledById: record.settlement?.byId ?? null,
-        settlementNote: record.settlement?.note ?? null,
-        inheritance: JSON.stringify(record.inheritance),
-        generation: record.generation,
-        originHolderId: record.originHolderId,
-        fromBelief: record.fromBelief ? 1 : 0,
-        recordedOnDay: record.recordedOnDay
-    });
-    return record;
-}
 
 /** Minimal shape of the handle `repos.db` is. Avoids a value import. */
 export interface DatabaseHandle {
@@ -726,7 +677,7 @@ export interface DutyLedgerInput {
  */
 export function acceptDuty(input: DutyLedgerInput): ObligationRecord {
     const { duty, cultivator } = input;
-    return writeObligation(input.repos.db as unknown as DatabaseHandle, createOath({
+    return writeOneObligation(input.repos.db as unknown as DatabaseHandle, createOath({
         holderId: cultivator.id,
         subjectId: duty.factionId ?? 'unaffiliated',
         cause: duty.origin === 'summons' ? 'sect_vow' : 'service_term',
@@ -775,7 +726,7 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
 
     let credited = 0;
     repos.db.transaction(() => {
-        writeObligation(repos.db as unknown as DatabaseHandle, settled);
+        writeOneObligation(repos.db as unknown as DatabaseHandle, settled);
         if (duty.factionId && duty.contribution > 0) {
             repos.sects.addContribution(duty.factionId, cultivator.id, duty.contribution);
             credited = duty.contribution;
@@ -823,7 +774,7 @@ export function refuseDuty(
         tags: ['duty', duty.origin, input.outcome, input.entryId]
     });
 
-    writeObligation(input.repos.db as unknown as DatabaseHandle, record);
+    writeOneObligation(input.repos.db as unknown as DatabaseHandle, record);
 
     return {
         obligation: record,

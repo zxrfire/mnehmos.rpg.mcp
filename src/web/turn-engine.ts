@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import type { ManualQuality, SectAlignment } from '../schema/cultivation.js';
 import type { ManualBand } from '../engine/cultivation/cultivation.js';
 import type Database from 'better-sqlite3';
@@ -409,7 +410,6 @@ import {
     fitOf,
     seekerFor,
     sectBoardFor,
-    writeObligation,
     rosterFor,
     type DatabaseHandle,
     type DutyLedgerInput
@@ -3652,10 +3652,10 @@ ${noticed}`;
             for (const row of [cost.reopened, cost.opened]) {
                 if (!row) continue;
                 const record = createObligation(row);
-                writeObligation(this.db as unknown as DatabaseHandle, record);
+                writeOneObligation(this.db as unknown as DatabaseHandle, record);
                 written.push(`${record.kind} at ${record.severity}, held by ${record.holderId}`);
             }
-            writeObligation(
+            writeOneObligation(
                 this.db as unknown as DatabaseHandle,
                 settleObligation(binding, {
                     resolution: 'oath_released',
@@ -3722,7 +3722,7 @@ ${noticed}`;
                 for (const hitId of new Set(struck.tookItInstead)) {
                     const them = this.repos.cultivators.getById(hitId);
                     if (!them) continue;
-                    writeObligation(
+                    writeOneObligation(
                         this.db as unknown as DatabaseHandle,
                         createObligation({
                             kind: 'grudge',
@@ -3935,7 +3935,7 @@ ${noticed}`;
             participants: [party.id, ...(witnessed ? [THE_OATHWRIGHT_HOUSE] : [])],
             tags: ['sworn', `cause:${cause}`, witnessed ? 'witnessed' : 'unwitnessed']
         });
-        writeObligation(this.db as unknown as DatabaseHandle, record);
+        writeOneObligation(this.db as unknown as DatabaseHandle, record);
 
         const facts = factsForToolResult(
             `A word given to ${party.name}.`,
@@ -5068,7 +5068,7 @@ ${noticed}`;
         const opened: ToolCallRecord[] = [];
         for (const account of asked.opens) {
             const record = createObligation(account.row);
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
             opened.push({
                 name: 'social.createObligation',
                 action: 'news',
@@ -5157,7 +5157,7 @@ ${noticed}`;
         const calls: ToolCallRecord[] = [];
         if (landedOn.opens !== null) {
             const record = createObligation(landedOn.opens);
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
             calls.push({
                 name: 'social.createObligation',
                 action: 'tell',
@@ -6759,7 +6759,7 @@ ${line}`;
         // AND THE ACCOUNTS IT OPENS
         for (const opens of left.leaves!.opens) {
             const record = createObligation({ ...opens, triggeringEventId: deed.fact.id });
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
             calls.push({
                 name: 'social.createObligation',
                 action: 'hunt',
@@ -8023,7 +8023,7 @@ ${opened.text}` : receipt,
 
             if (outcome.favour) {
                 const record = createObligation(outcome.favour);
-                writeObligation(this.db as unknown as DatabaseHandle, record);
+                writeOneObligation(this.db as unknown as DatabaseHandle, record);
                 outcome.calls.push({
                     name: 'social.createObligation',
                     action: 'give',
@@ -8503,7 +8503,7 @@ ${opened.text}` : receipt,
                 ...(sellerIsOfTheHouse ? ['their_own_house'] : [])
             ]
         });
-        writeObligation(this.db as unknown as DatabaseHandle, held);
+        writeOneObligation(this.db as unknown as DatabaseHandle, held);
         calls.push({
             name: 'social.createObligation',
             action: 'sell',
@@ -8533,7 +8533,7 @@ ${opened.text}` : receipt,
         }
 
         if (answer.indenture) {
-            writeObligation(
+            writeOneObligation(
                 this.db as unknown as DatabaseHandle,
                 createObligation(answer.indenture.oath)
             );
@@ -8654,7 +8654,7 @@ ${opened.text}` : receipt,
         );
 
         const record = createObligation(opened);
-        writeObligation(this.db as unknown as DatabaseHandle, record);
+        writeOneObligation(this.db as unknown as DatabaseHandle, record);
         return [
             {
                 name: 'social.theComplaintYourHouseReceives',
@@ -9814,7 +9814,7 @@ ${fit.line}`;
         this.worldDirty = true;
 
         if (taken.record) {
-            writeObligation(
+            writeOneObligation(
                 this.repos.db as unknown as DatabaseHandle,
                 createObligation(taken.record)
             );
@@ -10608,7 +10608,7 @@ ${fit.line}`;
                     }
                     : mark
             );
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
             wroteToTheLedger = true;
             calls.push({
                 name: 'social.createObligation',
@@ -10668,7 +10668,7 @@ ${fit.line}`;
                 if (open.kind !== 'grudge') continue;
                 if (open.holderId !== party.id || open.subjectId !== cultivator.id) continue;
                 if (!open.tags.includes('refused_approach')) continue;
-                writeObligation(this.db as unknown as DatabaseHandle, settleObligation(open, {
+                writeOneObligation(this.db as unknown as DatabaseHandle, settleObligation(open, {
                     resolution: 'forgiven',
                     onDay: Math.floor(run.elapsedDays),
                     byId: party.id,

@@ -3,6 +3,7 @@
  */
 
 import { getSect } from '../data/cultivation/index.js';
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { transmissionsBy } from '../data/cultivation/techniques.js';
 import { earningsPerYear } from '../engine/cultivation/origin.js';
 import { forStream } from '../engine/cultivation/rng.js';
@@ -94,8 +95,7 @@ import { askedAbout } from './asked.js';
 import {
     type DatabaseHandle,
     openLedgerBetween,
-    tieFrom,
-    writeObligation
+    tieFrom
 } from './encounters.js';
 import {
     type KnowledgeScope,
@@ -901,7 +901,7 @@ ${unnamed}`;
                     : lifted !== null ? [`took:${lifted.taken}`] : [])
             ]
         });
-        writeObligation(this.db as unknown as DatabaseHandle, held);
+        writeOneObligation(this.db as unknown as DatabaseHandle, held);
         calls.push({
             name: 'social.createObligation',
             action: 'interact',

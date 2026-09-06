@@ -3,6 +3,7 @@
  */
 
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
+import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getPill, getSect, getTechnique } from '../data/cultivation/index.js';
 import { requireRegion } from '../data/cultivation/regions.js';
 import { SECTS, sectThreat } from '../data/cultivation/sects.js';
@@ -81,7 +82,7 @@ import {
     whatTheActDidNotReach
 } from './acts-over-a-set.js';
 import { whoTheyCarryFor } from './what-a-telling-lands-on.js';
-import { type DatabaseHandle, PLAYER_ROLL_IDENTITY, writeObligation } from './encounters.js';
+import { type DatabaseHandle, PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { resolveCultivator, resolvePill } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
 import { type StandingFight, theFightStillStands } from './fight-answers.js';
@@ -1068,7 +1069,7 @@ export const combatVerbs = {
                 onDay,
                 description: seed.description
             });
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
             execution.calls.push({
                 name: 'social.createObligation',
                 action: held.verb,
@@ -1156,7 +1157,7 @@ export const combatVerbs = {
 
         for (const opens of deed.leaves?.opens ?? []) {
             const record = createObligation({ ...opens, triggeringEventId: deed.fact.id });
-            writeObligation(this.db as unknown as DatabaseHandle, record);
+            writeOneObligation(this.db as unknown as DatabaseHandle, record);
             execution.calls.push({
                 name: 'social.createObligation',
                 action: 'attack',
@@ -1376,7 +1377,7 @@ export const combatVerbs = {
                 ...carried.map(row => `object:${row.id}`)
             ]
         });
-        writeObligation(this.db as unknown as DatabaseHandle, opened);
+        writeOneObligation(this.db as unknown as DatabaseHandle, opened);
         execution.facts.structure.push(
             `${held.party.name} now holds a ${opened.severity} grudge about `
             + `${verdict.grudge.cause}, open until somebody settles it. Weighed as `
@@ -1482,7 +1483,7 @@ export const combatVerbs = {
             row.soulState = after.soulState;
             row.identityContinuity = after.identityContinuity;
             row.tags = [...after.tags];
-            writeObligation(this.db as unknown as DatabaseHandle, createObligation(
+            writeOneObligation(this.db as unknown as DatabaseHandle, createObligation(
                 whatBeingMadeIntoAThingOpens({
                     victimId: held.party.id,
                     holderId: cultivator.id,
@@ -1869,7 +1870,7 @@ export const combatVerbs = {
 
         if (opens.length > 0) {
             for (const row of opens) {
-                writeObligation(this.db as unknown as DatabaseHandle, createObligation(row));
+                writeOneObligation(this.db as unknown as DatabaseHandle, createObligation(row));
                 calls.push({
                     name: row.kind === 'blood_feud'
                         ? 'social.createBloodFeud' : 'social.createGrudge',
