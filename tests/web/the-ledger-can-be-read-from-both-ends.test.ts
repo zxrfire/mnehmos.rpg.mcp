@@ -114,7 +114,7 @@ describe('asking what the ledger holds', () => {
         // consulting the world roster - so the line read "Held against you by
         // npc-20" while the description under it named them. A raw id in player
         // prose is the one thing the entity layer exists to prevent.
-        expect(after, after).not.toMatch(/npc-\d+/);
+        expect(after, after).not.toMatch(/\bnpc-\d+\b/);
         const whoTookIt = /Held against you by ([^:]+):/.exec(after);
         expect(whoTookIt, after).not.toBeNull();
         expect(after).toContain(whoTookIt![1]);

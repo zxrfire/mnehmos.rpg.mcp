@@ -1832,6 +1832,35 @@ const TAKEN_ON_AS_SOMETHING = /\b(?:as|into) (?:a |an |my |his |her |their |our 
 const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|exterminate|wipe out|slaughter|massacre|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for|cut|slit|slash|stab|knife|strangle|throttle|poison|cripple|break|snap|crush|sever|hack|tear|rip/;
 
 /**
+ * Settling a thing with your hands, which is a fight and reads as none of the
+ * attack verbs.
+ *
+ * Measured on the oblique corpus: *"I settle this with my fists"* reached
+ * `cultivate` - `settle` is one of the sitting words - so a player throwing a
+ * punch spent a span of years breathing instead. That is the failure the
+ * corpus banner calls the one that cannot be recovered downstream: the engine
+ * never learns force was used.
+ *
+ * Kept to the hands. `settle this` alone is coming to terms, which is
+ * `negotiate`, and settling anywhere is where somebody lives.
+ */
+export const SETTLED_WITH_HANDS =
+    /\b(?:settle|settles|settling|settled|sort|sorts|sorting|sorted|finish|finishes|end|ends)\b[^.!?]{0,24}\b(?:with|using)\s+(?:my|our|his|her|their|bare)?\s*\b(?:fists?|hands?|knuckles)\b/;
+
+/**
+ * Sitting words that are not sitting.
+ *
+ * `sit` and `settle` are the weak members of the cultivation list: every other
+ * word in it means cultivation and nothing else, and these two carry idioms.
+ * `sit tight` is waiting, which the branch below cultivation owns.
+ */
+export const SITTING_THAT_IS_NOT_CULTIVATION = new RegExp([
+    SETTLED_WITH_HANDS.source,
+    String.raw`\bsits?\s+tight\b`,
+    String.raw`\bsitting\s+tight\b`
+].join('|'), 'i');
+
+/**
  * Phrases where an attack word is part of an idiom about something else.
  */
 const AN_ATTACK_WORD_INSIDE_AN_IDIOM =
@@ -1858,8 +1887,12 @@ const THE_PART_IS_NOT_THE_PERSON = [
 ];
 
 /** The verbs that have no innocent object once a person is on the end of them. */
-const VIOLENCE_WITH_NO_OTHER_READING =
-    /\b(?:stab|stabs|stabbing|stabbed|knife|knifes|knifing|gut|guts|disembowel|disembowels|strangle|strangles|throttle|throttles|smother|smothers|drown|drowns|poison|poisons|poisoning)\b|\bput (?:my|the|a) (?:knife|blade|dagger|sword|spear) (?:in|into|through)\b/;
+const VIOLENCE_WITH_NO_OTHER_READING = new RegExp([
+    String.raw`\b(?:stab|stabs|stabbing|stabbed|knife|knifes|knifing|gut|guts|disembowel|disembowels|strangle|strangles|throttle|throttles|smother|smothers|drown|drowns|poison|poisons|poisoning)\b`,
+    String.raw`\bput (?:my|the|a) (?:knife|blade|dagger|sword|spear) (?:in|into|through)\b`,
+    // Bare hands are a weapon, and were the one the table had never heard of.
+    SETTLED_WITH_HANDS.source
+].join('|'));
 
 /**
  * Taking somebody's cultivation off them, which this world holds to be worse
@@ -3337,7 +3370,11 @@ function planIntent(input: string): PlannedAction {
     // another person became a month of seclusion. The verb forms are
     // enumerated now, and they must be in verb position; the noun forms
     // (`cultivator`, `cultivators`) are deliberately absent from the list.
-    if (usedAsVerb(text, 'cultivate|cultivates|cultivating|meditate|meditates|meditating|'
+    // AND TWO OF THE SITTING WORDS ARE NOT ALWAYS SITTING. See
+    // `SITTING_THAT_IS_NOT_CULTIVATION`: both idioms were reaching a span of
+    // years, which is the most expensive thing this table can do to somebody.
+    if (!SITTING_THAT_IS_NOT_CULTIVATION.test(text)
+        && (usedAsVerb(text, 'cultivate|cultivates|cultivating|meditate|meditates|meditating|'
         + 'seclude|secludes|circulate|circulates|circulating|absorb|absorbs|absorbing|'
         + 'breathe|breathes|breathing|sit|sits|settle|settles')
         || /\b(?:in seclusion|into seclusion|gather qi|refine qi|closed[- ]?door cultivation|my cultivation practice)\b/.test(text)
@@ -3349,7 +3386,7 @@ function planIntent(input: string): PlannedAction {
         // cultivating is.
         || /\b(?:train|trains|training|rest|rests|resting)\s+for\b/.test(text)
         || /\b(?:make|makes|making|set|sets|setting)\s+(?:up\s+)?camp\b/.test(text)
-        || /\b(?:go|goes|going)\s+to\s+sleep\b/.test(text)) {
+        || /\b(?:go|goes|going)\s+to\s+sleep\b/.test(text))) {
         // -- AND WHETHER SOMEBODY IS SITTING IT WITH THEM -----------------
         const alongside = whoIsSittingWithThem(input);
         return {
@@ -3360,7 +3397,7 @@ function planIntent(input: string): PlannedAction {
     }
 
     // AND THE LANGUAGE OF RECOVERY, WHICH IS NOT THE LANGUAGE OF SITTING
-    if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger|loiter|listen|listening|eavesdrop|hang about|hang around)\b/.test(text)
+    if (/\b(?:wait|rest|sleep|pass the time|do nothing|linger|loiter|listen|listening|eavesdrop|hang about|hang around|sits? tight|sitting tight|let some time pass|let time pass|bide my time)\b/.test(text)
         || /\b(?:lie up|lies up|lying up|lie low|lies low|lying low|recover|recovers|recovering|recuperate|recuperates|recuperating|convalesce|stay off it|stay off my feet|keep off my feet|stay in bed|take it easy)\b/.test(text)
         || /\b(?:let|leave)\s+(?:it|them|the wound|the wounds|my wounds?|my meridians?)\s+(?:heal|mend|close|knit|settle)\b/.test(text)
         || /\buntil\s+(?:the\s+)?(?:wound|wounds|injury|injuries|meridians?)\b[^.!?]{0,20}\b(?:closed?|heals?|healed|mends?|mended|knits?)\b/.test(text)
