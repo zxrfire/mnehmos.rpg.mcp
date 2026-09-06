@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -724,6 +725,15 @@ export async function handleConsumePill(
 
     const after = repos.cultivators.getById(cultivator.id)!;
     const runAfter = repos.runs.getById(run.id)!;
+
+    // AND THE WORLD SPENT THEM TOO. This used to move only the run's clock,
+    // leaving the world behind by exactly these days until something noticed
+    // and ran `catchUp` - which simulates the gap with no access and no
+    // observer, so nothing that happened in it was ever knowable to the person
+    // who spent it. A month at a furnace was a month that happened to
+    // everybody except them.
+    const daysSpent = change.overdraw?.days ?? 0;
+    if (daysSpent > 0) await theseDaysPassedInTheWorldToo(runAfter, after, daysSpent);
 
     return {
         consumed: true,

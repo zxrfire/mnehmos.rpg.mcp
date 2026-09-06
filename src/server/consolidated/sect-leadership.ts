@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
 import { CultivationRNG } from '../../engine/cultivation/rng.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import { DAYS_PER_YEAR } from '../../engine/cultivation/cultivation.js';
@@ -158,6 +159,10 @@ function spendYears(
         repos.runs.advanceDays(view.run.id, days);
         view.ledger.accruedToDay = view.run.elapsedDays + days;
     }
+    // RETURNED SO THE CALLER CAN SPEND THEM IN THE WORLD TOO. This function
+    // moves only the run's clock - it runs inside a transaction and the world
+    // advance is async - so every caller must pass what it gets here to
+    // `theseDaysPassedInTheWorldToo` once its transaction has committed.
     return days;
 }
 
@@ -979,14 +984,16 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
             view.ledger.membersAdded += count;
         }
 
+        let yearsSpent = 0;
         repos.db.transaction(() => {
-            spendYears(repos, view, outcome.years);
+            yearsSpent = spendYears(repos, view, outcome.years);
             writeLedger(repos, view.cultivator.id, view.sectId, view.ledger);
             repos.runs.incrementTurn(view.run.id, 1);
         })();
 
         const after = repos.cultivators.getById(view.cultivator.id)!;
         const runAfter = repos.runs.getById(view.run.id)!;
+        if (yearsSpent > 0) await theseDaysPassedInTheWorldToo(runAfter, after, yearsSpent);
         return {
             recruited: !applied.obstructed && !applied.lostTheHouse,
             kind: 'elder',
@@ -1054,15 +1061,17 @@ export async function handleRecruit(args: z.infer<typeof RecruitSchema>): Promis
     view.ledger.ownFollowing += plan.count;
     view.ledger.membersAdded += plan.count;
 
+    let yearsSpent = 0;
     repos.db.transaction(() => {
         repos.cultivators.applyDeltas(view.cultivator.id, { spiritStones: -plan.stonesRequired });
-        spendYears(repos, view, plan.years);
+        yearsSpent = spendYears(repos, view, plan.years);
         writeLedger(repos, view.cultivator.id, view.sectId, view.ledger);
         repos.runs.incrementTurn(view.run.id, 1);
     })();
 
     const after = repos.cultivators.getById(view.cultivator.id)!;
     const runAfter = repos.runs.getById(view.run.id)!;
+    if (yearsSpent > 0) await theseDaysPassedInTheWorldToo(runAfter, after, yearsSpent);
 
     return {
         recruited: true,
@@ -1545,17 +1554,19 @@ export async function handleGrow(args: z.infer<typeof GrowSchema>): Promise<obje
         0, Math.min(MAX_ORDINAL, (facts?.powerOrdinal ?? 0) + drift)
     );
 
+    let yearsSpent = 0;
     repos.db.transaction(() => {
         repos.cultivators.applyDeltas(view.cultivator.id, { spiritStones: -plan.stonesRequired });
         const row = repos.sects.getById(view.sectId)!;
         repos.sects.upsert({ ...row, powerOrdinal: powerNow });
-        spendYears(repos, view, plan.years);
+        yearsSpent = spendYears(repos, view, plan.years);
         writeLedger(repos, view.cultivator.id, view.sectId, view.ledger);
         repos.runs.incrementTurn(view.run.id, 1);
     })();
 
     const after = repos.cultivators.getById(view.cultivator.id)!;
     const runAfter = repos.runs.getById(view.run.id)!;
+    if (yearsSpent > 0) await theseDaysPassedInTheWorldToo(runAfter, after, yearsSpent);
 
     return {
         grew: true,

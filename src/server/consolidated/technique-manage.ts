@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
 import type Database from 'better-sqlite3';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
@@ -743,6 +744,11 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
     const after = repos.cultivators.getById(cultivator.id)!;
     const runAfter = repos.runs.getById(run.id)!;
     const nowKnown = repos.techniques.getKnown(cultivator.id, technique.id);
+
+    // AND THE WORLD SPENT THEM TOO. See `theseDaysPassedInTheWorldToo`: years
+    // spent on an art were years the world simulated later with no observer,
+    // so nothing that happened while somebody practised was knowable to them.
+    if (days > 0) await theseDaysPassedInTheWorldToo(runAfter, after, days);
 
     return {
         practised: true,

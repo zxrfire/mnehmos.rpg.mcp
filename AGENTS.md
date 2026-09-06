@@ -537,6 +537,28 @@ turns, lethal injury counts, stagnation years - import them, never retype them.
 **Ladder bounds live in `src/engine/cultivation/realms.ts`.** `MAX_ORDINAL` is the
 authority. Never restate the number of ranks in prose - it has gone stale before.
 
+### Days a handler spends are days the world spends
+
+There are two clocks - `run.elapsedDays` and `world.currentDay` - and they are one clock:
+
+    world.currentDay === thisRun.startedOnDay + floor(run.elapsedDays)
+
+`tests/web/the-two-clocks-are-one-clock.test.ts` asserts it. Nothing did before.
+
+A handler that calls `repos.runs.advanceDays` and nothing else breaks it, and the breakage
+is silent: the next thing to touch the world runs `catchUp`, which simulates the gap with
+NO access and NO observer. Those years reach nobody. The player spent a month at a furnace
+and a decade running a house, and the world moved without them being present for any of
+it - no knowledge written, no memory written, no digest.
+
+Measured: four handlers did this - refining a pill, leading a house, siphoning a treasury,
+learning an art. Every one of them now passes what it spent to
+`theseDaysPassedInTheWorldToo` once its transaction has committed. **If you add a verb that
+spends days, it does the same, or the reconciler comes back and the years go blind again.**
+
+The world advance is async and a transaction cannot span an await, so it always happens
+AFTER the commit, never inside it.
+
 ### The shipped binary is a second runtime, and the suite cannot see it
 
 `esbuild.config.mjs` cannot bundle better-sqlite3's JavaScript wrapper, so it writes its

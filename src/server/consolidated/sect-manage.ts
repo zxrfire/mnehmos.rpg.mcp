@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -975,6 +976,11 @@ export async function handleSiphon(args: z.infer<typeof SiphonSchema>): Promise<
     if (!caught) {
         const after = repos.cultivators.getById(cultivator.id)!;
         const runAfter = repos.runs.getById(run.id)!;
+
+        // AND THE WORLD SPENT THEM TOO. See `theseDaysPassedInTheWorldToo`:
+        // this used to move only the run's clock, so months of siphoning were
+        // months the world simulated later with nobody watching.
+        if (days > 0) await theseDaysPassedInTheWorldToo(runAfter, after, days);
         return {
             caught: false,
             sect: { id: sect.id, name: sect.name },

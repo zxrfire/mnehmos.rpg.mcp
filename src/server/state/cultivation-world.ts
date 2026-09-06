@@ -391,6 +391,32 @@ export async function saveWorldForRun(run: Run): Promise<void> {
     repo().appendWorld(handle.state);
 }
 
+/**
+ * DAYS A HANDLER SPENT, SPENT IN THE WORLD TOO.
+ *
+ * Four places moved the run's clock and never touched the world's - refining a
+ * pill, leading a house, siphoning a treasury, learning an art. The world was
+ * left behind by exactly those days, and the next thing to notice ran `catchUp`,
+ * which simulates the gap with NO access and NO observer.
+ *
+ * That is the loss, and it is not a bookkeeping one: a span simulated without an
+ * observer writes the player no knowledge and no memory of anything in it. A
+ * month at a furnace and a decade running a sect were years that happened to
+ * everybody except the person who spent them.
+ *
+ * So a handler that spends days says so here, and the span runs the same way a
+ * cultivated one does. The digest comes back for a caller that wants to show it;
+ * a caller that does not is still strictly better off, because the knowledge and
+ * the accounts were written either way.
+ */
+export async function theseDaysPassedInTheWorldToo(
+    run: Run,
+    cultivator: Cultivator,
+    days: number
+): Promise<WorldAdvance | null> {
+    return advanceWorldForCultivator(run, cultivator, days);
+}
+
 /** Advance the world to where the run's clock says it should be, less `less`. */
 function catchUp(handle: WorldHandle, run: Run, less: number): number {
     const record = handle.state.runs.find(r => r.id === run.id);
