@@ -374,7 +374,7 @@ it describes.
 |---|---|---|---|
 | [`a-family-that-came-down-from-a-changed-beast.ts`](../../src/data/cultivation/a-family-that-came-down-from-a-changed-beast.ts) | THE ONE FAMILY IN THE WORLD THAT CAME DOWN FROM SOMETHING THAT CHANGED. | 230 | - |
 | [`a-favour-skips-the-admission-bar.ts`](../../src/data/cultivation/a-favour-skips-the-admission-bar.ts) | What a favour is for: it skips the admission ordinal. | 319 | - |
-| [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | The artifact catalog. | 445 | - |
+| [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | The artifact catalog. | 454 | - |
 | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | Spirit beasts - the part of the world that is dangerous and is not a person. | 1956 | [`trust.md`](houses/trust.md) |
 | [`bodies-that-cannot-keep-their-members-children.ts`](../../src/data/cultivation/bodies-that-cannot-keep-their-members-children.ts) | Three institutions with no place for their own members' children. | 211 | - |
 | [`catastrophe.ts`](../../src/data/cultivation/catastrophe.ts) | What a disaster can end, and who pays for it. | 170 | - |
@@ -454,7 +454,7 @@ it describes.
 <!-- BEGIN GENERATED: design-constants -->
 
 **272 design constants in the catalog. 25 are read by nothing at all,
-and 144 more are read only by a test.**
+and 143 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
 anywhere in the repo - but the game does not act on it, and nobody looking at the
@@ -607,7 +607,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `THE_JUNIOR_ANSWERS` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 12 |
 | `HOLLOW_COURT_FOSTERAGE` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | 13 |
 | `SEALED_ANCESTOR_PATTERN` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 13 |
-| `DEPARTURE` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 14 |
 | `NAMED_FIGURES` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 14 |
 | `THE_ANCESTOR_WHO_MIGHT_ANSWER` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | **nothing** | 14 |
 | `THE_BLOWN_GROUND` | [`regions/the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) | **nothing** | 14 |
@@ -647,6 +646,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `ONCE_IN_A_LIFE` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 1 | 9 |
 | `THE_BEAST_ROAD` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 1 | 9 |
 | `THE_VACANCY` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 1 | 12 |
+| `DEPARTURE` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 1 | 14 |
 | `WHAT_GIVES_A_CHANGED_BEAST_AWAY` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 1 | 16 |
 | `THE_OFFICE` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | 1 | 24 |
 | `HOW_A_FORTY_FIVE_EXISTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 2 | - |

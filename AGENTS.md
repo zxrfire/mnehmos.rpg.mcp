@@ -118,7 +118,7 @@ tests pass.
 > its own copy.**
 
 This is the rule the repo most often breaks, and the breakages are expensive because
-they do not look like breakages. A second copy of a fact does not fail loudly — it
+they do not look like breakages. A second copy of a fact does not fail loudly - it
 drifts, and then the world quietly says two different things.
 
 **Measured, in one working session:**
@@ -126,8 +126,8 @@ drifts, and then the world quietly says two different things.
 | The fact | Where it was kept twice | What it cost |
 |---|---|---|
 | What a place's qi is worth | `qiDensity`, `environment.spiritualDensity`, and a hash of the place's NAME | The band was wrong at **78%** of 1065 locations; a ten-year seclusion on the best ground returned 27% of its worth |
-| What `sealed` means | An undrawn qi pocket, a locked door, and "this room is an office" — one field, three jobs | **101 of 112** locked rooms reported the richest qi in the game. The discipline hall was the best cultivation ground in the world |
-| Whether a life plate is whole | Nearly stored on the plate, beside the person's own `status` | `markDead` has **six** call sites. The one that forgot would leave a whole plate for a dead disciple — which is this world's signature for *somebody is holding them prisoner*. The bug would have read as a kidnapping |
+| What `sealed` means | An undrawn qi pocket, a locked door, and "this room is an office" - one field, three jobs | **101 of 112** locked rooms reported the richest qi in the game. The discipline hall was the best cultivation ground in the world |
+| Whether a life plate is whole | Nearly stored on the plate, beside the person's own `status` | `markDead` has **six** call sites. The one that forgot would leave a whole plate for a dead disciple - which is this world's signature for *somebody is holding them prisoner*. The bug would have read as a kidnapping |
 | Who is on a house's roll | `repos.sects` in SQLite, and `NpcRecord.factionId` in world state | A test helper rebuilt the roll from the wrong one and reported that no rung could hold an office when several could |
 
 **So, in order of preference:**
@@ -135,7 +135,7 @@ drifts, and then the world quietly says two different things.
 1. **Derive it.** If a fact is a function of another fact, write the function. A plate's
    wholeness *is* its holder's aliveness. A person's disposition *is* what the world
    rolled for them at birth. Deriving cannot drift and has no call site that can forget.
-2. **Store it once** — only where the thing genuinely *changes over time* and is not a
+2. **Store it once** - only where the thing genuinely *changes over time* and is not a
    function of anything else. An activity is stored because it changes; a personality is
    derived because it does not.
 3. **Never store a second copy** to make a read convenient. Write the read.
@@ -146,7 +146,7 @@ If nothing would fail, it is a second copy and it will drift.
 ### Reproducibility is not a constraint on this engine
 
 Stated by the design owner, and it overrides earlier reasoning in this file and in
-several test headers: **a run need not be reproducible — that constraint was breaking
+several test headers: **a run need not be reproducible - that constraint was breaking
 the game.** *"It's a game, it's not some life-saving software."*
 
 What is still wanted is narrower and cheaper: **a run draws the same SETS of rng**, so a
@@ -154,7 +154,7 @@ stream is a stream and a draw for one thing is not silently a draw for another. 
 of one seed may differ.
 
 So never refuse a mechanic because it would make two runs diverge. Seeded determinism
-stays where it is free and useful — a world that opens the same way is easier to debug —
+stays where it is free and useful - a world that opens the same way is easier to debug -
 but it is a convenience, not a promise.
 
 ### Objects are dead. People are alive.
@@ -183,27 +183,27 @@ store and let systems query it. Event-sourced designs keep the log as truth and 
 every read as a projection. **None of them notify. They recompute.**
 
 That is the shape to move toward here, and it is one this repo already uses well in
-places — and badly in exactly the places listed in the table above.
+places - and badly in exactly the places listed in the table above.
 
 ## Tests test behaviour, not implementation
 
 > **Pin what the player would notice. Never pin how the engine happened to arrive at it.**
 
 A test that asserts an implementation detail fails when the implementation changes
-correctly, and it fails *somewhere else*, which is the expensive part — the failure
+correctly, and it fails *somewhere else*, which is the expensive part - the failure
 names a subsystem that is not the one that moved.
 
 **Worked example, measured.** `reporting-a-false-decree.test.ts` promoted the player to
 `ranks.length - 2` and asserted the narration contained the name `Wen Shu`. Both are
 implementation: offices are dealt round-robin over the sealed rooms sorted deepest-first,
 so *which* rung holds *which* room is an artefact of how many sealed rooms exist. Sealing
-one more room — a correct change, made for an unrelated reason — shifted every holder by
+one more room - a correct change, made for an unrelated reason - shifted every holder by
 one, and the test failed on a name, two subsystems from the edit, having said nothing
 about the rule it was there to protect.
 
 The rule it was protecting is: **holding the room is what lets you decide, and holding
 the rank is not.** That is behaviour. It could have been asserted directly, and the
-sibling test three lines above does exactly that — it checks the refusal says *"the room,
+sibling test three lines above does exactly that - it checks the refusal says *"the room,
 not the rank"* and passes through every reshuffle.
 
 **Concretely:**
@@ -211,7 +211,7 @@ not the rank"* and passes through every reshuffle.
 - **Pin the observable claim.** "A refusal names the honest route." "A look does not
   write a knowledge record." "The pouch is short and the refusal says of what."
 - **Do not pin a name, an id, a rank index, a room, an ordering, or a count** that the
-  engine chose for you — unless the choosing is itself what the test is about.
+  engine chose for you - unless the choosing is itself what the test is about.
 - **Read names out of the output** rather than hard-coding them: *any name the game
   prints is a name the game must accept.*
 - **When a test needs a particular arrangement, ask the engine for it** rather than
