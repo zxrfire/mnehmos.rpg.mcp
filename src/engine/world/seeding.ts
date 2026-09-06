@@ -71,6 +71,7 @@ import { seedComprehensionMaterials } from './single-use-dao-comprehension-mater
 import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
+import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
 import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
@@ -276,6 +277,19 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // in the world is bare masonry and a body at the bottom of the ladder can
     // walk into the compound of a body at the top.
     state.objects.push(...seedHouseWards(state));
+
+    // AND WHAT EACH HOUSE HAS IN ITS TREASURY, which was a balance and nothing
+    // else. A house held stones and no THINGS, so lending a disciple a furnace,
+    // bestowing something on somebody who earned it, and being robbed of
+    // anything that mattered all had nothing to operate on. Counted below,
+    // tracked above, and both off the standing the ward is rated on.
+    //
+    // NO SECOND LIST. What a house holds is `state.objects` filtered by
+    // `ownerId`, read through `whatThisHouseHolds`. A stored list of ids on the
+    // faction would be a second copy of a fact the one possessions table
+    // already owns, and the copy is what goes stale the first time something is
+    // lent, sold or taken. See `what-a-house-keeps-in-its-treasury.ts`.
+    state.objects.push(...seedTreasuries(state));
 
     // AND WHAT EVERY ONE OF THEM IS DOING. Last, because it reads where people
     // ended up standing and what they ended up holding. Before this, every

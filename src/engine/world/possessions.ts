@@ -3,6 +3,7 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import type { TechniqueGrade } from '../../schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PROVENANCE
@@ -17,6 +18,21 @@ export type AcquisitionMode =
     | 'stolen'
     | 'looted'
     | 'gifted'
+    /**
+     * Handed over, and not handed away.
+     *
+     * The design owner: *"there does need a distinction between borrowing and
+     * stealing."* Without this row there was none. A house furnace in a
+     * disciple's hands and a house furnace somebody walked off with are the
+     * same two fields - `ownerId` a house, `possessorId` a person - and the
+     * only thing that could ever tell them apart is whether the house handed
+     * it over. That is a fact about an EVENT, so it belongs on the chain of
+     * events rather than on the object.
+     *
+     * Distinct from `gifted` and `awarded`, which MOVE the ownership. A lent
+     * thing is still the house's, which is the whole point of it.
+     */
+    | 'lent'
     | 'crafted'
     | 'awarded'
     | 'confiscated'
@@ -108,6 +124,46 @@ export type KeptAs = 'counted' | 'tracked';
  */
 export function keptAs(significance: ObjectSignificance): KeptAs {
     return significance === 'mundane' ? 'counted' : 'tracked';
+}
+
+/**
+ * HOW MUCH A THING OF THIS GRADE IS WORTH BOOKKEEPING.
+ *
+ * The design owner: *"group pills and manuals together, it's all items"*, *"I
+ * don't see why any of them should remain separate"*, and - on the shape the
+ * rule should have - *"the pill logic (esp the immortal pill logic) should fall
+ * out of its IMPORTANCE."*
+ *
+ * So it falls out, here, once, for every noun in the world. A pill, a manual, a
+ * cauldron, a sword and a lot of ore are all objects, they are all graded on
+ * one five-step ladder, and how much of a record each deserves is a function of
+ * that grade and of nothing else. There is no pill rule, no manual rule and no
+ * cauldron rule, and the moment there is one of those the other twelve nouns
+ * start needing theirs.
+ *
+ * WHY THE TOP TWO ARE NOT A BAND BUT A FACT. Immortal and chaos are the grades
+ * nothing below the Lid makes - `who-can-refine-a-grade-of-medicine.ts` decides
+ * that, off the realm a hand has to stand in to work the materials at all - so
+ * every one of them down here came down or came out of something sealed. There
+ * is a finite number in the world and no process that adds another. A thing
+ * like that is never a stack with a quantity on it; asking whose it was and
+ * where it has been is the ONLY interesting question about it, and `legendary`
+ * is how this file says a row must be able to answer that.
+ */
+export function howMuchAGradeIsWorthTracking(grade: TechniqueGrade): ObjectSignificance {
+    switch (grade) {
+        // Roadside. You buy another one and nobody writes it down.
+        case 'mortal':
+            return 'mundane';
+        // Made by somebody, for somebody, and both are answerable.
+        case 'earth':
+            return 'notable';
+        case 'heaven':
+            return 'significant';
+        case 'immortal':
+        case 'chaos':
+            return 'legendary';
+    }
 }
 
 /** Whether this row carries a provenance anybody can be asked about. */
