@@ -379,12 +379,12 @@ export class WorldStateRepository {
                 id, world_id, area_id, kind, statement, cause_what,
                 cause_decided_by_id, cause_fact_id, signs, cause_known_locally,
                 began_on_day, review_on_day, lifted_on_day, stops,
-                price_multiplier, danger_delta
+                price_multiplier, price_multiplier_by_category, danger_delta
             ) VALUES (
                 @id, @worldId, @areaId, @kind, @statement, @causeWhat,
                 @causeDecidedById, @causeFactId, @signs, @causeKnownLocally,
                 @beganOnDay, @reviewOnDay, @liftedOnDay, @stops,
-                @priceMultiplier, @dangerDelta
+                @priceMultiplier, @priceMultiplierByCategory, @dangerDelta
             )
         `);
 
@@ -1142,6 +1142,7 @@ export class WorldStateRepository {
                 liftedOnDay: status.liftedOnDay,
                 stops: JSON.stringify(status.stops),
                 priceMultiplier: status.priceMultiplier,
+                priceMultiplierByCategory: JSON.stringify(status.priceMultiplierByCategory),
                 dangerDelta: status.dangerDelta
             });
         }
@@ -1850,6 +1851,11 @@ function rowToAreaStatus(row: AreaStatusRow): AreaStatus {
         liftedOnDay: row.lifted_on_day,
         stops: parseArray(row.stops),
         priceMultiplier: row.price_multiplier,
+        // A save written before the column existed carries no opinion by type,
+        // which is exactly what the scalar beside it already said.
+        priceMultiplierByCategory: row.price_multiplier_by_category
+            ? parseRecord<number>(row.price_multiplier_by_category) as AreaStatus['priceMultiplierByCategory']
+            : {},
         dangerDelta: row.danger_delta
     };
 }
@@ -2337,6 +2343,8 @@ interface AreaStatusRow {
     lifted_on_day: number | null;
     stops: string;
     price_multiplier: number;
+    /** JSON. Undefined off a save older than the ALTER that added it. */
+    price_multiplier_by_category: string | undefined;
     danger_delta: number;
 }
 

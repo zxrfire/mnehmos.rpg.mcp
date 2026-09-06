@@ -108,7 +108,16 @@ describe('what goes wrong with a place', () => {
             );
             expect(shut.cause.decidedById).toBe('sect-kettle');
             expect(shut.stops).toContain(STOPS_GATHERING);
-            expect(shut.priceMultiplier).toBeGreaterThan(1);
+            // This used to read `priceMultiplier > 1` off a blanket 1.5, and
+            // the blanket was the defect: closing a hunting district does not
+            // make an inn bed dearer. The rise now sits on the three types the
+            // ground actually supplied, and the scalar - what a type nothing
+            // named costs - is correctly 1.
+            expect(shut.priceMultiplier).toBe(1);
+            expect(shut.priceMultiplierByCategory!.medicine).toBeGreaterThan(1);
+            expect(shut.priceMultiplierByCategory!.tool).toBeGreaterThan(1);
+            expect(shut.priceMultiplierByCategory!.food).toBeGreaterThan(1);
+            expect(shut.priceMultiplierByCategory!.lodging).toBeUndefined();
             // A house that shuts ground says so. This is the one opener whose
             // cause is known without anybody surveying anything.
             expect(shut.causeKnownLocally).toBe(true);
@@ -197,7 +206,18 @@ describe('what goes wrong with a place', () => {
             // anywhere - the famine stops the meals, and travellers buying
             // meals never caused a famine.
             expect(famine!.cause.decidedById).toBeNull();
-            expect(famine!.priceMultiplier).toBeGreaterThan(1);
+            // AND IT MOVES THE PRICE BY TYPE, WHICH IS THE WHOLE OF WHAT A
+            // FAMINE IS. This assertion used to be `priceMultiplier > 1` off a
+            // blanket 4, which said the harvest failing quadrupled the price of
+            // a chisel and of a night at an inn. The design owner: *why would
+            // the famine move the cost of an inn bed. it should DROP it.* So
+            // the 4 is on food, where it was always the true figure, the beds
+            // go the other way because the roads empty, and the scalar - what a
+            // type this status has no opinion about costs - is 1.
+            expect(famine!.priceMultiplier).toBe(1);
+            expect(famine!.priceMultiplierByCategory!.food).toBeGreaterThan(1);
+            expect(famine!.priceMultiplierByCategory!.lodging).toBeLessThan(1);
+            expect(famine!.priceMultiplierByCategory!.tool).toBeUndefined();
         });
     });
 

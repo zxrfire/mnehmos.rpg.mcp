@@ -47,7 +47,14 @@ export interface TheGroundUnderYou {
  * trouble needs no code here.
  */
 function bites(status: AreaStatus): boolean {
-    return status.stops.length > 0 || status.priceMultiplier > 1 || status.dangerDelta > 0;
+    return status.stops.length > 0
+        || status.priceMultiplier > 1
+        // And a status that moved only ONE type of good still bites. A famine
+        // now carries a scalar of 1 and quadruples the food, and reading the
+        // scalar alone made the sharpest status in the world read as nothing
+        // happening here.
+        || Object.values(status.priceMultiplierByCategory).some(m => m > 1)
+        || status.dangerDelta > 0;
 }
 
 /**

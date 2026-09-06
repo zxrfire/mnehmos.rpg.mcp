@@ -162,7 +162,7 @@ function whatSomebodyWouldGoAndGet(
  * Marrow-Washing Pill, which is the earth-grade answer an ordinary tear on a
  * Core Formation body needs and had never been quoted anywhere.
  */
-function boardPrice(pill: Pill, regionId: string): number | null {
+function boardPrice(pill: Pill, regionId: string, groundMultiplier: number): number | null {
     const row = PRICES.find(price => price.name === pill.name);
     if (!row) return null;
     // The board is in cash and the purse is in stones, at the rate the whole
@@ -171,13 +171,15 @@ function boardPrice(pill: Pill, regionId: string): number | null {
     // quote may be wrong in: a player must never be told a figure lower than
     // what they will be charged.
     //
-    // `localPrice` and `Math.ceil(cashToStones(...))` are the two calls `buy`
-    // makes, in the order `buy` makes them, deliberately: any other arithmetic
-    // here - the board figure scaled afterwards, say, or rounding before the
-    // multiplier - produces a number that is off by one somewhere and puts the
-    // quote and the charge back into disagreement over exactly the rows nobody
-    // checks.
-    return Math.max(1, Math.ceil(cashToStones(localPrice(regionId, row.cash))));
+    // `localPrice`, the ground term, and `Math.ceil(cashToStones(...))` are the
+    // three calls `buy` makes, in the order `buy` makes them, deliberately: any
+    // other arithmetic here - the board figure scaled afterwards, say, or
+    // rounding before a multiplier - produces a number that is off by one
+    // somewhere and puts the quote and the charge back into disagreement over
+    // exactly the rows nobody checks.
+    return Math.max(1, Math.ceil(cashToStones(
+        Math.max(1, Math.round(localPrice(regionId, row.cash) * groundMultiplier))
+    )));
 }
 
 /**
@@ -196,7 +198,16 @@ export function whatWouldCloseThisWound(
      * first place, and a caller that has a cultivator has a region -
      * `standingOf(cultivator).regionId` is the whole of it.
      */
-    regionId: string
+    regionId: string,
+    /**
+     * What is TRUE of the ground today, for medicine, over what the province is
+     * LIKE. Defaulted to 1 only because a run can have no world at all, which
+     * is a quiet market and not a missing argument - every caller standing
+     * somewhere passes `groundPriceMultiplier(cultivator, 'medicine')`. A war
+     * has healers being paid too much, `buy` charges it, and a quote that did
+     * not would be the same lie `regionId` was added to end.
+     */
+    groundMultiplier = 1
 ): TheCure | null {
     if (untreated.length === 0) return null;
 
@@ -211,7 +222,7 @@ export function whatWouldCloseThisWound(
     if (!pill) return null;
 
     const notForSale = cashRefusalReason(pill);
-    const stones = notForSale === null ? boardPrice(pill, regionId) : null;
+    const stones = notForSale === null ? boardPrice(pill, regionId, groundMultiplier) : null;
 
     return {
         name: pill.name,

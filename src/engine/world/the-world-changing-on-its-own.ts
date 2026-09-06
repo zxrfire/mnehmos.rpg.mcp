@@ -1395,6 +1395,7 @@ function applyAreaStatuses(state: WorldState, year: number, day: number): AreaSt
             reviewOnDay: day + Math.max(1, Math.round(candidate.reviewInDays)),
             stops: candidate.stops,
             priceMultiplier: candidate.priceMultiplier,
+            priceMultiplierByCategory: candidate.priceMultiplierByCategory,
             dangerDelta: candidate.dangerDelta
         });
         state.statuses.push(status);

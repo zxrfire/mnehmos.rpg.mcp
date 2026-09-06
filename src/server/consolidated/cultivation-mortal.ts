@@ -51,7 +51,7 @@ import {
     standingStock
 } from '../../engine/world/what-a-place-still-has-in-the-ground.js';
 import { worldForRun, saveWorldForRun } from '../state/cultivation-world.js';
-import { priceMultiplierInArea } from '../../engine/world/what-is-true-of-a-place-right-now.js';
+import { dialFor, whatThisGroundDoesToPrices } from './what-this-ground-adds-to-a-price.js';
 import { worldLocationFor } from '../../web/entities.js';
 import { untreatedInjuryCount } from '../../engine/cultivation/injuries.js';
 import { CRIPPLING_UNTREATED_INJURIES } from '../../schema/cultivation.js';
@@ -481,22 +481,6 @@ async function theGroundUnder(
     }
 }
 
-/**
- * What everything on sale here costs today, over and above what the province
- * charges for it.
- */
-async function whatTheGroundHereAddsToAPrice(
-    run: Run,
-    cultivator: Cultivator
-): Promise<number> {
-    const ground = await theGroundUnder(run, cultivator);
-    if (!ground) return 1;
-    const world = await worldForRun(run);
-    return priceMultiplierInArea(
-        world.statuses, world.locations, ground.place.id, ground.onDay
-    );
-}
-
 export async function handleForage(
     args: z.infer<typeof ForageSchema>,
     cultivate: CultivateRunner
@@ -637,8 +621,11 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     const standing = standingOf(cultivator);
     const region = requireRegion(standing.regionId);
 
-    // AND WHAT IS TRUE OF THIS GROUND TODAY
-    const groundTerm = await whatTheGroundHereAddsToAPrice(run, cultivator);
+    // AND WHAT IS TRUE OF THIS GROUND TODAY, BY TYPE OF GOOD. One dial over
+    // the whole board could not say what a famine is: the millet goes up and
+    // the inn bed goes DOWN, on the same ground, on the same day.
+    const ground = await whatThisGroundDoesToPrices(run, cultivator);
+    const groundTerm = ground.everythingElse;
 
     // How this market meets this person, resolved once. A stall, an inn floor
     // and a bowl of millet are all pitched at the same rung, so the board is one
@@ -652,7 +639,8 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
     const prices = PRICES.filter(p => args.category === undefined || p.category === args.category)
         .map(p => {
             const list = localPrice(standing.regionId, p.cash);
-            const cash = Math.max(1, Math.round(list * groundTerm * boardRegard.priceMultiplier));
+            const groundHere = dialFor(ground, p.category);
+            const cash = Math.max(1, Math.round(list * groundHere * boardRegard.priceMultiplier));
             return {
                 id: p.id,
                 name: p.name,
@@ -660,6 +648,9 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
                 unit: p.unit,
                 cash,
                 listCash: list,
+                // Said per row, because a board where one line has quadrupled
+                // and the one under it has halved needs to say which did what.
+                groundHere,
                 spiritStones: round2(cashToStones(cash)),
                 affordable: cultivator.spiritStones * CASH_PER_STONE >= cash,
                 note: p.note
@@ -706,6 +697,10 @@ export async function handleMarket(args: z.infer<typeof MarketSchema>): Promise<
         // What is TRUE of this ground today, reported apart from what the
         // province is LIKE. One is a standing property and one lifts.
         groundPriceMultiplier: groundTerm,
+        // And which TYPES of good it moved, which is where a famine actually
+        // lives - the scalar above stays at 1 through one, because a failed
+        // harvest has nothing to say about the price of a chisel.
+        groundPriceMultiplierByCategory: ground.byCategory,
         // Observable consequence, not a category: what this ground has left to
         // give somebody standing at this rank.
         groundHereStillGives: canAdvanceHere(standing.regionId, cultivator.realmOrdinal),

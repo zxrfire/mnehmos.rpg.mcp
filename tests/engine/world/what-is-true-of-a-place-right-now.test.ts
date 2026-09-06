@@ -17,6 +17,11 @@
  *    branches on it. If a `kind` ever reaches a branch, this layer has failed.
  * 4. **A status is true of an area and everything under it, and nothing over
  *    it.** A worked-out district is not a worked-out province.
+ * 5. **The price dial is per TYPE of good, and the scalar is what a type it has
+ *    no opinion about costs.** A famine raises food and DROPS lodging, because
+ *    the roads empty; one number cannot say that. The effect is carried by the
+ *    status, so decision 3 survives it - a per-type dial under an invented kind
+ *    behaves exactly like one under a famine.
  *
  * And one boundary: presence is read off `NpcRecord.locationId`. This module
  * stores no second copy of who is where, which is why `whoIsInArea` is tested
@@ -45,6 +50,7 @@ import {
     statusesInArea,
     stoppedInArea,
     whatIsGoingOnHere,
+    whatTheGroundDoesToPrices,
     whoIsInArea,
     type AreaStatus
 } from '../../../src/engine/world/what-is-true-of-a-place-right-now.js';
@@ -248,11 +254,25 @@ describe('what a status does is not gated on knowing about it', () => {
         }
     });
 
+    /**
+     * THESE FOUR FIGURES ARE THE DEGRADE-TO-YESTERDAY CASE, AND THEY ARE KEPT.
+     *
+     * `famine()` and `war()` above set a scalar and no per-type dial, which is
+     * every writer that existed before types did - the world sim, a saved row
+     * off an older database, a test. Asked with no category, they answer 3, 2,
+     * 6 and 1 exactly as they always did. If any of these ever moves, a writer
+     * somewhere has had a behaviour changed under it without being edited.
+     */
     it('multiplies prices across statuses, so two things going wrong is worse than either', () => {
         expect(priceMultiplierInArea([famine()], places(), 'loc-town', AT)).toBe(3);
         expect(priceMultiplierInArea([war()], places(), 'loc-town', AT)).toBe(2);
         expect(priceMultiplierInArea([famine(), war()], places(), 'loc-town', AT)).toBe(6);
         expect(priceMultiplierInArea([], places(), 'loc-town', AT)).toBe(1);
+        // And a scalar-only status answers the same for every type of good,
+        // which is the sentence "it degrades to today's behaviour" said in code.
+        for (const c of ['food', 'lodging', 'tool', 'medicine'] as const) {
+            expect(priceMultiplierInArea([famine()], places(), 'loc-town', AT, c), c).toBe(3);
+        }
     });
 
     it('adds danger rather than replacing it, and reports nothing when nothing is wrong', () => {
@@ -260,6 +280,111 @@ describe('what a status does is not gated on knowing about it', () => {
         expect(dangerDeltaInArea([], places(), 'loc-town', AT)).toBe(0);
         // Lifted statuses do nothing at all.
         expect(dangerDeltaInArea([liftStatus(war(), AT)], places(), 'loc-town', AT)).toBe(0);
+    });
+});
+
+describe('the price dial is per type of good, because one number cannot say famine', () => {
+    /**
+     * The same failed harvest, written the way the world writes one now.
+     *
+     * The design owner, on what a single dial could not express: *also why
+     * would the famine move the cost of an inn bed. it should DROP it.*
+     */
+    function harvestFailed(over = 'loc-province'): AreaStatus {
+        return makeAreaStatus({
+            ...famine(over),
+            id: 'status-harvest',
+            priceMultiplier: 1,
+            priceMultiplierByCategory: { food: 4, lodging: 0.5, transport: 1.6 }
+        });
+    }
+
+    it('raises the food and drops the beds, on the same ground on the same day', () => {
+        const here = [harvestFailed()];
+        expect(priceMultiplierInArea(here, places(), 'loc-town', AT, 'food')).toBe(4);
+        expect(priceMultiplierInArea(here, places(), 'loc-town', AT, 'lodging')).toBe(0.5);
+        expect(priceMultiplierInArea(here, places(), 'loc-town', AT, 'transport')).toBe(1.6);
+    });
+
+    it('leaves a type it has no opinion about at the scalar, which is the whole of the fallback', () => {
+        const here = [harvestFailed()];
+        // A chisel and a letter written are not a famine's business.
+        expect(priceMultiplierInArea(here, places(), 'loc-town', AT, 'tool')).toBe(1);
+        expect(priceMultiplierInArea(here, places(), 'loc-town', AT, 'service')).toBe(1);
+        // And asked with no category at all, which is what every caller written
+        // before this existed does.
+        expect(priceMultiplierInArea(here, places(), 'loc-town', AT)).toBe(1);
+    });
+
+    /**
+     * The stacking rule, and it is the one that is easy to get wrong: a type
+     * one status named is still multiplied by every OTHER status's scalar.
+     */
+    it('stacks a typed status onto an untyped one rather than letting either win', () => {
+        const both = [harvestFailed(), war('loc-town')];
+        // The war doubles the whole board; the famine quadruples the food.
+        expect(priceMultiplierInArea(both, places(), 'loc-town', AT, 'food')).toBe(8);
+        // And the beds are half of double, which is where they started. A war
+        // fills the inns and a famine empties them, and nothing here decided
+        // which of the two is more important.
+        expect(priceMultiplierInArea(both, places(), 'loc-town', AT, 'lodging')).toBe(1);
+        expect(priceMultiplierInArea(both, places(), 'loc-town', AT, 'tool')).toBe(2);
+    });
+
+    it('reads backwards too: what has this ground moved, and by how much', () => {
+        const read = whatTheGroundDoesToPrices(
+            [harvestFailed(), war('loc-town')], places(), 'loc-town', AT
+        );
+        expect(read.everythingElse).toBe(2);
+        expect(read.byCategory).toEqual({ food: 8, lodging: 1, transport: 3.2 });
+        // Nothing going on is an empty map rather than eight ones, so a caller
+        // can tell "quiet" from "moved and came back to 1".
+        expect(whatTheGroundDoesToPrices([], places(), 'loc-town', AT))
+            .toEqual({ everythingElse: 1, byCategory: {} });
+    });
+
+    it('carries the effect on the status rather than reading it off the kind', () => {
+        // The same per-type dial under a kind nothing has ever seen. If this
+        // ever needed a `kind` anywhere, the design has failed - see the fourth
+        // decision at the top of this file.
+        const invented = makeAreaStatus({
+            id: 'status-salt-road',
+            areaId: 'loc-town',
+            kind: 'the-salt-road-has-been-cut-for-a-season',
+            statement: 'Nothing is coming up from the flats.',
+            cause: { what: 'A washout nobody has money to clear.', decidedById: null, factId: null },
+            beganOnDay: FAMINE_BEGAN,
+            reviewOnDay: FAMINE_BEGAN + 90,
+            priceMultiplierByCategory: { food: 2.5, lodging: 0.7 }
+        });
+        expect(priceMultiplierInArea([invented], places(), 'loc-town', AT, 'food')).toBe(2.5);
+        expect(priceMultiplierInArea([invented], places(), 'loc-town', AT, 'lodging')).toBe(0.7);
+        expect(priceMultiplierInArea([invented], places(), 'loc-town', AT, 'tool')).toBe(1);
+    });
+
+    it('does not gate any of it on knowing, same as everything else in this layer', () => {
+        const here = [harvestFailed()];
+        for (const stage of ['unaware', 'known'] as const) {
+            whatIsGoingOnHere(here, places(), 'loc-town', AT, () => stage);
+            expect(priceMultiplierInArea(here, places(), 'loc-town', AT, 'food'), stage).toBe(4);
+        }
+    });
+
+    it('reaches down from a province into a town, the same as the scalar does', () => {
+        expect(priceMultiplierInArea(
+            [harvestFailed('loc-province')], places(), 'loc-prefecture', AT, 'food'
+        )).toBe(4);
+        // And does not leak into a province it is not true of.
+        expect(priceMultiplierInArea(
+            [harvestFailed('loc-province')], places(), 'loc-far', AT, 'food'
+        )).toBe(1);
+    });
+
+    it('does not let a caller mutate a status through the map it handed over', () => {
+        const dial = { food: 4 };
+        const status = makeAreaStatus({ ...famine(), priceMultiplierByCategory: dial });
+        dial.food = 99;
+        expect(priceMultiplierInArea([status], places(), 'loc-town', AT, 'food')).toBe(4);
     });
 });
 

@@ -788,6 +788,11 @@ export function migrateWorld(db: Database.Database): void {
       lifted_on_day INTEGER,                         -- NULL while it is still true
       stops TEXT NOT NULL DEFAULT '[]',              -- JSON: what is not to be had here
       price_multiplier REAL NOT NULL DEFAULT 1,
+      -- JSON: the dial per type of good, over the scalar above. A famine is
+      -- '{"food":4,"lodging":0.5}' against a price_multiplier of 1, because a
+      -- failed harvest raises the millet, empties the inns and says nothing at
+      -- all about a chisel. '{}' means the scalar is the whole of it.
+      price_multiplier_by_category TEXT NOT NULL DEFAULT '{}',
       danger_delta REAL NOT NULL DEFAULT 0,
       PRIMARY KEY (world_id, id),
       FOREIGN KEY (world_id) REFERENCES world_runtime(id) ON DELETE CASCADE
@@ -1067,5 +1072,13 @@ function addWorldColumns(db: Database.Database): void {
         console.error('[Migration] Adding bloodline columns to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN bloodline_species TEXT;');
         db.exec('ALTER TABLE world_npcs ADD COLUMN bloodline_tier TEXT;');
+    }
+
+    // What a status does to prices BY TYPE OF GOOD. The default is the honest
+    // reading of every row written before this existed: one dial over
+    // everything, which is what price_multiplier beside it already says.
+    if (!columnsOf('world_area_statuses').includes('price_multiplier_by_category')) {
+        console.error('[Migration] Adding price_multiplier_by_category column to world_area_statuses table');
+        db.exec("ALTER TABLE world_area_statuses ADD COLUMN price_multiplier_by_category TEXT NOT NULL DEFAULT '{}';");
     }
 }

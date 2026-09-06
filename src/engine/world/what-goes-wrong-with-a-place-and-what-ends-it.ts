@@ -6,7 +6,11 @@ import type { CultivationRNG } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { HistoricalEventKind } from './history.js';
 import type { LocationRecord } from './locations.js';
-import { STOPS_PASSAGE, type StatusCause } from './what-is-true-of-a-place-right-now.js';
+import {
+    STOPS_PASSAGE,
+    type PriceMultiplierByCategory,
+    type StatusCause
+} from './what-is-true-of-a-place-right-now.js';
 import {
     REGROWTH_YEARS_BY_GRADE,
     standingStock,
@@ -38,7 +42,19 @@ export interface StatusCandidate {
     signs: readonly string[];
     causeKnownLocally: boolean;
     stops: readonly string[];
+    /**
+     * What a good this opener has no particular opinion about costs. A war
+     * holding its own seat moves everything, because nothing gets in; a failed
+     * harvest moves food and beds and leaves a chisel alone.
+     */
     priceMultiplier: number;
+    /**
+     * And the types it DOES have an opinion about. Every entry below is
+     * traceable to a line already in the same candidate's `signs` or
+     * `statement`: this is the opener saying out loud what its own prose says,
+     * rather than a second, quieter model of the same event.
+     */
+    priceMultiplierByCategory?: PriceMultiplierByCategory;
     dangerDelta: number;
     reviewInDays: number;
     /**
@@ -123,8 +139,21 @@ export function districtsTheirHolderHasShut(
             // known locally without anybody having to survey anything.
             causeKnownLocally: true,
             stops: [STOPS_GATHERING],
-            // Everything that came off this ground now comes from further out.
-            priceMultiplier: 1.5,
+            // Everything that came off this ground now comes from further out -
+            // and what came off it was herbs and game, which is a short list.
+            // Closing a hunting district does not make a bed or a letter dearer,
+            // so the scalar stays where it belongs and the three types the
+            // ground actually supplied carry the rise.
+            priceMultiplier: 1,
+            priceMultiplierByCategory: {
+                // The beds the assay closed. Herbs are the whole of what a
+                // gathering ground sends to a medicine counter.
+                medicine: 1.6,
+                // Hide, bone and horn, which is what a carver and a smith buy.
+                tool: 1.5,
+                // And the game, which was half of why anybody walked out there.
+                food: 1.3
+            },
             dangerDelta: 0,
             // Looked at again when the band it was shut over could plausibly
             // have come back. Not a promise: the review asks the ground.
@@ -176,7 +205,18 @@ export function tidesWhereTheGameWent(
             ],
             causeKnownLocally: false,
             stops: [],
-            priceMultiplier: 1.2,
+            priceMultiplier: 1,
+            priceMultiplierByCategory: {
+                // The bottom of the ground was taken out of it, and the bottom
+                // of the ground is what people ate.
+                food: 1.4,
+                // Everybody who did not own a weapon a month ago wants one.
+                tool: 1.5,
+                // Nothing crosses that ground now without paying somebody to
+                // come along, which is what the unfillable culling contracts in
+                // the signs are measuring.
+                transport: 1.6
+            },
             dangerDelta: 0.35,
             reviewInDays: Math.round(REGROWTH_YEARS_BY_GRADE.mortal * DAYS_PER_YEAR),
             // A tide is a season, not a climate. Ground that stays empty gets
@@ -220,7 +260,20 @@ export function groundUnderAWar(ground: readonly GroundAsItStands[]): StatusCand
             ],
             causeKnownLocally: true,
             stops: [STOPS_PASSAGE],
+            // THE ONE OPENER WHOSE SCALAR IS THE POINT. *Nothing goes through
+            // it that is not theirs* - so everything on every counter is dearer,
+            // including the inn bed, because the bed is full of people who
+            // cannot leave. The types below are dearer again, and each is a line
+            // out of this candidate's own signs.
             priceMultiplier: 2,
+            priceMultiplierByCategory: {
+                // *once two sects fight, you probably want to pay more.*
+                tool: 3,
+                // "The caravans have stopped and the road east is not being used."
+                transport: 3,
+                // "everybody who can heal is being paid too much."
+                medicine: 3
+            },
             dangerDelta: 0.5,
             // A year. A war does not have an expected end and gets a review
             // date like everything else - open-ended is deliberately not
@@ -276,7 +329,25 @@ export function harvestsThatFailed(
             // not a mystery; what is going to be done about it is.
             causeKnownLocally: true,
             stops: [STOPS_FOOD],
-            priceMultiplier: 4,
+            // THE CASE THE WHOLE PER-TYPE DIAL EXISTS FOR, and the scalar is 1
+            // because a failed harvest has nothing whatever to say about the
+            // price of a chisel.
+            priceMultiplier: 1,
+            priceMultiplierByCategory: {
+                // "There is food, and it is not for sale at any price a person
+                // who works for a living can meet." This is where the old
+                // blanket 4 went, and it is the only place it was ever true.
+                food: 4,
+                // *why would the famine move the cost of an inn bed. it should
+                // DROP it.* The roads empty of anybody travelling for a reason,
+                // the rooms stand open, and a room nobody wants gets cheap. The
+                // people on the road in the signs are all going ONE way, and
+                // they are not stopping for a night at an inn.
+                lodging: 0.5,
+                // What they are paying for instead is getting out. "There are
+                // more people on the road than there is reason for."
+                transport: 1.6
+            },
             dangerDelta: 0.2,
             // Answered by the next harvest, which is the only thing that ever
             // answers one.

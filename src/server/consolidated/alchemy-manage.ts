@@ -55,6 +55,7 @@ import { getHerb } from '../../data/cultivation/herbs.js';
 // this function through it flips the evaluation order and takes the server out
 // at boot. See `where-a-cultivator-is-standing.ts`.
 import { standingOf } from './where-a-cultivator-is-standing.js';
+import { whatThisGroundAddsToAPrice } from './what-this-ground-adds-to-a-price.js';
 import { gradeRank } from '../../data/cultivation/techniques.js';
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { pillBandOrdinal, whatACrossingTakesFrom } from '../../engine/cultivation/breakthrough.js';
@@ -495,7 +496,11 @@ export async function handleConsumePill(
     const dosed: Pill = { ...pill, potency: pill.potency * outcome.potencyMultiplier };
     const effect = resolvePillEffect(
         cultivator, dosed, day,
-        readNumberFlag(repos.db, cultivator.id, FLAG_BREAKTHROUGH_PILLS_TAKEN, 0)
+        readNumberFlag(repos.db, cultivator.id, FLAG_BREAKTHROUGH_PILLS_TAKEN, 0),
+        // Read here because the resolver is sync and has to stay that way. The
+        // only use of it is naming what would close a wound this pill did not,
+        // and that sentence quotes a counter, so it has to quote THIS counter.
+        await whatThisGroundAddsToAPrice(run, cultivator, 'medicine')
     );
 
     // ── Toxicity: the medicine keeps its own ledger. ──
@@ -762,7 +767,9 @@ function resolvePillEffect(
     pill: Pill,
     currentDay: number,
     /** How many breakthrough pills this life has already had. Read, never written. */
-    priorPillsTaken: number
+    priorPillsTaken: number,
+    /** What the ground here adds to medicine, for the cure this pill did not reach. */
+    groundMultiplier: number
 ): PillApplication {
     const base: PillApplication = {
         summary: '',
@@ -856,7 +863,10 @@ function resolvePillEffect(
                     // figure the counter charges. The physician's refusal, the
                     // situation panel and this sentence are the three places
                     // the cure gets named, and they now name one price.
-                    standingOf(cultivator).regionId)
+                    standingOf(cultivator).regionId,
+                    // What the province is LIKE, and then what is TRUE of the
+                    // ground today. `buy` charges both.
+                    groundMultiplier)
                 : null;
 
             let summary: string;

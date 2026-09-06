@@ -124,7 +124,10 @@ export interface PlaceStatusView {
     reviewInDays: number;
     /** What is simply not to be had here while this is true. */
     stops: string[];
+    /** What a type of good this status says nothing about costs. */
     priceMultiplier: number;
+    /** And the types it does move. A famine is food up and lodging down. */
+    priceMultiplierByCategory: Record<string, number>;
     dangerDelta: number;
 }
 
@@ -404,6 +407,7 @@ function statusView(
         reviewInDays: status.reviewOnDay - day,
         stops: status.stops.slice(),
         priceMultiplier: status.priceMultiplier,
+        priceMultiplierByCategory: { ...status.priceMultiplierByCategory },
         dangerDelta: status.dangerDelta
     };
 }

@@ -1,7 +1,30 @@
 /**
  * What is true of a place right now, and what it does while it is true.
+ *
+ * ── THE PRICE DIAL IS PER TYPE OF GOOD, AND HAS TO BE ────────────────────
+ *
+ * This layer carried ONE multiplier over everything on sale, and one number
+ * cannot say what a famine is. The design owner, on the defect:
+ *
+ *     also why would the famine move the cost of an inn bed. it should DROP it
+ *
+ * A failed harvest raises food AND empties the roads, so the beds go begging.
+ * A war raises weapons and carriage. Each of those is a single status moving
+ * two types of good in opposite directions, and a scalar can only ever move
+ * them together. So the dial is keyed on the good's own `category` - the closed
+ * enum `PriceSchema` already tags every row on the board with - and the scalar
+ * survives as the figure for the types a status has no opinion about.
+ *
+ * Two things it deliberately is NOT. It is not a table of kind -> category:
+ * `kind` is free-form content, the world sim invents kinds, and nothing in this
+ * file has ever branched on one. What a famine does to food is carried BY the
+ * famine and written where the famine is created. And it does not touch supply.
+ * The board stays infinite - *if you're willing to pay the right price you can
+ * get a theoretically unlimited supply of something* - so the price is the
+ * whole of what moves, and the shelf never empties.
  */
 
+import type { Price } from '../../data/cultivation/mortal-world.js';
 import type { KnowingStage } from '../social/discovery.js';
 import { isAtLeast, stageRank } from '../social/discovery.js';
 import { isOpenOn, nextOpeningDay, type LocationRecord } from './locations.js';
@@ -26,6 +49,22 @@ export interface StatusCause {
     /** The history fact, when the cause is on the record. */
     factId: string | null;
 }
+
+/**
+ * What kind of thing is being bought. The board's own tag, so a status and a
+ * price row cannot disagree about what counts as food.
+ */
+export type GoodCategory = Price['category'];
+
+/**
+ * What a status does to prices, by type of good.
+ *
+ * Partial on purpose. A key absent is not "no effect": it is *this status has
+ * nothing particular to say about that type*, and the status's scalar answers
+ * instead. So a writer that sets only the scalar behaves exactly as it did
+ * before this existed.
+ */
+export type PriceMultiplierByCategory = Readonly<Partial<Record<GoodCategory, number>>>;
 
 /**
  * Something that is true of an area now and will not be forever.
@@ -67,8 +106,17 @@ export interface AreaStatus {
      * What is simply not to be had here while this is true.
      */
     stops: readonly string[];
-    /** What everything still to be had here costs while this is true. */
+    /**
+     * What a good this status has no particular opinion about costs while it
+     * is true. The floor of the dial, and the whole of it for a status that
+     * moves everything the same way - a blockade, say, where nothing gets in.
+     */
     priceMultiplier: number;
+    /**
+     * And what each type of good costs, where this status DOES have an opinion.
+     * A famine lives here: `{ food: 4, lodging: 0.5 }` over a scalar of 1.
+     */
+    priceMultiplierByCategory: PriceMultiplierByCategory;
     /** Added to the place's danger while this is true. Signed. */
     dangerDelta: number;
 }
@@ -93,6 +141,7 @@ export interface AreaStatusInput {
     causeKnownLocally?: boolean;
     stops?: readonly string[];
     priceMultiplier?: number;
+    priceMultiplierByCategory?: PriceMultiplierByCategory;
     dangerDelta?: number;
 }
 
@@ -128,6 +177,9 @@ export function makeAreaStatus(input: AreaStatusInput): AreaStatus {
         liftedOnDay: null,
         stops: input.stops ?? [],
         priceMultiplier: input.priceMultiplier ?? 1,
+        // Copied rather than aliased: the caller's literal is usually a
+        // candidate row that outlives the status and gets reused next year.
+        priceMultiplierByCategory: { ...(input.priceMultiplierByCategory ?? {}) },
         dangerDelta: input.dangerDelta ?? 0
     };
 }
@@ -295,19 +347,84 @@ export function isStoppedInArea(
 }
 
 /**
- * What everything still to be had here costs, as a multiplier.
+ * What a good of this type still to be had here costs, as a multiplier.
+ *
+ * Ask with no category and you get what a status says about goods it has no
+ * opinion on, which is what this function answered before types existed. Every
+ * caller that has a category in hand should pass it: a famine asked without one
+ * reports 1 and is telling the truth about a chisel and nothing about millet.
  */
 export function priceMultiplierInArea(
     statuses: readonly AreaStatus[],
     locations: readonly LocationRecord[],
     locationId: string | null,
-    day: number
+    day: number,
+    category?: GoodCategory
 ): number {
     let m = 1;
     for (const s of statusesInArea(statuses, locations, locationId, day)) {
-        m *= Math.max(0, s.priceMultiplier);
+        m *= dialFor(s, category);
     }
     return Number(m.toFixed(6));
+}
+
+/** One status's dial for one type of good. The `?? scalar` is the whole rule. */
+function dialFor(status: AreaStatus, category: GoodCategory | undefined): number {
+    const named = category === undefined
+        ? undefined
+        : status.priceMultiplierByCategory[category];
+    return Math.max(0, named ?? status.priceMultiplier);
+}
+
+/**
+ * The other direction: not *what does this type cost here*, but *what has this
+ * ground moved, and by how much*.
+ *
+ * The forward read prices one row. This one is for a board with eight columns
+ * on it, and for the sentence a narrator wants - food dear here, beds cheap -
+ * which the point read cannot produce without being told what to ask about.
+ *
+ * `byCategory` names only types some live status actually had an opinion about,
+ * so an empty map is a quiet market rather than eight ones. There is no list of
+ * every category anywhere in this file on purpose: the keys come off the
+ * statuses standing here, so a category added to the board needs no edit here.
+ */
+export interface GroundPricing {
+    /** What a type nothing here named costs. 1 where nothing is going on. */
+    everythingElse: number;
+    /** Only the types a status here moved, each against the whole stack. */
+    byCategory: Partial<Record<GoodCategory, number>>;
+}
+
+export function whatTheGroundDoesToPrices(
+    statuses: readonly AreaStatus[],
+    locations: readonly LocationRecord[],
+    locationId: string | null,
+    day: number
+): GroundPricing {
+    const live = statusesInArea(statuses, locations, locationId, day);
+
+    let everythingElse = 1;
+    const named = new Set<GoodCategory>();
+    for (const s of live) {
+        everythingElse *= Math.max(0, s.priceMultiplier);
+        for (const c of Object.keys(s.priceMultiplierByCategory) as GoodCategory[]) {
+            named.add(c);
+        }
+    }
+
+    // Every named type is multiplied across EVERY status, not only the ones
+    // that named it: a war doubling the board and a famine quadrupling the
+    // food are eight times the price of a bowl of millet, and taking only the
+    // famine's word for food would quietly drop the war.
+    const byCategory: Partial<Record<GoodCategory, number>> = {};
+    for (const c of named) {
+        let m = 1;
+        for (const s of live) m *= dialFor(s, c);
+        byCategory[c] = Number(m.toFixed(6));
+    }
+
+    return { everythingElse: Number(everythingElse.toFixed(6)), byCategory };
 }
 
 /** How much more dangerous the place is today than the record says it is. */

@@ -1912,7 +1912,16 @@ what-is-true-of-a-place-right-now.ts
                  read off here and counted nowhere: a famine stops the millet,
                  and travellers buying meals never caused one. Every status
                  carries a cause, and a cause somebody chose differs from a
-                 cause nothing chose by one field and no branch
+                 cause nothing chose by one field and no branch. THE PRICE DIAL
+                 IS PER TYPE OF GOOD, keyed on the board's own `category`:
+                 `priceMultiplierByCategory` is what this status says about
+                 food, lodging, tools; `priceMultiplier` is what a type it has
+                 no opinion about costs, so a writer that sets only the scalar
+                 behaves as it always did. One number could not say what a
+                 famine is - it raises the food and DROPS the beds, because the
+                 roads empty - and the effect is carried BY the status rather
+                 than switched on `kind` downstream. The board stays infinite:
+                 the price moves and the shelf never does
 possessions.ts   possession / ownership / claim / knowledge, plus provenance
 object-damage.ts THE ONE ANSWER to "is this thing damaged, and how badly". A
                  hull, a sabre, a carriage, a plate and a manual all go through
@@ -2084,7 +2093,7 @@ it is actually for.** Range in walking days, growing with the rung: one province
 Void Refinement, the whole map by ordinal 38, and nothing at all below the floor. **The
 scarce thing is not power, it is knowing where the far end is** - a fold needs a fix, and
 there are exactly two, ground somebody has stood on and something they have seen. There is
-no third for being told or being sold one, because a bought fix is the Wide Age
+no third for being told or being sold one, because a bought fix is the Open Gate Age
 true-distance table and the Shrinking Earth Pavilion has spent five thousand years
 failing to reproduce it. `convergence.ts` prices its escape off the same curve, so a
 rescuer's reach is their own - **whose student you are is now a fact about how deep you may

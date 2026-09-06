@@ -800,7 +800,10 @@ export const situatedReads = {
                 cultivator.spiritStones,
                 // The province they are standing in, so the panel quotes the
                 // figure `buy` will charge rather than the board's base.
-                standingOf(cultivator).regionId
+                standingOf(cultivator).regionId,
+                // And what is TRUE of that ground today, which is the other
+                // half of what `buy` charges.
+                this.groundPriceMultiplier(cultivator, 'medicine')
             ),
             // -- AND WHOEVER IS ON THEIR KNEES IN FRONT OF THEM -----------
             yielding: (() => {
