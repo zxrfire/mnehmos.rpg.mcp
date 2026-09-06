@@ -75,8 +75,28 @@ export const HAVING_A_CHILD =
  * written, the world has used it for NPCs, and nothing has ever let the person
  * playing spend one. For somebody with no house it is the only road there is.
  */
-export const PLACING_A_CHILD =
-    /\b(?:place|places|placing|send|sends|sending|enrol|enrols|enroll|enrolls|enrolling|apprentice|apprentices|apprenticing)\b/;
+export const PLACING_A_CHILD = new RegExp(
+    '\\b(?:place|places|placing|send|sends|sending|enrol|enrols|enroll|enrolls'
+    + '|enrolling|apprentice|apprentices|apprenticing)\\b'
+    // ── AND THE WAY SOMEBODY ACTUALLY ASKS FOR IT ────────────────────────
+    //
+    // Caught by the corpus check: this file's own exemplar for the verb - "I
+    // call in a favour to get my child into that house" - reached `interact`
+    // and not `child`. Which is the exemplar the doc comment above is ABOUT,
+    // the favour reaching a player for the first time, so the table was wrong
+    // and the sentence was right.
+    //
+    // Nobody says "I enrol my son at the Pavilion" when they are calling in a
+    // favour. They say they are GETTING him in. The formal verbs above are how
+    // a clerk writes it down afterwards.
+    //
+    // CONSTRAINED, because `get` and `put` are the two commonest verbs in the
+    // language. A destination preposition has to follow within a clause, so "I
+    // get a child with her" - which is conceiving one and belongs to
+    // `HAVING_A_CHILD` - does not match, and the branch that reads this also
+    // demands a child noun and a destination of its own.
+    + '|\\b(?:get|gets|getting|put|puts|putting)\\b[^.!?]{0,30}?\\b(?:into|in|at)\\b'
+);
 
 /** Who is being asked, out of the two shapes a proposal is said in. */
 export const PROPOSE_SUBJECT_VERBS =
@@ -145,7 +165,7 @@ export function familyStep(text: string, input: string): PlannedAction | null {
                 // door, and the door is what has to resolve.
                 target: extractSubject(
                     input,
-                    /place .{0,40} (?:at|with|in|into)|send .{0,40} to|enrol .{0,40} (?:at|in|with)|apprentice .{0,40} to|at|with/
+                    /place .{0,40} (?:at|with|in|into)|send .{0,40} to|enrol .{0,40} (?:at|in|with)|apprentice .{0,40} to|(?:get|put) .{0,40} (?:into|in|at)|at|with/
                 )
             };
         }
