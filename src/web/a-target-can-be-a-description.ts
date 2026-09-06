@@ -30,7 +30,8 @@
  */
 
 import type { SectAlignment } from '../schema/cultivation.js';
-import { REALM_TIERS } from '../engine/cultivation/realms.js';
+import { A_REALM_ANSWERS_TO,
+    REALM_TIERS } from '../engine/cultivation/realms.js';
 
 /** Which end of an ordering the phrase asks for. */
 export type WhichEnd =
@@ -213,12 +214,20 @@ export function theDescriptionThisIs(query: string): ADescription | null {
     // the loop's unknown-word rule on purpose: it is an ordinary adjective in
     // this setting and would take phrases that are not about the ladder.
     let realmKey: string | null = null;
-    for (const tier of REALM_TIERS) {
-        if (tier.name.split(' ').length < 2) continue;
-        const at = rest.indexOf(tier.name.toLowerCase());
+    // What they are called now, and what they have ever been called. A run's
+    // transcript is the classifier's context, so a realm that was renamed goes
+    // on being said by everybody who read the narration from before it moved -
+    // see `A_REALM_ANSWERS_TO`. Retired names are read and never printed.
+    const byName: [string, string][] = [
+        ...REALM_TIERS.map(tier => [tier.name.toLowerCase(), tier.key] as [string, string]),
+        ...Object.entries(A_REALM_ANSWERS_TO)
+    ];
+    for (const [name, key] of byName) {
+        if (name.split(' ').length < 2) continue;
+        const at = rest.indexOf(name);
         if (at < 0) continue;
-        realmKey = tier.key;
-        rest = `${rest.slice(0, at)} ${rest.slice(at + tier.name.length)}`;
+        realmKey = key;
+        rest = `${rest.slice(0, at)} ${rest.slice(at + name.length)}`;
         break;
     }
 

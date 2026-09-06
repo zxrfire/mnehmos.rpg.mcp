@@ -220,6 +220,29 @@ export const REALM_TIERS: readonly RealmTier[] = [
 /**
  * Highest legal ordinal on the ladder: True Immortal.
  */
+/**
+ * NAMES A REALM USED TO GO BY, AND STILL ANSWERS TO.
+ *
+ * Void Refinement became Void Tribulation because alchemy took the word - see
+ * the note on the tier itself. The KEY did not move, and neither did anything a
+ * save holds, but a rename has one cost a key does not pay: everything already
+ * SAID stays said.
+ *
+ * WHICH MATTERS HERE MORE THAN IN AN ORDINARY CODEBASE. A run's transcript is
+ * the classifier's context. Somebody forty turns into a run has forty turns of
+ * narration behind them that says Void Refinement, and both they and the model
+ * reading for them will go on saying it. A parser that answers "no such realm"
+ * to a word the game itself printed an hour ago is not being precise, it is
+ * being wrong about its own history.
+ *
+ * So a retired name resolves, forever, to the realm that carried it. It is
+ * never PRINTED - `REALM_TIERS` owns what a realm is called - and nothing reads
+ * this except the readers that turn a player's words into a rung.
+ */
+export const A_REALM_ANSWERS_TO: Readonly<Record<string, RealmKey>> = {
+    'void refinement': 'void_refinement'
+};
+
 export const MAX_ORDINAL = 46;
 /** Total number of ranks, including ordinal 0. */
 export const TOTAL_RANKS = MAX_ORDINAL + 1;
