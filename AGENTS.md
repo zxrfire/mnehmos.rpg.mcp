@@ -151,7 +151,7 @@ you want is an item.
 
 ---
 
-## A name has to be tellable from every other name
+## A name evokes what it is, and is tellable from every other name
 
 The WORLD half of naming - what register a sect, an art, a pill or a place is in,
 which type nouns exist, why `guild` is banned - is not a repo-wide rule and does
@@ -173,10 +173,22 @@ then has to be disambiguated from the rest of the sentence. The design owner:
 *it makes it harder for the llm. try to make it easier by picking something
 distinct.*
 
-The same constraint decides what a name may be renamed TO. A name a player types
-keeps the word they type: `Lesser Healing Pill` was once renamed to something
-more evocative, and the cost was that "I swallow a healing pill" stopped
-reaching it. It went back.
+And the second half of the same constraint:
+
+> **A name has to evoke the character of the thing it names.**
+
+A reader takes the register as a claim about what the thing IS, before they have
+read a word of what it does - so a benign effect with an ominous name is a bug in
+exactly the way a wrong type noun is. `Lesser Healing Pill` was once renamed to
+`Flesh-Knitting Pill`, which reads as a demonic art: the design owner's objection
+was not that it was unclear but that *something that heals should evoke good
+thoughts*. Restoration sounds like restoration - Blood-Replenishing,
+Marrow-Washing, Spring-Returning. Demonic arts get the demonic register and have
+earned it - Corpse-Lantern Soul Forging, Lifespan-Devouring Heaven Theft.
+
+That rename also cost the sentence "I swallow a healing pill", which is what a
+player actually types. **A name a player types keeps the word they type.** Both
+failures were in one rename, and it went back.
 
 **Renaming is done across the whole tree at once**, because a name lives in the
 catalog, in the prose about it, in the ids and in the tests, and that is the only
