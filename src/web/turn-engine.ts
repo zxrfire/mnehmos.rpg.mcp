@@ -3963,6 +3963,23 @@ ${noticed}`;
     ): Execution {
         const here = this.present(cultivator);
 
+        // ── A BODY IS NOT SOMEBODY STANDING HERE ─────────────────────────
+        //
+        // Offering the people in the square as candidates for a name that
+        // belongs to a house is the wrong answer however little the player
+        // knows about that house. `noPartyNamed` is the right refusal and lists
+        // only the bodies this cultivator actually holds names for, so nothing
+        // is disclosed that was not disclosed before. See
+        // `thoseWordsNameSomeBody` for why the check is ungated.
+        if (this.thoseWordsNameSomeBody(query)) {
+            return this.noPartyNamed(
+                action, query, cultivator,
+                'Not somebody standing here.',
+                'What you named is a body rather than a person, and nothing of it is in front '
+                + 'of you to put anything to.'
+            );
+        }
+
         const nameable = here
             .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
             .map(row => row.name);
@@ -5475,6 +5492,39 @@ ${noticed}`;
             }
         }
         return best;
+    }
+
+    /**
+     * Whether these words name a BODY at all, whoever is asking.
+     *
+     * UNGATED, AND IT DECIDES A SHAPE RATHER THAN AN ANSWER. `factionMeant` is
+     * knowledge-gated and rightly so: a cultivator who has never heard of a
+     * house cannot act on it or name it. But the gate was also deciding what
+     * KIND of refusal an unknown name got, and the answer it produced was
+     * absurd. Measured on the trope corpus:
+     *
+     *     I will end the Azure Cloud Pavilion
+     *     -> "Lu Nuoming tells you who is present: Tang Xuxue, Kong Xuru, He
+     *        Tianhe, and four others. They leave it to you to specify which of
+     *        them you meant."
+     *
+     * The player named a house of the catalog in full and was offered seven
+     * bystanders as candidates for it. Nobody standing there is called that,
+     * and the engine had no way to know the difference because the only reader
+     * it asked refuses to look at houses the player has not heard of.
+     *
+     * So this asks the whole catalog one question - is that the name of a body -
+     * and NOTHING follows from a true answer except which refusal is used.
+     * `noPartyNamed` then lists only the bodies this cultivator actually holds
+     * names for, so what the player is told about the world is exactly what it
+     * was before.
+     */
+    private thoseWordsNameSomeBody(query: string | undefined): boolean {
+        const wanted = (query ?? '').trim();
+        if (wanted.length < 3) return false;
+        const named = (row: { name: string }): boolean =>
+            matchScore(wanted, row.name) > MATCH_THRESHOLD;
+        return SECTS.some(named) || COURTS.some(named) || APEX_INSTITUTIONS.some(named);
     }
 
     /**

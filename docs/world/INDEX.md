@@ -729,12 +729,12 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 18 | 76 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 20 | 22 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 41 |
-| `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 23 | 90 |
-| `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 121 |
+| `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 24 | 90 |
+| `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 28 | 121 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 33 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 34 | 148 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 48 | 59 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 61 | 307 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 62 | 309 |
 
 <!-- END GENERATED: design-constants -->
 
