@@ -115,6 +115,34 @@ export interface StandingHere {
     cure: TheCure | null;
     /** Below full HP. Distinct from wounded: a battered body mends under care. */
     battered: boolean;
+    /**
+     * The body has stopped coping - enough open channels that it no longer
+     * mends itself and everything it does costs more.
+     *
+     * NOT a count and not a death warning. `isCrippledByInjuries` is the one
+     * predicate for it and it is a THRESHOLD: below it the wounds are a list of
+     * problems, and at it they are one condition. A player carrying it needs to
+     * be told in those terms rather than handed a longer list.
+     */
+    bodyHasStoppedCoping: boolean;
+    /**
+     * A wound nothing in the world closes.
+     *
+     * The one fact about a body that no amount of money or seclusion answers,
+     * and the read said nothing about it: `treatableWounds` and
+     * `woundsPastMortalCare` both filter permanents OUT, so somebody carrying a
+     * ruined dantian and nothing else was told they had no wounds at all.
+     */
+    carriesAWoundNothingCloses: boolean;
+    /**
+     * Whether what is torn is the body or the mind, counted apart.
+     *
+     * `woundNature` splits them and nothing asked it. They are different
+     * problems with different medicines, and a read that adds them together
+     * points a player at the wrong physician.
+     */
+    woundsOfTheBody: number;
+    woundsOfTheMind: number;
     /** Whether a cultivation-class manual is being practised at all. */
     practisesAMethod: boolean;
     /**
@@ -518,7 +546,21 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         // Split on what mortal care can actually reach, because the two have
         // different answers and pointing a player at a physician who will
         // refuse them is worse than saying nothing.
-        if (here.treatableWounds > 0) {
+        // THE THRESHOLD FIRST, because past it the wounds stop being a list of
+        // problems and become one condition, and a longer list is the wrong
+        // thing to hand somebody whose body has stopped mending itself.
+        if (here.bodyHasStoppedCoping) {
+            add(at(SAY.treat, 'now',
+                'The body has stopped coping. There are enough channels open that it no longer '
+                + 'mends itself at all, everything costs more than it should, and this does not '
+                + 'improve by being carried further. '
+                + (here.woundsOfTheMind > 0 && here.woundsOfTheBody > 0
+                    ? `${here.woundsOfTheBody} of it is flesh and ${here.woundsOfTheMind} of it `
+                      + 'is not, which are two different physicians.'
+                    : here.woundsOfTheMind > 0
+                        ? 'What is torn is not the flesh, which is why rest has not touched it.'
+                        : 'All of it is flesh, which is the half that ordinary care reaches.')));
+        } else if (here.treatableWounds > 0) {
             add(at(SAY.treat, 'now',
                 `${here.treatableWounds} untreated wound${here.treatableWounds === 1 ? '' : 's'} that `
                 + 'ordinary care could close. They do not mend by waiting, and every one of them '
@@ -527,6 +569,29 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
             add(at(SAY.treat, 'soon',
                 'Nothing torn, but the body is under what it should be, and a month under a roof '
                 + 'is the only thing that puts it back.'));
+        }
+
+        // ── AND THE ONE NOTHING CLOSES ────────────────────────────────────
+        //
+        // Said whatever else is true, because it is not a thing to DO and every
+        // other branch above is. `treatableWounds` and `woundsPastMortalCare`
+        // both filter permanents out, so somebody carrying a ruined dantian and
+        // nothing else was told there was nothing wrong with them - the worst
+        // silence in the read, on the one fact money does not answer.
+        if (here.carriesAWoundNothingCloses) {
+            add({
+                id: 'the-wound-that-stays',
+                say: 'what would close this',
+                routesTo: 'look',
+                urgency: 'open',
+                because:
+                    'Something in there does not close. Not expensively, not with a better '
+                    + 'physician, and not with time - the world has no medicine for it and the '
+                    + 'rest of the road is walked carrying it.',
+                whatItIsAbout: 'you',
+                namesSomething: false,
+                canHurtYou: false
+            });
         }
         // the medicine, BY NAME
         if (here.cure != null && here.woundsPastMortalCare > 0) {

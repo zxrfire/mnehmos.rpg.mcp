@@ -18,7 +18,12 @@ import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { effectiveCapOf, writtenTo } from '../engine/cultivation/escapes.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
-import { untreatedInjuries } from '../engine/cultivation/injuries.js';
+import {
+    hasPermanentWound,
+    isCrippledByInjuries,
+    untreatedInjuries,
+    woundsOfNature
+} from '../engine/cultivation/injuries.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { turnsUntilStarvation } from '../engine/cultivation/survival.js';
 import { brokenStatusesOn } from '../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
@@ -826,6 +831,13 @@ export const situatedReads = {
                 return stillHere ? { name: stillHere.name } : null;
             })(),
             battered: cultivator.hp < cultivator.maxHp,
+            // The threshold, the permanent, and the split - three reads that
+            // existed in `injuries.ts` with no caller anywhere. See
+            // `StandingHere` for what each is for and what its absence cost.
+            bodyHasStoppedCoping: isCrippledByInjuries(cultivator),
+            carriesAWoundNothingCloses: hasPermanentWound(cultivator.injuries),
+            woundsOfTheBody: woundsOfNature(hurt, 'physical').length,
+            woundsOfTheMind: woundsOfNature(hurt, 'mental').length,
             practisesAMethod: road.state !== 'no_method',
             methodExhausted: road.state === 'exhausted',
             breakthroughReady: canAttemptBreakthrough(cultivator).eligible,

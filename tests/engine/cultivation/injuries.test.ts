@@ -15,7 +15,7 @@ import {
     aggregateInjuryPenalties,
     createInjury,
     defaultInjuryDescription,
-    isLethalInjuryState,
+    isCrippledByInjuries,
     rollInjurySeverity,
     treatInjury,
     treatWorstInjuries,
@@ -113,22 +113,22 @@ describe('aggregateInjuryPenalties', () => {
     });
 });
 
-describe('isLethalInjuryState', () => {
+describe('isCrippledByInjuries', () => {
     it('flips exactly at LETHAL_UNTREATED_INJURIES and not before', () => {
         for (let n = 0; n < LETHAL_UNTREATED_INJURIES; n++) {
             const cultivator = makeCultivator({ injuries: makeInjuries(n) });
-            expect(isLethalInjuryState(cultivator)).toBe(false);
+            expect(isCrippledByInjuries(cultivator)).toBe(false);
         }
         const atThreshold = makeCultivator({
             injuries: makeInjuries(LETHAL_UNTREATED_INJURIES)
         });
-        expect(isLethalInjuryState(atThreshold)).toBe(true);
+        expect(isCrippledByInjuries(atThreshold)).toBe(true);
     });
 
     it('counts only untreated injuries', () => {
         const injuries = makeInjuries(LETHAL_UNTREATED_INJURIES);
         const treated = treatInjury(injuries, injuries[0].id);
-        expect(isLethalInjuryState(makeCultivator({ injuries: treated }))).toBe(false);
+        expect(isCrippledByInjuries(makeCultivator({ injuries: treated }))).toBe(false);
         expect(untreatedInjuryCount(treated)).toBe(LETHAL_UNTREATED_INJURIES - 1);
         expect(untreatedInjuries(treated)).toHaveLength(LETHAL_UNTREATED_INJURIES - 1);
     });

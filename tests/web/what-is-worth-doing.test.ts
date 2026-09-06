@@ -83,6 +83,14 @@ const WELL: StandingHere = {
     woundsPastMortalCare: 0,
     cure: null,
     battered: false,
+    // A WHOLE BODY, said rather than left to `undefined`. The three wound reads
+    // `injuries.ts` had written and nobody called - the threshold, the wound
+    // nothing closes, and the body/mind split. See
+    // `a-wound-that-does-not-close.test.ts`.
+    bodyHasStoppedCoping: false,
+    carriesAWoundNothingCloses: false,
+    woundsOfTheBody: 0,
+    woundsOfTheMind: 0,
     practisesAMethod: true,
     methodExhausted: false,
     breakthroughReady: false,

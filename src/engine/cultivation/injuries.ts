@@ -252,13 +252,25 @@ export function aggregateInjuryPenalties(injuries: readonly Injury[]): InjuryPen
 /**
  * Whether this cultivator is carrying CRIPPLING_UNTREATED_INJURIES or more open
  * channel wounds - the state in which a body has stopped coping.
+ *
+ * ── ONE NAME HERE, AND THERE WERE TWO ────────────────────────────────────
+ *
+ * This was `isLethalInjuryState` with `isCrippledByInjuries` beside it as an
+ * alias, whose entire comment was *the name `isLethalInjuryState` should have*.
+ * Two exported names for one predicate, neither of them read by the game, and
+ * the second existing only to say the first was misnamed. So the rename is
+ * done and the alias is gone.
+ *
+ * `survival.ts` has `isBleedingOut`, which asks the same question of a COUNT
+ * rather than of a cultivator, and the two are NOT folded together: that file
+ * already imports this one, so a delegation either way round is a cycle. What
+ * makes them safe is that neither restates the threshold - both read
+ * `CRIPPLING_UNTREATED_INJURIES` out of the schema, under its two exported
+ * names - so there is one number and no way for them to disagree.
  */
-export function isLethalInjuryState(cultivator: Pick<Cultivator, 'injuries'>): boolean {
+export function isCrippledByInjuries(cultivator: Pick<Cultivator, 'injuries'>): boolean {
     return bleedingInjuryCount(cultivator.injuries) >= LETHAL_UNTREATED_INJURIES;
 }
-
-/** The name `isLethalInjuryState` should have. Same predicate. */
-export const isCrippledByInjuries = isLethalInjuryState;
 
 // TEMPERING - EXPERIENCE AS A FORM OF POWER
 //
