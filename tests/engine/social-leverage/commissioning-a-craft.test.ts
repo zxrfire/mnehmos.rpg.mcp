@@ -514,3 +514,160 @@ describe('a commission put to a house runs through the room that already decides
         );
     });
 });
+
+// ═════════════════════════════════════════════════════════════════════════
+// AND THE FLIP SIDE, WHICH IS THE SAME FUNCTION READ FROM THE OTHER END
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * The player is not a special kind of person, so taking a commission is not a
+ * special kind of question. It is this function with the two people swapped -
+ * the player in `maker`, whoever wants the thing in `askerId` - and these pin
+ * that the answer is symmetric rather than merely available.
+ */
+
+/**
+ * A player, per sample.
+ *
+ * VARIED, because one id is one leaning and four hundred asks of one person is
+ * a sample of size one wearing a rate. What is being measured is what happens
+ * to PLAYERS, and players differ from each other exactly as everybody does.
+ */
+const playerNumber = (n: number): string => `the-player-${n}`;
+
+/** Somebody asks the player to make them something. */
+function somebodyAsksThePlayer(n: number, c: Case & { playerOrdinal?: number }) {
+    const ask: WhatYouAskedThemToMake = {
+        named: 'the thing',
+        grade: c.grade ?? 'mortal',
+        ...(c.slip === undefined ? {} : { slip: c.slip })
+    };
+    const askerId = `petitioner-${n}`;
+    const player = playerNumber(n);
+    return askingSomebodyToMakeYouSomething({
+        ask,
+        askerId,
+        maker: { id: player, ordinal: c.playerOrdinal ?? 20 },
+        nearness: c.nearness ?? 'distant',
+        stonesOffered: c.stones ?? 0,
+        onTheTable: c.onTheTable ?? [],
+        ledger: c.ledgerFor ? c.ledgerFor(askerId, player) : [],
+        onDay: 1000
+    });
+}
+
+function howOftenThePlayerAgrees(c: Case & { playerOrdinal?: number }): number {
+    let yes = 0;
+    for (let n = 0; n < PEOPLE; n++) if (somebodyAsksThePlayer(n, c).agreed) yes++;
+    return yes / PEOPLE;
+}
+
+describe('the player taking a commission', () => {
+    it('is refused by the same gate that refuses anybody', () => {
+        const grade: TechniqueGrade = 'heaven';
+        const said = somebodyAsksThePlayer(0, {
+            grade,
+            playerOrdinal: refiningOrdinalFor(grade) - 1
+        });
+        expect(said.hands.theyCan).toBe(false);
+        expect(said.agreed).toBe(false);
+        // The refusal names the realm, from this side too. A player told "no"
+        // with no route is a player told nothing.
+        expect(said.hands.why).toContain(refiningRealmNameFor(grade));
+    });
+
+    it('quotes the same price it would have paid', () => {
+        // ONE LADDER, READ IN BOTH DIRECTIONS. What somebody must bring the
+        // player is what the player would have had to bring somebody else -
+        // otherwise taking commissions is an arbitrage and not a living.
+        for (const grade of GRADES) {
+            const asked = somebodyAsksThePlayer(0, { grade, playerOrdinal: MAX_ORDINAL });
+            const asking = askOnce(0, { grade, ordinal: MAX_ORDINAL });
+            expect(asked.priceInStones).toEqual(asking.priceInStones);
+            expect(asked.priceInStones).toEqual(whatACommissionComesTo(grade));
+        }
+    });
+
+    it('is moved by the tie, exactly as anybody else is', () => {
+        // A master who asks you is not a stranger asking you. The player does
+        // not get to be exempt from the thing that moves everybody.
+        const distant = howOftenThePlayerAgrees({ nearness: 'distant' });
+        const tied = howOftenThePlayerAgrees({ nearness: 'tied' });
+        const household = howOftenThePlayerAgrees({ nearness: 'household' });
+        expect(tied).toBeGreaterThan(distant);
+        expect(household).toBeGreaterThan(tied);
+    });
+
+    it('and by the ledger, in both directions', () => {
+        const plain = howOftenThePlayerAgrees({ nearness: 'house' });
+        const owedAFavour = howOftenThePlayerAgrees({
+            nearness: 'house',
+            ledgerFor: (askerId, makerId) => [
+                createObligation(createFavor({
+                    holderId: askerId,
+                    subjectId: makerId,
+                    severity: 'grave',
+                    incurredOnDay: 500,
+                    triggeringEventId: 'ev-favour'
+                }))
+            ]
+        });
+        const holdingAGrudge = howOftenThePlayerAgrees({
+            nearness: 'house',
+            ledgerFor: (askerId, makerId) => [
+                createObligation(createGrudge({
+                    holderId: makerId,
+                    subjectId: askerId,
+                    severity: 'grave',
+                    incurredOnDay: 500,
+                    triggeringEventId: 'ev-grudge'
+                }))
+            ]
+        });
+        expect(owedAFavour).toBeGreaterThan(plain);
+        expect(holdingAGrudge).toBeLessThan(plain);
+    });
+
+    it('says yes far more often once the money is on the table', () => {
+        const grade: TechniqueGrade = 'mortal';
+        const price = whatACommissionComesTo(grade)!;
+        const nothing = howOftenThePlayerAgrees({ grade, stones: 0 });
+        const paid = howOftenThePlayerAgrees({ grade, stones: price });
+        expect(paid).toBeGreaterThan(nothing);
+        // A met price is a rubber stamp from this side too, not a wall wearing
+        // an economy.
+        expect(paid).toBeGreaterThan(0.5);
+    });
+
+    it('and leaves the petitioner owing them where nothing was paid', () => {
+        const said = somebodyAsksThePlayer(0, { nearness: 'household' });
+        if (said.agreed) {
+            expect(said.owed).not.toBeNull();
+            // The record is held by whoever spent their hands, which on this
+            // side is the player.
+            expect(said.owed!.holderId).toBe(playerNumber(0));
+        }
+    });
+
+    it('is the same answer whichever way round two identical people stand', () => {
+        // Symmetry stated as a claim rather than assumed: swap the ids and the
+        // reading is the same, because nothing in here knows which of them is
+        // the player.
+        const ask: WhatYouAskedThemToMake = { named: 'the thing', grade: 'mortal' };
+        const shared = { ask, nearness: 'house' as Nearness, onDay: 1000, stonesOffered: 0 };
+        const oneWay = askingSomebodyToMakeYouSomething({
+            ...shared,
+            askerId: 'person-a',
+            maker: { id: 'person-b', ordinal: 20 }
+        });
+        const asMakerInstead = askingSomebodyToMakeYouSomething({
+            ...shared,
+            askerId: 'person-c',
+            maker: { id: 'person-b', ordinal: 20 }
+        });
+        // Same maker, same grade, same tie, different asker: the price and the
+        // gate are identical and only the reading of the person can differ.
+        expect(asMakerInstead.priceInStones).toEqual(oneWay.priceInStones);
+        expect(asMakerInstead.hands.theyCan).toEqual(oneWay.hands.theyCan);
+    });
+});

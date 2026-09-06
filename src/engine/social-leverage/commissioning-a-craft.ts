@@ -264,6 +264,20 @@ export interface WhetherTheyWillMakeIt {
  * route, because the four are four different things to do something about: a
  * realm they have not reached, a fold they cannot make, a figure that was not
  * met, and a person who does not care enough about the asker to spend a season.
+ *
+ * ── AND IT IS READ FROM BOTH SIDES ───────────────────────────────────────
+ *
+ * The design owner asked for the flip side - taking a commission yourself - and
+ * there is no second function for it, deliberately. Put the player in `maker`
+ * instead of `askerId` and this answers what SOMEBODY ELSE would have to bring
+ * before the player agrees. It is the same three questions with the two people
+ * swapped, and that is the whole point: a player and an NPC are the same kind of
+ * thing being asked the same question, so one ladder is read in both directions
+ * and what somebody would pay you is what you would pay them.
+ *
+ * The player is not exempt from the tie either. A master who asks you is not a
+ * stranger asking you, and `nearness` says so from this side exactly as it does
+ * from the other.
  */
 export function askingSomebodyToMakeYouSomething(
     input: AskingSomebodyToMakeYouSomething
