@@ -28,8 +28,8 @@ their original notice.
 PolyForm Noncommercial states it in its own words, and they are worth reading
 rather than paraphrasing. In practice:
 
-**Yes, without asking.** Clone it. Read it. Run your own copy and play it.
-Change it. Publish your changes. Hand it to a friend so they can run their own
+**Yes, without asking.** Clone it. Read it. Run it and play it - by yourself, or
+on your own network with people you know. Change it. Publish your changes. Hand it to a friend so they can run their own
 copy. Study it, write about it, teach from it, stream yourself playing it, fork
 it for your own campaign. Personal study, private entertainment, hobby projects
 and amateur pursuits are all named in the licence as permitted purposes, as is
@@ -39,9 +39,12 @@ use by schools, charities, public research bodies and government institutions.
 
 - **Selling it**, hosting it as a paid service, or bundling it into a commercial
   product. That is the PolyForm Noncommercial part.
-- **Running it for other people.** An instance, server, bot or hosted deployment
-  that others use - free or paid, public or invite-only. Running your own copy
-  is the point; putting other people on it is the thing withheld.
+- **Making it public.** An internet-facing instance, hosted service, public
+  server or bot that strangers can reach, free or paid. Running it privately is
+  fine and always was: your own machine, your household, a LAN, a game with
+  people you actually know. The line is PUBLIC AVAILABILITY, not the number of
+  players. Four friends on your network is fine; one stranger off the internet
+  is not.
 - **Taking the credit.** If you publish, deploy, demonstrate or write about it,
   credit this project and its upstream by name and link, where people will see
   it. Do not present it as your own creation.

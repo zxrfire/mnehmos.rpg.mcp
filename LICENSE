@@ -11,11 +11,17 @@ below and unmodified, PLUS the one additional condition in this section. The
 condition narrows the licence; it does not widen it. Because of it, this is not
 plain `PolyForm-Noncommercial-1.0.0` and should not be labelled as such.
 
-**1. Run it for yourself, not for other people.** You may run the software, and
-any work based on it, for your own use. You may NOT operate it as a service,
-instance, server, bot or hosted deployment that other people use, whether or not
-you charge, and whether those people are paying, invited, or strangers. Running
-your own copy is the point. Putting other people on it is not.
+**1. Run it privately, not publicly.** You may run the software, and any work
+based on it, for yourself and on a private or local network: your own machine,
+your household, a LAN, a game with people you actually know. That is ordinary
+use and needs no permission.
+
+What you may NOT do is make it available to the public. No internet-facing
+instance, hosted service, public server or bot that strangers can reach and use,
+whether or not you charge for it and whether or not it is advertised.
+
+The line is public availability, not the number of people. Four friends on your
+network is fine. One stranger off the internet is not.
 
 **2. Do not take the credit.** If you publish, deploy, demonstrate, stream or
 write about the software or a work based on it, you must credit this project and
@@ -23,9 +29,9 @@ its upstream by name and link, plainly and where people will see it. You may not
 present it, or a work substantially based on it, as your own creation.
 
 Everything else the licence permits, it still permits. Clone it. Read it. Run it
-for yourself. Change it. Publish your changes. Hand it to somebody so THEY can
-run their own copy. What is withheld is standing up an instance, putting other
-people on it, and collecting the credit for it.
+for yourself and for the people around you. Change it. Publish your changes.
+Hand it to somebody so THEY can run their own copy. What is withheld is putting
+it up for the public and collecting the credit for it.
 
 If you want to host it for other people, ask. These terms do not stop the
 licensor granting different ones; they stop you assuming them.
