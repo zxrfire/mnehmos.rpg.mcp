@@ -36,7 +36,7 @@ import {
     type RelationshipKind
 } from './npc-state.js';
 import type { FactionRecord, WorldState } from './world-state.js';
-import { isRuined, ruin } from './possessions.js';
+import { isRuined, isSomethingYouWouldSwing, ruin } from './possessions.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE NUMBERS
@@ -1156,26 +1156,6 @@ function bestObjectHeldBy(npc: NpcRecord, state: WorldState): CombatantInput['we
         }
     }
     return best;
-}
-
-/**
- * Whether this is a thing somebody raises in a fight.
- *
- * Stated as what it is NOT, because the list of things that are weapons is
- * open and the list of things that are certainly not is short and knowable.
- */
-export function isSomethingYouWouldSwing(object: {
-    tags: readonly string[];
-    kind: string;
-}): boolean {
-    // A CARRIAGE IS NOT A WEAPON, and neither is a boat.
-    if (object.tags.includes('conveyance')) return false;
-    // A THING BURNED ONCE IS NOT A WEAPON SLOT. It is used and it is gone,
-    // which is a different move from carrying it into every exchange.
-    if (object.tags.includes('single-use') || object.tags.includes('talisman')) return false;
-    // AND A THING THAT STANDS WHERE IT WAS MADE is never in anybody's hands.
-    if (object.kind === 'formation' || object.kind === 'territory') return false;
-    return true;
 }
 
 /**

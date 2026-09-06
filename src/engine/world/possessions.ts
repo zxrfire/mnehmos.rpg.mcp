@@ -199,6 +199,26 @@ export function howMuchAGradeIsWorthTracking(grade: TechniqueGrade): ObjectSigni
     }
 }
 
+/**
+ * Whether this is a thing somebody raises in a fight.
+ *
+ * Stated as what it is NOT, because the list of things that are weapons is
+ * open and the list of things that are certainly not is short and knowable.
+ */
+export function isSomethingYouWouldSwing(object: {
+    tags: readonly string[];
+    kind: string;
+}): boolean {
+    // A CARRIAGE IS NOT A WEAPON, and neither is a boat.
+    if (object.tags.includes('conveyance')) return false;
+    // A THING BURNED ONCE IS NOT A WEAPON SLOT. It is used and it is gone,
+    // which is a different move from carrying it into every exchange.
+    if (object.tags.includes('single-use') || object.tags.includes('talisman')) return false;
+    // AND A THING THAT STANDS WHERE IT WAS MADE is never in anybody's hands.
+    if (object.kind === 'formation' || object.kind === 'territory') return false;
+    return true;
+}
+
 /** Whether this row carries a provenance anybody can be asked about. */
 export function isTracked(object: Pick<ObjectRecord, 'significance'>): boolean {
     return keptAs(object.significance) === 'tracked';

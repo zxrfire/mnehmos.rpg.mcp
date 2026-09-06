@@ -50,7 +50,11 @@ import {
 import { openHandednessOf } from '../social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import type { WhyItMoved } from './a-house-holds-its-own.js';
 import { HOW_MANY_HALLS_A_COMPOUND_IS } from './what-a-year-of-war-does-to-a-compound.js';
-import { transferPossession, type ObjectRecord } from './possessions.js';
+import {
+    isSomethingYouWouldSwing,
+    transferPossession,
+    type ObjectRecord
+} from './possessions.js';
 import {
     whetherItLeavesTheStore
 } from '../social-leverage/who-has-to-agree-before-it-leaves-the-store.js';
@@ -300,8 +304,13 @@ export function armItsOwn(input: {
     // The good ones, best first. A house arming its people reaches past the
     // rack of iron swords for the things it keeps a record of - and WHETHER
     // each one may go is the ordinary question, asked of the ordinary room.
+    // AND ONLY THINGS SOMEBODY WOULD RAISE. Every finished artifact carries an
+    // ordinal, so "the best thing in the vault" would otherwise reach a spirit
+    // boat and a slip of paper. A house arming its people hands out weapons.
     const offered = input.holds
-        .filter(o => (o.power ?? 0) > 0 && o.possessorId === null)
+        .filter(o => (o.power ?? 0) > 0
+            && o.possessorId === null
+            && isSomethingYouWouldSwing(o))
         .sort((a, b) => (b.power ?? 0) - (a.power ?? 0));
     // And the strongest hands first, because a house does not put its best
     // sword in the weakest grip it has.

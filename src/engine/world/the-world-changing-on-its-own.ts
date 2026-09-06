@@ -27,6 +27,13 @@ import {
     type HistoricalFact
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import {
+    armItsOwn,
+    howTheWarGoesFor,
+    type HandedOut
+} from './what-a-house-opens-its-treasury-for.js';
+import { HALLS_DOWN } from './what-a-year-of-war-does-to-a-compound.js';
+import type { ObjectRecord } from './possessions.js';
 import { recordCrossing } from './recording-what-a-crossing-did.js';
 import { recordPromotion } from './recording-where-somebody-stands-in-a-house.js';
 import {
@@ -218,6 +225,11 @@ export type PressureKind =
      * A war ended and the losing side's hold changed hands.
      */
     | 'spoils_taken'
+    /**
+     * A house at war opened its vault and put its own good weapons into its
+     * own people's hands. Lent, never given.
+     */
+    | 'house_armed_its_own'
     | 'zone_forbidden'
     | 'migration'
     | 'disappearance'
@@ -396,6 +408,18 @@ export function applyPressure(
                 opens: settled.opens
             });
         }
+        // AND WHAT A HOUSE DID ABOUT LOSING ONE. A treasury that is only ever
+        // spent on payroll and rebuilding is a savings account; what makes it a
+        // war chest is that a house watching the thing end opens it. The
+        // decision is not the treasury's - it is the elders' and the
+        // patriarch's - and `what-a-house-opens-its-treasury-for.ts` puts it to
+        // them through the same room that decides whether one sword leaves the
+        // armoury.
+        events.push(...housesOpeningTheirVaults(
+            state,
+            withinSpan(year * 365 + 62, fromDay, toDay)
+        ));
+
         // Wars that reached the day they were scheduled to end. BEFORE the
         // statuses, so a war that ended this year is a road open this year.
         events.push(...settleWarsThatAreOver(state, withinSpan(year * 365 + 62, fromDay, toDay)));
@@ -1500,6 +1524,91 @@ function applyPromotions(state: WorldState, day: number): number {
     // with a person in it.
     applyPassedOver(state, promotions, blocked, day, roster);
     return promotions.length;
+}
+
+/**
+ * HOUSES AT WAR, OPENING WHAT THEY HOLD.
+ *
+ * One pass, once a year, over the houses a war names. Nothing here decides
+ * anything: it reads how the war is going off the compound (`HALLS_DOWN`, which
+ * `what-a-year-of-war-does-to-a-compound.ts` already counts), puts the question
+ * to the house's own elders, and moves what they agreed to move.
+ *
+ * ARMING IS THE DISCRETE HALF and the only half that produces an event. Stones
+ * leaving for a war are a rate - nobody remembers the year the house paid for
+ * arrows - but a house taking its good weapons out of the vault and putting
+ * them in disciples' hands is a thing everybody who was there remembers, and it
+ * is a LOAN: ownership never moves and the house can call every one back in.
+ */
+function housesOpeningTheirVaults(state: WorldState, day: number): PressureEvent[] {
+    const out: PressureEvent[] = [];
+    const onDay = Math.floor(day);
+
+    for (const house of state.factions) {
+        if (house.dissolvedOnDay !== null) continue;
+        if (!house.tags.includes('at_war')) continue;
+
+        const how = howTheWarGoesFor({
+            atWar: true,
+            hallsDown: Number(house.resources[HALLS_DOWN] ?? 0)
+        });
+        const members = state.npcs.filter(npc =>
+            npc.factionId === house.id && npc.status === 'alive');
+        if (members.length === 0) continue;
+
+        const armed = armItsOwn({
+            how,
+            roll: members.map(npc => ({ id: npc.id, rankIndex: npc.factionRankIndex })),
+            rankCount: house.ranks.length,
+            holds: state.objects.filter(o => o.ownerId === house.id),
+            takers: members.map(npc => ({
+                id: npc.id,
+                name: npc.name,
+                ordinal: npc.cultivation.realmOrdinal
+            })),
+            houseName: house.name,
+            onDay
+        });
+        if (armed.lent.length === 0) continue;
+
+        // The rows, moved. One write per object that actually left.
+        const moved = new Map<string, ObjectRecord>(
+            armed.objects.map(o => [o.id, o] as const));
+        for (let i = 0; i < state.objects.length; i++) {
+            const next = moved.get(state.objects[i].id);
+            if (next) state.objects[i] = next;
+        }
+
+        const fact = appendWorldFact(state, makeFact({
+            day: onDay,
+            kind: 'war',
+            scale: 'local',
+            summary: `${house.name} opened its vault and armed its own: `
+                + `${armed.lent.length} of its own things into its own hands, lent.`,
+            actors: armed.lent.slice(0, 4).map((l: HandedOut) => ({
+                id: l.toId, name: l.toName, role: 'armed'
+            })),
+            locationId: house.seatLocationId ?? null,
+            factionIds: [house.id],
+            visibility: 'faction',
+            magnitude: how === 'about_to_lose' ? 0.7 : 0.45,
+            data: { how, lent: armed.lent.length }
+        }));
+
+        out.push({
+            kind: 'house_armed_its_own',
+            onDay,
+            fact,
+            touched: {
+                factions: [house.id],
+                locations: [],
+                npcs: armed.lent.map((l: HandedOut) => l.toId)
+            },
+            deaths: []
+        });
+    }
+
+    return out;
 }
 
 function applyBookAcquisition(state: WorldState, year: number, day: number): number {

@@ -13,9 +13,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { isSomethingYouWouldSwing } from '../../../src/engine/world/gatherings';
+import { isSomethingYouWouldSwing, makeObject } from '../../../src/engine/world/possessions';
 import { cutATalisman } from '../../../src/engine/world/a-talisman-is-one-act-somebody-already-paid-for';
-import { makeObject } from '../../../src/engine/world/possessions';
+
 
 function aSlip(what: 'a_strike' | 'a_way_out') {
     return cutATalisman({
