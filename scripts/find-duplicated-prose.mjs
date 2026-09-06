@@ -46,6 +46,24 @@ const BENIGN = [
     // themselves the same way is house style, not a passage said twice.
     /^\/\/ *[─-╿]/,
     /[─-╿]{8}/,
+    // ── AND A LINE OF CODE IS NOT A PASSAGE EITHER ───────────────────────
+    //
+    // The same reasoning as the import list above, one step further in. Four
+    // files clamping an ordinal write `Math.max(0, Math.min(...))` because
+    // that is the expression, and a schema field that validates a percentage
+    // is `z.number().int().min(0).max(100)` in every file that has one.
+    // Neither is a rule with two owners: they are the language, and rewording
+    // one to satisfy a prose scan would make it worse.
+    //
+    // Matched on the CALL SHAPE rather than on a keyword, because a sentence
+    // of real prose can open with `const` in a code fence and a line of code
+    // cannot avoid its own punctuation.
+    /\b(?:math|z|object|array|json|string|number)\.\w+\(/,
+    /^(?:const|let|return|if|for|while|function|export const) .*[;{)]$/,
+    // A machine-read marker. `no catalog:` is a tag every design ruling in
+    // `docs/world` carries so the index can tell a ruling from a description,
+    // and it is identical by design - the same category as a section banner.
+    /^<! *no catalog:/,
 ];
 
 function sourceFiles() {

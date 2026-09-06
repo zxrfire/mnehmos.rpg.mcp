@@ -56,7 +56,7 @@ import {
     answerabilityOf,
     whatTheKillLeft
 } from '../engine/world/who-answers-for-a-beast-that-was-killed.js';
-import type { Party } from '../engine/social-leverage/what-a-deed-leaves.js';
+import type { Deed, Party } from '../engine/social-leverage/what-a-deed-leaves.js';
 import {
     drawFromTheGround,
     recordGroundDraw,
@@ -115,7 +115,14 @@ import {
     theLeakAsADeed,
     theStageAWitnessReaches
 } from '../engine/social-leverage/selling-a-copy-of-somebody-elses-art.js';
-import { whatTheHouseDoesAboutIt } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
+import {
+    AGAINST_THEIR_OWN,
+    type WhatTheHouseDoes,
+    ifCaughtAtSomethingTheHousePunishes,
+    theComplaintYourHouseReceives,
+    whatTheHouseDoesAboutIt,
+    whatYourOwnHouseOpensAboutYou
+} from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
@@ -8334,7 +8341,129 @@ ${opened.text}` : receipt,
             });
         }
 
+        calls.push(...this.whatYourOwnHouseDoesWhenItIsTold({
+            answer, run, cultivator, mine, deed, facts,
+            complainant: houseName
+        }));
+
         return calls;
+    }
+
+    /**
+     * THE COMPLAINT THAT GOES OVER YOUR HEAD, AND WHAT IS WAITING AT THE OTHER END.
+     *
+     * `whatTheHouseDoesAboutIt` has two outcomes when a house cannot reach you
+     * itself, and only one of them was played. Where your house backs you, an
+     * aggrieved house does not swallow it - it sets `redirectedTo` and hands
+     * the matter to the people who DO have a claim on you. That is the
+     * commonest shape this genre has for being answered: not a duel, a letter.
+     *
+     * `theComplaintYourHouseReceives` is the second pass and had no caller, so
+     * the redirect was a dead end. A player who leaked an art while ranked got
+     * the good half of being backed - the aggrieved house cannot touch them -
+     * and never the half that makes it a trade.
+     *
+     * WHY THE SECOND PASS IS THE WORSE ONE, AND IT IS NOT A DIFFICULTY DIAL.
+     * `backing: 'none'`, said by the function itself: *your own house is not
+     * deterred by your own house. Nothing stands between it and you, which is
+     * why a complaint is worse than a beating.* The same three questions with
+     * the parties moved along one, and the shield that stopped the first pass
+     * is the thing answering the second.
+     */
+    private whatYourOwnHouseDoesWhenItIsTold(input: {
+        answer: WhatTheHouseDoes;
+        run: Run;
+        cultivator: Cultivator;
+        /** The house the player is on, which is the one being written to. */
+        mine: string | null;
+        deed: Deed;
+        facts: EngineFacts;
+        /** Who complained, so the line can say where it came from. */
+        complainant: string;
+    }): ToolCallRecord[] {
+        const { answer, run, cultivator, mine, deed, facts } = input;
+        const onDay = Math.floor(run.elapsedDays);
+        if (mine === null) return [];
+
+        const mySect = getSect(mine) as
+            { name?: string; alignment?: SectAlignment; powerOrdinal?: number } | undefined;
+        const myName = mySect?.name ?? mine;
+        const handed = theComplaintYourHouseReceives(
+            answer,
+            {
+                id: mine,
+                name: myName,
+                houseId: mine,
+                houseName: myName,
+                alignment: mySect?.alignment ?? null,
+                ranked: true
+            },
+            Number(mySect?.powerOrdinal ?? 0)
+        );
+        if (handed === null) return [];
+
+        // WHAT THE HOUSE WOULD DO ABOUT IT, off its own alignment and off
+        // whether the matter is theirs to punish at all. A house told about
+        // its own member and holding no claim opens nothing, which is
+        // `whatYourOwnHouseOpensAboutYou` refusing rather than this deciding.
+        const doing = ifCaughtAtSomethingTheHousePunishes({
+            theirsToPunish: true,
+            alignment: mySect?.alignment ?? null
+        });
+        const opened = whatYourOwnHouseOpensAboutYou({
+            houseId: mine,
+            memberId: cultivator.id,
+            cause: deed.cause,
+            severity: answer.weight,
+            onDay,
+            description:
+                `${input.complainant} took it over ${cultivator.name}'s head to ${myName}, `
+                + `which is where a matter goes when the person who did it is somebody's. `
+                + `${deed.description}`,
+            doing,
+            knownTo: [mine, ...answer.knownTo]
+        });
+        if (opened === null) return [];
+
+        const line = doing === 'killed'
+            ? `${myName} is told. A house of its kind does not open a file on a member who has `
+              + 'cost it standing; it settles the matter and does not discuss the method.'
+            : doing === 'questioned_about_the_source'
+                ? `${myName} is told, and wants to know where it came from before it wants to `
+                  + 'know anything else. The answer is a worse problem than the question.'
+                : `${myName} is told, and prices it. What was owed to somebody else is now owed `
+                  + 'to the people who feed you.';
+
+        facts.lines.push(line);
+        facts.prose = `${facts.prose}\n\n${line}`;
+        facts.structure.push(
+            `theComplaintYourHouseReceives: redirected to ${answer.redirectedTo}, answering `
+            + `${myName} at backing 'none' - nothing stands between a house and its own. `
+            + `ifCaughtAtSomethingTheHousePunishes: ${doing}.`
+        );
+
+        const record = createObligation(opened);
+        writeObligation(this.db as unknown as DatabaseHandle, record);
+        return [
+            {
+                name: 'social.theComplaintYourHouseReceives',
+                action: 'sell',
+                summary:
+                    `${input.complainant} could not reach ${cultivator.name} and handed it to `
+                    + `${myName} instead. Second pass at backing 'none'. What a house of this `
+                    + `kind does about it: ${doing.replace(/_/g, ' ')}.`,
+                ok: true
+            },
+            {
+                name: 'social.createObligation',
+                action: 'sell',
+                summary:
+                    `${record.id}: ${myName} holds a ${record.severity} grudge about its own `
+                    + `member for ${record.cause}. Tagged ${AGAINST_THEIR_OWN}, which is the `
+                    + 'direction that makes it worse than an outsider\'s.',
+                ok: true
+            }
+        ];
     }
 
     /**

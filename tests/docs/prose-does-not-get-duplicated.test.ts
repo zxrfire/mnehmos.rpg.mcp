@@ -17,7 +17,7 @@ import { findDuplicates } from '../../scripts/find-duplicated-prose.mjs';
  * Run `node scripts/find-duplicated-prose.mjs` to see what is duplicated and
  * where.
  */
-const BASELINE = 24;
+const BASELINE = 23;
 
 /*
  * Raised from 25 when the ancestral roll was lifted out of `sects.ts`, and the
@@ -37,8 +37,34 @@ const BASELINE = 24;
  * The scan reads whole lines, so it used to count two files importing the same
  * names from the same module, and two files dividing themselves with the same
  * section banner. Neither is a passage anybody wrote twice - the first is what
- * a shared dependency looks like, and the language requires it. Every pair left
- * in the count is now real prose.
+ * a shared dependency looks like, and the language requires it.
+ *
+ * ── LOWERED FROM 24, IN TWO WAYS AND BOTH WORTH TELLING APART ────────────
+ *
+ * THREE WERE NEVER PROSE. The scan had started counting lines of code: four
+ * files clamping an ordinal write the same `Math.max(0, Math.min(...))`, a
+ * schema field validating a percentage is the same `z.number()` chain wherever
+ * it appears, and `<!-- no catalog: -->` is a machine-read tag every design
+ * ruling in `docs/world` carries so the index can tell a ruling from a
+ * description. None of the three is a rule with two owners, and rewording one
+ * to satisfy a prose scan would make it worse. They are the same category as
+ * the import list and the section banner, and they are skipped for the same
+ * reason. A guard that counts the language as duplication is a guard that will
+ * be raised rather than obeyed.
+ *
+ * TWO WERE REAL, AND WERE FIXED RATHER THAN EXCUSED. `faction-history`'s
+ * `whyTheGapIs` restated `faction-character`'s `production.note` word for word
+ * on the Thousand Treasure Pavilion and the Ashen Forge Clan. Two fields, two
+ * questions - *what does this house produce* and *why is it where it is* - and
+ * one answer copied into both, which is exactly the drift this file exists to
+ * stop. The history field now answers its own question out of the same
+ * established facts. Nothing was invented and nothing was deleted.
+ *
+ * WHAT IS NEXT. `sealed-ancestors.ts` and `the-ancestors-a-house-still-names.ts`
+ * still share three `restingPlace` lines, and they are the same three sealed
+ * beings written down twice. That one is a reconciliation rather than a
+ * rewording: the sealed-ancestor record owns where the body is, and the house's
+ * wall should derive it.
  */
 
 describe('duplicated prose', () => {
