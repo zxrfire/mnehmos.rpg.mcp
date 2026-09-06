@@ -55,7 +55,7 @@ A **deterministic xianxia cultivation RPG engine** exposed over MCP, driven by a
 runtime agent that narrates but never decides.
 
 Forked from a D&D 5e MCP engine. The substrate (dice, SQLite, action-routed tools,
-spatial grid, worldgen, NPC runtime) is retained; the entire game-facing surface is
+worldgen, NPC runtime) is retained; the entire game-facing surface is
 being replaced with cultivation mechanics.
 
 ---
@@ -399,7 +399,7 @@ src/                      # README.md - the index. Every folder below has one to
 │   ├── social-leverage/  # what moves somebody, what a deed leaves, what a house does
 │   ├── encounters/       # what the world puts in front of somebody
 │   ├── birth/, household/  # who is born, and what a match costs
-│   └── {spatial,worldgen,strategy,perception,dsl}/  # retained substrate
+│   └── {worldgen,strategy,perception,dsl}/  # retained D&D substrate
 ├── data/cultivation/     # the catalogs: sects, people, places, techniques, beasts
 │   └── regions/          # one file per region of the map
 ├── schema/               # the shapes that cross a boundary. Zod, and the balance

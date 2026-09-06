@@ -147,7 +147,6 @@ Where each currently lives:
 | `cultivation/` | The realm ladder, talent, progress, breakthrough, the price of advancement, existence states, death | [README](cultivation/README.md) |
 | `world/` | Places, capability predicates, opportunity windows, history, lineage, possessions, time | [README](world/README.md) |
 | `social/` | Relationships, obligations, knowledge and belief, secrets | [README](social/README.md) |
-| `spatial/` | Grid, collision, movement | retained substrate |
 | `worldgen/` | Procedural generation | retained substrate |
 | `strategy/` | Nation simulation | retained substrate |
 | `perception/` | The Operator's constraint-perception lens | see `data/subsystems/` |
