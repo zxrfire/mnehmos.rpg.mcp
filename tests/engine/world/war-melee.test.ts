@@ -217,11 +217,20 @@ describe('a war breaks what is carried, once', () => {
         expect(isRuined(state.objects.find(o => o.id === 'obj-in-the-vault')!)).toBe(false);
     });
 
-    it('every object a war ruined is one the melee reported, and there is no second route', async () => {
+    it('every CARRIED object a war ruined is one the melee reported, and there is no second route', async () => {
         // The whole reason `war-breakage.ts` was deleted. A war that ran both
         // it and a melee would break a house's things twice a year by two
         // routes; this asserts there is exactly one, and that it is the strike
         // record.
+        //
+        // ── AND A WARD IS NOT A CARRIED THING ─────────────────────────────
+        //
+        // A formation has `possessorId: null` by construction - it stands where
+        // it was made and cannot be picked up - so it can never appear in a
+        // strike record, because nothing swung it. It is ruined by the ground
+        // route in `what-a-year-of-war-does-to-a-compound.ts` and by nothing
+        // else, which is asserted directly below rather than being excused
+        // here. Two kinds of thing, one route each, and no object with two.
         for (let i = 0; i < 4; i++) {
             const { state } = await twoHousesAtWar(`breakage-${i}`);
             const wasRuined = new Set(
@@ -236,9 +245,41 @@ describe('a war breaks what is carried, once', () => {
                     for (const thing of engagement.thingsBroken) reported.add(thing.objectId);
                 }
             }
-            const nowRuined = state.objects.filter(o => isRuined(o) && !wasRuined.has(o.id));
+            const nowRuined = state.objects.filter(o =>
+                isRuined(o) && !wasRuined.has(o.id) && o.kind !== 'formation');
             for (const object of nowRuined) {
                 expect(reported.has(object.id)).toBe(true);
+            }
+        }
+    });
+
+    /**
+     * THE OTHER ROUTE, AND IT REACHES ONLY THE THING THE MELEE CANNOT.
+     *
+     * A ward comes down when the winner's reach beats the whole stack, and the
+     * year it does is the year the engagement reports `ground`. Nothing else in
+     * a war touches one, and no ward is ever ruined without a report saying so.
+     */
+    it('ruins a ward only through the ground route, and says so when it does', async () => {
+        for (let i = 0; i < 4; i++) {
+            const { state } = await twoHousesAtWar(`ward-${i}`);
+            const said = new Set<string>();
+            for (let year = 1; year <= 25; year++) {
+                const did = fightTheWarsThisYear(
+                    state, year * 365, forStream(`ward-${i}`, 'war-melee', year)
+                );
+                for (const engagement of did.fought) {
+                    if (engagement.ground?.wardBroken) said.add(engagement.ground.loserId);
+                    // And a ward is never in the strike record.
+                    for (const thing of engagement.thingsBroken) {
+                        const row = state.objects.find(o => o.id === thing.objectId);
+                        expect(row?.kind).not.toBe('formation');
+                    }
+                }
+            }
+            for (const ward of state.objects.filter(o => o.kind === 'formation' && isRuined(o))) {
+                expect(said.has(String(ward.ownerId)), `${ward.name} was ruined silently`)
+                    .toBe(true);
             }
         }
     });

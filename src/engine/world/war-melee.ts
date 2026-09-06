@@ -23,6 +23,10 @@ import {
     settleTheSpoils,
     type ThingChangedHands
 } from './war-spoils.js';
+import {
+    type WhatTheYearDidToTheGround,
+    whatTheYearDidToTheGround
+} from './what-a-year-of-war-does-to-a-compound.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 import type { DeathHandoff } from './time.js';
 
@@ -175,6 +179,13 @@ export interface WarEngagement {
     /** Objects that did not survive being swung, off `exchanges`. */
     thingsBroken: { objectId: string; objectName: string; carrierId: string }[];
     deaths: DeathHandoff[];
+    /**
+     * What the year did to the loser's compound, or null.
+     *
+     * Null is the ordinary answer: a stalemate touches no ground, and a winner
+     * who cannot beat what stands over that seat touches none either.
+     */
+    ground: WhatTheYearDidToTheGround | null;
     /**
      * The accounts the year's fighting opened, ready for the ledger.
      */
@@ -334,6 +345,28 @@ function fightOneYear(
         }
     }), { recur: false });
 
+    // ── AND WHAT THE YEAR DID TO THE GROUND ──────────────────────────────
+    //
+    // A war was fought over people and things and never over the PLACE: a house
+    // could lose one for a decade and its halls stood exactly as they had. What
+    // decides it is the winner's reach against the loser's stack, which is the
+    // same read a declaration is weighed by - so the sentence a declaration
+    // prints and the thing that later happens are one arithmetic.
+    //
+    // A year nobody won does nothing to anybody's ground. What flattens a
+    // compound is one side being able to walk in and the other not being able
+    // to stop them.
+    const ground = winner === null
+        ? null
+        : whatTheYearDidToTheGround(state, {
+            winner,
+            loser: winner.id === war.a.id ? war.b : war.a,
+            // What the winning house can actually field, off the same figure
+            // the melee itself drew its party from.
+            winnerReach: Number(winner.resources.power_ordinal ?? 0),
+            day
+        });
+
     return {
         aId: war.a.id,
         aName: war.a.name,
@@ -346,6 +379,7 @@ function fightOneYear(
         thingsBroken,
         deaths,
         opens,
+        ground,
         fact,
         line
     };
