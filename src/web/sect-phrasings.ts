@@ -94,6 +94,21 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
         String.raw`\b(?:what|which|why|whether|how much|how bad)\b[^.!?]*\b(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )(?:refus\w+|declin\w+|saying no|turn(?:ing)? (?:it|them) down)\b`
         + String.raw`|\b(?:what|which)\b[^.!?]*\b(?:summons|called me in|sent for me|been asked of me|they want of me|asked of me)\b`
         + String.raw`|\b(?:what (?:am i|have i) been (?:asked|called)|who sent for me|what was i (?:asked|called) (?:for|in for)|what does (?:the|my|our) (?:${A_HOUSE_WORD}) want (?:of|from) me)\b`
+        // ASKING WHETHER ANYBODY HAS, which is the shape a player uses when they
+        // do not already know one is standing. The pattern above needs a `what`
+        // or a `which` in front of it, so every yes-or-no form of the same
+        // question reached nothing: measured on the trope corpus, "has anybody
+        // sent for me", "am I summoned" and "who has sent for me" were three
+        // blank looks over a summons the house may actually have sent.
+        //
+        // A ONE-DIRECTIONAL READ, closed. `refuseWhatTheHouseAsked` already
+        // handles the nobody-asked case and already runs in a weigh-only mode,
+        // so a player could REFUSE a summons and could not ASK whether one
+        // existed.
+        + String.raw`|\b(?:has|have)\s+(?:anybody|anyone|somebody|someone|my \w+|the \w+)\s+(?:sent for|called for|summoned|asked for)\s+me\b`
+        + String.raw`|\bwho\s+(?:has|have)\s+sent\s+for\s+me\b`
+        + String.raw`|\bam\s+i\s+(?:summoned|being summoned|wanted|called (?:for|in)|sent for)\b`
+        + String.raw`|\b(?:any|is there a)\s+summons\b`
     )],
     // `turn ... down` takes its object in the middle - "I turn them down" is how a
     // person says it and "I turn down them" is not - so the particle has to be
