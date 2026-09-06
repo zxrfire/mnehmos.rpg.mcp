@@ -70,6 +70,7 @@ import { seedArtifacts } from './artifact-placement.js';
 import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
 import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
+import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
     seedTheFamiliesStandingInAPlace,
@@ -251,6 +252,13 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // in a document. Two shapes, one threshold - see
     // `where-the-pills-actually-are.ts`.
     state.objects.push(...seedPillStock(state));
+    // What each house has standing over its own compound. Raised by whoever the
+    // house could field out of whatever warding it teaches, so it is the LOWER
+    // of the art and the builder and not a property of the house - see
+    // `the-ward-a-house-raised-over-its-own-ground.ts`. Without this every seat
+    // in the world is bare masonry and a body at the bottom of the ladder can
+    // walk into the compound of a body at the top.
+    state.objects.push(...seedHouseWards(state));
     // And the medicine that mends a cracked cultivator, which is placed rather
     // than scattered: exactly the authored holdings, on exactly those bodies,
     // and nowhere else. See `who-holds-the-structural-repair-medicine.ts`.

@@ -15,6 +15,12 @@ import { SECTS, getSect } from '../data/cultivation/index.js';
 import { auditAncestralClaim, getSectAncestry, sectThreat } from '../data/cultivation/sects.js';
 import { OPENLY_OR_IN_SECRET } from '../data/cultivation/standoff.js';
 import { baseReservesFor } from '../engine/cultivation/embezzlement.js';
+import {
+    type WhatBringingItDownWouldTake,
+    whatAHouseDoesAboutSomebodyWhoCanEndIt,
+    whatAHouseIsMadeOf,
+    whatBringingItDownWouldTake
+} from '../engine/world/what-a-house-is-made-of-and-what-brings-it-down.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { writeFlag } from '../server/consolidated/cultivation-support.js';
@@ -92,7 +98,49 @@ const DECLARED: Readonly<Record<'war' | 'alliance' | 'defect' | 'tribute', (mine
  */
 const OFFERING_MONTHS = 120;
 
+/**
+ * What would happen to their seat, said plainly.
+ *
+ * ONE SENTENCE PER OUTCOME AND NO NUMBERS IN IT. The figures belong on the
+ * mechanical channel, which carries them; what a declaration needs in the prose
+ * is which of the three things this is, because they are three different acts
+ * wearing one word.
+ */
+function theWordForWhatWouldHappenToTheirSeat(
+    could: WhatBringingItDownWouldTake,
+    theirName: string
+): string {
+    if (could.couldFlattenIt) {
+        return `And it is not a form of words. What ${theirName} has standing over its ground `
+            + 'would not hold, and what is under it is ordinary stone. If this house sends what '
+            + 'it can send, that compound comes down and they pay to put it back up.';
+    }
+    if (could.couldGetIn) {
+        return `${theirName} can be reached - there is nothing over that ground that would stop `
+            + 'anybody this house could send - and it cannot be brought down. What that buys is '
+            + 'the inside of the compound, which is a robbery and not a war.';
+    }
+    return could.seat.formationName === null
+        ? `Nothing this house can send reaches them. The declaration is on the record and it is `
+          + 'the only thing about it that is.'
+        : `${could.seat.formationName} stands over their whole compound and nothing this house `
+          + 'can send would pass it. The declaration is a thing they will hear about and not a '
+          + 'thing they will feel.';
+}
+
 export const institutionVerbs = {
+    /**
+     * The ground a house is seated on, or null.
+     *
+     * `seatLocationId` has been on the faction record since the world state was
+     * written. This is the read that finds a compound so that something can be
+     * asked about what is standing over it.
+     */
+    seatOf(this: GameService, factionId: string): string | null {
+        const house = (this.atHand?.factions ?? []).find(row => row.id === factionId);
+        return house?.seatLocationId ?? null;
+    },
+
     /**
      * Asking an institution for a thing.
      */
@@ -495,6 +543,10 @@ export const institutionVerbs = {
         const theyHoldFromUs = theirParentage?.parentFactionId === position.sectId;
 
         const lines: string[] = [DECLARED[which](position.sectName, named.name)];
+        // Structure written while the lines are being built, appended to the
+        // facts once they exist. Kept apart so the mechanical channel and the
+        // prose cannot drift out of order.
+        const seatRead: string[] = [];
         if (cost) lines.push(cost.cost);
 
         // The measured half, and the only place a number appears. Both figures
@@ -522,6 +574,46 @@ export const institutionVerbs = {
                     + 'until today.'
                 );
             }
+        }
+
+        // ── AND WHETHER YOU COULD ACTUALLY DO IT ─────────────────────────
+        //
+        // The design owner: *"what should follow a declaration has to do with
+        // how likely you are to follow through"*, and *"if you can actually
+        // flatten a sect they might beg you to stay your hand."*
+        //
+        // A declaration was words and a flag. What makes it an act is that the
+        // named house can go and look at what is standing over its own compound
+        // and work out what the declaring house could do to it - the ward it
+        // raised, thinned by however long it has stood, and the masonry under
+        // that. Nothing here decides any of it: the stack is read.
+        //
+        // The reach that matters is what the declaring HOUSE can put in a room,
+        // not what its head personally stands at. A war is a thing between two
+        // houses and it is fought by whoever they can send.
+        if (which === 'war' && own) {
+            const seat = whatAHouseIsMadeOf(
+                this.atHand?.objects ?? [],
+                this.seatOf(named.id),
+                Math.floor(this.atHand?.currentDay ?? run.elapsedDays)
+            );
+            const could = whatBringingItDownWouldTake({ seat, theirReach: own.acting });
+            lines.push(theWordForWhatWouldHappenToTheirSeat(could, named.name));
+            if (whatAHouseDoesAboutSomebodyWhoCanEndIt(could) === 'sues_for_peace') {
+                lines.push(
+                    `${named.name} works this out before you have finished saying it, and what `
+                    + 'they do about it is ask what it would take. A house that can be ended by '
+                    + 'somebody does not stand on its dignity with them.'
+                );
+            }
+            seatRead.push(
+                `whatAHouseIsMadeOf(${named.id}): ward `
+                + `${seat.formationStandsAt === null
+                    ? 'none'
+                    : `${seat.formationName} answering at ${seat.formationStandsAt} of `
+                      + `${seat.formationWasSetAt} as set`}`
+                + `, masonry at ${seat.buildingsStandAt}. ${could.account}`
+            );
         }
 
         if (which === 'alliance') lines.push(OPENLY_OR_IN_SECRET.theAllianceIsVisible);
@@ -575,6 +667,7 @@ export const institutionVerbs = {
                     : 'Whether they hold a one-off to wake on top of that is not disclosed.')
             );
         }
+        facts.structure.push(...seatRead);
         facts.structure.push(
             'No standing is charged. The catalog holds no figure for what a declaration costs a '
             + 'head with their own people, and inventing one here would be a balance decision '
@@ -588,7 +681,12 @@ export const institutionVerbs = {
             timeSkip: null,
             breakthrough: null,
             outcome: 'executed',
-            calls: [{
+            calls: [...seatRead.map(summary => ({
+                name: 'engine.whatAHouseIsMadeOf',
+                action: 'posture',
+                summary,
+                ok: true
+            })), {
                 name: 'engine.housePosture',
                 action: 'posture',
                 summary:
