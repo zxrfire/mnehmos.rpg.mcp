@@ -2089,7 +2089,26 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['bribe', /\b(?:bribe|pay off|grease|buy (?:his|her|their) silence)\b/],
     ['interrogate', /\b(?:interrogate|question|press (?:him|her|them)|demand to know|grill)\b/],
     ['trade', /\b(?:trade|buy|sell|purchase|barter|haggle|market|shop|price)\b/],
-    ['negotiate', /\b(?:negotiate|bargain|make terms|come to terms|strike a deal|petition|ally|alliance|swear|join|apply to|seek protection|beg)\b/],
+    // CALLING IN WHAT SOMEBODY OWES YOU.
+    //
+    // Above `negotiate` because it IS one - coming to terms with a debt on the
+    // table - and it needs its own row only because none of `negotiate`'s words
+    // appear in the way anybody says it. Measured on the trope corpus: "I remind
+    // him that he owes me" and "I call in the favour he owes me" were `unclear`,
+    // which is a blank look on the oldest lever in the genre.
+    //
+    // NOTHING HERE DECLARES THE LEVERAGE. `whatYouBringToBear` reads the open
+    // ledger between these two and prices the debt itself, so a sentence that
+    // names a debt nobody owes carries exactly nothing - which is the point,
+    // and is why this row does not set `leverage` the way `bribe` does.
+    ['negotiate', new RegExp([
+        String.raw`\b(?:remind|reminds|reminding)\b[^.!?]{0,30}\b(?:owes?|owed|debt|favou?r)\b`,
+        String.raw`\bcalls?\s+in\b[^.!?]{0,24}\b(?:favou?r|debt|marker|what)\b`,
+        String.raw`\b(?:collect|collects|claim|claims)\b[^.!?]{0,20}\b(?:what\s+)?(?:i\s+am\s+)?owed\b`,
+        String.raw`\b(?:he|she|they|you)\s+owes?\s+me\b[^.!?]{0,20}\b(?:and|so|now)\b`,
+        // And the original list, unchanged.
+        String.raw`\b(?:negotiate|bargain|make terms|come to terms|strike a deal|petition|ally|alliance|swear|join|apply to|seek protection|beg)\b`
+    ].join('|'), 'i')],
     ['recruit', /\b(?:recruit|hire|take on|enlist|bring (?:him|her|them) in)\b/],
     ['apologise', /\b(?:apologi[sz]e|make amends|beg (?:his|her|their) pardon)\b/],
     // TAKING SOMEBODY'S FACE, which the genre runs on and which reached nothing.
