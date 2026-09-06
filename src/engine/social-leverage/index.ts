@@ -22,5 +22,6 @@ export * from './what-a-house-does-when-it-catches-you.js';
 export * from './personal-alignment.js';
 export * from './being-hunted.js';
 export * from './what-a-body-wants-is-what-its-deciders-want.js';
+export * from './commissioning-a-craft.js';
 export * from './what-an-elder-is-in-charge-of.js';
 export * from './a-thing-is-missed-when-somebody-goes-looking-for-it.js';
