@@ -600,6 +600,7 @@ import {
     type GroundClaimant,
     type GroundEntitlement
 } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
+import { aSealHereMeansAnUndrawnPocket } from '../engine/world/locations.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 // The ONE banding table, from `qi-scale.ts`. A second one in the encounter
 // tokens is how an encounter line and the sheet beside it came to disagree
@@ -11465,9 +11466,19 @@ ${fit.line}`;
             ? here.environment.spiritualDensity
             : groundDensityFor(place) ?? undefined;
 
+        // THE SEAL ONLY COUNTS WHERE IT MEANS AN UNDRAWN POCKET. A locked vault
+        // is not a rich one, and this line used to say it was: `sealed` short
+        // circuits `ambientForLocationOnDay` to `sealed_vein`, the richest band
+        // in the game, so the archive, the treasury and the punishment hall all
+        // reported the best cultivation ground in the world. See
+        // `aSealHereMeansAnUndrawnPocket`.
+        const sealedGround = here !== null
+            && here.sealed
+            && aSealHereMeansAnUndrawnPocket(here.kind);
+
         return ambientForBlock(run.seed, place, Math.floor(run.elapsedDays), {
             ...(density === undefined ? {} : { density }),
-            ...(here ? { sealed: here.sealed } : {})
+            ...(sealedGround ? { sealed: true } : {})
         });
     }
 
