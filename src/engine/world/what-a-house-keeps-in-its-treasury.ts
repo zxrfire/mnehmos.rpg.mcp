@@ -1,117 +1,46 @@
 /**
  * WHAT A HOUSE KEEPS IN ITS TREASURY.
  *
- * The design owner: *"fill it for all sects with counted/tracked things
- * (depending on sect strength)."*
+ * `a-house-holds-its-own.ts` gave every house a balance and an empty list of
+ * things. So a treasury was a number, and everything a treasury is FOR -
+ * lending a disciple a furnace, bestowing a sword, being robbed of something
+ * that matters - had nothing to operate on.
  *
- * `a-house-holds-its-own.ts` gave every house a balance it could actually spend
- * and a `holds` list of object ids - and the list was empty for every house in
- * the world. So a treasury was a number, "what does this house have" answered
- * "four hundred thousand stones and nothing", and every one of the things a
- * treasury is FOR - lending a disciple a furnace, bestowing a sword on somebody
- * who earned it, being robbed of something that matters - had nothing to
- * operate on.
+ * IT IS ALL ONE NOUN. A first cut kept pills and manuals out on the grounds
+ * that both have their own systems; that was rejected, and rightly, because
+ * those systems answer a different question. `readWhatIsOnOfferHere` says what
+ * a counter will sell and the shelves say what a hall will teach; neither says
+ * what a house OWNS. A house's medicine is not for sale and not on a shelf, and
+ * it is what a war chest is.
  *
- * ── COUNTED AND TRACKED, WHICH IS ALREADY THE LINE ───────────────────────
+ * So every kind goes in on one line and the line is grade:
+ * `howMuchAGradeIsWorthTracking` decides counted or tracked for a pill exactly
+ * as for a furnace. Nothing below knows what a pill is.
  *
- * *"Crappy ones counted and good ones tracked."* `possessions.ts` draws that
- * line once for everything, off `significance`, and nothing here redraws it: a
- * house's clay cauldrons are one lot with a number on it, and its named furnace
- * is a row with a history. That is also why a great house's treasury is not
- * simply a longer list than a poor one's - it is a list with different KINDS of
- * thing in it. A hill sect has forty of something; a first-rank house has one
- * of something nobody else has.
+ * STRENGTH DECIDES THE REST, off `sectThreat(id).acting` - the same number
+ * `seedHouseWards` rates a compound's ward on. A treasury and a wall are two
+ * readings of one standing, so a repriced house moves in both rather than
+ * drifting into a rich house behind a thin wall.
  *
- * ── AND STRENGTH DECIDES BOTH, OFF A NUMBER THAT ALREADY EXISTS ──────────
- *
- * `sectThreat(id).acting` is what this world already uses to say how much house
- * a house is, and it is what `seedHouseWards` rates a compound's ward off. Same
- * number here, for the same reason: a treasury and a wall are two readings of
- * the same standing, and deriving them from one figure means a house that is
- * repriced moves in both at once rather than drifting into a rich house with a
- * thin wall.
- *
- * ── AND IT IS ALL ONE NOUN ───────────────────────────────────────────────
- *
- * A first cut kept pills and manuals out of here, on the grounds that both have
- * their own systems already. The owner rejected it: *"group pills and manuals
- * together, it's all items"*, *"I don't see why any of them should remain
- * separate"*, *"merge it all into a more general class."*
- *
- * Which is right, and the reason is that the systems that already exist do a
- * DIFFERENT job. `readWhatIsOnOfferHere` says what a counter will sell you and
- * the shelves say what a hall will teach you; neither says what a house OWNS. A
- * house's own stock of medicine is not for sale and is not on a shelf, and it
- * is what a war chest actually is.
- *
- * So every kind goes in, on one line, and the line is grade:
- * `howMuchAGradeIsWorthTracking` in `possessions.ts` decides counted or tracked
- * for a pill exactly as it does for a furnace. The owner, on that: *"the pill
- * logic (esp the immortal pill logic) should fall out of its IMPORTANCE."* It
- * does. Nothing below knows what a pill is.
- *
- * ── AND THE ONLY REAL DIFFERENCE IS WHICH ROOM ───────────────────────────
- *
- * *"The only difference is that they are in different places. Some weapons are
- * in the treasury (the best ones), the counted ones in the armory."* And:
- * *"shitty cauldrons in the furnace area, idk what you call it."*
- *
- * So the room is not a second classification anybody maintains - it FALLS OUT
- * of the two facts already on the row. Tracked things are in the treasury,
+ * AND THE ROOM FALLS OUT OF THE ROW. Tracked things are in the treasury,
  * whatever they are, because the treasury is the room with one of each thing in
- * it. Counted things are wherever that kind of thing is USED: blades in the
- * armoury, clay cauldrons in the refining hall, medicine in the dispensary,
- * copies on the library shelves.
+ * it; counted things are wherever that kind is used. That is the honest reason
+ * a house's best sword and its four hundred spears are not in the same place -
+ * one is a thing you sign for and the others are a rack by the door.
  *
- * Which is also the honest reason a house's best sword and its four hundred
- * spears are not in the same place. Nobody decided that as a policy. One of
- * them is a thing you sign for and the others are a rack by the door. The same
- * split, said again about books: *"shitty books in the library, the valuable
- * books in the treasury."*
+ * A DEFAULT AND NOT A LAW: where a thing sits when nothing has happened to it.
+ * Anything lent, taken down or carried is somewhere else, and `possessorId`
+ * already says so.
  *
- * A DEFAULT AND NOT A LAW. The owner: *"good ones in the treasury (for elders
- * to lend, you'd imagine, for example. NON EXHAUSTIVE, NOT STRICT)."* This is
- * where a thing sits when nothing has happened to it. Anything that has - a
- * furnace lent out, a blade taken down, a book somebody is holding - is
- * somewhere else, and the row already says so in `possessorId`. Nothing here
- * enforces a room and nothing writes one down.
+ * AND ONE LEDGER. Measured: a version that wrote the room onto `tags` at
+ * seeding came back a third filed and the rest UNFILED, because the ward over a
+ * compound and the manuals other systems placed were house property this
+ * seeder never touched. The room is derived from `kind` and `significance`, so
+ * it answers for rows this file never wrote.
  *
- * ── AND IT IS ONE LEDGER, WHICH IS WHY THE ROOM IS NOT A FIELD ───────────
- *
- * *"All of that is tracked under sect ownership - IT DOES HAVE A LEDGER. It's
- * just in different places."*
- *
- * Measured, with a first cut that wrote the room onto `tags` at seeding: a
- * house's rows came back with a third of them filed and the rest UNFILED -
- * because the ward over its compound, and the manuals other systems had already
- * placed, were house property that this seeder never touched. Two ledgers, and
- * the newer one only knew about its own rows.
- *
- * So the room is not written anywhere. `whereInTheHouseItSits` is a pure read
- * over `kind` and `significance`, which every object in the world already
- * carries, so it answers for a row this file wrote, a row the ward seeder
- * wrote, and a row that has not been written yet. One ledger - `state.objects`
- * filtered by `ownerId` - and the room is a question you ask it.
- *
- * ── AND ALL OF IT IS LENT THE SAME WAY ───────────────────────────────────
- *
- * *"The treasury holds everything in terms of items, right? And it's lent the
- * same way - even pills, where you COULD lend a pill: you'd have to give it
- * back. Possible, like borrowing a pill to take at Foundation and giving a new
- * one at Core. That works because pills are fungible."*
- *
- * Which is the case that proves the design rather than the exception to it. A
- * loan is `ownerId` staying with the house while `possessorId` moves, and a
- * `lent` link on the chain saying the house agreed - see `whoseThisIs`. None of
- * that asks whether the thing survives being used. A borrowed furnace comes
- * back as itself; a borrowed pill comes back as ANOTHER ONE, years later, at a
- * realm the borrower could not reach when they took it. The debt is the same
- * debt and the house calls it in the same way, because what was lent was a
- * counted stack and one of those is as good as another.
- *
- * That is exactly why the counted/tracked line matters and is not cosmetic.
- * Counted things can be repaid in kind. A tracked thing cannot: there is one of
- * it, and giving back a different one is not giving it back.
+ * AND WHERE A THING IS IS NOT WHOSE IT IS. Three fields, three independent
+ * facts: `ownerId` whose it is, `possessorId` who is carrying it, `locationId`
+ * where it is when nobody is. A sword left in a furnace room is still yours.
  */
 
 import { getFactionCharacter } from '../../data/cultivation/faction-character.js';

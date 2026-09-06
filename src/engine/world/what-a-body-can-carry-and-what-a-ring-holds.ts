@@ -1,53 +1,33 @@
 /**
  * WHAT A BODY CAN CARRY, AND WHAT A RING HOLDS.
  *
- * The design owner: *"objects have volume and weight"*, *"how much you can
- * carry is limited by volume and weight by cultivation level"*, and - on the
- * thing that lifts the limit - *"that falls out of volume (if you have a spirit
- * ring), because crafting exists"*, *"spirit rings require Void Tribulation or
- * above to refine, hence rare"*, *"and Void Tribulation gets you the smallest
- * mortal grade one."*
+ * Two limits and not one, because they bind differently: a purse of spirit
+ * stones is heavy and small and a bundle of herbs is the reverse, so
+ * `whatStopsThemCarryingIt` reports WHICH ran out. "It will not fit" and "you
+ * cannot lift it" send somebody to do two different things.
+ *
+ * WEIGHT CLIMBS AND VOLUME BARELY DOES. Somebody four realms up is enormously
+ * stronger and is still one person with two arms - they carry a boulder and
+ * still cannot carry a cartload of hay. That asymmetry is what makes a ring
+ * worth what it is worth: it does not make you stronger, it removes the limit
+ * that never moved.
  *
  * ── WHY A RING IS HARDER THAN ITS GRADE ──────────────────────────────────
  *
- * Every other object in this world is gated by the grade of its materials, and
- * `who-can-refine-a-grade-of-medicine.ts` owns that ladder: mortal at Qi
- * Condensation, earth at Core Formation, heaven at Void Tribulation. A ring
- * breaks the pattern - the SMALLEST, cheapest, mortal-grade ring wants Void
- * Tribulation, four realms above what its materials would ask.
+ * Every other object is gated by the grade of its materials. A ring is not: the
+ * cheapest mortal-grade ring wants Void Tribulation, four realms above what its
+ * own grade would ask, because nothing below heaven-grade ore will hold a fold.
+ * Its grade says how BIG the fold is, not what it is made of.
  *
- * And it is not an exception bolted on. The owner again, on why: *"artifact
- * crafting exists too, like ores for swords - so rings need heaven grade ore
- * ofc."*
+ * TWO NUMBERS THAT TURN OUT TO BE ONE. `refiningOrdinalFor('heaven')` and
+ * `FOLD_FLOOR_ORDINAL` are both twenty-nine. That is not a coincidence to tidy
+ * away - a hand that can work material capable of holding a fold is a hand that
+ * can make one, seen from the material side and the person side.
+ * `THE_TWO_WALLS_AGREE` holds them together, so a repricing fails a check
+ * rather than quietly falsifying this paragraph.
  *
- * THE MATERIAL IS THE REASON, and it is the whole reason. A ring is a folded
- * space with a mouth on it, and nothing below heaven-grade ore will hold a fold
- * - so the cheapest ring in the world is still cut from heaven-grade material,
- * and therefore still answers to the rung heaven-grade material answers to. Its
- * own grade says how BIG the fold is; it does not say what the fold is made of.
- *
- * TWO NUMBERS THAT TURN OUT TO BE ONE. `refiningOrdinalFor('heaven')` is
- * twenty-nine, and `FOLD_FLOOR_ORDINAL` - the rung at which a cultivator can
- * fold space at all - is also twenty-nine. That is not a coincidence to be
- * tidied away: a hand that can work material capable of holding a fold is a
- * hand that can make one, because they are the same capability seen from the
- * material side and the person side. This module states the material wall,
- * because that is the one the owner gave, and asserts the other agrees.
- *
- * WHICH IS THE WHOLE REASON THEY ARE RARE. Not a drop rate and not a price.
- * There are very few hands in the world that can make one at all, every ring in
- * circulation was made by one of them, and the ones down here that nobody can
- * account for came from somewhere - the same sentence as every other object
- * above the Lid.
- *
- * ── AND THE BODY UNDERNEATH IT ───────────────────────────────────────────
- *
- * Without a ring, what somebody can carry is what a person can carry, and it
- * goes up with the body: a Qi Condensation disciple hauls what a strong mortal
- * hauls, and somebody four realms up carries a cart's worth without noticing.
- * Two limits and not one, because they bind differently - a bag of spirit
- * stones is heavy and small, and a bundle of spirit herbs is light and
- * enormous. Whichever runs out first is the one that stops you.
+ * WHICH IS WHY THEY ARE RARE. Not a drop rate and not a price: there are very
+ * few hands in the world that can make one at all.
  */
 
 import { FOLD_FLOOR_ORDINAL } from './how-far-somebody-can-fold-space-and-what-it-costs.js';

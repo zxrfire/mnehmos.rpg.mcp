@@ -143,20 +143,27 @@ drifts, and then the world quietly says two different things.
 **The test that decides which:** *if this drifted from its source, would anything fail?*
 If nothing would fail, it is a second copy and it will drift.
 
-### Observers are not the answer
+### Reproducibility is not a constraint on this engine
 
-The instinct to reach for an observer or event-bus when state is scattered is
-understandable and is the wrong medicine here. Listeners mutating state in response to
-other mutations produce order-dependent behaviour, and this engine's core promise is
-that a run is reproducible — there is a test by that name. Hidden fan-out is *more*
-interaction, not less.
+Stated by the design owner, and it overrides earlier reasoning in this file and in
+several test headers: **a run need not be reproducible — that constraint was breaking
+the game.** *"It's a game, it's not some life-saving software."*
 
-What the projects that solved this actually do is **one store plus pure derived reads**:
+What is still wanted is narrower and cheaper: **a run draws the same SETS of rng**, so a
+stream is a stream and a draw for one thing is not silently a draw for another. Two runs
+of one seed may differ.
+
+So never refuse a mechanic because it would make two runs diverge. Seeded determinism
+stays where it is free and useful — a world that opens the same way is easier to debug —
+but it is a convenience, not a promise.
+
+### One store, and the reads are computed
+
 Redux keeps a single store with pure reducers and computes the rest in selectors, and
-warns specifically against putting derived state in the store; the Elm architecture has
-one Model and derives the view; entity-component systems keep components as the only
-store and let systems query it; event-sourced designs keep the log as truth and treat
-every read as a projection. None of them notify. They recompute.
+warns specifically against putting derived state in the store. The Elm architecture has
+one Model and derives the view. Entity-component systems keep components as the only
+store and let systems query it. Event-sourced designs keep the log as truth and treat
+every read as a projection. **None of them notify. They recompute.**
 
 That is the shape to move toward here, and it is one this repo already uses well in
 places — and badly in exactly the places listed in the table above.
@@ -609,6 +616,15 @@ one. Bringing a file down when you are already editing it is real work, not tidy
 What this does NOT mean: stripping the measurements. The headers that record *what was
 played, what broke, and what the number was* are the most valuable prose here and they are
 why this engine is not full of re-introduced defects. Keep the finding; cut the retelling.
+
+**And quoting the design owner is retelling.** A ruling belongs in the code as the rule it
+is, not as a transcript of the conversation that produced it. One short quote earns its
+place when the exact words carry something a paraphrase loses - a distinction, a refusal, a
+word chosen over an obvious alternative. Three quotes in one header is a chat log.
+
+Measured, on files written in a single session: seven files carried **72 quoted passages**
+between them and ran 51-72% comment by line. The findings in them were worth keeping; the
+quotation around the findings was not.
 
 Use plain **hyphens** (`-`). Do not use em-dashes or en-dashes anywhere in this repo -
 not in Markdown, not in code comments, not in commit messages, not in player-facing

@@ -1,69 +1,29 @@
 /**
  * WHAT YOU REFINE IN.
  *
- * The design owner: *"cauldrons are items too, with crappy ones counted and
- * good ones tracked"*, and *"give them to sects (in their treasury, can be
- * borrowed) and people (owned in their own right)."*
+ * `recipes.ts` named cauldron quality as an input to a refinement from the day
+ * it was written, and there was no cauldron. Every alchemist in the world
+ * worked out of the same nothing, and a hall with a six-hundred-year furnace
+ * could not be told from a disciple with a clay pot.
  *
- * `recipes.ts` has named cauldron quality as an input to a refinement since the
- * file was written - *"`baseSuccessRate` is the floor the engine starts from
- * before alchemy skill, cauldron quality, spirit root and ambient qi are
- * applied"* - and there was no cauldron. Every alchemist in the world was
- * working out of the same nothing, and the difference between a hall with a
- * six-hundred-year furnace in it and a disciple with a clay pot was not a
- * difference the engine could state.
+ * WHAT IS HERE AND WHAT IS NOT. This file owns what a cauldron is WORTH. Who is
+ * allowed to be holding one is `a-house-holds-its-own.ts` - a lent furnace, a
+ * lent manual and a lent sword are one fact with three nouns in front of it,
+ * and the ruling is that none of it is bespoke to cauldrons.
  *
- * ── COUNTED AND TRACKED, WHICH IS ALREADY THE LINE ───────────────────────
+ * Counted or tracked is `possessions.ts`, unchanged: a mortal-grade pot is one
+ * you buy again, and anything above it was made by somebody for somebody and
+ * both are answerable.
  *
- * `possessions.ts` draws it once for everything: `mundane` is a holder and a
- * number, and anything above it is a row with a history. A cauldron falls on
- * that line exactly where the owner put it. A mortal-grade cauldron is a fired
- * clay pot; you buy another one, and asking whose it was is not a question.
- * Anything above it was made by somebody, for somebody, and both of those are
- * answerable - which is what `tracked` MEANS here and why it is not a separate
- * mechanism invented for cauldrons.
+ * AND IT IS A TREASURE, NOT ONLY A TOOL. The first cut gave every furnace
+ * `power: null`, which is the engine saying it is worth nothing in a fight. A
+ * cauldron is a sealed vessel of graded material with somebody's qi already
+ * running through it; they get thrown up overhead, people get shut inside them,
+ * and the good ones are fought over. `defensive` is a tag the ward code already
+ * reads, so nothing new says what a stance is.
  *
- * ── AND WHOSE IT IS, WHICH IS NOT A CAULDRON QUESTION ────────────────────
- *
- * *"Give them to sects (in their treasury, can be borrowed) and people (owned
- * in their own right)"*, then: *"a sect may be given too - that's the
- * distinction between the sect treasury and a personal item (perhaps bestowed
- * by the sect). This isn't bespoke. This is true for everything in the sect
- * treasury."*
- *
- * So none of it lives here. A lent furnace, a lent manual and a lent sword are
- * one fact with three nouns in front of it, and it is stated once, over any
- * object at all, in `a-house-holds-its-own.ts`. What this file owns is what a
- * cauldron is WORTH; who is allowed to be holding it is the treasury's
- * business.
- *
- * ── AND A CAULDRON IS A TREASURE, NOT ONLY A TOOL ────────────────────────
- *
- * The design owner: *"cauldrons can be used to defend in battle, basically a
- * spirit ship type thing too. Duh."*
- *
- * Duh, and the first cut had `power: null` on every furnace in the world -
- * which is `possessions.ts` saying, in the field whose whole job is to say it,
- * that the thing is worth nothing in a fight. That is wrong about the genre and
- * wrong about the object: a cauldron is a sealed vessel of graded material that
- * somebody's qi already runs through, which is the same sentence as a defensive
- * treasure. It gets thrown up overhead, people get shut inside one, and the
- * good ones are named and fought over.
- *
- * So it carries `power` on the ordinal ladder like anything else that matters
- * in a fight, off the one thing that decides everything else about it - its
- * grade. Defensive rather than offensive is not a second field: a cauldron with
- * a `defensive` tag is read by the same code that reads a ward with one, which
- * is why `seedHouseWards` and this agree about what a stance is.
- *
- * ── AND THE LID APPLIES HERE TOO ─────────────────────────────────────────
- *
- * The owner, on immortal and chaos: *"immortal needs to be worked on by
- * immortals and sent down, for everything of that grade"*, *"and found in
- * ruins"*, *"chaos is the same."* A cauldron is of that grade too. Nothing
- * below the Lid makes one, and the ones down here came down or came out of
- * something sealed - which `madeBelowTheLid` already decides, off the same
- * table that decides it for medicine.
+ * Immortal and chaos grades are sent down rather than made, which
+ * `madeBelowTheLid` already decides off the same table it decides for medicine.
  */
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';

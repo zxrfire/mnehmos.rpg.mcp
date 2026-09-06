@@ -1,48 +1,28 @@
 /**
  * A HOUSE KNOWS ITS OWN BY A PLATE AND A TOKEN.
  *
- * The design owner: *"life plates should [exist]"*, *"identity slips should be
- * an item you have by default as anything higher than outer disciple
- * inclusive"*, *"the life plates live in the central sect hall of course"*,
- * *"basically if you die your life plate shatters, the sect knows you died and
- * your identity medallion disintegrates"*, *"but identity medallions to prove
- * identity should be part of trust"*, *"if we have nothing then rebuild it."*
+ * `docs/world/houses/trust.md` has carried this design under its own heading
+ * since it was written - a house keeps a plate for each disciple, it shatters
+ * when they die, and the disciple's token goes with them. Measured before this
+ * file: `'token'` was a value of `ObjectKind` that nothing in the engine ever
+ * created. The design record and the machinery had no connection at all.
  *
- * ── WE HAD THE DESIGN AND NONE OF THE MACHINERY ──────────────────────────
- *
- * `docs/world/houses/trust.md` carries the whole thing under its own heading -
- * *"Tokens shatter, so somebody has to be taken alive"* - and states every
- * consequence: a house keeps a plate for each disciple and it shatters when
- * they die, the disciple's own token goes with them, you cannot take a working
- * token off a corpse, a house knows the instant one of its own dies, and a
- * disciple missing while their plate is still whole is the signature of a
- * captive rather than a casualty.
- *
- * Measured before this file: `'token'` existed as one value of `ObjectKind` and
- * NOTHING in the engine ever created one. Not a plate, not a tag, not an issue,
- * not a shatter. The doctrine that catches exactly this is the one the ratchet
- * enforces - a rule pinned but never reached by the game looks maintained and
- * is not - and here it was a document rather than an export.
- *
- * ── WHY THE SHATTERING IS THE LOAD-BEARING PART ──────────────────────────
- *
- * It is not flavour and the document says why. Because the token dies with its
+ * THE SHATTERING IS THE LOAD-BEARING PART. Because the token dies with its
  * holder, the obvious route to a stolen identity - kill somebody and take their
- * proof - DOES NOT EXIST. So an identity has to be taken alive and kept alive,
- * which converts a clean killing into an ongoing crime with a living victim, a
- * place they are being held, and somebody who can be rescued.
+ * proof - does not exist. An identity has to be taken ALIVE and kept alive,
+ * which turns a clean killing into an ongoing crime with a living victim, a
+ * place they are held, and somebody who can be rescued. That is a better thing
+ * for a world to contain than a body in a ditch.
  *
- * That is a better thing for a world to contain than a body in a ditch, and it
- * is the whole reason this is built the way it is rather than as a flag.
+ * TWO OBJECTS BECAUSE THEY ARE IN TWO PLACES. The token is on the person,
+ * wherever they have got to; the plate is on a wall a province away. A house
+ * learns from the plate and everybody else reads the token.
  *
- * ── AND THE TAG AUTHENTICATES THE LINE, NOT THE PERSON ───────────────────
- *
- * A genuine tag in the wrong hands still reads as *a member of that house*. It
- * answers the question a gate asks and leaves the individual wide open, which
- * is the seam somebody would actually work. Nothing here closes it, because it
- * is not a defect: verifying the OBJECT is a perceptual question and verifying
- * that this is the person it was issued to is not a question the object can
- * answer at all.
+ * AND THE TAG AUTHENTICATES THE LINE, NOT THE PERSON. A genuine tag in the
+ * wrong hands still reads as a member of that house. That is the seam somebody
+ * would work, and it is not a defect to close: verifying the object is a
+ * perceptual question, and whether this is the person it was issued to is not a
+ * question the object can answer.
  */
 
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
