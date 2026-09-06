@@ -8,8 +8,9 @@
  * vectors, so forgetting this is an error at startup rather than a silent
  * wrong answer.
  *
- * The vectors are NOT committed - `.gitignore` excludes `*.f32` and
- * `models/**/verb-corpus.json`, and this header said the opposite for long
+ * The vectors are NOT committed: `.gitignore` excludes the `.f32` files and
+ * every `verb-corpus.json` under `models/`, and this header said the opposite
+ * for long
  * enough that the setup steps in `README.md` were written without the step that
  * builds them. A fresh clone fetched the model, built, ran, and played with the
  * tier dead: `readyTheTier` throws on the missing manifest, `readTheSentence`

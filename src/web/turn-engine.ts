@@ -744,6 +744,7 @@ import {
 } from './view.js';
 import { type ObligationDb, ledgerAbout } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
+import { namesTheCoin, whatIsBeingSwapped } from './what-is-being-swapped-for-what.js';
 import {
     headlineForTheLedger,
     theLedgerAsLines,
@@ -3024,7 +3025,7 @@ ${noticedWaiting}`;
                 return this.buy(run, cultivator, ambient, action.target);
 
             case 'sell':
-                return this.sell(run, cultivator, action.target);
+                return this.sell(run, cultivator, ambient, action.target, rawInput);
 
             case 'give':
                 return this.giveSomething(
@@ -7782,13 +7783,41 @@ ${opened.text}` : receipt,
     private async sell(
         run: Run,
         cultivator: Cultivator,
-        target: string | undefined
+        ambient: AmbientQi,
+        target: string | undefined,
+        rawInput = ''
     ): Promise<Execution> {
         // AHEAD OF THE POUCH, BECAUSE A BOOK WAS NEVER IN IT
         const asACopy = await this.sellACopyOfAnArt(run, cultivator, (target ?? '').trim());
         if (asACopy) return asACopy;
 
         const held = listPouch(this.db, cultivator.id);
+
+        // ── BUYING IS SELLING, AND THE POUCH SAYS WHICH END YOU ARE ON ──────
+        //
+        // The design owner: *"it's all bartering, if spirit stones have
+        // value"*, *"it's your stuff for their stuff"*. One exchange, and the
+        // verb is only which half the sentence happened to put first.
+        //
+        // The WORDS cannot settle it. "I part with some stones for a pill" and
+        // "I sell my herbs for stones" are the same shape, and telling them
+        // apart by vocabulary means calling stones special, which is the
+        // bespoke thing this is here to avoid. So the sentence hands over both
+        // sides and the engine asks the one question that does settle it: is
+        // the thing being handed over something this cultivator is carrying?
+        //
+        // Where it is not, and the sentence also says what was wanted in
+        // return, the player is BUYING and said it from the other end. Above
+        // both refusals below, because an empty pouch is the commonest way to
+        // be on the buying end and it used to end the turn with "selling
+        // requires having something first" - which is true, and is not what
+        // they were doing.
+        const swap = whatIsBeingSwapped(rawInput);
+        if (swap?.got && !namesTheCoin(swap.got)
+            && (swap.given === null || this.pouchEntryFor(held, swap.given) === null)) {
+            return this.buy(run, cultivator, ambient, swap.got);
+        }
+
         if (held.length === 0) {
             return refused('storage.listPouch', 'sell', factsForRefusal(
                 'Nothing on you worth a counter.',

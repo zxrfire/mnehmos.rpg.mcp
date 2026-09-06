@@ -1444,8 +1444,15 @@ export const SOMEBODY_ELSE_TO_SEE_TO_IT =
 export const HAVING_IT_DONE_TO_YOU =
     /\b(?:get|gets|getting|got)\s+(?:myself\s+)?(?:patched up|seen to|treated|looked at|fixed up|bandaged|mended|stitched up)\b/;
 
-export const HAVING_IT_SEEN_TO =
-    /\b(?:get|gets|getting|have|has|having|want|wants|wanting|need|needs|needing|would like|ask for|asking for)\b[^.!?]*\b(?:injur\w*|wounds?|meridians?|myself|me)\b[^.!?]*\b(?:treated|seen to|looked at|fixed|attended to|mended|patched up|bandaged|set)\b/;
+export const HAVING_IT_SEEN_TO = new RegExp([
+    // Asking for it: a wanting verb, the thing that is wrong, the outcome.
+    String.raw`\b(?:get|gets|getting|have|has|having|want|wants|wanting|need|needs|needing|would like|ask for|asking for)\b[^.!?]*\b(?:injur\w*|wounds?|meridians?|myself|me|damage)\b[^.!?]*\b(?:treated|seen to|looked at|fixed|attended to|mended|patched up|bandaged|set|healed|repaired|put right)\b`,
+    // AND SAID THE OTHER WAY ROUND, which is how a person in pain says it:
+    // the state first and the asking after. "I am hurt and want it fixed"
+    // named what was wrong before it named the verb, so the ordered pattern
+    // above could not reach it however many outcome words it carried.
+    String.raw`\b(?:i am|i'?m|i have been|i'?ve been|we are|we'?re)\s+(?:badly\s+|half\s+)?(?:hurt|wounded|injured|bleeding|broken|maimed|crippled)\b[^.!?]*\b(?:treated|seen to|looked at|fixed|attended to|mended|patched up|bandaged|healed|repaired|put right|see to it|do something about)\b`
+].join('|'), 'i');
 
 // BUYING A LINE OFF THE BOARD
 

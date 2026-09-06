@@ -75,9 +75,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I head for the peaks',
         'I go on foot to the village',
         'I flee the town tonight',
-        'I follow the man who left ahead of me',
         'I walk into the village',
-        'I press on to the capital',
         'I walk it myself however long it takes',
         'I return to the town I came from'
     ],
@@ -89,7 +87,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I go by boat rather than walk it',
         'I fly there on my sword',
         'I take the spirit boat downriver',
-        'I travel on horseback',
         'I ride a crane over the range'
     ],
     fold: [
@@ -131,7 +128,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I break the dao oath I swore',
         'I want out of the oath I am under',
         'who witnessed the oath I am bound by',
-        'I bind myself by oath to see this done',
         'we swear an oath of brotherhood',
         'I swear a dao oath never to speak of this',
         'what have I sworn and to whom',
@@ -172,7 +168,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         // is. There is no taming subsystem and there must not be one.
         'I tame the beast',
         'I break the wolf in and make it mine',
-        'I pin him down until he gives me the name',
         'I hold him against the wall until he hands it over',
         'I drag him back here by the collar'
     ],
@@ -185,8 +180,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I meditate and take in the qi here',
         'I want to grow stronger by training',
         'I settle in and work at it for a year',
-        'I cultivate for ten years',
-        'I go back to my cultivation'
     ],
     seclude: [
         'I go into closed door cultivation',
@@ -196,7 +189,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I retreat from the world entirely for a stretch',
         'I go into seclusion now',
         'I cut myself off from everyone for a century',
-        'no visitors and no interruptions, I am in retreat'
     ],
     breakthrough: [
         'I attempt the breakthrough',
@@ -228,9 +220,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want to try alchemy with what I have',
         'I cook a healing pill',
         'I light the cauldron and start a batch',
-        'I work the furnace until a pill comes out of it',
         'can I turn this into medicine',
-        'I cook up a poison in the cauldron'
     ],
     // Every one of these names the thing. `build` and `make` on their own are
     // how somebody says half a dozen other intentions - making an offer, making
@@ -267,7 +257,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want to bring down a beast',
         'I go hunting',
         'I set snares for whatever comes through',
-        'I kill a beast and bring the body back',
         'I want the hide and bones off a beast'
     ],
     eat: [
@@ -289,8 +278,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I lay in enough food to last',
         'I need supplies for a long stretch',
         'I get grain in for the year',
-        'I need a decade of rations in the pouch',
-        'I want food put away for the long haul',
         'I stock the larder',
         'I want a hundred days of food'
     ],
@@ -303,7 +290,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I am hurt and want it fixed',
         'I get myself healed',
         'I want the damage inside me repaired',
-        'I have somebody set my broken bones'
     ],
     buy: [
         'I buy the manual',
@@ -313,8 +299,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I would like to take that off him for the price',
         'I want to buy a night at the inn',
         'I spend my stones on the sword',
-        'I take the sword and settle up for it',
-        'I get the healing pill with what stones I have'
     ],
     sell: [
         'I sell the sabre',
@@ -389,7 +373,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'where would I even find a book at all',
         'how do people without money get taught',
         'what are my options for getting a method',
-        'can I get the rest of this art somehow',
         'is being taught the only way to a better art'
     ],
     ceiling: [
@@ -401,9 +384,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'why is my progress stalled',
         'what is stopping me from getting stronger',
         'am I stuck',
-        'my cultivation has not moved in years, why',
         'what is my ceiling',
-        'nothing accumulates no matter how long I sit',
         'is it the manual or the ground that is failing me',
         'what has to change before I can climb again'
     ],
@@ -424,7 +405,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'where else could I be',
         'what other ground is there',
         'what options do I have if I leave here',
-        'list the places I could travel to',
         'what is out there worth going to',
         'is there anywhere with better energy for cultivating',
         'what is on the other side of these mountains'
@@ -436,7 +416,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'what road takes me there',
         'how far is it and by which way',
         'what can this ground teach me',
-        'where could I comprehend something',
         'is there ground around here that teaches a dao',
         'does this mountain teach anything'
     ],
@@ -473,7 +452,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'show me the stalls',
         'what can I get in this place',
         'what does this town have to trade',
-        'is there a market in this town',
         'what do the merchants have',
         'I want to know the prices here',
         'does anywhere here deal in pills'
@@ -503,7 +481,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'what old ground is there to search',
         'I go into the tomb',
         'I take whatever is behind the door',
-        'I look the crypt over from the threshold',
         'I loot the tomb'
     ],
     legacy: [
@@ -515,8 +492,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I bury my stones where nobody will find them',
         'I dig up the cache I left',
         'who would hold something for me for two hundred years',
-        'I leave my manual with a house against a password',
-        'I want to collect the deposit my father left'
     ],
     petition: [
         'I put my case to the elders',
@@ -577,7 +552,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I burn incense for the one who crossed',
         'I send a word down the line to them',
         'what is the line up to our ancestor',
-        'I leave food at the shrine for the ancestors',
         'I perform the rites for our ascended founder'
     ],
     // EVERY ONE OF THESE HAS TO NAME THE CROSSING. `DESCENT_UNAMBIGUOUS` in
@@ -593,7 +567,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I go down to the mortal world myself',
         'I take the way I came, back below the Lid',
         'I make the descent back below',
-        'I force the Lid open and go down myself',
         'I descend through the Lid in person',
         'I go down below the Lid rather than send anything',
         'I push down through the Lid to my old province',
@@ -673,9 +646,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I tell the elder what happened to his disciple',
         'I inform him that his brother is dead',
         'I tell him that I killed his brother',
-        'I tell him whose men burned his village',
         'I name the killer to his brother',
-        'I tell the merchant that his partner has been robbing him'
     ],
     request: [
         'I ask him to teach me',
@@ -705,8 +676,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I put a marriage to the head of the clan',
         'I accept the match they have offered',
         'I agree to the betrothal',
-        'I ask for her hand',
-        'can I marry her',
         'I send a matchmaker to the Xu house'
     ],
     decline: [
@@ -717,7 +686,6 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I run from the marriage they arranged',
         'I walk out of the match my house made',
         'I break off the engagement',
-        'I leave the man they married me to'
     ],
     child: [
         'we have a child together',
