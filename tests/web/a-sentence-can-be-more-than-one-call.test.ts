@@ -794,7 +794,15 @@ describe('a clause that chooses is a choice, not an act', () => {
 
     it('refuses a field it holds no rows for, and names what would carry it', () => {
         const said = whatTheChoiceFoundNobody({ field: 'price', want: 'least', word: 'cheapest' });
-        expect(said).toContain('price board');
+        // NOT A BOARD. The design owner: *"a player can't actually see the
+        // market board. There's a sect task board, but a market board is theirs
+        // to make a mental of."* This asserted the refusal said "price board",
+        // which sent a player looking for a thing that is not in the world. It
+        // still has to name what WOULD carry the comparison - a refusal that
+        // names no route is the defect this test exists for - and what carries
+        // it is having asked after the prices.
+        expect(said).toContain('prices you have asked after');
+        expect(said).not.toContain('board');
         expect(said).not.toMatch(/^No\.?$/);
     });
 });

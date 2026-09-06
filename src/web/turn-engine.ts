@@ -7445,7 +7445,7 @@ ${opened.text}` : receipt,
                     summary:
                         `${courses} course(s) of ${course.name} at ${courseCash} cash (${perWound} stone(s)) `
                         + `each = ${cost} stones. Priced through localPrice(${regionId}), the same call `
-                        + 'the market board prices with.',
+                        + 'the market read prices with.',
                     ok: true
                 },
                 ...skipCalls('treat', skip, provisioning.line),
