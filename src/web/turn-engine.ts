@@ -125,7 +125,8 @@ import {
 } from '../engine/social-leverage/what-a-house-does-when-it-catches-you.js';
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
-import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { whatSomebodyIsLike } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
 import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
@@ -11912,24 +11913,36 @@ ${fit.line}`;
 
         for (const person of here) {
             if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', person.id)) {
-                const doing = byId.get(person.id)?.activity ?? null;
+                const row = byId.get(person.id) ?? null;
+                const doing = row?.activity ?? null;
+                // Only the people the player can already name are named
+                // back: an activity that says "mid-conversation with
+                // somebody" is the honest read of watching two strangers
+                // talk, and handing over the second name would be the
+                // knowledge gate leaking through the prose.
+                //
+                // AND THE SAME GATE MAKES THE PARTY. `withIds` filtered this
+                // way is exactly *"his party if he's in one"* - the people the
+                // player can see are with them - so walking up to somebody
+                // mid-conversation hands over both, and walking up to two
+                // strangers talking hands over neither.
+                const alongside = (doing?.withIds ?? [])
+                    .filter(id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id))
+                    .map(nameOf);
                 named.push({
                     name: person.name,
                     ordinal: person.realmOrdinal,
                     sex: person.sex ?? null,
                     age: person.age,
                     rank: person.sectRank ?? null,
-                    // Only the people the player can already name are named
-                    // back: an activity that says "mid-conversation with
-                    // somebody" is the honest read of watching two strangers
-                    // talk, and handing over the second name would be the
-                    // knowledge gate leaking through the prose.
-                    at: doing === null ? null : whatThatLooksLike(
-                        doing,
-                        doing.withIds
-                            .filter(id => this.knowledge.isAwareOf(cultivator.id, 'cultivator', id))
-                            .map(nameOf)
-                    )
+                    at: doing === null ? null : whatThatLooksLike(doing, alongside),
+                    // Whether the square would hand this person to somebody
+                    // walking into it, and how sure they would be of it. Both
+                    // fall out of what is already true of them - see
+                    // `whetherTheyWouldLookUp` and `howMuchTheyPlayToTheRoom`.
+                    looksUp: doing !== null && whetherTheyWouldLookUp(doing.kind),
+                    playsToTheRoom: row === null ? 0 : whatSomebodyIsLike(row).room,
+                    withNames: alongside
                 });
             } else {
                 strangers.push({ ordinal: person.realmOrdinal });

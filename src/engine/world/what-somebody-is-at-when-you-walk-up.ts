@@ -186,13 +186,21 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
         case 'trade':
             return activity.note;
         case 'drawing_on_the_ground':
-            return `sitting on the best of the ground and drawing on it`;
+            // The note is the specific of it where there is one. Two of these
+            // cases used to return a fixed string and drop whatever had been
+            // written into `note`, so a caller that set one got it silently
+            // thrown away - which is worse than not accepting one.
+            return activity.note.length > 0
+                ? activity.note
+                : 'sitting on the best of the ground and drawing on it';
         case 'out_with_a_party':
             return withNames.length === 0
                 ? `out on something: ${activity.note}`
                 : `out on something with ${them}`;
         case 'travelling':
-            return 'going somewhere, and not stopping for long';
+            return activity.note.length > 0
+                ? activity.note
+                : 'going somewhere, and not stopping for long';
         case 'comprehending':
             return `sitting with a dao rather than an art: ${activity.note}`;
         case 'their_practice':
@@ -210,6 +218,47 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
             return withNames.length === 0
                 ? activity.note
                 : `${activity.note}, and ${them} ${withNames.length === 1 ? 'is' : 'are'} the other half of it`;
+    }
+}
+
+/**
+ * WHETHER THIS IS SOMEBODY WHO WOULD LOOK UP.
+ *
+ * The design owner, on arriving somewhere: *"you typically encounter 1 person
+ * (or his party if he's in one, so more than one) and that's your person you
+ * talk to."*
+ *
+ * Which one is not a draw. A square hands you whoever is FACING OUT of it -
+ * somebody at a counter, somebody putting a party together, somebody holding
+ * an audience. The rest of it is people who are turned away from the door: a
+ * cultivator behind a shut one, somebody sitting with a dao, somebody in the
+ * middle of a fight with a beast. They are all still there, and asking who
+ * else is here still finds them, but they are not who the ground gives you.
+ *
+ * The genre's own rule and not a convenience: the person who meets you at a
+ * sect gate is the person whose business it is to be met.
+ */
+export function whetherTheyWouldLookUp(kind: ActivityKind): boolean {
+    switch (kind) {
+        case 'trade':
+        case 'mustering':
+        case 'teaching':
+        case 'talking':
+        case 'at_a_table':
+        case 'squeezing':
+        case 'the_work_of_their_rank':
+        case 'travelling':
+        case 'idle':
+            return true;
+        case 'their_practice':
+        case 'comprehending':
+        case 'mending':
+        case 'at_the_shelves':
+        case 'drawing_on_the_ground':
+        case 'fighting_a_beast':
+        case 'out_with_a_party':
+        case 'their_own_business':
+            return false;
     }
 }
 
@@ -361,39 +410,90 @@ export function whatTheyOpenAt(input: {
     }
 
     if (ground === 'somewhere_goods_move') {
+        // ── A TOWN IS NOT ONLY A COUNTER ─────────────────────────────────
+        //
+        // Measured: every settlement in a seeded world handed a visitor
+        // somebody at a stall, because this branch produced `trade` and
+        // nothing else - so twelve towns read as twelve versions of the same
+        // market, which is the boredom this whole file exists against. A
+        // settlement has an inn in it, and people passing through it, and
+        // people who live there and are not buying anything today.
+        if (input.roll < 0.14) {
+            return bare('at_a_table', pick(input.words, [
+                'in an inn, eating, and taking their time about it',
+                'drinking at the hour people drink who have nowhere to be',
+                'at a table with a bowl going cold in front of them',
+                'eating standing up, because the seat costs extra'
+            ]));
+        }
+        if (input.roll < 0.22) {
+            return bare('travelling', pick(input.words, [
+                'passing through, and asking the road rather than the town',
+                'settling with a carter and moving on the same hour',
+                'waiting on a road that opens at dawn'
+            ]));
+        }
+        if (input.roll < 0.30) {
+            return bare('the_work_of_their_rank', pick(input.words, [
+                'minding a stall that belongs to somebody else',
+                'carrying somebody else’s goods for somebody else’s money',
+                'sweeping a doorway on a street that will be dusty again by noon',
+                'unloading a cart and counting it as it comes off'
+            ]));
+        }
+
         // ── AND NOT ALL AT THE SAME COUNTER ──────────────────────────────
         //
         // The first cut gave everybody at a market one of two lines, so a
         // square with three people in it printed the same clause twice in a
         // row. A market is the busiest ground in the world and the one place
         // the sameness shows worst, so the note is drawn rather than picked off
-        // a boolean. Everything here is trade; what varies is which end of it.
+        // a boolean. What varies is which end of the trade they are.
+        //
         // AND WHETHER THEY ARE LOUD ABOUT IT. A market is the one ground where
         // how much somebody plays to a room is visible from across it: the same
         // empty purse is a person haggling at volume or a person standing at
         // the edge of the square not approaching anything.
+        //
+        // DRAWN ON `words` AND NOT ON `roll`, which is the whole reason there
+        // are two draws. `roll` chose the branch above; reusing it here ties
+        // which line somebody gets to how far into the market band they fell,
+        // and the people a square hands a visitor - who are picked for one end
+        // of a disposition - then all say the same thing.
         return bare('trade', npc.spiritStones > 0
-            ? pick(input.roll, like.room >= 0 ? [
+            ? pick(input.words, like.room >= 0 ? [
                 'in the middle of a transaction and making sure it is heard',
                 'arguing a price down, and enjoying it more than the saving',
                 'buying something small and asking too many questions about it',
-                'holding court over a stall they have no intention of buying from'
+                'holding court over a stall they have no intention of buying from',
+                'reading a price out loud for the benefit of the queue',
+                'sending somebody back to a stall to ask again',
+                'being talked into something and letting everybody watch it happen'
             ] : [
                 'in the middle of a transaction, holding the money end of it',
                 'paying what was asked to get it over with',
                 'buying something small and not looking up while they do it',
-                'waiting on somebody who said they would be here'
+                'waiting on somebody who said they would be here',
+                'taking delivery of something already paid for',
+                'checking a seal on a jar against a mark on a slip of paper',
+                'walking the row twice before they buy anything at all'
             ])
-            : pick(input.roll, like.room >= 0 ? [
+            : pick(input.words, like.room >= 0 ? [
                 'talking up something nobody at this counter wants',
                 'telling a stallholder what the thing is really worth',
                 'counting what is left and doing it twice',
-                'making an offer they cannot cover and enjoying the moment before it lands'
+                'making an offer they cannot cover and enjoying the moment before it lands',
+                'working a small crowd that has not agreed to be one',
+                'asking after a buyer by name, loudly, twice',
+                'describing something they are selling better than it is'
             ] : [
                 'looking at what is on a counter and not buying',
                 'trying to sell something nobody at this counter wants',
                 'counting what is left and doing it twice, quietly',
-                'watching a stall rather than approaching it'
+                'watching a stall rather than approaching it',
+                'pricing a thing they have no intention of buying today',
+                'standing where the stalls end, not going further in',
+                'putting something back down and moving along the row'
             ]));
     }
 

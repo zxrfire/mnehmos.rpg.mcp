@@ -816,7 +816,7 @@ export function factsForLook(
 ): EngineFacts {
     const lines = standingLines(cultivator, ambient);
     const where = placeName(cultivator);
-    const who = describeCompany(company, cultivator.realmOrdinal);
+    const who = describeCompany(company, cultivator.realmOrdinal, 'walking_up');
     const noticed = selfNoticing(cultivator, groundIsQuiet);
 
     if (standing) lines.push(standing);
@@ -846,7 +846,7 @@ export function factsForCompany(
     standing: string | null = null
 ): EngineFacts {
     const where = placeName(cultivator);
-    const who = describeCompany(company, cultivator.realmOrdinal)
+    const who = describeCompany(company, cultivator.realmOrdinal, 'asked_who_is_here')
         ?? 'Nobody is about. Whatever this place does with its people, it is not doing it here.';
 
     const lines = [who, ...(standing ? [standing] : [])];
@@ -894,11 +894,40 @@ export interface SomebodyInTheSquare {
      * Grand Sword Elder - produced one sentence naming them and nothing else,
      * and every person in the world had `occupation: 'unknown'`.
      *
-     * DERIVED and never stored: see `what-somebody-is-at-when-you-walk-up.ts`.
-     * Null for somebody who exists only as a stored roster row, which is the
-     * player's own kind and a handful of others.
+     * STORED and not derived: see `what-somebody-is-at-when-you-walk-up.ts`
+     * for why that is the call, and `what-somebody-is-like-and-where-it-came-
+     * from.ts` for why personality is the opposite one. Null for somebody who
+     * exists only as a stored roster row, which is the player's own kind and a
+     * handful of others.
      */
     at: string | null;
+    /**
+     * Whether they are facing out of the square, off what they are at.
+     *
+     * The half of *"you typically encounter 1 person"* that decides WHICH: a
+     * person behind a shut door is still here and is not who the ground hands
+     * you. False where the world has no row for them.
+     */
+    looksUp: boolean;
+    /**
+     * How much they do it where it will be counted, on -1..+1.
+     *
+     * The other half. Between two people both facing out of the square, the
+     * one you fall in with is the one who was going to make sure of it. Falls
+     * out of who they are - see `howMuchTheyPlayToTheRoom` - and is 0 for
+     * somebody the world has no row for.
+     */
+    playsToTheRoom: number;
+    /**
+     * The people they are at it WITH who are also here and also nameable.
+     *
+     * *"Or his party if he's in one, so more than one."* A party is not a
+     * separate concept: it is `NpcActivity.withIds`, gated the same way every
+     * other name is, which is why walking up to somebody mid-conversation
+     * hands you both of them and walking up to a stranger's conversation hands
+     * you neither.
+     */
+    withNames: string[];
 }
 
 export interface Company {
@@ -935,8 +964,88 @@ function roughly(n: number): string {
     return `${n} people`;
 }
 
-function describeCompany(company: Company, observerOrdinal = 0): string | null {
+/**
+ * HOW YOU CAME TO BE LOOKING, which decides how much a square tells you.
+ *
+ * The design owner: *"when you show up to a new area, you typically encounter 1
+ * person (or his party if he's in one, so more than one) and that's your person
+ * you talk to. If there's more people, you have to specifically ask: who else
+ * is here? [...] you don't necessarily know everyone who is here right off the
+ * bat."*
+ *
+ * Two readings of one square and not two squares. Nothing is hidden and nothing
+ * is invented: the same roster answers both, and the difference is how much of
+ * it a person standing there would actually have taken in.
+ */
+export type HowYouCameToBeLooking =
+    /** You walked in. One person, or their party, and a count for the rest. */
+    | 'walking_up'
+    /** You asked who else is here. The census, which is what asking is for. */
+    | 'asked_who_is_here';
+
+/**
+ * Who the square hands you when you walk into it.
+ *
+ * Facing out of it first - see `whetherTheyWouldLookUp` - and between two
+ * people who are, whoever was going to make sure they were seen. Null when
+ * nobody nameable is facing out, which is a real state: a hall of people at
+ * their own practice hands you nobody, and you have to ask.
+ */
+export function whoTheGroundHandsYou(
+    named: readonly SomebodyInTheSquare[]
+): SomebodyInTheSquare | null {
+    let best: SomebodyInTheSquare | null = null;
+    for (const person of named) {
+        if (!person.looksUp) continue;
+        if (best === null || person.playsToTheRoom > best.playsToTheRoom) best = person;
+    }
+    return best;
+}
+
+function describeCompany(
+    company: Company,
+    observerOrdinal = 0,
+    how: HowYouCameToBeLooking = 'asked_who_is_here'
+): string | null {
     if (company.total === 0) return null;
+
+    // ── ONE PERSON, OR THEIR PARTY, AND A COUNT FOR THE REST ─────────────
+    //
+    // What walking in actually gets you. Everybody else is still here and the
+    // count says so, which is the invitation to ask: nothing is concealed, it
+    // is just that a person walking into a hall does not come away with a
+    // roster of it.
+    if (how === 'walking_up') {
+        const met = whoTheGroundHandsYou(company.named);
+        if (met !== null) {
+            const sentences: string[] = [];
+            const party = met.withNames.length;
+            sentences.push(met.at === null
+                ? `${met.name} is here.`
+                : `${met.name} is here, ${met.at}.`);
+            // The party is already inside the clause - "mid-conversation with
+            // X" - so it is not repeated. What is worth saying is that they
+            // came as a set, and only when the set is bigger than a pair.
+            if (party > 1) {
+                sentences.push(`They are not on their own; ${roughly(party)} are with them.`);
+            }
+            const rest = company.total - 1 - party;
+            if (rest === 1) {
+                sentences.push('Somebody else is here too, and has not looked over.');
+            } else if (rest > 1) {
+                sentences.push(
+                    `${capitalise(roughly(rest))} are here besides, and how many of them `
+                    + 'matter is not something a glance settles.'
+                );
+            }
+            return sentences.join(' ');
+        }
+        // NOBODY FACING OUT. The square is full of people with their backs to
+        // the door, which is a whole answer and a common one on a house's own
+        // ground. It falls through to the census read below rather than
+        // printing nothing, because what a glance CAN see - how many, and
+        // whether one of them stands over the rest - is still true.
+    }
 
     // Every clause here is written to stand alone, and some of them start
     // with a count - "twenty-odd people are about". Joined after a full
