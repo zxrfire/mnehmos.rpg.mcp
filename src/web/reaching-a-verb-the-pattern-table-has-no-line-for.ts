@@ -101,7 +101,44 @@ import {
  * MEANING THE SAME THING rather than on sharing words.
  */
 const ACCEPT_AT = 0.70;
-const CLEAR_OF_RUNNER_UP_BY = 0.01;
+/**
+ * HOW SURE THE TIER HAS TO BE, and neither half of it works alone.
+ *
+ * Three sentences were each patched individually before this - "I nod" reaching
+ * `oath`, "I step back" reaching `descend`, "who are you" reaching `status` -
+ * and patching the next one was not going to end. Measured over sentences whose
+ * right answer is known, top score and how far clear of the runner-up:
+ *
+ *   I want to get stronger    cultivate 0.904  clear 0.177   right
+ *   I have no food            eat       0.796  clear 0.106   right
+ *   I need money              work      0.862  clear 0.083   right
+ *   I have nothing left to sell market  0.750  clear 0.041   right
+ *   how far will what I know take me
+ *                             ceiling   0.809  clear 0.035   right
+ *   ------------------------------------------------------------------
+ *   I step back               descend   0.766  clear 0.031   wrong
+ *   I am broke                petition  0.742  clear 0.029   wrong
+ *   I nod                     posture   0.732  clear 0.022   wrong
+ *   I stand up                posture   0.809  clear 0.018   wrong
+ *   what is stopping me       seclude   0.684  clear 0.002   wrong
+ *
+ * NO FLOOR SEPARATES THESE: "I stand up" outscores "I have no food" and is
+ * junk. NO DAYLIGHT FIGURE SEPARATES THEM EITHER: the ceiling sentence is clear
+ * by 0.035 and "I step back" by 0.031. Only the two together do, which is the
+ * honest reading of what they mean - a score says how good the match looks, and
+ * the daylight says whether the model actually preferred it to anything else.
+ *
+ * `CLEAR_AIR_COUNTS_FOR` is what one point of daylight is worth against one
+ * point of score. THE MARGIN IS THIN - 0.873 for the last right answer against
+ * 0.863 for the first wrong one - and it is recorded rather than smoothed over,
+ * because ten sentences is a small sample and the next person to move this
+ * number should know how little room there is. The bias when it is wrong is
+ * deliberate: this is the tier that runs with NO MODEL, it is expected to be
+ * worse, and a refusal here costs a player one retyped sentence while a
+ * confident wrong verb costs them a turn and sometimes a life.
+ */
+const CLEAR_AIR_COUNTS_FOR = 3;
+const SURE_ENOUGH_TO_ACT_ON = 0.87;
 
 /**
  * A HIGHER BAR FOR ANYTHING THAT SPENDS THE PLAYER'S LIFE.
@@ -122,30 +159,41 @@ const CLEAR_OF_RUNNER_UP_BY = 0.01;
  */
 const ACCEPT_TIME_SPENDING_AT = 0.76;
 
+
 /**
- * VERBS THIS TIER MAY NOT REACH AT ALL, however well it scores.
+ * WHO THE SENTENCE IS ABOUT, WHICH THE VECTOR CANNOT SEE.
  *
- * The floors above are the answer where a wrong guess is expensive. They are
- * not the answer where a wrong guess is FINAL and the right guess was never
- * needed, and `descend` is both.
+ * "who am i" and "who are you" are the same sentence to a sentence model: they
+ * differ by one function word, function words carry almost no weight, and the
+ * word is the entire meaning. Measured: `who are you`, addressed to somebody
+ * standing in front of the player, came back as `status` - the game answering a
+ * question about a stranger by printing the player's own character sheet.
  *
- * Both halves matter. A misparse into it is nine strikes of the heaviest
- * tribulation in the game, weathered by somebody who spent a life getting where
- * they could be struck by it - `action-set.ts` says so in its own comment. And
- * nothing is lost by shutting the tier off it: every way of saying it names the
- * Lid or the world below, `DESCENT_UNAMBIGUOUS` and `THE_WAY_BACK_DOWN` in
- * `institution-phrasings.ts` hold those phrasings exactly, and that file's own
- * note is the reason - *nobody says "I descend through the Lid" about a
- * staircase*. A verb whose sentences are enumerable does not need a tier that
- * exists for sentences nobody wrote down.
+ * That is not a bad exemplar and it is not a threshold that needs raising. It is
+ * a distinction the model is structurally unable to draw, so it has to be drawn
+ * outside it: an act that only anybody performs ON THEMSELVES cannot answer a
+ * sentence about somebody else, whatever it scores.
  *
- * Measured, and this is why it is a list rather than a higher floor: with the
- * exemplars corrected to name the crossing, "I back away slowly" stopped
- * reaching it and "I step back" did not. Two words, no content beyond a
- * direction, and above the acceptance floor for the one verb that cannot be
- * taken back.
+ * Derived from the corpus rather than listed. An action counts as self-directed
+ * when EVERY exemplar written for it is about the speaker, so `status`,
+ * `inventory` and `ceiling` are covered without being named here, and a verb
+ * added tomorrow is classified by the sentences its author wrote for it.
  */
-const A_GUESS_MAY_NOT_REACH: readonly ActionName[] = ['descend'];
+const ABOUT_THE_SPEAKER = /\b(?:i|me|my|myself|mine)\b/i;
+const ABOUT_SOMEBODY_ELSE = /\b(?:you|your|yours|he|him|his|she|her|hers|they|them|their|theirs)\b/i;
+
+/** Actions every exemplar of which is the speaker asking about themselves. */
+const ONLY_EVER_ABOUT_YOURSELF: ReadonlySet<string> = new Set(
+    Object.entries(HOW_A_PLAYER_SAYS_EACH_VERB)
+        .filter(([, phrasings]) => {
+            const said = phrasings as readonly string[];
+            return said.length > 0 && said.every(one =>
+                ABOUT_THE_SPEAKER.test(one) && !ABOUT_SOMEBODY_ELSE.test(one));
+        })
+        .map(([action]) => action)
+);
+
+
 
 /**
  * A SENTENCE THAT NAMES NOTHING CANNOT MEAN SOMETHING.
@@ -389,11 +437,15 @@ export async function verbForASentenceThePatternsMissed(
     const nearest = await nearestVerbByMeaning(input);
     if (nearest === null) return fromTable;
 
-    if (A_GUESS_MAY_NOT_REACH.includes(nearest.action)) return fromTable;
+    // A THING YOU DO TO YOURSELF CANNOT ANSWER A SENTENCE ABOUT SOMEBODY ELSE.
+    if (ONLY_EVER_ABOUT_YOURSELF.has(nearest.action)
+        && ABOUT_SOMEBODY_ELSE.test(input)) return fromTable;
 
     const spendsTime = (TIME_CONSUMING_ACTIONS as readonly ActionName[]).includes(nearest.action);
     if (nearest.score < (spendsTime ? ACCEPT_TIME_SPENDING_AT : ACCEPT_AT)) return fromTable;
-    if (nearest.score - nearest.runnerUpScore < CLEAR_OF_RUNNER_UP_BY) return fromTable;
+    const sure = nearest.score
+        + CLEAR_AIR_COUNTS_FOR * (nearest.score - nearest.runnerUpScore);
+    if (sure < SURE_ENOUGH_TO_ACT_ON) return fromTable;
 
     const plan: PlannedAction = { action: nearest.action };
 

@@ -58,10 +58,18 @@ import { z } from 'zod';
 //      design owner's verdict on that: HALF ROOF IS NOT XIANXIA. Spacing an
 //      English village name gives an English village name. Terrace, Gorge,
 //      Cliff, Spring, Stair, Array, Garden, Eaves, Slope, Hall, Ridge, Ford,
-//      Basin, Wall, Reach, Creek, Stone, Head, Cut - what `place-names.ts`
+//      Basin, Wall, Creek, Stone, Head, Cut - what `place-names.ts`
 //      already uses, and nothing else. An administrative word is not one of
 //      them: District and Catchment were both in here and are a Prefecture
 //      (州) and a Basin now.
+//      REACH WAS ON THAT LIST AND SHOULD NOT HAVE BEEN, and it is the reason
+//      to distrust a list that says what another file uses instead of being
+//      checked against it. `place-names.md` names Reach twice as a word to
+//      replace - once beside Isle, Cape, Fall and Marches, and once beside
+//      Roof, Well, Bank and Yard - and no authored place has ever used it. The
+//      two that did were this table's Scorched Reach and the Hollow Reach
+//      prefecture in `low-fall.ts`, and they are Black Slope and the Hollow
+//      Basin now.
 //      AND THE QUALIFIER IN FRONT HAS TO BE AN IMAGE. The convention this is
 //      translated out of pairs a type noun with a colour, a material, a number
 //      or a celestial thing - Crescent Moon Valley, Hundred Flower Valley,
@@ -130,7 +138,7 @@ export const RUIN_NAMES: readonly GeneratedPlaceName[] = [
  * name, because the people who chose it were describing weather.
  */
 export const SCAR_NAMES: readonly GeneratedPlaceName[] = [
-    { name: 'Scorched Reach', source: 'what_happened', records: 'What the nearest village called it that week, and did not stop calling it.' },
+    { name: 'Black Slope', source: 'what_happened', records: 'What the nearest village called it that week, and did not stop calling it.' },
     { name: 'Four Days\' Fire', source: 'what_happened', records: 'How long it took, counted from a hill by people who could not do anything else.' },
     { name: 'Reed Flat', source: 'what_is_visibly_there', records: 'It was not flat before, and the word does the whole of the work.' },
     { name: 'Bitter Soil', source: 'what_is_visibly_there', records: 'Stated as a fact rather than as a name, and used as one for two hundred years.' },

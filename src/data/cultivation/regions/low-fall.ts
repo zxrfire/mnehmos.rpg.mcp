@@ -445,7 +445,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-grove-verge',
-        name: 'The Grove Verge',
+        name: 'The Grove Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
         seat: 'the valley of old trees',
@@ -463,7 +463,7 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
     },
     {
         id: 'prefecture-hollow-reach',
-        name: 'The Hollow Reach',
+        name: 'The Hollow Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
         seat: 'the four mountains',

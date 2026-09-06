@@ -451,6 +451,16 @@ import {
     ASKING_WHAT_IS_POSSIBLE,
     ABOUT_A_MANUAL
 } from './what-is-worth-doing-standing-here.js';
+// A sentence the engine cannot place is answered by somebody standing there
+// rather than by the narrator reporting a parse failure. What they may offer is
+// bounded by what they could know, which is derived rather than stored - the
+// module header sets out the two sources and why there is no third.
+import {
+    whatSomebodyHereWouldAsk,
+    type AThing,
+    type AName,
+    type WhatTheyCanPlace
+} from './what-somebody-here-would-ask.js';
 // A refusal is finished when it names the thing that would work. This is that,
 // for wounds - the one axis where the engine was right at every step and silent
 // at the step that mattered.
@@ -3095,19 +3105,45 @@ ${noticedWaiting}`;
                     whatIsWorthDoingStandingHere(this.whatIsLiveHere(cultivator, ambient, run)),
                     3
                 );
+
+                // SOMEBODY HEARD IT SAID. A sentence that reached nothing was
+                // answered by the narrator reporting that it had, which is the
+                // game stepping outside itself to describe its own reader.
+                // There is a person standing in the square; the honest answer
+                // is the one they would give, out of what they could place. The
+                // list below stays, because being asked what you meant and
+                // being told what is live are two different useful things.
+                const asking = this.whoWouldAsk(cultivator);
+                const question = asking
+                    ? whatSomebodyHereWouldAsk({
+                        askedFor: rawInput,
+                        ...asking,
+                        likeness: matchScore
+                    })
+                    : null;
+
                 const unread = this.freeAction(run, 'unclear', factsForRefusal(
                     'The thought does not resolve.',
-                    'You turn the thought over and it does not resolve into anything you could ' +
-                    'actually do standing here.\n\n' +
-                    'Things that would, at this moment:\n' +
-                    linesFor(pressing).map(line => `  ${line}`).join('\n') + '\n\n' +
+                    'You turn the thought over and it does not resolve into anything you could '
+                    + 'actually do standing here.'
+                    + (question ? ` ${question.said}` : '') + '\n\n'
+                    + 'Things that would, at this moment:\n'
+                    + linesFor(pressing).map(line => `  ${line}`).join('\n') + '\n\n'
                     // World voice, and `voice.test.ts` is why: naming the
                     // software here would put a sentence about the program in
                     // front of somebody who is meant to be standing in a
                     // village. Say what is true instead - the list is not a
                     // list of permitted words.
-                    'Those are not the only words that work. Say what you mean to do, '
-                    + 'and find out what it costs.'
+                    + 'Those are not the only words that work. Say what you mean to do, '
+                    + 'and find out what it costs.',
+                    question && asking
+                        ? `${asking.asker.name} asked what was meant, and offered `
+                          + (question.offered.length > 0
+                              ? question.offered.join(', ')
+                              : 'no name - they could place none of it')
+                          + '. Their answer is bounded by the square and their own house\'s '
+                          + 'roll; nothing else was read.'
+                        : undefined
                 ));
                 // The sentence itself goes to the inspector, where somebody
                 // tuning the parser can read exactly what it failed on.
@@ -11464,8 +11500,66 @@ ${fit.line}`;
     }
 
     /**
-     * The blank look, which is the answer.
+     * Somebody standing here who could be asked, and what they are in a
+     * position to place.
+     *
+     * WHO ASKS is gated on the player's awareness, because the paragraph prints
+     * their name and `look` does not name a stranger - the refusal path is
+     * inside the same gate as everything else, which is the section the README
+     * spends on this read. WHAT THEY OFFER is not gated, and must not be: a
+     * person saying a name out loud is a channel, and bounding their answer to
+     * what the player already knows would make the whole read a mirror.
+     *
+     * The player is not in `inFrontOfThem`. They are the one asking, so they
+     * are not a candidate for who they meant, and the module's other branch
+     * reads out that list as "who is standing here instead".
      */
+    private whoWouldAsk(cultivator: Cultivator): {
+        asker: AName;
+        theyCanPlace: WhatTheyCanPlace;
+    } | null {
+        const here = this.present(cultivator);
+        const asker = here.find(
+            row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
+        );
+        if (!asker) return null;
+
+        // EVERYTHING IN FRONT OF THEM, NOT ONLY THE FACES. The design owner:
+        // *this isn't only limited to names of course, it could be anything.*
+        // A person standing in a square can place the people, the houses those
+        // people wear, and the ground under all of them - so all three are
+        // offered, and none of them is a lookup this NPC could not have done.
+        const houses = new Map<string, { id: string; name: string }>();
+        for (const row of here) {
+            if (row.sectId && row.sectName) houses.set(row.sectId, {
+                id: row.sectId, name: row.sectName
+            });
+        }
+        const inFrontOfThem: AThing[] = [
+            ...here.map(row => ({ id: row.id, name: row.name, kind: 'person' as const })),
+            ...[...houses.values()].map(house => ({ ...house, kind: 'house' as const })),
+            { id: placeName(cultivator), name: placeName(cultivator), kind: 'place' as const }
+        ];
+
+        return {
+            asker: { id: asker.id, name: asker.name },
+            theyCanPlace: {
+                inFrontOfThem,
+                // Their own house's roll. What a house teaches is knowable to
+                // its own people too, and is left out only because nothing
+                // hands this method a curriculum - not because they would not
+                // know it.
+                ownHouseWouldKnow: asker.sectId
+                    ? getMembersOf(asker.sectId).map(member => ({
+                        id: member.id,
+                        name: member.name,
+                        kind: 'person' as const
+                    }))
+                    : []
+            }
+        };
+    }
+
     /**
      * A name nobody here answers to, and what somebody standing there does
      * about it.
@@ -11481,8 +11575,10 @@ ${fit.line}`;
      *
      * The near match is `matchScore` under its own threshold - the same scorer
      * the resolver just failed with, read the other way round. Nothing is
-     * invented and nothing is leaked: the only names offered are ones this
-     * cultivator can already say.
+     * invented: the only names offered are ones the person answering could
+     * place, which is `whoWouldAsk` above and not this cultivator's own
+     * awareness. Offering only what the player already knows is a mirror, and
+     * it is what this used to be.
      */
     private blankLook(
         cultivator: Cultivator,
@@ -11522,10 +11618,8 @@ ${fit.line}`;
             };
         }
 
-        const witness = here.find(
-            row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)
-        );
-        if (!witness) {
+        const asking = this.whoWouldAsk(cultivator);
+        if (!asking) {
             return {
                 said: `Nobody in ${where} answers to that name. The nearest person hears the `
                     + 'words out the way people hear out a sentence with a hole in it, and '
@@ -11534,31 +11628,39 @@ ${fit.line}`;
             };
         }
 
-        // THE NEAREST THING THEY HAVE, if the sentence was close to one.
-        // The witness is IN the candidates, and is usually the answer: somebody
-        // asked for a name one letter off their own is exactly the person who
-        // says "you mean me?".
-        const near = here
-            .filter(row => this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id))
-            .map(row => ({ row, score: matchScore(query, row.name) }))
-            .filter(one => one.score > 0)
-            .sort((a, b) => b.score - a.score)[0];
+        // WHAT THE ASKER CAN PLACE, not what the PLAYER is aware of. This read
+        // used to be a mirror: the only names anybody could offer were ones the
+        // player had already been handed, so a steward of a house of ninety had
+        // exactly the same answer as a stranger. Their own house's roll is a
+        // fact about the world, and it is the half that makes the offer worth
+        // anything.
+        const question = whatSomebodyHereWouldAsk({
+            askedFor: query,
+            ...asking,
+            likeness: matchScore
+        });
+        if (question.offered.length > 0) {
+            return { said: question.said, offeredAName: true };
+        }
 
-        if (near) {
+        // AND A PERSON CAN ALWAYS PLACE THEMSELVES. The module will not offer
+        // the asker's own name - it is written for the question about somebody
+        // else - which leaves the commonest miss in the game unanswered: a
+        // two-word name with one word right scores 30 against the person
+        // standing in front of you, under the resolver's bar of 55 and over
+        // nothing at all. Measured with this branch removed: a lone Liang
+        // Minyi, asked for "Liang Qixuanzhe", said she had never heard the name
+        // and that there was nobody else here it could belong to. Asked second,
+        // so somebody they can actually place still wins.
+        if (matchScore(query, asking.asker.name) > 0) {
             return {
-                said: near.row.id === witness.id
-                    ? `${witness.name} does not know the name, and then wonders whether you `
-                      + 'meant them. They say their own name back to you, with the question in it.'
-                    : `${witness.name} does not know the name. "${near.row.name}?" they offer, `
-                      + 'and waits to be told whether that was who you meant.',
+                said: `${asking.asker.name} does not know the name, and then wonders whether `
+                    + 'you meant them. They say their own name back to you, with the question '
+                    + 'in it.',
                 offeredAName: true
             };
         }
-        return {
-            said: `${witness.name} does not know the name, and says so - not as a refusal, as `
-                + 'a person who would tell you if they could. They ask who that is.',
-            offeredAName: false
-        };
+        return { said: question.said, offeredAName: false };
     }
 
     /**
