@@ -3516,8 +3516,19 @@ function planIntent(input: string): PlannedAction {
         return { action: 'sect', ...(namesNoHouse(said) ? {} : { target: said }) };
     }
 
+    // ── WHO ELSE IS DRAWING, WHICH IS NOT WHO ELSE IS HERE ───────────────
+    //
+    // This claimed "who else is here" as well, and it is the wrong owner for
+    // it. The design owner named that exact sentence as the DELIBERATE ASK a
+    // player makes for the roster: *"if there's more people, you have to
+    // specifically ask: who else is here?"* - which is `look/company` and the
+    // whole other half of `walking-in-is-not-reading-the-roster`.
+    //
+    // Crowding keeps "who else is DRAWING", which is the question it was named
+    // for: how many people are pulling on this ground, and what that does to
+    // the rate. Two different questions that happened to share four words.
     // who else is drawing on this ground
-    if (/\b(?:how crowded|how busy|how many (?:people|cultivators|others)|crowded here|too many people|who else is (?:here|drawing)|how contested|is it crowded|is this place crowded|how many are (?:here|drawing))\b/.test(text)
+    if (/\b(?:how crowded|how busy|how many (?:people|cultivators|others)|crowded here|too many people|who else is drawing|how contested|is it crowded|is this place crowded|how many are (?:here|drawing))\b/.test(text)
         || (/\b(?:crowd\w*|contested|occupancy|carrying capacity)\b/.test(text)
             && /\b(?:here|this place|this ground|the ground|is it|how)\b/.test(text))) {
         return { action: 'look', intent: 'crowding' };

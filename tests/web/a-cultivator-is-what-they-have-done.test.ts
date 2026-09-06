@@ -106,7 +106,19 @@ const WHAT_THEY_DID = ['rob', 'threaten', 'deceive', 'interrogate'];
  * prints is a name the game must accept.*
  */
 async function whoIsHere(game: { act(text: string): Promise<{ narration: string }> }): Promise<string[]> {
-    const look = await game.act('I look around');
+    // ASKED, AND NOT GLANCED AT.
+    //
+    // This used to read the arrival prose from `I look around`, and that stopped
+    // being the roster: the design owner's ruling is that walking into a square
+    // hands you ONE person or their party, and everybody else is a count -
+    // *"you don't necessarily know everyone who is here right off the bat"* -
+    // with the roster reserved for the sentence a player deliberately types,
+    // *"who else is here?"*
+    //
+    // So the harvester asks, which is what a player does and what the feature
+    // is for. Still read out of the words the game printed rather than pinned:
+    // AGENTS.md - *any name the game prints is a name the game must accept.*
+    const look = await game.act('who else is here');
     const line = /^(.*?) (?:is|are) here\./m.exec(look.narration);
     if (!line) return [];
     return line[1].split(/,| and /).map(s => s.trim()).filter(Boolean);

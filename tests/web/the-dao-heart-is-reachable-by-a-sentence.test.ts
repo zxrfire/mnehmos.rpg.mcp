@@ -41,11 +41,19 @@ function withAdmin(): void {
     });
 }
 
-/** Who the game just said was standing here, in the words it used. */
+/**
+ * Who the game says is standing here, in the words it used.
+ *
+ * ASKED, AND NOT GLANCED AT. This read the arrival prose from `I look around`,
+ * and that stopped being the roster: walking into a square hands you ONE person
+ * or their party and a count for the rest - *"you don't necessarily know
+ * everyone who is here right off the bat"* - with the full list reserved for
+ * the sentence a player deliberately types.
+ */
 async function whoIsHere(
     game: { act(text: string): Promise<{ narration: string }> }
 ): Promise<string[]> {
-    const look = await game.act('I look around');
+    const look = await game.act('who else is here');
     const line = /^(.*?) (?:is|are) here\./m.exec(look.narration);
     if (!line) return [];
     return line[1].split(/,| and /).map(s => s.trim()).filter(Boolean);

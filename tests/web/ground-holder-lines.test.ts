@@ -3,7 +3,7 @@
  *
  * The defect: `whoHoldsTheGround` had two callers in `src/`, both in the NPC
  * simulation, so the fact that changes a player's odds was one the played game
- * would not say. Measured on a fresh run at Wind Market on The Burial Sands, five
+ * would not say. Measured on a fresh run at Wind Turn on The Burial Sands, five
  * ways of asking gave five wrong answers - an NPC resolve failure, the
  * province's realm ceiling twice, the player's own sect standing, and unclear.
  *
@@ -165,7 +165,19 @@ describe('asking who holds this ground', () => {
         expect(routed('who leads this house')).toBe('sect/standing');
         expect(routed('who runs this place')).toBe('sect/standing');
         expect(routed('who is selling here')).toBe('market');
-        expect(routed('who else is here')).toBe('look/crowding');
+        // AND "WHO ELSE IS HERE" IS THE ROSTER, NOT THE GROUND.
+        //
+        // This asserted `look/crowding`, and crowding is the wrong owner. The
+        // design owner named that exact sentence as the deliberate ask a player
+        // makes for the people in a square: *"if there's more people, you have
+        // to specifically ask: who else is here?"* - the other half of walking
+        // in, which now hands over one person and a count.
+        //
+        // Crowding keeps the question it was named for, which is about the
+        // ground rather than the company: how many are pulling on this vein.
+        expect(routed('who else is here')).toBe('look/company');
+        expect(routed('who else is drawing')).toBe('look/crowding');
+        expect(routed('how crowded is it here')).toBe('look/crowding');
         // The asking branch still owns a question put to a named person.
         expect(routed('I ask the elder about the manual')).not.toBe('look/holder');
     });
