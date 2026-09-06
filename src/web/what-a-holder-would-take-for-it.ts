@@ -79,6 +79,7 @@
  */
 
 import { ARTIFACTS } from '../data/cultivation/artifacts.js';
+import { HERBS } from '../data/cultivation/herbs.js';
 import {
     IMMORTAL_ITEMS,
     ImmortalGradeSchema,
@@ -308,6 +309,91 @@ function firstRungOf(key: RealmKey): number {
     return REALM_TIERS.find(t => t.key === key)?.ordinalStart ?? 0;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// WHICH CATALOG THE WORDS NAME
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What an offer names, once, so that both ends of the trade read the same row.
+ *
+ * The pricing below and the gate below THAT ask two different questions of the
+ * same words - *what is this worth to them* and *is the player actually
+ * carrying it* - and asking them of two separate matchers is how two readers
+ * come to disagree about which thing somebody meant. `theThingAskedFor` says
+ * the same thing about the pill half in its own words.
+ *
+ * The order is the order the pricing has always taken and must not be
+ * rearranged: money, an art, a medicine, something from above, a rated object,
+ * a herb, and then the open medium. A name that answers to two catalogs
+ * belongs to the first of them, which is a rule about resolution rather than
+ * about worth.
+ */
+export type TheOfferNamed =
+    | { medium: 'stones'; what: string; stones: number }
+    | { medium: 'an_art'; what: string; id: string; name: string }
+    | { medium: 'a_medicine'; what: string; id: string; name: string }
+    | { medium: 'from_above'; what: string; id: string; name: string; promotes: boolean }
+    | { medium: 'a_thing'; what: string; id: string; name: string }
+    | { medium: 'a_herb'; what: string; id: string; name: string }
+    | { medium: 'an_undertaking'; what: string };
+
+/** The same loose read every catalog branch here has always taken. */
+function answersTo(name: string, what: string): boolean {
+    const lowered = name.toLowerCase();
+    const said = what.toLowerCase();
+    return lowered === said || lowered.includes(said);
+}
+
+/** How many stones a sum names, for the purse it has to come out of. */
+function howManyStones(what: string): number {
+    const digits = what.replace(/[^0-9]/g, '');
+    return digits.length === 0 ? 0 : Math.min(Number(digits), Number.MAX_SAFE_INTEGER);
+}
+
+export function whatTheOfferNames(named: string): TheOfferNamed {
+    const what = named.trim().slice(0, 100);
+
+    if (A_SUM_OF_STONES.test(what)) {
+        return { medium: 'stones', what, stones: howManyStones(what) };
+    }
+
+    const art = TECHNIQUES.find(t => answersTo(t.name, what));
+    if (art) return { medium: 'an_art', what, id: art.id, name: art.name };
+
+    const pill = PILLS.find(p => answersTo(p.name, what));
+    if (pill) return { medium: 'a_medicine', what, id: pill.id, name: pill.name };
+
+    // Matched on the name without its article, because the grade is said in
+    // front of it - "a higher Heaven-Ascending Golden Pill" is how anybody
+    // names one, and the catalog row is called "The Heaven-Ascending Golden
+    // Pill". Both directions of containment, which is how this has always read.
+    const fromAbove = IMMORTAL_ITEMS.find(i => {
+        const bare = i.name.replace(/^the\s+/i, '').toLowerCase();
+        return what.toLowerCase().includes(bare) || bare.includes(what.toLowerCase());
+    });
+    if (fromAbove) {
+        return {
+            medium: 'from_above',
+            what,
+            id: fromAbove.id,
+            name: fromAbove.name,
+            // The talisman changes an aperture rather than a rung, so the
+            // pricing has no unit for it and reads it as an undertaking. The
+            // GATE still holds: a thing nobody can price is still a thing, and
+            // still has to be in your hands before you can put it down.
+            promotes: fromAbove.effect === 'promote_realm'
+        };
+    }
+
+    const object = ARTIFACTS.find(o => answersTo(o.name, what));
+    if (object) return { medium: 'a_thing', what, id: object.id, name: object.name };
+
+    const herb = HERBS.find(h => answersTo(h.name, what));
+    if (herb) return { medium: 'a_herb', what, id: herb.id, name: herb.name };
+
+    return { medium: 'an_undertaking', what };
+}
+
 /**
  * What one named offer is worth to the person it is being made to.
  *
@@ -340,18 +426,17 @@ export function whatIsBeingPutDown(
     receiverOrdinal?: number
 ): OnTheTable {
     const what = named.trim().slice(0, 100);
+    const offer = whatTheOfferNames(what);
 
     // Money, named as money. Priced at nothing here and priced properly by
     // `purseWeight` in the resolver. See the header.
-    if (A_SUM_OF_STONES.test(what)) {
+    if (offer.medium === 'stones') {
         return { what, carriesThemTo: 0, singular: false };
     }
 
     const held = new Set(theirs);
-    const art = TECHNIQUES.find(t =>
-        t.name.toLowerCase() === what.toLowerCase()
-        || t.name.toLowerCase().includes(what.toLowerCase()));
-    if (art) {
+    if (offer.medium === 'an_art') {
+        const art = TECHNIQUES.find(t => t.id === offer.id)!;
         // The same grade-to-rung map the pill side uses, so a road and a
         // medicine of the same grade are worth the same height to the same
         // person. Nothing to them if they already walk it.
@@ -362,10 +447,8 @@ export function whatIsBeingPutDown(
         };
     }
 
-    const pill = PILLS.find(p =>
-        p.name.toLowerCase() === what.toLowerCase()
-        || p.name.toLowerCase().includes(what.toLowerCase()));
-    if (pill) {
+    if (offer.medium === 'a_medicine') {
+        const pill = PILLS.find(p => p.id === offer.id)!;
         return { what: pill.name, carriesThemTo: pillBandOrdinal(pill.grade), singular: true };
     }
 
@@ -387,11 +470,8 @@ export function whatIsBeingPutDown(
     // Matched on the name without its article, because the grade is said in
     // front of it - "a higher Heaven-Ascending Golden Pill" is how anybody names one, and the
     // catalog row is called "The Heaven-Ascending Golden Pill".
-    const fromAbove = IMMORTAL_ITEMS.find(i => {
-        const bare = i.name.replace(/^the\s+/i, '').toLowerCase();
-        return what.toLowerCase().includes(bare) || bare.includes(what.toLowerCase());
-    });
-    if (fromAbove && fromAbove.effect === 'promote_realm') {
+    if (offer.medium === 'from_above' && offer.promotes) {
+        const fromAbove = IMMORTAL_ITEMS.find(i => i.id === offer.id)!;
         const ceiling = firstRungOf(STEP_CEILING_BY_GRADE[gradeNamedIn(what)]);
         // What it does is one crossing, so the most it can put anybody on is
         // the first rung of the realm above theirs - and never past what the
@@ -418,10 +498,8 @@ export function whatIsBeingPutDown(
     // the Step was: nothing looked in the object catalog. A weapon lets its
     // holder strike at its own rung, so that rung is exactly how high it
     // carries whoever ends up with it.
-    const object = ARTIFACTS.find(o =>
-        o.name.toLowerCase() === what.toLowerCase()
-        || o.name.toLowerCase().includes(what.toLowerCase()));
-    if (object) {
+    if (offer.medium === 'a_thing') {
+        const object = ARTIFACTS.find(o => o.id === offer.id)!;
         return {
             what: object.name,
             carriesThemTo: Math.max(0, object.power ?? 0),
@@ -436,7 +514,155 @@ export function whatIsBeingPutDown(
     // this world therefore has no unit for. What backs an undertaking is the
     // person making it, so it is worth exactly what they are worth. A tenth
     // medium needs no code here.
+    //
+    // A HERB LANDS HERE TOO, and that is the reading it has always had: the
+    // catalog is read for the gate rather than for a price, because what a
+    // player is carrying by the handful is not what a barter-tier trade turns
+    // on. Priced at the offerer's own height, exactly as before this branch
+    // existed.
     return { what, carriesThemTo: Math.max(0, offererOrdinal), singular: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHETHER THE PLAYER IS ACTUALLY CARRYING IT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * THE SAME READ AS `heldByTheirHouse`, WITH THE SIDES SWAPPED.
+ *
+ * The holder's end of a barter has been bound to the world since it was
+ * written: `heldByTheirHouse` goes and looks for an unspent row on their shelf
+ * and refuses when there is not one, naming who else in the province is
+ * holding one. The PLAYER's end was a string. Whatever was typed was priced
+ * against four catalogs, nothing asked whether they had it, and the branch
+ * that closed the trade took nothing off them.
+ *
+ * So the sentence *"I offer him the Heaven-Ascending Golden Pill"* - typed by
+ * somebody who has never seen one - priced at the ceiling of the grade named,
+ * cleared almost any bar in the world, moved a tracked object onto the player,
+ * and wrote a provenance line saying what it was given for. Nothing was spent.
+ * That is not a hard trade or an easy one; it is not a trade.
+ *
+ * ── WHERE A PLAYER'S THINGS ACTUALLY LIVE, WHICH IS FOUR PLACES ──────────
+ *
+ * `items.md` keeps three tiers and the purse is beside them, so the read has
+ * to ask all four and there is no fifth:
+ *
+ *   THE PURSE     `spiritStones`, a number.
+ *   COUNTED STOCK the pouch: pills, herbs, rated objects bought by the lot.
+ *   A TRACKED ROW `state.objects` with the player as possessor - a blade taken
+ *                 off a corpse, a thing lifted, a thing bartered for. This is
+ *                 the tier the genre's best trades run on and the one a player
+ *                 could not previously put on a table at all.
+ *   AN ART        walked or held as a copy. It does not leave you when you give
+ *                 it: what changes hands is the teaching, and the teacher still
+ *                 knows the art afterwards. The gate is that you cannot pass on
+ *                 a road you have never walked.
+ *
+ * What is NOT gated is the open medium - an oath, a service, a name, a
+ * placement, information. Nobody carries an undertaking, so there is nothing to
+ * look for, and the pricing already answers it honestly: it is worth what the
+ * person making it is worth. A refusal there would close the one branch that
+ * keeps the medium open.
+ */
+export type TheOfferHeld =
+    | { holds: true; medium: 'stones' }
+    | { holds: true; medium: 'an_undertaking' }
+    | { holds: true; medium: 'an_art'; id: string; name: string }
+    | {
+        holds: true;
+        medium: 'a_thing';
+        id: string;
+        name: string;
+        /** The pouch lot to decrement when the trade lands, or null. */
+        counted: HeldStack | null;
+        /** The world row to move when the trade lands, or null. */
+        tracked: ObjectRecord | null;
+    }
+    | { holds: false; name: string; why: WhyItIsNotYours };
+
+/** Which of the four places was asked, and came back empty. */
+export type WhyItIsNotYours = 'not_in_your_hands' | 'you_do_not_walk_it';
+
+/** One lot of counted stock, as the pouch keeps it. */
+export interface HeldStack {
+    itemId: string;
+    kind: string;
+    quantity: number;
+}
+
+/** The four places, gathered by the caller because three of them want a handle. */
+export interface WhatYouAreCarrying {
+    stones: number;
+    pouch: readonly HeldStack[];
+    /** Ids of the arts walked or held as a copy. */
+    artIds: readonly string[];
+    /** Unspent rows in `state.objects` this player is the possessor of. */
+    rows: readonly ObjectRecord[];
+}
+
+/**
+ * What a held row is called, going the other way down the same catalogs.
+ *
+ * `nameOfStack` covers the two kinds an inheritance moves and reads as a pill
+ * for anything else, which would put a blade's name in a list of medicines. A
+ * refusal that lists what somebody IS carrying has to be right about all three
+ * kinds, so it asks here. The grade suffix is stripped first: the pouch stores
+ * an immortal medicine as `<id>:<grade>` and nobody says the grade twice.
+ */
+export function nameOfHeld(itemId: string): string {
+    const bare = itemId.split(':')[0] ?? itemId;
+    return PILLS.find(p => p.id === bare)?.name
+        ?? HERBS.find(h => h.id === bare)?.name
+        ?? ARTIFACTS.find(a => a.id === bare)?.name
+        ?? IMMORTAL_ITEMS.find(i => i.id === bare)?.name
+        ?? itemId;
+}
+
+export function heldByYou(named: string, carrying: WhatYouAreCarrying): TheOfferHeld {
+    const offer = whatTheOfferNames(named);
+
+    if (offer.medium === 'an_undertaking') return { holds: true, medium: 'an_undertaking' };
+
+    // ── AND MONEY IS NOT GATED, FOR THE REASON IT IS NOT PRICED ──────────
+    //
+    // A sum on a barter table contributes nothing to the bar however large it
+    // is, because above the cash line money is not the medium - the header
+    // says it at length and `items.md` says it outright. So there is no free
+    // lunch here to close: an offer of stones nobody has buys exactly what an
+    // offer of stones somebody has buys, which is nothing.
+    //
+    // Refusing it on the purse would replace a good answer with a worse one.
+    // The good answer is the one this verb already gives: the sum is worth
+    // nothing, and *name what you have, not what you can pay*. A player told
+    // instead that they cannot afford it has been told something false about
+    // why - affording it would not have helped.
+    if (offer.medium === 'stones') return { holds: true, medium: 'stones' };
+
+    if (offer.medium === 'an_art') {
+        return carrying.artIds.includes(offer.id)
+            ? { holds: true, medium: 'an_art', id: offer.id, name: offer.name }
+            : { holds: false, name: offer.name, why: 'you_do_not_walk_it' };
+    }
+
+    // A thing, in either tier or both. A pill bartered for has a pouch entry
+    // AND a row - the pouch entry is what `consume_pill` spends and the row is
+    // the world's record of which one this is - so both move, and finding
+    // either is enough to say it is in your hands.
+    // The pouch stores an immortal medicine as `<id>:<grade>` - the convention
+    // `theUnearnedStepIn` reads - because the catalog holds one row and three
+    // grades on it. Any grade of one is one of them.
+    const counted = carrying.pouch.find(
+        lot => lot.quantity > 0
+            && (lot.itemId === offer.id || lot.itemId.startsWith(`${offer.id}:`))
+    ) ?? null;
+    const tracked = carrying.rows.find(
+        row => thisRowIs(row, offer.id) && row.data?.spent !== true
+    ) ?? null;
+    if (counted === null && tracked === null) {
+        return { holds: false, name: offer.name, why: 'not_in_your_hands' };
+    }
+    return { holds: true, medium: 'a_thing', id: offer.id, name: offer.name, counted, tracked };
 }
 
 /** The realm on the far side of the wall above somebody. Theirs, at the top. */

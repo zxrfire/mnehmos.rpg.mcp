@@ -78,7 +78,15 @@ import type {
     Run,
     SectAlignment
 } from '../schema/cultivation.js';
-import { addToPouch, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
+import {
+    addToPouch,
+    listCarriedArtifacts,
+    listPouch,
+    readFlag,
+    removeFromPouch,
+    writeFlag
+} from '../server/consolidated/cultivation-support.js';
+import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { theRollLands } from '../server/consolidated/forcing-an-attempt-to-land.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
@@ -125,8 +133,12 @@ import { addHearing, refused, stonesNamedIn, structureCalls } from './tool-resul
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import {
+    type TheOfferHeld,
+    type WhatYouAreCarrying,
     heldByTheirHouse,
+    heldByYou,
     howHighTheirHouseReaches,
+    nameOfHeld,
     theThingAskedFor,
     thisRowIs,
     whatIsBeingPutDown
@@ -1472,6 +1484,101 @@ ${done.lines.join(' ')}`;
     },
 
     /**
+     * The four places a PLAYER's things live, gathered for the read that
+     * decides whether an offer is one they can actually make.
+     *
+     * The pouch is asked twice because it is kept in two halves - `listPouch`
+     * is counted stock and `listCarriedArtifacts` is deliberately not in it -
+     * and a table does not care which half a thing came out of.
+     */
+    whatYouAreCarrying(this: GameService, cultivator: Cultivator): WhatYouAreCarrying {
+        return {
+            stones: cultivator.spiritStones,
+            pouch: [
+                ...listPouch(this.db, cultivator.id),
+                ...listCarriedArtifacts(this.db, cultivator.id)
+            ],
+            // Walked or held as a copy, which is the same union `entities.ts`
+            // takes when it resolves an art a player names.
+            artIds: [
+                ...this.whatTheyAreCarrying(cultivator.id),
+                ...copiesHeldBy(this.db, cultivator.id)
+            ],
+            rows: (this.atHand?.objects ?? []).filter(row => row.possessorId === cultivator.id)
+        };
+    },
+
+    /**
+     * WHAT THE OFFER COST, WHICH IS THE MIRROR OF `transferPossession`.
+     *
+     * A trade that lands moves the holder's row onto the player. This moves the
+     * player's side onto the holder, on whichever tier the thing is kept: a
+     * number off two rows for counted stock, a possession with a provenance
+     * line for a tracked one, the purse for money.
+     *
+     * TWO THINGS DELIBERATELY DO NOT MOVE. An art does not leave you when you
+     * pass it on - what changes hands is the teaching, and the teacher still
+     * knows the art afterwards - and an undertaking is not carried at all, so
+     * there is nothing to take. Both are why this returns a sentence rather
+     * than asserting one: sometimes what was given up is not a thing.
+     */
+    whatTheOfferCost(
+        this: GameService,
+        cultivator: Cultivator,
+        party: ResolvedEntity,
+        offered: TheOfferHeld | null,
+        inReturnFor: string,
+        today: number
+    ): string | null {
+        if (!offered || !offered.holds) return null;
+        const theyAreStored = this.repos.cultivators.getById(party.id) !== undefined;
+
+        // Money does not move, for the reason it is not priced: above the cash
+        // line it is not the medium, so a sum on this table bought nothing and
+        // taking it would be charging for a thing that did not happen. `sell`
+        // and `buy` are where stones change hands.
+        if (offered.medium === 'stones') return null;
+
+        if (offered.medium === 'an_art') {
+            return `You owe them ${offered.name}, and what you know of it stays yours.`;
+        }
+        if (offered.medium === 'an_undertaking') return null;
+
+        const parts: string[] = [];
+        if (offered.counted) {
+            removeFromPouch(this.db, cultivator.id, offered.counted.itemId, 1);
+            if (theyAreStored) {
+                addToPouch(
+                    this.db, party.id, offered.counted.itemId,
+                    offered.counted.kind === 'herb' ? 'herb'
+                        : offered.counted.kind === 'artifact' ? 'artifact' : 'pill',
+                    1
+                );
+            }
+            parts.push('out of your pouch');
+        }
+        if (offered.tracked) {
+            const world = this.atHand;
+            const at = (world?.objects ?? []).findIndex(row => row.id === offered.tracked!.id);
+            if (world && at >= 0) {
+                world.objects[at] = transferPossession(world.objects[at]!, {
+                    onDay: today,
+                    toHolderId: party.id,
+                    toHolderName: party.name,
+                    how: 'bought',
+                    transfersOwnership: true,
+                    source: `Traded to ${party.name} by ${cultivator.name}`,
+                    note: `Given for a ${inReturnFor}, which went the other way across the same `
+                        + 'table. Not sold for stones.'
+                });
+                this.worldDirty = true;
+                parts.push('and its record now says whose it is');
+            }
+        }
+        return parts.length === 0 ? null : `The ${offered.name} goes ${parts.join(' ')}.`;
+    },
+
+    /**
      * What a person standing here is currently trying to do, off their rows.
      */
     theirOpenBusiness(this: GameService, personId: string): SomebodyWithGoals | null {
@@ -1593,6 +1700,53 @@ ${done.lines.join(' ')}`;
                 + `instead of a counter. "buy a ${thing.name}" is the sentence.`,
                 `${thing.id} is below the barter line, so it has a cash price and no barter. `
                 + 'See buying-and-bartering-pills.ts, manuals.ts and artifacts.ts.'
+            ));
+        }
+
+        // ── AND THE OTHER END OF THE TABLE IS BOUND TO THE WORLD TOO ─────
+        //
+        // Below this line the reading goes and looks at THEIR shelf, and
+        // `heldByTheirHouse` refuses a price for a thing they have not got.
+        // This is the same refusal with the sides swapped, and it comes first
+        // because it needs nobody's shelf: whether the player is carrying what
+        // they just offered is knowable from the player alone.
+        //
+        // Until it was written the player's end of every barter was a string.
+        // The offer was priced against four catalogs and nothing asked whether
+        // they had it, so `offer him the Heaven-Ascending Golden Pill for The
+        // Hidden Edge`, typed by somebody who has never seen one, priced at the
+        // ceiling of the grade named, cleared the bar, moved a tracked object
+        // onto the player and wrote a provenance line saying what it was given
+        // for. Nothing was spent. That is not a hard trade; it is not a trade.
+        //
+        // See `heldByYou` for the four places a player's things live, and for
+        // why an oath, a service or a name is deliberately not gated.
+        const carrying = this.whatYouAreCarrying(cultivator);
+        const offered: TheOfferHeld | null =
+            putDown === null ? null : heldByYou(putDown, carrying);
+        if (offered && !offered.holds) {
+            const inHand = [
+                ...carrying.pouch.map(lot => lot.quantity === 1
+                    ? nameOfHeld(lot.itemId)
+                    : `${nameOfHeld(lot.itemId)} x${lot.quantity}`),
+                ...carrying.rows.map(row => row.name)
+            ];
+            return refused('engine.possessions', 'request', factsForRefusal(
+                offered.why === 'you_do_not_walk_it'
+                    ? `You have never walked ${offered.name}.`
+                    : `You do not have a ${offered.name} to put down.`,
+                offered.why === 'you_do_not_walk_it'
+                    ? `You would have to know ${offered.name} before you could put it in `
+                      + `somebody else's hands, and you do not. ${party.name} would ask you `
+                      + 'to demonstrate, which is the part that cannot be talked around.'
+                    : 'You say the words and your hands are empty of it. '
+                      + (inHand.length > 0
+                          ? `What you are actually carrying: ${inHand.join(', ')}.`
+                          : 'You are carrying nothing anybody would trade for.'),
+                `"${putDown}" resolved to ${offered.name} and this cultivator holds none of it `
+                + `(${offered.why.replace(/_/g, ' ')}). Nothing spent, no time passed. `
+                + 'An oath, a service or a name would have been accepted: those are backed by '
+                + 'the person making them and are not carried.'
             ));
         }
 
@@ -1788,10 +1942,18 @@ ${done.lines.join(' ')}`;
             // the row above and has nothing to spend, and writing one into the
             // pouch as a pill would put a swallowable medicine in there.
             if (asPill) addToPouch(this.db, cultivator.id, asPill.id, 'pill', 1);
+
+            // ── AND THE OTHER HALF OF THE TRADE ACTUALLY HAPPENS ─────────
+            //
+            // The shelf goes short by one above. This is the same sentence
+            // said about the player: what they put down leaves them. Without
+            // it the gate alone would only mean a thing has to be yours ONCE,
+            // and could then be offered for the rest of your life.
+            const gone = this.whatTheOfferCost(cultivator, party, offered, thing.name, today);
             lines.push(
                 `${party.name} takes what you offered and the ${thing.name} is in your pouch. `
                 + 'It came off a shelf that is now short of one, and the record says whose it '
-                + 'was.'
+                + `was.${gone === null ? '' : ` ${gone}`}`
             );
         } else if (result.outcome === 'countered') {
             lines.push(

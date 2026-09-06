@@ -723,16 +723,16 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 10 | 21 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 47 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 14 | 17 |
-| `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 14 | 29 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 21 |
-| `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 18 | 22 |
-| `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 18 | 41 |
+| `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 17 | 29 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 18 | 76 |
+| `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 20 | 22 |
+| `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 41 |
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 21 | 88 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 25 | 119 |
-| `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 31 | 50 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 33 | 145 |
+| `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 33 | 50 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 34 | 145 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 46 | 58 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 57 | 292 |
 
