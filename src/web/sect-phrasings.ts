@@ -148,7 +148,7 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // is: `pending-summons.ts` allows exactly ONE standing ask at a time, so
     // the pronoun has one referent. Where nothing is standing the verb says so
     // and writes nothing, which is a better answer than a shrug.
-    ['ignore', /\b(?:ignore|ignores|ignoring)\s+(?:it|that|this|the summons|the call|the letter|the message|the order|what (?:they|the house|the sect) (?:want|wants|asked|asks))\b|\bi (?:do|will do|am doing) nothing about (?:it|that|this)\b|\b(?:let|leave) it (?:lie|be|sit)\b/],
+    ['ignore', /\b(?:ignore|ignores|ignoring)\s+(?:it|that|this|the summons|the call|the letter|the message|the order|what (?:they|the house|the sect) (?:want|wants|asked|asks))\b|\bi (?:do|will do|am doing) nothing about (?:it|that|this)\b|\b(?:let|leave) it (?:lie|be|sit)\s*[.!?]?$/],
 ];
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -454,7 +454,7 @@ it describes.
 <!-- BEGIN GENERATED: design-constants -->
 
 **272 design constants in the catalog. 27 are read by nothing at all,
-and 146 more are read only by a test.**
+and 144 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
 anywhere in the repo - but the game does not act on it, and nobody looking at the
@@ -530,7 +530,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `NAMED_FIGURE_ENGINE_GAP` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 4 |
 | `OTHERS_WHO_NOTICED` | [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) | **nothing** | 4 |
 | `ROAD_CUSTOMS` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | **nothing** | 4 |
-| `SEA_CARGO` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | **nothing** | 4 |
 | `THE_BINDING_CONSTRAINT` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 4 |
 | `THE_EXTINCTION_IS_SYMMETRIC` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | 4 |
 | `THE_HOLLOW_COURT_COULD` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 4 |
@@ -563,7 +562,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `HOW_THE_COURT_IS_SEEN` | [`hollow-court-roster.ts`](../../src/data/cultivation/hollow-court-roster.ts) | **nothing** | 6 |
 | `LU_SHENG_CARVINGS` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 6 |
 | `PILL_VALUE_BANDS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | **nothing** | 6 |
-| `SEA_TRADERS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | **nothing** | 6 |
 | `SETTLEMENT_FEARS` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | **nothing** | 6 |
 | `THE_CALENDAR_OFFSET` | [`history.ts`](../../src/data/cultivation/history.ts) | **nothing** | 6 |
 | `THE_COURTS_BELOW` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 6 |
@@ -663,7 +661,9 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `MODERN_REFINEMENT` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 2 | 3 |
 | `AGE_FIDELITY` | [`history.ts`](../../src/data/cultivation/history.ts) | 2 | 4 |
 | `NOTHING_AT_FORTY_SIX_IS_EVER_LEFT` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 2 | 4 |
+| `SEA_CARGO` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 2 | 4 |
 | `AUCTION_VENUES` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | 2 | 6 |
+| `SEA_TRADERS` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | 2 | 6 |
 | `TIER_NAMES` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 2 | 6 |
 | `LIVING_TRANSMISSIONS` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 2 | 7 |
 | `ORIGIN_ACCOUNTS` | [`history.ts`](../../src/data/cultivation/history.ts) | 2 | 8 |
@@ -732,9 +732,9 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 21 | 88 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 25 | 119 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 33 | 50 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 34 | 145 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 34 | 148 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 46 | 58 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 57 | 292 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 57 | 298 |
 
 <!-- END GENERATED: design-constants -->
 

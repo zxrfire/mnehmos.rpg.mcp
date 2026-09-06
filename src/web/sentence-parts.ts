@@ -330,8 +330,28 @@ export function namedAfter(input: string, verbs: string): string | undefined {
  * The other party in a sentence about two institutions.
  */
 export function partyAfter(input: string, markers: string): string | undefined {
+    // ── THE ARTICLE HAS TO BE A WHOLE WORD, AND IT WAS NOT ───────────────
+    //
+    // This was `(?:the|a|an|our|its|their|his|her)?\s*`, and `\s*` matches
+    // NOTHING - so the optional article was free to eat the first letter of the
+    // name behind it. Measured on the trope corpus against a live narrator:
+    //
+    //     I will end the Azure Cloud Pavilion   ->   "zure Cloud Pavilion"
+    //
+    // `a` took the A of Azure, `\s*` matched the empty string, and the capture
+    // started one character in. The declaration then resolved nobody, and what
+    // the player got back was a person asking who they meant - on a sentence
+    // that had named a house of the catalog in full.
+    //
+    // Seven of the thirty-six houses in the world start with one of these
+    // words - three Azure, the Ashen Forge Clan, the Ancient Bough Grove, The
+    // Hollow Court, The Severed - and every one of them was being mangled by
+    // every one of this function's thirteen callers.
+    //
+    // Requiring the whitespace INSIDE the optional group is the whole fix: an
+    // article is a word, and a word is followed by a space.
     const found = new RegExp(
-        `\\b(?:${markers})\\s+(?:the|a|an|our|its|their|his|her)?\\s*`
+        `\\b(?:${markers})\\s+(?:(?:the|a|an|our|its|their|his|her)\\s+)?`
         + `(.{2,80}?)`
         + '\\s*(?:\\b(?:for|about|regarding|concerning|over|because|so that|'
         + 'instead of|in order|and then|asking)\\b.*)?[.!?]?$',

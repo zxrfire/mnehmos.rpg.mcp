@@ -119,7 +119,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`wait`](#wait) | `days` | time | yes | - | - |
 | [`work`](#work) | `days` `target` | time | yes | - | - |
 | [`market`](#market) | - | nothing | yes | yes | - |
-| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [16](#sect) |
+| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [17](#sect) |
 | [`site`](#site) | `target` `intent` | time | yes | - | [4](#site) |
 | [`legacy`](#legacy) | `intent` `target` `days` | time | yes | - | [5](#legacy) |
 | [`petition`](#petition) | `target` `intent` `topic` | nothing | yes | yes | [3](#petition) |
@@ -434,13 +434,13 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `sect`
 
-anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay into the ledger, "guest" to sit in at a house that has not taken you, "leave" to resign, and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
+anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay into the ledger, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "refuse" to answer it no and "ignore" to answer it not at all, and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'sect'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.sect` · the deterministic parser reaches it.
 
 Takes `intent`, `target`, `topic`.
 
-Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`.
+Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `ignore`.
 
 ### `site`
 

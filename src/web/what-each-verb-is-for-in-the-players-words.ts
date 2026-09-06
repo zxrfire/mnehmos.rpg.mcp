@@ -399,13 +399,19 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             'recruit', 'admission', 'curriculum', 'expel', 'duty', 'donate', 'guest',
             // Dispatched on by the engine and undeclared until now, so the phase-1
             // glossary never told a model they existed and nothing typed reached them.
-            'summons', 'refuse'
+            'summons', 'refuse',
+            // And saying NOTHING to it, which is a third answer and not a
+            // softer second one: refusing spends standing today, ignoring
+            // spends nothing until the due day goes and then lands as a lapse.
+            'ignore'
         ],
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
             read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty"
             to take something off the mission board, "donate" to pay into the ledger, "guest"
-            to sit in at a house that has not taken you, "leave" to resign, and "siphon",
+            to sit in at a house that has not taken you, "leave" to resign, "summons" to ask
+            what the house has asked of you, "refuse" to answer it no and "ignore" to answer
+            it not at all, and "siphon",
             "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above
             a disciple buy. Default to the read - "standing" - unless the player plainly asked
             for a step, because joining is a life's worth of allegiance and cannot be unsaid.`

@@ -65,7 +65,6 @@ export interface SomethingThatCrosses {
     /** The house whose artisans made it, or null for what the ground gives. */
     madeBy: string | null;
     carriedBy: string;
-    /** Out of here, or in to here. */
     direction: 'outbound' | 'inbound';
     laneName: string;
     days: number;

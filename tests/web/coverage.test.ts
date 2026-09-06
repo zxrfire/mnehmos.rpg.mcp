@@ -805,8 +805,17 @@ describe('every intent DECLARED is a door somebody can find', () => {
         ],
         'sect/refuse': [
             'I refuse the summons',
-            'I ignore the summons',
+            'I turn them down',
             'I will not go'
+        ],
+        // SAYING NOTHING IS ITS OWN DOOR. `I ignore the summons` sat under
+        // `refuse` above and now has a verb of its own, because refusing spends
+        // standing today and ignoring spends nothing until the due day goes.
+        // See `ignoring-it-is-not-refusing-it.test.ts`.
+        'sect/ignore': [
+            'I ignore the summons',
+            'I ignore it',
+            'I do nothing about it'
         ],
         'look/holder': [
             'I ask who holds this ground',
