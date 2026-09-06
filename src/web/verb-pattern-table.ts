@@ -1024,7 +1024,11 @@ export const WHAT_THIS_GROUND_MAKES = new RegExp(
 export const WHO_STANDS_BEHIND_THEM = new RegExp(
     [
         String.raw`\bwho (?:stands |is )?(?:behind|above|over)\b[^.?]*\b(?:them|it|the\b|that\b)`,
-        String.raw`\bwho (?:would |could |will )?(?:answer|answers|speak|speaks|vouch|vouches|come) for\b`,
+        // NOT THE GROUND. "Who answers for this ground" is the holder read and
+        // has been since it was written; this arm asks who answers for a
+        // PERSON or a HOUSE, and without the guard it took the ground question
+        // off the verb that owns it.
+        String.raw`\bwho (?:would |could |will )?(?:answer|answers|speak|speaks|vouch|vouches|come) for (?!(?:this|the|that) (?:ground|land|territory|patch|place)\b)`,
         String.raw`\b(?:do|does|has|have)\b[^.?]*\b(?:they|it|the \w+)\b[^.?]*\bimmortal (?:ancestor|backing|behind)\b`,
         String.raw`\b(?:an? )?immortal ancestors?\b[^.?]*\b(?:have|has|hold|holds|behind|above)\b`,
         String.raw`\bwhat (?:lineage|ancestry|ancestors?|crossings?)\b[^.?]*\b(?:do|does|has|have|they|it)\b`,

@@ -946,6 +946,20 @@ let ambientDb: Database.Database | null = null;
 const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:someone|somebody|anyone|anybody|cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they|everyone|everybody|all of them|the lot of them|every person|the rest of them)(?: here| nearby| about| around| present| in the room| in front of me| in the square)?$/i;
 
 /**
+ * Intents aimed at a house AS A BODY, rather than at something it holds.
+ *
+ * The set that becomes a declaration when the target is a house instead of a
+ * person. Deliberately not `WRONG_BEHIND_INTENT`, which is every intent that
+ * leaves a wrong behind it and therefore includes taking a book off a shelf.
+ *
+ * One member, and it stays one until a sentence in a corpus proves otherwise.
+ * A house has no face to lose the way a person does and no pocket to be picked
+ * as a whole, so the acts that mean something done to the WHOLE of it are the
+ * ones that promise harm to all of it.
+ */
+const THE_INTENTS_AIMED_AT_A_WHOLE_HOUSE: ReadonlySet<string> = new Set(['threaten']);
+
+/**
  * The three things a player can do about a summons that is standing.
  *
  * Asking is a read. Refusing is a decision. Ignoring is the ABSENCE of one,
@@ -4160,6 +4174,46 @@ ${noticed}`;
                 // it on `topic` for a theft and nothing else reads it here.
                 undefined, named
             );
+        }
+
+        // ── A HOSTILE ACT AIMED AT A WHOLE HOUSE IS A DECLARATION ────────
+        //
+        // Measured on the trope corpus against a live narrator, in the scenario
+        // named for a declaration travelling. Phase 1 planned a person-shaped
+        // act at a house, the house resolved, and what came back was
+        // `engine.resolveInteraction` with `ok: false` and its own confession
+        // attached: *the intent label was carried to the narrator and read by
+        // no conditional.* An approach made, nothing settled - about a sentence
+        // that says you will end somebody.
+        //
+        // There is nobody to threaten in a house: `pressSomebody` above is
+        // gated on `party.kind === 'cultivator'` and correctly so, because
+        // `resolveAttempt` weighs a person against a person. What the genre
+        // does with this sentence instead is a DECLARATION, and `housePosture`
+        // has answered it since it was written - it reads where the speaker
+        // stands, tells an outsider what a war actually requires, and puts the
+        // deed into the world whether or not the war was refused.
+        //
+        // So the two paths meet: what a player types at a person goes to the
+        // attempt machine, and the same words aimed at a house go to the one
+        // that knows what a house is.
+        //
+        // ── AND THE GATE IS NARROW, BECAUSE HOSTILE IS NOT THE QUESTION ──
+        //
+        // The first cut asked `WRONG_BEHIND_INTENT`, which is every intent that
+        // leaves a wrong behind it - and that swept in `I take a manual from the
+        // sect library without asking`, which is theft and not a declaration of
+        // war. `an-unresolved-attempt-says-so.test.ts` caught it in one run,
+        // which is exactly what that file is for.
+        //
+        // The question is not whether the act is hostile. It is whether it is
+        // aimed at the house AS A BODY - something done TO a house rather than
+        // taken FROM one or said ABOUT one. Taking from its library is theft and
+        // insulting it is a matter of face; both have their own machinery and
+        // neither wants a war. Promising harm to the whole of it is the one act
+        // that means what a declaration means.
+        if (party.kind === 'sect' && THE_INTENTS_AIMED_AT_A_WHOLE_HOUSE.has(intent)) {
+            return this.posture(run, cultivator, party.name, 'war');
         }
 
         // The player gets the honest in-fiction shape of it - an approach made,
