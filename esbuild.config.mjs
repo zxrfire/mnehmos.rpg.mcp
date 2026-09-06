@@ -10,6 +10,12 @@ import { createGunzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 import { createWriteStream } from 'fs';
 import { Readable } from 'stream';
+// ONE SOURCE FOR THE DRIVER. `transaction` is not retyped here: the packaged
+// binary gets exactly the function
+// `tests/storage/a-transaction-inside-a-transaction-still-rolls-back.test.ts`
+// runs, because the version this file used to carry could not nest and two
+// production paths already do. See that file for what it cost.
+import { PACKAGED_TRANSACTION_SOURCE } from './scripts/packaged-better-sqlite3-driver.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outfile = 'dist-bundle/server.cjs';
@@ -198,51 +204,7 @@ Database.prototype.close = function() {
     return this;
 };
 
-Database.prototype.transaction = function(fn) {
-    if (typeof fn !== 'function') throw new TypeError('Expected first argument to be a function');
-    const db = this;
-    const begin = db.prepare('BEGIN');
-    const commit = db.prepare('COMMIT');
-    const rollback = db.prepare('ROLLBACK');
-    
-    function transaction(...args) {
-        begin.run();
-        try {
-            const result = fn.apply(this, args);
-            commit.run();
-            return result;
-        } catch (err) {
-            rollback.run();
-            throw err;
-        }
-    }
-    
-    transaction.deferred = transaction;
-    transaction.immediate = function(...args) {
-        db.exec('BEGIN IMMEDIATE');
-        try {
-            const result = fn.apply(this, args);
-            commit.run();
-            return result;
-        } catch (err) {
-            rollback.run();
-            throw err;
-        }
-    };
-    transaction.exclusive = function(...args) {
-        db.exec('BEGIN EXCLUSIVE');
-        try {
-            const result = fn.apply(this, args);
-            commit.run();
-            return result;
-        } catch (err) {
-            rollback.run();
-            throw err;
-        }
-    };
-    
-    return transaction;
-};
+${PACKAGED_TRANSACTION_SOURCE}
 
 Database.prototype.defaultSafeIntegers = function(toggle) {
     this[cppdb].defaultSafeIntegers(toggle);
