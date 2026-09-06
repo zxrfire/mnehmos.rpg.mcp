@@ -68,7 +68,7 @@ import { z } from 'zod';
 //      replace - once beside Isle, Cape, Fall and Marches, and once beside
 //      Roof, Well, Bank and Yard - and no authored place has ever used it. The
 //      two that did were this table's Scorched Reach and the Hollow Reach
-//      prefecture in `low-fall.ts`, and they are Black Slope and the Hollow
+//      prefecture in `low-fall.ts`, and they are Ash Slope and the Hollow
 //      Basin now.
 //      AND THE QUALIFIER IN FRONT HAS TO BE AN IMAGE. The convention this is
 //      translated out of pairs a type noun with a colour, a material, a number
@@ -138,7 +138,7 @@ export const RUIN_NAMES: readonly GeneratedPlaceName[] = [
  * name, because the people who chose it were describing weather.
  */
 export const SCAR_NAMES: readonly GeneratedPlaceName[] = [
-    { name: 'Black Slope', source: 'what_happened', records: 'What the nearest village called it that week, and did not stop calling it.' },
+    { name: 'Ash Slope', source: 'what_happened', records: 'What the nearest village called it that week, and did not stop calling it.' },
     { name: 'Four Days\' Fire', source: 'what_happened', records: 'How long it took, counted from a hill by people who could not do anything else.' },
     { name: 'Reed Flat', source: 'what_is_visibly_there', records: 'It was not flat before, and the word does the whole of the work.' },
     { name: 'Bitter Soil', source: 'what_is_visibly_there', records: 'Stated as a fact rather than as a name, and used as one for two hundred years.' },

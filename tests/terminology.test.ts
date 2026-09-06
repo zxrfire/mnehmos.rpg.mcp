@@ -175,8 +175,27 @@ interface Rule {
  * and a trailing `\b` would flag every `trash`, `cash`, `hash`, `flash`,
  * `clash`, `ashore`, `ashen` and `ashfall` in the repository. Matching
  * precisely is what keeps this rule free of an exception list.
+ *
+ * -- AND IT IS A NAME AGAIN, THOUGH NOT A MECHANIC --------------------------
+ *
+ * `Ash` FOLLOWED BY ANOTHER CAPITALISED WORD is a proper name and is allowed.
+ * The design owner, after the catalog was moved wholesale into the xianxia
+ * register: *we can now unretire ash cuz its now all xianxia names.* Ash
+ * Terrace and Ash Slope are ordinary names there, and `ashen` and `ashfall`
+ * were never caught by this rule anyway - the Ashen Forge Clan and Ashfall
+ * Crescent have stood the whole time.
+ *
+ * WHAT STAYS BANNED IS THE MECHANIC, because that is what this rule was always
+ * about. The word was retired as the name of a cut conceit - ambient qi as the
+ * settled remains of ascended cultivators - and not as a matter of taste. Bare
+ * `ash` in prose and every identifier form still fail here, and the world
+ * schema test still asserts `ash_density` is gone.
  */
-const ASH = /(?<![A-Za-z0-9])(?:ash|Ash)(?![a-z0-9])|(?<![A-Za-z0-9])ASH(?![A-Z0-9])/;
+const ASH = new RegExp(
+    '(?<![A-Za-z0-9])ash(?![a-z0-9])'
+    + '|(?<![A-Za-z0-9])Ash(?![a-z0-9])(?! [A-Z])'
+    + '|(?<![A-Za-z0-9])ASH(?![A-Z0-9])'
+);
 
 /** The retired faction prefix. It is now the Stone Marrow Hall. */
 const ASHWRIGHT = /ashwright/i;
@@ -374,5 +393,24 @@ describe('banned vocabulary stays out of the repository', () => {
             'these temporary allowlist entries are no longer suppressing anything ' +
             `and should be removed from tests/terminology.test.ts: ${unused.join(', ')}`
         ).toEqual([]);
+    });
+});
+
+describe('ash is a name again, and still not a mechanic', () => {
+    /**
+     * The word was retired as the name of a cut conceit - ambient qi as the
+     * settled remains of ascended cultivators - and unretired as a NAME once
+     * the catalog moved into the xianxia register. Both halves are asserted,
+     * because relaxing a guard without pinning what it still catches is how a
+     * guard quietly stops guarding.
+     */
+    it('allows a name and refuses the mechanic', () => {
+        const allowed = ['Ash Slope', 'Ash Terrace', 'Ashen Forge Clan',
+            'Ashfall Crescent', 'the ashfall', 'trash'];
+        const banned = ['ash_density', 'world_ash_density', 'ashDensity',
+            'ASH_DENSITY', 'qi is ash', 'the Ash was thick'];
+
+        for (const text of allowed) expect(ASH.test(text), text).toBe(false);
+        for (const text of banned) expect(ASH.test(text), text).toBe(true);
     });
 });
