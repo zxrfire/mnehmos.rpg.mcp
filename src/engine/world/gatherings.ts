@@ -1130,18 +1130,52 @@ export function combatantOf(npc: NpcRecord, state: WorldState): CombatantInput {
 /**
  * The rated object this person is actually holding, or null.
  */
+/**
+ * The best thing in this person's hands that they would actually SWING.
+ *
+ * NOT the highest-rated thing they hold, which is what this asked before. Every
+ * finished artifact carries an ordinal - that is what an ordinal is, and
+ * `possessions.ts` states the rule - so "the strongest object on them" now
+ * includes things nobody fights with. A carriage was already excluded by name;
+ * the general form is that being worth a rung and being a weapon are different
+ * facts.
+ *
+ * A single-use slip is the case that made this urgent. A departure talisman cut
+ * by a hand at 32 stands at 32, and swinging it is not what it is for - it is
+ * burned once and gone. It was dormant only because nothing yet hands one to
+ * anybody, and a hazard that is dormant is still a hazard.
+ */
 function bestObjectHeldBy(npc: NpcRecord, state: WorldState): CombatantInput['weapon'] {
     let best: CombatantInput['weapon'] = null;
     for (const object of state.objects) {
         if (object.possessorId !== npc.id) continue;
         if (object.power === null || isRuined(object)) continue;
-        // A CARRIAGE IS NOT A WEAPON
-        if (object.tags.includes('conveyance')) continue;
+        if (!isSomethingYouWouldSwing(object)) continue;
         if (best === null || object.power > best.power) {
             best = { id: object.id, name: object.name, power: object.power };
         }
     }
     return best;
+}
+
+/**
+ * Whether this is a thing somebody raises in a fight.
+ *
+ * Stated as what it is NOT, because the list of things that are weapons is
+ * open and the list of things that are certainly not is short and knowable.
+ */
+export function isSomethingYouWouldSwing(object: {
+    tags: readonly string[];
+    kind: string;
+}): boolean {
+    // A CARRIAGE IS NOT A WEAPON, and neither is a boat.
+    if (object.tags.includes('conveyance')) return false;
+    // A THING BURNED ONCE IS NOT A WEAPON SLOT. It is used and it is gone,
+    // which is a different move from carrying it into every exchange.
+    if (object.tags.includes('single-use') || object.tags.includes('talisman')) return false;
+    // AND A THING THAT STANDS WHERE IT WAS MADE is never in anybody's hands.
+    if (object.kind === 'formation' || object.kind === 'territory') return false;
+    return true;
 }
 
 /**
