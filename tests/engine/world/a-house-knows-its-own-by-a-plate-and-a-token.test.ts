@@ -27,8 +27,14 @@ import {
     tokenIdFor,
     whatAHouseMakesOfSilence,
     whatIsLeftOfThem,
-    whatThePlateSays
+    whatThePlateSays,
+    couldCutAPlate,
+    platesAreCutAt,
+    thisHouseCanIssue,
+    whatAPlateIsCutFrom,
+    wouldCutAPlate
 } from '../../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
+import { BEAST_MATERIALS } from '../../../src/data/cultivation/beasts.js';
 import { roomAuthorityOf } from '../../../src/engine/world/architecture.js';
 import { portfoliosIn } from '../../../src/engine/social-leverage/authority-for-an-order.js';
 import { whoAnswersAbout } from '../../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
@@ -91,6 +97,40 @@ describe('what a house issues', () => {
             expect(token.possessorId).not.toBeNull();
             expect(token.ownerId).not.toBe(token.possessorId);
         }
+    });
+});
+
+describe('and only a house that can cut one has any', () => {
+    it('needs a Foundation hand on the roll, not a Foundation recipient', () => {
+        // A house-level gate: somebody here has to be able to CUT one. A house
+        // with nobody at that rung has no plates at all, for anybody.
+        expect(couldCutAPlate(platesAreCutAt())).toBe(true);
+        expect(couldCutAPlate(platesAreCutAt() - 1)).toBe(false);
+        expect(thisHouseCanIssue([1, 2, platesAreCutAt()])).toBe(true);
+        expect(thisHouseCanIssue([1, 2, 3])).toBe(false);
+        expect(thisHouseCanIssue([])).toBe(false);
+    });
+});
+
+describe('and what one is cut from', () => {
+    it('wants the best grade the cutting hand can actually work', () => {
+        // Derived from the rung rather than named here, so the two move
+        // together: a Foundation hand works mortal grade, because earth wants
+        // Core Formation - a realm above the hand doing the cutting.
+        expect(whatAPlateIsCutFrom().grade).toBe('mortal');
+        expect(whatAPlateIsCutFrom().itIsBone).toBe(true);
+    });
+
+    it('finds bone in the catalog under the names the catalog uses', () => {
+        // There is no material called a bone. The mortal-grade bone of a beast
+        // big enough to cut a tag from is the Ironhide Tusk; antler, horn, fang
+        // and tooth are all earth grade and a realm too high.
+        const would = BEAST_MATERIALS.filter(m => wouldCutAPlate(m));
+        expect(would.length, 'nothing in the catalog could cut a plate').toBeGreaterThan(0);
+        for (const material of would) expect(material.grade).toBe('mortal');
+        // And the earth-grade bones are refused, which is the point of the grade.
+        const antler = BEAST_MATERIALS.find(m => m.name === 'Vein Deer Antler')!;
+        expect(wouldCutAPlate(antler)).toBe(false);
     });
 });
 

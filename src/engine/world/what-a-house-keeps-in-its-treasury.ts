@@ -137,7 +137,8 @@ import { purposeOf, type RoomPurpose } from './architecture.js';
 import {
     WHERE_THE_PLATES_HANG,
     carriesATokenAt,
-    issueTo
+    issueTo,
+    thisHouseCanIssue
 } from './a-house-knows-its-own-by-a-plate-and-a-token.js';
 import type { WorldState } from './world-state.js';
 
@@ -302,6 +303,17 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         //
         // Issued from the rung a house starts putting its name on somebody,
         // which is the first rung that is a disciple rather than a servant.
+        //
+        // AND ONLY WHERE THE HOUSE CAN CUT THEM. A plate is a Foundation
+        // craft, so a house with nobody at that rung has none at all - no roll
+        // it can read, no notice when one of its own dies, and no token its
+        // members can prove themselves with. That is a real difference between
+        // a house and a gathering of people, and it needed no rule of its own.
+        const onTheRoll = state.npcs
+            .filter(npc => npc.factionId === house.id && npc.status === 'alive')
+            .map(npc => npc.cultivation.realmOrdinal);
+        if (!thisHouseCanIssue(onTheRoll)) continue;
+
         const plateRoom = roomFor(WHERE_THE_PLATES_HANG);
         for (const member of state.npcs) {
             if (member.factionId !== house.id) continue;

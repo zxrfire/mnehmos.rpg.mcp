@@ -45,6 +45,9 @@
  * answer at all.
  */
 
+import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
+import { highestGradeRefinableAt } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
+import type { TechniqueGrade } from '../../schema/cultivation.js';
 import { makeObject, type ObjectRecord } from './possessions.js';
 
 /**
@@ -63,6 +66,70 @@ export function carriesATokenAt(rankIndex: number): boolean {
     return rankIndex >= THE_RUNG_A_HOUSE_ISSUES_AT;
 }
 
+/**
+ * THE REALM A PLATE IS CUT AT.
+ *
+ * The design owner: *"let's make life plates a core formation craft. Anyone
+ * less than that doesn't get one. Same for identity tokens"*, corrected a
+ * moment later to *"someone at least FOUNDATION must craft it for you."*
+ *
+ * A HOUSE-LEVEL GATE AND NOT A PERSON-LEVEL ONE, which is the whole of what it
+ * changes. It is not that a disciple must be Foundation to be GIVEN a plate -
+ * it is that somebody in the house has to be Foundation to CUT one. A house
+ * with nobody at that rung has no plates at all, for anybody: no roll it can
+ * read, no notice when one of its own dies, and no token its members can prove
+ * themselves with.
+ *
+ * Which is a real difference between a house and a gathering of people, and it
+ * arrives without a rule being written for it. A hill sect is not a lesser
+ * version of a court; it is a body that cannot do this at all.
+ *
+ * MEASURED, AND CURRENTLY NON-BINDING: all 36 houses in a seeded world can
+ * field a Foundation hand, so none is without plates today. That is not a
+ * reason to raise the rung - the gate is there for the bodies the world sim
+ * makes later, when a house is broken down to a handful of survivors and
+ * quietly loses the ability to know its own dead.
+ *
+ * ONE RUNG UNDER A QI SEAL, and the gap is the point. Sealing a person opens at
+ * Core Formation; cutting the jade that says who they are opens a realm below
+ * it. Making the thing that proves an identity is ordinary craft, and taking
+ * somebody's ability to draw is not - so most houses can issue and far fewer
+ * can hold.
+ *
+ * Read off the ladder rather than written as a number, for the same reason
+ * `qiSealOpensAt` is: the tiers have been renamed more than once and a constant
+ * copied out of them is a coincidence maintained by attention.
+ */
+export const THE_REALM_A_PLATE_IS_CUT_AT = 'foundation_establishment';
+
+export function platesAreCutAt(): number {
+    const tier = REALM_TIERS.find(row => row.key === THE_REALM_A_PLATE_IS_CUT_AT);
+    if (!tier) {
+        throw new Error(
+            `No realm tier is keyed ${THE_REALM_A_PLATE_IS_CUT_AT}. Cutting a plate is gated on a `
+            + 'realm rather than a number, so a renamed tier has to fail loudly here rather than '
+            + 'silently giving every house plates or none.'
+        );
+    }
+    return tier.ordinalStart;
+}
+
+/** Whether this hand could cut a plate or a token. */
+export function couldCutAPlate(ordinal: number): boolean {
+    return realmForOrdinal(ordinal).ordinalStart >= platesAreCutAt();
+}
+
+/**
+ * Whether this house can issue at all, off the best hand it has.
+ *
+ * The house's own question, asked once, rather than a check repeated per
+ * member: either somebody here can cut them and everybody eligible gets one, or
+ * nobody can and the house has none.
+ */
+export function thisHouseCanIssue(ordinalsOnTheRoll: readonly number[]): boolean {
+    return ordinalsOnTheRoll.some(couldCutAPlate);
+}
+
 /** The room a house keeps its plates in. Its own hall, at the inner end. */
 export const WHERE_THE_PLATES_HANG = 'ancestral_hall';
 
@@ -73,6 +140,52 @@ export function plateIdFor(memberId: string): string {
 
 export function tokenIdFor(memberId: string): string {
     return `identity-token-${memberId}`;
+}
+
+/**
+ * WHAT A PLATE IS CUT FROM.
+ *
+ * The design owner: *"remember it requires foundation establishment materials
+ * too - probably beast bones."*
+ *
+ * DERIVED FROM THE HAND, NOT PICKED. A Foundation hand cuts these, and
+ * `who-can-refine-a-grade-of-medicine.ts` already owns which grade of material
+ * a given rung can work at all - so the grade a plate wants is simply the best
+ * that rung can hold. It comes out MORTAL: earth grade wants Core Formation,
+ * which is a realm above the hand doing the cutting.
+ *
+ * That is worth more than naming a grade here, because the two move together.
+ * Reprice what a Foundation hand can work and the plate follows, rather than
+ * this file quietly asking for something nobody at the rung can hold.
+ *
+ * AND BONE, WHICH THE CATALOG HAS UNDER ANOTHER NAME. There is no material
+ * called a bone in `beasts.ts`; the mortal-grade bone of a beast big enough to
+ * cut a tag out of is the Ironhide Tusk, and the earth-grade ones - antler,
+ * horn, fang, tooth - are all a realm too high. So the requirement is stated as
+ * a grade and a kind rather than as one id, and a second mortal-grade bone
+ * added to the catalog satisfies it with no edit here.
+ */
+export function whatAPlateIsCutFrom(): { grade: TechniqueGrade; itIsBone: true } {
+    const grade = highestGradeRefinableAt(platesAreCutAt());
+    return {
+        // Unreachable while the refining table has a mortal row, which it must:
+        // mortal grade opens at ordinal zero. A loud fallback rather than a
+        // throw, because a bad edit here should fail a test and not a run.
+        grade: grade ?? 'mortal',
+        itIsBone: true
+    };
+}
+
+/** Whether this material would do for a plate. */
+export function wouldCutAPlate(material: {
+    grade: TechniqueGrade;
+    taking?: string;
+    name?: string;
+}): boolean {
+    const wants = whatAPlateIsCutFrom();
+    if (material.grade !== wants.grade) return false;
+    // Bone, in the words the catalog actually uses for it.
+    return /tusk|horn|fang|tooth|antler|bone|plastron|scute/i.test(material.name ?? '');
 }
 
 /**
