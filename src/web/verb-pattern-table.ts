@@ -2092,6 +2092,36 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     ['negotiate', /\b(?:negotiate|bargain|make terms|come to terms|strike a deal|petition|ally|alliance|swear|join|apply to|seek protection|beg)\b/],
     ['recruit', /\b(?:recruit|hire|take on|enlist|bring (?:him|her|them) in)\b/],
     ['apologise', /\b(?:apologi[sz]e|make amends|beg (?:his|her|their) pardon)\b/],
+    // TAKING SOMEBODY'S FACE, which the genre runs on and which reached nothing.
+    //
+    // Measured on the trope corpus: `I insult him`, `I mock him`, `I sneer at
+    // him`, `I spit at his feet`, `I call him a dog` and `I laugh in his face`
+    // were all `unclear` - six blank looks on the commonest provocation in
+    // xianxia. The owner said at the outset that *"people should react to an
+    // insult, that should exist already"*, and every part of it did except a
+    // sentence that reaches it: `insulted` is a `Wrong`, `humiliation` is the
+    // grudge it opens, and `how-they-took-what-you-said.ts` already decides
+    // what the hearer made of it.
+    //
+    // Above `talk` because talk is the catch-all and would swallow every one of
+    // these. Below `threaten` and `apologise` on purpose: a threat offers force
+    // as the reason to comply and an insult offers nothing, which is exactly
+    // the distinction `SHAPE_OF` draws between the two wrongs.
+    ['insult', new RegExp([
+        String.raw`\b(?:insult|insults|insulting|insulted|mock|mocks|mocking|mocked)\b`,
+        String.raw`\b(?:sneer|sneers|scoff|scoffs|jeer|jeers)\s+at\b`,
+        String.raw`\b(?:spit|spits|spat)\s+(?:at|on|in)\b`,
+        String.raw`\b(?:humiliate|humiliates|belittle|belittles|demean|demeans|disrespect|disrespects)\b`,
+        String.raw`\bmake\s+a\s+fool\s+of\b`,
+        String.raw`\blaugh(?:s|ing)?\s+in\s+(?:his|her|their|the)\b`,
+        // Calling somebody a thing. Scoped to a determiner so it cannot reach
+        // "I call him over" or "I call him by his name".
+        String.raw`\bcalls?\s+(?:him|her|them|the \w+)\s+(?:a|an)\s+\w+`,
+        // Saying their house is worthless, which is the sect-facing form and
+        // the one that gets a sword drawn.
+        String.raw`\b(?:his|her|their|your)\s+(?:sect|house|clan|school|master|lineage)\s+`
+        + String.raw`(?:is|are)\s+(?:trash|nothing|filth|garbage|worthless|a joke|beneath)\b`
+    ].join('|'), 'i')],
     // Bowing is how somebody opens with an elder in this setting, and it was the
     // one courtesy with no line at all. `strike up a conversation` is here rather
     // than left to `converse`, because the words a player uses for opening politely

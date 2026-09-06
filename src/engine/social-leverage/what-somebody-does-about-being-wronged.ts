@@ -67,6 +67,22 @@ export type Wrong =
      * {@link TheShapeOfAWrong.theyMayNeverBeCertain}.
      */
     | 'interfered_with_a_crossing'
+    /**
+     * Their standing, taken in front of people. The genre runs on this one.
+     *
+     * A distinct kind and not a synonym for anything above it: nothing is
+     * threatened, nothing is stolen, no lie is told and no wound is made. What
+     * is taken is FACE, which is why it is `somethingWasTaken` despite the
+     * hands never moving, and why it can be given back - an apology in front of
+     * the same people is the classic settlement and the ledger must be able to
+     * hold it.
+     *
+     * Added as a ninth kind rather than folded into `threatened`, because an
+     * insult offers no force as a reason to comply and `SHAPE_OF` would then be
+     * lying about it. The rule this follows is the one `what-a-threat-promises.ts`
+     * states: a ninth PHRASING needs no code, a ninth KIND of harm is a row here.
+     */
+    | 'insulted'
     /** They are dead, and the record has to go somewhere else. */
     | 'killed';
 
@@ -123,6 +139,13 @@ const SHAPE_OF: Readonly<Record<Wrong, TheShapeOfAWrong>> = Object.freeze({
         // `permanent` decides `canBeGivenBack`.
         force: true, somethingWasTaken: true, canBeGivenBack: true,
         theySurviveToHoldIt: true, theyMayNeverBeCertain: false, cause: 'injury'
+    },
+    insulted: {
+        // Nothing in the hands and something taken all the same. Face is a
+        // holding in this world, and it is given back the way it was taken:
+        // out loud, in front of the same people.
+        force: false, somethingWasTaken: true, canBeGivenBack: true,
+        theySurviveToHoldIt: true, theyMayNeverBeCertain: false, cause: 'humiliation'
     },
     violated: {
         force: true, somethingWasTaken: true, canBeGivenBack: false,
@@ -510,6 +533,7 @@ function whatWasDone(wrong: Wrong): string {
         robbed: 'being robbed',
         deceived: 'being lied to',
         interrogated: 'being leaned on for answers',
+        insulted: 'being made small in front of people',
         wounded: 'being cut',
         violated: 'what was done to them',
         interfered_with_a_crossing: 'somebody reaching into their crossing',

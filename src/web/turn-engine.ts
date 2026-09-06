@@ -515,6 +515,10 @@ import {
     worldForRun
 } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
+import {
+    priceMultiplierInArea,
+    type GoodCategory
+} from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { WorldState } from '../engine/world/world-state.js';
 // A finished pressure model that had no route from the player to it. The
 // resolver reads  and never , which is the whole design.
@@ -999,7 +1003,18 @@ const ATTEMPT_INTENTS: ReadonlySet<string> = new Set([
     // it is. It resolves through the same machine and at the same price as
     // leaning on one; what separates it is what it LEAVES, and that is decided
     // in `recordWhatTheAskLeft` off the closed wrongs table rather than here.
-    'steal'
+    'steal',
+    // Taking somebody's FACE, on the same reasoning one line up. An insult is
+    // not an attempt to move anybody - it asks for nothing and offers nothing -
+    // and it is still an attempt ON them, resolved against the same person
+    // through the same machine, and separated from the rest by what it leaves.
+    //
+    // Without this it fell through to `freeAction`: the sentence reached the
+    // verb, the narrator wrote a scene, and the ledger stayed empty. The owner
+    // has wanted this since the first hour of the session - *"people should
+    // react to an insult, that should exist already"* - and every other piece
+    // of it did exist. This was the line that made it cost something.
+    'insult'
 ]);
 
 /**
@@ -1008,7 +1023,10 @@ const ATTEMPT_INTENTS: ReadonlySet<string> = new Set([
 function whatThisPurchaseWillNotReach(
     cultivator: Cultivator,
     pillId: string,
-    regionId: string
+    regionId: string,
+    /** What the ground adds to medicine here, so the receipt names the price
+     * the counter beside it would actually ask. */
+    groundMultiplier: number
 ): { lines: string[]; structure: string[] } {
     const none = { lines: [], structure: [] };
     const bought = getPill(pillId);
@@ -1029,7 +1047,7 @@ function whatThisPurchaseWillNotReach(
         .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
         .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
     const cure = whatWouldCloseThisWound(
-        beyond, cultivator.realmOrdinal, cultivator.spiritStones, regionId);
+        beyond, cultivator.realmOrdinal, cultivator.spiritStones, regionId, groundMultiplier);
     const reached = mendable.length - beyond.length;
 
     // Said in whichever of the two shapes is TRUE. A pill that closes two of
@@ -7005,7 +7023,12 @@ ${opened.text}` : receipt,
         const visit = getPrice(GameService.PRICE_PHYSICIAN_VISIT)!;
         const course = getPrice(GameService.PRICE_COURSE_OF_CARE)!;
         const regionId = standingOf(cultivator).regionId;
-        const courseCash = localPrice(regionId, course.cash);
+        // `buy` routes both of these two board rows straight into this method,
+        // so they have to be priced the way `buy` prices everything else or the
+        // same sentence reaches two different figures. Both rows are medicine,
+        // and a war has *everybody who can heal being paid too much*.
+        const groundHere = this.groundPriceMultiplier(cultivator, course.category);
+        const courseCash = Math.max(1, Math.round(localPrice(regionId, course.cash) * groundHere));
         // Rounded UP to whole stones. The purse holds whole stones and a
         // player must never be charged less than the board quoted.
         const perWound = Math.max(1, Math.ceil(cashToStones(courseCash)));
@@ -7027,7 +7050,7 @@ ${opened.text}` : receipt,
                 .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
             // AND IT NAMES THE THING THAT WOULD WORK.
             const cure = whatWouldCloseThisWound(
-                hurt, cultivator.realmOrdinal, cultivator.spiritStones, regionId);
+                hurt, cultivator.realmOrdinal, cultivator.spiritStones, regionId, groundHere);
             return refused('engine.medicineNeededFor', 'treat', factsForRefusal(
                 'Past what a physician can do.',
                 `They look at what you are carrying and put their hands in their sleeves. `
@@ -7068,7 +7091,7 @@ ${opened.text}` : receipt,
         // A course of care closes a meridian; a visit sets what is ordinary
         // about a body, and somebody with no torn meridians is buying the
         // second one.
-        const visitCash = localPrice(regionId, visit.cash);
+        const visitCash = Math.max(1, Math.round(localPrice(regionId, visit.cash) * groundHere));
         const restingPrice = Math.max(1, Math.ceil(cashToStones(visitCash)));
         // Priced on what can be REACHED, not on what is being carried: a wound
         // past mortal grade is not a course anybody is going to sell.
@@ -7325,7 +7348,15 @@ ${opened.text}` : receipt,
         }
 
         const regionId = standingOf(cultivator).regionId;
-        const cash = localPrice(regionId, price.cash);
+        // TWO THINGS MOVE A PRICE AND THEY ARE NOT THE SAME KIND OF THING.
+        // `localPrice` is what this province is LIKE and never changes; the
+        // ground term is what is TRUE here today and lifts. This path asked
+        // only the first, so a province could starve for a century without a
+        // month of rations moving a copper, while the MCP board next to it
+        // quoted the famine correctly. Rounded the way the board rounds, in the
+        // order the board rounds, so the two surfaces cannot disagree.
+        const groundHere = this.groundPriceMultiplier(cultivator, price.category);
+        const cash = Math.max(1, Math.round(localPrice(regionId, price.cash) * groundHere));
         const stones = Math.max(1, Math.ceil(cashToStones(cash)));
 
         // What the engine actually holds a row for. A pill goes in the pouch;
@@ -7405,6 +7436,15 @@ ${opened.text}` : receipt,
                 'You could pay it. Nothing in your life would be different afterwards, so you keep '
                 + 'the money.'
             );
+            // A quoted figure with nothing said about why it moved reads as the
+            // board being wrong. It is not the board: it is the ground.
+            if (groundHere !== 1) {
+                facts.lines.push(
+                    `That is ${groundHere > 1 ? 'more' : 'less'} than ${price.category} goes for `
+                    + `on quiet ground - ${groundHere} times the province's own figure, and what `
+                    + 'is true here today is doing it.'
+                );
+            }
             facts.prose = facts.lines.join('\n\n');
             return refused('engine.possessions', 'buy', facts);
         }
@@ -7429,7 +7469,7 @@ ${opened.text}` : receipt,
         })();
 
         // THE ALMANAC IS NOT THE LEDGER
-        const shortfall = whatThisPurchaseWillNotReach(cultivator, pill.id, regionId);
+        const shortfall = whatThisPurchaseWillNotReach(cultivator, pill.id, regionId, groundHere);
 
         const facts = factsForToolResult(`${pill.name}, bought.`, [
             `One ${pill.name}, ${cash} cash the ${price.unit}, which is ${stones} spirit `
@@ -7438,8 +7478,9 @@ ${opened.text}` : receipt,
             ...shortfall.lines
         ]);
         facts.structure.push(
-            `${price.id} -> ${pill.id}: ${cash} cash at the ${regionId} multiplier, charged as `
-            + `${stones} stone(s). One added to cultivator_pouch.`,
+            `${price.id} -> ${pill.id}: ${cash} cash at the ${regionId} multiplier`
+            + (groundHere === 1 ? '' : ` and a ground term of ${groundHere} on ${price.category}`)
+            + `, charged as ${stones} stone(s). One added to cultivator_pouch.`,
             ...shortfall.structure
         );
 
@@ -11620,6 +11661,29 @@ ${fit.line}`;
     worldPlaceOf(cultivator: Cultivator): string | null {
         if (!this.atHand) return null;
         return worldLocationFor(this.atHand, cultivator.location)?.id ?? null;
+    }
+
+    /**
+     * What the ground under somebody adds to the price of this type of good.
+     *
+     * The province multiplier is `localPrice` and is a standing property. This
+     * is what is TRUE here today and lifts - a famine, a war - and it is per
+     * type because one dial cannot raise the millet and drop the inn bed at the
+     * same time. A run with no world reads as a quiet market, which it is.
+     *
+     * Callers pass the row's own `category`. Passing none asks what a type
+     * nothing here named costs, which is the honest answer for a manual.
+     */
+    groundPriceMultiplier(cultivator: Cultivator, category?: GoodCategory): number {
+        const where = this.worldPlaceOf(cultivator);
+        if (!this.atHand || !where) return 1;
+        return priceMultiplierInArea(
+            this.atHand.statuses,
+            this.atHand.locations,
+            where,
+            Math.floor(this.atHand.currentDay),
+            category
+        );
     }
 
     /**

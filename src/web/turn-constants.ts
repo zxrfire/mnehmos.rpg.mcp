@@ -133,6 +133,10 @@ export const WRONG_BEHIND_INTENT: Readonly<Partial<Record<string, Wrong>>> = {
     // doing, so a model that labels one `deceive` still lands on a wrong.
     deceive: 'deceived',
     interrogate: 'interrogated',
+    // Taking somebody's face. Nothing is threatened and nothing is taken
+    // out of a pouch, and standing is a holding in this world, so the
+    // ledger opens for `humiliation` the same as it does for the rest.
+    insult: 'insulted',
     // And the verb itself, now that the deterministic parser can produce it.
     // `robbed` was the one member of `Wrong` nothing reached: the engine has
     // resolved a theft off a person since the pressure model was wired, and
