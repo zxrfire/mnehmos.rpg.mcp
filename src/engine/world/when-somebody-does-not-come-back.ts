@@ -942,7 +942,20 @@ function stepWriteOff(
             })
         );
         facts.push(strikeFact);
-        state.npcs[seat] = setFaction(struck, null, -1, day);
+        // ── OFF THE CURRENT ROW, NOT OFF THE SNAPSHOT ────────────────────
+        //
+        // `struck` was read before the fact existed. `appendWorldFact` links a
+        // fact onto everybody it names, so by this line `state.npcs[seat]` is a
+        // NEWER object carrying the expulsion in its `historyFactIds` - and
+        // writing `setFaction(struck, ...)` put the pre-fact copy back, taking
+        // the link with it.
+        //
+        // Measured: nine facts in an eighty-year world named somebody who did
+        // not carry them, all of them expulsions, all of them the person struck
+        // off. The one thing `what-a-world-must-never-contain.ts` calls a fact
+        // that cannot be reached from the person it is about - and here it was
+        // the person's own removal.
+        state.npcs[seat] = setFaction(state.npcs[seat], null, -1, day);
         consequences.push({
             kind: 'struck_from_the_rolls',
             onDay: day,

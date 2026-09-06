@@ -1,5 +1,90 @@
 /**
  * Why a house puts a party on the road.
+ *
+ * A sending is a party, a destination, a REASON, a cost in time, a rung band
+ * it is survivable at, and a thing that happens to the house if it goes wrong.
+ * This file is the reason column, and the whole of the design is one line:
+ *
+ * > **The reason is a field. Nothing branches on which reason it is except
+ * > where the reason genuinely changes the mechanics.**
+ *
+ * There are exactly three places in this file where a reason changes a
+ * mechanic, and every one of them is a column rather than a case:
+ * {@link SendingReason.ceilingOrdinal}, {@link SendingReason.needs} and
+ * {@link SendingReason.factKind}. A tenth reason wants a row and no code. An
+ * eleventh reusing an existing `needs` key wants a row and no predicate.
+ *
+ * ── What was already here, and is therefore not here ─────────────────────
+ *
+ * Most of this system existed before the reason did, and the reason is the
+ * only thing that was missing. Do not rebuild any of the following:
+ *
+ *   the two beast reasons     `WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS` in
+ *                             `beasts.ts` argues both of them in full - why a
+ *                             core is the one high-grade thing nobody owns,
+ *                             and why ground answers for what it draws. It
+ *                             also says outright that they are two reasons of
+ *                             many. This file is the many. It does not restate
+ *                             either argument and must not.
+ *   the player's half         `engine/encounters/duties.ts`. A summons and a
+ *                             commission, priced off an `ENCOUNTERS` row and
+ *                             the taker's standing, with refusal terms in the
+ *                             obligation ledger's own vocabulary. Live, and
+ *                             reached from `src/web/actions.ts`.
+ *   the situations            `encounters.ts`. There is no second table of
+ *                             things that happen on a road here, for the
+ *                             reason `duties.ts` states in its own header.
+ *   the tier                  `REGARD_BANDS` in `src/schema/cultivation.ts`.
+ *                             A mission tier is how far the posting is pitched
+ *                             from the person taking it, which is the one
+ *                             thing regard already measures. {@link TIER_NAMES}
+ *                             is a board's word for each band and nothing else:
+ *                             there is no second difficulty scale in this repo.
+ *   prestige                  `engine/social/what-is-said-about-somebody.ts`.
+ *                             It is DERIVED from the ledger and from what is in
+ *                             circulation, and there is deliberately no stored
+ *                             score. A hard sending finished is a heavy fact
+ *                             that travels, not a number going up.
+ *   who carries the party     spirit boats. Physical, ordinal-rated, craftable
+ *                             objects, owned elsewhere. Nothing here is a
+ *                             conveyance and nothing here should become one.
+ *   places that shut          `LocationRecord.cycle` with `nextOpeningDay`,
+ *                             `nextClosingDay` and `openingsBetween` in
+ *                             `engine/world/locations.ts`. Ground that opens
+ *                             and closes on a schedule is already modelled, so
+ *                             a sending timed to one is wiring.
+ *
+ * ── The list is not closed, and that is the ruling ───────────────────────
+ *
+ * Ten rows is what somebody could think of in one sitting, not an enumeration
+ * of the ways a house can want something. The eleventh must cost a row and
+ * nothing else, and the moment a reader has to add a branch to add a reason,
+ * this file has failed at the only thing it exists for.
+ *
+ * The failure to watch for is therefore not a missing reason. It is a reader
+ * who wants to add one and finds they have to add a case with it. Every column
+ * below exists so that the answer to "what is different about this reason" is
+ * a value. **If a new reason cannot be expressed in the existing columns, add
+ * a COLUMN and fill it in for every row**, so the next reason gets it free.
+ *
+ * WHAT IS GENUINELY DIFFERENT: exactly three things, and all three are fields.
+ * What the house must already have for the reason to arise at all; whether the
+ * errand has a ceiling above which nobody is sent; and which word the ledger
+ * files the result under, because the digest and the rumour layer read that
+ * word and nothing else about the errand.
+ *
+ * WHAT IS NOT: who is strong enough, how long the party is gone, whether they
+ * finish, whether anybody comes back, and what the news of it is worth. None
+ * of those consult the reason. They are one function of the gap between the
+ * rung the posting is pitched at and the rung the person taking it stands on,
+ * which is what regard has always measured.
+ *
+ * ── No arithmetic here ───────────────────────────────────────────────────
+ *
+ * Rows state terms - days, hands, what is at stake. They do not decide who
+ * wins, how likely anybody is to come back, or what the news of it is worth.
+ * `engine/world/who-goes-out-for-a-house-and-what-comes-back.ts` does all of
+ * that, off `REGARD_BANDS`, and it is the only place those numbers are made.
  */
 
 import { z } from 'zod';

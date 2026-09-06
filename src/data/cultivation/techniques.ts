@@ -2417,7 +2417,14 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         category: 'dual_cultivation',
         grade: 'mortal',
         element: null,
-        requiredOrdinal: 13,
+        // TWELVE AND NOT THIRTEEN, WHICH IS THE BAND AND NOT A TASTE.
+        // `GRADE_ORDINAL_BANDS` puts a mortal-grade art at 12 or under, and
+        // this pair was authored at 13 apiece in a naming pass and never
+        // measured against it. The Rite stays at 13 because it is earth grade
+        // and 13 is where earth opens, so the two now sit one rung apart with
+        // the drawer above the drawn - which is the arrangement the pair
+        // describes anyway.
+        requiredOrdinal: 12,
         qiCost: 4,
         damage: null,
         cooldown: 0,
@@ -2433,7 +2440,12 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         grade: 'earth',
         element: null,
         requiredOrdinal: 13,
-        qiCost: 12,
+        // FIFTEEN, WHICH IS WHERE EARTH-GRADE FIRING STARTS. Authored at 12,
+        // presumably because what this returns is larger than what it spends -
+        // but `GRADE_QI_BANDS` is about what a book of this grade COSTS TO
+        // WORK, not about whether the working profits, and every other earth
+        // art in the catalog obeys it. What it gives back is untouched.
+        qiCost: 15,
         damage: null,
         cooldown: 20,
         requiresPeople: 2,

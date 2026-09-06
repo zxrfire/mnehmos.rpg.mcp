@@ -48,7 +48,18 @@ describe('seeding: a world that is already running', () => {
         const { state, stats } = seeded('seed-a', 300);
         expect(stats.npcs).toBeGreaterThan(250);
         expect(stats.npcs).toBeLessThan(400);
-        expect(livingPopulation(state)).toBe(stats.npcs);
+        // ROWS AND LIVING ARE TWO NUMBERS, and this used to assert they were
+        // one. The line that came down is seeded with its dead in it -
+        // ancestors whose bodies are gone and whose names a house still keeps -
+        // so the row count runs a few ahead of the living, and `populationTarget`
+        // counts them deliberately: a world that replaced its dead back to a
+        // figure excluding them would quietly delete them.
+        expect(livingPopulation(state)).toBe(stats.living);
+        expect(stats.living).toBeLessThanOrEqual(stats.npcs);
+        // And the gap is the ancestors and nothing else, so it stays small. A
+        // world opening with a tenth of its people already dead is a different
+        // bug wearing this one's clothes.
+        expect(stats.npcs - stats.living).toBeLessThan(stats.npcs / 20);
     });
 
     it('instantiates every faction with a seat, a treasury and its rivalries', () => {

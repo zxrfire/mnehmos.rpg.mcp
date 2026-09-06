@@ -1552,7 +1552,22 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             // province has this rite on its own list of things it will act on
             // sight for; the Hall sells it anyway, at Foundation, to whoever
             // can pay.
-            'crimson-bound-union-rite'
+            'crimson-bound-union-rite',
+            // AND THE PAIR, WHICH NOBODY IN THE WORLD COULD REACH.
+            //
+            // Both halves of the lotus arrangement were authored into the
+            // catalog with `taught` provenance and no house teaching either, so
+            // `routesTo` returned nothing for them: two arts nothing in the
+            // world could hand to anybody, which is exactly what
+            // `cultivation-technique-routes.test.ts` exists to catch.
+            //
+            // Here, because the Hall already sells the other bound rite and its
+            // own description is that it will sell anything to whoever can pay.
+            // The Canon is the half taught to somebody ELSE - the Hall's own
+            // entry says a blood hall has to get an offering somewhere before
+            // it can spend them - and the Rite is the half the buyer works.
+            'lotus-nurturing-canon',
+            'lotus-plucking-rite'
         ],
         signatureTechniqueId: 'meridian-devouring-art',
         specialities: ['forbidden', 'attack', 'dual_cultivation'],

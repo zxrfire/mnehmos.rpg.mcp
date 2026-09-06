@@ -57,6 +57,16 @@ const EXPECTED_FACTOR_ORDER = [
     'sect',
     'location',
     'focus',
+    // The other half of a two-person art, and NOT a second guidance term -
+    // guidance is somebody ABOVE you spending their attention, and this is
+    // somebody BESIDE you practising the same book. One for almost everybody in
+    // the world, which is what practising alone means, and it is listed for the
+    // reason `physique` is: a term a player cannot see is a term they cannot
+    // reason about.
+    //
+    // Added to the engine by `7d30b25e` and not to this list, which is what a
+    // fixed-order assertion is for.
+    'shared_practice',
     // Soft brake and hard ceiling, in that order, and last because a zero
     // from the ceiling must be visibly the thing that stopped them.
     'guidance',

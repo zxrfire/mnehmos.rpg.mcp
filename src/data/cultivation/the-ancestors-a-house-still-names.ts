@@ -77,7 +77,30 @@ export interface DormantAncestor {
     sealGrade: SealGrade;
     /** Whether they were banked whole, or kept at the end. See `SealReason`. */
     sealReason: SealReason;
-    /** The circumstance under which the sect would actually break the glass. */
+    /**
+     * The circumstance under which the sect would actually break the glass.
+     *
+     * A SEAL CUTS BOTH WAYS, and the catalog should be read in both directions.
+     *
+     * Defensively it is the last card, and this is the reading every entry here
+     * is written in: the wake conditions are disaster clauses. The caldera is
+     * breached. The library is entered by force. Two perimeters are lost in one
+     * season. That is what a sect tells itself the seal is for, and it is true.
+     *
+     * Offensively it is a single use looking for something worth spending it
+     * on, and that is the reading a sect does not say out loud. Same object,
+     * same decision, opposite direction - which means a sect that has quietly
+     * reclassified its last card as an opening move looks exactly like one that
+     * has not. Nothing visible about it changes, and that is the whole of why
+     * outsiders cannot price anybody: sects lie about what is under the
+     * mountain in both directions.
+     *
+     * This note travelled here with the field when the ancestral roll was
+     * lifted out of `sects.ts`, and it is restored because it did not: the lift
+     * dropped it, and `cultivation-governance.test.ts` says in its own words
+     * why that matters - *if this note goes, the sealed ancestors quietly
+     * become scenery.*
+     */
     wakeCondition: string;
     /** What waking costs. Nearly always the ancestor. */
     wakeCost: string;

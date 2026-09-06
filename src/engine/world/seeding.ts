@@ -112,7 +112,23 @@ export interface SeedStats {
     regions: number;
     locations: number;
     factions: number;
+    /**
+     * NPC ROWS the world opens with, living and not.
+     *
+     * NOT the living population, and the difference is small and real: the line
+     * that came down is seeded with its dead in it - ancestors whose bodies are
+     * gone and whose names a house still keeps - and they are rows like anybody
+     * else. Three of them in a three-hundred-person world.
+     *
+     * Both figures are reported because conflating them is a mistake somebody
+     * has already made. A caller reading this as "people alive here" is off by
+     * the ancestors, and `populationTarget` deliberately counts them: a world
+     * that replaced its dead back to a figure excluding them would quietly
+     * delete them.
+     */
     npcs: number;
+    /** Of those rows, the ones actually alive. See {@link SeedStats.npcs}. */
+    living: number;
     lineages: number;
     opportunities: number;
     scheduledEffects: number;
@@ -285,6 +301,7 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
             locations: state.locations.length,
             factions: factions.length,
             npcs: everybody.length,
+            living: livingPopulation(state),
             lineages: lineages.length,
             opportunities: opportunities.length,
             scheduledEffects: effects.length,
