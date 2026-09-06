@@ -286,46 +286,38 @@ export interface SiteConditions {
      *
      * ── FOUR WORDS, ONE PER THING ───────────────────────────────────────
      *
-     * The design owner, settling a collision that had cost real money:
+     *     seal          people   takes what somebody can draw
+     *     locked        room     a door with a key on it
+     *     forbidden     site     K2: worth going, and it kills people
+     *     pocket realm  site     a separate space, open or not
      *
-     *     seal          = people   a qi seal, taking what a person can draw
-     *     locked        = room     a door with a key on it
-     *     forbidden     = site     enter at your own risk
-     *     pocket realm  = site     a separate space, with an OPEN status
+     * Forbidden is a `LocationThresholds.survival` question, not a permission
+     * one, and that machinery already exists. Nobody stops you going; there is
+     * something worth having up there; a proportion of the people who go do not
+     * come back; and somebody good enough finds it merely hard. Sects send
+     * expeditions in constantly. It says nothing about how many people are
+     * standing there.
      *
-     * `forbidden` was the first name tried here and it is the wrong one, which
-     * the owner caught: *"forbidden is not every site - some sites aren't
-     * forbidden, they're actually sealed, hence pocket realm"*, *"pocket realm
-     * (open status yes no)"*.
+     * That trade - go in knowing it may kill you, because of what is in there -
+     * is the genre rather than a hazard bolted onto it.
      *
-     * And forbidden is not barred, which is the other half: *"you can still
-     * enter a forbidden realm - sects send people in there all the time.
-     * That's what the survival levels is for. At higher cultivations forbidden
-     * realms are a walk in the park."* The owner's own summary of it is the
-     * whole rule: *"it's just like - at your own risk?"*
+     * An unopened pocket is the only one of the four that makes qi STAND, and
+     * for the obvious reason: nobody has been in to draw it. This flag is that
+     * one and nothing else.
      *
-     * So it is a `LocationThresholds.survival` question and not a permission
-     * one, and that machinery already exists. It says nothing about how many
-     * people are on the ground - a forbidden site may be busy with a sect's
-     * expedition or empty for a century, and neither follows from the word.
+     * All four were spelled `sealed` and two of them met here.
+     * `LocationRecord.sealed` is a locked door - `architecture.ts` writes it
+     * from `PurposeSpec.sealed` and puts a `data.keyId` on the row - and this
+     * function returns `sealed_vein`, the richest band in the game, the moment
+     * its own flag is true and before it reads any density.
      *
-     * An unopened pocket is a different thing again: rich BECAUSE nobody has
-     * been in it. Only that one makes the qi stand.
+     * Measured: of 112 `sealed` locations in a seeded world, ELEVEN were
+     * pockets and 101 were locked doors - 36 treasuries, 27 discipline halls,
+     * 23 archives - every one of them reporting the best cultivation ground in
+     * the world.
      *
-     * All four were `sealed`, and two of them met here. `LocationRecord.sealed`
-     * means a LOCKED DOOR - `architecture.ts` writes it from `PurposeSpec.sealed`
-     * and puts a `data.keyId` on the row two lines later - and this function
-     * returns `sealed_vein` the moment its flag is true, BEFORE it reads any
-     * density, and `sealed_vein` is the richest band in the game.
-     *
-     * Measured on a seeded world: 112 `sealed` locations, ELEVEN of them
-     * genuine unopened pockets and 101 locked doors - 36 treasuries, 27
-     * discipline halls, 23 archives - every one of them reporting the best
-     * cultivation ground in the world.
-     *
-     * A guard was added at the caller that was forwarding it. This is the other
-     * half: with three facts under three names, nothing can forward one as
-     * another by accident again.
+     * A guard was added at the caller forwarding it; this is the other half.
+     * Under four names, nothing can forward one as another by accident.
      */
     anUnopenedPocket?: boolean;
     /**
