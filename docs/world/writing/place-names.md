@@ -53,9 +53,9 @@ The catalog already has the model, and it was authored before this file:
 - **Grain Rain** is a solar term. Twelve thousand people died there in one afternoon and
   the ground has fruited ever since. The name is what that season was called *before* it
   happened, and nothing in the name says so.
-- **Four Graves** is named for the four men who kept the station the winter the pass was
-  cut. Three of them are in the wall and there were five. The name is from the record and
-  the record is wrong.
+- **Four Names** is the four names the record gives for the men who kept the station the
+  winter the pass was cut. Three of them are in the wall and there were five. The name is
+  from the record and the record is wrong.
 - **Old River Village** is a river village. The river moved four li in one spring three hundred
   years ago and nobody renamed it.
 
@@ -81,9 +81,9 @@ Clear Creek Village -> Stonewater Town -> White River City -> Jade Pass
 | Tier | Register | Who has one | In the catalog |
 |---|---|---|---|
 | Ordinary | plain, concrete, often a distance or a crop or a water | most villages, hamlets, waystations | Six Li, Old River Village, Sand Well, Salt Fields |
-| Working | a trade, a landmark, a season | market towns, work faces | Wind Market, Autumn Gate, Jade Face |
+| Working | a trade, a landmark, a season | market towns, work faces | Wind Turn, Autumn Gate, Jade Face |
 | Held | material and treasure, weather, a number | cities, sect seats, passes | Nine Peaks, Cloud Gate, Iron Ridge, Cold Peak |
-| Remembered | an event the world actually holds | sites with a history | Grain Rain, Four Graves |
+| Remembered | an event the world actually holds | sites with a history | Grain Rain, Four Names |
 | Rare | heaven, the dao, the dead, catastrophe | almost nothing | *see below* |
 
 **The rare tier has to be sparse enough that a player notices one.** One or two names in
@@ -146,7 +146,7 @@ Two consequences:
   **HALF ROOF IS NOT XIANXIA**, and he was right. Roof, Well, Bank, Yard, Hollow, Rota,
   Landing, Shortcut and Reach are English domestic and agricultural words, and a space
   between two of them is still an English village. *Cloud Eaves Hall*, *Cold Spring*,
-  *Knife Edge*, *Iron Hook Slope* are the same places under the nouns the authored map
+  *Cut Edge*, *Iron Hook Slope* are the same places under the nouns the authored map
   already uses.
 - **A gerund is the same failure in a third coat.** *Digging* and *Gleaning* are English
   place names (Reading, Barking). Name what the work leaves: *Poor Man's Terrace*, *The
@@ -294,6 +294,19 @@ Standing prohibitions:
 - a name assembled from a stock of landscape nouns bolted to a stock of ominous
   adjectives to fill a quota: no story is compressed in one, so no player can ask a
   question about it
+- **a word the game already uses as a category.** *Four Graves* was a town and `graves`
+  is an inheritance-site noun, so "I travel to Four Graves" came back as the site listing
+  and nobody moved - a whole played turn spent, no day passed, and every later turn
+  reasoning about the wrong square. The parser now asks its anchors of the sentence with
+  its proper names taken out, so that particular sentence works; the name went anyway,
+  because a category word in a name is also a coin-flip for the model that classifies the
+  sentence before the table ever sees it. The same sweep found *Wind Market* (the market
+  board), *Stone Shadow* (`shadow` is the following verb), *Knife Edge* (`knife` is a
+  weapon, and every phrasing about it planned an attack) and *The Iron Ridge Mission*
+  (the duty board). They are Wind Turn, Under Stone, Cut Edge and The Iron Ridge Temple.
+  **Before a name is settled, say it in a sentence a player would type** - "I travel to
+  X", "tell me about X", "where is X" - and check it still means what it says. A place may
+  be *described* as a market; it may not be *called* one.
 
 Region IDS still carry retired names - `region-low-fall`, `region-quiet-marches` - and that
 is deliberate: an id is written into saved worlds and is not a display name.

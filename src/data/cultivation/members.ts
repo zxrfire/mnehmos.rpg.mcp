@@ -662,7 +662,7 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         rank: 'Inner Monk',
         realmOrdinal: 12,
         role: 'peer',
-        wants: 'a posting to the Iron Ridge Mission, eleven days away',
+        wants: 'a posting to the Iron Ridge Temple, eleven days away',
         fears: 'that he wants it because it is eleven days from his family\'s creditors',
         detail: 'Cuts his own hair rather than let anybody do it, badly, in front of a polished pan, on the first of the month.',
         outlier: false,

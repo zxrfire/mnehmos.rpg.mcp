@@ -156,7 +156,14 @@ export const SCAR_NAMES: readonly GeneratedPlaceName[] = [
     { name: 'Three Year Ground', source: 'what_happened', records: 'The interval before anybody would cross it, agreed by nobody and observed by everybody.' },
     { name: 'Near Pass', source: 'a_name_that_is_wrong', records: 'It is the short way and it costs a day to go round, which is the joke and the warning at once.' },
     { name: 'Thin Ridge', source: 'what_people_do_there_now', records: 'People still work the edges for what the ground gives up, and are known by it.' },
-    { name: 'Knife Edge', source: 'what_is_visibly_there', records: 'The edge is sharp, and the sharpness of the edge is the thing everybody remarks on.' },
+    // NOT `Knife Edge`, which is what this was and which no sentence could
+    // survive: `knife` is a weapon in the attack table, so every phrasing about
+    // this place - travelling to it, asking where it is, asking what is known of
+    // it - planned an attack on somebody called "Edge". Rule 4 below is about
+    // English domestic vocabulary; this is the same rule one step over. A NAME
+    // MUST NOT BE A WORD THE PARSER READS AS A CATEGORY, and a scar named for a
+    // blade is named for the combat verb.
+    { name: 'Cut Edge', source: 'what_is_visibly_there', records: 'The edge is sharp where the ground gave way, and the sharpness of it is the thing everybody remarks on.' },
     { name: 'The Old Crossing', source: 'a_name_that_is_wrong', records: 'Nobody has crossed it in two centuries and the road signs have never been changed.' },
     { name: 'Hemu\'s Post', source: 'who_held_it', records: 'A waystation keeper who did not leave, whose name outlasted the waystation and the road.' },
     { name: 'White Creek', source: 'what_is_visibly_there', records: 'The stream that comes off it runs pale and has done since, and the colour is the name.' }

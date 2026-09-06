@@ -10,7 +10,7 @@
  * the player's odds off it. Somebody was being priced on a fact the game would
  * not tell them.
  *
- * Measured, on a fresh run that opens at Wind Market on The Burial Sands. Five
+ * Measured, on a fresh run that opens at Wind Turn on The Burial Sands. Five
  * phrasings, five wrong answers, none of them the one true sentence:
  *
  *   "I ask who holds this ground"  routed to an NPC, and the resolve failed:
@@ -22,7 +22,7 @@
  *                                  PLAYER's affiliation. "Unaffiliated."
  *   "who do I complain to here"    unclear
  *
- * The second is the one worth naming: it printed *"You are in Wind Market, The
+ * The second is the one worth naming: it printed *"You are in Wind Turn, The
  * Burial Sands"* and then said what the ground carries, standing on the one
  * province in the world where the answer to who holds it is nobody.
  *

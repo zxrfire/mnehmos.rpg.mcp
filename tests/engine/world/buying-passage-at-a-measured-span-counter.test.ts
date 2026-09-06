@@ -3,7 +3,7 @@
  * the passenger's rung is not what carries them. Every case below is named for
  * the decision it pins, because most of them are numbers.
  *
- * The worked example throughout is the Four Graves Terminal, which is in
+ * The worked example throughout is the Four Names Terminal, which is in
  * `regions.ts` already: one of the nine stations, an hour from a station
  * seventeen days' walk away, open four days in nine. Nothing here invented a
  * route shape - it was read off a branch entry that has been in the catalog the
@@ -27,10 +27,10 @@ import {
 } from '../../../src/engine/world/how-far-somebody-can-fold-space-and-what-it-costs.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 
-/** The Four Graves span: seventeen walked days, four days open in nine. */
+/** The Four Names span: seventeen walked days, four days open in nine. */
 const FOUR_GRAVES: SpanRoute = {
     id: 'span-fourhands',
-    fromPlace: 'Four Graves',
+    fromPlace: 'Four Names',
     toPlace: 'the far station',
     walkedDaysItReplaces: 17,
     schedule: { periodDays: 9, openDays: 4, phaseDay: 0 },
@@ -152,7 +152,7 @@ describe('the board is the map, and the absence on it is the information', () =>
     const routes: SpanRoute[] = [
         FOUR_GRAVES,
         {
-            id: 'span-near', fromPlace: 'Four Graves', toPlace: 'the near yard',
+            id: 'span-near', fromPlace: 'Four Names', toPlace: 'the near yard',
             walkedDaysItReplaces: 6, schedule: { periodDays: 9, openDays: 4, phaseDay: 0 },
             inheritedTerminal: false
         },
@@ -164,21 +164,21 @@ describe('the board is the map, and the absence on it is the information', () =>
     ];
 
     it('lists only what leaves from where you are standing', () => {
-        const board = boardAt('Four Graves', routes, RATE, 0);
+        const board = boardAt('Four Names', routes, RATE, 0);
         expect(board.running).toBe(2);
         expect(board.lines.map(l => l.routeId)).not.toContain('span-elsewhere');
     });
 
     it('reads nearest first, and reads the same way twice', () => {
-        const board = boardAt('Four Graves', routes, RATE, 0);
+        const board = boardAt('Four Names', routes, RATE, 0);
         expect(board.lines.map(l => l.walkedDaysItReplaces)).toEqual([6, 17]);
-        expect(boardAt('Four Graves', routes, RATE, 0)).toEqual(board);
+        expect(boardAt('Four Names', routes, RATE, 0)).toEqual(board);
     });
 
     it('teaches a place, a distance and a price, which is a map', () => {
         // The discoverability claim, asserted rather than described: somebody
         // who has never left their province reads three facts per line.
-        for (const line of boardAt('Four Graves', routes, RATE, 0).lines) {
+        for (const line of boardAt('Four Names', routes, RATE, 0).lines) {
             expect(line.toPlace.length).toBeGreaterThan(0);
             expect(line.walkedDaysItReplaces).toBeGreaterThan(0);
             expect(line.fareCash).toBeGreaterThan(0);
@@ -186,7 +186,7 @@ describe('the board is the map, and the absence on it is the information', () =>
     });
 
     it('says what is not on it, and never leaves the gap unexplained', () => {
-        expect(boardAt('Four Graves', routes, RATE, 0).limits).toContain('survey');
+        expect(boardAt('Four Names', routes, RATE, 0).limits).toContain('survey');
         // A counter with nothing running is a real state and gets its own
         // sentence, because a blank board reads as a missing feature otherwise.
         const empty = boardAt('Nowhere', routes, RATE, 0);

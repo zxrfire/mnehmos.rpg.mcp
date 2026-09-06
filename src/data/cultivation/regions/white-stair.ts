@@ -185,7 +185,7 @@ export const THE_WHITE_STAIR: Region = {
         },
         {
             parentSectId: 'house-shrinking-earth',
-            localName: 'The Four Graves Terminal',
+            localName: 'The Four Names Terminal',
             doesHere:
                 'One of the nine stations, at the head of the pass, an hour from a station seventeen days\' walk away. It is the only reason anything reaches the North in the five months the road is shut, it opens four days in nine, and the Frostmirror pays for it in stones without ever having said what for.'
         }
@@ -195,7 +195,7 @@ export const THE_WHITE_STAIR: Region = {
         { name: PLACE.THE_LIVING_ICE, kind: 'site', ambient: 'spirit_tide', note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Living Ice and nobody says how much longer it will be living.' },
         { name: PLACE.STONE_SHADOW, kind: 'site', ambient: 'thin', note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
         { name: PLACE.DEEP_SNOW, kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
-        { name: PLACE.FOUR_GRAVES, kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, named for the four men who kept it the winter it was cut. Three of them are in the wall and there were five.' },
+        { name: PLACE.FOUR_GRAVES, kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, carrying the four names the record gives for the men who kept it the winter it was cut. Three of them are in the wall and there were five.' },
         {
             name: PLACE.ORCHID_TERRACE,
             kind: 'sect_town',

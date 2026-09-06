@@ -38,7 +38,7 @@
  * key=value emitters to 78 and `entities.ts` to zero. The bar, from the
  * destinations read:
  *
- *     Four Graves, in The White Stair: thin qi, half rate. 9 drawing on ground
+ *     Four Names, in The White Stair: thin qi, half rate. 9 drawing on ground
  *     that comfortably carries 7, which is over it.
  *
  * Every figure kept, every enum resolved, said as a sentence. Ordinals go

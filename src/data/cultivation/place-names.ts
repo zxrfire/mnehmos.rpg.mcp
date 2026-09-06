@@ -63,9 +63,33 @@ export const PLACE = {
     // ─── The White Stair ─────────────────────────────────────────────────
     COLD_PEAK: 'Cold Peak',
     THE_LIVING_ICE: 'The Living Ice',
-    STONE_SHADOW: 'Stone Shadow',
+    // `shadow` is a FOLLOWING VERB - "I shadow him" - so `Stone Shadow` sent
+    // every sentence about this place to the wrong subsystem: "I travel to Stone
+    // Shadow" planned a `move/follow` rather than a `move/travel`, and "tell me
+    // about Stone Shadow" reached `interact/follow` with nothing to follow. Same
+    // class as FOUR_GRAVES and found by the same sweep. The name says what it
+    // said before with the province's own vocabulary, which is elevations: this
+    // is the band under the floating stone, and the North would call it that.
+    STONE_SHADOW: 'Under Stone',
     DEEP_SNOW: 'Deep Snow Village',
-    FOUR_GRAVES: 'Four Graves',
+    // A PLACE IS NOT NAMED AFTER A GAME CATEGORY, and this one was for a while.
+    // The station is named for the four men who kept it the winter the pass was
+    // cut - three of them are in the wall and there were five - so the name is a
+    // count read off the record, and the record is wrong. `Four Graves` carried
+    // that and also carried `graves`, which is an inheritance-site noun in
+    // `src/web/site-phrasings.ts`: measured on a played turn, "I travel to Four
+    // Graves" came back as the site LISTING and nobody moved. `outsideAnyName`
+    // fixed the parser in general and this fixes the name, because a category
+    // word inside a place name is a coin-flip for the model that classifies the
+    // sentence as well as for the table that parses it.
+    //
+    // `Four Names` is the same story with the burial word taken out: what the
+    // station has is a written list of four, and there were five men. The number
+    // is the memorial and the wrongness is the point. The KEY is unchanged - it
+    // is a stable identifier and the catalog is full of keys that carry a
+    // retired name (GREEN_FALL, IRON_GATE, GRAVE_MARKET); a rename changes the
+    // value alone.
+    FOUR_GRAVES: 'Four Names',
     // 空谷幽蘭 - the orchid in the empty valley, which is the classical image
     // for worth that does not advertise itself and does not need to be seen to
     // be worth something. It is the house rather than a description of the
@@ -100,7 +124,14 @@ export const PLACE = {
     THE_SALT_FIELDS: 'Salt Fields',
 
     // ─── The Burial Sands (no province holds it) ─────────────────────────
-    WIND_MARKET: 'Wind Market',
+    // A PLACE IS NOT NAMED AFTER A GAME CATEGORY, again. `market` is the word
+    // the market board answers to, so "I go to Wind Market" and "I walk to Wind
+    // Market" opened a price board instead of moving anybody, and "where is Wind
+    // Market" was read as an offer to trade. The town is a market and is allowed
+    // to be described as one; it may not be CALLED one. It assembles for about
+    // six weeks after the wind turns and then is not there, so the name is the
+    // season that convenes it - which is the register `Grain Rain` is in.
+    WIND_MARKET: 'Wind Turn',
     SAND_WELL: 'Sand Well',
     LONG_VEIN: 'Long Vein',
     THE_SHORT_ROAD: 'The Short Road',

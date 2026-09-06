@@ -1394,7 +1394,7 @@ export const LOCAL_RESIDUE: readonly LocalResidue[] = [
             'The name is possessive, records a keeper, and has outlasted both the waystation and the road it served. Whether Hemu declined to leave or simply died before the road did is not recoverable and the practice does not depend on which.'
     },
     {
-        siteName: 'Knife Edge',
+        siteName: 'Cut Edge',
         kind: 'scar',
         whatTheySay:
             'Look at the edge. Ground does not do that. Something cut it and whatever cut it was not weather and it was not water.',

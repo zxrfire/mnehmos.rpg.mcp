@@ -23,14 +23,30 @@
  * to rather than walks into"*, and `old ground` was admitted only after passing
  * the test that *"it names no place in the catalog."*
  *
- * `graves` never passed that test. `place-names.ts` carries FOUR_GRAVES and the
- * region catalog carries The Four Graves Terminal - and the catalog has plenty
- * more of them: Glacial Tomb Slash, Sealed Tomb Entrance, The Tended Tomb.
+ * `graves` never passed that test. `place-names.ts` carried FOUR_GRAVES as
+ * `Four Graves` and the region catalog carried The Four Graves Terminal - and
+ * the catalog has plenty more of the same shape: Glacial Tomb Slash, Sealed
+ * Tomb Entrance, The Tended Tomb.
  *
  * So the fix is not a word. A category noun doing duty inside a PROPER NAME is
  * not that word being used as a category, and the anchor is asked of the
  * sentence with its names taken out. These hold that split rather than the
  * prose, so the parser can be rewritten and the split cannot be lost.
+ *
+ * ── AND THE TOWN WAS RENAMED AFTERWARDS, WHICH THIS FILE DOES NOT FOLLOW ──
+ *
+ * `PLACE.FOUR_GRAVES` is `Four Names` now. Belt and braces: the parser stopped
+ * mis-reading the name, and then the name stopped carrying a game category at
+ * all, because a category word in a place name is a coin-flip for the model
+ * that classifies a sentence as well as for the table that parses it.
+ *
+ * `Four Graves` STAYS in the cases below, deliberately and as a retired name.
+ * The rule under test is about the SHAPE of a sentence - two capitalised words
+ * with a category noun among them - and swapping in the live name would leave
+ * three cases that contain no category noun and therefore test nothing. The
+ * catalog no longer supplies a name that fails this way, which is the point of
+ * the rename; the regression still needs one, so it is kept here. The second
+ * block below is the half that reads the live catalog and it needs no literal.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -39,6 +55,9 @@ import { parseIntent } from '../../src/web/actions';
 import { PLACE_NAMES } from '../../src/data/cultivation/place-names';
 
 describe('a town whose name carries a site noun', () => {
+    // The retired name, kept on purpose. See the header: the live catalog has
+    // no name that carries a category noun any more, and the rule still has to
+    // hold for the next one somebody writes.
     it.each([
         'I travel to Four Graves',
         'I go to Four Graves',

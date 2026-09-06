@@ -250,7 +250,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
             howTheyPutIt:
                 'A grant is a band of altitude and a band of altitude has to be followed uphill. We were not able to say why we could not take one without saying what was in the valley, so we said no and did not explain, and that is still where the matter is.',
             andSoTheyDo:
-                'Sells its crop through the Cold Crucible and the Four Graves station rather than to the Court that holds the Crucible\'s grant, which costs it money every season and has never been raised by anybody as a preference.',
+                'Sells its crop through the Cold Crucible and the Four Names station rather than to the Court that holds the Crucible\'s grant, which costs it money every season and has never been raised by anybody as a preference.',
             grievance: null
         }
     },

@@ -808,10 +808,10 @@ const ABOUT_PLACES: readonly Rumour[] = [
     },
     {
         id: 'rumour-fourhands-counts-you-out',
-        saying: 'They count you out at Four Graves and they count you back. If the numbers do not match they do not send anybody after you. They write it down.',
+        saying: 'They count you out at Four Names and they count you back. If the numbers do not match they do not send anybody after you. They write it down.',
         saidBy: 'a waystation keeper, stating the policy',
         aboutId: 'region-white-stair',
-        aboutName: 'Four Graves',
+        aboutName: 'Four Names',
         accuracy: 'true',
         underneath: 'Exactly the policy, stated exactly, and the keeper is not being callous. A waystation on that road has no capacity to search and a record is the only thing it can honestly offer.',
         consequence: 'The most accurate mortality figures for the White Stair passes exist in a waystation ledger nobody has ever asked to see.',

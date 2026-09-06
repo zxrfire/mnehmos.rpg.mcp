@@ -863,7 +863,7 @@ export function placeName(rng: CultivationRNG): string {
     const head = rng.pick(PLACE_HEAD);
     const tail = rng.pick(PLACE_TAIL);
     // Nine Peaks, not Nine Peak. The authored map has the model - Nine Peaks,
-    // Three Walls, Four Graves, Six Li - and a counted feature is plural in
+    // Three Walls, Four Names, Six Li - and a counted feature is plural in
     // both languages.
     return `${head} ${A_NUMBER.has(head) ? pluralOf(tail) : tail}`;
 }

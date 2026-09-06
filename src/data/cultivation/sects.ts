@@ -1300,7 +1300,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
                 'Nothing it can pay and everything it would have to stop doing. Being left alone is only available while nobody has a reason to insist, and the Court sells into a Hall that has to account for what it buys. Every season it sells is a season somebody could work backwards from to a valley that is on nobody\'s figure.',
             contestedWith: [],
             movedOn:
-                'It has begun selling forward two seasons at a time through the Four Graves station rather than over its own counter, and the Cold Crucible has stopped writing the origin on its intake sheet.'
+                'It has begun selling forward two seasons at a time through the Four Names station rather than over its own counter, and the Cold Crucible has stopped writing the origin on its intake sheet.'
         }
     },
     {

@@ -182,13 +182,21 @@ export const THE_QUIET_MARCHES: Region = {
         },
         {
             parentSectId: 'sect-sweptground-temple',
-            localName: 'The Iron Ridge Mission',
+            // NOT `The Iron Ridge Mission`. `mission` is a DUTY noun - the word
+            // the house's mission board answers to - so every sentence about
+            // this branch reached the duty board: "what does the Iron Ridge
+            // Mission teach" was answered with a list of errands rather than
+            // with the shelf it actually keeps. Same defect as FOUR_GRAVES in
+            // `place-names.ts` and found by the same sweep. It is a temple's
+            // daughter house and `temple` is a house noun, which is what it
+            // should have been reading as all along.
+            localName: 'The Iron Ridge Temple',
             doesHere:
                 'Teaches the Lesser Qi-Gathering Manual and elementless basics free to anyone who turns up, and is the only institution in the region that will tell a carver plainly that their local titles and the standard ladder are the same rungs. Four monks, no face, no grant.'
         }
     ],
     places: [
-        { name: PLACE.IRON_GATE, kind: 'market_town', ambient: 'thin', note: 'Clearwater Ward town: grant queue, assay house, mission, and a permanent dust plume.' },
+        { name: PLACE.IRON_GATE, kind: 'market_town', ambient: 'thin', note: 'Clearwater Ward town: grant queue, assay house, temple, and a permanent dust plume.' },
         { name: PLACE.GRAVE_MARKET, kind: 'village', ambient: 'thin', note: 'Fallen Grain Caravan\' sorting yard, where salvage is priced before it goes to Iron Ridge.' },
         { name: PLACE.SIX_LI, kind: 'hamlet', ambient: 'thin', note: 'A shed, a survey, and the Wardens who repaint the stakes.' },
         { name: PLACE.JADE_FACE, kind: 'site', ambient: 'dense', note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },

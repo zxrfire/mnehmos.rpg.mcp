@@ -242,7 +242,7 @@ describe('local residue of the deep past', () => {
         // being a label.
         const told = new Set(LOCAL_RESIDUE.map(r => r.siteName));
         for (const name of ['Nine Bell Terrace', 'Quan Terrace', 'The Warm Gate', 'Cold Spring',
-            'Cloud Eaves', 'Bitter Soil', 'Knife Edge', 'Hemu\'s Post']) {
+            'Cloud Eaves', 'Bitter Soil', 'Cut Edge', 'Hemu\'s Post']) {
             expect(told.has(name), `${name} has no story attached`).toBe(true);
         }
     });

@@ -60,7 +60,7 @@ describe('asking about a named thing reaches the verb that reads one', () => {
     it.each([
         ['tell me about the Fallen Grain Caravan', 'Fallen Grain Caravan'],
         ['tell me about Shen Wanshi', 'Shen Wanshi'],
-        ['tell me about Four Graves', 'Four Graves'],
+        ['tell me about Four Names', 'Four Names'],
         ['tell me about the Lesser Qi-Gathering Manual', 'Lesser Qi-Gathering Manual'],
         ['tell me more about Shen Wanshi', 'Shen Wanshi'],
         ['what can you tell me about Shen Wanshi', 'Shen Wanshi'],
@@ -350,7 +350,7 @@ describe('played, through the whole service', () => {
         const { game } = await makeGameInWorld({ seed: 'intake', worldSeed: 'world-askscratch' });
         await game.newRun('Wen Shuyi');
         await game.act('I look around');
-        await game.act('I travel to Four Graves');
+        await game.act('I travel to Four Names');
 
         const wall = await game.act('what is posted here');
         const named = /^(.+?) is holding an intake/m.exec(wall.narration)?.[1];

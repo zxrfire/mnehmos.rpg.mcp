@@ -285,7 +285,7 @@ the term in the mechanical channel without it.
 The other half, and the worse one, because the term is already moving the player's odds off
 a fact the game will not say. `whoHoldsTheGround` has two callers in `src/` and both are in
 the NPC simulation; the played `look` never asks it and `ask` does not route to it. Measured
-on a fresh run, which opens at Wind Market on **The Burial Sands** - so a player stands on the
+on a fresh run, which opens at Wind Turn on **The Burial Sands** - so a player stands on the
 one province in the world nobody holds, on turn one, and cannot find out:
 
 ```text

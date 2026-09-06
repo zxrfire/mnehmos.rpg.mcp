@@ -108,8 +108,8 @@ export const investigateVerb = {
             // ── A NAME THEY HOLD IS NOT A PLACE THAT HAS NO SUCH THING ───
             //
             // FOUND BY PLAYING, one town from somebody known since childhood.
-            // "I look at Fang Nuoshan", typed in Four Graves with Fang Nuoshan in
-            // Six Li, came back as *"You go over Four Graves looking for it and
+            // "I look at Fang Nuoshan", typed in Four Names with Fang Nuoshan in
+            // Six Li, came back as *"You go over Four Names looking for it and
             // it is not the kind of place that has one"* - and the inspector
             // line printed underneath it read *"Unresolved subject "Fang
             // Nuoshan": no knowledge record and nothing co-located. Known to

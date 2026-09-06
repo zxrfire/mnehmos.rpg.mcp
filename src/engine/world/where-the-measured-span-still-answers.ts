@@ -51,7 +51,7 @@
  * from a span it folds itself, and the two entries answer it differently for a
  * reason each states:
  *
- *   Four Graves is *"one of the nine stations"* and runs on the station's own
+ *   Four Names is *"one of the nine stations"* and runs on the station's own
  *   cycle. Nine is the count of the terminals the house inherited and cannot
  *   reopen when one stops answering.
  *   Clear River Ford to Iron Ridge is a COURIER route - *"four by Shrinking Earth Pavilion courier
@@ -81,7 +81,7 @@ import { PLACE } from '../../data/cultivation/place-names.js';
 export const THE_SPAN_HOUSE_ID = 'house-shrinking-earth';
 
 /**
- * Four days in nine, off the Four Graves Terminal entry, and the only Span
+ * Four days in nine, off the Four Names Terminal entry, and the only Span
  * timetable this world states.
  *
  * `phaseDay` 0 rather than a per-counter offset: nothing anywhere says the two

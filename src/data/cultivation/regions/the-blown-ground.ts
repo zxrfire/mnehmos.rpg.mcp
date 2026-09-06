@@ -180,7 +180,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         againstTheGrantCycle:
             'A grant is twelve years, everywhere in the world that has one, and it is twelve years because that is how long a surveyed vein can be relied on to still be a surveyed vein. Not one show in living memory has run a full grant cycle. Long Vein is nineteen years and is the exception the whole province argues about: two parties have quietly asked whether it could be granted, both of them asked a court that has no jurisdiction here, and both were told the ground would have to be certified first, which returns the question to the Immovable Mountain Temple and to a datum that walks a li a year.',
         whatAFinderDoes:
-            'Sells the location once, on the spot, in cash or stones, to whoever is at Wind Market that week, and does not lead the buyer to it. The buyer takes the direction and the distance and finds it themselves or does not. There is no warranty, no recourse and no second sale, and a finder who sells the same show twice is not punished, they are simply never bought from again in a province with one market in it.'
+            'Sells the location once, on the spot, in cash or stones, to whoever is at Wind Turn that week, and does not lead the buyer to it. The buyer takes the direction and the distance and finds it themselves or does not. There is no warranty, no recourse and no second sale, and a finder who sells the same show twice is not punished, they are simply never bought from again in a province with one market in it.'
     },
     whyNobodyFixesIt: {
         whatOrderWouldTake:
@@ -202,7 +202,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             factionId: null,
             holds: 'nothing',
             doesHere:
-                'Walk, alone or in twos, looking for a change in the cover, and sell a location once at Wind Market for cash or stones. The only trade native to the ground and the only one that could not be done anywhere else.',
+                'Walk, alone or in twos, looking for a change in the cover, and sell a location once at Wind Turn for cash or stones. The only trade native to the ground and the only one that could not be done anywhere else.',
             whyHere:
                 'Because it is the one trade in the world that requires no house, no register, no teacher and no capital beyond water, and because the thing they sell cannot be taken off them until they have said where it is.'
         },
@@ -220,7 +220,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             factionId: 'sect-crimson-abyss-fortress',
             holds: 'nothing',
             doesHere:
-                'Work Wind Market the way they work the eastern admission days: a table, a cash box, and the first month paid in advance to anybody who will sign. They take more people out of this ground than they take out of any city in the Yellow Plain, and they take them out alive, which is a sentence their rivals find difficult.',
+                'Work Wind Turn the way they work the eastern admission days: a table, a cash box, and the first month paid in advance to anybody who will sign. They take more people out of this ground than they take out of any city in the Yellow Plain, and they take them out alive, which is a sentence their rivals find difficult.',
             whyHere:
                 'It is the largest concentration of refused cultivators in the world and the only one with no gate, no register and no competing recruiter standing next to them.'
         },
@@ -238,7 +238,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             factionId: 'sect-fallen-grain-caravan',
             holds: 'nothing',
             doesHere:
-                'Buys at Wind Market, by weight, on the same manifest rule it uses at Willow Village, and will not send a crew in. The Caravan is the only institution operating here that publishes what it does here, and what it publishes is that it buys and does not dig.',
+                'Buys at Wind Turn, by weight, on the same manifest rule it uses at Willow Village, and will not send a crew in. The Caravan is the only institution operating here that publishes what it does here, and what it publishes is that it buys and does not dig.',
             whyHere:
                 'A yard four days away in Iron Ridge and a market with one buyer at it is the same trade the Caravan already runs, with the sorting done by somebody else and the losses taken by somebody else.'
         },
@@ -256,7 +256,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
             factionId: 'sect-thousand-treasure-pavilion',
             holds: 'nothing',
             doesHere:
-                'Two men at Wind Market in season, buying dug goods and asking nothing about the hole, exactly as the Pavilion buys everywhere. What they will not do is catalogue where a lot came from, because a lot from here has no provenance that would survive being written down.',
+                'Two men at Wind Turn in season, buying dug goods and asking nothing about the hole, exactly as the Pavilion buys everywhere. What they will not do is catalogue where a lot came from, because a lot from here has no provenance that would survive being written down.',
             whyHere:
                 'It is the only source in the world of material out of dense ground that nobody owns, which means it is the only material on the circuit that no house can post a notice against.'
         },
@@ -280,7 +280,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         }
     ],
     howManyNote:
-        'Nobody has counted and nobody could. The two figures that exist are Wind Market\'s own head count in the week it assembles, which has run between about eight hundred and about four thousand depending on the season and on how many shows are open, and the standing bounty postings at nine eastern gates, which count the people who have been noticed rather than the people who are here. Both are quoted as if they were the population and neither is.',
+        'Nobody has counted and nobody could. The two figures that exist are Wind Turn\'s own head count in the week it assembles, which has run between about eight hundred and about four thousand depending on the season and on how many shows are open, and the standing bounty postings at nine eastern gates, which count the people who have been noticed rather than the people who are here. Both are quoted as if they were the population and neither is.',
     howRankIsSpoken:
         'In the words the world already uses for people with no house - loose cultivator, wandering senior, solitary - which are `ROGUE_STANDING` in `rogues.ts` and are the only rank vocabulary in use here, because a rank vocabulary is a thing houses maintain and there are no houses. The words are not honours and nobody confers them: they are what a place starts calling somebody once "they must be somebody\'s" has been checked and found false. This is the one ground in the world where that check comes back false as a matter of course.',
     register: {
@@ -293,7 +293,7 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     customs: {
         socialPrinciple: 'Nothing that outlasts a season. What stands in for it is the finder\'s custom - a location is sold once, on the spot, and not led to - kept because there is one market in eleven days of ground and it is the only sanction anybody has.',
         death: 'Left where they fell, and the cover takes them within the year and gives them back a decade later with their possessions still on them. Nobody is buried and nobody is burned, and the dead belong to whoever is standing over them when the sand puts them out again.',
-        taboo: 'Never point. Indicating where a show is, in company, with your hand, is how a finder is killed, and a visitor who does it at Wind Market has the conversation ended for them by somebody else before they have finished the gesture.',
+        taboo: 'Never point. Indicating where a show is, in company, with your hand, is how a finder is killed, and a visitor who does it at Wind Turn has the conversation ended for them by somebody else before they have finished the gesture.',
         threatModel: 'People, and specifically people who have already been refused everywhere. There is no institution to answer for anyone and nothing to be taken away from anyone, so what a stranger will do is decided entirely by what they think they can get, and everybody plans on that being the whole of it.',
         naming: 'The gate that refused you: Refused-at-Three Walls Ma, Autumn Gate Bo, Iron Ridge-Queue Ren. Where the Drowned Sea names a person for where they came aboard and asks nothing past it, this ground names them for where they were turned away and asks a great deal past it, because who refused you is the only prior anybody has on you.',
         time: 'Counted in shows. "Two shows ago" is anything from a season to nine years and nobody converts it, and the only fixed calendar anybody here observes is the posting cycle at nine city gates, which is imported, resented and universally known.'
