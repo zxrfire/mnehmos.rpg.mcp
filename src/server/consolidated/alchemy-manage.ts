@@ -50,6 +50,12 @@ import {
 } from '../../data/cultivation/pills.js';
 import { RECIPES, getRecipe } from '../../data/cultivation/recipes.js';
 import { getHerb } from '../../data/cultivation/herbs.js';
+import { whatThisCauldronAddsFor } from '../../engine/cultivation/what-you-refine-in.js';
+import type { TechniqueGrade } from '../../schema/cultivation.js';
+import {
+    howYouWouldComeByIt,
+    whatAnIngredientIs
+} from '../../engine/cultivation/what-a-cauldron-will-take.js';
 // The leaf, deliberately, and NOT `cultivation-mortal.js` which re-exports it:
 // that module and `cultivation-manage.js` are in a live cycle, and reaching
 // this function through it flips the evaluation order and takes the server out
@@ -190,10 +196,15 @@ export async function handleListRecipes(
     }).map(recipe => {
         const pill = getPill(recipe.producesPillId);
         const ingredients = recipe.ingredients.map(ing => {
-            const herb = getHerb(ing.itemId);
+            // ONE RESOLVER, BOTH SOURCES. A recipe ingredient is a herb or it
+            // is something taken off a spirit beast, and a cauldron does not
+            // care which - see `what-a-cauldron-will-take.ts`. Reading through
+            // `getHerb` here is what made a beast core a thing you could hunt,
+            // harvest, carry and sell, and could not refine with.
+            const material = whatAnIngredientIs(ing.itemId);
             return {
                 itemId: ing.itemId,
-                name: herb?.name ?? ing.itemId,
+                name: material?.name ?? ing.itemId,
                 required: ing.quantity,
                 held: held.get(ing.itemId) ?? 0,
                 short: Math.max(0, ing.quantity - (held.get(ing.itemId) ?? 0))
@@ -236,7 +247,16 @@ function refineChance(
     ordinal: number,
     requiredOrdinal: number,
     insight: number,
-    supplementBonus: number
+    supplementBonus: number,
+    /**
+     * What they are actually refining IN, or null for the clay pot everybody
+     * has. `recipes.ts` has named cauldron quality as an input to a refinement
+     * since the file was written - *"the floor the engine starts from before
+     * alchemy skill, CAULDRON QUALITY, spirit root and ambient qi are
+     * applied"* - and until now there was no cauldron, so every alchemist in
+     * the world worked out of the same nothing.
+     */
+    cauldron: TechniqueGrade | null = null
 ): { chance: number; modifiers: Array<{ source: string; delta: number }> } {
     const modifiers: Array<{ source: string; delta: number }> = [
         { source: 'recipe_base', delta: baseRate }
@@ -248,6 +268,18 @@ function refineChance(
     );
     modifiers.push({ source: 'realm_margin', delta: margin });
     modifiers.push({ source: 'insight', delta: (insight - 2) * REFINE_INSIGHT_PER_POINT });
+    // THE FURNACE, AND ONLY WHERE THE HAND CAN WORK IT. A great cauldron held
+    // by somebody who cannot work its materials is a great cauldron full of
+    // slag, so `whatThisCauldronAddsFor` returns nothing below the rung rather
+    // than a bonus that could not have been earned. Nothing is subtracted for
+    // the clay pot: it is the baseline every `baseSuccessRate` was written
+    // against, and taxing it would silently reprice the whole table.
+    if (cauldron !== null) {
+        const fromTheFurnace = whatThisCauldronAddsFor(cauldron, ordinal);
+        if (fromTheFurnace !== 0) {
+            modifiers.push({ source: `cauldron:${cauldron}`, delta: fromTheFurnace });
+        }
+    }
     if (supplementBonus !== 0) {
         modifiers.push({ source: 'supplementary_herbs', delta: supplementBonus });
     }
@@ -296,28 +328,44 @@ export async function handleRefine(args: z.infer<typeof RefineSchema>): Promise<
     const missing = recipe.ingredients
         .map(ing => {
             const herb = getHerb(ing.itemId);
+            const material = whatAnIngredientIs(ing.itemId);
             const held = pouchQuantity(repos.db, cultivator.id, ing.itemId);
             return {
                 itemId: ing.itemId,
-                name: herb?.name ?? ing.itemId,
+                name: material?.name ?? ing.itemId,
                 required: ing.quantity,
                 held,
                 short: ing.quantity - held,
                 // Where it grows and how high the ground has to be before it
-                // gives any up. Both are already on the herb row; a refusal
-                // that omits them tells somebody to go and get a thing without
-                // saying where, or whether they can.
+                // gives any up. Both are already on the row; a refusal that
+                // omits them tells somebody to go and get a thing without
+                // saying where, or whether they can. `biome` is a herb's own
+                // field and stays null for a beast material, whose answer to
+                // "where" is a different sentence - see `howYouWouldComeByIt`.
                 biome: herb?.biome ?? null,
-                harvestOrdinal: herb?.harvestOrdinal ?? null
+                harvestOrdinal: material?.harvestOrdinal ?? null,
+                from: material?.from ?? null,
+                route: material === null ? null : howYouWouldComeByIt(material)
             };
         })
         .filter(i => i.held < i.required);
     if (missing.length > 0) {
         // A REFUSAL THAT DOES NOT NAME ITS CAUSE IS A BROKEN FEATURE
         const shortOf = missing.map(i => `${i.short} x ${i.name}`).join(', ');
-        const where = ` ${missing.map(i => `${i.name} grows ${i.biome === null
-            ? 'somewhere nobody has written down'
-            : `on ${String(i.biome).replace(/_/g, ' ')}`}`).join('; ')}.`;
+        // AND WHAT THE HONEST ROUTE ACTUALLY IS. A herb grows somewhere; a
+        // beast material is currently inside something that will object. Those
+        // are different afternoons and a refusal that says "grows" about a
+        // spirit beast's core is telling somebody to go and pick one.
+        //
+        // The herb keeps its own sentence, which is the MORE specific of the
+        // two: it names the actual biome off the row. `howYouWouldComeByIt` is
+        // the general answer and only wins where there is no biome to give -
+        // which is exactly the beast case.
+        const where = ` ${missing.map(i => i.from === 'a_beast' && i.route !== null
+            ? i.route
+            : `${i.name} grows ${i.biome === null
+                ? 'somewhere nobody has written down'
+                : `on ${String(i.biome).replace(/_/g, ' ')}`}`).join('; ')}.`;
         return guidingError(
             'missing_ingredients',
             `${recipe.name} cannot be attempted: the pouch is short of ${shortOf}. `
