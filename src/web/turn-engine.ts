@@ -946,6 +946,15 @@ let ambientDb: Database.Database | null = null;
 const POINTING = /^(?:the |that |this |a |an |some )?(?:nearest |closest |nearby |other |old |young |first )*(?:someone|somebody|anyone|anybody|cultivator|cultivators|person|people|man|woman|men|women|elder|stranger|passerby|local|villager|guard|steward|merchant|trader|monk|beggar|one|fellow|him|her|them|they|everyone|everybody|all of them|the lot of them|every person|the rest of them)(?: here| nearby| about| around| present| in the room| in front of me| in the square)?$/i;
 
 /**
+ * The three things a player can do about a summons that is standing.
+ *
+ * Asking is a read. Refusing is a decision. Ignoring is the ABSENCE of one,
+ * and it is not a synonym for either: what it costs is decided by the calendar
+ * rather than by the player, which is exactly why anybody does it.
+ */
+type WhatTheyAnsweredWith = 'asking' | 'refusing' | 'ignoring';
+
+/**
  * A word that refers BACK to somebody, rather than describing anybody.
  */
 const A_PRONOUN_FOR_SOMEBODY_ALREADY_NAMED =
@@ -4481,12 +4490,15 @@ ${noticed}`;
             case 'duty':
                 return this.duty(run, cultivator, ambient, target);
 
-            // Answering the house, or not.
+            // Answering the house, or not, or not yet.
             case 'summons':
-                return this.refuseWhatTheHouseAsked(run, cultivator, true);
+                return this.refuseWhatTheHouseAsked(run, cultivator, 'asking');
 
             case 'refuse':
-                return this.refuseWhatTheHouseAsked(run, cultivator, false);
+                return this.refuseWhatTheHouseAsked(run, cultivator, 'refusing');
+
+            case 'ignore':
+                return this.refuseWhatTheHouseAsked(run, cultivator, 'ignoring');
 
             // Putting a hand on something the house owns. `siphon` two cases
             // up is the same crime against the counted tier and stays exactly
@@ -9617,11 +9629,34 @@ ${fit.line}`;
 
     /**
      * Being asked by your own house, and saying no.
+     *
+     * ── AND IGNORING IT IS NOT SAYING NO ─────────────────────────────────
+     *
+     * Measured on the trope corpus against a live narrator, `I ignore it` -
+     * typed straight after the house had sent for somebody - came back a shrug.
+     * The commonest answer anybody gives a summons in this genre had no verb.
+     *
+     * It is not the refusal verb with a different word in front of it, and
+     * folding it in would have been the wrong mechanic said confidently.
+     * Refusing is a DECISION: you answer, you spend the standing, and the house
+     * writes down that you declined. Ignoring is the absence of one, and what
+     * it costs depends entirely on the calendar:
+     *
+     *   IN TIME     nothing yet. The ask stays standing until its due day,
+     *               which is what a due day is for, and the honest answer is
+     *               the price of the decision you have not made. No flag
+     *               cleared, no standing spent, nothing written.
+     *   OVERDUE     the lapse lands, and `refuseDuty` already tells it apart
+     *               from a refusal in the ledger - *one of them is a decision
+     *               and the other is what happens to somebody who made none.*
+     *
+     * So ignoring is a real act with a real cost and the cost arrives late,
+     * which is the whole of why anybody would do it.
      */
     private async refuseWhatTheHouseAsked(
         run: Run,
         cultivator: Cultivator,
-        pricingOnly: boolean
+        said: WhatTheyAnsweredWith
     ): Promise<Execution> {
         const today = Math.floor(run.elapsedDays);
         const pending = readPendingSummons(this.repos, cultivator.id);
@@ -9661,10 +9696,18 @@ ${fit.line}`;
         const overdue = summonsIsOverdue(pending, today);
         const whoAsked = duty.spokenBy ? duty.spokenBy.name : duty.factionName ?? 'the house';
 
+        // Saying nothing is only an answer once the day has gone. Until then
+        // the ask is still standing, and the honest reply is the price of the
+        // decision that has not been made.
+        const commits = said === 'refusing' || (said === 'ignoring' && overdue);
+
         // ── WHAT IT WOULD COST, WITHOUT SPENDING IT ──────────────────────
-        if (pricingOnly) {
+        if (!commits) {
             const lines = [
-                `${whoAsked} asked, and it is still standing: ${pending.what}`,
+                said === 'ignoring'
+                    ? `You say nothing, and nothing is what the house has heard. It is still `
+                      + `standing: ${pending.what}`
+                    : `${whoAsked} asked, and it is still standing: ${pending.what}`,
                 `${duty.days} days, ${duty.contribution} contribution and ${duty.stones} spirit `
                 + `stone${duty.stones === 1 ? '' : 's'} on completion`
                 + (duty.cohort > 0 ? `, with ${duty.cohort} of the house alongside` : '')
@@ -9688,9 +9731,16 @@ ${fit.line}`;
                 );
             }
 
-            const facts = factsForToolResult(`Refusing costs ${price.spends} standing.`, lines);
+            const facts = factsForToolResult(
+                said === 'ignoring'
+                    ? `Nothing said, and it does not go away. Refusing would cost `
+                      + `${price.spends} standing.`
+                    : `Refusing costs ${price.spends} standing.`,
+                lines
+            );
             facts.structure.push(
-                `leadership.affordable: act=refuse severity=${duty.refusal.severity} `
+                `${said === 'ignoring' ? 'Ignored in time, so nothing landed. ' : ''}`
+                + `leadership.affordable: act=refuse severity=${duty.refusal.severity} `
                 + `raw=${price.cost.standingCost} shielded=${price.spends} `
                 + `from=${Math.round(price.credit.standing)} to=${Math.round(price.wouldLandAt)} `
                 + `level=${price.wouldTrigger} dismissed=${price.wouldBeDismissed}. `
@@ -9740,7 +9790,8 @@ ${fit.line}`;
 
         const lines = [
             overdue
-                ? `The day it had to be answered by has gone. ${walked.line}`
+                ? `${said === 'ignoring' ? 'You went on saying nothing, and t' : 'T'}he day it `
+                  + `had to be answered by has gone. ${walked.line}`
                 : `You tell ${whoAsked} no. ${walked.line}`,
             `${price.spends} standing spent with ${price.position.sectName}; you stand at `
             + `${Math.round(outcome.standingAfter)} with them now.`

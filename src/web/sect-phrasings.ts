@@ -48,6 +48,12 @@ export type SectIntent =
      */
     | 'refuse'
     /**
+     * Saying nothing to it, which is not the same act and does not cost the
+     * same thing. Refusing spends standing today; ignoring spends nothing until
+     * the due day goes, and then lands as a lapse rather than a refusal.
+     */
+    | 'ignore'
+    /**
      * Putting a hand on a thing the house owns.
      */
     | 'take'
@@ -122,7 +128,27 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // refuses" is a threat with a condition in it, and it reached a summons
     // because the word was there. A third-person subject in front of the verb
     // is somebody else's refusal, and a summons is only ever the player's own.
-    ['refuse', /(?<!cannot )(?<!can not )(?<!can't )(?<!could not )(?<!couldn't )(?<!unable to )(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|ignore the summons|ignores the summons|do not answer|don'?t answer|no answer)\b/],
+    ['refuse', /(?<!cannot )(?<!can not )(?<!can't )(?<!could not )(?<!couldn't )(?<!unable to )(?<!he )(?<!she )(?<!they )(?<!it )(?<!anyone )(?<!anybody )(?<!someone )(?<!somebody )\b(?:refuse|refuses|refusing|decline|declines|declining|turns?\s+(?:\w+\s+){0,2}down|turning\s+(?:\w+\s+){0,2}down|say no|says no|saying no|will not go|wont go|won't go|not going|do not answer|don'?t answer|no answer)\b/],
+    // ── AND SAYING NOTHING, WHICH IS NOT SAYING NO ───────────────────────
+    //
+    // `I ignore it`, typed straight after the house had sent for somebody, came
+    // back a shrug on the trope corpus - the commonest answer anybody gives a
+    // summons in this genre, with no verb. It is deliberately its own intent
+    // rather than a phrasing of `refuse`: refusing spends standing now and
+    // ignoring costs nothing until the due day goes, and folding them together
+    // would charge somebody for a decision they have not made.
+    //
+    // A THING AND NEVER A PERSON. `it`, `that`, `this` and the summons by name;
+    // never `him`, `her` or `them`. Ignoring somebody standing in front of you
+    // is a different act with a different subject, and routing it here would
+    // answer a snub with a house's paperwork - measured, `I ignore him` reached
+    // this row before the pronouns were cut out of it.
+    //
+    // Bare `it` is safe for the reason the summons layer is built the way it
+    // is: `pending-summons.ts` allows exactly ONE standing ask at a time, so
+    // the pronoun has one referent. Where nothing is standing the verb says so
+    // and writes nothing, which is a better answer than a shrug.
+    ['ignore', /\b(?:ignore|ignores|ignoring)\s+(?:it|that|this|the summons|the call|the letter|the message|the order|what (?:they|the house|the sect) (?:want|wants|asked|asks))\b|\bi (?:do|will do|am doing) nothing about (?:it|that|this)\b|\b(?:let|leave) it (?:lie|be|sit)\b/],
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
