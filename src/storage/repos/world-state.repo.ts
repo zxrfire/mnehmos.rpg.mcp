@@ -450,7 +450,12 @@ export class WorldStateRepository {
             'SELECT * FROM world_object_provenance WHERE world_id = ? ORDER BY object_id ASC, seq ASC'
         );
         this.selectAbsencesStmt = db.prepare(
-            'SELECT * FROM world_absences WHERE world_id = ? ORDER BY left_on_day ASC, absentee_id ASC'
+            // ROWID, like every other array-backed collection here. `saveWorld` clears
+            // and re-inserts in the array's own order, so rowid reproduces the array
+            // and any other ordering silently permutes it. Absences were the one
+            // exception, sorting by day and id - which read back a world whose
+            // absence list was a different sequence from the one that was saved.
+            'SELECT * FROM world_absences WHERE world_id = ? ORDER BY rowid ASC'
         );
 
         // The no-resurrection guard reads only ids and needs no row bodies.

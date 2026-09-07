@@ -326,6 +326,33 @@ export function libraryObjectId(factionId: string, techniqueId: string): string 
     return `lib-${factionId}-${techniqueId}`;
 }
 
+/**
+ * An id for a copy this house is writing out NOW, which must not be the id of
+ * the copy that walked away.
+ *
+ * MEASURED: 23 objects in one seeded world advanced 500 years shared an id with
+ * another object, and every one was a library manual. The library index is keyed
+ * on `possessorId|techniqueId` and the id is keyed on the FACTION - so a manual
+ * taken as a war spoil leaves the house's index while keeping the house's id in
+ * its name, the house correctly reads that it has no copy, and writes out a
+ * fresh one that collides with the one now sitting in the winner's hold.
+ *
+ * Two rows, one id. In memory both existed and whichever a reader found first
+ * won; on save, `INSERT OR REPLACE` collapsed them and one silently ceased to
+ * exist. The world reloaded 23 objects lighter than it was saved.
+ *
+ * The day is the discriminator because it is the fact that distinguishes them:
+ * these are two different copies, written at different times, and the second one
+ * exists precisely because the first is somewhere else.
+ */
+export function replacementCopyId(
+    factionId: string,
+    techniqueId: string,
+    onDay: number
+): string {
+    return `${libraryObjectId(factionId, techniqueId)}-rewritten-${Math.floor(onDay)}`;
+}
+
 /** How many copies a holding carries. Absent or malformed counts as one. */
 export function copyCount(object: ObjectRecord): number {
     const n = Number(object.data?.copies ?? 1);
@@ -1000,8 +1027,14 @@ export function applyManualCopying(
                 if (holding === null || at === undefined) {
                     const t = getTechnique(techniqueId) as { name: string; cap?: number | null };
                     const cap = Number(t.cap);
+                    // A copy this house does not have. If its id is already
+                    // taken, the earlier copy is somewhere else - looted, or
+                    // given away - and this is a REPLACEMENT rather than the
+                    // same book appearing twice. See `replacementCopyId`.
+                    const baseId = libraryObjectId(faction.id, techniqueId);
+                    const taken = state.objects.some(o => o.id === baseId);
                     state.objects.push(makeObject({
-                        id: libraryObjectId(faction.id, techniqueId),
+                        id: taken ? replacementCopyId(faction.id, techniqueId, day) : baseId,
                         name: t.name,
                         kind: 'manual',
                         significance: significanceOfManual(techniqueId, cap),
