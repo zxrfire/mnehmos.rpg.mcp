@@ -470,6 +470,18 @@ export class CultivatorRepository {
             updatedAt: new Date().toISOString()
         });
 
+        // A RANK WITHOUT A HOUSE IS NOT A STATE ANYBODY IS IN. `sect_id` and
+        // `sect_rank` mirror the roll and `SectRepository` maintains both
+        // together; the one caller that writes them directly is somebody
+        // walking out of the house they were BORN into, who has no roll row to
+        // remove. It nulls the house and says nothing about the title, and the
+        // merge is over a fresh read - so the title outlived the house and the
+        // game would describe an Outer Disciple of nowhere.
+        //
+        // Held here rather than at that caller because it is a fact about the
+        // pair, not about leaving: whoever writes one has written the other.
+        if (merged.sectId === null) merged.sectRank = null;
+
         this.updateStmt.run(this.toParams(merged));
         return merged;
     }
