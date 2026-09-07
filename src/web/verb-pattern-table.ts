@@ -3126,7 +3126,16 @@ function planIntent(input: string): PlannedAction {
         // answer it. Measured on the trope corpus as a blank look.
         || /\b(?:what|anything)\s+(?:is|are)\s+(?:he|she|they|you|the \w+)\s+offer(?:ing)?\b/.test(text)
         || /\bwhat\s+(?:has|have)\s+(?:he|she|they|the \w+)\s+got\b/.test(text)) {
-        return { action: 'market', target: extractSubject(input, /market for|price of|cost of|buy|sell/) };
+        // HOW MUCH IS A THING is the commonest way anybody asks a price, and it
+        // was the one phrasing whose SUBJECT was thrown away: the branch above
+        // fires on it, `extractSubject` had no pattern for it, and the player
+        // asking after one pill was handed all forty-three things on the board.
+        return {
+            action: 'market',
+            target: extractSubject(
+                input, /market for|price of|cost of|how much (?:is|are|does)|buy|sell/
+            )
+        };
     }
 
     // Stocking up comes before eating, because "buy food" is ambiguous and the

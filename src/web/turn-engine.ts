@@ -6123,6 +6123,38 @@ ${noticed}`;
         target: string | undefined
     ): Promise<Execution> {
         const category = MARKET_CATEGORIES.find(c => (target ?? '').toLowerCase().includes(c));
+
+        // ── A NAMED THING IS A PRICE QUESTION ────────────────────────────
+        //
+        // Played: "how much is a healing pill" was answered with all
+        // FORTY-THREE things on the board, beginning with a bowl of millet, and
+        // the pill was not among the lines shown. The subject was thrown away
+        // twice over - `extractSubject` had no pattern for "how much is", and
+        // this method read the target only for a CATEGORY word, which the name
+        // of a thing is not.
+        //
+        // Priced through the same calls the buy path prices with, so the figure
+        // somebody is quoted is the figure they are charged.
+        const named = (target ?? '').trim();
+        const row = category === undefined && named.length >= 3 ? resolvePrice(named) : null;
+        const priced = row ? getPrice(row.id) : undefined;
+        if (priced) {
+            const regionId = standingOf(cultivator).regionId;
+            const cash = localPrice(regionId, priced.cash);
+            const stones = Math.max(1, Math.ceil(cashToStones(cash)));
+            const quoted = factsForToolResult(`${priced.name}, priced.`, [
+                `${priced.name} is ${cash} cash the ${priced.unit} here, which is ${stones} `
+                + `spirit stone${stones === 1 ? '' : 's'}. You are carrying `
+                + `${cultivator.spiritStones}.`,
+                priced.note
+            ]);
+            quoted.structure.push(
+                `${priced.id} at the ${regionId} multiplier: ${cash} cash = ${stones} stone(s). `
+                + 'Quoted, not bought - nothing spent and no time passed.'
+            );
+            return this.freeAction(run, 'market', quoted);
+        }
+
         const result = await handleMarket({
             action: 'market',
             cultivatorId: cultivator.id,
