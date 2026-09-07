@@ -120,18 +120,18 @@ export function theSentenceCalledItAThing(said: string, target: string): string 
  * player anything except the doing of it.
  */
 function whoSawIt(watching: readonly string[]): string {
-    if (watching.length === 0) {
-        return 'Nobody sees it, which is the only mercy in the arrangement.';
-    }
-    if (watching.length === 1) {
-        return `${watching[0]} watches the whole thing and does not look away, which is worse `
-            + 'than looking away.';
-    }
+    // WHO SAW IT, AND NOTHING ABOUT WHAT COMES OF IT. Every line here used to
+    // end in a verdict or a forecast: "which is the only mercy in the
+    // arrangement", "which is worse than looking away", "which means they will
+    // later", "one of them will tell it wrong somewhere else". The engine does
+    // not know that they will say anything later, and has no row that says whose
+    // version travels. It knows who was standing there.
+    if (watching.length === 0) return 'Nobody sees it.';
+    if (watching.length === 1) return `${watching[0]} watches the whole thing.`;
     if (watching.length === 2) {
-        return `${watching[0]} and ${watching[1]} both watch. Neither says anything to the `
-            + 'other, which means they will later.';
+        return `${watching[0]} and ${watching[1]} both watch, and say nothing to each other.`;
     }
-    return `${watching[0]}, ${watching[1]} and ${watching.length - 2} `
-        + `other${watching.length - 2 === 1 ? '' : 's'} watch the whole thing. One of them will `
-        + 'tell it wrong somewhere else, and their version is the one that travels.';
+    const others = watching.length - 2;
+    return `${watching[0]}, ${watching[1]} and ${others} `
+        + `other${others === 1 ? '' : 's'} watch the whole thing.`;
 }

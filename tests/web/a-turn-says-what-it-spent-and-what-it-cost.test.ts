@@ -43,7 +43,13 @@ describe('a span says the span the player asked for', () => {
         expect(narration).not.toMatch(/Waiting of \d+ months was intended/);
         // And the correction to the player's own sentence, which could not
         // print while `asked` was being read off the truncated span.
-        expect(narration).toContain('It was never going to be 1 year');
+        //
+        // Matched on the two spans rather than on the old opening clause ("It
+        // was never going to be 1 year"), which was the engine being ominous
+        // about its own scheduler. What has to survive is that the player is
+        // told the span they asked for AND the span that ran.
+        expect(narration).toMatch(/and not 1 year/);
+        expect(narration).toMatch(/It ran \d+ (?:days?|months?|years?) and not/);
     }, 60_000);
 });
 

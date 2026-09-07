@@ -499,9 +499,11 @@ function timeSkipProse(
     paragraphs.push(`${opening} ${label} of ${humanDays(asked)} was intended.`);
     if (asked > skip.requestedDays) {
         paragraphs.push(
-            `It was never going to be ${humanDays(asked)}. Something was already coming that `
-            + `would end it at ${humanDays(skip.requestedDays)}, and the door was shut on that `
-            + 'understanding whether or not anybody said so.'
+            // THE SPAN WAS CUT, AND SOMETHING CUT IT. The claim below depends on
+            // this saying so; the mystifying about doors shut on understandings
+            // nobody voiced was the engine dressing a scheduling fact.
+            `It ran ${humanDays(skip.requestedDays)} and not ${humanDays(asked)}. `
+            + 'Something was already on its way.'
         );
     }
 
@@ -1776,8 +1778,11 @@ export function factsForHolding(
         );
     }
     lines.push(
-        'That is the whole of it. Most of these you could not say a second sentence about, and the '
-        + 'world does not stop to explain itself to somebody who did not already know.'
+        // THE COUNT AND WHAT THE NAMES ARE WORTH. The rest of this told the
+        // player about their own ignorance in the engine's own voice - the world
+        // not stopping to explain itself to somebody who did not already know -
+        // which is a fine sentence and is nothing anybody's record contains.
+        'That is the whole of it. Most of them are a name and nothing more.'
     );
 
     return {
