@@ -1201,6 +1201,13 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
                     : `The crossing out of ${rankName(npc.cultivation.realmOrdinal)} `
                       + 'did not open, and closed.'
             );
+            // AND WHAT THEY LEFT. `markDead` alone stops a heart; it passes
+            // nothing on. The two deaths that skipped this were the deaths at a
+            // WALL and at the LAST CROSSING - the two highest-ordinal ways to
+            // die in the world, and therefore the deaths most likely to have
+            // heirs and accounts worth inheriting. A grudge that took a
+            // century to earn ended with the person holding it.
+            settleNpcDeath(state, state.npcs[at], day);
             recordCrossing(state, npc, strike.result, day);
             continue;
         }
@@ -2202,6 +2209,9 @@ function applyLastCrossing(
                 day,
                 'Did not survive the last crossing.'
             );
+            // See the wall, above: a death that settles nothing passes nothing
+            // on, and this is the other end of the ladder doing it.
+            settleNpcDeath(state, state.npcs[i], day);
         }
         out.push(state.npcs[i]);
     }
