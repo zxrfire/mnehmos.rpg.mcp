@@ -16,13 +16,19 @@
  * The fix routes a person to the read that already exists rather than giving
  * `assess` one of its own: a second account of what somebody looks like would
  * be a second opinion about it.
+ *
+ * AND THE WORLD IS PINNED. `makeGame` leaves the world to be built by whatever
+ * happened first in the process, so which people are standing in the square
+ * moves with what ran before - a test that reads "the first name in the answer"
+ * is then measuring the file order. `makeGameInWorld` creates it from a named
+ * seed. Tests set up their own state.
  */
 
 import { describe, expect, it } from 'vitest';
-import { makeGame } from './harness';
+import { makeGameInWorld } from './harness';
 
 async function inASquareWithSomebody(seed: string) {
-    const { game } = makeGame({ seed, worldEnabled: true });
+    const { game } = await makeGameInWorld({ seed, worldSeed: seed, worldEnabled: true });
     await game.newRun('Nobody');
     await game.act('I look around');
     const here = await game.act('who is here') as unknown as { narration: string };
@@ -54,7 +60,9 @@ describe('sizing somebody up', () => {
     it('and still reads the ground when the ground is what was named', async () => {
         // The reading that was already there has to survive the one added
         // beside it. "here" is the ground, and so is a place by name.
-        const { game } = makeGame({ seed: 'assess-the-ground', worldEnabled: true });
+        const { game } = await makeGameInWorld({
+            seed: 'assess-the-ground', worldSeed: 'assess-the-ground', worldEnabled: true
+        });
         await game.newRun('Nobody');
         await game.act('I look around');
         const read = await game.act('I assess this place') as unknown as {
@@ -64,7 +72,9 @@ describe('sizing somebody up', () => {
     }, 300_000);
 
     it('and still reads the player when nobody is named', async () => {
-        const { game } = makeGame({ seed: 'assess-myself', worldEnabled: true });
+        const { game } = await makeGameInWorld({
+            seed: 'assess-myself', worldSeed: 'assess-myself', worldEnabled: true
+        });
         await game.newRun('Nobody');
         await game.act('I look around');
         const read = await game.act('I assess myself') as unknown as {

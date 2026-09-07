@@ -600,10 +600,20 @@ function whatTheHouseItselfNeedsDone(
         hasAFind: deps.world.history.facts.some(f => f.kind === 'treasure_found')
     };
 
+    // WHAT THIS HOUSE CAN ACTUALLY REACH, off its own roll. A board is bounded
+    // by the people who could be sent, so a strong disciple in a weak house
+    // reads a weak board - which is a true thing about the house they joined.
+    let reach = 0;
+    for (const npc of deps.world.npcs) {
+        if (npc.factionId !== faction.id || npc.status !== 'alive') continue;
+        if (npc.cultivation.realmOrdinal > reach) reach = npc.cultivation.realmOrdinal;
+    }
+
     const out: DutyCandidate[] = [];
     for (const entry of whatAHouseHasOnItsBoard({
         house: standing,
-        ordinal: cultivator.realmOrdinal
+        ordinal: cultivator.realmOrdinal,
+        reachOfTheHouse: reach
     })) {
         const terms = dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission');
         // The same gate the catalogue goes through. A posting pitched where the

@@ -15,14 +15,17 @@
  * reachable only from a barrel re-export, with no caller anywhere in the game.
  * A module nothing calls is not a feature.
  *
- * WHAT IS WIRED HERE IS THE ASK. The thing is not handed over: a commissioned
- * talisman is a tracked world object rather than a counted pouch row, and
- * bridging those is its own piece of work. What a player gets is the answer -
- * whether those hands can, what it comes to, and what is still short.
+ * WHAT IS WIRED HERE IS THE ASK, and what a player gets is the answer - whether
+ * those hands can, what it comes to, and what is still short.
+ *
+ * AND THE WORLD IS PINNED, because these read whoever is standing in the square.
+ * `makeGame` leaves the world to whatever the process built first, so that
+ * person moves with the file order; `makeGameInWorld` names the seed it is
+ * built from. Tests set up their own state.
  */
 
 import { describe, expect, it } from 'vitest';
-import { makeGame } from './harness';
+import { makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/actions';
 import { requestPutToSomebody } from '../../src/web/what-a-request-asks-and-of-whom';
 import {
@@ -93,7 +96,9 @@ describe('what the words said was wanted', () => {
 
 describe('and the answer is the one the engine already had', () => {
     async function askedOf(seed: string, said: (name: string) => string) {
-        const { game, repos, db } = makeGame({ seed, worldEnabled: true });
+        const { game, repos, db } = await makeGameInWorld({
+            seed, worldSeed: seed, worldEnabled: true
+        });
         const { cultivator } = await game.newRun('Apprentice');
         repos.sects.addMember('sect-azure-cloud-pavilion', cultivator.id, 1);
         db.prepare('UPDATE cultivators SET spirit_stones = 9000 WHERE id = ?')
@@ -164,7 +169,9 @@ describe('and the answer is the one the engine already had', () => {
     it('and it costs the asker nothing to have asked', async () => {
         // Asking is free. What it spends is their patience, which is the
         // ledger's business and not the clock's.
-        const { game, repos, db } = makeGame({ seed: 'craft-free', worldEnabled: true });
+        const { game, repos, db } = await makeGameInWorld({
+            seed: 'craft-free', worldSeed: 'craft-free', worldEnabled: true
+        });
         const { cultivator } = await game.newRun('Apprentice');
         repos.sects.addMember('sect-azure-cloud-pavilion', cultivator.id, 1);
         db.prepare('UPDATE cultivators SET spirit_stones = 9000 WHERE id = ?')

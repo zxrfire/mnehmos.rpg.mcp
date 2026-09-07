@@ -226,14 +226,21 @@ export type HowItLooked =
  * agreed to it, one of them is dead, and the next pair steps forward. It is
  * nobody in the room's son.
  *
- * PAST THE MARK, AND ONE OF THEIRS, CALLS IT OFF EVERY TIME. There is no
- * version of a room watching its own disciple killed on purpose and then
- * running the next bout, and the table should not be able to produce one.
+ * AND NOTHING HERE IS ABSOLUTE, INCLUDING A KILLING ON PURPOSE. This table read
+ * one of their own killed deliberately as -1, on the reasoning that no room
+ * watches that and then calls the next pair up. The design owner: *"depends on
+ * if the elders like the dude that killed, of course. intentional is fine."*
+ *
+ * Which is the same correction this file already took once: the answer is not a
+ * property of the death, it is what the PEOPLE think. So the shift is heavy
+ * enough that an indifferent room always stops, and not so heavy that a room
+ * full of the killer's own backers cannot carry it - because that room exists,
+ * and a table that could not produce it would be deciding on their behalf.
  */
 export const WHAT_A_DEATH_MOVES_A_ROOM: Readonly<
     Record<WhoWentDown, Readonly<Record<HowItLooked, number>>>
 > = {
-    the_hosts_own: { an_accident: -0.35, past_the_mark: -1 },
+    the_hosts_own: { an_accident: -0.35, past_the_mark: -0.8 },
     a_guest: { an_accident: 0.1, past_the_mark: -0.6 }
 };
 
@@ -258,10 +265,27 @@ export function whetherItGoesOn(input: {
     how: HowItLooked;
     roll: readonly OnTheRoll[];
     rankCount: number;
-    /** How each decider leans, before the death. Defaults to their temperament. */
+    /**
+     * What each decider holds about the person who did it, where the world has
+     * a row for it. Null for no row, which reads as their temperament and
+     * nothing more.
+     *
+     * THIS IS THE READING, and the design owner's ruling is the whole of why:
+     * *"depends on if the elders like the dude that killed."* A room is not
+     * deciding about a death in the abstract, it is deciding about somebody
+     * they know, and an elder who thinks well of the winner hears a different
+     * afternoon than one who does not.
+     */
+    heldAboutTheKiller?: (deciderId: string) => number | null;
+    /** How each decider leans, before any of it. Defaults to their temperament. */
     readingOf?: (personId: string) => number;
 }): WhetherItGoesOn {
-    const base = input.readingOf ?? openHandednessOf;
+    const temperament = input.readingOf ?? openHandednessOf;
+    const held = input.heldAboutTheKiller;
+    const base = (id: string) => {
+        const about = held?.(id) ?? null;
+        return about === null || !Number.isFinite(about) ? temperament(id) : about;
+    };
     const shift = WHAT_A_DEATH_MOVES_A_ROOM[input.who][input.how];
     const answer = whatTheBodyWants({
         roll: input.roll,

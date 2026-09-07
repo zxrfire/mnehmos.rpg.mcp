@@ -128,6 +128,34 @@ describe('and it posts only what it actually needs', () => {
         expect(after).toBeGreaterThan(before);
     });
 
+    it('and never above what the house itself can reach', () => {
+        // The design owner: *"sects only offer work they have disciples able to
+        // reach."* A village temple does not put a Core Formation errand on the
+        // wall - nobody there has come back from one and nobody there knows
+        // what it would take. Somebody standing above their own house's reach
+        // is reading a board written for the house.
+        const strongReader = 30;
+        const houseTopsOutAt = 8;
+        const posted = whatAHouseHasOnItsBoard({
+            house: { ...bare, holdsGround: true },
+            ordinal: strongReader,
+            reachOfTheHouse: houseTopsOutAt
+        });
+        expect(posted.length).toBeGreaterThan(0);
+        for (const entry of posted) {
+            expect(entry.threatOrdinal).not.toBeNull();
+            expect(entry.threatOrdinal!, entry.name).toBeLessThanOrEqual(houseTopsOutAt);
+        }
+
+        // And with no ceiling given, the reader's own rung is the pitch - which
+        // is what a caller with no world to ask still knows.
+        const unbounded = whatAHouseHasOnItsBoard({
+            house: { ...bare, holdsGround: true }, ordinal: strongReader
+        });
+        expect(Math.max(...unbounded.map(e => e.threatOrdinal ?? 0)))
+            .toBeGreaterThan(houseTopsOutAt);
+    });
+
     it('and it never posts above the ceiling the reason itself carries', () => {
         // A reason with a ceiling is one nobody above that rung is sent on.
         // Pitching it at a reader who is past it would be the board inventing

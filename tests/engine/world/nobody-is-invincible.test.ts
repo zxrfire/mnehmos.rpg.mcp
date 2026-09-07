@@ -285,10 +285,15 @@ describe('and why they stood up is what decides it', () => {
 });
 
 describe('and then the elders decide', () => {
-    it('never carries on over one of their own killed on purpose', async () => {
-        // The one entry in the table that is absolute. There is no version of a
-        // room watching its own disciple killed deliberately and then calling
-        // the next pair up.
+    it('stops for one of their own killed on purpose, when the room is indifferent', async () => {
+        // NOT ABSOLUTE, and it used to be. The table read this as -1 on the
+        // reasoning that no room watches its own disciple killed deliberately
+        // and then calls the next pair up. The design owner: *"depends on if
+        // the elders like the dude that killed, of course. intentional is
+        // fine."*
+        //
+        // So the claim is about a room that holds nothing either way, which is
+        // most rooms: they stop.
         for (const house of (await aLivedWorld()).factions) {
             const ruling = whetherItGoesOn({
                 who: 'the_hosts_own',
@@ -298,6 +303,48 @@ describe('and then the elders decide', () => {
             });
             expect(ruling.goesOn).toBe(false);
         }
+    });
+
+    it('and carries on anyway for somebody they think well of', async () => {
+        // The other half of the same ruling, and the reason the entry stopped
+        // being -1: that room exists, and a table that could not produce it
+        // would be deciding on their behalf.
+        const world = await aLivedWorld();
+        let asked = 0;
+        let carried = 0;
+        for (const house of world.factions) {
+            const roll = rollFor(world, house.id);
+            if (roll.length === 0) continue;
+            asked++;
+            const ruling = whetherItGoesOn({
+                who: 'the_hosts_own',
+                how: 'past_the_mark',
+                roll,
+                rankCount: house.ranks.length,
+                // Every one of them owes the winner everything.
+                heldAboutTheKiller: () => 1
+            });
+            if (ruling.goesOn) carried++;
+        }
+        expect(asked).toBeGreaterThan(0);
+        expect(carried, 'a room that backs the killer still could not carry it')
+            .toBeGreaterThan(0);
+    });
+
+    it('and the reading is what the room holds about the killer, not the death', async () => {
+        // Same house, same death, same everything - one number changed.
+        const world = await aLivedWorld();
+        const house = world.factions.find(f => rollFor(world, f.id).length > 2);
+        expect(house, 'no house had a room to ask').toBeDefined();
+        const ask = (heldAboutTheKiller: (id: string) => number | null) => whetherItGoesOn({
+            who: 'a_guest',
+            how: 'past_the_mark',
+            roll: rollFor(world, house!.id),
+            rankCount: house!.ranks.length,
+            heldAboutTheKiller
+        });
+        expect(ask(() => 1).goesOn).toBe(true);
+        expect(ask(() => -1).goesOn).toBe(false);
     });
 
     it('and genuinely splits over a guest who died by accident', async () => {

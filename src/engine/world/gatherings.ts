@@ -748,7 +748,17 @@ function runChallenge(
                 who: gone.who.factionId === circle.host.id ? 'the_hosts_own' : 'a_guest',
                 how: looked,
                 roll: own.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
-                rankCount: circle.host.ranks.length
+                rankCount: circle.host.ranks.length,
+                // WHAT EACH OF THEM HOLDS ABOUT THE ONE STILL STANDING. Read
+                // off the rows the world has been writing about these two for
+                // however long they have known each other - a killing on
+                // purpose by somebody the room thinks well of is a different
+                // afternoon from the same act by somebody they do not.
+                heldAboutTheKiller: deciderId => {
+                    const decider = state.npcs.find(n => n.id === deciderId);
+                    if (decider === undefined) return null;
+                    return relationshipWith(decider, gone.by.id)?.standing ?? null;
+                }
             });
             lines.push(ruling.line);
             if (!ruling.goesOn) calledOff = true;

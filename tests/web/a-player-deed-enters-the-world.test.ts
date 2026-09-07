@@ -34,7 +34,7 @@
  * measuring a configuration nobody plays.
  */
 
-import { makeGame, cultivatorRow } from './harness';
+import { makeGameInWorld, cultivatorRow } from './harness';
 import { SITES } from '../../src/data/cultivation/inheritance-trials';
 import { circulating, whatTheySay } from '../../src/engine/world/what-people-are-saying';
 import { buildPlayerDigest, simpleAccess } from '../../src/engine/world/digest';
@@ -50,7 +50,7 @@ interface LedgerRow {
     triggering_event_id: string | null;
 }
 
-function ledger(db: ReturnType<typeof makeGame>['db']): LedgerRow[] {
+function ledger(db: Awaited<ReturnType<typeof makeGameInWorld>>['db']): LedgerRow[] {
     return db.prepare(
         'SELECT kind, cause, severity, holder_id, subject_id, triggering_event_id FROM obligations'
     ).all() as LedgerRow[];
@@ -86,7 +86,9 @@ describe('a gift to a house is a thing the world contains', () => {
      * module is for and what it had no caller in `src/` to do.
      */
     it('writes a fact, priced by what it cost against what they had', async () => {
-        const { db, game } = makeGame({ seed: 'gift-deed', worldEnabled: true });
+        const { db, game } = await makeGameInWorld({
+                seed: 'gift-deed', worldSeed: 'gift-deed', worldEnabled: true
+            });
         const { cultivator } = await game.newRun('Probe');
         db.prepare('UPDATE cultivators SET spirit_stones = ? WHERE id = ?').run(400, cultivator.id);
         await game.act('I join the Azure Dew Sect');
@@ -119,7 +121,9 @@ describe('a gift to a house is a thing the world contains', () => {
     it('prices the same sum by what the giver had', async () => {
         const weights: number[] = [];
         for (const purse of [400, 60_000]) {
-            const { db, game } = makeGame({ seed: 'gift-scale', worldEnabled: true });
+            const { db, game } = await makeGameInWorld({
+                seed: 'gift-scale', worldSeed: 'gift-scale', worldEnabled: true
+            });
             const { cultivator } = await game.newRun('Probe');
             db.prepare('UPDATE cultivators SET spirit_stones = ? WHERE id = ?')
                 .run(purse, cultivator.id);
@@ -149,7 +153,9 @@ describe('emptying ground a house claims is a thing the world contains', () => {
      * rather than two memories of it.
      */
     it('writes a fact and points the grudge at it', async () => {
-        const { db, game } = makeGame({ seed: 'rob-deed', worldEnabled: true });
+        const { db, game } = await makeGameInWorld({
+                seed: 'rob-deed', worldSeed: 'rob-deed', worldEnabled: true
+            });
         const { cultivator } = await game.newRun('Digger');
         db.prepare(
             'UPDATE cultivators SET realm_ordinal = 40, spirit_stones = 50000, hp = 900, '
@@ -189,7 +195,9 @@ describe('emptying ground a house claims is a thing the world contains', () => {
      * the event was not in the table the digest reads.
      */
     it('reaches a member of the house whose ground it was', async () => {
-        const { db, game } = makeGame({ seed: 'rob-reach', worldEnabled: true });
+        const { db, game } = await makeGameInWorld({
+                seed: 'rob-reach', worldSeed: 'rob-reach', worldEnabled: true
+            });
         const { cultivator } = await game.newRun('Digger');
         db.prepare(
             'UPDATE cultivators SET realm_ordinal = 40, spirit_stones = 50000, hp = 900, '
@@ -249,7 +257,9 @@ describe('a bout that went past what was agreed', () => {
         } | null = null;
 
         for (let n = 0; n < 30 && !found; n++) {
-            const { db, game, repos } = makeGame({ seed: `deed-bout-${n}`, worldEnabled: true });
+            const { db, game, repos } = await makeGameInWorld({
+                seed: `deed-bout-${n}`, worldSeed: `deed-bout-${n}`, worldEnabled: true
+            });
             const { cultivator } = await game.newRun('Duellist');
             repos.sects.addMember('sect-azure-cloud-pavilion', cultivator.id, 1);
             await game.act('I look around');
@@ -330,7 +340,9 @@ describe('a bout that went past what was agreed', () => {
         let everInThePool = false;
 
         for (let n = 0; n < 30 && !said; n++) {
-            const { db, game, repos } = makeGame({ seed: `deed-heard-${n}`, worldEnabled: true });
+            const { db, game, repos } = await makeGameInWorld({
+                seed: `deed-heard-${n}`, worldSeed: `deed-heard-${n}`, worldEnabled: true
+            });
             const { cultivator } = await game.newRun('Duellist');
             repos.sects.addMember('sect-azure-cloud-pavilion', cultivator.id, 1);
             await game.act('I look around');

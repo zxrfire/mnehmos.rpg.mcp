@@ -160,15 +160,34 @@ export function whatAHouseHasOnItsBoard(input: {
     house: HouseAsItStands;
     /** The rung of the person reading it. */
     ordinal: number;
+    /**
+     * The highest rung this house has anybody standing on.
+     *
+     * The design owner: *"this needs to depend on sect ofc. sects only offer
+     * work they have disciples able to reach."*
+     *
+     * Which is the difference between a board and a wish. A house posts the
+     * work it has, and the work it has is bounded by the people it could send -
+     * a village temple does not put a Core Formation errand on the wall,
+     * because nobody there has ever come back from one and nobody there knows
+     * what it would take. Somebody standing above their own house's reach is
+     * reading a board written for the house, and that is a fact about the house
+     * they joined rather than a fact about them.
+     *
+     * Omit it for no ceiling, which is what a caller without a world knows.
+     */
+    reachOfTheHouse?: number;
     /** Where each reason would send them, when the world knows. */
     placeFor?: (reason: SendingReason) => string | null;
 }): EncounterEntry[] {
+    const reach = input.reachOfTheHouse;
+    const pitch = reach === undefined ? input.ordinal : Math.min(input.ordinal, reach);
     const out: EncounterEntry[] = [];
     for (const reason of reasonsOpenTo(input.house)) {
         out.push(aPostingAsAnOffer({
             reason,
             house: { id: input.house.id, name: input.house.name },
-            pitchOrdinal: input.ordinal,
+            pitchOrdinal: pitch,
             placeName: input.placeFor?.(reason) ?? null
         }));
     }
