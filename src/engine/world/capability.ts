@@ -65,10 +65,17 @@ export type CapabilityGrant =
      * Void Tribulation: folding space rather than crossing it.
      *
      * SOLO, PHYSICAL, AND CONTESTED. It folds the space around one body and
-     * what that body has on it, up to about the size of a sword. No companion,
-     * no passenger, and nothing larger than a person can carry. A Dao house
-     * portal moves other things, and it is a different mechanism rather than a
-     * better version of this one.
+     * what that body has on it, against a VOLUME budget of about a sword:
+     * `WHAT_A_CARRIED_THING_TAKES` in `what-a-body-can-carry-and-what-a-ring-
+     * holds.ts`, which is that file's measure of a blade. Several smaller
+     * things summing to it are as good as one sword. No companion and no
+     * passenger at any size.
+     *
+     * THE BUDGET IS SET BY WHAT A CULTIVATOR MUST NOT HAVE TO LEAVE BEHIND.
+     * A sword cultivator who folds out of a fight without their sword has been
+     * charged their whole art for an escape, so the limit is drawn where their
+     * blade fits and no wider. A Dao house portal moves what will not fit, and
+     * it is a different mechanism rather than a better version of this one.
      *
      * AND A FOLD IS BLOCKED BY A FOLD. Somebody else folding the same space
      * holds it against you, so at this height getting out is a contest between
