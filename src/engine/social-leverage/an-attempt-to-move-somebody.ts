@@ -864,9 +864,13 @@ export function resolveAttempt(input: AttemptInput): AttemptResult {
                 tie: null,
                 unspoken: null
             },
+            // `They`, not the name. The subject is established by the headline
+            // and by the opener of the account this line sits in, and every
+            // channel naming them again put one person's name five times into
+            // one paragraph about them.
             line: reached
-                ? `${input.subject.name} refused, and did not keep it to themselves.`
-                : `${input.subject.name} refused.`
+                ? 'They refused, and did not keep it to themselves.'
+                : 'They refused.'
         };
     }
 

@@ -61,18 +61,31 @@ import { rungAndOrdinal } from './facts.js';
  * The odds, in the form somebody can act on.
  *
  * A percentage alone is a number a player has to do arithmetic on before it
- * means anything; "one time in eight" is the same fact already divided. Both,
- * because the first is what an operator compares and the second is what a
- * person understands, and this channel promises the first while the prose needs
- * the second.
+ * means anything; "one time in eight" is the same fact already divided.
+ *
+ * ── AND ONE OF THEM, NOT BOTH ────────────────────────────────────────────
+ *
+ * This returned both, on the reasoning that an operator compares the first and
+ * a person understands the second. Both readers are served by this game and
+ * they are served by different CHANNELS: prose says it the way somebody says
+ * it, `structure` carries the figure. Read out loud it was a form field with
+ * its own answer key attached:
+ *
+ *     Something like this comes off about one time in 3 (35 in a hundred).
+ *
+ * {@link theOddsInFull} is the operator's half, for the channel that wants it.
  */
 export function howOftenThisLands(odds: number): string {
     const safe = Math.min(Math.max(odds, 0.0001), 1);
-    const inAHundred = Math.round(safe * 100);
     const oneIn = Math.max(1, Math.round(1 / safe));
     return oneIn <= 2
-        ? `${inAHundred} times in a hundred`
-        : `about one time in ${oneIn} (${inAHundred} in a hundred)`;
+        ? `${Math.round(safe * 100)} times in a hundred`
+        : `about one time in ${oneIn}`;
+}
+
+/** The same odds as a figure, for the inspector. Never narration. */
+export function theOddsInFull(odds: number): string {
+    return `${(Math.min(Math.max(odds, 0), 1) * 100).toFixed(1)}%`;
 }
 
 /**
@@ -326,6 +339,14 @@ export interface AnAskThatWasPut {
  * every term, the ask, the leverage, the days, the stones, the attempt count.
  * The difference is that it can be read.
  */
+/**
+ * THE OPERATOR'S CHANNEL, AND THE ONE PLACE THE FIGURE BELONGS.
+ *
+ * The odds are said in words AND as a number here, which is what the header on
+ * {@link howOftenThisLands} was arguing for and what the prose was wrongly
+ * carrying: a person reads "about one time in eight" and somebody comparing two
+ * runs needs the figure they were both rolled against.
+ */
 export function whatTheAskCameTo(put: AnAskThatWasPut): string {
     const what = resolved(WHAT_WAS_BEING_ASKED_FOR, put.kind);
     const table = resolved(WHAT_WAS_ON_THE_TABLE, put.leverage ?? 'none');
@@ -340,7 +361,8 @@ export function whatTheAskCameTo(put: AnAskThatWasPut): string {
 
     if (put.outcome === undefined) {
         return `${put.subject}, asked ${what} with ${table}: not put, only weighed. `
-            + `It is ${weight}, and it would come off ${howOftenThisLands(put.odds)}. `
+            + `It is ${weight}, and it would come off ${howOftenThisLands(put.odds)} `
+            + `(${theOddsInFull(put.odds)}). `
             + `${theTermsInWords(put.terms, put.odds, put.theNeed)}${ground}${attempt} No day passed `
             + 'and nothing changed hands.';
     }
@@ -368,7 +390,7 @@ export function whatTheAskCameTo(put: AnAskThatWasPut): string {
 
     return `${put.subject}, asked ${what} with ${table}: `
         + `${resolved(HOW_IT_WENT, put.outcome)}. It is ${weight}, and it comes off `
-        + `${howOftenThisLands(put.odds)}.${attempt} `
+        + `${howOftenThisLands(put.odds)} (${theOddsInFull(put.odds)}).${attempt} `
         + `${theTermsInWords(put.terms, put.odds, put.theNeed)}${ground} `
         + `${spent}. ${after}.`;
 }

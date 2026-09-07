@@ -155,13 +155,13 @@ describe('the sum on the table reaches the odds', () => {
         // else, and on the term's own name because the terms are named rather
         // than keyed.
         //
-        // BOTH of the renderer's phrasings, which is what this missed. Long
-        // odds read "about one time in 8 (13 in a hundred)" and ordinary ones
-        // read "42 TIMES in a hundred", and only the first was covered - so the
-        // test passed for exactly as long as both arms happened to be long
-        // shots, and reported "no odds in:" the moment one was not.
+        // THE FIGURE, OUT OF THE CHANNEL THAT CARRIES IT. This used to
+        // scrape both of the prose phrasings - "about one time in 8 (13 in
+        // a hundred)" and "42 times in a hundred" - and the parenthetical
+        // half of the first has since moved out of the prose, which is a
+        // different audience, and into this summary as an exact figure.
         const odds = Number(
-            /comes off (?:about one time in \d+ \()?(\d+) (?:times )?in a hundred/
+            /comes off [^(]*\((\d+(?:\.\d+)?)%\)/
                 .exec(call!.summary)?.[1] ?? NaN
         );
         const purse = /Nothing came from[^.]*the money put down/.test(call!.summary)

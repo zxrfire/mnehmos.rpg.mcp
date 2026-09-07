@@ -78,8 +78,11 @@ describe('who answers for this ground', () => {
         // The route is what makes this a game answer instead of a database one,
         // and each one says something the state above it did not already say.
         expect(read('no_authority').answer).toMatch(/somebody who already knows you/);
+        // The rule, in whatever order the sentence puts it: what you can take
+        // there is a favour and not a right. It used to open with `So`, which
+        // pointed back at a sentence rendered a paragraph away.
         expect(read('no_holder_of_record').answer)
-            .toMatch(/asking a favour rather than invoking a right/);
+            .toMatch(/favour asked rather than a right invoked/);
         // And the one that is ignorance points at the people who would know.
         expect(read('unrecorded').answer).toMatch(/Ask somebody standing here/);
     });

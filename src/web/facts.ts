@@ -30,7 +30,10 @@ import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
 import type { AskWeight, AttemptResult, Wrong } from '../engine/social-leverage/index.js';
 import { whatTheirRefusalIsLike } from '../engine/social-leverage/index.js';
-import { howItHasBeenGoing } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
+import {
+    howItHasBeenGoing,
+    theOddsInFull
+} from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
@@ -2427,14 +2430,14 @@ export function factsForAttempt(
                     // The failure of a taking is being caught. Nobody declined
                     // anything, and saying they did is the engine describing a
                     // conversation that did not happen.
-                    ? `${subject} caught you at it, and it went no further than the two of you.`
+                    ? 'They caught you at it, and it went no further than the two of you.'
                     : 'It was refused, and it stayed between the two of you.'
             );
             break;
         case 'reported':
             lines.push(
                 taking
-                    ? `${subject} caught you at it and did not keep it to themselves. Somebody who `
+                    ? 'They caught you at it and did not keep it to themselves. Somebody who '
                       + 'was not in the room knows what you tried.'
                     : 'It was refused and it did not stay between the two of you. Somebody who was '
                       + 'not in the room now knows what was asked for.'
@@ -2442,7 +2445,7 @@ export function factsForAttempt(
             break;
         case 'turned':
             lines.push(
-                `${subject} is not merely unwilling. They have decided what you are, and they are `
+                'They are not merely unwilling. They have decided what you are, and they are '
                 + 'going to act on it.'
             );
             break;
@@ -2472,7 +2475,9 @@ export function factsForAttempt(
             // to prevent, which is that it selected something.
             + `The approach was labelled "${intent}", which is carried for the `
             + 'narrator and read by no conditional - what the engine priced was '
-            + 'the weight of the thing asked for, never the word.'
+            + 'the weight of the thing asked for, never the word.',
+            `The roll was priced at ${theOddsInFull(result.odds)}. The prose says how often a `
+            + 'thing like this lands, in words; this is the figure it was said from.'
         ]
     );
 }
@@ -2773,7 +2778,7 @@ export function factsForWeighingARequest(
     if (heard) lines.push(heard);
     if (offered !== null) {
         lines.push(
-            `You would be putting ${offered} spirit stones down, and ${cultivator.name} is `
+            `You would be putting ${offered} spirit stones down, and you are `
             + `carrying ${cultivator.spiritStones}.`
         );
     }

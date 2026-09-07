@@ -124,8 +124,10 @@ const WHAT_TO_DO_ABOUT_IT: Readonly<Record<GroundRecourse, string>> = {
     the_member_is_priced:
         'What you have instead is whoever already knows you.',
     unheld_inside_a_province:
-        'So take it to whoever keeps the place running, and expect to be asking a favour '
-        + 'rather than invoking a right.',
+        // No opening `So`: these are rendered as a paragraph of their own, so
+        // the connective pointed back at a sentence that was not next to it.
+        'Whoever keeps the place running is what there is, and anything taken to them is a '
+        + 'favour asked rather than a right invoked.',
     the_record_does_not_say:
         'Ask somebody standing here. The silence is the register\'s and not the ground\'s.',
     none:

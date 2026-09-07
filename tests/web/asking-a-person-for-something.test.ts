@@ -37,6 +37,7 @@ import { factsForRequest } from '../../src/web/facts.js';
 import {
     howItHasBeenGoing,
     howOftenThisLands,
+    theOddsInFull,
     theTermsInWords
 } from '../../src/web/saying-what-an-ask-cost-and-how-likely-it-was.js';
 import type { Cultivator } from '../../src/schema/cultivation.js';
@@ -654,11 +655,18 @@ describe('the courtesy that asks for nothing', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('a request says its own arithmetic', () => {
-    it('divides the odds for the reader as well as printing them', () => {
-        expect(howOftenThisLands(0.13)).toBe('about one time in 8 (13 in a hundred)');
-        expect(howOftenThisLands(0.02)).toBe('about one time in 50 (2 in a hundred)');
-        // Past a half, "one time in one" is nonsense and the percentage is not.
+    it('divides the odds for the reader rather than making them do it', () => {
+        // ONE FORM, NOT TWO. This used to assert both - "about one time in 8
+        // (13 in a hundred)" - on the reasoning that an operator compares the
+        // figure and a person understands the division. Both readers are
+        // served by this game and they are served by different CHANNELS: read
+        // out loud it was a sentence with its own answer key attached, and
+        // `whatTheAskCameTo` carries the figure for whoever wants it.
+        expect(howOftenThisLands(0.13)).toBe('about one time in 8');
+        expect(howOftenThisLands(0.02)).toBe('about one time in 50');
+        // Past a half, "one time in one" is nonsense and the count is not.
         expect(howOftenThisLands(0.9)).toBe('90 times in a hundred');
+        expect(theOddsInFull(0.13)).toBe('13.0%');
     });
 
     /** The count is the half that turns a bad run into a legible one. */
@@ -769,7 +777,7 @@ describe('a request says its own arithmetic', () => {
         const who = (await anybodyNameable(harness))!;
 
         const first = await harness.game.act(`I buy ${who} a drink`) as { narration?: string };
-        expect(first.narration ?? '').toMatch(/comes off .*in a hundred/);
+        expect(first.narration ?? '').toMatch(/comes off (?:about one time in |\d+ times in a hundred)/);
         expect(first.narration ?? '').toContain('first try');
 
         await harness.game.act(`I buy ${who} a drink`);
@@ -791,7 +799,7 @@ describe('a request says its own arithmetic', () => {
             narration?: string;
             toolCalls: { name: string; summary: string }[];
         };
-        expect(weighed.narration ?? '').toMatch(/comes off .*in a hundred/);
+        expect(weighed.narration ?? '').toMatch(/comes off (?:about one time in |\d+ times in a hundred)/);
         expect(weighed.narration ?? '').toContain('No day has gone by');
         expect(harness.game.currentRun().run.elapsedDays, 'the read spent a day')
             .toBe(before);

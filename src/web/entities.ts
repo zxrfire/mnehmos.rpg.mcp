@@ -409,6 +409,13 @@ export function resolveCultivator(
     // handing a narrator "Nascent Soul Mid" produces power-level exposition,
     // which Tier 1 bans outright. The engine does the arithmetic; the prose
     // reports what it feels like to stand next to the answer.
+    // A NAME IS SAID ONCE, AND THEN THEY ARE `they`.
+    //
+    // Every line here named them, so an approach that splices this block into
+    // its own account read "Duan Shutao is here... Duan Shutao answers to
+    // nobody visible... Duan Shutao refused. Duan Shutao caught you at it" -
+    // five times in a paragraph about one person standing in front of you.
+    // The first line establishes who; nothing after it needs to.
     const facts = [
         `${match.name} is here, and reads as ${describeStanding(observerOrdinal, match.realmOrdinal)}.`,
         match.alive
@@ -416,10 +423,10 @@ export function resolveCultivator(
             // is the engine gesturing at what a cultivator's age looks like,
             // which is the narrator's line and not a fact anybody holds.
             ? `They are ${Math.floor(match.age)} years old.`
-            : `${match.name} is dead. Whatever ended them is not written where this cultivator can read it.`,
+            : 'They are dead. Whatever ended them is not written where you could read it.',
         affiliation
             ? `They wear the marks of ${affiliation}${match.sectRank ? `, and are addressed as ${match.sectRank}` : ''}.`
-            : `${match.name} answers to nobody visible.`,
+            : 'They answer to nobody visible.',
         ((where: string | null) => where === null
             ? 'Last known to be somewhere you could not name.'
             : `Last known to be at ${where}.`)(placeOrShape(scope, match.location))
@@ -434,10 +441,10 @@ export function resolveCultivator(
         );
         facts.push(
             met
-                ? `${match.name} is ${theirPhysique.tell}. It is a ${theirPhysique.name}, and `
+                ? `They are ${theirPhysique.tell}. It is a ${theirPhysique.name}, and `
                   + 'there are people who would cross a province for one.'
-                : `Whatever ${match.name}'s body is, it is not something anybody has learned `
-                  + 'at second hand. It would take standing in front of them.'
+                : 'Whatever their body is, it is not something anybody has learned at second '
+                  + 'hand. It would take standing in front of them.'
         );
     }
 

@@ -482,7 +482,20 @@ function sentenceFor(s: Saying): string {
     const other = s.other;
     const house = s.house;
     const where = s.where;
-    const at = where ? ` at ${where}` : '';
+    // ── A HOUSE'S OWN GROUND IS NOT A SECOND THING TO NAME ───────────────
+    //
+    // `seeding.ts` calls a house's seat "<House> grounds", so any saying whose
+    // subject is that house named it twice in one clause:
+    //
+    //   Deeproot Court has put a gate up at Deeproot Court grounds, before
+    //   most people here were born.
+    //
+    // Tested on the whole subject rather than on a word of it, so a person
+    // whose surname is also a village keeps their village.
+    const subject = house ?? who;
+    const somewhereElse = where !== undefined && where !== null
+        && !(subject.length > 0 && where.includes(subject));
+    const at = somewhereElse ? ` at ${where}` : '';
     const when = whenPhrase(s.years);
     const size = sizePhrase(s.size);
 
