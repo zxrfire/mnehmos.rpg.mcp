@@ -26,6 +26,8 @@ import {
     progressRequiredForOrdinal
 } from '../cultivation/realms.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
+import { getTechnique } from '../../data/cultivation/techniques.js';
+import type { TollCandidateInput } from '../cultivation/price-of-advancement.js';
 import {
     roadsTaughtByPractice,
     type RoadWithinReach
@@ -218,6 +220,58 @@ export interface Strike {
 }
 
 /**
+ * WHAT A CROSSING COULD TAKE FROM SOMEBODY THE WORLD HOLDS.
+ *
+ * The price of advancement is charged out of what a person actually has, and
+ * `attemptBreakthrough` says what happens to a caller that hands over nothing:
+ * *"Omitting this does not skip the toll ... it charges with no candidates,
+ * which surfaces as `nothing_left`. A caller that owns bonds, memories and
+ * techniques must supply them here."*
+ *
+ * The world owned all of it and handed over none, so every NPC in every world
+ * crossed every boundary free while the player lost a bond, an art or their
+ * name. The largest permanent cost in the game was a player-only tax.
+ *
+ * Two of the three kinds are on the record itself, which is why they are built
+ * here rather than by the caller. MEMORIES ARE NOT: `memoryIds` holds ids and
+ * the text lives in the memory store, so a caller that can read it passes them
+ * in and a caller that cannot leaves them out. That is the same shape `roads`
+ * and `watch` already use.
+ *
+ * The weights mirror the player's own feeder rather than inventing a scale. A
+ * tie is weighed by how much it mattered either way, which is what
+ * `npc-state.ts` already sorts relationships by; an art is weighed by the rung
+ * it took to hold, which is this side's answer to a player's mastery.
+ */
+export function whatACrossingCouldTakeFrom(npc: NpcRecord): TollCandidateInput[] {
+    const candidates: TollCandidateInput[] = [];
+
+    for (const tie of npc.relationships) {
+        candidates.push({
+            kind: 'bond',
+            // Stable, and unique per pair: the severance deletes exactly this.
+            id: `tie:${npc.id}:${tie.targetId}`,
+            label: `${tie.targetName}, ${tie.kind}`,
+            // A bond held hard in either direction is a bond worth taking.
+            weight: 0.5 + Math.abs(tie.standing)
+        });
+    }
+
+    for (const id of npc.cultivation.techniqueIds) {
+        const art = getTechnique(id);
+        if (art === undefined) continue;
+        candidates.push({
+            kind: 'technique',
+            id,
+            label: art.name,
+            weight: 1 + (art.requiredOrdinal / MAX_ORDINAL) * 2
+        });
+    }
+
+    return candidates;
+}
+
+/**
  * Strike at the wall, and return the record the outcome leaves behind.
  */
 export function strikeAtTheWall(
@@ -233,7 +287,14 @@ export function strikeAtTheWall(
     /**
      * Who is standing over this crossing, when anybody is.
      */
-    watch?: { share: number; by: readonly string[] }
+    watch?: { share: number; by: readonly string[] },
+    /**
+     * Anything else the crossing could take that is not on the record itself.
+     * Memories, whose text lives in the memory store rather than on the NPC.
+     * The bonds and the arts are read from the record by
+     * {@link whatACrossingCouldTakeFrom} and must not be repeated here.
+     */
+    alsoAtStake?: readonly TollCandidateInput[]
 ): Strike | null {
     const ordinal = npc.cultivation.realmOrdinal;
     const required = progressRequiredForOrdinal(ordinal);
@@ -279,7 +340,16 @@ export function strikeAtTheWall(
         // in the odds and this supplies it rather than adding a second.
         ...(watch && watch.share > 0
             ? { protection: watch.share, protectionBy: watch.by }
-            : {})
+            : {}),
+        // WHAT THIS CROSSING CAN CHARGE. Without it the toll runs with nothing
+        // to take and books `nothing_left` every time, which is how the world
+        // came to cross every boundary free while the player paid.
+        toll: {
+            candidates: [
+                ...whatACrossingCouldTakeFrom(npc),
+                ...(alsoAtStake ?? [])
+            ]
+        }
     });
 
     if (result.outcome === 'death') {

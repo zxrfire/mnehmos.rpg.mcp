@@ -1,0 +1,192 @@
+/**
+ * The Price of Advancement bound the player and nobody else.
+ *
+ * `attemptBreakthrough` states what a caller that hands over nothing gets:
+ * *"Omitting this does not skip the toll ... it charges with no candidates,
+ * which surfaces as `nothing_left`. A caller that owns bonds, memories and
+ * techniques must supply them here."*
+ *
+ * Every player route supplied it, through `tollConditionsFor`. `strikeAtTheWall`
+ * passed `rng`, `ambient`, `turn` and an optional watch, and no `toll` at all,
+ * while the world owned every input kind it asks for: `relationships` on the
+ * record, `techniqueIds` beside them, and a memory store the caller can read.
+ *
+ * So every cultivator in every world crossed every realm boundary free, and
+ * only the player lost a bond, an art or their name. That is the largest
+ * permanent cost in the game, charged to one person in the world.
+ *
+ * This is the sibling of `npc-crossing-toll.test.ts`, which pins the OTHER
+ * toll: `bodyCost`, the share of the pool, which was fixed for the same reason
+ * and quotes the same AGENTS.md rule. *"Any capability the world gives a
+ * non-player is a capability the player has, through the same code"*, and a
+ * rule that binds the player and not an NPC is that failure with the sign
+ * flipped.
+ *
+ *  * MEASURED, before and after, at the ordinal-16 boundary in thin qi over 3,000
+ * seeds, for somebody holding four ties and four arts. The same 76 crossings
+ * are charged either way, and the same 34 of them fail the roll:
+ *
+ *     before   clean 42, nothing_left 34, took something 0
+ *     after    clean 42, taken        34, took something 34
+ *
+ * So the charge was always landing. It simply had nothing in front of it, and
+ * booked the outcome that means "there was nothing worth taking" about people
+ * holding four ties and four arts.
+ *
+ * What is asserted is not a rate. It is that the world's crossing has
+ * something to charge, that what it charges comes off the record, and that
+ * somebody who genuinely holds nothing still reads `nothing_left` rather than
+ * being spared by an empty list nobody filled in.
+ */
+
+import { describe, expect, it } from 'vitest';
+
+import { createNpc } from '../../../src/engine/world/npc-state';
+import {
+    strikeAtTheWall,
+    whatACrossingCouldTakeFrom
+} from '../../../src/engine/world/an-npc-striking-at-the-next-wall';
+import { CultivationRNG } from '../../../src/engine/cultivation/rng';
+import { DAYS_PER_YEAR } from '../../../src/engine/cultivation/cultivation';
+import { TOLL_BOUNDARY_ORDINALS } from '../../../src/engine/cultivation/price-of-advancement';
+import { TECHNIQUES } from '../../../src/data/cultivation/techniques';
+
+/**
+ * A real boundary the world's own crossing can actually reach.
+ *
+ * Not the highest one, and the reason is a second defect of the same family.
+ *
+ * `strikeAtTheWall` builds its subject with `insights: []`, so
+ * `canAttemptBreakthrough` refuses anybody at ordinal 20 or above with
+ * `insufficient_dao`. Measured while writing this: eligible at 12 and 16,
+ * REFUSED at 20 and 24. So no cultivator the world holds has ever crossed a
+ * realm boundary above Core Formation through this path at all, and every high
+ * rung in every world was handed out by `deriveOrdinal` instead.
+ *
+ * The subject's construction carries a comment explaining that the world writes
+ * no comprehension on an NPC. That is a description of the gap and not a
+ * justification for it: an NPC's dao should be the player's dao, through the
+ * same code, which is the rule this file is about one field over. It is filed
+ * as its own piece of work rather than fixed here.
+ *
+ * What matters for this file is only that the boundary chosen is one the world
+ * can currently reach, so the test exercises the path the world actually takes.
+ */
+const AT_A_BOUNDARY = TOLL_BOUNDARY_ORDINALS[1]!;
+const DAY = 400 * DAYS_PER_YEAR;
+
+/** Two arts anybody at this rung could be holding, read out of the catalog. */
+const ARTS = TECHNIQUES.filter(t => t.requiredOrdinal <= AT_A_BOUNDARY).slice(0, 4).map(t => t.id);
+
+const READY = { yearsNeeded: 1, yearsAccumulated: 1, yearsStood: 1, ready: true, settled: false };
+
+function somebody(seed: string, ties: number, arts: readonly string[]) {
+    const npc = createNpc(seed, {
+        id: `crosser-${seed}`,
+        name: 'A Crosser',
+        bornOnDay: 0,
+        onDay: DAY,
+        cultivation: { realmOrdinal: AT_A_BOUNDARY, techniqueIds: [...arts] }
+    });
+    return {
+        ...npc,
+        cultivation: { ...npc.cultivation, accumulatingSinceDay: 0 },
+        relationships: Array.from({ length: ties }, (_, i) => ({
+            targetId: `tied-${i}`,
+            targetName: `Somebody ${i}`,
+            kind: 'kin' as const,
+            standing: 0.6,
+            note: 'a tie',
+            sinceDay: 0,
+            lastChangedDay: 0,
+            factIds: [],
+            inheritedFromId: null
+        }))
+    };
+}
+
+describe('what a crossing could take from somebody the world holds', () => {
+    it('offers the ties and the arts that are on the record', () => {
+        const at_stake = whatACrossingCouldTakeFrom(somebody('offer', 4, ARTS));
+        expect(at_stake.filter(c => c.kind === 'bond')).toHaveLength(4);
+        expect(at_stake.filter(c => c.kind === 'technique')).toHaveLength(ARTS.length);
+        // Every candidate is a row the severance could actually delete.
+        for (const c of at_stake) {
+            expect(c.id.length).toBeGreaterThan(0);
+            expect(c.label.length).toBeGreaterThan(0);
+        }
+    });
+
+    it('offers nothing for somebody who holds nothing, which is a real answer', () => {
+        expect(whatACrossingCouldTakeFrom(somebody('empty', 0, []))).toEqual([]);
+    });
+
+    /**
+     * THE REGRESSION, AND IT IS ABOUT WHAT IS TAKEN RATHER THAN HOW OFTEN.
+     *
+     * Before the wiring the crossing ran with an empty candidate list, so the
+     * only outcome it could ever book was `nothing_left`. What proves the fix
+     * is not a rate: it is that when the charge lands, the thing it takes is a
+     * row that was on this person's record.
+     *
+     * Thin qi raises the toll risk, which is what makes a taking observable in
+     * a bounded sweep rather than needing tens of thousands of seeds. It
+     * changes which outcomes appear and nothing about where a candidate came
+     * from.
+     */
+    it('takes something that was actually on the record', () => {
+        const outcomes = new Map<string, number>();
+        let charged = 0;
+        let takings = 0;
+
+        for (let seed = 0; seed < 3000; seed++) {
+            const who = somebody(`charge-${seed}`, 4, ARTS);
+            const offered = new Set(whatACrossingCouldTakeFrom(who).map(c => c.id));
+            const out = strikeAtTheWall(
+                who,
+                DAY,
+                READY,
+                new CultivationRNG(`charge-strike-${seed}`),
+                'thin'
+            );
+            if (out === null || out.result.toll === null) continue;
+            charged++;
+            outcomes.set(out.result.toll.outcome, (outcomes.get(out.result.toll.outcome) ?? 0) + 1);
+
+            for (const taken of out.result.toll.takenAll) {
+                takings++;
+                // The whole point. A crossing cannot take what the person did
+                // not have, and before this it could not take anything at all.
+                expect(offered.has(taken.id), `took ${taken.id}, which was never offered`).toBe(true);
+            }
+        }
+
+        // eslint-disable-next-line no-console
+        console.log(
+            `  ${charged} crossings charged over 3000 seeds, ${takings} took something:`,
+            JSON.stringify(Object.fromEntries(outcomes))
+        );
+
+        expect(charged, 'no crossing charged a toll at all').toBeGreaterThan(0);
+        expect(takings, 'the toll never took anything, so the candidates are not reaching it')
+            .toBeGreaterThan(0);
+        // And it is never the empty-list answer, because the list is not empty.
+        expect(outcomes.get('nothing_left') ?? 0).toBe(0);
+    });
+
+    /** And somebody genuinely empty-handed still reads as empty-handed. */
+    it('still books nothing_left for somebody who truly holds nothing', () => {
+        let sawNothingLeft = false;
+        for (let seed = 0; seed < 200 && !sawNothingLeft; seed++) {
+            const out = strikeAtTheWall(
+                somebody(`bare-${seed}`, 0, []),
+                DAY,
+                READY,
+                new CultivationRNG(`bare-strike-${seed}`),
+                'normal'
+            );
+            if (out?.result.toll?.outcome === 'nothing_left') sawNothingLeft = true;
+        }
+        expect(sawNothingLeft).toBe(true);
+    });
+});
