@@ -193,7 +193,7 @@ export const craftVerbs = {
             this.atHand = this.atHand ?? await this.loadWorld();
             if (this.atHand) {
                 this.atHand.objects.push(landed.minted);
-                this.worldDirty = true;
+                this.theWorldMoved();
             }
         }
 

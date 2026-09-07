@@ -360,7 +360,7 @@ export const guardVerbs = {
             world.npcs[at] = strike.npc;
         }
         recordCrossing(world, world.npcs[at], strike.result, today);
-        this.worldDirty = true;
+        this.theWorldMoved();
 
         // ── THE ACCOUNT IT OPENS ─────────────────────────────────────────
         //

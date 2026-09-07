@@ -247,8 +247,15 @@ export interface EstateOutcome {
     factIds: string[];
     /** Tracked rows written back to the world. */
     objects: ObjectRecord[];
-    /** True where the world was changed and needs saving. */
-    worldDirty: boolean;
+    /**
+     * True where settling this death changed the world.
+     *
+     * A RETURN VALUE and not a flag anybody sets: the caller is inside a
+     * transition and this is how the body tells it the world moved. Its old
+     * name read as the turn-wide deferral it is not, and the ratchet in
+     * `tests/docs/the-refactor-is-checkable.test.ts` greps for that name.
+     */
+    theWorldMoved: boolean;
     facts: EngineFacts;
 }
 
@@ -361,7 +368,7 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
         graveLocationId,
         factIds,
         objects: estate.objects,
-        worldDirty: world !== null,
+        theWorldMoved: world !== null,
         facts: factsForEstate(deps, estate, cache, graveLocationId, found.unaccounted)
     };
 }

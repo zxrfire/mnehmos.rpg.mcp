@@ -94,24 +94,36 @@ describe('one write mode per intent', () => {
     });
 });
 
-describe('what is still deferred, and only ever less of it', () => {
+describe('nothing defers a world write any more', () => {
     /**
-     * Every one of these marks a world change written at the end of the turn
-     * instead of with the rows it belongs to. Each belongs inside its own
-     * verb's transaction; the flush they feed already goes through the boundary,
-     * so moving one is a local change.
+     * There were 29. A boolean called `worldDirty` marked "the world changed,
+     * write it at the end of the turn", and the end of the turn is strictly
+     * after every SQLite row of that turn has already committed - so a crash
+     * between the two tore, and the deferral was invisible at all 29 sites.
      *
-     * MEASURED, NOT CHOSEN. Lower it when you move one; never raise it.
+     * The field is DELETED rather than the sites converted one at a time,
+     * because a boolean anybody can set is a boolean somebody will set again.
+     * With nothing to defer to, a new deferred world write does not compile.
      */
-    const DEFERRED_WORLD_WRITES = 29;
+    it('has no flag to set, so a new deferral cannot be written', () => {
+        expect(occurrences('worldDirty')).toBe(0);
+    });
 
-    it('does not add another place that defers a world write', () => {
-        const found = occurrences('worldDirty = true');
-        expect(
-            found,
-            `${found} places defer a world write, against a high-water mark of `
-            + `${DEFERRED_WORLD_WRITES}. Put the write in the verb's own transaction `
-            + 'rather than adding another deferral.'
-        ).toBeLessThanOrEqual(DEFERRED_WORLD_WRITES);
+    it('and no second flush point pretending to be one', () => {
+        // `saveWorldForRun` is the deferred-write door. It survives for the two
+        // handlers that genuinely have no transaction open and no world change
+        // to join; the turn engine must not be one of them again.
+        const engine = SOURCE.get(join(SRC, 'web', 'turn-engine.ts')) ?? '';
+        expect(engine.includes('saveWorldForRun')).toBe(false);
+    });
+
+    it('writes the world through the boundary and nowhere else', () => {
+        // `theWorldMoved` is the one primitive, and it commits through
+        // `commitOneTransition` - which NESTS, so a caller already inside a
+        // transaction gets its world write joined to the rows rather than
+        // deferred, and a caller outside one gets a single atomic write.
+        const engine = SOURCE.get(join(SRC, 'web', 'turn-engine.ts')) ?? '';
+        expect(engine.includes('theWorldMoved()')).toBe(true);
+        expect(engine.includes('commitOneTransition')).toBe(true);
     });
 });

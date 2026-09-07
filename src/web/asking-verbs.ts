@@ -778,7 +778,7 @@ ${unnamed}`;
             });
             const at = this.atHand!.objects.findIndex(row => row.id === reach.object.id);
             if (at >= 0) this.atHand!.objects[at] = lifted.object;
-            this.worldDirty = true;
+            this.theWorldMoved();
             return {
                 taken: 0,
                 hadBefore: Math.max(0, Math.floor(stored ? stored.spiritStones : npc!.spiritStones)),
@@ -805,7 +805,7 @@ ${unnamed}`;
                 // The turn wrapper writes the world when this is set, so a
                 // restart cannot find the stones back in the pocket they came
                 // out of.
-                this.worldDirty = true;
+                this.theWorldMoved();
                 this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: taken });
             }
         }
@@ -1571,7 +1571,7 @@ ${done.lines.join(' ')}`;
                     note: `Given for a ${inReturnFor}, which went the other way across the same `
                         + 'table. Not sold for stones.'
                 });
-                this.worldDirty = true;
+                this.theWorldMoved();
                 parts.push('and its record now says whose it is');
             }
         }
@@ -1929,7 +1929,7 @@ ${done.lines.join(' ')}`;
                 });
                 // The turn wrapper writes the world when this is set, so a
                 // restart cannot lose the fact that the shelf is now empty.
-                this.worldDirty = true;
+                this.theWorldMoved();
             }
 
             // The pouch is the PLAYER-FACING half and not a second copy: the

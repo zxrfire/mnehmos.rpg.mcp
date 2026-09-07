@@ -1175,7 +1175,7 @@ export const siteVerbs = {
             })
             : null;
         if (deed) {
-            this.worldDirty = true;
+            this.theWorldMoved();
             lines.push(deed.line);
             calls.push({
                 name: 'world.aDeedEntersTheWorld',

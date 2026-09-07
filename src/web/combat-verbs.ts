@@ -789,7 +789,7 @@ export const combatVerbs = {
         // composed, so a narration that never runs cannot lose the fact.
         if (!thing.knownOwnershipBy.includes(them.id)) {
             this.atHand.objects[at] = revealOwnership(thing, them.id);
-            this.worldDirty = true;
+            this.theWorldMoved();
         }
 
         const line = read.inTheWrongHands
@@ -1153,7 +1153,7 @@ export const combatVerbs = {
             data: { outcome: 'humiliation', spared: true }
         });
         if (!deed) return;
-        this.worldDirty = true;
+        this.theWorldMoved();
 
         for (const opens of deed.leaves?.opens ?? []) {
             const record = createObligation({ ...opens, triggeringEventId: deed.fact.id });
@@ -1219,7 +1219,7 @@ export const combatVerbs = {
                 // `act` persists on this flag before anything is narrated, so a
                 // restart cannot lose the loss - the same guarantee a killing
                 // gets one method down.
-                this.worldDirty = true;
+                this.theWorldMoved();
             }
 
             // AND SAY WHAT IS LEFT, NOT WHAT ALREADY HAPPENED
@@ -1298,7 +1298,7 @@ export const combatVerbs = {
             const at = world!.objects.findIndex(row => row.id === object.id);
             if (at >= 0) world!.objects[at] = moved;
         }
-        if (carried.length > 0 || (lifted !== null && lifted.taken > 0)) this.worldDirty = true;
+        if (carried.length > 0 || (lifted !== null && lifted.taken > 0)) this.theWorldMoved();
 
         // -- WHAT ACTUALLY CAME ACROSS, IN ONE SENTENCE -------------------
         //
@@ -1463,7 +1463,7 @@ export const combatVerbs = {
         const pill = getPill(named.itemId);
         const pillName = getPill(named.itemId)?.name ?? named.itemId;
         removeFromPouch(this.db, cultivator.id, named.itemId, 1);
-        this.worldDirty = true;
+        this.theWorldMoved();
 
         const world = this.atHand;
         const row = (world?.npcs ?? []).find(npc => npc.id === held.party.id) ?? null;
@@ -1663,7 +1663,7 @@ export const combatVerbs = {
 
         // A world changed inside one turn. `act` persists on this flag before
         // anything is narrated, so a restart cannot lose a killing.
-        this.worldDirty = true;
+        this.theWorldMoved();
 
         const calls: ToolCallRecord[] = [{
             name: 'world.whatTheConfrontationDidToThem',
@@ -1832,7 +1832,7 @@ export const combatVerbs = {
             })
             : null;
         if (deed) {
-            this.worldDirty = true;
+            this.theWorldMoved();
             lines.push(deed.line);
             calls.push({
                 name: 'world.aDeedEntersTheWorld',

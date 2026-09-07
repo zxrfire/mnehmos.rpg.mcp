@@ -536,7 +536,6 @@ import { unattributedTextOf } from '../engine/world/digest.js';
 import { type RosterEntry } from '../storage/repos/cultivator.repo.js';
 import {
     advanceWorldForCultivator,
-    saveWorldForRun,
     worldForRun
 } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
@@ -1447,9 +1446,43 @@ export class GameService {
      */
     private namedThisTurn: ThingNamed[] = [];
     /**
-     * Set when an action changed the world without spending a day.
+     * THE WORLD MOVED, AND IT IS WRITTEN NOW.
+     *
+     * This replaces a boolean that 29 places set and one
+     * flush at the end of the turn read. Every one of those was a DEFERRAL, and
+     * a deferral is a window: SQLite rows were written throughout the turn in
+     * their own transactions and the world went down at the end, so a crash
+     * between the two tore, and the deferral was invisible at every site.
+     *
+     * The field is gone rather than the sites being converted one at a time,
+     * because a boolean anybody can set is a boolean somebody will set again.
+     * With nothing to defer TO, a new deferred world write does not compile.
+     *
+     * ── WHY WRITING NOW IS NOT A WORSE TRADE ─────────────────────────────
+     *
+     * `commitOneTransition` NESTS - the packaged driver gained savepoints, and
+     * better-sqlite3 has always had them. So a caller that is already inside a
+     * transaction does not open a second one: its world write JOINS the
+     * transaction its rows are in, which is exactly what the deferral was
+     * failing to do. A caller that is not in one gets a single atomic write
+     * instead of a window. Neither case is worse and one of them was the bug.
      */
-    worldDirty = false;
+    theWorldMoved(): void {
+        const world = this.atHand;
+        if (world === null) return;
+        commitOneTransition({
+            db: this.db,
+            at: {
+                id: world.id,
+                state: world,
+                append: state => writeTheWorldNow(state),
+                forget: () => forgetWorld(world.id),
+                nowAt: revision => noteWorldRevision(world.id, revision)
+            },
+            onDay: Math.floor(world.currentDay),
+            body: ctx => { ctx.markWorldChanged(); }
+        });
+    }
     private readonly narrator: Narrator;
     private readonly seedFactory: () => string;
 
@@ -2017,40 +2050,10 @@ export class GameService {
 
         }
 
-        // A world changed inside one turn is written before anything is
-        // narrated, so a restart cannot lose an abode, a descent or a thing
-        // that went down a channel. Nothing here reads the narration; the
-        // ordering is only about durability.
-        //
-        // THROUGH THE BOUNDARY, which is the step that makes the rest of this
-        // refactor incremental. There are 28 places that set `worldDirty` and
-        // each of them belongs inside its own verb's transaction; until they
-        // are moved, the deferred flush at least commits with a revision and
-        // drops the handle if it throws, so the process cannot be left holding
-        // a world that was rolled back. Moving a site out of here and into its
-        // verb is a local change after this, rather than a change to how the
-        // world is written.
-        if (this.worldDirty) {
-            this.worldDirty = false;
-            const world = this.atHand;
-            if (world === null) {
-                await saveWorldForRun(run);
-            } else {
-                commitOneTransition({
-                    db: this.db,
-                    at: {
-                        id: world.id,
-                        state: world,
-                        append: state => writeTheWorldNow(state),
-                        forget: () => forgetWorld(world.id),
-                        nowAt: revision => noteWorldRevision(world.id, revision)
-                    },
-                    onDay: Math.floor(world.currentDay),
-                    body: ctx => { ctx.markWorldChanged(); }
-                });
-            }
-        }
-
+        // NOTHING IS FLUSHED HERE ANY MORE. A world change is written by
+        // `theWorldMoved` at the moment it happens, inside whatever transaction
+        // the caller already has open. There is no end-of-turn window left to
+        // lose an abode, a descent or a thing that went down a channel in.
 
         // EVERYTHING THIS TURN SHOWED, WRITTEN DOWN
         for (const perceived of execution.perceived ?? []) {
@@ -2773,7 +2776,7 @@ export class GameService {
                 + 'about somebody who was not there.',
             data: { saidAbout: about, wouldHave: action.action }
         });
-        this.worldDirty = true;
+        this.theWorldMoved();
         into.calls.push({
             name: 'world.aDeedEntersTheWorld',
             action: action.action,
@@ -5656,7 +5659,7 @@ ${noticed}`;
     residentNow(cultivator: Cultivator, run: Run): Resident | null {
         if (!this.atHand) return null;
         const resident = residentAbove(this.atHand, cultivator, Math.floor(run.elapsedDays));
-        if (resident?.settledJustNow) this.worldDirty = true;
+        if (resident?.settledJustNow) this.theWorldMoved();
         return resident;
     }
 
@@ -5892,7 +5895,7 @@ ${noticed}`;
             ));
         }
 
-        this.worldDirty = true;
+        this.theWorldMoved();
         calls.push({
             name: 'world.descend',
             action: 'descend',
@@ -6032,7 +6035,7 @@ ${noticed}`;
             ));
         }
 
-        this.worldDirty = true;
+        this.theWorldMoved();
         const facts = factsForToolResult(`${chosen.name} answered.`, [
             `Whatever you put through it reached ${holder.name} and nobody else. A channel does `
             + 'not announce; one person will know, and every account of it after this will be '
@@ -6777,7 +6780,7 @@ ${line}`;
                 answerability: left.answerability
             }
         });
-        this.worldDirty = true;
+        this.theWorldMoved();
         calls.push({
             name: 'world.aDeedEntersTheWorld',
             action: 'hunt',
@@ -6895,7 +6898,7 @@ ${line}`;
             });
             if (this.atHand) {
                 this.atHand.objects.push(record);
-                this.worldDirty = true;
+                this.theWorldMoved();
             }
             // And the pouch entry beside it, which is the player-facing half
             // and not a second copy: the object row is which one this is and
@@ -6950,7 +6953,7 @@ ${line}`;
         const draw = drawFromTheGround(place, {
             kind, grade, wanted, onDay: Math.floor(this.atHand.currentDay)
         });
-        if (recordGroundDraw(place, draw)) this.worldDirty = true;
+        if (recordGroundDraw(place, draw)) this.theWorldMoved();
         return { taken: draw.taken, line: draw.line };
     }
 
@@ -7051,11 +7054,8 @@ ${line}`;
         let estate: EstateOutcome | null = null;
         if (!after.cultivator.alive && after.cultivator.deathCause) {
             this.atHand = this.atHand ?? await this.loadWorld();
+            // The death is its own transition and writes the world inside it.
             estate = this.settleTheEstateIfTheyDied();
-            if (this.worldDirty) {
-                this.worldDirty = false;
-                await saveWorldForRun(after.run);
-            }
         }
 
         const told = response.changed
@@ -8039,7 +8039,7 @@ ${opened.text}` : receipt,
                         const npc = (this.atHand?.npcs ?? []).find(row => row.id === party!.id);
                         if (npc) {
                             npc.spiritStones += outcome.stones;
-                            this.worldDirty = true;
+                            this.theWorldMoved();
                         }
                     }
                 }
@@ -8742,7 +8742,7 @@ ${opened.text}` : receipt,
             Number(house.resources.spirit_stones ?? 0), took, 'siphoned'
         );
         house.resources.spirit_stones = moved.after;
-        this.worldDirty = true;
+        this.theWorldMoved();
 
         // What the house did not have, taken back off the thief. A player
         // cannot end a turn holding stones that were never anywhere.
@@ -9843,7 +9843,7 @@ ${fit.line}`;
         // did not happen, the narration would be the original defect again.
         const at = world ? world.objects.findIndex(o => o.id === taken.object.id) : -1;
         if (world && at >= 0) world.objects[at] = taken.object;
-        this.worldDirty = true;
+        this.theWorldMoved();
 
         if (taken.record) {
             writeOneObligation(
@@ -10283,7 +10283,7 @@ ${fit.line}`;
                 })
                 : null;
             if (said) {
-                this.worldDirty = true;
+                this.theWorldMoved();
                 execution.facts.structure.push(
                     `world.aDeedEntersTheWorld: ${said.fact.id} (opportunity, ${said.weight}, `
                     + `magnitude ${said.fact.magnitude.toFixed(2)}, ${said.fact.visibility}) at `
@@ -10942,7 +10942,7 @@ ${fit.line}`;
             : putIntoTheHouse(Number(coffers.resources.spirit_stones ?? 0), offered, 'donation');
         if (coffers !== null && paidIn !== null) {
             coffers.resources.spirit_stones = paidIn.after;
-            this.worldDirty = true;
+            this.theWorldMoved();
         }
 
         const after = this.repos.sects.getMembership(cultivator.id);
@@ -11030,7 +11030,7 @@ ${fit.line}`;
             })
             : null;
         if (gift) {
-            this.worldDirty = true;
+            this.theWorldMoved();
             execution.facts.lines.push(gift.line);
             execution.calls.push({
                 name: 'world.aDeedEntersTheWorld',
@@ -12249,14 +12249,9 @@ ${fit.line}`;
             // A failed crossing leaves a scar and nothing to search.
             leavesBody: now.cultivator.deathCause !== 'heavenly_tribulation'
         });
-        // NOT `this.worldDirty = true`. The world write happens inside this
-        // transaction, so setting the turn-wide flag as well would make `act()`
-        // flush the same world a second time at :2013 - and a test asserting
-        // "one death, one commit" would read two with nothing to explain it.
-        if (settled.worldDirty) {
-            ctx.markWorldChanged();
-            this.worldDirty = false;
-        }
+        // The body says the world moved and the runner writes it, which is the
+        // whole shape: nothing here defers anything and there is no flag to set.
+        if (settled.theWorldMoved) ctx.markWorldChanged();
         // What the death left behind, for whoever has to be told. Ids and not
         // prose: the fact rows are already in the world this transition wrote,
         // and a second copy of their wording here would be two accounts of one

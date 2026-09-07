@@ -389,7 +389,7 @@ export const takingVerbs = {
             const at = (this.atHand?.objects ?? []).findIndex(row => row.id === found.id);
             if (at >= 0 && this.atHand) {
                 this.atHand.objects[at] = { ...found, locationId: null };
-                this.worldDirty = true;
+                this.theWorldMoved();
             }
             const execution = this.freeAction(run, 'interact', factsForRefusal(
                 `${found.name}: picked up.`,
