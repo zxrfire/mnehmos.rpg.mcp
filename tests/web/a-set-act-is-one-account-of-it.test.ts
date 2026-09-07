@@ -9,10 +9,26 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { saidOnceForEverybodyItHappenedTo } from '../../src/web/acts-over-a-set';
+import {
+    saidOnceForEverybodyItHappenedTo,
+    theAccountOfASetAct,
+    whoWasNeverReached
+} from '../../src/web/acts-over-a-set';
 import { makeGameInWorld } from './harness';
 
 describe('what was the same for all of them, said once', () => {
+    it('splits what was true of all of them from what is true of each', () => {
+        const account = theAccountOfASetAct([
+            { who: 'A', lines: ['Driven off. A is left at 13 of 67.'] },
+            { who: 'B', lines: ['Driven off. B is left at 15 of 75.'] }
+        ]);
+        // `lines` is a list of statements; `prose` wants a paragraph and then
+        // the figures. Joined a sentence to a paragraph, an account of one act
+        // arrived as twenty one-sentence paragraphs.
+        expect(account.forAll).toEqual(['Driven off.']);
+        expect(account.theirOwn).toEqual(['A is left at 13 of 67.', 'B is left at 15 of 75.']);
+    });
+
     it('says a sentence every one of them produced exactly once', () => {
         const said = saidOnceForEverybodyItHappenedTo([
             { who: 'Gu Nuohe', lines: ['Driven off. Gu Nuohe is left at 13 of 67.'] },
@@ -24,15 +40,18 @@ describe('what was the same for all of them, said once', () => {
         expect(said).toContain('Shen Wanyi is left at 16 of 80.');
     });
 
-    it('fills the name slot, and capitalises it where it opens the sentence', () => {
+    it('fills the name slot with a SINGULAR phrase, and capitalises it', () => {
+        // Every template here was written about one person and carries a
+        // singular verb somewhere in it, so a list of names disagrees with the
+        // sentence it is dropped into: "A and B IS carrying a wound now."
         const said = saidOnceForEverybodyItHappenedTo([
             { who: 'A', lines: ['A is carrying a wound now.'] },
             { who: 'B', lines: ['B is carrying a wound now.'] }
         ]);
-        expect(said).toEqual(['A and B is carrying a wound now.'.replace('is', 'is')]);
+        expect(said).toEqual(['Each of them is carrying a wound now.']);
     });
 
-    it('says `each of them` rather than listing more than three names', () => {
+    it('says `each of them` however many of them there are', () => {
         const many = ['A', 'B', 'C', 'D', 'E'].map(who => ({
             who, lines: [`${who} was driven off.`]
         }));
@@ -46,6 +65,15 @@ describe('what was the same for all of them, said once', () => {
         ]);
         expect(said).toContain('A dropped a purse.');
         expect(said.filter(line => /driven off/.test(line))).toHaveLength(1);
+    });
+
+    it('says who the act never got to, as a sentence rather than a label', () => {
+        // "Untouched: Wei Rongya, Bai Wanhe, Cao Jingshi, Kong Fuping, He
+        // Lanyi." A colon and a list is how a field is written down.
+        expect(whoWasNeverReached(['A'])).toBe('A was never reached');
+        expect(whoWasNeverReached(['A', 'B'])).toBe('A and B were never reached');
+        expect(whoWasNeverReached(['A', 'B', 'C', 'D', 'E']))
+            .toBe('5 others behind them were never reached');
     });
 
     it('leaves a single member alone', () => {

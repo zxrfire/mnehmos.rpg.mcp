@@ -399,7 +399,8 @@ export function factsForTimeSkip(
         if (REQUIRED_EVENT_KINDS.has(event.kind)) required.push(line);
     }
 
-    lines.push(netChangeLine(skip));
+    const moved = netChangeLine(skip);
+    if (moved !== null) lines.push(moved);
     lines.push(
         `Standing afterwards: ${rankName(after.realmOrdinal)}, age ${Math.floor(after.age)}, ` +
         `${untreatedInjuryCount(after.injuries)} untreated injuries, ${after.spiritStones} spirit stones.`
@@ -436,17 +437,36 @@ const REQUIRED_EVENT_KINDS: ReadonlySet<string> = new Set([
     'resource_depleted'
 ]);
 
-function netChangeLine(skip: TimeSkipResult): string {
+/**
+ * WHAT MOVED. NOT A LEDGER WITH SIX ZEROES IN IT.
+ *
+ * This was `Net change: ${signed}...` over all six figures whatever they were,
+ * so a day that did nothing printed "Net change: 0 progress, 0 ranks, 0 HP, 0
+ * spirit stones, 0 years of age, 0 new injuries." - a label, a list and six
+ * noughts, which is how a row is written down rather than how anything is
+ * said. The full six are in `standingStructure` for the inspector.
+ *
+ * Null when nothing moved at all: the line after this one says where they are
+ * standing, and a span that changed nothing has already been said by the days
+ * that went into it.
+ */
+function netChangeLine(skip: TimeSkipResult): string | null {
     const d = skip.deltas;
-    const parts = [
-        `${signed(d.cultivationProgress)} progress`,
-        `${signed(d.realmOrdinal)} rank${Math.abs(d.realmOrdinal) === 1 ? '' : 's'}`,
-        `${signed(d.hp)} HP`,
-        `${signed(d.spiritStones)} spirit stones`,
-        `${signed(d.age, 1)} years of age`,
-        `${d.injuriesGained} new injur${d.injuriesGained === 1 ? 'y' : 'ies'}`
-    ];
-    return `Net change: ${parts.join(', ')}.`;
+    const moved = [
+        d.cultivationProgress === 0 ? null : `${signed(d.cultivationProgress)} progress`,
+        d.realmOrdinal === 0
+            ? null
+            : `${signed(d.realmOrdinal)} rank${Math.abs(d.realmOrdinal) === 1 ? '' : 's'}`,
+        d.hp === 0 ? null : `${signed(d.hp)} HP`,
+        d.spiritStones === 0 ? null : `${signed(d.spiritStones)} spirit stones`,
+        Math.abs(d.age) < 0.05 ? null : `${signed(d.age, 1)} years of age`,
+        d.injuriesGained === 0
+            ? null
+            : `${d.injuriesGained} new injur${d.injuriesGained === 1 ? 'y' : 'ies'}`
+    ].filter((part): part is string => part !== null);
+
+    if (moved.length === 0) return null;
+    return `What moved: ${moved.join(', ')}.`;
 }
 
 function timeSkipHeadline(skip: TimeSkipResult, before: Cultivator, after: Cultivator): string {

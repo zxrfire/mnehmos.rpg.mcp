@@ -365,7 +365,24 @@ export function howTheSetWasCounted(
 export function saidOnceForEverybodyItHappenedTo(
     outcomes: readonly { who: string; lines: readonly string[] }[]
 ): string[] {
-    if (outcomes.length < 2) return outcomes.flatMap(one => [...one.lines]);
+    const account = theAccountOfASetAct(outcomes);
+    return [...account.forAll, ...account.theirOwn];
+}
+
+/**
+ * The same, split where a paragraph break belongs.
+ *
+ * `lines` is a list of statements and `prose` is what somebody reads, and the
+ * two want different shapes: joining the folded sentences with a blank line
+ * apiece turned an account of one act into twenty one-sentence paragraphs.
+ * What was true of all of them is a paragraph; what is true of each is a line.
+ */
+export function theAccountOfASetAct(
+    outcomes: readonly { who: string; lines: readonly string[] }[]
+): { forAll: string[]; theirOwn: string[] } {
+    if (outcomes.length < 2) {
+        return { forAll: [], theirOwn: outcomes.flatMap(one => [...one.lines]) };
+    }
 
     const WHOEVER = ' ';
     const templateOf = (sentence: string, who: string): string =>
@@ -410,7 +427,7 @@ export function saidOnceForEverybodyItHappenedTo(
             key.startsWith(WHOEVER)
         ));
     }
-    return [...forAll, ...theirOwn];
+    return { forAll, theirOwn };
 }
 
 /**
@@ -427,15 +444,23 @@ function atTheHeadOfASentence(sentence: string, filled: boolean): string {
 /**
  * The name slot in a folded sentence, filled with everybody it fits.
  *
- * `each of them` rather than a list, past three: a sentence that has to name
- * ten people in the middle of itself has stopped being a sentence, and every
- * one of those names is on a line of its own underneath it anyway.
+ * ── AND THE FILL IS SINGULAR, BECAUSE THE SENTENCE IS ────────────────────
+ *
+ * Every template here was written about ONE person and carries a singular verb
+ * somewhere in it - "{} is here, and reads as well beneath you". A list of
+ * names is plural and produces "Cao Nuochen and Wei Rongya is here", so the
+ * fill is `each of them` for any group above one. It is the same reason a
+ * group short of the whole set does not fold at all: there is no honest
+ * singular phrase for four out of six, and a plural one would disagree with
+ * the verb it was dropped in front of.
+ *
+ * `each of them` rather than a list is the right reading anyway: a sentence
+ * that has to name ten people in the middle of itself has stopped being a
+ * sentence, and every one of those names is on a line of its own below it.
  */
 function theyAllWere(names: readonly string[]): string {
     const unique = [...new Set(names)];
-    if (unique.length === 1) return unique[0]!;
-    if (unique.length > 3) return 'each of them';
-    return `${unique.slice(0, -1).join(', ')} and ${unique[unique.length - 1]}`;
+    return unique.length === 1 ? unique[0]! : 'each of them';
 }
 
 /**
@@ -459,4 +484,21 @@ function intoSentences(line: string): string[] {
     }
     if (held.trim().length > 0) parts.push(held.trim());
     return parts;
+}
+
+/**
+ * Who the act never got to, said the way somebody says it.
+ *
+ * Three names or fewer are worth saying; past that the fact is how many, and
+ * every one of them is standing in the square to be looked at. The same rule
+ * the room reading takes and the set fold takes.
+ */
+export function whoWasNeverReached(names: readonly string[]): string {
+    if (names.length === 0) return 'Nobody else was in it';
+    if (names.length === 1) return `${names[0]} was never reached`;
+    if (names.length <= 3) {
+        return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} were never `
+            + 'reached';
+    }
+    return `${names.length} others behind them were never reached`;
 }

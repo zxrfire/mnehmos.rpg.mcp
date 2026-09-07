@@ -78,6 +78,8 @@ import {
     type TheSetAsKnown,
     howTheSetWasCounted,
     saidOnceForEverybodyItHappenedTo,
+    theAccountOfASetAct,
+    whoWasNeverReached,
     theSetAsThisCultivatorKnowsIt,
     theSetThisNames,
     whatTheActDidNotReach
@@ -716,14 +718,20 @@ export const combatVerbs = {
         // members are alike the sentences come out identical by construction.
         // Measured at Void Refinement against a square of ten: ten paragraphs
         // of sixty words, four facts stated ten times each.
-        const sameForAll = saidOnceForEverybodyItHappenedTo(
+        const account = theAccountOfASetAct(
             done.map((one, at) => ({
                 who: known.reached[at]?.name ?? '',
                 lines: one.facts.lines
             }))
         );
-        folded.facts.lines = sameForAll;
-        folded.facts.prose = sameForAll.join('\n\n');
+        folded.facts.lines = [...account.forAll, ...account.theirOwn];
+        // What was true of all of them is a paragraph; what is true of each is
+        // a line of its own. Joined a sentence to a paragraph, an account of
+        // one act arrived as twenty one-sentence paragraphs.
+        folded.facts.prose = [
+            account.forAll.join(' '),
+            ...account.theirOwn
+        ].filter(said => said.length > 0).join('\n\n');
         // AND THE SAME OVER `required`, which is a channel of its own and
         // was carrying its own unfolded copy of every consequence line: the
         // folded answer said "Each of them is carrying 1 untreated wound"
@@ -748,9 +756,16 @@ export const combatVerbs = {
             // The names are `known.reached`, so they are people the player can
             // already name. Somebody they have never met is a head in the
             // crowd, not a name in a list.
+            // ── AND THE SECOND FACT IS A SENTENCE, NOT A LABEL ───────────
+            //
+            // "Untouched: Wei Rongya, Bai Wanhe, Cao Jingshi, Kong Fuping, He
+            // Lanyi." A colon and a list is how a field is written down, not
+            // how anybody says who is still standing there - and five names
+            // inside one is a roster rather than a fact. Past three, a count,
+            // the same rule the room reading and the set fold both take.
             heldOn !== null && reachedButNotYet.length > 0
                 ? `${heldOn} is still standing, and stopped it there. `
-                  + `Untouched: ${reachedButNotYet.map(one => one.name).join(', ')}.`
+                  + `${whoWasNeverReached(reachedButNotYet.map(one => one.name))}.`
                 : null,
             remainder
         ].filter((line): line is string => line !== null);
