@@ -54,23 +54,29 @@ import { TECHNIQUES } from '../../../src/data/cultivation/techniques';
 /**
  * A real boundary the world's own crossing can actually reach.
  *
- * Not the highest one, and the reason is a second defect of the same family.
+ * Not the highest one, because a subject built here in isolation holds only the
+ * PRACTICE channel and that channel is thin: 22 of 155 catalog arts teach a
+ * road, so six arts usually teach none, and `canAttemptBreakthrough` then
+ * refuses at ordinal 20 and above with `insufficient_dao`.
  *
- * `strikeAtTheWall` builds its subject with `insights: []`, so
- * `canAttemptBreakthrough` refuses anybody at ordinal 20 or above with
- * `insufficient_dao`. Measured while writing this: eligible at 12 and 16,
- * REFUSED at 20 and 24. So no cultivator the world holds has ever crossed a
- * realm boundary above Core Formation through this path at all, and every high
- * rung in every world was handed out by `deriveOrdinal` instead.
+ * THAT IS A FACT ABOUT THIS FIXTURE AND NOT ABOUT THE WORLD, and an earlier
+ * draft of this header got it wrong. The world supplies a second channel:
+ * `the-world-changing-on-its-own.ts` hands `roadsInReachOf(state, npc)` to
+ * `strikeAtTheWall`, and `probe-can-the-world-feed-the-dao-gate.ts` measures
+ * what that is worth over 600 years on two seeds:
  *
- * The subject's construction carries a comment explaining that the world writes
- * no comprehension on an NPC. That is a description of the gap and not a
- * justification for it: an NPC's dao should be the player's dao, through the
- * same code, which is the rule this file is about one field over. It is filed
- * as its own piece of work rather than fixed here.
+ *     band            people   roads: practice / ground   would pass
+ *     Nascent 21-24       55           1.13 / 1.24          35 / 55
+ *     Deity 25-28         33           1.18 / 1.79          16 / 33
+ *     Void 29-32          17           1.94 / 2.82          12 / 17
  *
- * What matters for this file is only that the boundary chosen is one the world
- * can currently reach, so the test exercises the path the world actually takes.
+ * So the world does cross above Core Formation, on ground rather than on
+ * practice. What an NPC still never gets is an insight formed by an EVENT, the
+ * way a player does from a tribulation survived or a rare meditative state,
+ * and that asymmetry is its own piece of work.
+ *
+ * What matters for this file is only that the boundary chosen is one this
+ * fixture reaches without having to build a world, so the test stays a unit.
  */
 const AT_A_BOUNDARY = TOLL_BOUNDARY_ORDINALS[1]!;
 const DAY = 400 * DAYS_PER_YEAR;
@@ -172,6 +178,49 @@ describe('what a crossing could take from somebody the world holds', () => {
             .toBeGreaterThan(0);
         // And it is never the empty-list answer, because the list is not empty.
         expect(outcomes.get('nothing_left') ?? 0).toBe(0);
+    });
+
+    /**
+     * CHARGED IS NOT COLLECTED, AND THE FIRST CUT OF THIS ONLY CHARGED.
+     *
+     * A ledger that says a bond was severed while the bond is still on the row
+     * is worse than never charging: every later read disagrees with the account
+     * of the crossing, and the disagreement is invisible because both halves
+     * look right on their own. The player's side has collected since it was
+     * written; this asserts the world's does too.
+     */
+    it('removes what it took from the record', () => {
+        let checked = 0;
+        for (let seed = 0; seed < 3000 && checked < 12; seed++) {
+            const before = somebody(`collect-${seed}`, 4, ARTS);
+            const out = strikeAtTheWall(
+                before,
+                DAY,
+                READY,
+                new CultivationRNG(`charge-strike-${seed}`),
+                'thin'
+            );
+            const taken = out?.result.toll?.takenAll ?? [];
+            if (taken.length === 0) continue;
+            checked++;
+
+            const ties = new Set(out!.npc.relationships.map(t => `tie:${before.id}:${t.targetId}`));
+            const arts = new Set(out!.npc.cultivation.techniqueIds);
+            for (const one of taken) {
+                if (one.id === null) continue;
+                if (one.kind === 'bond') {
+                    expect(ties.has(one.id), `bond ${one.id} was taken and is still held`).toBe(false);
+                }
+                if (one.kind === 'technique') {
+                    expect(arts.has(one.id), `art ${one.id} was taken and is still held`).toBe(false);
+                }
+            }
+            // And it took exactly what it said: nothing else left the record.
+            expect(out!.npc.relationships.length + out!.npc.cultivation.techniqueIds.length)
+                .toBe(before.relationships.length + before.cultivation.techniqueIds.length - taken.length);
+        }
+        expect(checked, 'no crossing took anything, so collection was never exercised')
+            .toBeGreaterThan(0);
     });
 
     /** And somebody genuinely empty-handed still reads as empty-handed. */

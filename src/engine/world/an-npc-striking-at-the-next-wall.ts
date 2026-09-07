@@ -272,6 +272,48 @@ export function whatACrossingCouldTakeFrom(npc: NpcRecord): TollCandidateInput[]
 }
 
 /**
+ * AND WHAT THE CROSSING ACTUALLY TOOK, REMOVED FROM THE RECORD.
+ *
+ * Charging the toll and not collecting it is half a fix and a worse state than
+ * not charging at all: the ledger says a bond was severed and the bond is still
+ * on the row, so every later read disagrees with the account of the crossing.
+ * The player's side has collected since it was written - `cultivation-support.ts`
+ * carries an `everything in takenAll was actually removed or ended` flag - and
+ * this is that, for a record instead of for tables.
+ *
+ * A taken NAME carries `id: null` and is not a row, so there is nothing here to
+ * delete for one. The world does not yet hold a taken-name flag, and inventing
+ * a field for it here would be a second place that fact could live.
+ */
+function withoutWhatTheCrossingTook(
+    npc: NpcRecord,
+    taken: readonly { kind: string; id: string | null }[]
+): NpcRecord {
+    if (taken.length === 0) return npc;
+
+    const tiesTaken = new Set(
+        taken.filter(t => t.kind === 'bond' && t.id !== null).map(t => t.id as string)
+    );
+    const artsTaken = new Set(
+        taken.filter(t => t.kind === 'technique' && t.id !== null).map(t => t.id as string)
+    );
+    if (tiesTaken.size === 0 && artsTaken.size === 0) return npc;
+
+    return {
+        ...npc,
+        // The same id `whatACrossingCouldTakeFrom` offered, so the row deleted
+        // is exactly the row that was charged.
+        relationships: npc.relationships.filter(
+            tie => !tiesTaken.has(`tie:${npc.id}:${tie.targetId}`)
+        ),
+        cultivation: {
+            ...npc.cultivation,
+            techniqueIds: npc.cultivation.techniqueIds.filter(id => !artsTaken.has(id))
+        }
+    };
+}
+
+/**
  * Strike at the wall, and return the record the outcome leaves behind.
  */
 export function strikeAtTheWall(
@@ -360,6 +402,9 @@ export function strikeAtTheWall(
 
     const sustained: Injury[] = result.injuriesSustained;
     if (sustained.length > 0) after = carryingWounds(after, sustained, day);
+
+    // What the price of advancement took, actually taken.
+    if (result.toll !== null) after = withoutWhatTheCrossingTook(after, result.toll.takenAll);
 
     // ── And what it repaired. The crucible: a boundary cleared while carrying
     // a repairable break reseats it, and the caller has to actually drop the
