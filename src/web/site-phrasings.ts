@@ -98,7 +98,16 @@ export const SITE_NOUNS =
     // `investigate` and searched the square the player was standing in. It is
     // two words, both anchored, and it names no place in the catalog - which is
     // the test `ruin` had to pass and `scars` and `spirit veins` failed.
-    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment|ruins?|ruined (?:hall|compound|temple)|secret realms?|old ground|abandoned (?:place|places|site|sites|hall|halls|compound|compounds|temple|temples|seat|seats)|lost (?:cave|caves|tomb|tombs|hall|halls|temple|temples))\b/;
+    //
+    // `somewhere old` passes that same test and was found the same way. Played:
+    // "I look for somewhere old to explore" reached `investigate` carrying the
+    // subject "explore", and the engine answered that nothing here answers to
+    // it - while the whole site listing sat one word away. Two words, both
+    // anchored, naming no place in the catalog. `explore` on its own is
+    // deliberately NOT admitted: it is a verb, it takes "I explore the
+    // village", and this file has already had to revert the greedy version of
+    // this edit once.
+    /\b(?:inheritance (?:ground|grounds|site|sites|trial|trials|cave|caves)|trials?|graves?|tombs?|crypts?|burial (?:ground|site|mound)|grave goods?|interment|ruins?|ruined (?:hall|compound|temple)|secret realms?|old ground|somewhere (?:old|ancient)|abandoned (?:place|places|site|sites|hall|halls|compound|compounds|temple|temples|seat|seats)|lost (?:cave|caves|tomb|tombs|hall|halls|temple|temples))\b/;
 
 /**
  * The face of a site: what is physically at the threshold.

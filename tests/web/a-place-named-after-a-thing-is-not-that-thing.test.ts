@@ -101,6 +101,29 @@ describe('and no place in the catalog is swallowed by a category', () => {
      * is a deliberate act with a name attached rather than a quiet breakage two
      * subsystems away.
      */
+    it('and admits a ground phrase that names no place in the catalog', () => {
+        // The other side of the same test. `old ground` was let in for passing
+        // it; `graves` and `spirit veins` were kept out for failing it.
+        //
+        // `somewhere old` was found by playing: "I look for somewhere old to
+        // explore" reached `investigate` carrying the subject "explore", and
+        // the engine answered that nothing here answers to it - while the site
+        // listing sat one word away. It names no place in the catalog, which is
+        // asserted here rather than asserted once by hand and then trusted.
+        for (const name of Object.values(PLACE_NAMES)) {
+            if (typeof name !== 'string') continue;
+            expect(name.toLowerCase(), `${name} would be eaten by the ground phrase`)
+                .not.toMatch(/somewhere (?:old|ancient)/);
+        }
+        const asked = parseIntent('I look for somewhere old to explore');
+        expect(asked.action).toBe('site');
+        expect(asked.intent).toBe('approach');
+
+        // And the verb on its own stays out. "explore" takes "I explore the
+        // village", which is the greedy version this file has reverted once.
+        expect(parseIntent('I explore the village').action).not.toBe('site');
+    });
+
     it('leaves every catalogued place name reachable by travel', () => {
         const swallowed: string[] = [];
         for (const name of Object.values(PLACE_NAMES)) {
