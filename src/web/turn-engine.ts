@@ -1808,6 +1808,7 @@ export class GameService {
             : null;
         const fightAnswer = inAFight === null ? null : whatTheySaidInTheFight(trimmed);
 
+
         const standing = stillStands(this.crossroads, run.id, cultivator)
             ? this.crossroads
             : null;
@@ -2835,6 +2836,39 @@ export class GameService {
             action = carryWhatOnlyTheSentenceKnows(action, rawInput, this.present(cultivator));
         }
 
+        // ── THE BODY A READ SHOULD REPORT WHILE A FIGHT IS STANDING ──────
+        //
+        // A fight holds its damage until it resolves - the row is written once,
+        // at the end - so every read of the player's own body during one was
+        // answering off the sheet as it stood before the first exchange.
+        // Played, inside a single turn:
+        //
+        //   You are on 19 of 50; Liang Lanlu is on 33 of 55.
+        //   ...
+        //   Unmarked, 50 of 50 in the body. The meridians are whole.
+        //
+        // That is the engine contradicting itself in consecutive sentences.
+        //
+        // The stored row is left alone - what a fight does to it is settled when
+        // the fight is - and only what a READ is shown is corrected.
+        const held = theFightStillStands(this.fight, run.id, cultivator.id) ? this.fight : null;
+        const asTheyStand: Cultivator = held === null
+            ? cultivator
+            : {
+                ...cultivator,
+                // Keyed on the fight's own `playerId`, which is the combatant
+                // id for the player's side and is not always the cultivator row
+                // id - reading it off the row silently fell through to the
+                // pre-fight figure and printed "50 of 50" to somebody at 19.
+                hp: Math.max(0, Math.round(
+                    held.state.hp[held.state.playerId] ?? cultivator.hp
+                )),
+                injuries: [
+                    ...cultivator.injuries,
+                    ...(held.state.injuries[held.state.playerId] ?? [])
+                ]
+            };
+
         switch (action.action) {
             // `durationAskedFor` is the UNCLAMPED span in the sentence.
             // `action.days` has already been through `parseDuration`, which
@@ -2926,7 +2960,10 @@ export class GameService {
                     );
 
             case 'investigate':
-                return this.investigate(run, cultivator, ambient, action.target);
+                // The standing body, for the same reason as `status` and
+                // `treat`: "I look at my wounds" mid-fight read the sheet as it
+                // was before the first exchange and answered "Unmarked".
+                return this.investigate(run, asTheyStand, ambient, action.target);
 
             case 'attack':
                 // `terms` reaches the consequence layer and nothing else. See
@@ -3050,7 +3087,7 @@ ${noticedWaiting}`;
                 });
 
             case 'status': {
-                const eligibility = canAttemptBreakthrough(cultivator);
+                const eligibility = canAttemptBreakthrough(asTheyStand);
                 // The ceiling belongs on the status read, not only in a
                 // digest forty lines long that a player sees after the decade
                 // is already spent. Asking "how am I doing" and being told
@@ -3058,7 +3095,7 @@ ${noticedWaiting}`;
                 // "nothing will ever accumulate" is a status screen that lies
                 // by omission.
                 const sheet = this.freeAction(run, 'status', factsForStatus(
-                    cultivator, ambient, eligibility.progressRequired, eligibility.eligible,
+                    asTheyStand, ambient, eligibility.progressRequired, eligibility.eligible,
                     techniqueCeiling(
                         cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
                         // Or the sheet sends somebody to buy a book that is in
@@ -3171,6 +3208,22 @@ ${noticedWaiting}`;
                 return this.descend(run, cultivator, ambient, action.target);
 
             case 'treat':
+                // NOT WHILE SOMEBODY IS SWINGING AT YOU. Read off the sheet,
+                // this answered "nothing anybody could charge you for" to
+                // somebody visibly bleeding; read off the standing body it
+                // spent a month and closed nothing, because a wound taken in a
+                // fight is held by the fight until it ends. Neither is true.
+                // What is true is that a physician is not an option here.
+                if (held !== null) {
+                    return refused('cultivation_manage.treat', 'treat', factsForRefusal(
+                        'Not here, and not now.',
+                        'Somebody is still swinging at you. Whatever is open stays open until '
+                        + 'this is finished one way or the other.',
+                        'Treatment refused while a fight is standing: wounds taken in one are '
+                        + 'held by the fight and written when it resolves. Nothing spent, no '
+                        + 'time passed.'
+                    ));
+                }
                 return this.treat(run, cultivator, ambient);
 
             case 'buy':

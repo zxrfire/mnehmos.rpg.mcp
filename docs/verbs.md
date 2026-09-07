@@ -324,7 +324,7 @@ Takes `days`, `rations`.
 
 get a wound seen to. Untreated meridian injuries never heal on their own, they raise the odds of the next one, and this is the only route out of that. Choose it whenever the player says they are hurt and wants it dealt with, whether or not they name a physician. Costs stones and a month.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'treat'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.treat` · the deterministic parser reaches it · spends in-world time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'treat'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 
 ### `buy`
 
