@@ -63,6 +63,37 @@ export type CapabilityGrant =
     | 'enters_dead_zones'
     /**
      * Void Tribulation: folding space rather than crossing it.
+     *
+     * SOLO, PHYSICAL, AND CONTESTED. It folds the space around one body and
+     * carries nothing else: no companion, no cargo, no passenger. A Dao house
+     * portal moves other things, and it is a different mechanism rather than a
+     * better version of this one.
+     *
+     * AND A FOLD IS BLOCKED BY A FOLD. Somebody else folding the same space
+     * holds it against you, so at this height getting out is a contest between
+     * two hands rather than a switch one of them presses. That is what stops
+     * the grant ending every scene it appears in, and it is the reason an
+     * escape is still worth buying above ordinal 29.
+     *
+     * A GRANT ANSWERS A GRANT. AN ART HAS TO BE ANSWERED BY AN ART. Holding
+     * the space is enough to stop somebody who is only folding it, because
+     * both of you are spending the same free thing. It is not enough against a
+     * movement ART, which is above the grant by definition: that has to be
+     * answered with something of your own, an attack, a seal, a formation,
+     * whatever you are actually carrying. So the ladder has two rungs and the
+     * second one costs, which is the shape the genre already has.
+     *
+     * WHAT THIS MEANS FOR AN ART. Everybody at 29 has this for nothing, so a
+     * movement art at or above 29 that only folds space sells back a
+     * capability the rung already gave away. To be worth its place it has to
+     * beat the bare fold: take somebody with you, move something that is not
+     * you, reach where a held space refuses, or hold the space yourself.
+     * `Void-Fold Pilgrimage` is the row this was written about.
+     *
+     * IT IS ALSO THE FLOOR UNDER A TALISMAN. A hand at 29 with nothing
+     * carvable can still seal its own folding into a way out, so the ancient
+     * era's refusal to be carved stops costing them a slip here. Below 29 they
+     * have nothing to carve and that is the honest answer.
      */
     | 'spatial_folding'
     /** Void Tribulation: reads regional formation structure whole. */
