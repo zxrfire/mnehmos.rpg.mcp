@@ -236,7 +236,7 @@ export function whatAChangeOfHandsLeaves(change: AChangeOfHands): ObligationInpu
 export function oneAccountEach(rows: readonly ObligationInput[]): ObligationInput[] {
     const pooled = new Map<string, ObligationInput>();
     for (const row of rows) {
-        const key = [row.kind, row.holderId, row.subjectId ?? '', row.cause].join(' ');
+        const key = [row.kind, row.holderId, row.subjectId ?? '', row.cause].join('');
         const held = pooled.get(key);
         if (!held) {
             pooled.set(key, { ...row, tags: [...(row.tags ?? [])], participants: [...(row.participants ?? [])] });

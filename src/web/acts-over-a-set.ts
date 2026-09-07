@@ -384,7 +384,7 @@ export function theAccountOfASetAct(
         return { forAll: [], theirOwn: outcomes.flatMap(one => [...one.lines]) };
     }
 
-    const WHOEVER = ' ';
+    const WHOEVER = '';
     const templateOf = (sentence: string, who: string): string =>
         who.length === 0 ? sentence : sentence.split(who).join(WHOEVER);
 
