@@ -33,6 +33,11 @@
  */
 
 import { pillBandOrdinal } from '../cultivation/breakthrough.js';
+import {
+    couldFoldARing,
+    whatARingCosts,
+    whyTheFoldWillNotHold
+} from '../world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import { gradeTradeTier } from '../cultivation/buying-and-bartering-pills.js';
 import { earningsPerYear } from '../cultivation/origin.js';
 import { MAX_ORDINAL } from '../cultivation/realms.js';
@@ -77,6 +82,16 @@ export interface WhatYouAskedThemToMake {
     grade: TechniqueGrade;
     /** Set for a talisman. `a_way_out` needs a hand that can already fold. */
     slip?: WhatIsInTheSlip | null;
+    /**
+     * True where what is being asked for is a STORAGE RING.
+     *
+     * A separate flag rather than a grade, because a ring's grade means
+     * something else than every other grade in the world: a mortal-grade ring is
+     * heaven-grade material to destroy and is called mortal for how much it
+     * holds. Its gate is folding space rather than working the stuff, which is
+     * why `couldFoldARing` answers it and `canRefineGrade` cannot.
+     */
+    aRing?: boolean;
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -105,6 +120,16 @@ export function whetherTheirHandsCanDoIt(
             theyCan: false,
             insteadTheyCouldMake,
             why: whyTheCauldronRefuses(ask.grade, makerOrdinal)
+        };
+    }
+    if (ask.aRing && !couldFoldARing(ask.grade, makerOrdinal)) {
+        return {
+            theyCan: false,
+            insteadTheyCouldMake,
+            // The refusal that names the honest route, which had no caller
+            // anywhere: nobody was ever told WHY a ring could not be made for
+            // them, only that it could not.
+            why: whyTheFoldWillNotHold(ask.grade, makerOrdinal)
         };
     }
     if (ask.slip === 'a_way_out' && !couldCutAWayOut(makerOrdinal)) {
@@ -141,7 +166,15 @@ export function howMuchOfTheirReachItAsksFor(grade: TechniqueGrade, makerOrdinal
  * stones are not the medium. NULL IS THE WHOLE POINT and a caller must not fall
  * back to another figure: above the line the price is `whatItWouldTake`'s.
  */
-export function whatACommissionComesTo(grade: TechniqueGrade): number | null {
+export function whatACommissionComesTo(
+    grade: TechniqueGrade,
+    aRing = false
+): number | null {
+    // A RING IS PRICED AS A FOLD, not as its materials. The design owner: a
+    // heaven-grade ring is absurdly expensive, equivalent to a heaven-grade
+    // spirit boat, and a court has maybe one - which is a statement about the
+    // FOLD and not about the ore, and `whatARingCosts` is where it is made.
+    if (aRing) return whatARingCosts(grade);
     if (gradeTradeTier(grade) !== 'commodity') return null;
     return Math.round(earningsPerYear(refiningOrdinalFor(grade)));
 }

@@ -22,6 +22,7 @@ import { whatTheBodyWants, type OnTheRoll } from '../../../src/engine/social-lev
 import { createFavor, createGrudge, createObligation, type ObligationRecord } from '../../../src/engine/social/grudges';
 import type { Nearness } from '../../../src/engine/social/how-near-you-stand-to-somebody';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms';
+import { FOLD_FLOOR_ORDINAL } from '../../../src/engine/world/how-far-somebody-can-fold-space-and-what-it-costs';
 import {
     refiningOrdinalFor,
     refiningRealmNameFor
@@ -669,5 +670,75 @@ describe('the player taking a commission', () => {
         // gate are identical and only the reading of the person can differ.
         expect(asMakerInstead.priceInStones).toEqual(oneWay.priceInStones);
         expect(asMakerInstead.hands.theyCan).toEqual(oneWay.hands.theyCan);
+    });
+});
+
+// ═════════════════════════════════════════════════════════════════════════
+// AND A RING, WHICH IS PRICED AS A FOLD RATHER THAN AS ITS MATERIALS
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * A ring's grade means something else than every other grade in the world: a
+ * mortal-grade ring is heaven-grade material to destroy and is called mortal for
+ * how much it HOLDS. Its gate is folding space rather than working the stuff.
+ *
+ * `whyTheFoldWillNotHold` is the refusal that names the honest route and it had
+ * no caller anywhere - so nobody was ever told why a ring could not be made for
+ * them, only that it could not.
+ */
+describe('asking somebody to make you a ring', () => {
+    it('is refused by the fold, not by the materials, and the refusal says so', () => {
+        const said = whetherTheirHandsCanDoIt(
+            { named: 'a ring', grade: 'mortal', aRing: true },
+            FOLD_FLOOR_ORDINAL - 1
+        );
+        expect(said.theyCan).toBe(false);
+        // A hand a rung under the floor can work mortal-grade materials all day.
+        // What it cannot do is fold, and the refusal names that rather than a
+        // shortage of skill.
+        expect(said.why).toBeTruthy();
+        expect(said.why).toMatch(/fold/i);
+    });
+
+    it('and a cheaper ring is not an easier one', () => {
+        // There is no small fold. Every grade is refused at the same place.
+        for (const grade of GRADES) {
+            expect(
+                whetherTheirHandsCanDoIt(
+                    { named: 'a ring', grade, aRing: true },
+                    FOLD_FLOOR_ORDINAL - 1
+                ).theyCan
+            ).toBe(false);
+        }
+    });
+
+    it('opens for a hand that can fold', () => {
+        const said = whetherTheirHandsCanDoIt(
+            { named: 'a ring', grade: 'mortal', aRing: true },
+            MAX_ORDINAL
+        );
+        expect(said.theyCan).toBe(true);
+        expect(said.why).toBeNull();
+    });
+
+    it('is priced as a fold, and the grades climb steeply', () => {
+        // The design owner: a heaven-grade ring is absurdly expensive,
+        // equivalent to a heaven-grade spirit boat, and a court has maybe one.
+        // That is a statement about the fold rather than about the ore.
+        const mortal = whatACommissionComesTo('mortal', true);
+        const earth = whatACommissionComesTo('earth', true);
+        const heaven = whatACommissionComesTo('heaven', true);
+        expect(mortal).not.toBeNull();
+        expect(earth!).toBeGreaterThan(mortal!);
+        expect(heaven!).toBeGreaterThan(earth!);
+        // Steeply, not linearly: a ring one grade up is not a ring plus a bit.
+        expect(heaven! / earth!).toBeGreaterThan(earth! / mortal! * 0.9);
+    });
+
+    it('and a ring is priced differently from anything else of its grade', () => {
+        // The whole reason the flag exists. A mortal-grade ring and a
+        // mortal-grade slip are not the same commission.
+        expect(whatACommissionComesTo('mortal', true))
+            .not.toEqual(whatACommissionComesTo('mortal'));
     });
 });
