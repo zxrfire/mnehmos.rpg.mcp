@@ -304,14 +304,22 @@ export function armItsOwn(input: {
     // The good ones, best first. A house arming its people reaches past the
     // rack of iron swords for the things it keeps a record of - and WHETHER
     // each one may go is the ordinary question, asked of the ordinary room.
-    // AND ONLY THINGS SOMEBODY WOULD RAISE. Every finished artifact carries an
-    // ordinal, so "the best thing in the vault" would otherwise reach a spirit
-    // boat and a slip of paper. A house arming its people hands out weapons.
-    const offered = input.holds
-        .filter(o => (o.power ?? 0) > 0
-            && o.possessorId === null
-            && isSomethingYouWouldSwing(o))
+    // WHAT A HOUSE PUTS IN SOMEBODY'S HANDS IS TWO THINGS, and they are handed
+    // for two different reasons: something to fight with, and something to come
+    // home with. Both are in the vault and only the first is a weapon, so
+    // sorting the vault by rung and taking the top would hand out neither
+    // reliably - a slip stands at the rung of the hand that cut it and would
+    // outrank the swords.
+    const inTheVault = input.holds.filter(o => o.possessorId === null);
+    const weapons = inTheVault
+        .filter(o => (o.power ?? 0) > 0 && isSomethingYouWouldSwing(o))
         .sort((a, b) => (b.power ?? 0) - (a.power ?? 0));
+    // The best slip first for the same reason as the best sword: a house that
+    // is losing does not hand out its worst paper.
+    const slips = inTheVault
+        .filter(o => o.tags.includes('talisman') && o.data?.spent !== true)
+        .sort((a, b) => (b.power ?? 0) - (a.power ?? 0));
+    const offered = weapons;
     // And the strongest hands first, because a house does not put its best
     // sword in the weakest grip it has.
     const hands = [...input.takers].sort((a, b) => b.ordinal - a.ordinal);
@@ -352,6 +360,24 @@ export function armItsOwn(input: {
             note: `Opened while ${input.how}.`
         }));
         lent.push({ objectId: arm.id, objectName: arm.name, toId: hand.id, toName: hand.name });
+    }
+
+    // AND A SLIP EACH, to as many hands as there is paper for. Not gated on
+    // having been given a sword: the person a house most wants to come back is
+    // not always the person it armed.
+    for (let at = 0; at < Math.min(slips.length, hands.length); at++) {
+        const slip = slips[at];
+        const hand = hands[at];
+        if (slip === undefined || hand === undefined) continue;
+        objects.push(transferPossession(slip, {
+            onDay: input.onDay,
+            toHolderId: hand.id,
+            toHolderName: hand.name,
+            how: 'lent',
+            source: `${input.houseName} armed its own`,
+            note: `Opened while ${input.how}.`
+        }));
+        lent.push({ objectId: slip.id, objectName: slip.name, toId: hand.id, toName: hand.name });
     }
 
     return {

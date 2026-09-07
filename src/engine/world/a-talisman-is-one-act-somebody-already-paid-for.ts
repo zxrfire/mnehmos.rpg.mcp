@@ -95,11 +95,6 @@ export function whatWasFoldedIn(crafterOrdinal: number): number {
     return Math.max(0, Math.floor(crafterOrdinal));
 }
 
-/** What a strike talisman hits for: the rung folded in, swung by whoever holds it. */
-export function whatTheStrikeLandsAt(crafterOrdinal: number): number {
-    return whatWasFoldedIn(crafterOrdinal);
-}
-
 /**
  * How far a way-out talisman carries, in walking days.
  *
@@ -192,4 +187,51 @@ export function burnIt(object: ObjectRecord, byId: string, onDay: number): Objec
         tags: [...object.tags, 'spent'],
         data: { ...object.data, spent: true, spentBy: byId, spentOnDay: onDay }
     };
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// AND THE ONE ACT, TAKEN
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * WHO WALKED OUT OF A KILLING BECAUSE THEY WERE CARRYING A DOOR.
+ *
+ * The whole point of the object, and until this it had none: a slip that can
+ * never be burned is a row in a treasury. This is the moment it is for - a
+ * cultivator about to be finished, holding a fold somebody else paid for, using
+ * it once and being somewhere else.
+ *
+ * It breaks the rule everything in this engine obeys, that what you can do is
+ * what you are, exactly once and then it is paper. `FOLD_FLOOR_ORDINAL` is 29
+ * and most of the people this saves are nowhere near it.
+ *
+ * ONLY THE DEAD ARE OFFERED IT. Somebody who is going to survive the exchange
+ * does not spend a heaven-grade slip on it, and a caller that asked this about
+ * everybody present would empty the world's paper in one war.
+ *
+ * The slip is burned whether or not anybody ever hears about it, and the spent
+ * row stays: that this person had one, and used it here, is exactly the kind of
+ * thing somebody should be able to find out two centuries later.
+ */
+export function whoBurnedAWayOut(input: {
+    /** Every object the world holds. Mutated in place for the ones burned. */
+    objects: ObjectRecord[];
+    /** Ids of the people who are about to be finished. */
+    aboutToFall: readonly string[];
+    onDay: number;
+}): string[] {
+    const walkedOut: string[] = [];
+    for (const who of input.aboutToFall) {
+        const at = input.objects.findIndex(o =>
+            o.possessorId === who
+            && o.tags.includes('escape')
+            && isUnburnt(o)
+            && Number(o.data?.carriesWalkingDays ?? 0) > 0);
+        if (at < 0) continue;
+        const slip = input.objects[at];
+        if (slip === undefined) continue;
+        input.objects[at] = burnIt(slip, who, input.onDay);
+        walkedOut.push(who);
+    }
+    return walkedOut;
 }

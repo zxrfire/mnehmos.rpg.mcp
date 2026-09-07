@@ -2,6 +2,7 @@
  * A war between two houses, which is a group fight and nothing else.
  */
 
+import { whoBurnedAWayOut } from './a-talisman-is-one-act-somebody-already-paid-for.js';
 import {
     resolveMelee,
     sideStrength,
@@ -318,12 +319,28 @@ function fightOneYear(
     // instruction.
     const thingsBroken = writeBackWhatBroke(state, result, day);
 
+    // ── AND WHO WALKED OUT OF IT ─────────────────────────────────────────
+    //
+    // A departure talisman is one fold somebody else paid for, and this is the
+    // moment it exists for: a cultivator about to be finished, using it once,
+    // and being somewhere else. It is what lets a weak character survive a
+    // strong one without the engine lying about who was stronger.
+    const wouldFall = result.combatants
+        .filter(c => c.fate === 'finished' || c.fate === 'body_destroyed')
+        .map(c => c.id);
+    const walkedOut = new Set(whoBurnedAWayOut({
+        objects: state.objects,
+        aboutToFall: wouldFall,
+        onDay: day
+    }));
+
     // ── THE RECORD, COMPOSED FROM THE RESULT ─────────────────────────────
     const fell = result.combatants
-        .filter(c => c.fate === 'finished' || c.fate === 'body_destroyed')
+        .filter(c => (c.fate === 'finished' || c.fate === 'body_destroyed')
+            && !walkedOut.has(c.id))
         .map(c => c.name);
     const brokeOff = result.combatants
-        .filter(c => c.fate === 'withdrew' || c.fate === 'crippled')
+        .filter(c => c.fate === 'withdrew' || c.fate === 'crippled' || walkedOut.has(c.id))
         .map(c => c.name);
     const winner = result.winningSideId === null
         ? null
