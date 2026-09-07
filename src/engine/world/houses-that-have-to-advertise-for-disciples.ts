@@ -143,7 +143,7 @@ export interface RecruitingBill {
 export const WHAT_THE_PAPER_GIVES_AWAY: Record<WhyItIsUpThere, string> = {
     no_seat:
         'There is no address on it. Whoever wrote this has nowhere to tell you to come to, '
-        + 'which means they have no ground, which means there is nothing to inherit and '
+        + 'and a house with no ground has nothing to inherit and '
         + 'nothing to be thrown out of.',
     open_door:
         'The bar on it is the bottom of the ladder, which is not a bar at all. A house that '

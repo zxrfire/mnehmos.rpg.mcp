@@ -7950,7 +7950,7 @@ ${opened.text}` : receipt,
             `${stones} spirit stone${stones === 1 ? '' : 's'} of the ${cultivator.spiritStones} `
             + `you had, and the copy is yours. ${after.spiritStones} left.`,
             `It opens at ${rankName(named.requiredOrdinal)} and carries as far as `
-            + `${rankName(named.cap)}. Owning it and having read it are different facts: sitting `
+            + `${rankName(named.cap)}. Owning it is not reading it: sitting `
             + 'down with it is a separate thing you have not done yet.'
         ]);
         facts.structure.push(
@@ -8015,10 +8015,9 @@ ${opened.text}` : receipt,
             WHY_THEY_ARE_SELLING[offer.why],
             offer.usefulUntil > offer.usableFrom
                 ? `It opens at ${rankName(offer.usableFrom)} and carries as far as `
-                  + `${rankName(offer.usefulUntil)}. Owning it and having read it are different `
-                  + 'facts.'
-                : `It opens at ${rankName(offer.usableFrom)} and carries nobody past it. Owning `
-                  + 'it and having read it are different facts.',
+                  + `${rankName(offer.usefulUntil)}. Owning it is not reading it.`
+                : `It opens at ${rankName(offer.usableFrom)} and carries nobody past it. `
+                  + 'Owning it is not reading it.',
             // WHO WILL WANT A WORD WITH YOU, WHICH IS NOT WHOSE IT IS
             ...(() => {
                 const answerable = unauthorisedPractice(

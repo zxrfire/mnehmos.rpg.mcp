@@ -349,20 +349,24 @@ function whoseHouseWasInIt(
  * The people who are interchangeable, said once.
  */
 function theRoom(count: number, spoke: number, ofTheirs: number, reading: string): string {
+    // NAMES THEM AND STOPS. This said they "had no part in it" and then
+    // `reading` said "No part of this was theirs" directly after - the same
+    // sentence twice, in consecutive breaths, every time a crowd watched
+    // anything.
     const who = count === 1
-        ? 'One other person here had no part in it.'
-        : `${count} other people here had no part in it.`;
+        ? 'One other person is here.'
+        : `${count} other people are here.`;
 
+    // AND THE VERB AGREES. `${spoke} of them answer` printed "1 of them answer"
+    // whenever exactly one spoke, which is most scenes with a crowd in them.
     const voices = count === 1
-        ? (spoke === 1
-            ? 'They say something about it.'
-            : 'They do not say anything, and the not saying is visible.')
+        ? (spoke === 1 ? 'They say something about it.' : 'They say nothing.')
         : spoke === 0
-            ? 'None of them says anything, and the not saying is visible.'
+            ? 'None of them says anything.'
             : spoke === count
-                ? 'Every one of them answers it out loud.'
-                : `${spoke} of them answer it out loud. The rest do not, and the not saying `
-                  + 'is visible.';
+                ? 'Every one of them answers, out loud.'
+                : `${spoke} of them ${spoke === 1 ? 'answers' : 'answer'}, out loud. `
+                  + 'The rest say nothing.';
 
     const theirs = ofTheirs === 0
         ? ''

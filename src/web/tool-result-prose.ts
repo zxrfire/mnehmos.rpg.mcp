@@ -424,8 +424,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         lines.push(
             `${art?.name ?? 'The art'} is held now, at nothing like mastery` +
             `${art?.element ? `, and it runs on ${art.element}` : ''}. ` +
-            'Knowing a method and being able to use it are different distances, and practice is ' +
-            'the only thing that closes the second one.'
+            'Holding it is not being able to use it. Practice is what closes that.'
         );
         if (body.elementConflict === true) {
             lines.push(
@@ -699,7 +698,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
                 'Block-printed and plainly set down. What a house\'s own canon has that these do '
                 + 'not is four hundred years of its teachers writing into it, which is a large '
                 + 'part of what anybody sweeps a courtyard for.',
-                'A book or the food. Whichever the stones go on, they do not go on the other.'
+                'The purse will not cover the book and the food both.'
             );
         }
 

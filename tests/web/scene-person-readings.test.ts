@@ -70,7 +70,12 @@ function gateOver(nameable: readonly string[]): KnowledgeGate {
 }
 
 const NOBODY_KNOWN = gateOver([]);
-const THE_ROOM = /other (people|person) here had no part in it/;
+/**
+ * The watchers' one sentence. Matched on the count and not on the clause: it
+ * used to read "N other people here had no part in it", which the reading
+ * beside it then said again in its own words.
+ */
+const THE_ROOM = /other (?:people are|person is) here/;
 
 describe('a scene nothing happened in', () => {
     it('says nothing about anybody', () => {
@@ -98,7 +103,7 @@ describe('three people watching one thing happen', () => {
     it('are said once, with a count, rather than three times over', () => {
         const lines = said();
         expect(lines).toHaveLength(1);
-        expect(lines[0]).toMatch(/3 other people here had no part in it/);
+        expect(lines[0]).toMatch(/3 other people are here/);
     });
 
     it('do not have their names spent on a sentence that does not need one', () => {
@@ -131,7 +136,7 @@ describe('the person the turn actually happened to', () => {
         // sentences the reading used to return; the rule is that a total loss
         // reads as one.
         expect(lines[0]).toMatch(/lost all of it/i);
-        expect(lines.some(line => /One other person here had no part in it/.test(line)))
+        expect(lines.some(line => /One other person is here/.test(line)))
             .toBe(true);
     });
 
@@ -205,7 +210,7 @@ describe('somebody who is no longer standing here', () => {
         });
         expect(lines.join(' ')).toMatch(/The Killed/);
         expect(lines.length).toBeGreaterThan(0);
-        expect(lines.join(' ')).toMatch(/2 other people here had no part in it/);
+        expect(lines.join(' ')).toMatch(/2 other people are here/);
     });
 
     it('and somebody who merely walked off is not a scene at all', () => {

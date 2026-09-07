@@ -1081,7 +1081,7 @@ function describeCompany(
             } else if (rest > 1) {
                 sentences.push(
                     `${capitalise(roughly(rest))} are here besides, and how many of them `
-                    + 'matter is not something a glance settles.'
+                    + 'matter is not something this cultivator can tell from here.'
                 );
             }
             return sentences.join(' ');

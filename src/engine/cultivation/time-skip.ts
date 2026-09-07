@@ -791,9 +791,8 @@ export function simulateTimeSkip(
                         // and no sentence said which way or why.
                         paidWithTheBody > 0
                             ? `${result.narrationHint} Getting through it took `
-                              + `${paidWithTheBody} of the body, which is what arriving costs and `
-                              + 'is why an accumulated rush across several rungs leaves somebody '
-                              + 'standing in nothing.'
+                              + `${paidWithTheBody} of the body. Every rung costs that, and `
+                              + 'nothing gives it back but time.'
                             : result.narrationHint,
                         false,
                         {
