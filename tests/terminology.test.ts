@@ -243,7 +243,32 @@ const SLEEPER_PROPER_NAME = /[Ss]leeper[- ][Ii]n[- ][Tt]he[- ][Cc]ut|mat-sleeper
  * A ratchet against the two that were found, in the same spirit as the retired
  * vocabulary above, rather than a general classifier for every work that exists.
  */
-const AN_EXTERNAL_SOURCE = /(?<![A-Za-z])the genre(?![A-Za-z])|(?<![A-Za-z])a traveller|Obi-?Wan|of the weir/i;
+/**
+ * The names themselves, built from their codepoints so THIS FILE DOES NOT
+ * CONTAIN THE NAMES IT FORBIDS. Same reason and same technique as `DASH`
+ * below: a guard that has to spell out what it bans is one more place the
+ * banned thing lives, and here that would defeat the point of the rule.
+ *
+ * Two needles for one franchise because the repo held both spellings, one
+ * hyphenated and one not.
+ */
+const FORBIDDEN_SOURCE_NAMES: readonly number[][] = [
+    [69, 114, 32, 71, 101, 110],
+    [65, 110, 97, 107, 105, 110],
+    [75, 101, 110, 111, 98, 105],
+    [79, 98, 105, 45, 87, 97, 110],
+    [79, 98, 105, 32, 87, 97, 110],
+    [111, 108, 100, 32, 66, 101, 110]
+];
+
+const AN_EXTERNAL_SOURCE = new RegExp(
+    FORBIDDEN_SOURCE_NAMES
+        // Bounded on both sides by a letter test, or the first needle fires
+        // inside ordinary words: `other generation` contains one of them.
+        .map(cs => '(?<![A-Za-z])' + String.fromCharCode(...cs) + '(?![A-Za-z])')
+        .join('|'),
+    'i'
+);
 
 /**
  * Em-dash (U+2014) and en-dash (U+2013), built from their codepoints so this
@@ -392,6 +417,25 @@ function report(violations: Violation[]): string {
 describe('banned vocabulary stays out of the repository', () => {
     const { violations, fileCount, usedAllowlist } = scan();
     const inGroup = (group: RuleGroup) => violations.filter(v => v.group === group);
+
+    /**
+     * THE PATTERN PROVES ITSELF BEFORE IT IS TRUSTED.
+     *
+     * `AN_EXTERNAL_SOURCE` is assembled from codepoints so this file does not
+     * hold the names it forbids, and an assembled pattern is exactly where a
+     * dead one hides: a regex that matches nothing and a clean tree read
+     * identically from the outside. So it is asked to match, and to leave an
+     * ordinary word alone.
+     */
+    it('has a source-name pattern that is alive and not overbroad', () => {
+        for (const cs of FORBIDDEN_SOURCE_NAMES) {
+            const name = String.fromCharCode(...cs);
+            expect(AN_EXTERNAL_SOURCE.test(`a line naming ${name} as the source`), name).toBe(true);
+        }
+        // The first needle sits inside ordinary English and must not fire there.
+        expect(AN_EXTERNAL_SOURCE.test('what the other generation was taught')).toBe(false);
+        expect(AN_EXTERNAL_SOURCE.test('a longer generated passage')).toBe(false);
+    });
 
     it('reads a corpus worth guarding', () => {
         // A walk that finds nothing would pass every rule below for free.
