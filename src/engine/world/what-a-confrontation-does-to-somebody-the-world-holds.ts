@@ -359,7 +359,10 @@ export function whatTheConfrontationDidToThem(
             // people, whatever the summaries have in common.
         }), { recur: false }));
 
-        lines.push(`${dying.name} is dead, and the world has it written down.`);
+        // The deed line that follows this one opens "The world has it written
+        // down", so saying it here too put the same clause into two of three
+        // consecutive sentences. What this line owns is the death.
+        lines.push(`${dying.name} is dead.`);
         if (handoff.primaryHeirId) {
             lines.push(
                 `They left somebody, and that somebody has inherited both what they were doing `

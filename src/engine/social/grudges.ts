@@ -80,6 +80,22 @@ export type ObligationCause = GrudgeCause | FavorCause | OathCause;
  */
 export type Severity = 'slight' | 'serious' | 'grave' | 'unforgivable';
 
+/**
+ * The band as a phrase, for the sentences that report one.
+ *
+ * The four keys are the engine's names for four bands and were reaching the
+ * player as though `grave` were a word anybody uses that way - "written down
+ * as grave, on day 365000", "killed kin, at grave". Here rather than at either
+ * of those, because a fact lives in one place and both of them report the same
+ * one.
+ */
+export const SEVERITY_IN_WORDS: Readonly<Record<Severity, string>> = Object.freeze({
+    slight: 'a small thing',
+    serious: 'a serious one',
+    grave: 'something people do not let go of',
+    unforgivable: 'the kind of thing that is never settled'
+});
+
 export const SEVERITY_ORDER: readonly Severity[] = Object.freeze([
     'slight',
     'serious',

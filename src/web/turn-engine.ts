@@ -3688,7 +3688,20 @@ ${noticed}`;
             // hold - written by the ordinary verbs, priced by
             // `whatYouBringToBear` on every later approach, and askable in no
             // sentence at all. See `what-stands-between-you-and-everybody.ts`.
-            const named = target
+            // ── A WORD THAT MEANS ALL OF THEM IS NOT ONE OF THEM ─────
+            //
+            // "what stands between me and everybody" parses to this read with
+            // `everybody` as its target, and `somebodyAtHand` answers a
+            // pointer with the nearest face - so the question about the whole
+            // ledger was answered about one stranger:
+            //
+            //   Nothing stands between you and Yun Wanyan.
+            //
+            // `theSetThisNames` is the repo's own answer to which words name a
+            // set, so "everyone here" and "all of them" are covered by the
+            // same reading rather than by a second list here. A set word means
+            // the unfiltered read, which is what no target at all means.
+            const named = target && theSetThisNames(target) === null
                 ? this.partyPutTo(cultivator, target, this.scopeFor(cultivator))
                 : null;
             const stands = whatStandsBetweenYouAndEverybody({

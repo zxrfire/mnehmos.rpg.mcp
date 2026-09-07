@@ -101,7 +101,7 @@ import {
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import type { WorldState } from './world-state.js';
-import type { Severity } from '../social/grudges.js';
+import { SEVERITY_IN_WORDS, type Severity } from '../social/grudges.js';
 import {
     whatADeedLeaves,
     type Deed,
@@ -300,9 +300,16 @@ export function aDeedEntersTheWorld(
         fact,
         weight,
         leaves,
+        // ── A ROW READ OUT, RATHER THAN A THING THAT HAPPENED ───────────
+        //
+        // This said "written down as grave, on day 365000, and 8 people were
+        // there" - a severity key straight off the union, an absolute world
+        // clock nobody standing anywhere can read, and a label-and-list shape.
+        // The severity is said in words; the day is the inspector's and is in
+        // `fact` for it; who saw it is the half a player can act on.
         line: workedOut
-            ? `The world has it written down as ${weight}, on day ${input.day}, `
-              + `and ${fact.witnessIds.length} `
+            ? `The world has it written down, as ${SEVERITY_IN_WORDS[weight]}. `
+              + `${fact.witnessIds.length} `
               + `${fact.witnessIds.length === 1 ? 'person was' : 'people were'} there.`
             : 'The world has it written down. Nobody has put your name to it, so nobody '
               + 'is repeating it - which is not the same as nobody ever finding out.'

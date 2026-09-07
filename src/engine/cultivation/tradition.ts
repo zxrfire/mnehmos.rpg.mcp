@@ -114,7 +114,11 @@ export function killRequirement(
                 // matters here and it will usually be wrong in the other
                 // direction: they will expect to have to end a soul.
                 ? 'The nascent soul is there and it is crippled - it cannot survive outside the body it is holding together. They read as Nascent Soul to anybody who checks, and an ordinary killing finishes them anyway.'
-                : 'Below Nascent Soul the body is the whole of the person, and an ordinary killing is an ordinary killing.'
+                // The tail was a tautology: an ordinary killing is an
+                // ordinary killing. What it was there to say is that nothing
+                // beyond the body has to be dealt with, and the first clause
+                // says that already.
+                : 'Below Nascent Soul the body is the whole of the person, and ending it ends them.'
     };
 }
 

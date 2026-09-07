@@ -28,7 +28,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
 import { howFarOff } from '../../src/web/facts';
-import { whichWayItPoints } from '../../src/engine/social/grudges';
+import { SEVERITY_IN_WORDS, whichWayItPoints } from '../../src/engine/social/grudges';
 import {
     theLedgerAsLines,
     whatStandsBetweenYouAndEverybody
@@ -124,8 +124,13 @@ describe('asking what the ledger holds', () => {
 
         const after = said(await game.act('what am I owed'));
         expect(after).toMatch(/Held against you/);
-        // The cause and the weight, so the player can tell a slight from a feud.
-        expect(after).toMatch(/at (slight|moderate|serious|grave)/);
+        // The cause and the weight, so the player can tell a slight from a
+        // feud. The weight in WORDS: `at grave` was the band's own key with a
+        // preposition in front of it, and `SEVERITY_IN_WORDS` in `grudges.ts`
+        // is where that fact lives now.
+        expect(after).toMatch(
+            new RegExp(`the world holds it as (${Object.values(SEVERITY_IN_WORDS).join('|')})`)
+        );
 
         // AND A NAME, NEVER AN ID. The person who took it is one the world
         // spawned, and `nameOf` consulted two tables and a catalog without

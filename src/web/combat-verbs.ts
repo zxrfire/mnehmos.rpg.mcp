@@ -1963,8 +1963,12 @@ export const combatVerbs = {
                 theirHouseId && theirHouse
                     ? known
                         ? `${hurtName} was ${theirHouse.name}'s. ${followed.note}`
+                        // "what was agreed" is the vocabulary of an agreed
+                        // bout, and this branch is reached for any killing at
+                        // all - so a house nobody had an agreement with was
+                        // said to be about to hear how one was broken.
                         : `${hurtName} answered to somebody, and you do not know who. They will `
-                          + 'be told what was agreed and what happened instead.'
+                          + 'hear what happened, and not from you.'
                     // Nobody to complain to and somebody to come asking, which is
                     // the harder of the two and the one that had no sentence.
                     : `${hurtName} answered to nobody and left ${family === 1

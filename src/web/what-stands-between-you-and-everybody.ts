@@ -36,7 +36,11 @@
  * Pure. Rows and a name resolver in, sentences out.
  */
 
-import { whichWayItPoints, type ObligationRecord } from '../engine/social/grudges.js';
+import {
+    SEVERITY_IN_WORDS,
+    whichWayItPoints,
+    type ObligationRecord
+} from '../engine/social/grudges.js';
 
 /** What one row is, said as a person would say it. */
 export interface OneRowOfTheLedger {
@@ -84,7 +88,11 @@ function rowFor(
     const withWhom = otherId === null ? NOBODY_IN_PARTICULAR : nameOf(otherId);
     return {
         withWhom,
-        line: `${lead} ${withWhom}: ${inWords(record)}, at ${record.severity}. ${whatItSays(record)}`,
+        // `at grave` was the band's own key with a preposition in front of
+        // it. `SEVERITY_IN_WORDS` is where that fact lives, and the deed
+        // line reads the same table.
+        line: `${lead} ${withWhom}: ${inWords(record)}, and the world holds it as `
+            + `${SEVERITY_IN_WORDS[record.severity]}. ${whatItSays(record)}`,
         structure: `${record.id}:${record.kind}:${record.cause}:${record.severity}`
     };
 }
