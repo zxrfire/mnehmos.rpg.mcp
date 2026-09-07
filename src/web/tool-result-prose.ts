@@ -112,6 +112,34 @@ export function skipCalls(action: string, skip: TimeSkipResult, provisioning: st
  * The handful of fields worth reading off an MCP handler's result.
  */
 /**
+ * Whether a line was written for whoever is reading the TOOL, not the player.
+ *
+ * A tool result's `note` is read by two audiences that want opposite things:
+ * an operator or a model driving the MCP surface, and a person standing in a
+ * market town. This layer pushes it at the second, and the first had been
+ * writing for the first.
+ *
+ * Played: `I assess myself` printed *"only `attempt` refuses, and only for
+ * physical reasons. `regard` is the separate question of..."* - two fields of
+ * the result shape, in backticks, to somebody's face.
+ *
+ * So a line naming a symbol is not a line for a player, and this is the net
+ * rather than the fix: the note that leaked was corrected where it is written.
+ * A net is worth having because the same field is read at three sites here and
+ * filled by every tool in the game.
+ */
+function writtenForTheOperator(line: string): boolean {
+    return /`[^`]+`/.test(line) || /\.(?:ts|md)\b/.test(line);
+}
+
+/** Push a tool's note only where it is addressed to the player. */
+function pushNote(lines: string[], note: unknown): void {
+    if (typeof note !== 'string') return;
+    if (writtenForTheOperator(note)) return;
+    lines.push(note);
+}
+
+/**
  * Strip the deliberate-override word out of a named target.
  */
 export function withoutTheOverride(target: string): string {
@@ -161,7 +189,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
 
     // WHERE SOMEBODY STANDS IN THEIR OWN HOUSE
     const returning = body.returning as { note?: string } | null | undefined;
-    if (returning?.note) lines.push(returning.note);
+    pushNote(lines, returning?.note);
 
     // BEING RAISED A RUNG
     if (body.promoted === true) {
@@ -223,7 +251,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         }
     }
     if (body.member === false && typeof body.note === 'string') {
-        lines.push(body.note);
+        pushNote(lines, body.note);
     }
 
     const odds = body.odds as { finalChancePercent?: number; roll?: number } | undefined;
@@ -493,7 +521,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
                   + `${Math.round(stall.stagnationYears ?? 0)} the ladder credits. `
                   + `${Math.round(stall.yearsRemaining ?? 0)} still counted.`);
         }
-        if (typeof body.note === 'string') lines.push(body.note);
+        pushNote(lines, body.note);
     }
 
     // WHAT HAPPENS IF THEY TRY, WHICH IS THE WHOLE POINT OF THE VERB
@@ -584,7 +612,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
                 `Names picked up passing it along: ${learned.map(n => String(n)).join(', ')}.`
             );
         }
-        if (typeof body.note === 'string') lines.push(body.note);
+        pushNote(lines, body.note);
     }
 
     if (body.paid === true) {
@@ -617,7 +645,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
             `No longer of ${formerSect?.name ?? 'the sect'}` +
             `${formerRank ? `, where the rank was ${formerRank}` : ''}.`
         );
-        if (typeof body.note === 'string') lines.push(body.note);
+        pushNote(lines, body.note);
     }
 
     const offered = body.work as Array<{ name?: string; cashPerMonth?: number; monthsLodgingItCovers?: number; risk?: string }> | undefined;

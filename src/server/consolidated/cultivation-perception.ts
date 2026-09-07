@@ -368,13 +368,17 @@ export async function handleAssess(args: z.infer<typeof AssessSchema>): Promise<
             note: regard.note
         },
         summary: assessment.summary,
+        // FOR WHOEVER READS THIS, WHICH IS NOT ALWAYS AN OPERATOR. This is
+        // pushed into the player's own lines by `tool-result-prose.ts`, and it
+        // used to end by naming two fields of this result shape in backticks -
+        // source identifiers, printed to somebody standing in a market town.
+        //
+        // What is left is the part that is about the world: the five answers
+        // come apart, and nothing refuses you for being unwise.
         note:
-            'Five separate answers, and they come apart. A cultivator who can attempt this may not ' +
-            'survive it, and one who survives it may not understand what they found. Nothing here ' +
-            'refuses an action for being unwise - only `attempt` refuses, and only for physical reasons. ' +
-            '`regard` is the separate question of how far above or below this they are standing, and ' +
-            'what follows from that: what it costs them, how long it takes, and whether it is put to ' +
-            'them at all.'
+            'Five separate answers, and they come apart. A cultivator who can attempt this may ' +
+            'not survive it, and one who survives it may not understand what they found. ' +
+            'Nothing refuses an action here for being unwise.'
     };
 }
 
