@@ -61,7 +61,7 @@ describe('finishing one is news', () => {
         const board = await say('what duties are there');
         // Take whatever this seed put on the wall, by the name the board
         // printed - AGENTS.md: any name the game prints is a name it accepts.
-        const offered = /\n {2}([^\n]+?) - /.exec(board.narration ?? '')?.[1];
+        const offered = /\n {2}([^:\n]{5,60}): /.exec(board.narration ?? '')?.[1];
         expect(offered, board.narration ?? '').toBeTruthy();
 
         const before = world().history.facts.length;
@@ -81,7 +81,7 @@ describe('finishing one is news', () => {
     it('moves what people are repeating, which it could not before', async () => {
         const { say } = await standingWhereThereIsABoard('tier-c');
         const board = await say('what duties are there');
-        const offered = /\n {2}([^\n]+?) - /.exec(board.narration ?? '')?.[1];
+        const offered = /\n {2}([^:\n]{5,60}): /.exec(board.narration ?? '')?.[1];
         if (!offered) return;
 
         const before = await say('what news is there');

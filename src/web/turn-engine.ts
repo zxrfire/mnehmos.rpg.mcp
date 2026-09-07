@@ -10321,13 +10321,58 @@ ${fit.line}`;
         const wanted = (target ?? '').trim();
 
         // WHAT THE BOARD CALLS IT
-        const describe = (offer: DutyCandidate): string =>
-            `${offer.entry.name} - ${tierNameFor(offer.terms.regard.band).toLowerCase()} at `
-            + `${rankName(offer.terms.pitchOrdinal)}: ${humanDays(offer.terms.days)}, `
-            + `${offer.terms.contribution} contribution and ${offer.terms.stones} spirit stone`
-            + `${offer.terms.stones === 1 ? '' : 's'} on completion`
+        // ── A BOARD DOES NOT REPEAT ITS OWN TERMS ON EVERY LINE ─────────
+        //
+        // Every posting carried the house that put it up, the rung it is
+        // pitched at, the tier that reads at, and the pay - and a house posts
+        // for the rung in front of it, so eight of nine lines were:
+        //
+        //   Finding out why it went quiet, for Azure Cloud Pavilion - second
+        //     rank at Qi Condensation Layer 6: 3 months, 72 contribution and
+        //     22 spirit stones on completion, with 11 of the house alongside.
+        //   To a war, for Azure Cloud Pavilion - second rank at Qi Condensation
+        //     Layer 6: 3 months, 72 contribution and 22 spirit stones on
+        //     completion, with 11 of the house alongside.
+        //
+        // Word for word but the title. What a group of postings shares is a
+        // fact about the house's standing offer, so it is said once above them,
+        // and each line says only what that line asks and pays.
+        const HOUSE_ON_THE_NOTICE = ', for ';
+        const whoPosted = (offer: DutyCandidate): string | null => {
+            const at = offer.entry.name.lastIndexOf(HOUSE_ON_THE_NOTICE);
+            return at < 0 ? null : offer.entry.name.slice(at + HOUSE_ON_THE_NOTICE.length);
+        };
+        const titleOf = (offer: DutyCandidate): string => {
+            const at = offer.entry.name.lastIndexOf(HOUSE_ON_THE_NOTICE);
+            return at < 0 ? offer.entry.name : offer.entry.name.slice(0, at);
+        };
+        const sameTermsAs = (offer: DutyCandidate): string => {
+            const house = whoPosted(offer);
+            const stones = `${offer.terms.stones} spirit stone`
+                + `${offer.terms.stones === 1 ? '' : 's'} on completion`;
+            return `${house === null ? 'Contracted out' : house}, `
+                + `${tierNameFor(offer.terms.regard.band).toLowerCase()} at `
+                + `${rankName(offer.terms.pitchOrdinal)}, ${stones}:`;
+        };
+        const whatItAsks = (offer: DutyCandidate): string =>
+            `  ${titleOf(offer)}: ${humanDays(offer.terms.days)}, `
+            + `${offer.terms.contribution} contribution`
             + (offer.terms.cohort > 0 ? `, with ${offer.terms.cohort} of the house alongside` : '')
             + '.';
+        const theBoardAsLines = (offers: readonly DutyCandidate[]): string[] => {
+            const groups = new Map<string, DutyCandidate[]>();
+            for (const offer of offers) {
+                const key = sameTermsAs(offer);
+                const held = groups.get(key);
+                if (held) held.push(offer);
+                else groups.set(key, [offer]);
+            }
+            const out: string[] = [];
+            for (const [terms, group] of groups) {
+                out.push(terms, ...group.map(whatItAsks));
+            }
+            return out;
+        };
 
         // A SENTENCE THAT POINTS AT THE ONE LINE IS NOT A REQUEST TO READ
         const pointedAtTheOnlyOne =
@@ -10364,12 +10409,16 @@ ${fit.line}`;
                     ? 'What the house is asking for, and what it pays:'
                     : 'What is being contracted out, and what it pays. None of it touches anybody\'s '
                       + 'ledger, because you are on nobody\'s:');
-                for (const offer of board.offers.slice(0, DUTIES_SHOWN)) {
-                    lines.push(`  ${describe(offer)}`);
-                }
+                lines.push(...theBoardAsLines(board.offers.slice(0, DUTIES_SHOWN)));
             }
-            for (const refused of board.refusals.slice(0, DUTIES_SHOWN)) {
-                lines.push(`  ${refused.name}: not put to you. ${refused.reason}`);
+            // Under a heading of their own: the offers above are grouped by the
+            // terms they share and indented under those, so a refusal pushed in
+            // at the same indent read as another line of the last group.
+            if (board.refusals.length > 0) {
+                lines.push('And what is on the wall that is not being put to you:');
+                for (const refused of board.refusals.slice(0, DUTIES_SHOWN)) {
+                    lines.push(`  ${refused.name}. ${refused.reason}`);
+                }
             }
 
             const facts = factsForToolResult(
@@ -10516,7 +10565,11 @@ ${fit.line}`;
             });
         }
 
-        execution.facts.lines.unshift(describe(chosen));
+        // One posting, taken: the terms and what it asks, on one line, because
+        // there is nothing here for a group heading to be shared with.
+        execution.facts.lines.unshift(
+            `${sameTermsAs(chosen)}${whatItAsks(chosen).replace(/^ {2}/, ' ')}`
+        );
         execution.calls.unshift({
             name: 'encounters.acceptDuty',
             action: 'sect',

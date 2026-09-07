@@ -483,14 +483,14 @@ function timeSkipProse(
         : sentOut
             // Not a place they settled into - a place they were sent to, and
             // the ground's own qi is beside the point for the duration.
-            ? `${where}. ${before.name} went out to it.`
+            ? `${where}. You went out to it.`
         : ambient === 'thin'
-            ? `${where}. The qi is thin here; it always has been. ${before.name} sat down anyway.`
+            ? `${where}. The qi is thin here; it always has been. You sat down anyway.`
             : ambient === 'spirit_tide'
-                ? `${where}. A tide was running when ${before.name} sat down, and for once the air gave more than it asked.`
+                ? `${where}. A tide was running when you sat down, and for once the air gave more than it asked.`
                 : ambient === 'dense'
-                    ? `${where}. There is a vein under this ground, close enough to feel. ${before.name} sat down on top of it.`
-                    : `${where}. ${before.name} sat down and began to breathe.`;
+                    ? `${where}. There is a vein under this ground, close enough to feel. You sat down on top of it.`
+                    : `${where}. You sat down and began to breathe.`;
     // What was INTENDED is what the player asked for, not what the engine
     // decided to run after it had already shortened the span. Asking for five
     // years and reading "Seclusion of 2 years was intended" is the game telling

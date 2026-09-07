@@ -698,8 +698,8 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 3,
         damageMultiplier: 6,
         reaction:
-            'Pitched {gap} rungs from where they stand, which is far enough above that it is not '
-            + 'put in front of them. Asking does not produce it, and being told so is the whole answer.'
+            'Pitched {gap} rungs above where you stand, which is far enough above that it is not '
+            + 'put in front of you. Asking does not produce it, and being told so is the whole answer.'
     },
     {
         band: 'overmatched',
@@ -712,8 +712,8 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 2,
         damageMultiplier: 3,
         reaction:
-            'Pitched {gap} rungs from where they stand. It is within reach of a hand and the margin '
-            + 'is against them; nobody offers it, and nobody stops them either.'
+            'Pitched {gap} rungs above where you stand. It is within reach of a hand and the margin '
+            + 'is against you; nobody offers it, and nobody stops you either.'
     },
     {
         band: 'stretch',
@@ -726,7 +726,7 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 1.35,
         damageMultiplier: 1.6,
         reaction:
-            'Pitched {gap} rungs from where they stand: just above. It can be had, and it costs more '
+            'Pitched {gap} rungs above where you stand. It can be had, and it costs more '
             + 'time and more risk than it would cost the person it was meant for.'
     },
     {
@@ -740,7 +740,7 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 1,
         damageMultiplier: 1,
         reaction:
-            'Pitched {gap} rungs from where they stand, which is to say at them. Ordinary terms, '
+            'Pitched {gap} rungs from where you stand, which is to say at you. Ordinary terms, '
             + 'ordinary price, ordinary risk.'
     },
     {
@@ -754,7 +754,7 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 0.8,
         damageMultiplier: 0.45,
         reaction:
-            'Pitched {gap} rungs below where they stand. It goes quickly, it goes well, and the '
+            'Pitched {gap} rungs below where you stand. It goes quickly, it goes well, and the '
             + 'people involved adjust their terms without being asked to.'
     },
     {
@@ -768,7 +768,7 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 0.55,
         damageMultiplier: 0.12,
         reaction:
-            'Pitched {gap} rungs below where they stand. Nobody present treats this as a thing being '
+            'Pitched {gap} rungs below where you stand. Nobody present treats this as a thing being '
             + 'attempted. It is simply done, and the room rearranges itself around that.'
     },
     {
@@ -782,9 +782,9 @@ export const REGARD_BANDS: readonly RegardBandRow[] = [
         priceMultiplier: 0.3,
         damageMultiplier: 0,
         reaction:
-            'Pitched {gap} rungs below where they stand. Nothing here is worth their time and '
-            + 'everyone can see what they are, so it is not put to them at all. If they take it '
-            + 'anyway it costs them nothing, and that is its own kind of answer.'
+            'Pitched {gap} rungs below where you stand. Nothing here is worth your time and '
+            + 'everyone can see what you are, so it is not put to you at all. If you take it '
+            + 'anyway it costs you nothing, and that is its own kind of answer.'
     }
 ] as const;
 

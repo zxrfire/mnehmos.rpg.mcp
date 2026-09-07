@@ -170,7 +170,10 @@ describe('the discovery gate holds', () => {
             gate: NOBODY_KNOWN
         });
         expect(lines[0]).not.toMatch(/Yan Shuling/);
-        expect(lines[0]).toMatch(/whose name this cultivator does not have/);
+        // The rule, not the sentence: a stranger is given a standing and no
+        // name. `this cultivator` used to be the engine's word for the reader
+        // here, in a channel that says `you` everywhere else.
+        expect(lines[0]).toMatch(/whose name you do not have/);
         // And they still answer it, which is the point of the sentence.
         expect(lines[0]).toMatch(/lost all of it/i);
     });
@@ -185,7 +188,7 @@ describe('the discovery gate holds', () => {
             gate: NOBODY_KNOWN
         });
         const strangers = lines.filter(line =>
-            /whose name this cultivator does not have/.test(line)).length;
+            /whose name you do not have/.test(line)).length;
         expect(strangers).toBe(1);
         expect(lines.some(line => /2 others here were in it too/.test(line))).toBe(true);
     });

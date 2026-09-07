@@ -189,11 +189,19 @@ export const SAY_TO_GO = 'I get up and go';
  * of the three numbers add up and the third has to be converted first - in a
  * game whose whole claim is that the numbers are the honest part.
  */
-function spans(scale: number): (days: number) => string {
+function spans(scale: number): { said: (days: number) => string; bare: (days: number) => string } {
     const inYears = scale >= 365;
-    return (days: number) => inYears
-        ? `${(days / 365).toFixed(1)} years`
-        : `${Math.round(days)} day${Math.round(days) === 1 ? '' : 's'}`;
+    return {
+        said: (days: number) => inYears
+            ? `${(days / 365).toFixed(1)} years`
+            : `${Math.round(days)} day${Math.round(days) === 1 ? '' : 's'}`,
+        // THE UNIT IS SAID ONCE IN A SENTENCE. "0.5 years of the 1.0 years are
+        // spent and 0.5 years are still sitting there" says `years` three times
+        // and the figure four, which is the same arithmetic read as a stutter.
+        bare: (days: number) => inYears
+            ? `${(days / 365).toFixed(1)}`
+            : `${Math.round(days)}`
+    };
 }
 
 /**
@@ -223,15 +231,18 @@ export function whatTheForkAsks(
     them: string
 ): string {
     const say = spans(crossroads.daysAsked);
-    const remaining = say(crossroads.daysRemaining);
-    const spent = say(crossroads.daysSpent);
-    const asked = say(crossroads.daysAsked);
+    const remaining = say.said(crossroads.daysRemaining);
+    const spent = say.said(crossroads.daysSpent);
+    const asked = say.bare(crossroads.daysAsked);
 
+    // AND THE FIGURE IS SAID ONCE. Every mention after the first is `the rest`,
+    // which is what somebody weighing the choice actually calls it, and which
+    // reads the same whether the span came out in days or in years.
     if (crossroads.canWithdraw) {
-        return `${spent} of the ${asked} are spent and ${remaining} are still sitting there. `
+        return `${spent} of ${asked} are spent, and ${remaining} are still sitting there. `
             + 'The road out is open for as long as you are not sitting down. Get up and it '
-            + `costs you the ${remaining}, and ${them} never knows this place was here. Sit `
-            + `back down and the ${remaining} are yours, and you are found here, sitting, by `
+            + `costs you the rest, and ${them} never knows this place was here. Sit `
+            + 'back down and the rest is yours, and you are found here, sitting, by '
             + `${them}. Say which.`;
     }
     // WHAT THIS DOES NOT SAY, DELIBERATELY.
@@ -246,11 +257,11 @@ export function whatTheForkAsks(
     // and buys only your feet, and sitting is the only way those years get
     // spent. If posture is ever meant to change what an arrival does, that is a
     // design question for the encounter layer and this sentence follows it.
-    return `${spent} of the ${asked} are spent and ${remaining} are still sitting there. `
+    return `${spent} of ${asked} are spent, and ${remaining} are still sitting there. `
         + `There is no road out that does not cross ${them}, so leaving buys you nothing but `
-        + `your feet: get up and the ${remaining} are gone and you meet them standing. Sit back `
-        + `down and the ${remaining} are yours, and they come on you in the middle of it, which `
-        + 'is the only way those years get spent at all. Say which.';
+        + 'your feet: get up and the rest is gone and you meet them standing. Sit back '
+        + 'down and the rest is yours, and they come on you in the middle of it, which '
+        + 'is the only way it gets spent at all. Say which.';
 }
 
 /** The structural half, for the inspector and the log. */
@@ -277,22 +288,22 @@ export function whatTheForkAsksStructurally(crossroads: SeclusionCrossroads): st
 /** What going cost, said once the player has gone. */
 export function whatGoingCost(crossroads: SeclusionCrossroads, them: string): string {
     const say = spans(crossroads.daysAsked);
-    const remaining = say(crossroads.daysRemaining);
-    const spent = say(crossroads.daysSpent);
-    const asked = say(crossroads.daysAsked);
+    const remaining = say.said(crossroads.daysRemaining);
+    const spent = say.said(crossroads.daysSpent);
+    const asked = say.bare(crossroads.daysAsked);
     if (crossroads.canWithdraw) {
         return `You are up and away before ${them} is close enough to see the place. ${spent} `
-            + `of the ${asked} are spent; the ${remaining} that were left went with the sitting, `
+            + `of ${asked} are spent; the ${remaining} that were left went with the sitting, `
             + 'and there is no getting back into a stretch you stood up out of.';
     }
     return `You are on your feet when ${them} arrives, which is the whole of what standing up `
-        + `bought. ${spent} of the ${asked} are spent; the ${remaining} that were left went with `
+        + `bought. ${spent} of ${asked} are spent; the ${remaining} that were left went with `
         + 'the sitting.';
 }
 
 /** What sitting back down committed to, said as the resumed stretch opens. */
 export function whatStayingCommittedTo(crossroads: SeclusionCrossroads, them: string): string {
-    const remaining = spans(crossroads.daysAsked)(crossroads.daysRemaining);
+    const remaining = spans(crossroads.daysAsked).said(crossroads.daysRemaining);
     if (crossroads.canWithdraw) {
         return `You let the road go and sit back down. ${remaining} left to sit, and ${them} `
             + 'is coming past a place that is no longer empty.';

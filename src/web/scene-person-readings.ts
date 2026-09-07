@@ -308,22 +308,40 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     //
     // Which is the exact failure this whole channel was written to avoid, and
     // the one `theRoom` already solves for watchers: say them once, together.
-    // Only the nameable ones - somebody the player cannot name is lifted out at
-    // most once by the rule below, and folding them into a list would name them
-    // by implication.
-    const namedDead = involved.filter(entry =>
-        dead.has(entry.row.id)
-        && scene.gate.isAwareOf(scene.playerNow.id, 'cultivator', entry.row.id));
+    //
+    // ── AND THE ONE THE PLAYER CANNOT NAME IS FOLDED IN TOO ──────────────
+    //
+    // This folded only the NAMEABLE dead, on the reasoning that putting an
+    // unnameable person into a list of names would name them by implication.
+    // The reasoning is right and the rule was too narrow: with one of each, two
+    // deaths again came out word for word identical.
+    //
+    //   Bai Anming, a little above you. They are dying, and there was time
+    //   enough in it for them to know so. They say the last thing...
+    //   Somebody here whose name you do not have, well above you. They are
+    //   dying, and there was time enough in it for them to know so. They say...
+    //
+    // A name and a count are not a list of names: "Bai Anming, and somebody
+    // whose name you do not have, are dying" names exactly the one person it
+    // named before.
+    //
+    // Only the ones who got a moment. Somebody the gap killed in a single
+    // action was not present for any of it, which is a different sentence and
+    // must not be folded into this one.
+    const dyingAloud = involved.filter(entry => dead.has(entry.row.id) && entry.gotAMoment);
     const foldedIntoOne = new Set<string>();
-    if (namedDead.length > 1) {
-        for (const entry of namedDead) foldedIntoOne.add(entry.row.id);
-        const names = namedDead.map(entry => entry.row.name);
-        const said = namedDead.filter(entry => entry.asked.aloud).length;
+    if (dyingAloud.length > 1) {
+        for (const entry of dyingAloud) foldedIntoOne.add(entry.row.id);
+        const names = dyingAloud
+            .filter(entry => scene.gate.isAwareOf(scene.playerNow.id, 'cultivator', entry.row.id))
+            .map(entry => entry.row.name);
+        const unnameable = dyingAloud.length - names.length;
+        const said = dyingAloud.filter(entry => entry.asked.aloud).length;
         lines.push(
-            `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} are dying. `
+            `${whoIsDying(names, unnameable)} are dying. `
             + (said === 0
                 ? 'None of them says anything.'
-                : said === namedDead.length
+                : said === dyingAloud.length
                     ? 'Each of them says a last thing.'
                     : `${said} of them ${said === 1 ? 'says' : 'say'} a last thing. `
                       + 'The rest say nothing.')
@@ -383,7 +401,10 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     // Two counts, and they are different facts. Somebody the cap pushed out was
     // in it; somebody who only watched was not, and saying so is the whole of
     // what a bystander line is for.
-    const overflow = involved.length - spokenFor - readTheSameAsLastTurn;
+    // Neither the folded dead nor the people who read the same as last turn are
+    // overflow: this counts the ones the CAP pushed out, and both of those were
+    // said, or deliberately not said, for their own reasons.
+    const overflow = involved.length - spokenFor - readTheSameAsLastTurn - foldedIntoOne.size;
     if (overflow > 0) {
         lines.push(
             `${overflow} other${overflow === 1 ? '' : 's'} here ${overflow === 1 ? 'was' : 'were'} `
@@ -412,6 +433,23 @@ function whoseHouseWasInIt(
     read: readonly { row: RosterEntry; involved: boolean }[]
 ): string | null {
     return read.find(entry => entry.involved)?.row.sectId ?? null;
+}
+
+/**
+ * The dead, named where they can be named and counted where they cannot.
+ *
+ * A count is not a name: somebody the player has never been introduced to
+ * stays that way whoever they are standing beside.
+ */
+function whoIsDying(names: readonly string[], unnameable: number): string {
+    const nameless = unnameable === 0
+        ? null
+        : unnameable === 1
+            ? 'somebody whose name you do not have'
+            : `${unnameable} others whose names you do not have`;
+    const parts = [...names, ...(nameless === null ? [] : [nameless])];
+    if (parts.length === 1) return parts[0]!;
+    return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
 }
 
 /**
@@ -465,7 +503,7 @@ function sentenceFor(
 ): string | null {
     const who = nameable
         ? row.name
-        : 'Somebody here whose name this cultivator does not have';
+        : 'Somebody here whose name you do not have';
     const standing = describeStanding(observerOrdinal, row.realmOrdinal);
     const disposition = whatTheyAreLike(row.id);
 
@@ -526,7 +564,7 @@ function lastSentenceFor(
 ): string {
     const who = nameable
         ? row.name
-        : 'Somebody here whose name this cultivator does not have';
+        : 'Somebody here whose name you do not have';
     const standing = describeStanding(observerOrdinal, row.realmOrdinal);
     if (!gotAMoment) {
         return `${who}, ${standing}. They are dead. It took one action, and there was no part `

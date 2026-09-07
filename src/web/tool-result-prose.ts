@@ -147,6 +147,9 @@ export function withoutTheOverride(target: string): string {
     return target.replace(/\b(?:anyway|anyhow|regardless|even so)\b/gi, '').replace(/\s+/g, ' ').trim();
 }
 
+/** A sentence's own full stop, where something has to be appended to it. */
+const A_CLOSING_STOP = /\.\s*$/;
+
 export function summariseToolBody(body: Record<string, unknown>): string[] {
     const lines: string[] = [];
 
@@ -864,8 +867,14 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
 
     return {
         lines: [...byText.values()].map(line => {
-            const many = line.occurrences > 1 ? ` (${line.occurrences} times over the span)` : '';
-            return `Year ${line.year}: ${line.text}${many}`;
+            if (line.occurrences <= 1) return `Year ${line.year}: ${line.text}`;
+            // A PARENTHETICAL IS A FORM FIELD. This read "(2 times over the
+            // span)" hung off the end of a sentence somebody is meant to be
+            // told, which is how you annotate a row rather than how you say a
+            // thing happened twice. The text carries its own full stop.
+            const howOften = line.occurrences === 2 ? 'twice' : `${line.occurrences} times`;
+            const said = line.text.replace(A_CLOSING_STOP, '');
+            return `Year ${line.year}: ${said}, ${howOften} over the span.`;
         }),
         structure: [
             `World digest: ${digest.lines.length} line(s) reached this cultivator; ` +

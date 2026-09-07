@@ -268,16 +268,18 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
     if (input.rank && input.rank.nextRankTitle !== null) {
         const rank = input.rank;
         const unmet: string[] = [];
+        // THE RUNG IS NAMED ONCE, BY THE SENTENCE THAT INTRODUCES IT.
+        //
+        // This read "To raise you to Inner Disciple, Inner Disciple wants Qi
+        // Condensation Layer 12", because the clause carried the title the
+        // sentence around it had just said. The clauses name what is wanted and
+        // nothing else.
         if (input.ordinal < rank.requiredOrdinal) {
-            unmet.push(
-                `${rank.nextRankTitle} wants ${rankName(rank.requiredOrdinal)} and you stand `
-                + `at ${standing}`
-            );
+            unmet.push(`${rankName(rank.requiredOrdinal)}, and you stand at ${standing}`);
         }
         if (rank.contribution < rank.requiredContribution) {
             unmet.push(
-                `it wants ${rank.requiredContribution} contribution and you have `
-                + `${rank.contribution}`
+                `${rank.requiredContribution} contribution, and you have ${rank.contribution}`
             );
         }
         if (unmet.length > 0) {
@@ -285,8 +287,8 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 kind: 'rank',
                 hard: false,
                 line:
-                    `${rank.sectName} has you at ${rank.rankTitle}. To raise you to `
-                    + `${rank.nextRankTitle}, ${unmet.join('; and ')}.`,
+                    `${rank.sectName} has you at ${rank.rankTitle}. ${rank.nextRankTitle} `
+                    + `wants ${unmet.join('; ')}.`,
                 structure:
                     `${rank.nextRankTitle} wants ${rungAndOrdinal(rank.requiredOrdinal)} `
                     + `against ${rungAndOrdinal(input.ordinal)} held, and `

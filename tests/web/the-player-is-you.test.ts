@@ -50,7 +50,13 @@ describe('the player reads as the second person', () => {
             'what stands between me and them',
             'what do people say about me',
             'what is my standing',
-            'I look around'
+            'I look around',
+            // The seclusion opening named the player in five of its six
+            // phrasings, and no verb in the list above sits down.
+            'I cultivate for 10 days',
+            'what duties are there',
+            'what is stopping me',
+            'I look at the nearest person'
         ]) {
             const answer = await game.act(said) as unknown as { narration: string };
             if (answer.narration.includes(PLAYER)) {
