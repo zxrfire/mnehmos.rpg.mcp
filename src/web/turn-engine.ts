@@ -12711,9 +12711,12 @@ ${fit.line}`;
      * A name nobody here answers to, and what somebody standing there does
      * about it.
      *
-     * The design owner: *PEOPLE DON'T ACTUALLY SAY BLANK LOOK. think a traveller
-     * asking for elder yun of the weir - who is elder yun? you mean the one at the weir? someone
-     * else?*
+     * The design owner: *PEOPLE DON'T ACTUALLY SAY BLANK LOOK.* Their example
+     * ran on somebody asking after a person by a name the other only half
+     * knows, and being offered two other people it might have been. Rendered
+     * in this world: a traveller asks the ferryman for Elder Yun, and gets
+     * back the one who keeps the weir, or Yun of the north road, or the Yun
+     * at the temple that nobody calls Elder.
      *
      * That is the whole of it. Somebody asked a name you do not know does not
      * stare, they OFFER: they say the nearest thing they have and let you sort

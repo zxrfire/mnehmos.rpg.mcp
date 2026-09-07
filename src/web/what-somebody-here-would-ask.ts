@@ -6,10 +6,10 @@
  * itself to report a parse failure. There is somebody standing in the square.
  * They heard it. The honest answer is the one they would give.
  *
- * The design owner's own example is the shape of it: *think a traveller asking for
- * elder yun of the weir - who is elder yun? you mean the one at the weir? someone else?* The
- * question is not a refusal. It is a person offering the nearest thing they
- * have, and being wrong about it is part of the answer.
+ * The design owner's own example is the shape of it, rendered in this world:
+ * a traveller asks the ferryman for Elder Yun and is offered the one who
+ * keeps the weir, or Yun of the north road, or the Yun at the temple that
+ * nobody calls Elder.
  *
  * ── AND IT IS NOT ONLY NAMES ─────────────────────────────────────────────
  *

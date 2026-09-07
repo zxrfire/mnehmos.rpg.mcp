@@ -222,6 +222,30 @@ const SLEEPER = /(?<![A-Za-z0-9])[Ss]leepers?(?![a-z0-9])|(?<![A-Za-z0-9])sleepe
 const SLEEPER_PROPER_NAME = /[Ss]leeper[- ][Ii]n[- ][Tt]he[- ][Cc]ut|mat-sleeper-seam-core/;
 
 /**
+ * AN EXTERNAL AUTHOR OR WORK, NAMED AS A DESIGN SOURCE.
+ *
+ * The design is an amalgamation of a great many things and the repo cites none
+ * of them. Two citations had been sitting in `writing/tone.md` since it was
+ * written: an author named as the register standard for technique names, and a
+ * film franchise supplying the worked example for how somebody answers a name
+ * they do not know.
+ *
+ * The first was the dangerous one. It sat inside a section the doc marks tier 1,
+ * and the plan to stop the narrator prompt drifting from that doc is to LOAD the
+ * tier-1 sections rather than hand copy them. That would have shipped the
+ * attribution into the system prompt on every turn.
+ *
+ * Both were replaceable at no cost, which is the tell that neither was load
+ * bearing: the four adjectives after the colon already carried the register, and
+ * the example reads better with a ferryman in it than with somebody from another
+ * world entirely.
+ *
+ * A ratchet against the two that were found, in the same spirit as the retired
+ * vocabulary above, rather than a general classifier for every work that exists.
+ */
+const AN_EXTERNAL_SOURCE = /(?<![A-Za-z])the genre(?![A-Za-z])|(?<![A-Za-z])a traveller|Obi-?Wan|of the weir/i;
+
+/**
  * Em-dash (U+2014) and en-dash (U+2013), built from their codepoints so this
  * file does not contain the characters it forbids. U+2500 box drawing, used in
  * the comment banners above, is a different codepoint and is not matched.
@@ -243,6 +267,7 @@ const RULES: readonly Rule[] = [
         except: SLEEPER_PROPER_NAME
     },
 
+    { name: 'an external author or work named as a design source', group: 'style', pattern: AN_EXTERNAL_SOURCE, allowlist: VOCAB_EXEMPT },
     { name: 'em-dash or en-dash (AGENTS.md: hyphens only)', group: 'style', pattern: DASH, allowlist: DASH_ALLOWLIST }
 ];
 

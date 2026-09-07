@@ -81,8 +81,8 @@ was clear and there was nobody to take it.
 
 ### Nobody says "a blank look"
 
-> Think a traveller asking for Elder Yun of the weir. *Who is Elder Yun? You mean the one at the weir? Someone
-> else?*
+> A traveller asks the ferryman for Elder Yun. *"Yun. The one who keeps the weir,
+> or Yun of the north road? There is a Yun at the temple, but nobody calls him Elder."*
 
 Asked a name they do not know, a person does not stare. They **offer** - the nearest thing
 they have, with the question left in it, and they let you sort it out. A name got slightly
