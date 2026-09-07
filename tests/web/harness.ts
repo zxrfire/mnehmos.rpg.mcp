@@ -117,6 +117,25 @@ export interface Harness {
     repos: CultivationRepos;
 }
 
+/**
+ * A GAME WITHOUT A PINNED WORLD IS A DIFFERENT WORLD EVERY RUN.
+ *
+ * `worldEnabled: true` does not create a world - the first thing that touches
+ * one does, through `activeWorld()`, which falls through to `createWorld()`
+ * with no seed. And `createWorld` mints one with `randomUUID()` when none is
+ * given, which is right for an installation and fatal for a test: the people
+ * standing in the square, who is selling what, and which houses exist are all
+ * different on the next run of the same file.
+ *
+ * So a test that reads anything OUT of the world - a name, a price, a person to
+ * ask - must use `makeGameInWorld({ worldSeed })`, which creates it from a seed
+ * you named. `makeGame` is fine for everything that only needs the world layer
+ * switched on.
+ *
+ * This cost hours to find, twice, because the symptom looks like test pollution:
+ * it fails in company, passes alone, and moves to a different test each run. It
+ * is not the file order. It is a new world.
+ */
 export function makeGame(options: HarnessOptions = {}): Harness {
     // The world registry in `cultivation-world.ts` is module state, and a
     // vitest fork runs several test FILES in one process. Without this, a

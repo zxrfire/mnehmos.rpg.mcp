@@ -14,7 +14,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { makeGame } from './harness';
+import { makeGameInWorld } from './harness';
 import { circulating } from '../../src/engine/world/what-people-are-saying';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { HistoricalFact } from '../../src/engine/world/history';
@@ -30,7 +30,9 @@ describe('a declaration nobody could carry out', () => {
      * it is now a fact.
      */
     it('is refused, and the world still holds that it was said', async () => {
-        const { game } = makeGame({ seed: 'declared', worldEnabled: true });
+        const { game } = await makeGameInWorld({
+            seed: 'declared', worldSeed: 'declared', worldEnabled: true
+        });
         const { cultivator } = await game.newRun('Probe');
 
         const before = (await game.loadWorld())!;
@@ -61,7 +63,9 @@ describe('a declaration nobody could carry out', () => {
         // cultivator's saying and not its own. It failed that way intermittently
         // under a full-suite run and passed alone, which is what a shared cache
         // looks like from the outside. The test below already has its own.
-        const { game } = makeGame({ seed: 'declared-and-repeated', worldEnabled: true });
+        const { game } = await makeGameInWorld({
+            seed: 'declared-and-repeated', worldSeed: 'declared-and-repeated', worldEnabled: true
+        });
         const { cultivator } = await game.newRun('Probe');
         await game.act('I declare war on the Azure Dew Sect');
 
@@ -86,7 +90,9 @@ describe('a declaration nobody could carry out', () => {
      * a world that recorded them would be a world that overhears everything.
      */
     it('is not a fact when nobody was there to hear it', async () => {
-        const { game, db } = makeGame({ seed: 'alone', worldEnabled: true });
+        const { game, db } = await makeGameInWorld({
+            seed: 'alone', worldSeed: 'alone', worldEnabled: true
+        });
         const { cultivator } = await game.newRun('Probe');
         db.prepare("UPDATE cultivators SET location = 'nowhere-at-all' WHERE id = ?")
             .run(cultivator.id);

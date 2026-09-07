@@ -930,25 +930,6 @@ export function upsertRelationship(
     return { ...npc, relationships: next, updatedOnDay: onDay };
 }
 
-export function adjustStanding(
-    npc: NpcRecord,
-    targetId: string,
-    delta: number,
-    onDay: number,
-    note?: string
-): NpcRecord {
-    const at = npc.relationships.findIndex(r => r.targetId === targetId);
-    if (at < 0) return npc;
-    const next = npc.relationships.slice();
-    next[at] = {
-        ...next[at],
-        standing: clampStanding(next[at].standing + delta),
-        note: note ?? next[at].note,
-        lastChangedDay: onDay
-    };
-    return { ...npc, relationships: next, updatedOnDay: onDay };
-}
-
 export function relationshipWith(npc: NpcRecord, targetId: string): NpcRelationship | null {
     return npc.relationships.find(r => r.targetId === targetId) ?? null;
 }
@@ -968,20 +949,6 @@ export function recordFact(npc: NpcRecord, factId: string, onDay: number): NpcRe
         historyFactIds: npc.historyFactIds.concat(factId),
         updatedOnDay: onDay,
         lastConfirmedOnDay: Math.max(npc.lastConfirmedOnDay, onDay)
-    };
-}
-
-export function attachMemory(npc: NpcRecord, memoryId: string, onDay: number): NpcRecord {
-    if (npc.memoryIds.includes(memoryId)) return npc;
-    return { ...npc, memoryIds: npc.memoryIds.concat(memoryId), updatedOnDay: onDay };
-}
-
-export function detachMemories(npc: NpcRecord, memoryIds: readonly string[], onDay: number): NpcRecord {
-    const drop = new Set(memoryIds);
-    return {
-        ...npc,
-        memoryIds: npc.memoryIds.filter(id => !drop.has(id)),
-        updatedOnDay: onDay
     };
 }
 
@@ -1134,10 +1101,6 @@ export function ageInYears(npc: NpcRecord, onDay: number): number {
     return Math.floor((onDay - npc.identity.bornOnDay) / DAYS_PER_YEAR);
 }
 
-export function yearsToLifespanEnd(npc: NpcRecord, onDay: number): number {
-    return (npc.cultivation.lifespanEndsOnDay - onDay) / DAYS_PER_YEAR;
-}
-
 export interface NpcBrief {
     id: string;
     name: string;
@@ -1223,17 +1186,6 @@ export function npcBrief(
         recentFactIds: npc.historyFactIds.slice(-recentFacts),
         memoryIds: npc.memoryIds,
         staleDays: Math.max(0, onDay - npc.lastConfirmedOnDay)
-    };
-}
-
-/** Environmental profile for the location layer's compatibility check. */
-export function environmentProfile(npc: NpcRecord): {
-    specialties: string[];
-    vulnerabilities: string[];
-} {
-    return {
-        specialties: npc.cultivation.specialties.slice(),
-        vulnerabilities: (npc.tags.filter(t => t.startsWith('vuln:')) ?? []).map(t => t.slice(5))
     };
 }
 

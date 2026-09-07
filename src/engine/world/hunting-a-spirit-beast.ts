@@ -21,6 +21,7 @@ import {
     type Regard
 } from '../cultivation/regard.js';
 import {
+    howAGradeIsStored,
     makeObject,
     transferPossession,
     type ObjectRecord,
@@ -306,9 +307,9 @@ export type HarvestShape = 'counted' | 'tracked';
  * Which shape a material is stored in.
  */
 export function howAMaterialIsStored(material: BeastMaterial): HarvestShape {
-    return material.grade === 'mortal' || material.grade === 'earth'
-        ? 'counted'
-        : 'tracked';
+    // Asked of the grade, where the line lives. It was answered here privately
+    // and a second noun then needed the same answer - see `howAGradeIsStored`.
+    return howAGradeIsStored(material.grade);
 }
 
 /**

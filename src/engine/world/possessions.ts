@@ -183,6 +183,27 @@ export function keptAs(significance: ObjectSignificance): KeptAs {
  * where it has been is the ONLY interesting question about it, and `legendary`
  * is how this file says a row must be able to answer that.
  */
+/**
+ * Whether a thing of this grade is an AMOUNT or a ROW WITH A HISTORY.
+ *
+ * `items.md` derives this line from production and not from taste: a grade the
+ * standing population can restock is a quantity, a grade it cannot is a thing
+ * whose provenance is the only interesting question about it. Measured on a
+ * world of 587 living cultivators - 587 can work mortal, 89 can work earth, 30
+ * can work heaven, and nobody at all above that.
+ *
+ * The design owner, on a commissioned talisman: *"depends on the level of
+ * talisman. a commissioned talisman is counted if its not heaven rank."* Which
+ * is this line exactly, said about a different noun - and it is one line for
+ * every noun on purpose. `hunting-a-spirit-beast.ts` asked it about a beast
+ * material and answered it privately; there is no beast rule and no talisman
+ * rule, and the moment there is one of those the other twelve nouns start
+ * needing theirs.
+ */
+export function howAGradeIsStored(grade: TechniqueGrade): 'counted' | 'tracked' {
+    return grade === 'mortal' || grade === 'earth' ? 'counted' : 'tracked';
+}
+
 export function howMuchAGradeIsWorthTracking(grade: TechniqueGrade): ObjectSignificance {
     switch (grade) {
         // Roadside. You buy another one and nobody writes it down.

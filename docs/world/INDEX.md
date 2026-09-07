@@ -673,7 +673,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `RUIN_NAMES` | [`regions/what-the-people-who-saw-it-call-it.ts`](../../src/data/cultivation/regions/what-the-people-who-saw-it-call-it.ts) | 2 | 10 |
 | `SETTLEMENTS` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 2 | 10 |
 | `DEAD_CIVILISATIONS` | [`history.ts`](../../src/data/cultivation/history.ts) | 2 | 12 |
-| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 2 | 12 |
 | `GRADE_QI_BANDS` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 2 | 14 |
 | `WOUND_TYPES` | [`wounds.ts`](../../src/data/cultivation/wounds.ts) | 2 | 14 |
 | `UNOWNED_ANCESTORS` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | 2 | 18 |
@@ -707,6 +706,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 5 | 12 |
 | `ARCHIVE_COPIES` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 5 | 13 |
 | `ANCHORING_A_CACHE` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 6 | - |
+| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 6 | 12 |
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 6 | 12 |
 | `GRAVE_CONTENTS_BANDS` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 6 | 14 |
 | `SENT_DOWN_UNACCOUNTED` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 7 | - |
@@ -733,7 +733,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 28 | 121 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 33 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 34 | 148 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 50 | 61 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 52 | 62 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 65 | 311 |
 
 <!-- END GENERATED: design-constants -->

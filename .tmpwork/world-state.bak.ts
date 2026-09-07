@@ -41,15 +41,21 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { rankName } from '../cultivation/realms.js';
 import {
+    appendFact,
     createLedger,
     dayOfYear,
     eraForDay,
     openEra,
     placeName,
+    queryFacts,
     seedPriorAges,
     yearOfDay,
+    type EventConsequences,
+    type HistoricalFact,
     type HistoryLedger,
+    type PendingFact,
     type PriorAgesOptions
 } from './history.js';
 import { forStream } from '../cultivation/rng.js';
@@ -60,7 +66,7 @@ import {
 } from './locations.js';
 import { createMemoryStore, type MemoryStore } from './memory.js';
 import { DEFAULT_LAYER, type AscensionRecord, type LayerKey } from './layers.js';
-import type { NpcRecord } from './npc-state.js';
+import type { NpcRecord, NpcRelationship } from './npc-state.js';
 import type { LineageRecord } from './lineage.js';
 import type { WorldRun } from './legacy.js';
 import type { OpportunityWindow } from './opportunities.js';
@@ -123,7 +129,67 @@ export function makeFaction(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// SCHEDULED EFFECTS
+// ACTORS
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface InventoryItem {
+    itemId: string;
+    name: string;
+    /** 'pill', 'manual', 'artifact', 'material', 'token', 'key'. */
+    kind: string;
+    quantity: number;
+    note: string;
+}
+
+/**
+ * The world-facing hard state of one actor.
+ *
+ * Deliberately separate from the cultivator record in `schema/cultivation.ts`,
+ * which owns the body - hp, qi, satiety, injuries, progress. This owns where
+ * they are in the world and what they are holding, for both the player and any
+ * NPC whose inventory the world actually tracks. The two are joined by
+ * `actorId` and neither duplicates the other.
+ */
+export interface ActorWorldState {
+    actorId: string;
+    locationId: string | null;
+    /** Which side of the Lid they are on. See `layers.ts`. */
+    layer: LayerKey;
+    factionId: string | null;
+    factionRankIndex: number;
+    inventory: InventoryItem[];
+    /** Durable counts: 'spirit_stones', 'contribution', 'rations'. */
+    resources: Record<string, number>;
+    /** Ties this actor holds. Same shape NPCs use, so inheritance can move them. */
+    relationships: NpcRelationship[];
+    memoryIds: string[];
+    historyFactIds: string[];
+    /** Keys, tokens and permits, for sealed doors and gated links. */
+    keyIds: string[];
+    updatedOnDay: number;
+}
+
+export function makeActor(
+    init: Partial<ActorWorldState> & Pick<ActorWorldState, 'actorId'>
+): ActorWorldState {
+    return {
+        locationId: null,
+        layer: DEFAULT_LAYER,
+        factionId: null,
+        factionRankIndex: -1,
+        inventory: [],
+        resources: {},
+        relationships: [],
+        memoryIds: [],
+        historyFactIds: [],
+        keyIds: [],
+        updatedOnDay: 0,
+        ...init
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SCHEDULE
 // ─────────────────────────────────────────────────────────────────────────
 
 export type ScheduledEffectKind =
@@ -191,6 +257,43 @@ export function makeScheduledEffect(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// DURABLE PROCESSES
+// ─────────────────────────────────────────────────────────────────────────
+
+export type DurableProcessKind =
+    | 'cultivating'
+    | 'seclusion'
+    | 'travelling'
+    | 'recovering'
+    | 'imprisoned'
+    | 'working'
+    | 'custom';
+
+/**
+ * Something an actor is doing continuously, stored as a rate.
+ *
+ * This is the other half of how the world moves without being simulated. A
+ * thirty-year seclusion is not thirty years of cultivation ticks; it is one
+ * record saying "gaining 1.4 progress and spending 0.6 stones per day, from
+ * day X", and `advanceTime` applies it with a multiplication. The cost of a
+ * decade is the cost of a day.
+ *
+ * `perDay` keys are resource names on the actor's `resources` map, so a process
+ * can add and subtract several things at once, and a caller can invent a
+ * resource without the engine needing to know what it means.
+ */
+export interface DurableProcess {
+    id: string;
+    actorId: string;
+    kind: DurableProcessKind;
+    startedOnDay: number;
+    /** Null while open-ended. Applied only up to this day. */
+    endsOnDay: number | null;
+    perDay: Record<string, number>;
+    note: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE WORLD
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -204,7 +307,9 @@ export interface WorldState {
     locations: LocationRecord[];
     factions: FactionRecord[];
     npcs: NpcRecord[];
+    actors: ActorWorldState[];
     schedule: ScheduledEffect[];
+    processes: DurableProcess[];
     /** Parent/descendant edges, and what travels down them. */
     lineages: LineageRecord[];
     /** Dated windows that open and close whether or not anyone is watching. */
@@ -345,7 +450,9 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
         locations,
         factions: [],
         npcs: [],
+        actors: [],
         schedule: [],
+        processes: [],
         lineages: [],
         opportunities: [],
         objects: [],
@@ -406,6 +513,14 @@ export function getNpc(state: WorldState, id: string): NpcRecord | null {
     return state.npcs.find(n => n.id === id) ?? null;
 }
 
+export function getActor(state: WorldState, id: string): ActorWorldState | null {
+    return state.actors.find(a => a.actorId === id) ?? null;
+}
+
+export function getLineage(state: WorldState, id: string): LineageRecord | null {
+    return state.lineages.find(l => l.id === id) ?? null;
+}
+
 /** The line a person belongs to, whichever it is. */
 export function lineageOf(state: WorldState, memberId: string): LineageRecord | null {
     return state.lineages.find(l => l.memberIds.includes(memberId)) ?? null;
@@ -415,12 +530,20 @@ export function getObject(state: WorldState, id: string): ObjectRecord | null {
     return state.objects.find(o => o.id === id) ?? null;
 }
 
+export function getOpportunity(state: WorldState, id: string): OpportunityWindow | null {
+    return state.opportunities.find(o => o.id === id) ?? null;
+}
+
 export function upsertLineage(state: WorldState, lineage: LineageRecord): WorldState {
     return { ...state, lineages: replace(state.lineages, l => l.id === lineage.id, lineage) };
 }
 
 export function upsertObject(state: WorldState, object: ObjectRecord): WorldState {
     return { ...state, objects: replace(state.objects, o => o.id === object.id, object) };
+}
+
+export function upsertOpportunity(state: WorldState, opp: OpportunityWindow): WorldState {
+    return { ...state, opportunities: replace(state.opportunities, o => o.id === opp.id, opp) };
 }
 
 export function getAreaStatus(state: WorldState, id: string): AreaStatus | null {
@@ -465,6 +588,11 @@ export interface StateChange {
     to: string | number | boolean | null;
 }
 
+export interface MutationResult {
+    state: WorldState;
+    changes: StateChange[];
+}
+
 function replace<T>(items: readonly T[], match: (t: T) => boolean, next: T): T[] {
     const at = items.findIndex(match);
     if (at < 0) return items.concat(next);
@@ -483,6 +611,229 @@ export function upsertFaction(state: WorldState, faction: FactionRecord): WorldS
 
 export function upsertNpc(state: WorldState, npc: NpcRecord): WorldState {
     return { ...state, npcs: replace(state.npcs, n => n.id === npc.id, npc) };
+}
+
+export function upsertActor(state: WorldState, actor: ActorWorldState): WorldState {
+    return { ...state, actors: replace(state.actors, a => a.actorId === actor.actorId, actor) };
+}
+
+/** Move an actor. The single write path for "where is this character". */
+export function moveActor(state: WorldState, actorId: string, locationId: string): MutationResult {
+    const actor = getActor(state, actorId);
+    if (!actor) return { state, changes: [] };
+    const next = { ...actor, locationId, updatedOnDay: state.currentDay };
+    return {
+        state: upsertActor(state, next),
+        changes: [{
+            entity: 'actor', entityId: actorId, field: 'locationId',
+            from: actor.locationId, to: locationId
+        }]
+    };
+}
+
+export function setActorFaction(
+    state: WorldState,
+    actorId: string,
+    factionId: string | null,
+    rankIndex = 0
+): MutationResult {
+    const actor = getActor(state, actorId);
+    if (!actor) return { state, changes: [] };
+    const next = {
+        ...actor,
+        factionId,
+        factionRankIndex: factionId ? rankIndex : -1,
+        updatedOnDay: state.currentDay
+    };
+    return {
+        state: upsertActor(state, next),
+        changes: [
+            { entity: 'actor', entityId: actorId, field: 'factionId', from: actor.factionId, to: factionId },
+            { entity: 'actor', entityId: actorId, field: 'factionRankIndex', from: actor.factionRankIndex, to: next.factionRankIndex }
+        ]
+    };
+}
+
+/**
+ * Change a durable resource count.
+ *
+ * Clamped at zero, because a negative spirit-stone balance is not a debt - a
+ * debt is a `ScheduledEffect` with a due date and somebody's name on it, which
+ * is a different thing and is stored differently.
+ */
+export function adjustResource(
+    state: WorldState,
+    actorId: string,
+    key: string,
+    delta: number
+): MutationResult {
+    const actor = getActor(state, actorId);
+    if (!actor) return { state, changes: [] };
+    const from = actor.resources[key] ?? 0;
+    const to = Math.max(0, from + delta);
+    const next = {
+        ...actor,
+        resources: { ...actor.resources, [key]: to },
+        updatedOnDay: state.currentDay
+    };
+    return {
+        state: upsertActor(state, next),
+        changes: [{ entity: 'actor', entityId: actorId, field: `resources.${key}`, from, to }]
+    };
+}
+
+export function addItem(state: WorldState, actorId: string, item: InventoryItem): MutationResult {
+    const actor = getActor(state, actorId);
+    if (!actor) return { state, changes: [] };
+    const at = actor.inventory.findIndex(i => i.itemId === item.itemId);
+    const inventory = actor.inventory.slice();
+    const from = at >= 0 ? inventory[at].quantity : 0;
+    if (at >= 0) inventory[at] = { ...inventory[at], quantity: from + item.quantity };
+    else inventory.push({ ...item });
+    const next = { ...actor, inventory, updatedOnDay: state.currentDay };
+    return {
+        state: upsertActor(state, next),
+        changes: [{
+            entity: 'actor', entityId: actorId, field: `inventory.${item.itemId}`,
+            from, to: from + item.quantity
+        }]
+    };
+}
+
+export function removeItem(
+    state: WorldState,
+    actorId: string,
+    itemId: string,
+    quantity = 1
+): MutationResult {
+    const actor = getActor(state, actorId);
+    if (!actor) return { state, changes: [] };
+    const at = actor.inventory.findIndex(i => i.itemId === itemId);
+    if (at < 0) return { state, changes: [] };
+    const from = actor.inventory[at].quantity;
+    const to = Math.max(0, from - quantity);
+    const inventory = actor.inventory.slice();
+    if (to === 0) inventory.splice(at, 1);
+    else inventory[at] = { ...inventory[at], quantity: to };
+    const next = { ...actor, inventory, updatedOnDay: state.currentDay };
+    return {
+        state: upsertActor(state, next),
+        changes: [{ entity: 'actor', entityId: actorId, field: `inventory.${itemId}`, from, to }]
+    };
+}
+
+export function grantKey(state: WorldState, actorId: string, keyId: string): WorldState {
+    const actor = getActor(state, actorId);
+    if (!actor || actor.keyIds.includes(keyId)) return state;
+    return upsertActor(state, { ...actor, keyIds: actor.keyIds.concat(keyId).sort() });
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface RecordEventOptions {
+    /** Attach the fact to these actors' and NPCs' history lists. */
+    linkToActorIds?: readonly string[];
+    /** Ten-questions block. Omitted for events that do not claim to be major. */
+    consequences?: Partial<EventConsequences>;
+}
+
+export interface RecordEventResult {
+    state: WorldState;
+    fact: HistoricalFact;
+    /** Unanswered Consequence Test questions, when consequences were supplied. */
+    warnings: string[];
+}
+
+/**
+ * Write a world event.
+ *
+ * The single path by which anything becomes true about the past. Appends the
+ * fact, links it to whoever it happened to, and - when the caller supplied a
+ * consequences block - reports which of the ten questions went unanswered. An
+ * event with no consequences once the scene ends was not a major event; the
+ * engine's job is to make that visible, not to argue about it.
+ */
+export function recordEvent(
+    state: WorldState,
+    fact: PendingFact,
+    opts: RecordEventOptions = {}
+): RecordEventResult {
+    const history = state.history;
+    const stored = appendFact(history, {
+        ...fact,
+        consequences: opts.consequences ? fillConsequenceBlock(opts.consequences) : fact.consequences
+    });
+
+    let next = state;
+    const linkIds = new Set<string>([
+        ...(opts.linkToActorIds ?? []),
+        ...fact.actors.map(a => a.id),
+        ...fact.witnessIds
+    ]);
+    for (const id of Array.from(linkIds).sort()) {
+        const npc = getNpc(next, id);
+        if (npc && !npc.historyFactIds.includes(stored.id)) {
+            next = upsertNpc(next, {
+                ...npc,
+                historyFactIds: npc.historyFactIds.concat(stored.id),
+                lastConfirmedOnDay: Math.max(npc.lastConfirmedOnDay, fact.day),
+                updatedOnDay: fact.day
+            });
+        }
+        const actor = getActor(next, id);
+        if (actor && !actor.historyFactIds.includes(stored.id)) {
+            next = upsertActor(next, {
+                ...actor,
+                historyFactIds: actor.historyFactIds.concat(stored.id),
+                updatedOnDay: fact.day
+            });
+        }
+    }
+
+    return {
+        state: next,
+        fact: stored,
+        warnings: opts.consequences ? missingConsequenceQuestions(opts.consequences) : []
+    };
+}
+
+function fillConsequenceBlock(c: Partial<EventConsequences>): EventConsequences {
+    return {
+        immediate: c.immediate ?? '',
+        physical: c.physical ?? '',
+        beneficiaries: c.beneficiaries ?? [],
+        losers: c.losers ?? [],
+        factionReactions: c.factionReactions ?? [],
+        relationshipChanges: c.relationshipChanges ?? [],
+        opportunitiesOpened: c.opportunitiesOpened ?? [],
+        opportunitiesClosed: c.opportunitiesClosed ?? [],
+        rumours: c.rumours ?? [],
+        tenYearsLater: c.tenYearsLater ?? ''
+    };
+}
+
+function missingConsequenceQuestions(c: Partial<EventConsequences>): string[] {
+    const out: string[] = [];
+    const check = (v: unknown, q: string) => {
+        const empty =
+            v === undefined || v === null ||
+            (typeof v === 'string' && v.trim() === '') ||
+            (Array.isArray(v) && v.length === 0);
+        if (empty) out.push(q);
+    };
+    check(c.immediate, 'What changed immediately?');
+    check(c.physical, 'What changed physically?');
+    check(c.beneficiaries, 'Who benefited?');
+    check(c.losers, 'Who lost something?');
+    check(c.factionReactions, 'Which factions reacted?');
+    check(c.relationshipChanges, 'Which relationships changed?');
+    check(c.opportunitiesOpened, 'What new opportunities appeared?');
+    check(c.opportunitiesClosed, 'What old opportunities disappeared?');
+    check(c.rumours, 'What rumours spread?');
+    check(c.tenYearsLater, 'What is still true ten years later?');
+    return out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -527,6 +878,58 @@ export function schedule(state: WorldState, input: ScheduleInput): { state: Worl
     };
 }
 
+export function cancelScheduled(state: WorldState, effectId: string): WorldState {
+    return { ...state, schedule: state.schedule.filter(e => e.id !== effectId) };
+}
+
+export interface ProcessInput {
+    actorId: string;
+    kind: DurableProcessKind;
+    perDay: Record<string, number>;
+    startedOnDay?: number;
+    endsOnDay?: number | null;
+    note?: string;
+}
+
+/** Begin a continuous activity. Applied by `advanceTime` as a rate times a span. */
+export function startProcess(
+    state: WorldState,
+    input: ProcessInput
+): { state: WorldState; process: DurableProcess } {
+    const process: DurableProcess = {
+        id: `p${state.nextProcessSeq}`,
+        actorId: input.actorId,
+        kind: input.kind,
+        startedOnDay: input.startedOnDay ?? state.currentDay,
+        endsOnDay: input.endsOnDay ?? null,
+        perDay: { ...input.perDay },
+        note: input.note ?? ''
+    };
+    return {
+        state: {
+            ...state,
+            processes: state.processes.concat(process),
+            nextProcessSeq: state.nextProcessSeq + 1
+        },
+        process
+    };
+}
+
+export function endProcess(state: WorldState, processId: string, onDay: number): WorldState {
+    return {
+        ...state,
+        processes: state.processes.map(p =>
+            p.id === processId ? { ...p, endsOnDay: Math.min(p.endsOnDay ?? onDay, onDay) } : p
+        )
+    };
+}
+
+export function activeProcesses(state: WorldState, onDay = state.currentDay): DurableProcess[] {
+    return state.processes.filter(
+        p => p.startedOnDay <= onDay && (p.endsOnDay === null || p.endsOnDay > onDay)
+    );
+}
+
 /** Effects due in a window, in fire order. The query `advanceTime` runs on. */
 export function pendingEffects(
     state: WorldState,
@@ -536,6 +939,102 @@ export function pendingEffects(
     return state.schedule
         .filter(e => !e.fired && e.dueOnDay > fromDay && e.dueOnDay <= toDay)
         .sort((a, b) => a.dueOnDay - b.dueOnDay || (a.id < b.id ? -1 : 1));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SNAPSHOT
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface WorldSnapshot {
+    worldId: string;
+    date: WorldDate;
+    /** Where the actor is, and what the place currently is. */
+    location: {
+        id: string;
+        name: string;
+        kind: string;
+        ambient: string;
+        hazards: string[];
+        controllingFactionId: string | null;
+    } | null;
+    actor: {
+        id: string;
+        factionId: string | null;
+        factionRank: string | null;
+        resources: Record<string, number>;
+        inventory: InventoryItem[];
+        keyIds: string[];
+        relationships: { name: string; kind: string; standing: number }[];
+    } | null;
+    /** Who else is here. Names and ranks only; briefs are fetched separately. */
+    presentNpcs: { id: string; name: string; rank: string; factionId: string | null }[];
+    /** The last few things that happened around here. */
+    recentLocalEvents: { id: string; year: number; summary: string }[];
+    nextScheduled: { id: string; dueInDays: number; summary: string }[];
+}
+
+/**
+ * The compact bundle handed to the LLM so it can reason about the present.
+ *
+ * Small on purpose. The LLM is the reasoning engine, but it reasons from what
+ * the database says is true, and the database's job is to hand over the true
+ * things that are relevant rather than everything it knows.
+ */
+export function worldSnapshot(state: WorldState, actorId: string): WorldSnapshot {
+    const actor = getActor(state, actorId);
+    const location = actor?.locationId ? getLocation(state, actor.locationId) : null;
+    const faction = actor?.factionId ? getFaction(state, actor.factionId) : null;
+
+    return {
+        worldId: state.id,
+        date: dateOf(state),
+        location: location
+            ? {
+                id: location.id,
+                name: location.name,
+                kind: location.kind,
+                ambient: location.ambient,
+                hazards: location.hazards.slice(),
+                controllingFactionId: location.controllingFactionId
+            }
+            : null,
+        actor: actor
+            ? {
+                id: actor.actorId,
+                factionId: actor.factionId,
+                factionRank:
+                    faction && actor.factionRankIndex >= 0
+                        ? faction.ranks[Math.min(actor.factionRankIndex, faction.ranks.length - 1)]
+                        : null,
+                resources: { ...actor.resources },
+                inventory: actor.inventory.map(i => ({ ...i })),
+                keyIds: actor.keyIds.slice(),
+                relationships: actor.relationships
+                    .slice()
+                    .sort((a, b) => Math.abs(b.standing) - Math.abs(a.standing) || (a.targetId < b.targetId ? -1 : 1))
+                    .slice(0, 8)
+                    .map(r => ({ name: r.targetName, kind: r.kind, standing: r.standing }))
+            }
+            : null,
+        presentNpcs: location
+            ? npcsAt(state, location.id).slice(0, 12).map(n => ({
+                id: n.id,
+                name: n.name,
+                rank: rankName(n.cultivation.realmOrdinal),
+                factionId: n.factionId
+            }))
+            : [],
+        recentLocalEvents: location
+            ? queryFacts(state.history, { locationId: location.id, toDay: state.currentDay + 1 })
+                .slice(-6)
+                .map(f => ({ id: f.id, year: f.year, summary: f.summary }))
+            : [],
+        nextScheduled: state.schedule
+            .filter(e => !e.fired && e.dueOnDay > state.currentDay)
+            .sort((a, b) => a.dueOnDay - b.dueOnDay || (a.id < b.id ? -1 : 1))
+            .slice(0, 5)
+            .map(e => ({ id: e.id, dueInDays: e.dueOnDay - state.currentDay, summary: e.summary }))
+    };
 }
 
 /**
@@ -591,7 +1090,17 @@ export function cloneWorld(state: WorldState): WorldState {
             memoryIds: n.memoryIds.slice(),
             tags: n.tags.slice()
         })),
+        actors: state.actors.map(a => ({
+            ...a,
+            inventory: a.inventory.map(i => ({ ...i })),
+            resources: { ...a.resources },
+            relationships: a.relationships.map(r => ({ ...r, factIds: r.factIds.slice() })),
+            memoryIds: a.memoryIds.slice(),
+            historyFactIds: a.historyFactIds.slice(),
+            keyIds: a.keyIds.slice()
+        })),
         schedule: state.schedule.map(e => ({ ...e, actorIds: e.actorIds.slice(), data: { ...e.data } })),
+        processes: state.processes.map(p => ({ ...p, perDay: { ...p.perDay } })),
         lineages: state.lineages.map(l => ({
             ...l,
             memberIds: l.memberIds.slice(),

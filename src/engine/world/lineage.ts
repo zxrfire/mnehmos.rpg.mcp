@@ -29,7 +29,6 @@
  * same grid the cultivation time-skip uses, `DAYS_PER_YEAR = 365`.
  */
 
-import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import type { CapabilityModifier } from './capability.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -239,11 +238,6 @@ export function traitsFor(lineage: LineageRecord, memberId: string): BloodlineTr
     );
 }
 
-/** Capability modifiers a member carries by blood. Feeds `assessCapability`. */
-export function bloodlineModifiers(lineage: LineageRecord, memberId: string): CapabilityModifier[] {
-    return traitsFor(lineage, memberId).flatMap(t => t.modifiers);
-}
-
 /** The social-layer heir shape. Kept structurally identical on purpose. */
 export interface HeirRef {
     id: string;
@@ -357,26 +351,4 @@ export function settleInheritance(
                 ? `, along with ${lineage.inheritedEnemyIds.length} standing account${lineage.inheritedEnemyIds.length === 1 ? '' : 's'}`
                 : ''}.`
     };
-}
-
-/** Record a party with an account against the family rather than a person. */
-export function addLineageEnemy(lineage: LineageRecord, enemyId: string): LineageRecord {
-    if (lineage.inheritedEnemyIds.includes(enemyId)) return lineage;
-    return { ...lineage, inheritedEnemyIds: lineage.inheritedEnemyIds.concat(enemyId).sort() };
-}
-
-/** Link an obligation record held by the family as a whole. */
-export function addLineageObligation(lineage: LineageRecord, obligationId: string): LineageRecord {
-    if (lineage.obligationIds.includes(obligationId)) return lineage;
-    return { ...lineage, obligationIds: lineage.obligationIds.concat(obligationId).sort() };
-}
-
-export function adjustLineageReputation(lineage: LineageRecord, delta: number): LineageRecord {
-    const next = Math.max(-1, Math.min(1, lineage.reputation + delta));
-    return { ...lineage, reputation: next };
-}
-
-/** Years the line has existed. Convenience for "an old family". */
-export function lineageAgeYears(lineage: LineageRecord, onDay: number): number {
-    return Math.floor((onDay - lineage.foundedOnDay) / DAYS_PER_YEAR);
 }

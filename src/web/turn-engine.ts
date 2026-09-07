@@ -1517,6 +1517,12 @@ export class GameService {
         // bundle the MCP tools use - including its auxiliary tables - instead
         // of this layer growing a parallel set that could drift.
         setDb(this.db);
+        // AND SAY SO, or the first act thinks the database changed underneath
+        // it and flushes the world layer's caches on the way in. Harmless in
+        // production - the worlds are in SQLite and come back - but it discards
+        // a world a caller has just built and pinned, which is how a test that
+        // named its seed still got somebody else's people.
+        ambientDb = this.db;
         this.repos = ensureCultivationDb();
         this.log = new PlayLog(this.db);
         this.knowledge = new KnowledgeGate(this.db);

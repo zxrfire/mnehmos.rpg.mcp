@@ -292,14 +292,6 @@ export function searchMemories(store: MemoryStore, q: MemoryQuery = {}): MemoryR
     return q.limit != null ? rows.slice(0, q.limit) : rows;
 }
 
-export function memoriesOf(store: MemoryStore, ownerId: string): MemoryRecord[] {
-    return searchMemories(store, { ownerId, order: 'chronological' });
-}
-
-export function getMemory(store: MemoryStore, id: string): MemoryRecord | null {
-    return store.records.find(m => m.id === id) ?? null;
-}
-
 /**
  * What this person would bring to mind about somebody else.
  *
@@ -315,19 +307,6 @@ export function recallAbout(
     limit = 8
 ): MemoryRecord[] {
     return searchMemories(store, { ownerId, actorIds: [subjectId], limit });
-}
-
-/**
- * What the owner still carries about a place, including things the world's
- * record no longer supports.
- */
-export function recallLocation(
-    store: MemoryStore,
-    ownerId: string,
-    locationId: string,
-    limit = 8
-): MemoryRecord[] {
-    return searchMemories(store, { ownerId, locationId, limit });
 }
 
 /**

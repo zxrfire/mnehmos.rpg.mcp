@@ -73,37 +73,3 @@ export function calculateHearingRadius(config: HearingRangeConfig): number {
 
     return range;
 }
-
-export function canHearAtDistance(distance: number, hearingRadius: number): boolean {
-    return distance <= hearingRadius;
-}
-
-/**
- * Feet ADDED to the real distance when a wall is in the way, not subtracted
- * from the radius. Whispers get a penalty large enough to never carry.
- */
-export function getAdjacentRoomPenalty(volume: VolumeLevel): number {
-    switch (volume) {
-        case 'WHISPER':
-            return 999; // Effectively blocks whispers
-        case 'TALK':
-            return 30;  // Adds 30ft effective distance
-        case 'SHOUT':
-            return 10;  // Shouts penetrate walls better
-    }
-}
-
-/** Hearing quality as a word, for flavour text in conversation memories. */
-export function getHearingQuality(distance: number, hearingRadius: number): string {
-    const ratio = distance / hearingRadius;
-
-    if (ratio <= 0.25) {
-        return 'clearly';
-    } else if (ratio <= 0.5) {
-        return 'distinctly';
-    } else if (ratio <= 0.75) {
-        return 'faintly';
-    } else {
-        return 'barely';
-    }
-}
