@@ -27,6 +27,7 @@ import {
     type HistoricalFact
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
+import { whereASendingGoes } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import {
     armItsOwn,
     howTheWarGoesFor,
@@ -55,6 +56,7 @@ import {
     markDead,
     markMissing,
     relationshipWith,
+    setLocation,
     setRealm,
     upsertRelationship,
     type NpcRecord
@@ -230,6 +232,10 @@ export type PressureKind =
      * own people's hands. Lent, never given.
      */
     | 'house_armed_its_own'
+    /**
+     * Somebody is late back, and the person whose job it is has said so.
+     */
+    | 'overdue'
     | 'zone_forbidden'
     | 'migration'
     | 'disappearance'
@@ -418,6 +424,21 @@ export function applyPressure(
         events.push(...housesOpeningTheirVaults(
             state,
             withinSpan(year * 365 + 62, fromDay, toDay)
+        ));
+
+        // WHOEVER IS DUE BACK COMES BACK, and it happens BEFORE anybody is
+        // called late. A party whose term ran out three months ago and which
+        // nothing has processed yet is not overdue, it is unprocessed, and a
+        // keeper who cannot tell those apart raises the alarm about everybody.
+        bringHomeWhoeverIsDue(state, withinSpan(year * 365 + 62, fromDay, toDay));
+
+        // AND THEN WHO HAS NOT COME BACK. The keeper's job is personnel: they
+        // are the one who knows a week's errand has taken a month, and the one
+        // who tells everybody else something is wrong. It goes out as an
+        // ordinary fact, so it reaches people the way every other thing does.
+        events.push(...whatTheKeeperNotices(
+            state,
+            withinSpan(year * 365 + 63, fromDay, toDay)
         ));
 
         // Wars that reached the day they were scheduled to end. BEFORE the
@@ -1851,6 +1872,69 @@ function applySendings(state: WorldState, year: number, day: number): number {
         });
         sent++;
 
+        // ── AND THEY GO ──────────────────────────────────────────────────
+        //
+        // The posting names a place off the reason's own `needs` key, and the
+        // party stands there until the term is up. Before this a sending was
+        // resolved without anybody moving: measured, 74 of 76 NPCs who survived
+        // two hundred years never changed location once.
+        //
+        // `setLocation` is the mover, and it had no caller anywhere in the
+        // repository.
+        const goingTo = whereASendingGoes({
+            needs: reason.needs,
+            fromLocationId: faction.seatLocationId,
+            seatsInPlay: state.factions
+                .filter(f => f.id !== faction.id && f.dissolvedOnDay === null)
+                .map(f => f.seatLocationId)
+                .filter((id): id is string => id !== null),
+            // GROUND SOMEBODY CAN STAND ON, and not a hall. A region is a
+            // container - `populationWeightOf` is zero for one - and a party
+            // posted to one is inside the map rather than on it. Seats are
+            // excluded because the errands that go to a hall are the ones where
+            // a house receives you, and those read `seatsInPlay`.
+            elsewhere: state.locations
+                .filter(l => l.kind !== 'sect_seat'
+                    && isBelowTheLid(l)
+                    && populationWeightOf(l) > 0)
+                .map(l => l.id),
+            pick: count => rng.int(0, Math.max(0, count - 1))
+        });
+        if (goingTo !== null) {
+            const partyIds = party.map(p => p.id);
+            // EVERYBODY WHO WENT, including the ones who will not come back.
+            // The lost went out on the same errand to the same place; they are
+            // marked missing a few lines below and `markMissing` leaves the
+            // activity standing, so what is on their record is the errand that
+            // took them. That is also the only thing the keeper has to notice -
+            // a house whose people all come home has nothing to raise an alarm
+            // about.
+            for (const member of party) {
+                const index = at.get(member.id);
+                if (index === undefined) continue;
+                const row = state.npcs[index];
+                if (row === undefined || !isTheWorldsToMove(row)) continue;
+                state.npcs[index] = {
+                    ...setLocation(row, goingTo, day),
+                    // `mustering` is the kind whose own doc names this
+                    // machinery, and the one where `withIds` is the party
+                    // rather than a companion. The term is what makes a party
+                    // still out tellable from a party that never came home.
+                    activity: {
+                        kind: 'mustering',
+                        note: `Out for the ${houseName(faction.name)} on ${reason.name.toLowerCase()}.`,
+                        withIds: partyIds.filter(id => id !== member.id),
+                        sinceDay: day,
+                        untilDay: sending.returnsOnDay,
+                        // Where they came from, which is not their house's
+                        // front door. A disciple who lives in a village comes
+                        // back to the village.
+                        returnTo: row.locationId
+                    }
+                };
+            }
+        }
+
         for (const missing of sending.lost) {
             const index = at.get(missing.id);
             if (index === undefined) continue;
@@ -1872,6 +1956,126 @@ function applySendings(state: WorldState, year: number, day: number): number {
         }
     }
     return sent;
+}
+
+/**
+ * HOW LATE SOMEBODY HAS TO BE BEFORE THE HOUSE SAYS IT OUT LOUD.
+ *
+ * The design owner: *"the keeper knows x has been away for a month, their
+ * mission should've only taken a week. That's their job - personnel. They're
+ * the ones who tell other people something is wrong."*
+ *
+ * A share of the term rather than a fixed span, because a week late off a
+ * forty-day errand is a delay and a week late off a two-year war is nothing.
+ */
+const LATE_ENOUGH_TO_SAY_SO = 0.5;
+
+/**
+ * The keeper notices, and it goes out the way everything goes out.
+ *
+ * NOT A NEW CHANNEL. It is a world fact with an `unattributed` line on it, so
+ * it reaches a player who cannot name the missing person as "a compound has
+ * been asking after somebody" and reaches one who can by name - which is the
+ * hearsay layer doing exactly what it already does for every other event.
+ *
+ * DERIVED FROM THE TERM. Nothing marks anybody overdue: a party's activity
+ * carries the day it is due back, so being late is arithmetic, and a keeper
+ * cannot forget to notice.
+ *
+ * Said ONCE. The activity is cleared when it is said, because the point is the
+ * house raising the alarm rather than a compound announcing the same absence
+ * every year for a century.
+ */
+function whatTheKeeperNotices(state: WorldState, day: number): PressureEvent[] {
+    const out: PressureEvent[] = [];
+    const houseOf = new Map(state.factions.map(f => [f.id, f]));
+
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc === undefined || npc.status === 'physically_dead') continue;
+        const doing = npc.activity;
+        if (!doing || doing.kind !== 'mustering') continue;
+        if (doing.untilDay === null || doing.untilDay === undefined) continue;
+
+        const term = Math.max(1, doing.untilDay - doing.sinceDay);
+        if (day < doing.untilDay + term * LATE_ENOUGH_TO_SAY_SO) continue;
+
+        const house = npc.factionId === null ? null : houseOf.get(npc.factionId) ?? null;
+        const late = Math.max(0, Math.floor((day - doing.untilDay) / 30));
+
+        // Said, and then not said again. Whatever happened to them is somebody
+        // else's to find out.
+        state.npcs[i] = { ...npc, activity: null };
+
+        out.push(emit(state, 'overdue', day, {
+            day,
+            // The keeper SAYS it. That is the act - a house learning one of
+            // its own has not come back is a person telling everybody.
+            kind: 'said_in_public',
+            scale: 'local',
+            summary:
+                `${npc.name} was due back` + (house ? ` at the ${houseName(house.name)}` : '')
+                + ` and is ${late === 0 ? 'overdue' : `${late} month${late === 1 ? '' : 's'} overdue`}. `
+                + 'The hall has started asking.',
+            actors: [{ id: npc.id, name: npc.name, role: 'missing' }],
+            locationId: npc.locationId,
+            factionIds: house ? [house.id] : [],
+            visibility: 'faction',
+            magnitude: 0.3 + Math.min(0.3, npc.cultivation.realmOrdinal * 0.01),
+            unattributed:
+                'Somebody at the compound has been asking after a name, in the tone of '
+                + 'a person who has already asked everybody easier.',
+            consequences: {
+                immediate: 'The house knows one of its own has not come back.',
+                tenYearsLater:
+                    'Either they came back with an account of it, or the name is one the '
+                    + 'hall says on a particular day of the year.'
+            }
+        }, {
+            factions: house ? [house.id] : [],
+            locations: npc.locationId ? [npc.locationId] : [],
+            npcs: [npc.id, ...doing.withIds]
+        }));
+    }
+    return out;
+}
+
+/**
+ * Everybody whose errand is over, standing where they started.
+ *
+ * Reads the term off the activity rather than off a list of who is out, so a
+ * world loaded from disk mid-sending brings the right people home without
+ * anything having had to persist a roster of parties.
+ *
+ * Home is their house's seat. Somebody whose house dissolved while they were
+ * away stays where they are, which is a truer answer than teleporting them to a
+ * hall that is not there any more.
+ */
+function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
+    const standing = new Set(state.locations.map(l => l.id));
+    let home = 0;
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        if (npc === undefined || npc.status !== 'alive') continue;
+        const doing = npc.activity;
+        if (!doing || doing.kind !== 'mustering') continue;
+        if (doing.untilDay === null || doing.untilDay === undefined) continue;
+        if (day < doing.untilDay) continue;
+
+        // BACK WHERE THEY CAME FROM, which is not their house's seat. A
+        // disciple who lives in a village lives in the village; posting the
+        // whole world home to a front door drains settlements one party at a
+        // time. A place that has since ceased to exist leaves them standing
+        // where the errand took them, which is truer than teleporting them into
+        // a location the world no longer holds.
+        const back = doing.returnTo ?? null;
+        state.npcs[i] = {
+            ...(back !== null && standing.has(back) ? setLocation(npc, back, day) : npc),
+            activity: null
+        };
+        home++;
+    }
+    return home;
 }
 
 // THE YARD

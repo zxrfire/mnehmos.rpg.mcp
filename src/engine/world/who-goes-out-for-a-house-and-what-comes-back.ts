@@ -357,3 +357,70 @@ export function newsOfASending(sending: Sending, opts: {
             : ''
     });
 }
+
+// ═════════════════════════════════════════════════════════════════════════
+// AND WHERE THEY ACTUALLY GO
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * WHERE A SENDING GOES, off the reason's own `needs` key.
+ *
+ * A posting used to be pitched at the house's own seat, which is not a place
+ * anybody is sent TO - it is where they left from. Measured: 74 of 76 NPCs who
+ * survived two hundred years never changed location once, because the only
+ * pass that moves anybody filters `factionId === null` and half the world is in
+ * a house.
+ *
+ * Nothing new decides this. `needs` already names what the errand is about, and
+ * the predicate for each is already written in `NEED_PREDICATES` - a house that
+ * has no rival cannot be sent at one. So the destination falls out of the same
+ * key that decides whether the reason is open at all:
+ *
+ *     an_ally        their seat. You are received: a marriage happens at a house.
+ *     a_subsidiary   their seat. Tribute is collected from a place.
+ *     a_parent       their seat. A call comes from somewhere and you go to it.
+ *
+ *     a_rival        NOT their seat. You do not camp in the courtyard of the
+ *                    house you are at war with; you stand on ground between.
+ *     ground         ground, which is what standing to means.
+ *     a_find         out where the find is.
+ *     nothing        out. Materials, recruits and escorts are errands whose
+ *                    destination is not stated, and the honest answer is
+ *                    somewhere that is not this hall - which is also what makes
+ *                    a recruiting trip reach a lesser house.
+ *
+ * `elsewhere` MUST be ground somebody can stand on. A region is a container -
+ * `populationWeightOf` is zero for one and `demography.test.ts` holds the line
+ * that nobody is ever placed on a map node nobody can stand on - and sending a
+ * party to one put nineteen people inside the map rather than on it.
+ *
+ * Null where the world holds nowhere to go, and a caller must read that as
+ * "they went out and the record does not say where" rather than as home.
+ */
+export function whereASendingGoes(input: {
+    needs: ReasonNeed;
+    /** The house's own seat, so it can be excluded. */
+    fromLocationId: string | null;
+    /** Seats of the houses this reason is about, in the world's own order. */
+    seatsInPlay: readonly string[];
+    /** Places that are neither this house's nor anybody's seat. */
+    elsewhere: readonly string[];
+    /** Picks one. The caller's stream, so no draw anywhere else moves. */
+    pick: (count: number) => number;
+}): string | null {
+    const notHome = (ids: readonly string[]): string[] =>
+        ids.filter(id => id !== input.fromLocationId);
+
+    // Only the errands where a house RECEIVES you go to a hall.
+    const received = input.needs === 'an_ally'
+        || input.needs === 'a_subsidiary'
+        || input.needs === 'a_parent';
+    const pool = received ? notHome(input.seatsInPlay) : notHome(input.elsewhere);
+
+    // A house with a rival it cannot find the seat of still sends the party.
+    // Falling back to elsewhere rather than to home, because the one thing that
+    // is certainly wrong is a party posted to the hall it left.
+    const chosen = pool.length > 0 ? pool : notHome(input.elsewhere);
+    if (chosen.length === 0) return null;
+    return chosen[Math.min(chosen.length - 1, Math.max(0, input.pick(chosen.length)))] ?? null;
+}

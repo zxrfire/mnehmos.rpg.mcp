@@ -335,6 +335,31 @@ export interface NpcActivity {
     withIds: string[];
     /** The day they started it, so a world can tell a habit from a moment. */
     sinceDay: number;
+    /**
+     * The day it ends, for the things that have an end.
+     *
+     * Null for the ordinary activities, which stop when somebody stops - a
+     * person at a table is at a table until they are not. A SENDING has a term:
+     * the house said forty days and the party is away for forty days, and
+     * without a date on it nothing could tell a party still out from a party
+     * that never came home.
+     *
+     * A day and not a countdown, because a countdown has to be decremented by
+     * somebody and the thing that forgets is the thing that strands a party in
+     * a province forever.
+     */
+    untilDay?: number | null;
+    /**
+     * Where they were standing when it started, for the things that take you
+     * somewhere.
+     *
+     * Null for everything that happens where you already are. An errand needs
+     * it because HOME IS NOT A HOUSE'S SEAT: a disciple who lives in a village
+     * and is sent out has to come back to the village. Sending everybody to
+     * their house's front door instead emptied settlements one party at a time,
+     * which `demography.test.ts` catches as a settlement with nobody in it.
+     */
+    returnTo?: string | null;
 }
 
 export interface NpcCultivation {
