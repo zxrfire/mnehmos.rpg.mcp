@@ -1438,6 +1438,17 @@ export const RECALL_EVERYTHING = new RegExp([
  * "what is going on elsewhere" reached nothing at all, though ELSEWHERE is the
  * exact thing this verb is for.
  */
+/** The nouns that make a sentence alchemy rather than shopping. */
+const ALCHEMICAL_NOUN = /\b(?:pills?|elixirs?|medicines?|formulae?|formulas?|recipes?)\b/i;
+
+/** Buying the makings of a thing, which is not buying the thing. */
+const WHAT_IT_IS_MADE_OF =
+    /\b(?:materials?|ingredients?|components?|reagents?|herbs?|makings)\b[^.?!]{0,12}\b(?:for|to make|to refine|to brew)\b/i;
+
+/** And asking what it takes, which is the same question without a purse. */
+const WHAT_A_THING_TAKES =
+    /\bwhat\s+(?:do|does|would)\b[^.?!]{0,40}\bneed\b|\bwhat\s+(?:goes|go)\s+into\b|\bwhat\s+(?:is|are)\s+(?:needed|required)\s+for\b/i;
+
 export const NEWS_AND_RUMOUR =
     /\b(?:what news|any news|what(?:'s| is) the news|what(?:'s| is) happening (?:in the world|out there|elsewhere)|what(?:'s| is) going on (?:in the world|out there|elsewhere|anywhere)|what are people saying|what do (?:people|they|folk)\b[^.?!]{0,14}\bsay\b|listen for (?:rumours?|rumors?|news|talk)|any (?:rumours?|rumors?)|what (?:rumours?|rumors?)|catch up on the news|what have i heard lately)\b/;
 
@@ -3235,6 +3246,30 @@ function planIntent(input: string): PlannedAction {
             intent: step,
             ...(where ? { target: where } : {})
         };
+    }
+
+    // ── WHAT A THING TAKES IS NOT THE THING ──────────────────────────
+    //
+    // Played, and this one spent money on the wrong article:
+    //
+    //   > I buy the materials for a qi-gathering pill
+    //   One Qi-Gathering Pill for 26 spirit stone(s). The pill is in the pouch.
+    //
+    // The buy path resolves its target by name, "qi-gathering pill" sits
+    // inside "materials for a qi-gathering pill", and the qualifier that is
+    // the whole point of the sentence was read past. Somebody stocking a
+    // cauldron was sold the finished article instead.
+    //
+    // And its question form reached nothing at all: "what do I need for a
+    // qi-gathering pill" came back unrecognised, while the bare formula read
+    // has always answered exactly that - what it takes, what the pouch is
+    // short of, and what ground each herb grows on.
+    //
+    // So both go to the read. An alchemical noun is required on either side,
+    // which is the same guard the `make` rule above earns its place with.
+    if (ALCHEMICAL_NOUN.test(text)
+        && (WHAT_IT_IS_MADE_OF.test(text) || WHAT_A_THING_TAKES.test(text))) {
+        return { action: 'refine' };
     }
 
     // buying a line off the board
