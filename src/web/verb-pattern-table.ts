@@ -254,6 +254,7 @@ import { institutionalAct, matterAsked, IMMORTAL_ITEM_NAMED } from './institutio
 import {
     MALFORMED_QUANTITY,
     ASKING_RATHER_THAN_DOING,
+    theQuestionRatherThanTheBystander,
     theReadThatAnswersIt
 } from './asking-is-not-doing.js';
 
@@ -2436,9 +2437,14 @@ function readTheSentence(input: string): PlannedAction {
     // vetoes scattered through the table below. Doing it as a post-pass is what
     // makes it complete: a verb added tomorrow is covered without its author
     // having to know this rule exists.
-    return ASKING_RATHER_THAN_DOING.test(input.toLowerCase())
+    const mood = ASKING_RATHER_THAN_DOING.test(input.toLowerCase())
         ? theReadThatAnswersIt(plan)
         : plan;
+    // And a question the table handed to a bystander is still a question. Same
+    // reasoning as the mood pass and the same place for it: on the whole
+    // sentence, once, rather than as a guard inside every verb that can take a
+    // person. See `theQuestionRatherThanTheBystander`.
+    return theQuestionRatherThanTheBystander(mood, planIntent);
 }
 
 let vocabulary: ReadonlySet<string> | null = null;

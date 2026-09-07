@@ -75,6 +75,27 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     /\bwhat\s+(?:is|are)\s+(?:left|there)\b[^.?!]{0,20}\bto\s+[a-z]+\b/,
     // AND A CONDITIONAL IS NOT A COMMITMENT
     /^\s*if\s+(?!i\b)[^,.?!]{2,60},?\s*(?:then\s+)?i(?:'ll|'d|\s+will|\s+would|\s+shall)?\b/,
+    // AND THE PLAINEST FORM OF ALL, WHICH WAS MISSING: the player saying, in
+    // so many words, that they are asking.
+    //
+    // Measured by playing it. "I ask what work the sect has" was answered with
+    // NINETY DAYS OF HAULING, because the phrase contains "work the" and the
+    // mortal-economy rule takes that as employment. The same question with two
+    // words moved - "what work does the sect have" - was a read all along,
+    // which is exactly the near-synonym trap AGENTS.md names: the phrasing a
+    // player reaches for first is the one that fails, and they cannot find the
+    // working half except by guessing.
+    //
+    // AN INTERROGATIVE IS REQUIRED, and that is the whole distinction between a
+    // question and a request. "I ask what he wants" is asking. "I ask him to
+    // craft me a talisman" is somebody commissioning a talisman, and it has to
+    // stay one - the design owner asked for that verb by name.
+    // IMMEDIATELY AFTER THE VERB, with no person in the gap. "ask Jiang Anyi
+    // what she wants" is somebody being asked something and the table already
+    // reads it correctly as a free request; allowing a name in between put
+    // that sentence through this pass and changed it. The costly case has
+    // nothing in the gap at all.
+    /\bask(?:s|ed|ing)?\s+(?:what|who|whom|which|where|when|why|whether|how)\b/,
     // AND THE ONE THE PLAYER TYPED ON PURPOSE
     /\?\s*$/
 ].map(r => r.source).join('|'), 'i');
@@ -250,4 +271,66 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
         default:
             return { action: 'assess', ...(plan.target ? { target: plan.target } : {}) };
     }
+}
+
+/**
+ * A question the parser handed to a bystander, read as the question it is.
+ *
+ * MEASURED BY PLAYING IT, and the shape is always the same. "I ask what my rank
+ * is" resolved to TALKING TO SOMEBODY about a person called "what my rank is",
+ * and the engine answered `resolveParty: matched nobody`. So did "I ask what
+ * missions are open to me", and "I ask what has happened while I was in
+ * seclusion". Meanwhile "what my rank is" on its own reads as `status`, "what
+ * missions are open" as the duty board, and "what my contribution is" as
+ * standing in the house - correct, every one of them.
+ *
+ * The two words in front were the whole difference. That is the near-synonym
+ * rule in AGENTS.md: the phrasing a player reaches for first is the one that
+ * fails, and there is no way to find the working half except by guessing.
+ *
+ * SO THIS ONLY EVER FIRES WHERE THE PARSER ALREADY FOUND NOBODY. The target has
+ * to begin with an interrogative, which is not what a person is called, and the
+ * answer has to be a read - a question is never allowed to become something
+ * that spends a day. Where the inside is unclear, the outer plan stands and the
+ * player is talking to whoever is in front of them, which is also right: "I ask
+ * what he wants" is a person being asked something.
+ */
+const STARTS_WITH_AN_INTERROGATIVE =
+    /^(?:what|who|whom|which|where|when|why|whether|how)\b/i;
+
+export function theQuestionRatherThanTheBystander(
+    plan: PlannedAction,
+    reparse: (text: string) => PlannedAction
+): PlannedAction {
+    // The three verbs that take a person or a thing by name. `request` is here
+    // with the other two because "I ask what missions are open to me" reached it
+    // carrying "what missions are open" as the thing being requested, which is
+    // the same failure wearing a different verb.
+    if (plan.action !== 'interact'
+        && plan.action !== 'investigate'
+        && plan.action !== 'request') {
+        return plan;
+    }
+    const said = (plan.target ?? '').trim();
+    if (said.length === 0 || !STARTS_WITH_AN_INTERROGATIVE.test(said)) return plan;
+
+    const inside = reparse(said);
+    // Nothing better to say, so the person in front of them is the answer.
+    if (inside.action === 'unclear') return plan;
+    // And never round-trip into the same guess.
+    if (inside.action === 'interact'
+        || inside.action === 'investigate'
+        || inside.action === 'request') {
+        return plan;
+    }
+    // A QUESTION NEVER BECOMES A COST. The inside was read as a bare sentence,
+    // so it can come back as the committing half of a verb - "what missions are
+    // open" reads as TAKING one - and a question must not do that.
+    //
+    // But that is the rule directly above, and it already knows what the free
+    // half of every verb is. So the inside is put through it rather than being
+    // thrown away, and only refused if it still costs something afterwards.
+    if (costsTheAskerNothing(inside)) return inside;
+    const asked = theReadThatAnswersIt(inside);
+    return costsTheAskerNothing(asked) ? asked : plan;
 }
