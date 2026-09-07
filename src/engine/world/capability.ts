@@ -65,7 +65,8 @@ export type CapabilityGrant =
      * Void Tribulation: folding space rather than crossing it.
      *
      * SOLO, PHYSICAL, AND CONTESTED. It folds the space around one body and
-     * carries nothing else: no companion, no cargo, no passenger. A Dao house
+     * what that body has on it, up to about the size of a sword. No companion,
+     * no passenger, and nothing larger than a person can carry. A Dao house
      * portal moves other things, and it is a different mechanism rather than a
      * better version of this one.
      *
@@ -86,8 +87,9 @@ export type CapabilityGrant =
      * WHAT THIS MEANS FOR AN ART. Everybody at 29 has this for nothing, so a
      * movement art at or above 29 that only folds space sells back a
      * capability the rung already gave away. To be worth its place it has to
-     * beat the bare fold: take somebody with you, move something that is not
-     * you, reach where a held space refuses, or hold the space yourself.
+     * beat the bare fold, and the sword is the measure of that: take somebody
+     * with you, move something bigger than a hand can carry, reach where a
+     * held space refuses, or hold the space yourself.
      * `Void-Fold Pilgrimage` is the row this was written about.
      *
      * IT IS ALSO THE FLOOR UNDER A TALISMAN. A hand at 29 with nothing
