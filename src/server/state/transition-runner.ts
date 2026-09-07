@@ -68,6 +68,14 @@ export interface TheWorldAtHand {
      * Drop the cached handle so the next touch reloads from disk. See ruling 3.
      */
     forget(): void;
+    /**
+     * The handle is now at this revision.
+     *
+     * Told rather than inferred, because the handle that ran the transition is
+     * the one that is current - and a cache that cannot be told would read its
+     * own writes as somebody else's and reload the world after every commit.
+     */
+    nowAt?(revision: number): void;
 }
 
 /**
@@ -114,6 +122,7 @@ export function commitOneTransition<T>(input: {
             revision = input.at ? advanceWorldRevision(input.db, input.at.id) : 0;
             return out;
         })();
+        input.at?.nowAt?.(revision);
         return { result, revision, events };
     } catch (err) {
         // SQLite is clean. The world graph is not.

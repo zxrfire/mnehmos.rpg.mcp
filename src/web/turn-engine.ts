@@ -222,7 +222,11 @@ import {
     commitOneTransition,
     type TransitionContext
 } from '../server/state/transition-runner.js';
-import { forgetWorld, writeTheWorldNow } from '../server/state/cultivation-world.js';
+import {
+    forgetWorld,
+    noteWorldRevision,
+    writeTheWorldNow
+} from '../server/state/cultivation-world.js';
 import { somebodyDidThis } from '../engine/world/estate-at-death.js';
 import {
     DEFAULT_CULTIVATION_DAYS,
@@ -2010,6 +2014,7 @@ export class GameService {
             for (const line of died.facts.lines) {
                 sayThisWhateverTheNarratorDoes(execution.facts, line);
             }
+
         }
 
         // A world changed inside one turn is written before anything is
@@ -2020,6 +2025,7 @@ export class GameService {
             this.worldDirty = false;
             await saveWorldForRun(run);
         }
+
 
         // EVERYTHING THIS TURN SHOWED, WRITTEN DOWN
         for (const perceived of execution.perceived ?? []) {
@@ -12168,7 +12174,8 @@ ${fit.line}`;
                 id: world.id,
                 state: world,
                 append: state => writeTheWorldNow(state),
-                forget: () => forgetWorld(world.id)
+                forget: () => forgetWorld(world.id),
+                nowAt: revision => noteWorldRevision(world.id, revision)
             },
             onDay: world === null ? 0 : Math.floor(world.currentDay),
             body: ctx => this.settleTheEstateInside(now, ctx)

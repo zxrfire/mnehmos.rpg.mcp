@@ -319,7 +319,10 @@ export async function endRunInWorld(
     record.outcome = outcome;
     record.peakOrdinal = Math.max(record.peakOrdinal, peakOrdinal);
     record.endedOnDay = handle.state.currentDay;
-    repo().saveWorld(handle.state);
+    // `appendWorld` and not `saveWorld`. Three fields moved on one row; a full
+    // save clears all 25 world tables before re-inserting, which is a lifecycle
+    // operation and not what closing a run is.
+    repo().appendWorld(handle.state);
     return record;
 }
 
@@ -370,6 +373,18 @@ export async function worldForRun(run: Run): Promise<WorldState> {
  */
 export function writeTheWorldNow(state: WorldState): void {
     repo().appendWorld(state);
+}
+
+/**
+ * Tell the cache what revision the held handle is now at.
+ *
+ * A transition commits a revision bump alongside its writes. Without this the
+ * cached handle - which IS the one that made those writes and is therefore
+ * exactly current - reads as stale on the next touch and is thrown away, and
+ * the world reloads from disk after every single transition.
+ */
+export function noteWorldRevision(worldId: string, revision: number): void {
+    if (loaded.has(worldId)) revisionOf.set(worldId, revision);
 }
 
 /**
