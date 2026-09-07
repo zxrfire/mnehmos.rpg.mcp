@@ -1201,7 +1201,10 @@ ${unnamed}`;
         const holdsThings = howTheyHoldWhatTheyHave(openHandedness);
         const aboutThem = holdsThings === null
             ? party.facts
-            : [...party.facts, `${party.name} ${holdsThings}.`];
+            // `They`, because the phrase agrees with it: see
+            // `howTheyHoldWhatTheyHave`. Who they are is established by the
+            // facts above this one.
+            : [...party.facts, `They ${holdsThings}.`];
 
         // Read once and used three times: the resolver prices it, the costing
         // line says it, and a refusal names it as the thing that is already

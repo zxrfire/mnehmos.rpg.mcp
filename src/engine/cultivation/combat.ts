@@ -1801,9 +1801,13 @@ function describeOneSided(
                   'piece regrows over years into somebody who remembers exactly who did this and how easy they ' +
                   'found it.';
         case 'withdrawal':
-            return 'Driven off, one-sidedly and settled. They are hurt, they are carrying something that will ' +
-                'not close on its own, and the party who did it is untouched. What they take away is not a ' +
-                'grievance about a fight - it is the measurement.';
+            // SAID ONCE, AND WITHOUT THE EPIGRAM. The hint that wraps this
+            // states the body and the untouched aggressor in its own words a
+            // sentence later, so "the party who did it is untouched" arrived
+            // twice in every one-sided withdrawal; and what somebody takes
+            // away from a beating is not something the engine can see.
+            return 'Driven off, one-sidedly and settled. They are hurt, and they are carrying '
+                + 'something that will not close on its own.';
         case 'capture':
             return 'Taken, not beaten - there was nothing to beat. What happens next is a negotiation, and no ' +
                 'part of the terms is theirs.';
@@ -1904,9 +1908,18 @@ function oneSided(
         // for it, and every consequence this function actually applied is
         // named - because a narrator that is told the number cannot write that
         // nothing happened.
+        // ── THE DEFENDER IS THE SUBJECT, AND THE AGGRESSOR IS NOT NAMED ──
+        //
+        // This opened with the aggressor's own name, and the aggressor is
+        // usually the player - so a set act aimed at ten people said "Reader
+        // stands 2 major realms above" ten times, in the third person, to
+        // Reader. Everything else in this hint is about the defender, who is
+        // named; the gap is the same fact read from their side, and a sentence
+        // with no aggressor in its grammar reads correctly whoever they are.
         narrationHint:
-            `${aggressorInput.name} stands ${-gap.realmGap} major realms above ${defenderInput.name}, ` +
-            'so this resolved in one action with nothing contested and no exchange rolled. ' +
+            `${defenderInput.name} stands ${-gap.realmGap} major realms below the party who came ` +
+            'at them, so this resolved in one action with nothing contested and no exchange ' +
+            'rolled. ' +
             describeOneSided(outcome, requirement, outcome === 'body_destroyed' ? requirement.remnant : null) +
             ` ${defenderInput.name} is left at ${hp[defenderInput.id]}/${defenderInput.maxHp}` +
             (injuries[defenderInput.id].length > 0
@@ -1916,8 +1929,9 @@ function oneSided(
             // nothing OFF THEM", which is a different sentence and now a
             // reachable one: a coercion for `hand_over` moves a purse, so the
             // damage line and the taking line sat next to each other saying
-            // opposite things. This says the body and only the body.
-            ` ${aggressorInput.name} was not touched.`
+            // opposite things. This says the body and only the body - and says
+            // it without naming the aggressor, for the reason above.
+            ' Nothing came back the other way.'
     };
 }
 

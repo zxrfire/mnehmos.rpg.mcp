@@ -325,3 +325,138 @@ export function howTheSetWasCounted(
         + 'Both counts are taken against this cultivator\'s knowledge records, never against '
         + 'the world roster - see the header.';
 }
+
+/**
+ * WHAT HAPPENED TO TEN PEOPLE, WHERE IT WAS THE SAME THING TEN TIMES.
+ *
+ * -- MEASURED, AND IT IS THE WORST STUTTER IN THE GAME --------------------
+ *
+ * Played at Void Refinement against a market square of ten, `I attack
+ * everyone here` answered with ten paragraphs of sixty words. Every sentence
+ * of every one of them was identical but for the name and two figures:
+ *
+ *   Reader stands 2 major realms above Gu Nuohe, so this resolved in one
+ *   action with nothing contested and no exchange rolled. Driven off,
+ *   one-sidedly and settled. They are hurt, and they are carrying something
+ *   that will not close on its own. Gu Nuohe is left at 13/67 and carrying a
+ *   serious wound that will not close on its own. Reader was not touched.
+ *
+ *   Reader stands 2 major realms above Liang Yaoming, so this resolved in one
+ *   action with nothing contested and no exchange rolled. Driven off, ...
+ *
+ * Six hundred words in which four facts are stated ten times each. And it is
+ * not a coincidence of one seed: a set act runs the SAME resolver once per
+ * member, so whenever the members are alike the sentences are identical by
+ * construction - which is exactly when a player is most likely to aim at a
+ * set in the first place.
+ *
+ * -- THE TEST IS THE SENTENCE WITH THE NAME TAKEN OUT ---------------------
+ *
+ * Each member's lines are cut into sentences and each sentence is templated by
+ * removing the name of whoever it happened to. A template every member
+ * produced is a fact about the ACT rather than about any one of them, and is
+ * said once with them named as a group. A template only one member produced -
+ * anything carrying a figure of their own - stays under their name.
+ *
+ * Nothing here reads the sentences. It does not know what a wound is, which is
+ * what lets it sit over `attack`, `rob`, `threaten` and every other verb that
+ * takes a set: all it knows is that two sentences said the same thing.
+ */
+export function saidOnceForEverybodyItHappenedTo(
+    outcomes: readonly { who: string; lines: readonly string[] }[]
+): string[] {
+    if (outcomes.length < 2) return outcomes.flatMap(one => [...one.lines]);
+
+    const WHOEVER = ' ';
+    const templateOf = (sentence: string, who: string): string =>
+        who.length === 0 ? sentence : sentence.split(who).join(WHOEVER);
+
+    // First-appearance order, so what the turn says still reads in the order
+    // it happened in.
+    const order: string[] = [];
+    const byTemplate = new Map<string, { who: string; said: string }[]>();
+    for (const outcome of outcomes) {
+        for (const line of outcome.lines) {
+            for (const said of intoSentences(line)) {
+                const key = templateOf(said, outcome.who);
+                const held = byTemplate.get(key);
+                if (held) held.push({ who: outcome.who, said });
+                else {
+                    order.push(key);
+                    byTemplate.set(key, [{ who: outcome.who, said }]);
+                }
+            }
+        }
+    }
+
+    const everybody = new Set(outcomes.map(one => one.who));
+    // WHAT WAS TRUE OF ALL OF THEM COMES FIRST, then what was true of each.
+    // Interleaved by first appearance, the shared sentences arrived between
+    // one person's figures and the next, and the answer read as though the
+    // engine had lost its place.
+    const forAll: string[] = [];
+    const theirOwn: string[] = [];
+    for (const key of order) {
+        const group = byTemplate.get(key)!;
+        const said = new Set(group.map(one => one.who));
+        // Every member produced it, and none produced it twice: a fact about
+        // the act. Anything else is theirs and keeps their name on it.
+        if (said.size !== everybody.size || group.length !== outcomes.length) {
+            theirOwn.push(...group.map(one => one.said));
+            continue;
+        }
+        forAll.push(atTheHeadOfASentence(
+            key.split(WHOEVER).join(theyAllWere(group.map(one => one.who))),
+            key.startsWith(WHOEVER)
+        ));
+    }
+    return [...forAll, ...theirOwn];
+}
+
+/**
+ * A sentence whose first word was a name slot, capitalised again.
+ *
+ * `each of them is carrying a wound now` began a sentence in lower case
+ * because the name it replaced never needed capitalising.
+ */
+function atTheHeadOfASentence(sentence: string, filled: boolean): string {
+    if (!filled || sentence.length === 0) return sentence;
+    return `${sentence[0]!.toUpperCase()}${sentence.slice(1)}`;
+}
+
+/**
+ * The name slot in a folded sentence, filled with everybody it fits.
+ *
+ * `each of them` rather than a list, past three: a sentence that has to name
+ * ten people in the middle of itself has stopped being a sentence, and every
+ * one of those names is on a line of its own underneath it anyway.
+ */
+function theyAllWere(names: readonly string[]): string {
+    const unique = [...new Set(names)];
+    if (unique.length === 1) return unique[0]!;
+    if (unique.length > 3) return 'each of them';
+    return `${unique.slice(0, -1).join(', ')} and ${unique[unique.length - 1]}`;
+}
+
+/**
+ * A line, cut where one statement ends and the next begins.
+ *
+ * Deliberately crude: a stop, a question mark or an exclamation with a space
+ * or the end of the line after it. A decimal point keeps its digits, because
+ * what follows one is never a space, and `13/67` holds no stop at all.
+ */
+function intoSentences(line: string): string[] {
+    const parts: string[] = [];
+    let held = '';
+    for (let at = 0; at < line.length; at++) {
+        held += line[at];
+        const ends = line[at] === '.' || line[at] === '?' || line[at] === '!';
+        if (ends && (at + 1 >= line.length || line[at + 1] === ' ')) {
+            parts.push(held.trim());
+            held = '';
+            at++;
+        }
+    }
+    if (held.trim().length > 0) parts.push(held.trim());
+    return parts;
+}

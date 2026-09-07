@@ -295,6 +295,8 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     let spokenFor = 0;
     /** Involved, and reading exactly as they read last turn. Not overflow. */
     let readTheSameAsLastTurn = 0;
+    /** Read out this turn, before the ones that read alike are folded. */
+    const readOut: { who: string; said: string }[] = [];
 
     // ── MORE THAN ONE PERSON DYING IS ONE SENTENCE ───────────────────────
     //
@@ -349,7 +351,10 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     }
 
     for (const entry of involved) {
-        if (lines.length >= PEOPLE_WORTH_A_SENTENCE) break;
+        // THE CAP IS ON PEOPLE, AND HAS TO BE COUNTED WHERE THEY ARE COLLECTED.
+        // It read `lines.length` and the readings go into `readOut` now, so
+        // nothing capped anything and twelve strangers were all read out.
+        if (readOut.length >= PEOPLE_WORTH_A_SENTENCE) break;
         if (foldedIntoOne.has(entry.row.id)) continue;
         const nameable = scene.gate.isAwareOf(scene.playerNow.id, 'cultivator', entry.row.id);
         if (!nameable) {
@@ -394,9 +399,23 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
         // pushing out the person the turn happened to, and somebody who reads
         // exactly as they read last turn is not that person.
         if (said === null) { readTheSameAsLastTurn++; continue; }
-        lines.push(said);
+        readOut.push({ who: entry.row.name, said });
         spokenFor++;
     }
+    // ── AND TWO PEOPLE WHO READ THE SAME ARE ONE SENTENCE ────────────────
+    //
+    // The memory above stops a reading repeating across TURNS. Inside one
+    // turn, an act aimed at a set leaves several people in the same state, and
+    // each of them got the same twenty-eight words under a different name:
+    //
+    //   Liang Rongping, well beneath you. They lost a serious piece of what
+    //   they had... They say nothing, where the others can see it.
+    //   Jiang Xuchen, well beneath you. They lost a serious piece of what
+    //   they had... They say nothing, where the others can see it.
+    //
+    // Which is the same failure `theRoom` solves for watchers and the dead
+    // fold solves for the dying, one channel over.
+    lines.push(...theOnesWhoReadTheSame(readOut));
 
     // Two counts, and they are different facts. Somebody the cap pushed out was
     // in it; somebody who only watched was not, and saying so is the whole of
@@ -433,6 +452,86 @@ function whoseHouseWasInIt(
     read: readonly { row: RosterEntry; involved: boolean }[]
 ): string | null {
     return read.find(entry => entry.involved)?.row.sectId ?? null;
+}
+
+/**
+ * Readings that say the same thing about different people, said once.
+ *
+ * A reading is a head - who this is and how they stand relative to the reader -
+ * and then what happened to them. The BODY is what is tested: an act aimed at
+ * a set leaves several people in the same state, and their readings then differ
+ * only in the head. Measured on a square of ten, one act:
+ *
+ *   Liang Rongping, well beneath you. They lost a serious piece of what they
+ *   had... They say nothing, where the others can see it.
+ *   Jiang Xuchen, well beneath you. They lost a serious piece of what they
+ *   had... They say nothing, where the others can see it.
+ *   Gu Nuohe, far beneath you. They lost a serious piece of what they
+ *   had... They say nothing, where the others can see it.
+ *
+ * Grouping on the whole sentence folds the first two and leaves the third
+ * repeating every word of them, because one standing differs. So the body is
+ * the key and the heads are gathered into it: `7 of them well beneath you, and
+ * 3 far beneath you.`
+ *
+ * Past three names in one head, a count. A sentence that has to name seven
+ * people before it says anything is a roster wearing a reading.
+ */
+function theOnesWhoReadTheSame(read: readonly { who: string; said: string }[]): string[] {
+    const order: string[] = [];
+    const byBody = new Map<string, { who: string; standing: string; said: string }[]>();
+    for (const one of read) {
+        const split = headAndBody(one.said, one.who);
+        const held = byBody.get(split.body);
+        const row = { who: one.who, standing: split.standing, said: one.said };
+        if (held) held.push(row);
+        else { order.push(split.body); byBody.set(split.body, [row]); }
+    }
+    return order.map(body => {
+        const group = byBody.get(body)!;
+        if (group.length === 1) return group[0]!.said;
+        return `${theHeadsTogether(group)} ${body}`.trim();
+    });
+}
+
+/** The head a reading opens with, and everything after it. */
+function headAndBody(
+    said: string,
+    who: string
+): { standing: string; body: string } {
+    const opens = `${who}, `;
+    const stop = said.indexOf('. ');
+    // Not a reading this can take apart. Kept whole, which folds it only
+    // against another reading that is whole and identical.
+    if (!said.startsWith(opens) || stop < 0) return { standing: '', body: said };
+    return {
+        standing: said.slice(opens.length, stop),
+        body: said.slice(stop + 2)
+    };
+}
+
+/** Several heads over one body, gathered by the standing they share. */
+function theHeadsTogether(
+    group: readonly { who: string; standing: string }[]
+): string {
+    const byStanding = new Map<string, string[]>();
+    for (const one of group) {
+        const held = byStanding.get(one.standing);
+        if (held) held.push(one.who);
+        else byStanding.set(one.standing, [one.who]);
+    }
+    const parts = [...byStanding].map(([standing, names]) =>
+        `${namesOrCount(names)}${standing.length > 0 ? ` ${standing}` : ''}`);
+    return `${parts.length === 1
+        ? parts[0]
+        : `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`}.`;
+}
+
+/** Who they are, or how many of them there are. */
+function namesOrCount(names: readonly string[]): string {
+    if (names.length > 3) return `${names.length} of them`;
+    if (names.length === 1) return names[0]!;
+    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
 /**

@@ -277,8 +277,16 @@ describe('the cap on how many people get a sentence', () => {
             playerNow: player(),
             gate: gateOver(ids)
         });
-        const named = lines.filter(line => /^Person p/.test(line)).length;
-        expect(named).toBe(PEOPLE_WORTH_A_SENTENCE);
+        // THE CAP IS ON PEOPLE, NOT ON LINES. It used to be asserted by
+        // counting lines that open with a name, which was the same number
+        // until readings that say the same thing about different people
+        // started being said once - twelve identical strangers now share one
+        // sentence rather than getting three.
+        const named = new Set(
+            [...lines.join(' ').matchAll(/Person p\d+/g)].map(hit => hit[0])
+        );
+        expect(named.size).toBeLessThanOrEqual(PEOPLE_WORTH_A_SENTENCE);
+        expect(named.size).toBeGreaterThan(0);
         expect(lines.some(line => /9 others here were in it too/.test(line))).toBe(true);
     });
 });

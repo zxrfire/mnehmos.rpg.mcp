@@ -63,20 +63,31 @@ const MARKED = 0.75;
  * Written as what somebody would observe rather than as a label, because a word
  * that names the axis invites an enum later.
  */
+/**
+ * AGREES WITH `they`, WHICH IS WHAT BOTH CALLERS PUT IN FRONT OF IT.
+ *
+ * These were written to follow a name - "Wei Minfeng keeps more off their face"
+ * - and are rendered after singular `They`, so a scene read "They is entirely
+ * legible" and "They nothing reaches their face", the second because that one
+ * was a whole clause rather than a predicate at all.
+ */
 export function howMuchTheyLetShow(reticence: number): string | null {
     if (!Number.isFinite(reticence)) return null;
     if (reticence >= MARKED) {
-        return 'nothing reaches their face that they did not put there, and people who have '
+        // A PREDICATE, LIKE THE OTHER THREE. This one was written as a whole
+        // clause, and its only caller says `They ${...}.` - so the strongest
+        // reticence in the game printed "They nothing reaches their face".
+        return 'let nothing reach their face that they did not put there, and people who have '
             + 'known them for years say the same';
     }
     if (reticence >= WORTH_SAYING) {
-        return 'keeps more off their face than most people manage';
+        return 'keep more off their face than most people manage';
     }
     if (reticence <= -MARKED) {
-        return 'is entirely legible, and has never been anything else';
+        return 'are entirely legible, and have never been anything else';
     }
     if (reticence <= -WORTH_SAYING) {
-        return 'shows a little more than most people do';
+        return 'show a little more than most people do';
     }
     return null;
 }

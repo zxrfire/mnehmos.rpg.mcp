@@ -47,20 +47,24 @@ const MARKED = 0.75;
 /**
  * The number said in words, or null when there is nothing to say.
  */
+/**
+ * AGREES WITH `they`. See {@link howMuchTheyLetShow} for the measurement: both
+ * tables were written to follow a name and are read after singular `They`.
+ */
 export function howTheyHoldWhatTheyHave(openHandedness: number): string | null {
     if (!Number.isFinite(openHandedness)) return null;
     if (openHandedness >= MARKED) {
-        return 'gives things away, and has been doing it long enough that people '
+        return 'give things away, and have been doing it long enough that people '
             + 'have stopped being surprised by it';
     }
     if (openHandedness >= WORTH_SAYING) {
-        return 'parts with things more easily than most people do';
+        return 'part with things more easily than most people do';
     }
     if (openHandedness <= -MARKED) {
-        return 'does not let go of what is theirs, and is known for it';
+        return 'do not let go of what is theirs, and are known for it';
     }
     if (openHandedness <= -WORTH_SAYING) {
-        return 'holds on to what is theirs a little harder than most people do';
+        return 'hold on to what is theirs a little harder than most people do';
     }
     return null;
 }

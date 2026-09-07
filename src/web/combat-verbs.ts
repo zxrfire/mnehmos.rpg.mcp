@@ -77,6 +77,7 @@ import {
     type SetShape,
     type TheSetAsKnown,
     howTheSetWasCounted,
+    saidOnceForEverybodyItHappenedTo,
     theSetAsThisCultivatorKnowsIt,
     theSetThisNames,
     whatTheActDidNotReach
@@ -708,6 +709,33 @@ export const combatVerbs = {
 
         const folded = foldTheCallsIntoOneTurn(done, `${set.word}: ${done.length} of `
             + `${known.reached.length} standing here.`);
+
+        // ── AND WHAT WAS THE SAME FOR ALL OF THEM IS SAID ONCE ───────────
+        //
+        // A set act runs the same resolver once per member, so when the
+        // members are alike the sentences come out identical by construction.
+        // Measured at Void Refinement against a square of ten: ten paragraphs
+        // of sixty words, four facts stated ten times each.
+        const sameForAll = saidOnceForEverybodyItHappenedTo(
+            done.map((one, at) => ({
+                who: known.reached[at]?.name ?? '',
+                lines: one.facts.lines
+            }))
+        );
+        folded.facts.lines = sameForAll;
+        folded.facts.prose = sameForAll.join('\n\n');
+        // AND THE SAME OVER `required`, which is a channel of its own and
+        // was carrying its own unfolded copy of every consequence line: the
+        // folded answer said "Each of them is carrying 1 untreated wound"
+        // and then said it again, ten times, under ten names.
+        const requiredOfAll = saidOnceForEverybodyItHappenedTo(
+            done.map((one, at) => ({
+                who: known.reached[at]?.name ?? '',
+                lines: one.facts.required ?? []
+            }))
+        );
+        if (requiredOfAll.length > 0) folded.facts.required = requiredOfAll;
+        else delete folded.facts.required;
 
         const tail = [
             // ENGINE TRUTH, AND NOT NARRATION. This said "X is still in front

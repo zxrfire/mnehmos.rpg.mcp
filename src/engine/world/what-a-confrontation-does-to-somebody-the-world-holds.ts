@@ -370,8 +370,11 @@ export function whatTheConfrontationDidToThem(
         const them = state.npcs[at];
         const carried = them.cultivation.untreatedInjuries;
         lines.push(
+            // `them` for one wound was a count and a pronoun disagreeing inside
+            // one sentence, and one is the commonest case a fight leaves.
             `${them.name} is carrying ${carried} untreated ${carried === 1 ? 'wound' : 'wounds'} `
-            + 'now, and will still be carrying them the next time anybody meets them.'
+            + `now, and will still be carrying ${carried === 1 ? 'it' : 'them'} the next time `
+            + 'anybody meets them.'
         );
     }
 
