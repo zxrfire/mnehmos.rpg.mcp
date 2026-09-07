@@ -2,6 +2,7 @@
  * What the world volunteers to somebody standing here.
  */
 
+import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { APEX_INSTITUTIONS, COURTS, SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
@@ -1178,7 +1179,7 @@ export const situatedReads = {
             + '.';
         const facts = factsForToolResult(
             `${placeName(cultivator)} at ${rankName(cultivator.realmOrdinal)}: `
-            + `${live.length} thing(s) live.`,
+            + `${howMany(live.length, 'thing')} live.`,
             [standing, theirState, ...linesFor(live)],
             // The closing line is not decoration. It is the difference between
             // a prompt and a menu, and a player who reads this as the list of
@@ -1269,7 +1270,7 @@ export const situatedReads = {
         if (catalog.requiredOrdinal > cultivator.realmOrdinal) {
             lines.push(
                 `You stand at ${rankName(cultivator.realmOrdinal)}, which is `
-                + `${catalog.requiredOrdinal - cultivator.realmOrdinal} rung(s) under it. `
+                + `${howMany(catalog.requiredOrdinal - cultivator.realmOrdinal, 'rung')} under it. `
                 + 'Nothing about the book changes that; you do.'
             );
         }

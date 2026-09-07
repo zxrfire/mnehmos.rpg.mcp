@@ -1106,9 +1106,7 @@ export const institutionVerbs = {
         if (alreadySent) {
             return refused('engine.offering', 'offer', factsForRefusal(
                 'Once.',
-                'It was done, and it was answered the way it was answered. A house that goes back '
-                + 'up the line inside one lifetime is a house that has misunderstood what the '
-                + 'first one was, and everybody senior would say so.',
+                'It was done, and it was answered the way it was answered. A lifetime gets one.',
                 `offering:${sectId} recorded on day ${alreadySent.onDay}, ${alreadySent.stones} `
                 + 'stones out of the principal.'
             ));

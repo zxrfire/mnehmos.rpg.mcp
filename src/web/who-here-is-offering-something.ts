@@ -2,6 +2,7 @@
  * Who, in this square, would sell you something - the half that goes and looks.
  */
 
+import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import { getSect } from '../data/cultivation/sects.js';
 import {
@@ -232,25 +233,44 @@ export function linesForOffers(
     }
 
     const lines = ['Not everything here is on a stall. People are carrying things too.'];
+    // Carried across the reason groups, not reset with each: the same primer
+    // sold by somebody who needs the money and by somebody who is leaving is
+    // still one primer, and its reach is a fact about it.
+    const alreadySaid = new Set<string>();
     for (const [why, group] of byReason) {
         lines.push(WHY_THEY_ARE_SELLING[why]);
-        lines.push(...rowsForOffers(group));
+        lines.push(...rowsForOffers(group, alreadySaid));
     }
 
+    // THE PURSE IS SAID ONCE IN AN ANSWER, AND THE BOARD SAID IT.
+    //
+    // A market read renders the stall board first, which already opens with
+    // what the purse holds and in what currency. This restated the figure with
+    // no unit on it, so the same answer carried "The purse holds 40000 spirit
+    // stones, which is 4000000 cash" and then "The purse holds 40000". What
+    // this block knows that the board does not is how these particular offers
+    // sit against it, so that is all it says.
     const within = offers.filter(o => o.askStones <= purseStones).length;
     lines.push(
         within === 0
-            ? `The purse holds ${purseStones}, which is short of every one of those.`
+            ? 'Every one of those is past what the purse holds.'
             : within === offers.length
-                ? `The purse holds ${purseStones}, which covers any of them.`
-                : `The purse holds ${purseStones}: ${within} of those ${offers.length} `
-                  + 'are within it.'
+                ? 'The purse covers any of them.'
+                : `${within} of those ${offers.length} are within the purse.`
     );
     return lines;
 }
 
 /** One line each: who, what, what it costs, where it opens and stops. */
-function rowsForOffers(offers: readonly AnOfferStandingHere[]): string[] {
+function rowsForOffers(
+    offers: readonly AnOfferStandingHere[],
+    // WHERE A THING OPENS AND STOPS IS A FACT ABOUT THE THING.
+    //
+    // Three people in a square carrying the same primer printed the same
+    // sentence about it three times, once under each seller. It is said under
+    // the first of them and not again, across the whole read.
+    alreadySaid: Set<string>
+): string[] {
     const lines: string[] = [];
     for (const offer of offers) {
         // WHOSE IT IS, SAID ONLY WHEN IT IS SOMEBODY'S
@@ -260,20 +280,27 @@ function rowsForOffers(offers: readonly AnOfferStandingHere[]): string[] {
         // A thing that opens and stops at the same rung carries nobody
         // anywhere. Saying "as far as" about it reads as a bug rather than as
         // a fighting art.
-        const reach = offer.usefulUntil > offer.usableFrom
-            ? `It opens at ${rankName(offer.usableFrom)} and carries as far as `
-              + `${rankName(offer.usefulUntil)}. `
-            : `It opens at ${rankName(offer.usableFrom)} and carries nobody past it - it is one `
-              + 'thing done well rather than a road. ';
-        lines.push(
+        const said = alreadySaid.has(offer.name);
+        alreadySaid.add(offer.name);
+        const reach = said
+            ? ''
+            : offer.usefulUntil > offer.usableFrom
+                ? `It opens at ${rankName(offer.usableFrom)} and carries as far as `
+                  + `${rankName(offer.usefulUntil)}. `
+                : `It opens at ${rankName(offer.usableFrom)} and carries nobody past it - it is `
+                  + 'one thing done well rather than a road. ';
+        // Trimmed at the end because the reach clause is dropped on a repeat
+        // of the same thing, and the price segment before it ends in the space
+        // that used to carry it.
+        lines.push((
             `  ${offer.sellerName} would let a copy of ${offer.name} go for `
-            + `${offer.askStones} spirit stone${offer.askStones === 1 ? '' : 's'}. `
+            + `${howMany(offer.askStones, 'spirit stone')}. `
             + reach.trimEnd()
             + (house
                 ? ` It is the ${house.name}'s, and they are not one of theirs - somebody will `
                   + 'want to know where you got it.'
                 : '')
-        );
+        ).trimEnd());
     }
     return lines;
 }

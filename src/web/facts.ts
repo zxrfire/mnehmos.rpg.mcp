@@ -201,6 +201,21 @@ export function describeStanding(observerOrdinal: number, subjectOrdinal: number
 }
 
 /**
+ * How far off a day is, in the words somebody uses for it.
+ *
+ * This was `${Math.round(days / 365)} year(s) off` on an obligation's due day,
+ * which is a form field rather than a sentence and printed "0 year(s) off" for
+ * anything inside six months. A debt falling due next season is not a debt
+ * falling due in no years.
+ */
+export function howFarOff(days: number): string {
+    if (days <= 0) return 'already past';
+    if (days < DAYS_PER_YEAR) return `${days} ${days === 1 ? 'day' : 'days'} off`;
+    const years = Math.round(days / DAYS_PER_YEAR);
+    return `${years} ${years === 1 ? 'year' : 'years'} off`;
+}
+
+/**
  * Where a True Immortal is, which is not anywhere on the map.
  */
 export const ABOVE_THE_LID_PLACE = 'the far side of the Lid';
@@ -2531,13 +2546,12 @@ export function factsForRequest(
         lines.push(
             result.outcome === 'taken' || result.outcome === 'turned'
                 ? `${subject} takes it, and the afternoon goes somewhere. You are not a stranger `
-                  + 'to them any more, which is a small thing and is the thing every larger one '
-                  + 'is built on.'
+                  + 'to them any more.'
                 : `${subject} is civil about it and it goes nowhere. Nothing was asked, so there `
                   + 'is nothing to hold against you and nothing has been spent but the day. '
                   + (priorAsks === 0
-                      ? 'This is a thing that works by being done repeatedly, and this was once.'
-                      : 'It works by being done repeatedly and it does not work every time.')
+                      ? 'It works by being done repeatedly. This was once.'
+                      : 'It works by being done repeatedly, and not every time.')
         );
     } else {
         switch (result.outcome) {

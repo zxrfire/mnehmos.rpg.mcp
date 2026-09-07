@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
 import { CultivationRNG } from '../../engine/cultivation/rng.js';
+import { howMany } from '../../utils/a-count-agrees-with-what-it-counts.js';
 import { MAX_ORDINAL, rankName } from '../../engine/cultivation/realms.js';
 import { DAYS_PER_YEAR } from '../../engine/cultivation/cultivation.js';
 // On what authority an order is given. The ladder answers whether this rung
@@ -930,7 +931,7 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
               + 'punished for declining, because there was no house in it to decline. '
               + `What it cost is ${round2(outcome.standingSpent)} standing, which is what saying `
               + 'it out loud cost - an order that was ignored was still given.'
-            : `${hands} ${view.ranks[toRankIndex]?.toLowerCase() ?? 'hands'} went out for ${days} days on ` +
+            : `${howMany(hands, view.ranks[toRankIndex]?.toLowerCase() ?? 'hand')} went out for ${days} days on ` +
             `${view.rankTitle}'s word, and ${view.cultivator.name} did not go with them - that is what the rank is for. ` +
             (applied.obstructed
                 ? `${applied.narration} `

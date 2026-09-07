@@ -2,6 +2,7 @@
  * The game service - phase 2, and the only thing in this package that writes.
  */
 
+import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { randomUUID } from 'crypto';
 import { getNpc } from '../engine/world/world-state.js';
 import { everybodyDrawingHere } from '../engine/people/there-is-one-kind-of-person.js';
@@ -665,6 +666,7 @@ import {
     factsForGroundTime,
     factsForTimeSkip,
     factsForToolResult,
+    howFarOff,
     humanDays,
     placeName,
     rungAndOrdinal,
@@ -920,7 +922,8 @@ export type { WorldReport };
 // depend on the two of them agreeing.
 import {
     boardSample,
-    MARKET_CATEGORIES
+    MARKET_CATEGORIES,
+    quotedBy
 } from './market-prices.js';
 import type { MarketPrice } from './market-prices.js';
 
@@ -3579,8 +3582,11 @@ ${line}`;
                         `${sellers === 1 ? 'Somebody here is' : `${sellers} people here are`} `
                         + 'carrying something they would rather have the stones for, and not '
                         + `hiding it. A copy of ${cheapest.name} is going for `
-                        + `${cheapest.askStones}. "what is for sale" is the whole of what is `
-                        + 'being asked here, stalls and people both.';
+                        // The unit was missing - "going for 6" - and the
+                        // sentence closed by quoting a command string at
+                        // somebody standing in a market square. What the player
+                        // may type is not something a scene knows.
+                        + `${howMany(cheapest.askStones, 'spirit stone')}.`;
                     looking.facts.lines.push(line);
                     looking.facts.prose = `${looking.facts.prose}
 
@@ -3694,8 +3700,7 @@ ${noticed}`;
                     ? [
                         'Nothing, in either direction: nobody is owed your service, nobody '
                         + 'has your name written against a penalty clause, and you hold '
-                        + 'nobody else\'s. It is a lighter thing to be than it sounds '
-                        + 'and it does not last.'
+                        + 'nobody else\'s.'
                     ]
                     : [])
                 : carried.map(row => {
@@ -3703,7 +3708,7 @@ ${noticed}`;
                     const term = row.dueOnDay === null
                         ? 'No day is written into it.'
                         : `Due on day ${row.dueOnDay}, which is `
-                            + `${Math.max(0, Math.round((row.dueOnDay - today) / 365))} year(s) off.`;
+                            + `${howFarOff(row.dueOnDay - today)}.`;
                     return `${row.cause.replace(/_/g, ' ')}, at ${row.severity}, owed to ${owed}. `
                         + `${row.terms ?? row.description} ${term}`;
                 });
@@ -6203,7 +6208,7 @@ ${noticed}`;
             const cash = localPrice(regionId, priced.cash);
             const stones = Math.max(1, Math.ceil(cashToStones(cash)));
             const quoted = factsForToolResult(`${priced.name}, priced.`, [
-                `${priced.name} is ${cash} cash the ${priced.unit} here, which is ${stones} `
+                `${priced.name} is ${cash} cash${quotedBy(priced.unit)} here, which is ${stones} `
                 + `spirit stone${stones === 1 ? '' : 's'}. You are carrying `
                 + `${cultivator.spiritStones}.`,
                 priced.note
@@ -7818,7 +7823,7 @@ ${opened.text}` : receipt,
                 + 'one, so nothing was charged.'
             );
             facts.lines.push(
-                `${price.name} is ${cash} cash the ${price.unit} here, which is about ${stones} `
+                `${price.name} is ${cash} cash${quotedBy(price.unit)} here, which is about ${stones} `
                 + `spirit stone${stones === 1 ? '' : 's'}. ${price.note}`,
                 'You could pay it. Nothing in your life would be different afterwards, so you keep '
                 + 'the money.'
@@ -7839,7 +7844,7 @@ ${opened.text}` : receipt,
         if (cultivator.spiritStones < stones) {
             return refused('engine.localPrice', 'buy', factsForRefusal(
                 'Not for what you are carrying.',
-                `${price.name} is ${cash} cash the ${price.unit} here, which is ${stones} spirit `
+                `${price.name} is ${cash} cash${quotedBy(price.unit)} here, which is ${stones} spirit `
                 + `stone${stones === 1 ? '' : 's'}. You are carrying ${cultivator.spiritStones}. `
                 + `You are ${stones - cultivator.spiritStones} short and nobody is offering terms.`,
                 `${price.id} at ${cash} cash = ${stones} stone(s); purse holds `
@@ -7859,7 +7864,7 @@ ${opened.text}` : receipt,
         const shortfall = whatThisPurchaseWillNotReach(cultivator, pill.id, regionId, groundHere);
 
         const facts = factsForToolResult(`${pill.name}, bought.`, [
-            `One ${pill.name}, ${cash} cash the ${price.unit}, which is ${stones} spirit `
+            `One ${pill.name}, ${cash} cash${quotedBy(price.unit)}, which is ${stones} spirit `
             + `stone${stones === 1 ? '' : 's'} of the ${cultivator.spiritStones} you had.`,
             `${after.spiritStones} left in the purse, and the pill is in the pouch.`,
             ...shortfall.lines
@@ -8081,10 +8086,8 @@ ${opened.text}` : receipt,
                     .map(id => (getSect(id) as { name?: string } | undefined)?.name ?? id);
                 return [
                     `The art is the ${named.join(' and the ')}'s, and you are not one of theirs. `
-                    + 'Practising it is a visible thing that people who know it recognise on '
-                    + 'sight, and it stays recognisable for as long as you keep climbing on it. '
-                    + `Nothing here stops you; what changes is that ${named[0]} now `
-                    + 'has a question about you that they have not asked yet.'
+                    + 'Anybody who knows it recognises it on sight, for as long as you keep '
+                    + `climbing on it. Nothing here stops you.`
                 ];
             })()
         ]);
@@ -9402,13 +9405,47 @@ ${opened.text}` : receipt,
             note?: string;
         };
 
-        // WHERE IT STOPS, SAID BEFORE THE DECADE IS SPENT.
-        const carries = (row: Listed): string =>
-            row.class !== 'cultivation'
-                ? ' It carries nobody anywhere; it is an art, not a road.'
-                : row.carriesToRank
-                    ? ` It carries a cultivator as far as ${row.carriesToRank} and no further.`
-                    : ' It carries a cultivator the whole way.';
+        // WHERE IT STOPS, SAID BEFORE THE DECADE IS SPENT - AND SAID ONCE.
+        //
+        // This was a clause on every row, and a root that takes up twenty arts
+        // got "It carries nobody anywhere; it is an art, not a road." thirteen
+        // times in one answer, the same eleven words under each name. It is a
+        // fact about a KIND of thing, not about the row, so the rows are
+        // gathered under it and it is said at the bottom of its own group.
+        const carries = (row: Listed, howManyOfThem: number): string => {
+            const they = howManyOfThem === 1 ? 'It carries' : 'They carry';
+            if (row.class !== 'cultivation') {
+                return howManyOfThem === 1
+                    ? 'It carries nobody anywhere; it is an art, not a road.'
+                    : 'They carry nobody anywhere; they are arts, not roads.';
+            }
+            return row.carriesToRank
+                ? `${they} a cultivator as far as ${row.carriesToRank} and no further.`
+                : `${they} a cultivator the whole way.`;
+        };
+
+        /** Rows gathered under the one sentence they all answer to. */
+        const underWhatTheyDo = (
+            rows: readonly Listed[],
+            nameOf: (row: Listed) => string
+        ): string[] => {
+            const groups = new Map<string, Listed[]>();
+            for (const row of rows) {
+                // Keyed on the singular reading, which differs exactly where
+                // the group does; the printed sentence is taken from the group
+                // once its size is known.
+                const key = carries(row, 1);
+                const group = groups.get(key);
+                if (group) group.push(row);
+                else groups.set(key, [row]);
+            }
+            const out: string[] = [];
+            for (const group of groups.values()) {
+                for (const row of group) out.push(`  ${nameOf(row)}`);
+                out.push(carries(group[0]!, group.length));
+            }
+            return out;
+        };
         const compatible = (body.compatible ?? []).filter(row => row.known !== true);
         const conflicting = body.conflicting ?? [];
 
@@ -9464,14 +9501,12 @@ ${opened.text}` : receipt,
         } else {
             if (compatible.length > 0) {
                 lines.push('What a root like yours could take up:');
-                for (const row of compatible.slice(0, TECHNIQUES_SHOWN)) {
-                    lines.push(
-                        `  ${row.name ?? 'unnamed'}`
+                lines.push(...underWhatTheyDo(
+                    compatible.slice(0, TECHNIQUES_SHOWN),
+                    row => `${row.name ?? 'unnamed'}`
                         + `${row.element ? `, an art of ${row.element}` : ''}`
-                        + `${row.grade ? ` (${row.grade} grade)` : ''}.`
-                        + carries(row)
-                    );
-                }
+                        + `${row.grade ? ` (${row.grade} grade)` : ''}`
+                ));
                 if (compatible.length > TECHNIQUES_SHOWN) {
                     lines.push(`  and ${compatible.length - TECHNIQUES_SHOWN} more besides.`);
                 }
@@ -9481,12 +9516,10 @@ ${opened.text}` : receipt,
                     'And these, which fight the root rather than run with it. They can be learned. '
                     + 'Learning one can tear the meridians on the spot:'
                 );
-                for (const row of conflicting.slice(0, TECHNIQUES_SHOWN)) {
-                    lines.push(
-                        `  ${row.name ?? 'unnamed'}${row.element ? `, of ${row.element}` : ''}.`
-                        + carries(row)
-                    );
-                }
+                lines.push(...underWhatTheyDo(
+                    conflicting.slice(0, TECHNIQUES_SHOWN),
+                    row => `${row.name ?? 'unnamed'}${row.element ? `, of ${row.element}` : ''}`
+                ));
             }
         }
         const gated = body.counts?.gatedByRealm ?? 0;
@@ -9500,7 +9533,7 @@ ${opened.text}` : receipt,
                 ? `${held.length} art${held.length === 1 ? '' : 's'} held, and what else is within reach.`
                 : compatible.length === 0 && conflicting.length === 0
                     ? 'Nothing within reach.'
-                    : `${compatible.length + conflicting.length} art(s) you could be taught.`,
+                    : `${howMany(compatible.length + conflicting.length, 'art')} you could be taught.`,
             lines
         );
         facts.structure.push(

@@ -3,6 +3,7 @@
  * very small number of craft that are objects with names.
  */
 
+import { howMany } from '../../utils/a-count-agrees-with-what-it-counts.js';
 import { makeObject } from '../../engine/world/possessions.js';
 import type { ObjectRecord } from '../../engine/world/possessions.js';
 import type {
@@ -275,12 +276,10 @@ export function describeCountedHoldings(
         return 'Nothing in the yard. Whatever this house sends anywhere, it sends on foot.';
     }
     return held
-        .map(x => {
-            // The catalog names carry their own article - "A shod carriage" -
-            // so a count in front of one read "5 a shod carriages".
-            const what = x.c.name.replace(/^an?\s+/i, '').toLowerCase();
-            return `${x.n} ${what}${x.n === 1 ? '' : 's'} at ${x.c.grade} grade`;
-        })
+        // The catalog names carry their own article - "A shod carriage" - and
+        // the head of one of them is not always its last word. `howMany` owns
+        // both; the site only lowercases.
+        .map(x => `${howMany(x.n, x.c.name.toLowerCase())} at ${x.c.grade} grade`)
         .join(', ') + '.';
 }
 

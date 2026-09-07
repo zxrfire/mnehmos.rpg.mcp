@@ -436,7 +436,7 @@ it describes.
 | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | The top of the world, and whether it can be moved. | 368 | - |
 | [`traditions.ts`](../../src/data/cultivation/traditions.ts) | Two traditions, one ladder. The world holds two genuinely different ways of cultivating, and the difference between them is the oldest quarrel in it. Both climb the SAME rungs: a fourth-realm practitioner of either is Core Formation, ordinal 17 to 20, and `realmOrdinal` means exactly what it means everywhere else. There is no second scale in this file and there must never be one. | 312 | - |
 | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | Wandering figures: people who belong to nothing and are therefore worth asking. | 821 | - |
-| [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | What a house moves its people on: the rungs, what a house has of each, and the very small number of craft that are objects with names. | 532 | - |
+| [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | What a house moves its people on: the rungs, what a house has of each, and the very small number of craft that are objects with names. | 531 | - |
 | [`what-an-indenture-is-and-what-happens-when-it-ends.ts`](../../src/data/cultivation/what-an-indenture-is-and-what-happens-when-it-ends.ts) | What an indenture is, what the years are for, and what a person walks out into on the day the term is served. | 175 | - |
 | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | What each house makes, and what crosses the water because it makes it. | 506 | - |
 | [`what-two-houses-both-have-a-hand-on.ts`](../../src/data/cultivation/what-two-houses-both-have-a-hand-on.ts) | What two houses both have a hand on, and therefore what they are contending over whether or not anybody wrote it down. | 294 | - |
@@ -703,8 +703,8 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `CUSTODY_TAKERS` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 5 | 5 |
 | `IMMORTAL_HOLDINGS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 5 | 8 |
 | `DESTROYED_DAO_HOUSES` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 5 | 10 |
-| `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 5 | 12 |
 | `ARCHIVE_COPIES` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 5 | 13 |
+| `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 5 | 14 |
 | `ANCHORING_A_CACHE` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | 6 | - |
 | `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 6 | 12 |
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 6 | 12 |
@@ -734,7 +734,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 33 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 34 | 148 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 52 | 62 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 65 | 311 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 65 | 313 |
 
 <!-- END GENERATED: design-constants -->
 

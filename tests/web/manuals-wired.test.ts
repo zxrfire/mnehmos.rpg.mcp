@@ -110,15 +110,21 @@ describe('where the manual stops, said before the decade is spent', () => {
         await game.newRun('Wen Shu');
         const listed = await game.act('what arts can I learn');
         // The whole point: a ceiling nobody can see before committing to it is
-        // a trap rather than a difficulty curve.
-        expect(listed.narration).toMatch(/carries a cultivator (as far as|the whole way)/);
+        // a trap rather than a difficulty curve. Said of one book or of the
+        // group of them that share a ceiling, which is why the number is open.
+        expect(listed.narration)
+            .toMatch(/(?:It carries|They carry) a cultivator (?:as far as|the whole way)/);
     });
 
     it('says plainly that an art is not a road', async () => {
         const { game } = makeGame({ seed: 'cap-shown-2' });
         await game.newRun('Wen Shu');
         const listed = await game.act('what arts can I learn');
-        expect(listed.narration).toContain('it is an art, not a road');
+        // The rule, not the sentence: a thing that carries nobody is named as
+        // such where it is listed. The listing gathers rows under the sentence
+        // they share, so it is plural whenever more than one art is on offer.
+        expect(listed.narration)
+            .toMatch(/(?:it is an art, not a road|they are arts, not roads)/);
     });
 });
 

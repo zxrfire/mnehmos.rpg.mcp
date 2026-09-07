@@ -27,6 +27,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
+import { howFarOff } from '../../src/web/facts';
 import { whichWayItPoints } from '../../src/engine/social/grudges';
 import {
     theLedgerAsLines,
@@ -36,6 +37,23 @@ import {
 function said(result: unknown): string {
     return String((result as { narration?: string }).narration ?? '');
 }
+
+describe('how far off a due day is', () => {
+    // The line read `${Math.round(days / 365)} year(s) off`, so a debt falling
+    // due next season was "0 year(s) off" and a debt falling due tomorrow said
+    // the same thing.
+    it('says the distance, in the words somebody uses for it', () => {
+        expect(howFarOff(1)).toBe('1 day off');
+        expect(howFarOff(120)).toBe('120 days off');
+        expect(howFarOff(365)).toBe('1 year off');
+        expect(howFarOff(1200)).toBe('3 years off');
+    });
+
+    it('says a day already gone is gone, rather than counting backwards', () => {
+        expect(howFarOff(0)).toBe('already past');
+        expect(howFarOff(-40)).toBe('already past');
+    });
+});
 
 describe('asking what the ledger holds', () => {
     beforeEach(() => { process.env.ADMIN_MODE = 'true'; });

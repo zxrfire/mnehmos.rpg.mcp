@@ -7,6 +7,7 @@ import type { Cultivator } from '../schema/cultivation.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
 import { keptAs, type ObjectRecord } from '../engine/world/possessions.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
+import { quotedBy } from './market-prices.js';
 import { describePhysique, physiqueOrNull } from '../engine/cultivation/physiques.js';
 import {
     A_FACE_YOU_HAVE_SOMETHING_BEHIND
@@ -886,11 +887,11 @@ export function resolvePrice(query: string): ResolvedEntity | null {
         kind: 'price',
         id: winner.id,
         name: winner.name,
-        facts: [`${winner.name}, ${winner.cash} cash the ${winner.unit}. ${winner.note}`],
+        facts: [`${winner.name}, ${winner.cash} cash${quotedBy(winner.unit)}. ${winner.note}`],
         structure: [
             `${articleCapitalised(winner.category)} ${winner.category} line on the board at `
             + `${winner.cash} `
-            + `cash the ${winner.unit}. That is the base figure; the region multiplier is `
+            + `cash${quotedBy(winner.unit)}. That is the base figure; the region multiplier is `
             + 'applied where it is charged.'
         ]
     };

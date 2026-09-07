@@ -80,8 +80,28 @@ export function boardSample(prices: MarketPrice[]): MarketPrice[] {
     return prices.filter(item => chosen.has(item));
 }
 
+/**
+ * WHAT A PRICE IS QUOTED BY, IN A SENTENCE.
+ *
+ * The board wrote " the ${unit}" for every row, which is right for the units
+ * that are nouns - the crossing, the night, the bolt, the plot - and wrong for
+ * the two kinds that are not. Measured on the board a player is actually shown:
+ *
+ *     Bowl of millet, 1 cash the each
+ *     Caravan passage, 250 cash the per 100 li
+ *
+ * `each` is not a thing you buy one of, and a unit that already opens with
+ * `per` carries its own preposition.
+ */
+export function quotedBy(unit: string | undefined): string {
+    if (!unit) return '';
+    if (unit === 'each') return ' each';
+    if (unit.startsWith('per ')) return ` ${unit}`;
+    return ` the ${unit}`;
+}
+
 export function priceOf(item: MarketPrice): string {
-    const unit = item.unit ? ` the ${item.unit}` : '';
+    const unit = quotedBy(item.unit);
     const mortal = item.category === undefined || MORTAL_CATEGORIES.has(item.category);
 
     if (mortal && typeof item.cash === 'number') {

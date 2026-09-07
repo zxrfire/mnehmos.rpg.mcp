@@ -2,6 +2,7 @@
  * The historical record - ground truth, and what survives of it.
  */
 
+import { pluralOf } from '../../utils/a-count-agrees-with-what-it-counts.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { RUIN_NAMES, SCAR_NAMES } from '../../data/cultivation/regions.js';
@@ -845,13 +846,10 @@ export function placeName(rng: CultivationRNG): string {
     const tail = rng.pick(PLACE_TAIL);
     // Nine Peaks, not Nine Peak. The authored map has the model - Nine Peaks,
     // Three Walls, Four Names, Six Li - and a counted feature is plural in
-    // both languages.
+    // both languages. The rule used to be a private three-liner here and got
+    // `Pass` wrong, reading its final s as a plural already there and minting
+    // Nine Pass; the shared one knows that a Witness is one person.
     return `${head} ${A_NUMBER.has(head) ? pluralOf(tail) : tail}`;
-}
-
-function pluralOf(tail: string): string {
-    if (tail.endsWith('s')) return tail;
-    return tail.endsWith('ch') || tail.endsWith('sh') ? `${tail}es` : `${tail}s`;
 }
 
 export function factionName(rng: CultivationRNG): string {

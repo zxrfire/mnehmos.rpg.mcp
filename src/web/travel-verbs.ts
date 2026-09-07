@@ -2,6 +2,7 @@
  * Getting somewhere: on foot, on something, by folding, or on somebody's span.
  */
 
+import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { cashToStones } from '../data/cultivation/mortal-world.js';
 import {
     REGIONS,
@@ -791,7 +792,7 @@ export const travelVerbs = {
             road === null
                 ? 'Nothing prices a road inside one province, so nothing was saved that anybody '
                     + 'can put a number to. What it cost is the settling, and that is real.'
-                : `${cost.daysSavedAgainstWalking} day(s) saved against the ${road} on the road.`,
+                : `${howMany(cost.daysSavedAgainstWalking, 'day')} saved against the ${road} on the road.`,
             ...applied.tollLines,
             ...world.lines
         ];
@@ -959,11 +960,11 @@ export const travelVerbs = {
                 : `It was not running. You waited for day ${quote.nextDepartureDay ?? today}, `
                     + 'because a span is held open at a cost and is not standing open all year.',
             quote.settlingDays > 0
-                ? `${quote.settlingDays} day(s) afterwards are not much use to anybody. Being `
+                ? `${howMany(quote.settlingDays, 'day')} afterwards are not much use to anybody. Being `
                     + 'moved through space you do not understand is rough, and how rough is how '
                     + 'little you understand it.'
                 : 'You rode it easily. At this rung the fare is the whole of what it costs.',
-            `${quote.daysSavedAgainstWalking} day(s) saved against the `
+            `${howMany(quote.daysSavedAgainstWalking, 'day')} saved against the `
             + `${route.walkedDaysItReplaces} on the road.`,
             quote.notCovered,
             ...learned,

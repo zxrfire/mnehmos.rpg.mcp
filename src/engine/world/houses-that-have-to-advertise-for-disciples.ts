@@ -146,8 +146,8 @@ export const WHAT_THE_PAPER_GIVES_AWAY: Record<WhyItIsUpThere, string> = {
         + 'and a house with no ground has nothing to inherit and '
         + 'nothing to be thrown out of.',
     open_door:
-        'The bar on it is the bottom of the ladder, which is not a bar at all. A house that '
-        + 'will hear anybody is a house that has run out of ways to be chosen.',
+        'The bar on it is the bottom of the ladder, which is not a bar at all. '
+        + 'Whoever answers is taken.',
     no_name:
         'It states the terms carefully, in a good hand, as though the terms were the '
         + 'question. Nobody with a name people already say has to write any of this down.'

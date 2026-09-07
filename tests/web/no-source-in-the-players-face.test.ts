@@ -23,6 +23,17 @@ import { makeGameInWorld } from './harness';
 /** A symbol, a filename, or anything else only somebody with the source says. */
 const SOURCE_IN_PROSE = /`[^`]+`|\b\w+\.(?:ts|md)\b|\bundefined\b|\[object Object\]/;
 
+/**
+ * A FORM FIELD, WHICH IS A DIFFERENT AUDIENCE AGAIN.
+ *
+ * `${n} year(s) off` on an obligation's due day, and `0 year(s)` for anything
+ * inside six months. A parenthesised plural is what somebody writes when they
+ * do not know the number yet; the engine knows it. An operator `note` may keep
+ * the form register - it is read by something driving the surface - but the
+ * narration is read by somebody standing in a room.
+ */
+const A_FORM_RATHER_THAN_A_SENTENCE = /\b[a-zA-Z]+\(s\)|\bN\/A\b|\bnull\b|\bNaN\b/;
+
 describe('nothing in the narration comes out of the source', () => {
     it('holds across a turn of every ordinary verb', async () => {
         const { game, db } = await makeGameInWorld({
@@ -31,6 +42,12 @@ describe('nothing in the narration comes out of the source', () => {
         const { cultivator } = await game.newRun('Reader');
         db.prepare('UPDATE cultivators SET spirit_stones = 3000, realm_ordinal = 6 WHERE id = ?')
             .run(cultivator.id);
+
+        // The same self-check as the form guard below: a pattern that has
+        // stopped matching and a surface that has stopped offending look the
+        // same from here.
+        expect(SOURCE_IN_PROSE.test('only `attempt` refuses')).toBe(true);
+        expect(SOURCE_IN_PROSE.test('only an attempt refuses')).toBe(false);
 
         const offences: string[] = [];
         for (const said of [
@@ -52,5 +69,43 @@ describe('nothing in the narration comes out of the source', () => {
             if (found) offences.push(`${said} -> ${found[0]}`);
         }
         expect(offences, 'the player was shown a symbol from the source').toEqual([]);
+    }, 600_000);
+
+    it('does not hand the player a form to read', async () => {
+        const { game, db } = await makeGameInWorld({
+            seed: 'no-forms', worldSeed: 'no-forms', worldEnabled: true
+        });
+        const { cultivator } = await game.newRun('Reader');
+        db.prepare('UPDATE cultivators SET spirit_stones = 3000, realm_ordinal = 14 WHERE id = ?')
+            .run(cultivator.id);
+
+        // THE PATTERN ITSELF, ASSERTED FIRST.
+        //
+        // A word-boundary escape in this file was eaten to a literal backspace
+        // on the way to disk once already, and the guard went green because there was
+        // nothing left for it to catch either way. A dead regex and a clean
+        // surface read identically from here, so the regex is shown a line it
+        // must reject before it is trusted with the narration.
+        expect(A_FORM_RATHER_THAN_A_SENTENCE.test('which is 1 rung(s) up')).toBe(true);
+        expect(A_FORM_RATHER_THAN_A_SENTENCE.test('which is 1 rung up')).toBe(false);
+
+        const offences: string[] = [];
+        for (const said of [
+            'I look around',
+            'what do I owe',
+            'who owes me',
+            'what do I carry',
+            'what is my standing',
+            'what have I done',
+            'what is stopping me',
+            'what houses are here',
+            'what is for sale',
+            'I look at my wounds'
+        ]) {
+            const answer = await game.act(said) as unknown as { narration: string };
+            const found = A_FORM_RATHER_THAN_A_SENTENCE.exec(answer.narration);
+            if (found) offences.push(`${said} -> ${found[0]}`);
+        }
+        expect(offences, 'the player was handed a form field').toEqual([]);
     }, 600_000);
 });

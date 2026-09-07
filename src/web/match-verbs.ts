@@ -803,12 +803,10 @@ export const matchVerbs = {
             [
                 `You say no. ${leaves.note}`,
                 leaves.left === null
-                    ? 'Nothing was put down and no word had been given, so there is nothing for '
-                      + 'anybody to hold against you. A refusal that costs nothing is still a '
-                      + 'refusal.'
-                    : 'They had something riding on it, and being told no in front of whoever '
-                      + 'was there is a thing that happened to them rather than a thing that '
-                      + 'did not.'
+                    ? 'Nothing was put down and no word had been given, so there is nothing '
+                      + 'for anybody to hold against you.'
+                    : 'They had something riding on it, and they were told no in front of '
+                      + 'whoever was there.'
             ]
         );
         facts.structure.push(

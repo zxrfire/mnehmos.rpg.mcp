@@ -1,6 +1,7 @@
 /**
  * An engine result, turned into the sentences a player and an operator read.
  */
+import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
@@ -238,10 +239,17 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         if (next?.title) {
             const wants: string[] = [];
             if ((next.ordinalShortfall ?? 0) > 0 && next.requiredRank) {
-                wants.push(`${next.requiredRank}, which is ${next.ordinalShortfall} rung(s) up`);
+                wants.push(`${next.requiredRank}, which is ${howMany(next.ordinalShortfall ?? 0, 'rung')} up`);
             }
             if ((next.contributionShortfall ?? 0) > 0) {
-                wants.push(`${next.requiredContribution} contribution, which is ${next.contributionShortfall} more`);
+                const required = next.requiredContribution ?? 0;
+                const short = next.contributionShortfall ?? 0;
+                // Somebody with nothing booked is short by the whole
+                // requirement, and this said the number twice: "2700
+                // contribution, which is 2700 more".
+                wants.push(short === required
+                    ? `${required} contribution, none of it booked yet`
+                    : `${required} contribution, which is ${short} more than is booked`);
             }
             lines.push(wants.length === 0
                 ? `${next.title} is open: the house has no further requirement to state.`
@@ -723,10 +731,17 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
                 );
             }
             lines.push(
-                'Block-printed and plainly set down. What a house\'s own canon has that these do '
-                + 'not is four hundred years of its teachers writing into it, which is a large '
-                + 'part of what anybody sweeps a courtyard for.',
-                'The purse will not cover the book and the food both.'
+                // THE SECOND SENTENCE WAS AN ASSERTION WITH NOTHING BEHIND IT.
+                //
+                // "The purse will not cover the book and the food both"
+                // printed on every board, at every purse. Measured at forty
+                // thousand stones, against a four-stone primer and a one-cash
+                // bowl of millet. Nothing computed it, so it was the engine
+                // deciding what the player could afford without looking, which
+                // is the one thing a price board is for. The sentence above it
+                // lost its closing couplet and kept the rule inside it.
+                'Block-printed and plainly set down. A house\'s own canon is better than any '
+                + 'of it, and is not sold.'
             );
         }
 

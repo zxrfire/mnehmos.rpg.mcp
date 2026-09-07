@@ -265,5 +265,5 @@ export function whatToSayAboutTheCure(cure: TheCure): string {
     return `What closes ${wound} is a ${cure.name}, ${cure.stones} spirit stones at a counter here. `
         + (cure.affordable
             ? 'You are carrying enough for one.'
-            : 'You are not carrying enough for one, which is a thing that can be changed.');
+            : 'You are not carrying enough for one.');
 }
