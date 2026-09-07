@@ -162,18 +162,42 @@ export function describeDeathCause(
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * What the difference between two cultivators feels like from below.
+ * HOW FAR APART TWO PEOPLE STAND. Engine truth, and not narration.
+ *
+ * This used to answer what the difference FEELS LIKE from below - its own
+ * docstring said so - and returned finished sentences with the character beat
+ * already written into them: "plainly beneath notice, AND AWARE OF IT",
+ * "somewhat ahead, AND UNHURRIED ABOUT PROVING IT", "out of reach in a way that
+ * DOES NOT INVITE COMPARISON". Whether somebody is unhurried about proving
+ * anything is not something an ordinal knows.
+ *
+ * Two costs, and the second is the one that shows. The narrator was handed a
+ * conclusion instead of a fact, so it either parroted the clause or argued with
+ * it; and the deterministic renderer prints these verbatim, so the same
+ * eighteen words arrived under every person in every scene, every turn. A
+ * sentence a player has read four times is not atmosphere any more.
+ *
+ * SO IT SAYS THE DISTANCE AND STOPS. Not the number either: the first cut of
+ * this fix went to "5 rungs above you", and `exposition.test.ts` caught it
+ * inside a run - *"power-level exposition is banned in Tier 1. What a person
+ * perceives is that someone is out of reach, not that they are ordinal 30."*
+ * A digit is the opposite failure from a mood and it is the worse one, because
+ * a person standing in a square does not perceive an ordinal at all.
+ *
+ * What is left is what somebody could actually see: how far apart they are, in
+ * plain words, with nothing about how either of them feels about it. The
+ * narrator writes what that is like to stand in front of.
  */
 export function describeStanding(observerOrdinal: number, subjectOrdinal: number): string {
     const gap = subjectOrdinal - observerOrdinal;
-    if (gap <= -13) return 'plainly beneath notice, and aware of it';
-    if (gap <= -4) return 'noticeably slighter, and careful about it';
-    if (gap < 0) return 'a little behind, near enough that it could go either way';
-    if (gap === 0) return 'level, as far as anyone can tell from looking';
-    if (gap <= 3) return 'somewhat ahead, and unhurried about proving it';
-    if (gap <= 8) return 'far enough ahead that the difference is not a matter of effort';
-    if (gap <= 16) return 'out of reach in a way that does not invite comparison';
-    return 'so far above that the question of comparison does not arise, and they are not thinking about it either';
+    if (gap <= -13) return 'far beneath you';
+    if (gap <= -4) return 'well beneath you';
+    if (gap < 0) return 'a little beneath you';
+    if (gap === 0) return 'level with you';
+    if (gap <= 3) return 'a little above you';
+    if (gap <= 8) return 'well above you';
+    if (gap <= 16) return 'far above you';
+    return 'out of reach entirely';
 }
 
 /**
@@ -1556,8 +1580,7 @@ export function factsForInteraction(
     cultivator: Cultivator,
     subject: string,
     intent: string,
-    subjectFacts: readonly string[],
-    unresolved: string
+    subjectFacts: readonly string[]
 ): EngineFacts {
     // `intent` is a label the parser wrote, and it belongs to the inspector.
     // Reading it back as prose produced "The intent is follow.", which is the
@@ -1570,12 +1593,10 @@ export function factsForInteraction(
         lines: [
             `${cultivator.name} went to ${subject}.`,
             ...subjectFacts,
-            unresolved
         ],
         prose: [
             `${cultivator.name} goes to ${subject}.`,
             subjectFacts.join(' '),
-            unresolved
         ].join('\n\n')
     };
 }

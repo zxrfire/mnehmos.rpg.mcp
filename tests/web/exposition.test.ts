@@ -160,7 +160,13 @@ describe('resolved entities describe behaviour, not schema', () => {
         const perceived = seen.facts.join(' ');
         expect(perceived).toContain('The Tall One');
         expect(perceived).not.toContain('Void Tribulation');
-        expect(perceived).toMatch(/does not invite comparison|does not arise/i);
+        // A STANDING RELATIVE TO THE READER, in whatever words. This pinned the
+        // exact clause "does not invite comparison", which was one of the mood
+        // phrases `describeStanding` used to return - so it held the wording
+        // rather than the rule, and went red when the wording stopped editorial-
+        // ising. The rule is the two lines around it: the person is named, the
+        // rank is not, and nothing here is exposition.
+        expect(perceived).toMatch(/above you|beneath you|level with you|out of reach/i);
         expect(offences(perceived)).toEqual([]);
 
         // The ordinal is not lost, it is filed where an operator can read it -

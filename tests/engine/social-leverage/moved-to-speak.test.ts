@@ -209,8 +209,14 @@ describe('whether they answer it out loud', () => {
     });
 
     it('says what the silence looked like rather than dropping the person', () => {
-        expect(whetherTheySayIt(false)).toMatch(/not saying is visible/);
-        expect(whetherTheySayIt(true)).not.toBe(whetherTheySayIt(false));
+        // THE SILENCE IS REPORTED AND IT IS VISIBLE - that is the rule, and it
+        // used to be pinned by the exact words "the not saying is visible",
+        // which was the engine reaching for an effect rather than stating the
+        // condition. The condition is that the others can see it.
+        const quiet = whetherTheySayIt(false);
+        expect(quiet).toMatch(/say nothing|says nothing/i);
+        expect(quiet).toMatch(/others can see|in front of|visible/i);
+        expect(whetherTheySayIt(true)).not.toBe(quiet);
     });
 
     it('is silent far more often than not in an ordinary scene', () => {

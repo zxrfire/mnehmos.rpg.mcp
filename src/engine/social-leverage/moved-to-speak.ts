@@ -134,6 +134,22 @@ function costOfAnswering(bearing: Bearing, bodyLeft: number): number {
 
 /**
  * What somebody in the room could see about their situation.
+ *
+ * THREE FACTS AND NOTHING ELSE: which way it went for them, how much of what
+ * they had it was, and what their part in it was. The narrator writes what that
+ * looks like on a face.
+ *
+ * These were twelve finished sentences with the reaction already in them - "and
+ * they have registered it", "there is no part of this they can absorb and carry
+ * on as they were", "from close enough to be counted as having been there". An
+ * engine knows a magnitude and a role. It does not know what somebody has
+ * registered, and writing it down as though it does leaves the narrator
+ * arguing with a conclusion instead of describing a person.
+ *
+ * The cost of the old shape was not only tone. The deterministic renderer
+ * prints these verbatim, so the SAME long sentence arrived under the same
+ * person on every turn of a fight - and a line a player has read four times has
+ * stopped being atmosphere whatever it says.
  */
 function readingFor(weight: number, moved: number, dealtWith: boolean): string | null {
     if (weight < WORTH_A_SENTENCE) return null;
@@ -141,37 +157,29 @@ function readingFor(weight: number, moved: number, dealtWith: boolean): string |
 
     if (moved < 0) {
         return [
-            'A little of what they had has gone, and they have registered it.',
-            'A serious piece of what they had has gone, and they are standing in front of '
-                + 'whoever it went to.',
-            'What they had is gone. There is no part of this they can absorb and carry on '
-                + 'as they were.'
+            'They lost a little of what they had.',
+            'They lost a serious piece of what they had, to whoever is in front of them.',
+            'They lost all of it.'
         ][band];
     }
     if (moved > 0) {
         return [
-            'A little more than they had has come to them, and they have registered it.',
-            'A serious piece more than they had is theirs, and they are standing in front of '
-                + 'whoever it came from.',
-            'More has come to them than they had. There is no part of this they can absorb '
-                + 'and carry on as they were.'
+            'They gained a little.',
+            'They gained a serious piece, from whoever is in front of them.',
+            'They gained more than they had.'
         ][band];
     }
     if (dealtWith) {
         return [
-            'Nothing of theirs moved. They are the one it was put to, and it came to nothing.',
-            'Nothing of theirs moved. They are the one it was put to, in front of whoever '
-                + 'else is standing here, and it came to nothing.',
-            'Nothing of theirs moved, and they were at the middle of it from the first word '
-                + 'to the last.'
+            'Nothing of theirs moved. It was put to them and came to nothing.',
+            'Nothing of theirs moved. It was put to them in front of the others.',
+            'Nothing of theirs moved. They were at the middle of it throughout.'
         ][band];
     }
     return [
-        'Nothing of this was theirs. They saw it.',
-        'Nothing of this was theirs. They saw all of it, from close enough to be counted '
-            + 'as having been there.',
-        'Nothing of this was theirs, and they were near enough that it could as easily '
-            + 'have been.'
+        'No part of this was theirs. They saw it.',
+        'No part of this was theirs. They saw all of it, from close by.',
+        'No part of this was theirs, and they were near enough that it could have been.'
     ][band];
 }
 
@@ -179,9 +187,12 @@ function readingFor(weight: number, moved: number, dealtWith: boolean): string |
  * The silence, said as what it looked like.
  */
 export function whetherTheySayIt(aloud: boolean): string {
+    // BOTH ARE FACTS AND BOTH ARE VISIBLE, which is the whole content: the room
+    // can tell either way. "The not saying is visible" was the engine reaching
+    // for the effect instead of stating the condition.
     return aloud
-        ? 'They answer it out loud.'
-        : 'They do not say anything, and the not saying is visible.';
+        ? 'They answer, out loud.'
+        : 'They say nothing, where the others can see it.';
 }
 
 function clamp01(n: number): number {

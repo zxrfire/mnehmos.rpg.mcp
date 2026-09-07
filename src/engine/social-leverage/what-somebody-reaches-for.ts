@@ -69,7 +69,16 @@ export interface WhereTheyStand {
 
 export interface WhatTheyReachFor {
     lever: WhatTheyHave;
-    /** Engine truth, one clause. The narrator writes the speech, never this. */
+    /**
+     * Engine truth, one clause. The narrator writes the speech, never this.
+     *
+     * KEPT TO THE FACT, and it was not. These read "They are near enough in
+     * strength to answer it themselves, AND THAT IS WHAT THEY REACH FOR" -
+     * which says the same thing twice, once in the sentence and once in
+     * `lever` beside it, and spends a subordinate clause explaining a
+     * threshold the narrator did not ask about. What the narrator needs is
+     * which lever; what it does with it is its own.
+     */
     line: string;
 }
 
@@ -109,8 +118,7 @@ export function whatTheyReachFor(input: {
     if (gap < HELPLESS_REALM_GAP) {
         return {
             lever: 'answer_in_kind',
-            line: 'They are near enough in strength to answer it themselves, and that is what '
-                + 'they reach for.'
+            line: 'They can answer this themselves.'
         };
     }
 
@@ -119,8 +127,7 @@ export function whatTheyReachFor(input: {
     if (input.them.houseId && houseOrdinal - input.theOther.ordinal >= A_HOUSE_WORTH_NAMING) {
         return {
             lever: 'the_house_behind_them',
-            line: 'What they have that reaches is the house behind them, and they say whose '
-                + 'they are.'
+            line: 'They name the house behind them.'
         };
     }
 
@@ -130,7 +137,7 @@ export function whatTheyReachFor(input: {
     if (theirYear > 0 && stones / theirYear >= WHAT_MAKES_A_PURSE_AN_ANSWER) {
         return {
             lever: 'what_is_in_their_purse',
-            line: 'What they have that reaches is what they are carrying, and they offer it.'
+            line: 'They offer what they are carrying.'
         };
     }
 
@@ -140,10 +147,10 @@ export function whatTheyReachFor(input: {
     return openHandednessOf(input.them.id) >= 0
         ? {
             lever: 'asking_to_be_let_go',
-            line: 'Nothing they have reaches, and they ask.'
+            line: 'Nothing they hold reaches. They ask.'
         }
         : {
             lever: 'nothing_that_reaches',
-            line: 'Nothing they have reaches, and they do not ask.'
+            line: 'Nothing they hold reaches. They do not ask.'
         };
 }

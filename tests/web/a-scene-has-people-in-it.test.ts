@@ -41,7 +41,7 @@ const WORLD = 'people-channel-world';
 const RUN = 'people-channel';
 
 /** The engine's own signature for "and this is whether they said anything". */
-const SAID_OR_DID_NOT = /They answer it out loud\.|They do not say anything/;
+const SAID_OR_DID_NOT = /They answer, out loud\.|They say nothing/;
 const THE_ROOM = /other (people|person) here had no part in it/;
 
 /** Every phase-3 user message the provider was sent since a mark. */
@@ -151,7 +151,7 @@ describe('a gift and a robbery are the same kind of event', () => {
         expect(line).toBeDefined();
         // The engine does not grade. What separates this from a theft is the
         // direction, and nothing else.
-        expect(line).toMatch(/come to them|is theirs/);
+        expect(line).toMatch(/gained/);
         expect(line).not.toMatch(/has gone|is gone/);
         expect(line).toMatch(SAID_OR_DID_NOT);
     }, 300_000);

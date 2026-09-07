@@ -4341,13 +4341,9 @@ ${noticed}`;
         }
 
         // The player gets the honest in-fiction shape of it - an approach made,
-        // nothing settled. Why it is not settled is a fact about this codebase,
-        // not about the world, and it belongs on the mechanical channel.
-        const unresolved =
-            'Nothing is settled by it. Nobody agreed to anything, nothing changed hands, and ' +
-            'no standing shifted one way or the other.';
-
-        const facts = factsForInteraction(cultivator, party.name, intent, party.facts, unresolved);
+        // and then the act's own denial, which is the only half of this that
+        // was ever measured to work. See `unresolved-attempt-denials.ts`.
+        const facts = factsForInteraction(cultivator, party.name, intent, party.facts);
 
         // AND THE ACT ITSELF DID NOT HAPPEN, SAID SO IT CANNOT BE DROPPED
         sayThisWhateverTheNarratorDoes(facts, whatDidNotHappen(intent, cultivator.name));

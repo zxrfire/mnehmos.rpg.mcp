@@ -73,7 +73,7 @@ describe('the company sentence at the counts where plural stops being true', () 
         expect(pluralSlips(prose)).toEqual([]);
         // Standing is still what is said about them; that is the whole point of
         // lifting somebody out of the count.
-        expect(prose).toMatch(/out of reach|far enough ahead|so far above|somewhat ahead/);
+        expect(prose).toMatch(/above you|beneath you|level with you|out of reach/);
     });
 
     it('does not call a single bystander "the others" around a standout', () => {

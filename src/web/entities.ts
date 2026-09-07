@@ -396,7 +396,10 @@ export function resolveCultivator(
     const facts = [
         `${match.name} is here, and reads as ${describeStanding(observerOrdinal, match.realmOrdinal)}.`,
         match.alive
-            ? `They carry ${Math.floor(match.age)} years, however many of those show.`
+            // THE NUMBER, not a remark about it. "However many of those show"
+            // is the engine gesturing at what a cultivator's age looks like,
+            // which is the narrator's line and not a fact anybody holds.
+            ? `They are ${Math.floor(match.age)} years old.`
             : `${match.name} is dead. Whatever ended them is not written where this cultivator can read it.`,
         affiliation
             ? `They wear the marks of ${affiliation}${match.sectRank ? `, and are addressed as ${match.sectRank}` : ''}.`

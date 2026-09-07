@@ -126,7 +126,11 @@ describe('the person the turn actually happened to', () => {
             gate: gateOver(['a', 'b'])
         });
         expect(lines[0]).toMatch(/^Yan Shuling, /);
-        expect(lines[0]).toMatch(/What they had is gone/);
+        // THE HEAVIEST LOSS BAND, in whatever words. This pinned the clause
+        // "What they had is gone", which was one of twelve written-out
+        // sentences the reading used to return; the rule is that a total loss
+        // reads as one.
+        expect(lines[0]).toMatch(/lost all of it/i);
         expect(lines.some(line => /One other person here had no part in it/.test(line)))
             .toBe(true);
     });
@@ -146,7 +150,8 @@ describe('the person the turn actually happened to', () => {
         // The same band, said the other way round, and neither is longer than
         // the other by a sentence.
         expect(robbed.split('.').length).toBe(given.split('.').length);
-        expect(given).toMatch(/has come to them|is theirs|More has come to them/);
+        // A GAIN READS AS A GAIN. Same rule, other direction.
+        expect(given).toMatch(/gained/i);
     });
 });
 
@@ -162,7 +167,7 @@ describe('the discovery gate holds', () => {
         expect(lines[0]).not.toMatch(/Yan Shuling/);
         expect(lines[0]).toMatch(/whose name this cultivator does not have/);
         // And they still answer it, which is the point of the sentence.
-        expect(lines[0]).toMatch(/What they had is gone/);
+        expect(lines[0]).toMatch(/lost all of it/i);
     });
 
     it('lifts at most one stranger out, however many there are', () => {

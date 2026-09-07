@@ -83,9 +83,17 @@ export type InteractIntent = typeof INTERACT_INTENTS[number];
  * observable that would have changed and says it did not.
  */
 const WHAT_DID_NOT_HAPPEN: Readonly<Record<InteractIntent, (who: string) => string>> = {
+    // THE ANSWER IS THE OBSERVABLE, and this denied the addressing instead.
+    // Played: "I greet the nearest person" was answered with "Reader goes to
+    // Wei Minfeng" and then "Nobody greeted Reader" - the engine contradicting
+    // the player's own act two sentences after reporting it.
+    //
+    // Every other line here names the thing that WOULD have changed and says it
+    // did not: a purse unopened, a shelf undisturbed. For talking, the player
+    // opening their mouth is not in doubt; what did not happen is the reply.
     talk: who =>
-        `No words were exchanged. Nobody greeted ${who} and nobody answered them; whatever was `
-        + 'going to be said is still unsaid.',
+        `No answer came back. Whatever ${who} said is still hanging, and nobody has said `
+        + 'anything to them.',
 
     negotiate: who =>
         `No terms were put and none were heard. ${who} offered nothing, nobody countered, and `
