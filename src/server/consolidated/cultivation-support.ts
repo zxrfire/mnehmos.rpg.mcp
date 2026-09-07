@@ -856,7 +856,26 @@ export function tollConditionsFor(
     const membership = repos.sects.getMembership(cultivator.id);
     // A sect spends on a crossing in proportion to how much it has invested in
     // the disciple, which is what rank actually measures.
-    const sectProtection = membership ? Math.min(0.3, 0.06 * (membership.rankIndex + 1)) : 0;
+    //
+    // THIS IS A SHARE, NOT A RISK REDUCTION, AND IT USED TO BE BOTH.
+    // `computePriceOdds` documents `sectProtection` as 0..1 and spends it as
+    // `-sectProtection * MAX_SECT_PROTECTION`, so the scaling to the 0.3
+    // ceiling happens THERE. This capped at 0.3 as well, which applied the
+    // ceiling twice: a top-rank disciple's whole house came to 0.3 * 0.3 =
+    // 0.09 of toll risk where the contract intends 0.30.
+    //
+    // Measured on an ordinary cultivator at the ordinal-24 boundary in normal
+    // qi, whose toll risk unhoused is 0.450:
+    //
+    //     rank 0   0.432 -> 0.390
+    //     rank 2   0.396 -> 0.270
+    //     rank 4   0.360 -> 0.150
+    //
+    // The curve is the one that was always intended - linear in rank, full at
+    // the fifth rung - and only the units move, so 0.06 becomes 0.20 against a
+    // ceiling of 1 rather than of 0.3. Every other producer and every test
+    // already speaks the 0..1 scale; this was the one caller that did not.
+    const sectProtection = membership ? Math.min(1, 0.2 * (membership.rankIndex + 1)) : 0;
 
     return {
         candidates: tollCandidatesFor(repos, cultivator),
