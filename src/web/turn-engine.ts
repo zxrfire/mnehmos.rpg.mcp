@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { getNpc } from '../engine/world/world-state.js';
 import { everybodyDrawingHere } from '../engine/people/there-is-one-kind-of-person.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import type { ManualQuality, SectAlignment } from '../schema/cultivation.js';
@@ -12171,10 +12172,28 @@ ${fit.line}`;
     private refreshThePlayerRow(cultivator: Cultivator): void {
         if (!this.atHand) return;
         const membership = this.repos.sects.getMembership(cultivator.id);
-        standInTheWorld(this.atHand, cultivator, {
+        const before = getNpc(this.atHand, cultivator.id);
+        const wasIn = before?.factionId ?? null;
+        const wasAt = before?.factionRankIndex ?? -1;
+
+        const row = standInTheWorld(this.atHand, cultivator, {
             factionId: membership?.sectId ?? null,
             rankIndex: membership?.rankIndex ?? -1
         }, this.atHand.currentDay);
+
+        // AND IT IS WRITTEN, which it was not.
+        //
+        // This mutated the in-memory world and marked nothing, so the refresh
+        // reached disk only when some OTHER site that turn happened to make the
+        // world dirty. The membership is the authority and the world row is its
+        // projection - a projection nobody stores is not one.
+        //
+        // Only when it moved: the row is refreshed on every turn and most turns
+        // do not change anybody's house.
+        if (row === null) return;
+        if (row.factionId !== wasIn || row.factionRankIndex !== wasAt || before === null) {
+            this.theWorldMoved();
+        }
     }
 
     /**

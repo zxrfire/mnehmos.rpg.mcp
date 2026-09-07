@@ -114,3 +114,48 @@ describe('a promotion the player never earned', () => {
         });
     });
 });
+
+describe('and the rank flows one way', () => {
+    /**
+     * There are two promotion writers and they write two different kinds of
+     * person: `handlePromote` writes `sect_members` for a played character, and
+     * `applyPromotions` writes `NpcRecord.factionRankIndex` for everybody else.
+     *
+     * The player exists in both stores, so the direction matters. The
+     * membership is the authority; the world row is a projection refreshed each
+     * turn. The world may not write back - which is the guard above - and the
+     * membership must reach the world, which is this.
+     */
+    it('carries a promotion from the roll into the world row', async () => {
+        await withAdmin(async () => {
+            const harness = await makeGameInWorld({ seed: 'flow-1', worldSeed: 'flow-world' });
+            const { game, repos } = harness;
+            const { cultivator } = await game.newRun('Shen Ke');
+
+            const sect = repos.sects.list()[0];
+            repos.sects.addMember(sect.id, cultivator.id, 0);
+            await game.act('look');
+            expect((await playerRow(harness))?.factionRankIndex).toBe(0);
+
+            // The house raises them, through the roll.
+            repos.sects.setRank(sect.id, cultivator.id, 2);
+            expect(repos.sects.getMembership(cultivator.id)?.rankIndex).toBe(2);
+
+            // A turn passes, and the world's copy of them agrees.
+            await game.act('look');
+            expect((await playerRow(harness))?.factionRankIndex).toBe(2);
+        });
+    });
+
+    it('and the house on the world row follows the roll too', async () => {
+        await withAdmin(async () => {
+            const harness = await makeGameInWorld({ seed: 'flow-2', worldSeed: 'flow-world-2' });
+            const { game, repos } = harness;
+            const { cultivator } = await game.newRun('Shen Ke');
+            const sect = repos.sects.list()[0];
+            repos.sects.addMember(sect.id, cultivator.id, 1);
+            await game.act('look');
+            expect((await playerRow(harness))?.factionId).toBe(sect.id);
+        });
+    });
+});
