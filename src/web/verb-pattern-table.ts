@@ -1428,8 +1428,18 @@ export const RECALL_EVERYTHING = new RegExp([
 /**
  * News, rumour, and what is being said - which in this world IS the holding.
  */
+/**
+ * WHAT THE WORLD IS SAYING, in the words somebody uses for it.
+ *
+ * Two widenings, both measured by playing. "what do people HERE say is
+ * happening" put the question to a bystander and got "you get as far as
+ * opening your mouth before realising you had not picked one" - there was a
+ * whole verb for it and one word in the middle kept the sentence off it. And
+ * "what is going on elsewhere" reached nothing at all, though ELSEWHERE is the
+ * exact thing this verb is for.
+ */
 export const NEWS_AND_RUMOUR =
-    /\b(?:what news|any news|what(?:'s| is) the news|what(?:'s| is) happening (?:in the world|out there|elsewhere)|what(?:'s| is) going on (?:in the world|out there)|what are people saying|what do people say|listen for (?:rumours?|rumors?|news|talk)|any (?:rumours?|rumors?)|what (?:rumours?|rumors?)|catch up on the news|what have i heard lately)\b/;
+    /\b(?:what news|any news|what(?:'s| is) the news|what(?:'s| is) happening (?:in the world|out there|elsewhere)|what(?:'s| is) going on (?:in the world|out there|elsewhere|anywhere)|what are people saying|what do (?:people|they|folk)\b[^.?!]{0,14}\bsay\b|listen for (?:rumours?|rumors?|news|talk)|any (?:rumours?|rumors?)|what (?:rumours?|rumors?)|catch up on the news|what have i heard lately)\b/;
 
 /**
  * The same question in the words somebody would actually use.

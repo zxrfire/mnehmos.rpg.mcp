@@ -82,6 +82,28 @@ describe('saying you are asking is not doing it', () => {
         }
     });
 
+    it('and the talk of the world is reachable in the words people use', () => {
+        // A SECOND NEAR-SYNONYM, found the same way. There is a whole `news`
+        // verb - "what the people here are saying is happening elsewhere" - and
+        // the most natural phrasing for it put the question to a bystander:
+        // "you get as far as opening your mouth before realising you had not
+        // picked one." One word in the middle kept the sentence off its own
+        // verb, and ELSEWHERE, which is the thing the verb is for, reached
+        // nothing at all.
+        for (const said of [
+            'what do people here say is happening',
+            'what do they say is going on',
+            'what is going on elsewhere',
+            // The ones that already worked, kept here so a later narrowing of
+            // the pattern is caught rather than being someone else's surprise.
+            'what are people saying',
+            'what is the news',
+            'what have you heard'
+        ]) {
+            expect(parseIntent(said).action, said).toBe('news');
+        }
+    });
+
     it('and never turns a question into something that spends a day', () => {
         // The guard that makes the rest of it safe. Whatever is inside the
         // question, if answering it would cost, the question was not the thing

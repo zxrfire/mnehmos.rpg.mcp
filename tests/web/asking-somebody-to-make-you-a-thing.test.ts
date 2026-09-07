@@ -29,6 +29,9 @@ import {
     gradeAskedFor,
     whatTheyWereAskedToMake
 } from '../../src/web/what-somebody-was-asked-to-make';
+import {
+    askingSomebodyToMakeYouSomething
+} from '../../src/engine/social-leverage/index';
 
 describe('the sentence reaches the hands', () => {
     it('is a request put to a person, not a form filed against a house', () => {
@@ -126,34 +129,37 @@ describe('and the answer is the one the engine already had', () => {
         expect(asked.narration).toMatch(/covers 0%/i);
     }, 300_000);
 
-    it('and paying in full is not the same as being agreed to', async () => {
-        // THE CLAIM IS THAT IT VARIES, which is the whole design: a season of
-        // somebody's hands is not something a figure settles on its own, so the
-        // same money put to different people comes back differently. A rule
-        // that always said yes would make the tie decorative and one that
-        // always said no would make the verb pointless.
+    it('and paying in full is not the same as being agreed to', () => {
+        // THE CLAIM IS THAT IT VARIES WITH THE PERSON, which is the whole
+        // design: a season of somebody's hands is not something a figure
+        // settles on its own. A rule that always said yes would make the tie
+        // decorative and one that always said no would make the verb pointless.
         //
-        // And where it IS refused with the figure met, the player is told what
-        // is actually short rather than being left to guess at the number.
-        let agreed = 0;
-        let refused = 0;
-        for (const seed of ['paid-a', 'paid-b', 'paid-c', 'paid-d', 'paid-e', 'paid-f']) {
-            const asked = await askedOf(
-                seed, n => `I pay ${n} 400 stones to cut me a talisman`
-            );
-            if (/will make it/i.test(asked.narration)) {
-                agreed++;
-                continue;
-            }
-            refused++;
-            expect(asked.narration).toMatch(/covers 100%/i);
-            expect(asked.narration, 'refused with the figure met and no reason given')
-                .toMatch(/regard/i);
-        }
-        expect(agreed + refused).toBe(6);
-        expect(agreed, 'nobody ever agreed, so the verb cannot be used').toBeGreaterThan(0);
-        expect(refused, 'everybody agreed, so the tie is decorative').toBeGreaterThan(0);
-    }, 900_000);
+        // Asserted on the reading rather than by playing six seeds and hoping
+        // both answers turn up. The first cut did exactly that, passed alone
+        // and failed in company - it picked whoever the narration named first,
+        // and which NPC that is moves with what ran before it. A test that
+        // measures the fixture order is not measuring the rule.
+        const ask = whatTheyWereAskedToMake('a talisman');
+        const bothWays = (reading: number) => askingSomebodyToMakeYouSomething({
+            ask,
+            askerId: 'asker',
+            maker: { id: 'maker', ordinal: 20 },
+            stonesOffered: 4000,
+            onDay: 10,
+            readingOf: () => reading
+        });
+
+        const openHanded = bothWays(1);
+        const closed = bothWays(-1);
+
+        // Same thing, same money, same hands. Different person.
+        expect(openHanded.paid).toBeGreaterThanOrEqual(1);
+        expect(closed.paid).toBeGreaterThanOrEqual(1);
+        expect(openHanded.agreed).toBe(true);
+        expect(closed.agreed).toBe(false);
+        expect(closed.hands.theyCan, 'refused for the wrong reason').toBe(true);
+    });
 
     it('and it costs the asker nothing to have asked', async () => {
         // Asking is free. What it spends is their patience, which is the
