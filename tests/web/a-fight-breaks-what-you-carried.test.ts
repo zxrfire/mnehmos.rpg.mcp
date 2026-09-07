@@ -55,7 +55,7 @@ async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
 
 function pouchCount(harness: Harness, itemId: string): number {
     const row = harness.db
-        .prepare('SELECT quantity AS q FROM cultivator_pouch WHERE cultivator_id = ? AND item_id = ?')
+        .prepare('SELECT quantity AS q FROM cultivator_pouch WHERE holder_id = ? AND item_id = ?')
         .get(harness.game.state().cultivator.id, itemId) as { q: number } | undefined;
     return row?.q ?? 0;
 }

@@ -1065,7 +1065,7 @@ describe('buying a line off the price board', () => {
 
         const result = await game.act('I buy a Lesser Healing Pill');
         const pouch = db
-            .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE cultivator_id = ?')
+            .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE holder_id = ?')
             .all(cultivator.id) as Array<{ item_id: string; quantity: number }>;
 
         expect(pouch.some(row => row.item_id === 'pill-minor-healing')).toBe(true);

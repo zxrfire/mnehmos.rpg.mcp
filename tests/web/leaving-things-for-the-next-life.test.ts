@@ -146,16 +146,16 @@ describe('objects cross and nothing else does', () => {
                     .run(delta, id),
             add: (id, stack) =>
                 db.prepare(`
-                    INSERT INTO cultivator_pouch (cultivator_id, item_id, item_kind, quantity)
+                    INSERT INTO cultivator_pouch (holder_id, item_id, item_kind, quantity)
                     VALUES (?, ?, ?, ?)
-                    ON CONFLICT(cultivator_id, item_id) DO UPDATE SET quantity = quantity + excluded.quantity
+                    ON CONFLICT(holder_id, item_id) DO UPDATE SET quantity = quantity + excluded.quantity
                 `).run(id, stack.itemId, stack.kind, stack.quantity),
             take: (id, stack) => {
                 const held = db
-                    .prepare('SELECT quantity FROM cultivator_pouch WHERE cultivator_id = ? AND item_id = ?')
+                    .prepare('SELECT quantity FROM cultivator_pouch WHERE holder_id = ? AND item_id = ?')
                     .get(id, stack.itemId) as { quantity: number } | undefined;
                 if (!held || held.quantity < stack.quantity) return false;
-                db.prepare('UPDATE cultivator_pouch SET quantity = quantity - ? WHERE cultivator_id = ? AND item_id = ?')
+                db.prepare('UPDATE cultivator_pouch SET quantity = quantity - ? WHERE holder_id = ? AND item_id = ?')
                     .run(stack.quantity, id, stack.itemId);
                 return true;
             }
@@ -187,7 +187,7 @@ describe('objects cross and nothing else does', () => {
 
         // And the pouch took the stock, which is the other half of "objects".
         const pouch = db
-            .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE cultivator_id = ?')
+            .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE holder_id = ?')
             .all('heir') as { item_id: string; quantity: number }[];
         expect(pouch).toEqual([{ item_id: 'pill-qi-gathering', quantity: 3 }]);
     });

@@ -423,7 +423,7 @@ function allPouchRows(db: Database.Database, cultivatorId: string): PouchEntry[]
     const rows = db
         .prepare(`
             SELECT item_id, item_kind, quantity FROM cultivator_pouch
-            WHERE cultivator_id = ? AND quantity > 0
+            WHERE holder_id = ? AND quantity > 0
             ORDER BY item_kind ASC, item_id ASC
         `)
         .all(cultivatorId) as { item_id: string; item_kind: string; quantity: number }[];
@@ -440,7 +440,7 @@ export function pouchQuantity(
     itemId: string
 ): number {
     const row = db
-        .prepare('SELECT quantity FROM cultivator_pouch WHERE cultivator_id = ? AND item_id = ?')
+        .prepare('SELECT quantity FROM cultivator_pouch WHERE holder_id = ? AND item_id = ?')
         .get(cultivatorId, itemId) as { quantity: number } | undefined;
     return row ? row.quantity : 0;
 }
@@ -455,9 +455,9 @@ export function addToPouch(
     const amount = Math.max(0, Math.floor(quantity));
     if (amount === 0) return;
     db.prepare(`
-        INSERT INTO cultivator_pouch (cultivator_id, item_id, item_kind, quantity, updated_at)
+        INSERT INTO cultivator_pouch (holder_id, item_id, item_kind, quantity, updated_at)
         VALUES (?, ?, ?, ?, datetime('now'))
-        ON CONFLICT(cultivator_id, item_id) DO UPDATE SET
+        ON CONFLICT(holder_id, item_id) DO UPDATE SET
             quantity = cultivator_pouch.quantity + excluded.quantity,
             updated_at = excluded.updated_at
     `).run(cultivatorId, itemId, kind, amount);
@@ -495,7 +495,7 @@ export function removeFromPouch(
     if (held < amount) return false;
     db.prepare(`
         UPDATE cultivator_pouch SET quantity = quantity - ?, updated_at = datetime('now')
-        WHERE cultivator_id = ? AND item_id = ?
+        WHERE holder_id = ? AND item_id = ?
     `).run(amount, cultivatorId, itemId);
     return true;
 }

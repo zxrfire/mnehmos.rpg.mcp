@@ -511,7 +511,7 @@ describe('gather and refine', () => {
         expect(planned(result).action).toBe('gather');
 
         const pouch = db
-            .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE cultivator_id = ?')
+            .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE holder_id = ?')
             .all(cultivator.id) as Array<{ item_id: string; quantity: number }>;
         const call = engineCalls(result)[engineCalls(result).length - 1];
 

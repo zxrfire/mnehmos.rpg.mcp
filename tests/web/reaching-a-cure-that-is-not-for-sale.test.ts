@@ -193,7 +193,7 @@ describe('reaching a cure that is not for sale', () => {
         // asserting an outcome the database never took.
         expect(took, `never landed in 12 tries: ${outcomes.join(', ')}`).toBe(true);
         const pouch = db.prepare(
-            'select quantity from cultivator_pouch where cultivator_id = ? and item_id = ?'
+            'select quantity from cultivator_pouch where holder_id = ? and item_id = ?'
         ).get(cultivator.id, THE_CURE) as { quantity: number } | undefined;
         expect(pouch?.quantity ?? 0).toBeGreaterThan(0);
 

@@ -77,7 +77,7 @@ export function goodsAreEmpty(goods: LegacyGoods): boolean {
 /** What the pouch holds, as stacks. Read straight, no catalog join. */
 export function pouchStacks(db: Database.Database, cultivatorId: string): GoodStack[] {
     const rows = db
-        .prepare('SELECT item_id, item_kind, quantity FROM cultivator_pouch WHERE cultivator_id = ? AND quantity > 0')
+        .prepare('SELECT item_id, item_kind, quantity FROM cultivator_pouch WHERE holder_id = ? AND quantity > 0')
         .all(cultivatorId) as { item_id: string; item_kind: string; quantity: number }[];
     return rows
         .filter(r => r.item_kind === 'pill' || r.item_kind === 'herb')

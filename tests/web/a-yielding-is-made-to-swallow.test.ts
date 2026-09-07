@@ -96,7 +96,7 @@ async function standingOverSomebody(pillId: string | null) {
 /** What is left in the pouch, by catalog id. */
 function pouchIds(db: any, playerId: string): string[] {
     return (db.prepare(
-        'SELECT item_id AS id FROM cultivator_pouch WHERE cultivator_id = ? AND quantity > 0'
+        'SELECT item_id AS id FROM cultivator_pouch WHERE holder_id = ? AND quantity > 0'
     ).all(playerId) as { id: string }[]).map(row => row.id);
 }
 

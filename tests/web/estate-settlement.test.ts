@@ -56,7 +56,7 @@ async function worldNow(harness: Harness) {
 
 function pouchRows(harness: Harness, cultivatorId: string): number {
     return (harness.db
-        .prepare('SELECT COUNT(*) AS n FROM cultivator_pouch WHERE cultivator_id = ? AND quantity > 0')
+        .prepare('SELECT COUNT(*) AS n FROM cultivator_pouch WHERE holder_id = ? AND quantity > 0')
         .get(cultivatorId) as { n: number }).n;
 }
 

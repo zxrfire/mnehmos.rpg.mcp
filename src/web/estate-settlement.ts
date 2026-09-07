@@ -67,7 +67,7 @@ import { enshrineRun } from '../engine/world/legacy.js';
 import { getNpc, getObject, upsertNpc, upsertObject, type WorldState } from '../engine/world/world-state.js';
 import type { ObjectRecord } from '../engine/world/possessions.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
-import { listCarriedArtifacts, listPouch } from '../server/consolidated/cultivation-support.js';
+import { addToPouch, listCarriedArtifacts, listPouch } from '../server/consolidated/cultivation-support.js';
 import {
     LegacyLedger,
     describeGoods,
@@ -162,7 +162,7 @@ function countedOnTheBody(db: Database.Database, cultivator: Cultivator): Counte
  * emptied into nothing is worse than one that was never emptied.
  */
 function emptyTheBody(db: Database.Database, cultivatorId: string): void {
-    db.prepare('DELETE FROM cultivator_pouch WHERE cultivator_id = ?').run(cultivatorId);
+    db.prepare('DELETE FROM cultivator_pouch WHERE holder_id = ?').run(cultivatorId);
     db.prepare("UPDATE cultivators SET spirit_stones = 0, updated_at = datetime('now') WHERE id = ?")
         .run(cultivatorId);
 }
@@ -312,11 +312,22 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
     if (world) {
         for (const object of estate.objects) Object.assign(world, upsertObject(world, object));
 
-        // And the stones, where somebody took them. An NPC's purse is a number
-        // on their row, so this is the whole of what "they took it" means for
-        // the counted tier: pills and herbs have no representation on anybody
-        // but the player, and `items.md` is explicit that a counted thing can
-        // simply be absorbed as stock.
+        // AND THE STOCK, where somebody took it.
+        //
+        // This used to be the stones only, on the reasoning that pills and herbs
+        // had no representation on anybody but the player - which was true, and
+        // was a defect rather than a fact about the world. `cultivator_pouch`
+        // was keyed on `cultivator_id` with a cascade to the cultivators table,
+        // so a stack could only be held by somebody a run was being played
+        // through and stopped existing when they died. A body was searched, the
+        // stones changed hands, and forty years of medicine was deleted.
+        //
+        // The pouch is keyed on a HOLDER now, so the taker simply has it.
+        if (estate.taken && estate.taker) {
+            for (const stack of estate.taken.stock) {
+                addToPouch(db, estate.taker.id, stack.itemId, stack.kind, stack.quantity);
+            }
+        }
         if (estate.taken && estate.taker && estate.taken.spiritStones > 0) {
             const taker = getNpc(world, estate.taker.id);
             if (taker) {

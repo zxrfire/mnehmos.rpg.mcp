@@ -219,7 +219,7 @@ describe('a typed ADMIN action moves the thing it names', () => {
             const result = await game.act('ADMIN grant_item itemId=pill-minor-healing');
 
             const row = db
-                .prepare('SELECT quantity FROM cultivator_pouch WHERE cultivator_id = ? AND item_id = ?')
+                .prepare('SELECT quantity FROM cultivator_pouch WHERE holder_id = ? AND item_id = ?')
                 .get(me, 'pill-minor-healing') as { quantity: number } | undefined;
             expect(row?.quantity).toBeGreaterThan(0);
             expect(result.narration).toMatch(/GRANTED/i);

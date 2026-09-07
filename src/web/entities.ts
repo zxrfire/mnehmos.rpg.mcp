@@ -1286,7 +1286,7 @@ export function knownTechniqueNames(repos: CultivationRepos, cultivatorId: strin
 /** Herbs the pouch actually holds, for a refusal that helps. */
 export function pouchNames(db: Database.Database, cultivatorId: string): string[] {
     const rows = db
-        .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE cultivator_id = ? AND quantity > 0')
+        .prepare('SELECT item_id, quantity FROM cultivator_pouch WHERE holder_id = ? AND quantity > 0')
         .all(cultivatorId) as Array<{ item_id: string; quantity: number }>;
     return rows.map(row => {
         const name = HERBS.find(h => h.id === row.item_id)?.name
