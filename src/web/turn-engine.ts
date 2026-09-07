@@ -3256,7 +3256,7 @@ ${noticedWaiting}`;
                 );
 
             case 'assess':
-                return this.assess(cultivator, action.target);
+                return this.assess(run, cultivator, ambient, action.target);
 
             case 'unclear': {
                 // `help` and `what can I do` land here, and until now they got
@@ -6190,7 +6190,12 @@ ${line}`;
     /**
      * What happens if they try.
      */
-    private async assess(cultivator: Cultivator, target: string | undefined): Promise<Execution> {
+    private async assess(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        target: string | undefined
+    ): Promise<Execution> {
         const query = (target ?? '').trim();
 
         // a master reading a student
@@ -6203,6 +6208,29 @@ ${line}`;
             return this.fromToolResult(
                 'cultivation_perception.assess', 'assess', read, 'The reckoning'
             );
+        }
+
+        // ── AND A PERSON IS NOT A PLACE ──────────────────────────────────
+        //
+        // There were two readings here, yourself and the ground, and anything
+        // else named fell through to the ground. Played:
+        //
+        //   > I assess He Anwu
+        //   cultivation_perception.assess: place_not_known
+        //   Nobody has never heard of "He Anwu".
+        //
+        // - about somebody standing in the same square, whom the very next
+        // sentence read correctly down to their rank, root and open accounts.
+        // Sizing somebody up is the commonest thing anybody does with this verb
+        // and it was the one thing it could not do.
+        //
+        // Routed to the read that already exists rather than given one of its
+        // own. `investigate` resolves a person or a thing and assembles the
+        // structural account of them; a second reading of a person here would
+        // be a second opinion about what somebody looks like.
+        if (!GameService.THE_GROUND_UNDER_THEIR_FEET.test(query)
+            && this.partyPutTo(cultivator, query, this.scopeFor(cultivator)) !== null) {
+            return await this.investigate(run, cultivator, ambient, query);
         }
 
         // "HERE" IS A PLACE, AND IT IS THE ONE THEY ARE STANDING IN
