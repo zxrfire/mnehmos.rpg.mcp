@@ -784,6 +784,22 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // paying for it. Measured routing WRONG before it had a phrasing here -
         // "talisman" is a standing-stock noun, so the sentence filed a
         // requisition against a HOUSE and answered with a list of sect names.
+        // ORDERING THE RUNG BELOW, which was reachable only with `order` in
+        // verb position. "I give an order to the outer disciples" reached
+        // `sect/donate` and answered a command by handing over money, because
+        // `give` beside a named house is how somebody pays in. Off the recorded
+        // gaps and into a phrasing, which is the only legal direction for that
+        // list.
+        'sect/order': [
+            'I order the outer disciples to gather',
+            'I give an order to the outer disciples'
+        ],
+        // Paying in, kept beside it: the guard that stopped an order being a
+        // donation must not have stopped a donation being one.
+        'sect/donate': [
+            'I donate 500 stones to the sect',
+            'I give the sect 500 stones'
+        ],
         'request/a_making': [
             'I ask my master to cut me a talisman',
             'I pay Elder Fang 400 stones to craft me a talisman'
@@ -850,8 +866,8 @@ describe('every intent DECLARED is a door somebody can find', () => {
         'passage/board', 'passage/buy',
         'oath/read', 'oath/swear', 'oath/break',
         'sect/leave', 'sect/promote', 'sect/stipend', 'sect/standing', 'sect/join',
-        'sect/siphon', 'sect/order', 'sect/recruit', 'sect/admission', 'sect/curriculum',
-        'sect/expel', 'sect/duty', 'sect/donate', 'sect/guest',
+        'sect/siphon', 'sect/recruit', 'sect/admission', 'sect/curriculum',
+        'sect/expel', 'sect/duty', 'sect/guest',
         'site/approach', 'site/outside', 'site/enter', 'site/take',
         'legacy/counters', 'legacy/bury', 'legacy/dig', 'legacy/lodge', 'legacy/claim',
         'petition/grant', 'petition/stock', 'petition/descent',

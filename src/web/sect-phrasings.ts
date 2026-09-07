@@ -289,6 +289,21 @@ export const DEFAULT_SIPHON_PACE = 'careful';
 export const SECT_ORDER_VERBS =
     'order|orders|command|commands|send|sends|dispatch|dispatches|detail|details|assign|assigns|task|tasks';
 
+/**
+ * GIVING an order, where the order is the object rather than the verb.
+ *
+ * `usedAsVerb` is what gates the list above, and it is right to: "the order of
+ * the thing" is not somebody commanding anybody. But "I give an order to the
+ * outer disciples" has no verb in that list at all - and measured, it reached
+ * `sect/donate`, because `give` next to a named house is how somebody pays in.
+ * A player issuing an order was answered by handing over money.
+ *
+ * The article is required, which is what keeps this off "give order to the
+ * ranks" as a phrase about tidiness and off "in order to".
+ */
+export const GIVING_AN_ORDER =
+    /\b(?:give|gives|giving|gave|issue|issues|issuing|issued)\s+(?:an?|the)\s+(?:order|command|instruction)s?\b/;
+
 export const SECT_SUBORDINATE_NOUNS =
     /\b(?:disciples?|servants?|juniors?|underlings?|subordinates?|acolytes?|attendants?|initiates?|the ranks? below|my line|my people)\b/;
 

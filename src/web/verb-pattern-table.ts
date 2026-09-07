@@ -167,6 +167,7 @@ export {
     SIPHON_PACE_PATTERNS,
     SIPHON_TAKING_VERBS,
     DEFAULT_SIPHON_PACE,
+    GIVING_AN_ORDER,
     SECT_ORDER_VERBS,
     SECT_SUBORDINATE_NOUNS,
     SENDING_A_MESSAGE,
@@ -199,6 +200,7 @@ import {
     SIPHON_TAKING_VERBS,
     HOUSE_GIVING_VERBS,
     DEFAULT_SIPHON_PACE,
+    GIVING_AN_ORDER,
     SECT_ORDER_VERBS,
     SECT_SUBORDINATE_NOUNS,
     SENDING_A_MESSAGE,
@@ -2741,7 +2743,7 @@ function planIntent(input: string): PlannedAction {
     // Sending the rung below, before `work` and `gather` - both of which used to
     // catch these sentences and answer them by spending the PLAYER's days. An
     // order is the one action in the game whose whole point is that it does not.
-    if (usedAsVerb(text, SECT_ORDER_VERBS)
+    if ((usedAsVerb(text, SECT_ORDER_VERBS) || GIVING_AN_ORDER.test(text))
         && SECT_SUBORDINATE_NOUNS.test(text)
         && !SENDING_A_MESSAGE.test(text)) {
         const errand = matchIntent(text, SECT_ERRAND_PATTERNS) ?? DEFAULT_ERRAND;

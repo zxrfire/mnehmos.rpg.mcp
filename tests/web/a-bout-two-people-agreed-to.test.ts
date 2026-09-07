@@ -40,7 +40,7 @@
 import { readFileSync } from 'node:fs';
 
 import { parseIntent, validatePlan } from '../../src/web/actions';
-import { makeGame, cultivatorRow } from './harness';
+import { makeGameInWorld, cultivatorRow } from './harness';
 
 interface OpenAccount {
     kind: string;
@@ -183,13 +183,16 @@ describe('and the world answers', () => {
         // see the note below - so the search has to walk past the common one
         // to reach the rare one this test is about, and thirty seeds started
         // landing on the wrong side of the draw in a pooled run while passing
-        // on its own. `makeGame` does not pin the WORLD, so what the file
-        // before it left behind is part of the sample; the bar is unchanged
-        // and the sample is bigger, which is the fix AGENTS.md names.
+        // on its own. Each seed now pins its OWN world as well, so the sample
+        // is eighty known worlds rather than eighty draws from whatever the
+        // process happened to build first - the bar is unchanged and the
+        // sample is both bigger and reproducible.
         const seeds = Array.from({ length: 80 }, (_, n) => `bout-${n}`);
         for (const seed of seeds) {
             if (found) break;
-            const { db, game, repos } = makeGame({ seed, worldEnabled: true });
+            const { db, game, repos } = await makeGameInWorld({
+                seed, worldSeed: seed, worldEnabled: true
+            });
             const { cultivator } = await game.newRun('Duellist');
             const mine = 'sect-azure-cloud-pavilion';
             repos.sects.addMember(mine, cultivator.id, 1);
@@ -266,7 +269,9 @@ describe('and the world answers', () => {
         let said = '';
 
         for (const seed of ['killed-a', 'killed-b', 'killed-c', 'killed-d'] as const) {
-            const { db, game, repos } = makeGame({ seed, worldEnabled: true });
+            const { db, game, repos } = await makeGameInWorld({
+                seed, worldSeed: seed, worldEnabled: true
+            });
             const { cultivator } = await game.newRun('Duellist');
             repos.sects.addMember('house-immovable-mountain', cultivator.id, 1);
             await game.act('I look around');
@@ -312,7 +317,9 @@ describe('and the world answers', () => {
         let ledger: unknown;
 
         for (const seed of ['open-a', 'open-b', 'open-c'] as const) {
-            const { db, game, repos } = makeGame({ seed, worldEnabled: true });
+            const { db, game, repos } = await makeGameInWorld({
+                seed, worldSeed: seed, worldEnabled: true
+            });
             const { cultivator } = await game.newRun('Brawler');
             repos.sects.addMember('house-immovable-mountain', cultivator.id, 1);
             await game.act('I look around');
