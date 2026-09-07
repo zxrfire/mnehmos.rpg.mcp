@@ -71,6 +71,11 @@ export type CapabilityGrant =
      * things summing to it are as good as one sword. No companion and no
      * passenger at any size.
      *
+     * A BUDGET RATHER THAN A LIMIT PER OBJECT, because one object can be a
+     * spirit boat. Counting the largest thing carried would let a fold take
+     * anything at all so long as it arrived in one piece, which is the wrong
+     * answer by inspection.
+     *
      * THE BUDGET IS SET BY WHAT A CULTIVATOR MUST NOT HAVE TO LEAVE BEHIND.
      * A sword cultivator who folds out of a fight without their sword has been
      * charged their whole art for an escape, so the limit is drawn where their
