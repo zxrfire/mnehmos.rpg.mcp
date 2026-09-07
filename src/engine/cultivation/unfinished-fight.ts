@@ -425,7 +425,7 @@ export function takeAFightTurn(
                 line: `${flight.narrationHint}`
                     + (toward
                         ? ` The road toward ${toward.name} is the one you took; it is `
-                          + `${toward.days} days.`
+                          + `${toward.days} day${toward.days === 1 ? '' : 's'}.`
                         : ' Away from them, which is as much as you know about where you are going.')
             };
         }
@@ -696,7 +696,7 @@ function afterRound(
             ...base,
             fight: null,
             finished: concludeFrom(fight, round.winnerId, round.loserId!, round.ending!, ctx),
-            line: preamble + stamped.map(e => e.result.narrationHint).join(' ')
+            line: preamble + theRoundAsItHappened(fight, stamped)
         };
     }
 
@@ -722,8 +722,58 @@ function afterRound(
         ...base,
         fight,
         finished: null,
-        line: preamble + stamped.map(e => e.result.narrationHint).join(' ')
+        line: preamble + theRoundAsItHappened(fight, stamped)
     };
+}
+
+/**
+ * A ROUND, SAID AS WHAT HAPPENED RATHER THAN AS WHAT WAS COMPUTED.
+ *
+ * The round line was the exchange resolver's own hints, concatenated. That
+ * resolver is handed two `CombatantPower` values and a `CombatantPower` has no
+ * name in it, only a rung - so every round of every fight read:
+ *
+ *   Qi Condensation Layer 8 strikes at Qi Condensation Layer 9. Advantage
+ *   1.06; 8 damage. Qi Condensation Layer 9 strikes at Qi Condensation Layer 8.
+ *   Advantage 0.94; 8 damage.
+ *
+ * Two people are in that sentence and neither of them is named, in an answer
+ * whose next line says "You are on 42 of 50; Liang Tianshi is on 59 of 67".
+ * And `advantage` is the roll's own multiplier: a figure the player can do
+ * nothing with, which the `structure` channel already carries in full.
+ *
+ * A fight knows who is in it, so the line says so. Everything the hint carried
+ * except the multiplier is still here: what it cost, what it opened, what
+ * broke, and whether it went at the soul.
+ */
+function theRoundAsItHappened(
+    fight: UnfinishedFight,
+    stamped: readonly ExchangeRecord[]
+): string {
+    const sides = [fight.aggressor.input, fight.defender.input];
+    const nameOf = (id: string): string =>
+        sides.find(side => side.id === id)?.name ?? 'somebody';
+
+    return stamped.map(exchange => {
+        const struck = exchange.attackerId === fight.playerId;
+        const took = exchange.defenderId === fight.playerId;
+        const who = struck ? 'You' : nameOf(exchange.attackerId);
+        const at = took ? 'you' : nameOf(exchange.defenderId);
+        const lands = struck ? 'land' : 'lands';
+        const soul = exchange.result.vector === 'soul' ? ', at the soul' : '';
+        const cost = exchange.result.damage === 0
+            ? `${who} reach${struck ? '' : 'es'} ${at}${soul} and it costs them nothing.`
+            : `${who} ${lands} ${exchange.result.damage} on ${at}${soul}.`;
+        const opened = exchange.result.injury
+            ? ` A ${exchange.result.injury.severity} meridian injury, and it will not close on `
+              + 'its own.'
+            : '';
+        const broke = exchange.result.weapon?.broke
+            ? ` ${exchange.result.weapon.objectName} did not survive it. `
+              + exchange.result.weapon.narrationHint
+            : '';
+        return `${cost}${opened}${broke}`;
+    }).join(' ');
 }
 
 /** End the fight the way a one-call fight ends. There is one endgame. */
@@ -836,8 +886,15 @@ export function whereThisFightStands(
         line:
             `You are on ${yourHp} of ${mine.input.maxHp}; ${theirs.input.name} is on ${theirHp} `
             + `of ${theirs.input.maxHp}. ${roundsLeft} round${roundsLeft === 1 ? '' : 's'} before `
-            + `neither of you can finish it. Breaking off would come off at `
-            + `${(preview.chance * 100).toFixed(0)}%, and turning your back costs something `
-            + 'either way.'
+            // WHAT FAILING IT ACTUALLY COSTS, WHICH THE ENGINE KNOWS.
+            //
+            // This said "turning your back costs something either way" - the
+            // engine declining to name a cost it computes twelve lines up, in
+            // a sentence the player reads on every round of every fight. The
+            // rule is that a failed break-off spends the round and the other
+            // side's blow lands with nothing in the way of it.
+            + `neither of you can finish it. Breaking off gets you clear `
+            + `${(preview.chance * 100).toFixed(0)} times in a hundred; failing it spends the `
+            + 'round, and their blow comes with nothing in the way of it.'
     };
 }

@@ -55,7 +55,11 @@ describe('a fight the player stands inside', () => {
         expect(names(opened)).toContain('combat.round');
         // And the fight did NOT resolve, which is the whole of the change.
         expect(names(opened)).not.toContain('combat_manage.resolve');
-        expect(opened.narration).toMatch(/strikes at/);
+        // THE RULE: a round says who struck whom. It used to say it as
+        // "Qi Condensation Layer 8 strikes at Qi Condensation Layer 9",
+        // which names neither of the two people in it - the resolver is
+        // handed a rung and no name. The fight knows who is in it.
+        expect(opened.narration).toMatch(/You (?:land|reach) /);
     }, 120_000);
 
     it('tells the player where they stand before they have to answer', async () => {
@@ -78,16 +82,18 @@ describe('a fight the player stands inside', () => {
         // choose it.
         expect(opened.narration).toMatch(/You are on \d+ of \d+/);
         expect(opened.narration).toMatch(/rounds? before neither of you can finish it/);
-        expect(opened.narration).toMatch(/Breaking off would come off at \d+%/);
+        // The odds on the way out, in whatever words. This used to pin
+        // "come off at N%", which is the engine's own phrase for it.
+        expect(opened.narration).toMatch(/Breaking off gets you clear \d+ times in a hundred/);
     }, 120_000);
 
     it('answers the five sentences that used to reach nothing', async () => {
         // Each is played into a fresh fight, because they are alternatives - a
         // player gets one answer a round.
         const cases: Array<[string, RegExp]> = [
-            ['I block his sword', /strikes at/],
-            ['I let him hit me', /strikes at/],
-            ['I back off', /(Broke away|Did not get clear)/],
+            ['I block his sword', /(?:You land|lands \d+ on you)/],
+            ['I let him hit me', /(?:You land|lands \d+ on you)/],
+            ['I back off', /You (?:got clear|did not get clear)/],
             ['I call for help', /(You shout|comes)/],
             ['I shout for the wardens', /(You shout|comes)/]
         ];

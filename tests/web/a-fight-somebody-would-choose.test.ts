@@ -103,7 +103,7 @@ describe('who a peer phrase resolves to', () => {
         // exchange count to report yet - the claim the comment always made is
         // that a fight HAPPENED, and what says so now is a blow landing and the
         // state of the fight coming back with it.
-        expect(acted.narration).toMatch(/strikes at/);
+        expect(acted.narration).toMatch(/You (?:land|reach) /);
         expect(acted.narration).toMatch(/rounds? before neither of you can finish it/);
         expect(acted.narration).not.toMatch(/the moment goes past you/);
         expect(acted.narration).not.toMatch(/is not a fight/);

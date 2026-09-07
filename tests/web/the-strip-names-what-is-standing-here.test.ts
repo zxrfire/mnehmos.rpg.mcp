@@ -277,7 +277,7 @@ describe('the strip changes when a fight opens, and every entry the fight can an
         const { before, during, opened } = await intoAFight();
         // The engine is pricing the way out in the same breath - this is the
         // half that was always working.
-        expect(opened).toMatch(/Breaking off would come off at \d+%/);
+        expect(opened).toMatch(/Breaking off gets you clear \d+ times in a hundred/);
 
         // And the strip used to be byte-identical to the turn before. That is
         // the defect, stated as the thing that must never be true again.
@@ -307,7 +307,7 @@ describe('the strip changes when a fight opens, and every entry the fight can an
 
     it('carries the flight odds the engine computed, not a number of its own', async () => {
         const { during, opened } = await intoAFight();
-        const priced = opened.match(/come off at (\d+)%/)![1];
+        const priced = opened.match(/gets you clear (\d+) times in a hundred/)![1];
         const out = during.find(a => a.id === 'fight_break_off')!;
         // The row and the prose above it quote one number, because both read
         // `whereThisFightStands`. Two opinions about the odds would be worse

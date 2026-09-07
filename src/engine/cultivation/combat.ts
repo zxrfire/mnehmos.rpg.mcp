@@ -2070,10 +2070,18 @@ export function attemptFlight(
         roll,
         damage,
         injury,
+        // A FIGURE WITH ITS UNIT ON IT, AND A SENTENCE RATHER THAN A FORM.
+        //
+        // "paid 4 for the turn of the back" - four of what, and the phrase is
+        // the engine's own name for the mechanic rather than anything anybody
+        // says. The chance is the figure the player weighed the choice on and
+        // stays; what it cost is a number of hit points and now says so.
         narrationHint: escaped
-            ? `Broke away at ${(chance * 100).toFixed(0)}%, and paid ${damage} for the turn of the back.`
-            : `Did not get clear: ${(chance * 100).toFixed(0)}% was not enough. ${damage} taken` +
-              (injury ? `, and a ${injury.severity} injury with it.` : '.')
+            ? `You got clear, on a ${(chance * 100).toFixed(0)} in a hundred, and turning your `
+              + `back cost ${damage} of the body.`
+            : `You did not get clear: ${(chance * 100).toFixed(0)} in a hundred was not enough. `
+              + `${damage} of the body went on the attempt`
+              + (injury ? `, and a ${injury.severity} injury with it.` : '.')
     };
 }
 

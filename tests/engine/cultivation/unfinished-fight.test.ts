@@ -184,7 +184,10 @@ describe('a fight is a thing you stand inside', () => {
         // The odds of getting out are on the table BEFORE the choice, which is
         // what makes the choice one.
         expect(view.flight.chance).toBeGreaterThan(0);
-        expect(view.line).toContain('%');
+        // The odds are IN the sentence, in whatever words it uses for
+        // them. It used to be asserted as a percent sign, which is the
+        // engine's own notation rather than the fact.
+        expect(view.line).toMatch(/\d+ times in a hundred/);
     });
 
     it('does not hold open a fight the gap has already settled', () => {

@@ -7611,7 +7611,7 @@ ${opened.text}` : receipt,
 
         const after = this.repos.cultivators.getById(cultivator.id)!;
         const stillHurt = untreatedInjuryCount(after.injuries);
-        const facts = factsForTreatment(cultivator, after, {
+        const facts = factsForTreatment(after, {
             what: course.name,
             note: course.note,
             cashEach: courseCash,

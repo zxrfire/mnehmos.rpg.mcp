@@ -1899,7 +1899,6 @@ export function factsForDao(
  * A course of mortal care, bought and taken.
  */
 export function factsForTreatment(
-    before: Cultivator,
     after: Cultivator,
     course: {
         what: string;
@@ -1919,10 +1918,10 @@ export function factsForTreatment(
         // with no meridians in it is a stay, and it is what somebody who is
         // battered rather than torn is actually buying.
         course.treated.length === 0
-            ? `${before.name} paid ${course.stonesSpent} spirit `
+            ? `You paid ${course.stonesSpent} spirit `
               + `stone${course.stonesSpent === 1 ? '' : 's'} to be kept, fed and looked at for a `
               + `month. ${after.spiritStones} left in the purse.`
-            : `${before.name} paid for ${course.treated.length === 1 ? 'a course' : `${course.treated.length} courses`} `
+            : `You paid for ${course.treated.length === 1 ? 'a course' : `${course.treated.length} courses`} `
               + `of ${course.what}: ${course.cashEach} cash each, which is ${course.stonesEach} spirit `
               + `stone${course.stonesEach === 1 ? '' : 's'}, ${course.stonesSpent} in all. `
               + `${after.spiritStones} left in the purse.`,
@@ -1949,10 +1948,23 @@ export function factsForTreatment(
             counted.set(description, (counted.get(description) ?? 0) + 1);
         }
         for (const [description, howMany] of counted) {
+            // WHAT IT WAS, NOT WHAT IT COSTS WHILE IT IS OPEN.
+            //
+            // An injury description is written for a wound somebody is still
+            // carrying, so it says what it is and then what it does every day
+            // it stays open. Read out after "Closed:" the second half denied
+            // the first word of the sentence it was in:
+            //
+            //   Closed, 2 of them, and all the same: A channel that carries qi
+            //   has been opened along its length. It does not close on its own,
+            //   and every day it stays open is a day the qi moving through it
+            //   makes it slightly worse. They are scar tissue now.
+            const whatItWas = description.slice(0, description.indexOf('. ') + 1)
+                || description;
             lines.push(
                 howMany === 1
-                    ? `Closed: ${description} It is scar tissue now, and scar tissue costs nothing.`
-                    : `Closed, ${howMany} of them, and all the same: ${description} `
+                    ? `Closed: ${whatItWas} It is scar tissue now, and scar tissue costs nothing.`
+                    : `Closed, ${howMany} of them, and all the same: ${whatItWas} `
                       + 'They are scar tissue now, and scar tissue costs nothing.'
             );
         }
