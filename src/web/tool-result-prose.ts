@@ -344,11 +344,26 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         if (fresh.length > 0) {
             // The descriptions are written as sentences and already carry a
             // full stop. Appending another produced "taken in combat..".
-            const said = fresh
-                .map(i => (i.description ?? i.severity ?? 'something').replace(/\.\s*$/, ''))
+            //
+            // AND TWO WOUNDS OF A KIND ARE ONE DESCRIPTION. A meridian opened
+            // twice in one fight printed forty words, then a semicolon, then
+            // the same forty words - which is what the injury table holding one
+            // sentence per severity guarantees whenever a fight lands twice.
+            const byKind = new Map<string, number>();
+            for (const injury of fresh) {
+                const said = (injury.description ?? injury.severity ?? 'something')
+                    .replace(/\.\s*$/, '');
+                byKind.set(said, (byKind.get(said) ?? 0) + 1);
+            }
+            const only = [...byKind.keys()][0] ?? '';
+            const groups = [...byKind]
+                .map(([said, count]) => count === 1 ? said : `${count} of them: ${said}`)
                 .join('; ');
             lines.push(
-                `Came away with ${fresh.length === 1 ? 'a wound' : `${fresh.length} wounds`}: ${said}.`
+                `Came away with ${fresh.length === 1 ? 'a wound' : `${fresh.length} wounds`}`
+                + (fresh.length > 1 && byKind.size === 1
+                    ? `, the same as each other: ${only}.`
+                    : `: ${groups}.`)
             );
         }
 

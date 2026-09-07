@@ -94,6 +94,29 @@ export interface SceneAsPeopleFoundIt {
      * a caller that cannot price one.
      */
     houseWeight?: (houseId: string | null) => number;
+    /**
+     * WHAT WAS SAID ABOUT THIS PERSON LAST TURN.
+     *
+     * This channel runs on every turn, and the renderer is deterministic, so a
+     * reading whose parts have not changed arrives word for word again. Played,
+     * through a bout of four exchanges:
+     *
+     *     Kong Zhaoshan, a little beneath you. They lost a little of what they
+     *     had. They answer, out loud. Nothing they hold reaches. They ask.
+     *
+     * Five times running, and the last three sentences never once changed -
+     * because what somebody reaches for does not change while the fight they
+     * are in does not. A sentence read five times has stopped being a reading
+     * of anybody.
+     *
+     * Given the parts said last turn, the ones that still say the same thing
+     * are dropped, and a person about whom nothing new is true drops out
+     * entirely. The caller owns the memory, the same way it owns `feels`: this
+     * module holds no state between turns and must not start.
+     */
+    saidLastTurn?: (personId: string) => ReadonlySet<string>;
+    /** Called once per person with everything true of them this turn. */
+    noteWhatWasSaid?: (personId: string, parts: readonly string[]) => void;
 }
 
 /**
@@ -270,6 +293,8 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     let unnamedShown = false;
     const lines: string[] = [];
     let spokenFor = 0;
+    /** Involved, and reading exactly as they read last turn. Not overflow. */
+    let readTheSameAsLastTurn = 0;
 
     // ── MORE THAN ONE PERSON DYING IS ONE SENTENCE ───────────────────────
     //
@@ -313,7 +338,7 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
             if (unnamedShown) continue;
             unnamedShown = true;
         }
-        lines.push(dead.has(entry.row.id)
+        const said = dead.has(entry.row.id)
             ? lastSentenceFor(
                 entry.row, nameable, entry.asked, entry.gotAMoment, scene.playerNow.realmOrdinal)
             : sentenceFor(
@@ -342,15 +367,23 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
                         houseId: scene.playerNow.sectId ?? null,
                         houseOrdinal: scene.houseWeight?.(scene.playerNow.sectId ?? null) ?? 0
                     }
-                })
-            ));
+                }),
+                scene.saidLastTurn?.(entry.row.id) ?? null,
+                parts => scene.noteWhatWasSaid?.(entry.row.id, parts)
+            );
+        // A person about whom nothing is newly true drops out, and does not
+        // count against the cap: the cap is there to keep a crowded square from
+        // pushing out the person the turn happened to, and somebody who reads
+        // exactly as they read last turn is not that person.
+        if (said === null) { readTheSameAsLastTurn++; continue; }
+        lines.push(said);
         spokenFor++;
     }
 
     // Two counts, and they are different facts. Somebody the cap pushed out was
     // in it; somebody who only watched was not, and saying so is the whole of
     // what a bystander line is for.
-    const overflow = involved.length - spokenFor;
+    const overflow = involved.length - spokenFor - readTheSameAsLastTurn;
     if (overflow > 0) {
         lines.push(
             `${overflow} other${overflow === 1 ? '' : 's'} here ${overflow === 1 ? 'was' : 'were'} `
@@ -424,16 +457,22 @@ function sentenceFor(
     /** What they feel about the player, where anything has passed between them. */
     feeling: string | null = null,
     /** What they have to answer WITH, where the moment left them room to. */
-    reachedFor: WhatTheyReachFor | null = null
-): string {
+    reachedFor: WhatTheyReachFor | null = null,
+    /** Everything true of them the last time this channel ran. */
+    alreadySaid: ReadonlySet<string> | null = null,
+    /** Told everything true of them now, whether or not it is printed. */
+    said: ((parts: readonly string[]) => void) | null = null
+): string | null {
     const who = nameable
         ? row.name
         : 'Somebody here whose name this cultivator does not have';
     const standing = describeStanding(observerOrdinal, row.realmOrdinal);
     const disposition = whatTheyAreLike(row.id);
 
-    return [
-        `${who}, ${standing}.`,
+    // The head is not a part. It names who this is about, and a reading that
+    // opened with the changed sentence and no name would be a reading of
+    // nobody.
+    const parts = ([
         asked.reading,
         // WHAT THEY FEEL ABOUT THE PLAYER BEFORE WHAT THEY ARE LIKE, because
         // the first is about this pair and the second is about them in
@@ -451,7 +490,14 @@ function sentenceFor(
         // against the person in front of them: an arm, a house, a purse, or
         // asking. The engine names the lever; the narrator writes the words.
         asked.aloud ? reachedFor?.line ?? null : null
-    ].filter((part): part is string => part !== null).join(' ');
+    ] as ReadonlyArray<string | null>).filter((part): part is string => part !== null);
+
+    said?.(parts);
+    const fresh = alreadySaid === null ? parts : parts.filter(part => !alreadySaid.has(part));
+    // Nothing about them is newly true. The turn happened; it did not happen to
+    // them in any way it had not already.
+    if (fresh.length === 0) return null;
+    return [`${who}, ${standing}.`, ...fresh].join(' ');
 }
 
 /**

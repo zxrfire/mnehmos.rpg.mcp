@@ -78,11 +78,27 @@ export type InteractIntent = typeof INTERACT_INTENTS[number];
 /**
  * The denial for each intent, as the sentence a player reads.
  *
- * Written in the third person with the actor's name, because `facts.lines`
- * speaks that way and the narrator turns it around. Each one names the
- * observable that would have changed and says it did not.
+ * ── SECOND PERSON, LIKE EVERYTHING ELSE THE PLAYER READS ─────────────────
+ *
+ * These were written in the third person with the actor's name, on the
+ * reasoning that `facts.lines` spoke that way and the narrator would turn it
+ * around. `facts.lines` does not speak that way any more. Measured across
+ * sixteen played verbs, the player's own name reached the narration from
+ * exactly three places, and every other line in the game says `you` - so one
+ * answer read:
+ *
+ *     Kong Zhaoshan is here, and reads as a little beneath you.
+ *     No apology was made and none was accepted. Whatever stands between
+ *     Zhen Wuxia and them stands exactly as high as it did, unaltered.
+ *
+ * Two people, one of whom is the reader, twice. A narrator handed that has to
+ * reconcile two persons before it can write a sentence, and the deterministic
+ * renderer ships the switch straight through.
+ *
+ * Each line still names the observable that would have changed and says it did
+ * not; that is the whole mechanism and it is untouched.
  */
-const WHAT_DID_NOT_HAPPEN: Readonly<Record<InteractIntent, (who: string) => string>> = {
+const WHAT_DID_NOT_HAPPEN: Readonly<Record<InteractIntent, string>> = {
     // THE ANSWER IS THE OBSERVABLE, and this denied the addressing instead.
     // Played: "I greet the nearest person" was answered with "Reader goes to
     // Wei Minfeng" and then "Nobody greeted Reader" - the engine contradicting
@@ -91,53 +107,53 @@ const WHAT_DID_NOT_HAPPEN: Readonly<Record<InteractIntent, (who: string) => stri
     // Every other line here names the thing that WOULD have changed and says it
     // did not: a purse unopened, a shelf undisturbed. For talking, the player
     // opening their mouth is not in doubt; what did not happen is the reply.
-    talk: who =>
-        `No answer came back. Whatever ${who} said is still hanging, and nobody has said `
-        + 'anything to them.',
+    talk:
+        'No answer came back. Whatever you said is still hanging, and nobody has said anything '
+        + 'to you.',
 
-    negotiate: who =>
-        `No terms were put and none were heard. ${who} offered nothing, nobody countered, and `
-        + 'there is no bargain between them of any kind.',
+    negotiate:
+        'No terms were put and none were heard. You offered nothing, nobody countered, and there '
+        + 'is no bargain between you of any kind.',
 
-    trade: who =>
-        `Nothing changed hands. Every item is where it was, in the hands that already held it, `
-        + `and ${who} is carrying exactly what they arrived carrying.`,
+    trade:
+        'Nothing changed hands. Every item is where it was, in the hands that already held it, '
+        + 'and you are carrying exactly what you arrived carrying.',
 
-    deceive: who =>
-        `No lie was told and nobody believed anything. ${who} has not been taken for anything `
-        + 'they are not, because nothing was put to anybody to be taken either way.',
+    deceive:
+        'No lie was told and nobody believed anything. You have not been taken for anything you '
+        + 'are not, because nothing was put to anybody to be taken either way.',
 
-    interrogate: who =>
-        `No question was put and nothing was answered. Nobody told ${who} a single thing they `
-        + 'did not already know, and nobody was held anywhere or pressed for anything.',
+    interrogate:
+        'No question was put and nothing was answered. Nobody told you a single thing you did '
+        + 'not already know, and nobody was held anywhere or pressed for anything.',
 
-    threaten: who =>
-        `No threat landed. Nobody was frightened of ${who}, nobody gave way, and everybody is `
+    threaten:
+        'No threat landed. Nobody was frightened of you, nobody gave way, and everybody is '
         + 'standing exactly where and how they were standing before.',
 
-    bribe: who =>
-        `No purse was opened. Not one stone left ${who}, nobody was paid anything, and nobody `
-        + 'has agreed to overlook a thing.',
+    bribe:
+        'No purse was opened. Not one stone left you, nobody was paid anything, and nobody has '
+        + 'agreed to overlook a thing.',
 
-    recruit: who =>
-        `Nobody was asked to come along and nobody said yes. No one has taken up with ${who}, `
+    recruit:
+        'Nobody was asked to come along and nobody said yes. No one has taken up with you, '
         + 'changed sides, or left where they were standing.',
 
-    apologise: who =>
-        `No apology was made and none was accepted. Whatever stands between ${who} and them `
-        + 'stands exactly as high as it did, unaltered.',
+    apologise:
+        'No apology was made and none was accepted. Whatever stands between you and them stands '
+        + 'exactly as high as it did, unaltered.',
 
-    seduce: who =>
-        `Nothing passed between anybody. Nobody was charmed, nobody came closer to ${who}, and `
+    seduce:
+        'Nothing passed between anybody. Nobody was charmed, nobody came closer to you, and '
         + 'nothing whatever was begun.',
 
     // The one the defect was found on, and the most concrete on purpose. The
     // played prose was "your hand closing around a manual" and "you pull it
     // from its place on the shelf", so the denial names the shelf and the hand.
-    steal: who =>
-        `Nothing was taken. Nothing left a shelf, a purse or a hand, every object is still `
-        + `exactly where it was and still belongs to whoever it belonged to, and ${who} is `
-        + 'carrying nothing they did not walk in with.'
+    steal:
+        'Nothing was taken. Nothing left a shelf, a purse or a hand, every object is still '
+        + 'exactly where it was and still belongs to whoever it belonged to, and you are '
+        + 'carrying nothing you did not walk in with.'
 };
 
 /**
@@ -148,9 +164,9 @@ const WHAT_DID_NOT_HAPPEN: Readonly<Record<InteractIntent, (who: string) => stri
  * to the same standard as the eleven rather than as a shrug, because a sentence
  * that denies nothing is how this defect started.
  */
-export function whatDidNotHappen(intent: string, who: string): string {
-    const known = (WHAT_DID_NOT_HAPPEN as Record<string, ((who: string) => string) | undefined>)[intent];
-    if (known) return known(who);
-    return `Nothing came of it. Nothing moved, nothing was said that mattered, and ${who} is `
-        + 'standing where they were with everything they arrived with.';
+export function whatDidNotHappen(intent: string): string {
+    const known = (WHAT_DID_NOT_HAPPEN as Record<string, string | undefined>)[intent];
+    if (known) return known;
+    return 'Nothing came of it. Nothing moved, nothing was said that mattered, and you are '
+        + 'standing where you were with everything you arrived with.';
 }

@@ -847,8 +847,7 @@ ${unnamed}`;
             theirOrdinal,
             yourOrdinal: cultivator.realmOrdinal,
             alignment,
-            theirName: party.name,
-            yourName: cultivator.name
+            theirName: party.name
         });
 
         // The engine's account goes on all three channels, for the three

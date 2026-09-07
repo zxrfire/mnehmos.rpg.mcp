@@ -1165,10 +1165,10 @@ function describeCompany(
         }
         // AND WHAT THE CROWD IS, WHICH IS THE HALF A MODEL INVENTED
         if (!standsOut && others > 1) {
-            sentences.push(
-                'none of them reads as anything out of the ordinary, and nothing about the way '
-                + 'they carry themselves suggests otherwise.'
-            );
+            // One clause, not two. The second half said the first half again in
+            // different words - "reads as nothing out of the ordinary" and
+            // "nothing suggests otherwise" are the same observation.
+            sentences.push('none of them reads as anything out of the ordinary.');
         }
         if (standsOut) {
             const standing = describeStanding(observerOrdinal, deepest.ordinal);
@@ -1596,7 +1596,6 @@ export function factsForPlaceHistory(
  * An attempted interaction.
  */
 export function factsForInteraction(
-    cultivator: Cultivator,
     subject: string,
     intent: string,
     subjectFacts: readonly string[]
@@ -1610,11 +1609,14 @@ export function factsForInteraction(
         headline: `${subject}, approached.`,
         structure: [`Stated intent: ${intent}. Carried for the narrator; read by no conditional.`],
         lines: [
-            `${cultivator.name} went to ${subject}.`,
+            // Second person, like every other line the player reads. This
+            // said the player's own name, which put two people into an
+            // answer where one of them is the reader.
+            `You went to ${subject}.`,
             ...subjectFacts,
         ],
         prose: [
-            `${cultivator.name} goes to ${subject}.`,
+            `You go to ${subject}.`,
             subjectFacts.join(' '),
         ].join('\n\n')
     };

@@ -970,6 +970,35 @@ export const WHO_WOULD_TAKE_SOMEBODY_LIKE_ME = new RegExp(
 /**
  * Asking what was done to a place, in the ways people actually ask it.
  */
+/**
+ * ASKED ABOUT THE ASKER, WHICH IS NOT A QUESTION ABOUT THE GROUND.
+ *
+ * `what do (locals|people|folk|they) (say|think|believe|reckon)` is a good
+ * reading of somebody asking after a place, and it does not say what they are
+ * asking ABOUT. Measured, six phrasings of one question:
+ *
+ *     what do people think of me now   ->  the village's crop and its mill
+ *     what do they think of me         ->  the same
+ *
+ * A player asking the most ordinary question in this setting was answered with
+ * a rice terrace. The guard is on the branch rather than inside one pattern,
+ * because every pattern in the list is a place question that a first-person
+ * object turns into a different question entirely.
+ */
+export const ASKED_ABOUT_THE_ASKER =
+    /\b(?:of|about|regarding)\s+(?:me|myself|us|ourselves)\b/;
+
+/**
+ * ASKING WHAT THE WORLD HOLDS ABOUT YOU.
+ *
+ * Named rather than written inline at its branch, because the branch sits far
+ * down the table and two readers above it own sentences that are this question
+ * with a different verb in them. See the branch that pairs it with
+ * {@link ASKED_ABOUT_THE_ASKER}.
+ */
+export const A_QUESTION_ABOUT_STANDING =
+    /\b(?:my reputation|what(?:'s| is) my reputation|how am i regarded|how do (?:they|people|others) (?:see|regard|treat) me|what do people think of me|my standing|what is my standing|how am i seen)\b/;
+
 export const PLACE_HISTORY_PATTERNS: readonly RegExp[] = [
     /\bwhat happened (?:here|to (?:this|the)\b)/,
     /\bwhat became of (?:this|the)\b/,
@@ -2848,6 +2877,21 @@ function planIntent(input: string): PlannedAction {
     // head. Ahead of the `recall` patterns below and behind `RECALL_DAO`,
     // because "what have I heard lately" is in both bags and the one that
     // teaches something is the one worth reaching.
+    // ── AND `about me` IS LEFT WITH IT, DELIBERATELY ─────────────────────
+    //
+    // The obvious next move was to take a question about the asker out of the
+    // world's talk too, and it is wrong. `news` is the ONLY reader in the game
+    // whose answer moves when the player does something worth repeating -
+    // `who-answers-for-a-beast-you-killed.test.ts` uses "what do people say
+    // about me" as exactly that probe, and its header says why: before it,
+    // a house could be owed something for an event no ledger anybody reads
+    // carried, so nobody could repeat it. Routing the sentence to the standing
+    // read answers LESS.
+    //
+    // The honest statement of the gap: nothing in this game answers "what does
+    // the world hold about me". `whatTheWorldHoldsAbout` is the reader for it
+    // and is wired for everybody except the player, whose own record it reads
+    // only to answer who is hunting them.
     if ((NEWS_AND_RUMOUR.test(text) || ASKING_AFTER_THE_WORLD.test(text))
         && !ABOUT_THE_GROUND_HERE.test(text)) {
         return { action: 'news' };
@@ -3653,7 +3697,8 @@ function planIntent(input: string): PlannedAction {
     }
 
     // why the ground is like this
-    if (PLACE_HISTORY_PATTERNS.some(pattern => pattern.test(text))) {
+    if (!ASKED_ABOUT_THE_ASKER.test(text)
+        && PLACE_HISTORY_PATTERNS.some(pattern => pattern.test(text))) {
         const where = namedAfter(input, PLACE_HISTORY_SUBJECT);
         return { action: 'look', intent: 'history', ...(where ? { target: where } : {}) };
     }
@@ -3747,7 +3792,7 @@ function planIntent(input: string): PlannedAction {
     // `what-they-can-place-about-you.ts` - the mirror of a look, which that file
     // states it answers with the two sides swapped. Wiring it to a sentence is
     // its own piece of work; until then the general answer beats none.
-    if (/\b(?:my reputation|what(?:'s| is) my reputation|how am i regarded|how do (?:they|people|others) (?:see|regard|treat) me|what do people think of me|my standing|what is my standing|how am i seen)\b/.test(text)
+    if (A_QUESTION_ABOUT_STANDING.test(text)
         || /\bwhat\s+do(?:es)?\s+(?:he|she|they|the \w+(?:\s+\w+){0,3}?)\s+(?:make of|think of|see in|reckon of)\s+me\b/.test(text)
         || /\bhow\s+do(?:es)?\s+(?:he|she|they|the \w+(?:\s+\w+){0,3}?)\s+(?:see|read|regard|rate)\s+me\b/.test(text)) {
         return { action: 'sect', intent: 'standing' };

@@ -27,6 +27,7 @@ import {
     MATCH_THRESHOLD,
     matchScore,
     resolveAnything,
+    resolveCultivator,
     worldLocationFor
 } from './entities.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
@@ -103,7 +104,32 @@ export const investigateVerb = {
             // turns in a row, all four successful, nothing anywhere saying the
             // ground was drawing down.
             ?? this.groundAtHand(query, cultivator)
-            ?? resolveAnything(this.repos, query, cultivator, scope);
+            ?? resolveAnything(this.repos, query, cultivator, scope)
+            // ── AND A FACE POINTED AT RATHER THAN NAMED ──────────────────
+            //
+            // `somebodyAtHand` is the repo's ONE resolver for a person a
+            // sentence points at instead of naming - "the nearest person", "the
+            // oldest man here", "somebody here" - and every verb aimed at a
+            // person goes through it. This verb did not, so looking at somebody
+            // worked only if the player already had their name:
+            //
+            //     I greet the nearest person   ->  You go to Ji Tianshi.
+            //     I look at the nearest person ->  You go over Cloud Gate
+            //                                     looking for it...
+            //
+            // Which is the commonest sentence in the game answered by searching
+            // the ground for a person, and then calling them "it". Last in the
+            // chain deliberately: a name, a ruin and the ground underfoot are
+            // all better answers when they resolve, and this only ever runs on
+            // a query none of them recognised.
+            ?? (() => {
+                const pointedAt = this.somebodyAtHand(query, cultivator);
+                return pointedAt
+                    ? resolveCultivator(
+                        this.repos, pointedAt.name, cultivator.id, scope, cultivator.realmOrdinal
+                    )
+                    : null;
+            })();
         if (!subject) {
             // ── A NAME THEY HOLD IS NOT A PLACE THAT HAS NO SUCH THING ───
             //

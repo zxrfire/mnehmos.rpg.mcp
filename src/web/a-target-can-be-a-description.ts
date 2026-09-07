@@ -95,6 +95,16 @@ export interface SomebodyDescribable {
     readonly sectId: string | null;
 }
 
+/**
+ * The ways somebody says `nearest` without saying it. Longest first, so
+ * "standing next to me" is never left holding a stray "standing".
+ */
+const A_PHRASE_FOR_NEAREST: readonly string[] = [
+    'standing right next to me', 'standing next to me', 'standing beside me',
+    'right next to me', 'nearest to me', 'closest to me', 'next to me',
+    'beside me', 'in front of me', 'nearest me', 'closest me'
+].sort((a, b) => b.length - a.length);
+
 const ORDERINGS: Readonly<Record<string, WhichEnd>> = Object.freeze({
     nearest: 'nearest', closest: 'nearest',
     youngest: 'youngest', newest: 'youngest',
@@ -183,7 +193,7 @@ const FILLER = new Set([
     'here', 'nearby', 'about', 'around', 'present', 'in', 'room', 'square',
     'front', 'standing', 'one', 'ones', 'person', 'people', 'someone', 'somebody',
     'anyone', 'anybody', 'cultivator', 'cultivators', 'sect', 'sects', 'other',
-    'others', 'from', 'who', 'is', 'are', 'most', 'and',
+    'others', 'from', 'who', 'whoever', 'whomever', 'is', 'are', 'most', 'and',
     // The possessive in front of a title, which is how half of them are said:
     // *my senior brother*, *our elder*. Safe because every title that MEANS
     // something by the possessive - "my master", "my disciple" - is a `TITLES`
@@ -239,6 +249,18 @@ export function theDescriptionThisIs(query: string): ADescription | null {
     let sameHouse = false;
     let tie: string | null = null;
     let carried = realmKey === null ? 0 : 1;
+
+    // ── `nearest` IS RARELY ONE WORD ─────────────────────────────────────
+    //
+    // Every word of "the person next to me" is already filler here except
+    // `next`, so the phrase parsed as no description at all and went to the
+    // resolver that reads names, which asked the room who that was. Measured
+    // against the seven ways a player points at whoever is in reach: six
+    // resolved and this one did not. Folded to the word the table knows, before
+    // the titles, because a title can sit inside one of these.
+    for (const phrase of A_PHRASE_FOR_NEAREST) {
+        if (rest.includes(phrase)) rest = rest.split(phrase).join(' nearest ');
+    }
 
     // Titles, longest first, so "senior brother" is never read as "senior".
     for (const title of Object.keys(TITLES).sort((a, b) => b.length - a.length)) {

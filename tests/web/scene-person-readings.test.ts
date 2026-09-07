@@ -446,3 +446,103 @@ describe('what they feel about the person in front of them', () => {
         expect(lines).not.toContain('carrying what');
     });
 });
+
+describe('a reading that has not changed is not read out again', () => {
+    /**
+     * PLAYED, THROUGH A BOUT OF FOUR EXCHANGES:
+     *
+     *     Kong Zhaoshan, a little beneath you. They lost a little of what they
+     *     had. They answer, out loud. Nothing they hold reaches. They ask.
+     *
+     * Word for word, five turns running. The last three sentences never once
+     * changed, because what somebody reaches for does not change while the
+     * fight they are in does not - and this channel runs on every turn, and the
+     * deterministic renderer prints it verbatim. A sentence read five times has
+     * stopped being a reading of anybody.
+     *
+     * The caller owns the memory. This module holds no state between turns.
+     */
+    function turnFor(
+        remembered: Map<string, ReadonlySet<string>>,
+        them: RosterEntry,
+        dealtWith = true
+    ): string[] {
+        const thisTurn = new Map<string, Set<string>>();
+        const lines = whatThePeopleHereAreAnswering({
+            before: [them],
+            now: [them],
+            playerBefore: player(),
+            playerNow: player(),
+            gate: gateOver([them.id]),
+            declared: [{ personId: them.id, dealtWith }],
+            saidLastTurn: id => remembered.get(id) ?? new Set<string>(),
+            noteWhatWasSaid: (id, parts) => thisTurn.set(id, new Set(parts))
+        });
+        remembered.clear();
+        for (const [id, parts] of thisTurn) remembered.set(id, parts);
+        return lines;
+    }
+
+    it('says it the first time and not the second', () => {
+        const them = person({ id: 'them', name: 'Kong Zhaoshan' });
+        const remembered = new Map<string, ReadonlySet<string>>();
+
+        expect(turnFor(remembered, them).join(' ')).toContain('Kong Zhaoshan');
+        expect(turnFor(remembered, them)).toEqual([]);
+    });
+
+    it('says the part that changed, and only that part', () => {
+        const before = person({ id: 'them', name: 'Kong Zhaoshan', spiritStones: 100 });
+        const remembered = new Map<string, ReadonlySet<string>>();
+
+        const first = turnFor(remembered, before).join(' ');
+        expect(first).toContain('Kong Zhaoshan');
+
+        // The same person, now down most of what they were carrying. What that
+        // costs them is newly true; what they reach for is not.
+        const poorer = person({ id: 'them', name: 'Kong Zhaoshan', spiritStones: 5 });
+        const thisTurn = new Map<string, Set<string>>();
+        const second = whatThePeopleHereAreAnswering({
+            before: [before],
+            now: [poorer],
+            playerBefore: player(),
+            playerNow: player(),
+            gate: gateOver(['them']),
+            declared: [{ personId: 'them', dealtWith: true }],
+            saidLastTurn: id => remembered.get(id) ?? new Set<string>(),
+            noteWhatWasSaid: (id, parts) => thisTurn.set(id, new Set(parts))
+        }).join(' ');
+
+        expect(second).toContain('Kong Zhaoshan');
+        // Everything it says is something the first reading did not say.
+        for (const sentence of second.split('. ').slice(1)) {
+            expect(first, sentence).not.toContain(sentence);
+        }
+    });
+
+    it('remembers what was true, not what was printed', () => {
+        const them = person({ id: 'them', name: 'Kong Zhaoshan' });
+        const remembered = new Map<string, ReadonlySet<string>>();
+
+        turnFor(remembered, them);
+        // Suppressed, and the memory must survive it: a person who read the
+        // same way still reads that way, so the turn after stays silent too.
+        expect(turnFor(remembered, them)).toEqual([]);
+        expect(turnFor(remembered, them)).toEqual([]);
+    });
+
+    it('says everything when the caller keeps no memory at all', () => {
+        const them = person({ id: 'them', name: 'Kong Zhaoshan' });
+        const said = () => whatThePeopleHereAreAnswering({
+            before: [them],
+            now: [them],
+            playerBefore: player(),
+            playerNow: player(),
+            gate: gateOver(['them']),
+            declared: [{ personId: 'them', dealtWith: true }]
+        }).join(' ');
+
+        expect(said()).toContain('Kong Zhaoshan');
+        expect(said()).toBe(said());
+    });
+});

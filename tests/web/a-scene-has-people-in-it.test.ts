@@ -102,10 +102,16 @@ describe('a turn that happened to somebody', () => {
             }
         }
 
-        expect(readings.length).toBe(3);
         // A bout that has taken a quarter of somebody is not the bout that has
         // taken a scratch, and the sentence has to move with it.
-        expect(new Set(readings).size).toBeGreaterThan(1);
+        expect(readings.length).toBeGreaterThan(1);
+        // AND IT NEVER ARRIVES TWICE THE SAME. This used to assert one reading
+        // per round, which was the defect rather than the rule: a channel that
+        // runs every turn printed the identical five sentences under the
+        // identical name for as long as the fight took. A round that finds
+        // nothing newly true of somebody now says nothing about them, so what
+        // reaches the narrator is exactly the rounds that moved.
+        expect(new Set(readings).size).toBe(readings.length);
     }, 300_000);
 
     it('says nothing about anybody on a turn where nothing happened to them', async () => {

@@ -524,10 +524,14 @@ describe('a permitted lookup does not leak the names inside it', () => {
             const rival = SECTS.find(sect => sect.id === rivalId);
             if (rival) expect(text).not.toContain(rival.name);
         }
-        expect(text).toMatch(/none of whom this cultivator could name/i);
+        // THE RULE, NOT THE SENTENCE. Both of these used to pin the phrase
+        // `this cultivator`, which is the engine's word for whoever is asking
+        // and reached the player's face in a channel that says `you`
+        // everywhere else.
+        expect(text).toMatch(/none of whom you could name/i);
         // The seat is a place the player has never heard of either, so it is
         // reported as unlocatable rather than named.
-        expect(text).toMatch(/not something this cultivator could point to/i);
+        expect(text).toMatch(/not somewhere you could point to/i);
         expect(text).not.toContain(withRivals.territory);
     });
 

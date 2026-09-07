@@ -1086,6 +1086,16 @@ export async function handleStanding(args: z.infer<typeof StandingSchema>): Prom
             member: false,
             cultivator: { id: cultivator.id, name: cultivator.name, rank: rankName(cultivator.realmOrdinal) },
             note:
+                // THE QUOTED PHRASE STAYS, AND IT IS THE ONE PLACE IT DOES.
+                //
+                // A command string in scene prose is a menu wearing a sentence
+                // and is cut wherever it turns up. Not here: this answer offers
+                // no affordance channel of its own, the phrase is the whole
+                // route out of having no house, and
+                // `standing-at-no-house-names-the-way-in.test.ts` types it back
+                // in to prove the route reaches the wall. A route named in
+                // words nobody can use is worse than silence, which is what
+                // that file is for.
                 'Unaffiliated. No stipend, no array, no elder, and nobody to notice if this run '
                 + 'ends badly. Houses short of people advertise rather than wait, so what is '
                 + 'nailed up locally is where an intake with a bar and a date on it would be '

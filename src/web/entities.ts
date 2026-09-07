@@ -266,16 +266,26 @@ function nameOrShape(
 }
 
 /**
- * A place name, or an admission that the player could not name it.
+ * A place name, or null where the player could not name it.
+ *
+ * This used to answer the unnameable case with the phrase itself - "somewhere
+ * this cultivator could not name" - which put the engine's own word for the
+ * player into a sentence the player reads, and read as
+ *
+ *     Last known to be at somewhere this cultivator could not name.
+ *
+ * because a caller writing "at ${place}" cannot know it is about to be handed a
+ * clause rather than a name. Null, and each caller says it in its own words.
  */
-function placeOrShape(scope: KnowledgeScope | undefined, place: string | null): string {
+function placeOrShape(
+    scope: KnowledgeScope | undefined,
+    place: string | null
+): string | null {
     if (!place) return 'unrecorded';
     if (!scope) return place;
     const here = (scope.here ?? '').trim().toLowerCase();
     if (here.length > 0 && place.trim().toLowerCase() === here) return place;
-    if (!scope.gate.isAwareOf(scope.holderId, 'place', place)) {
-        return 'somewhere this cultivator could not name';
-    }
+    if (!scope.gate.isAwareOf(scope.holderId, 'place', place)) return null;
     const held = scope.gate
         .awareness(scope.holderId, 'place')
         .find(row => row.id === place);
@@ -333,15 +343,20 @@ function whatTheirRecordSays(
     return `Their own record reads ${read.is.alignment}. ${read.line}`;
 }
 
-/** One line for a list that may be wholly or partly unnameable. */
+/**
+ * One line for a list that may be wholly or partly unnameable.
+ *
+ * Second person, like every other line the player reads. `this cultivator` is
+ * the engine's word for whoever is asking, and it belongs in `structure`.
+ */
 function describeParties(label: string, named: string[], hidden: number): string | null {
     if (named.length === 0 && hidden === 0) return null;
     if (named.length === 0) {
-        return `${label}: ${hidden}, none of whom this cultivator could name.`;
+        return `${label}: ${hidden}, none of whom you could name.`;
     }
     return hidden === 0
         ? `${label}: ${named.join(', ')}.`
-        : `${label}: ${named.join(', ')}, and ${hidden} more this cultivator could not name.`;
+        : `${label}: ${named.join(', ')}, and ${hidden} more you could not name.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -405,7 +420,9 @@ export function resolveCultivator(
         affiliation
             ? `They wear the marks of ${affiliation}${match.sectRank ? `, and are addressed as ${match.sectRank}` : ''}.`
             : `${match.name} answers to nobody visible.`,
-        `Last known to be at ${placeOrShape(scope, match.location)}.`
+        ((where: string | null) => where === null
+            ? 'Last known to be somewhere you could not name.'
+            : `Last known to be at ${where}.`)(placeOrShape(scope, match.location))
     ];
 
     // WHAT THEIR BODY IS, AND THE ONE THING THAT GATES IT
@@ -562,7 +579,7 @@ export function resolveSect(
     facts.push(
         seat === catalogued.territory
             ? `They are seated at ${seat}.`
-            : 'Where they are seated is not something this cultivator could point to on any road they know.'
+            : 'Where they are seated is not somewhere you could point to on any road you know.'
     );
     if (!catalogued.recruits) {
         facts.push('Nobody has ever heard of them taking anyone on.');

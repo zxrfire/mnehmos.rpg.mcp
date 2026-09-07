@@ -452,7 +452,16 @@ export function whatTheyDoAboutBeingWronged(input: {
     /** The wronged party's house, or null if they are on nobody's roll. */
     alignment: SectAlignment | null;
     theirName: string;
-    yourName: string;
+    /**
+     * THE PERSON WRONGED IS NAMED; THE ONE WHO DID IT IS THE READER.
+     *
+     * This took a `yourName` and wrote the player into its own account in the
+     * third person, so one answer carried "Kong Zhaoshan is here, and reads as
+     * a little beneath you" and then "Zhen Wuxia does not walk away from it
+     * whole" - two people, one of whom is the reader twice over. Both callers
+     * were passing the player's own name; every other fact line in the game
+     * says `you`.
+     */
     /**
      * They know rather than suspect. Only consulted for wrongs that happen on
      * their own often enough to be deniable. Defaults to true.
@@ -510,12 +519,12 @@ export function whatTheyDoAboutBeingWronged(input: {
                 : 0.2,
         line: spentThemselves
             ? `${input.theirName} could do nothing about ${whatWasDone(input.wrong)} and did the `
-              + `one thing that reaches. There is nothing left of them. ${input.yourName} did not `
-              + 'walk away from it untouched, and it is the kind of thing people repeat.'
+              + 'one thing that reaches. There is nothing left of them. You did not walk away '
+              + 'from it untouched, and it is the kind of thing people repeat.'
             : unsure
-                ? `${input.theirName} cannot say it was ${input.yourName}. These things fail on `
-                  + 'their own. What they hold is a suspicion, and they hold it hard.'
-                : lineFor(response, input.wrong, input.theirName, input.yourName, realmGap)
+                ? `${input.theirName} cannot say it was you. These things fail on their own. `
+                  + 'What they hold is a suspicion, and they hold it hard.'
+                : lineFor(response, input.wrong, input.theirName, realmGap)
     };
 }
 
@@ -549,7 +558,6 @@ function lineFor(
     response: Reprisal,
     wrong: Wrong,
     theirName: string,
-    yourName: string,
     realmGap: number
 ): string {
     const what = whatWasDone(wrong);
@@ -558,21 +566,21 @@ function lineFor(
         case 'warned':
             return realmGap <= -1
                 ? `${theirName} noticed ${what}, and is in no position to do a thing about it. `
-                  + `They tell ${yourName} exactly that, and it is all they have.`
-                : `${theirName} noticed ${what} and lets it go with words. ${yourName} has been `
-                  + 'told once.';
+                  + 'They tell you exactly that, and it is all they have.'
+                : `${theirName} noticed ${what} and lets it go with words. You have been told `
+                  + 'once.';
         case 'driven_off':
-            return `${theirName} answers ${what} by putting ${yourName} out. No wound and no `
-                + 'quarter: they are not welcome where this person stands.';
+            return `${theirName} answers ${what} by putting you out. No wound and no quarter: `
+                + 'you are not welcome where this person stands.';
         case 'injured':
-            return `${theirName} answers ${what} in the body. ${yourName} does not walk away `
-                + 'from it whole.';
+            return `${theirName} answers ${what} in the body. You do not walk away from it `
+                + 'whole.';
         case 'crippled':
-            return `${theirName} answers ${what} by taking the road away. What ${yourName} `
-                + 'carries out of this does not close.';
+            return `${theirName} answers ${what} by taking the road away. What you carry out of `
+                + 'this does not close.';
         case 'killed':
-            return `${theirName} answers ${what} by killing ${yourName}. The gap was wide `
-                + 'enough that it was a decision rather than a fight.';
+            return `${theirName} answers ${what} by killing you. The gap was wide enough that `
+                + 'it was a decision rather than a fight.';
         default:
             return `${theirName} does nothing about ${what}.`;
     }

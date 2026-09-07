@@ -971,6 +971,9 @@ export type {
  */
 let ambientDb: Database.Database | null = null;
 
+/** Nobody has been read yet this run. */
+const NOTHING_SAID_YET: ReadonlySet<string> = new Set<string>();
+
 /**
  * Phrases that point at a person rather than naming one.
  */
@@ -1465,6 +1468,15 @@ export class GameService {
      * Things this turn named to the player, being collected for {@link lastTurn}.
      */
     private namedThisTurn: ThingNamed[] = [];
+    /**
+     * Everything the scene channel found true of each person last turn.
+     *
+     * Keyed by person. Read by `sayWhoWasInIt` so a reading that has not
+     * changed is not printed again, and rewritten there every turn from what
+     * was TRUE rather than from what was printed - a person suppressed for
+     * reading the same way still reads that way the turn after.
+     */
+    private saidAboutThemLastTurn = new Map<string, ReadonlySet<string>>();
     /**
      * THE WORLD MOVED, AND IT IS WRITTEN NOW.
      *
@@ -4401,10 +4413,10 @@ ${noticed}`;
         // The player gets the honest in-fiction shape of it - an approach made,
         // and then the act's own denial, which is the only half of this that
         // was ever measured to work. See `unresolved-attempt-denials.ts`.
-        const facts = factsForInteraction(cultivator, party.name, intent, party.facts);
+        const facts = factsForInteraction(party.name, intent, party.facts);
 
         // AND THE ACT ITSELF DID NOT HAPPEN, SAID SO IT CANNOT BE DROPPED
-        sayThisWhateverTheNarratorDoes(facts, whatDidNotHappen(intent, cultivator.name));
+        sayThisWhateverTheNarratorDoes(facts, whatDidNotHappen(intent));
 
         if (spoken) addHearing(facts, spoken);
 
@@ -12139,6 +12151,7 @@ ${fit.line}`;
         declared: readonly DeclaredMovement[] = []
     ): void {
         const now = this.present(playerNow);
+        const saidThisTurn = new Map<string, Set<string>>();
         for (const said of whatThePeopleHereAreAnswering({
             before: squareBefore,
             now,
@@ -12153,13 +12166,27 @@ ${fit.line}`;
             // question is a filter over it. Nothing is stored: see
             // `what-they-feel-about-you.ts` on why an emotion column drifts and
             // a read cannot.
-            feels: this.whatTheSquareFeelsAbout(playerNow)
+            feels: this.whatTheSquareFeelsAbout(playerNow),
+            // WHAT WAS ALREADY TRUE OF THEM LAST TURN.
+            //
+            // This channel runs on every turn and the renderer prints it
+            // verbatim, so a reading whose parts have not changed arrives
+            // word for word again. Played through a four-exchange bout: the
+            // same three closing sentences under the same name, five turns
+            // running. The memory is held here rather than in the reader,
+            // which stays a function of the scene it is handed.
+            saidLastTurn: id => this.saidAboutThemLastTurn.get(id) ?? NOTHING_SAID_YET,
+            noteWhatWasSaid: (id, parts) => saidThisTurn.set(id, new Set(parts))
         })) {
             execution.facts.lines.push(said);
             execution.facts.prose = execution.facts.prose.length > 0
                 ? `${execution.facts.prose}\n\n${said}`
                 : said;
         }
+        // Everything true of everybody this turn, printed or not: somebody
+        // who read the same as last turn still reads that way, and the turn
+        // after this one has to know it.
+        this.saidAboutThemLastTurn = saidThisTurn;
     }
 
     /**

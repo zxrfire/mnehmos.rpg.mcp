@@ -1367,8 +1367,7 @@ export const combatVerbs = {
             theirOrdinal: held.standingOrdinal ?? cultivator.realmOrdinal,
             yourOrdinal: cultivator.realmOrdinal,
             alignment: factionId ? (getSect(factionId)?.alignment ?? null) : null,
-            theirName: held.party.name,
-            yourName: cultivator.name
+            theirName: held.party.name
         });
         const cost = lifted !== null && lifted.hadBefore > 0
             ? lifted.taken / lifted.hadBefore
