@@ -221,6 +221,58 @@ not the rank"* and passes through every reshuffle.
   it covers and confirm it goes red. Several tests in this repo were written that way and
   say so in their headers.
 
+## Tests are living documentation
+
+> **A test's header is where this repo keeps its reasons. It is a first class
+> output of the work, and it moves when the behaviour moves.**
+
+The companion to the two rules above: [Tests test behaviour, not
+implementation](#tests-test-behaviour-not-implementation) says what to assert,
+and [A test can be rewritten. A test that pins a bug must
+be](#a-test-can-be-rewritten-a-test-that-pins-a-bug-must-be) says when to
+change one. Neither says what the header is for, and the header is the part a
+later reader actually needs.
+
+**Why here rather than in a design document.** Every substantial test in this
+tree opens by recording the defect as it was OBSERVED, the numbers if it was
+measured, and the ruling it encodes. `nobody-is-invincible.test.ts` carries the
+half spent measurement as a table. `ground-holder-lines.test.ts` opens
+*"Measured on a fresh run at Wind Turn on The Burial Sands, five ways of asking
+gave five wrong answers"*. `duties-wired.test.ts` records that the second rung
+of every house in the world was unreachable and nobody was told. Somebody
+asking why a decision was made finds it in a test header more reliably than
+anywhere else in the repo, because the header sits against the thing it
+justifies and cannot drift away from it the way a separate document can.
+
+So:
+
+- **Write the header for the person who arrives at a red test in a year.** What
+  went wrong, how it was seen, what was measured, and what rule the assertions
+  encode. A test landed without one has thrown away the reasoning that
+  justified it, and the next person will delete it as inscrutable.
+- **State the numbers if you measured any**, with what produced them. A figure
+  with no provenance is a figure the next person will assume is arbitrary and
+  edit. This is the same rule [A design decision that lives only as a number
+  needs a test](#a-design-decision-that-lives-only-as-a-number-needs-a-test)
+  states from the other end.
+- **Living means it moves.** When behaviour legitimately changes, the header
+  changes in the same commit. A header describing a world that no longer exists
+  is worse than no header, because it is believed, and it carries more
+  authority than an ordinary stale comment because it sits next to a passing
+  assertion.
+- **Do not quietly relabel.** Rewriting a header to match new behaviour while
+  discarding the reasoning that justified the old behaviour destroys the
+  record. Say what changed and why it was right to change, which is what
+  [A test can be rewritten](#a-test-can-be-rewritten-a-test-that-pins-a-bug-must-be)
+  already demands for a number and is true of a rule as well.
+- **A comment describing a gap is not a justification for it.** A header that
+  explains why something is missing has documented the defect, not licensed it.
+  Say plainly which it is: an argued decision, or a gap somebody has written
+  down and not yet closed.
+
+None of this makes a test permanent. It makes it legible enough that the next
+person can tell whether it should move.
+
 ## Nothing in the lore is bespoke
 
 The companion rule to the one above, and the one most often broken by accident.
