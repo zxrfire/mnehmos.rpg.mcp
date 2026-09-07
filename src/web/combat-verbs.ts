@@ -389,9 +389,24 @@ export const combatVerbs = {
                             10, Math.floor(theirRecord.cultivation.untreatedInjuries)
                         )),
                         maxHp: Math.max(1, Math.round(maxBodyOf(theirRecord))),
-                        hp: Math.max(1, Math.round(
-                            bodyStandingOn(theirRecord, Math.floor(run.elapsedDays))
-                        ))
+                        // ON THE WORLD'S CLOCK, which is the clock the wound
+                        // was stamped on. `bodyOnDay` is a world day and mending
+                        // runs forward from it, so measuring it against the
+                        // RUN's elapsed days - a much smaller number - gives
+                        // zero days of mending forever, and anybody the world
+                        // ever hurt reads as permanently one hit from dead.
+                        //
+                        // Which nothing noticed while nothing wrote a world
+                        // NPC's bar. `gatherings.ts` now writes what a bout
+                        // took, and the first thing it broke was the player
+                        // swinging at somebody who had been to one: an opponent
+                        // frozen at a sliver is not a fight, it is `no_contest`,
+                        // and no account is written about a contest there was
+                        // no contest in.
+                        hp: Math.max(1, Math.round(bodyStandingOn(
+                            theirRecord,
+                            Math.floor(this.atHand?.currentDay ?? run.elapsedDays)
+                        )))
                     }
                     : {})
             };

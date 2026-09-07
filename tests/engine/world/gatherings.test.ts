@@ -48,6 +48,15 @@ function build(opts: {
     purse?: number;
     /** Give every house its own province, so nobody is anybody's neighbour. */
     eachInOwnProvince?: boolean;
+    /**
+     * Put one elder in each house, a realm above the chosen.
+     *
+     * Which every real house has, and which matters because an elder standing
+     * in the yard is who stops a bout going wrong - see
+     * `whoCouldHaveStoppedIt`. Off by default so the suite's other cases keep
+     * the exact populations they were written against.
+     */
+    withElders?: boolean;
 } = {}): Built {
     const state = createWorld({ seed: 'gather-test', skipPriorAges: true, regionCount: 0 });
 
@@ -103,6 +112,20 @@ function build(opts: {
             });
             npc = setRealm(npc, 12 + i * 3, state.currentDay);
             state.npcs.push({ ...npc, factionId, factionRankIndex: 1 });
+        }
+        if (opts.withElders) {
+            // Untagged: an elder watches, and tagging them chosen would enter
+            // them in the draw. Core Formation, which is a realm above both of
+            // the chosen above and is therefore somebody who can get a hand in.
+            let elder = createNpc(state.seed, {
+                id: `npc-${seq++}`,
+                bornOnDay: state.currentDay - 365 * 300,
+                onDay: state.currentDay,
+                locationId: `seat-${factionId}`,
+                occupation: 'disciple'
+            });
+            elder = setRealm(elder, 19, state.currentDay);
+            state.npcs.push({ ...elder, factionId, factionRankIndex: 4 });
         }
     }
     return { state };
@@ -352,15 +375,28 @@ describe('the four kinds do different things', () => {
         }
     });
 
-    it('a competition ranks everybody who came, exactly once each', () => {
+    it('a competition ranks everybody who came, exactly once each, ON THEIR OWN BOARD', () => {
+        // A competition is run BY REALM: a Qi Condensation winner, a Foundation
+        // Establishment winner, and so on. So places run 1..n WITHIN a bracket
+        // and the field as a whole is not one ladder - which it used to be, and
+        // which measured only which entrant was furthest along.
         const competitions = drawn.get('competition') ?? [];
         expect(competitions.length).toBeGreaterThan(0);
         for (const held of competitions) {
             expect(held!.placings.length).toBe(held!.attendeeIds.length);
-            expect(held!.placings.map(p => p.place)).toEqual(
-                held!.placings.map((_, i) => i + 1)
-            );
             expect(new Set(held!.placings.map(p => p.npcId)).size).toBe(held!.placings.length);
+
+            const boards = new Map<string, number[]>();
+            for (const p of held!.placings) {
+                const places = boards.get(p.bracket) ?? [];
+                places.push(p.place);
+                boards.set(p.bracket, places);
+            }
+            expect(boards.size).toBeGreaterThan(0);
+            for (const [, places] of boards) {
+                const sorted = [...places].sort((a, b) => a - b);
+                expect(sorted).toEqual(sorted.map((_, i) => i + 1));
+            }
         }
     });
 
@@ -397,14 +433,30 @@ describe('the four kinds do different things', () => {
     it('a challenge is fought with the combat resolver and can hurt somebody', () => {
         const challenges = drawn.get('challenge') ?? [];
         expect(challenges.length).toBeGreaterThan(0);
-        // Nobody is meant to be hurt, so most bouts leave nothing; what must be
-        // true is that the possibility exists and that nothing DIES.
+        // Nobody is MEANT to be hurt, so most bouts leave nothing.
+        //
+        // NOT "an even number of placings". That assumed a placing per side of
+        // every bout, so somebody who stood up twice was ranked twice on one
+        // board - which is not a ranking. Everybody who fought is placed once.
         for (const held of challenges) {
-            expect(held!.placings.length % 2).toBe(0);
+            expect(new Set(held!.placings.map(p => p.npcId)).size)
+                .toBe(held!.placings.length);
         }
     });
 
-    it('nobody dies at a friendly bout', () => {
+    it('dying at a friendly bout is rare, and it is not impossible', () => {
+        // THIS TEST USED TO SAY NOBODY DIES, and asserted every attendee still
+        // alive after two hundred gatherings. The design owner: *"it's not that
+        // nothing dies. someone dies and the thing is cancelled (or goes on,
+        // idk, depends on the elders). nobody is invincible."*
+        //
+        // The old claim was never a rule anyway - it held because the gathering
+        // threw `ConfrontationResult.hp` away, so no bar could be emptied. The
+        // claim that replaces it is the one that was actually meant: a bout is
+        // not a duel, so a death is an exchange landing wrong and has to stay
+        // rare. See `nobody-is-invincible.test.ts` for the death itself.
+        let challenges = 0;
+        let withADeath = 0;
         for (let i = 0; i < 200; i++) {
             const fresh = build({
                 edges: [['house-b', 'house-a', 0.4], ['house-c', 'house-a', 0.4]],
@@ -415,8 +467,18 @@ describe('the four kinds do different things', () => {
                 forStream('lethality', String(i))
             );
             if (!held || held.kind !== 'challenge') continue;
-            for (const npc of fresh.state.npcs) expect(npc.status).toBe('alive');
+            challenges++;
+            const dead = fresh.state.npcs.filter(n => n.status !== 'alive');
+            if (dead.length > 0) withADeath++;
+            // And whoever went down went down FROM THE BOUT. A gathering is not
+            // allowed to kill somebody of anything else.
+            for (const npc of dead) {
+                expect(npc.endNote).toMatch(/friendly bout/);
+                expect(npc.diedOnDay).not.toBeNull();
+            }
         }
+        expect(challenges).toBeGreaterThan(0);
+        expect(withADeath / challenges).toBeLessThan(0.15);
     });
 });
 
@@ -440,9 +502,16 @@ describe('the yearly pass', () => {
     });
 
     it('holds a circle to roughly its own interval and not to the event budget', () => {
+        // WITH ELDERS, because this measures the INTERVAL over fifteen
+        // centuries and the circle has to survive them to be counted. Without
+        // one in the yard, a hundred gatherings of accumulated bad blood
+        // eventually produce a killing and six people with no replacements
+        // kill each other off - which is the mechanism working, asserted in
+        // `nobody-is-invincible.test.ts`, and a confound here.
         const { state } = build({
             edges: [['house-b', 'house-a', 0.4], ['house-c', 'house-a', 0.4]],
-            chosen: { 'house-a': 2, 'house-b': 2, 'house-c': 2 }
+            chosen: { 'house-a': 2, 'house-b': 2, 'house-c': 2 },
+            withElders: true
         });
         let count = 0;
         for (let year = 1; year <= 1500; year++) {

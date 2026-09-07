@@ -4,6 +4,12 @@
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import {
+    REALM_TIERS,
+    realmForOrdinal,
+    realmIndexOf,
+    type RealmKey
+} from '../cultivation/realms.js';
+import {
     assessPower,
     resolveConfrontation,
     type CombatantInput,
@@ -28,6 +34,7 @@ import {
     addGoal,
     bodyStandingOn,
     carryingWounds,
+    markDead,
     maxBodyOf,
     relationshipWith,
     upsertRelationship,
@@ -35,6 +42,19 @@ import {
     type NpcRecord,
     type RelationshipKind
 } from './npc-state.js';
+import {
+    whetherItGoesOn,
+    whetherTheyGotUp,
+    whoCouldHaveStoppedIt,
+    whyTheyStoodUp,
+    WHAT_THEY_CAME_TO_DO,
+    WHAT_A_KILLING_COSTS_YOU_WITH_A_WITNESS,
+    WHAT_DOING_IT_ON_PURPOSE_ADDS,
+    WHAT_IT_COSTS_YOU_WITH_THEIR_OWN,
+    type HowItLooked,
+    type WhatTheyStoodUpFor
+} from './nobody-is-invincible.js';
+import { settleNpcDeath } from './time.js';
 import type { FactionRecord, WorldState } from './world-state.js';
 import { isRuined, isSomethingYouWouldSwing, ruin } from './possessions.js';
 
@@ -65,6 +85,16 @@ export const MAX_INTRODUCTIONS = 12;
 
 /** Bouts fought at one gathering. `MAX_EXCHANGES` is the budget inside each. */
 export const MAX_BOUTS = 3;
+
+/**
+ * How far each reason for standing up is prepared to go, for picking which of
+ * the two the bout belongs to. An ordering, not a weight - nothing multiplies
+ * by it.
+ */
+const HOW_FAR_THEY_CAME_TO_GO: Readonly<Record<WhatTheyStoodUpFor, number>> = {
+    a_test: 0,
+    to_end_them: 1
+};
 
 /** People who go into a site together. */
 export const MAX_ENTRANTS = 8;
@@ -105,10 +135,24 @@ export interface GatheringPlacing {
     npcId: string;
     name: string;
     factionId: string | null;
-    /** 1 is first. Ties are broken deterministically, never left equal. */
+    /** 1 is first ON THEIR OWN BOARD. Ties broken deterministically, never equal. */
     place: number;
     /** The scoring number, for a harness that wants to see the distribution. */
     score: number;
+    /**
+     * The realm the board was run at.
+     *
+     * The design owner: *"remember those competitions are by realm too, so you
+     * can have a qi condensation winner, a foundation establishment winner, and
+     * so on."*
+     *
+     * Which is how the genre works and also the only way the thing means
+     * anything: ranking a Qi Condensation disciple against a Core Formation one
+     * measures which of them is further along, which everybody already knew.
+     * Bracketed, a first place is a statement about the people who could
+     * plausibly have beaten you.
+     */
+    bracket: RealmKey;
 }
 
 /** One tie a gathering actually wrote, for the caller and for measurement. */
@@ -344,7 +388,7 @@ export function holdGathering(
             summary = runMeeting(state, attendees, day, fact.id, rng, ties);
             break;
         case 'challenge':
-            summary = runChallenge(state, attendees, day, fact.id, rng, ties, placings);
+            summary = runChallenge(state, circle, attendees, day, fact.id, rng, ties, placings);
             break;
         case 'competition': {
             const result = runCompetition(state, circle, attendees, day, fact.id, rng, ties, placings);
@@ -544,9 +588,15 @@ function impression(state: WorldState, from: NpcRecord, to: NpcRecord, rng: Cult
 
 /**
  * Two people test each other and nobody is meant to be hurt.
+ *
+ * MEANT TO BE. The design owner: *"it's not that nothing dies. someone dies and
+ * the thing is cancelled (or goes on, idk, depends on the elders). nobody is
+ * invincible."* Which the combat layer already agreed with - it was this
+ * function throwing the body away. See `nobody-is-invincible.ts`.
  */
 function runChallenge(
     state: WorldState,
+    circle: Circle,
     attendees: readonly NpcRecord[],
     day: number,
     factId: string,
@@ -558,6 +608,11 @@ function runChallenge(
     // are not the ones who stand up at every gathering for a century.
     const all = crossHousePairs(attendees);
     if (all.length === 0) return 'Nobody would stand up.';
+    // Collected and ranked AFTER, because a place used to be `placings.length + 1`
+    // - bout order - so place 3 was the winner of the second drawn bout and the
+    // fact's `beneficiaries` named whoever happened to be drawn first. A board
+    // is a ranking or it is nothing.
+    const bouts: { winner: NpcRecord; loser: NpcRecord; wonWith: number; lostWith: number }[] = [];
     const pairs: [NpcRecord, NpcRecord][] = [];
     const used = new Set<number>();
     for (let n = 0; n < MAX_BOUTS && used.size < all.length; n++) {
@@ -567,12 +622,52 @@ function runChallenge(
         pairs.push(all[at]);
     }
 
+    // WHO IS ACTUALLY STANDING THERE. Not `attendees` - that is the chosen who
+    // came to compete, and the person who steps into a bout going wrong is an
+    // elder watching from the edge of it, who was never on that list. The
+    // courtyard is everybody who came PLUS the household whose courtyard it is,
+    // which is also the room that rules on it afterwards.
+    const cameWith = new Set(attendees.map(n => n.id));
+    const inTheYard: NpcRecord[] = [
+        ...attendees,
+        ...state.npcs.filter(n =>
+            n.factionId === circle.host.id && n.status === 'alive'
+            // AT THE SEAT, not on the roll. A house's people are scattered
+            // across postings and sendings, and somebody stationed in a city
+            // four hundred li away did not see this and cannot hold it against
+            // anybody. It also keeps the yard a room rather than a census.
+            && n.locationId === circle.host.seatLocationId
+            && !cameWith.has(n.id))
+    ];
+
     const lines: string[] = [];
     let hurt = 0;
     let outclassed = 0;
+    let killed = 0;
+    // Set when the room rules that the rest of the card is not held. Checked in
+    // the loop condition rather than by breaking, so a death in the LAST bout
+    // still runs everything below - the ruling is a fact about the gathering
+    // whether or not there was anything left to cancel.
+    let calledOff = false;
 
-    for (let i = 0; i < pairs.length; i++) {
-        const [a, b] = pairs[i];
+    for (let i = 0; i < pairs.length && !calledOff; i++) {
+        const drawn = pairs[i]!;
+
+        // WHY EACH OF THEM STOOD UP, and the bout takes its character from
+        // whoever meant it more. The resolver carries one intent - the
+        // aggressor's - so the one who came for something other than a bout is
+        // put on that side rather than having their reason quietly dropped
+        // because the draw happened to list them second.
+        const why = [
+            whyTheyStoodUp({ who: drawn[0], against: drawn[1].id }),
+            whyTheyStoodUp({ who: drawn[1], against: drawn[0].id })
+        ] as const;
+        const meantItMore = HOW_FAR_THEY_CAME_TO_GO[why[1]] > HOW_FAR_THEY_CAME_TO_GO[why[0]]
+            ? 1 : 0;
+        const a = drawn[meantItMore]!;
+        const b = drawn[meantItMore === 0 ? 1 : 0]!;
+        const came = why[meantItMore]!;
+
         const result = resolveConfrontation(
             combatantOf(a, state),
             combatantOf(b, state),
@@ -580,7 +675,12 @@ function runChallenge(
                 rng: forStream(state.seed, 'gathering-bout', factId, i),
                 ambient: 'normal',
                 turn: 1,
-                intent: { goal: 'subdue', willWithdraw: true }
+                intent: {
+                    goal: WHAT_THEY_CAME_TO_DO[came],
+                    // Somebody here for a bout lets the other one break off.
+                    // Somebody here to end it does not.
+                    willWithdraw: came !== 'to_end_them'
+                }
             }
         );
 
@@ -615,9 +715,47 @@ function runChallenge(
         // the house's shelf is one row poorer in a way somebody can look up.
         lines.push(...applyBoutBreakages(state, result.brokenObjects, day));
 
+        // HOW IT LOOKED. Intent first and the damage second: somebody who came
+        // to end it went past the mark whatever the fight then did, and a bout
+        // meant honestly can still cripple somebody by going too far. Hoisted
+        // above the winner branch because a death and an injury are read the
+        // same way and both need it.
+        const looked: HowItLooked = came === 'to_end_them'
+            || result.outcome === 'crippled'
+            || result.outcome === 'humiliation'
+            || (loser !== null
+                && (result.injuries[loser.id] ?? []).some(w => w.severity === 'crippling'))
+            ? 'past_the_mark'
+            : 'an_accident';
+
+        // AND WHAT IT LEFT STANDING IN THE BODY. `ConfrontationResult.hp` is
+        // documented "the caller writes these" and this caller never did, which
+        // is the entire reason a gathering could not kill anybody: not a rule
+        // about friendly bouts, an omission. Replayed over 600 of them, 1 ends
+        // with a bar at zero and 508 of 1200 people walk out under a quarter.
+        const stopped = whoDidNotGetUp(state, [a, b], inTheYard, result, day);
+        lines.push(...stopped.said);
+        for (const gone of stopped.down) {
+            killed++;
+            lines.push(`${gone.who.name} did not get up`);
+            heldAgainstTheKiller(state, gone, inTheYard, looked, factId, day, ties);
+
+            // AND THE ELDERS RULE. Not a chance that it continues - a room, and
+            // some of them knew the person on the ground.
+            const own = state.npcs.filter(
+                n => n.factionId === circle.host.id && n.status === 'alive');
+            const ruling = whetherItGoesOn({
+                who: gone.who.factionId === circle.host.id ? 'the_hosts_own' : 'a_guest',
+                how: looked,
+                roll: own.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
+                rankCount: circle.host.ranks.length
+            });
+            lines.push(ruling.line);
+            if (!ruling.goesOn) calledOff = true;
+        }
+
         if (winner && loser) {
-            const ugly = result.outcome === 'crippled' || result.outcome === 'humiliation'
-                || (result.injuries[loser.id] ?? []).some(w => w.severity === 'crippling');
+            const ugly = looked === 'past_the_mark';
             if (ugly) {
                 hurt++;
                 write(state, loser, winner,
@@ -634,8 +772,13 @@ function runChallenge(
                 write(state, winner, loser, 0.25, 'Worth standing up with.', factId, day, ties);
                 lines.push(`${winner.name} took the bout from ${loser.name}`);
             }
-            placings.push(place(winner, placings.length + 1, result.aggressor.total));
-            placings.push(place(loser, placings.length + 1, result.defender.total));
+            // THE WINNER'S OWN POWER, and the loser's. `result.aggressor` is
+            // side A of the exchange and NOT whoever won it, so handing it to
+            // the winner recorded the loser's strength as the winner's score
+            // whenever B took the bout - measured at 30 of 167 bouts, 18%.
+            const wonWith = winner.id === a.id ? result.aggressor.total : result.defender.total;
+            const lostWith = winner.id === a.id ? result.defender.total : result.aggressor.total;
+            bouts.push({ winner, loser, wonWith, lostWith });
         } else {
             // A stalemate is not a loss. Both of them come away with a rival
             // and neither of them with an account.
@@ -645,9 +788,161 @@ function runChallenge(
         }
     }
 
+    // ── AND THE BOARD, ONE PER REALM ─────────────────────────────────────
+    //
+    // Everybody who stood up, ranked against the people who could plausibly
+    // have beaten them. Winners above losers, and within each by what they
+    // actually put out.
+    const showing = new Map<string, { npc: NpcRecord; score: number; won: boolean }>();
+    for (const bout of bouts) {
+        showing.set(bout.winner.id, { npc: bout.winner, score: bout.wonWith, won: true });
+        if (!showing.has(bout.loser.id)) {
+            showing.set(bout.loser.id, { npc: bout.loser, score: bout.lostWith, won: false });
+        }
+    }
+    for (const [, board] of boardsFor([...showing.values()].map(r => r.npc))) {
+        const ranked = board
+            .map(npc => showing.get(npc.id)!)
+            .sort((x, y) => (y.won ? 1 : 0) - (x.won ? 1 : 0)
+                || y.score - x.score
+                || (x.npc.id < y.npc.id ? -1 : 1));
+        for (let i = 0; i < ranked.length; i++) {
+            placings.push(place(ranked[i]!.npc, i + 1, ranked[i]!.score));
+        }
+    }
+
     return `Friendly bouts: ${lines.join('; ')}.`
+        + (killed > 0 ? ` ${killed} did not walk out of it.` : '')
+        + (calledOff ? ' The rest of the card was not held.' : '')
         + (hurt > 0 ? ` ${hurt} went further than anyone intended.` : '')
         + (outclassed > 0 ? ` ${outclassed} found out how far behind they are.` : '');
+}
+
+/**
+ * Down, and up again in a week. Floored at one rather than left holding a zero
+ * that a later pass reading the row would take for a corpse.
+ */
+function floored(npc: NpcRecord, day: number): NpcRecord {
+    if (npc.cultivation.hp > 0) return npc;
+    return { ...npc, cultivation: { ...npc.cultivation, hp: 1, bodyOnDay: day } };
+}
+
+/** Somebody who fought, and the person who was standing over them. */
+interface WentDown {
+    who: NpcRecord;
+    by: NpcRecord;
+}
+
+/**
+ * The body each of them was left standing on, and whoever was not.
+ *
+ * The death itself is `survival.ts`'s to declare and this asks it. What is
+ * decided here is only who to hand the gate.
+ */
+function whoDidNotGetUp(
+    state: WorldState,
+    fought: readonly [NpcRecord, NpcRecord],
+    inTheYard: readonly NpcRecord[],
+    result: ConfrontationResult,
+    day: number
+): { down: WentDown[]; said: string[] } {
+    const down: WentDown[] = [];
+    const said: string[] = [];
+    const [a, b] = fought;
+    for (const person of fought) {
+        const at = state.npcs.findIndex(n => n.id === person.id);
+        if (at < 0) continue;
+        const standing = state.npcs[at]!;
+        // A missing key is not a wound. The resolver only reports a bar it
+        // actually moved, and reading `?? 0` would kill everybody who was never
+        // touched - so an absent one reads as whole.
+        const left = result.hp[person.id];
+        const got = whetherTheyGotUp({
+            npc: standing,
+            hp: left === undefined ? maxBodyOf(standing) : left,
+            onDay: day
+        });
+        if (got.cause === null) {
+            state.npcs[at] = got.npc;
+            continue;
+        }
+
+        // AN EMPTIED BAR IS NOT A BODY, and for most of a gathering it cannot
+        // become one. Measured over 2,666 replayed bouts fought as tests, every
+        // emptied bar came back `capture` - 115 of 115 - which is defined as
+        // the loser being TAKEN ALIVE. Somebody trying to stop you does not
+        // kill you however badly it goes, and `result.finished` is the
+        // resolver's own word for the difference. `combat-manage.ts` gates the
+        // player's kills on exactly this.
+        //
+        // So what reaches here is a bout somebody came to end - see
+        // `whyTheyStoodUp` - and the last thing between that and a body is
+        // whether anybody in the yard could get a hand in.
+        if (!result.finished || result.loserId !== person.id) {
+            state.npcs[at] = floored(got.npc, day);
+            continue;
+        }
+        const couldReach = whoCouldHaveStoppedIt({
+            present: inTheYard,
+            fighting: [a.id, b.id],
+            reachedRealm: Math.max(
+                realmIndexOf(a.cultivation.realmOrdinal),
+                realmIndexOf(b.cultivation.realmOrdinal)
+            )
+        });
+        if (couldReach.length > 0) {
+            state.npcs[at] = floored(got.npc, day);
+            said.push(`${couldReach[0]!.name} put a stop to it`);
+            continue;
+        }
+        state.npcs[at] = got.npc;
+
+        const other = person.id === a.id ? b : a;
+        state.npcs[at] = markDead(state.npcs[at]!, day,
+            `Went down at a friendly bout with ${other.name}, and did not get up.`);
+        // The same handoff every other death in the world gets: heirs, goals,
+        // and what they were carrying. A gathering does not get its own.
+        settleNpcDeath(state, state.npcs[at]!, day);
+        down.push({ who: state.npcs[at]!, by: other });
+    }
+    return { down, said };
+}
+
+/**
+ * What the room holds against the person who was still standing.
+ *
+ * The design owner: *"the killer does get negative rep tho."* Which is written
+ * here as what everybody who watched now thinks of them, because that is what a
+ * reputation is in this world - there is no field, and adding one would put the
+ * fact in two places. Their own house holds it hardest, and the ties feed
+ * `settleHouseStanding`, so the houses move on it too.
+ */
+function heldAgainstTheKiller(
+    state: WorldState,
+    gone: WentDown,
+    watching: readonly NpcRecord[],
+    looked: HowItLooked,
+    factId: string,
+    day: number,
+    ties: GatheringTie[]
+): void {
+    const onPurpose = looked === 'past_the_mark' ? WHAT_DOING_IT_ON_PURPOSE_ADDS : 0;
+    const note = looked === 'past_the_mark'
+        ? `Killed ${gone.who.name} at a friendly bout and meant it.`
+        : `Killed ${gone.who.name} at a friendly bout.`;
+
+    for (const witness of watching) {
+        if (witness.id === gone.by.id || witness.id === gone.who.id) continue;
+        if (state.npcs.find(n => n.id === witness.id)?.status !== 'alive') continue;
+        // Whether they have to carry the body home is the whole difference
+        // between a house that will not sit with you again and a house that
+        // heard about it.
+        const theirs = gone.who.factionId !== null && witness.factionId === gone.who.factionId;
+        const delta = (theirs
+            ? WHAT_IT_COSTS_YOU_WITH_THEIR_OWN
+            : WHAT_A_KILLING_COSTS_YOU_WITH_A_WITNESS) + onPurpose;
+        write(state, witness, gone.by, delta, note, factId, day, ties);
+    }
 }
 
 /**
@@ -701,24 +996,41 @@ function runCompetition(
     ties: GatheringTie[],
     placings: GatheringPlacing[]
 ): { summary: string; selectedUpwardId: string | null } {
-    const scored = attendees.map(npc => {
-        const power = assessPower(combatantOf(npc, state), { ambient: 'normal' }).total;
-        const showing = 1 + (rng.next() - 0.5) * 2 * SHOWING_SPREAD;
-        return { npc, score: power * showing };
-    }).sort((a, b) => b.score - a.score || (a.npc.id < b.npc.id ? -1 : 1));
+    // ONE BOARD PER REALM. Ranking a Qi Condensation disciple against a Core
+    // Formation one measures which of them is further along, which everybody
+    // in the room already knew. Bracketed, a first place is a statement about
+    // the people who could plausibly have beaten you - and a house comes away
+    // with a Qi Condensation winner AND a Foundation winner, which is what a
+    // sect competition in this genre produces.
+    const scored: { npc: NpcRecord; score: number }[] = [];
+    for (const [, board] of boardsFor(attendees)) {
+        const ranked = board.map(npc => {
+            const power = assessPower(combatantOf(npc, state), { ambient: 'normal' }).total;
+            const showing = 1 + (rng.next() - 0.5) * 2 * SHOWING_SPREAD;
+            return { npc, score: power * showing };
+        }).sort((a, b) => b.score - a.score || (a.npc.id < b.npc.id ? -1 : 1));
 
-    for (let i = 0; i < scored.length; i++) {
-        placings.push(place(scored[i].npc, i + 1, scored[i].score));
+        for (let i = 0; i < ranked.length; i++) {
+            placings.push(place(ranked[i]!.npc, i + 1, ranked[i]!.score));
+        }
+        scored.push(...ranked);
     }
 
     // Prestige, which is what the placing was for. Positive at the top of the
     // board, negative at the bottom, and the size of it scales with the field -
     // coming last in a field of twelve says more than coming last in four.
+    // AGAINST THE BOARD THEY WERE ON, not against the room. Coming first in a
+    // field of two says less than coming first in a field of twelve, and a
+    // bracket with one person in it is not a win at all - it is somebody
+    // standing on a stage alone.
+    const boardSize = new Map<RealmKey, number>();
+    for (const p of placings) boardSize.set(p.bracket, (boardSize.get(p.bracket) ?? 0) + 1);
     for (const p of placings) {
         if (!p.factionId) continue;
         const faction = state.factions.find(f => f.id === p.factionId);
         if (!faction) continue;
-        const share = placings.length <= 1 ? 0 : 1 - 2 * ((p.place - 1) / (placings.length - 1));
+        const size = boardSize.get(p.bracket) ?? 1;
+        const share = size <= 1 ? 0 : 1 - 2 * ((p.place - 1) / (size - 1));
         faction.resources.prestige = Number(faction.resources.prestige ?? 0) + share;
     }
 
@@ -756,10 +1068,26 @@ function runCompetition(
         }
     }
 
-    const board = placings.slice(0, 3).map(p => `${p.place}. ${p.name}`).join(', ');
+    // ONE LINE PER BOARD, NAMED. Rendered flat, a bracketed field reads as a
+    // broken ranking - "1. Xiao Yaozhi, 2. Lu Rongwu, 1. Iron Ridge Shen" is
+    // two winners and no way to see why. The realm is what makes it legible,
+    // and it is what a house is actually boasting about.
+    const boards = new Map<RealmKey, GatheringPlacing[]>();
+    for (const p of placings) {
+        const rows = boards.get(p.bracket);
+        if (rows) rows.push(p); else boards.set(p.bracket, [p]);
+    }
+    const board = [...boards.entries()]
+        // A bracket nobody could have lost to is not a result. It is still a
+        // placing on the record; it is just not worth saying out loud.
+        .filter(([, rows]) => rows.length > 1)
+        .map(([realm, rows]) => `${REALM_TIERS.find(t => t.key === realm)?.name ?? realm}: `
+            + rows.slice(0, 3).map(p => `${p.place}. ${p.name}`).join(', '))
+        .join('. ');
     return {
         summary: `${circle.host.name} ranked ${placings.length} chosen of `
-            + `${new Set(attendees.map(n => n.factionId)).size} houses. ${board}.`
+            + `${new Set(attendees.map(n => n.factionId)).size} houses`
+            + (board.length > 0 ? `. ${board}.` : ', and no two of them at the same height.')
             + (selectedUpwardId
                 ? ` ${champion?.name} was taken into the ${circle.host.name} at its lowest rank.`
                 : ''),
@@ -794,8 +1122,18 @@ function runExpedition(
         ? raceForTheProof(state, entrants, site, day, rng)
         : contestTheHaul(state, entrants, site, day, rng);
 
-    for (let i = 0; i < result.ranked.length; i++) {
-        placings.push(place(result.ranked[i].npc, i + 1, result.ranked[i].score));
+    // ONE BOARD PER REALM here too. An expedition ranks by what somebody
+    // brought out, and what a Qi Condensation disciple can bring out of a
+    // sealed hall is not the same question as what a Core Formation one can -
+    // so a flat ranking measures the rung again. Re-placed within each bracket
+    // rather than re-scored: the order the site produced is the order, and only
+    // the numbering is per-board.
+    const byScore = new Map(result.ranked.map(r => [r.npc.id, r.score]));
+    for (const [, board] of boardsFor(result.ranked.map(r => r.npc))) {
+        for (let i = 0; i < board.length; i++) {
+            const npc = board[i]!;
+            placings.push(place(npc, i + 1, byScore.get(npc.id) ?? 0));
+        }
     }
 
     // What happened inside is what the ties are made of. Somebody who came out
@@ -1100,7 +1438,30 @@ function crossHousePairs(attendees: readonly NpcRecord[]): [NpcRecord, NpcRecord
 }
 
 function place(npc: NpcRecord, at: number, score: number): GatheringPlacing {
-    return { npcId: npc.id, name: npc.name, factionId: npc.factionId, place: at, score };
+    return {
+        npcId: npc.id,
+        name: npc.name,
+        factionId: npc.factionId,
+        place: at,
+        score,
+        bracket: realmForOrdinal(npc.cultivation.realmOrdinal).key
+    };
+}
+
+/**
+ * The boards a field is split into, strongest bracket first.
+ *
+ * Read off the realm ladder rather than a list here, so a renamed or added tier
+ * is a board without anybody touching this file.
+ */
+function boardsFor(entrants: readonly NpcRecord[]): Map<RealmKey, NpcRecord[]> {
+    const boards = new Map<RealmKey, NpcRecord[]>();
+    for (const npc of entrants) {
+        const key = realmForOrdinal(npc.cultivation.realmOrdinal).key;
+        const board = boards.get(key);
+        if (board) board.push(npc); else boards.set(key, [npc]);
+    }
+    return boards;
 }
 
 /**
