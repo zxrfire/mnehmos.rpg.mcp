@@ -270,8 +270,44 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     let unnamedShown = false;
     const lines: string[] = [];
     let spokenFor = 0;
+
+    // ── MORE THAN ONE PERSON DYING IS ONE SENTENCE ───────────────────────
+    //
+    // `lastSentenceFor` is a fixed sentence, so two deaths in the same span
+    // came out word for word identical except for the name:
+    //
+    //   Yun Huiya, well beneath you. They are dying, and there was time enough
+    //   in it for them to know so. They say the last thing they are going to say.
+    //   Han Lanping, well beneath you. They are dying, and there was time enough
+    //   in it for them to know so. They say the last thing they are going to say.
+    //
+    // Which is the exact failure this whole channel was written to avoid, and
+    // the one `theRoom` already solves for watchers: say them once, together.
+    // Only the nameable ones - somebody the player cannot name is lifted out at
+    // most once by the rule below, and folding them into a list would name them
+    // by implication.
+    const namedDead = involved.filter(entry =>
+        dead.has(entry.row.id)
+        && scene.gate.isAwareOf(scene.playerNow.id, 'cultivator', entry.row.id));
+    const foldedIntoOne = new Set<string>();
+    if (namedDead.length > 1) {
+        for (const entry of namedDead) foldedIntoOne.add(entry.row.id);
+        const names = namedDead.map(entry => entry.row.name);
+        const said = namedDead.filter(entry => entry.asked.aloud).length;
+        lines.push(
+            `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} are dying. `
+            + (said === 0
+                ? 'None of them says anything.'
+                : said === namedDead.length
+                    ? 'Each of them says a last thing.'
+                    : `${said} of them ${said === 1 ? 'says' : 'say'} a last thing. `
+                      + 'The rest say nothing.')
+        );
+    }
+
     for (const entry of involved) {
         if (lines.length >= PEOPLE_WORTH_A_SENTENCE) break;
+        if (foldedIntoOne.has(entry.row.id)) continue;
         const nameable = scene.gate.isAwareOf(scene.playerNow.id, 'cultivator', entry.row.id);
         if (!nameable) {
             if (unnamedShown) continue;

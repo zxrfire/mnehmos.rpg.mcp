@@ -808,8 +808,32 @@ export function reportFromDigest(digest: PlayerDigest | null): WorldReport {
         };
     }
 
+    // ONE LINE PER THING THAT HAPPENED, whatever reached them about it.
+    //
+    // The digest groups by kind and channel, which is what the inspector below
+    // wants: hearing the same death from a house and from a passing trader is
+    // two facts about how news moves. It is one fact about the world, and the
+    // player was reading it twice -
+    //
+    //   Year 1000: A holding up the valley has changed hands within a family.
+    //   Year 1000: A house has been in white for a month. (2 times over the span)
+    //   Year 1000: A holding up the valley has changed hands within a family.
+    //   Year 1000: A house has been in white for a month. (2 times over the span)
+    //
+    // - which reads as the engine stuttering, and is worse than an unheard
+    // event because the player cannot tell it from two similar things
+    // happening. Collapsed on the rendered text, so the count says what the
+    // repetitions were and the structure channel keeps every row.
+    const byText = new Map<string, { year: number; text: string; occurrences: number }>();
+    for (const line of digest.lines) {
+        const key = `${line.year}|${line.text}`;
+        const held = byText.get(key);
+        if (held) held.occurrences += line.occurrences;
+        else byText.set(key, { year: line.year, text: line.text, occurrences: line.occurrences });
+    }
+
     return {
-        lines: digest.lines.map(line => {
+        lines: [...byText.values()].map(line => {
             const many = line.occurrences > 1 ? ` (${line.occurrences} times over the span)` : '';
             return `Year ${line.year}: ${line.text}${many}`;
         }),
