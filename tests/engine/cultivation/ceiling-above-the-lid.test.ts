@@ -79,7 +79,7 @@ describe('the manual axis above the Lid', () => {
         // function was written to fix in the first place.
         const noBook = techniqueCeiling(20, NO_MANUAL_CEILING);
         expect(noBook.state).toBe('no_method');
-        expect(noBook.line).toMatch(/It is a book, or somebody willing to teach them one/);
+        expect(noBook.line).toMatch(/a book, or somebody willing to teach them one/);
 
         const ended = techniqueCeiling(20, 20);
         expect(ended.state).toBe('exhausted');

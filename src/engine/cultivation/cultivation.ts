@@ -380,22 +380,28 @@ export function techniqueCeiling(
             label: nothingLeftToAccumulateFor
                 ? 'No cultivation method, and nothing left for one to carry them to'
                 : 'No cultivation method: there is no book',
+            // ONE SENTENCE, AND THE ROUTE OUT OF IT.
+            //
+            // This ran to five: sitting in a quiet room not being cultivation,
+            // nothing accumulating and nothing ever will, standing at this rung
+            // FOR AS LONG AS THEY LIVE - which is a forecast conditional on
+            // never buying the book the same paragraph tells them to buy - and
+            // what is missing being neither years nor discipline.
+            //
+            // A new player is told this three times in their first three
+            // answers, because three different reads all correctly report the
+            // ceiling. At five sentences each that is most of what they have
+            // read. The fact is that nothing accumulates without a method, and
+            // the useful half is what closes it.
             line: nothingLeftToAccumulateFor
-                ? 'This cultivator is practising no cultivation method, and at ' +
-                  `${rankName(realmOrdinal)} it would not matter if they were. There is no ` +
-                  'rung above this one that qi buys, so there is nothing for a manual to ' +
-                  'carry them to and nothing for the sitting to accumulate. What is left is ' +
-                  'not a book. It is what they understand.'
-                : 'This cultivator is practising no cultivation method at all. Sitting in a ' +
-                  'quiet room and breathing is not cultivation: there is no road for the ' +
-                  'qi to take, so nothing accumulates and nothing ever will. ' +
-                  `They will stand at ${rankName(realmOrdinal)} for as long as they live. ` +
-                  'What is missing is not years and not discipline. ' +
+                ? 'No cultivation method, and at ' +
+                  `${rankName(realmOrdinal)} a manual would carry them nowhere: there is no ` +
+                  'rung above this one that qi buys. What is left is what they understand.'
+                : 'No cultivation method, so nothing accumulates however long they sit. ' +
                   (holdsAnUnlearnedCopy
-                      ? 'They are carrying a copy they have never opened. Owning it and ' +
-                        'having sat down with it are separate facts, and only the second ' +
-                        'one teaches anybody anything.'
-                      : 'It is a book, or somebody willing to teach them one.')
+                      ? 'They are carrying a copy they have never opened, and owning it is ' +
+                        'not reading it.'
+                      : 'What closes that is a book, or somebody willing to teach them one.')
         };
     }
 

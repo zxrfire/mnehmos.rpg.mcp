@@ -623,8 +623,10 @@ export const seclusionVerbs = {
         const next = await this.theNextVolume(cultivator);
 
         const wouldBe = wall.state === 'no_method'
-            ? 'There is no road for the qi to take, so the whole stretch returns exactly nothing.'
-            : 'The book has ended, so the whole stretch returns exactly nothing.';
+            // The ceiling line above has already said why. This says what it
+            // cost, which is the part that is about this stretch.
+            ? 'The stretch returns nothing.'
+            : 'The book has ended, so the stretch returns nothing.';
 
         const pointer = next
             ? `${next} carries further than you stand, and you could be taught it. `

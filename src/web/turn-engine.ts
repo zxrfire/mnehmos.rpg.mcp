@@ -9449,10 +9449,11 @@ ${opened.text}` : receipt,
                 );
             }
         } else {
-            lines.push(
-                'No method is being practised. Sitting in a quiet room and breathing is not '
-                + 'cultivation: without a road for the qi to take, nothing accumulates.'
-            );
+            // Said plainly, because the ceiling read and the seclusion refusal
+            // both say it too - a new player meets this three times in their
+            // first three answers, and at four sentences each it was most of
+            // what they had read.
+            lines.push('No method is being practised, so nothing accumulates.');
         }
 
         if (compatible.length === 0 && conflicting.length === 0) {

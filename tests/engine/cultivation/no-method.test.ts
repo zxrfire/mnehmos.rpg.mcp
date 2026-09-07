@@ -56,8 +56,14 @@ describe('the fourth reason a manual fails somebody: there is no manual', () => 
         // The lesson a silent stall teaches is "sit longer", which is the exact
         // opposite of the true one.
         const line = techniqueCeiling(0, NO_MANUAL_CEILING).line!;
-        expect(line).toContain('not years');
-        expect(line).toContain('nothing ever will');
+        // MORE YEARS ARE NOT THE ANSWER, in whatever words. This pinned the
+        // clause "What is missing is not years and not discipline", which was
+        // one of five sentences the line used to run to; "nothing accumulates
+        // however long they sit" is the same claim in one.
+        expect(line).toMatch(/however long they sit|not years/i);
+        // Same rule, same reason: the claim is that sitting does not close it,
+        // not the particular five words it used to close on.
+        expect(line).toMatch(/nothing accumulates|nothing ever will/i);
     });
 
     it('says nothing at all when the manual is still teaching', () => {
@@ -112,7 +118,7 @@ describe('it reaches the player, not just the inspector', () => {
         const said = result.events.filter(e => e.kind === 'method_ceiling');
         expect(said.length).toBe(1);
         expect(said[0].data.state).toBe('no_method');
-        expect(said[0].summary).toContain('no cultivation method at all');
+        expect(said[0].summary).toMatch(/no cultivation method/i);
     });
 
     it('says it once across a long seclusion, not once per chunk', () => {
@@ -163,7 +169,7 @@ describe('a copy in the bag is not a road, and it is not an absence either', () 
     it('still says find a book to somebody who holds none', () => {
         const empty = techniqueCeiling(0, NO_MANUAL_CEILING);
 
-        expect(empty.line).toMatch(/It is a book, or somebody willing to teach them one/);
+        expect(empty.line).toMatch(/a book, or somebody willing to teach them one/);
         expect(empty.line).not.toMatch(/never opened/i);
     });
 
@@ -190,7 +196,7 @@ describe('a copy in the bag is not a road, and it is not an absence either', () 
     it('says nothing about a held copy above the Lid, where no book is the answer', () => {
         const above = techniqueCeiling(46, NO_MANUAL_CEILING, true);
 
-        expect(above.line).toMatch(/It is what they understand/);
+        expect(above.line).toMatch(/what they understand/);
         expect(above.line).not.toMatch(/never opened/i);
     });
 });

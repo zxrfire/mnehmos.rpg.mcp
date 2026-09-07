@@ -141,7 +141,7 @@ describe('lines the player must read survive a narrator that skips them', () => 
         });
         const { game } = await stalledButFunded('req-guard', provider);
         const result = await game.cultivate(1800, { anyway: true });
-        expect(result.narration).toMatch(/no road for the qi/i);
+        expect(result.narration).toMatch(/no cultivation method|nothing accumulates/i);
     });
 });
 
@@ -153,13 +153,13 @@ describe('the ceiling is answerable without spending the decade', () => {
         // "0 of 100 toward the next rank" with no explanation attached invites
         // another decade, and the true answer is that no number of decades
         // moves it.
-        expect(status.narration).toMatch(/no road for the qi/i);
+        expect(status.narration).toMatch(/no cultivation method|nothing accumulates/i);
     });
 
     it('is in the seclusion preamble, before the years are spent', async () => {
         const { game } = await stalledButFunded('ceil-pre');
         const result = await game.cultivate(1800, { anyway: true });
-        expect(result.narration).toMatch(/no road for the qi/i);
+        expect(result.narration).toMatch(/no cultivation method|nothing accumulates/i);
     });
 
     it('goes quiet the moment they hold a book', async () => {
@@ -168,7 +168,7 @@ describe('the ceiling is answerable without spending the decade', () => {
         await game.act('I buy the Lesser Qi-Gathering Manual');
         await game.act('I learn the Lesser Qi-Gathering Manual');
         const status = await game.act('how am I doing');
-        expect(status.narration).not.toMatch(/no road for the qi/i);
+        expect(status.narration).not.toMatch(/no cultivation method|nothing accumulates/i);
     });
 });
 
