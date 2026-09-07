@@ -677,6 +677,10 @@ describe('CultivatorRepository.roster', () => {
             kind: 'pc',
             spiritRoot: 'single_fire',
             sex: 'female',
+            // Carried for the same reason `sex` is, and for the same reason:
+            // a fact one store held and the other did not would make the
+            // answer depend on which table somebody came out of.
+            physique: null,
             realmOrdinal: 4,
             location: 'Azure Cloud Sect outer courtyard',
             sectId: sect.id,
