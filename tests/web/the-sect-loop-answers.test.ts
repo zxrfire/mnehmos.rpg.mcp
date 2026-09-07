@@ -33,9 +33,17 @@ describe('the board can be acted on', () => {
      * The definite article resolves when there is one thing to resolve to. A
      * player should not have to retype a seven-word title to accept the only
      * job on the wall.
+     *
+     * WHICH NOW NEEDS A BOARD WITH ONE THING ON IT, and a member of a house no
+     * longer has one: the house posts its own work, so the wall holds about a
+     * dozen lines. Somebody on nobody's roll is not being asked by anybody and
+     * reads the catalogue alone, which at the bottom rung is a single job - so
+     * that is where the rule is still expressible. See
+     * `a-house-posts-what-it-needs-doing.test.ts`.
      */
     it('takes the only mission on the board when asked for "the mission"', async () => {
-        const { game } = await inAHouse('take-the-mission');
+        const { game } = makeGame({ seed: 'take-the-mission', worldEnabled: true });
+        await game.newRun('Rogue');
         const listed = await game.act('what missions are there');
         expect(listed.narration).toMatch(/What a Poor Prefecture/);
 
@@ -44,6 +52,24 @@ describe('the board can be acted on', () => {
         expect(taken.narration, 'the board refused the only thing on it')
             .not.toMatch(/it is not there/i);
         expect(taken.narration).toMatch(/Sect duty/i);
+    }, 120_000);
+
+    /**
+     * And with a wall full of them, the same sentence is a question.
+     *
+     * Measured before this: it came back "you read it twice and it is not
+     * there", about a board holding twelve lines. A player pointing at "the
+     * mission" has not said which one, and the useful answer is the list -
+     * telling them the thing in front of them does not exist is not a refusal,
+     * it is a wrong statement about the world.
+     */
+    it('and shows the wall when "the mission" could be any of a dozen', async () => {
+        const { game } = await inAHouse('the-mission-is-ambiguous');
+        const asked = await game.act('I take the mission');
+        expect(asked.narration).not.toMatch(/it is not there/i);
+        expect(asked.narration).not.toMatch(/Sect duty/i);
+        // What is actually on it, so the next sentence can name one.
+        expect(asked.narration).toMatch(/contribution/i);
     }, 120_000);
 
     /**

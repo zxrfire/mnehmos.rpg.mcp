@@ -529,6 +529,9 @@ import {
     type AnOfferStandingHere
 } from '../engine/world/what-somebody-standing-here-would-part-with.js';
 import { assessAcquisition, type AcquisitionRoute } from '../engine/encounters/index.js';
+import {
+    whichPostingTheyMeant
+} from '../engine/encounters/what-a-house-has-on-its-board.js';
 import type {
     ArrivableFact,
     DutyCandidate
@@ -1149,6 +1152,19 @@ function sharesADistinctivePhrase(query: string, title: string): boolean {
         }
     }
     return false;
+}
+
+/**
+ * The board offer a posted duty's reason names, as a candidate rather than an
+ * entry, so the call site above stays one expression.
+ */
+function matchedPosting(
+    wanted: string,
+    offers: readonly DutyCandidate[]
+): DutyCandidate | undefined {
+    const entry = whichPostingTheyMeant(wanted, offers.map(o => o.entry));
+    if (entry === null) return undefined;
+    return offers.find(o => o.entry.id === entry.id);
 }
 
 /** Words that name nothing on their own, so a shared one means nothing. */
@@ -10154,9 +10170,23 @@ ${fit.line}`;
             && board.offers.length === 1
             && GameService.THE_ONE_ON_THE_BOARD.test(wanted);
 
+        // AND THE SAME SENTENCE, WITH TWELVE THINGS ON THE WALL, IS A READ.
+        //
+        // "I take the mission" used to be unambiguous because the board held
+        // one line. A house posts its own work now, so the same words point at
+        // nothing in particular - and the answer that came back was "you read
+        // it twice and it is not there", about a wall with twelve on it. They
+        // have not said which; showing them is the answer, not a refusal.
+        const pointedAtNoneInParticular =
+            wanted.length > 0
+            && board.offers.length > 1
+            && GameService.THE_ONE_ON_THE_BOARD.test(wanted);
+
         // ── the wall, read ──
         if (!pointedAtTheOnlyOne
-            && (wanted.length < 3 || GameService.BOARD_IN_GENERAL.test(wanted))) {
+            && (pointedAtNoneInParticular
+                || wanted.length < 3
+                || GameService.BOARD_IN_GENERAL.test(wanted))) {
             const lines: string[] = [];
             if (board.offers.length === 0) {
                 lines.push(board.membership
@@ -10194,7 +10224,14 @@ ${fit.line}`;
         const chosen = board.offers.length === 1 && GameService.THE_ONE_ON_THE_BOARD.test(wanted)
             ? board.offers[0]
             : board.offers.find(offer => matchScore(wanted, offer.entry.name) > MATCH_THRESHOLD)
-                ?? board.offers.find(offer => sharesADistinctivePhrase(wanted, offer.entry.name));
+                ?? board.offers.find(offer => sharesADistinctivePhrase(wanted, offer.entry.name))
+                // AND THE HOUSE'S OWN POSTINGS, by the reason they were posted
+                // for. Both matchers above refuse a single word naming a
+                // multi-word title, correctly - but "I take the escort" against
+                // "An escort at Autumn Gate, for Azure Cloud Pavilion" is a
+                // player naming a thing off a closed table of seven reasons,
+                // not guessing. See `whichPostingTheyMeant`.
+                ?? matchedPosting(wanted, board.offers);
         if (!chosen) {
             const going = board.offers.map(offer => offer.entry.name).join(', ');
             return refused('encounters.sectBoardFor', 'sect', factsForRefusal(

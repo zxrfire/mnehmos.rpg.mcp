@@ -29,6 +29,13 @@ import {
     type EncounterValence
 } from '../engine/encounters/index.js';
 import { rungAndOrdinal } from './facts.js';
+import {
+    whatAHouseHasOnItsBoard
+} from '../engine/encounters/what-a-house-has-on-its-board.js';
+import { dutyTermsFor, summonable } from '../engine/encounters/duties.js';
+import type {
+    HouseAsItStands
+} from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
 import type { Cultivator, SimEvent } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
@@ -543,8 +550,17 @@ export interface SectBoard {
  */
 export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectBoard {
     const membership = membershipFor(deps, cultivator);
-    const offers = commissionBoard(cultivator.realmOrdinal, membership)
-        .sort((a, b) => b.terms.contribution - a.terms.contribution ||
+    const offers = [
+        ...commissionBoard(cultivator.realmOrdinal, membership),
+        // AND WHAT THE HOUSE ITSELF NEEDS DOING. The catalogue is a fixed list
+        // with ordinal windows on it, and measured through this very function
+        // it holds ONE offer at the bottom rung and NOTHING AT ALL from Core
+        // Formation upward. A house's own postings are pitched at whoever is
+        // reading the board, so the board does not run out - and they are the
+        // sendings that house was going to make anyway, so nothing here is
+        // invented. See `what-a-house-has-on-its-board.ts`.
+        ...whatTheHouseItselfNeedsDone(deps, cultivator, membership)
+    ].sort((a, b) => b.terms.contribution - a.terms.contribution ||
             b.terms.stones - a.terms.stones ||
             (a.entry.id < b.entry.id ? -1 : 1));
 
@@ -557,6 +573,46 @@ export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectB
             reason: row.regard.reaction
         }))
     };
+}
+
+/**
+ * The house's own postings, priced by the same rule as everything else.
+ *
+ * Nothing without a house and nothing without a world: a rogue reads whatever
+ * the catalogue has, which is what being on nobody's roll means.
+ */
+function whatTheHouseItselfNeedsDone(
+    deps: EncounterDeps,
+    cultivator: Cultivator,
+    membership: Membership | null
+): DutyCandidate[] {
+    if (!membership || !deps.world) return [];
+    const faction = deps.world.factions.find(f => f.id === membership.factionId);
+    if (!faction || faction.dissolvedOnDay !== null) return [];
+
+    const standing: HouseAsItStands = {
+        id: faction.id,
+        name: faction.name,
+        holdsGround: deps.world.locations.some(l => l.controllingFactionId === faction.id),
+        standing: faction.standing,
+        // What somebody has turned up recently, which is the house's own
+        // reason for putting a party on the road after it.
+        hasAFind: deps.world.history.facts.some(f => f.kind === 'treasure_found')
+    };
+
+    const out: DutyCandidate[] = [];
+    for (const entry of whatAHouseHasOnItsBoard({
+        house: standing,
+        ordinal: cultivator.realmOrdinal
+    })) {
+        const terms = dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission');
+        // The same gate the catalogue goes through. A posting pitched where the
+        // reader cannot survive it is not offered to them, it is refused, and
+        // `boardRefusals` is where a refusal belongs.
+        if (!summonable(terms.regard.band)) continue;
+        out.push({ entry, terms, weight: entry.weight });
+    }
+    return out;
 }
 
 /**

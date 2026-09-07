@@ -9,6 +9,7 @@ import { ApproachLeverageSchema } from '../schema/cultivation.js';
 
 // The board's own titles, so any name the game prints is a name it accepts.
 import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
+import { SENDING_REASONS } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
 import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // The other half of the word `tell`: carrying news of a wrong TO somebody,
@@ -1247,6 +1248,17 @@ export function dutyNamed(text: string): string | undefined {
     for (const phrase of DUTY_PHRASES) {
         if (text.includes(phrase)) return phrase;
     }
+    // AND THE WORK THE HOUSE POSTED ITSELF, which is most of the board now.
+    // `COMMISSION_ENTRIES` is a fixed list with ordinal windows on it and holds
+    // nothing at all above Foundation Establishment; the rest of what a player
+    // can take is generated from the house's own reasons for putting a party on
+    // the road. Those reasons are a fixed table too, so the vocabulary is still
+    // known here - it is only the house and the place in the finished title
+    // that are not. See `what-a-house-has-on-its-board.ts`.
+    for (const posted of POSTED_DUTY_PHRASES) {
+        const found = posted.exec(text);
+        if (found) return found[0];
+    }
     return undefined;
 }
 
@@ -1258,6 +1270,30 @@ const DUTY_PHRASES: readonly string[] = [...new Set(
 )]
     .filter(name => name.length >= 12)
     .sort((a, b) => b.length - a.length);
+
+/**
+ * The same for a posted duty, as patterns rather than phrases.
+ *
+ * A generated title reads "An escort at Willow Village, for Azure Dew Sect",
+ * and a player says "I take the escort". So the reason's own leading article is
+ * dropped and any article is allowed in its place - matching on the part of the
+ * name that is actually the job.
+ *
+ * The length guard the phrase list uses is applied to what is left after the
+ * article, at a lower bar: these are a small curated set of multi-word names
+ * rather than the whole catalogue, and they are only ever consulted when a
+ * taking verb is already in verb position. "I take the escort" is a duty. "I
+ * escort the merchant" is not a taking verb and never reaches here.
+ */
+const POSTED_DUTY_PHRASES: readonly RegExp[] = [...new Set(
+    SENDING_REASONS.map(reason => reason.name.toLowerCase().replace(/^(?:an?|the)\s+/, ''))
+)]
+    .filter(name => name.length >= 6)
+    .sort((a, b) => b.length - a.length)
+    // The names are words and spaces - that table is authored, not user
+    // input - so nothing needs escaping here, and a name that stops being
+    // words and spaces should be fixed there rather than escaped here.
+    .map(name => new RegExp(String.raw`\b(?:an?|the)?\s*` + name + String.raw`\b`));
 
 // WHAT AM I CARRYING IN MY HEAD
 
