@@ -46,6 +46,29 @@
  * change wants its own measurement and its own ruling; it is not something to
  * arrive at as a side effect of the toll having somewhere to land.
  *
+ * ── AND THE GATHERING HALF WAS MEASURED, WHICH IS WHY IT IS NOW WRITTEN ──
+ *
+ * `gatherings.ts` DOES write the bar back now, and it did arrive as a side
+ * effect - of asking why nobody could ever die at a friendly bout. The answer
+ * was that `ConfrontationResult.hp` says "the caller writes these" and that
+ * caller did not. This paragraph is the reason it could not just be done, so
+ * the measurement it asks for was taken, over lived worlds:
+ *
+ *     50 years   2 of 541 living people below full      0 at half or less
+ *     200 years  5 of 546                               0 at half or less
+ *     500 years  0 of 549                               0 at half or less
+ *
+ * Nobody is half spent, at any span. A circle gathers about once in fifteen
+ * years and `HP_RECOVERY_FRACTION_PER_DAY` returns a full bar in a fraction of
+ * that, so the depletion this paragraph feared needs bouts far closer together
+ * than the world has them. Pinned in
+ * `tests/engine/world/nobody-is-invincible.test.ts` so that a change which does
+ * make them that frequent fails here rather than being noticed as a mood.
+ *
+ * WHAT DOES NOT FOLLOW is that THIS file should start writing them. A player
+ * can fight every turn; a circle cannot. The frequency is the whole argument,
+ * and it comes out differently on this side.
+ *
  * What a fight leaves on a body that the world CAN hold is WOUNDS, and those are
  * rows the resolver already produced. So a bout somebody walked away from
  * unmarked leaves their body as it was - which is the honest reading, not a lost

@@ -168,7 +168,16 @@ describe('played, robbing your own house', () => {
         };
         expect(before.house, 'the house was seeded holding nothing').toBeGreaterThan(0);
 
-        await harness.game.act('I siphon from the sect treasury for 12 months');
+        // CAREFULLY, AND FOR A SEASON. The span is what gets somebody caught -
+        // a year of it is noticed and reconciled, and the house takes back
+        // everything. Measured on this fixture: twelve months at any pace gains
+        // nothing, three careful months gains about five thousand.
+        //
+        // Said out loud rather than left to a bare "I siphon", which was this
+        // test hoping rather than setting up. It read as flaky for a long time
+        // because the player's id is minted at random and the discovery roll
+        // reads it, so the same sentence was a different crime every run.
+        await harness.game.act('I siphon carefully from the sect treasury for 3 months');
 
         const after = {
             house: treasuryOf(harness.game, A_HOUSE.id),
@@ -185,7 +194,10 @@ describe('played, robbing your own house', () => {
      */
     it('says what the pot actually holds, beside the figure off the payroll', async () => {
         const { harness } = await anOfficerWhoCanReachTheReserves('siphon-says');
-        const answer = await harness.game.act('I siphon from the sect treasury for 12 months');
+        // The same conditions as above, and for the same reason.
+        const answer = await harness.game.act(
+            'I siphon carefully from the sect treasury for 3 months'
+        );
         const structure = ((answer as { toolCalls?: { name: string; summary: string }[] })
             .toolCalls ?? []).map(c => `${c.name} ${c.summary}`).join(' ');
         expect(structure).toMatch(/The treasury itself/);

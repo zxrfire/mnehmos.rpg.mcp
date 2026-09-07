@@ -28,7 +28,7 @@ import { describe, expect, it } from 'vitest';
 import { createWorld, makeFaction, type WorldState } from '../../../src/engine/world/world-state';
 import { makeLocation } from '../../../src/engine/world/locations';
 import {
-    createNpc, setRealm, maxBodyOf, upsertRelationship
+    bodyStandingOn, createNpc, setRealm, maxBodyOf, upsertRelationship
 } from '../../../src/engine/world/npc-state';
 import { forStream } from '../../../src/engine/cultivation/rng';
 import { realmIndexOf } from '../../../src/engine/cultivation/realms';
@@ -192,6 +192,38 @@ describe('a bout is fought with a body', () => {
             }
         }
         expect(checked).toBeGreaterThan(0);
+    });
+
+    it('and the world is not left half spent, which is what the bar was for', async () => {
+        // THE RULING THIS CHANGE OWED, and it was owed to a paragraph that says
+        // so in as many words. `what-a-confrontation-does-to-somebody-the-world-
+        // holds.ts` refuses to write hit points for exactly this reason:
+        //
+        //   "every bout at every gathering would deplete everybody who fought,
+        //    nothing but the mending rate would return it, and a world of
+        //    permanently half-spent people is a different setting from this
+        //    one. That change wants its own measurement and its own ruling."
+        //
+        // Writing the bar back at a gathering IS that change, and it arrived as
+        // a side effect of asking why nobody could die at a friendly bout. So
+        // here is the measurement, and it comes out in favour: a circle gathers
+        // about once in fifteen years and a bar mends in a fraction of that.
+        //
+        // If a later change makes bouts frequent enough to matter, this fails.
+        const state = await aLivedWorld();
+        {
+            const alive = state.npcs.filter(n => n.status === 'alive');
+            let counted = 0;
+            let halfOrLess = 0;
+            for (const npc of alive) {
+                const max = maxBodyOf(npc);
+                if (max <= 0) continue;
+                counted++;
+                if (bodyStandingOn(npc, state.currentDay) <= max / 2) halfOrLess++;
+            }
+            expect(counted).toBeGreaterThan(0);
+            expect(halfOrLess, 'the world is going about half spent').toBe(0);
+        }
     });
 
     it('and nobody who walked away is left holding a zero', () => {

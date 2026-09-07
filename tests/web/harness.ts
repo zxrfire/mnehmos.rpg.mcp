@@ -160,12 +160,25 @@ export function makeGame(options: HarnessOptions = {}): Harness {
             ? new ProviderNarrator(options.provider, { model: 'test-model', timeoutMs: 5000 })
             : new DeterministicNarrator());
 
+    // AND WHO THE PLAYER TURNS OUT TO BE, pinned to the same seed.
+    //
+    // A cultivator's id is minted with `randomUUID` in production, and this
+    // world derives a person's disposition from their id - so an unpinned one
+    // makes the player a different person on every run of the same test. That
+    // is not hypothetical: `a-house-holds-its-own.test.ts` failed one run in
+    // five ON ITS OWN, with a pinned world, and it looked exactly like test
+    // pollution for three diagnoses.
+    //
+    // Counted per harness so two runs in one test are two different people,
+    // which is what a test doing that means.
+    let minted = 0;
     const game = new GameService({
         db,
         narrator,
         worldEnabled: options.worldEnabled ?? false,
         adminMode: options.adminMode ?? false,
-        seedFactory: () => options.seed ?? 'test-seed'
+        seedFactory: () => options.seed ?? 'test-seed',
+        idFactory: () => `cultivator-${options.seed ?? 'test-seed'}-${minted++}`
     });
 
     return { db, game, narrator, repos: ensureCultivationDb() };

@@ -159,6 +159,20 @@ export interface GameServiceOptions {
     adminMode?: boolean;
     /** Injectable for tests that need a reproducible run. */
     seedFactory?: () => string;
+    /**
+     * Who the player turns out to BE. Injectable for the same reason.
+     *
+     * A cultivator's id is minted with `randomUUID`, and this world derives a
+     * person's disposition from their id - `openHandednessOf` seeds a stream
+     * with it, and every room that reads somebody reads that. So the player is
+     * a different person on every run of the same test: how generously they are
+     * met, what a house's elders make of them, which way a marginal ask falls.
+     *
+     * Measured on `a-house-holds-its-own.test.ts`, which failed one run in five
+     * ON ITS OWN with a pinned world - it was never test pollution, which is
+     * what it looked like for three diagnoses.
+     */
+    idFactory?: () => string;
 }
 
 /** What an action did, before it is narrated. */

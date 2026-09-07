@@ -1502,6 +1502,7 @@ export class GameService {
     }
     private readonly narrator: Narrator;
     private readonly seedFactory: () => string;
+    private readonly idFactory: () => string;
 
     readonly adminMode: boolean;
 
@@ -1510,6 +1511,7 @@ export class GameService {
         this.narrator = options.narrator;
         this.adminMode = options.adminMode ?? false;
         this.seedFactory = options.seedFactory ?? (() => randomUUID());
+        this.idFactory = options.idFactory ?? (() => randomUUID());
 
         // This deployment is single-operator against one database, so the
         // injected handle IS the process database. Installing it as the
@@ -1620,7 +1622,10 @@ export class GameService {
 
         const created = this.db.transaction(() => {
             const cultivator = this.repos.cultivators.create({
-                id: randomUUID(),
+                // WHO THEY TURN OUT TO BE, and not only which row they are.
+                // A disposition in this world is derived from the id, so a
+                // random one makes the player a different person every run.
+                id: this.idFactory(),
                 name: trimmed,
                 kind: 'pc',
                 spiritRoot: root.key,
