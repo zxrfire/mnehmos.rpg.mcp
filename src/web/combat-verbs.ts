@@ -695,10 +695,19 @@ export const combatVerbs = {
             + `${known.reached.length} standing here.`);
 
         const tail = [
+            // ENGINE TRUTH, AND NOT NARRATION. This said "X is still in front
+            // of you, and while they are, A, B and C are not something you have
+            // got to" - which is the engine writing atmosphere, badly, in the
+            // one place the narrator is supposed to. Two plain facts instead:
+            // who stopped it, and who is untouched. The narrator turns that
+            // into a swing and a block; nothing here should try to.
+            //
+            // The names are `known.reached`, so they are people the player can
+            // already name. Somebody they have never met is a head in the
+            // crowd, not a name in a list.
             heldOn !== null && reachedButNotYet.length > 0
-                ? `${heldOn} is still in front of you, and while they are, `
-                  + `${reachedButNotYet.map(one => one.name).join(', ')} `
-                  + `${reachedButNotYet.length === 1 ? 'is' : 'are'} not something you have got to.`
+                ? `${heldOn} is still standing, and stopped it there. `
+                  + `Untouched: ${reachedButNotYet.map(one => one.name).join(', ')}.`
                 : null,
             remainder
         ].filter((line): line is string => line !== null);

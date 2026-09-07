@@ -20,6 +20,10 @@ import {
     DISPOSITION_BANDS
 } from '../engine/social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import {
+    whatTheyReachFor,
+    type WhatTheyReachFor
+} from '../engine/social-leverage/what-somebody-reaches-for.js';
+import {
     whatThisAsksOfThem,
     whetherTheySayIt,
     WORTH_A_SENTENCE,
@@ -81,6 +85,15 @@ export interface SceneAsPeopleFoundIt {
      * front of them is not the same person as one who has not.
      */
     feels?: WhatTheyFeelAboutThePlayer;
+    /**
+     * How heavy a house is, on the ordinal ladder.
+     *
+     * A lookup the caller owns, for the same reason `feels` is: this module
+     * stays clear of the sect catalog. Absent means every house weighs nothing,
+     * which reads as nobody having a house worth naming - the honest answer for
+     * a caller that cannot price one.
+     */
+    houseWeight?: (houseId: string | null) => number;
 }
 
 /**
@@ -272,7 +285,28 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
                 nameable,
                 entry.asked,
                 scene.playerNow.realmOrdinal,
-                scene.feels?.(entry.row.id) ?? null
+                scene.feels?.(entry.row.id) ?? null,
+                // Read for everybody who got a moment to speak, whatever the
+                // verb was. This channel runs on every turn, so what somebody
+                // reaches for is answered the same way for a robbery, a
+                // killing, a demand and a snub - which is what makes it a rule
+                // rather than a combat feature.
+                whatTheyReachFor({
+                    them: {
+                        id: entry.row.id,
+                        ordinal: entry.row.realmOrdinal,
+                        stones: entry.row.spiritStones,
+                        houseId: entry.row.sectId,
+                        houseOrdinal: scene.houseWeight?.(entry.row.sectId) ?? 0
+                    },
+                    theOther: {
+                        id: scene.playerNow.id,
+                        ordinal: scene.playerNow.realmOrdinal,
+                        stones: scene.playerNow.spiritStones,
+                        houseId: scene.playerNow.sectId ?? null,
+                        houseOrdinal: scene.houseWeight?.(scene.playerNow.sectId ?? null) ?? 0
+                    }
+                })
             ));
         spokenFor++;
     }
@@ -348,7 +382,9 @@ function sentenceFor(
     asked: { aloud: boolean; reading: string | null },
     observerOrdinal: number,
     /** What they feel about the player, where anything has passed between them. */
-    feeling: string | null = null
+    feeling: string | null = null,
+    /** What they have to answer WITH, where the moment left them room to. */
+    reachedFor: WhatTheyReachFor | null = null
 ): string {
     const who = nameable
         ? row.name
@@ -365,7 +401,16 @@ function sentenceFor(
         // is read through that first.
         feeling,
         disposition === null ? null : `They ${disposition}.`,
-        whetherTheySayIt(asked.aloud)
+        whetherTheySayIt(asked.aloud),
+        // AND WITH WHAT.
+        //
+        // `whetherTheySayIt` says THAT somebody answers and stops there, which
+        // handed the narrator a person opening their mouth and nothing to put
+        // in it - every scene in the game read "They answer it out loud" and
+        // ended. What they reach for is a read over what they actually hold
+        // against the person in front of them: an arm, a house, a purse, or
+        // asking. The engine names the lever; the narrator writes the words.
+        asked.aloud ? reachedFor?.line ?? null : null
     ].filter((part): part is string => part !== null).join(' ');
 }
 
