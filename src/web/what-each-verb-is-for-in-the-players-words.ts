@@ -126,6 +126,7 @@ const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     introduction: true,
     telling: true,
     a_thing: true,
+    a_making: true,
     terms: true,
     a_trade: true,
     nothing: true,

@@ -58,12 +58,14 @@ describe('saying you are asking is not doing it', () => {
         // The design owner asked for this verb by name: *"you should be able to
         // ask your master to cut a slip or craft something for you."* A rule
         // that swallowed it would have taken a feature out to fix a phrasing.
+        // A commission, put to the person named. It used to file a requisition
+        // against a HOUSE - see `asking-somebody-to-make-you-a-thing.test.ts`
+        // for that one - and what matters here is only that the mood pass did
+        // not turn it into a read.
         const commissioned = parseIntent('I ask my master to craft me a talisman');
-        expect(commissioned.action).toBe('petition');
-
-        const bought = parseIntent('I ask my master for a talisman');
-        expect(bought.action).toBe('petition');
-        expect(bought.target).toBe('my master');
+        expect(commissioned.action).toBe('request');
+        expect(commissioned.intent).toBe('a_making');
+        expect(commissioned.target).toBe('my master');
     });
 
     it('and a question about a person in front of you is still about them', () => {

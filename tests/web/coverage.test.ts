@@ -778,6 +778,16 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
+        // Their hands for a season, which is a different ask from a thing they
+        // are already holding. Both phrasings are the design owner's own words:
+        // "ask your master to cut a slip or craft something for you", and
+        // paying for it. Measured routing WRONG before it had a phrasing here -
+        // "talisman" is a standing-stock noun, so the sentence filed a
+        // requisition against a HOUSE and answered with a list of sect names.
+        'request/a_making': [
+            'I ask my master to cut me a talisman',
+            'I pay Elder Fang 400 stones to craft me a talisman'
+        ],
         'attack/drive_off': ['I attack the bandit', 'I start a fight with him'],
         'attack/subdue': ['I spar with him', 'I subdue the thief'],
         'attack/kill': ['I mean to kill the thief', 'I murder the courier'],

@@ -115,7 +115,8 @@ import {
     nearlyGone,
     placeName,
     sayThisWhateverTheNarratorDoes,
-    theBodyIsNearlyGone
+    theBodyIsNearlyGone,
+    factsForACommission
 } from './facts.js';
 import type { Hearing } from './hearsay.js';
 import {
@@ -130,6 +131,8 @@ import { whatYouAreNotShowing } from './what-you-are-not-showing.js';
 import { whatTheyCanPlaceAbout } from '../engine/social/what-they-can-place-about-you.js';
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import { addHearing, refused, stonesNamedIn, structureCalls } from './tool-result-prose.js';
+import { whatTheyWereAskedToMake } from './what-somebody-was-asked-to-make.js';
+import { askingSomebodyToMakeYouSomething } from '../engine/social-leverage/index.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import {
@@ -179,6 +182,9 @@ function askWeightOf(text: string): AskWeight {
  */
 const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
     'teaching', 'discipleship', 'introduction', 'telling', 'a_thing', 'nothing',
+    // Their hands for a season, which is not the same ask as a thing they are
+    // already holding and does not end in the same place.
+    'a_making',
     // The price asked before it is paid, and the thing put down for it. Both
     // reach `whatWouldItTake` below rather than the ordinary request path,
     // because the ordinary path ends at `interact` for anything that is not an
@@ -1073,6 +1079,21 @@ ${unnamed}`;
             if (who) return this.askAround(run, cultivator, who, named, scope);
         }
 
+        // ── THEIR HANDS, FOR A SEASON ────────────────────────────────────
+        //
+        // *"you should be able to ask your master to cut a slip or craft
+        // something for you. And you should also be able to pay someone either
+        // $ or trade in expensive $ to do it."*
+        //
+        // `commissioning-a-craft.ts` has answered this since it was written and
+        // nothing has ever called it - the whole module was reachable only from
+        // a barrel re-export, which is the thing AGENTS.md means by a module
+        // nothing calls not being a feature. Played, the sentence filed a
+        // requisition against a HOUSE and came back with a list of sect names.
+        if (kind === 'a_making') {
+            return this.whetherTheyWouldMakeIt(run, cultivator, party, named, rawInput);
+        }
+
         // WHAT WOULD IT TAKE, AND WHAT IS BEING PUT DOWN FOR IT
         if (kind === 'terms' || kind === 'a_trade') {
             return await this.whatWouldItTake(
@@ -1642,6 +1663,67 @@ ${done.lines.join(' ')}`;
             today,
             this.clocksOfWhoeverTheWantIsAbout(them.goals[0].targetId)
         );
+    },
+
+
+    /**
+     * WHETHER THEY WILL MAKE IT, AND WHAT IT WOULD TAKE.
+     *
+     * The design owner: *"you should be able to ask your master to cut a slip or
+     * craft something for you. And you should also be able to pay someone either
+     * $ or trade in expensive $ to do it."*
+     *
+     * `askingSomebodyToMakeYouSomething` has answered exactly this since it was
+     * written, and until now nothing called it: the module was reachable only
+     * through a barrel re-export, which is what AGENTS.md means by a module
+     * nothing calls not being a feature. Played, the sentence filed a
+     * requisition against a HOUSE and the player was handed a list of sect
+     * names.
+     *
+     * THIS ASKS AND ANSWERS. It does not hand over the thing: a commissioned
+     * talisman is a tracked world object rather than a counted pouch row, and
+     * bridging those is its own piece of work. What the player gets is the
+     * answer the module gives - whether those hands can, what it comes to, and
+     * how far what they put down reaches - which is what a person asking
+     * actually wants to know first.
+     */
+    whetherTheyWouldMakeIt(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        party: ResolvedEntity,
+        named: string,
+        rawInput: string
+    ): Execution {
+        if (named.length < 2 || !party.party) {
+            return refused('engine.resolveCraft', 'request', factsForRefusal(
+                'Make what?',
+                `You ask ${party.name} to make you something and do not say what. `
+                + `Name it: "ask ${party.name} to cut me a talisman".`,
+                'Request of kind a_making with no object named. Nothing spent, no time passed.'
+            ));
+        }
+
+        const asked = whatTheyWereAskedToMake(named);
+        const answer = askingSomebodyToMakeYouSomething({
+            ask: asked,
+            askerId: cultivator.id,
+            maker: { id: party.id, ordinal: party.party.realmOrdinal },
+            // Same house is the tie that is actually on the record here. A
+            // closer one - a master, a sworn brother - is what
+            // `howNearTheyStand` reads, and it wants the tie rows this call site
+            // does not carry; a wrong guess at NEAR would make a stranger
+            // generous, so the safe default is the honest one.
+            ...(cultivator.sectId !== null && cultivator.sectId === party.party.factionId
+                ? { nearness: 'house' as const }
+                : {}),
+            stonesOffered: stonesNamedIn(rawInput) ?? 0,
+            onDay: Math.floor(run.elapsedDays)
+        });
+
+        return this.freeAction(run, 'request', factsForACommission(
+            party.name, cultivator.name, asked, answer
+        ));
     },
 
     /**

@@ -134,7 +134,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`recognise`](#recognise) | `target` | nothing | yes | yes | - |
 | [`news`](#news) | - | nothing | yes | yes | - |
 | [`tell`](#tell) | `target` `topic` | varies | yes | - | - |
-| [`request`](#request) | `target` `intent` `topic` | time | yes | - | [9](#request) |
+| [`request`](#request) | `target` `intent` `topic` | time | yes | - | [10](#request) |
 | [`guard`](#guard) | `target` `days` | time | yes | - | - |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
@@ -574,7 +574,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 Takes `target`, `intent`, `topic`.
 
-Intents: `teaching`, `discipleship`, `introduction`, `telling`, `a_thing`, `terms`, `a_trade`, `nothing`, `unstated`.
+Intents: `teaching`, `discipleship`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `nothing`, `unstated`.
 
 ### `guard`
 

@@ -7,6 +7,7 @@ import { IMMORTAL_ITEMS } from '../data/cultivation/immortal-items.js';
 import { usedAsVerb, partyAfter } from './sentence-parts.js';
 import { ASKING_TO_BE_TAKEN_IN } from './sect-phrasings.js';
 import { A_HOUSE_BY_NAME_OR_KIND } from './what-a-house-is-called.js';
+import { ASKING_THEM_TO_MAKE_IT } from './what-a-request-asks-and-of-whom.js';
 
 // INSTITUTIONS ACTING ON EACH OTHER, AND ON THE DEAD
 
@@ -437,9 +438,23 @@ export function institutionalAct(text: string, input: string): PlannedAction | n
     }
 
     // the form, by name
-    if (REQUISITION_NAMED.test(text)
-        || (usedAsVerb(text, `${PETITION_VERBS}|${PETITION_ASKING_VERBS}`)
-            && (STANDING_STOCK_NOUNS.test(text) || IMMORTAL_ITEM_NAMED.test(text)))) {
+    //
+    // AND NOT SOMEBODY BEING ASKED TO MAKE ONE. `STANDING_STOCK_NOUNS` holds
+    // "talisman", and `PETITION_ASKING_VERBS` holds "ask", so "I ask my master
+    // to craft me a talisman" filed a requisition against a BODY - and was
+    // answered with a list of sect names, because "my master" is not a house.
+    // The design owner asked for that sentence by name: *"you should be able to
+    // ask your master to cut a slip or craft something for you."*
+    //
+    // Filing for a house's standing stock and commissioning a pair of hands are
+    // different asks with one noun in common, and the making verb is what tells
+    // them apart. Read from the same pattern the request layer classifies with,
+    // so there is one statement of what asking somebody to make something looks
+    // like.
+    if (!ASKING_THEM_TO_MAKE_IT.test(text)
+        && (REQUISITION_NAMED.test(text)
+            || (usedAsVerb(text, `${PETITION_VERBS}|${PETITION_ASKING_VERBS}`)
+                && (STANDING_STOCK_NOUNS.test(text) || IMMORTAL_ITEM_NAMED.test(text))))) {
         const named = partyAfter(
             input,
             `(?:${PETITION_ASKING_VERBS})|(?:with|to|at|of|before) the`

@@ -2,6 +2,10 @@
  * Engine outcomes, rendered as English.
  */
 
+import type {
+    WhatYouAskedThemToMake,
+    WhetherTheyWillMakeIt
+} from '../engine/social-leverage/index.js';
 import {
     CRIPPLING_UNTREATED_INJURIES,
     HP_RECOVERY_FRACTION_PER_DAY,
@@ -2912,4 +2916,76 @@ export function factsForRecognisingAnArt(input: ArtRecognitionInput): EngineFact
     }
 
     return { headline, lines, structure: [...input.structure], prose: lines.join('\n\n') };
+}
+
+/**
+ * What somebody said when they were asked to make a thing.
+ *
+ * Every refusal names its own route, because `askingSomebodyToMakeYouSomething`
+ * distinguishes four and they are four different things to do something about:
+ * a realm they have not reached, a fold they cannot make, a figure that was not
+ * met, and a person who does not care enough about the asker to spend a season.
+ * Flattening those into "they said no" would take the whole point out of it.
+ */
+export function factsForACommission(
+    makerName: string,
+    askerName: string,
+    ask: WhatYouAskedThemToMake,
+    answer: WhetherTheyWillMakeIt
+): EngineFacts {
+    const lines: string[] = [];
+    const thing = `${ask.grade}-grade ${ask.named}`;
+
+    if (!answer.hands.theyCan) {
+        lines.push(`${makerName} cannot make it. ${answer.hands.why ?? ''}`.trim());
+        if (answer.hands.insteadTheyCouldMake !== null) {
+            lines.push(
+                `The best those hands could work is ${answer.hands.insteadTheyCouldMake} grade.`
+            );
+        }
+    } else if (answer.agreed) {
+        lines.push(`${makerName} will make it.`);
+        if (answer.owed !== null) {
+            // NOT PAID FOR IS NOT FREE. The record is the whole difference, and
+            // it is the same ledger every other ask between these two reads.
+            lines.push(
+                `Nothing like enough was put down for it, so it is owed. `
+                + `${askerName} now stands in ${makerName}'s book for it.`
+            );
+        }
+    } else {
+        lines.push(`${makerName} will not make it.`);
+        if (answer.priceInStones !== null) {
+            lines.push(
+                `A ${thing} comes to ${answer.priceInStones} spirit stones, and what was `
+                + `put down covers ${Math.round(answer.paid * 100)}% of it.`
+            );
+        }
+        if (answer.reading !== null && answer.paid >= 1) {
+            // Paid in full and still refused, which is the interesting refusal:
+            // the money was never what was missing.
+            lines.push(
+                `The figure was met. What is short is ${makerName}'s regard for `
+                + `${askerName}, and a season of their hands is not something the `
+                + 'money settles on its own.'
+            );
+        }
+    }
+
+    const structure = [
+        `askingSomebodyToMakeYouSomething: ${answer.line}`,
+        `hands=${answer.hands.theyCan ? 'able' : 'unable'}`
+        + `, grade=${ask.grade}`
+        + `, price=${answer.priceInStones ?? 'not in stones'}`
+        + `, paid=${answer.paid.toFixed(2)}`
+        + `, reading=${answer.reading === null ? 'none' : answer.reading.toFixed(2)}`
+        + `, agreed=${answer.agreed}`
+    ];
+
+    return observable(
+        answer.agreed ? `${makerName} agreed to make it.` : `${makerName} did not agree.`,
+        lines,
+        lines.join(' '),
+        structure
+    );
 }

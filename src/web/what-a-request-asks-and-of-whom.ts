@@ -18,6 +18,19 @@ export type RequestKind =
     | 'telling'
     | 'a_thing'
     /**
+     * ASKING SOMEBODY TO MAKE YOU ONE, which is not asking them for one.
+     *
+     * The design owner: *"you should be able to ask your master to cut a slip
+     * or craft something for you. And you should also be able to pay someone
+     * either $ or trade in expensive $ to do it."*
+     *
+     * A different ask from `a_thing` because a thing they are holding costs
+     * them the thing, and a thing they have to MAKE costs them a season of
+     * their hands - which is why `commissioning-a-craft.ts` prices it against
+     * the maker's own reach rather than against what is in their pocket.
+     */
+    | 'a_making'
+    /**
      * ASKING WHAT IT WOULD TAKE, WHICH IS NOT ASKING FOR IT.
      */
     | 'terms'
@@ -53,6 +66,11 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         case 'discipleship':
         case 'a_thing':
         case 'a_trade':
+        // Their hands for a season. Nothing in this world costs the person
+        // being asked more, and the weight says so at the same rung as the
+        // others rather than at one of its own: what makes a commission heavy
+        // is the grade asked for, and that is priced where grades are.
+        case 'a_making':
             return 'a_real_favour';
     }
 }
@@ -99,6 +117,20 @@ const REQUEST_VERB = new RegExp(
  * Where the sentence stops naming WHO and starts saying WHAT.
  */
 const WHERE_THE_ASK_STARTS = /\s+(?:to|for|with|into|about|regarding|concerning)\s+/i;
+
+/**
+ * Asking for their hands rather than for what is in them.
+ *
+ * The verbs are the ones a player reaches for - the design owner's own words
+ * were "cut a slip" and "craft something" - and every one of them requires an
+ * object after it, so "ask him to make his way here" is not a commission.
+ */
+export const ASKING_THEM_TO_MAKE_IT =
+    /\bto\s+(?:make|craft|cut|fold|forge|refine|inscribe|draw|write|carve)\s+(?:me|us|my|for me)?\s*(?:a|an|the|one|some)?\s*\w/i;
+
+/** Everything after the making verb is what they were asked to make. */
+const AFTER_THE_MAKING_VERB =
+    /\bto\s+(?:make|craft|cut|fold|forge|refine|inscribe|draw|write|carve)\s+(?:me|us|for me)?\s*/i;
 
 /**
  * The pivots that open a question rather than a request.
@@ -512,6 +544,12 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
     }
     if (ASKING_TO_BE_TOLD.test(clause)) {
         return { kind: 'telling', object: objectAfter(clause, AFTER_THE_TELLING_PHRASE) };
+    }
+    // AFTER TEACHING, because "teach me to cut a slip" is somebody asking to be
+    // taught and not somebody asking for a slip. Before the thing-fallback,
+    // because everything with an object reaches that.
+    if (ASKING_THEM_TO_MAKE_IT.test(clause)) {
+        return { kind: 'a_making', object: objectAfter(clause, AFTER_THE_MAKING_VERB) };
     }
 
     // Everything else that named something is a THING being asked for. The
