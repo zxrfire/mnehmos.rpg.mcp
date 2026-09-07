@@ -3,6 +3,9 @@
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { beastsOnThisGround, bandOf } from './hunting-a-spirit-beast.js';
+import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
+import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { rankName, triggersHeavenlyTribulation } from '../cultivation/realms.js';
 // Pressure is the LOWER world's own affairs, and only its own. Every selection
 // in this file is filtered to the mortal layer, because politics above the Lid
@@ -56,6 +59,7 @@ import {
     markDead,
     markMissing,
     relationshipWith,
+    type NpcActivity,
     setLocation,
     setRealm,
     upsertRelationship,
@@ -232,6 +236,8 @@ export type PressureKind =
      * own people's hands. Lent, never given.
      */
     | 'house_armed_its_own'
+    /** Something came off the ground and into a town people live in. */
+    | 'beast_came_down'
     /**
      * Somebody is late back, and the person whose job it is has said so.
      */
@@ -431,6 +437,11 @@ export function applyPressure(
         // nothing has processed yet is not overdue, it is unprocessed, and a
         // keeper who cannot tell those apart raises the alarm about everybody.
         bringHomeWhoeverIsDue(state, withinSpan(year * 365 + 62, fromDay, toDay));
+
+        // AND WHO THE HOUSE HAS PUT SOMEWHERE. Postings run in years and are
+        // taken by the people a house can spare - which an elder holding no
+        // room is, by design, because there are fewer rooms than elders.
+        applyPostings(state, year, withinSpan(year * 365 + 64, fromDay, toDay));
 
         // AND THEN WHO HAS NOT COME BACK. The keeper's job is personnel: they
         // are the one who knows a week's errand has taken a month, and the one
@@ -1921,7 +1932,10 @@ function applySendings(state: WorldState, year: number, day: number): number {
                     // rather than a companion. The term is what makes a party
                     // still out tellable from a party that never came home.
                     activity: {
-                        kind: 'mustering',
+                        // `out_with_a_party` and not `mustering`: mustering is
+                        // getting people together, and these have gone. The
+                        // kind's own doc names this exact machinery.
+                        kind: 'out_with_a_party',
                         note: `Out for the ${houseName(faction.name)} on ${reason.name.toLowerCase()}.`,
                         withIds: partyIds.filter(id => id !== member.id),
                         sinceDay: day,
@@ -1994,7 +2008,7 @@ function whatTheKeeperNotices(state: WorldState, day: number): PressureEvent[] {
         const npc = state.npcs[i];
         if (npc === undefined || npc.status === 'physically_dead') continue;
         const doing = npc.activity;
-        if (!doing || doing.kind !== 'mustering') continue;
+        if (!doing || !isAwayOnSomething(doing.kind)) continue;
         if (doing.untilDay === null || doing.untilDay === undefined) continue;
 
         const term = Math.max(1, doing.untilDay - doing.sinceDay);
@@ -2041,6 +2055,152 @@ function whatTheKeeperNotices(state: WorldState, day: number): PressureEvent[] {
 }
 
 /**
+ * HOW LONG A POSTING RUNS.
+ *
+ * Years, and that is the whole difference from an errand. A sending is measured
+ * in weeks and comes back with an account of itself; a station is somebody the
+ * house has put in a town and largely stopped thinking about.
+ */
+const A_POSTING_RUNS_FOR_YEARS = 12;
+
+/**
+ * HOW MANY PLACES A HOUSE KEEPS SOMEBODY AT.
+ *
+ * Off its own weight, because that is what reach IS: a hill sect holds the one
+ * town under it and a court has somebody in every market worth the name. Never
+ * a share of its people - the first cut of this took a fifth of whoever was
+ * idle every year and the idle never recovered, so 175 people ended up posted
+ * out of a world of 525 and the sendings pass, which draws on the same hands,
+ * starved.
+ *
+ * A house tops up to the PLACES it holds, and it obviously does not hold every
+ * city.
+ */
+export function howManyPostsAHouseKeeps(powerOrdinal: number): number {
+    return Math.max(1, Math.min(6, Math.floor(powerOrdinal / 8)));
+}
+
+/**
+ * PEOPLE A HOUSE HAS PUT SOMEWHERE.
+ *
+ * The design owner: *"a sect stations their people outside the sect too"*, and
+ * on who: *"maybe no office elders go outside"*. An elder holding a room stays
+ * and approves things; an elder holding none is exactly who a house can spare -
+ * and there are deliberately fewer rooms than elders, so being spare is the
+ * ordinary condition rather than a failure.
+ *
+ * Measured before this pass: 57 of 68 living elders had no activity at all, and
+ * 516 of 541 living people had none. The world's top half was standing still.
+ *
+ * NOT A SENDING. A sending is an errand with a party and a term in weeks. This
+ * is one person, one place, and years, and it is why a house has somebody in a
+ * town it does not own.
+ */
+function applyPostings(state: WorldState, year: number, day: number): number {
+    const rng = forStream(state.seed, 'postings', year);
+    // NOT ANYBODY'S SEAT, by id and not by kind. A house's `seatLocationId` is
+    // not always a location of kind `sect_seat` - some houses are seated in a
+    // town - so filtering on the kind alone posted people into halls that
+    // somebody lives in, which is not a posting, it is a visit.
+    const seats = new Set(state.factions
+        .map(f => f.seatLocationId)
+        .filter((id): id is string => id !== null));
+    const towns = state.locations.filter(l =>
+        !seats.has(l.id)
+        && l.kind !== 'sect_seat'
+        && isBelowTheLid(l)
+        && populationWeightOf(l) > 0);
+    if (towns.length === 0) return 0;
+
+    let posted = 0;
+    for (const faction of liveFactions(state)) {
+        const ranks = faction.ranks.length;
+        if (ranks === 0) continue;
+
+        // WHO THE HOUSE CAN SPARE. Anybody already away is already spared, and
+        // an elder holding a room is not - `whoIsInChargeOfWhat` deals the
+        // rooms out and the people it did not reach are the ones with nothing
+        // keeping them at the seat.
+        const members = state.npcs.filter(n =>
+            n.factionId === faction.id
+            && n.status === 'alive'
+            && n.activity === null
+            && isTheWorldsToMove(n));
+        if (members.length === 0) continue;
+
+        const rooms = whoIsInChargeOfWhat({
+            rooms: theRoomsThisHouseHas(state.locations, faction.id),
+            roll: members.map(n => ({ id: n.id, rankIndex: n.factionRankIndex })),
+            rankCount: ranks
+        });
+        const holdingARoom = new Set(
+            rooms.map((r: APortfolio) => r.holderId)
+                .filter((id): id is string => id !== null));
+
+        // THE PLACES THIS HOUSE KEEPS SOMEBODY AT, and the ones that are empty.
+        //
+        // Its own region first, because reach starts at home, and only as many
+        // as its weight carries. A post nobody is at is a post to fill; a post
+        // somebody is already at is not.
+        // The province the house is seated in, read off its seat's parent -
+        // there is no region field on a house and inventing one would be a
+        // second answer to a question the map already holds.
+        const seatRegion = state.locations
+            .find(l => l.id === faction.seatLocationId)?.parentId ?? null;
+        const near = seatRegion === null
+            ? []
+            : towns.filter(t => t.parentId === seatRegion);
+        const posts = (near.length > 0 ? near : towns)
+            .slice(0, howManyPostsAHouseKeeps(Number(faction.resources.power_ordinal ?? 0)));
+        const held = new Set(state.npcs
+            .filter(n => n.factionId === faction.id
+                && n.status === 'alive'
+                && n.activity?.kind === 'stationed')
+            .map(n => n.locationId));
+        const empty = posts.filter(t => !held.has(t.id));
+        if (empty.length === 0) continue;
+
+        const spare = members.filter(n => !holdingARoom.has(n.id));
+        if (spare.length === 0) continue;
+        const wanted = Math.min(empty.length, spare.length);
+
+        for (let i = 0; i < wanted; i++) {
+            const who = spare[i];
+            const town = empty[i];
+            if (who === undefined || town === undefined) continue;
+            const at = state.npcs.findIndex(n => n.id === who.id);
+            if (at < 0) continue;
+
+            const years = rng.int(Math.ceil(A_POSTING_RUNS_FOR_YEARS / 2), A_POSTING_RUNS_FOR_YEARS * 2);
+            state.npcs[at] = {
+                ...setLocation(state.npcs[at]!, town.id, day),
+                activity: {
+                    kind: 'stationed',
+                    note: `Holding the ${houseName(faction.name)}'s interest at ${town.name}.`,
+                    withIds: [],
+                    sinceDay: day,
+                    untilDay: day + years * DAYS_PER_YEAR,
+                    returnTo: who.locationId
+                }
+            };
+            posted++;
+        }
+    }
+    return posted;
+}
+
+/**
+ * The activities that take somebody away and end on a day.
+ *
+ * One predicate rather than a comparison at each site: an errand and a station
+ * are both "gone, until", and every pass that brings people home or notices
+ * they have not come home asks the same question of both.
+ */
+function isAwayOnSomething(kind: NpcActivity['kind']): boolean {
+    return kind === 'out_with_a_party' || kind === 'stationed';
+}
+
+/**
  * Everybody whose errand is over, standing where they started.
  *
  * Reads the term off the activity rather than off a list of who is out, so a
@@ -2058,7 +2218,7 @@ function bringHomeWhoeverIsDue(state: WorldState, day: number): number {
         const npc = state.npcs[i];
         if (npc === undefined || npc.status !== 'alive') continue;
         const doing = npc.activity;
-        if (!doing || doing.kind !== 'mustering') continue;
+        if (!doing || !isAwayOnSomething(doing.kind)) continue;
         if (doing.untilDay === null || doing.untilDay === undefined) continue;
         if (day < doing.untilDay) continue;
 
@@ -3670,6 +3830,113 @@ const TEMPLATES: Template[] = [
                     tenYearsLater: 'It is on the maps as a blank, and children are told not to.'
                 }
             }, { locations: [place.id], factions: holder ? [holder.id] : [] });
+        }
+    },
+
+    // ── Something comes off the ground and into a town. ─────────────────
+    {
+        kind: 'beast_came_down',
+        weight: 10,
+        apply(state, day, rng) {
+            // A PLACE PEOPLE ARE, because a beast in empty wilds is not an
+            // event - it is the ordinary condition of the wilds. `crowding`
+            // is not consulted: what makes this worth telling is that there
+            // was a town here, not how full it was.
+            const towns = state.locations.filter(l =>
+                l.kind === 'settlement' && isBelowTheLid(l) && !l.sealed);
+            const town = pick(rng, towns);
+            if (!town) return null;
+
+            // WHAT COULD BE STANDING THERE AT ALL, off the module that already
+            // decides it. Nothing new says what lives where.
+            const could = beastsOnThisGround({
+                sealed: false,
+                onAVein: town.kind === 'vein'
+            });
+            const beast = pick(rng, could.filter(b => bandOf(b) !== 'person'));
+            if (!beast) return null;
+
+            // WHO IT REACHES. The people standing there, and the ones who can
+            // answer it are the ones who do - which is why a beast that comes
+            // down on a town holding a Foundation cultivator is a story and one
+            // that comes down on a hamlet is a bereavement.
+            const here = state.npcs.filter(n =>
+                n.status === 'alive' && n.locationId === town.id && isTheWorldsToMove(n));
+            const answered = here.filter(n => n.cultivation.realmOrdinal >= beast.ordinal);
+
+            // AND WHOSE PEOPLE ARE HERE.
+            //
+            // The design owner, on what a stationed elder is for: they defend
+            // the disciples of their own house who are here on their own
+            // errands - at a distance, with their spirit sense, rather than by
+            // following anybody around - and they write reports to the sect.
+            //
+            // Both are the same fact and neither needs machinery. Somebody
+            // POSTED here is standing here, so they are already in `here` and
+            // already answer it if they can; and naming their house on the
+            // event is what makes the house know, because a fact that names a
+            // house reaches it. That IS the report - a house does not learn
+            // about a town it has nobody in.
+            const watching = new Set(here
+                .filter(n => n.activity?.kind === 'stationed' && n.factionId !== null)
+                .map(n => n.factionId!));
+
+            const taken: NpcRecord[] = [];
+            if (answered.length === 0) {
+                // Nobody there could stop it. It takes what it came for.
+                const couldTake = here.filter(n => n.cultivation.realmOrdinal < beast.ordinal);
+                const howMany = Math.min(couldTake.length, rng.int(1, 3));
+                for (let i = 0; i < howMany; i++) {
+                    const who = couldTake[i];
+                    if (who === undefined) continue;
+                    const at = state.npcs.findIndex(n => n.id === who.id);
+                    if (at < 0) continue;
+                    state.npcs[at] = markDead(state.npcs[at]!, day,
+                        `Taken when ${beast.name} came down on ${town.name}.`);
+                    settleNpcDeath(state, state.npcs[at]!, day);
+                    taken.push(state.npcs[at]!);
+                }
+            }
+
+            const held = answered.length > 0;
+            return emit(state, 'beast_came_down', day, {
+                day,
+                kind: 'catastrophe',
+                scale: 'local',
+                summary: held
+                    ? `${beast.name} came down on ${town.name} and was put back. `
+                      + `${answered.length} stood to it.`
+                    : `${beast.name} came down on ${town.name}. `
+                      + (taken.length === 0
+                          ? 'There was nobody in it to take.'
+                          : `${taken.length} did not get away from it.`),
+                actors: (held ? answered : taken).slice(0, 4)
+                    .map(n => ({ id: n.id, name: n.name, role: held ? 'stood to it' : 'taken' })),
+                locationId: town.id,
+                // The houses with somebody posted here. A house learns what
+                // happens where it has people and does not learn what happens
+                // where it has none, which is the whole value of a station.
+                factionIds: [...watching],
+                visibility: 'public',
+                magnitude: held ? 0.4 : 0.55 + Math.min(0.25, taken.length * 0.08),
+                unattributed: held
+                    ? 'Something came out of the treeline at a town on the low road, and the '
+                      + 'town is still there.'
+                    : 'A town on the low road is short of people, and the ones left will not '
+                      + 'say what it was.',
+                consequences: {
+                    immediate: held
+                        ? 'The town holds, and knows who held it.'
+                        : 'Fewer people, and a reason to want somebody sent.',
+                    tenYearsLater: held
+                        ? 'The people who stood to it are the people that town asks for.'
+                        : 'The ground is worked by whoever came afterwards.'
+                }
+            }, {
+                factions: [...watching],
+                locations: [town.id],
+                npcs: (held ? answered : taken).map(n => n.id)
+            });
         }
     },
 

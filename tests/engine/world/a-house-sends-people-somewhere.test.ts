@@ -66,7 +66,7 @@ describe('people go places', () => {
     it('and somebody is out at any given moment', async () => {
         for (const { state } of await worldsLived()) {
             const away = state.npcs.filter(n =>
-                n.status === 'alive' && n.activity?.kind === 'mustering');
+                n.status === 'alive' && n.activity?.kind === 'out_with_a_party');
             expect(away.length).toBeGreaterThan(0);
         }
     });
@@ -82,14 +82,15 @@ describe('people go places', () => {
     });
 
     it('and a party a house SENT is out for a stated term', async () => {
-        // The seeder also writes `mustering` - somebody getting a group
-        // together, with no term because nobody has left yet. A term is what
-        // distinguishes a party that is gone, and it is what brings them home.
+        // `out_with_a_party` is the kind whose own doc names this machinery -
+        // gone, with the party they mustered - and a TERM is what distinguishes
+        // a party that has left from one still gathering, and what brings them
+        // home.
         let withATerm = 0;
         for (const { state } of await worldsLived()) {
             for (const npc of state.npcs) {
                 const doing = npc.activity;
-                if (!doing || doing.kind !== 'mustering') continue;
+                if (!doing || doing.kind !== 'out_with_a_party') continue;
                 if (doing.untilDay === null || doing.untilDay === undefined) continue;
                 withATerm++;
                 expect(doing.untilDay).toBeGreaterThan(doing.sinceDay);
@@ -105,7 +106,7 @@ describe('people go places', () => {
             for (const npc of state.npcs) {
                 if (npc.status !== 'alive') continue;
                 const doing = npc.activity;
-                if (!doing || doing.kind !== 'mustering') continue;
+                if (!doing || doing.kind !== 'out_with_a_party') continue;
                 if (doing.untilDay === null || doing.untilDay === undefined) continue;
                 // The pass brings them home before it sends anybody new, so a
                 // living person out for more than a year past their own term is
@@ -125,7 +126,7 @@ describe('people go places', () => {
         for (const { state } of await worldsLived()) {
             stillOut += state.npcs.filter(n =>
                 n.status !== 'alive'
-                && n.activity?.kind === 'mustering'
+                && n.activity?.kind === 'out_with_a_party'
                 && typeof n.activity.untilDay === 'number').length;
         }
         expect(stillOut).toBeGreaterThan(0);
@@ -133,7 +134,7 @@ describe('people go places', () => {
 
     it('and a party names each other, which is what makes it a party', async () => {
         for (const { state } of await worldsLived()) {
-            const out = state.npcs.filter(n => n.activity?.kind === 'mustering');
+            const out = state.npcs.filter(n => n.activity?.kind === 'out_with_a_party');
             for (const npc of out) {
                 expect(npc.activity!.withIds).not.toContain(npc.id);
             }

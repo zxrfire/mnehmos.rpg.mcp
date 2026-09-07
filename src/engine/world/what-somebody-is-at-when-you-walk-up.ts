@@ -169,6 +169,11 @@ export function whatThatLooksLike(activity: NpcActivity, withNames: readonly str
             return `sitting over what is torn: ${activity.note}`;
         case 'the_work_of_their_rank':
             return activity.note;
+        case 'stationed':
+            // A posting is the work of their rank somewhere that is not their
+            // house, and the note says which - so this reads as what it is
+            // rather than as somebody loitering in a town.
+            return `posted here, and settled into it: ${activity.note}`;
         case 'teaching':
             return withNames.length === 0
                 ? activity.note
@@ -242,6 +247,10 @@ export function whetherTheyWouldLookUp(kind: ActivityKind): boolean {
     switch (kind) {
         case 'trade':
         case 'mustering':
+        // SOMEBODY POSTED HERE IS WHO THE GROUND GIVES YOU. Being stationed in
+        // a town is being the house's face in it; a person whose whole business
+        // is standing where strangers arrive looks up when one does.
+        case 'stationed':
         case 'teaching':
         case 'talking':
         case 'at_a_table':

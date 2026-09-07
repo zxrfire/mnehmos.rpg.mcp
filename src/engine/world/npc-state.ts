@@ -260,6 +260,20 @@ export type ActivityKind =
     /** Ground worth working, being worked. */
     | 'drawing_on_the_ground'
     /**
+     * Posted somewhere for the house, for years rather than for an errand.
+     *
+     * The design owner: *"a sect stations their people outside the sect too"*,
+     * and on who goes: *"maybe no office elders go outside"* - an elder holding
+     * a room stays and approves things, and an elder holding none is exactly
+     * who a house can spare. There are fewer rooms than elders on purpose, so
+     * being spare is the ordinary condition rather than a failure.
+     *
+     * Distinct from `out_with_a_party`, which is an errand with a term measured
+     * in weeks and a party around you. A station is one person, a place, and
+     * years - and it is why a house has people in towns it does not own.
+     */
+    | 'stationed'
+    /**
      * Out on the errand they mustered for, with the party they mustered.
      *
      * The end of the owner's worked chain - taught, then a task taken, then a
