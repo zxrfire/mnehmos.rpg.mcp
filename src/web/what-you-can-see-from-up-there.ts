@@ -206,14 +206,17 @@ export function whatCanBeSeenFromUpThere(input: OverlookInput): OverlookRead {
     if (horizon <= 0) {
         return {
             headline: 'You cannot get above it.',
+            // THREE FACTS: what they see, what seeing further takes, and how a
+            // name reaches them meanwhile. It ran to four sentences of essay -
+            // "it is slow and cold when it comes", "the world reaches you the
+            // way it reaches everybody" - around the same three.
             lines: [
-                'You look at as much of the world as a person standing on the world can look at, '
-                + 'which is the next ridge and then the sky behind it.',
-                'Getting high enough to see over it is a thing cultivators do, and not yet a thing '
-                + 'you do. It comes in somewhere around a made foundation, on a sword or on '
-                + 'anything else that will hold you up, and it is slow and cold when it comes.',
-                'Until then the world reaches you the way it reaches everybody: somebody says a '
-                + 'name where you can hear it. Ask, and keep asking.'
+                'You see what somebody standing on the ground sees: the next ridge, and the sky '
+                + 'behind it.',
+                'Seeing over it starts somewhere around a made foundation, on a sword or on '
+                + 'anything else that will hold you up.',
+                'Until then a name reaches you when somebody says it where you can hear. Ask, '
+                + 'and keep asking.'
             ],
             structure: [
                 ...structure,

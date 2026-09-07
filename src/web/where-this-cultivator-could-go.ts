@@ -124,9 +124,11 @@ function distance(place: Destination): string {
     if (place.travelDays !== null) {
         return `${place.travelDays} day${place.travelDays === 1 ? '' : 's'} away`;
     }
-    return place.sameProvince
-        ? 'in this province, and nothing states how far'
-        : 'no road stated from here';
+    // SAID ONCE PER ROW AND NOT TWICE. The trailing "and nothing states how
+    // far" was true and identical on every row that had no day count - nine
+    // times in one answer, which is the list stuttering. A row with no distance
+    // on it beside rows that carry one already says it.
+    return place.sameProvince ? 'in this province' : 'no road stated from here';
 }
 
 /**
