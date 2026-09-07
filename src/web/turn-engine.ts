@@ -2021,9 +2021,34 @@ export class GameService {
         // narrated, so a restart cannot lose an abode, a descent or a thing
         // that went down a channel. Nothing here reads the narration; the
         // ordering is only about durability.
+        //
+        // THROUGH THE BOUNDARY, which is the step that makes the rest of this
+        // refactor incremental. There are 28 places that set `worldDirty` and
+        // each of them belongs inside its own verb's transaction; until they
+        // are moved, the deferred flush at least commits with a revision and
+        // drops the handle if it throws, so the process cannot be left holding
+        // a world that was rolled back. Moving a site out of here and into its
+        // verb is a local change after this, rather than a change to how the
+        // world is written.
         if (this.worldDirty) {
             this.worldDirty = false;
-            await saveWorldForRun(run);
+            const world = this.atHand;
+            if (world === null) {
+                await saveWorldForRun(run);
+            } else {
+                commitOneTransition({
+                    db: this.db,
+                    at: {
+                        id: world.id,
+                        state: world,
+                        append: state => writeTheWorldNow(state),
+                        forget: () => forgetWorld(world.id),
+                        nowAt: revision => noteWorldRevision(world.id, revision)
+                    },
+                    onDay: Math.floor(world.currentDay),
+                    body: ctx => { ctx.markWorldChanged(); }
+                });
+            }
         }
 
 
