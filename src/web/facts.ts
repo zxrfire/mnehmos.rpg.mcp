@@ -1081,10 +1081,12 @@ function describeCompany(
             if (rest === 1) {
                 sentences.push('Somebody else is here too, and has not looked over.');
             } else if (rest > 1) {
-                sentences.push(
-                    `${capitalise(roughly(rest))} are here besides, and how many of them `
-                    + 'matter is not something this cultivator can tell from here.'
-                );
+                // THE COUNT, AND NOTHING ABOUT WHAT A GLANCE SETTLES. This
+                // trailed "and how many of them matter is not something a
+                // glance settles" on EVERY look - the commonest action in the
+                // game, so the commonest sentence in it, and it is the engine
+                // musing rather than counting.
+                sentences.push(`${capitalise(roughly(rest))} are here besides.`);
             }
             return sentences.join(' ');
         }

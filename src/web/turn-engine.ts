@@ -11770,12 +11770,14 @@ ${fit.line}`;
         // worth, and what it is worth is local.
         const territory = getSect(sect.id)?.territory ?? null;
 
-        return `${sect.name} has you down as ${rank}. ` +
-            (territory
-                ? `${territory} Whether that means anything where you are standing depends on who is ` +
-                  'standing in front of you.'
-                : 'Whether that means anything where you are standing depends on who is standing in ' +
-                  'front of you.');
+        // THE ROLL AND THE GROUND, and no hedge about what either is worth.
+        // "Whether that means anything where you are standing depends on who is
+        // standing in front of you" printed under every look a member took -
+        // true of every fact in the game, and therefore not a fact about this
+        // one. Who is standing in front of them is the rest of the scene.
+        return territory
+            ? `${sect.name} has you down as ${rank}. ${territory}`
+            : `${sect.name} has you down as ${rank}.`;
     }
 
 
