@@ -46,7 +46,7 @@ export function whatALookAtSomebodyReaches(
         stage,
         reference: STAGE_MEANING[stage],
         line: dealt
-            ? `${name} is somebody this cultivator has already stood in front of, so there is `
+            ? `${name} is somebody you have already stood in front of, so there is `
               + 'something behind the face and not only the face.'
             : `${name} is a face with nothing behind it yet - whatever is known of them was got `
               + 'at second hand, and looking harder adds none of it.',

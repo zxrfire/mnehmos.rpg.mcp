@@ -39,6 +39,12 @@ const LOCAL_SECT = SECTS
 const SYSTEM_VOICE = [
     /\bengine\b/i,
     /\bthe (?:player|caller|handler|repository|schema)\b/i,
+    // THE PLAYER IS YOU. `this cultivator` is the engine's own register for
+    // them, correct in a ruling and wrong in prose, and it was reaching the
+    // narration: "X is somebody this cultivator has already stood in front of",
+    // read off a live turn. Nobody in this world says that about the person
+    // they are looking at.
+    /\bthis cultivator\b/i,
     /\bstate (?:change|changed)\b/i,
     /\bnot (?:yet )?(?:supported|implemented|resolvable)\b/i,
     /\bknowledge record\b/i,
