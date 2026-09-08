@@ -1050,6 +1050,14 @@ export interface SomebodyInTheSquare {
      */
     withNames: string[];
     /**
+     * What they have on their mind, or null - which is most people.
+     *
+     * See `what-somebody-here-is-chewing-on.ts`. A STATED FACT about their
+     * situation and never a mood: the narrator is what turns "has spent most of
+     * the years this rung allows" into somebody sighing over a bowl of noodles.
+     */
+    chewing?: string | null;
+    /**
      * The one thing worth saying about who they are, or null for most people.
      *
      * Not what they are doing - `at` is that, and it changes. This is what they
@@ -1230,6 +1238,7 @@ function describeCompany(
         // being told about each of them separately is the same defect one
         // level down, and `at` already carries "mid-conversation with X".
         const covered = new Set<string>();
+        let saidWhatIsOnSomebodysMind = false;
         for (const person of ordered) {
             if (covered.has(person.name)) continue;
             covered.add(person.name);
@@ -1243,6 +1252,31 @@ function describeCompany(
                 sentences.push(person.looksUp
                     ? `${person.name} is here, ${person.at}.`
                     : `${person.name} is ${person.at}, and has not looked up.`);
+            }
+
+            // AND AT MOST ONE PERSON HAS SOMETHING ON THEIR MIND.
+            //
+            // One, and only the first who has anything, deliberately. Three
+            // people in a square all audibly preoccupied is a soap opera, and
+            // the third time a player reads one of these they stop reading
+            // them - which is precisely how the ambient qi reading became
+            // wallpaper. See `what-somebody-here-is-chewing-on.ts`, which sets
+            // its bars to exclude the ordinary case for the same reason.
+            if (!saidWhatIsOnSomebodysMind && (person.chewing ?? null) !== null) {
+                saidWhatIsOnSomebodysMind = true;
+                // SHAPED AS WHAT IT LICENSES, not as what is true.
+                //
+                // First cut handed over the bare fact - "X has spent most of
+                // the years this rung allows" - and the model narrated it
+                // straight, omnisciently, about a stranger. That is worse than
+                // silence: a person standing in a square cannot see how many
+                // years somebody else has spent, so it is the engine reading
+                // its own rows aloud. Saying WHAT THEY CAN BE HEARD ON leaves
+                // the only honest rendering being the one that was wanted.
+                sentences.push(
+                    `What ${person.name} can be heard on, unprompted and not to you: `
+                    + `they ${person.chewing}.`
+                );
             }
         }
     }

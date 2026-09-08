@@ -1131,6 +1131,20 @@ export function composeNarrationUser(
         // cause was in the facts and is fixed there; this is the other half,
         // because a model handed good material will still reach for the roll
         // call if nothing tells it not to.
+        // AND WHAT THEY SAY WHEN THEY ARE NOT TALKING TO THE PLAYER.
+        //
+        // The owner: *"the world doesn't feel alive nor narrative at all"*, and
+        // the two examples that fix it - a junior sister sighing over a meal
+        // about how hard it is, a senior brother going on about a borrowed
+        // sword. The engine now states what somebody has on their mind. Turning
+        // that into a sentence they SAY is this instruction, and is the whole
+        // reason the fact is handed over.
+        'WHAT SOMEBODY HAS ON THEIR MIND, where the facts give one, is what that person can',
+        'be heard on. Put it in their mouth: to themselves, to whoever is beside them, to',
+        'nobody. The player overhears it and is not being addressed, so it does not explain',
+        'itself, does not resolve, and does not ask them anything. Never report it as a',
+        'state of mind, and never state it a second time in the same account.',
+        '',
         'HOW PEOPLE ENTER THE PROSE. A person arrives doing something, or in relation to',
         'somebody already on the page, or not at all. Never introduce anybody by announcing',
         'their presence: no "is also here", no "is also present", no "another person is",',

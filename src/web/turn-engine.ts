@@ -132,6 +132,7 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { whatTheyWouldBeHeardOnAbout } from '../engine/world/what-somebody-here-is-chewing-on.js';
 import {
     theOneThingWorthSayingAbout,
     whatSomebodyIsLike
@@ -12332,6 +12333,19 @@ ${fit.line}`;
                     looksUp: doing !== null && whetherTheyWouldLookUp(doing.kind),
                     playsToTheRoom: row === null ? 0 : whatSomebodyIsLike(row).room,
                     withNames: alongside,
+                    // WHAT THEY HAVE ON THEIR MIND, which is what makes a
+                    // square somewhere people are rather than somewhere people
+                    // are listed. Derived from what the world already keeps -
+                    // their years against the years their rung buys, the rank
+                    // they wear, whether a house has marked them - so there is
+                    // no stored field and no new draw. Null for most people,
+                    // which is the point.
+                    chewing: row === null ? null : whatTheyWouldBeHeardOnAbout({
+                        ordinal: person.realmOrdinal,
+                        age: person.age,
+                        rank: person.sectRank ?? null,
+                        chosen: row.tags.includes('chosen')
+                    }),
                     // Only from the world row, never from the roster one. The
                     // roster carries no attributes and no origin, so deriving
                     // this from it would make the same person read differently
