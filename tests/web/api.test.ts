@@ -163,7 +163,7 @@ describe('GET /api/state', () => {
             'lifespanPressure',
             'lifespanPressureFromAge',
             'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextBoundaryRank', 'nextRankName',
-            'physiqueSpeed',
+            'physiqueSpeed', 'progressFraction',
             'progressRequired', 'rankName', 'realmName', 'scarBreakthroughModifier',
             'scarTempering', 'sectName',
             // `standingHere` is what is live for this cultivator right now,

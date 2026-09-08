@@ -340,9 +340,10 @@ export const investigateVerb = {
             // which is the mode the defect was found in.
             facts.prose = `${facts.prose}\n\n${reaches.line} ${reaches.ceiling}`;
             facts.structure.push(
-                `Look at a person: reference axis at stage ${reaches.stage} - `
-                + `${reaches.reference} The perceptual axis is the party read above, and `
-                + 'trust.md rules that the two must not be collapsed into one number.'
+                `What this cultivator has a reference for: ${String(reaches.stage).replace(/_/g, ' ')}. `
+                + `${reaches.reference} What they can PERCEIVE is the reading above, and `
+                + 'the two are separate: knowing of somebody and being able to place '
+                + 'them are different things and are never one number.'
             );
         }
 

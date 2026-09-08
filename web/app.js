@@ -1240,10 +1240,21 @@ function setPending(on, text) {
 /* ── cultivator sheet ── */
 
 function meter(opts) {
-  const { name, value, max, unit = '', kind = '', state = '', note = '' } = opts;
+  const { name, value, max, unit = '', kind = '', state = '', note = '', fraction } = opts;
   const v = Number(value) || 0;
   const m = Number(max) || 0;
-  const pct = m > 0 ? Math.max(0, Math.min(100, (v / m) * 100)) : 0;
+  // THE ENGINE'S OWN FRACTION WHEN IT SENDS ONE.
+  //
+  // Dividing the two numbers here is not always the same answer:
+  // `progressFraction` reads comprehension as well, so a cultivator whose
+  // insights bear on what they are practising is further along than the
+  // raw counter says. A denominator the browser invents is a denominator
+  // that can disagree with the engine, which is the rule `lifespanYears`
+  // was put on the wire to keep.
+  const given = Number(fraction);
+  const pct = Number.isFinite(given) && fraction !== undefined && fraction !== null
+    ? Math.max(0, Math.min(100, given * 100))
+    : (m > 0 ? Math.max(0, Math.min(100, (v / m) * 100)) : 0);
   return html`
     <div class="meter meter--${raw(kind)} ${raw(state)}">
       <div class="meter__top">
@@ -1502,6 +1513,7 @@ function renderSheet() {
             name: d.nextRankName ? `Toward ${d.nextRankName}` : 'Progress',
             value: progress,
             max: progressRequired,
+            fraction: d.progressFraction,
             kind: 'prog'
           }))}
       ${progressRequired === null ? '' : raw(html`

@@ -165,7 +165,12 @@ describe('the engine log is read by somebody standing in a room', () => {
             "what can I learn",
             "what am I carrying",
             "who is here",
-            "what are people saying"
+            "what are people saying",
+            // Found by playing: this one printed `trust.md` at somebody standing
+            // in a market town, and the list above did not reach it.
+            "I look at Shen Minru",
+            "who would teach me",
+            "what is stopping me"
         ]) {
             const answer = await game.act(said) as unknown as {
                 state: { log: Array<{ role: string; text: string }> };

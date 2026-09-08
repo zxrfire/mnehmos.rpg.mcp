@@ -8,6 +8,7 @@ import {
     understandingEffects
 } from '../engine/cultivation/understanding.js';
 import { hasCrossedTheLid } from '../engine/cultivation/realms.js';
+import { progressFraction } from '../engine/cultivation/cultivation.js';
 import {
     cultivationSpeedOf,
     lifespanWithPhysique,
@@ -279,6 +280,16 @@ export interface DerivedView {
      * The Talent panel names the physique and says what it is. It could not say
      * what it is WORTH, which is the number the panel exists to explain.
      */
+    /**
+     * How far along the bar actually is, 0..1.
+     *
+     * `progressFraction` says in its own doc that it is "For progress bars",
+     * and the sheet has one. The browser was dividing the two numbers itself,
+     * which is the same defect `lifespanYears` above exists to prevent: a
+     * denominator the client invents is a denominator that can disagree with
+     * the engine. Above the Lid the bar measures nothing and this is 0.
+     */
+    progressFraction: number;
     physiqueSpeed: number;
     /**
      * What the cultivation rate KEEPS after scar wear, 0..1.
@@ -372,6 +383,7 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         tollAtNextBoundary: isTolled(ordinal)
             ? computeTollRisk(cultivator, { ambient: context.ambient ?? 'normal' }).risk
             : null,
+        progressFraction: progressFraction(cultivator),
         physiqueSpeed: cultivationSpeedOf(physiqueOrNull(cultivator.physique)),
         scarTempering: scarRateMultiplier(cultivator.injuries),
         scarBreakthroughModifier: scarTempering(cultivator.injuries).netBreakthroughModifier,
