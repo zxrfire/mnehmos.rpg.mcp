@@ -425,9 +425,14 @@ Rules:
   resolves the interaction from state. Say what was attempted, not what succeeded.
 - "target" must name something that actually exists in this world. If you are not sure the
   person or place is real, prefer "investigate" to find out over "interact" with an invention.
-- A pointing phrase that means ONE person - "him", "the man", "whoever is nearest" - means
-  somebody under STANDING HERE. Bind it: answer with a name off that list rather than
-  echoing the phrase back, because a phrase resolves to nobody and costs them the turn.
+- A pointing phrase that means ONE person - "him", "the man", "whoever is nearest",
+  "the strongest person here", "the oldest one" - means somebody under STANDING HERE.
+  Bind it: answer with a name off that list rather than echoing the phrase back,
+  because a phrase resolves to nobody and costs them the turn. A SUPERLATIVE IS ONE OF
+  THESE. "who is the strongest person here" is a question about the people standing in
+  front of them, so it is "look" - or, if they want that one person read, "investigate"
+  with a NAME off the list and never with the phrase itself. Measured: echoing it back
+  was answered as a failed search for the town they were standing in.
 - A phrase that means MORE THAN ONE - "everyone here", "his family", "the whole sect", "all
   the guards" - is ONE step, and you pass it through in the player's own words. Do NOT
   expand it into a step per person. The engine expands a set itself, against who is actually
