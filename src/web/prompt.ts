@@ -1075,7 +1075,32 @@ export function composeNarrationUser(
         hearing?: Hearing | null;
         /** The player's literal words. Shown, never parsed for an outcome. */
         playerSaid?: string | null;
-    }
+    },
+    /**
+     * WHETHER THE AMBIENT READING IS NEW INFORMATION.
+     *
+     * Measured in play over six consecutive turns on one island: five of them
+     * opened on the qi being thin, in near enough the same words every time -
+     * "a long sitting yields only what a short one should, a fact the locals
+     * have stopped mentioning" - and the sixth was a time skip that had no
+     * scene header at all. Nothing was wrong with the sentence. It was being
+     * handed over as the first line of the prompt on every single turn, so it
+     * became the first line of the prose on every single turn.
+     *
+     * This is the defect `describeStanding` was already cured of once, in the
+     * same repo and for the same reason: a STANDING CONDITION narrated as if it
+     * were news. A player who has read it four times is not being given
+     * atmosphere any more.
+     *
+     * So it is volunteered when it changes and stated as standing when it does
+     * not. It is never withheld: the reading is still in the prompt either way,
+     * because a character who chooses to sit and draw is acting on it and the
+     * narrator has to be able to say so.
+     *
+     * Defaults to news, which is the honest default for a caller that has not
+     * said - the first turn of a run, and every existing test.
+     */
+    told: { ambientIsNews?: boolean } = {}
 ): string {
     const nameable = nameableNames(scene.awareness ?? []);
     const hearing = scene.hearing ?? null;
@@ -1083,7 +1108,14 @@ export function composeNarrationUser(
     return [
         'SCENE',
         `Place: ${scene.place}`,
-        describeAmbientPerceived(scene.ambient),
+        told.ambientIsNews === false
+            // Still handed over, and marked as the wallpaper it has become.
+            // The instruction is on the same line as the fact so a model
+            // cannot pick up one without the other.
+            ? `Standing condition, unchanged, and this cultivator stopped noticing it turns ago `
+              + `- do not open on it and do not describe it again unless they act on it: `
+              + describeAmbientPerceived(scene.ambient)
+            : describeAmbientPerceived(scene.ambient),
         ...(scene.playerSaid ? ['', `THE PLAYER SAID, WORD FOR WORD: ${scene.playerSaid}`] : []),
         '',
         ...spokenBlock(hearing),

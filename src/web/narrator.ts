@@ -807,11 +807,28 @@ export class ProviderNarrator implements Narrator {
     }
 
     /**
+     * THE LAST SCENE HEADER THIS NARRATOR HANDED OVER.
+     *
+     * Held here rather than by the caller because `narrate` is the one funnel:
+     * five call sites in `turn-engine.ts` reach it and none of them would
+     * otherwise know what the previous one said. What it is for is written on
+     * `composeNarrationUser`'s `told` parameter.
+     */
+    private lastSceneTold: { place: string; ambient: AmbientQi } | null = null;
+
+    /**
      * Phase 3. The result is stored in the log and shown to the player. It is
      * not parsed, matched, or compared against anything; there is deliberately
      * no code in this package that reads a value out of it.
      */
     async narrate(facts: EngineFacts, scene: NarratorScene): Promise<Narration> {
+        const ambientIsNews = this.lastSceneTold === null
+            || this.lastSceneTold.place !== scene.place
+            || this.lastSceneTold.ambient !== scene.ambient;
+        // Recorded before the call rather than after it, so a narration that
+        // times out or is discarded does not make the next turn repeat itself.
+        // The model was told; whether it used it well is a separate question.
+        this.lastSceneTold = { place: scene.place, ambient: scene.ambient };
         try {
             const result = await this.provider.call({
                 model: this.options.model,
@@ -820,7 +837,7 @@ export class ProviderNarrator implements Narrator {
                 signal: AbortSignal.timeout(this.timeoutMs),
                 messages: [
                     { role: 'system', content: narrationSystemPrompt() },
-                    { role: 'user', content: composeNarrationUser(facts, scene) }
+                    { role: 'user', content: composeNarrationUser(facts, scene, { ambientIsNews }) }
                 ]
             });
 
