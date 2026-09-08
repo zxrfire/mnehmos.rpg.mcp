@@ -165,10 +165,20 @@ describe('the zero-provider narration is a situation, not a sheet', () => {
 
         const shown = playerFacing(await game.act('I look around.'));
 
-        // The sheet is already on screen. Saying it again in a sentence is the
-        // failure: no rank name, no age in years, no stone count.
-        expect(shown).not.toMatch(/Qi Condensation Layer \d/);
-        expect(shown).not.toMatch(/\d+ years old/);
+        // WHAT IS BANNED HERE IS THE LADDER INDEX, NOT THE RANK AND NOT THE AGE.
+        //
+        // This used to refuse `Qi Condensation Layer 4` and `17 years old`, and
+        // both are things people in this world say. The design owner: *"layer x
+        // is okay (only for qi condensation cuz it goes 1-13, for the rest use
+        // the words), x years old is okay, just do not say the ordinal number."*
+        // `rankName` already obeys the first half on its own, because Qi
+        // Condensation is the one realm whose sub-ranks are numbered and every
+        // realm above it names them in words: Sinew, Marrow, First Tempering.
+        //
+        // The ordinal is the engine's index into the ladder. Nobody in this
+        // world says it, and it was reaching the player through the engine log
+        // on every reading of anybody's standing.
+        expect(shown).not.toMatch(/ordinal \d/i);
         expect(shown).not.toMatch(/\d+ spirit stones to their name/);
     });
 

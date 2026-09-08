@@ -557,10 +557,9 @@ export function planTheBuild(input: PlanInput): BuildPlan {
                       + '.'
             ],
             structure: [
-                `Refused ${recipe.id}: requires ordinal ${requiredOrdinalForRecipe(recipe)} `
-                + `(${refiningRealmNameFor(recipe.grade)}); cultivator stands at `
-                + `${cultivator.realmOrdinal}. Within reach: `
-                + `${reachable.map(r => r.id).join(', ') || 'none'}.`
+                `Refused ${recipe.name}: it is written for ${refiningRealmNameFor(recipe.grade)}, `
+                + `and this cultivator stands at ${rankName(cultivator.realmOrdinal)}. `
+                + `Within reach: ${reachable.map(r => r.name).join(', ') || 'none'}.`
             ]
         };
     }
@@ -748,7 +747,7 @@ export function landTheBuild(input: LandInput): BuildOutcome {
     );
     if (worked.stoppedBecause) lines.push(worked.stoppedBecause);
     structure.push(
-        `workOn(${recipe.id}): asked ${plan.daysToWork}, absorbed ${worked.daysWorked}, `
+        `${recipe.name}, worked on: asked ${plan.daysToWork} days, absorbed ${worked.daysWorked}, `
         + `${berth.workDaysDone}/${recipe.workDays} done at `
         + `${Math.round(fractionStocked(berth, recipe) * 100)}% stocked.`
     );
@@ -778,9 +777,9 @@ export function landTheBuild(input: LandInput): BuildOutcome {
     );
     clearTheStocks(db, cultivator.id);
     structure.push(
-        `launch(${recipe.id}) at ordinal ${cultivator.realmOrdinal}: rate `
+        `${recipe.name}, attempted at ${rankName(cultivator.realmOrdinal)}: rate `
         + `${(outcome.rate * 100).toFixed(1)}% (base ${(recipe.baseSuccessRate * 100).toFixed(0)}% `
-        + `+ margin over ordinal ${requiredOrdinalForRecipe(recipe)}), rolled `
+        + `plus the margin over what it is written for), rolled `
         + `${outcome.roll.toFixed(3)} - ${outcome.launched ? 'holds' : 'does not hold'}. `
         + `Rate quoted before the roll was ${(rate * 100).toFixed(1)}%.`
     );

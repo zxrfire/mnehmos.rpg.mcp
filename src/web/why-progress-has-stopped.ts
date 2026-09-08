@@ -58,7 +58,7 @@
  */
 
 import { rankName } from '../engine/cultivation/realms.js';
-import { rungAndOrdinal } from './facts.js';
+import { theRung } from './facts.js';
 import type { TechniqueCeiling } from '../engine/cultivation/cultivation.js';
 import type { AmbientQi } from '../schema/cultivation.js';
 
@@ -211,7 +211,7 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `What is missing is a book, or somebody willing to teach you one.`,
             structure:
                 `No method is practised, so the manual carries no further than `
-                + `${rungAndOrdinal(0)} and the rate multiplier is 0. A stretch of any length `
+                + `${theRung(0)} and the rate multiplier is 0. A stretch of any length `
                 + 'returns exactly nothing.'
         });
     } else if (input.manual.state === 'exhausted') {
@@ -224,8 +224,8 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `It is not slower here, it is stopped, and no amount of sitting with it `
                 + `changes that. What is missing is the next volume.`,
             structure:
-                `The manual carries to ${rungAndOrdinal(cap)} and this cultivator stands at `
-                + `${rungAndOrdinal(input.ordinal)}, so the rate multiplier past it is 0. A `
+                `The manual carries to ${theRung(cap)} and this cultivator stands at `
+                + `${theRung(input.ordinal)}, so the rate multiplier past it is 0. A `
                 + 'stretch of any length returns exactly nothing.'
         });
     }
@@ -242,8 +242,8 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                 + `you unaided: buy access, buy stones, or leave.`,
             structure:
                 `${input.regionName} carries nobody past `
-                + `${rungAndOrdinal(input.localCeilingOrdinal)} and this cultivator stands at `
-                + `${rungAndOrdinal(input.ordinal)}, so the ground here cannot take them `
+                + `${theRung(input.localCeilingOrdinal)} and this cultivator stands at `
+                + `${theRung(input.ordinal)}, so the ground here cannot take them `
                 + 'further unaided.'
         });
     }
@@ -290,8 +290,8 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                     `${rank.sectName} has you at ${rank.rankTitle}. ${rank.nextRankTitle} `
                     + `wants ${unmet.join('; ')}.`,
                 structure:
-                    `${rank.nextRankTitle} wants ${rungAndOrdinal(rank.requiredOrdinal)} `
-                    + `against ${rungAndOrdinal(input.ordinal)} held, and `
+                    `${rank.nextRankTitle} wants ${theRung(rank.requiredOrdinal)} `
+                    + `against ${theRung(input.ordinal)} held, and `
                     + `${rank.requiredContribution} contribution against ${rank.contribution} `
                     + 'held.'
             });
@@ -319,7 +319,7 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                     + `qi-units. You hold ${round(input.progressAvailable)}, which is `
                     + `${round(short)} short.`,
                 structure:
-                    `The rung above ${rungAndOrdinal(input.ordinal)} is priced at `
+                    `The rung above ${theRung(input.ordinal)} is priced at `
                     + `${round(input.progressRequired)} qi-units and `
                     + `${round(input.progressAvailable)} are held, which is `
                     + `${round(short)} short.`
@@ -344,11 +344,11 @@ export function whyProgressHasStopped(input: CeilingInput): CeilingRead {
                   + `${round(-past)} still counted.`,
             structure: past >= 0
                 ? `${round(input.yearsAtCurrentRealm)} years held at `
-                  + `${rungAndOrdinal(input.ordinal)} against the `
+                  + `${theRung(input.ordinal)} against the `
                   + `${round(input.stagnationYears)} the ladder credits before settling: `
                   + `${round(past)} years past it.`
                 : `${round(input.yearsAtCurrentRealm)} years held at `
-                  + `${rungAndOrdinal(input.ordinal)} of the ${round(input.stagnationYears)} `
+                  + `${theRung(input.ordinal)} of the ${round(input.stagnationYears)} `
                   + `the ladder credits before settling, with ${round(-past)} still counted.`
         });
     }

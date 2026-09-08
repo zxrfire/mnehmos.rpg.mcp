@@ -42,7 +42,7 @@
  *     that comfortably carries 7, which is over it.
  *
  * Every figure kept, every enum resolved, said as a sentence. Ordinals go
- * through `rungAndOrdinal`, which is the single place that decision is made -
+ * through `theRung`, which is the single place that decision is made -
  * five modules had been making it separately and had already drifted, and the
  * parenthetical form is the one that composes anywhere.
  *
@@ -51,7 +51,7 @@
 
 import type { AskWeight } from '../engine/social-leverage/index.js';
 import type { ApproachLeverage } from '../schema/cultivation.js';
-import { rungAndOrdinal } from './facts.js';
+import { theRung } from './facts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // HOW OFTEN A THING LIKE THIS LANDS
@@ -402,8 +402,8 @@ export function whatTheAskCameTo(put: AnAskThatWasPut): string {
 /** How far apart two people stand, said as rungs and as both rungs. */
 export function theGapInWords(theirs: number, ours: number): string {
     const gap = theirs - ours;
-    if (gap === 0) return `both at ${rungAndOrdinal(ours)}`;
-    return `${rungAndOrdinal(theirs)} against ${rungAndOrdinal(ours)}, `
+    if (gap === 0) return `both at ${theRung(ours)}`;
+    return `${theRung(theirs)} against ${theRung(ours)}, `
         + `${Math.abs(gap)} rung${Math.abs(gap) === 1 ? '' : 's'} `
         + `${gap > 0 ? 'above' : 'below'}`;
 }

@@ -5,6 +5,7 @@
 import type { Cultivator } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ResolvedEntity } from './entities.js';
+import { rankName } from '../engine/cultivation/realms.js';
 import { WORKING_KNOWLEDGE_MARGIN } from './hearsay.js';
 import type {
     WhatTheySayAboutThemselves
@@ -173,7 +174,7 @@ export function askedAbout(input: AskedInput): Answer {
     // shape of a person they have not.
     const who = input.speakerName ?? 'The one nearest to hand';
     const structure: string[] = [
-        `Asked ${asked.name} (ordinal ${asked.realmOrdinal}, ` +
+        `Asked ${asked.name} (${rankName(asked.realmOrdinal)}, ` +
         `${attached(asked) ? `${asked.sectName ?? 'a sect'} as ${asked.sectRank ?? 'a member'}` : 'unattached'}).`
     ];
 

@@ -45,7 +45,7 @@ import {
     whenThisWantRunsOut
 } from '../engine/world/what-an-open-need-does-to-an-ask-and-to-a-price.js';
 import type { EngineFacts } from './facts.js';
-import { rungAndOrdinal } from './facts.js';
+import { theRung } from './facts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE PIECES
@@ -140,7 +140,7 @@ function whatWouldReachIt(goal: NpcGoal, them: SomebodyWithGoals): string {
         case 'wealth':
         case 'debt':
             return 'Money would reach it, and the figure is a year of what somebody at '
-                + `${rungAndOrdinal(them.ordinal)} earns rather than a sum that sounds large.`;
+                + `${theRung(them.ordinal)} earns rather than a sum that sounds large.`;
         case 'cultivation':
             return 'A road they have not walked would reach it. They are carrying '
                 + `${them.holds.length} art${them.holds.length === 1 ? '' : 's'}, and anything `

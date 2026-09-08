@@ -109,3 +109,85 @@ describe('nothing in the narration comes out of the source', () => {
         expect(offences, 'the player was handed a form field').toEqual([]);
     }, 600_000);
 });
+
+
+/**
+ * AND THE SAME RULE ON THE CHANNEL THAT IS NOT REWRITTEN.
+ *
+ * The guard above reads `answer.narration`, which is the channel a narrator
+ * RE-WRITES. `facts.structure` is the other one, and `engineEntries` pushes it
+ * to the play log verbatim as ENGINE RULING rows that sit on screen beside the
+ * prose. Nothing checked it, so everything the rule above forbids arrived there
+ * instead. Read off a live run before this existed:
+ *
+ *   whatIsWrongWithThisGround: 9 line(s) at stage encountered over 2 status(es)
+ *   whoHoldsTheGround: held (name withheld from the player), answered at
+ *     loc-region-low-fall-scarwater. Recourse the_record_does_not_say.
+ *   filtered out of the learnable list below by `known !== true`
+ *   0 pill row(s), 0 herb row(s), 22 stone(s)
+ *   Standing at Qi Condensation Layer 1 (ordinal 0)
+ *
+ * Function names, a raw location id, a raw enum key, a code expression, six
+ * parenthesised plurals, and the ladder index. `withoutTheHandlerName` already
+ * strips one class of this at the sink, which is the repo noticing the problem
+ * and fixing a single instance of it.
+ *
+ * An operator surface is a real thing and this is not one: the play log sits on
+ * the same screen as the narration, in every mode, and `adminMode` gates only
+ * the roster and the admin menu.
+ */
+describe('the engine log is read by somebody standing in a room', () => {
+    /** A raw identifier: kebab-case ids, snake_case enum keys, fn( calls. */
+    const A_SYMBOL_NOT_A_WORD =
+        /\b[a-z]+(?:-[a-z0-9]+){2,}\b|\b[a-z]+_[a-z_]+\b|\b[a-z]+[A-Z][a-zA-Z]*\b/;
+
+    it('shows no source, no form fields and no ladder index in its rulings', async () => {
+        const { game, db } = await makeGameInWorld({
+            seed: 'engine-log', worldSeed: 'engine-log', worldEnabled: true
+        });
+        const { cultivator } = await game.newRun('Reader');
+        db.prepare('UPDATE cultivators SET spirit_stones = 3000, realm_ordinal = 6 WHERE id = ?')
+            .run(cultivator.id);
+
+        // The patterns have to be alive, or a clean surface and a dead regex
+        // read the same from here.
+        expect(A_SYMBOL_NOT_A_WORD.test("answered at loc-region-low-fall")).toBe(true);
+        expect(A_SYMBOL_NOT_A_WORD.test("Recourse the_record_does_not_say")).toBe(true);
+        expect(A_SYMBOL_NOT_A_WORD.test("whoHoldsTheGround: held")).toBe(true);
+        expect(A_SYMBOL_NOT_A_WORD.test("a quiet market town on thin ground")).toBe(false);
+        expect(A_SYMBOL_NOT_A_WORD.test("Ning Jingyi says The Quiet Marches")).toBe(false);
+
+        const offences: string[] = [];
+        for (const said of [
+            "I look around",
+            "I assess myself",
+            "what is for sale",
+            "what can I learn",
+            "what am I carrying",
+            "who is here",
+            "what are people saying"
+        ]) {
+            const answer = await game.act(said) as unknown as {
+                state: { log: Array<{ role: string; text: string }> };
+            };
+            const rulings = (answer.state.log ?? []).filter(row => row.role === "engine");
+            for (const row of rulings) {
+                for (const [what, re] of [
+                    ["source", SOURCE_IN_PROSE],
+                    ["a form field", A_FORM_RATHER_THAN_A_SENTENCE],
+                    ["a symbol", A_SYMBOL_NOT_A_WORD],
+                    ["the ladder index", /ordinal \d/i]
+                ] as Array<[string, RegExp]>) {
+                    const hit = re.exec(row.text);
+                    if (hit) offences.push(`${said} -> ${what}: ${hit[0]}`);
+                }
+            }
+        }
+
+        expect(
+            [...new Set(offences)],
+            "The engine log sits on the same screen as the prose and is rewritten by "
+            + "nobody. What it says is what the player reads."
+        ).toEqual([]);
+    });
+});

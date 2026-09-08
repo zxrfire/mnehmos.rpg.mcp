@@ -110,12 +110,17 @@ describe('resolved entities describe behaviour, not schema', () => {
         // the play log as well as the inspector, so it states its figures in
         // sentences - `alignment=righteous, admissionOrdinal=3` became
         // "Righteous on the schema's alignment axis. It admits from Qi
-        // Condensation Layer 4 (ordinal 3)". What this test is for is that the
-        // alignment, the admission rung and the rank ladder are filed where the
-        // prose is not, and all three still are.
+        // Condensation Layer 4". What this test is for is that the alignment,
+        // the admission rung and the rank ladder are filed where the prose is
+        // not, and all three still are.
+        //
+        // It used to carry "(ordinal 3)" beside the rung, and the paragraph
+        // above is the reason that had to go: a channel that reaches the play
+        // log is read by somebody standing in a room, and the ladder index is
+        // not a thing anybody in this world says.
         const structure = sect.structure.join(' ');
         expect(structure.toLowerCase()).toContain(LOCAL_SECT.alignment);
-        expect(structure).toContain(`ordinal ${LOCAL_SECT.admissionOrdinal}`);
+        expect(structure).not.toMatch(/ordinal \d/i);
         expect(structure).toContain(rankName(LOCAL_SECT.admissionOrdinal));
         expect(structure).toContain(LOCAL_SECT.ranks[0]);
     });
@@ -172,7 +177,11 @@ describe('resolved entities describe behaviour, not schema', () => {
         // The ordinal is not lost, it is filed where an operator can read it -
         // and it now arrives with the rung it names, because `ordinal` is a
         // field name and every other surface in the game says the rank.
-        expect(seen.structure.join(' ')).toContain('ordinal 30');
+        // The rung, not the ladder index. This channel is logged to the player
+        // beside the prose, so the index was reaching a reader here; what the
+        // test is for is that the RANK is filed separately from the narration,
+        // and it still is.
+        expect(seen.structure.join(' ')).toContain('Void Tribulation');
         expect(seen.structure.join(' ')).toContain(rankName(30));
     });
 

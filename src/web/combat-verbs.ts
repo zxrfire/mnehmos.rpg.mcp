@@ -87,7 +87,7 @@ import {
 import { whoTheyCarryFor } from './what-a-telling-lands-on.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { resolveCultivator, resolvePill } from './entities.js';
-import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
+import { factsForRefusal, factsForToolResult, placeName, theRung } from './facts.js';
 import { type StandingFight, theFightStillStands } from './fight-answers.js';
 import { routesOutOfAGap, sayingWhatWouldWork } from './gap-routes.js';
 import { loosePlaceKey } from './knowledge.js';
@@ -302,7 +302,7 @@ export const combatVerbs = {
                     ? 'What the strongest person they would put in a room stands at is not '
                       + 'recorded anywhere this read can see.'
                     : `The strongest person they will put in a room stands at `
-                      + `${rungAndOrdinal(theirs)}.`)
+                      + `${theRung(theirs)}.`)
                 + (position
                     ? ` This cultivator serves ${position.sectId}, so the other route is open to `
                       + `them: what a house does to a house is decided by its ${headTitleOf(position)}.`

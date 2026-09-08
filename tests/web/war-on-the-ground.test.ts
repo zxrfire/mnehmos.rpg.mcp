@@ -229,14 +229,15 @@ describe('what a war does to the ground it is fought on', () => {
 
         const onTheSeat = await game.act('I look around');
         expect(onTheSeat.narration).toMatch(/fighting/i);
-        expect(logOf(onTheSeat)).toMatch(/whatIsWrongWithThisGround: [1-9]/);
+        // Was the function's own name in the log. Says it in words now.
+        expect(logOf(onTheSeat)).toMatch(/Something is wrong with this ground/);
 
         // The same sentence, the same day, somewhere nothing is true of.
         db.prepare('UPDATE cultivators SET location = ? WHERE id = ?')
             .run(quiet.name, cultivator.id);
         const elsewhere = await game.act('I look around');
         expect(elsewhere.narration).not.toMatch(/fighting/i);
-        expect(logOf(elsewhere)).toMatch(/whatIsWrongWithThisGround: 0 line/);
+        expect(logOf(elsewhere)).toMatch(/0 things about it can be told/);
     }, 300_000);
 
     /**

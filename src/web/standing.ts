@@ -221,7 +221,7 @@ function tierInWords(position: HousePosition): string {
 /**
  * A rung in a house, named, with its index kept beside it.
  *
- * The house sibling of `rungAndOrdinal` in `facts.ts`, and it exists for the
+ * The house sibling of `theRung` in `facts.ts`, and it exists for the
  * same reason: `rank_index=2` is a column value, and six call sites in
  * `game.ts` were each deciding separately how to say it. Both halves are kept,
  * because they differ by one - a rank index counts from zero and a person in

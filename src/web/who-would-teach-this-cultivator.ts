@@ -56,7 +56,7 @@
  */
 
 import { rankName } from '../engine/cultivation/realms.js';
-import { rungAndOrdinal } from './facts.js';
+import { theRung } from './facts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT THE CALLER HAS TO HAVE READ ALREADY
@@ -181,15 +181,15 @@ const WHY_A_TEACHER_MATTERS: Record<TeacherInput['manualState'], string> = {
  */
 function mechanicalPerson(person: SomebodyAbove, playerOrdinal: number): string {
     const gap = person.realmOrdinal - playerOrdinal;
-    return `${person.name} stands at ${rungAndOrdinal(person.realmOrdinal)}, ${rungs(gap)} `
-        + `above ${rungAndOrdinal(playerOrdinal)}. `
+    return `${person.name} stands at ${theRung(person.realmOrdinal)}, ${rungs(gap)} `
+        + `above ${theRung(playerOrdinal)}. `
         + (person.willTeach
             ? 'Marked a master on the roll: they teach, inside stated limits. '
             : 'Nothing on the roll marks them a teacher. ')
         + (person.carriesYouTo === null
             ? 'Nothing they are carrying goes past where the asker already stands, so what '
               + 'they could hand over is an art and not a road further up. '
-            : `carriesTo puts their reach at ${rungAndOrdinal(person.carriesYouTo)}, being the `
+            : `carriesTo puts their reach at ${theRung(person.carriesYouTo)}, being the `
               + `lower of their own rung and the teachable end of the deepest thing they hold. `)
         + (person.here
             ? 'They are standing here, so they can be approached today.'
@@ -239,9 +239,9 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
     const roads = named.filter(p => p.carriesYouTo !== null);
 
     structure.push(
-        `${input.above.length} stand above ${rungAndOrdinal(input.ordinal)} on the roll and `
+        `${input.above.length} stand above ${theRung(input.ordinal)} on the roll and `
         + `in the room. ${named.length} can be named, ${masters.length} of those teach, `
-        + `${roads.length} are carrying a road that goes past ${rungAndOrdinal(input.ordinal)}, `
+        + `${roads.length} are carrying a road that goes past ${theRung(input.ordinal)}, `
         + `and ${unnamed.length} are counted without a name because this cultivator has never `
         + `met them. ${WHY_A_TEACHER_MATTERS[input.manualState]}`
     );

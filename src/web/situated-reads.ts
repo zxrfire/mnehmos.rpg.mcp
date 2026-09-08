@@ -59,7 +59,7 @@ import { holdsACopyOf } from '../server/consolidated/technique-manage.js';
 import { stillStands } from './choosing-what-to-do-when-a-seclusion-is-broken.js';
 import { rosterFor, sectBoardFor } from './encounters.js';
 import { resolveTechnique, worldLocationFor } from './entities.js';
-import { factsForRefusal, factsForToolResult, placeName, rungAndOrdinal } from './facts.js';
+import { factsForRefusal, factsForToolResult, placeName, theRung } from './facts.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
 import { readFlag } from '../server/consolidated/cultivation-support.js';
@@ -1308,10 +1308,10 @@ export const situatedReads = {
 
         const facts = factsForToolResult(`${catalog.name}, and what stands in the way.`, lines);
         facts.structure.push(
-            `${catalog.name} opens at ${rungAndOrdinal(catalog.requiredOrdinal)} and `
+            `${catalog.name} opens at ${theRung(catalog.requiredOrdinal)} and `
             + `${cap === null || cap === undefined
                 ? 'nothing caps how far this cultivator may be taught'
-                : `this cultivator may be taught no further than ${rungAndOrdinal(cap)}`}. `
+                : `this cultivator may be taught no further than ${theRung(cap)}`}. `
             + `${isSoldAtAStall(art.id) ? 'A stall sells it' : 'No stall sells it'}, and `
             + `${holdsACopyOf(this.db, cultivator.id, art.id)
                 ? 'they already hold a copy'

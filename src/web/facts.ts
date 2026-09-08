@@ -71,10 +71,22 @@ export function sayThisWhateverTheNarratorDoes(facts: EngineFacts, said: string)
 }
 
 /**
- * A rung, named, with its ordinal kept beside it.
+ * A rung, named. THE ORDINAL IS NOT SAID.
+ *
+ * This used to append `(ordinal N)`, and the engine log is player facing, so
+ * every reading of anybody's standing carried the ladder index beside it:
+ * "Qi Condensation Layer 4 (ordinal 3), 3 rungs above Qi Condensation Layer 1
+ * (ordinal 0)". The design owner: *"layer x is okay (only for qi condensation
+ * cuz it goes 1-13, for the rest use the words), x years old is okay, just
+ * don't say the ordinal number."*
+ *
+ * `rankName` already obeys the first half of that on its own - Qi Condensation
+ * carries a numbered layer because that is what the realm is called, and every
+ * realm above it names its sub-rank in words (Sinew, Marrow, First Tempering).
+ * So the whole of the fix is dropping what this function added.
  */
-export function rungAndOrdinal(ordinal: number): string {
-    return `${rankName(ordinal)} (ordinal ${ordinal})`;
+export function theRung(ordinal: number): string {
+    return rankName(ordinal);
 }
 
 /** Build facts with an empty structure channel. Most outcomes have none. */
@@ -336,7 +348,7 @@ export function standingStructure(cultivator: Cultivator, ambient: AmbientQi): s
     const rateLost = Math.round(aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty * 100);
     const settling = Math.round(stagnationYearsForOrdinal(cultivator.realmOrdinal));
     return [
-        `Standing at ${rungAndOrdinal(cultivator.realmOrdinal)}, `
+        `Standing at ${theRung(cultivator.realmOrdinal)}, `
         + `on a ${getSpiritRoot(cultivator.spiritRoot).name}, `
         + (cultivator.foundationQuality === 'none'
             ? 'with no foundation laid.'
@@ -761,7 +773,7 @@ export function factsForBreakthrough(
         // merely stated, which is the whole promise.
         structure: [
             `Outcome: ${result.outcome}. `
-            + `${rungAndOrdinal(result.fromOrdinal)} to ${rungAndOrdinal(result.toOrdinal)}, `
+            + `${theRung(result.fromOrdinal)} to ${theRung(result.toOrdinal)}, `
             + `on a final chance of ${result.finalChance.toFixed(4)} against a roll of `
             + `${result.roll.toFixed(4)}. `
             + (isBoundaryCrossing(result)
@@ -2079,7 +2091,7 @@ export function factsForSiteFace(
             + `${face.name !== null ? 'does permit naming' : 'does not permit naming'}. `
             + (face.advertisedOrdinal === null || face.advertisedOrdinal === undefined
                 ? 'Nothing advertises what rung it was built for.'
-                : `It is advertised as built for ${rungAndOrdinal(face.advertisedOrdinal)}, `
+                : `It is advertised as built for ${theRung(face.advertisedOrdinal)}, `
                   + 'which is the rumour\'s number and not the room\'s - three entries in the '
                   + 'catalog disagree with their own interior on purpose.'),
             'Pre-entry view only. The interior was not read: this renderer has no field that could hold it.',

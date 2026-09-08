@@ -49,11 +49,24 @@ describe('what cultivation level the expert was', () => {
         expect(said).not.toMatch(/ordinal/i);
     });
 
-    /** The number is kept where an operator sorts on it, and only there. */
-    it('keeps the number in the mechanical channel', () => {
+    /**
+     * AND THE NUMBER IS NOT KEPT THERE EITHER, BECAUSE THERE IS ON SCREEN.
+     *
+     * This used to say the ordinal was "kept where an operator sorts on it, and
+     * only there". The premise was wrong: `engineEntries` pushes every
+     * `facts.structure` line into the play log as an ENGINE RULING row, in every
+     * mode, beside the prose. `adminMode` gates the roster and the admin menu and
+     * not that. So the mechanical channel is a second player-facing surface that
+     * nothing was checking, and the ladder index reached a reader through it on
+     * every reading of anybody's standing.
+     *
+     * The design owner: *"just don't say the ordinal number."* Both channels name
+     * the rung now, and the rung is the fact anybody in this world would state.
+     */
+    it('names the rung in the mechanical channel too, and not the index', () => {
         const line = headstoneStructure(stone());
-        expect(line).toContain('ordinal 44');
         expect(line).toContain('Tribulation Transcendence Perfection');
+        expect(line).not.toMatch(/ordinal \d/i);
     });
 
     it('says how they died and what became of them, in words rather than in enums', () => {

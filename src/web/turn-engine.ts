@@ -669,7 +669,7 @@ import {
     howFarOff,
     humanDays,
     placeName,
-    rungAndOrdinal,
+    theRung,
     sayThisWhateverTheNarratorDoes,
     type EngineFacts
 } from './facts.js';
@@ -3526,8 +3526,9 @@ ${noticedWaiting}`;
 ${line}`;
                     }
                     looking.facts.structure.push(
-                        `whatIsWrongWithThisGround: ${wrong.lines.length} line(s) at stage `
-                        + `${wrong.stage} over ${wrong.running} status(es) running here.`
+                        `Something is wrong with this ground, and ${howMany(wrong.lines.length, 'thing')} `
+                        + `about it can be told. It is at the ${String(wrong.stage).replace(/_/g, ' ')} `
+                        + `stage, with ${howMany(wrong.running, 'condition')} still running here.`
                     );
                 }
                 // AND WHO ANSWERS FOR IT, WHERE NOBODY DOES
@@ -6274,7 +6275,7 @@ ${line}`;
             'You read what is on offer here. Nothing was bought and no time passed.'
         );
         board.facts.structure.push(
-            `${offered.peopleHere} person(s) standing here; ${offered.offers.length} offer(s) `
+            `${howMany(offered.peopleHere, 'person')} standing here; ${howMany(offered.offers.length, 'offer')} `
             + 'after the cut, priced between what a counter would give the holder and what the '
             + 'copy is worth. Reading them costs nothing: nothing bought, no time passed.'
         );
@@ -9046,12 +9047,12 @@ ${opened.text}` : receipt,
             lines
         );
         facts.structure.push(
-            `alchemy_manage.inventory: ${pills.length} pill row(s), ${herbs.length} herb row(s), `
-            + `${stones} stone(s).`,
-            `Held off the pouch entirely: ${carried.length} rated object(s) through `
-            + `listCarriedArtifacts, ${books.length} book(s) through copiesHeldBy. A copy of a `
-            + 'manual is a knowledge row with a provenance rather than a counted pouch row, so '
-            + 'the alchemy reader cannot see one however long it looks.',
+            `In the pouch: ${howMany(pills.length, 'pill')}, ${howMany(herbs.length, 'herb')}, `
+            + `${howMany(stones, 'spirit stone')}.`,
+            `Held off the pouch entirely: ${howMany(carried.length, 'rated object')} and `
+            + `${howMany(books.length, 'book')}. A copy of a manual is a knowledge row with a `
+            + 'provenance rather than a counted pouch row, so the reader that counts pills '
+            + 'cannot see one however long it looks.',
             asked === 'on the body'
                 ? 'Asked about the body, so the legacy ledger was not read. "what do I have" '
                 + 'reaches it; "what am I carrying" is the narrower question and does not.'
@@ -9563,9 +9564,10 @@ ${opened.text}` : receipt,
         );
         facts.structure.push(
             `Held: ${held.length > 0 ? held.map(a => a.id).join(', ') : 'none'}. These are `
-            + 'filtered out of the learnable list below by `known !== true`, which is why the '
-            + 'listing has to open with them rather than leaving them to it.',
-            `technique_manage.list_available: ${compatible.length} compatible, `
+            + 'already held, so they are kept out of the list of what could be learned '
+            + 'below, which is why the listing has to open with them rather than leaving '
+            + 'them to it.',
+            `${compatible.length} compatible, `
             + `${conflicting.length} conflicting, ${gated} gated by realm, `
             + `${body.counts?.unavailableInThisRun ?? 0} absent from this run by seed.`
         );
@@ -9622,7 +9624,7 @@ ${opened.text}` : receipt,
 ${fit.line}`;
             execution.facts.structure.push(
                 `It reads as ${fit.fit} for this body at `
-                + `${rungAndOrdinal(fit.gradeOrdinal)}, judged on `
+                + `${theRung(fit.gradeOrdinal)}, judged on `
                 + `${fit.axes.length} axis${fit.axes.length === 1 ? '' : 'es'}: `
                 + fit.axes.map(a => `${a.axis} ${a.verdict}`).join(', ') + '.'
             );
@@ -11107,7 +11109,7 @@ ${fit.line}`;
                 name: 'engine.takeAMaster',
                 action: 'request',
                 summary:
-                    `${party.name}, standing at ${rungAndOrdinal(theirOrdinal)}, is recorded as `
+                    `${party.name}, standing at ${theRung(theirOrdinal)}, is recorded as `
                     + `${cultivator.name}'s master. It is read on every cultivation span from `
                     + `here, and is worth `
                     + `${theirOrdinal > cultivator.realmOrdinal

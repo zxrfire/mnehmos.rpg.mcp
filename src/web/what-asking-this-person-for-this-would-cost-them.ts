@@ -65,7 +65,7 @@ import {
 import { carriesTo, getTechnique, teachersOf } from '../data/cultivation/techniques.js';
 import { getSect, getSectsTeaching } from '../data/cultivation/sects.js';
 import { rankName } from '../engine/cultivation/realms.js';
-import { rungAndOrdinal } from './facts.js';
+import { theRung } from './facts.js';
 import {
     theAskInWords,
     theGapInWords
@@ -446,8 +446,8 @@ function costOfTeaching(
             + `That makes the request ${theAskInWords(WHAT_THE_LEAK_COSTS[rung])}. `
             + `${reach === null
                 ? 'The book states no teachable end.'
-                : `Teaching could carry the asker as far as ${rungAndOrdinal(reach)}, being the `
-                  + `lower of the book's teachable end and ${rungAndOrdinal(asked.ordinal)}, `
+                : `Teaching could carry the asker as far as ${theRung(reach)}, being the `
+                  + `lower of the book's teachable end and ${theRung(asked.ordinal)}, `
                   + 'which is where the teacher has stood.'}`
         ],
         techniqueId: art.id,

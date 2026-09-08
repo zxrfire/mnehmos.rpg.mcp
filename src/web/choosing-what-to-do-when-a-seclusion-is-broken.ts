@@ -78,6 +78,7 @@
  */
 
 import type { Cultivator } from '../schema/cultivation.js';
+import { rankName } from '../engine/cultivation/realms.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE QUESTION
@@ -275,7 +276,7 @@ export function whatTheForkAsksStructurally(crossroads: SeclusionCrossroads): st
             ? 'A clean withdrawal was rolled available, so both branches are open. '
             : 'No clean withdrawal was rolled, so the branch is posture rather than departure. ')
         + (who
-            ? `The person close is ${who.id} at ordinal ${who.realmOrdinal}, pricing `
+            ? `The person close is ${who.name} at ${rankName(who.realmOrdinal)}, pricing `
               + `${who.theirPower.toFixed(1)} against this cultivator's ${who.yourPower.toFixed(1)}`
               + `${who.known ? ' and already on this run\'s knowledge record' : ' and not yet known to this run'}. `
             : 'No nameable person stands at this location on the roster, so the sentences say '

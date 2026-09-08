@@ -47,7 +47,7 @@ import { getPill } from '../data/cultivation/pills.js';
 import { getHerb } from '../data/cultivation/herbs.js';
 import { loosePlaceKey } from './knowledge.js';
 import { matchScore, MATCH_THRESHOLD } from './entities.js';
-import { rungAndOrdinal, type EngineFacts } from './facts.js';
+import { theRung, type EngineFacts } from './facts.js';
 import { whatYouAreNotShowing } from './what-you-are-not-showing.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -693,7 +693,7 @@ export function factsForBuried(
             : `world day ${record.buriedOnWorldDay}`)
         + `. It went into ${record.ground.replace(/_/g, ' ')} ground over `
         + `${record.burial.daysSpent} day(s) of work by somebody standing at `
-        + `${rungAndOrdinal(record.burial.burierOrdinal)}, and `
+        + `${theRung(record.burial.burierOrdinal)}, and `
         + (record.burial.anchored
             ? 'the Immovable Mountain Temple holds it on the survey of record.'
             : 'nothing anchors it anywhere.'),

@@ -13,7 +13,7 @@ import {
     type TellerStanding
 } from '../engine/world/what-people-are-saying.js';
 import { worldLocationFor } from './entities.js';
-import { rungAndOrdinal, type EngineFacts } from './facts.js';
+import { theRung, type EngineFacts } from './facts.js';
 import type { Hearing, SpeakableName } from './hearsay.js';
 import type { KnownEntityKind } from './knowledge.js';
 import type { HistoricalFact } from '../engine/world/history.js';
@@ -379,6 +379,6 @@ export function factsForNews(asked: AskedAround): EngineFacts {
             + `${DISTORTION[told.rumour.distortion] ?? told.rumour.distortion}. It reaches `
             + `this cultivator at fidelity ${told.rumour.fidelity.toFixed(2)}, where 1.00 is `
             + `the event as it happened. `
-            + `Whoever it is about stands at ${rungAndOrdinal(told.rumour.subjectOrdinal)}.`)
+            + `Whoever it is about stands at ${theRung(told.rumour.subjectOrdinal)}.`)
     };
 }

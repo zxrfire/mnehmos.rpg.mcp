@@ -28,7 +28,7 @@ import {
     type EncounterStance,
     type EncounterValence
 } from '../engine/encounters/index.js';
-import { rungAndOrdinal } from './facts.js';
+import { theRung } from './facts.js';
 import {
     whatAHouseHasOnItsBoard
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
@@ -454,7 +454,7 @@ export function recordEncounters(
             + (o.stance === 'none' ? '' : ` ${STANCE_IN_WORDS[o.stance]}`)
             + (o.confrontation
                 ? ` ${o.confrontation.count} of them, standing at `
-                  + `${rungAndOrdinal(o.confrontation.threatOrdinal)}, and what they land on this `
+                  + `${theRung(o.confrontation.threatOrdinal)}, and what they land on this `
                   + `cultivator counts ${o.confrontation.damageMultiplier} times over.`
                 : '')
             + (o.interrupts

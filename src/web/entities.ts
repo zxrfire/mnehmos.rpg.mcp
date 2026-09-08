@@ -15,7 +15,7 @@ import {
 import { isAtLeast } from '../engine/social/discovery.js';
 import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
 import { rankName } from '../engine/cultivation/realms.js';
-import { describeStanding, rungAndOrdinal } from './facts.js';
+import { describeStanding, theRung } from './facts.js';
 import type { ObligationDb } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
 import {
@@ -487,7 +487,7 @@ export function resolveCultivator(
         name: match.name,
         facts,
         structure: [
-            `Stands at ${rungAndOrdinal(match.realmOrdinal)}, carrying ${match.age} years, on `
+            `Stands at ${theRung(match.realmOrdinal)}, carrying ${match.age} years, on `
             + `the roster as ${match.kind}. `
             + (match.alive
                 ? 'Alive.'
@@ -568,8 +568,8 @@ export function resolveSect(
             facts: sectFacts(stored.name, stored.admissionOrdinal, memberOf === stored.id, stored.ranks),
             structure: [
                 `${capitalised(stored.alignment)} on the schema\'s alignment axis. It admits from `
-                + `${rungAndOrdinal(stored.admissionOrdinal)}, and the house itself is weighed `
-                + `at ${rungAndOrdinal(stored.powerOrdinal)}.`,
+                + `${theRung(stored.admissionOrdinal)}, and the house itself is weighed `
+                + `at ${theRung(stored.powerOrdinal)}.`,
                 `${stored.ranks.length} rank${stored.ranks.length === 1 ? '' : 's'}, lowest `
                 + `first: ${andList(stored.ranks)}.`
             ]
@@ -611,8 +611,8 @@ export function resolveSect(
         facts,
         structure: [
             `${capitalised(catalogued.alignment)} on the schema\'s alignment axis. It admits from `
-            + `${rungAndOrdinal(catalogued.admissionOrdinal)}, the house itself is weighed at `
-            + `${rungAndOrdinal(catalogued.powerOrdinal)}, and it `
+            + `${theRung(catalogued.admissionOrdinal)}, the house itself is weighed at `
+            + `${theRung(catalogued.powerOrdinal)}, and it `
             + `${catalogued.recruits ? 'does take people on' : 'does not take people on'}.`,
             `Seated at ${catalogued.territory.replace(/\.\s*$/, '')}. ${catalogued.ranks.length} `
             + `rank${catalogued.ranks.length === 1 ? '' : 's'}, lowest first: `
@@ -680,7 +680,7 @@ export function resolveTechnique(
         structure: [
             `${articleCapitalised(match.grade)} ${match.grade}-grade ${match.category} art`
             + `${match.element ? ` of ${match.element}` : ' of no element'}. It opens at `
-            + `${rungAndOrdinal(match.requiredOrdinal)}. `
+            + `${theRung(match.requiredOrdinal)}. `
             + (known
                 ? `This cultivator holds it at ${known.mastery.toFixed(2)} mastery, where 1.00 `
                   + 'is whole.'
@@ -719,7 +719,7 @@ export function resolveRecipe(query: string): ResolvedEntity | null {
         structure: [
             `It works ${Math.round(match.baseSuccessRate * 100)}% of the time before anything `
             + `about the alchemist is counted, and it cannot be attempted below `
-            + `${rungAndOrdinal(match.requiredOrdinal)}. What comes out of it is `
+            + `${theRung(match.requiredOrdinal)}. What comes out of it is `
             + `${pill?.name ?? match.producesPillId}.`
         ]
     };
@@ -741,7 +741,7 @@ export function resolveHerb(query: string): ResolvedEntity | null {
             `${articleCapitalised(match.grade)} ${match.grade}-grade herb of the ${match.biome}, `
             + `drawn at `
             + `weight ${match.rarityWeight} against everything else that grows there. It can be `
-            + `taken from ${rungAndOrdinal(match.harvestOrdinal)} and is valued at `
+            + `taken from ${theRung(match.harvestOrdinal)} and is valued at `
             + `${match.value} spirit stones.`
         ]
     };
@@ -1001,7 +1001,7 @@ function resolveTheAskerThemselves(
         name: self.name,
         facts,
         structure: [
-            `The asker's own sheet: ${rungAndOrdinal(self.realmOrdinal)}, `
+            `The asker's own sheet: ${theRung(self.realmOrdinal)}, `
             + `${self.cultivationProgress} qi-units accumulated, foundation `
             + `${self.foundationQuality}, ${untreated} untreated of ${self.injuries.length} `
             + `injur${self.injuries.length === 1 ? 'y' : 'ies'} on record.`

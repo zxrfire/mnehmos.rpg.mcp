@@ -194,10 +194,10 @@ export function whoAnswersForThisGround(input: GroundHolderInput): GroundHolderR
         // The mechanical channel keeps the world's own answer. What is gated is
         // what the player is TOLD, exactly as it is at the door.
         structure:
-            `whoHoldsTheGround: ${read.holding}`
-            + (read.holderName ? ` by ${read.holderName}` : '')
-            + (mayBeToldTheName ? '' : ' (name withheld from the player: below the naming bar)')
-            + (read.answeredAtId ? `, answered at ${read.answeredAtId}` : '')
-            + `. Recourse ${ground.recourse}.`
+            `This ground reads as ${String(read.holding).replace(/_/g, ' ')}`
+            + (read.holderName ? `, held by ${read.holderName}` : '')
+            + (mayBeToldTheName ? '' : ', and the name of who holds it is above what this'
+                + ' cultivator can be told')
+            + `. Being wronged here: ${String(ground.recourse).replace(/_/g, ' ')}.`
     };
 }

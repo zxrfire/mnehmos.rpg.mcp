@@ -1662,8 +1662,8 @@ function renderSheet() {
 function tollRowMarkup(toll, index) {
   const outcome = String(toll.outcome || 'clean');
   const taken = outcome === 'taken' && toll.taken ? toll.taken : null;
-  const from = ladderName(toll.fromOrdinal) || `ordinal ${fmtInt(toll.fromOrdinal)}`;
-  const to = ladderName(toll.toOrdinal) || `ordinal ${fmtInt(toll.toOrdinal)}`;
+  const from = ladderName(toll.fromOrdinal) || UNNAMED_RUNG;
+  const to = ladderName(toll.toOrdinal) || UNNAMED_RUNG;
 
   return html`
     <li class="toll toll--${raw(outcome)}">
@@ -1696,6 +1696,17 @@ function tollRowMarkup(toll, index) {
  *
  * Null off a boundary, and then this says so rather than saying zero.
  */
+/**
+ * WHAT A RUNG IS CALLED WHEN THE LADDER CANNOT NAME IT.
+ *
+ * These fallbacks used to print `ordinal 12`, which is the engine's index
+ * into the ladder and not a thing anybody in this world says. The design
+ * owner: 'just don't say the ordinal number'. A rung the client cannot name
+ * is a client that has not loaded the ladder yet, and saying so plainly is
+ * better than handing over an internal number as though it were a rank.
+ */
+const UNNAMED_RUNG = 'a rung not yet named';
+
 function tollAheadMarkup(derived) {
   const risk = derived && typeof derived.tollAtNextBoundary === 'number'
     ? derived.tollAtNextBoundary
@@ -2268,9 +2279,9 @@ function showBreakthrough(result) {
       </div>
 
       <div class="bt__step">
-        <span class="bt__from">${fromName || `ordinal ${fmtInt(result.fromOrdinal)}`}</span>
+        <span class="bt__from">${fromName || UNNAMED_RUNG}</span>
         <span class="bt__arrow">→</span>
-        <span class="bt__to">${toName || `ordinal ${fmtInt(result.toOrdinal)}`}</span>
+        <span class="bt__to">${toName || UNNAMED_RUNG}</span>
         ${crossed ? raw(html`<span class="bt__boundary">realm boundary</span>`) : ''}
       </div>
 
@@ -3221,7 +3232,7 @@ async function openLedger() {
         <div class="ledger__row">
           <div>
             <div class="ledger__name">${r.name || 'Unnamed'}</div>
-            <div class="ledger__peak">peak: ${r.peakRankName || ladderName(r.peakOrdinal) || `ordinal ${fmtInt(r.peakOrdinal)}`}</div>
+            <div class="ledger__peak">peak: ${r.peakRankName || ladderName(r.peakOrdinal) || UNNAMED_RUNG}</div>
           </div>
           <div>
             <div class="ledger__cause">${causeText(r.deathCause)}</div>
@@ -4310,7 +4321,7 @@ function mapBodyRest(n) {
 
     ${raw(mapStatusesMarkup(n))}
 
-    <div class="section__label">What would kill you${MAP.ordinal == null ? '' : ` · you are ordinal ${fmtInt(MAP.ordinal)}`}</div>
+    <div class="section__label">What would kill you${MAP.ordinal == null ? '' : ` · you stand at ${ladderName(MAP.ordinal) || UNNAMED_RUNG}`}</div>
     <div class="thrs">
       ${raw(mapThresholdRow('entry', n.thresholds.entry, 'below this, turned away'))}
       ${raw(mapThresholdRow('survival', n.thresholds.survival, 'below this, in and dead'))}
@@ -4649,7 +4660,7 @@ function mapFlockMarkup(key, group, sharedDescriptions) {
   const holders = new Set(group.map((n) => n.heldBy).filter((h) => h && h !== 'nobody in particular'));
   const facts = [
     `Ground ${mapRange(group.map((n) => n.qiDensity), (v) => fmtInt(v))} of 100.`,
-    `Holding one takes ${mapRange(group.map((n) => n.thresholds.mastery), (v) => `ordinal ${fmtInt(v)}`)}.`,
+    `Holding one takes ${mapRange(group.map((n) => n.thresholds.mastery), (v) => ladderName(v) || UNNAMED_RUNG)}.`,
     holders.size === 1 ? `On the ground, every one: ${[...holders][0]}.` : holders.size ? `${fmtInt(holders.size)} different holders.` : '',
     sealed ? `${fmtInt(sealed)} sealed.` : '',
     shut ? `${fmtInt(shut)} shut today.` : '',
@@ -4950,7 +4961,7 @@ function renderDeath() {
   if (isTrueImmortal(run, c)) { renderTrueImmortal(host, run, c); wireEndingActions(); return; }
 
   const peakName = run.peakOrdinal != null
-    ? (ladderName(run.peakOrdinal) || `ordinal ${fmtInt(run.peakOrdinal)}`)
+    ? (ladderName(run.peakOrdinal) || UNNAMED_RUNG)
     : (S.derived && S.derived.rankName) || '-';
 
   host.className = 'death';

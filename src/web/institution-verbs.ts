@@ -40,7 +40,7 @@ import {
     type SealIntent
 } from './actions.js';
 import { MATCH_THRESHOLD, matchScore } from './entities.js';
-import { factsForRefusal, factsForToolResult, rungAndOrdinal } from './facts.js';
+import { factsForRefusal, factsForToolResult, theRung } from './facts.js';
 import {
     type HousePosition,
     elderRungTitle,
@@ -660,10 +660,10 @@ export const institutionVerbs = {
         if (own && theirActing !== null) {
             facts.structure.push(
                 `What each house can actually put in a room: ${position.sectName} at `
-                + `${rungAndOrdinal(own.acting)}, ${named.name} at ${rungAndOrdinal(theirActing)}. `
+                + `${theRung(own.acting)}, ${named.name} at ${theRung(theirActing)}. `
                 + (theirSeal?.sealedIsPublic
                     ? `The one-off they could wake on top of that reaches `
-                      + `${rungAndOrdinal(theirSeal.ceiling)}, and they do not keep it quiet.`
+                      + `${theRung(theirSeal.ceiling)}, and they do not keep it quiet.`
                     : 'Whether they hold a one-off to wake on top of that is not disclosed.')
             );
         }
@@ -968,7 +968,7 @@ export const institutionVerbs = {
         const facts = factsForToolResult(`${dormant.name} is awake.`, lines);
         facts.structure.push(
             `What ${position.sectId} can put in a room has gone from `
-            + `${rungAndOrdinal(before)} to ${rungAndOrdinal(dormant.realmOrdinal)}. The ceiling `
+            + `${theRung(before)} to ${theRung(dormant.realmOrdinal)}. The ceiling `
             + 'has become the acting figure and cannot be spent a second time.'
         );
         facts.structure.push(

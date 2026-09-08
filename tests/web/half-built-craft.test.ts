@@ -98,7 +98,10 @@ describe('the sentence that started this', () => {
         const said = plan.lines.join(' ');
         expect(said).toContain('Void Tribulation');
         expect(said).toContain('drawn carriage');
-        expect(plan.structure.join(' ')).toContain('requires ordinal');
+        // Was 'requires ordinal', which put the ladder index on the player's
+        // screen: structure is logged verbatim. The rule is that the refusal
+        // names what the recipe is written FOR, and it still does.
+        expect(plan.structure.join(' ')).toMatch(/it is written for /);
     });
 
     /** Anybody may attempt anything: the bar is a price, never a missing verb. */
@@ -152,7 +155,9 @@ describe('beginning something, and coming back to it', () => {
         // A mortal carriage is a counted thing. There is no object to mint and
         // there must not be: `conveyanceKeptAs` decides the side of the line.
         expect(two.minted).toBeNull();
-        expect(two.structure.join(' ')).toContain('launch(build-carriage-mortal)');
+        // Was `launch(build-carriage-mortal)`, a function call and a raw id.
+        // What matters is that the ruling names the thing being built.
+        expect(two.structure.join(' ')).toContain('carriage');
 
         const launched = two.lines.join(' ').includes('Everything that went into it');
         if (launched) {

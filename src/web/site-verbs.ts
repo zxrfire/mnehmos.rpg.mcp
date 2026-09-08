@@ -57,7 +57,7 @@ import {
     factsForToolResult,
     humanDays,
     placeName,
-    rungAndOrdinal
+    theRung
 } from './facts.js';
 import {
     type FoundGround,
@@ -215,7 +215,7 @@ export const siteVerbs = {
                 ? `It admits ${ground.access.admits}`
                   + `${floor === undefined || floor === null
                       ? ' and states no floor'
-                      : ` from no lower than ${rungAndOrdinal(floor)}`}. `
+                      : ` from no lower than ${theRung(floor)}`}. `
                 : 'Nothing about who it admits is recorded on the find. ')
             + (ground.discoveredOnDay === undefined || ground.discoveredOnDay === null
                 ? 'The day the world found it is unrecorded.'

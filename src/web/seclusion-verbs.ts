@@ -60,7 +60,7 @@ import {
     factsForToolResult,
     humanDays,
     placeName,
-    rungAndOrdinal
+    theRung
 } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import {
@@ -640,7 +640,7 @@ export const seclusionVerbs = {
             (wall.state === 'no_method'
                 ? 'No method is practised, so the rate multiplier at '
                 : 'The manual has ended, so the rate multiplier at ')
-            + `${rungAndOrdinal(cultivator.realmOrdinal)} is 0 and the stretch returns exactly `
+            + `${theRung(cultivator.realmOrdinal)} is 0 and the stretch returns exactly `
             + 'nothing. '
             + `${days} day${days === 1 ? ' was' : 's were'} refused before anything was spent: `
             + 'no provisioning, no encounter roll, no time passed.'

@@ -17,7 +17,7 @@
  * database column, three lines under authored prose that says it properly - *"a
  * course of inscription along the lintel giving a name, a rank at the end of
  * Tribulation Transcendence, a date"*. Every other surface in this package puts
- * a rung through `rankName` or `rungAndOrdinal`; this one did not.
+ * a rung through `rankName` or `theRung`; this one did not.
  *
  * ── AND THE RULE THAT WAS WRITTEN AND NEVER READ ─────────────────────────
  *
@@ -160,12 +160,12 @@ export function whatTheStoneSays(facts: HeadstoneFacts): string[] {
  * The mechanical channel: the band, by name and by number, off the table.
  *
  * Separate from the prose because an operator sorts and compares on it, which is
- * the same division `rungAndOrdinal` is built on.
+ * the same division `theRung` is built on.
  */
 export function headstoneStructure(facts: HeadstoneFacts): string {
     const profile = contentsProfileOf(facts.mannerOfDeath);
     const band = GRAVE_CONTENTS_BANDS[profile];
-    return `grave marker: occupant at ordinal ${facts.occupantOrdinal} (${rankName(facts.occupantOrdinal)}), `
+    return `grave marker: occupant at ${rankName(facts.occupantOrdinal)}, `
         + `${facts.mannerOfDeath}, ${facts.burial}, ${facts.yearsDead} years dead. `
         + `GRAVE_CONTENTS_BANDS.${profile}: ${band.minItems}-${band.maxItems} item(s), `
         + `allProven=${band.allProven}.`;

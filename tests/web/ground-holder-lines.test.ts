@@ -103,9 +103,15 @@ describe('who answers for this ground', () => {
     });
 
     it('carries the mechanical channel beside the prose', () => {
-        expect(read('held').structure).toMatch(/whoHoldsTheGround: held by /);
-        expect(read('held').structure).toMatch(/Recourse taken_up/);
-        expect(read('unrecorded').structure).toMatch(/Recourse the_record_does_not_say/);
+        // Was `whoHoldsTheGround: held by ...`, which put a function name on the
+        // player's screen: the structure channel is logged verbatim beside
+        // the prose. The FACT is unchanged and is what is asserted.
+        expect(read('held').structure).toMatch(/reads as held, held by /);
+        // The enum key was printed raw. It is said in words now, and what is
+        // asserted is the route, which is the fact the key stood for.
+        expect(read('held').structure).toMatch(/Being wronged here: taken up/);
+        expect(read('unrecorded').structure)
+            .toMatch(/Being wronged here: the record does not say/);
     });
 });
 
@@ -233,7 +239,9 @@ describe('what a reader is told about who holds this', () => {
     it('keeps the true answer in the structure line', () => {
         const low = at(TOLD_THE_NAME_AT - 1);
         expect(low.structure).toContain('Azure Cloud Pavilion');
-        expect(low.structure).toContain('name withheld');
+        // Same rewrite. It used to say the name was 'withheld from the player',
+        // which addresses the reader as `the player` in a line they read.
+        expect(low.structure).toMatch(/above what this cultivator can be told/);
     });
 
     /** An absent ordinal is the world asking about its own records. */
