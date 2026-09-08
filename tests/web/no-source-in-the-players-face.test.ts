@@ -157,6 +157,19 @@ describe('the engine log is read by somebody standing in a room', () => {
         expect(A_SYMBOL_NOT_A_WORD.test("a quiet market town on thin ground")).toBe(false);
         expect(A_SYMBOL_NOT_A_WORD.test("Ning Jingyi says The Quiet Marches")).toBe(false);
 
+        // AND A PERSON WHO IS ACTUALLY STANDING THERE.
+        //
+        // A hard-coded name is a name this world may not hold, and then the verb
+        // resolves to a refusal and the person-read path never runs. That is how
+        // `trust.md` reached a player through "look at a person" while this file
+        // was green. AGENTS.md: read names out of the output rather than
+        // hard-coding them, because any name the game prints it must accept.
+        const roster = await game.act("who is here") as unknown as { narration: string };
+        const somebody = /\b([A-Z][a-z]+ [A-Z][a-z]+)\b/.exec(roster.narration)?.[1];
+        // A guard that silently skips the path it was added for is the defect
+        // it exists to catch, so it has to have found somebody.
+        expect(somebody, roster.narration.slice(0, 200)).toBeTruthy();
+
         const offences: string[] = [];
         for (const said of [
             "I look around",
@@ -166,11 +179,9 @@ describe('the engine log is read by somebody standing in a room', () => {
             "what am I carrying",
             "who is here",
             "what are people saying",
-            // Found by playing: this one printed `trust.md` at somebody standing
-            // in a market town, and the list above did not reach it.
-            "I look at Shen Minru",
             "who would teach me",
-            "what is stopping me"
+            "what is stopping me",
+            ...(somebody ? [`I look at ${somebody}`] : [])
         ]) {
             const answer = await game.act(said) as unknown as {
                 state: { log: Array<{ role: string; text: string }> };

@@ -33,6 +33,7 @@ import { awarenessOfSite, faceOf, nameableSites, resolveSite } from './trials.js
 import { getMembersOf } from '../data/cultivation/members.js';
 import { A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL } from './what-a-house-is-called.js';
 import { getSect } from '../data/cultivation/sects.js';
+import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import {
     readALineageOffAName,
@@ -501,12 +502,12 @@ export function resolveCultivator(
                     ? readTheRollFor(match.name, match.sectId)
                     : readALineageOffAName(match.name);
                 return 'worth' in reading
-                    ? `The name reads ${reading.worth} against ${match.sectId}.`
+                    ? `The name reads ${String(reading.worth).replace(/_/g, ' ')} against their house.`
                     : `The name reads ${reading.reading}${reading.housesWithThisLine.length > 0
-                        ? `, with a line of it on ${reading.housesWithThisLine.length} house roll(s)` : ''}.`;
+                        ? `, with a line of it on ${howMany(reading.housesWithThisLine.length, 'house roll')}` : ''}.`;
             })(),
             (match.sectId
-                ? `On the roll of ${match.sectId}`
+                ? "On a house's roll"
                   + `${match.sectRank ? `, at the rank of ${match.sectRank}` : ', at no rank in it'}`
                 : 'On no house\'s roll, and so at no rank in one')
             + `. ${rootName(match.spiritRoot)}. `
@@ -514,7 +515,7 @@ export function resolveCultivator(
             + `${match.spiritStones} spirit stones and `
             + `${match.untreatedInjuries} untreated `
             + `injur${match.untreatedInjuries === 1 ? 'y' : 'ies'}. Last recorded at `
-            + `${match.location ?? 'nowhere the row states'}.`,
+            + `${match.location ? 'somewhere the row states' : 'nowhere the row states'}.`,
             // WHAT THEIR OWN RECORD MAKES THEM
             whatTheirRecordSays(repos, match, candidates)
         ],
