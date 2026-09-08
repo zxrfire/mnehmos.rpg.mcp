@@ -113,6 +113,55 @@ plugged in higher changes the *agenda* a person is exposed to, which is the
 mechanism behind "the higher up you are the more you know" without any of it
 being a property of their body.
 
+### The worked example: an announcement is itself an event
+
+The owner's scenario, which is the clearest statement of the whole rule:
+
+> *"You, a False Immortal, announce that you are dying and you are hosting a
+> competition to pick your close-door disciple. THAT ITSELF SHOULD BE NEWS. Your
+> words make waves. Sect elders prepare for this. People start trying to fish
+> for info. Sects sabotaging other sects so they can't go."*
+
+Nothing was done here. A person said a thing, and saying it was the event.
+
+**At height, an utterance enters the world the way a deed does.** That is the
+whole of what influence is, and it is worth stating in that form because it is
+implementable: the announcement is a row in the world, houses re-plan against
+it, and the re-planning is what the player later walks into.
+
+Three orders of consequence, and the third is the one that proves it is real:
+
+1. **Your own apparatus moves.** Elders prepare. That is the leadership
+   infrastructure above doing what it is for, and it needs no new mechanism.
+2. **The information itself becomes worth something.** People fish. Who is being
+   invited, what the trial will test, whether the dying is real. So the news
+   arrives everywhere in the distorted form the repo already models, and the
+   people repeating it mostly do not know they are guessing.
+3. **Third parties act against each other over it.** A house sabotages a rival
+   house so the rival cannot attend. **The player is not in that room, is not
+   the target, and may never learn it happened.**
+
+**The third order is the test.** A world that only reacts *at* the player is
+narration doing an impression of consequence. A world where two houses move
+against each other because of something the player said, out of sight, is
+influence that exists whether or not anybody is watching. If only the first
+order fires, the feature is decorative.
+
+And it inverts cleanly, which is what makes it the same rule as the rest of this
+file rather than a new one. At the bottom your words reach the room you are
+standing in and stop, because nobody repeats them. Nothing about the mechanism
+differs; the difference is entirely in how far the utterance travels and how
+many people have to re-plan when it arrives.
+
+**Engine state, checked rather than assumed.** `aDeedEntersTheWorld` already
+puts a played deed into the world as a fact and its header is about exactly this
+seam. `whatBeingToldOpens` and `whatIsSaidAbout` model somebody finding out and
+the gap between what is said and what is true. World events already carry
+`rumours`. **What is missing is the planner:** rumours are written as
+decorations hanging off events, and nothing in the world pass reads one and
+changes what a house intends to do. Until something does, order two exists as
+text and order three does not exist at all.
+
 ## The unit of narration changes
 
 At the bottom it is **one person with one physical problem**: tracking an
