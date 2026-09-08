@@ -72,6 +72,7 @@ import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
 import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
+import { whatEachHouseHasOutOnLoan } from './a-house-lends-what-it-owns-to-somebody-it-trusts.js';
 import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
@@ -289,7 +290,37 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // faction would be a second copy of a fact the one possessions table
     // already owns, and the copy is what goes stale the first time something is
     // lent, sold or taken. See `what-a-house-keeps-in-its-treasury.ts`.
-    state.objects.push(...seedTreasuries(state));
+    const treasury = seedTreasuries(state);
+    state.objects.push(...treasury);
+
+    // AND WHAT IS NOT IN THE ROOM BECAUSE SOMEBODY IS CARRYING IT.
+    //
+    // The treasury header names lending a disciple a furnace as one of the
+    // three cases it existed to make possible, and nothing ever did it.
+    // Measured before this: of 415 people in a seeded world, the ~29 holding
+    // something owned by somebody else were holding a house TOKEN, every one
+    // of them, so the count of people carrying a thing a house lent them was
+    // zero in every world. See
+    // `a-house-lends-what-it-owns-to-somebody-it-trusts.ts`.
+    {
+        const lent = new Map(
+            // ONLY OUT OF WHAT THE TREASURY PASS ITSELF MINTED.
+            //
+            // Scanning every object in the world reached into the catalog and
+            // lent out a relic that is sitting in a vault because the catalog
+            // put it there. `objects-in-hands.test.ts` caught it by name:
+            // *leaves a vault a vault, a ruin a ruin, and the far side of the
+            // Lid unreachable*. A house lends what is in its own stores and
+            // nothing else.
+            whatEachHouseHasOutOnLoan({ ...state, objects: treasury })
+                .map(loan => [loan.objectId, loan.toNpcId])
+        );
+        if (lent.size > 0) {
+            state.objects = state.objects.map(object => lent.has(object.id)
+                ? { ...object, possessorId: lent.get(object.id) ?? null }
+                : object);
+        }
+    }
 
     // AND WHAT EVERY ONE OF THEM IS DOING. Last, because it reads where people
     // ended up standing and what they ended up holding. Before this, every

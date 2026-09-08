@@ -132,7 +132,10 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
-import { whatTheyWouldBeHeardOnAbout } from '../engine/world/what-somebody-here-is-chewing-on.js';
+import {
+    whatTheyCarryForSomebodyElse,
+    whatTheyWouldBeHeardOnAbout
+} from '../engine/world/what-somebody-here-is-chewing-on.js';
 import {
     theOneThingWorthSayingAbout,
     whatSomebodyIsLike
@@ -12344,7 +12347,10 @@ ${fit.line}`;
                         ordinal: person.realmOrdinal,
                         age: person.age,
                         rank: person.sectRank ?? null,
-                        chosen: row.tags.includes('chosen')
+                        chosen: row.tags.includes('chosen'),
+                        carriesForTheirHouse: whatTheyCarryForSomebodyElse(
+                            this.atHand?.objects ?? [], person.id
+                        )
                     }),
                     // Only from the world row, never from the roster one. The
                     // roster carries no attributes and no origin, so deriving

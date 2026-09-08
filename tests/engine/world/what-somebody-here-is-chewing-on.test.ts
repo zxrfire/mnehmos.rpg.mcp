@@ -17,6 +17,7 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+    whatTheyCarryForSomebodyElse,
     whatTheyWouldBeHeardOnAbout,
     THE_ROAD_IS_RUNNING_OUT,
     AHEAD_OF_THE_ROAD,
@@ -25,7 +26,7 @@ import {
 import { lifespanForOrdinal, MAX_ORDINAL } from '../../../src/engine/cultivation/realms';
 
 /** Somebody with nothing on their mind, which is the default and the majority. */
-const ORDINARY = { ordinal: 5, age: 20, rank: null, chosen: false };
+const ORDINARY = { ordinal: 5, age: 20, rank: null, chosen: false, carriesForTheirHouse: null };
 
 /** Years that put a person at a given fraction of what their rung buys. */
 const yearsAt = (ordinal: number, fraction: number) =>
@@ -95,6 +96,37 @@ describe('what somebody standing here would be heard on', () => {
             };
             expect(whatTheyWouldBeHeardOnAbout(midway), `ordinal ${ordinal}`).toBeNull();
         }
+    });
+
+    /**
+     * THE BORROWED SWORD, which needed nothing built to represent it.
+     *
+     * The owner's second example: *"a senior brother monologue about how nice
+     * his borrowed sword is"*. The possessions table has kept `ownerId` apart
+     * from `possessorId` all along so that a house can lend somebody a thing,
+     * and `seeding.ts` names that exact case while filling the treasuries -
+     * *"lending a disciple a furnace"*. So this reads a fact the world already
+     * writes.
+     */
+    it('reads a thing carried for somebody else, by kind and never by name', () => {
+        const objects = [
+            { kind: 'blade', ownerId: 'sect-azure-cloud-pavilion', possessorId: 'them' }
+        ];
+        expect(whatTheyCarryForSomebodyElse(objects, 'them')).toBe('blade');
+
+        // A thing nobody owns is a thing they simply have, and so is a thing
+        // they own themselves. Only the third case has terms attached.
+        expect(whatTheyCarryForSomebodyElse(
+            [{ kind: 'blade', ownerId: null, possessorId: 'them' }], 'them'
+        )).toBeNull();
+        expect(whatTheyCarryForSomebodyElse(
+            [{ kind: 'blade', ownerId: 'them', possessorId: 'them' }], 'them'
+        )).toBeNull();
+        // And somebody else's loan is not theirs to be heard on.
+        expect(whatTheyCarryForSomebodyElse(objects, 'somebody-else')).toBeNull();
+
+        expect(whatTheyWouldBeHeardOnAbout({ ...ORDINARY, carriesForTheirHouse: 'blade' }))
+            .toMatch(/carries a blade their house owns and they do not/);
     });
 
     it('puts the thing with a clock on it ahead of the rest', () => {

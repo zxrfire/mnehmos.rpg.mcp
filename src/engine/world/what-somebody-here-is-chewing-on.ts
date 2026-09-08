@@ -80,6 +80,23 @@ export interface SomebodyWithSomethingOnTheirMind {
     rank: string | null;
     /** Whether their house has marked them as its pick. */
     chosen: boolean;
+    /**
+     * WHAT THEY CARRY THAT IS NOT THEIRS, as a common noun, or null.
+     *
+     * The owner's second example: *"a senior brother monologue about how nice
+     * his borrowed sword is"*. Nothing had to be invented for it. The
+     * possessions table separates `ownerId` from `possessorId` precisely so a
+     * house can lend somebody a thing, and `seeding.ts` names that case in its
+     * own words when it builds the treasuries - *"lending a disciple a
+     * furnace"*. A thing whose owner is a house and whose holder is a person
+     * IS the borrowed sword, already, in the data.
+     *
+     * A COMMON NOUN AND NEVER THE THING'S NAME. What a person carries is
+     * visible; what it is CALLED is a proper noun, and handing that over would
+     * walk straight through the discovery gate. A blade is a blade to somebody
+     * who has not been told otherwise.
+     */
+    carriesForTheirHouse: string | null;
 }
 
 /**
@@ -113,6 +130,19 @@ export function whatTheyWouldBeHeardOnAbout(
         return 'has spent most of the years this rung allows and is still standing at the same wall';
     }
 
+    // ── A THING THAT IS NOT THEIRS ───────────────────────────────────────
+    //
+    // Second, above every reading about standing, because it is the most
+    // concrete thing anybody here has and the only one with an object in it.
+    // The register the owner named is a boast, and the reason a boast about a
+    // borrowed thing lands is that everybody hearing it knows the terms: it is
+    // theirs while they are useful, and the house can take it back.
+    // `?? null` rather than a bare comparison: a caller that omits the field
+    // entirely must read as nobody carrying anything, not as somebody carrying
+    // an undefined.
+    const borrowed = person.carriesForTheirHouse ?? null;
+    if (borrowed !== null) return `carries a ${borrowed} their house owns and they do not`;
+
     // ── AHEAD OF IT ──────────────────────────────────────────────────────
     //
     // The mirror, and deliberately harder to hit: young at a rung that takes
@@ -138,5 +168,39 @@ export function whatTheyWouldBeHeardOnAbout(
         return 'wears the lowest rank their house gives out, and is doing what that rank is for';
     }
 
+    return null;
+}
+
+/**
+ * A THING SOMEBODY CARRIES THAT BELONGS TO SOMEBODY ELSE, as a common noun.
+ *
+ * `ownerId` and `possessorId` are separate columns on the possessions table for
+ * exactly this: the house owns it, the disciple has it. `seeding.ts` names the
+ * case when it fills the treasuries - *"lending a disciple a furnace"* - so
+ * this reads a fact the world already writes rather than adding one.
+ *
+ * The KIND and never the name, because a name is a proper noun and the
+ * discovery gate is the reason this game withholds those.
+ */
+export function whatTheyCarryForSomebodyElse(
+    objects: readonly {
+        kind: string; ownerId: string | null; possessorId: string | null;
+    }[],
+    personId: string
+): string | null {
+    for (const object of objects) {
+        if (object.possessorId !== personId) continue;
+        // Owned by nobody is a thing they simply have. Owned by THEM is the
+        // same. What this is about is the third case, which is the only one
+        // with terms attached to it.
+        if (object.ownerId === null || object.ownerId === personId) continue;
+        // AND A HOUSE PLATE IS NOT A LOAN. Every member of every house wears
+        // one, so a reading that counted it would fire on ~29 of 415 people in
+        // a seeded world and always say the same uninteresting thing. Measured
+        // before the lending pass existed, that was the ONLY thing anybody in
+        // this world carried for somebody else.
+        if (object.kind === 'token') continue;
+        return object.kind.replace(/_/g, ' ');
+    }
     return null;
 }
