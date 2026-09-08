@@ -3645,6 +3645,36 @@ function planIntent(input: string): PlannedAction {
         return { action: 'look', intent: 'holder' };
     }
 
+    // WHO IS THE STRONGEST PERSON HERE, WHICH IS THE QUESTION THE GENRE ASKS
+    // MOST AND WHICH ROUTED THREE DIFFERENT WAYS.
+    //
+    // Found by playing. Measured on one run, before this:
+    //
+    //   whos the strongest person here?      investigate, unresolved subject
+    //   who is the strongest person here     sect/standing
+    //   who is the most powerful person here investigate, unresolved subject
+    //
+    // The first is the worst, because an unresolved SUBJECT is answered as a
+    // failed search for a PLACE: the player asked after a person and was told
+    // the name of the town they were standing in found no purchase in the
+    // terrain. The second is wrong more quietly, reading the house ladder for
+    // a question about the square.
+    //
+    // It is one question and it is about who is STANDING here, which is
+    // `look/company` - the read that hands over the people in a square and
+    // where each of them stands relative to whoever asked.
+    //
+    // A superlative plus a word that means HERE. "who is the strongest of the
+    // Azure Dew Sect" names a house and keeps the ladder read below.
+    if (/(?:who'?s|who)\s*(?:is|are)?\s*(?:the)?\s*(?:strongest|mightiest|most\s+powerful|weakest|lowest|highest|greatest|toughest)/i
+        .test(text)
+        && /(?:here|around|about|nearby|in\s+(?:this|the)\s+(?:room|square|town|city|place))/i
+            .test(text)
+        && !A_HOUSE_IS_NAMED.test(text)
+        && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text)) {
+        return { action: 'look', intent: 'company' };
+    }
+
     if (/\b(?:who (?:leads|heads|runs|founded|commands)|who is (?:the )?(?:head|leader|patriarch|matriarch|master|strongest)(?: of)?|who is in charge)\b/.test(text)
         && (A_HOUSE_IS_NAMED.test(text) || /\b(?:here|it|this|my|our)\b/.test(text))
         // Unless it is being put to a person, in which case it is a question

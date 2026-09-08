@@ -185,6 +185,23 @@ describe('asking who holds this ground', () => {
         // Crowding keeps the question it was named for, which is about the
         // ground rather than the company: how many are pulling on this vein.
         expect(routed('who else is here')).toBe('look/company');
+
+        // AND THE QUESTION THE GENRE ASKS MOST, WHICH ROUTED THREE WAYS.
+        //
+        // Found by playing. All three of these are one question about who is
+        // standing in the square, and before this they went to three places:
+        // the contraction to an unresolved SUBJECT, which is answered as a
+        // failed search for a PLACE (the player asked after a person and was
+        // told the town they stood in found no purchase in the terrain); the
+        // plain form to the house ladder; the synonym back to unresolved.
+        expect(routed("who's the strongest person here?")).toBe('look/company');
+        expect(routed('who is the strongest person here')).toBe('look/company');
+        expect(routed('who is the most powerful person here')).toBe('look/company');
+        expect(routed('who is the weakest here')).toBe('look/company');
+        // A house named is the house ladder again, which is the other question.
+        expect(routed('who is the strongest of the Azure Dew Sect')).toBe('sect/standing');
+        // And a title is not a superlative: this one was never about the square.
+        expect(routed('who is the patriarch here')).toBe('sect/standing');
         expect(routed('who else is drawing')).toBe('look/crowding');
         expect(routed('how crowded is it here')).toBe('look/crowding');
         // The asking branch still owns a question put to a named person.
