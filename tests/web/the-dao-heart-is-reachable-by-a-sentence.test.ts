@@ -54,9 +54,20 @@ async function whoIsHere(
     game: { act(text: string): Promise<{ narration: string }> }
 ): Promise<string[]> {
     const look = await game.act('who else is here');
-    const line = /^(.*?) (?:is|are) here\./m.exec(look.narration);
-    if (!line) return [];
-    return line[1].split(/,| and /).map(s => s.trim()).filter(Boolean);
+    // THE CENSUS STOPPED BEING A LIST, so this stopped being a list read.
+    //
+    // It used to open "X, Y and Z are here." and this split that one sentence.
+    // A roll call is not how anybody writes a room, so the census now gives
+    // each person their own sentence, opening with their name and what they
+    // are at. The names are still read out of the words the game printed
+    // rather than pinned - AGENTS.md, *any name the game prints is a name the
+    // game must accept* - and what is read is now the subject of each
+    // sentence instead of the members of one list.
+    return look.narration
+        .split(/(?<=\.)\s+/)
+        .map(sentence => /^([^.]+?) is (?:here\b|.*\bhas not looked up\b)/.exec(sentence.trim()))
+        .filter((found): found is RegExpExecArray => found !== null)
+        .map(found => found[1].trim());
 }
 
 describe('a cultivator can ask what their own record weighs, and the wall asks too', () => {

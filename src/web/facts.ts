@@ -1194,27 +1194,56 @@ function describeCompany(
     // clause guessing whether it will be first.
     const sentences: string[] = [];
 
-    // Named first: these are the people the player has earned.
+    // ── THE CENSUS, WRITTEN AS AN ARRANGEMENT AND NOT AS A ROLL ──────────
+    //
+    // FOUND BY PLAYING, and the owner named it: *"do novels introduce
+    // characters like this? no. not at all."* What the square produced was
+    //
+    //     Bai Wanchen, Mo Yaozhi and Han Ciya are here.
+    //     Bai Wanchen is telling a stallholder what the thing is really worth.
+    //     Han Ciya is eating a meal, taking their time with it.
+    //
+    // and no model can write its way out of that, because it is three facts
+    // with no relation between them and one of them is a list of names. The
+    // roll call was IN THE FACTS. What came back was the roll call in slightly
+    // better clothes: "Mo Yaozhi is also present."
+    //
+    // The material for an arrangement was already on every row and was being
+    // thrown away. `looksUp` says who has registered that somebody walked in.
+    // `withNames` says who came as a set. `whoTheGroundHandsYou` already picks
+    // the one the room is arranged around, and the walking-up read has used it
+    // all along - only the census ignored it.
+    //
+    // So: the name list is gone. Nobody is introduced twice. Each person
+    // arrives doing something or not at all, and whoever the room is arranged
+    // around arrives first, so the prose has a subject to sweep from rather
+    // than three equal entries. Everything here is still observable and none of
+    // it is a mood: whether a person has looked up is a thing you can see.
     const named = company.named.slice(0, COMPANY_SHOWN);
-    if (named.length === 1) {
-        // ── WHAT THEY ARE AT, WHICH IS THE HALF THAT WAS MISSING ─────────
-        //
-        // "X is here" is a census entry. What makes a square worth standing in
-        // is that the people in it are doing something, and one person alone is
-        // the case where there is room to say what.
-        sentences.push(named[0].at === null
-            ? `${named[0].name} is here.`
-            : `${named[0].name} is here, ${named[0].at}.`);
-    } else if (named.length > 1) {
-        const last = named[named.length - 1].name;
-        const rest = named.slice(0, -1).map(p => p.name).join(', ');
-        sentences.push(`${rest} and ${last} are here.`);
-        // AND WHAT THEY ARE AT. Two at most: four clauses about four people is
-        // a list nobody reads, and the two worth having are the ones the square
-        // is arranged around - already first, because `company` sorts deepest
-        // first. They need not agree with each other about anything.
-        for (const person of named.slice(0, 2)) {
-            if (person.at !== null) sentences.push(`${person.name} is ${person.at}.`);
+    {
+        const front = whoTheGroundHandsYou(named);
+        const ordered = front === null
+            ? named
+            : [front, ...named.filter(person => person.name !== front.name)];
+
+        // A party is one entry. Walking in on two people mid-conversation and
+        // being told about each of them separately is the same defect one
+        // level down, and `at` already carries "mid-conversation with X".
+        const covered = new Set<string>();
+        for (const person of ordered) {
+            if (covered.has(person.name)) continue;
+            covered.add(person.name);
+            for (const other of person.withNames) covered.add(other);
+
+            if (person.at === null) {
+                sentences.push(person.looksUp
+                    ? `${person.name} is here.`
+                    : `${person.name} is here and has not looked up.`);
+            } else {
+                sentences.push(person.looksUp
+                    ? `${person.name} is here, ${person.at}.`
+                    : `${person.name} is ${person.at}, and has not looked up.`);
+            }
         }
     }
 

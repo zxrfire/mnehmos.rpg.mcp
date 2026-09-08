@@ -1122,6 +1122,24 @@ export function composeNarrationUser(
         // The whitelist, stated positively. A model follows "these are the only
         // names" far more reliably than "do not name anything you were not
         // told about", and the list is short because the player's world is.
+        // NOBODY IS EVER INTRODUCED BY BEING COUNTED.
+        //
+        // Measured in play: given three people in a square the model wrote
+        // "Bai Wanchen is here, standing by a stall... Mo Yaozhi is also
+        // present. Han Ciya is inside an inn..." The owner, on that line: *"do
+        // novels introduce characters like this? no. not at all."* Half the
+        // cause was in the facts and is fixed there; this is the other half,
+        // because a model handed good material will still reach for the roll
+        // call if nothing tells it not to.
+        'HOW PEOPLE ENTER THE PROSE. A person arrives doing something, or in relation to',
+        'somebody already on the page, or not at all. Never introduce anybody by announcing',
+        'their presence: no "is also here", no "is also present", no "another person is",',
+        'no listing several names in one breath before saying anything about any of them.',
+        'If somebody is worth naming they are worth a clause about what they are at; if they',
+        'are not, they are part of the room and stay in it. The first person named should be',
+        'the one the scene is arranged around, and the others should be placed against them',
+        'rather than queued behind them.',
+        '',
         'NAMES YOU MAY USE - proper nouns this cultivator has heard of. Any person, sect,',
         'faction, city or event NOT on this list and NOT in the facts below must not appear',
         'in your prose at all, including in passing and including as scenery:',
