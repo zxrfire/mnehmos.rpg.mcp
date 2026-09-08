@@ -44,6 +44,7 @@ import { WHAT_EACH_VERB_IS_FOR } from './what-each-verb-is-for-in-the-players-wo
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
 import type { EngineFacts } from './facts.js';
+import { inTheCharactersThePatternsUse } from './sentence-parts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PHASE 1, AND THE ONE THING A MODEL'S READING MAY NOT DO
@@ -823,7 +824,21 @@ export class ProviderNarrator implements Narrator {
                 ]
             });
 
-            const text = (result.text ?? '').trim();
+            // THE MODEL WRITES TYPOGRAPHY THIS REPO DOES NOT USE.
+            //
+            // `AGENTS.md` forbids an em-dash and an en-dash, and
+            // `terminology.test.ts` enforces it across every file. None of that
+            // reaches the narrator, which writes them freely: measured on a live
+            // turn, gemma produced "within earshot - even in a kitchen - the
+            // disciples stand" with em-dashes on both sides. That is the most
+            // read surface in the game breaking the one typographic rule the
+            // whole repo keeps.
+            //
+            // `inTheCharactersThePatternsUse` already existed for the other
+            // direction, normalising what a PLAYER types so the patterns can
+            // match it. The same function serves here, and smart quotes and an
+            // ellipsis character come back with it.
+            const text = inTheCharactersThePatternsUse((result.text ?? '').trim());
             if (text.length === 0) {
                 return { text: facts.prose, source: 'fallback', note: 'model returned empty prose' };
             }

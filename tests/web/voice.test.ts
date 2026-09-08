@@ -23,7 +23,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { SECTS } from '../../src/data/cultivation/index';
-import { makeGame, engineCalls } from './harness';
+import { makeGame, engineCalls, ScriptedProvider } from './harness';
 import { drawBirth } from '../../src/engine/birth/birth';
 
 /** Where the default harness seed births somebody. Derived, never assumed. */
@@ -245,5 +245,60 @@ describe('no system voice anywhere a player can reach', () => {
 
         // Engine rows are allowed to be mechanical. That is what they are for.
         expect(state.log.some(e => e.role === 'engine')).toBe(true);
+    });
+});
+
+
+/**
+ * THE NARRATOR WRITES TYPOGRAPHY THIS REPO DOES NOT USE.
+ *
+ * `AGENTS.md` forbids an em-dash and an en-dash, and `terminology.test.ts`
+ * enforces it over every file in the tree. None of that reaches the model,
+ * which writes them freely. Measured on a live turn against ollama, in prose
+ * that was otherwise the best thing the game had produced:
+ *
+ *   whenever a sword is drawn anywhere within earshot [em] even in a kitchen
+ *   [em] the disciples instinctively stand
+ *
+ * So the one typographic rule the whole repo keeps was being broken on the
+ * most read surface in the game, by the one writer nobody had told.
+ *
+ * `inTheCharactersThePatternsUse` already existed for the other direction,
+ * normalising what a PLAYER types so the patterns can match it. The same
+ * function serves the way out.
+ */
+describe("the narrator typography is the repo typography", () => {
+    // Built from codepoints, because a test asserting the absence of these
+    // characters must not be the file that reintroduces them.
+    const EM = String.fromCharCode(0x2014);
+    const EN = String.fromCharCode(0x2013);
+    const CURLY = String.fromCharCode(0x2019);
+    const ELLIPSIS = String.fromCharCode(0x2026);
+
+    it("puts a model dash, quote and ellipsis back to the plain ones", async () => {
+        const provider = new ScriptedProvider({
+            plans: ['{"action":"look"}'],
+            narrations: [
+                `A road ${EM} and nobody on it ${EN} nobody at all${ELLIPSIS} ` +
+                `the ferryman${CURLY}s boat is gone.`
+            ]
+        });
+        const { game } = makeGame({ provider });
+        await game.newRun('Villager');
+        const shown = playerFacing(await game.act('I look around.'));
+
+        // The narration reached the player, so the fixture is being read.
+        expect(shown).toContain('A road');
+
+        for (const [name, ch] of [
+            ['em dash', EM], ['en dash', EN],
+            ['curly apostrophe', CURLY], ['ellipsis character', ELLIPSIS]
+        ] as Array<[string, string]>) {
+            expect(shown.includes(ch), name).toBe(false);
+        }
+
+        // And what replaced them is what the rest of the repo writes.
+        expect(shown).toContain('-');
+        expect(shown).toContain("ferryman's");
     });
 });

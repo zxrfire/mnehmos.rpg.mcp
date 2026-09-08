@@ -572,7 +572,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `DEALER_MARKUP` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | **nothing** | 7 |
 | `HIGH_REALM_PROVENANCE` | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | **nothing** | 7 |
 | `SEA_LANES` | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | **nothing** | 7 |
-| `THE_CANDIDATE_REGISTER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 7 |
 | `THE_REVOLT` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 7 |
 | `THE_SHADOW_CONSPIRACY` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 7 |
 | `THE_WRONG_QUESTION` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 7 |
@@ -587,6 +586,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `HERB_VALUE_BANDS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | **nothing** | 8 |
 | `RECEIPT_HISTORIES` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 8 |
 | `RECIPE_SUCCESS_BANDS` | [`recipes.ts`](../../src/data/cultivation/recipes.ts) | **nothing** | 8 |
+| `THE_CANDIDATE_REGISTER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 8 |
 | `THE_REMAINDER` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 8 |
 | `WHO_HINTS_AND_WHY` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 8 |
 | `ROGUE_TRADES` | [`rogues.ts`](../../src/data/cultivation/rogues.ts) | **nothing** | 9 |
