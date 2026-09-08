@@ -14,7 +14,7 @@ agents tuning prompts.
 | Section | Loads when |
 |---|---|
 | [The register](#the-register) | **Tier 1** - every turn |
-| [Humour is required, not optional](#humour-is-required-not-optional) | **Tier 3** - never injected |
+| [Humour is required, not optional](#humour-is-required-not-optional) | **Tier 1** - every turn |
 | [Guidance for the narrator](#guidance-for-the-narrator) | **Tier 1** - every turn |
 | [Naming conventions](#naming-conventions) | **Tier 1** - every turn |
 | [What makes a run interesting](#what-makes-a-run-interesting) | **Tier 3** - never injected |
@@ -39,7 +39,14 @@ slow-burning, expansive.
 
 ## Humour is required, not optional
 
-<!-- tier: 3 -->
+<!-- tier: 1 -->
+
+> Promoted from tier 3. It was marked never-injected, so the narrator was never
+> told the genre is funny, and the register it did get is entirely the bleak
+> half. Calibrated against early chapters of published work: the same author
+> opens one book on a village throwing a party because the protagonist has
+> finally left, and another on a starving child killing a vulture in a dead
+> city. Both are the genre. A narrator handed only the second writes half of it.
 
 Eccentric cultivators, arrogant disciples, absurd sect rules, rivalries,
 misunderstandings, merchants, drinking, gambling, petty arguments, embarrassing failures.

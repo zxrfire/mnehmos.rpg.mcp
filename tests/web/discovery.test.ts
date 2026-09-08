@@ -492,6 +492,9 @@ describe('the narrator constitution', () => {
         // Every heading the doc marks tier 1, present by name.
         for (const heading of [
             '## The register',
+            // Promoted from tier 3: the narrator was never told the genre is
+            // funny, so the register it got was entirely the bleak half.
+            '## Humour is required, not optional',
             '## Guidance for the narrator',
             '## Naming conventions',
             '## Show, never explain'
