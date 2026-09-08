@@ -617,7 +617,6 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `THE_CONTRACT` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | **nothing** | 17 |
 | `INHERITANCE_TRIALS` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 18 |
 | `WHAT_SHE_DOES_WITH_THE_TIME` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 19 |
-| `FALLEN` | [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | **nothing** | 20 |
 | `THE_STEP_AND_THE_BOUNDARY` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 20 |
 | `WHY_NOBODY_MOVES` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 21 |
 | `WHAT_SERVICE_ACTUALLY_BUYS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 22 |
@@ -626,6 +625,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `IDENTIFYING_A_SEAT` | [`false-immortals.ts`](../../src/data/cultivation/false-immortals.ts) | **nothing** | 24 |
 | `THE_TWO_CLAIMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | **nothing** | 24 |
 | `THE_LINEAGE_CLAIM` | [`sealed-ancestors.ts`](../../src/data/cultivation/sealed-ancestors.ts) | **nothing** | 25 |
+| `FALLEN` | [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) | **nothing** | 28 |
 | `GRAVES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 29 |
 | `DAO_HOUSES` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | 31 |
 | `THE_DEEPEST_ROADS` | [`roads-to-the-top-of-the-ladder.ts`](../../src/data/cultivation/roads-to-the-top-of-the-ladder.ts) | **nothing** | 34 |

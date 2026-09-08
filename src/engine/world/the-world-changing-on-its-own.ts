@@ -3,6 +3,7 @@
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
+import { whoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import { beastsOnThisGround, bandOf } from './hunting-a-spirit-beast.js';
 import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
@@ -3441,6 +3442,32 @@ const TEMPLATES: Template[] = [
             const orphans = membersOf(state, faction.id);
             for (const npc of orphans) {
                 replaceNpc(state, { ...npc, factionId: null, factionRankIndex: -1, updatedOnDay: day });
+            }
+
+            // AND WHAT IT OWNED STOPS BEING ITS.
+            //
+            // This cut every member loose and left the compound ruined, and
+            // said nothing about the treasury - so every object a fallen
+            // house owned kept pointing at an institution that no longer
+            // existed, for the rest of the world's life. Ownership here is a
+            // live fact and not a label: whoever walked out with a thing owns
+            // it, because there is nobody left to say otherwise, and whatever
+            // nobody carried has no owner at all, which is what makes a ruin
+            // a ruin. See
+            // `what-becomes-of-a-houses-things-when-the-house-ends.ts`.
+            {
+                const byId = new Map(state.npcs.map(npc => [npc.id, npc.name]));
+                const landed = new Map(whoOwnsThemNow(
+                    state.objects, faction.id, id => byId.get(id) ?? null
+                ).map(where => [where.objectId, where]));
+                if (landed.size > 0) {
+                    state.objects = state.objects.map(object => {
+                        const where = landed.get(object.id);
+                        return where === undefined
+                            ? object
+                            : { ...object, ownerId: where.ownerId, ownerName: where.ownerName };
+                    });
+                }
             }
 
             const seat = faction.seatLocationId

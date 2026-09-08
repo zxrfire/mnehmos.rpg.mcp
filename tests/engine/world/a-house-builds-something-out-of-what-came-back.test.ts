@@ -72,9 +72,21 @@ describe('a house builds something out of what came back', () => {
             state => state.objects.filter(o => o.tags.includes('conveyance'))
         );
         expect(craft.length).toBeGreaterThan(0);
+
+        // AND A HOUSE THAT FELL OWNS NOTHING, which is why this asks about
+        // the owner rather than asserting there is one. The design owner:
+        // *"once a faction ends, their item ownership is marked now as
+        // whoever is holding it... so in ruins that owners are long gone, no
+        // owner."* A boat moored in a yard nobody walked out of has nobody
+        // to answer for it, and that is a find rather than a gap. What must
+        // never happen is the third state this used to allow: a row still
+        // naming an institution that stopped existing centuries ago.
+        const standing = new Set((await worlds).flatMap(
+            state => state.factions.filter(f => f.dissolvedOnDay === null).map(f => f.id)
+        ));
         for (const row of craft) {
             expect(conveyanceKeptAs('heaven')).toBe('tracked');
-            expect(row.ownerId).not.toBeNull();
+            if (row.ownerId !== null) expect(standing.has(row.ownerId)).toBe(true);
             // Moored, never carried. A craft with a possessor is one
             // `bestObjectHeldBy` would arm somebody with.
             expect(row.possessorId).toBeNull();
