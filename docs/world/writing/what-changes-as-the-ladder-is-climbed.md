@@ -48,9 +48,32 @@ perceive a rung, so nobody states one. Nobody explains anything, because nobody
 has a reason to explain anything to you. Your problems are a day wide: food,
 cold, the road.
 
-At the top the reach is a house or a region. People tell you things because you
-are somebody who gets told. You can perceive rungs, so rungs are ordinary
-conversation. What you do lands on institutions rather than on an afternoon.
+At the top the reach is a house or a region. You can perceive rungs, so rungs
+are ordinary conversation, and what you do lands on institutions rather than on
+an afternoon.
+
+**But the world did not become more forthcoming, and this is the part that is
+easy to get wrong.** The owner, correcting exactly that reading:
+
+> *"and if you ask a rando villager THEY STILL DON'T KNOW. But at Tribulation
+> Transcendence those Core Formation disciples posted outside know, and your
+> elders know what affects the region. It's exactly like how CEOs work."*
+
+So the villager is the same villager at both ends of the game and knows the same
+things. Nothing about your rung makes them better informed, and a narrator that
+has the innkeeper start explaining regional history because the player got
+strong has the mechanism backwards.
+
+**Knowledge is a property of the person being asked. Never of the person
+asking.** What climbing buys is not better answers from the same people: it is a
+different set of people standing near you. Disciples posted outside a ruin whose
+posting is to know what is in it. Elders whose business is what moves in the
+region. A house that keeps records because keeping them is what a house is for.
+
+The comparison the owner drew is the exact one: a chief executive does not get
+better answers out of the front desk than anybody else does. What they have is a
+staff, and people whose job is to have already found out. Same world, same front
+desk, different position on the chart.
 
 So the register changes at height not because the prose gets grander but because
 **the character's position in the world changed and the prose is still honest
@@ -59,6 +82,36 @@ at one of them.
 
 The rest of this file is what that looks like in practice. Do not over-index on
 any single item below: they are symptoms, and the rule above is the cause.
+
+## And influence works the same way: you are admitted, you do not expand
+
+The other half of *rung is reach* is influence, and it has the identical shape.
+The owner, in four lines:
+
+> *"you influence strategy. that should fall out. it's not really the world. but
+> you get plugged into leadership infrastructure?"*
+
+So a high cultivator does not personally move a region any more than they
+personally know it. **They get admitted to the rooms where a house decides what
+it is going to do, and the house moves the region.** The influence is over
+strategy rather than over the world directly, and it is exercised through an
+apparatus that already existed and was already running before they arrived.
+
+*"That should fall out"* is the standing instruction and it applies cleanly
+here: this must not be legislated as a rung rule. The repo already holds houses,
+ranks, member rolls, grant chains and obligations, and admission to the rooms is
+a fact about a rank on a roll. If a high cultivator's strategic influence has to
+be written as its own mechanism, then the house machinery is what is underbuilt,
+and that is where the fix belongs.
+
+And the rooms are not interchangeable. **An apex house's leadership is
+discussing different subject matter than a county house's**, not the same
+subject matter at greater volume: what an era is doing, which houses are
+combining, what is coming out of somewhere nobody has opened in an age. A small
+house's leadership is discussing a road, a debt, and a marriage. So being
+plugged in higher changes the *agenda* a person is exposed to, which is the
+mechanism behind "the higher up you are the more you know" without any of it
+being a property of their body.
 
 ## The unit of narration changes
 
@@ -105,22 +158,43 @@ particular art could shake a particular class of being, and rank one named
 ability against another. At that point the vocabulary IS the world's own: people
 who can perceive rungs talk about rungs.
 
-**This wants a ruling rather than a quiet change**, because the ban also serves
-the discovery gate: the engine withholds other people's ranks from a player who
-cannot place them. The two rules are entangled and only one of them is about
-register. See `docs/world/houses/discovery.md`.
+**Ruled, and it turns out not to be about height either.** The axis is the
+speaker, exactly as with exposition above: somebody whose job is to appraise
+says what they appraise, and the narrator never says it on its own account. A
+gate disciple posted to size up arrivals states what they see. A villager does
+not, at any point in the game, because a villager cannot see it.
 
-## Exposition is permitted at height, and only there
+That leaves the discovery gate untouched, which is why this reading is preferred
+to a rung-aware ban. The gate withholds what a player cannot place; this rule
+only ever puts words in the mouth of somebody who could. The two looked
+entangled because both were written as rules about the player. Neither is.
+See `docs/world/houses/discovery.md`.
 
-The show-never-explain rule is a low-rung rule and a good one: nobody explains
-the world to somebody who has just left their village, because in the world
-there is no such job.
+## Exposition belongs to somebody whose job is to know
 
-High up, that changes. Chapters late in a long work will spend paragraphs on
-where a class of technique came from, which era made it, and what it costs the
-people who use it. The reason it works there and not at the bottom is that the
-character has become somebody who would be told - and the cost is always stated
-with the history, never the power alone.
+The show-never-explain rule reads like a rule about height and it is not. It is
+a rule about **who is talking**: nobody explains the world to somebody who has
+just left their village, because in the village there is no such job.
+
+The job is what changes, not the rung. A disciple posted outside a ruin can say
+what era it is from and what has been coming out of it, because that is the
+posting. An elder can say what is moving in the region, because that is what an
+elder is for. A records hall answers questions about lineage because answering
+them is the hall. Every one of those people could be met by a low cultivator who
+happened to be standing in the right place, and would answer the same way.
+
+What height changes is **how many such people are within reach and how many of
+them owe you an answer.** At the bottom you rarely meet one and have no claim on
+them. At the top several of them work for you.
+
+So the test on an expository line is never *is the player high enough for this*.
+It is **whose job was it to know this, and are they here**. That question already
+has an answer in the engine: a posting, a rank, a records hall, the house that
+holds the ground.
+
+And a cost is stated with the history rather than with the power alone: what a
+class of technique is, which era made it, and what it does to the people who use
+it, in one breath.
 
 ## The costs are graded, and the grading is the content
 
@@ -190,8 +264,9 @@ trying and not worth defending.
 2. **Follows from the ruling.** A person read should change what it reads them off as the rung
    climbs. Clothing and circumstance low, rank and house middle, class of being
    high.
-3. **Thin: sample only.** The power-exposition ban should become rung-aware rather than
-   absolute, without loosening the discovery gate. Needs a ruling.
+3. **Follows from the ruling.** Neither the power-exposition ban nor the
+   show-never-explain rule is about the player's height. Both are about whether
+   the speaker's job is to know, and rung only changes who is standing near you.
 4. **Thin: sample only.** Scale should be allowed to come back down. A quiet room is a
    correct late-game scene.
 5. **Thin: sample only, and worth testing.** Late-rung answers that name a capability should name its
