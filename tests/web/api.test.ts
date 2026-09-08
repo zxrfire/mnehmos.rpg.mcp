@@ -163,14 +163,16 @@ describe('GET /api/state', () => {
             'lifespanPressure',
             'lifespanPressureFromAge',
             'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextBoundaryRank', 'nextRankName',
-            'progressRequired', 'rankName', 'realmName', 'sectName',
+            'physiqueSpeed',
+            'progressRequired', 'rankName', 'realmName', 'scarBreakthroughModifier',
+            'scarTempering', 'sectName',
             // `standingHere` is what is live for this cultivator right now,
             // most pressing first. On the wire because the interface offered
             // three buttons over a verb space a player could not find any other
             // way - see `what-is-worth-doing-standing-here.ts`. Prompts, never
             // a menu: free text stays the whole game.
             'stagnationYears', 'standingHere',
-            'tollAtNextBoundary', 'untreatedInjuries'
+            'tollAtNextBoundary', 'turnsUntilBleedingOut', 'untreatedInjuries'
         ]);
         // The four that were added together, and the reason: the client had 50
         // written into it as the settling clock and said "fifty years without

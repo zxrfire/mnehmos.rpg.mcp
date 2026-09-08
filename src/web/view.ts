@@ -8,8 +8,16 @@ import {
     understandingEffects
 } from '../engine/cultivation/understanding.js';
 import { hasCrossedTheLid } from '../engine/cultivation/realms.js';
-import { lifespanWithPhysique, physiqueOrNull } from '../engine/cultivation/physiques.js';
-import { lifespanCeilingFor } from '../engine/cultivation/survival.js';
+import {
+    cultivationSpeedOf,
+    lifespanWithPhysique,
+    physiqueOrNull
+} from '../engine/cultivation/physiques.js';
+import {
+    bleedStateOf,
+    lifespanCeilingFor,
+    turnsUntilBleedOut
+} from '../engine/cultivation/survival.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import type { CrowdingRead } from './how-crowded-this-ground-is.js';
 import type { Affordance } from './what-is-worth-doing-standing-here.js';
@@ -33,7 +41,12 @@ import {
     lifespanPressure,
     lifespanPressureOnsetAge
 } from '../engine/cultivation/breakthrough.js';
-import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
+import {
+    aggregateInjuryPenalties,
+    scarRateMultiplier,
+    scarTempering,
+    untreatedInjuryCount
+} from '../engine/cultivation/injuries.js';
 import {
     boundariesCrossed,
     computeTollRisk,
@@ -250,6 +263,41 @@ export interface DerivedView {
      * rolling, for a UI that wants to show a player what crossing now would
      * expose them to."* Nothing called it.
      */
+    /**
+     * Turns left before open wounds finish this cultivator, or null when they
+     * are not bleeding out.
+     *
+     * The Injuries panel says how many wounds are open and what fraction of the
+     * rate they are taking. It could not say the one thing a bleeding cultivator
+     * needs, which is how long they have. `turnsUntilBleedOut` and `bleedStateOf`
+     * were both written and neither was reached by anything the game runs.
+     */
+    /**
+     * What the body itself multiplies the rate by, from the physique. 1 when
+     * there is no physique, which is almost everybody.
+     *
+     * The Talent panel names the physique and says what it is. It could not say
+     * what it is WORTH, which is the number the panel exists to explain.
+     */
+    physiqueSpeed: number;
+    /**
+     * What the cultivation rate KEEPS after scar wear, 0..1.
+     *
+     * The Injuries panel prices what is open. Scars are the other ledger and it
+     * has two sides: past a plateau they wear the rate down, and that is this.
+     * Both halves were computed and read by nothing.
+     */
+    scarTempering: number;
+    /**
+     * Tempering less attrition, as the flat modifier a crossing books. Positive
+     * for a body that has been hurt and mended, negative for somebody who bought
+     * their rank with their meridians.
+     *
+     * `injuries.ts` says of this figure, in as many words, "This is the figure to
+     * show a player". Nothing showed it.
+     */
+    scarBreakthroughModifier: number;
+    turnsUntilBleedingOut: number | null;
     tollAtNextBoundary: number | null;
     /**
      * The rung where the next charge falls, named. Off a boundary the risk
@@ -324,6 +372,13 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         tollAtNextBoundary: isTolled(ordinal)
             ? computeTollRisk(cultivator, { ambient: context.ambient ?? 'normal' }).risk
             : null,
+        physiqueSpeed: cultivationSpeedOf(physiqueOrNull(cultivator.physique)),
+        scarTempering: scarRateMultiplier(cultivator.injuries),
+        scarBreakthroughModifier: scarTempering(cultivator.injuries).netBreakthroughModifier,
+        turnsUntilBleedingOut: (() => {
+            const left = turnsUntilBleedOut(bleedStateOf(cultivator));
+            return Number.isFinite(left) ? left : null;
+        })(),
         boundariesCrossed: boundariesCrossed(ordinal),
         nextBoundaryRank: (() => {
             const next = TOLL_BOUNDARY_ORDINALS.find(b => b >= ordinal);

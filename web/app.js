@@ -1633,6 +1633,8 @@ function renderSheet() {
               <span class="injury__src">${titleise(i.source)}${i.treated ? ' · treated' : ' · untreated'}</span>
             </div>`).join(''))
         : raw(html`<p class="empty">Meridians intact.</p>`)}
+    ${raw(bleedingOutMarkup(S.derived))}
+    ${raw(whatTheBodyCarriesMarkup(S.derived))}
     </section>
 
     ${raw(tollLedgerMarkup(S.tolls))}
@@ -1696,6 +1698,62 @@ function tollRowMarkup(toll, index) {
  *
  * Null off a boundary, and then this says so rather than saying zero.
  */
+/**
+ * THE TWO LEDGERS THE BODY KEEPS THAT NOTHING WAS SHOWING.
+ *
+ * Scars have two sides. Past a plateau they wear the cultivation rate down,
+ * and they make a crossing easier, and `injuries.ts` says of the net figure in
+ * as many words: "This is the figure to show a player." Nothing showed it.
+ *
+ * A physique multiplies the rate outright. The Talent panel names the physique
+ * and never said what it was worth. Silent when there is none, which is almost
+ * everybody, so it stays out of the way until it matters.
+ */
+function whatTheBodyCarriesMarkup(derived) {
+  if (!derived) return '';
+  const rows = [];
+
+  const kept = Number(derived.scarTempering);
+  if (Number.isFinite(kept) && kept < 1) {
+    rows.push(`Old scars have worn the rate down to ${fmtInt(Math.round(kept * 100))}% of itself.`);
+  }
+
+  const crossing = Number(derived.scarBreakthroughModifier);
+  if (Number.isFinite(crossing) && crossing !== 0) {
+    rows.push(crossing > 0
+      ? `A body that has been hurt and mended: crossings come ${fmtInt(Math.round(crossing * 100))}% easier for it.`
+      : `Bought with the meridians: crossings come ${fmtInt(Math.abs(Math.round(crossing * 100)))}% harder.`);
+  }
+
+  const speed = Number(derived.physiqueSpeed);
+  if (Number.isFinite(speed) && speed !== 1) {
+    rows.push(`The body itself draws at ${fmtInt(Math.round(speed * 100))}% of an ordinary one.`);
+  }
+
+  if (!rows.length) return '';
+  return html`<p class="injury__scars">${rows.join(' ')}</p>`;
+}
+
+/**
+ * HOW LONG A BLEEDING CULTIVATOR HAS.
+ *
+ * The panel above says how many wounds are open and what they cost the rate.
+ * It could not say the one thing somebody bleeding actually needs to know.
+ * `turnsUntilBleedOut` and `bleedStateOf` were both written for this and
+ * neither was reached by anything the game runs.
+ */
+function bleedingOutMarkup(derived) {
+  const left = derived && typeof derived.turnsUntilBleedingOut === 'number'
+    ? derived.turnsUntilBleedingOut
+    : null;
+  if (left === null) return '';
+  if (left <= 0) {
+    return html`<p class="injury__bleeding"><strong>Bleeding out, and out of time.</strong></p>`;
+  }
+  const turns = left === 1 ? 'turn' : 'turns';
+  return html`<p class="injury__bleeding"><strong>Bleeding out.</strong> ${fmtInt(left)} ${turns} before it finishes you, unless somebody closes them.</p>`;
+}
+
 /**
  * WHAT A RUNG IS CALLED WHEN THE LADDER CANNOT NAME IT.
  *
