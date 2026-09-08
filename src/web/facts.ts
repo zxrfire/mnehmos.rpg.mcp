@@ -18,7 +18,7 @@ import {
     TimeSkipResult
 } from '../schema/cultivation.js';
 import { insightName } from '../engine/cultivation/understanding.js';
-import { rankName } from '../engine/cultivation/realms.js';
+import { rankName, realmIndexOf } from '../engine/cultivation/realms.js';
 import {
     headstoneStructure,
     whatTheStoneSays,
@@ -202,17 +202,58 @@ export function describeDeathCause(
  * What is left is what somebody could actually see: how far apart they are, in
  * plain words, with nothing about how either of them feels about it. The
  * narrator writes what that is like to stand in front of.
+ *
+ * AND IT IS COUNTED IN WALLS, NOT IN ORDINALS. `realmIndexOf` states the rule
+ * in its own docstring - *"gaps between people are counted in these and not in
+ * ordinals: a realm is a different kind of body, and two people eight ordinals
+ * apart inside one realm are far closer than two people one ordinal apart
+ * across a boundary"* - and the one function whose entire job is reporting a
+ * gap was the function ignoring it.
+ *
+ * Measured over all 45x45 ordered pairs before this change, the reading was not
+ * merely coarse. It was inverted, because Qi Condensation is thirteen ordinals
+ * wide and every realm above it is four:
+ *
+ *   Nascent Soul Perfection  -> Deity Transformation   one ordinal, ONE WALL
+ *                                                      crossed, a different
+ *                                                      kind of body
+ *                                                      said: "a little above"
+ *   Qi Condensation Layer 1  -> Qi Condensation 13     twelve ordinals, NO
+ *                                                      wall, closable by
+ *                                                      practising
+ *                                                      said: "far above"
+ *
+ * One phrase, "far above you", covered realm gaps of nought through four. A
+ * one-wall gap drew three different phrases depending only on where the pair
+ * happened to stand on the ladder. So the reading carried real information
+ * about neither quantity.
+ *
+ * The wall is the repo's own noun for the boundary (`strikeAtTheWall`), which
+ * is why it can be said out loud without becoming mechanism-talk: a cultivator
+ * in this world perceives that somebody is past a wall they have not crossed.
+ * They do not perceive an ordinal, and this still never says one.
+ *
+ * Within one realm the difference is degree, and the phrase says so, because
+ * that is the case where practice closes the distance and the player should be
+ * able to hear that it can.
  */
 export function describeStanding(observerOrdinal: number, subjectOrdinal: number): string {
-    const gap = subjectOrdinal - observerOrdinal;
-    if (gap <= -13) return 'far beneath you';
-    if (gap <= -4) return 'well beneath you';
-    if (gap < 0) return 'a little beneath you';
-    if (gap === 0) return 'level with you';
-    if (gap <= 3) return 'a little above you';
-    if (gap <= 8) return 'well above you';
-    if (gap <= 16) return 'far above you';
-    return 'out of reach entirely';
+    const walls = realmIndexOf(subjectOrdinal) - realmIndexOf(observerOrdinal);
+    if (walls === 0) {
+        // Same kind of body. What separates them is practice, and nothing else.
+        const gap = subjectOrdinal - observerOrdinal;
+        if (gap === 0) return 'level with you';
+        if (gap >= 3) return 'above you, though on the same footing';
+        if (gap > 0) return 'a little above you';
+        if (gap <= -3) return 'beneath you, though on the same footing';
+        return 'a little beneath you';
+    }
+    if (walls === 1) return 'a wall above you';
+    if (walls === 2) return 'two walls above you';
+    if (walls >= 3) return 'out of reach entirely';
+    if (walls === -1) return 'a wall beneath you';
+    if (walls === -2) return 'two walls beneath you';
+    return 'far beneath you';
 }
 
 /**
