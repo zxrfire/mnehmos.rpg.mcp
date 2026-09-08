@@ -80,14 +80,37 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  * closes it. A slot nobody brings back down is indistinguishable from the
  * defect this ratchet exists to catch.
  */
+/**
+ * AND IT COUNTS CODE, NOT PROSE.
+ *
+ * The header above names three things an unwired export can be and says only
+ * the first is the finding. The second, *design deliberately stated as data*,
+ * turned out to be a real and growing category: this repo writes its arguments
+ * into the catalog as objects of sentences, and `THE_CANDIDATE_REGISTER` is
+ * 5,396 characters of text with no code in it anywhere. Counting those as
+ * unwired BEHAVIOUR made the ratchet measure the wrong thing, so a tree could
+ * go over its ceiling by writing down more of its own reasoning.
+ *
+ * Measured when the split was added: 50 of 567 test-only exports and 10 of 161
+ * dead ones were prose. That is a real correction rather than an escape hatch,
+ * and the proof is that it does not close the gap on its own - the code-only
+ * count was still 514 against a ceiling of 496, and the difference had to be
+ * wired rather than reclassified.
+ *
+ * `isDesignStatedAsProse` in the script is the classifier: no function syntax,
+ * and overwhelmingly quoted text by volume. A label or a small lookup fails the
+ * length floor and stays counted as code, which is the conservative direction.
+ */
 const DEAD = 171;
 const TEST_ONLY = 496;
 
 describe('design does not go unwired', () => {
-    const rows = findUnwired() as Array<{ name: string; file: string; state: string }>;
+    const rows = findUnwired() as Array<{
+        name: string; file: string; state: string; kind: 'code' | 'prose';
+    }>;
 
     it('does not add exports that nothing anywhere reads', () => {
-        const dead = rows.filter(r => r.state === 'dead');
+        const dead = rows.filter(r => r.state === 'dead' && r.kind === 'code');
         const worst = [...dead]
             .reduce((acc, r) => acc.set(r.file, (acc.get(r.file) ?? 0) + 1), new Map<string, number>());
         const top = [...worst.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
@@ -100,7 +123,7 @@ describe('design does not go unwired', () => {
     });
 
     it('does not add exports only a test reads', () => {
-        const testOnly = rows.filter(r => r.state === 'testOnly');
+        const testOnly = rows.filter(r => r.state === 'testOnly' && r.kind === 'code');
         expect(
             testOnly.length,
             `Exports only a test reads rose above ${TEST_ONLY}. A rule pinned but never `

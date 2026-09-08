@@ -1686,10 +1686,41 @@ function tollRowMarkup(toll, index) {
     </li>`;
 }
 
+/**
+ * What the NEXT crossing risks, which a ledger could never say.
+ *
+ * A ledger records what already happened, so a cultivator who has not crossed
+ * a boundary yet read "Nothing charged yet" and had no way to find out that the
+ * rung ahead is the one that charges. `computeTollRisk` exists for this and
+ * says so in its own doc; nothing called it until now.
+ *
+ * Null off a boundary, and then this says so rather than saying zero.
+ */
+function tollAheadMarkup(derived) {
+  const risk = derived && typeof derived.tollAtNextBoundary === 'number'
+    ? derived.tollAtNextBoundary
+    : null;
+  const crossed = derived && typeof derived.boundariesCrossed === 'number'
+    ? derived.boundariesCrossed
+    : 0;
+  const paid = crossed > 0
+    ? html`<p class="toll__paid">${fmtInt(crossed)} boundar${crossed === 1 ? 'y' : 'ies'} behind you, and the same number of rolls.</p>`
+    : '';
+  if (risk === null) {
+    // Not a restatement of the empty ledger above, which already says nothing
+    // is charged between sub-ranks. This says where it WILL be charged.
+    const at = derived && derived.nextBoundaryRank;
+    if (!at) return html`${raw(paid)}`;
+    return html`${raw(paid)}<p class="toll__ahead">The next charge falls at ${at}.</p>`;
+  }
+  return html`${raw(paid)}<p class="toll__ahead">The next rung is a boundary. As things stand it would take something ${Math.round(risk * 100)} times in a hundred.</p>`;
+}
+
 function tollLedgerMarkup(tolls, opts = {}) {
   const list = Array.isArray(tolls) ? tolls : [];
   const takenCount = list.filter((t) => t.outcome === 'taken').length;
   const bare = !!opts.bare;
+  const ahead = tollAheadMarkup(S.derived);
 
   const body = list.length
     ? html`
@@ -1697,8 +1728,8 @@ function tollLedgerMarkup(tolls, opts = {}) {
           ${fmtInt(list.length)} instalment${list.length === 1 ? '' : 's'} charged ·
           ${fmtInt(takenCount)} collected
         </p>
-        <ol class="tolls">${raw(list.map(tollRowMarkup).join(''))}</ol>`
-    : html`<p class="empty">Nothing charged yet. The Toll falls at realm boundaries, never on the small steps between sub-ranks.</p>`;
+        <ol class="tolls">${raw(list.map(tollRowMarkup).join(''))}</ol>${raw(ahead)}`
+    : html`<p class="empty">Nothing charged yet. The Toll falls at realm boundaries, never on the small steps between sub-ranks.</p>${raw(ahead)}`;
 
   if (bare) return body;
 

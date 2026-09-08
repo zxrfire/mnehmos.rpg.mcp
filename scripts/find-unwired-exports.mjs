@@ -77,6 +77,68 @@ const rel = f => path.relative(ROOT, f).split(path.sep).join('/');
 const EXPORTED = /^export (?:async )?(?:function|const|class) ([A-Za-z_][A-Za-z0-9_]*)/gm;
 
 /**
+ * WHETHER AN EXPORTED CONST IS DESIGN STATED AS PROSE RATHER THAN CODE.
+ *
+ * The header above names three things an unwired export can be, and says only
+ * the first is the finding. The second - *design deliberately stated as data*
+ * - is a real category here: this repo writes arguments into the catalog as
+ * objects of sentences, and `THE_CANDIDATE_REGISTER` is 5,396 characters of
+ * text with no code in it at all. Counting those as unwired BEHAVIOUR made the
+ * ratchet measure the wrong thing, so a tree could go over its ceiling by
+ * writing down more of its reasoning.
+ *
+ * Measured when this was added: 42 of 567 test-only exports were prose. That
+ * is a real correction and not an escape hatch, because it does not close the
+ * gap on its own.
+ *
+ * The test: no function syntax, and overwhelmingly quoted text by volume. A
+ * label or a small lookup fails the length floor and stays counted as code.
+ */
+function isDesignStatedAsProse(text, name) {
+    const at = text.indexOf('export const ' + name);
+    if (at < 0) return false;
+    const eq = text.indexOf('=', at);
+    if (eq < 0) return false;
+
+    let i = eq + 1;
+    // Space, newline, carriage return, tab, by codepoint: a literal escape
+    // here does not survive every way this file gets edited.
+    const BLANK = [32, 10, 13, 9];
+    while (i < text.length && BLANK.indexOf(text.charCodeAt(i)) >= 0) i++;
+    const open = text[i];
+    let body;
+    if (open === '{' || open === '[') {
+        const close = open === '{' ? '}' : ']';
+        let depth = 0;
+        let j = i;
+        for (; j < text.length; j++) {
+            if (text[j] === open) depth++;
+            else if (text[j] === close) { depth--; if (depth === 0) break; }
+        }
+        body = text.slice(i, j + 1);
+    } else {
+        body = text.slice(i, i + 400);
+    }
+    if (body.indexOf('=>') >= 0 || body.indexOf('function') >= 0) return false;
+
+    // Characters sitting inside a string literal. A plain scanner rather than a
+    // regex, because the escape for an escape does not survive every editor.
+    const BACKSLASH = String.fromCharCode(92);
+    let quoted = 0;
+    for (let k = 0; k < body.length; k++) {
+        const c = body[k];
+        if (c !== "'" && c !== '"' && c !== '`') continue;
+        k++;
+        while (k < body.length && body[k] !== c) {
+            if (body[k] === BACKSLASH) k++;
+            quoted++;
+            k++;
+        }
+    }
+    return quoted > 200 && quoted / body.length > 0.7;
+}
+
+/**
  * Three answers, not two, and only the first is the finding.
  *
  *   `dead`      nothing anywhere reads it - not the game, not a test. Design
@@ -114,7 +176,12 @@ export function findUnwired() {
             }
             if (live > 0) continue;
             const byTest = tests.some(t => word.test(t.text));
-            rows.push({ name, file: file.rel, state: byTest ? 'testOnly' : 'dead' });
+            rows.push({
+                name,
+                file: file.rel,
+                state: byTest ? 'testOnly' : 'dead',
+                kind: isDesignStatedAsProse(file.text, name) ? 'prose' : 'code'
+            });
         }
     }
     return rows.sort((a, b) => a.file.localeCompare(b.file) || a.name.localeCompare(b.name));

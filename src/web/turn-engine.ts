@@ -12980,6 +12980,7 @@ ${fit.line}`;
             },
             ambient: this.ambientFor(cultivator, run),
             derived: derivedView(cultivator, {
+                ambient: this.ambientFor(cultivator, run),
                 sectName: this.sectNameFor(cultivator),
                 nameTaken: this.nameTaken(cultivator),
                 // The strongest environmental lever in the game, and it was on

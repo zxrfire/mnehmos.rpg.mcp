@@ -7,7 +7,7 @@ sizing a context window for the game does not reach any of them.
 
 Ollama holds a model in VRAM at **one** window. A request that asks for a
 different `num_ctx` than the loaded instance makes the server unload and reload
-the weights - so a game that asked `gemma4:26b` for 32768 while another tool
+the weights - so a game that asked `gemma4:31b` for 32768 while another tool
 used the same tag at its default would make both of them reload on every
 alternation. Twenty seconds of loading, per turn, in both directions.
 
@@ -36,13 +36,13 @@ A larger window is VRAM spent on space that stays empty - and at the model's own
 ## Building it
 
 ```bash
-ollama create rpg-gemma4-26b -f config/ollama/gemma4-26b.Modelfile
+ollama create rpg-gemma4-31b -f config/ollama/gemma4-31b.Modelfile
 ```
 
 Then point the game at it:
 
 ```bash
-OLLAMA_MODEL=rpg-gemma4-26b
+OLLAMA_MODEL=rpg-gemma4-31b
 ```
 
 Change `FROM` to build the same thing off a different base.

@@ -10,7 +10,7 @@ import {
 import { hasCrossedTheLid } from '../engine/cultivation/realms.js';
 import { lifespanWithPhysique, physiqueOrNull } from '../engine/cultivation/physiques.js';
 import { lifespanCeilingFor } from '../engine/cultivation/survival.js';
-import type { Cultivator, Run } from '../schema/cultivation.js';
+import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import type { CrowdingRead } from './how-crowded-this-ground-is.js';
 import type { Affordance } from './what-is-worth-doing-standing-here.js';
 import { getSect } from '../data/cultivation/sects.js';
@@ -34,6 +34,13 @@ import {
     lifespanPressureOnsetAge
 } from '../engine/cultivation/breakthrough.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
+import {
+    boundariesCrossed,
+    computeTollRisk,
+    isTolled,
+    TOLL_BOUNDARY_ORDINALS
+} from '../engine/cultivation/price-of-advancement.js';
+import { isHalted } from '../engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { stagnationYearsForOrdinal } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
@@ -232,9 +239,40 @@ export interface DerivedView {
      * What is live standing here, most pressing first.
      */
     standingHere: Affordance[];
+    /**
+     * WHAT THE NEXT CROSSING WOULD EXPOSE THEM TO, 0..1, or null when the step
+     * ahead is not a realm boundary and so charges nothing.
+     *
+     * The ledger below it says what every past crossing took. It could not say
+     * what the next one risks, so a player read "Nothing charged yet" and had
+     * no way to learn that the next rung is the one that charges. `computeTollRisk`
+     * was written for exactly this and its own doc says so: *"Toll risk without
+     * rolling, for a UI that wants to show a player what crossing now would
+     * expose them to."* Nothing called it.
+     */
+    tollAtNextBoundary: number | null;
+    /**
+     * The rung where the next charge falls, named. Off a boundary the risk
+     * above is null and this is the useful sentence instead: not "nothing is
+     * charged here", which the empty ledger already says, but where it will be.
+     */
+    nextBoundaryRank: string | null;
+    /**
+     * Instalments already paid. The number behind "a Void Tribulation cultivator
+     * has crossed five boundaries and rolled five times".
+     */
+    boundariesCrossed: number;
+    /**
+     * True when a wound is holding the climb rather than merely slowing it. The
+     * sheet already lists injuries and their rate penalty, neither of which says
+     * that the road is shut.
+     */
+    halted: boolean;
 }
 
 export interface DerivedContext {
+    /** Where they are standing, which the toll reads as a modifier. */
+    ambient?: AmbientQi;
     sectName?: string | null;
     nameTaken?: boolean;
     ground?: CrowdingRead | null;
@@ -279,7 +317,19 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         foundationQuality: cultivator.foundationQuality,
         nameTaken: context.nameTaken ?? false,
         ground: context.ground ?? null,
-        standingHere: context.standingHere ?? []
+        standingHere: context.standingHere ?? [],
+        // Null rather than zero off a boundary: "this step costs nothing" and
+        // "this step is free of risk" are different sentences and only one of
+        // them is true between sub-ranks.
+        tollAtNextBoundary: isTolled(ordinal)
+            ? computeTollRisk(cultivator, { ambient: context.ambient ?? 'normal' }).risk
+            : null,
+        boundariesCrossed: boundariesCrossed(ordinal),
+        nextBoundaryRank: (() => {
+            const next = TOLL_BOUNDARY_ORDINALS.find(b => b >= ordinal);
+            return next === undefined || next >= MAX_ORDINAL ? null : rankName(next);
+        })(),
+        halted: isHalted(cultivator)
     };
 }
 

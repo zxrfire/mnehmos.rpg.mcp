@@ -142,6 +142,13 @@ describe('GET /api/state', () => {
         expect(['thin', 'normal', 'dense', 'spirit_tide']).toContain(res.body.ambient);
 
         expect(Object.keys(res.body.derived).sort()).toEqual([
+            // The toll reads, added together. `computeTollRisk`'s own doc says it
+            // exists 'for a UI that wants to show a player what crossing now would
+            // expose them to' and nothing called it, so the sheet could say what
+            // every past crossing took and never what the next one risks.
+            // `nextBoundaryRank` carries the off-boundary case: null risk is not
+            // zero risk, and the useful sentence there is WHERE it will be charged.
+            'boundariesCrossed',
             'breakthroughBlockedReason', 'breakthroughReady', 'dao',
             // `daysChannelsOpen` and `injuryRatePenalty` replaced
             // `bleedOutTurns` and `turnsUntilBleedOut`, which were a countdown
@@ -152,9 +159,10 @@ describe('GET /api/state', () => {
             // `ground` is who else is drawing on the ground under them. It is
             // on the sheet because occupancy moves the rate more than the
             // ambient band does and was on no screen anywhere.
-            'foundationQuality', 'ground', 'injuryRatePenalty', 'lifespanPressure',
+            'foundationQuality', 'ground', 'halted', 'injuryRatePenalty',
+            'lifespanPressure',
             'lifespanPressureFromAge',
-            'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextRankName',
+            'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextBoundaryRank', 'nextRankName',
             'progressRequired', 'rankName', 'realmName', 'sectName',
             // `standingHere` is what is live for this cultivator right now,
             // most pressing first. On the wire because the interface offered
@@ -162,7 +170,7 @@ describe('GET /api/state', () => {
             // way - see `what-is-worth-doing-standing-here.ts`. Prompts, never
             // a menu: free text stays the whole game.
             'stagnationYears', 'standingHere',
-            'untreatedInjuries'
+            'tollAtNextBoundary', 'untreatedInjuries'
         ]);
         // The four that were added together, and the reason: the client had 50
         // written into it as the settling clock and said "fifty years without
