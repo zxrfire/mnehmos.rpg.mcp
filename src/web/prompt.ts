@@ -90,6 +90,80 @@ export function narratorCore(): { text: string; source: 'file' | 'fallback' } {
     return narratorCoreCache;
 }
 
+/**
+ * WHERE THE VOICE DOC LIVES, AND WHY IT IS LOADED RATHER THAN COPIED.
+ *
+ * `docs/world/README.md` sets up three tiers and says tier 1 is loaded every
+ * turn. `NARRATOR-CORE.md` is the assembled copy of it and ships whole. But
+ * `tone.md` marks four of its own sections tier 1 as well, and nothing read
+ * them: the prompt carried a hand-written compression instead, and the README
+ * already says of that arrangement, "It should converge on NARRATOR-CORE.md."
+ *
+ * A hand copy is what drifted. The show and never explain TABLE never arrived
+ * at all - six paired rows, the densest positive material in the repo, and the
+ * one that names the beat the genre actually runs on: somebody is addressed by
+ * a title the player does not know, and the room rearranges itself. So the
+ * sections are read off disk, and the test that they are all present reads the
+ * same file, which is a thing a paraphrase can never be checked against.
+ */
+export const TONE_PATH = 'docs/world/writing/tone.md';
+
+/**
+ * Every section of a world doc whose own marker says tier 1, in file order.
+ *
+ * The scheme is a parseable HTML comment after a heading, which
+ * `docs/world/README.md` specifies and `build-world-index.mjs` already reads.
+ * A section runs from its heading to the next heading of any level, and the
+ * first tier marker inside it is the one that governs it.
+ */
+function tierOneSectionsOf(text: string): string[] {
+    const lines = text.split(/\r?\n/);
+    const out: string[] = [];
+    let heading = -1;
+    let tier: number | null = null;
+
+    const flush = (end: number): void => {
+        if (heading >= 0 && tier === 1) out.push(lines.slice(heading, end).join(String.fromCharCode(10)).trim());
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i] ?? '';
+        if (line.startsWith('#')) {
+            flush(i);
+            heading = i;
+            tier = null;
+            continue;
+        }
+        const marked = /<!--\s*tier:\s*(\d+)/.exec(line);
+        if (marked && tier === null) tier = Number(marked[1]);
+    }
+    flush(lines.length);
+    return out;
+}
+
+let toneCache: string | null = null;
+
+/**
+ * The voice doc, tier 1 only, as one block. Empty when the file is missing:
+ * `NARRATOR-CORE.md` already carries the register in compressed form, so a
+ * packaging change that loses `docs/` degrades rather than breaking.
+ */
+export function theVoiceDoc(): string {
+    if (toneCache !== null) return toneCache;
+    try {
+        const path = fileURLToPath(new URL(`../../${TONE_PATH}`, import.meta.url));
+        toneCache = tierOneSectionsOf(readFileSync(path, 'utf-8')).join(String.fromCharCode(10, 10));
+    } catch {
+        toneCache = '';
+    }
+    return toneCache;
+}
+
+/** Test seam: forget the cached voice doc so a later call re-reads it. */
+export function resetTheVoiceDoc(): void {
+    toneCache = null;
+}
+
 /** Test seam: forget the cached core so a later call re-reads it. */
 export function resetNarratorCore(): void {
     narratorCoreCache = null;
@@ -286,22 +360,19 @@ compounds, often numbered - Nine Severing Threads, Lid-Watching Stance, Borrowed
 are graded - third-grade Meridian Knitting Pill. Places are plain and physical - Burnt Earth,
 the Jade Gorge, Clear River Ford.`;
 
-const TONE_RULES = `TONE
-Register: plain declarative sentences that turn cruel without raising their voice. Obsession as
-the engine of a life. Cosmic scale undercut by one small intimate loss. Grandiosity is what the
-characters believe, not what the prose does.
-
-Do: anchor a cosmic event to one physical detail - a spirit tide is the hair lifting on your
-arms and the sudden sense that breathing is easier than it was an hour ago. Let NPCs be
-genuinely convinced of things; nobody here thinks they are in a tragedy. Treat the price of a
-crossing as bureaucratic; the world processes it the way ours processes tax. Let ambition be
-real.
-
-Don't: explain the setting's rules in dialogue. Don't do power-level exposition. Don't reach for
-the trash-of-the-clan opening, the arrogant young master, or the senior sister who exists to be
-impressed. Don't pad - two or three short paragraphs is the target, and one is often right.
-
-SITUATIONS, NOT QUESTS
+/**
+ * The two blocks of tone that have NO source in `tone.md`.
+ *
+ * Everything else that used to sit here was a paraphrase of that doc, and the
+ * doc marks its own sections tier 1 and therefore every turn. It is loaded now
+ * by `theVoiceDoc`, so the paraphrase is gone rather than maintained beside it:
+ * a hand copy is what drifted, and the show and never explain table never made
+ * it into the copy at all.
+ *
+ * These two survive because deleting them would lose them. If they ever earn a
+ * home in the doc, they should move there and this constant should go.
+ */
+const TONE_RULES_WITH_NO_HOME_IN_THE_DOC = `SITUATIONS, NOT QUESTS
 Never frame anything as a task list. No "collect ten herbs", no objective markers, no quest
 giver handing out an errand. When something is going on, describe CIRCUMSTANCES with
 competing interests and no clean answer: someone needs a thing, several parties want it, one
@@ -489,7 +560,9 @@ ${DISCOVERY_RULE}
 
 ${WORLD_BIBLE}
 
-${TONE_RULES}
+${theVoiceDoc()}
+
+${TONE_RULES_WITH_NO_HOME_IN_THE_DOC}
 
 THE SETTING'S ORDINARY FURNITURE IS NOT AN ATROCITY, AND YOU MUST NOT WRITE IT AS ONE.
 
@@ -521,9 +594,7 @@ filled in. There is no character whose job is to explain the world, because in t
 there is no such job.
 
 - If a sentence you are about to write would teach the player a rule, cut it and write the
-  consequence instead. Not "the sect answers to someone above it", but the elder saying the
-  matter has been sent up and declining to say to whom. Not "this valley is held by
-  deference", but three carters refusing the shortcut and changing the subject.
+  consequence instead. The table above gives six worked pairs of exactly that trade.
 - Never state a mechanism, a rate, a threshold, a multiplier or a correspondence. Not "the
   qi here is half rate", but a long sitting that yields what a short one should.
 - Never do power-level exposition. You are given how someone READS to this cultivator, not

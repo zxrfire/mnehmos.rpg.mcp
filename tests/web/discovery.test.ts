@@ -20,6 +20,8 @@ import {
     composeNarrationUser,
     composeStateSummary,
     narratorCore,
+    theVoiceDoc,
+    TONE_PATH,
     narrationSystemPrompt
 } from '../../src/web/prompt';
 import { resolveSect } from '../../src/web/entities';
@@ -460,6 +462,46 @@ describe('the narrator constitution', () => {
         expect(prompt).toContain(DISCOVERY_RULE);
         // Tier 1 comes before the setting detail: it is the constitution.
         expect(prompt.indexOf('Narrator Core')).toBeLessThan(prompt.indexOf('THE CEILING'));
+    });
+
+    /**
+     * AND THE VOICE DOC, WHICH MARKS ITSELF TIER 1 AND WAS READ BY NOTHING.
+     *
+     * `docs/world/README.md` sets up the tiers and says tier 1 loads every
+     * turn. `tone.md` marks four of its own sections that way and the prompt
+     * carried a hand-written compression instead, which is the arrangement the
+     * README already calls out: "It should converge on NARRATOR-CORE.md."
+     *
+     * A hand copy is what drifted. The show and never explain TABLE never made
+     * it into the copy at all - six paired rows, and one of them names the beat
+     * the genre actually runs on: somebody is addressed by a title the player
+     * does not know, and the room rearranges itself.
+     *
+     * This reads the same file the prompt reads, so it pins no wording and
+     * cannot go stale. Section headings are asserted rather than prose for the
+     * same reason: the doc is free to be rewritten, and not free to stop
+     * arriving.
+     */
+    it('loads every tier-1 section of the voice doc rather than paraphrasing it', () => {
+        const voice = theVoiceDoc();
+        expect(voice.length, `${TONE_PATH} loaded nothing`).toBeGreaterThan(0);
+
+        const prompt = narrationSystemPrompt();
+        expect(prompt).toContain(voice);
+
+        // Every heading the doc marks tier 1, present by name.
+        for (const heading of [
+            '## The register',
+            '## Guidance for the narrator',
+            '## Naming conventions',
+            '## Show, never explain'
+        ]) {
+            expect(voice, heading).toContain(heading);
+        }
+
+        // The row that never arrived. It is the one worth naming: the whole
+        // point of the table is trading an explanation for a consequence.
+        expect(prompt).toContain('the room rearranges itself');
     });
 
     it('states unattributed consequence as the preferred move', () => {
