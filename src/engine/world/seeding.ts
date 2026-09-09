@@ -72,7 +72,17 @@ import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
 import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
 import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
-import { whatEachHouseHasOutOnLoan } from './a-house-lends-what-it-owns-to-somebody-it-trusts.js';
+import {
+    applyTheLoans,
+    whatEachHouseHasOutOnLoan,
+    whatPeopleHaveLentToTheirJuniors,
+    whyTheyHaveIt
+} from './what-is-out-on-loan-and-who-lent-it.js';
+import {
+    whatEachHouseHasGivenAway,
+    whyItIsTheirs
+} from './a-house-bestows-a-thing-on-somebody-who-earned-it.js';
+import { transferPossession } from './possessions.js';
 import { setWhatEverybodyIsAt } from './what-somebody-is-at-when-you-walk-up.js';
 import { seedStructuralRepairMedicine } from './who-holds-the-structural-repair-medicine.js';
 import {
@@ -293,41 +303,6 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const treasury = seedTreasuries(state);
     state.objects.push(...treasury);
 
-    // AND WHAT IS NOT IN THE ROOM BECAUSE SOMEBODY IS CARRYING IT.
-    //
-    // The treasury header names lending a disciple a furnace as one of the
-    // three cases it existed to make possible, and nothing ever did it.
-    // Measured before this: of 415 people in a seeded world, the ~29 holding
-    // something owned by somebody else were holding a house TOKEN, every one
-    // of them, so the count of people carrying a thing a house lent them was
-    // zero in every world. See
-    // `a-house-lends-what-it-owns-to-somebody-it-trusts.ts`.
-    {
-        const lent = new Map(
-            // ONLY OUT OF WHAT THE TREASURY PASS ITSELF MINTED.
-            //
-            // Scanning every object in the world reached into the catalog and
-            // lent out a relic that is sitting in a vault because the catalog
-            // put it there. `objects-in-hands.test.ts` caught it by name:
-            // *leaves a vault a vault, a ruin a ruin, and the far side of the
-            // Lid unreachable*. A house lends what is in its own stores and
-            // nothing else.
-            whatEachHouseHasOutOnLoan({ ...state, objects: treasury })
-                .map(loan => [loan.objectId, loan.toNpcId])
-        );
-        if (lent.size > 0) {
-            state.objects = state.objects.map(object => lent.has(object.id)
-                ? { ...object, possessorId: lent.get(object.id) ?? null }
-                : object);
-        }
-    }
-
-    // AND WHAT EVERY ONE OF THEM IS DOING. Last, because it reads where people
-    // ended up standing and what they ended up holding. Before this, every
-    // person in the world was at nothing - `occupation: 'unknown'`, no goals -
-    // so ten people on a house's own ground, from an outer disciple to the
-    // Grand Sword Elder, all read the same way. See
-    // `what-somebody-is-at-when-you-walk-up.ts`.
     setWhatEverybodyIsAt(state, presentDay);
     // And the medicine that mends a cracked cultivator, which is placed rather
     // than scattered: exactly the authored holdings, on exactly those bodies,
@@ -347,6 +322,89 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
             tags: grant.chosen && !npc.tags.includes('chosen') ? [...npc.tags, 'chosen'] : npc.tags
         };
     }
+
+    // PLACED AFTER THE GRANT LOOP DELIBERATELY. The pass above is what
+    // writes the `chosen` tag, and a house gives its good thing to the
+    // person it has already marked. Run before it, the bestowal found
+    // nobody marked in the entire world and gave away nothing - measured at
+    // zero personally-owned objects on every seed.
+    // AND WHO IS ACTUALLY HOLDING WHAT, WHICH IS THREE SEPARATE ACTS.
+    //
+    // Order matters and each pass depends on the one above it.
+    //
+    //   1. A house GIVES a thing to the person it already marked. Ownership
+    //      moves, the house is out of the field, and the person now owns
+    //      something. Measured before this existed: of 1452 objects in a
+    //      seeded world, the number owned by a PERSON was zero, so there was
+    //      no such thing as anybody's own treasure anywhere in the world.
+    //   2. A house LENDS out of its stores. Possession moves and ownership
+    //      does not: it is owed back to the house.
+    //   3. A PERSON lends their own thing DOWN, to a junior they hold a tie
+    //      to or somebody standing lower on the same roll. This is the one the
+    //      design owner asked for, and it can only run after step 1, because
+    //      before step 1 nobody had a treasure to hand anybody.
+    //
+    // All three write through `transferPossession` so the provenance chain
+    // says which act it was. That is not decoration: `whoseThisIs` reads the
+    // chain, and the first cut of the lending pass moved things by object
+    // spread, which left 199 of 199 carried objects reading `unaccounted_for`
+    // and made `lent_by_their_house` unreachable in a fresh world.
+    {
+        const today = Math.floor(state.currentDay);
+
+        // OUT OF ITS OWN STORES, exactly as with lending. Scanning every
+        // object in the world reached into the catalog and gave away a relic
+        // the catalog had placed on purpose - the same defect
+        // `objects-in-hands.test.ts` caught on the lending side, and it
+        // caught this one too. A house gives what is in its stores.
+        const given = whatEachHouseHasGivenAway({ ...state, objects: treasury });
+        const alreadyGone = new Set(given.map(gift => gift.objectId));
+        const givenBy = new Map(given.map(gift => [gift.objectId, gift]));
+        if (givenBy.size > 0) {
+            state.objects = state.objects.map(object => {
+                const gift = givenBy.get(object.id);
+                return gift === undefined ? object : transferPossession(object, {
+                    onDay: today,
+                    toHolderId: gift.toNpcId,
+                    toHolderName: gift.toName,
+                    how: 'awarded',
+                    // Ownership moves, which is the whole difference between
+                    // this and the loan below.
+                    transfersOwnership: true,
+                    source: gift.fromName,
+                    note: whyItIsTheirs(gift)
+                });
+            });
+        }
+
+        // Both loans are decided against the state as it stands after the
+        // giving, and applied together, so one object can never be lent twice.
+        const lentOut = [
+            // Minus whatever was just given away: `treasury` is the array as
+            // it was minted, so a bestowed thing still reads as unheld in it
+            // and would otherwise be lent out from under its new owner.
+            ...whatEachHouseHasOutOnLoan({
+                ...state, objects: treasury.filter(thing => !alreadyGone.has(thing.id))
+            }),
+            ...whatPeopleHaveLentToTheirJuniors(state)
+        ];
+        state.objects = applyTheLoans(state.objects, lentOut, (object, loan) =>
+            transferPossession(object, {
+                onDay: today,
+                toHolderId: loan.toNpcId,
+                toHolderName: loan.toName,
+                how: 'lent',
+                source: loan.fromName,
+                note: whyTheyHaveIt(loan)
+            }));
+    }
+
+    // AND WHAT EVERY ONE OF THEM IS DOING. Last, because it reads where people
+    // ended up standing and what they ended up holding. Before this, every
+    // person in the world was at nothing - `occupation: 'unknown'`, no goals -
+    // so ten people on a house's own ground, from an outer disciple to the
+    // Grand Sword Elder, all read the same way. See
+    // `what-somebody-is-at-when-you-walk-up.ts`.
 
     return {
         state,

@@ -26,7 +26,7 @@ import {
 import { lifespanForOrdinal, MAX_ORDINAL } from '../../../src/engine/cultivation/realms';
 
 /** Somebody with nothing on their mind, which is the default and the majority. */
-const ORDINARY = { ordinal: 5, age: 20, rank: null, chosen: false, carriesForTheirHouse: null };
+const ORDINARY = { ordinal: 5, age: 20, rank: null, chosen: false, carriesForSomebodyElse: null };
 
 /** Years that put a person at a given fraction of what their rung buys. */
 const yearsAt = (ordinal: number, fraction: number) =>
@@ -112,7 +112,8 @@ describe('what somebody standing here would be heard on', () => {
         const objects = [
             { kind: 'blade', ownerId: 'sect-azure-cloud-pavilion', possessorId: 'them' }
         ];
-        expect(whatTheyCarryForSomebodyElse(objects, 'them')).toBe('blade');
+        expect(whatTheyCarryForSomebodyElse(objects, 'them'))
+            .toEqual({ noun: 'blade', from: 'a house' });
 
         // A thing nobody owns is a thing they simply have, and so is a thing
         // they own themselves. Only the third case has terms attached.
@@ -125,13 +126,24 @@ describe('what somebody standing here would be heard on', () => {
         // And somebody else's loan is not theirs to be heard on.
         expect(whatTheyCarryForSomebodyElse(objects, 'somebody-else')).toBeNull();
 
-        expect(whatTheyWouldBeHeardOnAbout({ ...ORDINARY, carriesForTheirHouse: 'blade' }))
-            .toMatch(/carries a blade their house owns and they do not/);
+        expect(whatTheyWouldBeHeardOnAbout({
+            ...ORDINARY, carriesForSomebodyElse: { noun: 'blade', from: 'a house' }
+        })).toMatch(/carries a blade their house owns and they do not/);
+
+        // AND A PERSON'S LOAN IS A DIFFERENT FACT. The owner: *"PEOPLE lend
+        // too. Like you might lend your treasure to a junior brother or
+        // sister."* A thing owed back to a house is owed to a roll and a
+        // rule; a thing owed back to a person is owed to somebody who will be
+        // standing there.
+        expect(whatTheyWouldBeHeardOnAbout({
+            ...ORDINARY, carriesForSomebodyElse: { noun: 'blade', from: 'a person' }
+        })).toMatch(/somebody above them lent out of their own hands/);
         // AND THE ARTICLE AGREES WITH THE NOUN. The first cut said "a
         // artifact", which tells a reader a machine wrote the sentence even
         // when everything else about it is right.
-        expect(whatTheyWouldBeHeardOnAbout({ ...ORDINARY, carriesForTheirHouse: 'urn' }))
-            .toMatch(/carries an urn/);
+        expect(whatTheyWouldBeHeardOnAbout({
+            ...ORDINARY, carriesForSomebodyElse: { noun: 'urn', from: 'a house' }
+        })).toMatch(/carries an urn/);
     });
 
     /**
@@ -149,12 +161,12 @@ describe('what somebody standing here would be heard on', () => {
         const carried = (name: string, kind = 'artifact') => whatTheyCarryForSomebodyElse(
             [{ name, kind, ownerId: 'a-house', possessorId: 'them' }], 'them'
         );
-        expect(carried('The Severing Canon')).toBe('canon');
-        expect(carried("A Sword Elder's Tally")).toBe('tally');
+        expect(carried('The Severing Canon')?.noun).toBe('canon');
+        expect(carried("A Sword Elder's Tally")?.noun).toBe('tally');
         // One thing, not the lot it came out of.
-        expect(carried('fired clay cauldrons')).toBe('cauldron');
+        expect(carried('fired clay cauldrons')?.noun).toBe('cauldron');
         // And the storage category is the fallback, never the first answer.
-        expect(carried('', 'manual')).toBe('manual');
+        expect(carried('', 'manual')?.noun).toBe('manual');
     });
 
     it('puts the thing with a clock on it ahead of the rest', () => {

@@ -12302,6 +12302,10 @@ ${fit.line}`;
         // and reads as null, which is the honest answer for somebody the world
         // sim has never touched.
         const byId = new Map((this.atHand?.npcs ?? []).map(row => [row.id, row]));
+        // Which owner ids are institutions. The same set `whoseThisIs` takes,
+        // and what decides whether a thing somebody carries is owed back to a
+        // roll or to a person who will be standing in front of them.
+        const houseIds = new Set((this.atHand?.factions ?? []).map(house => house.id));
         const nameOf = (id: string): string => byId.get(id)?.name ?? 'somebody';
 
         for (const person of here) {
@@ -12348,8 +12352,8 @@ ${fit.line}`;
                         age: person.age,
                         rank: person.sectRank ?? null,
                         chosen: row.tags.includes('chosen'),
-                        carriesForTheirHouse: whatTheyCarryForSomebodyElse(
-                            this.atHand?.objects ?? [], person.id
+                        carriesForSomebodyElse: whatTheyCarryForSomebodyElse(
+                            this.atHand?.objects ?? [], person.id, houseIds
                         )
                     }),
                     // Only from the world row, never from the roster one. The

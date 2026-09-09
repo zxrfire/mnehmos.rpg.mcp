@@ -95,8 +95,15 @@ export interface SomebodyWithSomethingOnTheirMind {
      * visible; what it is CALLED is a proper noun, and handing that over would
      * walk straight through the discovery gate. A blade is a blade to somebody
      * who has not been told otherwise.
+     *
+     * AND WHO LENT IT, because the two are different facts. The owner named the
+     * second lender: *"and don't forget, PEOPLE lend too. Like you might lend
+     * your treasure to a junior brother or sister."* A thing owed back to a
+     * house is owed to a roll and a rule. A thing owed back to a person is owed
+     * to somebody who will be standing there, and that is the one that reads as
+     * a debt.
      */
-    carriesForTheirHouse: string | null;
+    carriesForSomebodyElse: { noun: string; from: 'a house' | 'a person' } | null;
 }
 
 /**
@@ -136,13 +143,20 @@ export function whatTheyWouldBeHeardOnAbout(
     // concrete thing anybody here has and the only one with an object in it.
     // The register the owner named is a boast, and the reason a boast about a
     // borrowed thing lands is that everybody hearing it knows the terms: it is
-    // theirs while they are useful, and the house can take it back.
+    // theirs while they are useful, and it can be taken back.
+    //
     // `?? null` rather than a bare comparison: a caller that omits the field
     // entirely must read as nobody carrying anything, not as somebody carrying
     // an undefined.
-    const borrowed = person.carriesForTheirHouse ?? null;
+    const borrowed = person.carriesForSomebodyElse ?? null;
     if (borrowed !== null) {
-        return `carries ${anOrA(borrowed)} ${borrowed} their house owns and they do not`;
+        const noun = `${anOrA(borrowed.noun)} ${borrowed.noun}`;
+        // A house wants its cauldron back through whoever keeps the roll. A
+        // senior wants their blade back in person, and the junior has to keep
+        // looking at them until they get it.
+        return borrowed.from === 'a house'
+            ? `carries ${noun} their house owns and they do not`
+            : `carries ${noun} somebody above them lent out of their own hands`;
     }
 
     // ── AHEAD OF IT ──────────────────────────────────────────────────────
@@ -188,8 +202,14 @@ export function whatTheyCarryForSomebodyElse(
     objects: readonly {
         name?: string; kind: string; ownerId: string | null; possessorId: string | null;
     }[],
-    personId: string
-): string | null {
+    personId: string,
+    /**
+     * Which ids name houses rather than people, exactly as `whoseThisIs` takes
+     * it. Omitted, everything reads as a house, which is what this answered
+     * before people could own anything.
+     */
+    houseIds: ReadonlySet<string> | null = null
+): { noun: string; from: 'a house' | 'a person' } | null {
     for (const object of objects) {
         if (object.possessorId !== personId) continue;
         // Owned by nobody is a thing they simply have. Owned by THEM is the
@@ -202,7 +222,10 @@ export function whatTheyCarryForSomebodyElse(
         // before the lending pass existed, that was the ONLY thing anybody in
         // this world carried for somebody else.
         if (object.kind === 'token') continue;
-        return theCommonNounFor(object);
+        return {
+            noun: theCommonNounFor(object),
+            from: houseIds === null || houseIds.has(object.ownerId) ? 'a house' : 'a person'
+        };
     }
     return null;
 }
