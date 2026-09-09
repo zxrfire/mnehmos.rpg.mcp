@@ -36,7 +36,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { PRICES } from '../../src/data/cultivation/mortal-world';
-import { cheapestInCategory } from '../../src/web/entities';
+import { cheapestInCategory, resolvePriceLoosely } from '../../src/web/entities';
 import { MARKET_CATEGORIES } from '../../src/web/market-prices';
 import { getPill } from '../../src/data/cultivation/pills';
 import { getConveyance } from '../../src/data/cultivation/what-a-house-moves-its-people-on';
@@ -118,11 +118,36 @@ describe('every line on the price board does something', () => {
         }
     });
 
+    /**
+     * A PARAPHRASE STILL HAS TO REACH THE BOARD.
+     *
+     * FOUND BY PLAYING, and it is a defect of the seam rather than of either
+     * side. The player typed "I buy a night at an inn"; the intent reader
+     * rewrote the target as "inn stay", which is a fair paraphrase and not a
+     * word on the board. `resolvePrice` handles the player's own phrasing
+     * perfectly - what it never sees is the player's own phrasing.
+     */
+    it('reaches the right row from the words people and models actually use', () => {
+        const reached = (query: string) =>
+            (cheapestInCategory(query) ?? resolvePriceLoosely(query) as { id?: string } | null)?.id
+            ?? (resolvePriceLoosely(query)?.id ?? null);
+        expect(reached('inn stay')).toBe('price-inn-night');
+        expect(reached('a room for the night')).toBe('price-inn-night');
+        expect(reached('a bed')).toBe('price-inn-night');
+        expect(reached('something to eat')).toBe('price-millet');
+        expect(reached('see a doctor')).toBe('price-doctor-visit');
+        expect(reached('a ride')).toBe('price-ferry');
+    });
+
     it('reads a category out of a sentence, and does not match half a word', () => {
         expect(cheapestInCategory('food')?.id).toBe('price-millet');
-        expect(cheapestInCategory('something to eat')).toBeNull();
-        // Whole word only: a stool is not a tool.
+        // The schema word and the word anybody actually says both land.
+        expect(cheapestInCategory('something to eat')?.id).toBe('price-millet');
+        // Whole word only: a stool is not a tool, and nothing here matches
+        // inside a longer word.
         expect(cheapestInCategory('a stool')).toBeNull();
         expect(cheapestInCategory('a tool')?.category).toBe('tool');
+        // And a sentence about nothing on the board still reaches nothing.
+        expect(cheapestInCategory('a spaceship')).toBeNull();
     });
 });

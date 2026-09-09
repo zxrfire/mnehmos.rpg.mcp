@@ -339,6 +339,7 @@ import {
     resolvePlace,
     cheapestInCategory,
     resolvePrice,
+    resolvePriceLoosely,
     resolveRecipe,
     resolveSect,
     resolveTechnique,
@@ -7765,9 +7766,28 @@ ${opened.text}` : receipt,
         const byCategory = asRide === undefined && resolved === null
             ? cheapestInCategory(query)
             : null;
+        // AND FAILING BOTH, A WORD OUT OF WHAT THEY SAID. The intent reader
+        // paraphrases - it turned "a night at an inn" into "inn stay" - so the
+        // string that reaches here is often not the string anybody typed. Last,
+        // so a row named outright and a category asked for both still win.
+        //
+        // AND IT YIELDS TO A THING THE GAME KNOWS BY ANOTHER NAME. A single
+        // word out of a paraphrase is a blunt instrument: "a Meridian
+        // Rebirth Pill" reaches `meridian`, which is a DIFFERENT pill on the
+        // board, so the loose pass cheerfully sold the wrong medicine to
+        // somebody asking for the one thing that would have mended them.
+        // Caught by `a-torn-meridian-can-be-answered`. If the sentence names
+        // a pill, the pill catalog owns the answer - including the refusal
+        // that says it is not sold for stones at all.
+        const namesAPill = query.length >= 3 ? resolvePill(query) : null;
+        const looseHit = asRide === undefined && resolved === null
+            && byCategory === null && namesAPill === null
+            ? resolvePriceLoosely(query)
+            : null;
         const price = asRide !== undefined
             ? getPrice(asRide)
-            : resolved ? getPrice(resolved.id) : byCategory ?? undefined;
+            : resolved ? getPrice(resolved.id)
+                : byCategory ?? (looseHit ? getPrice(looseHit.id) : undefined);
 
         if (!price) {
             // ABOVE A CERTAIN LINE, CASH IS NOT THE MEDIUM

@@ -915,7 +915,7 @@ export function cheapestInCategory(query: string): Price | null {
     // Whole word, so "a tool" reaches tools and "a stool" does not.
     const named = MARKET_CATEGORIES.find(
         category => new RegExp(`\\b${category}\\b`).test(wanted)
-    );
+    ) ?? categoryAskedForByAnotherName(wanted);
     if (named === undefined) return null;
     let best: Price | null = null;
     for (const price of PRICES) {
@@ -1358,4 +1358,63 @@ export function pouchNames(db: Database.Database, cultivatorId: string): string[
             ?? row.item_id;
         return `${row.quantity} x ${name}`;
     });
+}
+
+/**
+ * THE WORDS PEOPLE ACTUALLY USE FOR A CATEGORY.
+ *
+ * `category` is a schema word. Nobody asks a stallholder for "lodging" or
+ * "transport"; they ask for a bed, a room, a ride. Kept small and kept here
+ * rather than on the rows, because it is about how the question is asked and
+ * not about what any particular row is.
+ */
+const ASKED_FOR_BY_ANOTHER_NAME: ReadonlyArray<readonly [RegExp, string]> = [
+    [/\b(?:food|meal|eat|eating|hungry|something to eat|supper|breakfast)\b/, 'food'],
+    [/\b(?:bed|room|inn|lodging|stay|sleep|night|bunk)\b/, 'lodging'],
+    [/\b(?:ride|passage|fare|crossing|transport|travel)\b/, 'transport'],
+    [/\b(?:medicine|physician|doctor|healing|treatment|care)\b/, 'medicine'],
+    [/\b(?:tool|blade|sword|cloth|chisel)\b/, 'tool'],
+    [/\b(?:scribe|letter|witness|service)\b/, 'service'],
+    [/\b(?:land|ground|cave|plot|field)\b/, 'land'],
+    [/\b(?:information|assessment|placement)\b/, 'information']
+];
+
+function categoryAskedForByAnotherName(wanted: string): string | undefined {
+    for (const [pattern, category] of ASKED_FOR_BY_ANOTHER_NAME) {
+        if (pattern.test(wanted)) return category;
+    }
+    return undefined;
+}
+
+/**
+ * A PARAPHRASE STILL HAS TO REACH THE BOARD.
+ *
+ * FOUND BY PLAYING, and it is a defect of the seam rather than of either side.
+ * A player typed "I buy a night at an inn"; the model's intent reader rewrote
+ * the target as **"inn stay"** - a fair paraphrase and not a word on the board -
+ * and the whole-string match returned nothing, so the answer refused and then
+ * listed "nights at an inn" among the stock. `resolvePrice` handles the
+ * player's own phrasing perfectly; what it never sees is the player's own
+ * phrasing.
+ *
+ * So when the whole string fails, the words in it are tried one at a time,
+ * longest first, because the longest word is the most specific: "inn stay"
+ * reaches `inn`, which is on the board. Stopwords are dropped so "a" and "the"
+ * never score. This runs BELOW the whole-string match and below the category
+ * read, so a row named outright still wins.
+ */
+const WORDS_THAT_NAME_NOTHING = new Set([
+    'the', 'a', 'an', 'for', 'and', 'one', 'some', 'any', 'buy', 'get',
+    'this', 'that', 'here', 'with', 'from', 'have', 'want', 'need'
+]);
+
+export function resolvePriceLoosely(query: string): ResolvedEntity | null {
+    const words = query.toLowerCase().split(/[^a-z]+/)
+        .filter(word => word.length >= 3 && !WORDS_THAT_NAME_NOTHING.has(word))
+        .sort((a, b) => b.length - a.length);
+    for (const word of words) {
+        const found = resolvePrice(word);
+        if (found !== null) return found;
+    }
+    return null;
 }
