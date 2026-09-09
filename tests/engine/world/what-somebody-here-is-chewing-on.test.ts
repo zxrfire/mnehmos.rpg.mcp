@@ -127,6 +127,34 @@ describe('what somebody standing here would be heard on', () => {
 
         expect(whatTheyWouldBeHeardOnAbout({ ...ORDINARY, carriesForTheirHouse: 'blade' }))
             .toMatch(/carries a blade their house owns and they do not/);
+        // AND THE ARTICLE AGREES WITH THE NOUN. The first cut said "a
+        // artifact", which tells a reader a machine wrote the sentence even
+        // when everything else about it is right.
+        expect(whatTheyWouldBeHeardOnAbout({ ...ORDINARY, carriesForTheirHouse: 'urn' }))
+            .toMatch(/carries an urn/);
+    });
+
+    /**
+     * WHAT A PERSON WOULD CALL IT, not what the column calls it.
+     *
+     * Measured on a seeded world: every tracked thing out on loan read as
+     * "an artifact their house owns", because `kind` is a storage category and
+     * only some of its values are words anybody says. The last word of a
+     * thing's name is its noun, here and in general, so that is where the noun
+     * comes from - and taking ONLY the last word is what keeps this inside the
+     * discovery gate, since the full name is a proper noun a player may not
+     * have earned.
+     */
+    it('calls a thing what it is, off the noun its name ends in', () => {
+        const carried = (name: string, kind = 'artifact') => whatTheyCarryForSomebodyElse(
+            [{ name, kind, ownerId: 'a-house', possessorId: 'them' }], 'them'
+        );
+        expect(carried('The Severing Canon')).toBe('canon');
+        expect(carried("A Sword Elder's Tally")).toBe('tally');
+        // One thing, not the lot it came out of.
+        expect(carried('fired clay cauldrons')).toBe('cauldron');
+        // And the storage category is the fallback, never the first answer.
+        expect(carried('', 'manual')).toBe('manual');
     });
 
     it('puts the thing with a clock on it ahead of the rest', () => {

@@ -141,7 +141,9 @@ export function whatTheyWouldBeHeardOnAbout(
     // entirely must read as nobody carrying anything, not as somebody carrying
     // an undefined.
     const borrowed = person.carriesForTheirHouse ?? null;
-    if (borrowed !== null) return `carries a ${borrowed} their house owns and they do not`;
+    if (borrowed !== null) {
+        return `carries ${anOrA(borrowed)} ${borrowed} their house owns and they do not`;
+    }
 
     // ── AHEAD OF IT ──────────────────────────────────────────────────────
     //
@@ -184,7 +186,7 @@ export function whatTheyWouldBeHeardOnAbout(
  */
 export function whatTheyCarryForSomebodyElse(
     objects: readonly {
-        kind: string; ownerId: string | null; possessorId: string | null;
+        name?: string; kind: string; ownerId: string | null; possessorId: string | null;
     }[],
     personId: string
 ): string | null {
@@ -200,7 +202,43 @@ export function whatTheyCarryForSomebodyElse(
         // before the lending pass existed, that was the ONLY thing anybody in
         // this world carried for somebody else.
         if (object.kind === 'token') continue;
-        return object.kind.replace(/_/g, ' ');
+        return theCommonNounFor(object);
     }
     return null;
+}
+
+/**
+ * "a" or "an", off the noun that follows.
+ *
+ * Trivial, and it is here because the first cut said "carries a artifact",
+ * which is the sort of thing that tells a reader a machine wrote the sentence
+ * even when everything else about it is right.
+ */
+function anOrA(noun: string): string {
+    return /^[aeiou]/i.test(noun.trim()) ? 'an' : 'a';
+}
+
+/**
+ * WHAT A PERSON WOULD CALL THE THING, rather than what the schema calls it.
+ *
+ * `kind` is a storage category - `artifact`, `manual`, `formation` - and two of
+ * those are words somebody might actually say while one is not. Measured on a
+ * seeded world, every tracked thing out on loan read as "an artifact their
+ * house owns", which is the engine reading its own column aloud.
+ *
+ * The last word of a thing's name is its noun, in this setting's naming
+ * conventions and in general: The Severing Canon is a canon, A Sword Elder's
+ * Tally is a tally, fired clay cauldrons are cauldrons. So the noun comes from
+ * there, lowercased, with a plural brought back to one.
+ *
+ * AND ONLY THE LAST WORD, which is what keeps it inside the discovery gate. The
+ * name is a proper noun a player may not have earned; its final common noun is
+ * what anybody looking at the thing can see it is.
+ */
+function theCommonNounFor(object: { name?: string; kind: string }): string {
+    const last = (object.name ?? '').trim().split(/\s+/).pop() ?? '';
+    const word = last.replace(/[^A-Za-z-]/g, '').toLowerCase();
+    if (word.length < 3) return object.kind.replace(/_/g, ' ');
+    // One thing, not the lot it came out of. "ss" is not a plural ending.
+    return word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
 }
