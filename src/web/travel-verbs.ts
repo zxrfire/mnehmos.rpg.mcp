@@ -2,6 +2,8 @@
  * Getting somewhere: on foot, on something, by folding, or on somebody's span.
  */
 
+import { resolveSect } from './entities.js';
+import { readTheWall } from './what-is-posted-on-the-wall-here.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import { cashToStones } from '../data/cultivation/mortal-world.js';
 import {
@@ -229,10 +231,66 @@ export const travelVerbs = {
         // there is nothing that could say a name is wrong; refusing then
         // would make travel impossible rather than safe.
         if (this.atHand && !this.somewhereReal(place.name, cultivator)) {
+            // A HOUSE IS NOT A PLACE, AND SAYING SO BEATS SAYING YOU NEVER
+            // HEARD OF IT.
+            //
+            // FOUND BY PLAYING, and it was the game contradicting itself one
+            // turn apart. Turn one told the player, unprompted, that the Azure
+            // Dew Sect was holding an intake here in sixty-nine days. Turn two
+            // said "I go to the azure dew sect" and got *"matches no world
+            // location, no occupied place and NOTHING THIS CULTIVATOR HAS HEARD
+            // OF"*.
+            //
+            // Both halves were doing their job. `readTheWall` had written the
+            // house into the knowledge table, and `somewhereReal` looks for a
+            // PLACE - so the sect was known and its ground was not, and the
+            // refusal reported the second as though it were the first.
+            //
+            // The design owner: *"if it's something you know it should mention.
+            // Like, you've heard the abc sect is recruiting."* So it says what
+            // is actually held: you know them, here is what you were told, and
+            // what nobody has told you is where they are.
+            const known = this.whatTheyKnowOfThisHouse(place.name, cultivator, run);
+            if (known !== null) {
+                // THE INFORMATION IS THE SAME. THE VOICE IS NOT THE ENGINE'S.
+                //
+                // The first cut of this said "a name you have been given and
+                // not a place you have been given", and the design owner: *"the
+                // info is right, but the prose, not right... if that's engine
+                // feedback, that's okay."* Exactly the line this repo draws:
+                // the mechanical channel may say a house is not a location, and
+                // the channel a player reads as a scene may not, because that
+                // is the engine explaining its own categories out loud.
+                //
+                // So the scene says what it is like to know a name and not a
+                // road, the paper says the rest in the words it was written in,
+                // and the category stays in the record below.
+                const asked = this.anybodyElseHere(cultivator)
+                    ? `You ask the way to ${known.name} and get it twice over: everybody has `
+                      + 'heard the name, nobody has been.'
+                    : `You turn the name over and it goes nowhere. ${known.name} is something `
+                      + 'you know of, not somewhere you know the road to.';
+                return refused('engine.resolvePlace', 'move', factsForRefusal(
+                    'You have the name. You do not have the road.',
+                    known.told === null
+                        ? `${asked} Whoever they are, they have not said where they keep `
+                          + 'themselves, and a name is not a direction.'
+                        : `${asked} What you have of them is the paper: ${known.told}`,
+                    `"${place.name}" is a house this cultivator has heard of and not a location. `
+                    + 'Location unchanged, no time passed.'
+                ));
+            }
             return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'No road goes there.',
-                `You ask after ${place.name} and get the look people give a name that is not a ` +
-                'place. Nobody sets you right, because nobody is sure what you meant.',
+                // AND NO BYSTANDERS IN AN EMPTY SQUARE. This read "you get the
+                // look people give a name that is not a place" on ground the
+                // same turn had already reported as empty - "Nobody is about" -
+                // so the answer put a crowd in a place it had just emptied.
+                this.anybodyElseHere(cultivator)
+                    ? `You ask after ${place.name} and get the look people give a name that is `
+                      + 'not a place. Nobody sets you right, because nobody is sure what you meant.'
+                    : `You turn ${place.name} over and it does not attach to anywhere. No road `
+                      + 'you know of runs to it, and there is nobody here to ask.',
                 `Unresolved destination "${place.name}": matches no world location, no ` +
                 'occupied place and nothing this cultivator has heard of. Location unchanged, ' +
                 'no time passed.'
@@ -1007,5 +1065,44 @@ export const travelVerbs = {
             // `whatArrivingIntroduces`.
             perceived
         };
+    },
+
+    /**
+     * WHAT THIS CULTIVATOR ACTUALLY KNOWS ABOUT A HOUSE THEY NAMED.
+     *
+     * Null when the name is not a house they have heard of, which is the ordinary
+     * case and the one the plain refusal is for.
+     *
+     * `told` is the thing that makes the refusal worth reading: a bill on the wall
+     * here is how most players hear of a house at all, and it is what they are
+     * really asking about when they say the name back. Re-read rather than
+     * remembered, because the wall is a pure function of the place and the day.
+     */
+    whatTheyKnowOfThisHouse(
+        this: GameService,
+        named: string,
+        cultivator: Cultivator,
+        run: Run
+    ): { name: string; told: string | null } | null {
+        const scope = {
+            gate: this.knowledge, holderId: cultivator.id, here: placeName(cultivator)
+        };
+        const house = resolveSect(this.repos, named, scope, null);
+        if (house === null) return null;
+
+        // What the paper here says about them, where there is paper about them.
+        const wall = readTheWall(this.knowledge, cultivator, run);
+        const about = wall.lines.find((line: string) => line.includes(house.name)) ?? null;
+        return { name: house.name, told: about };
+    },
+
+    /**
+     * Whether there is anybody here at all to give somebody a look.
+     *
+     * A refusal that describes bystanders on ground the same turn reported as empty
+     * is the engine contradicting itself inside one screen.
+     */
+    anybodyElseHere(this: GameService, cultivator: Cultivator): boolean {
+        return this.present(cultivator).some(row => row.id !== cultivator.id);
     }
 };

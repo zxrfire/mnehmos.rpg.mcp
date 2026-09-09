@@ -805,6 +805,23 @@ export const DESTINATIONS_QUESTION = new RegExp([
     /\bwhat (?:else )?is (?:there )?(?:nearby|around|out there|beyond)\b/,
     /\bwhere is (?:there|the)\b[^.?!]*\b(?:better|stronger|denser|thicker|richer|more)\b[^.?!]*\b(?:qi|spiritual energy|spirit energy|energy|cultivation)\b/,
     /\bwhere (?:is|are) the (?:qi|spiritual energy|spirit energy|energy) (?:better|stronger|denser|thicker|richer)\b/,
+    // THE QUESTION THE WHOLE GAME IS ABOUT, asked the ways people ask it.
+    //
+    // Measured on five natural phrasings of one question: only one reached
+    // this read. "I ask about a place with more qi density" became a request
+    // put to a person, "where can I find denser qi" was unclear, and "I ask
+    // where the qi is better" started a conversation with somebody called
+    // "where the qi is better". Thin ground is the first problem every
+    // cultivator has, and asking where thicker ground is must not be a
+    // vocabulary test.
+    /\b(?:place|places|somewhere|anywhere|spot|ground|region|province)\b[^.?!]{0,30}\b(?:more|better|stronger|denser|thicker|richer|higher)\b[^.?!]{0,20}\b(?:qi|spiritual energy|spirit energy|energy|density)\b/,
+    /\b(?:more|better|stronger|denser|thicker|richer)\b[^.?!]{0,20}\b(?:qi|spiritual energy|spirit energy)\b[^.?!]{0,30}\b(?:place|somewhere|anywhere|nearby|around)\b/,
+    /\bwhere\b[^.?!]{0,20}\b(?:can|could|do|would) i find\b[^.?!]{0,25}\b(?:qi|spiritual energy|spirit energy)\b/,
+    // Only when nobody is being asked. “I ask Bai Wanchen where the qi is
+    // better” is a question put to a PERSON, and a person answering out of
+    // what they know is the better answer - it is how the genre moves
+    // anybody anywhere. Swallowing it here took that away.
+    /(?:^|\bi ask )where the (?:qi|spiritual energy|spirit energy|energy) is (?:better|stronger|denser|thicker|richer)\b/,
     /\b(?:travel|go|move|head) (?:somewhere|anywhere) (?:else|better|new)\b/,
     /\b(?:somewhere|anywhere) else to (?:go|cultivate|be)\b/,
     /\bwhat (?:are )?my (?:travel )?options\b[^.?!]*\bwhere\b/,
