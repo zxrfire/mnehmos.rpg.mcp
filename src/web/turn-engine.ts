@@ -132,6 +132,8 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import { getConveyance } from '../data/cultivation/what-a-house-moves-its-people-on.js';
+import type { Price } from '../data/cultivation/mortal-world.js';
 import {
     whatTheyCarryForSomebodyElse,
     whatTheyWouldBeHeardOnAbout
@@ -335,6 +337,7 @@ import {
     resolveParty,
     resolvePill,
     resolvePlace,
+    cheapestInCategory,
     resolvePrice,
     resolveRecipe,
     resolveSect,
@@ -447,7 +450,6 @@ import { obligationFromRow, type ObligationRow } from '../storage/repos/obligati
 // WAYS OF COVERING GROUND THAT ARE NOT WALKING
 import {
     adjustCountedHolding,
-    conveyanceSoldAs,
     priceRowForSomethingToRide,
     countedConveyancesHeld,
     countedHoldingKey
@@ -674,6 +676,7 @@ import {
     humanDays,
     placeName,
     theRung,
+    observable,
     sayThisWhateverTheNarratorDoes,
     type EngineFacts
 } from './facts.js';
@@ -7710,6 +7713,32 @@ ${opened.text}` : receipt,
         };
     }
 
+/**
+ * WHAT A COUNTER IS ASKING, AND WHY IT IS ASKING THAT.
+ *
+ * Both lines used to live only inside the refusal for a row nothing could
+ * hold, which meant making a row buyable would have thrown the figure away.
+ * A price a player never sees is a famine a player never learns about.
+ */
+    private whatThisCostsAndWhy(
+        price: Price, cash: number, stones: number, groundHere: number
+    ): string[] {
+        const said = [
+            `${price.name} is ${cash} cash${quotedBy(price.unit)} here, which is ${stones} `
+            + `spirit stone${stones === 1 ? '' : 's'}.`
+        ];
+        // A quoted figure with nothing said about why it moved reads as the board
+        // being wrong. It is not the board: it is the ground.
+        if (groundHere !== 1) {
+            said.push(
+                `That is ${groundHere > 1 ? 'more' : 'less'} than ${price.category} goes for `
+                + `on quiet ground - ${groundHere} times the province's own figure, and what `
+                + 'is true here today is doing it.'
+            );
+        }
+    return said;
+}
+
     /**
      * Buying a line off the price board.
      */
@@ -7730,9 +7759,15 @@ ${opened.text}` : receipt,
         const resolved = asRide === undefined && query.length >= 3
             ? resolvePrice(query)
             : null;
+        // AND A CATEGORY, WHICH IS WHAT SOMEBODY HUNGRY ACTUALLY TYPES.
+        // "food" is not the name of any row and is the name of a category with
+        // three rows in it. Below the name match, so naming a thing still wins.
+        const byCategory = asRide === undefined && resolved === null
+            ? cheapestInCategory(query)
+            : null;
         const price = asRide !== undefined
             ? getPrice(asRide)
-            : resolved ? getPrice(resolved.id) : undefined;
+            : resolved ? getPrice(resolved.id) : byCategory ?? undefined;
 
         if (!price) {
             // ABOVE A CERTAIN LINE, CASH IS NOT THE MEDIUM
@@ -7781,13 +7816,145 @@ ${opened.text}` : receipt,
         const cash = Math.max(1, Math.round(localPrice(regionId, price.cash) * groundHere));
         const stones = Math.max(1, Math.ceil(cashToStones(cash)));
 
-        // What the engine actually holds a row for. A pill goes in the pouch;
-        // a ferry crossing and a night at an inn do not, and saying so beats
-        // taking the money for a state change that never happens.
-        const pill = price.category === 'medicine' ? resolvePill(price.name.replace(/,.*$/, '')) : null;
+        // WHAT BUYING IT DOES, READ OFF THE ROW AND NOT GUESSED FROM ITS NAME.
+        //
+        // This used to be `resolvePill(price.name.replace(/,.*$/, ''))` - the
+        // display string re-resolved against another catalog - and it succeeded
+        // for 8 of the 43 rows. The other 35 were priced, quoted and unbuyable,
+        // including the bowl of millet a starving player was looking at. The
+        // catalog carries the answer now; see `WhatBuyingItGivesSchema`.
+        const gives = price.gives;
+
+        // A MEAL IS EATEN, AT WHAT THIS COUNTER CHARGES FOR IT.
+        //
+        // Not routed to `eat`, and the reason is a real one rather than
+        // tidiness: `eat` is the bare verb, charges a flat constant, and
+        // refuses outright when you are not hungry - so a player who asks the
+        // price of a meal in a famine got "you are not hungry" and no figure at
+        // all. `a-famine-moves-the-food-and-not-the-bed.test.ts` reads the
+        // quote out of this answer, and a famine that cannot be read off the
+        // board is a famine the player never learns about.
+        //
+        // So buying a named meal charges the LOCAL price - province term and
+        // ground term, the same two the board quotes - and feeds the body. The
+        // bare verb keeps its own constant for eating whatever is around, which
+        // is a different act at a different counter.
+        if (gives.kind === 'a_meal') {
+            if (cultivator.spiritStones < stones) {
+                return refused('engine.localPrice', 'buy', factsForRefusal(
+                    'Not for what you are carrying.',
+                    `${price.name} is ${cash} cash here, which is ${stones} spirit `
+                    + `stone${stones === 1 ? '' : 's'}. You are carrying `
+                    + `${cultivator.spiritStones}, and the pot does not move.`,
+                    `${price.id} at ${stones} stones against a purse of `
+                    + `${cultivator.spiritStones}. Nothing bought, nothing spent, no time passed.`
+                ));
+            }
+            const restored = Math.max(0, SATIETY_MAX - cultivator.satiety);
+            const fed = this.db.transaction((): Cultivator => {
+                const updated = this.repos.cultivators.applyDeltas(cultivator.id, {
+                    satiety: restored,
+                    starvationTurns: -cultivator.starvationTurns,
+                    spiritStones: -stones
+                });
+                if (!updated) throw new GameError('Cultivator vanished mid-meal.', 500);
+                this.repos.runs.incrementTurn(run.id, 1);
+                return updated;
+            })();
+            const facts = factsForEat(fed, restored, stones);
+            // THE FIGURE, AND WHY IT MOVED, WHICH IS THE HALF THE BOARD IS FOR.
+            //
+            // Both of these used to live in the REFUSAL - they were what the
+            // engine said instead of selling you the meal - so making food
+            // buyable would have thrown away the only place a player could read
+            // a famine off a price. `a-famine-moves-the-food-and-not-the-bed`
+            // reads exactly this, and it is right to: a quoted figure with
+            // nothing said about why it moved reads as the board being wrong,
+            // and it is not the board, it is the ground.
+            facts.lines.push(...this.whatThisCostsAndWhy(price, cash, stones, groundHere));
+            facts.prose = facts.lines.join('\n\n');
+            return {
+                facts, events: [], timeSkip: null, breakthrough: null, outcome: 'executed',
+                calls: [{
+                    name: 'cultivator.applyDeltas',
+                    action: 'buy',
+                    summary: `${price.name} at ${stones} spirit stone`
+                        + `${stones === 1 ? '' : 's'}; satiety +${restored} to `
+                        + `${fed.satiety}/100 (${fed.spiritStones} left).`,
+                    ok: true
+                }]
+            };
+        }
+        if (gives.kind === 'rations') return this.provision(run, cultivator, undefined, 1);
+
+        // PAID FOR AND GONE. A letter written, a bell rung, a night on an inn
+        // floor: consumed at the counter, leaving nothing to hold. This used to
+        // fall through to "there is no row in this engine for holding one",
+        // which is true of the ENGINE and false of the world - a scribe will
+        // write your letter. The stones are spent and the fact is stated.
+        if (gives.kind === 'spent_at_the_counter') {
+            if (cultivator.spiritStones < stones) {
+                return refused('engine.localPrice', 'buy', factsForRefusal(
+                    'Not for what you are carrying.',
+                    `${price.name} is ${cash} cash${quotedBy(price.unit)} here, which is ${stones} `
+                    + `spirit stone${stones === 1 ? '' : 's'}. You are carrying `
+                    + `${cultivator.spiritStones}, and it is not enough.`,
+                    `${price.id} at ${stones} stones against a purse of `
+                    + `${cultivator.spiritStones}. Nothing bought, nothing spent, no time passed.`
+                ));
+            }
+            const after = this.db.transaction((): Cultivator => {
+                const updated = this.repos.cultivators.applyDeltas(cultivator.id, {
+                    spiritStones: -stones
+                });
+                if (!updated) throw new GameError('Cultivator vanished at the counter.', 500);
+                this.repos.runs.incrementTurn(run.id, 1);
+                return updated;
+            })();
+            const lines = [
+                `${cultivator.name} paid for ${gives.what}.`,
+                ...this.whatThisCostsAndWhy(price, cash, stones, groundHere),
+                `${stones} spirit stone${stones === 1 ? '' : 's'} spent, leaving `
+                + `${after.spiritStones}. Nothing was added to what you carry, because there is `
+                + 'nothing to carry: it was used where you stood.'
+            ];
+            return {
+                facts: observable(
+                    `Paid. ${after.spiritStones} stones left.`,
+                    lines,
+                    lines.join('\n\n'),
+                    [`${price.id} bought at ${stones} stones; consumed on the spot, nothing held.`]
+                ),
+                events: [], timeSkip: null, breakthrough: null, outcome: 'executed',
+                calls: [{
+                    name: 'cultivator.applyDeltas',
+                    action: 'buy',
+                    summary: `${price.name} at ${stones} spirit stone`
+                        + `${stones === 1 ? '' : 's'} (${after.spiritStones} left).`,
+                    ok: true
+                }]
+            };
+        }
+
+        // QUOTED, AND BOUGHT THROUGH ANOTHER DOOR. The board is a price list,
+        // and passage, ground and a bounty are all reached by doing the thing
+        // rather than by paying at a stall. The refusal says which door.
+        if (gives.kind === 'quoted_only') {
+            return refused('engine.priceBoard', 'buy', factsForRefusal(
+                `${price.name} is quoted here, and not sold here.`,
+                'The board carries the figure and the person behind it does not take your money '
+                + `for it. ${gives.because[0].toUpperCase()}${gives.because.slice(1)}.`,
+                `${price.id} is quoted at ${price.cash} cash. Nothing bought, nothing spent, `
+                + 'no time passed.'
+            ));
+        }
+
+        const pill = gives.kind === 'pill' ? getPill(gives.pillId) : null;
 
         // A THING YOU CAN ACTUALLY PUT UNDER YOU
-        const rideable = conveyanceSoldAs(price.id);
+        const rideable = gives.kind === 'conveyance'
+            ? getConveyance(gives.conveyanceId) ?? null
+            : null;
         if (rideable) {
             // The catalog names carry their own article - "A drawn carriage" -
             // so anything writing "a ${name}" reads "a a drawn carriage".

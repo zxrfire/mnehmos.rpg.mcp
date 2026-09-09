@@ -7,7 +7,7 @@ import type { Cultivator } from '../schema/cultivation.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
 import { keptAs, type ObjectRecord } from '../engine/world/possessions.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
-import { quotedBy } from './market-prices.js';
+import { MARKET_CATEGORIES, quotedBy } from './market-prices.js';
 import { describePhysique, physiqueOrNull } from '../engine/cultivation/physiques.js';
 import {
     A_FACE_YOU_HAVE_SOMETHING_BEHIND
@@ -890,6 +890,41 @@ function whatTheySeeLookingAtIt(
 /**
  * A line on the price board.
  */
+/**
+ * THE CATEGORIES ARE WORDS PLAYERS TYPE, and nothing was matching them.
+ *
+ * FOUND BY PLAYING. A starving player typed "I buy food and eat" and was told
+ * *"It is the look reserved for those who ask for things that are not sold"* -
+ * in an answer that then listed **bowls of millet** as available, because the
+ * refusal is built by mapping over the same array that holds the millet. One
+ * array, read twice, contradicting itself in one breath.
+ *
+ * The cause: `resolvePrice` scored the query against `price.name` twice and
+ * never against `price.category`, which is a closed enum whose eight values -
+ * food, lodging, transport, medicine, land, service, tool, information - are
+ * exactly the words somebody asks for. Measured before this: `resolvePrice`
+ * returned null for six of the eight; `lodging` and `land` only hit by accident
+ * of appearing inside a row's name.
+ *
+ * So a category word answers with the CHEAPEST row in it, which is what asking
+ * for "food" in a market means: the thing anybody would hand you first.
+ */
+export function cheapestInCategory(query: string): Price | null {
+    const wanted = query.trim().toLowerCase();
+    if (wanted.length < 3) return null;
+    // Whole word, so "a tool" reaches tools and "a stool" does not.
+    const named = MARKET_CATEGORIES.find(
+        category => new RegExp(`\\b${category}\\b`).test(wanted)
+    );
+    if (named === undefined) return null;
+    let best: Price | null = null;
+    for (const price of PRICES) {
+        if (price.category !== named) continue;
+        if (best === null || price.cash < best.cash) best = price;
+    }
+    return best;
+}
+
 export function resolvePrice(query: string): ResolvedEntity | null {
     const wanted = query.trim();
     if (wanted.length < 3) return null;

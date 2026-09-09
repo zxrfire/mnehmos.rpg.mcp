@@ -124,6 +124,62 @@ export const OCCUPATIONS: readonly Occupation[] = OCCUPATION_DATA.map(o =>
 // Anchored against the 30-stone starting purse and the 9,000-stone pill.
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * WHAT BUYING A LINE OFF THE BOARD ACTUALLY DOES.
+ *
+ * FOUND BY PLAYING. A player typed "I buy a bowl of millet", naming a row on
+ * the board exactly, and was told *"Bowl of millet is priced and quoted and
+ * there is no row in this engine for holding one, so nothing was charged."*
+ * They were starving at the time and the millet was on the board in front of
+ * them at one cash.
+ *
+ * The cause was structural: **`Price` was a quote row pretending to be a stock
+ * row.** It carried a name, a category, a number and a unit, and nothing that
+ * said what the thing IS - so `buy` recovered the missing column by
+ * re-resolving the row's DISPLAY NAME against the pill catalog and an authored
+ * two-entry map of conveyances. Measured, that guess succeeded for 8 of 43
+ * rows. The other 35 were priced, quoted, and unbuyable, and the refusal they
+ * produced was built by mapping over this same array - so one answer refused
+ * food and advertised the millet in the same breath.
+ *
+ * This is the column. It is STORED and not derived, which is the exception the
+ * derive-don't-store rule allows for and the reason is plain: nothing about the
+ * string "Bowl of millet" tells the engine it is eaten. Somebody has to say so
+ * once, here, per row.
+ *
+ * Every row carries one. A row nobody can buy says so deliberately and says
+ * why, rather than falling through a guess - which is what turns "the catalog
+ * grew a row and nobody noticed it was dead" into a test failure.
+ */
+export const WhatBuyingItGivesSchema = z.discriminatedUnion('kind', [
+    /** It is eaten. Routes to the satiety path, so the board and `eat` cannot
+     *  disagree about what a meal costs. */
+    z.object({ kind: z.literal('a_meal') }),
+    /** Dry rations carried against a long stretch. Routes to `provision`. */
+    z.object({ kind: z.literal('rations') }),
+    /** A course of mortal care. Routes to `treat`. */
+    z.object({ kind: z.literal('care') }),
+    /** A pill, which goes in the pouch. */
+    z.object({ kind: z.literal('pill'), pillId: z.string().min(3) }),
+    /** Something to put under you. */
+    z.object({ kind: z.literal('conveyance'), conveyanceId: z.string().min(3) }),
+    /**
+     * Paid for and gone: a service consumed at the counter that leaves nothing
+     * to hold. A letter written, a bell rung, a night on an inn floor. The
+     * stones are spent and the fact is stated, because taking the money for
+     * nothing and refusing outright are both worse than saying what happened.
+     */
+    z.object({ kind: z.literal('spent_at_the_counter'), what: z.string().min(10) }),
+    /**
+     * Quoted, and not bought with this verb. The board is a price list and some
+     * of what it lists is reached another way - passage by naming where you are
+     * going, ground by taking it. `because` is engine-channel text saying which
+     * door, so a refusal points somewhere instead of just closing.
+     */
+    z.object({ kind: z.literal('quoted_only'), because: z.string().min(10) })
+]);
+export type WhatBuyingItGives = z.infer<typeof WhatBuyingItGivesSchema>;
+
 export const PriceSchema = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -131,34 +187,36 @@ export const PriceSchema = z.object({
     /** Price in cash. Divide by CASH_PER_STONE for the stone figure. */
     cash: z.number().int().min(1),
     unit: z.string().min(2),
-    note: z.string().min(20)
+    note: z.string().min(20),
+    /** What buying it does. See `WhatBuyingItGivesSchema`. */
+    gives: WhatBuyingItGivesSchema
 });
 export type Price = z.infer<typeof PriceSchema>;
 
 export const PRICES: readonly Price[] = [
     // ── food and lodging: the mortal end of the scale ─────────────────
-    { id: 'price-millet', name: 'Bowl of millet', category: 'food', cash: 1, unit: 'each', note: 'The floor of the whole economy. A day of eating badly is three of these.' },
-    { id: 'price-meal', name: 'Hot meal at an inn', category: 'food', cash: 6, unit: 'each', note: 'Fish and rice in the Jade Gorge; flatbread and sour broth in the Silent Cliffs, at half again the price.' },
-    { id: 'price-month-rations', name: 'A month of rations', category: 'food', cash: 120, unit: 'month', note: 'What travelling actually costs, and the number that makes the Grain Abstinence Pill worth nine thousand stones.' },
-    { id: 'price-inn-night', name: 'Night at an inn', category: 'lodging', cash: 12, unit: 'night', note: 'A floor, a blanket and no privacy. A private room is four times that and exists in perhaps six buildings per town.' },
-    { id: 'price-month-lodging', name: 'A month\'s lodging', category: 'lodging', cash: 300, unit: 'month', note: 'A room in a market town, which is roughly one and a half months of a porter\'s wage.' },
+    { id: 'price-millet', name: 'Bowl of millet', category: 'food', cash: 1, unit: 'each', note: 'The floor of the whole economy. A day of eating badly is three of these.', gives: { kind: 'a_meal' } },
+    { id: 'price-meal', name: 'Hot meal at an inn', category: 'food', cash: 6, unit: 'each', note: 'Fish and rice in the Jade Gorge; flatbread and sour broth in the Silent Cliffs, at half again the price.', gives: { kind: 'a_meal' } },
+    { id: 'price-month-rations', name: 'A month of rations', category: 'food', cash: 120, unit: 'month', note: 'What travelling actually costs, and the number that makes the Grain Abstinence Pill worth nine thousand stones.', gives: { kind: 'rations' } },
+    { id: 'price-inn-night', name: 'Night at an inn', category: 'lodging', cash: 12, unit: 'night', note: 'A floor, a blanket and no privacy. A private room is four times that and exists in perhaps six buildings per town.', gives: { kind: 'spent_at_the_counter', what: 'a floor, a blanket, and morning' } },
+    { id: 'price-month-lodging', name: 'A month\'s lodging', category: 'lodging', cash: 300, unit: 'month', note: 'A room in a market town, which is roughly one and a half months of a porter\'s wage.', gives: { kind: 'spent_at_the_counter', what: 'a room, paid up, and a door that shuts' } },
 
     // and the cultivator end of the same scale
-    { id: 'price-spirit-beast-meal', name: 'Spirit-beast meat, a cultivator\'s meal', category: 'food', cash: 800, unit: 'each', note: 'Eight stones on the board for one sitting, before whatever a province adds to it - a mule\'s worth of a mortal\'s food, and the reason the two boards do not compare. What is being paid for is flesh off something that was drawing qi while it lived; a hundred bowls of millet do not add up to it and never will. The measure a stall means when it says a block-printed primer costs about what a meal does.' },
+    { id: 'price-spirit-beast-meal', name: 'Spirit-beast meat, a cultivator\'s meal', category: 'food', cash: 800, unit: 'each', note: 'Eight stones on the board for one sitting, before whatever a province adds to it - a mule\'s worth of a mortal\'s food, and the reason the two boards do not compare. What is being paid for is flesh off something that was drawing qi while it lived; a hundred bowls of millet do not add up to it and never will. The measure a stall means when it says a block-printed primer costs about what a meal does.', gives: { kind: 'a_meal' } },
 
     // ── transport ─────────────────────────────────────────────────────
-    { id: 'price-ferry', name: 'Ferry crossing', category: 'transport', cash: 2, unit: 'crossing', note: 'Free for Clear River Alliance members, and the Alliance counts the debt in crossings rather than cash.' },
-    { id: 'price-caravan-passage', name: 'Caravan passage', category: 'transport', cash: 250, unit: 'per 100 li', note: 'Includes food and the protection of being one of a group. The border road to Iron Ridge is eleven days and priced as such.' },
-    { id: 'price-mule', name: 'Mule', category: 'transport', cash: 1_400, unit: 'each', note: 'Fourteen stones on four legs, and the single largest purchase most mortals ever make.' },
-    { id: 'price-cart', name: 'Cart', category: 'transport', cash: 3_000, unit: 'each', note: 'Thirty stones: exactly the starting purse of a cultivator, which is a comparison mortals make bitterly and often.' },
-    { id: 'price-span-courier', name: 'Shrinking Earth Pavilion courier', category: 'transport', cash: 900, unit: 'per true li', note: 'Priced by true rather than walked distance, which nobody outside the Span can verify and everybody pays.' },
+    { id: 'price-ferry', name: 'Ferry crossing', category: 'transport', cash: 2, unit: 'crossing', note: 'Free for Clear River Alliance members, and the Alliance counts the debt in crossings rather than cash.', gives: { kind: 'quoted_only', because: 'passage is bought by naming where you are going, not at a counter' } },
+    { id: 'price-caravan-passage', name: 'Caravan passage', category: 'transport', cash: 250, unit: 'per 100 li', note: 'Includes food and the protection of being one of a group. The border road to Iron Ridge is eleven days and priced as such.', gives: { kind: 'quoted_only', because: 'passage is bought by naming where you are going, not at a counter' } },
+    { id: 'price-mule', name: 'Mule', category: 'transport', cash: 1_400, unit: 'each', note: 'Fourteen stones on four legs, and the single largest purchase most mortals ever make.', gives: { kind: 'conveyance', conveyanceId: 'conv-mount-mortal' } },
+    { id: 'price-cart', name: 'Cart', category: 'transport', cash: 3_000, unit: 'each', note: 'Thirty stones: exactly the starting purse of a cultivator, which is a comparison mortals make bitterly and often.', gives: { kind: 'conveyance', conveyanceId: 'conv-carriage-mortal' } },
+    { id: 'price-span-courier', name: 'Shrinking Earth Pavilion courier', category: 'transport', cash: 900, unit: 'per true li', note: 'Priced by true rather than walked distance, which nobody outside the Span can verify and everybody pays.', gives: { kind: 'quoted_only', because: 'passage is bought by naming where you are going, not at a counter' } },
 
     // the water, which is priced in a different unit and should be
-    { id: 'price-sea-passage', name: 'Sea passage', category: 'transport', cash: 45, unit: 'per head per day', note: 'Quoted on the expected passage and never on the tail, which is where the arguments come from. Twenty-one days to the eastern shore is nine hundred and forty-five cash before anybody has burned a stone.' },
-    { id: 'price-deck-passage-open-water', name: 'Deck passage, no landfall in it', category: 'transport', cash: 70, unit: 'per head per day', note: 'Half again, for a lane with nowhere to stop. The surcharge is not for the danger - it is because a hull on that water carries provisions for people it cannot put ashore, and everybody aboard is loaded for.' },
-    { id: 'price-water-jar', name: 'Fresh water, sealed stone jar', category: 'food', cash: 30, unit: 'jar', note: 'Six days for one person at the standing ration, and the actual binding constraint on every passage in the province. Silver Island sells it at a margin nobody argues about, because a shipmaster haggling over water in front of a crew has already lost the crew.' },
-    { id: 'price-hull-repair', name: 'Hull repair at a quay', category: 'service', cash: 2_200, unit: 'per call', note: 'Caulking, cordage and canvas. Silver Island Market keeps eleven caulkers and does not price them to profit, on the reasoning that a hull that cannot be repaired there is a hull that stops coming.' },
-    { id: 'price-port-rate', name: 'Port rate on a cargo', category: 'service', cash: 25, unit: 'per stone of value per 40', note: 'A fortieth of what crosses the rail, published, unchanged in ninety years and refused upward four times in writing. It is light because the traffic is where the profit is and squeezing the traffic moves it.' },
+    { id: 'price-sea-passage', name: 'Sea passage', category: 'transport', cash: 45, unit: 'per head per day', note: 'Quoted on the expected passage and never on the tail, which is where the arguments come from. Twenty-one days to the eastern shore is nine hundred and forty-five cash before anybody has burned a stone.', gives: { kind: 'quoted_only', because: 'passage is bought by naming where you are going, not at a counter' } },
+    { id: 'price-deck-passage-open-water', name: 'Deck passage, no landfall in it', category: 'transport', cash: 70, unit: 'per head per day', note: 'Half again, for a lane with nowhere to stop. The surcharge is not for the danger - it is because a hull on that water carries provisions for people it cannot put ashore, and everybody aboard is loaded for.', gives: { kind: 'quoted_only', because: 'passage is bought by naming where you are going, not at a counter' } },
+    { id: 'price-water-jar', name: 'Fresh water, sealed stone jar', category: 'food', cash: 30, unit: 'jar', note: 'Six days for one person at the standing ration, and the actual binding constraint on every passage in the province. Silver Island sells it at a margin nobody argues about, because a shipmaster haggling over water in front of a crew has already lost the crew.', gives: { kind: 'spent_at_the_counter', what: 'a sealed jar, heavy, and six days of not thinking about it' } },
+    { id: 'price-hull-repair', name: 'Hull repair at a quay', category: 'service', cash: 2_200, unit: 'per call', note: 'Caulking, cordage and canvas. Silver Island Market keeps eleven caulkers and does not price them to profit, on the reasoning that a hull that cannot be repaired there is a hull that stops coming.', gives: { kind: 'quoted_only', because: 'a quay repairs a hull for whoever owns one, and you do not' } },
+    { id: 'price-port-rate', name: 'Port rate on a cargo', category: 'service', cash: 25, unit: 'per stone of value per 40', note: 'A fortieth of what crosses the rail, published, unchanged in ninety years and refused upward four times in writing. It is light because the traffic is where the profit is and squeezing the traffic moves it.', gives: { kind: 'quoted_only', because: 'a levy on cargo crossing a rail, charged to the cargo and not paid at a stall' } },
 
     // medicine: where the two currencies meet The note used to end "cannot touch a
     // meridian", and the engine disagreed with it in play: mortal care closed two
@@ -166,42 +224,42 @@ export const PRICES: readonly Price[] = [
     // the board beside it. What is actually out of reach is set by
     // `medicineNeededFor` - crippling damage, or an ordinary tear on a body far
     // enough up the ladder - and the prose yields to the measurement.
-    { id: 'price-doctor-visit', name: 'Mortal physician, one visit', category: 'medicine', cash: 40, unit: 'visit', note: 'Sets a bone, stitches a cut, and puts a body that has been battered back on its feet. An ordinary torn meridian closes under the month of care on the line below; crippling damage does not, and neither does anything on a body the village has no medicine for.' },
-    { id: 'price-splint-and-month', name: 'Splint and a month of care', category: 'medicine', cash: 500, unit: 'course', note: 'The mortal alternative to a healing pill: slower, cheaper, and it leaves you out of the fight for a season.' },
-    { id: 'price-lesser-healing-pill', name: 'Lesser Healing Pill', category: 'medicine', cash: 2_000, unit: 'each', note: 'Twenty stones. Every run starts with exactly one, and it is worth a mule and a half.' },
-    { id: 'price-qi-gathering-pill', name: 'Qi-Gathering Pill', category: 'medicine', cash: 1_800, unit: 'each', note: 'Eighteen stones. Cheap by cultivator standards and a year of a farmhand\'s savings.' },
-    { id: 'price-clear-meridian-pill', name: 'Clear Meridian Pill', category: 'medicine', cash: 6_000, unit: 'each', note: 'Sixty stones, and unobtainable in the Silent Cliffs at any price because alchemy will not hold there.' },
+    { id: 'price-doctor-visit', name: 'Mortal physician, one visit', category: 'medicine', cash: 40, unit: 'visit', note: 'Sets a bone, stitches a cut, and puts a body that has been battered back on its feet. An ordinary torn meridian closes under the month of care on the line below; crippling damage does not, and neither does anything on a body the village has no medicine for.', gives: { kind: 'care' } },
+    { id: 'price-splint-and-month', name: 'Splint and a month of care', category: 'medicine', cash: 500, unit: 'course', note: 'The mortal alternative to a healing pill: slower, cheaper, and it leaves you out of the fight for a season.', gives: { kind: 'care' } },
+    { id: 'price-lesser-healing-pill', name: 'Lesser Healing Pill', category: 'medicine', cash: 2_000, unit: 'each', note: 'Twenty stones. Every run starts with exactly one, and it is worth a mule and a half.', gives: { kind: 'pill', pillId: 'pill-minor-healing' } },
+    { id: 'price-qi-gathering-pill', name: 'Qi-Gathering Pill', category: 'medicine', cash: 1_800, unit: 'each', note: 'Eighteen stones. Cheap by cultivator standards and a year of a farmhand\'s savings.', gives: { kind: 'pill', pillId: 'pill-qi-gathering' } },
+    { id: 'price-clear-meridian-pill', name: 'Clear Meridian Pill', category: 'medicine', cash: 6_000, unit: 'each', note: 'Sixty stones, and unobtainable in the Silent Cliffs at any price because alchemy will not hold there.', gives: { kind: 'pill', pillId: 'pill-clear-meridian' } },
     // THE EARTH-GRADE RUNG OF THE SAME LADDER, and it was missing.
-    { id: 'price-marrow-washing-pill', name: 'Marrow-Washing Pill', category: 'medicine', cash: 42_000, unit: 'each', note: 'Four hundred and twenty stones, quoted at the two or three counters in a province that keep one. What a torn meridian costs once the body carrying it is past Foundation Establishment, and the reason a Core Formation cultivator with an ordinary injury still goes to their sect about it.' },
+    { id: 'price-marrow-washing-pill', name: 'Marrow-Washing Pill', category: 'medicine', cash: 42_000, unit: 'each', note: 'Four hundred and twenty stones, quoted at the two or three counters in a province that keep one. What a torn meridian costs once the body carrying it is past Foundation Establishment, and the reason a Core Formation cultivator with an ordinary injury still goes to their sect about it.', gives: { kind: 'pill', pillId: 'pill-marrow-washing' } },
 
     // ── land and access: the real cost of advancing ───────────────────
-    { id: 'price-cave-ordinary', name: 'Cave rent, ordinary ground', category: 'land', cash: 800, unit: 'month', note: 'Eight stones a month for somewhere with a door and nothing in the air worth breathing.' },
-    { id: 'price-cave-vein', name: 'Cave rent, decent vein', category: 'land', cash: 6_000, unit: 'month', note: 'Sixty stones a month, twice the starting purse, and the single largest recurring expense in any cultivator\'s life.' },
-    { id: 'price-grant-day', name: 'Grant day at a workable face', category: 'land', cash: 4_000, unit: 'day', note: 'Forty stones a DAY, Silent Cliffs only, and the reason nobody there saves anything.' },
-    { id: 'price-farmland-mu', name: 'Farmland', category: 'land', cash: 9_000, unit: 'per mu', note: 'Ninety stones for land a family can live off, which prices a whole mortal life against three months of a good cave.' },
+    { id: 'price-cave-ordinary', name: 'Cave rent, ordinary ground', category: 'land', cash: 800, unit: 'month', note: 'Eight stones a month for somewhere with a door and nothing in the air worth breathing.', gives: { kind: 'quoted_only', because: 'ground is taken by going and sitting on it, not bought at a stall' } },
+    { id: 'price-cave-vein', name: 'Cave rent, decent vein', category: 'land', cash: 6_000, unit: 'month', note: 'Sixty stones a month, twice the starting purse, and the single largest recurring expense in any cultivator\'s life.', gives: { kind: 'quoted_only', because: 'ground is taken by going and sitting on it, not bought at a stall' } },
+    { id: 'price-grant-day', name: 'Grant day at a workable face', category: 'land', cash: 4_000, unit: 'day', note: 'Forty stones a DAY, Silent Cliffs only, and the reason nobody there saves anything.', gives: { kind: 'quoted_only', because: 'a face is worked by arrangement with whoever holds it' } },
+    { id: 'price-farmland-mu', name: 'Farmland', category: 'land', cash: 9_000, unit: 'per mu', note: 'Ninety stones for land a family can live off, which prices a whole mortal life against three months of a good cave.', gives: { kind: 'quoted_only', because: 'land changes hands between families over years, and not across a counter' } },
 
     // ── services and information ──────────────────────────────────────
-    { id: 'price-gate-registration', name: 'Gate registration', category: 'service', cash: 300, unit: 'year', note: 'Three stones a year to the Jade Register Hall, compulsory in nine cities, and the House\'s real income.' },
-    { id: 'price-oath-witness', name: 'Oath witnessing', category: 'service', cash: 5_000, unit: 'oath', note: 'Fifty stones and up, scaled to the penalty clause rather than the sum at stake.' },
-    { id: 'price-scribe-letter', name: 'A letter written', category: 'service', cash: 8, unit: 'letter', note: 'Most people cannot write. This is why a scribe eats better than a farmhand.' },
-    { id: 'price-placement', name: 'Placement of a foreign cultivator', category: 'information', cash: 7_000, unit: 'assessment', note: 'Seventy stones to have the Ninefold Karma Palace say where inside a realm somebody stands. Cheaper than being wrong once.' },
-    { id: 'price-chisel', name: 'Carver\'s chisel', category: 'tool', cash: 450, unit: 'each', note: 'Lasts about a season at a face. In the Silent Cliffs this is a recurring cost of cultivating, which the Jade Gorge finds absurd.' },
-    { id: 'price-mortal-sword', name: 'Sword, mortal steel', category: 'tool', cash: 700, unit: 'each', note: 'Ashen Forge work, reforged from ploughed-up fragments. A cultivator\'s blade starts at fifty times this.' },
+    { id: 'price-gate-registration', name: 'Gate registration', category: 'service', cash: 300, unit: 'year', note: 'Three stones a year to the Jade Register Hall, compulsory in nine cities, and the House\'s real income.', gives: { kind: 'spent_at_the_counter', what: 'a year on the register, and a clerk who does not look up' } },
+    { id: 'price-oath-witness', name: 'Oath witnessing', category: 'service', cash: 5_000, unit: 'oath', note: 'Fifty stones and up, scaled to the penalty clause rather than the sum at stake.', gives: { kind: 'spent_at_the_counter', what: 'an oath witnessed, and a name against it that is not yours' } },
+    { id: 'price-scribe-letter', name: 'A letter written', category: 'service', cash: 8, unit: 'letter', note: 'Most people cannot write. This is why a scribe eats better than a farmhand.', gives: { kind: 'spent_at_the_counter', what: 'a letter, written in a hand better than yours' } },
+    { id: 'price-placement', name: 'Placement of a foreign cultivator', category: 'information', cash: 7_000, unit: 'assessment', note: 'Seventy stones to have the Ninefold Karma Palace say where inside a realm somebody stands. Cheaper than being wrong once.', gives: { kind: 'spent_at_the_counter', what: 'an assessment, and a number somebody else now knows' } },
+    { id: 'price-chisel', name: 'Carver\'s chisel', category: 'tool', cash: 450, unit: 'each', note: 'Lasts about a season at a face. In the Silent Cliffs this is a recurring cost of cultivating, which the Jade Gorge finds absurd.', gives: { kind: 'spent_at_the_counter', what: 'a chisel that will last about a season at a face' } },
+    { id: 'price-mortal-sword', name: 'Sword, mortal steel', category: 'tool', cash: 700, unit: 'each', note: 'Ashen Forge work, reforged from ploughed-up fragments. A cultivator\'s blade starts at fifty times this.', gives: { kind: 'spent_at_the_counter', what: 'mortal steel, honest and unremarkable' } },
 
     // the dead, which is the largest unavoidable expense a family has
-    { id: 'price-coffin', name: 'Coffin', category: 'service', cash: 1_400, unit: 'each', note: 'The same figure as a mule, which every family notices, and the comparison is made at every funeral in both provinces.' },
-    { id: 'price-burial-plot', name: 'Ground for a grave', category: 'land', cash: 600, unit: 'plot', note: 'Bought once and held forever, which is the only thing a mortal family owns that a cultivator cannot outbid them for, because nobody wants it.' },
-    { id: 'price-corpse-cart', name: 'Carriage of a body', category: 'transport', cash: 90, unit: 'per stage', note: 'A city will not bury an outsider and a village will not keep one, so a body travels, and it travels at a fixed rate nobody haggles over.' },
-    { id: 'price-bell-tolling', name: 'A bell rung out', category: 'service', cash: 20, unit: 'each', note: 'Paid to the bell keeper by the stroke. In the Jade Gorge a second stroke is refused at any price in the valleys that will not ring twice.' },
-    { id: 'price-mourner', name: 'A hired mourner', category: 'service', cash: 30, unit: 'day', note: 'Standard in the cities and considered grotesque in the villages, which supply most of the mourners.' },
-    { id: 'price-name-cut', name: 'A name cut in stone', category: 'service', cash: 250, unit: 'each', note: 'Two and a half stones to be legible for a century. Most families pay for the name and not the dates, which is why the graveyards cannot be used to date anything.' },
+    { id: 'price-coffin', name: 'Coffin', category: 'service', cash: 1_400, unit: 'each', note: 'The same figure as a mule, which every family notices, and the comparison is made at every funeral in both provinces.', gives: { kind: 'spent_at_the_counter', what: 'a coffin, and somebody to carry it' } },
+    { id: 'price-burial-plot', name: 'Ground for a grave', category: 'land', cash: 600, unit: 'plot', note: 'Bought once and held forever, which is the only thing a mortal family owns that a cultivator cannot outbid them for, because nobody wants it.', gives: { kind: 'spent_at_the_counter', what: 'a plot, marked, and held for as long as anybody remembers it' } },
+    { id: 'price-corpse-cart', name: 'Carriage of a body', category: 'transport', cash: 90, unit: 'per stage', note: 'A city will not bury an outsider and a village will not keep one, so a body travels, and it travels at a fixed rate nobody haggles over.', gives: { kind: 'quoted_only', because: 'a body travels when somebody sends it, which is not a counter purchase' } },
+    { id: 'price-bell-tolling', name: 'A bell rung out', category: 'service', cash: 20, unit: 'each', note: 'Paid to the bell keeper by the stroke. In the Jade Gorge a second stroke is refused at any price in the valleys that will not ring twice.', gives: { kind: 'spent_at_the_counter', what: 'a stroke of the bell, and whoever hears it' } },
+    { id: 'price-mourner', name: 'A hired mourner', category: 'service', cash: 30, unit: 'day', note: 'Standard in the cities and considered grotesque in the villages, which supply most of the mourners.', gives: { kind: 'spent_at_the_counter', what: 'a day of somebody grieving loudly on your behalf' } },
+    { id: 'price-name-cut', name: 'A name cut in stone', category: 'service', cash: 250, unit: 'each', note: 'Two and a half stones to be legible for a century. Most families pay for the name and not the dates, which is why the graveyards cannot be used to date anything.', gives: { kind: 'spent_at_the_counter', what: 'a name in stone, legible for a century' } },
 
     // ── the ordinary board, which sets the floor everything else sits on ──
-    { id: 'price-salt', name: 'Salt', category: 'food', cash: 4, unit: 'catty', note: 'Taxed at the gate in nine cities and smuggled everywhere else, which is the commonest crime in the world and is punished as one.' },
-    { id: 'price-cloth', name: 'Cloth, undyed', category: 'tool', cash: 55, unit: 'bolt', note: 'A set of clothes is two bolts and a winter, and a cultivator whose robes are obviously new is read as either freshly paid or freshly robbed.' },
-    { id: 'price-firewood', name: 'Firewood', category: 'food', cash: 18, unit: 'month', note: 'The reason charcoal burning is a trade and the reason a cold winter shows up in the corpse carriers\' takings before it shows up anywhere else.' },
-    { id: 'price-culling-bounty', name: 'Beast-culling bounty', category: 'service', cash: 350, unit: 'head', note: 'Paid by a village out of its own store, which means the village decides what it can afford to be afraid of. Below this figure nobody comes.' },
-    { id: 'price-village-well', name: 'A well sunk', category: 'land', cash: 5_000, unit: 'each', note: 'Fifty stones, raised over years by a whole village, and the largest thing most hamlets will ever do collectively.' }
+    { id: 'price-salt', name: 'Salt', category: 'food', cash: 4, unit: 'catty', note: 'Taxed at the gate in nine cities and smuggled everywhere else, which is the commonest crime in the world and is punished as one.', gives: { kind: 'spent_at_the_counter', what: 'salt, wrapped, and the gate tax already in the price' } },
+    { id: 'price-cloth', name: 'Cloth, undyed', category: 'tool', cash: 55, unit: 'bolt', note: 'A set of clothes is two bolts and a winter, and a cultivator whose robes are obviously new is read as either freshly paid or freshly robbed.', gives: { kind: 'spent_at_the_counter', what: 'a bolt of undyed cloth' } },
+    { id: 'price-firewood', name: 'Firewood', category: 'food', cash: 18, unit: 'month', note: 'The reason charcoal burning is a trade and the reason a cold winter shows up in the corpse carriers\' takings before it shows up anywhere else.', gives: { kind: 'spent_at_the_counter', what: 'a month of not being cold' } },
+    { id: 'price-culling-bounty', name: 'Beast-culling bounty', category: 'service', cash: 350, unit: 'head', note: 'Paid by a village out of its own store, which means the village decides what it can afford to be afraid of. Below this figure nobody comes.', gives: { kind: 'quoted_only', because: 'a bounty is collected for a head brought in, not paid out at a stall' } },
+    { id: 'price-village-well', name: 'A well sunk', category: 'land', cash: 5_000, unit: 'each', note: 'Fifty stones, raised over years by a whole village, and the largest thing most hamlets will ever do collectively.', gives: { kind: 'quoted_only', because: 'a village raises a well over years; nobody sells one' } }
 ];
 
 // ─────────────────────────────────────────────────────────────────────────

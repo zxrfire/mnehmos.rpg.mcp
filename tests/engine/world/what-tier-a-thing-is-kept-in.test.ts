@@ -87,8 +87,17 @@ describe('the tier that is not modelled carries no quantity', () => {
     it('prices ordinary goods without counting any of them', () => {
         expect(PRICES.length).toBeGreaterThan(20);
         for (const p of PRICES) {
+            // `gives` joined the row and the reason is a played defect: the
+            // board quoted a bowl of millet at one cash to a starving player
+            // and could not sell it, because `Price` was a QUOTE row
+            // pretending to be a stock row and `buy` recovered the missing
+            // column by re-resolving the display NAME against the pill
+            // catalog. That guess worked for 8 of 43 rows. What is still
+            // true, and is what this assertion is for, is that a price row
+            // carries no QUANTITY: the mortal tier is priced and not
+            // counted.
             expect(Object.keys(p).sort()).toEqual(
-                ['cash', 'category', 'id', 'name', 'note', 'unit'].sort()
+                ['cash', 'category', 'gives', 'id', 'name', 'note', 'unit'].sort()
             );
             expect(p.cash).toBeGreaterThan(0);
         }

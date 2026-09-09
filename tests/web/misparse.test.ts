@@ -1072,14 +1072,36 @@ describe('buying a line off the price board', () => {
         expect(result.state.cultivator.spiritStones).toBeLessThan(400);
     });
 
-    it('quotes the price and charges nothing for what the engine cannot hold', async () => {
+    /**
+     * THIS USED TO ASSERT THAT NOTHING HAPPENED, and that was the defect.
+     *
+     * The old contract was “quote the price and charge nothing for what the
+     * engine cannot hold”, which is a statement about the ENGINE dressed as a
+     * statement about the world. An innkeeper will rent you a floor. Found by
+     * playing on the row next to it: a starving player could not buy a bowl of
+     * millet quoted at one cash in front of them, because `Price` carried no
+     * field saying what a row IS and `buy` guessed from the display name -
+     * correctly for 8 of 43 rows.
+     *
+     * A night at an inn is now `spent_at_the_counter`: the stones go, nothing
+     * is carried away, and the answer says so. What must still never happen is
+     * the old silent no-op, so this asserts the money actually moved.
+     */
+    it('charges for a service and says nothing was carried away', async () => {
         const { db, game } = makeGame({ seed: 'buy-inn' });
         const { cultivator } = await game.newRun('Shi Wanjun');
-        const before = db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id);
+        db.prepare('UPDATE cultivators SET spirit_stones = 400 WHERE id = ?').run(cultivator.id);
+        const before = game.state().cultivator.spiritStones;
 
         const result = await game.act('I buy a night at an inn');
         expect(result.narration).toMatch(/cash/);
-        expect(db.prepare('SELECT * FROM cultivators WHERE id = ?').get(cultivator.id)).toEqual(before);
+        expect(game.state().cultivator.spiritStones).toBeLessThan(before);
+        // And nothing was added to the pouch, because there is nothing to
+        // carry: a night is used where you stand.
+        const pouch = db
+            .prepare('SELECT item_id FROM cultivator_pouch WHERE holder_id = ?')
+            .all(cultivator.id) as Array<{ item_id: string }>;
+        expect(pouch).toEqual([]);
     });
 
     it('refuses what the board never advertised, with the board attached', async () => {

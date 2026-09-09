@@ -90,7 +90,7 @@ export function theRung(ordinal: number): string {
 }
 
 /** Build facts with an empty structure channel. Most outcomes have none. */
-function observable(headline: string, lines: string[], prose: string, structure: string[] = []): EngineFacts {
+export function observable(headline: string, lines: string[], prose: string, structure: string[] = []): EngineFacts {
     return { headline, lines, structure, prose };
 }
 

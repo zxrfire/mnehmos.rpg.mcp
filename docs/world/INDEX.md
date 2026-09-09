@@ -400,7 +400,7 @@ it describes.
 | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | Bodies that will hold a thing for somebody who is not coming back, and the terms each of them holds it on. | 378 | - |
 | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | The ancient tier: what a richer age made, what is left of it, and who is holding the remains. | 808 | - |
 | [`members.ts`](../../src/data/cultivation/members.ts) | Members - the people inside the institutions, at human scale. | 3864 | - |
-| [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | The mortal world: what people do, what things cost, where they live, and what they think of cultivators. | 610 | - |
+| [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | The mortal world: what people do, what things cost, where they live, and what they think of cultivators. | 668 | - |
 | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | The named dead, the named absent, and the named enormous. | 1265 | - |
 | [`pills.ts`](../../src/data/cultivation/pills.ts) | Alchemy - the pill catalog. | 718 | - |
 | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | Place names - one source of truth for what every place is called. | 173 | [`place-names.md`](writing/place-names.md) |
@@ -720,7 +720,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `IMMORTAL_CHANNELS` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 8 | 4 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 8 | 19 |
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 8 | 82 |
-| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 10 | 22 |
+| `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 11 | 31 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 47 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 14 | 17 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
