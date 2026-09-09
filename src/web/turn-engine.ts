@@ -1476,6 +1476,30 @@ export class GameService {
      * Things this turn named to the player, being collected for {@link lastTurn}.
      */
     private namedThisTurn: ThingNamed[] = [];
+
+    /**
+     * NAME A THING THIS TURN ACTUALLY PUT IN THEIR HANDS.
+     *
+     * FOUND BY PLAYING. Turn one bought the Lesser Qi-Gathering Manual and it
+     * went into the copies table. Turn two said “I study it” and the engine
+     * went looking for a PLACE called *it*, and answered with a list of
+     * villagers and gates.
+     *
+     * Every part of the machinery for that already existed.
+     * `resolvingAgainstTheLastTurn` runs over every plan's target and topic
+     * before every verb, and `A_BARE_ONE` has listed “it” all along. What it
+     * resolves against is `namedThisTurn`, and that had exactly three writers,
+     * all of them market LISTINGS - so the game could say “the cheaper one”
+     * about two books on a stall and could not say “it” about the book it had
+     * just sold you. The gap was on the WRITE side.
+     *
+     * A thing offered is worth naming. A thing HANDED OVER is worth it more.
+     */
+    private nameWhatTheyGot(name: string, stones?: number): void {
+        if (name.trim().length === 0) return;
+        if (this.namedThisTurn.some(thing => thing.name === name)) return;
+        this.namedThisTurn.push({ name, ...(stones === undefined ? {} : { stones }) });
+    }
     /**
      * Everything the scene channel found true of each person last turn.
      *
@@ -8149,6 +8173,7 @@ ${opened.text}` : receipt,
             const updated = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
             if (!updated) throw new GameError('Cultivator vanished mid-purchase.', 500);
             addToPouch(this.db, cultivator.id, pill.id, 'pill', 1);
+            this.nameWhatTheyGot(pill.name, stones);
             this.repos.runs.incrementTurn(run.id, 1);
             return updated;
         })();
@@ -8293,6 +8318,7 @@ ${opened.text}` : receipt,
             const updated = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -stones });
             if (!updated) throw new GameError('Cultivator vanished mid-purchase.', 500);
             recordACopyHeld(this.db, cultivator.id, named.id);
+            this.nameWhatTheyGot(named.name, stones);
             this.repos.runs.incrementTurn(run.id, 1);
             return updated;
         })();
@@ -8355,6 +8381,7 @@ ${opened.text}` : receipt,
             );
             if (!updated) throw new GameError('Cultivator vanished mid-purchase.', 500);
             recordACopyHeld(this.db, cultivator.id, offer.thingId);
+            this.nameWhatTheyGot(offer.name, offer.askStones);
             this.repos.runs.incrementTurn(run.id, 1);
             return updated;
         })();
