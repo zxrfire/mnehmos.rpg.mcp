@@ -1050,6 +1050,22 @@ export interface SomebodyInTheSquare {
      */
     withNames: string[];
     /**
+     * TIES THIS PERSON HOLDS TO OTHERS STANDING RIGHT HERE.
+     *
+     * Filtered by the caller to people in this square whom this cultivator
+     * can name, because a relation clause naming somebody the player cannot
+     * name is a discovery-gate leak, and because 84% of the ties in an aged
+     * world point at somebody no longer alive.
+     *
+     * Directed, as the world stores them: the kind says which end of it this
+     * person is holding. A `master` row is held by the student.
+     */
+    tiesHere?: readonly { name: string; kind: string }[];
+    /** Their house, for the relation of last resort. */
+    houseId?: string | null;
+    /** Where they stand on its roll. Lower is junior. -1 when unaffiliated. */
+    rankIndex?: number;
+    /**
      * What they have on their mind, or null - which is most people.
      *
      * See `what-somebody-here-is-chewing-on.ts`. A STATED FACT about their
@@ -1142,6 +1158,91 @@ export function whoTheGroundHandsYou(
         if (best === null || person.playsToTheRoom > best.playsToTheRoom) best = person;
     }
     return best;
+}
+
+/**
+ * WHAT ONE PERSON IS TO ANOTHER, said as a fact and not as a temperature.
+ *
+ * The world stores ties directed, and the kind names which end is being held.
+ * `master` is the row a STUDENT keeps, so its sentence runs the other way round
+ * from `disciple`, and the same for the other three reciprocal pairs. Nothing
+ * here reports how anybody feels about it: `standing` is a number this
+ * deliberately does not read, because "they resent it" is the narrator's to
+ * write if the scene earns it, and the engine's job is to say the tie exists.
+ */
+function whatTheyAreToEachOther(holder: string, kind: string, other: string): string | null {
+    switch (kind) {
+        case 'master': return `${holder} studies under ${other}`;
+        case 'disciple': return `${other} studies under ${holder}`;
+        case 'parent': return `${other} raised ${holder}`;
+        case 'child': return `${holder} raised ${other}`;
+        case 'spouse': return `${holder} and ${other} are married`;
+        case 'kin': return `${holder} and ${other} are of one blood`;
+        case 'patron': return `${holder} took ${other} in`;
+        case 'client': return `${other} took ${holder} in`;
+        case 'creditor': return `${other} owes ${holder}`;
+        case 'debtor': return `${holder} owes ${other}`;
+        case 'ally': return `${holder} and ${other} have stood together`;
+        case 'rival': return `${holder} and ${other} are set against each other`;
+        case 'enemy': return `${holder} holds something against ${other}`;
+        case 'acquaintance': return `${holder} and ${other} have served together`;
+        default: return null;
+    }
+}
+
+/**
+ * THE ONE THING TRUE OF TWO PEOPLE HERE RATHER THAN OF EITHER OF THEM.
+ *
+ * FOUND BY PLAYING. Given three people the census produced three self-contained
+ * sentences, and a model handed three self-contained sentences writes a queue:
+ * "Bai Wanchen stands at a stall... Nearby, Mo Yaozhi is counting... Further
+ * along, Han Ciya is eating." The prompt already tells it to place people
+ * against each other rather than list them, and it could not, because the ONLY
+ * predicate over a pair the facts could express was `withNames` - which arrives
+ * already flattened inside the `at` clause. The queue was in the facts.
+ *
+ * So exactly one relation per square, on the same discipline `chewing` follows
+ * and for the same reason: a room where every pair has a history is a soap
+ * opera, and the third one a player reads is the one they stop reading.
+ *
+ * Cheapest true thing first. A tie the world actually wrote beats a rank gap,
+ * because it is a relationship rather than a coincidence of paperwork.
+ */
+function whatIsTrueOfTwoOfThem(ordered: readonly SomebodyInTheSquare[]): string | null {
+    if (ordered.length < 2) return null;
+    const here = new Set(ordered.map(person => person.name));
+
+    // A NAMED TIE, tried from whoever the room is arranged around first, so the
+    // relation binds to the person the prose is already about.
+    for (const person of ordered) {
+        for (const tie of person.tiesHere ?? []) {
+            if (!here.has(tie.name) || tie.name === person.name) continue;
+            const said = whatTheyAreToEachOther(person.name, tie.kind, tie.name);
+            if (said !== null) return `${said}.`;
+        }
+    }
+
+    // FAILING THAT, THE ROLL. Two people of one house with a rung between them
+    // is the commonest relation in this setting and the one the genre runs on.
+    for (const person of ordered) {
+        if (!person.houseId) continue;
+        for (const other of ordered) {
+            if (other.name === person.name || other.houseId !== person.houseId) continue;
+            if ((person.rankIndex ?? -1) <= (other.rankIndex ?? -1)) continue;
+            return `${person.name} stands above ${other.name} on the same roll.`;
+        }
+    }
+
+    // AND SHARING A HOUSE AND NOTHING ELSE is still a relation, and still worth
+    // the clause: they answer to the same people.
+    for (const person of ordered) {
+        if (!person.houseId) continue;
+        const other = ordered.find(
+            candidate => candidate.name !== person.name && candidate.houseId === person.houseId
+        );
+        if (other) return `${person.name} and ${other.name} answer to the same house.`;
+    }
+    return null;
 }
 
 function describeCompany(
@@ -1279,6 +1380,12 @@ function describeCompany(
                 );
             }
         }
+
+        // AND ONE THING TRUE OF TWO OF THEM RATHER THAN OF EITHER. Without it
+        // the square is N self-contained facts and no model can write a room
+        // out of that. See `whatIsTrueOfTwoOfThem`.
+        const between = whatIsTrueOfTwoOfThem(ordered);
+        if (between !== null) sentences.push(between);
     }
 
     // Everybody else is a crowd, with at most one figure lifted out of it -

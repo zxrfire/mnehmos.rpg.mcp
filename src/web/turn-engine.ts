@@ -12361,11 +12361,38 @@ ${fit.line}`;
                     // this from it would make the same person read differently
                     // depending on which table the caller happened to reach -
                     // the exact thing deriving instead of storing is for.
-                    like: row === null ? null : theOneThingWorthSayingAbout(row)
+                    like: row === null ? null : theOneThingWorthSayingAbout(row),
+                    // WHO ELSE STANDING HERE THEY ARE ANYTHING TO.
+                    //
+                    // Filled after the loop, because a tie is only worth
+                    // carrying when BOTH ends are in this square, and the
+                    // second end has to clear the same knowledge gate the
+                    // first did - otherwise the relation clause names somebody
+                    // the player was never told about.
+                    tiesHere: [],
+                    houseId: person.sectId ?? null,
+                    rankIndex: row?.factionRankIndex ?? -1
                 });
             } else {
                 strangers.push({ ordinal: person.realmOrdinal });
             }
+        }
+
+        // NOW THE TIES, once it is settled who is actually standing here.
+        //
+        // Both ends must be in this square and both must be nameable. The
+        // world's rows are directed, and `reading-a-tie-against-the-roster.ts`
+        // measures 84% of the ties in an aged world pointing at somebody no
+        // longer alive, so this matches against the people actually present
+        // rather than reading the row list raw.
+        const nameableHere = new Map(named.map(person => [person.name, person]));
+        const idByName = new Map(here.map(entry => [entry.name, entry.id]));
+        for (const person of named) {
+            const row = byId.get(idByName.get(person.name) ?? '');
+            if (row === undefined) continue;
+            person.tiesHere = row.relationships
+                .filter(tie => nameableHere.has(tie.targetName) && tie.targetName !== person.name)
+                .map(tie => ({ name: tie.targetName, kind: tie.kind }));
         }
 
         // Deepest first: in a square, the person you notice is the one the
