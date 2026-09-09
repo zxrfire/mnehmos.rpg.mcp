@@ -75,10 +75,12 @@ function fight(
     aggressorOrdinal: number,
     defenderOrdinal: number,
     goal: ConfrontationIntent['goal'],
-    seed: string
+    seed: string,
+    /** What the defender is like, where the test is about their decision. */
+    over: { bearing?: CombatantInput['bearing'] } = {}
 ): { result: ConfrontationResult; a: CombatantInput; d: CombatantInput } {
     const a = fighter('aggressor', aggressorOrdinal);
-    const d = fighter('defender', defenderOrdinal);
+    const d = { ...fighter('defender', defenderOrdinal), ...over };
     return {
         a, d,
         result: resolveConfrontation(a, d, {
@@ -148,17 +150,60 @@ describe('a resolution that settled something does not say nothing was settled',
     });
 });
 
-describe('the far-above direction is unchanged', () => {
-    it('a swing at somebody two realms up is still a no contest, and still costs the swinger nothing in HP', () => {
-        // The control that pointed at the bug in the first place. This half was
-        // always right and must stay right.
+describe('the far-above direction', () => {
+    /**
+     * THIS USED TO ASSERT THAT IT COST THE SWINGER NOTHING, and that was the
+     * defect written down as a contract.
+     *
+     * A player at Qi Condensation swung at a cultivator five realms up, at a
+     * power ratio of 2414 to 1, and the engine refused the swing and printed a
+     * menu of four things that would work instead. The design owner: *"it can't
+     * be refused. You swing at a cultivator way above you... you break your arm,
+     * maybe you just die, or they laugh at your bravery and give you something.
+     * This should fall out."*
+     *
+     * Refusing was the engine protecting a player from their own decision. The
+     * world does not stop a mortal who swings at an immortal; it consumes them,
+     * or is amused by them, and either way something happens.
+     *
+     * What is UNCHANGED, and is what this file's control was really for: it is
+     * still not a fight. The aggressor still cannot reach them, still gets no
+     * exchange of their own, and still cannot win. What changed is that the
+     * stronger party now does something, and the default is to answer once.
+     */
+    it('lets the swing land on the swinger, and still is not a fight', () => {
         const { result, a, d } = fight(29, 45, 'drive_off', 'control');
-        expect(result.outcome).toBe('no_contest');
-        expect(result.winnerId).toBeNull();
-        expect(result.exchanges).toHaveLength(0);
-        expect(result.hp[a.id]).toBe(a.hp);
-        expect(result.hp[d.id]).toBe(d.hp);
         expect(result.narrationHint).toContain('cannot reach');
+        // Not a contest, and not a win for anybody who was contesting.
+        expect(['no_contest', 'lethal']).toContain(result.outcome);
+        // THE SWING COST SOMETHING. That is the whole of the change.
+        expect(result.hp[a.id]).toBeLessThan(a.hp);
+        // And nothing touched the person far above.
+        expect(result.hp[d.id]).toBe(d.hp);
+        // The decision is recorded, because the world layer has to act on it.
+        expect(result.theirDecision).toBeTruthy();
+    });
+
+    /**
+     * AND SOMEBODY OPEN-HANDED IS AMUSED INSTEAD, which is the third of the
+     * owner's three outcomes and the one that turns a hopeless swing into the
+     * genre's oldest turning point.
+     */
+    it('leaves them standing when the person above them is amused', () => {
+        const { result, a } = fight(29, 45, 'drive_off', 'amused', {
+            bearing: { push: 0, room: 0, openHanded: 1 }
+        });
+        expect(result.theirDecision).toBe('indulges');
+        expect(result.hp[a.id]).toBe(a.hp);
+        expect(result.injuries[a.id]).toHaveLength(0);
+    });
+
+    it('finishes it when the person above them is the sort who does', () => {
+        const { result, a } = fight(29, 45, 'drive_off', 'finisher', {
+            bearing: { push: 1, room: 0, openHanded: 0 }
+        });
+        expect(result.theirDecision).toBe('kills');
+        expect(result.hp[a.id]).toBeLessThan(a.hp);
     });
 
     it('the gap that gates it is the same constant in both directions', () => {

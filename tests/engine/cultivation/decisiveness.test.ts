@@ -117,7 +117,12 @@ describe('the ends of the curve, which must not move', () => {
             ambient: 'normal', turn: 1, vector: 'body',
             attackerEdges: [], defenderEdges: [], intent: { goal: 'drive_off' }
         });
-        expect(result.exchanges).toHaveLength(0);
+        // Two realms is still not a fight. What the aggressor gets is still
+        // nothing; the single exchange is the answer from above, which used
+        // to be absent and was the defect - a swing that cost the person
+        // swinging it nothing whatsoever.
+        expect(result.exchanges.filter(x => x.attackerId === result.aggressor.id ))
+            .toHaveLength(0);
     });
 });
 

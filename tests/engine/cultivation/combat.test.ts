@@ -441,12 +441,22 @@ describe('resolveConfrontation', () => {
         );
 
         expect(result.outcome).toBe('no_contest');
-        expect(result.exchanges).toEqual([]);
+        // THE AGGRESSOR STILL GETS NOTHING, which is what this asserted and
+        // is still the property. What it used to assert was that NOBODY got
+        // anything, and that was the defect: the swing was refused outright
+        // and cost the person swinging nothing at all. The one exchange here
+        // is the answer from above, run through the ordinary exchange code.
+        expect(result.exchanges.some(x => x.attackerId === 'weak')).toBe(false);
         expect(result.winnerId).toBeNull();
         expect(result.gap.options).toBe(REAL_OPTIONS);
         expect(result.finished).toBe(false);
-        // Nothing happened, so nobody was hurt and nobody owes anybody anything.
-        expect(result.hp.weak).toBe(100);
+        // AND THE SWING COST SOMETHING, which is the half that was missing.
+        // “Nothing happened, so nobody was hurt” was what this said, and a
+        // world where swinging at somebody far above you is free is a world
+        // with no danger in it. The person above is untouched, which is the
+        // part that was always right.
+        expect(result.hp.weak).toBeLessThan(100);
+        expect(result.hp.strong).toBe(100);
         expect(result.obligations).toEqual([]);
     });
 
@@ -637,7 +647,9 @@ describe('resolveConfrontation', () => {
             baseCtx({ rng: rng('upset'), attackerEdges: [...ALL_EDGES], intent: { goal: 'kill' } })
         );
         expect(result.outcome).toBe('no_contest');
-        expect(result.exchanges).toEqual([]);
+        // Everything brought still does not overturn two realms: the
+        // underdog lands nothing. The exchange present is the answer.
+        expect(result.exchanges.some(x => x.attackerId === 'underdog')).toBe(false);
     });
 
     it('records a crippling wound as a crippling rather than a mere withdrawal', () => {

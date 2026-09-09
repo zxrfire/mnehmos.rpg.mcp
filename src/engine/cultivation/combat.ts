@@ -51,6 +51,21 @@ import type { CultivationRNG } from './rng.js';
 // Every constant here is a design statement. Read the comment before changing
 // the number; several of them are load-bearing for rules 1 and 2.
 
+import {
+    theyLayAHandOn,
+    whatTheyDecided,
+    whatTheyDoAboutIt,
+    type WhatTheyAreLike,
+    type WhatTheyDo
+} from './what-somebody-far-above-you-does-about-it.js';
+
+/**
+ * Somebody the caller could not read. The floor, and not a shrug: it lands on
+ * answering once and stopping, which is what `whatTheyDoAboutIt` does with a
+ * person it knows nothing about.
+ */
+const UNREADABLE_BEARING: WhatTheyAreLike = { push: 0, room: 0, openHanded: 0 };
+
 /**
  * Major-realm gap at which a direct confrontation stops being a fight.
  */
@@ -241,6 +256,19 @@ export interface CombatantInput {
     technique?: Technique | null;
     /** Mastery of that art as THIS combatant holds it, 0..1. */
     techniqueMastery?: number;
+    /**
+     * WHAT THIS PERSON IS LIKE, when they are the one being swung at from far
+     * below and the decision is theirs alone.
+     *
+     * Three numbers the world already derives about everybody - `push` and
+     * `room` from `whatSomebodyIsLike`, `openHanded` from `openHandednessOf` -
+     * supplied by the caller because who somebody IS lives in the world layer
+     * and this engine is pure. The same seam the breakthrough toll uses.
+     *
+     * Absent means the caller could not see them, and the decision falls to the
+     * floor in `whatTheyDoAboutIt`, which is answering once and stopping.
+     */
+    bearing?: WhatTheyAreLike;
 }
 
 export interface PowerContext {
@@ -1106,6 +1134,14 @@ export interface ExchangeRecord {
 
 export interface ConfrontationResult {
     outcome: ConfrontationOutcome;
+    /**
+     * WHAT THE STRONGER PARTY DECIDED, when the gap made the decision theirs.
+     *
+     * Absent on an ordinary fight, where nobody was in a position to decide
+     * anything alone. `indulges` is the one the caller has work to do about:
+     * this engine owns no object catalog and cannot hand anything over.
+     */
+    theirDecision?: WhatTheyDo;
     /** Null for `no_contest` and `stalemate`. */
     winnerId: string | null;
     loserId: string | null;
@@ -1191,12 +1227,81 @@ export function theGapDecidesItAlone(
         // `weaponExposure` reaches certainty on the body alone, so nothing is
         // rolled here either: it is not luck, it is what happens.
         const swung = aggressor.weapon === null ? null : atRisk(aggressor.weapon, defender, ctx.rng);
-        return noContest(aggressor, defender, gap, hp, injuries, aggressorInput.id, defenderInput.id,
-            `${aggressorInput.name} cannot reach ${defenderInput.name}. ${gap.summary}` +
-            (swung?.broke ? ` ${swung.objectName} did not survive the attempt. ${swung.narrationHint}` : ''),
-            swung?.broke
-                ? [{ carrierId: aggressorInput.id, breakerId: defenderInput.id, broke: swung }]
-                : []);
+        const broken = swung?.broke
+            ? [{ carrierId: aggressorInput.id, breakerId: defenderInput.id, broke: swung }]
+            : [];
+        const struck = `${aggressorInput.name} cannot reach ${defenderInput.name}. ${gap.summary}`
+            + (swung?.broke
+                ? ` ${swung.objectName} did not survive the attempt. ${swung.narrationHint}`
+                : '');
+
+        // AND THEN THEY DECIDE, WHICH IS THE HALF THAT WAS MISSING.
+        //
+        // This used to stop here, with the swing spent and nothing whatever
+        // happening to the person who took it. The design owner: *"it can't be
+        // refused. You swing at a cultivator way above you... you break your
+        // arm, maybe you just die, or they laugh at your bravery and give you
+        // something."*
+        //
+        // `no_contest` was always the right FRAME - its own description calls it
+        // "a decision the stronger party made alone" - and the only thing wrong
+        // with it was that the decision was always nothing. It is read off the
+        // person making it now. See
+        // `what-somebody-far-above-you-does-about-it.ts`.
+        const decision = whatTheyDoAboutIt(defenderInput.bearing ?? UNREADABLE_BEARING);
+        const decided = `${defenderInput.name} decided. ${whatTheyDecided(decision)}`;
+
+        if (!theyLayAHandOn(decision)) {
+            // Left standing. What they walk away carrying is the caller's to
+            // settle: this engine owns no object catalog and cannot hand
+            // anything over, so it records the decision and the world layer
+            // acts on it.
+            return {
+                ...noContest(aggressor, defender, gap, hp, injuries,
+                    aggressorInput.id, defenderInput.id, `${struck} ${decided}`, broken),
+                theirDecision: decision
+            };
+        }
+
+        // A HAND LAID ON, THROUGH THE ORDINARY EXCHANGE.
+        //
+        // One exchange, roles reversed, run by the same code every other blow in
+        // the game goes through - so the wound, the damage and the chance of it
+        // being an ending are what the engine already says they are at this
+        // distance, and nothing about consequences is written twice. At this
+        // ratio it will usually be a removal, which is exactly "maybe you just
+        // die" and is not a special case.
+        const answered = resolveExchange(defender, aggressor, aggressorInput.maxHp, {
+            ...ctx,
+            vector: 'body'
+        } as ExchangeContext);
+        const left = Math.max(0, (hp[aggressorInput.id] ?? aggressorInput.hp) - answered.damage);
+        const after: Record<string, number> = { ...hp, [aggressorInput.id]: left };
+        const hurt: Record<string, Injury[]> = { ...injuries };
+        if (answered.injury) {
+            hurt[aggressorInput.id] = [...(hurt[aggressorInput.id] ?? []), answered.injury];
+        }
+        return {
+            ...noContest(aggressor, defender, gap, after, hurt,
+                aggressorInput.id, defenderInput.id,
+                `${struck} ${decided} ${answered.narrationHint ?? ''}`.trim(), broken),
+            // `lethal` is the outcome for a finishing requirement actually
+            // met, and that is what this is. It stays `no_contest` otherwise,
+            // because it still was not a fight - it was a decision, and one
+            // blow does not make it a contest.
+            outcome: left <= 0 ? 'lethal' : 'no_contest',
+            winnerId: left <= 0 ? defenderInput.id : null,
+            loserId: left <= 0 ? aggressorInput.id : null,
+            finished: left <= 0,
+            exchanges: [{
+                index: 0,
+                attackerId: defenderInput.id,
+                defenderId: aggressorInput.id,
+                result: answered,
+                defenderHpAfter: left
+            }],
+            theirDecision: decision
+        };
     }
     if (reverseGap.verdict === 'helpless') {
         return oneSided(aggressor, defender, gap, ctx, aggressorInput, defenderInput, hp, injuries);

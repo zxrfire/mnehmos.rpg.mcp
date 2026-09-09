@@ -2,6 +2,8 @@
  * Hitting somebody, and everything the world does about it afterwards.
  */
 
+import { openHandednessOf } from '../engine/social-leverage/how-freely-somebody-parts-with-what-they-have.js';
+import { whatSomebodyIsLike } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getPill, getSect, getTechnique } from '../data/cultivation/index.js';
@@ -414,7 +416,22 @@ export const combatVerbs = {
                     : {})
             };
 
-        const opponentBody = combatantFromOpponent(opponentSpec, this.repos);
+        // WHO THEY ARE, for the one case where the decision is theirs alone.
+        //
+        // A swing from far below is not refused and is not free: the person
+        // swung at decides what happens, and what they decide is read off
+        // three numbers the world already keeps about everybody. This is the
+        // only place that can see them, because a cultivators row carries no
+        // disposition and the combat engine is pure.
+        const bearing = theirRecord
+            ? {
+                ...whatSomebodyIsLike(theirRecord),
+                openHanded: openHandednessOf(theirRecord.id)
+            }
+            : undefined;
+        const opponentBody = combatantFromOpponent(
+            { ...opponentSpec, ...(bearing ? { bearing } : {}) }, this.repos
+        );
         if (isGuidingErrorBody(opponentBody)) {
             return this.fromToolResult(
                 'combat_manage.resolve', intent === 'coerce' ? 'coerce' : 'attack',

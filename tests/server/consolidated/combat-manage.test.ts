@@ -359,7 +359,20 @@ describe('combat_manage', () => {
             expect(result.killRequirement.soulAttackWorks).toBe(false);
         });
 
-        it('refuses across a categorical gap and hurts nobody doing it', async () => {
+        /**
+         * THIS ASSERTED THAT IT HURT NOBODY, and that was the defect stated as
+         * a contract.
+         *
+         * The design owner, on a player who swung at a cultivator five realms
+         * up and was handed a menu instead: *"it can't be refused. You swing at
+         * a cultivator way above you... you break your arm, maybe you just die,
+         * or they laugh at your bravery and give you something."*
+         *
+         * What is unchanged is that it is still not a fight and the aggressor
+         * still lands nothing. What changed is that the person swung at now
+         * does something about it, and answering once is the floor.
+         */
+        it('is not a fight, and the swing still costs the person who took it', async () => {
             const created = await newCultivator();
             const id = created.cultivator.id;
             const repo = new CultivatorRepository(db);
@@ -371,9 +384,12 @@ describe('combat_manage', () => {
                 opponent: { name: 'an ancestor', realmOrdinal: realmStart('void_refinement') }
             });
 
-            expect(result.outcome).toBe('no_contest');
-            expect(result.exchanges).toEqual([]);
-            expect(repo.getById(id)!.hp).toBe(before.hp);
+            expect(['no_contest', 'lethal']).toContain(result.outcome);
+            // The aggressor lands nothing. That half was always right.
+            expect(result.exchanges.some((x: { attackerId: string }) => x.attackerId === id))
+                .toBe(false);
+            // And it cost them, which is the half that was missing.
+            expect(repo.getById(id)!.hp).toBeLessThan(before.hp);
         });
 
         it('advances the run turn exactly once', async () => {

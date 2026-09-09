@@ -103,7 +103,21 @@ const OpponentSchema = z.object({
     artifactGrade: z.number().min(0).max(5).optional(),
     battlesSurvived: z.number().int().min(0).optional(),
     /** Untreated injuries they are already carrying. The commonest real edge. */
-    untreatedInjuries: z.number().int().min(0).max(10).optional()
+    untreatedInjuries: z.number().int().min(0).max(10).optional(),
+    /**
+     * WHAT THEY ARE LIKE, for the one case where the decision is theirs alone.
+     *
+     * Only read when the gap is categorical and somebody far below swings at
+     * them. Derived by the caller from what the world already keeps about
+     * them - `whatSomebodyIsLike` and `openHandednessOf` - because who
+     * somebody IS lives in the world layer and the combat engine is pure.
+     * See `what-somebody-far-above-you-does-about-it.ts`.
+     */
+    bearing: z.object({
+        push: z.number().min(-1).max(1),
+        room: z.number().min(-1).max(1),
+        openHanded: z.number().min(-1).max(1)
+    }).optional()
 });
 
 const AssessSchema = z.object({
@@ -277,7 +291,9 @@ export function combatantFromOpponent(
                 hint: 'Omit cultivatorId and describe the opponent instead, or cultivation_manage({ action: "list" }).'
             });
         }
-        return combatantFromCultivator(row, repos);
+        // The bearing rides through: a row in the cultivators table carries
+        // no disposition, and the caller is the only one who can see it.
+        return { ...combatantFromCultivator(row, repos), ...(spec.bearing ? { bearing: spec.bearing } : {}) };
     }
 
     if (spec.realmOrdinal === undefined) {
@@ -302,6 +318,7 @@ export function combatantFromOpponent(
     return {
         id: `opponent:${(spec.name ?? 'unnamed').toLowerCase().replace(/\s+/g, '-')}`,
         name: spec.name ?? 'the other one',
+        ...(spec.bearing ? { bearing: spec.bearing } : {}),
         realmOrdinal: spec.realmOrdinal,
         traditionId: spec.traditionId,
         spiritRoot: 'muddled_five_element',
