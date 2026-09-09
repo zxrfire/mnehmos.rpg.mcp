@@ -441,7 +441,9 @@ export function factsForTimeSkip(
     }
 
     for (const event of skip.events) {
-        const line = `Day ${Math.round(event.dayOffset)}: ${event.summary}`;
+        // The same stamp the prose digest uses. This built its own inline
+        // `Day ${n}:` and so the two surfaces disagreed about how to say when.
+        const line = `${howFarIn(event.dayOffset)}: ${event.summary}`;
         lines.push(line);
         // Why nothing is accumulating is not an incidental detail of a long
         // span: it is the only thing in the digest a player has to act on, and
@@ -755,14 +757,31 @@ function theDeathSentence(name: string, cause: DeathCause | null | undefined, or
         + 'The run is closed. There is no reload.';
 }
 
+/**
+ * HOW FAR INTO THE STRETCH SOMETHING HAPPENED, in the words a person uses.
+ *
+ * "Day 133:" is a form field, and it stood at the head of every line in the
+ * densest block of facts the narrator is ever handed - a hundred-day seclusion
+ * digest, one stamped row per thing that happened. A player running without a
+ * model reads it exactly as printed.
+ *
+ * `humanDays` has always existed and says "4 months" where this said "133", and
+ * what an offset into a stretch actually means is a distance rather than a
+ * date: nobody sitting a year in a cave thinks of the hundred and thirty-third
+ * day, they think of four months in. So it is a distance now.
+ *
+ * Day nought is the exception and gets its own words, because "0 days in" is
+ * the form field all over again.
+ */
+function howFarIn(dayOffset: number): string {
+    const day = Math.max(0, Math.round(dayOffset));
+    if (day === 0) return 'At the outset';
+    if (day === 1) return 'The next day';
+    return `${humanDays(day)} in`;
+}
+
 function dayStamp(event: SimEvent): string {
-    const day = Math.round(event.dayOffset);
-    if (day >= DAYS_PER_YEAR) {
-        const years = Math.floor(day / DAYS_PER_YEAR);
-        const rest = day - years * DAYS_PER_YEAR;
-        return `Year ${years}${rest > 0 ? `, day ${rest}` : ''}`;
-    }
-    return `Day ${day}`;
+    return howFarIn(event.dayOffset);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
