@@ -9813,11 +9813,25 @@ ${opened.text}` : receipt,
             execution.facts.prose = `${execution.facts.prose}
 
 ${fit.line}`;
+            // THE FINDINGS, NOT THE RUBRIC.
+            //
+            // This used to read “It reads as suited for this body at Qi
+            // Condensation Layer 1, judged on 2 axises: reach match, element
+            // match.” The design owner: *“this is not great. this is tell not
+            // show.”* Correct twice over. It recited the SCORING PROCEDURE -
+            // how many axes were consulted and what each returned - which is
+            // the engine reading its own marking scheme aloud, and it threw
+            // away the one thing worth printing: every `FitAxis` already
+            // carries an engine-authored factual `note` saying what it FOUND.
+            // “It is written for wood, which is what this cultivator draws” is
+            // a fact a reader can do something with; “element match” is a
+            // column heading.
+            //
+            // Dropping the count also removes the pluralisation it was
+            // getting wrong: `axis` + `es` is “axises”, which is not a word.
             execution.facts.structure.push(
-                `It reads as ${fit.fit} for this body at `
-                + `${theRung(fit.gradeOrdinal)}, judged on `
-                + `${fit.axes.length} axis${fit.axes.length === 1 ? '' : 'es'}: `
-                + fit.axes.map(a => `${a.axis} ${a.verdict}`).join(', ') + '.'
+                `${technique.name} is cut for a body at ${theRung(fit.gradeOrdinal)}. `
+                + fit.axes.map(axis => axis.note).join(' ')
             );
             execution.calls.push({
                 name: 'encounters.assessFit',
