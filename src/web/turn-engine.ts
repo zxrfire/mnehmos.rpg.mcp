@@ -2937,13 +2937,29 @@ export class GameService {
             case 'breakthrough': {
                 const eligibility = canAttemptBreakthrough(cultivator);
                 if (!eligibility.eligible) {
+                    // AND THE FIGURES, WHICH THE PLAYER PLANS AGAINST.
+                    //
+                    // FOUND BY PLAYING. This called `factsForRefusal` with two
+                    // arguments, so the mechanical channel got nothing and the
+                    // whole of what a player saw was the headline: “The barrier
+                    // does not move.” The prose DOES carry the numbers, and the
+                    // model paraphrased them out - “the qi within you is a
+                    // shallow pool” - which is a fair sentence and not a number
+                    // anybody can sit down against.
+                    //
+                    // Compare the refusal a player gets for cultivating with
+                    // no method, which is the same situation done right: it
+                    // names the rate, says it is zero, and says what would
+                    // change it. A wall a player cannot see the distance to is
+                    // a wall they cannot plan for.
                     return refused('engine.canAttemptBreakthrough', 'breakthrough', factsForRefusal(
                         'The barrier does not move.',
                         refusalText(
                             eligibility.reason, eligibility.progressAvailable,
                             eligibility.progressRequired,
                             { held: eligibility.daoHeld, required: eligibility.daoRequired }
-                        )
+                        ),
+                        this.whatTheWallIsAskingFor(cultivator, eligibility)
                     ));
                 }
                 return this.strikeBarrier(run, cultivator, ambient);
@@ -7440,6 +7456,66 @@ ${opened.text}` : receipt,
      */
     private static readonly PRICE_PHYSICIAN_VISIT = 'price-doctor-visit';
     private static readonly PRICE_COURSE_OF_CARE = 'price-splint-and-month';
+
+    /**
+     * WHAT THE WALL IS ASKING FOR, IN FIGURES.
+     *
+     * FOUND BY PLAYING. Striking the barrier too early answered with a headline
+     * and nothing else - *"The barrier does not move."* - because the refusal
+     * was built without a mechanical channel at all. The prose does carry the
+     * numbers, and the model paraphrased them out: *"the qi within you is a
+     * shallow pool, insufficient to bridge the gap."* A fair sentence, and not
+     * something anybody can sit down against.
+     *
+     * The refusal a player gets for cultivating with no method is the same
+     * situation done right, and it is the standard this is written to: it names
+     * the rate, says it is zero, and says what would change it. A wall a player
+     * cannot see the distance to is a wall they cannot plan for, and planning
+     * against a wall is most of what this game is.
+     *
+     * Every figure here is one the eligibility check already computed. Nothing
+     * is derived a second time, so the sentence cannot come to disagree with
+     * the decision it explains.
+     */
+    private whatTheWallIsAskingFor(
+        cultivator: Cultivator,
+        eligibility: ReturnType<typeof canAttemptBreakthrough>
+    ): string {
+        const said: string[] = [
+            `Standing at ${theRung(cultivator.realmOrdinal)}, striking for `
+            + `${theRung(Math.min(MAX_ORDINAL, cultivator.realmOrdinal + 1))}.`
+        ];
+
+        if (eligibility.progressRequired === null) {
+            // Above the Lid the requirement is not denominated in qi at all,
+            // and quoting a figure would invent an exchange rate. Say that
+            // rather than printing a number that means nothing.
+            said.push('What is above this is not bought with qi, so there is no figure to give.');
+        } else {
+            const short = Math.max(0, eligibility.progressRequired - eligibility.progressAvailable);
+            said.push(
+                `Progress ${Math.round(eligibility.progressAvailable)} of `
+                + `${eligibility.progressRequired}, which is ${Math.round(short)} short.`
+            );
+            // The two halves of what is available are different things and a
+            // player can only act on one of them, so they are named apart.
+            if (eligibility.progressSubstituted > 0) {
+                said.push(
+                    `${Math.round(eligibility.progressAccumulated)} of that was gathered and `
+                    + `${Math.round(eligibility.progressSubstituted)} is what understanding stands `
+                    + 'in for.'
+                );
+            }
+        }
+
+        if (eligibility.daoRequired > 0) {
+            said.push(
+                `Roads besides your own: ${eligibility.daoHeld} held against `
+                + `${eligibility.daoRequired} this rung asks for.`
+            );
+        }
+        return said.join(' ');
+    }
 
     /**
      * Getting a wound seen to.

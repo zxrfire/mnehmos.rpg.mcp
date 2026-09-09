@@ -143,7 +143,12 @@ describe('whose order it is', () => {
         // and cannot overwrite this.
         const asked = turn.toolCalls.find(row => row.name === 'engine.canAttemptBreakthrough');
         expect(asked, JSON.stringify(turn.toolCalls.map(row => row.name))).toBeDefined();
-        expect(asked!.summary).toContain('The barrier does not move.');
+        // The summary is the mechanical channel, and it used to be the bare
+        // headline because this refusal was built without one. It now
+        // carries the distance, which is what a player plans against and
+        // what a model cannot paraphrase away.
+        expect(asked!.summary).toMatch(/striking for/);
+        expect(asked!.summary).toMatch(/\bshort\b/);
         expect(turn.toolCalls.some(row => row.name === 'engine.whichComesFirst')).toBe(false);
         // And the year is not spent on a crossing that did not happen.
         expect(game.state().run.elapsedDays).toBe(before);
