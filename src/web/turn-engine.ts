@@ -132,6 +132,13 @@ import {
 import { whatTheBodyWants } from '../engine/social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
 import { putIntoTheHouse, takeFromTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { whatThatLooksLike, whetherTheyWouldLookUp } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
+import {
+    howTheyComeToKnowIt,
+    whatTheyCouldPlaceForYou,
+    whatTheySayAboutWhoHoldsIt,
+    whoTheyCouldPointYouAt
+} from '../engine/world/who-they-could-point-you-at.js';
+import { TECHNIQUES } from '../data/cultivation/index.js';
 import { getConveyance } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { Price } from '../data/cultivation/mortal-world.js';
 import {
@@ -4597,6 +4604,35 @@ ${noticed}`;
         // everything else uses. Unresolvable is a real outcome, not an error:
         // people are asked about things that do not exist all the time.
         const subject = resolveAnything(this.repos, topic, cultivator, scope);
+
+        // ── AND IF THE ASKER DOES NOT KNOW IT, THE PERSON ASKED MIGHT ────
+        //
+        // `resolveAnything` is filtered by the ASKER's knowledge gate, so a
+        // question about something the player has not heard of resolves to
+        // nothing before the person answering is consulted at all. Measured
+        // across this layer: no answer in the game could name a third party the
+        // player did not already know, so somebody could be asked where to
+        // learn an art, know exactly who teaches it, and structurally not say.
+        //
+        // The design owner: *"you can imagine an elder telling you the
+        // patriarch teaches technique x. Even if they don't have it."*
+        //
+        // So the art is resolved off the CATALOG rather than off what the
+        // player holds, and who could be sent to is read off what the SPEAKER
+        // is in a position to know - their own roll, or the square in front of
+        // them. `whoWouldAsk` predicted this exact gap in its own comment: the
+        // house roll was left out "only because nothing hands this method a
+        // curriculum". This is the curriculum.
+        const pointed = subject === null
+            // ANYTHING THEY KNOW, first, because that is the rule. The
+            // art-holder read below is one instance of it and not the shape of
+            // it: the design owner, on an earlier cut that only did arts -
+            // *"remember this is pointing you at ANYTHING they know. That's the
+            // non-bespoke case."*
+            ? this.whatTheyCouldPlaceForYou(cultivator, asked, topic)
+              ?? this.whoTheyWouldSendYouTo(cultivator, asked, topic)
+            : null;
+        if (pointed !== null) return pointed;
 
         // Whether the player can put a name to the person they are talking
         // to, decided BEFORE the answer, so a stranger stays a stranger
@@ -13001,6 +13037,173 @@ ${fit.line}`;
     /** Everything this cultivator has heard of. The narrator's whitelist. */
     private awarenessOf(cultivator: Cultivator): AwarenessRow[] {
         return this.knowledge.awareness(cultivator.id);
+    }
+
+    /**
+     * ANYTHING THIS PERSON CAN PLACE THAT THE ASKER CANNOT.
+     *
+     * The general case, and the art-holder read below is one instance of it.
+     * One predicate, applied to whatever the topic turned out to name: a person
+     * on their own roll, a person standing here, their own house, the ground
+     * under them. No branch per question and no list of question types.
+     *
+     * Resolved off the catalogs UNGATED, because what the player can place must
+     * decide what they are told about and must not decide what somebody else is
+     * able to know. That inversion is the whole fix.
+     */
+    private whatTheyCouldPlaceForYou(
+        cultivator: Cultivator,
+        asked: RosterEntry,
+        topic: string
+    ): Execution | null {
+        if (!this.atHand) return null;
+        // Ungated: no `scope`, so this is the world's own catalogs rather than
+        // the player's slice of them.
+        const named = resolveAnything(this.repos, topic, cultivator);
+        if (named === null) return null;
+        if (named.kind !== 'cultivator' && named.kind !== 'sect' && named.kind !== 'place') {
+            return null;
+        }
+        // Already theirs to name, so there is nothing to be told.
+        if (this.knowledge.isAwareOf(cultivator.id, named.kind, named.id)) return null;
+
+        const here = this.present(cultivator);
+        const placed = whatTheyCouldPlaceForYou({
+            subject: { id: named.id, name: named.name, kind: named.kind },
+            speakerId: asked.id,
+            speakerFactionId: asked.sectId ?? null,
+            speakerFactionName: asked.sectName ?? null,
+            hereName: placeName(cultivator),
+            hereIds: new Set(here.map(row => row.id)),
+            ownRollIds: new Set(
+                this.atHand.npcs
+                    .filter(npc => asked.sectId !== null && npc.factionId === asked.sectId)
+                    .map(npc => npc.id)
+            )
+        });
+        if (placed === null) return null;
+
+        this.knowledge.learnIfNew({
+            holderId: cultivator.id,
+            onDay: Math.floor(this.currentRun().run.elapsedDays),
+            kind: named.kind,
+            subjectId: named.id,
+            subjectName: named.name,
+            stage: 'heard_of',
+            source: 'told'
+        } as never);
+        this.namedThisTurn.push({ name: named.name });
+
+        const lines = [
+            `${asked.name} can place ${named.name}, and says so.`,
+            howTheyComeToKnowIt(placed),
+            'What you have now is the name. What it is worth is a separate question.'
+        ];
+        return {
+            facts: observable(
+                `${asked.name} places ${named.name} for you.`,
+                lines,
+                lines.join('\n\n'),
+                [
+                    `${asked.name} could place ${named.name} (${named.kind}) because it is `
+                    + `${placed.because}. Heard of by this cultivator now, and not before.`
+                ]
+            ),
+            events: [], timeSkip: null, breakthrough: null, outcome: 'executed',
+            calls: [{
+                name: 'engine.whatTheyCouldPlaceForYou',
+                action: 'ask',
+                summary: `${asked.name} placed ${named.name}: ${placed.because}.`,
+                ok: true
+            }]
+        };
+    }
+
+    /**
+     * BEING SENT TO SOMEBODY, which is how anybody in this setting gets
+     * anywhere.
+     *
+     * Null unless all of it lines up: the topic names an art in the catalog,
+     * the person being asked is in a position to know who holds it, and that
+     * somebody is not already known to the player. Every one of those is a real
+     * refusal and the commonest outcome is still a shrug.
+     *
+     * The name is WRITTEN to the knowledge table before it is narrated, for the
+     * reason the whole knowledge layer exists: a name that lives only inside a
+     * paragraph is a name the next turn cannot accept.
+     */
+    private whoTheyWouldSendYouTo(
+        cultivator: Cultivator,
+        asked: RosterEntry,
+        topic: string
+    ): Execution | null {
+        if (!this.atHand) return null;
+        // The catalog, ungated. What the PLAYER can place decides what they are
+        // told about; it must not decide what somebody else is able to know.
+        // Straight off the catalog. A loose contains-match, because the
+        // player is naming an art they have never seen written down.
+        const wanted = topic.trim().toLowerCase();
+        const art = wanted.length < 3
+            ? null
+            : TECHNIQUES.find(entry => entry.name.toLowerCase() === wanted)
+                ?? TECHNIQUES.find(entry => entry.name.toLowerCase().includes(wanted))
+                ?? null;
+        if (art === null) return null;
+        // Somebody who already holds it is not asking where to find it.
+        if (this.repos.techniques.getKnown(cultivator.id, art.id)) return null;
+
+        const here = this.present(cultivator);
+        const known = new Set<string>([cultivator.id]);
+        for (const row of here) {
+            if (this.knowledge.isAwareOf(cultivator.id, 'cultivator', row.id)) known.add(row.id);
+        }
+        const sent = whoTheyCouldPointYouAt({
+            speakerId: asked.id,
+            speakerFactionId: asked.sectId ?? null,
+            hereIds: new Set(here.map(row => row.id)),
+            artId: art.id,
+            exclude: known,
+            npcs: this.atHand.npcs
+        });
+        if (sent === null) return null;
+
+        // Written before narration. See `askAround`.
+        this.knowledge.learnIfNew({
+            holderId: cultivator.id,
+            onDay: Math.floor(this.currentRun().run.elapsedDays),
+            kind: 'cultivator',
+            subjectId: sent.id,
+            subjectName: sent.name,
+            stage: 'heard_of',
+            source: 'told'
+        } as never);
+        this.namedThisTurn.push({ name: sent.name });
+
+        const said = whatTheySayAboutWhoHoldsIt(sent, art.name);
+        const lines = [
+            `${asked.name} does not hold ${art.name}, and knows who does.`,
+            said,
+            `You have a name now and not a road: where ${sent.name} is, and whether they would `
+            + 'teach anybody, are two more questions.'
+        ];
+        return {
+            facts: observable(
+                `${asked.name} names somebody who holds ${art.name}.`,
+                lines,
+                lines.join('\n\n'),
+                [
+                    `${asked.name} could name ${sent.name} because they are ${sent.because}. `
+                    + `${sent.name} is now heard of by this cultivator and was not before.`
+                ]
+            ),
+            events: [], timeSkip: null, breakthrough: null, outcome: 'executed',
+            calls: [{
+                name: 'engine.whoTheyCouldPointYouAt',
+                action: 'ask',
+                summary: `${asked.name} -> ${sent.name} for ${art.name}, ${sent.because}.`,
+                ok: true
+            }]
+        };
     }
 
     /**
