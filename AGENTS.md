@@ -112,6 +112,45 @@ tests pass.
 
 ---
 
+## The engine states what can be perceived, not what the record holds
+
+The engine knows everything. A person standing in a square knows what they can
+see. **A fact the record holds and the eye cannot reach must not be handed to
+the narrator as an observation**, because the narrator will write it as one, and
+what reaches the player is the engine reading its own columns aloud in a
+character's voice.
+
+This has now been caught three times, in three unrelated places, which is why it
+is written down:
+
+| what the engine handed over | what a model wrote | why it is wrong |
+|---|---|---|
+| `carrying somebody else's goods for somebody else's money` | *"carrying goods that do not belong to him for money that does not stay with him"* | ownership is not visible. The design owner: *"how would you know the goods don't belong to him? Only if it's conspicuously marked as sect property. Otherwise you'd just see him haggling with a stranger."* |
+| `has spent most of the years this rung allows` | the same sentence, narrated omnisciently about a stranger | nobody can see how many years somebody else has spent |
+| a person's standing, as a raw ordinal gap | *"five rungs above you"* | a person in a square does not perceive an ordinal at all |
+
+**Three ways out, and only three.**
+
+1. **Make it visible.** A house's property carries the house's mark, and this
+   world already has the machinery for it: plates and tokens
+   (`a-house-knows-its-own-by-a-plate-and-a-token.ts`) and a `house:<id>` tag on
+   the object. Marked property can be described as marked property.
+2. **Route it through somebody who knows.** The person carrying the borrowed
+   blade knows it is borrowed, so it belongs in the channel where they can be
+   heard on it, never in the channel that says what a stranger sees. See
+   `what-somebody-here-is-chewing-on.ts`, whose facts are shaped as *what they
+   can be heard on* for exactly this reason - the first cut handed over the bare
+   fact and the model narrated it straight.
+3. **Say the behaviour and let the reader conclude.** A hired hand is visible as
+   one: they send every question about the price indoors, they carry a load
+   without once looking at it. This is the tier-1 rule the writing already
+   keeps - show the world, never explain it - and it is usually the best answer,
+   because the conclusion the reader draws is worth more than the fact.
+
+The test to apply, before adding any field to a scene-facing fact: **could
+somebody standing there work this out?** If the honest answer is "only if they
+were told", then say who told them, or do not say it.
+
 ## One thing holds state, everything else derives from it
 
 > **A fact lives in exactly one place. Everything that wants it asks; nothing keeps

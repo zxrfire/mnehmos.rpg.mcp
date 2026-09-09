@@ -443,9 +443,25 @@ export function whatTheyOpenAt(input: {
             ]));
         }
         if (input.roll < 0.30) {
+            // WHAT AN ONLOOKER CAN SEE, AND NOT WHAT THE RECORD SAYS.
+            //
+            // Two of these used to assert ownership - 'minding a stall that
+            // belongs to somebody else', 'carrying somebody else’s goods for
+            // somebody else’s money' - and a model narrated the second one
+            // straight: “carrying goods that do not belong to him for money
+            // that does not stay with him.” The design owner: *“how would you
+            // know the goods don’t belong to him? Only if it’s conspicuously
+            // marked as sect property. Otherwise you’d just see him haggling
+            // with a stranger.”*
+            //
+            // Correct, and it is the tier-1 rule this repo already keeps:
+            // show the world, never explain it. A hired hand is visible as
+            // one - by deferring about the price, by not looking at what
+            // they carry - and that is what these say now. The conclusion
+            // is the reader’s, which is also where it belongs.
             return bare('the_work_of_their_rank', pick(input.words, [
-                'minding a stall that belongs to somebody else',
-                'carrying somebody else’s goods for somebody else’s money',
+                'minding a stall, and sending every question about the price indoors',
+                'shouldering a load up from the carts without once looking at it',
                 'sweeping a doorway on a street that will be dusty again by noon',
                 'unloading a cart and counting it as it comes off'
             ]));
