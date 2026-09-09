@@ -2496,7 +2496,55 @@ function readTheSentence(input: string): PlannedAction {
     // reasoning as the mood pass and the same place for it: on the whole
     // sentence, once, rather than as a guard inside every verb that can take a
     // person. See `theQuestionRatherThanTheBystander`.
-    return theQuestionRatherThanTheBystander(mood, planIntent);
+    const answered = theQuestionRatherThanTheBystander(mood, planIntent);
+    // And a trade word is never who you were talking to. Same post-pass shape
+    // and the same reason. See `aTradeWordIsNotSomebodyToTalkTo`.
+    return aTradeWordIsNotSomebodyToTalkTo(answered, input);
+}
+
+/** The words that are always an act and never a person or a thing. */
+const A_TRADE_WORD_AND_NOTHING_ELSE =
+    /^(?:buy|buys|buying|sell|sells|selling|trade|trades|trading|purchase|purchases|purchasing|barter|haggle|shop|shopping)$/i;
+
+/**
+ * A VERB IS NOT SOMEBODY TO TALK TO.
+ *
+ * FOUND BY PLAYING, on the single most important sentence a new cultivator can
+ * type. "I look for a cultivation manual to buy" parsed to
+ * `interact(target="buy")`, so the engine went looking for a person named *buy*,
+ * found nobody, and answered with a list of villagers and the note that four of
+ * them could be spoken to. A player who cannot get a method cannot cultivate at
+ * all - `No method is practised, so the rate multiplier is 0` - so this is the
+ * first door in the game, and the commonest way of asking for it walked into a
+ * wall.
+ *
+ * The table itself is not wrong: the sentence really does contain a trade word,
+ * and `trade` really is an interact intent. What is wrong is taking the trailing
+ * verb as the noun. This repo already knows the failure - the respelling pass
+ * carries a comment about it, that a target of "stole" *"sends the engine
+ * looking for an object that does not exist"* - and this is the same mistake
+ * arrived at from the other direction.
+ *
+ * So: the trailing verb says what to DO, and the noun in front of it says what
+ * with. Where the sentence names one, it becomes the purchase it always was;
+ * where it does not, the board is the honest answer to somebody who came to
+ * buy something unspecified.
+ */
+function aTradeWordIsNotSomebodyToTalkTo(plan: PlannedAction, input: string): PlannedAction {
+    if (plan.action !== 'interact') return plan;
+    if (!A_TRADE_WORD_AND_NOTHING_ELSE.test((plan.target ?? '').trim())) return plan;
+
+    const wanted = /\b(?:for|at)\s+(.+?)\s+to\s+(?:buy|purchase|sell|trade|barter)\b/i
+        .exec(input);
+    const noun = (wanted?.[1] ?? '')
+        .replace(/^(?:a|an|the|some|any|one)\s+/i, '')
+        .trim();
+    // “Something” names nothing. Somebody who came to buy and did not say
+    // what wants the board, which is the answer to that question.
+    const namesNothing = /^(?:something|anything|stuff|things?|goods|supplies|wares)$/i;
+    return noun.length >= 3 && !namesNothing.test(noun)
+        ? { action: 'buy', target: noun }
+        : { action: 'market' };
 }
 
 let vocabulary: ReadonlySet<string> | null = null;

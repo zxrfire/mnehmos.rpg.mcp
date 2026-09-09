@@ -1042,6 +1042,42 @@ describe('buying a line off the price board', () => {
         expect(parseIntent('I go to the market').action).toBe('market');
     });
 
+    /**
+     * A VERB IS NOT SOMEBODY TO TALK TO.
+     *
+     * FOUND BY PLAYING, on the most important sentence a new cultivator can
+     * type. "I look for a cultivation manual to buy" parsed to
+     * `interact(target="buy")`, so the engine went looking for a person named
+     * *buy*, found nobody, and answered with a list of villagers. A player with
+     * no method cannot cultivate at all - the rate multiplier is literally zero
+     * - so this is the first door in the game, and the commonest way of asking
+     * for it walked into a wall.
+     *
+     * The table was not wrong that the sentence contains a trade word. It was
+     * wrong to take the trailing verb as the noun. The repo already knew this
+     * failure from the other direction: the respelling pass carries a comment
+     * that a target of "stole" sends the engine looking for an object that does
+     * not exist.
+     */
+    it('reads the noun in front of a trailing trade verb, not the verb', () => {
+        expect(parseIntent('I look for a cultivation manual to buy'))
+            .toEqual({ action: 'buy', target: 'cultivation manual' });
+        expect(parseIntent('I look for a sword to buy'))
+            .toEqual({ action: 'buy', target: 'sword' });
+        // Named nothing in particular, so the board is the honest answer.
+        expect(parseIntent('I look around for something to buy').action).toBe('market');
+        expect(parseIntent('I look for wares to buy').action).toBe('market');
+    });
+
+    it('leaves trading WITH a person exactly where it was', () => {
+        // The guard fires only when the target IS the bare verb. A person named
+        // in the sentence is still a person.
+        expect(parseIntent('I trade with the merchant'))
+            .toEqual({ action: 'interact', target: 'merchant', intent: 'trade' });
+        expect(parseIntent('I haggle with Kong Nuoming').target).toBe('Kong Nuoming');
+        expect(parseIntent('I buy his silence').intent).toBe('bribe');
+    });
+
     it('never reads paying somebody off as shopping', () => {
         expect(parseIntent('I buy his silence').action).toBe('interact');
         expect(parseIntent('I bribe the gate steward').action).toBe('interact');
