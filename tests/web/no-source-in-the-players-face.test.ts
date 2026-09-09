@@ -181,7 +181,17 @@ describe('the engine log is read by somebody standing in a room', () => {
             "what are people saying",
             "who would teach me",
             "what is stopping me",
-            ...(somebody ? [`I look at ${somebody}`] : [])
+            ...(somebody ? [`I look at ${somebody}`] : []),
+            // AND A SWING AT SOMEBODY, LAST, because it can start a fight.
+            //
+            // The pattern above already caught a source file name. What it
+            // never saw was this path: striking somebody far above you
+            // produced a ruling ending "the rest are recorded in
+            // `gap-routes.ts` as unreachable rather than printed", which is
+            // the engine telling a player where to look in its own
+            // repository. Found by playing, not by this file, because a
+            // guard only guards the sentences it is given.
+            ...(somebody ? [`I attack ${somebody}`] : [])
         ]) {
             const answer = await game.act(said) as unknown as {
                 state: { log: Array<{ role: string; text: string }> };

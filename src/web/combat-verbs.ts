@@ -871,11 +871,24 @@ export const combatVerbs = {
         execution.facts.lines.push(line);
         execution.facts.required = [...(execution.facts.required ?? []), line];
         execution.facts.prose = [execution.facts.prose, line].join('\n');
+        // NAMES, NOT ROW IDS. This printed four database ids at a player -
+        // the object's, the reader's, the owner's and the holder's - in the
+        // channel that is shown in every mode and rewritten by nobody. Found
+        // by playing, after `no-source-in-the-players-face` was given a swing
+        // to take: the guard was right and had never been handed this path.
+        //
+        // The figures stay, because the mechanical channel is where figures
+        // belong and the two of them are a real fact about the reading - what
+        // their rung affords, and what having seen one before affords. What
+        // goes is the arithmetic said out loud at the end.
         execution.facts.structure.push(
-            `${thing.id} read by ${them.id}: realm afforded ${read.fromRealm}, reference `
-            + `afforded ${read.fromReference} at stage ${read.reference}; the reading is the `
-            + `lower of the two, ${read.reading}. Owner ${thing.ownerId ?? 'nobody'}, holder `
-            + `${cultivator.id}. ${read.toldWhereItCameFrom ? 'They had been told.' : 'Read off the two axes.'}`
+            `${thing.name} read by ${them.name}: their rung affords ${read.fromRealm}, `
+            + `having seen one before affords ${read.fromReference} at stage `
+            + `${read.reference}, and what they get is ${read.reading}. Held by `
+            + `${cultivator.name}, owned by ${thing.ownerName || 'nobody'}. `
+            + (read.toldWhereItCameFrom
+                ? 'They had been told where it came from.'
+                : 'Nobody told them; this is what they can see for themselves.')
         );
         execution.calls.push({
             name: 'world.revealOwnership',
@@ -928,18 +941,38 @@ export const combatVerbs = {
             [turn.line, where.line]
         );
         facts.required = [turn.line, where.line];
+        // WHO STRUCK WHOM, BY NAME.
+        //
+        // This printed both fighters as database row ids - "cultivator-engine-
+        // log-0 -> opponent:ji-tianming: advantage 1.34" - in the channel that
+        // is shown in every mode and rewritten by nobody. Found by playing, and
+        // then by `no-source-in-the-players-face` once that guard was finally
+        // handed a swing to take: the pattern had always been right and had
+        // never been given this path.
+        //
+        // The figures stay. A round's advantage, damage and the hit points left
+        // are exactly what the mechanical channel is for, and a player reading
+        // them can tell whether the next round is worth taking. What goes is the
+        // spelling of the rows they came out of, and the internal keys beside
+        // them, which name nothing anybody can act on.
+        const sideName = (id: string): string =>
+            id === cultivator.id ? cultivator.name
+                : id === held.party.id ? held.party.name
+                    : 'the other';
+        const inWords = (key: string): string => key.replace(/[_:]+/g, ' ').trim();
         facts.structure.push(
-            `Fight ${held.state.id}, round ${this.fight.state.roundsFought} of `
-            + `${this.fight.state.roundBudget}. Player answered "${turn.playerAct}"; `
+            `Round ${this.fight.state.roundsFought} of ${this.fight.state.roundBudget}. `
+            + `${cultivator.name} answered "${turn.playerAct}"; `
             + `${held.party.name} answered "${turn.theirAct}". `
             + turn.exchanges.map(x =>
-                `${x.attackerId} -> ${x.defenderId}: advantage ${x.result.advantage.toFixed(2)}, `
-                + `${x.result.damage} damage, ${x.defenderHpAfter} left`
+                `${sideName(x.attackerId)} against ${sideName(x.defenderId)}: advantage `
+                + `${x.result.advantage.toFixed(2)}, ${x.result.damage} damage, `
+                + `${x.defenderHpAfter} left`
                 + (x.result.injury ? `, a ${x.result.injury.severity} wound` : '')).join('. ')
             + `. Breaking off prices at ${(where.flight.chance * 100).toFixed(0)}%: `
-            + where.flight.modifiers.map(m => `${m.source} ${m.delta >= 0 ? '+' : ''}`
+            + where.flight.modifiers.map(m => `${inWords(m.source)} ${m.delta >= 0 ? '+' : ''}`
                 + m.delta.toFixed(2)).join(', ')
-            + '. Nothing was persisted; a fight writes on the turn it ends.'
+            + '. Nothing is written down until the fight ends.'
         );
         if (turn.shout) facts.structure.push(...turn.shout.heard.map(h => h.because));
 
@@ -1035,12 +1068,24 @@ export const combatVerbs = {
                 routesOutOfAGap(result.gap.options), held.party.name
             );
             execution.facts.required = [...(execution.facts.required ?? []), ...routes];
+            // NO SOURCE FILE NAMES IN A CHANNEL THE PLAYER READS.
+            //
+            // Found by playing. This line ended “the rest are recorded in
+            // `gap-routes.ts` as unreachable rather than printed”, which is the
+            // engine telling a player where to look in its own repository. The
+            // structure channel is mechanical and is shown in every mode; it
+            // is not a developer console. Same class as reciting a scoring
+            // rubric: true, and about the machine rather than the world.
+            //
+            // The COUNT is worth keeping - how many ways out exist against how
+            // many can be typed is a real fact about this situation, and a
+            // player who sees four routes and a count of nine knows there are
+            // others they have not earned the words for.
             execution.facts.structure.push(
                 `Gap: ${result.gap.verdict}, ${result.gap.realmGap} major realms, power ratio `
-                + `${result.gap.powerRatio.toFixed(1)}. The engine offered `
-                + `${result.gap.options.length} real options and ${routes.length === 0 ? 0 : routes.length - 1} `
-                + 'of them have a verb a player can type. The rest are recorded in '
-                + '`gap-routes.ts` as unreachable rather than printed.'
+                + `${result.gap.powerRatio.toFixed(1)}. ${result.gap.options.length} ways out of `
+                + `this exist and ${routes.length === 0 ? 0 : routes.length - 1} of them can be `
+                + 'said in a sentence from where you are standing.'
             );
         }
 
