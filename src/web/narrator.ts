@@ -390,10 +390,28 @@ export interface FiledOutcome {
      * The name of the cultivator whose run this is.
      */
     who?: string;
+    /**
+     * NAMED THINGS THE ENGINE PUT IN FRONT OF THE MODEL THIS TURN THAT THE
+     * PLAYER DOES NOT HOLD.
+     *
+     * FOUND BY PLAYING. The stall was read, nothing was bought, and the next
+     * turn's prose said *"You have the Lesser Qi-Gathering Manual with you, but
+     * it remains a closed weight in your possession."* The engine's own facts
+     * for that turn said the opposite in as many words - no method is
+     * practised, the rate multiplier is zero - and the model wrote the player
+     * into owning the one object that would have changed it.
+     *
+     * This is narrower than "every name", deliberately. Only what the engine
+     * SAID this turn can be checked, because only that is a name the model was
+     * handed; and only what is not held can be a fabrication. A stall listing a
+     * manual for sale is not a claim of ownership, so the check is on the claim
+     * and not on the mention.
+     */
+    onOfferAndNotHeld?: readonly string[];
 }
 
 export interface NarrationViolation {
-    kind: 'invented_breakthrough' | 'invented_death';
+    kind: 'invented_breakthrough' | 'invented_death' | 'invented_possession';
     detail: string;
 }
 
@@ -454,7 +472,40 @@ export function auditNarration(
         });
     }
 
+    for (const name of filed.onOfferAndNotHeld ?? []) {
+        if (!claimsTheyHaveIt(text, name)) continue;
+        found.push({
+            kind: 'invented_possession',
+            detail: `prose has this cultivator holding ${name}, which the engine says they do not have`
+        });
+        // One is enough to throw the account away, and listing the rest adds
+        // nothing a reader of the log would act on.
+        break;
+    }
+
     return found;
+}
+
+/**
+ * Prose that says the player HAS a particular named thing.
+ *
+ * Tight on purpose. A market answer legitimately says a manual is on a stall,
+ * priced, and opens at a given rung - none of which is a claim that anybody
+ * owns it. What is banned is the ownership itself, in the three shapes it comes
+ * in: possessing it, it being yours, and it being in your hands.
+ */
+function claimsTheyHaveIt(text: string, name: string): boolean {
+    const it = forRegExp(name);
+    return new RegExp(
+        // "you have / hold / carry / own the X", within a clause of it
+        `\\byou\\s+(?:have|hold|holds|carry|own|possess|keep)\\b[^.!?]{0,40}${it}`
+        // "your X"
+        + `|\\byour\\s+(?:own\\s+)?${it}`
+        // "the X in your hands / in your possession / you are carrying"
+        + `|${it}[^.!?]{0,40}\\b(?:in|is in)\\s+your\\s+(?:hands?|possession|pouch|pack|sleeve)\\b`
+        + `|${it}[^.!?]{0,30}\\byou\\s+are\\s+carrying\\b`,
+        'i'
+    ).test(text);
 }
 
 /**

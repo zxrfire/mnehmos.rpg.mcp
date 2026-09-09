@@ -232,3 +232,70 @@ describe('the death check is about the player and nobody else', () => {
             .toEqual(['invented_death']);
     });
 });
+
+/**
+ * AND THE THIRD FABRICATION, WHICH IS QUIETER THAN THE OTHER TWO.
+ *
+ * FOUND BY PLAYING. The stall was read and nothing was bought. The next turn's
+ * prose said:
+ *
+ *     "You have the Lesser Qi-Gathering Manual with you, but it remains a
+ *      closed weight in your possession."
+ *
+ * The engine's facts for that same turn said the opposite in as many words -
+ * *no method is practised, so the rate multiplier at Qi Condensation Layer 1 is
+ * 0* - and the model wrote the player into owning the one object that would
+ * have changed it. Nobody dies of this and no rank moves, which is why it is
+ * quieter; a player who believes they own a method will sit for a year finding
+ * out they do not.
+ *
+ * The check is narrow on both sides deliberately. Only names the engine SAID
+ * this turn are considered, because only those were handed to the model; and
+ * only names the player does not hold, because owning it is the whole question.
+ */
+describe('prose that hands the player something they do not have', () => {
+    const filed = { who: 'Wen Shu', onOfferAndNotHeld: ['Lesser Qi-Gathering Manual'] };
+    const invented = (text: string) =>
+        auditNarration(text, filed).some(v => v.kind === 'invented_possession');
+
+    it('catches the claim in the shapes a model writes it', () => {
+        for (const text of [
+            'You have the Lesser Qi-Gathering Manual with you, but it remains closed.',
+            'Your Lesser Qi-Gathering Manual lies open on your knees.',
+            'The Lesser Qi-Gathering Manual is in your hands.',
+            'You carry the Lesser Qi-Gathering Manual and have not opened it.'
+        ]) {
+            expect(invented(text), text).toBe(true);
+        }
+    });
+
+    /**
+     * AND LEAVES THE MARKET ALONE, which is the whole reason this is a claim
+     * check and not a mention check. A stall listing a manual, pricing it, and
+     * saying what rung it opens at is the single commonest answer in the game.
+     */
+    it('says nothing about a manual that is merely for sale', () => {
+        for (const text of [
+            'A Lesser Qi-Gathering Manual is available for eight spirit stones; it opens at '
+            + 'Qi Condensation Layer 1 and carries as far as Foundation Establishment Early.',
+            'Beside the cooking pots, block-printed manuals are set down plainly.',
+            'The stall has a Lesser Qi-Gathering Manual. You have eighty-eight spirit stones.'
+        ]) {
+            expect(invented(text), text).toBe(false);
+        }
+    });
+
+    it('says nothing at all about something they actually hold', () => {
+        // The caller only lists what is NOT held, so a book bought a moment ago
+        // never reaches this check. Asserted so that the day somebody makes the
+        // list "every name" instead, this fails.
+        expect(auditNarration(
+            'You have the Lesser Qi-Gathering Manual with you.',
+            { who: 'Wen Shu', onOfferAndNotHeld: [] }
+        )).toEqual([]);
+    });
+
+    it('leaves the other two audits exactly where they were', () => {
+        expect(auditNarration('Nothing much happened.', filed)).toEqual([]);
+    });
+});

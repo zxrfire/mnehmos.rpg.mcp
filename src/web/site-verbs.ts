@@ -4,7 +4,8 @@
 
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
-import { getTechnique } from '../data/cultivation/index.js';
+import { getPill, getTechnique, PILLS, TECHNIQUES } from '../data/cultivation/index.js';
+import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import {
     type AdmissionReading,
     SITES,
@@ -1063,8 +1064,47 @@ export const siteVerbs = {
             who: this.currentRun().cultivator.name,
             died: execution.timeSkip?.died === true
                 || execution.breakthrough?.outcome === 'death'
-                || !this.currentRun().cultivator.alive
+                || !this.currentRun().cultivator.alive,
+            // What the engine named this turn that this cultivator does not
+            // have. See `FiledOutcome.onOfferAndNotHeld` for the played defect.
+            onOfferAndNotHeld: this.namedAndNotHeld(execution)
         };
+    },
+
+    /**
+     * Named things the engine mentioned this turn and the player does not hold.
+     *
+     * Read off the record on both sides. What was MENTIONED comes from the
+     * facts the model is about to be handed, so nothing is checked that the
+     * model was never told; what is HELD comes from the copies table and the
+     * pouch, so a book bought a moment ago is not called a fabrication.
+     */
+    namedAndNotHeld(this: GameService, execution: Execution): string[] {
+        const said = execution.facts.lines.join(' ');
+        if (said.length === 0) return [];
+        const cultivatorId = this.currentRun().cultivator.id;
+        const held = new Set<string>();
+        for (const id of copiesHeldBy(this.db, cultivatorId)) {
+            const named = getTechnique(id);
+            if (named) held.add(named.name);
+        }
+        const pouch = this.db
+            .prepare('SELECT item_id AS itemId FROM cultivator_pouch WHERE holder_id = ?')
+            .all(cultivatorId) as Array<{ itemId: string }>;
+        for (const row of pouch) {
+            const named = getPill(row.itemId);
+            if (named) held.add(named.name);
+        }
+        const out: string[] = [];
+        for (const art of TECHNIQUES) {
+            if (held.has(art.name)) continue;
+            if (said.includes(art.name)) out.push(art.name);
+        }
+        for (const pill of PILLS) {
+            if (held.has(pill.name)) continue;
+            if (said.includes(pill.name)) out.push(pill.name);
+        }
+        return out;
     },
 
     /**
