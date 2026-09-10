@@ -567,9 +567,11 @@ import {
 } from '../server/state/cultivation-world.js';
 import { planNextRun, recordRun, lastFinishedRun } from '../engine/world/legacy.js';
 import {
+    isStoppedInArea,
     priceMultiplierInArea,
     type GoodCategory
 } from '../engine/world/what-is-true-of-a-place-right-now.js';
+import { STOPS_GATHERING } from '../engine/world/what-goes-wrong-with-a-place-and-what-ends-it.js';
 import type { WorldState } from '../engine/world/world-state.js';
 // A finished pressure model that had no route from the player to it. The
 // resolver reads  and never , which is the whole design.
@@ -6807,6 +6809,29 @@ ${line}`;
         ambient: AmbientQi,
         target: string | undefined
     ): Promise<Execution> {
+        // ── GROUND SOMEBODY HAS CLOSED IS CLOSED ─────────────────────────
+        //
+        // A house that closes its ground writes `STOPS_GATHERING` and says so
+        // out loud: the status's own signs are people on the paths who are not
+        // from here, turning other people around. Nothing read it, so the
+        // player walked past them and spent the day anyway.
+        //
+        // Unambiguous in a way `STOPS_FOOD` is not - see `stoppedHere`. Closed
+        // ground is closed to whoever is standing on it, and the status carries
+        // no second sentence saying it is merely dearer.
+        //
+        // Refused BEFORE the span rather than after: the cost of a closed
+        // district is not being turned back at the end of a day spent in it.
+        if (this.stoppedHere(cultivator, STOPS_GATHERING)) {
+            return refused('engine.isStoppedInArea', 'gather', factsForRefusal(
+                'This ground is closed.',
+                'Somebody has shut it, and they have people on the paths to make that mean '
+                + 'something. You would be turning over ground that is being watched, for a '
+                + 'day, in front of them.',
+                `${STOPS_GATHERING} is stopped in this area. Nothing gathered, no day spent.`
+            ));
+        }
+
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, GATHERING_DAYS, {
             seed: run.seed,
@@ -13478,6 +13503,49 @@ ${fit.line}`;
             where,
             Math.floor(this.atHand.currentDay),
             category
+        );
+    }
+
+    /**
+     * WHETHER THIS IS SIMPLY NOT TO BE HAD HERE TODAY.
+     *
+     * `AreaStatus.stops` is *what is simply not to be had here while this is
+     * true*, and the world writes three things into it. Exactly one was ever
+     * asked about:
+     *
+     *     STOPS_PASSAGE    read by `passageStoppedInArea`
+     *     STOPS_GATHERING  written by a house closing its ground, read by
+     *                      nothing
+     *     STOPS_FOOD       written by a failed harvest, read by nothing
+     *
+     * `isStoppedInArea` is the engine's own answer and had no caller. It takes
+     * no `KnowingStage` on purpose, and the module says why: a famine stops the
+     * millet for somebody who has never heard the word.
+     *
+     * ── AND `STOPS_FOOD` IS NOT ONE OF ITS CALLERS, DELIBERATELY ─────────
+     *
+     * The first cut of this read it in `buyProvisions` and starved a cultivator
+     * to death on a pinned forty-four year climb the world intends somebody to
+     * survive. That was a misreading, and the catalog says so twice. The
+     * constant is defined as *what a failed harvest stops, which is the whole of
+     * the MUNDANE TIER*, and the famine's own price note is *there is food, and
+     * it is not for sale at any price a person who works for a living can meet*
+     * - which is what the fourfold price on food already expresses, and a
+     * cultivator with a purse is not that person.
+     *
+     * So a famine reaches a cultivator as a price and reaches a village as a
+     * stop. Wiring it as a blanket refusal made the two halves of the status
+     * agree by making one of them wrong.
+     */
+    stoppedHere(cultivator: Cultivator, what: string): boolean {
+        const where = this.worldPlaceOf(cultivator);
+        if (!this.atHand || !where) return false;
+        return isStoppedInArea(
+            this.atHand.statuses,
+            this.atHand.locations,
+            where,
+            Math.floor(this.atHand.currentDay),
+            what
         );
     }
 
