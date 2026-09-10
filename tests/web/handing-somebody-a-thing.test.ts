@@ -104,7 +104,12 @@ describe('the sentence that had no verb', () => {
 describe('a player naming their own property', () => {
     it.each([
         ['I hand Shen Liefeng my two spirit stones', 'Shen Liefeng', 2],
-        ['I hand her the two stones', undefined, 2],
+        // `her` was recorded here as `undefined` when this test was written,
+        // because that is what the parser did - not because a pronoun naming
+        // nobody was ever the ruling. It is a POINTER, and dropping it sent the
+        // stones to the first row of the crowd order. See
+        // `the-person-you-hand-it-to-is-the-one-you-named.test.ts`.
+        ['I hand her the two stones', 'her', 2],
         ['I give Shen Liefeng ten stones', 'Shen Liefeng', 10]
     ] as ReadonlyArray<readonly [string, string | undefined, number]>)(
         '%s', (said, who, count) => {

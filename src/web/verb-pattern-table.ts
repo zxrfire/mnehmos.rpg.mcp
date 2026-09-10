@@ -76,7 +76,7 @@ import {
     parseCount,
     extractDestination,
     cleanPlace,
-    ANYBODY,
+    ASKING_GENERALLY,
     parseAsk,
     matchIntent,
     extractSubject,
@@ -386,7 +386,26 @@ export function whatIsBeingHandedOver(
         if (thing.length >= 1) {
             return {
                 thing,
-                ...(who.length >= 2 && !ANYBODY.test(who) ? { to: who } : {}),
+                // A PRONOUN IS A POINTER AND NOT NOBODY, which is the
+                // split `parseAsk` already makes over this same set - see
+                // the note on {@link ASKING_GENERALLY}, which says it
+                // outright: every member of ANYBODY except the two
+                // adverbs is a pointer, and `somebodyAtHand` resolves
+                // pointers.
+                //
+                // Measured, and it moves money: "I give him 20 stones"
+                // came back with no recipient at all, and `giveSomething`
+                // reads an absent recipient as whoever is FIRST IN THE
+                // CROWD ORDER. So the stones went to a stranger the
+                // player had never addressed, and the screen said they
+                // had been handed over.
+                //
+                // This is the silent retarget `somebodyAtHand` already
+                // refuses by name one file over: *falling through to the
+                // crowd order below is what put a marriage proposal to a
+                // stranger the player had never mentioned*. Same defect,
+                // same cause, one verb along, with a purse behind it.
+                ...(who.length >= 2 && !ASKING_GENERALLY.test(who) ? { to: who } : {}),
                 ...(stones !== undefined ? { stones } : {})
             };
         }
@@ -406,7 +425,8 @@ export function whatIsBeingHandedOver(
         if (who.length >= 2 && thing.length >= 1) {
             return {
                 thing,
-                ...(ANYBODY.test(who) ? {} : { to: who }),
+                // The pointer is kept. See the note on the branch above.
+                ...(ASKING_GENERALLY.test(who) ? {} : { to: who }),
                 ...(stones !== undefined ? { stones } : {})
             };
         }
@@ -2161,7 +2181,22 @@ export const SETTLED_WITH_HANDS =
 export const SITTING_THAT_IS_NOT_CULTIVATION = new RegExp([
     SETTLED_WITH_HANDS.source,
     String.raw`\bsits?\s+tight\b`,
-    String.raw`\bsitting\s+tight\b`
+    String.raw`\bsitting\s+tight\b`,
+    // AND SETTLING AN ACCOUNT, WHICH IS THE THIRD IDIOM AND THE ONE
+    // THAT COSTS THE MOST.
+    //
+    // Measured: "I settle my debt" reached `cultivate` and sat the
+    // player down for a span of YEARS - the most expensive thing this
+    // table can do to anybody, for a sentence about paying somebody
+    // back. Nothing on the screen would have told them why.
+    //
+    // This list exists because `settle` carries idioms and is therefore
+    // one of the two weak members of the cultivation list. This is the
+    // idiom it did not have.
+    String.raw`\bsettle(?:s|d)?\s+(?:my|his|her|their|our|the|up|a)\s+(?:debt|debts|account|accounts|score|tab|bill|dues)\b`,
+    String.raw`\bsettling\s+(?:my|his|her|their|our|the|up|a)\s+(?:debt|debts|account|accounts|score|tab|bill|dues)\b`,
+    String.raw`\bsettle(?:s|d)?\s+up\b`,
+    String.raw`\bsettling\s+up\b`
 ].join('|'), 'i');
 
 /**

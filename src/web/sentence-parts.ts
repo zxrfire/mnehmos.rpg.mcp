@@ -194,7 +194,7 @@ export const ANYBODY = /^(?:around|about|someone|somebody|anyone|anybody|people|
  * asked. Measured: "I ask him where the sect is" came back with a topic and no
  * person at all, so the commonest pronoun in the game reached nobody.
  */
-const ASKING_GENERALLY = /^(?:around|about)$/i;
+export const ASKING_GENERALLY = /^(?:around|about)$/i;
 
 /** Where a question stops naming who and starts naming what. */
 /**
