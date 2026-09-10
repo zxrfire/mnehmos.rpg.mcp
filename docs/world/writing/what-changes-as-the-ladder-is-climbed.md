@@ -32,6 +32,8 @@ entirely, with one unchanging narrator throughout.
 
 ## One rule, and the rest falls out of it
 
+<!-- tier: 1 -->
+
 The design owner, cutting through the observations below:
 
 > *"the higher up you are the more you know about the world, and the more you

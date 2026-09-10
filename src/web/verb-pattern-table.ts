@@ -1882,7 +1882,21 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // the same event with a different word on the log while a whole conveyance
     // layer sat with no caller. It is its own verb now - see {@link RIDING} -
     // and its branch is tested ahead of this table.
-    ['travel', /\b(?:travel|go to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b/]
+    // ── AND THE COMPASS, WITH THE VERB PEOPLE ACTUALLY USE ───────────────
+    //
+    // The near-synonym trap in its purest form. Measured:
+    //
+    //     "I head north"  -> move      "I go north"    -> UNCLEAR
+    //     "I travel east" -> move      "I walk north"  -> UNCLEAR
+    //
+    // The compass was bolted onto `head` alone - `head north` is spelled out
+    // in the list and `go` only appears as `go to`, which needs a place name
+    // after it. So a direction worked with one verb in four, and `go` is the
+    // one everybody reaches for first.
+    //
+    // `go to sleep` keeps its veto, and it is why `go` was narrow here in the
+    // first place - so the compass words are named rather than a bare `go`.
+    ['travel', /\b(?:travel|go to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b|\b(?:go|goes|walk|walks|ride|rides|march|marches|strike out|press|head)\s+(?:north|south|east|west|northeast|northwest|southeast|southwest|upriver|downriver|inland|uphill|downhill|upstream|downstream)\b|\b(?:climb|climbs|ascend|ascends)\s+(?:the|that|this)\s+(?:mountain|hill|peak|slope|ridge|cliff|steps|stair|stairs|path)\b/]
 ];
 
 // THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING
@@ -4412,6 +4426,70 @@ function planIntent(input: string): PlannedAction {
     if (isBareDuration(text)) {
         const bare = parseDuration(text);
         if (bare !== null) return { action: 'cultivate', days: bare };
+    }
+
+    // ── THE THING THAT WAS JUST POINTED AT ───────────────────────────────
+    //
+    // Measured, and every one reached nothing:
+    //
+    //     "I go that way"    "go there"    "I take the road"    "I go back"
+    //
+    // These are what somebody types on the turn AFTER being told something is
+    // over there. The engine had just named a road, an opening or a direction,
+    // and the sentence acknowledging it made no sense to the parser - which
+    // is the worst possible turn to fail on, because the player is following
+    // the game's own lead.
+    //
+    // NO TARGET IS CARRIED ON PURPOSE. This layer cannot know what `there`
+    // was and must not guess: the verb resolves it against what is actually
+    // at hand, and where nothing is, the honest answer is that they did not
+    // say where - which is a better answer than the sentence making no sense.
+    if (/^(?:i\s+)?(?:go|goes|head|walk|move)\s+(?:there|that way|this way|back)\s*[.!?]*$/.test(text)
+        || /^(?:i\s+)?takes?\s+(?:the|that)\s+(?:road|path|way|track|trail|steps|stairs)\s*[.!?]*$/.test(text)) {
+        return { action: 'move', intent: 'travel' };
+    }
+
+    // And LOOKING at the thing just pointed at, which is the other half of
+    // the same beat and reaches a different verb.
+    if (/^(?:i\s+)?(?:check\s+(?:it|that|this)\s+out|takes?\s+a\s+look|has?\s+a\s+look|looks?\s+(?:at\s+)?(?:it|that|there))\s*[.!?]*$/.test(text)) {
+        return { action: 'investigate' };
+    }
+
+    // ── HOW FAR IS IT, AND WHICH WAY ─────────────────────────────────────
+    //
+    // Two reads that exist and could not be asked for:
+    //
+    //     "how far is Iron Ridge"    -> UNCLEAR
+    //     "which way is Iron Ridge"  -> UNCLEAR
+    //
+    // `destinations` already answers both - it is the read that lists what is
+    // in reach and how long each one takes - and "where can I go" reached it
+    // all along. A player who has been TOLD a name and wants to know whether
+    // it is a day away or a season had no sentence for it, which is most of
+    // what deciding to travel consists of.
+    // A NAMED PLACE, and that is what separates this from the roads read.
+    //
+    // The first cut matched a bare `how far is` and took "how far is it and by
+    // which way" - which is a `roads` exemplar in
+    // `how-a-player-says-each-verb.ts`, and belongs to it: `roads` is what the
+    // ground within reach would teach, asked about the ground you are on.
+    //
+    // Asking after somewhere you can NAME is the other question. "How far is
+    // Iron Ridge" is somebody who has been told a name deciding whether it is
+    // a day away or a season, and `destinations` is the read that says.
+    if (/\bhow\s+far\s+(?:is|are|to)\s+(?![^.?!]*\bwhich\s+way\b)\s*[A-Z]/.test(input)
+        || /\bwhich\s+way\s+(?:is|to)\s+[A-Z]/.test(input)
+        || /\bhow\s+long\s+(?:would|will|does)\s+it\s+take\s+to\s+(?:get|reach|walk|travel)\b/.test(text)) {
+        return { action: 'destinations' };
+    }
+
+    // ── AND CARRYING ON THE WAY YOU WERE GOING ───────────────────────────
+    //
+    // "I keep going" and "I go back" both reached nothing, while `descend`
+    // already owns "I return the way I came". The first is the commonest
+    // thing anybody says on a road and the second is the second commonest.
+    if (/^(?:i\s+)?(?:keep|carry on|press on|continue)\s+(?:going|on|walking|moving|north|south|east|west)\s*[.!?]*$/.test(text)) {
+        return { action: 'move', intent: 'travel' };
     }
 
     // ── HOW BADLY AM I HURT, AND HOW IS HE DOING ─────────────────────────
