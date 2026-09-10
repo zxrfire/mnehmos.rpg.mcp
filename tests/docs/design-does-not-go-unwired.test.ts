@@ -101,8 +101,24 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  * and overwhelmingly quoted text by volume. A label or a small lookup fails the
  * length floor and stays counted as code, which is the conservative direction.
  */
-const DEAD = 171;
-const TEST_ONLY = 496;
+/**
+ * LOWERED WHEN THE INSTRUMENT WAS FIXED, not when the tree got better.
+ *
+ * These were 171 and 496. `find-unwired-exports.mjs` skipped every `index.ts`
+ * as a reader on the rule that *"a barrel re-exporting a name has not read
+ * it"* - true of a re-export, false of the several barrels in this repo that
+ * import their steps and RUN them. Those steps were all reported unwired while
+ * being called from their own barrel, which is the worst kind of false
+ * positive: it points at working code and says delete it.
+ *
+ * The script now strips re-export statements and reads what is left, so a name
+ * that survives is one the barrel actually does something with. That removed 26
+ * dead and 51 test-only false positives, and the ceilings come down by exactly
+ * that much. Nothing was wired to earn it - the tree did not change, the
+ * measurement did.
+ */
+const DEAD = 145;
+const TEST_ONLY = 445;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

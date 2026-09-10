@@ -258,6 +258,57 @@ event feel extraordinary.
 
 ---
 
+# The standing goal
+
+> *"do this for ALL THE MECHANICS SOMEONE MIGHT THINK ABOUT."*
+
+Written down here because it is not a task with an end. Every mechanic a player might
+reach for gets taken to a finished state, and "finished" is defined by the method below
+rather than by anybody's impression of the code.
+
+## The method
+
+It is one loop, and it is the only one that has found real defects:
+
+1. **Probe by playing.** Twenty-odd sentences a person would actually type, through the
+   real parser, then everything that routes played against the real engine. Not a review
+   of the code - the code always looks fine.
+2. **Read the answer as a reader would.** Not "is this correct" but "is this what a
+   novel does here." Both halves count: the info can be right and the prose wrong, and
+   that is still a defect.
+3. **Fix the cause, not the symptom.** The measured ratio has held at roughly ten
+   symptoms per cause. Patching the symptom leaves the other nine.
+4. **Leave a test whose header is the defect** - the sentence typed, the answer that came
+   back, the numbers if any were measured, and the ruling. That header is this repo's
+   primary design record, and it is what stops the class coming back.
+
+## The four classes worth naming
+
+Every sweep so far has found the same four, in roughly these proportions:
+
+- **It blocks play.** The sentence reaches `unclear`, or reaches the wrong verb. Usually
+  the machinery exists and nothing routes to it.
+- **The game contradicts itself on one screen.** The largest class by count. Three
+  causes: a row read from before the update, a paragraph pushed unconditionally, and
+  state asserted but never enforced.
+- **Flat prose, or the engine's own voice.** A rubric recited, a raw stat printed, a
+  scene block appended to a turn it has nothing to do with.
+- **It is not symmetric.** An NPC can do it and the player cannot, or the reverse. See
+  AGENTS.md: an asymmetry without a written reason beside it is a defect.
+
+## And the two rules the sweeps keep rediscovering
+
+**The engine states facts; the narrator writes prose.** Extended by measurement into:
+the engine may only state what somebody standing there could actually perceive, and it
+states findings rather than the rubric that produced them.
+
+**Do not author what the world already generates.** If the variables exist - a birth
+house, a ground, a household, a relationship - hand them over and let the narrator
+synthesise. Writing the prose into the engine is the same defect as reciting a rubric,
+reached from the pleasant direction.
+
+---
+
 # Where everything lives
 
 Design docs sit next to the code they govern. The world bible is split by topic under

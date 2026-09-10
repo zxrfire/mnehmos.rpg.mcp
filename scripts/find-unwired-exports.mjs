@@ -170,9 +170,24 @@ export function findUnwired() {
             let live = 0;
             for (const other of files) {
                 if (other.rel === file.rel) continue;
-                // A barrel re-exporting a name has not read it.
-                if (/\/index\.ts$/.test(other.rel)) continue;
-                if (word.test(other.text)) live++;
+                // A barrel RE-EXPORTING a name has not read it. A barrel that
+                // CALLS one has.
+                //
+                // This used to skip every `index.ts` outright, which is right
+                // for the first case and wrong for the second - and the second
+                // is real: several barrels in this repo are pipelines that
+                // import their steps and run them. Those steps were all
+                // reported unwired while being called from their own barrel,
+                // which is the worst kind of false positive, because it points
+                // at working code and says delete it.
+                //
+                // So the re-export STATEMENTS are removed and what is left of
+                // the file is read normally. A name that survives that strip is
+                // one the barrel actually does something with.
+                const text = /\/index\.ts$/.test(other.rel)
+                    ? other.text.replace(/^\s*export\s+(?:\*|\{[^}]*\})\s+from\s+[^\n]*$/gm, '')
+                    : other.text;
+                if (word.test(text)) live++;
             }
             if (live > 0) continue;
             const byTest = tests.some(t => word.test(t.text));
