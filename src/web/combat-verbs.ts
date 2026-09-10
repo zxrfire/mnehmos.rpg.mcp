@@ -1005,7 +1005,22 @@ export const combatVerbs = {
             `${held.party.name}: the exchange goes on.`,
             [turn.line, where.line]
         );
-        facts.required = [turn.line, where.line];
+        // ── THE ARITHMETIC IS ENGINE RESULT, NOT SOMETHING A PLAYER IS TOLD ──
+        //
+        // These two were `required`, and a required line is appended verbatim to
+        // the narration whenever the prose does not already contain it. The
+        // narration prompt forbids restating the numbers as a list - the bars are
+        // on the sheet and the interface renders them - so a narrator that obeys
+        // NEVER contains them, and the block was therefore appended every single
+        // time. The better the narrator behaved, the more reliably a turn ended
+        // in "You are on 36 of 50; Road Bandit is on 74 of 88."
+        //
+        // The design owner's ruling: no HP bars in the prose, and the engine
+        // result is debug data. So they stay in `lines`, because the narrator
+        // cannot write the exchange without knowing what the exchange did, and
+        // they move to `structure`, which is what the tool-call summary is built
+        // from and what an operator reads.
+        facts.structure.push(turn.line, where.line);
         // WHO STRUCK WHOM, BY NAME.
         //
         // This printed both fighters as database row ids - "cultivator-engine-
@@ -1196,9 +1211,16 @@ export const combatVerbs = {
 
         // What the last round did, said before what the fight came to. Without
         // it a player who broke off reads the outcome and never the attempt.
+        //
+        // It is first in `lines`, which is what makes the narrator write the
+        // attempt before the outcome, and it is no longer `required`: the line is
+        // the round's arithmetic, and appending it to prose the narrator was told
+        // not to put numbers in is how every break-off turn ended in a stat
+        // block. The deterministic account still opens on it, because there the
+        // line IS the prose.
         if (lastRound) {
             execution.facts.lines.unshift(lastRound.line);
-            execution.facts.required = [lastRound.line, ...(execution.facts.required ?? [])];
+            execution.facts.structure.push(lastRound.line);
             execution.facts.prose = [lastRound.line, execution.facts.prose].join('\n\n');
             if (lastRound.flight) {
                 execution.facts.structure.push(

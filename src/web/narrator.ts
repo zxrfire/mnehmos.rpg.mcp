@@ -557,6 +557,20 @@ export const THE_NARRATION_WAS_DISCARDED =
 
 /**
  * Put back anything the narrator left out that a player cannot play without.
+ *
+ * ── NEVER REQUIRE A LINE THE PROMPT FORBIDS THE PROSE FROM CONTAINING ──────
+ *
+ * Matching is on the line appearing in the text, so a line the narrator is under
+ * instructions NOT to write is missing on every well-behaved turn and is appended
+ * on every well-behaved turn. `narrationSystemPrompt` says *"do not restate the
+ * numbers as a list - the interface already shows the arithmetic"*, and a combat
+ * round used to require its own bars and odds anyway: the result was that obeying
+ * the prompt guaranteed the stat block, and every fight turn ended in one.
+ *
+ * So the test before marking a line required is not "would a player want this".
+ * It is "is a narrator ALLOWED to write this". If the answer is no, the line
+ * belongs in `structure`, where the tool-call summary picks it up for an operator.
+ * `tests/web/a-round-does-not-print-its-own-arithmetic.test.ts` holds that line.
  */
 export function withRequiredLines(text: string, required: readonly string[] | undefined): string {
     if (!required || required.length === 0) return text;
