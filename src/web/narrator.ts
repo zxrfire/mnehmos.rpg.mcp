@@ -415,9 +415,49 @@ export interface NarrationViolation {
     detail: string;
 }
 
-/** Prose that claims a rank was gained. */
-const CLAIMS_ADVANCEMENT =
-    /\b(?:breakthrough succeeded|broke through(?! (?:to nothing|and failed))|broken through|advanced to|rose to|ascended to|stepped up to|climbed to|attained|reached)\b[^.!?]{0,60}\b(?:layer|rank|realm|stage|condensation|foundation|core|nascent|deity|void|tribulation)\b/i;
+/** The rung words an advancement claim has to land on to be one. */
+const RUNG_WORD =
+    '(?:layer|rank|realm|stage|condensation|foundation|core|nascent|deity|void|tribulation)';
+
+/**
+ * Saying it in a way that can only be an advancement, whoever the subject is.
+ *
+ * No house states its intake bar as "broke through", so these are safe to catch
+ * without asking who the sentence is about.
+ */
+const ADVANCED_UNAMBIGUOUSLY =
+    new RegExp(
+        '\\b(?:breakthrough succeeded|broke through(?! (?:to nothing|and failed))|broken through'
+        + '|advanced to|rose to|ascended to|stepped up to|climbed to)\\b'
+        + `[^.!?]{0,60}\\b${RUNG_WORD}\\b`,
+        'i'
+    );
+
+/**
+ * A BAR SOMEBODY ELSE SETS IS NOT A CLAIM ABOUT THE PLAYER.
+ *
+ * `reached` and `attained` used to be in the list above, subjectless, and that
+ * made a whole class of turn unnarratable. An intake notice says "will hear
+ * anybody who has reached Qi Condensation at all" - so every faithful narration
+ * of a house recruiting tripped `invented_breakthrough` and was thrown away, and
+ * the player got the engine's own list instead. Measured on `who is here` in a
+ * town with three notices up: discarded on three consecutive runs, and the run
+ * that passed did so only by omitting all three notices.
+ *
+ * These two verbs therefore need the subject to be the person whose run this is,
+ * which is the shape {@link claimsThePlayerDied} already uses and for the same
+ * reason.
+ */
+function claimsThePlayerAdvanced(text: string, who: string | undefined): boolean {
+    if (ADVANCED_UNAMBIGUOUSLY.test(text)) return true;
+
+    const subjects = ['you', 'your', ...(who && who.trim() ? [forRegExp(who.trim())] : [])];
+    return new RegExp(
+        `\\b(?:${subjects.join('|')})\\b[^.!?]{0,40}\\b(?:attained|reached)\\b`
+        + `[^.!?]{0,60}\\b${RUNG_WORD}\\b`,
+        'i'
+    ).test(text);
+}
 
 /**
  * Ways of saying somebody died, without the somebody.
@@ -458,7 +498,7 @@ export function auditNarration(
     // resolved no attempt. An attempt that FAILED is a legitimate thing to
     // write about, and prose about it will contain these words.
     const granted = (filed.ranksGained ?? 0) > 0;
-    if (!granted && filed.breakthroughAttempted !== true && CLAIMS_ADVANCEMENT.test(text)) {
+    if (!granted && filed.breakthroughAttempted !== true && claimsThePlayerAdvanced(text, filed.who)) {
         found.push({
             kind: 'invented_breakthrough',
             detail: 'prose announces an advancement; the engine granted no rank and resolved no attempt'

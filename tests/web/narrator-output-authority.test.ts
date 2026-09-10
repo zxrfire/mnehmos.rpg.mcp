@@ -95,10 +95,48 @@ describe('prose that contradicts the engine is not shown', () => {
             ['Forty years went by and nobody came to the cave.',
                 { ranksGained: 0, breakthroughAttempted: false, died: false }],
             ['Nothing accumulated, because there is no road for the qi to take.',
-                { ranksGained: 0, breakthroughAttempted: false, died: false }]
+                { ranksGained: 0, breakthroughAttempted: false, died: false }],
+            // A BAR SOMEBODY ELSE SETS IS NOT A CLAIM ABOUT THE PLAYER.
+            //
+            // An intake notice states its floor, and the engine's own fact for
+            // one reads "will hear anybody who has reached Qi Condensation at
+            // all" - so `reached ... condensation`, matched without asking who
+            // the sentence was about, destroyed every narration of a town with
+            // notices up. Measured on `who is here` against a live model:
+            // discarded three runs out of three, and the run that survived did
+            // so only by leaving all three notices out of the prose.
+            ['The Azure Dew Sect will hear anybody who has reached Qi Condensation at all, '
+                + 'and whoever answers is taken.',
+                { ranksGained: 0, breakthroughAttempted: false, died: false, who: 'Wen Shu' }],
+            ['Verdant Spring Valley wants somebody some way into Qi Condensation and not '
+                + 'from the first rung of it.',
+                { ranksGained: 0, breakthroughAttempted: false, died: false, who: 'Wen Shu' }],
+            // Somebody else's standing, stated as what it is.
+            ['He has attained a realm you will not see for forty years.',
+                { ranksGained: 0, breakthroughAttempted: false, died: false, who: 'Wen Shu' }]
         ];
         for (const [text, filed] of cases) {
             expect(auditNarration(text, filed), text).toEqual([]);
+        }
+    });
+
+    /**
+     * And the claim the loosened check still has to catch: the player across the
+     * bar, rather than the bar.
+     */
+    it('still catches an advancement the engine did not grant', () => {
+        for (const text of [
+            'You have reached Qi Condensation Layer 2.',
+            'Wen Shu attained the second layer before the hour was out.',
+            'Your breakthrough succeeded and the realm opened.',
+            'She broke through to Foundation Establishment.'
+        ]) {
+            expect(
+                auditNarration(text, {
+                    ranksGained: 0, breakthroughAttempted: false, died: false, who: 'Wen Shu'
+                }).map(v => v.kind),
+                text
+            ).toContain('invented_breakthrough');
         }
     });
 
