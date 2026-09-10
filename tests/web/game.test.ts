@@ -429,7 +429,10 @@ describe('investigate', () => {
         expect(planned(result).action).toBe('investigate');
         expect(refusedCall(result)).toBeNull();
         expect(result.narration).toContain(LOCAL_SECT.name);
-        expect(engineCalls(result)[0].summary).toContain(`to sect ${LOCAL_SECT.id}`);
+        // THE KIND, NOT THE ROW ID. This read `to sect ${LOCAL_SECT.id}` - a
+        // database key in the channel the player reads, beside the name that is
+        // already in the line above. See `no-engine-voice-in-a-played-turn`.
+        expect(engineCalls(result)[0].summary).toContain('to a sect');
     });
 
     it('refuses to describe what the world does not hold', async () => {

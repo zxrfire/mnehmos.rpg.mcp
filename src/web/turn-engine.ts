@@ -4521,7 +4521,12 @@ ${noticed}`;
             {
                 name: 'engine.resolveParty',
                 action: 'interact',
-                summary: `Resolved "${query}" to ${party.kind} ${party.id}. ${party.facts[0]}`,
+                // A NAME, NOT A ROW ID. This read `Resolved "someone" to cultivator
+                // npc-109` in a channel the player sees in every mode - a
+                // database key printed beside the person's actual name, which
+                // is in the very next sentence. The id is the engine's business
+                // and the name is what the resolution FOUND.
+                summary: `Resolved "${query}" to a ${party.kind}. ${party.facts[0]}`,
                 ok: true
             },
             ...structureCalls(party.structure),
@@ -7495,7 +7500,11 @@ ${opened.text}` : receipt,
                 'Already fed.',
                 'You are not hungry, and eating for the sake of it is a habit for people with more ' +
                 'stones than you have.',
-                `Satiety already ${cultivator.satiety}/${SATIETY_MAX}; no purchase made.`
+                // THE BELLY, NOT THE COLUMN. `Satiety` is a field name and
+                // `100/100` is its raw range; neither is a thing anybody says.
+                // What is true is that they are full, and the mechanical
+                // channel is allowed to be plain without being a struct dump.
+                'They are as fed as they get; no purchase made.'
             ));
         }
         if (cultivator.spiritStones < MEAL_COST_STONES) {
@@ -8765,8 +8774,12 @@ ${opened.text}` : receipt,
                 action: 'sell',
                 summary:
                     `${lots.length} lot(s) sold for ${quote.offeredStones} spirit stone(s) against `
-                    + `a list of ${Math.round(quote.grossStones)}, priced by regard at ordinal `
-                    + `${cultivator.realmOrdinal}.`,
+                    // PRICED BY WHAT THEY ARE, SAID AS WHAT THEY ARE. This
+                    // read "priced by regard at ordinal 4", and `ordinal` is an
+                    // internal scale with no meaning to anybody reading it. The
+                    // rung has a name and the engine has always known it.
+                    + `a list of ${Math.round(quote.grossStones)}, priced by the regard a `
+                    + `${theRung(cultivator.realmOrdinal)} is held in.`,
                 ok: true
             }]
         };
@@ -8924,7 +8937,8 @@ ${opened.text}` : receipt,
                 action: 'sell',
                 summary:
                     `One copy of ${art.name} for ${paid} spirit stone(s) against a list of `
-                    + `${list}, priced by regard at ordinal ${cultivator.realmOrdinal}. `
+                    + `${list}, priced by the regard a ${theRung(cultivator.realmOrdinal)} is `
+                    + 'held in. '
                     + `${months} month(s) of copying. The art stays where it was: what moved is `
                     + 'a copy.',
                 ok: true

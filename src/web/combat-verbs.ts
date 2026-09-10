@@ -1818,7 +1818,10 @@ export const combatVerbs = {
             name: 'world.whatTheConfrontationDidToThem',
             action: 'attack',
             summary:
-                `${theirRecord.id} (${theirRecord.name}) in world state: `
+                // THE NAME, NOT THE ROW ID BESIDE IT. This printed
+                // `npc-174 (Qiu Nuohe)` in a channel the player reads in every
+                // mode - a database key set next to the person's actual name.
+                `${theirRecord.name} in world state: `
                 + `${wrote.wounds} wound ${wrote.wounds === 1 ? 'row' : 'rows'} written, `
                 + `died=${wrote.died}, facts=${wrote.facts.length}`
                 + (wrote.handoff?.primaryHeirId

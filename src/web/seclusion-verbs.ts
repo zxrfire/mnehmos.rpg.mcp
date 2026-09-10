@@ -708,11 +708,16 @@ export const seclusionVerbs = {
             `${humanDays(days)} of sitting would produce nothing.`,
             `${wall.line} ${wouldBe} ${pointer} `
             + 'Say it again with "anyway" and the years go by regardless - they are yours to spend.',
+            // THE FINDING, NOT THE ARITHMETIC THAT PRODUCED IT. This read
+            // "the rate multiplier at Qi Condensation Layer 1 is 0", which is
+            // the engine reading its own coefficient aloud in a channel the
+            // player sees in every mode. What is true and worth saying is that
+            // nothing accumulates - see `the-engine-states-findings-not-its-
+            // rubric.test.ts`, which is the same defect one screen over.
             (wall.state === 'no_method'
-                ? 'No method is practised, so the rate multiplier at '
-                : 'The manual has ended, so the rate multiplier at ')
-            + `${theRung(cultivator.realmOrdinal)} is 0 and the stretch returns exactly `
-            + 'nothing. '
+                ? 'No method is practised, so nothing accumulates at '
+                : 'The manual has ended, so nothing further accumulates at ')
+            + `${theRung(cultivator.realmOrdinal)} however long the sitting runs. `
             + `${days} day${days === 1 ? ' was' : 's were'} refused before anything was spent: `
             + 'no provisioning, no encounter roll, no time passed.'
         ));

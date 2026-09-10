@@ -133,7 +133,12 @@ describe('a turn that spends the body says what it spent', () => {
 
         for (let turn = 0; turn < 20; turn++) {
             const { narration, state } = await h.game.act('I gather herbs');
-            if (/satiety is down to/i.test(narration)) warned = true;
+            // MATCHED ON THE WARNING, NOT ON A FIELD NAME. This read
+            // `/satiety is down to/`, and `Satiety` was a raw stat printed at
+            // the player - removed by `no-engine-voice-in-a-played-turn`. The
+            // warning itself is unchanged and says the same thing about the
+            // same body; only the noun it uses is one a person would.
+            if (/(?:satiety|the belly) is down to/i.test(narration)) warned = true;
             if (!state.cultivator.alive) {
                 deathSaid = narration;
                 break;

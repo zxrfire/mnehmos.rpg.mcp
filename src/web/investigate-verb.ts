@@ -358,7 +358,12 @@ export const investigateVerb = {
             {
                 name: 'engine.readState',
                 action: 'investigate',
-                summary: `Resolved "${query}" to ${subject.kind} ${subject.id}. Read only: no time passed, nothing changed.`,
+                // A NAME, NOT A ROW ID. This read `Resolved "someone" to cultivator
+                // npc-109` in a channel the player sees in every mode - a
+                // database key printed beside the person's actual name, which
+                // is in the very next sentence. The id is the engine's business
+                // and the name is what the resolution FOUND.
+                summary: `Resolved "${query}" to a ${subject.kind}. Read only: no time passed, nothing changed.`,
                 ok: true
             },
             ...structureCalls(subject.structure)

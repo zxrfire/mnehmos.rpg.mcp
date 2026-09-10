@@ -184,12 +184,15 @@ describe('everything that can be inspected', () => {
         };
 
         const who = namesHeld(db)[0]!;
-        expect(await reached(`I look at ${who.name}`)).toMatch(/to cultivator /);
-        expect(await reached('I examine the Fallen Grain Caravan')).toMatch(/to sect /);
-        expect(await reached('I examine the Lesser Qi-Gathering Manual')).toMatch(/to technique /);
-        expect(await reached('I examine this place')).toMatch(/to place /);
+        // The KIND each name resolved to. The row id used to ride along beside
+        // it and was a database key in front of a player; see
+        // `no-engine-voice-in-a-played-turn`.
+        expect(await reached(`I look at ${who.name}`)).toMatch(/to a cultivator/);
+        expect(await reached('I examine the Fallen Grain Caravan')).toMatch(/to a sect/);
+        expect(await reached('I examine the Lesser Qi-Gathering Manual')).toMatch(/to a technique/);
+        expect(await reached('I examine this place')).toMatch(/to a place/);
         // The asker themselves, which is its own kind and not a cultivator row.
-        expect(await reached('I examine my meridians')).toMatch(/to self /);
+        expect(await reached('I examine my meridians')).toMatch(/to a self/);
     }, 200_000);
 });
 

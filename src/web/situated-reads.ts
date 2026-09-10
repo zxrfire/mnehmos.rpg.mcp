@@ -676,10 +676,11 @@ export const situatedReads = {
             action: 'destinations',
             summary:
                 `${overlook.seen} of ${onTheGround.length} piece(s) of unnameable ground inside a `
-                + `horizon of ${horizonInDays(cultivator.realmOrdinal).toFixed(1)} travel days at `
-                + `ordinal ${cultivator.realmOrdinal}. Perception, not knowledge: no name, holder `
-                + `or ceiling crosses this channel, and below ordinal ${LEAVES_THE_GROUND} it `
-                + `returns nothing at all.`,
+                // `at ordinal N` is an internal scale. The rung has a name.
+                + `horizon of ${horizonInDays(cultivator.realmOrdinal).toFixed(1)} travel days for a `
+                + `${theRung(cultivator.realmOrdinal)}. Perception, not knowledge: no name, `
+                + `holder or ceiling crosses this channel, and below `
+                + `${theRung(LEAVES_THE_GROUND)} it returns nothing at all.`,
             ok: overlook.seen > 0
         });
         return execution;

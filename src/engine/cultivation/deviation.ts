@@ -235,7 +235,12 @@ export function resolveDeviation(
         summary:
             `Qi deviation: a ${severity} meridian injury, ` +
             `${Math.round(progressLost)} qi-units of cultivation destroyed, ` +
-            `${hpLost} HP lost.`
+            // NOT "N HP LOST". `HP` is the field name and the player has an
+            // in-world word for what it measures: what a backlash took out of
+            // the body. The number stays - the ruling is that raw STATS go and
+            // in-world estimation stays, and a count of what was torn is a
+            // fact somebody standing there could give you.
+            `${hpLost} taken out of the body.`
     };
 }
 

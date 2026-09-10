@@ -309,13 +309,20 @@ describe('played, through the whole service', () => {
         };
 
         // A house, by the name the game itself printed.
+        //
+        // THE KIND, NOT THE ROW ID. This matched `to sect
+        // sect-fallen-grain-caravan`, and the id was a database key printed in
+        // a channel the player reads - removed by
+        // `no-engine-voice-in-a-played-turn`. What this was ever asserting is
+        // that the name resolved to a HOUSE rather than to a person or a place,
+        // and that is what it asserts now.
         expect(await resolved('tell me about the Fallen Grain Caravan'))
-            .toMatch(/to sect sect-fallen-grain-caravan/);
+            .toMatch(/to a sect/);
         // The ground underfoot.
-        expect(await resolved('tell me about this place')).toMatch(/to place /);
+        expect(await resolved('tell me about this place')).toMatch(/to a place/);
         // An art out of the catalog.
         expect(await resolved('what do you know about the Lesser Qi-Gathering Manual'))
-            .toMatch(/to technique lesser-qi-gathering-manual/);
+            .toMatch(/to a technique/);
     }, 200_000);
 
     /**
