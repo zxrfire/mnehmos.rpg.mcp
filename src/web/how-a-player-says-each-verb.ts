@@ -407,17 +407,38 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'what options do I have if I leave here',
         'what is out there worth going to',
         'is there anywhere with better energy for cultivating',
-        'what is on the other side of these mountains'
-    ],
-    roads: [
+        'what is on the other side of these mountains',
+        // The five below were filed under `roads` and are about PHYSICAL
+        // ROUTES, which is this verb's subject and not that one's. `roads`
+        // reads what the ground within reach would teach; getting somewhere is
+        // priced here, in days off the region connections, with the fold range
+        // and the Shrinking Earth Pavilion counter under it. See
+        // `a-route-question-is-not-a-dao-question.test.ts` for the measurement
+        // that moved them and for what it cost to leave them where they were.
         'how do I get to the mountain from here',
         'which way does the road run',
         'what is the route out of this place',
         'what road takes me there',
-        'how far is it and by which way',
+        'how far is it and by which way'
+    ],
+    // Every one of these asks what somewhere would TEACH. The verb reads the
+    // player's own knowledge rows joined to the dao-ground catalog and names no
+    // place they could not already name, so a sentence asking how to reach
+    // anywhere is not one of its own however much it sounds like the word.
+    //
+    // The last two are replacements rather than additions. Five of the eight
+    // that were here went to `destinations` and took the word `road` with them,
+    // so one line has to hold that word in ITS OTHER SENSE or "teach me a road"
+    // sits nearer five route sentences than anything left behind. And the
+    // comprehension phrasing is here because it was measured reaching nothing
+    // at all - not the table, not the tier - while the verb it belongs to was
+    // carrying five sentences it cannot answer.
+    roads: [
         'what can this ground teach me',
         'is there ground around here that teaches a dao',
-        'does this mountain teach anything'
+        'does this mountain teach anything',
+        'what would I comprehend if I sat here',
+        'is there anywhere near here that would teach me a road'
     ],
     // Deliberately none of these is a shrug. "I do nothing for a while" and
     // "I give it a month and see" were exemplars here and had to go: they are

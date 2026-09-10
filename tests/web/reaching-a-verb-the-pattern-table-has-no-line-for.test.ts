@@ -63,7 +63,21 @@ const PLAIN_ENGLISH: ReadonlyArray<readonly [ActionName, string]> = [
     ['acquisition', 'where would I even find a manual'],
     ['status', 'what am I'],
     ['look', 'what is going on here'],
-    ['roads', 'which way do the roads run'],
+    // THE ONE SENTENCE HERE THAT TURNS ON A COLLIDING WORD. `road` names a dao
+    // in this world and a thing you walk on in English, and this probe was
+    // written when `roads` carried five exemplars about getting somewhere -
+    // so it was reading the sentence the way that misfiling had taught the
+    // tier to. The five moved to `destinations`; the ruling and the
+    // measurement are in `a-route-question-is-not-a-dao-question.test.ts`.
+    //
+    // Which leaves this expectation, and it is `destinations` on the merits
+    // rather than because the corpus moved: "which way do the roads run" asks
+    // for a direction of travel, and `roads` names no place by design and
+    // cannot answer it. The dao sense of the word is asked with "what roads
+    // are open to me" - the verb's own phrasing in
+    // `what-each-verb-is-for-in-the-players-words.ts` - and the game offers
+    // the verb to the player as "what can I learn here", never as a road.
+    ['destinations', 'which way do the roads run'],
     ['news', 'what is the talk around here'],
     ['inventory', 'check my things'],
     ['list_techniques', 'what arts do I actually know'],

@@ -34,6 +34,42 @@
  * So `unclear` passes, and every one of the 104 that reach it is a sentence
  * this file hands to the tier on purpose.
  *
+ * ── AND IT SHOULD KEEP PASSING. MEASURED, WHEN THAT WAS ASKED AGAIN ──────
+ *
+ * The question came back as: this test never fails an exemplar that reaches
+ * `unclear`, so the corpus can advertise a sentence the parser has no reading
+ * for and nothing complains. The blast radius was measured before answering.
+ * On the corpus at 492 exemplars:
+ *
+ *     table 492: right 323, WRONG VERB 0, unclear 169
+ *     verbs the table reaches none of their own exemplars: 0
+ *     whole reader: 491 of 492
+ *
+ * A third of the corpus, and every one of those 169 is answered by the tier.
+ * Failing on `unclear` would be a demand that the table be rewritten to guess
+ * at 169 sentences it currently declines, which is the thing `AGENTS.md`
+ * forbids two paragraphs up. A shrink-only ratchet is no better: the ordinary
+ * way this file grows is somebody adding a natural phrasing nobody wrote a
+ * regular expression for, and that raises the count by one every time. A
+ * ratchet that turns healthy corpus growth red would be edited away within a
+ * month, and would deserve to be.
+ *
+ * ── THE GAP THAT IS REAL IS A DIFFERENT ONE, AND NEITHER TEST CAN SEE IT ─
+ *
+ * An exemplar filed under the WRONG VERB passes here twice. The sweep scores
+ * it `unclear`, which passes. The whole-reader sweep below scores it correct -
+ * because the tier's answer is this file, so a misfiled sentence is its own
+ * nearest neighbour and confirms itself. Meanwhile it teaches the tier to send
+ * every real sentence that means the same thing to a verb that cannot answer
+ * them.
+ *
+ * Found by hand, not by any test: `roads` reads what ground TEACHES, and five
+ * of its eight exemplars asked how to get somewhere. Six route sentences that
+ * were in no corpus at all reached `roads` through the whole reader. They are
+ * `destinations` exemplars now, and the ruling and the before-and-after are in
+ * `a-route-question-is-not-a-dao-question.test.ts`, which asserts on held-out
+ * sentences for exactly the reason above.
+ *
  * ── AND THE DISAGREEMENT RAN BOTH WAYS ───────────────────────────────────
  *
  * Four of the twenty-eight were fixed in the CORPUS, not the table, because the
@@ -169,6 +205,11 @@ describe('working at a thing is not working for wages', () => {
  * Through the whole reader the same corpus answers 294 of 296, so those verbs
  * are not broken: the tier is doing exactly the job the table's looseness
  * assumes. Which means the number worth guarding is this one, not the table's.
+ *
+ * Re-measured at 492 exemplars: the table answers 323, and no verb reaches
+ * none of its own any more. The whole reader answers 491. The shape of the
+ * finding held; the three verbs named above did not stay the worst ones, which
+ * is the argument for measuring per verb rather than pinning a list of them.
  *
  * -- AND IT IS THE ALARM FOR THE TIER GOING MISSING -----------------------
  *
