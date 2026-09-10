@@ -959,7 +959,10 @@ import { matchVerbs } from './match-verbs.js';
 import { daoPartnerVerbs } from './what-a-dao-partner-is-for.js';
 import { siteVerbs } from './site-verbs.js';
 import { institutionVerbs } from './institution-verbs.js';
-import { howTheyTookIt } from '../engine/social/how-they-took-what-you-said.js';
+import {
+    ALREADY_STANDS_BETWEEN_THEM,
+    howTheyTookIt
+} from '../engine/social/how-they-took-what-you-said.js';
 import { costsTheAskerNothing } from './asking-is-not-doing.js';
 import {
     realmIndexOf
@@ -12973,10 +12976,41 @@ ${fit.line}`;
             && record.subjectId === them.id
             && record.holderId !== them.id);
 
+        // ── AND WHETHER ANY OF THEM WOULD ACTUALLY LEND A HAND ───────────
+        //
+        // This counted house-mates by MEMBERSHIP alone, so an elder who holds a
+        // grudge against this cultivator counted as standing behind them -
+        // present, on the same roll, and perfectly willing to watch. Backing is
+        // what makes a threat from somebody far weaker land instead of reading
+        // as absurd, so the game was lending the player the weight of people
+        // who would not move.
+        //
+        // The design owner, on what a personal falling-out costs: *the elder may
+        // not recommend you for things like postings, or lend you a hand when
+        // disciples fight* - and, on what a recommendation IS: *it means what it
+        // means today, and what it means in game. Does he like you?*
+        //
+        // So it is not a flag and there is no recommendation field. It is the
+        // feeling, which the ledger already derives, and
+        // `ALREADY_STANDS_BETWEEN_THEM` is the existing statement of which
+        // feelings mean something stands between two people. Somebody with
+        // something standing between you does not step in front of a blade for
+        // you.
+        //
+        // FEELING NOTHING IS STILL BACKING, and that is the institutional case:
+        // a house-mate who has no particular opinion answers for the house. What
+        // breaks solidarity is a grievance, not the absence of warmth.
         const backing = this.present(cultivator).filter(row =>
             row.id !== them.id
             && row.sectId !== null
-            && row.sectId === this.repos.sects.getMembership(cultivator.id)?.sectId);
+            && row.sectId === this.repos.sects.getMembership(cultivator.id)?.sectId
+            && !ALREADY_STANDS_BETWEEN_THEM.has(
+                whatTheyFeelAboutYou({
+                    theirId: row.id,
+                    aboutId: cultivator.id,
+                    ledger
+                }).feeling
+            ));
 
         return howTheyTookIt({
             wrongInTheAct,

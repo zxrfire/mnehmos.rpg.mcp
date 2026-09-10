@@ -81,8 +81,27 @@ export interface HowTheyTookIt {
  * Read off `whatTheyFeelAboutYou`, so it moves when the ledger moves and there
  * is no second notion of what people have against each other. Conflicted is in
  * it because somebody holding two things at once hears the worse one.
+ *
+ * ── EXPORTED FOR A SECOND READER, WHICH ASKS A DIFFERENT QUESTION ────────
+ *
+ * This one asks how a sentence LANDS. `howItLandedOn` also decides who is
+ * standing BEHIND the person saying it, and that was counting house-mates by
+ * membership alone - so somebody who holds a grudge against the player counted
+ * as backing them, standing right there, while the player leaned on their
+ * presence.
+ *
+ * The set carries over because of what it says rather than what it was for:
+ * these are the feelings that mean something stands between two people, and
+ * somebody with something standing between you does not step in front of a
+ * blade for you. That is the whole of it, and it keeps one notion of what
+ * people have against each other rather than opening a second.
+ *
+ * `nothing_either_way` is deliberately NOT in it and must not be. A house-mate
+ * who feels nothing in particular about somebody still answers for the house,
+ * and that is the common case and the institutional one - personal grievance is
+ * what breaks house solidarity, not the absence of personal warmth.
  */
-const ALREADY_STANDS_BETWEEN_THEM: ReadonlySet<WhatTheyFeel> =
+export const ALREADY_STANDS_BETWEEN_THEM: ReadonlySet<WhatTheyFeel> =
     new Set<WhatTheyFeel>(['sore', 'bitter', 'despondent', 'conflicted']);
 
 export function howTheyTookIt(input: {
