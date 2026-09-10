@@ -79,6 +79,7 @@
  */
 
 import { ARTIFACTS } from '../data/cultivation/artifacts.js';
+import { parseCount, WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
 import { HERBS } from '../data/cultivation/herbs.js';
 import {
     IMMORTAL_ITEMS,
@@ -284,8 +285,23 @@ export function howHighTheirHouseReaches(
 // WHAT THE PLAYER HAS PUT DOWN
 // ─────────────────────────────────────────────────────────────────────────
 
-/** A naked sum, in either of the two ways somebody writes one. */
-const A_SUM_OF_STONES = /^\s*(?:about\s+|around\s+)?\d[\d,]*\s*(?:spirit\s+)?stones?\s*$/i;
+/**
+ * A naked sum, in either of the two ways somebody writes one.
+ *
+ * THE COMMENT WAS TRUE AND THE PATTERN WAS NOT. It read `\d[\d,]*` and saw
+ * digits only, so "twenty stones" was not a sum of stones - it fell past this
+ * to the art and pill catalogs, and a player putting money down was read as
+ * offering something that is not money.
+ *
+ * The same defect stood in three other readers of the same words, all fixed
+ * together: `THE_MONEY` and `WHERE_WHAT_IS_PUT_DOWN_STARTS` in
+ * `what-a-request-asks-and-of-whom.ts`, and `stonesNamedIn`.
+ */
+const A_SUM_OF_STONES = new RegExp(
+    `^\\s*(?:about\\s+|around\\s+)?(?:\\d[\\d,]*|${WORD_NUMBER_ALTERNATION})`
+    + '\\s*(?:spirit\\s+)?stones?\\s*$',
+    'i'
+);
 
 /**
  * Which grade of an immortal medicine was named, out of the words used.
@@ -344,10 +360,15 @@ function answersTo(name: string, what: string): boolean {
     return lowered === said || lowered.includes(said);
 }
 
-/** How many stones a sum names, for the purse it has to come out of. */
+/**
+ * How many stones a sum names, for the purse it has to come out of.
+ *
+ * `parseCount` rather than a digit strip, for the reason on
+ * {@link A_SUM_OF_STONES}: half the sums a player writes are words, and a
+ * digit strip reads every one of them as nothing.
+ */
 function howManyStones(what: string): number {
-    const digits = what.replace(/[^0-9]/g, '');
-    return digits.length === 0 ? 0 : Math.min(Number(digits), Number.MAX_SAFE_INTEGER);
+    return Math.min(parseCount(what) ?? 0, Number.MAX_SAFE_INTEGER);
 }
 
 export function whatTheOfferNames(named: string): TheOfferNamed {

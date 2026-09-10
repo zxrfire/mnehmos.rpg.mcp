@@ -2,6 +2,7 @@
  * An engine result, turned into the sentences a player and an operator read.
  */
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
+import { parseCount, WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { LOW_SATIETY } from '../engine/cultivation/survival.js';
@@ -29,12 +30,38 @@ const A_HANDLER_NAME_AT_THE_FRONT = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_
 
 /**
  * The sum somebody said they were putting down, off their own sentence.
+ *
+ * OFF THEIR OWN SENTENCE, which is why digits alone will not do. This read
+ * `\d[\d,]*` and saw nothing in "I offer twenty stones", and the caller that
+ * matters most treats a sum it cannot see as no sum at all:
+ * `stonesOffered: stonesNamedIn(rawInput) ?? 0`. So a player who wrote their
+ * payment in words commissioned the work for NOTHING - and the unpaid path is
+ * the one that opens a favour saying they took nothing for it.
+ *
+ * `parseCount` is the repo's one reader of a number said either way and cannot
+ * go stale against the table it reads. The noun is still matched here, because
+ * this function answers *how many STONES*, not *how many of anything*.
  */
 export function stonesNamedIn(sentence: string): number | null {
-    const said = /\b(\d[\d,]*)\s*(?:spirit\s+)?stones?\b/i.exec(sentence);
-    if (!said) return null;
-    const value = Number.parseInt(said[1].replace(/,/g, ''), 10);
-    return Number.isFinite(value) && value > 0 ? value : null;
+    // DIGITS FIRST, AND WITH THEIR OWN PARSE. A grouped thousand is written
+    // `1,500` and only this branch knows what the comma is for - `parseCount`
+    // reads at most three digits and would take `1` out of it, which is the
+    // wrong answer by a factor of a thousand on the largest sums in the game.
+    const inDigits = /\b(\d[\d,]*)\s*(?:spirit\s+)?stones?\b/i.exec(sentence);
+    if (inDigits) {
+        const value = Number.parseInt(inDigits[1].replace(/,/g, ''), 10);
+        return Number.isFinite(value) && value > 0 ? value : null;
+    }
+
+    // AND THEN THE SAME SUM SAID IN WORDS, which is the half that was missing.
+    const inWords = new RegExp(
+        `\\b((?:${WORD_NUMBER_ALTERNATION})(?:${WORD_NUMBER_ALTERNATION})?)`
+        + '\\s*(?:spirit\\s+)?stones?\\b',
+        'i'
+    ).exec(sentence);
+    if (!inWords) return null;
+    const value = parseCount(inWords[1]);
+    return value !== null && value > 0 ? value : null;
 }
 
 export function withoutTheHandlerName(line: string): string {

@@ -3,6 +3,7 @@
  */
 
 import type { AskWeight } from '../engine/social-leverage/index.js';
+import { WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT IS BEING ASKED FOR
@@ -137,8 +138,44 @@ const AFTER_THE_MAKING_VERB =
  */
 const A_QUESTION_RATHER_THAN_A_REQUEST = /^\s*(?:about|regarding|concerning)\b/i;
 
-/** A sum on the table, in either of the two ways somebody writes one. */
-const THE_MONEY = /\b(?:with|for)?\s*\d[\d,]*\s*(?:spirit\s+)?stones?\b/i;
+/**
+ * A sum on the table, in either of the two ways somebody writes one.
+ *
+ * THE COMMENT ABOVE WAS ALREADY TRUE AND THE PATTERN WAS NOT. It read
+ * `\d[\d,]*` and saw digits only, so half of every sentence with money in it
+ * was read one way and half the other. Measured, in matched pairs:
+ *
+ *     "I offer him 20 stones for the manual"
+ *         -> request, target `him`, a_trade
+ *     "I offer him twenty stones for the manual"
+ *         -> request, target `him twenty stones`, a_thing
+ *
+ *     "I ask him for the manual with 60 spirit stones"
+ *         -> topic `manual`
+ *     "I ask him for the manual with sixty spirit stones"
+ *         -> topic `manual with sixty spirit stones`
+ *
+ * The second of those is this module's OWN documented case - see the note
+ * `THE PURSE IS NOT THE ASK`, which says outright that leaving the money
+ * clause in would classify a teaching request as a request for sixty spirit
+ * stones, and then spells the example in words.
+ *
+ * The first is worse, because a wrong person is worse than no person: an
+ * absent target means whoever is at hand, and `him twenty stones` means a
+ * refusal about somebody who is not standing there. It is also the commonest
+ * haggle sentence in the game.
+ *
+ * `WORD_NUMBER_ALTERNATION` is the repo's one answer to this and cannot go
+ * stale against `parseCount`. The haggle branch in the verb table splices it
+ * in for exactly this reason, under a header saying the same thing: *a number
+ * said in words is how people write a counter-offer*.
+ */
+const THE_MONEY = new RegExp(
+    String.raw`\b(?:with|for)?\s*`
+    + `(?:\\d[\\d,]*|${WORD_NUMBER_ALTERNATION})`
+    + String.raw`\s*(?:spirit\s+)?stones?\b`,
+    'i'
+);
 
 /**
  * Leading and trailing noise a person phrase collects.
@@ -421,11 +458,21 @@ function whereTheSwapIs(input: string): { index: number; length: number } | null
 
 /**
  * Where the person stops and the thing being put down starts.
+ *
+ * THE THIRD DIGITS-ONLY READ IN THIS MODULE. The lookahead lists the words a
+ * thing can start with and then `\d+` for a counted one, so "offer him 20
+ * stones for the manual" was a trade and "offer him twenty stones for the
+ * manual" was not: it fell past this to the generic path and came back as a
+ * request for a thing. `WORD_NUMBER_ALTERNATION` is the same answer applied by
+ * the same file two readers up, and the alternation's entries carry a trailing
+ * space of their own, which is stripped here because this is a lookahead onto a
+ * word boundary rather than a match.
  */
 const WHERE_WHAT_IS_PUT_DOWN_STARTS = new RegExp(
     '\\b(?:offer|offers|offering|trade|trades|trading|swap|swaps|swapping'
     + '|exchange|exchanges|exchanging|give|gives|giving)\\s+(.{2,60}?)\\s+'
     + '(?=(?:the|a|an|my|his|her|their|your|our|its|one|some|any|this|that|these|those'
+    + `|${WORD_NUMBER_ALTERNATION.replace(/ /g, '')}`
     + '|\\d+)\\b)(.{2,120})$',
     'i'
 );

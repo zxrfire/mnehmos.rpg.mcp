@@ -14,11 +14,38 @@ const DURATION_UNITS: ReadonlyArray<[RegExp, number]> = [
     [/\b(?:century|centuries)\b/, 36_500]
 ];
 
+/**
+ * ── EVERY NUMBER WORD, BECAUSE A MISSING ONE IS SILENTLY ONE ─────────────
+ *
+ * This held nineteen entries and stopped at fifty, skipping eleven, thirteen,
+ * fourteen, sixteen through nineteen, and sixty through ninety. An
+ * unrecognised word does not fail here - `howManyWereNamed` starts at 1 and
+ * returns it - so a span written in a word the table lacked was silently the
+ * smallest possible span, with nothing on the screen to say so.
+ *
+ * Measured through the real parser, in matched pairs:
+ *
+ *     "I cultivate for fifty years"  -> 18250 days   (fifty was in the table)
+ *     "I cultivate for sixty years"  ->   365 days   (one year)
+ *     "I cultivate for eighty years" ->   365 days   (one year)
+ *     "I wait fifteen days"          ->    15 days
+ *     "I wait fourteen days"         ->     1 day
+ *     "I wait seventy days"          ->     1 day
+ *
+ * In a game whose core loop is deciding how long to sit down, and where time
+ * does not come back, a span quietly reduced to its minimum is the worst shape
+ * a defect can have: no error, a wrong answer, and nothing to undo it with.
+ */
 const WORD_NUMBERS: Readonly<Record<string, number>> = {
     a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
-    eight: 8, nine: 9, ten: 10, twelve: 12, fifteen: 15, twenty: 20, thirty: 30,
-    forty: 40, fifty: 50, hundred: 100
+    eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13,
+    fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
+    nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60,
+    seventy: 70, eighty: 80, ninety: 90, hundred: 100, thousand: 1_000
 };
+
+/** The tens, which are the half of a compound that comes first. */
+const A_ROUND_TEN = (word: number): boolean => word >= 20 && word < 100 && word % 10 === 0;
 
 /**
  * The words that multiply the word before them.
@@ -27,10 +54,19 @@ const WORD_MAGNITUDES: Readonly<Record<string, number>> = { hundred: 100, thousa
 
 /**
  * How many were named, from the two tokens before the unit.
+ *
+ * A COMPOUND IS TWO WORDS AND THE READ STOPPED AT THE FIRST. `twenty five
+ * days` broke on `five` and came back as five days, because the loop takes the
+ * first number it meets going backwards and stops. The tens word is the one
+ * standing behind it, and the caller already passes the two tokens before the
+ * unit - which is exactly a compound and no more.
  */
 function howManyWereNamed(tail: readonly string[]): number {
     let count = 1;
     let magnitude = 1;
+    // Whether a units word (one to nine) has been read and could still have a
+    // tens word standing in front of it.
+    let awaitingTheTens = false;
     for (const token of [...tail].reverse()) {
         const digits = Number(token.replace(/[^0-9.]/g, ''));
         if (Number.isFinite(digits) && digits > 0) { count = digits; break; }
@@ -41,7 +77,13 @@ function howManyWereNamed(tail: readonly string[]): number {
         // the word behind it.
         if (token === 'a' || token === 'an') continue;
         const word = WORD_NUMBERS[token];
-        if (word !== undefined) { count = word; break; }
+        if (word === undefined) break;
+        // The front half of `twenty five`, and the only thing that may be read
+        // after a units word rather than instead of it.
+        if (awaitingTheTens && A_ROUND_TEN(word)) { count += word; break; }
+        count = word;
+        if (word >= 1 && word <= 9) { awaitingTheTens = true; continue; }
+        break;
     }
     return count * magnitude;
 }
@@ -112,7 +154,36 @@ export function parseCount(input: string): number | null {
         const n = Number(digits[1]);
         if (n >= 1) return n;
     }
-    for (const token of input.toLowerCase().split(/[^a-z]+/).filter(Boolean)) {
+    // ── AN ARTICLE IS THE LAST RESORT AND WAS THE FIRST ──────────────────
+    //
+    // `a` and `an` are in the table because "a stone" is one stone. Read in
+    // sentence order they also won every race they were in: "a thousand
+    // stones" came back as ONE, because `a` is the first token and the loop
+    // returned on it.
+    //
+    // So a real number word is looked for first, and the article answers only
+    // when the sentence names no other number.
+    const words = input.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+    let magnitude = 1;
+    let named: number | null = null;
+    let joined = false;
+    for (const token of words) {
+        const scale = WORD_MAGNITUDES[token];
+        if (scale !== undefined) { magnitude = Math.max(magnitude, scale); continue; }
+        if (token === 'a' || token === 'an') continue;
+        const word = WORD_NUMBERS[token];
+        if (word === undefined || word < 1) continue;
+        if (named === null) { named = word; continue; }
+        // AND THE SECOND HALF OF A COMPOUND, so this agrees with
+        // `howManyWereNamed` about `twenty five`. Only a units word directly
+        // after a round ten joins it; anything else is a second number in the
+        // sentence, and the first one said is the one meant.
+        if (!joined && A_ROUND_TEN(named) && word <= 9) { named += word; joined = true; }
+    }
+    if (named !== null) return Math.round(named * magnitude);
+    if (magnitude > 1) return Math.round(magnitude);
+    // And the article, where it was all the sentence said.
+    for (const token of words) {
         const word = WORD_NUMBERS[token];
         if (word !== undefined && word >= 1) return Math.round(word);
     }
