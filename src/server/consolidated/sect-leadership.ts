@@ -310,6 +310,56 @@ function loadHouse(
 }
 
 /**
+ * WHOEVER SITS AT THE TOP OF THE HOUSE, WHICH {@link seatElders} LEAVES OUT.
+ *
+ * `seatElders` stops one rung short of the top on purpose, and every consumer of
+ * `view.elders` inside this file is an act the HEAD performs on the people under
+ * them - challenging for the seat, dismissing an elder, pricing a dismissal - so
+ * a head who appeared in their own list of elders would be a defect of its own.
+ * The `- 1` in the disciple count below is the same decision, said in
+ * arithmetic.
+ *
+ * `whoDecidesIn` is not one of those consumers, and it disagrees. It filters a
+ * roll with `isElderRank`, whose header states the rule this file's omission
+ * breaks: *the top rung is one too*. So the roll assembled for `portfoliosIn`
+ * was every decider in the house EXCEPT the one who decides most, and
+ * `whoIsInChargeOfWhat` hands the rooms out deepest-first to the heaviest voice
+ * first - which meant the innermost sealed room of a house went to its second
+ * most senior person, and an elder claiming the house's word over that room was
+ * told they held it.
+ *
+ * Only reachable by somebody who is NOT the head: the order path gates on
+ * `canOrder` rather than on the seat, so any rung that can send anybody reaches
+ * it, and the caller puts the cultivator on the roll itself. Where the
+ * cultivator IS the head the roll was already whole, which is why this went
+ * unnoticed.
+ *
+ * Derived the same way `seatElders` derives every other rung - the named member
+ * of the catalog first, the synthetic seat where the world named nobody, and
+ * neither if they are gone - because a head assembled differently from the
+ * elders is a second answer to who holds a rung.
+ */
+function seatTheHead(
+    sectId: string,
+    rankCount: number,
+    ledger: HouseLedger
+): { id: string; rankIndex: number } | null {
+    if (rankCount <= 0) return null;
+    const rung = rankCount - 1;
+    const gone = new Set([...ledger.expelled, ...ledger.departed]);
+
+    const named = getMembersOf(sectId).find(m => m.rankIndex === rung && !gone.has(m.id));
+    if (named) return { id: named.id, rankIndex: rung };
+
+    // `rosterByRung` seats one person here whatever the house's size, in so many
+    // words: *the top rung is one person, not three tenths of one*. So the seat
+    // exists even where the catalog names nobody to it, and the synthetic id is
+    // spelled the way the unnamed elders are spelled.
+    const id = `elder:${sectId}:${rung}:0`;
+    return gone.has(id) ? null : { id, rankIndex: rung };
+}
+
+/**
  * The elders of a house, named where the world named them.
  */
 function seatElders(
@@ -796,9 +846,20 @@ export async function handleOrder(args: z.infer<typeof OrderSchema>): Promise<ob
         ? portfoliosIn({
             locations: world.locations,
             sectId: view.sectId,
+            // AND THE SEAT ITSELF. `view.elders` stops one rung short of the
+            // top, so this roll was every decider in the house except the one
+            // who decides most. See `seatTheHead`.
+            //
+            // Not added where the cultivator IS the head: they are already on
+            // the roll one line up, and a second entry at that rung would hand
+            // the deepest room to a person who is not there.
             roll: [
                 { id: view.cultivator.id, rankIndex: view.rankIndex },
-                ...view.elders.map(e => ({ id: e.id, rankIndex: e.rankIndex }))
+                ...view.elders.map(e => ({ id: e.id, rankIndex: e.rankIndex })),
+                ...(isHeadOfHouse(view.rankIndex, view.rankCount)
+                    ? []
+                    : [seatTheHead(view.sectId, view.rankCount, view.ledger)]
+                        .filter((seat): seat is { id: string; rankIndex: number } => seat !== null))
             ],
             rankCount: view.rankCount
         })
