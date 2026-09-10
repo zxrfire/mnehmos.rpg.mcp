@@ -542,6 +542,47 @@ export function whoATheftIsAimedAt(input: string): string | undefined {
 }
 
 /**
+ * WHO IS BEING OFFERED SOMETHING, WHICH IS NEVER THE THING OFFERED.
+ *
+ * The same defect `whoATheftIsAimedAt` exists for, one verb along.
+ * `extractSubject` takes everything after the verb, which is right for
+ * `negotiate with him` and wrong for `offer him a deal` - it produced the
+ * target `him a deal`, a name nothing can resolve, which is worse than no name
+ * at all: an absent target means whoever is at hand, and a wrong one means a
+ * refusal saying nobody here is called that.
+ *
+ * Measured, the three shapes and what they gave:
+ *
+ *     "I strike a deal with him"  -> him            (the preposition carried it)
+ *     "I offer him a deal"        -> NOBODY
+ *     "I make him an offer"       -> NOBODY
+ *
+ * A DITRANSITIVE VERB PUTS THE PERSON FIRST, and that is the whole reading:
+ * what follows `offer` is who, and what follows them is what. Only a pronoun
+ * or a capitalised name is taken, because `offer the manual` puts a THING
+ * there and a shape that cannot tell the two apart would hand a resolver a
+ * book to look for a face in.
+ */
+export function whoIsBeingOfferedSomething(input: string): string | undefined {
+    const said = new RegExp(
+        String.raw`\b(?:offer|offers|offering|offered|make|makes|making|made)\s+`
+        + String.raw`(him|her|them|us|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+`
+        // And something after them, because a person alone is not an offer:
+        // `I make him` is not this sentence and neither is `I offer her`.
+        + String.raw`(?:an?|the|my|our|his|her|their|[0-9]|\w+\s)`
+    ).exec(input);
+    if (!said) return undefined;
+
+    const who = said[1]!;
+    // A THING IN THE PERSON SLOT IS STILL A THING. `A_PORTABLE_THING` is the
+    // repo's own answer to thing-or-person and both readers of it ask the same
+    // question, so "I offer Jade the manual" keeps its name and "I offer Jade
+    // Pendant" is not a person being offered anything.
+    if (namesTheThingRatherThanThePerson(who)) return undefined;
+    return who;
+}
+
+/**
  * Whether what came out of the sentence is an object rather than somebody.
  */
 export function namesTheThingRatherThanThePerson(target: string | undefined): boolean {
@@ -2698,7 +2739,7 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
         // a house - so these name what is being offered rather than taking a
         // bare `offer`.
         String.raw`\b(?:offer|offers|offering|offered)\s+(?:him|her|them|us|\w+)?\s*an?\s+(?:deal|bargain|arrangement|trade|understanding|price)\b`,
-        String.raw`\b(?:make|makes|making|made)\s+(?:him|her|them|us|\w+)\s+an\s+offer\b`,
+        String.raw`\b(?:make|makes|making|made)\s+(?:him|her|them|us|\w+(?:\s+\w+){0,2})\s+an\s+offer\b`,
         String.raw`\bput\s+a\s+(?:deal|bargain|proposal|proposition)\s+to\b`,
         // And the original list, unchanged.
         String.raw`\b(?:negotiate|bargain|make terms|come to terms|strike a deal|petition|ally|alliance|swear|join|apply to|seek protection|beg)\b`
@@ -3660,7 +3701,16 @@ function planIntent(input: string): PlannedAction {
         // here" became a haggle, because the bare word was in this list - and
         // a counter is precisely where somebody goes to buy passage.
         || /\b(?:i\s+)?(?:counter-?offer|lowball|beat him down|beat them down|meet (?:him|her|them) halfway)\b/i.test(text)) {
-        return { action: 'interact', intent: 'trade' };
+        // AND WHO THE PRICE WAS SAID TO. A haggle happens with whoever is in
+        // front of you, so no target was ever wrong here - but the sentence
+        // names one and dropping it made `somebodyAtHand` guess at a face the
+        // player had already picked out.
+        const acrossTheTable = whoIsBeingOfferedSomething(input);
+        return {
+            action: 'interact',
+            ...(acrossTheTable ? { target: acrossTheTable } : {}),
+            intent: 'trade'
+        };
     }
     // ── WHAT DID THAT PAY ────────────────────────────────────────────────
     //
@@ -4464,6 +4514,27 @@ function planIntent(input: string): PlannedAction {
         return { action: 'investigate', target: askedAfter };
     }
 
+    // ── OFFERING SOMEBODY A THING, WHICH IS PUTTING IT ON THE TABLE ──────
+    //
+    // Measured: "I offer him twenty stones" reached the haggle (a PRICE, and
+    // that branch owns it) and "I offer him the manual" reached nothing. The
+    // trade intent's word list is `trade|buy|sell|purchase|barter|haggle|
+    // market|shop|price`, so "I offer him a trade" worked on the word `trade`
+    // and the sentence that names the actual thing did not.
+    //
+    // It is a trade and not a gift, and the difference is the verb: `give`
+    // asks for nothing back and is why it opens an account without leverage,
+    // and an offer is holding a thing out to see what comes the other way.
+    // Below the price branch on purpose, so naming a sum stays a haggle.
+    {
+        const offeredTo = whoIsBeingOfferedSomething(input);
+        if (offeredTo
+            && /\b(?:offer|offers|offering|offered)\b/.test(text)
+            && !matchIntent(text, INTERACT_INTENT_PATTERNS)) {
+            return { action: 'interact', target: offeredTo, intent: 'trade' };
+        }
+    }
+
     // ── interact: everything done to or with a person or a faction ──
     const interactIntent = matchIntent(text, INTERACT_INTENT_PATTERNS);
     if (interactIntent) {
@@ -4474,9 +4545,17 @@ function planIntent(input: string): PlannedAction {
         // nobody where it does not, rather than the purse.
         const takingAThing = interactIntent === 'steal'
             && namesTheThingRatherThanThePerson(subject);
+        // AND THE SAME FOR AN OFFER, WHICH PUTS THE PERSON FIRST.
+        // `extractSubject` takes the whole tail, so "I offer him a deal" came
+        // out as the target `him a deal` - a name nothing resolves, and worse
+        // than no name at all, because an absent target means whoever is at
+        // hand and a wrong one means a refusal about somebody who is not here.
+        const offeredTo = interactIntent === 'negotiate' || interactIntent === 'trade'
+            ? whoIsBeingOfferedSomething(input)
+            : undefined;
         const target = interactIntent === 'steal'
             ? whoATheftIsAimedAt(input) ?? (takingAThing ? undefined : subject)
-            : subject;
+            : offeredTo ?? subject;
         return {
             action: 'interact',
             target,
