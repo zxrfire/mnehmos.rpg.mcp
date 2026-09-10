@@ -5191,6 +5191,50 @@ ${noticed}`;
                 return this.donate(run, cultivator, days);
 
             case 'standing': {
+                // ── A HOUSE THAT IS NOT YOURS IS A QUESTION ABOUT THE HOUSE ──
+                //
+                // `handleStanding` takes a cultivator id and nothing else, so
+                // every answer it can give is about the asker. That is right
+                // for "who leads my sect" - the read names whoever stands
+                // highest in the house it read - and it is an answer to a
+                // different question for "who leads the Azure Dew Sect" put by
+                // somebody who is not of it. Measured, played unaffiliated:
+                // the question came back "Unaffiliated. No stipend, no array,
+                // no elder, and nobody to notice if this run ends badly."
+                // True, and not what was asked.
+                //
+                // WHO LEADS A HOUSE IS SOMETHING YOU ARE TOLD, and the world
+                // already says so: `what-joining-tells-you.ts` hands the head's
+                // name over on joining, in so many words - "you were told when
+                // you joined". So a stranger is not given the name here, and
+                // the honest answer is the one the register already gives about
+                // a house from outside, which is awareness-gated and says what
+                // is known of it rather than what its roll holds.
+                //
+                // RESOLVED WITHOUT THE AWARENESS GATE, which looks wrong and is
+                // not: this decides only WHOSE house was named, and it reveals
+                // nothing, because the name being matched is a name the player
+                // just typed. Gating here instead would fall through to the
+                // standing read for every house the asker has not heard of -
+                // which is the whole defect again, and worst in the case that
+                // deserves it least. The read it hands off to does gate, and
+                // answers a house nobody has heard of with "something you
+                // cannot place" rather than with the asker's own rank.
+                //
+                // The membership DOES go in, as the fourth argument, and it is
+                // what makes "my sect" resolve to the asker's own house instead
+                // of to whichever catalog name scores best against those two
+                // words. The parser only ever puts a catalog name here, but the
+                // phase-1 router is a model and may put anything.
+                const asked = (target ?? '').trim();
+                const aboutAHouse = asked.length >= 3 && !GENERIC_HOUSE_PHRASE.test(asked)
+                    ? resolveSect(this.repos, asked, undefined, cultivator.sectId)
+                    : null;
+                if (aboutAHouse
+                    && aboutAHouse.id !== positionIn(this.repos, cultivator.id)?.sectId) {
+                    return this.investigate(run, cultivator, ambient, aboutAHouse.name);
+                }
+
                 const read = this.fromToolResult(
                     'sect_manage.standing', 'sect',
                     await handleStanding({ action: 'standing', cultivatorId: cultivator.id }),

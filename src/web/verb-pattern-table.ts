@@ -4370,7 +4370,22 @@ function planIntent(input: string): PlannedAction {
         // Unless it is being put to a person, in which case it is a question
         // asked of somebody rather than a read of the player's own house.
         && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text)) {
-        return { action: 'sect', intent: 'standing' };
+        // WHICH HOUSE WAS ASKED ABOUT, WHICH USED TO BE THROWN AWAY.
+        //
+        // The standing read answers this for a member of the house named,
+        // because it names whoever stands highest in the house it reads. It has
+        // no answer at all about any OTHER house, and the name was dropped
+        // here, so "who leads the Azure Dew Sect" asked by somebody of the
+        // Frostmirror Court - or by somebody of nowhere - was answered with the
+        // asker's own rank and contribution.
+        //
+        // Only a catalog name is carried, never the bare type noun: "who runs
+        // the sect" means the asker's own and has to keep meaning it. The match
+        // is the catalog's own spelling because `A_HOUSE_NAME_IS_SAID` is built
+        // out of the catalog, longest name first, so what it matched IS the
+        // house rather than a phrase somebody has to guess at.
+        const named = A_HOUSE_NAME_IS_SAID.exec(text)?.[0];
+        return { action: 'sect', intent: 'standing', ...(named ? { target: named } : {}) };
     }
 
     if (/\b(?:join|joining|apply to|applying to|swear to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|give (?:my|our) (?:oath|word) to|bind myself to|take (?:the|their) oath|take me on|taken on|would (?:take|have) me|accept me|admit me|adopt me|take me in|be admitted)\b/.test(text)

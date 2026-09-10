@@ -263,6 +263,25 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
                     // half a bare standing read does not cover.
                     : plan.intent === 'leave'
                         ? { action: 'sect', intent: 'standing', topic: 'leaving' }
+                    // A HOUSE THE STANDING READ WAS ASKED ABOUT SURVIVES THE
+                    // REWRITE. "who leads the Azure Dew Sect?" and the same
+                    // sentence without the question mark are one question, and
+                    // only the second reached the parser's own answer: this
+                    // pass rebuilt the plan and dropped the house on the floor,
+                    // so the version a player is likelier to type was the
+                    // version that lost the name.
+                    //
+                    // Named on `standing` alone rather than on the fall-through
+                    // as a whole. Every other intent that lands here arrived
+                    // with a target meaning something else, and carrying it
+                    // into a standing read would make the read answer about a
+                    // house nobody asked about.
+                    : plan.intent === 'standing'
+                        ? {
+                            action: 'sect',
+                            intent: 'standing',
+                            ...(plan.target ? { target: plan.target } : {})
+                        }
                         : { action: 'sect', intent: 'standing' };
 
         case 'guard':
