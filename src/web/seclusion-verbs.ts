@@ -3,6 +3,12 @@
  */
 
 import { combatPowerForOrdinal } from '../engine/cultivation/combat.js';
+import { whoHoldsTheGround } from '../engine/world/ground-holder.js';
+import {
+    aboutHowLongYouWouldGetHere,
+    howOftenSittingHereIsInterrupted,
+    somewhereYouCouldFinishALongSitting
+} from '../engine/cultivation/sitting-down-where-people-can-see-you.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { insightName, integrateInsight } from '../engine/cultivation/understanding.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
@@ -162,6 +168,33 @@ export const seclusionVerbs = {
         } = {}
     ): Promise<Execution> {
         const sealed = options.sealed ?? false;
+        // WHO CAN SEE YOU SIT DOWN.
+        //
+        //   *"you typically can't cultivate for 20 years in a square"* -
+        //   *"someone will tell you to go somewhere else"* -
+        //   *"that's like being homeless"* - *"you'll be bugged"*
+        //
+        // Counted at the moment the sitting opens, not sampled through it: this
+        // is the decision about WHERE TO SIT DOWN, and it is made once, by
+        // somebody looking around before they close their eyes.
+        const watching = this.present(cultivator).filter(row => row.id !== cultivator.id).length;
+        // AND WHETHER YOU HAVE ANY BUSINESS SITTING HERE.
+        //
+        // A courtyard you are on the roll of is not a square. Read off
+        // `whoHoldsTheGround`, which is the same answer the ground read gives
+        // a player who asks whose ground this is - so the engine cannot tell
+        // them one thing and act on another.
+        //
+        // Caught by a played test the same hour the crowd count landed: a
+        // disciple practising inside their own sect's compound for forty years
+        // was being moved on every few months by the people they live with,
+        // which is the opposite of what a compound is for.
+        const holder = this.atHand
+            ? whoHoldsTheGround(this.atHand.locations, this.worldPlaceOf(cultivator))
+            : null;
+        const atHome = holder?.holding === 'held'
+            && holder.holderFactionId !== null
+            && holder.holderFactionId === (cultivator.sectId ?? null);
         const startDay = Math.floor(run.elapsedDays);
 
         // A STRETCH WHOSE RETURN IS ZERO IS NOT SOLD SILENTLY
@@ -238,7 +271,21 @@ export const seclusionVerbs = {
             // formation is a thing somebody built, and it goes. Over a long enough
             // sitting the ward the cultivator set on their own door decays under
             // them, and a door that is gone is not a door.
+            // A SHUT DOOR SCALES DOWN AND A CROWD SCALES UP, and until now only
+            // the first existed - an open sitting in a market square drew
+            // events at exactly the rate of an open sitting on an empty
+            // mountainside. See `sitting-down-where-people-can-see-you.ts`.
+            //
+            // The seal still wins where there is one, and that is the whole
+            // reason a house builds halls: a sealed sitting inside a compound
+            // full of disciples is undisturbed, because the door is what makes
+            // it so rather than the emptiness.
             randomEventScale: sealed ? doorScaleOverStretch(cultivator.realmOrdinal, lived) : 1,
+            // AND A SEAL IS WHAT MAKES A PLACE PRIVATE, not emptiness. A sealed
+            // sitting inside a compound full of disciples is undisturbed, which
+            // is the entire reason a house builds halls; an open sitting in the
+            // same compound is not.
+            botheredScale: sealed ? 1 : howOftenSittingHereIsInterrupted(watching, atHome),
             // 道心. A wall crossed inside a stretch weighs the record exactly as
             // a deliberate strike does. `daoHeartConditions` is the one
             // derivation and `crossing.ts` is the other door onto it - if the
@@ -297,6 +344,30 @@ export const seclusionVerbs = {
 
         // WHAT THE CAVE MOUTH CHARGED, SAID OUT LOUD
         (facts.required ??= []).push(provisioning.line);
+
+        // AND WHETHER THIS WAS SOMEWHERE THE STRETCH COULD HAVE BEEN FINISHED.
+        //
+        //   *"you typically can't cultivate for 20 years in a square"* -
+        //   *"someone will tell you to go somewhere else"*
+        //
+        // Said because somebody who has lived in this world already knows it.
+        // A cultivator sitting down in a market square is not discovering a
+        // rule; they are doing something everybody around them can see is not
+        // going to work, and the engine withholding that is the engine knowing
+        // something the character would know.
+        //
+        // Stated as what is true of the place, never as advice: no "you should
+        // go elsewhere", no estimate dressed up as a warning. What was asked
+        // for, roughly what a place like this gives, and who can see them.
+        if (!sealed && !somewhereYouCouldFinishALongSitting(watching, atHome)) {
+            const runs = aboutHowLongYouWouldGetHere(watching, atHome);
+            const exposure =
+                `${watching} ${watching === 1 ? 'person' : 'people'} can see them sitting here, `
+                + `and nobody here answers to them. A stretch in a place like this runs about `
+                + `${runs} days before somebody comes over about it.`;
+            facts.lines.unshift(exposure);
+            facts.required.push(exposure);
+        }
 
         // AND WHO WAS SITTING THERE WITH THEM
         if (options.daoPartner) {

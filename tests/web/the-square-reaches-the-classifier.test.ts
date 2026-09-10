@@ -11,7 +11,7 @@
  * model does with the square is the model's business and the engine still rules
  * on it; what must not happen again is the square being withheld.
  */
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
     AWARENESS_SHOWN_TO_THE_CLASSIFIER,
@@ -118,6 +118,134 @@ describe('the square in the real phase-1 prompt', () => {
     }, 120_000);
 });
 
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * AND WHAT HAS A BODY HERE TO ANSWER
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * FOUND BY AUDIT, and it is the cheapest prose defect in the repo:
+ * `describeWhatIsWithinReach` was DEAD - zero callers, not even a test - while
+ * the whole chain above it ran on every single turn.
+ *
+ *     turn-engine.ts:1998  withinReach: this.reachFrom(cultivator).map(...)
+ *     prompt.ts:760        withinReach?: readonly ThingWithinReach[]  <- arrives
+ *     prompt.ts:819        describeWhatIsWithinReach(...)             <- DEAD
+ *
+ * So every turn the game resolved what was reachable, asked
+ * `theWordsThisPersonAnswersTo` what each person and house present answers to,
+ * assembled the `alsoCalled` list, put all of it on the prompt input - and then
+ * told the narrator none of it. The forms-of-address table was on the same wire
+ * and died at the same boundary.
+ *
+ * It is the same class as the square itself, which is what this file was
+ * written about: a model cannot bind a phrase to a person it was never shown.
+ * The square told it WHO is here; this tells it what each of them ANSWERS TO,
+ * which is how a novel refers to anybody twice.
+ */
+describe('what is within reach, and the names it answers to', () => {
+    // A real cultivator and a real run, built once. Hand-authoring a
+    // `Cultivator` here would drift from the schema the moment anybody adds a
+    // field, and the point of these three is the BLOCK rather than the body.
+    type Summary = Parameters<typeof composeStateSummary>[0];
+    let PLAYER: Summary['cultivator'];
+    let RUN: Summary['run'];
+    let EMPTY_SQUARE: Company;
+
+    beforeAll(async () => {
+        const { game } = await makeGameInWorld({ seed: 'reach-fixture', worldSeed: WORLD });
+        const started = await game.newRun('Probe');
+        PLAYER = started.cultivator;
+        RUN = game.state().run as never;
+        EMPTY_SQUARE = { total: 0, named: [], strangers: [] } as unknown as Company;
+    }, 120_000);
+
+    it('carries the other names a thing here answers to', () => {
+        const summary = composeStateSummary({
+            cultivator: PLAYER,
+            run: RUN,
+            ambient: 'thin',
+            present: EMPTY_SQUARE,
+            withinReach: [
+                {
+                    kind: 'person',
+                    name: 'Fang Qiuyan',
+                    alsoCalled: ['Elder Fang', 'the elder'],
+                    through: null
+                },
+                {
+                    kind: 'house',
+                    name: 'Azure Dew Sect',
+                    alsoCalled: ['the sect'],
+                    through: { name: 'Fang Qiuyan' }
+                }
+            ]
+        });
+
+        expect(summary).toContain('WITHIN REACH');
+        expect(summary).toContain('Fang Qiuyan');
+        expect(summary).toContain('Elder Fang');
+        // A house is reachable because somebody who answers for it is standing
+        // here, and saying through WHOM is the whole of why it is on the list.
+        expect(summary).toContain('here through Fang Qiuyan');
+    });
+
+    /**
+     * AND IT IS NOT A LIMIT ON WHAT MAY BE NAMED, which is stated in the block
+     * itself for the same reason the live block states it. A model handed a
+     * list reads it as the permitted set unless told otherwise, and anything
+     * the cultivator has heard of can be named whether or not it is standing
+     * here.
+     */
+    it('says outright that it is not a limit', () => {
+        const summary = composeStateSummary({
+            cultivator: PLAYER,
+            run: RUN,
+            ambient: 'thin',
+            present: EMPTY_SQUARE,
+            withinReach: [
+                { kind: 'person', name: 'Fang Qiuyan', alsoCalled: [], through: null }
+            ]
+        });
+        expect(summary).toMatch(/NOT A LIMIT ON WHAT MAY BE NAMED/);
+    });
+
+    it('says nothing at all when nothing is reachable', () => {
+        const summary = composeStateSummary({
+            cultivator: PLAYER, run: RUN, ambient: 'thin', present: EMPTY_SQUARE, withinReach: []
+        });
+        expect(summary).not.toContain('WITHIN REACH');
+    });
+
+    /**
+     * THE WHOLE CHAIN, ON A REAL RUN. The unit tests above prove the block is
+     * composed; this proves the engine actually fills it, which is the half
+     * that was broken - the data had been arriving correctly the entire time.
+     */
+    it('reaches the real prompt on a played turn', async () => {
+        const { game } = await makeGameInWorld({ seed: 'reach-1', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Probe');
+
+        const reach = game.reachFrom(cultivator);
+        expect(reach.length, 'a fresh square reaches nothing').toBeGreaterThan(0);
+
+        const summary = composeStateSummary({
+            cultivator,
+            run: game.state().run as never,
+            ambient: 'thin',
+            present: game.company(cultivator),
+            withinReach: reach.map(thing => ({
+                kind: thing.kind,
+                name: thing.name,
+                alsoCalled: thing.alsoCalled,
+                through: thing.through ? { name: thing.through.name } : null
+            }))
+        });
+
+        expect(summary).toContain('WITHIN REACH');
+        for (const thing of reach.slice(0, 3)) expect(summary).toContain(thing.name);
+    }, 120_000);
+});
 
 describe('what the world is holding out', () => {
     /**

@@ -174,7 +174,22 @@ describe('walking up the terraces', () => {
 
             const cultivators = new CultivatorRepository(repos.db);
             const decidesAt = stagnationYearsForOrdinal(0);
-            for (let i = 0; i < 40 && elapsedYears(repos, cultivator.id) < decidesAt - 6; i++) {
+            // ── AND THE BUDGET IS LARGER THAN IT WAS, FOR A REASON ──────
+            //
+            // This was 40 iterations, which reached the threshold while a
+            // two-year sitting reliably bought two years. It no longer does,
+            // and that is the point of `sitting-down-where-people-can-see-you`:
+            // this person has no house and is sitting in an unheld region with
+            // five people in it, so somebody comes over. Measured, the loop now
+            // buys about eight months an attempt instead of two years.
+            //
+            // Which is the correct answer for exactly this person. The subject
+            // of this arm is somebody the house decides it cannot make a
+            // disciple of - they are studying under its eye and are on nobody's
+            // roll - so having nowhere they are entitled to sit for a decade is
+            // not an accident of the change. It is what being on probation IS,
+            // and it is most of why anybody wants to be admitted.
+            for (let i = 0; i < 200 && elapsedYears(repos, cultivator.id) < decidesAt - 6; i++) {
                 if (!cultivators.getById(cultivator.id)?.alive) break;
                 await say('I cultivate for two years');
                 await say('I find a physician and have my meridians treated');

@@ -96,6 +96,61 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     // that sentence through this pass and changed it. The costly case has
     // nothing in the gap at all.
     /\bask(?:s|ed|ing)?\s+(?:what|who|whom|which|where|when|why|whether|how)\b/,
+    // ═══════════════════════════════════════════════════════════════════════
+    // A QUESTION WITHOUT A QUESTION MARK IS STILL A QUESTION
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // FOUND BY PLAYING. Twenty question forms typed the way people type into a
+    // game - lower case, no punctuation - and ALL TWENTY fell through:
+    //
+    //     am i at a bottleneck            is my foundation ready
+    //     am i ready to break through     do i have enough to break through
+    //     how far am i from a breakthrough    what rung am i at
+    //     tell me if i can break through  check whether i can break through
+    //     i want to know if i can break through
+    //     i wonder if i should cultivate here
+    //     see if i can break through      find out if the sect is recruiting
+    //     how much longer until i break through
+    //
+    // Thirteen of them reached `unclear`, which is the cheap half: the player
+    // is told their sentence made no sense and loses nothing but the ask.
+    //
+    // AND ONE OF THEM SPENT THE RUN. *"how much longer until i break through"*
+    // routed to `breakthrough` - so asking how far there was left to go
+    // ATTEMPTED THE CROSSING, with the Price of Advancement on the other side
+    // of it. That is the defect the whole of this module exists to prevent, and
+    // `theReadThatAnswersIt` has had a `breakthrough` case waiting for it the
+    // entire time. Nothing needed designing; the sentence never arrived.
+    //
+    // (Recorded honestly: an earlier sweep reported this and nine hand-tried
+    // phrasings did not reproduce it. They were all interrogative-first forms,
+    // which the patterns above already catch. It reproduces on the declarative
+    // ones, which is most of how people actually type.)
+    //
+    // WHY THESE ARE SAFE TO TAKE BROADLY. `am i`, `do i` and `have i` are
+    // interrogative by construction - there is no declarative English sentence
+    // with a bare `am i` in it - so they need no interrogative word after them
+    // and requiring one is what left the list above failing.
+    /\bam\s+i\b/,
+    /\bhave\s+i\b/,
+    /\bdo\s+i\s+(?:have|know|need|still|already)\b/,
+    /\b(?:is|are)\s+(?:my|mine)\b/,
+    // "what rung am i at", "what is my cultivation at", "how many days do i
+    // have". A question about the player's own state, in the two shapes people
+    // write it.
+    /\bwhat\s+(?:\w+\s+){0,2}(?:am|is|are|do|does)\s+(?:i|my)\b/,
+    /\bhow\s+(?:far|long|much|many|close|near)\b[^.?!]{0,40}\b(?:i|my|until|before|to\s+go)\b/,
+    // ASKING SOMEBODY ELSE TO FIND OUT IS ASKING.
+    //
+    // `if` or `whether` is required after every one of these, and that is what
+    // keeps them off the verbs they share a word with: "check whether the sect
+    // is recruiting" is a question and "I check the manual" is a look.
+    /\b(?:tell\s+me|let\s+me\s+know|check|see|find\s+out|work\s+out|figure\s+out)\s+(?:if|whether)\b/,
+    /\bi\s+(?:want|need)\s+to\s+know\b/,
+    /\bi\s+wonder\s+(?:if|whether|how|what|where|when|why|who)\b/,
+    // "is it time to", which is "should i" asked the other way round and was
+    // the one form of it the modal list never had.
+    /\bis\s+it\s+time\s+to\b/,
     // AND THE ONE THE PLAYER TYPED ON PURPOSE
     /\?\s*$/
 ].map(r => r.source).join('|'), 'i');
@@ -160,8 +215,24 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
                 : plan.intent === 'summons' || plan.intent === 'refuse'
                     ? { action: 'sect', intent: 'summons' }
                 : plan.intent === 'duty' || plan.intent === 'siphon'
-                    // Both of these have a READ mode reached by naming nothing
-                    // further: the wall, and the position of the reserves.
+                        || plan.intent === 'authority' || plan.intent === 'curriculum'
+                    // These have a READ mode reached by naming nothing further:
+                    // the wall, the position of the reserves, who answers for
+                    // what, and what the house teaches.
+                    //
+                    // `authority` was falling through to `standing` below, so
+                    // *"what do I run"* - a question about what is in your gift
+                    // - was answered with your rank and contribution. Two
+                    // different questions, and the second is not an answer to
+                    // the first. It was already true of *"what do I run?"* with
+                    // the question mark on, and only surfaced when the asking
+                    // detector was widened to catch the form without one.
+                    //
+                    // `curriculum` is the same defect one intent over: *"what
+                    // does my hall teach"* was answered with the asker's rank
+                    // and contribution. Both are questions somebody is entitled
+                    // to ask a hundred times for nothing, and neither is a
+                    // question about the asker.
                     ? { action: 'sect', intent: plan.intent }
                     // The standing read carries the two numbers a departure
                     // forfeits - the seat and the contribution - so it is the
@@ -230,7 +301,19 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
             // INTENT_ACTIONS: the board, and what the swearer already carries.
             // Dropping the intent reaches it. "What would passage to Iron Ridge
             // cost" is the board, and the board is a price list.
-            return { action: plan.action, ...(plan.target ? { target: plan.target } : {}) };
+            //
+            // AND FOR AN OATH THE READ IS NAMED RATHER THAN LEFT OFF. Dropping
+            // it reaches the same place, but it arrives unlabelled - and three
+            // separate tests read the label to say which question was answered.
+            // "What am I owed" coming back as `oath` with no intent is the
+            // right board and an answer nothing downstream can identify.
+            // `passage` keeps the bare form: its read is `board`, and naming it
+            // here would be asserting a route this change has not measured.
+            return {
+                action: plan.action,
+                ...(plan.action === 'oath' ? { intent: 'read' as const } : {}),
+                ...(plan.target ? { target: plan.target } : {})
+            };
 
         case 'breakthrough':
         case 'cultivate':

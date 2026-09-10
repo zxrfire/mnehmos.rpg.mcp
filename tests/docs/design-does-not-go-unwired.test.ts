@@ -117,7 +117,7 @@ import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
  * that much. Nothing was wired to earn it - the tree did not change, the
  * measurement did.
  */
-const DEAD = 145;
+const DEAD = 144;
 const TEST_ONLY = 445;
 
 describe('design does not go unwired', () => {

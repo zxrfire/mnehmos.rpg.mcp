@@ -876,7 +876,26 @@ export function composeStateSummary(input: StateSummaryInput): string {
         '',
         'HAS HEARD OF (the whole of this cultivator\'s world; everything else is unheard of):',
         ...describeAwareness(input.awareness ?? [], input.said ?? ''),
-        ...describeWhatIsLive(input.liveHere ?? [])
+        ...describeWhatIsLive(input.liveHere ?? []),
+        // AND WHAT HAS A BODY HERE TO ANSWER.
+        //
+        // This line was missing, and everything behind it has been running
+        // every single turn since it was written:
+        //
+        //     turn-engine.ts   withinReach: this.reachFrom(cultivator).map(...)
+        //     prompt.ts:760    withinReach?: readonly ThingWithinReach[]  <- arrives
+        //     prompt.ts        describeWhatIsWithinReach(...)             <- never called
+        //
+        // So every turn the game resolved what was reachable, asked
+        // `theWordsThisPersonAnswersTo` what each person and house present
+        // answers to, built the `alsoCalled` list, put it on this input - and
+        // told the narrator none of it. The forms-of-address table was on the
+        // same wire and died at the same boundary.
+        //
+        // It is the difference between a narrator that knows an elder in this
+        // square can be addressed as "Elder Fang", "the elder" or "Azure Dew's
+        // man" and one that only has the row.
+        ...describeWhatIsWithinReach(input.withinReach ?? [])
     ].join('\n');
 }
 

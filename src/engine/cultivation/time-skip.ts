@@ -240,6 +240,28 @@ export interface TimeSkipContext {
      */
     randomEventScale?: number;
     /**
+     * HOW EXPOSED THIS PLACE IS, as a multiplier on how often somebody comes at
+     * the cultivator. 1 is nobody watching, which is every caller that does not
+     * set it and every place the engine has ever simulated.
+     *
+     * SEPARATE FROM `randomEventScale`, and the separation is the point.
+     * `randomEventScale` is a DOOR: it is clamped to at most 1 because a shut
+     * door can only ever reduce what comes through it, and lifting that clamp
+     * to let a crowd raise it would also make a crowd hand out OPPORTUNITIES -
+     * a market square would start producing the buried ruin and the passing
+     * master, which is the opposite of what being watched means.
+     *
+     * This scales the ENCOUNTER draw and nothing else, because being seen makes
+     * exactly one thing likelier: somebody deciding to do something about you.
+     *
+     * The design owner: *"you typically can't cultivate for 20 years in a
+     * square"*, *"someone will tell you to go somewhere else"*, *"that's like
+     * being homeless"*, *"you'll be bugged"*. See
+     * `sitting-down-where-people-can-see-you.ts`, which is where the number
+     * comes from and why.
+     */
+    botheredScale?: number;
+    /**
      * Conditions for the price of advancement at any realm boundary crossed during the
      * skip. The candidate list must come from real rows - the engine holds no
      * database - so a caller that omits it will see the crossing find nothing
@@ -333,6 +355,11 @@ export function simulateTimeSkip(
     const identity = ctx.rollIdentity ?? cultivator.id;
     const randomEvents = ctx.randomEvents ?? true;
     const eventScale = Math.min(1, Math.max(0, ctx.randomEventScale ?? 1));
+    // NOT clamped at 1, which is the whole difference between this and the
+    // door above. Floored at 0 and ceilinged well clear of any real value, so a
+    // caller cannot turn encounters off through it or drive the chance to
+    // nonsense; turning them off is `randomEvents`, which says so.
+    const botheredScale = Math.min(64, Math.max(0, ctx.botheredScale ?? 1));
     const grainAbstinence = ctx.grainAbstinence ?? false;
     const hostility = ctx.hostility;
 
@@ -1234,7 +1261,10 @@ export function simulateTimeSkip(
             // whatever the cultivator's Fortune: whether something comes, how
             // serious it is, whether it lands, and whether it can be left.
             const rng = forStream(ctx.seed, 'encounter', newAbsDay);
-            const came = rng.chance(ENCOUNTER_CHANCE * eventScale);
+            // The door reduces it and being watched raises it. A sealed hall
+            // in the middle of a crowded compound is quiet, and an open sitting
+            // in a market square is not, and both fall out of this one line.
+            const came = rng.chance(ENCOUNTER_CHANCE * eventScale * botheredScale);
             const major = rng.chance(MAJOR_ENCOUNTER_FRACTION);
             const landed = rng.next();
             const withdrawal = rng.next();
@@ -1268,9 +1298,35 @@ export function simulateTimeSkip(
                 // - go now and stay unseen, or stay and be found sitting. The
                 // engine does not resolve that choice and must not pretend to:
                 // the next thing the player types is the resolution.
+                // AND A THIRD CASE, WHICH IS NOT A DISCOVERY AT ALL.
+                //
+                // Both sentences below are about a place that was HIDDEN -
+                // "has not seen this place yet", "has found this place". That
+                // is the right account of a cave and a flat lie about a village
+                // square, where nothing was ever concealed and nobody found
+                // anything. The cultivator sat down in front of people and the
+                // people have now done what people do.
+                //
+                //   *"someone will tell you to go somewhere else"* -
+                //   *"that's like being homeless"* - *"you'll be bugged"*
+                //
+                // Note what is NOT said: not who came, not what they want, not
+                // what they will do about it. The engine states that somebody
+                // has come over about it, because that is the part a person
+                // sitting there perceives. Who they are and what they say is
+                // the next turn's, and the player is standing up with the same
+                // choice as the other two branches.
                 push(
                     'encounter',
-                    canWithdraw
+                    botheredScale > 1
+                        ? 'Seclusion broken: you sat down in plain view and somebody has come '
+                          + 'over about it. Nothing was found and nothing was hidden - you have '
+                          + 'been sitting where anybody could see you since the first day, and '
+                          + 'this is the first of them to say something. Going means finding '
+                          + 'somewhere out of the way; staying means having this again. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : canWithdraw
                         ? 'Seclusion broken: somebody is close enough to matter and has not seen '
                           + 'this place yet. There is a road out that does not cross them, and it '
                           + 'is open for as long as you are not sitting down. Going costs the '
@@ -1293,7 +1349,15 @@ export function simulateTimeSkip(
                 if (passedBy) {
                     push(
                         'encounter',
-                        'Something passed close by the cave and went on without stopping.',
+                        // NOT "the cave". The simulator does not know where the
+                        // cultivator sat and must not say: this same line ran
+                        // over a sitting in the middle of a village, and told
+                        // the player about a cave that did not exist. Same
+                        // class as the branch above, which described a hidden
+                        // place being found in a square where nothing was ever
+                        // hidden. What is true either way is that something
+                        // came near and did not stop.
+                        'Something passed close by and went on without stopping.',
                         false,
                         { severity: 'minor', passedBy: true, damage: 0 }
                     );
