@@ -3,7 +3,7 @@
  */
 
 import { PlannedAction } from './planned-action.js';
-import { usedAsVerb, namedAfter, matchIntent } from './sentence-parts.js';
+import { usedAsVerb, namedAfter, matchIntent, WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
 import {
     A_HOUSE_IS_NAMED,
     A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL
@@ -344,9 +344,26 @@ export const SECT_RECRUIT_VERBS =
      * line, is gated at the elder rung, and prices the intake. A second verb for it
      * would have been a second implementation of one act, which is how two answers
      * to the same question get into a save.
+     *
+     * ── AND A SECOND COPY OF THE NUMBER TABLE, WHICH IS ITS OWN DEFECT ──
+     *
+     * This spelled out `one|two|three|...|ten` by hand and stopped there, and
+     * spelled it out for `take` only. Measured:
+     *
+     *     "I take three disciples"      -> recruit
+     *     "I take twelve disciples"     -> UNCLEAR
+     *     "I take twenty disciples"     -> UNCLEAR
+     *     "I am taking three disciples" -> UNCLEAR
+     *
+     * `WORD_NUMBER_ALTERNATION` is the repo's one list of these words and
+     * cannot go stale against `parseCount`, which is what actually reads the
+     * figure out of the sentence afterwards. A hand-written second copy can
+     * only ever drift from it, and had - by seventeen words and two verb
+     * forms.
      */
-    + 'take (?:a|an|on|in|another|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)|'
-    + 'takes (?:a|an|another|[0-9]+)|taking (?:a|an|another|[0-9]+)|'
+    + `take (?:a|an|on|in|another|${WORD_NUMBER_ALTERNATION.replace(/ /g, '')}|[0-9]+)|`
+    + `takes (?:a|an|another|${WORD_NUMBER_ALTERNATION.replace(/ /g, '')}|[0-9]+)|`
+    + `taking (?:a|an|another|${WORD_NUMBER_ALTERNATION.replace(/ /g, '')}|[0-9]+)|`
     /**
      * And taking a NAMED PERSON, which the counted form above does not reach.
      *

@@ -241,3 +241,43 @@ describe('a sum put down in words is money', () => {
         expect(named.medium === 'stones' ? named.stones : null).toBe(many);
     });
 });
+
+/**
+ * AND A SECOND COPY OF THE TABLE, WRITTEN OUT BY HAND.
+ *
+ * `sect-phrasings.ts` spelled `one|two|three|...|ten` into its own recruiting
+ * pattern and stopped there, and spelled it for one of the three verb forms.
+ * Measured:
+ *
+ *     "I take three disciples"   -> recruit
+ *     "I take twelve disciples"  -> UNCLEAR
+ *     "I take twenty disciples"  -> UNCLEAR
+ *
+ * A hand-written second copy of a list can only ever drift from the first, and
+ * had - by seventeen words. It is the same defect as the four regexes above,
+ * with the table transcribed instead of spliced.
+ */
+describe('the number table has one copy', () => {
+    it.each([
+        'I take a disciple',
+        'I take three disciples',
+        'I take twelve disciples',
+        'I take twenty disciples',
+        'I take ninety disciples'
+    ])('%j is a recruitment', said => {
+        const parsed = parseIntent(said);
+        expect(parsed.action).toBe('sect');
+        expect(parsed.intent).toBe('recruit');
+    });
+
+    /**
+     * AND `take` STILL MEANS THE OTHER THINGS IT MEANS. It is one of the
+     * busiest verbs in the table and a widening here must not reach them.
+     */
+    it.each([
+        ['I take the pill', 'consume_pill'],
+        ['I take the manual', 'interact']
+    ])('%j stays %s', (said, want) => {
+        expect(parseIntent(said).action).toBe(want);
+    });
+});
