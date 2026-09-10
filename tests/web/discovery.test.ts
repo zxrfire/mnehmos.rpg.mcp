@@ -489,7 +489,7 @@ describe('the narrator constitution', () => {
         const prompt = narrationSystemPrompt();
         expect(prompt).toContain(voice);
 
-        // Every heading the doc marks tier 1, present by name.
+        // Every heading the docs mark tier 1, present by name.
         for (const heading of [
             '## The register',
             // Promoted from tier 3: the narrator was never told the genre is
@@ -497,7 +497,25 @@ describe('the narrator constitution', () => {
             '## Humour is required, not optional',
             '## Guidance for the narrator',
             '## Naming conventions',
-            '## Show, never explain'
+            '## Show, never explain',
+            // The design owner's ruling on what changes with height, out of the
+            // ladder file. The rest of that file is hypotheses and stays off.
+            '## One rule, and the rest falls out of it'
+        ]) {
+            expect(voice, heading).toContain(heading);
+        }
+
+        // A SUBSECTION OF A TIER-1 SECTION IS PART OF IT.
+        //
+        // These two sit under `## Humour is required` and declare no tier of
+        // their own, and a section used to end at the first heading of any
+        // depth - so the worked examples were cut while the rule above them
+        // arrived. They are the two the narrator has least ability to invent:
+        // what to do with an act that parsed perfectly and cannot be carried
+        // out, and what a person says when asked a name they do not know.
+        for (const heading of [
+            '### Incoherent and coherent-and-stupid are two different failures',
+            '### Nobody says "a blank look"'
         ]) {
             expect(voice, heading).toContain(heading);
         }
@@ -505,6 +523,11 @@ describe('the narrator constitution', () => {
         // The row that never arrived. It is the one worth naming: the whole
         // point of the table is trading an explanation for a consequence.
         expect(prompt).toContain('the room rearranges itself');
+        // And the beat the cut subsection carries: the answer to a coherent
+        // stupidity is written by whoever was standing there.
+        expect(prompt).toContain('it is written by the square');
+        // The ruling, which is the one thing on the ladder page that is a rule.
+        expect(prompt).toContain('Knowledge is a property of the person being asked');
     });
 
     it('states unattributed consequence as the preferred move', () => {

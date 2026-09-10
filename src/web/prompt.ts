@@ -109,33 +109,78 @@ export function narratorCore(): { text: string; source: 'file' | 'fallback' } {
 export const TONE_PATH = 'docs/world/writing/tone.md';
 
 /**
- * Every section of a world doc whose own marker says tier 1, in file order.
+ * The voice docs, in the order they reach the narrator.
+ *
+ * `tone.md` is the register. The ladder file carries the design owner's ruling
+ * on what changes with height - rung is reach, and knowledge is a property of
+ * the person being ASKED and never of the person asking - which governs the
+ * narrator's register directly and was reaching nothing. That file is mostly
+ * hypotheses and says so of itself, so only the ruling section is marked tier 1
+ * and the rest stays off the prompt.
+ */
+export const VOICE_PATHS = [
+    TONE_PATH,
+    'docs/world/writing/what-changes-as-the-ladder-is-climbed.md'
+];
+
+/**
+ * Every section of a world doc whose marker says tier 1, in file order.
  *
  * The scheme is a parseable HTML comment after a heading, which
  * `docs/world/README.md` specifies and `build-world-index.mjs` already reads.
- * A section runs from its heading to the next heading of any level, and the
- * first tier marker inside it is the one that governs it.
+ * A section runs from its heading to the next heading of any level.
+ *
+ * ── A SUBSECTION INHERITS THE TIER OF THE SECTION IT IS INSIDE ─────────────
+ *
+ * It did not, and that silently cut the two worked examples the narrator most
+ * needed. `## Humour is required, not optional` marks itself tier 1 and ends at
+ * the first `###` under it, and neither `### Incoherent and coherent-and-stupid
+ * are two different failures` nor `### Nobody says "a blank look"` carries a
+ * marker of its own - so both read as untiered and were dropped. What was lost
+ * is the prose rather than the rule: how to answer an act that parsed perfectly
+ * and cannot be carried out, and what somebody says when asked a name they do
+ * not know. Marking a heading tier 1 means the section, examples included; an
+ * author should not have to re-mark every subheading to get them.
  */
 function tierOneSectionsOf(text: string): string[] {
     const lines = text.split(/\r?\n/);
     const out: string[] = [];
+    /** The governing tier of each still-open ancestor heading, by its depth. */
+    const ancestors = new Map<number, number>();
     let heading = -1;
-    let tier: number | null = null;
+    let depth = 0;
+    let declared: number | null = null;
+    let inherited: number | null = null;
+
+    const governing = (): number | null => declared ?? inherited;
 
     const flush = (end: number): void => {
-        if (heading >= 0 && tier === 1) out.push(lines.slice(heading, end).join(String.fromCharCode(10)).trim());
+        if (heading >= 0 && governing() === 1) {
+            out.push(lines.slice(heading, end).join(String.fromCharCode(10)).trim());
+        }
     };
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i] ?? '';
-        if (line.startsWith('#')) {
+        const opened = /^(#+)\s/.exec(line);
+        if (opened) {
             flush(i);
+            const governed = governing();
+            if (heading >= 0 && governed !== null) ancestors.set(depth, governed);
+
+            depth = opened[1]!.length;
+            // This heading closes anything at its own depth or deeper, so those
+            // are no longer ancestors of what follows.
+            for (const seen of [...ancestors.keys()]) if (seen >= depth) ancestors.delete(seen);
+
+            inherited = null;
+            for (const [seen, tier] of ancestors) if (seen < depth) inherited = tier;
             heading = i;
-            tier = null;
+            declared = null;
             continue;
         }
         const marked = /<!--\s*tier:\s*(\d+)/.exec(line);
-        if (marked && tier === null) tier = Number(marked[1]);
+        if (marked && declared === null) declared = Number(marked[1]);
     }
     flush(lines.length);
     return out;
@@ -144,18 +189,23 @@ function tierOneSectionsOf(text: string): string[] {
 let toneCache: string | null = null;
 
 /**
- * The voice doc, tier 1 only, as one block. Empty when the file is missing:
- * `NARRATOR-CORE.md` already carries the register in compressed form, so a
- * packaging change that loses `docs/` degrades rather than breaking.
+ * The voice docs, tier 1 only, as one block. A file that cannot be read
+ * contributes nothing rather than throwing: `NARRATOR-CORE.md` already carries
+ * the register in compressed form, so a packaging change that loses `docs/`
+ * degrades rather than breaking.
  */
 export function theVoiceDoc(): string {
     if (toneCache !== null) return toneCache;
-    try {
-        const path = fileURLToPath(new URL(`../../${TONE_PATH}`, import.meta.url));
-        toneCache = tierOneSectionsOf(readFileSync(path, 'utf-8')).join(String.fromCharCode(10, 10));
-    } catch {
-        toneCache = '';
+    const blocks: string[] = [];
+    for (const doc of VOICE_PATHS) {
+        try {
+            const path = fileURLToPath(new URL(`../../${doc}`, import.meta.url));
+            blocks.push(...tierOneSectionsOf(readFileSync(path, 'utf-8')));
+        } catch {
+            // One missing doc must not cost the others.
+        }
     }
+    toneCache = blocks.join(String.fromCharCode(10, 10));
     return toneCache;
 }
 

@@ -151,6 +151,28 @@ export const ASKING_RATHER_THAN_DOING = new RegExp([
     // "is it time to", which is "should i" asked the other way round and was
     // the one form of it the modal list never had.
     /\bis\s+it\s+time\s+to\b/,
+    // ── WHAT A THING IS WORTH ────────────────────────────────────────
+    //
+    // The commonest money question there is, and every phrasing of it
+    // reached nothing: "what is this worth", "what is my sword worth",
+    // "how much for the manual", "what will he give me for it".
+    //
+    // AND THE ROUTING FIX ALONE WOULD HAVE BEEN WORSE THAN THE GAP. Those
+    // sentences now reach `sell`, which SPENDS - so without this half, a
+    // player asking what their sword was worth would have sold it. This is
+    // the pass that turns the question back into a quote.
+    // ANCHORED TO THE QUESTION SHAPE, and the first cut was not.
+    //
+    // A bare `go for` or `fetch` is ordinary English: "I go for the man with
+    // the spear" became a QUESTION and was answered with an assessment
+    // instead of a fight - a player committing to an attack was handed a
+    // read. Bare `worth` is nearly as bad.
+    //
+    // The words only mean a price when a price is being asked for, which is
+    // exactly the shape the verb table requires of them too.
+    /\b(?:what(?:'s| is| are)?|how much)\b[^.?!]{0,40}\b(?:worth|go for|fetch|fetches)\b/,
+    /\bhow much (?:for|would (?:he|she|they|anybody|anyone) give)\b/,
+    /\bwhat (?:would|will|could) (?:he|she|they|anybody|anyone|i)\s+(?:get|give me) for\b/,
     // AND THE ONE THE PLAYER TYPED ON PURPOSE
     /\?\s*$/
 ].map(r => r.source).join('|'), 'i');

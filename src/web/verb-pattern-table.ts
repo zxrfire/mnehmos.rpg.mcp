@@ -3343,6 +3343,11 @@ function planIntent(input: string): PlannedAction {
         || /\b(?:i (?:can|could) do|anything|something|any(?:thing)? going)\b[^.?!]*\bfor (?:pay|wages|money|coin|stones|a wage)\b/.test(text)
         // A TAKING OF WORK IS A TAKING, HOWEVER IT IS QUALIFIED
         || /\btakes?\b[^.?!]{0,30}?\bwork\b/.test(text)
+        // TAKING THE ONE THAT WAS JUST OFFERED. `take ... work` was here and
+        // `take the job` was not, so the sentence somebody types after reading
+        // the board reached nothing at all - the board names jobs, not "work".
+        || /\b(?:i\s+)?takes?\s+(?:the|that|this|it|a)\s*(?:job|post|posting|position|contract|errand|commission|duty)?\b/.test(text)
+            && /\b(?:job|post|posting|position|contract|errand|commission|duty)\b/.test(text)
         || /\b(?:whatever|anything|something)\b[^.?!]{0,20}\bpays?\b/.test(text)
         || /\bbest[- ]paying\b|\bpays? (?:the )?(?:best|most|fastest|quickest)\b/.test(text)
         // SAYING PLAINLY THAT YOU NEED ONE
@@ -3439,6 +3444,78 @@ function planIntent(input: string): PlannedAction {
     }
 
     // selling, which is the only way a pouch becomes a purse
+    // ── NAMING A PRICE IS HAGGLING, AND SO IS REFUSING ONE ───────────────
+    //
+    // Measured: "I haggle" and "I try to get a better price" both reached the
+    // trade approach, and the two sentences somebody types when they are
+    // actually doing it reached nothing -- a counter-offer, and a complaint
+    // about the asking price:
+    //
+    //     "I offer him twenty stones"   -> UNCLEAR
+    //     "that is too expensive"       -> UNCLEAR
+    //
+    // The bare verb worked and the real sentences did not, which is the
+    // near-synonym trap AGENTS.md names: a player who types the specific thing
+    // is told it makes no sense, and can only find the working half by being
+    // vaguer than they meant to be.
+    // A NUMBER SAID IN WORDS is how people write a counter-offer - "twenty
+    // stones", not "20 stones" - and a digits-only clause misses every one of
+    // them. `WORD_NUMBER_ALTERNATION` is the same table the provisioning branch
+    // splices in, for the same reason: so it cannot go stale against
+    // `parseCount`, which already knows all of them.
+    if (new RegExp(
+        `\\b(?:i\\s+)?offers?\\s+(?:him|her|them|it)?\\s*`
+        + `(?:${WORD_NUMBER_ALTERNATION}|[0-9]+)\\s*(?:spirit\\s+)?stones?\\b`, 'i'
+    ).test(input)
+        // "TOO MUCH FOR ME" IS ABOUT DANGER. "Is this place too much for me"
+        // is somebody weighing a ruin they might not walk out of, and this
+        // pattern read it as a complaint about a price.
+        || (/\b(?:that(?:'s| is)?|it(?:'s| is)?|too)\s+(?:too\s+)?(?:expensive|dear|much|steep|rich|pricey)\b/i.test(text)
+            && !/\b(?:for|against)\s+(?:me|myself|us)\b/i.test(text))
+        // `counter` ALONE IS A PIECE OF FURNITURE. "Is there a Span counter
+        // here" became a haggle, because the bare word was in this list - and
+        // a counter is precisely where somebody goes to buy passage.
+        || /\b(?:i\s+)?(?:counter-?offer|lowball|beat him down|beat them down|meet (?:him|her|them) halfway)\b/i.test(text)) {
+        return { action: 'interact', intent: 'trade' };
+    }
+    // ── WHAT DID THAT PAY ────────────────────────────────────────────────
+    //
+    // "What did I earn" and "how much did that pay" both reached nothing,
+    // while `work` reports a wage when it runs. A player who looked away for a
+    // turn had no way to ask again, and the purse read does not say where the
+    // stones came from.
+    //
+    // Routed to the purse, which is the one place that knows what is in it.
+    if (/\b(?:what\s+did\s+i\s+(?:earn|make|get paid|take home)|how much\s+(?:did|does)\s+(?:that|it|this|the job|the work)\s+pay)\b/i.test(text)) {
+        return { action: 'inventory' };
+    }
+    // ── WHAT IS THIS WORTH is a question about selling ───────────────────
+    //
+    // Five ways of asking a price, all `unclear`: "what is this worth", "what
+    // is my sword worth", "how much for the manual", "what does a pill cost",
+    // "what will he give me for it". Somebody deciding whether to part with a
+    // thing had no sentence that reached anything at all.
+    //
+    // Routed to `sell` and left to the asking pass, which is the mechanism
+    // built for exactly this - `theReadThatAnswersIt` turns a question about a
+    // committing verb into its free read, so nothing here has to know what the
+    // free read IS. The detector half is in `asking-is-not-doing.ts`.
+    // AND `worth` HAS TWO READINGS. "What is he worth against me" is somebody
+    // measuring themselves against a person, which `assess` owns and answers
+    // properly - it went to the market on the word alone. A thing is worth
+    // stones; a person is worth measuring up.
+    if (!/\b(?:he|she|they|him|her|them|you)\s+(?:is\s+)?worth\b/.test(text)
+        && !/\bworth\b[^.?!]{0,20}\b(?:against|compared to|next to|beside)\s+(?:me|myself|us)\b/.test(text)
+        && /\b(?:what(?:'s| is| are)?|how much)\b[^.?!]{0,40}\b(?:worth|go for|fetch|fetches)\b/.test(text)
+        || /\bhow much (?:for|would (?:he|she|they|anybody|anyone) give)\b/.test(text)
+        || /\bwhat (?:would|will|could) (?:he|she|they|anybody|anyone|i) get for\b/.test(text)
+        || /\bwhat (?:would|will) (?:he|she|they) give me for\b/.test(text)) {
+        return {
+            action: 'sell',
+            target: extractSubject(input, /worth|go for|fetch|how much for|give me for|get for/)
+        };
+    }
+
     if ((usedAsVerb(text, SELLING_VERBS)
         // `offer` and `put` are not selling verbs on their own - one is a
         // request and the other is half the sentences in this file - and with
@@ -3482,6 +3559,15 @@ function planIntent(input: string): PlannedAction {
     // about everything else it catches and the readiness read below owns this.
     if (!/\b(?:price|cost) of (?:advancement|ascension|the crossing|breaking through)\b/.test(text)
         && (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices\b|what(?:'s| is) on (?:the )?(?:stalls?|counter|board))\b/.test(text)
+        // "What does a pill cost" - the plainest form of the price question,
+        // and the one shape the list above did not have. It carries `how much
+        // is`, `price of` and `cost of`, and not `what does X cost`.
+        //
+        // A TICKET IS NOT A STALL. "What would a ticket to Iron Ridge cost" is
+        // the passage counter's question and `passage` owns it; this pattern
+        // took it to the market on the word `cost` alone.
+        || (/\bwhat (?:does|do|would|will) (?:a|an|the|one)\b[^.?!]{0,40}\bcosts?\b/.test(text)
+            && !/\b(?:ticket|passage|span|berth|seat|fare|boat|carriage)\b/.test(text))
         // What the place itself deals in, which is the board question asked
         // about the town rather than about a thing. "what does this town have
         // to trade" walked the player over to talk to somebody.
@@ -4075,6 +4161,21 @@ function planIntent(input: string): PlannedAction {
     // assess: what happens if I try, which is not the same as looking
     if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|do i stand a chance|judge the odds)\b/.test(text)
         || /\b(?:can i (?:beat|win against)|would i (?:win|beat|survive|last)|what (?:are|is) my chances|out of my depth|a fight i can (?:take|win)|am i (?:a )?match for)\b/.test(text)
+        // ── MEASURING YOURSELF AGAINST SOMETHING ─────────────────────────
+        //
+        // Two exemplars `how-a-player-says-each-verb.ts` lists under `assess`
+        // and the table had no pattern for either, so both reached `unclear`:
+        //
+        //     "what is he worth against me"
+        //     "is this place too much for me"
+        //
+        // Both are somebody weighing themselves against a person or a piece of
+        // ground, which is the whole of what this verb is for. They surfaced
+        // when the money pass briefly took them - `worth` and `too much` each
+        // have a price reading and a measuring-up reading, and the second is
+        // the one the genre uses more.
+        || /\bworth\b[^.?!]{0,20}\b(?:against|compared to|next to|beside)\s+(?:me|myself|us)\b/.test(text)
+        || /\b(?:too much|too strong|too dangerous|beyond me|over my head)\b[^.?!]{0,20}\bfor\s+(?:me|us)\b/.test(text)
         // ── WHAT A CROSSING WOULD COST AND WHETHER IT WOULD WORK ─────────
         //
         // Nine phrasings measured, all reaching nothing: "what are my odds",
