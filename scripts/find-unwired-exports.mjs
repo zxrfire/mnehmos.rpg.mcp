@@ -202,6 +202,72 @@ export function findUnwired() {
     return rows.sort((a, b) => a.file.localeCompare(b.file) || a.name.localeCompare(b.name));
 }
 
+/**
+ * ── THE SECOND SHAPE: DATA THE PLAYER HAS NO VERB FOR ────────────────────
+ *
+ * `findUnwired` answers one question - does anything import this name - and
+ * that turns out to be the CHEAPEST shape of unreachable and the rarest one in
+ * practice. It was green through every defect found in the sweep that produced
+ * this function. What is expensive is a value going missing between two
+ * functions that DO call each other, and a catalog nothing lets you act on.
+ *
+ * This is the second of those, and it is mechanical enough to measure: a table
+ * in `src/data/` that the VERB LAYER never reads. `src/web/` is where the
+ * player's sentences turn into acts, so a catalog no file there imports is a
+ * catalog whose contents cannot be spent, taken, entered, bought or refused,
+ * however much of the engine reads it.
+ *
+ * Measured when this landed: auction venues carry cadence, entry bonds and
+ * floor protections, encounters announce sales with lots and reserves, and no
+ * verb bids. Structural repair medicine has doses in every world, a reference
+ * table, and no verb spends one.
+ *
+ * READING THE ENGINE IS NOT ENOUGH AND THAT IS THE POINT. A table the world
+ * simulation consults is live for the WORLD and unreachable for the PLAYER,
+ * and those are different findings. This reports the second.
+ *
+ * A row here is a question, not a task. Plenty of data is legitimately the
+ * world's own - what a house is like, what a region grows - and the player
+ * acts on its consequences rather than on the table. What the row asks is
+ * whether anybody MEANT it to be actable.
+ */
+export function findDataWithNoVerb() {
+    // THE ACT SURFACE IS TWO DIRECTORIES AND NOT ONE. `src/web/` turns a
+    // player's sentence into a verb, and `src/server/` is where several of
+    // those verbs actually run - `handleStanding` and `handleOrder` are as
+    // much a player act as anything in `web`. Measured against `web` alone
+    // this reported the dao-ground catalog unreachable, and the standing read
+    // has been calling into it from `server/consolidated` all along.
+    const verbs = [
+        ...sources(path.join(SRC, 'web')),
+        ...sources(path.join(SRC, 'server'))
+    ]
+        .map(f => fs.readFileSync(f, 'utf8'))
+        .join(String.fromCharCode(10));
+
+    const rows = [];
+    for (const file of sources(path.join(SRC, 'data'))) {
+        const relPath = rel(file);
+        // The barrel is not data. It re-exports, which is how most of this
+        // directory reaches a reader in the first place.
+        if (/\/index\.ts$/.test(relPath)) continue;
+        const text = fs.readFileSync(file, 'utf8');
+
+        // BY NAME AND NEVER BY FILENAME. Almost every verb file imports from
+        // `data/cultivation/index.js`, so asking whether the verb layer names
+        // the MODULE reports live catalogs as unreachable - the barrel is the
+        // whole point of the barrel. What settles it is whether any name the
+        // module exports is written anywhere in the verb layer.
+        const names = [...text.matchAll(EXPORTED)].map(m => m[1]);
+        if (names.length === 0) continue;
+        const read = names.filter(
+            n => new RegExp(`\\b${n}\\b`).test(verbs)
+        );
+        if (read.length > 0) continue;
+        rows.push({ file: relPath, exports: names.length });
+    }
+    return rows;
+}
 const isMain = process.argv[1]
     && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
@@ -212,10 +278,24 @@ if (isMain) {
     } else if (process.argv.includes('--count')) {
         console.log(rows.length);
     } else {
-        const dead = rows.filter(r => r.state === 'dead');
-        const testOnly = rows.filter(r => r.state === 'testOnly');
+        // THE HEADLINE COUNTED PROSE AND THE RATCHET DOES NOT, so the two
+        // disagreed by exactly the prose rows - the CLI said 154 and 487 where
+        // `design-does-not-go-unwired.test.ts` pinned 144 and 445. Anybody
+        // comparing them read the tree wrong, and the numbers a person quotes
+        // are the ones the CLI printed.
+        //
+        // `isDesignStatedAsProse` is the split: a body with no function syntax
+        // that is overwhelmingly quoted text is design SAID rather than design
+        // RUN, and wiring it is a category error. Both halves are printed, and
+        // the code half is named as the one the ratchet holds.
+        const code = rows.filter(r => r.kind === 'code');
+        const dead = code.filter(r => r.state === 'dead');
+        const testOnly = code.filter(r => r.state === 'testOnly');
+        const prose = rows.filter(r => r.kind === 'prose');
+
+        const listing = process.argv.includes('--test-only') ? testOnly : dead;
         const byFile = new Map();
-        for (const r of dead) {
+        for (const r of listing) {
             if (!byFile.has(r.file)) byFile.set(r.file, []);
             byFile.get(r.file).push(r.name);
         }
@@ -223,7 +303,17 @@ if (isMain) {
             console.log(`\n${file}`);
             for (const n of names) console.log(`    ${n}`);
         }
-        console.log(`\n${dead.length} exported names nothing reads at all, across ${byFile.size} files.`);
+        console.log(
+            `\n${dead.length} exported names nothing reads at all, across `
+            + `${new Set(dead.map(r => r.file)).size} files.`
+        );
         console.log(`${testOnly.length} more are read only by a test.`);
+        console.log(
+            `Both counts are the CODE half, which is what the ratchet holds. `
+            + `${prose.length} further rows are design stated as prose and are not counted.`
+        );
+        if (!process.argv.includes('--test-only')) {
+            console.log('Pass --test-only to list the test-only names instead of the dead ones.');
+        }
     }
 }

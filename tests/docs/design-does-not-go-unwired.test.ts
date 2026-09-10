@@ -35,7 +35,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { findUnwired } from '../../scripts/find-unwired-exports.mjs';
+import { findDataWithNoVerb, findUnwired } from '../../scripts/find-unwired-exports.mjs';
 
 /**
  * Measured, not chosen. Lower these when you wire something; never raise them.
@@ -145,5 +145,62 @@ describe('design does not go unwired', () => {
             `Exports only a test reads rose above ${TEST_ONLY}. A rule pinned but never `
             + 'reached by the game looks maintained and is not.'
         ).toBeLessThanOrEqual(TEST_ONLY);
+    });
+});
+
+/**
+ * ── THE SECOND SHAPE, BECAUSE THE FIRST ONE IS THE CHEAP ONE ─────────────
+ *
+ * Everything above answers one question: does anything IMPORT this name. That
+ * turns out to be the cheapest shape of unreachable to detect and the rarest
+ * one in practice - the ratchet above sat green through a whole sweep of
+ * defects, every one of which was unreachable in a way it cannot see:
+ *
+ *   a sentence with no branch      five route questions filed under a verb
+ *                                  that reads dao ground, answered
+ *                                  confidently by the wrong read
+ *   a value dropped mid-flight     the head left off the roll that hands out
+ *                                  a house's rooms; the house name dropped
+ *                                  from a standing read; the recipient
+ *                                  dropped from a gift
+ *   data with no verb              auction venues with cadence, entry bonds
+ *                                  and floor protections, and no way to bid
+ *   output thrown away             a narration discarded by a guard that read
+ *                                  a house's intake bar as the player
+ *                                  breaking through
+ *
+ * Every one of those is a value going missing between two functions that DO
+ * call each other, or a table nothing lets anybody act on. This covers the
+ * second of them, which is the one that can be measured mechanically: a
+ * catalog in `src/data/` that no player-facing act reads.
+ *
+ * THE ACT SURFACE IS `src/web/` AND `src/server/`. The first turns a sentence
+ * into a verb and the second is where several of those verbs run. Measured
+ * against `web` alone this called the dao-ground catalog unreachable while the
+ * standing read was calling into it from `server/consolidated`.
+ *
+ * A ROW HERE IS A QUESTION AND NOT A TASK. Plenty of this data is the WORLD's
+ * own - what a region grows, what a prefecture is called - and the player acts
+ * on its consequences rather than on the table. Reading the engine is not
+ * enough to clear a row, and that is the point: a table the simulation
+ * consults is live for the world and unreachable for the player, and those are
+ * two different findings.
+ */
+const DATA_NO_ACT_READS = 15;
+
+describe('a catalog the player cannot act on', () => {
+    it('does not add data no player-facing act reads', () => {
+        const rows = findDataWithNoVerb() as Array<{ file: string; exports: number }>;
+        const worst = [...rows]
+            .sort((a, b) => b.exports - a.exports)
+            .slice(0, 5)
+            .map(r => `\n  ${r.exports}  ${r.file}`)
+            .join('');
+        expect(
+            rows.length,
+            `Catalogs no player-facing act reads rose above ${DATA_NO_ACT_READS}. `
+            + 'Give it a verb, or say in the file that it belongs to the world and the '
+            + `player meets it through its consequences.${worst}`
+        ).toBeLessThanOrEqual(DATA_NO_ACT_READS);
     });
 });
