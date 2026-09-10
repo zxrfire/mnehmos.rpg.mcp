@@ -3,7 +3,7 @@
  */
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
-import { whoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
+import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import { beastsOnThisGround, bandOf } from './hunting-a-spirit-beast.js';
 import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
@@ -2440,22 +2440,74 @@ function weighted<T>(rng: CultivationRNG, rows: readonly T[], weightOf: (row: T)
     return rows[rows.length - 1];
 }
 
+/**
+ * What a house pays each member on its roll, per year.
+ *
+ * Not a new number: it is the `members * 45` this function has always charged
+ * itself. It is named now because it is paid to somebody.
+ */
+export const A_STIPEND_PER_MEMBER_PER_YEAR = 45;
+
+/**
+ * How much of it goes straight back out again.
+ *
+ * A STIPEND IS SPENT. Crediting the whole of it would be as wrong as crediting
+ * none of it, in the other direction: two hundred years of untouched wages
+ * would make every long-lived disciple in the world enormously rich for having
+ * done nothing, and `spiritStones` is read as a live gate on what somebody can
+ * be leaned on with. What accumulates is the SURPLUS - what somebody did not
+ * need this year - which is small, and is why a purse is worth something.
+ */
+export const WHAT_A_MEMBER_LIVES_ON = 0.8;
+
 function applyFactionEconomy(state: WorldState): void {
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
-        let members = 0;
-        for (const npc of state.npcs) {
-            if (npc.status === 'alive' && npc.factionId === faction.id) members++;
+        const roll: number[] = [];
+        for (let i = 0; i < state.npcs.length; i++) {
+            const npc = state.npcs[i];
+            if (npc.status === 'alive' && npc.factionId === faction.id) roll.push(i);
         }
+        const members = roll.length;
         const veins = faction.resources.veins ?? 0;
         const production = Number(faction.resources.production ?? 0.5);
         const income = veins * 5_000 * (0.5 + production) + members * 30;
-        const upkeep = members * 45 + (faction.resources.tribute_owed_per_year ?? 0) * 0.1;
-        faction.resources.spirit_stones = Math.max(
-            0,
-            Math.round((faction.resources.spirit_stones ?? 0) + income - upkeep)
-        );
+        const payroll = members * A_STIPEND_PER_MEMBER_PER_YEAR;
+        const upkeep = payroll + (faction.resources.tribute_owed_per_year ?? 0) * 0.1;
+        const before = faction.resources.spirit_stones ?? 0;
+        faction.resources.spirit_stones = Math.max(0, Math.round(before + income - upkeep));
         faction.resources.members = members;
+
+        // ═══════════════════════════════════════════════════════════════════
+        // AND SOMEBODY RECEIVES THE PAYROLL
+        // ═══════════════════════════════════════════════════════════════════
+        //
+        // This charged `members * 45` a year and credited NOBODY, so the wages
+        // of every house in the world left it. `NpcRecord.spiritStones` was
+        // written once at seeding and never again - and read as a live gate on
+        // whether somebody can be leaned on with money, a few thousand lines
+        // down. So the gate was asking about a number that had not moved in two
+        // hundred years.
+        //
+        // ONLY WHAT THE HOUSE COULD ACTUALLY PAY. A house whose purse is empty
+        // does not pay its disciples, and that has always been silently true
+        // here - the `Math.max(0, ...)` above absorbed the shortfall and said
+        // nothing. Now it is the members who go without, which is who actually
+        // goes without.
+        //
+        // The tribute half is NOT paid to anybody: it goes to whoever the
+        // tribute is owed to, and that is a different house's business.
+        const affordable = Math.max(0, Math.min(payroll, before + income));
+        const each = members > 0 ? (affordable / members) * (1 - WHAT_A_MEMBER_LIVES_ON) : 0;
+        if (each >= 1) {
+            const kept = Math.round(each);
+            for (const at of roll) {
+                state.npcs[at] = {
+                    ...state.npcs[at],
+                    spiritStones: state.npcs[at].spiritStones + kept
+                };
+            }
+        }
     }
 }
 
@@ -3455,20 +3507,11 @@ const TEMPLATES: Template[] = [
             // nobody carried has no owner at all, which is what makes a ruin
             // a ruin. See
             // `what-becomes-of-a-houses-things-when-the-house-ends.ts`.
-            {
-                const byId = new Map(state.npcs.map(npc => [npc.id, npc.name]));
-                const landed = new Map(whoOwnsThemNow(
-                    state.objects, faction.id, id => byId.get(id) ?? null
-                ).map(where => [where.objectId, where]));
-                if (landed.size > 0) {
-                    state.objects = state.objects.map(object => {
-                        const where = landed.get(object.id);
-                        return where === undefined
-                            ? object
-                            : { ...object, ownerId: where.ownerId, ownerName: where.ownerName };
-                    });
-                }
-            }
+            //
+            // Through the shared applier, because this was one of THREE places
+            // a house stops existing and the only one that ran the rule. See
+            // `applyWhoOwnsThemNow`.
+            applyWhoOwnsThemNow(state, faction.id);
 
             const seat = faction.seatLocationId
                 ? state.locations.find(l => l.id === faction.seatLocationId) ?? null : null;

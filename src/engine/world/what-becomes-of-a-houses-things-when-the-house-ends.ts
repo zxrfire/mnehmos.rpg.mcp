@@ -90,3 +90,47 @@ export function whoOwnsThemNow(
     }
     return landed;
 }
+
+/**
+ * The same rule, written into a world.
+ *
+ * PULLED OUT OF ONE CALLER BECAUSE THERE WERE THREE. A house stops existing in
+ * three places - the yearly fall in `the-world-changing-on-its-own.ts`, an
+ * aggressor being dissolved in `parties-under-pressure.ts`, and a loser being
+ * scattered in `war-spoils.ts` - and only the first one ran this rule. The
+ * other two left every object the house owned pointing at an institution that
+ * had stopped existing, which is the exact state the fall site's own comment
+ * says must never happen.
+ *
+ * Found by a played world: a spirit boat five centuries old, moored in nobody's
+ * yard, still answering to the Thousand Treasure Pavilion, which fell in a war.
+ * `war-spoils.ts` moves the things the victor TAKES; whatever they leave stayed
+ * the dead house's forever.
+ *
+ * The decision is still `whoOwnsThemNow`'s and this only writes it down, so
+ * there remains exactly one answer to what becomes of a fallen house's things.
+ */
+export function applyWhoOwnsThemNow(
+    state: {
+        objects: ObjectRecordLike[];
+        npcs: readonly { id: string; name: string }[];
+    },
+    fallenHouseId: string
+): number {
+    const byId = new Map(state.npcs.map(npc => [npc.id, npc.name]));
+    const landed = new Map(
+        whoOwnsThemNow(state.objects, fallenHouseId, id => byId.get(id) ?? null)
+            .map(where => [where.objectId, where])
+    );
+    if (landed.size === 0) return 0;
+    state.objects = state.objects.map(object => {
+        const where = landed.get(object.id);
+        return where === undefined
+            ? object
+            : { ...object, ownerId: where.ownerId, ownerName: where.ownerName };
+    });
+    return landed.size;
+}
+
+/** The shape this pass rewrites. Kept structural so the module stays pure. */
+type ObjectRecordLike = AThingLeftBehind & { ownerName: string };

@@ -166,8 +166,15 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
     const deceased = state.npcs[at];
     const onDay = input.onDay;
 
-    // Dead, and staying dead.
-    state.npcs[at] = markDead(deceased, onDay, input.causeNote);
+    // Dead, and staying dead. The purse goes with them: what was buried is
+    // recorded on the grave below, and a corpse that is ALSO still carrying it
+    // is the same stones counted twice - once somewhere a player can dig them
+    // up and once on a row nothing ever reads again.
+    //
+    // The tracked goods are different and are deliberately left possessed by
+    // the deceased: a grave good's possessor IS the body, and its `locationId`
+    // is the grave, which is what makes the grave searchable at all.
+    state.npcs[at] = { ...markDead(deceased, onDay, input.causeNote), spiritStones: 0 };
 
     // ── The grave ────────────────────────────────────────────────────────
     let grave: LocationRecord | null = null;

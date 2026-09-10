@@ -5,6 +5,7 @@
 import { forStream } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { isBelowTheLid } from './layers.js';
+import { settleNpcDeath } from './time.js';
 import { markDead, type NpcRecord } from './npc-state.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
 import type { Party } from '../social-leverage/what-a-deed-leaves.js';
@@ -213,6 +214,13 @@ export function seedTheWrongsStillOpen(
                 }
             });
 
+            // SETTLED BEFORE THEY ARE MARKED, so the estate reads a live purse
+            // rather than a corpse's. This site called `markDead` and nothing
+            // else, so a world that opens with killings already in it opened
+            // with that many bodies still holding everything they had - and
+            // holding it for the whole life of the world, because nothing looks
+            // at a dead row again.
+            settleNpcDeath(state, state.npcs[victimAt], day);
             state.npcs[victimAt] = markDead(
                 state.npcs[victimAt], day, `Killed by ${doer.name}.`);
             killings++;

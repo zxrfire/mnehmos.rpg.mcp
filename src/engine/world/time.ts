@@ -5,6 +5,7 @@
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
+import { settleEstate } from './estate-at-death.js';
 import {
     classifyForObserver,
     concurrentEventsFor,
@@ -600,6 +601,103 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
                 }, onDay);
             }
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // AND THE THINGS THEY WERE HOLDING
+    // ═══════════════════════════════════════════════════════════════════
+    //
+    // This function moved goals and relationships and touched NO OBJECT AND NO
+    // STONE. Two hundred years of NPC deaths left zero loot and zero graves,
+    // and every grave in the repo was hand-authored. The comment forty lines
+    // down already said *"an estate that went somewhere is a fact about the
+    // world, and it is the one a descendant three centuries later is standing
+    // on"* - and then wrote only the fact.
+    //
+    // So the world had a one-way object economy. `settleEstate` existed, was
+    // tested, and had exactly one caller: the player's own death, in
+    // `src/web/`. Every rule about what happens to a dead cultivator's things
+    // had already been ruled on and was reachable by one person in the world.
+    //
+    // WHO GOES THROUGH THE BODY IS THE CALLER'S DECISION, and `settleEstate`
+    // takes the first name on the list. The order here is the ruling.
+    //
+    // THE HEIR FIRST, IF THEY ARE ACTUALLY STANDING THERE. An heir who is not
+    // does not get a look-in, and that is deliberate: the field is documented
+    // as *"people close enough to go through the body"*, and a cultivator who
+    // dies alone in a ruin is looted by whoever finds them however many sons
+    // they have. It is what makes dying at home different from dying out.
+    //
+    // AND AFTER THEM IT IS CHANCE, NOT ALPHABETICAL. A first cut sorted the
+    // rest by id, which is deterministic and wrong in a way that only showed up
+    // when the world was lived: the same NPC is first by id at that location
+    // every time, so ONE person went through every body that fell there for two
+    // hundred years. Measured, the richest NPC in a 600-person world came out
+    // on 45,934 stones - not a rich cultivator, a serial looter created by a
+    // sort order.
+    //
+    // Drawn on its own named stream keyed to the deceased, so it is reproducible
+    // for a given world and cannot shift anything else's draws.
+    const reachedFirst = forStream(state.seed, 'who-reached-the-body', deceased.id, onDay);
+    const overTheBody = state.npcs
+        .filter(n => n.id !== deceased.id
+            && n.locationId === deceased.locationId
+            && (n.status === 'alive' || n.status === 'soul_preserved'))
+        .map(n => ({ npc: n, draw: reachedFirst.next() }))
+        .sort((a, b) => (a.npc.id === primary?.id ? -1 : b.npc.id === primary?.id ? 1 : 0)
+            || a.draw - b.draw)
+        .map(row => ({ id: row.npc.id, name: row.npc.name }));
+
+    const estate = settleEstate({
+        dead: { id: deceased.id, name: deceased.name },
+        onDay,
+        locationId: deceased.locationId,
+        // NPCs carry stones and no counted stock. An empty stack list is not a
+        // placeholder for one that should exist: `NpcRecord` has no pack, and
+        // inventing stacks here would be this file asserting an inventory
+        // nothing else in the world reads or writes.
+        counted: { spiritStones: deceased.spiritStones, stock: [] },
+        tracked: state.objects
+            .filter(o => o.possessorId === deceased.id)
+            .map(o => ({
+                itemId: o.id,
+                name: o.name,
+                kind: o.kind,
+                significance: o.significance,
+                power: o.power,
+                description: o.description,
+                worldRow: o
+            })),
+        standingOver: overTheBody,
+        causeNote: `${deceased.name} died in the world's own time.`
+    });
+
+    // The rows the settlement rewrote go back where they came from, matched by
+    // id: `settleEstate` is pure and returns what SHOULD be true, and putting
+    // it back is the caller's - which is this.
+    for (const moved of estate.objects) {
+        const at = state.objects.findIndex(o => o.id === moved.id);
+        if (at >= 0) state.objects[at] = moved;
+        else state.objects.push(moved);
+    }
+
+    // AND THE PURSE ACTUALLY MOVES. The dead hold nothing; whoever went through
+    // the body is that much richer. Where nobody did, the stones are in the
+    // ground with them and are simply gone from circulation - which is the
+    // honest answer and the reason a world can lose wealth at all.
+    if (estate.taken !== null && estate.taker !== null) {
+        const at = state.npcs.findIndex(n => n.id === estate.taker!.id);
+        if (at >= 0) {
+            state.npcs[at] = {
+                ...state.npcs[at],
+                spiritStones: state.npcs[at].spiritStones + estate.taken.spiritStones,
+                updatedOnDay: onDay
+            };
+        }
+    }
+    {
+        const at = state.npcs.findIndex(n => n.id === deceased.id);
+        if (at >= 0) state.npcs[at] = { ...state.npcs[at], spiritStones: 0, updatedOnDay: onDay };
     }
 
     // A teaching line that ended today.

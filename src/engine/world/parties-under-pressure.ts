@@ -58,6 +58,7 @@
  */
 
 import type { CultivationRNG } from '../cultivation/rng.js';
+import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import { clampOrdinal, rankName } from '../cultivation/realms.js';
 import { UNTOUCHED_BY_DISASTER_ORDINAL, couldDieToADisaster } from '../../data/cultivation/catastrophe.js';
 import { QI_DENSITY_MIN } from './qi-scale.js';
@@ -790,6 +791,12 @@ function applyExpend(
                 ...npc, factionId: null, factionRankIndex: -1, updatedOnDay: day
             });
         }
+        // AND THEIR THINGS STOP BEING THEIRS. Third of the three places a
+        // house stops existing, and the second that was not running this. A
+        // row naming an institution that no longer exists is the one state
+        // `what-becomes-of-a-houses-things-when-the-house-ends.ts` was written
+        // to make impossible.
+        applyWhoOwnsThemNow(state, aggressor.id);
     }
 
     // ── The asset ────────────────────────────────────────────────────────

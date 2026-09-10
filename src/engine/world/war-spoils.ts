@@ -4,6 +4,7 @@
 
 import type { CultivationRNG } from '../cultivation/rng.js';
 import type { HistoricalFact } from './history.js';
+import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import {
     isInert,
     type ForceApplied,
@@ -289,6 +290,17 @@ export function settleTheSpoils(
             for (const npc of state.npcs) {
                 if (npc.factionId === input.loser.id) npc.factionId = null;
             }
+            // AND WHATEVER THE VICTOR DID NOT TAKE STOPS BEING THEIRS.
+            //
+            // The spoils pass above moves the things somebody carried off. It
+            // says nothing about the rest, so every object the loser owned and
+            // nobody wanted kept naming a house that no longer existed, for the
+            // remaining life of the world.
+            //
+            // Found by playing five centuries: a spirit boat moored in nobody's
+            // yard, still answering to the Thousand Treasure Pavilion, which
+            // fell in a war three hundred years earlier.
+            applyWhoOwnsThemNow(state, input.loser.id);
         }
     }
 
