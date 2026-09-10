@@ -4414,6 +4414,38 @@ function planIntent(input: string): PlannedAction {
         if (bare !== null) return { action: 'cultivate', days: bare };
     }
 
+    // ── HOW BADLY AM I HURT, AND HOW IS HE DOING ─────────────────────────
+    //
+    // FOUND BY PLAYING, mid-fight, and it was the worst thing in the combat
+    // sweep before the round charge came off it:
+    //
+    //     "how hurt am I"       -> the PHYSICIAN'S PRICE LIST
+    //     "how hurt is he"      -> unclear
+    //     "is he close to done" -> unclear
+    //
+    // The first is the same shape as "how many rations do I have" reaching a
+    // grocery stall: a question about the player's own body, answered with a
+    // shop. It gets there honestly - `treat` is the verb for being hurt, and
+    // the asking pass turns a question about treating into the medicine board
+    // - but the question was never about buying anything.
+    //
+    // Both halves matter and they are different reads. What is left of ME is
+    // the sheet; what is left of HIM is an assessment, and the two are not
+    // interchangeable in a fight where one of them decides whether to run.
+    if (/\b(?:how\s+(?:badly|hurt|bad)|what\s+shape|what\s+state)\b[^.?!]{0,24}\b(?:am\s+i|i\s+am|my\s+body|me)\b/.test(text)
+        || /\bhow\s+hurt\s+am\s+i\b/.test(text)
+        || /\bam\s+i\s+(?:badly\s+)?(?:hurt|wounded|injured|bleeding|done for)\b/.test(text)) {
+        return { action: 'status' };
+    }
+
+    // And the same question about the person on the other side of it, which
+    // `assess` owns - it is the read that weighs somebody up.
+    if (/\bhow\s+(?:hurt|badly hurt|bad|much\s+has\s+he\s+got)\b[^.?!]{0,20}\b(?:is\s+)?(?:he|she|they|him|her|them)\b/.test(text)
+        || /\b(?:is|are)\s+(?:he|she|they)\s+(?:close\s+to\s+)?(?:done|finished|beaten|nearly done|about to drop|hurt)\b/.test(text)
+        || /\bhow\s+(?:is|are)\s+(?:he|she|they)\s+(?:doing|holding up|faring)\b/.test(text)) {
+        return { action: 'assess' };
+    }
+
     // ── THE HOUSE SENTENCES THAT NAME NO HOUSE ───────────────────────────
     //
     // Last, deliberately, and that is the whole design of them. The sect

@@ -1062,6 +1062,31 @@ export const combatVerbs = {
 
     /**
      * A round happens to somebody who did something else with their turn.
+     *
+     * ══════════════════════════════════════════════════════════════════
+     * BUT LOOKING IS NOT DOING SOMETHING ELSE
+     * ══════════════════════════════════════════════════════════════════
+     *
+     * FOUND BY PLAYING, and it is the worst thing in the combat sweep.
+     * Three questions asked in a standing fight:
+     *
+     *     "how hurt am I"        Ji Xushan lands 2 on you   26 -> 24
+     *     "how hurt is he"       lands 3                    24 -> 21
+     *     "what shape am I in"   lands 3, AND a serious meridian injury,
+     *                            and it will not close on its own
+     *
+     * Twelve points and a permanent wound for asking how badly hurt you
+     * were. A player checking whether to run was charged for checking, and
+     * the charge is what killed the option.
+     *
+     * The rule this implements is right and stays: you cannot wander off
+     * mid-fight for free, so an ACT taken during one eats a guard round.
+     * What was wrong is that it could not tell an act from a look.
+     *
+     * `costsTheAskerNothing` already answers exactly that question and is
+     * the same predicate the asking pass uses, so a read is free here for
+     * the same reason it is free everywhere else. The fight is untouched -
+     * no round, no blow, and it is still standing when the read is over.
      */
     async takeTheRoundFirst(
         this: GameService,
@@ -1071,8 +1096,23 @@ export const combatVerbs = {
         cultivator: Cultivator,
         ambient: AmbientQi,
         /** The verb the plan settled on, so a fighting verb is not charged twice. */
-        verb: ActionName
+        verb: ActionName,
+        /**
+         * Whether the sentence takes nothing from the player.
+         *
+         * A BOOLEAN AND NOT THE PLAN, because importing the predicate here is
+         * a cycle - `asking-is-not-doing` reaches back round to this module,
+         * and the symbol arrives undefined at run time rather than failing to
+         * compile. The caller owns `costsTheAskerNothing` already and is the
+         * one place that has the whole plan anyway.
+         *
+         * Defaults to false, which is the safe direction: a caller that cannot
+         * say gets the behaviour this had before.
+         */
+        aFreeRead = false
     ): Promise<Execution> {
+        // LOOKING IS FREE, IN A FIGHT AS ANYWHERE ELSE. See the header.
+        if (aFreeRead) return await andThen();
         // `attack` and `coerce` ANSWER the fight - they continue the one that is
         // standing rather than doing something else during it - so taking a
         // round here as well would charge the player two rounds for one sentence

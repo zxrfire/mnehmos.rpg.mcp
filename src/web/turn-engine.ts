@@ -2056,7 +2056,29 @@ export class GameService {
             : await this.takeTheRoundFirst(
                 inAFight,
                 () => this.carryOutThePlan(theTurnsPlan, run, cultivator, ambient, trimmed),
-                run, cultivator, ambient, theTurnsPlan.action.action
+                run, cultivator, ambient, theTurnsPlan.action.action,
+                // WHAT A FIGHTER PERCEIVES WITHOUT ACTING, and nothing else.
+                //
+                // Decided here because `combat-verbs` cannot import the asking
+                // module without a cycle, and this is the one place with the
+                // whole plan anyway.
+                //
+                // NOT `costsTheAskerNothing`, which was the first cut and was too
+                // broad by a long way: it admits `look`, `market` and `news`, so a
+                // player could browse a market stall mid-duel for free.
+                // `a-fight-you-can-answer.test.ts` says the rule outright - *the
+                // blade arrives and THEN they do the thing they asked for. A fight
+                // is a situation, not a mode* - and that is right for every one of
+                // those.
+                //
+                // These two are different in kind. Checking what is left of your
+                // own body, and reading the person swinging at you, are things a
+                // fighter does continuously and without looking away. Measured
+                // before this, three such questions cost 12 points and a permanent
+                // meridian injury - so a player deciding whether to run was charged
+                // for deciding. See `takeTheRoundFirst`.
+                theTurnsPlan.action.action === 'status'
+                    || theTurnsPlan.action.action === 'assess'
             );
 
         if (carriesOn !== null && carryingOn === null) {
