@@ -312,6 +312,20 @@ export const A_POSSESSIVE =
 export const HANDING_IT_OVER =
     'hand over|hands over|handing over|handed over|'
     + 'give|gives|giving|gave|hand|hands|handing|handed|pass|passes|passing|passed|'
+    // AND PAYING, WHICH IS HANDING SOMETHING OVER.
+    //
+    // `give` already took an amount and "I give him 20 stones" worked the
+    // whole time. The list simply had no word for the commonest reason
+    // anybody puts money in somebody's hand, so "I pay him 20 stones" reached
+    // nothing.
+    //
+    // `settle` and `square` are NOT here and must not be. Both are payment
+    // words in one idiom and something else entirely in another - `settle`
+    // has a whole guard of its own two thousand lines down for exactly that -
+    // and this list is consumed as a bare verb alternation with a lazy
+    // capture after it, which is the least forgiving place in the table to
+    // put a word that means two things.
+    + 'pay|pays|paying|paid|repay|repays|repaying|repaid|'
     + 'press|presses|pressing|pressed|slip|slips|slipping|slipped';
 
 /**
@@ -349,6 +363,18 @@ export function whatIsBeingHandedOver(
     const text = input.toLowerCase();
     if (A_PRICE_IS_NAMED.test(text)) return null;
     if (MADE_TO_HAND_IT_OVER.test(text)) return null;
+    // ── HANDING IT TO YOURSELF IS ASKING FOR IT ──────────────────────────
+    //
+    // "give me the manual" parses perfectly as `<person> <thing>` with `me` as
+    // the person, and came back as a gift the player made to themselves.
+    // Measured: `{action: 'give', target: 'me', topic: 'manual'}`.
+    //
+    // It is the commonest way anybody asks for anything, and `request` owns
+    // it - `askWeightOf` has `give me` on its own list of real favours, and
+    // could not see the sentence because this took it first.
+    if (/\b(?:give|gives|giving|gave|hand|hands|handing|handed|pass|passes|passing|passed|lend|lends|lending|lent)\s+(?:me|us)\b/.test(text)) {
+        return null;
+    }
 
     const stones = /\b(?:[0-9]+|[a-z]+)\s+(?:spirit\s+)?stones?\b/.test(text)
         ? parseCount(text) ?? undefined
@@ -408,6 +434,32 @@ export function whatIsBeingHandedOver(
                 ...(who.length >= 2 && !ASKING_GENERALLY.test(who) ? { to: who } : {}),
                 ...(stones !== undefined ? { stones } : {})
             };
+        }
+    }
+
+    // ── HANDED OVER, WITH NOBODY NAMED ───────────────────────────────────
+    //
+    // "I hand over the stones" reached nothing. `hand over` was on the verb
+    // list from the start, but all three shapes above want a PERSON in the
+    // sentence, and this one names none - which `giveSomething` already has an
+    // answer for: nobody named means whoever is at hand, the same thing
+    // `interact` means by an absent target.
+    //
+    // ONLY THE TWO-WORD FORMS, AND THAT IS THE WHOLE CARE HERE. A bare
+    // `<giving verb> <thing>` shape would take "give me the manual", which is
+    // a REQUEST, and "I give up", which is not about a thing at all. `hand
+    // over`, `pass over` and `give away` cannot be either, because the
+    // particle is what makes them mean this.
+    const noOneNamed = new RegExp(
+        String.raw`\b(?:hands?|handing|handed|passe?s?|passing|passed|gives?|giving|gave)`
+        + String.raw`\s+(?:over|away)\s+(?!to\b)`
+        + `(${NOT_PAST_THE_CLAUSE}{2,60}?)\s*(?:[,;.!?]|$)`,
+        'i'
+    ).exec(input);
+    if (noOneNamed) {
+        const thing = cleanPlace(noOneNamed[1] ?? '') ?? '';
+        if (thing.length >= 1) {
+            return { thing, ...(stones !== undefined ? { stones } : {}) };
         }
     }
 
@@ -2064,7 +2116,32 @@ export const WHAT_IS_WRITTEN_BETWEEN_US = new RegExp([
     String.raw`^\s*what\s+(?:stands|is|lies)\s+between\b`,
     // Who is carrying something about you. The hazard direction.
     String.raw`^\s*(?:what|who)\b[^.!?]{0,40}\b(?:held against|holds against|holding against|has against|grudges?)\b`,
-    String.raw`^\s*who\s+(?:is\s+)?(?:owed|owes)\b`
+    String.raw`^\s*who\s+(?:is\s+)?(?:owed|owes)\b`,
+    // ── AND MEANING TO DO SOMETHING ABOUT IT ─────────────────────────────
+    //
+    // Measured, and every settlement sentence in the language reached nothing:
+    //
+    //     "I pay him back"        "I repay what I owe"     "I clear the debt"
+    //     "I settle my debt"      "I forgive the debt"
+    //
+    // ("I settle my debt" was worse than nothing: `settle` is a sitting word
+    // and it reached `cultivate`, so paying somebody back spent years.)
+    //
+    // THEY ARE ANSWERED AND NOT PERFORMED, and that is a ruling rather than a
+    // shortcut. A debt in this world has no number on it. The row that opens
+    // when somebody does a thing for you carries terms that read *Unstated,
+    // and that is the point: it is called in when it is worth calling in* -
+    // so there is no sum to move and inventing one would be the engine making
+    // up a price the record deliberately refuses to carry.
+    //
+    // What the engine does know is what would end it, which is exactly what
+    // `whatWouldCloseIt` answers, and this read now says it per row. So the
+    // sentence gets a true answer that names the act: giving back what was
+    // given, or the person owed deciding they are not. Doing it is the
+    // ordinary verbs - `give` moves a thing, `request` asks - and this is the
+    // read that tells them which.
+    String.raw`^\s*(?:i\s+)?(?:pay|repay|settle|clear|discharge|square|make\s+good|forgive|write\s+off|cancel|let\s+go\s+of)\s+(?:up\s+)?(?:my|his|her|their|our|the|what|him|her|them|it|\w+'s)\b[^.!?]{0,30}\b(?:debt|debts|account|accounts|favou?r|favou?rs|owe|owes|owed|owing|score|tab|bill|dues|marker|obligation|obligations)\b`,
+    String.raw`^\s*(?:i\s+)?(?:pay|pays|paid|repay|repays|repaid)\s+(?:him|her|them|\w+)\s+back\b`
 ].join('|'), 'i');
 
 /** Where a name sits in a question about the ledger. */
@@ -2610,6 +2687,20 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
         String.raw`\b(?:collect|collects|claim|claims)\b[^.!?]{0,20}\b(?:what\s+)?(?:i\s+am\s+)?owed\b`,
         String.raw`\b(?:he|she|they|you)\s+owes?\s+me\b[^.!?]{0,20}\b(?:and|so|now)\b`,
         // And the original list, unchanged.
+        // PUTTING A DEAL TO SOMEBODY, WHICH THE LIST ONLY HAD ONE VERB FOR.
+        //
+        // Measured: "I strike a deal with him" reached `negotiate` and "I offer
+        // him a deal" and "I make him an offer" reached nothing. `strike a
+        // deal` was spelled out and the two commoner ways of saying the same
+        // thing were not.
+        //
+        // `offer` is also an ACTION in this game - the offering made upward to
+        // a house - so these name what is being offered rather than taking a
+        // bare `offer`.
+        String.raw`\b(?:offer|offers|offering|offered)\s+(?:him|her|them|us|\w+)?\s*an?\s+(?:deal|bargain|arrangement|trade|understanding|price)\b`,
+        String.raw`\b(?:make|makes|making|made)\s+(?:him|her|them|us|\w+)\s+an\s+offer\b`,
+        String.raw`\bput\s+a\s+(?:deal|bargain|proposal|proposition)\s+to\b`,
+        // And the original list, unchanged.
         String.raw`\b(?:negotiate|bargain|make terms|come to terms|strike a deal|petition|ally|alliance|swear|join|apply to|seek protection|beg)\b`
     ].join('|'), 'i')],
     ['recruit', /\b(?:recruit|hire|take on|enlist|bring (?:him|her|them) in)\b/],
@@ -2651,7 +2742,7 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     // `AN_ATTACK_WORD_INSIDE_AN_IDIOM`, which stops it swinging. Exempting it there
     // and not claiming it here would trade a wrong act for a refusal, which is
     // better and is not the answer.
-    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself|strike(?:s|ing)? up a conversation|bows? to|bowing to|nods? to|pay my respects to|chat|chats|chatting|chat with|make small talk|small talk|call for help|calls for help|calling for help|shout for help|scream for help|cry for help|yell for help)\b/]
+    ['talk', /\b(?:talk|speak|ask|greet|converse|say|tell|introduce myself|strike(?:s|ing)? up a conversation|bows? to|bowing to|nods? to|pay my respects to|chat|chats|chatting|chat with|make small talk|small talk|thank|thanks|thanking|thanked|call for help|calls for help|calling for help|shout for help|scream for help|cry for help|yell for help)\b/]
 ];
 
 // `warn` is in the threaten intent and was not here, so "I warn him to stay
@@ -3184,6 +3275,37 @@ function planIntent(input: string): PlannedAction {
         const about = askingWhatSomebodyIsAfter(input);
         if (about) {
             return { action: 'request', intent: 'wants', target: about };
+        }
+    }
+
+    // ── ASKING FOR IT, SAID TO SOMEBODY'S FACE ───────────────────────────
+    //
+    // Measured, and all of them reached nothing:
+    //
+    //     "give me the manual"          "lend me twenty stones"
+    //     "can you give me the manual"  "hand me the flask"
+    //
+    // `requestPutToSomebody` below wants an ASKING verb and a PERSON - "I ask
+    // him for the manual" works and always did. But the commonest way anybody
+    // asks for a thing is to say it to the person's face, with no `ask` in it
+    // and no name, because they are already standing there.
+    //
+    // `askWeightOf` has had `give me` and `lend` on its list of real favours
+    // since the request verb was written. The weight was ready and the
+    // sentence could not get to it.
+    //
+    // NO TARGET, on purpose. The person is whoever is being spoken to, which
+    // `somebodyAtHand` resolves off the last-addressed flag and the nearest
+    // face - the same thing an absent target means to `interact` and to
+    // `give`. Naming a person the sentence did not name would be a guess.
+    {
+        const askedFor =
+            /^\s*(?:(?:can|could|will|would|might)\s+you\s+|please\s+)?(?:give|hand|pass|lend|loan|spare|sell)\s+(?:me|us)\s+([^,;.!?]{2,60}?)\s*[?.!]*$/i.exec(input.trim());
+        if (askedFor && !A_PRICE_IS_NAMED.test(text)) {
+            const wanted = cleanPlace(askedFor[1] ?? '');
+            if (wanted) {
+                return { action: 'request', intent: 'a_thing', topic: wanted };
+            }
         }
     }
 
@@ -4148,6 +4270,42 @@ function planIntent(input: string): PlannedAction {
     //
     // A superlative plus a word that means HERE. "who is the strongest of the
     // Azure Dew Sect" names a house and keeps the ladder read below.
+    // WHO HERE CARRIES SOMETHING ABOUT ME
+    //
+    // Ahead of the superlative branch below and ahead of `investigate`, which
+    // took two of these as a PERSON'S NAME. Measured:
+    //
+    //     who likes me        -> UNCLEAR
+    //     who hates me        -> UNCLEAR
+    //     who trusts me       -> UNCLEAR
+    //     who are my friends  -> investigate, looking for somebody called
+    //                            "my friends"
+    //     who are my enemies  -> the same, for "my enemies"
+    //
+    // `whatTheSquareFeelsAbout` computes this every single turn and hands it
+    // to the narrator through the scene channel. No sentence asked for it.
+    //
+    // IT IS ABOUT THE ASKER, which is what separates it from every question
+    // next to it. `who is the strongest here` reads the ladder and `who leads
+    // this house` reads the house; these name the player as the thing being
+    // felt about, and that is the whole difference.
+    if (/\b(?:who|whos|who'?s)\s+(?:is|are|would)?\s*(?:likes?|hates?|trusts?|distrusts?|resents?|fears?|respects?|owes|helps?|would\s+help|is\s+friendly\s+(?:to|with)|has\s+it\s+in\s+for)\s+(?:me|us)\b/.test(text)
+        // ANCHORED, because the bare phrase is a noun anybody may use in the
+        // middle of a sentence about going somewhere: "I go to my friends the
+        // Azure Dew Sect" is not this question and took this branch. Same
+        // shape `WHAT_IS_WRITTEN_BETWEEN_US` uses two hundred lines up for
+        // exactly the same reason - `my debts` is the question and `my debts to
+        // the house are why I am here` is not.
+        || /^\s*(?:so\s+|and\s+)?(?:who\s+(?:is|are)\s+)?(?:my|our)\s+(?:friends?|enemies|enemy|allies|ally|rivals?|admirers?)\s*[?.!]*\s*$/.test(text)
+        || /\b(?:am\s+i|are\s+we)\s+(?:well\s+)?(?:liked|hated|trusted|feared|welcome|resented|respected)\b/.test(text)) {
+        // Unless it is being ASKED OF SOMEBODY, in which case it is a question
+        // put to a person and not a read of the square. The same guard the two
+        // branches below carry, for the same reason.
+        if (!PUTTING_THE_QUESTION_TO_SOMEBODY.test(text)) {
+            return { action: 'look', intent: 'warmth' };
+        }
+    }
+
     if (/(?:who'?s|who)\s*(?:is|are)?\s*(?:the)?\s*(?:strongest|mightiest|most\s+powerful|weakest|lowest|highest|greatest|toughest)/i
         .test(text)
         && /(?:here|around|about|nearby|in\s+(?:this|the)\s+(?:room|square|town|city|place))/i

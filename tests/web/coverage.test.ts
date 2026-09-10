@@ -778,6 +778,18 @@ describe('every intent DECLARED is a door somebody can find', () => {
      * a second place for them to drift.
      */
     const INTENT_PHRASINGS: Record<string, readonly string[]> = {
+        // WHO HERE CARRIES SOMETHING ABOUT ME. Lands with a phrasing rather
+        // than as a recorded gap, which is the only legal direction for that
+        // list. The engine computed this every turn for the scene channel and
+        // no sentence asked for it: `who likes me`, `who hates me` and `who
+        // trusts me` reached nothing, and `who are my enemies` was read as
+        // somebody's NAME and answered with a failed lookup.
+        'look/warmth': [
+            'who likes me',
+            'who hates me',
+            'who are my enemies',
+            'am I liked here'
+        ],
         // Their hands for a season, which is a different ask from a thing they
         // are already holding. Both phrasings are the design owner's own words:
         // "ask your master to cut a slip or craft something for you", and

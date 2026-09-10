@@ -39,7 +39,8 @@
 import {
     SEVERITY_IN_WORDS,
     whichWayItPoints,
-    type ObligationRecord
+    type ObligationRecord,
+    type Settlement
 } from '../engine/social/grudges.js';
 
 /** What one row is, said as a person would say it. */
@@ -65,6 +66,48 @@ export interface WhatStandsBetweenYouAndEverybody {
     readonly nothingAtAll: boolean;
 }
 
+/**
+ * WHAT WOULD CLOSE AN ACCOUNT, IN WORDS RATHER THAN AS A COLUMN VALUE.
+ *
+ * `whatWouldCloseIt` is the engine's answer to the question and had no caller
+ * anywhere outside its own test - so the ledger could say what was open and
+ * never what would end it, and a player typing *I repay what I owe* had
+ * nowhere to be sent.
+ *
+ * The words are what the act IS, not what the enum is called. `avenged` is not
+ * a thing anybody says; somebody acting on it is.
+ */
+const HOW_IT_ENDS: Record<Settlement['resolution'], string> = {
+    repaid: 'giving back what was given',
+    forgiven: 'whoever is carrying it deciding to let it go',
+    compensated: 'paying for it',
+    avenged: 'somebody acting on it',
+    oath_fulfilled: 'doing the thing that was promised',
+    oath_released: 'whoever holds the word letting it go',
+    renounced: 'an arrangement between the two houses, which closes it without '
+        + 'putting anything right',
+    proven_false: 'somebody proving it was never true'
+};
+
+/**
+ * The closings a row can afford, as one clause, or nothing.
+ */
+function andWhatWouldEndIt(closings: readonly Settlement['resolution'][]): string {
+    const said = closings.map(one => HOW_IT_ENDS[one]).filter(Boolean);
+    if (said.length === 0) return '';
+    const list = said.length === 1
+        ? said[0]!
+        : `${said.slice(0, -1).join(', ')} or ${said[said.length - 1]!}`;
+    // WHAT IT WOULD TAKE, AND NOT A CLOSED SET. An earlier wording said `and
+    // by nothing else`, which the caller cannot honestly promise: the party
+    // facts `whatWouldCloseIt` asks for include one - whether the two houses
+    // have people who could be bound to each other - that the engine does not
+    // hold, and the caller passes false for it. That under-reports the
+    // heaviest discharge on a heavy account, which is the safe direction to be
+    // wrong in only as long as the line does not claim to be exhaustive.
+    return ` What would close it: ${list}.`;
+}
+
 /** An account with no name on it is still an account. */
 const NOBODY_IN_PARTICULAR = 'somebody whose name is not written down';
 
@@ -83,7 +126,16 @@ function rowFor(
     record: ObligationRecord,
     otherId: string | null,
     nameOf: (id: string) => string,
-    lead: string
+    lead: string,
+    /**
+     * What would close this, from the caller's `whatWouldCloseIt`.
+     *
+     * The caller's, because the answer needs facts about the two PARTIES -
+     * whether either is a house, whether the person it happened to is still
+     * alive - and this module is pure and holds rows and a name resolver.
+     * Absent, and the row reads exactly as it did before.
+     */
+    closings: readonly Settlement['resolution'][] = []
 ): OneRowOfTheLedger {
     const withWhom = otherId === null ? NOBODY_IN_PARTICULAR : nameOf(otherId);
     return {
@@ -92,7 +144,8 @@ function rowFor(
         // it. `SEVERITY_IN_WORDS` is where that fact lives, and the deed
         // line reads the same table.
         line: `${lead} ${withWhom}: ${inWords(record)}, and the world holds it as `
-            + `${SEVERITY_IN_WORDS[record.severity]}. ${whatItSays(record)}`,
+            + `${SEVERITY_IN_WORDS[record.severity]}. ${whatItSays(record)}`
+            + andWhatWouldEndIt(closings),
         structure: `${record.id}:${record.kind}:${record.cause}:${record.severity}`
     };
 }
@@ -112,6 +165,13 @@ export function whatStandsBetweenYouAndEverybody(input: {
     readonly nameOf: (id: string) => string;
     /** Narrow to one party, when the sentence named somebody. */
     readonly onlyWithId?: string | null;
+    /**
+     * What would close one row, which is `whatWouldCloseIt` and needs facts
+     * about the two parties that this module does not hold. Supplied by the
+     * caller or left off, and left off the lines read as they always did.
+     */
+    readonly whatWouldCloseIt?: (record: ObligationRecord)
+        => readonly Settlement['resolution'][];
 }): WhatStandsBetweenYouAndEverybody {
     const youOwe: OneRowOfTheLedger[] = [];
     const owedToYou: OneRowOfTheLedger[] = [];
@@ -135,7 +195,8 @@ export function whatStandsBetweenYouAndEverybody(input: {
             if (input.onlyWithId && other !== input.onlyWithId) continue;
             (mine === 'owe' ? youOwe : owedToYou).push(rowFor(
                 record, other, input.nameOf,
-                mine === 'owe' ? 'Owed by you to' : 'Owed to you by'
+                mine === 'owe' ? 'Owed by you to' : 'Owed to you by',
+                input.whatWouldCloseIt?.(record) ?? []
             ));
             continue;
         }
@@ -148,7 +209,8 @@ export function whatStandsBetweenYouAndEverybody(input: {
         if (input.onlyWithId && other !== input.onlyWithId) continue;
         (mine === 'against' ? heldAgainstYou : youHold).push(rowFor(
             record, other, input.nameOf,
-            mine === 'against' ? 'Held against you by' : 'Held by you against'
+            mine === 'against' ? 'Held against you by' : 'Held by you against',
+            input.whatWouldCloseIt?.(record) ?? []
         ));
     }
 

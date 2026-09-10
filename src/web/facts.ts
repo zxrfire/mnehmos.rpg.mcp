@@ -1078,6 +1078,80 @@ export function factsForCompany(
 }
 
 /**
+ * HOW EACH OF THE PEOPLE STANDING HERE CARRIES THE PLAYER.
+ *
+ * FOUND BY PLAYING. `whatTheSquareFeelsAbout` runs on every single turn and
+ * reaches the narrator through the scene channel, and the player had no
+ * sentence that asked for it. Measured:
+ *
+ *     who likes me       -> UNCLEAR
+ *     who hates me       -> UNCLEAR
+ *     who trusts me      -> UNCLEAR
+ *     who are my friends -> a search for a PERSON called "my friends"
+ *     who are my enemies -> a search for a PERSON called "my enemies"
+ *
+ * The last two are the worse pair: the question was understood as a name and
+ * answered with a failed lookup.
+ *
+ * WHAT A BYSTANDER CAN SEE, AND NOTHING ELSE. `howTheyCarryIt` is already
+ * written to that rule and says so in its own header - *observable, never
+ * interior: nobody sees despondency, they see somebody who has stopped keeping
+ * up appearances*. So this read hands over those clauses unchanged and adds
+ * nothing to them.
+ *
+ * AND IT IS A READ OF FACES RATHER THAN OF RECORDS. It covers the people
+ * standing here and nobody else, and it can only see what has actually passed
+ * between them and this cultivator. Somebody who dislikes them for a reason
+ * that never touched the ledger stands here looking like anybody else, and the
+ * closing line says so rather than letting an empty answer read as `nobody
+ * here has anything against you`.
+ */
+export function factsForHowTheyCarryYou(
+    cultivator: Cultivator,
+    here: ReadonlyArray<{ readonly id: string; readonly name: string }>,
+    howTheyCarryThem: (personId: string) => string | null
+): EngineFacts {
+    const where = placeName(cultivator);
+    const carried = here
+        .map(person => ({ name: person.name, clause: howTheyCarryThem(person.id) }))
+        .filter((row): row is { name: string; clause: string } => row.clause !== null);
+
+    // The limit on the answer, stated whether or not anything was found. It is
+    // the difference between `nobody here shows anything` and `nobody here
+    // feels anything`, and only the first is true.
+    const whatThisCanSee =
+        'What can be read off a person is what has actually passed between the two of you. '
+        + 'Somebody who has a reason to dislike you that you never gave them stands here '
+        + 'looking like anybody else.';
+
+    const lines = carried.length === 0
+        ? [
+            here.length === 0
+                ? 'There is nobody here to read.'
+                : 'Nobody standing here is carrying anything about you that shows.',
+            whatThisCanSee
+        ]
+        : [
+            ...carried.map(row => `${row.name}. ${row.clause}`),
+            whatThisCanSee
+        ];
+
+    return observable(
+        carried.length === 0
+            ? `Nothing showing on anybody in ${where}.`
+            : `${carried.length} of ${here.length} in ${where} carrying something about you.`,
+        lines,
+        lines.join('\n\n'),
+        [
+            `${here.length} standing here; ${carried.length} carry a reading. Read off the `
+            + 'obligation ledger at the moment of asking and stored nowhere - see '
+            + '`what-they-feel-about-you.ts` on why an emotion column drifts and a read '
+            + 'cannot.'
+        ]
+    );
+}
+
+/**
  * Who is standing here, split by whether the player can put a name to them.
  */
 /**

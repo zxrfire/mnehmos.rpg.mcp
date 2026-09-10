@@ -465,7 +465,10 @@ import {
 } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 // ── AND A WORD GIVEN, CARRIED, OR NOT KEPT ───────────────────────────────
 import { openOathsHeldBy } from './encounters.js';
-import { whatWalkingOutOfItCosts } from '../engine/social-leverage/what-would-settle-an-account-this-heavy.js';
+import {
+    whatWalkingOutOfItCosts,
+    whatWouldCloseIt
+} from '../engine/social-leverage/what-would-settle-an-account-this-heavy.js';
 import {
     THE_OATHWRIGHT_HOUSE,
     THE_OATHWRIGHT_WILL_NOT_WITNESS_FOR,
@@ -667,6 +670,7 @@ import {
     factsForGather,
     factsForInteraction,
     factsForCompany,
+    factsForHowTheyCarryYou,
     factsForLook,
     factsForDao,
     factsForHolding,
@@ -3620,11 +3624,26 @@ ${noticedWaiting}`;
                 // nothing-is-wrong line, and only when the ground contradicts
                 // it.
                 const groundIsQuiet = !wrong || wrong.lines.length === 0;
+                // WHAT THE PEOPLE STANDING HERE CARRY ABOUT THIS CULTIVATOR.
+                //
+                // `whatTheSquareFeelsAbout` already runs every turn for the
+                // scene channel; this is the same read, asked for on purpose.
+                // Free, and it must be: it restates rows the player's own
+                // ledger already holds and can teach, spend, move and kill
+                // nothing.
+                const warmth = action.intent === 'warmth'
+                    ? factsForHowTheyCarryYou(
+                        cultivator,
+                        this.present(cultivator).map(row => ({ id: row.id, name: row.name })),
+                        this.whatTheSquareFeelsAbout(cultivator)
+                    )
+                    : null;
                 const looking = this.freeAction(
                     run, 'look',
-                    action.intent === 'company'
-                        ? factsForCompany(cultivator, company, standing)
-                        : factsForLook(cultivator, ambient, company, standing, groundIsQuiet)
+                    warmth
+                        ?? (action.intent === 'company'
+                            ? factsForCompany(cultivator, company, standing)
+                            : factsForLook(cultivator, ambient, company, standing, groundIsQuiet))
                 );
                 if (wrong) {
                     for (const line of wrong.lines) {
@@ -3813,11 +3832,42 @@ ${noticed}`;
             const named = target && theSetThisNames(target) === null
                 ? this.partyPutTo(cultivator, target, this.scopeFor(cultivator))
                 : null;
+            // ── AND WHAT WOULD CLOSE EACH OF THEM ────────────────────
+            //
+            // `whatWouldCloseIt` is the engine's answer to the only question a
+            // player asks after *what do I owe*, and it had no caller outside
+            // its own test. So the ledger could say what was open and never
+            // what would end it, and every sentence a player types to DO
+            // something about a debt - "I repay what I owe", "I clear the
+            // debt", "I pay him back" - had nowhere to go.
+            //
+            // The parties are facts about the two ends, and they are known
+            // here. `couldBeBound` is the exception and is passed false: it
+            // gates ONLY the marriage bargain, it is a fact about two whole
+            // households rather than about these two people, and nothing here
+            // holds it. Under-reporting one heavy option on a grudge is the
+            // safe direction; claiming one that is not available is not.
+            const aHouse = (id: string | null): boolean =>
+                id !== null && SECTS.some(house => house.id === id);
             const stands = whatStandsBetweenYouAndEverybody({
                 rows: ledgerAbout(this.db as unknown as ObligationDb, cultivator.id),
                 meId: cultivator.id,
                 nameOf,
-                onlyWithId: named?.id ?? null
+                onlyWithId: named?.id ?? null,
+                whatWouldCloseIt: record => whatWouldCloseIt(record, {
+                    holderIsAHouse: aHouse(record.holderId),
+                    subjectIsAHouse: aHouse(record.subjectId),
+                    // The person it happened to, and whether anybody can still
+                    // ask them. A house is always still here; a person has to
+                    // be findable.
+                    principalIsStillHere: aHouse(record.originHolderId)
+                        || this.repos.cultivators.getById(record.originHolderId) !== undefined
+                        || (this.atHand?.npcs ?? []).some(
+                            person => person.id === record.originHolderId
+                                && person.status === 'alive'
+                        ),
+                    couldBeBound: false
+                })
             });
             const between = theLedgerAsLines(stands, named?.name ?? null);
 

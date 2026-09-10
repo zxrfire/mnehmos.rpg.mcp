@@ -734,7 +734,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 35 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 39 | 150 |
 | `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 64 | 65 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 65 | 315 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 66 | 315 |
 
 <!-- END GENERATED: design-constants -->
 
