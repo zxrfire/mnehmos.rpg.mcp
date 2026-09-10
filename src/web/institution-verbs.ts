@@ -12,6 +12,7 @@ import {
 } from '../data/cultivation/hierarchy.js';
 import { getHoldingsOf } from '../data/cultivation/immortal-items.js';
 import { SECTS, getSect } from '../data/cultivation/index.js';
+import { NAMED_FIGURES, nameIsUsable } from '../data/cultivation/named-figures.js';
 import { auditAncestralClaim, getSectAncestry, sectThreat } from '../data/cultivation/sects.js';
 import { OPENLY_OR_IN_SECRET } from '../data/cultivation/standoff.js';
 import { baseReservesFor } from '../engine/cultivation/embezzlement.js';
@@ -385,6 +386,50 @@ export const institutionVerbs = {
                     }
                 }
                 if (line) break;
+            }
+        }
+
+        // ── AND THE FIGURES THE WORLD ACTUALLY NAMES ─────────────────────
+        //
+        // The loop above searches sect ancestry records and nothing else.
+        // `named-figures.ts` is the other register - founders, ancestors who
+        // crossed, sealed figures, the handful of historical people the world
+        // argues about - and no player act read a line of it. Measured: of 39
+        // usable names in that file, FIVE also appear in a sect's ancestry
+        // records. The other 34 were unclaimable, and the refusal a player got
+        // for naming a real founder is the one written for a name they made
+        // up: *an unheard name and an invented one are answered identically
+        // here, by construction*.
+        //
+        // The catalog states this gap itself, in `NAMED_FIGURE_ENGINE_GAP`,
+        // as the third of the three things the engine would need: *a link from
+        // an offering or a claim of descent to the figure it addresses, since
+        // both are currently free text and neither can be wrong*.
+        //
+        // `nameIsUsable` IS THE GATE AND THE FILE SAYS SO: *anything that
+        // needs to know whether a name is trustworthy should call
+        // `nameIsUsable` rather than reading the string*. A name that is
+        // garbled in copying, held in a hand nobody at the institution can
+        // read, or deliberately withheld is one the house cannot certify
+        // against - so the claim reaches the same refusal, for a different and
+        // honest reason, and the player is not told which.
+        //
+        // Awareness-gated on the house whose records hold them, the same rule
+        // the ancestry loop keeps. A figure belonging to no house is claimable
+        // by anybody who can say the name, which is what a figure the whole
+        // world argues about is.
+        if (!line && wanted.length >= 3) {
+            for (const figure of NAMED_FIGURES) {
+                if (!nameIsUsable(figure)) continue;
+                if (matchScore(wanted, figure.name) <= MATCH_THRESHOLD) continue;
+                const house = figure.factionId === null ? null : getSect(figure.factionId);
+                if (house && !this.knowledge.isAwareOf(cultivator.id, 'sect', house.id)) continue;
+                line = {
+                    sectId: house?.id ?? '',
+                    sectName: house?.name ?? 'nobody living',
+                    ancestorName: figure.name
+                };
+                break;
             }
         }
 
