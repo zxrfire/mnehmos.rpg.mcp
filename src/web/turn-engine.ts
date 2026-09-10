@@ -139,6 +139,7 @@ import {
     whoTheyCouldPointYouAt
 } from '../engine/world/who-they-could-point-you-at.js';
 import { TECHNIQUES } from '../data/cultivation/index.js';
+import { theLifeBehindTheFirstTurn } from './the-life-behind-the-first-turn.js';
 import { getConveyance } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { Price } from '../data/cultivation/mortal-world.js';
 import {
@@ -1741,6 +1742,24 @@ export class GameService {
 
         const ambient = this.ambientFor(created.cultivator, created.run);
         const facts = factsForLook(created.cultivator, ambient, this.company(created.cultivator));
+
+        // ── THE SIXTEEN YEARS, BEFORE THE FIRST TURN ASKS ANYTHING ──────
+        //
+        // The opening used to be a character sheet and then a look at the
+        // square, and on empty ground that is a sheet and then nothing. The
+        // design owner: *"if you start in a place with 0 people, say it, like
+        // the beginning should narrate your life up to that point"*, and on the
+        // same screen, *"you have to know SOMETHING, else the game is just
+        // dead."*
+        //
+        // Both halves were already drawn and thrown away. "3 names known" was
+        // the tell: every one of those rows carries the name, what this person
+        // believes about it, and who they got it from. See
+        // `the-life-behind-the-first-turn.ts`.
+        //
+        // Put at the FRONT of the lines, because it is what happened first.
+        facts.lines.unshift(...theLifeBehindTheFirstTurn(birth, STARTING_AGE));
+        facts.prose = facts.lines.join('\n\n');
         const opening = await this.narrator.narrate(facts, {
             place: placeName(created.cultivator),
             ambient,
