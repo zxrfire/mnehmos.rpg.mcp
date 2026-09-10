@@ -419,6 +419,7 @@ export const askingVerbs = {
                 }
                 : null,
             ledger,
+            theirTie,
             promised: promised?.promised ?? null
         });
         const brought = leverage ?? behind.leverage;

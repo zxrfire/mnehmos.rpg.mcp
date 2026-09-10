@@ -99,6 +99,28 @@ export interface WhatIsActuallyBehindYou {
      * it decides the mirror question with the same call.
      */
     readonly asTheyReadYou?: WhatTheyCanPlace;
+    /**
+     * The standing tie between the two, where they have one.
+     *
+     * A SECOND RECORD OF A FAVOUR, AND THE LIGHTER ONE. `ledger` holds
+     * accounts - rows opened by something that happened, priced and settleable.
+     * A tie carries ROLES, which are standing facts about the relationship, and
+     * `owes_a_favour` and `is_owed_a_favour` are written on it by ordinary
+     * contact: an elder giving an instruction puts the player in their debt,
+     * and asking somebody for something puts them in the player's.
+     *
+     * Both were written and neither was read. `contact.ts` has been recording
+     * them on every instruction and every ask, `spending-a-word-to-place-a-
+     * child.ts` writes one too, and nothing in the repository consulted either
+     * - so an elder could put the player in their personal debt and no code
+     * existed that called it in. The mirror of the field-nothing-writes that
+     * AGENTS.md names, one turn around.
+     *
+     * They are disjoint from the ledger rather than a duplicate of it: an
+     * instruction writes the role and opens no account, so counting both
+     * double-counts nothing.
+     */
+    readonly theirTie?: { readonly roles: readonly string[] } | null;
 }
 
 export interface WhatYouBringToBear {
@@ -189,7 +211,11 @@ export function whatYouBringToBear(input: WhatIsActuallyBehindYou): WhatYouBring
     const outreaches = yourHouse !== null
         && yourHouse.reaches >= (input.theirHouse?.reaches ?? 0);
     const debts = theyOweYou(input, 'debt');
-    const favours = theyOweYou(input, 'favor');
+    // The accounts, and then the standing fact. See `theirTie`: a favour owed
+    // off ordinary contact opens no row, so it is invisible to the ledger and
+    // real to both people.
+    const onTheTie = input.theirTie?.roles.includes('is_owed_a_favour') === true;
+    const favours = theyOweYou(input, 'favor') + (onTheTie ? 1 : 0);
 
     const whatIsTrue: Readonly<Partial<Record<ApproachLeverage, { holds: boolean; why: string }>>> = {
         force: {
@@ -210,7 +236,8 @@ export function whatYouBringToBear(input: WhatIsActuallyBehindYou): WhatYouBring
         },
         favour: {
             holds: favours > 0,
-            why: `${favours} open favour${favours === 1 ? '' : 's'} they owe.`
+            why: `${favours} open favour${favours === 1 ? '' : 's'} they owe`
+                + (onTheTie ? ', one of them off what has passed between you.' : '.')
         },
         name: {
             holds: over > 0 || yourHouse !== null,
