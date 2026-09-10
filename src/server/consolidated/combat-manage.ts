@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { AN_ORDINARY_SWING } from '../../engine/cultivation/how-a-blow-was-thrown.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -144,12 +145,53 @@ const ResolveSchema = z.object({
     action: z.literal('resolve'),
     cultivatorId: z.string().optional(),
     opponent: OpponentSchema,
-    goal: z.enum(['kill', 'subdue', 'drive_off', 'humiliate', 'coerce']).optional().default('drive_off')
-        .describe(
-            'What the cultivator is trying to achieve. Decides which endings are reachable. '
-            + '`coerce` is force applied to get compliance rather than to end anybody: it wants them '
-            + 'complying and still standing, and it reaches `submission` when they yield.'
-        ),
+    // HOW THE BLOW WAS THROWN, which replaced a `goal` enum of
+    // `kill | subdue | drive_off | humiliate | coerce`.
+    //
+    // The full account is in `engine/cultivation/how-a-blow-was-thrown.ts`. The
+    // short version: an aggressor does not choose an ending, they choose a
+    // swing, and letting the caller name the ending made *"I run him through"*
+    // resolve as shooing somebody away. Defaults describe the bare form -
+    // whatever is in the hand, wherever the fight offers, meant.
+    thrown: z.object({
+        with: z.enum(['in_hand', 'open_hand', 'fist', 'blunt', 'edge', 'art']).default('in_hand')
+            .describe(
+                'What is in the hand. `in_hand` means unstated - whatever this person is '
+                + 'actually carrying. `open_hand` is a shove, slap, grab or poke, and is a '
+                + 'CHOICE rather than an absence: it is picked instead of the weapon they hold.'
+            ),
+        at: z.enum([
+            'throat', 'head', 'spine', 'chest', 'gut', 'limb', 'hand', 'back', 'unstated'
+        ]).default('unstated')
+            .describe('Where it was aimed. `unstated` means wherever the fight offered.'),
+        force: z.enum(['a_poke', 'light', 'committed', 'everything']).default('committed')
+            .describe(
+                'How much was behind it. `a_poke` is zero damage by construction and still '
+                + 'carries offence. `committed` is what a bare "attacks him" means.'
+            )
+    }).optional(),
+    /**
+     * Force applied to get COMPLIANCE rather than to end anybody. Wants them
+     * complying and still standing, and reaches `submission` when they yield.
+     * Not a swing, which is why it is its own field and not a value of one.
+     *
+     * NO ZOD DEFAULT, for the reason the comment on `submission` below already
+     * gives: a default makes the field REQUIRED on the inferred output type,
+     * and every existing caller would stop compiling over a flag none of them
+     * set. Absent means false and is read that way at the one place it is used.
+     */
+    toMakeThemComply: z.boolean().optional(),
+    /**
+     * They are beaten, and are being let go where it can be seen.
+     *
+     * Also not a swing. It is what somebody FAR ENOUGH ABOVE you does instead
+     * of killing you, so it is decided by the gap between the two of them -
+     * which is why it is exposed here, on the surface the world and the admin
+     * drive fights through, and NOT read off anything a player types. A player
+     * who says "I humiliate him" has named an outcome they are not in a
+     * position to choose.
+     */
+    toMakeAnExampleOfThem: z.boolean().optional(),
     techniqueId: z.string().optional(),
     vector: z.enum(['body', 'soul']).optional().default('body'),
     edges: z.array(EdgeSchema).optional().default([]),
@@ -612,7 +654,9 @@ export async function handleResolve(args: z.infer<typeof ResolveSchema>): Promis
         attackerEdges: args.edges ?? [],
         defenderEdges: args.opponentEdges ?? [],
         intent: {
-            goal: args.goal,
+            thrown: args.thrown ?? AN_ORDINARY_SWING,
+            ...(args.toMakeThemComply ? { toMakeThemComply: true } : {}),
+            ...(args.toMakeAnExampleOfThem ? { toMakeAnExampleOfThem: true } : {}),
             willWithdraw: !(args.fightToTheEnd ?? false),
             opening: args.opening,
             ...(args.submission
@@ -1323,7 +1367,11 @@ Aliases: size_up->assess, attack->strike, fight/duel->resolve, escape->flee`,
         techniqueId: z.string().optional(),
         movementTechniqueId: z.string().optional(),
         vector: z.enum(['body', 'soul']).optional(),
-        goal: z.enum(['kill', 'subdue', 'drive_off', 'humiliate']).optional(),
+        // The swing, not a goal. See `ResolveSchema` above and
+        // `engine/cultivation/how-a-blow-was-thrown.ts`.
+        thrown: z.record(z.any()).optional(),
+        toMakeThemComply: z.boolean().optional(),
+        toMakeAnExampleOfThem: z.boolean().optional(),
         edges: z.array(z.string()).optional(),
         opponentEdges: z.array(z.string()).optional(),
         fightToTheEnd: z.boolean().optional(),

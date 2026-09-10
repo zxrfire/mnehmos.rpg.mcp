@@ -2,6 +2,10 @@
  * Hitting somebody, and everything the world does about it afterwards.
  */
 
+import {
+    AN_ORDINARY_SWING,
+    type HowTheBlowWasThrown
+} from '../engine/cultivation/how-a-blow-was-thrown.js';
 import { openHandednessOf } from '../engine/social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import { whatSomebodyIsLike } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
@@ -238,7 +242,18 @@ export const combatVerbs = {
          */
         ambient: AmbientQi,
         target: string | undefined,
-        goal: string,
+        /**
+         * HOW THE BLOW WAS THROWN - what was in the hand, where it went, how
+         * much was behind it. Read off the sentence by `howTheySaidTheySwung`
+         * and passed straight to the resolver.
+         *
+         * This parameter used to be `goal: string`, one of `kill | subdue |
+         * drive_off | humiliate | coerce`, and it is the field the whole of
+         * `how-a-blow-was-thrown.ts` was written to remove.
+         */
+        thrown: HowTheBlowWasThrown | undefined,
+        /** Force applied to get compliance rather than to end anybody. */
+        toMakeThemComply: boolean,
         terms: BoutTerms = 'open',
         /**
          * How the fight was opened. Passed straight to the resolver, which
@@ -272,7 +287,7 @@ export const combatVerbs = {
         const asASet = theSetThisNames(query);
         if (asASet) {
             return await this.attackOverASet(
-                cultivator, asASet, goal, terms, opening, wanted, named
+                cultivator, asASet, thrown, toMakeThemComply, terms, opening, wanted, named
             );
         }
 
@@ -343,12 +358,16 @@ export const combatVerbs = {
             ));
         }
 
-        // `goal` decides which endings the engine will reach for. It is passed
-        // straight through; nothing in this layer reads it to pick a winner.
-        const intent = goal === 'kill' || goal === 'subdue' || goal === 'humiliate'
-            || goal === 'coerce'
-            ? goal
-            : 'drive_off';
+        // THE SWING, PASSED STRAIGHT THROUGH. Nothing in this layer reads it
+        // to pick a winner and nothing in this layer may: what a blow reaches
+        // is the engine's, and the person on the end of it gets a say after
+        // that.
+        //
+        // What stood here was a four-way check on a `goal` string that fell
+        // through to `drive_off` - the weakest ending the engine had - for
+        // every sentence it did not recognise. So a killing thrust and a shove
+        // arrived identical. See `how-a-blow-was-thrown.ts`.
+        const swing = thrown ?? AN_ORDINARY_SWING;
 
         // Half the people in a square exist only in the world state, not in the
         // cultivators table, and `combat_manage` looks its opponent up by id.
@@ -434,7 +453,7 @@ export const combatVerbs = {
         );
         if (isGuidingErrorBody(opponentBody)) {
             return this.fromToolResult(
-                'combat_manage.resolve', intent === 'coerce' ? 'coerce' : 'attack',
+                'combat_manage.resolve', toMakeThemComply ? 'coerce' : 'attack',
                 opponentBody, party.name
             );
         }
@@ -467,11 +486,12 @@ export const combatVerbs = {
                 movement: null, movementMastery: 0
             },
             intent: {
-                goal: intent,
+                thrown: swing,
+                ...(toMakeThemComply ? { toMakeThemComply: true } : {}),
                 willWithdraw: true,
                 opening,
                 // WHETHER THEY WOULD RATHER DIE
-                ...(intent === 'coerce' && theirRecord
+                ...(toMakeThemComply && theirRecord
                     ? (() => {
                         const kneel = wouldTheyKneel(theirRecord, cultivator.id);
                         return { yields: { willYield: kneel.yields, because: kneel.because } };
@@ -498,7 +518,7 @@ export const combatVerbs = {
                 aggressor: { input: selfBody, edges: [], vector: 'body', movement: null, movementMastery: 0 },
                 defender: { input: opponentBody, edges: [], vector: 'body', movement: null, movementMastery: 0 },
                 hp: {}, injuries: {}, hpAtOpening: {}, exchanges: [], brokenObjects: [],
-                intent: { goal: intent }, playerId: cultivator.id,
+                intent: { thrown: swing }, playerId: cultivator.id,
                 ground: this.groundUnderAFight(cultivator), openedOnTurn: run.turn + 1
             },
             runId: run.id,
@@ -511,7 +531,7 @@ export const combatVerbs = {
             opponent: opponentBody,
             techniqueId,
             terms,
-            verb: intent === 'coerce' ? 'coerce' : 'attack',
+            verb: toMakeThemComply ? 'coerce' : 'attack',
             ...(wanted !== undefined ? { wanted } : {}),
             ...(named !== undefined ? { named } : {})
         };
@@ -807,7 +827,8 @@ export const combatVerbs = {
         this: GameService,
         cultivator: Cultivator,
         set: SetShape,
-        goal: string,
+        thrown: HowTheBlowWasThrown | undefined,
+        toMakeThemComply: boolean,
         terms: BoutTerms = 'open',
         opening: 'open' | 'from_concealment' = 'open',
         wanted?: string,
@@ -821,7 +842,7 @@ export const combatVerbs = {
                 const now = this.currentRun();
                 return this.attack(
                     now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
-                    member.name, goal, terms, opening, wanted, named
+                    member.name, thrown, toMakeThemComply, terms, opening, wanted, named
                 );
             },
             {

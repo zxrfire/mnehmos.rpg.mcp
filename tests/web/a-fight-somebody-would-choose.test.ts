@@ -28,15 +28,39 @@ describe('asking for a bout', () => {
     });
 
     /**
-     * An agreed bout ends when one party yields, which is what `subdue` already
-     * means to the resolver - so this needed no change to the combat tool's
-     * closed set of goals.
+     * A BOUT IS A SWING, NOT A DECLARED ENDING.
+     *
+     * This asserted `intent === 'subdue'` on a duel and `'kill'` on a killing,
+     * and the comment above it read *"an agreed bout ends when one party
+     * yields, which is what `subdue` already means to the resolver."* Both were
+     * the goal model: the aggressor announced how it would end, and the engine
+     * delivered that ending.
+     *
+     * Which made a spar unable to go wrong - and a spar going wrong is the one
+     * thing the genre does with them constantly. It is also flatly contradicted
+     * by this repo's own measurement: 2,666 replayed friendly bouts, 115 of
+     * them ending with somebody's bar at zero (`nobody-is-invincible.ts`).
+     *
+     * What separates a bout from a killing now is what the two of them THROW.
+     * Two people finding out where they stand use bare hands, meant, at nothing
+     * in particular; somebody who means to end it does not hold anything back.
+     * The agreement itself is carried by `terms`, where it always belonged, and
+     * that is what decides what a killing MEANT rather than whether one is
+     * possible.
      */
-    it('asks for a yield rather than a killing', () => {
-        expect(parseIntent('I challenge him to a duel').intent).toBe('subdue');
-        expect(parseIntent('I duel the nearest cultivator').intent).toBe('subdue');
-        // And a stated killing is still a killing.
-        expect(parseIntent('I kill the nearest cultivator').intent).toBe('kill');
+    it('opens a bout with a bout swing, and a killing with everything', () => {
+        expect(parseIntent('I challenge him to a duel').thrown)
+            .toEqual({ with: 'fist', at: 'unstated', force: 'committed' });
+        expect(parseIntent('I duel the nearest cultivator').thrown)
+            .toEqual({ with: 'fist', at: 'unstated', force: 'committed' });
+        // And the thing that makes it a bout is the agreement, not a ceiling
+        // on what the blows can do.
+        expect(parseIntent('I challenge him to a duel').terms).toBe('agreed');
+
+        // A stated killing keeps nothing back, and where that lands is the
+        // engine's to settle.
+        expect(parseIntent('I kill the nearest cultivator').thrown?.force).toBe('everything');
+        expect(parseIntent('I kill the nearest cultivator').terms).not.toBe('agreed');
     });
 
     /**

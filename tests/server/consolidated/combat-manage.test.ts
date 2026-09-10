@@ -257,7 +257,7 @@ describe('combat_manage', () => {
 
             const result = await combat({
                 action: 'resolve',
-                goal: 'kill',
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
                 fightToTheEnd: true,
                 opponent: { name: 'a rival', realmOrdinal: realmStart('foundation_establishment'), maxHp: 200 }
             });
@@ -277,7 +277,7 @@ describe('combat_manage', () => {
 
             await combat({
                 action: 'resolve',
-                goal: 'humiliate',
+                toMakeAnExampleOfThem: true,
                 opponent: { name: 'a rival', realmOrdinal: 4 }
             });
 
@@ -298,7 +298,7 @@ describe('combat_manage', () => {
 
             const result = await combat({
                 action: 'resolve',
-                goal: 'humiliate',
+                toMakeAnExampleOfThem: true,
                 opponent: { name: 'Wen Sho', realmOrdinal: 4 }
             });
 
@@ -326,7 +326,7 @@ describe('combat_manage', () => {
             const result = await combat({
                 action: 'resolve',
                 cultivatorId: attackerId,
-                goal: 'kill',
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
                 opponent: {
                     name: 'Elder Rong',
                     realmOrdinal: realmStart('nascent_soul'),
@@ -346,7 +346,7 @@ describe('combat_manage', () => {
 
             const result = await combat({
                 action: 'resolve',
-                goal: 'kill',
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
                 opponent: {
                     name: 'a carver',
                     realmOrdinal: 4,
@@ -380,7 +380,7 @@ describe('combat_manage', () => {
 
             const result = await combat({
                 action: 'resolve',
-                goal: 'kill',
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
                 opponent: { name: 'an ancestor', realmOrdinal: realmStart('void_refinement') }
             });
 
@@ -399,7 +399,7 @@ describe('combat_manage', () => {
 
             const result = await combat({
                 action: 'resolve',
-                goal: 'drive_off',
+                thrown: { with: 'open_hand', at: 'unstated', force: 'light' },
                 opponent: { name: 'a rival', realmOrdinal: 6 }
             });
 
@@ -440,7 +440,7 @@ describe('combat_manage', () => {
         it('reads back what was actually resolved', async () => {
             const created = await newCultivator();
             setRank(db, created.cultivator.id, realmStart('core_formation'));
-            await combat({ action: 'resolve', goal: 'subdue', opponent: { name: 'Bo', realmOrdinal: 3 } });
+            await combat({ action: 'resolve', thrown: { with: 'fist', at: 'unstated', force: 'committed' }, opponent: { name: 'Bo', realmOrdinal: 3 } });
 
             const result = await combat({ action: 'history' });
             expect(result.records).toHaveLength(1);

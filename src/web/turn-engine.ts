@@ -3059,8 +3059,14 @@ export class GameService {
                 // the header on `attack` and on `whatFollowedTheBout`.
                 // `opening` reaches the resolver and decides who gets the first
                 // round; it decides nothing about what a blow does to a body.
+                // `thrown` is the swing the parser read off the sentence. It
+                // used to be `action.intent ?? 'drive_off'`, which fell back to
+                // the weakest ending the engine had whenever the sentence said
+                // nothing the old regex recognised - so a bare "I attack him"
+                // and a thrust through the chest arrived identical. See
+                // `how-a-blow-was-thrown.ts`.
                 return this.attack(
-                    run, cultivator, ambient, action.target, action.intent ?? 'drive_off',
+                    run, cultivator, ambient, action.target, action.thrown, false,
                     action.terms ?? 'open', action.opening ?? 'open'
                 );
 
@@ -3091,7 +3097,7 @@ export class GameService {
                     }
                 }
                 return this.attack(
-                    run, cultivator, ambient, action.target, 'coerce', 'open',
+                    run, cultivator, ambient, action.target, action.thrown, true, 'open',
                     action.opening ?? 'open', action.intent ?? 'submit',
                     // The thing the sentence named. Read only where somebody
                     // yields and something has to be chosen; the resolver never
@@ -3106,7 +3112,7 @@ export class GameService {
                 // `coerce` in `actions.ts` for why it is its own verb and not a
                 // second door onto `threaten`.
                 return this.attack(
-                    run, cultivator, ambient, action.target, 'coerce', 'open',
+                    run, cultivator, ambient, action.target, action.thrown, true, 'open',
                     action.opening ?? 'open', action.intent ?? 'submit'
                 );
 
@@ -6889,7 +6895,9 @@ ${line}`;
             // catalog carries, and inventing attributes for a beast would be a
             // second stat block in a repo that deleted the first.
             opponent: { name: met.name, realmOrdinal: met.ordinal },
-            goal: 'kill',
+            // A beast fight is not a negotiation. Whatever the cultivator is
+            // carrying, thrown at everything they have.
+            thrown: { with: 'in_hand', at: 'unstated', force: 'everything' },
             vector: 'body',
             edges: [],
             opponentEdges: [],

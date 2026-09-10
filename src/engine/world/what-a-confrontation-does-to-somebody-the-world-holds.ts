@@ -144,12 +144,17 @@ export interface WhatTheFightDecided {
      *
      * NOT a synonym for "reduced to nothing", and the distinction is the whole
      * of why this module can kill somebody without a second death gate.
-     * `finishOutcome` reads the aggressor's GOAL: `subdue` ends at capture,
-     * `humiliate` at humiliation, `drive_off` at withdrawal, and only `kill`
-     * against a body the tradition says is enough returns `lethal`. So a bout
-     * that empties somebody's bar without meaning to arrives here `finished:
-     * false` and leaves them beaten, and a killing is a killing because the
-     * killer went there. See the note at the death gate in `combat-manage.ts`,
+     * `finishOutcome` reads THE SWING that put them down: an open hand ends at
+     * withdrawal, bare hands and a blade in a limb end at capture, and only a
+     * blow that could reach a death - an edge somewhere vital, a skull broken,
+     * hands on a throat with everything behind them - against a body the
+     * tradition says is enough returns `lethal`.
+     *
+     * So a bout that empties somebody's bar with fists arrives here `finished:
+     * false` and leaves them beaten, and a killing is a killing because of what
+     * was in the hand and where it went. This used to read the aggressor's
+     * declared GOAL, which let somebody announce an ending in advance; see
+     * `how-a-blow-was-thrown.ts` for why that could not be honest. See the note at the death gate in `combat-manage.ts`,
      * which is the same ruling on the other side of the same boundary.
      */
     finished: boolean;

@@ -11,6 +11,7 @@ import {
     type SideInput,
     type SideStrength
 } from '../cultivation/combat.js';
+import { A_BLOW_MEANT_TO_END_IT } from '../cultivation/how-a-blow-was-thrown.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { combatantOf } from './gatherings.js';
 import { makeFact, type HistoricalFact } from './history.js';
@@ -274,7 +275,7 @@ function fightOneYear(
         // Two houses openly fighting are trying to stop each other. `willWithdraw`
         // is left at its default, so most of the beaten break off rather than
         // die - which is why a war costs a house people without emptying it.
-        intent: { goal: 'kill' }
+        intent: { thrown: A_BLOW_MEANT_TO_END_IT }
     });
 
     const byId = new Map<string, NpcRecord>(

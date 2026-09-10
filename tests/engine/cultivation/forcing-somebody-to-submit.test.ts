@@ -12,7 +12,7 @@
  * people."*
  *
  * So `submission` is the sixth outcome and it is NOT what losing means. It is
- * reached from `goal: 'coerce'` and only when the beaten party yields, and
+ * reached from `toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT` and only when the beaten party yields, and
  * whether they yield is a fact about who they are that the CALLER reads off
  * records the world already keeps - a person's wants and standing, a beast's
  * own nature. There is no will-to-submit number anywhere in the engine and
@@ -48,6 +48,11 @@ import {
     whatALevelLeaves,
     wentFurtherThan
 } from '../../../src/engine/cultivation/how-far-you-went-to-make-them-comply.js';
+import {
+    A_BLOW_MEANT_TO_END_IT,
+    AN_ORDINARY_SWING,
+    type HowTheBlowWasThrown
+} from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
 function body(ordinal: number, id: string): CombatantInput {
     const hp = Math.max(10, 20 + ordinal * 12);
@@ -64,7 +69,7 @@ function ctx(over: Partial<ConfrontationContext> = {}, seed = 'seed-1'): Confron
         rng: forStream(seed, 'confrontation'),
         ambient: 'normal',
         turn: 1,
-        intent: { goal: 'coerce' },
+        intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT },
         ...over
     };
 }
@@ -138,7 +143,7 @@ describe('forcing somebody to submit', () => {
     it('reaches submission when the beaten party yields', () => {
         const result = resolveConfrontation(
             body(12, 'strong'), body(9, 'weak'),
-            ctx({ intent: { goal: 'coerce', yields: ORDINARILY_YIELDS } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT, yields: ORDINARILY_YIELDS } })
         );
         expect(result.outcome).toBe('submission');
         expect(result.winnerId).toBe('strong');
@@ -151,7 +156,7 @@ describe('forcing somebody to submit', () => {
     it('leaves the loser holding a grave grudge, because they chose to kneel', () => {
         const result = resolveConfrontation(
             body(12, 'strong'), body(9, 'weak'),
-            ctx({ intent: { goal: 'coerce' } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         expect(result.obligations).toHaveLength(1);
         expect(result.obligations[0]).toMatchObject({
@@ -167,7 +172,7 @@ describe('forcing somebody to submit', () => {
         };
         const result = resolveConfrontation(
             body(12, 'strong'), body(9, 'weak'),
-            ctx({ intent: { goal: 'coerce', yields: wouldRatherDie } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT, yields: wouldRatherDie } })
         );
         expect(result.outcome).not.toBe('submission');
         expect(['lethal', 'body_destroyed']).toContain(result.outcome);
@@ -179,7 +184,7 @@ describe('forcing somebody to submit', () => {
         // Being outmatched must not make anybody more biddable.
         const yielding = resolveConfrontation(
             body(30, 'far_above'), body(3, 'nobody'),
-            ctx({ intent: { goal: 'coerce' } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         expect(yielding.gap.verdict).toBe('dominant');
         expect(yielding.exchanges).toHaveLength(0);
@@ -188,7 +193,7 @@ describe('forcing somebody to submit', () => {
 
         const refusing = resolveConfrontation(
             body(30, 'far_above'), body(3, 'nobody'),
-            ctx({ intent: { goal: 'coerce', yields: { willYield: false, because: 'territorial' } } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT, yields: { willYield: false, because: 'territorial' } } })
         );
         expect(refusing.outcome).not.toBe('submission');
         expect(refusing.hp['nobody']).toBe(0);
@@ -200,7 +205,7 @@ describe('forcing somebody to submit', () => {
         // lost, and nobody is under anybody.
         const result = resolveConfrontation(
             body(6, 'optimist'), body(14, 'wall'),
-            ctx({ intent: { goal: 'coerce' } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         if (result.winnerId !== 'optimist') {
             expect(result.outcome).not.toBe('submission');
@@ -218,11 +223,11 @@ describe('forcing somebody to submit', () => {
 
     it('takes the default that most people yield, without making it a rule', () => {
         const withDefault = resolveConfrontation(
-            body(12, 'a'), body(9, 'b'), ctx({ intent: { goal: 'coerce' } })
+            body(12, 'a'), body(9, 'b'), ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         const explicit = resolveConfrontation(
             body(12, 'a'), body(9, 'b'),
-            ctx({ intent: { goal: 'coerce', yields: ORDINARILY_YIELDS } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT, yields: ORDINARILY_YIELDS } })
         );
         expect(fingerprint(withDefault)).toBe(fingerprint(explicit));
     });
@@ -233,11 +238,11 @@ describe('opening a fight from concealment', () => {
         // AGENTS.md: a new RNG draw is a regression until proved otherwise.
         // Base and change, back to back in one command.
         const absent = resolveConfrontation(
-            body(11, 'a'), body(11, 'b'), ctx({ intent: { goal: 'kill' } })
+            body(11, 'a'), body(11, 'b'), ctx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         const open = resolveConfrontation(
             body(11, 'a'), body(11, 'b'),
-            ctx({ intent: { goal: 'kill', opening: 'open' } })
+            ctx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT, opening: 'open' } })
         );
         expect(fingerprint(open)).toBe(fingerprint(absent));
     });
@@ -260,7 +265,7 @@ describe('opening a fight from concealment', () => {
     it('gives the target no swing in the round they did not know about', () => {
         const concealed = resolveConfrontation(
             body(11, 'hidden'), body(11, 'unaware'),
-            ctx({ intent: { goal: 'kill', opening: 'from_concealment' } })
+            ctx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT, opening: 'from_concealment' } })
         );
         // The opening round is one strike, not two: the first exchange whose
         // attacker is the target cannot be index 1.
@@ -272,7 +277,7 @@ describe('opening a fight from concealment', () => {
     it('carries the ambush edge on the opening exchange and on no other', () => {
         const concealed = resolveConfrontation(
             body(11, 'hidden'), body(11, 'unaware'),
-            ctx({ intent: { goal: 'kill', opening: 'from_concealment' } })
+            ctx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT, opening: 'from_concealment' } })
         );
         const named = (i: number) =>
             concealed.exchanges[i].result.modifiers.map(m => m.source).join('|');
@@ -290,11 +295,11 @@ describe('opening a fight from concealment', () => {
         // damage fraction. What concealment bought is the edge multiplier and
         // the free round, both of which are already-priced mechanics.
         const open = resolveConfrontation(
-            body(11, 'a'), body(11, 'b'), ctx({ intent: { goal: 'kill' } })
+            body(11, 'a'), body(11, 'b'), ctx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         const concealed = resolveConfrontation(
             body(11, 'a'), body(11, 'b'),
-            ctx({ intent: { goal: 'kill', opening: 'from_concealment' } })
+            ctx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT, opening: 'from_concealment' } })
         );
         expect(concealed.exchanges[0].result.advantage)
             .toBeGreaterThan(open.exchanges[0].result.advantage);
@@ -305,7 +310,7 @@ describe('opening a fight from concealment', () => {
     it('composes with coercion, because they are different questions', () => {
         const result = resolveConfrontation(
             body(12, 'hidden'), body(10, 'mark'),
-            ctx({ intent: { goal: 'coerce', opening: 'from_concealment' } })
+            ctx({ intent: { toMakeThemComply: true, thrown: A_BLOW_MEANT_TO_END_IT, opening: 'from_concealment' } })
         );
         expect(result.outcome).toBe('submission');
         expect(result.exchanges[0].result.modifiers.map(m => m.source).join('|'))

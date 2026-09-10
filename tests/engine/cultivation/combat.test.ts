@@ -46,6 +46,11 @@ import {
 } from '../../../src/engine/cultivation/realms.js';
 import type { Technique, TechniqueReach } from '../../../src/schema/cultivation.js';
 import { makeInjuries } from './fixtures.js';
+import {
+    A_BLOW_MEANT_TO_END_IT,
+    AN_ORDINARY_SWING,
+    type HowTheBlowWasThrown
+} from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // FIXTURES
@@ -429,7 +434,7 @@ describe('resolveConfrontation', () => {
         rng: rng('confrontation'),
         ambient: 'normal' as const,
         turn: 1,
-        intent: { goal: 'kill' as const },
+        intent: { thrown: A_BLOW_MEANT_TO_END_IT },
         ...overrides
     });
 
@@ -487,7 +492,7 @@ describe('resolveConfrontation', () => {
             const result = resolveConfrontation(
                 combatant({ id: 'a', realmOrdinal: 14 }),
                 combatant({ id: 'b', realmOrdinal: 14 }),
-                baseCtx({ rng: rng(`bounded-${i}`), intent: { goal: 'kill', willWithdraw: false } })
+                baseCtx({ rng: rng(`bounded-${i}`), intent: { thrown: A_BLOW_MEANT_TO_END_IT, willWithdraw: false } })
             );
             expect(result.exchanges.length).toBeLessThanOrEqual(MAX_EXCHANGES * 2);
         }
@@ -502,7 +507,7 @@ describe('resolveConfrontation', () => {
             outcomes.add(resolveConfrontation(
                 combatant({ id: 'a', realmOrdinal: 14 }),
                 combatant({ id: 'b', realmOrdinal: 14 }),
-                baseCtx({ rng: rng(`stale-${i}`), intent: { goal: 'kill', willWithdraw: false } })
+                baseCtx({ rng: rng(`stale-${i}`), intent: { thrown: A_BLOW_MEANT_TO_END_IT, willWithdraw: false } })
             ).outcome);
         }
         expect(outcomes).toContain('stalemate');
@@ -515,26 +520,84 @@ describe('resolveConfrontation', () => {
             const outcome = resolveConfrontation(
                 combatant({ id: 'a', realmOrdinal: 14 }),
                 combatant({ id: 'b', realmOrdinal: 14 }),
-                baseCtx({ rng: rng(`ordinary-${i}`), intent: { goal: 'kill', willWithdraw: true } })
+                baseCtx({ rng: rng(`ordinary-${i}`), intent: { thrown: A_BLOW_MEANT_TO_END_IT, willWithdraw: true } })
             ).outcome;
             tally[outcome] = (tally[outcome] ?? 0) + 1;
         }
         expect((tally.withdrawal ?? 0) + (tally.crippled ?? 0)).toBeGreaterThan(tally.lethal ?? 0);
     });
 
-    it('produces outcomes other than death, and the goal decides which', () => {
-        const goals = ['subdue', 'humiliate', 'drive_off'] as const;
-        const expected = { subdue: 'capture', humiliate: 'humiliation', drive_off: 'withdrawal' };
+    /**
+     * THE SWING DECIDES WHICH, NOT A DECLARED GOAL.
+     *
+     * This test used to read *"produces outcomes other than death, and the GOAL
+     * decides which"*, and it looped over `subdue | humiliate | drive_off`
+     * asserting that each one produced its matching ending. It passed, and it
+     * was documenting the defect.
+     *
+     * What the goal model could not express is the ordinary case, which is
+     * every case: a man who shoves somebody and kills them because they went
+     * down badly, and a man who means to kill and finds he has broken an arm.
+     * An aggressor announced an ending and the engine delivered it.
+     *
+     * Measured through the real parser, the same model reaching the player:
+     *
+     *     "i run him through"          -> drive_off
+     *     "i stab him in the throat"   -> drive_off
+     *     "i stab him in the leg"      -> drive_off
+     *
+     *   *"just make attacks and drive away the same thing"* -
+     *   *"a push is assault"* - *"a stabbing is still attack"* -
+     *   *"just with a different thing"* - *"it shouldn't be split"*
+     *
+     * So the ending is read off WHAT WAS IN THE HAND, WHERE IT WENT and HOW
+     * MUCH WAS BEHIND IT. Same two people, same seed, four swings, four
+     * endings - and nobody chose any of them.
+     */
+    it('reads the ending off the swing, so the same fight ends four ways', () => {
+        const swings = [
+            // A finger in the chest. Zero damage by construction, and the
+            // offence it carries is read elsewhere, against the relationship.
+            [{ with: 'open_hand', at: 'chest', force: 'a_poke' }, 'withdrawal'],
+            // A shove. Assault, and it does not finish anybody who can stand.
+            [{ with: 'open_hand', at: 'unstated', force: 'light' }, 'withdrawal'],
+            // Bare hands, meant. They go down and they get up.
+            [{ with: 'fist', at: 'unstated', force: 'committed' }, 'capture'],
+            // An edge in the throat. This is what killing somebody looks like,
+            // and no part of it was declared in advance.
+            [{ with: 'edge', at: 'throat', force: 'committed' }, 'lethal']
+        ] as const;
 
-        for (const goal of goals) {
+        for (const [thrown, expected] of swings) {
             const result = resolveConfrontation(
                 combatant({ id: 'a', realmOrdinal: realmStart('core_formation') }),
                 combatant({ id: 'b', realmOrdinal: 2 }),
-                baseCtx({ intent: { goal } })
+                baseCtx({ intent: { thrown } })
             );
-            expect(result.outcome, goal).toBe(expected[goal]);
-            expect(result.finished, goal).toBe(false);
+            const said = `${thrown.with}/${thrown.at}/${thrown.force}`;
+            expect(result.outcome, said).toBe(expected);
+            expect(result.finished, said).toBe(expected === 'lethal');
         }
+    });
+
+    /**
+     * AND THE SAME INSTRUMENT AT A DIFFERENT FORCE IS A DIFFERENT ENDING.
+     *
+     * The half of *"attacks have severity but it's all an attack"* that the
+     * table above does not show: these are the SAME hands in the SAME place,
+     * and the only thing that changed is how much was behind it. A hand on a
+     * throat is a grip; a hand on a throat with everything behind it is
+     * strangling, and strangling kills.
+     */
+    it('separates a grip on a throat from a strangling by force alone', () => {
+        const ending = (force: 'light' | 'everything') => resolveConfrontation(
+            combatant({ id: 'a', realmOrdinal: realmStart('core_formation') }),
+            combatant({ id: 'b', realmOrdinal: 2 }),
+            baseCtx({ intent: { thrown: { with: 'open_hand', at: 'throat', force } } })
+        ).outcome;
+
+        expect(ending('light')).toBe('withdrawal');
+        expect(ending('everything')).toBe('lethal');
     });
 
     it('destroys the body of a high Drawn cultivator without ending them', () => {
@@ -545,7 +608,7 @@ describe('resolveConfrontation', () => {
                 realmOrdinal: realmStart('nascent_soul'),
                 traditionId: 'tradition-drawn'
             }),
-            baseCtx({ intent: { goal: 'kill' } })
+            baseCtx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT } })
         );
 
         expect(result.outcome).toBe('body_destroyed');
@@ -559,7 +622,7 @@ describe('resolveConfrontation', () => {
         const result = resolveConfrontation(
             combatant({ id: 'a', realmOrdinal: realmStart('deity_transformation') }),
             combatant({ id: 'b', realmOrdinal: 2, traditionId: 'tradition-cut' }),
-            baseCtx({ intent: { goal: 'kill' } })
+            baseCtx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT } })
         );
 
         expect(result.outcome).toBe('body_destroyed');
@@ -571,7 +634,7 @@ describe('resolveConfrontation', () => {
         const result = resolveConfrontation(
             combatant({ id: 'a', realmOrdinal: realmStart('core_formation') }),
             combatant({ id: 'b', realmOrdinal: 2 }),
-            baseCtx({ intent: { goal: 'kill' } })
+            baseCtx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         expect(result.outcome).toBe('lethal');
         expect(result.finished).toBe(true);
@@ -582,7 +645,7 @@ describe('resolveConfrontation', () => {
         const result = resolveConfrontation(
             combatant({ id: 'a', realmOrdinal: realmStart('core_formation') }),
             combatant({ id: 'b', realmOrdinal: 2 }),
-            baseCtx({ intent: { goal: 'kill' } })
+            baseCtx({ intent: { thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         // The shape carries damage and a requirement, and no aliveness at all.
         expect(Object.keys(result)).not.toContain('alive');
@@ -594,7 +657,7 @@ describe('resolveConfrontation', () => {
         const result = resolveConfrontation(
             combatant({ id: 'a', realmOrdinal: realmStart('core_formation') }),
             combatant({ id: 'b', name: 'Wen', realmOrdinal: 2 }),
-            baseCtx({ intent: { goal: 'humiliate' } })
+            baseCtx({ intent: { toMakeAnExampleOfThem: true, thrown: A_BLOW_MEANT_TO_END_IT } })
         );
 
         expect(result.obligations).toHaveLength(1);
@@ -618,7 +681,7 @@ describe('resolveConfrontation', () => {
                 baseCtx({
                     rng: rng(`upset-${edges.join()}-${i}`),
                     attackerEdges: edges as never,
-                    intent: { goal: 'kill', willWithdraw: false }
+                    intent: { thrown: A_BLOW_MEANT_TO_END_IT, willWithdraw: false }
                 })
             );
             if (result.winnerId === 'underdog') wins++;
@@ -644,7 +707,7 @@ describe('resolveConfrontation', () => {
         const result = resolveConfrontation(
             combatant({ id: 'underdog', realmOrdinal: realmForOrdinal(13).ordinalEnd }),
             combatant({ id: 'favourite', realmOrdinal: realmStart('nascent_soul') }),
-            baseCtx({ rng: rng('upset'), attackerEdges: [...ALL_EDGES], intent: { goal: 'kill' } })
+            baseCtx({ rng: rng('upset'), attackerEdges: [...ALL_EDGES], intent: { thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         expect(result.outcome).toBe('no_contest');
         // Everything brought still does not overturn two realms: the
@@ -660,7 +723,7 @@ describe('resolveConfrontation', () => {
             const result = resolveConfrontation(
                 combatant({ id: 'a', realmOrdinal: realmForOrdinal(17).ordinalEnd, maxHp: 200, hp: 200 }),
                 combatant({ id: 'b', realmOrdinal: realmStart('core_formation'), maxHp: 200, hp: 200 }),
-                baseCtx({ rng: rng(`cripple-${i}`), intent: { goal: 'drive_off', willWithdraw: true } })
+                baseCtx({ rng: rng(`cripple-${i}`), intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true } })
             );
             if (result.outcome === 'crippled') found = result;
         }
@@ -879,7 +942,7 @@ describe('resolveMelee', () => {
         rng: rng('melee'),
         ambient: 'normal' as const,
         turn: 1,
-        intent: { goal: 'kill' as const },
+        intent: { thrown: A_BLOW_MEANT_TO_END_IT },
         ...overrides
     });
 
@@ -1326,7 +1389,7 @@ describe('resolveMelee', () => {
     it('reports the losing side by its worst fate and seeds the grudges', () => {
         const result = resolveMelee(
             [band('a', realmStart('core_formation'), 2), band('b', 2, 2)],
-            meleeCtx({ intent: { goal: 'humiliate' } })
+            meleeCtx({ intent: { toMakeAnExampleOfThem: true, thrown: A_BLOW_MEANT_TO_END_IT } })
         );
         expect(result.outcome).toBe('humiliation');
         expect(result.obligations.length).toBeGreaterThan(0);

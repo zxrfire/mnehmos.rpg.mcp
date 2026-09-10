@@ -804,10 +804,22 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I ask my master to cut me a talisman',
             'I pay Elder Fang 400 stones to craft me a talisman'
         ],
-        'attack/drive_off': ['I attack the bandit', 'I start a fight with him'],
-        'attack/subdue': ['I spar with him', 'I subdue the thief'],
-        'attack/kill': ['I mean to kill the thief', 'I murder the courier'],
-        'attack/humiliate': ['I humiliate him in front of them', 'I make an example of the clerk'],
+        // ONE VERB, AT EVERY SEVERITY. These were four rows - drive_off,
+        // subdue, kill, humiliate - and the split is what
+        // `how-a-blow-was-thrown.ts` removed: *"just make attacks and drive
+        // away the same thing"*, *"a push is assault"*, *"it shouldn't be
+        // split"*. What separates a shove from a thrust is the swing the parser
+        // reads off the sentence, not a different branch, so all of these are
+        // the same row now and the severities are pinned in
+        // `a-push-is-assault.test.ts` where they can be read as a scale.
+        attack: [
+            'I attack the bandit', 'I start a fight with him',
+            'I spar with him', 'I subdue the thief',
+            'I mean to kill the thief', 'I murder the courier',
+            'I humiliate him in front of them', 'I make an example of the clerk',
+            // And the eight that reached nothing at all before it.
+            'I push him', 'I shove the guard', 'I slap him', 'I punch the thief'
+        ],
         // Hands rather than words, and the four things somebody wants out of it.
         'coerce/submit': ['I force him to submit', 'I make him kneel'],
         'coerce/hand_over': [
@@ -922,7 +934,15 @@ describe('every intent DECLARED is a door somebody can find', () => {
         it(`${key}: ${phrasings.length} phrasings all route there`, () => {
             const misses = phrasings
                 .map(text => [text, parseIntent(text)] as const)
-                .filter(([, got]) => got.action !== verb || got.intent !== intent)
+                // A KEY WITH NO SLASH IS A VERB THAT CARRIES NO INTENT, and
+                // `attack` is now one: the four rows it used to have -
+                // drive_off, subdue, kill, humiliate - were the goal model
+                // declaring an ending in advance, and they are gone. Where a
+                // key names no intent, only the verb is under test; the
+                // severity of the swing is pinned in `a-push-is-assault.test.ts`
+                // against the scale it belongs to.
+                .filter(([, got]) =>
+                    got.action !== verb || (intent !== undefined && got.intent !== intent))
                 .map(([text, got]) => `"${text}" -> ${got.action}/${got.intent ?? '-'}`);
             expect(misses, `misrouted: ${misses.join('; ')}`).toEqual([]);
         });

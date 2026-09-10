@@ -16,20 +16,31 @@
  */
 import { describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
+import { theWorstItCouldDo } from '../../src/engine/cultivation/how-a-blow-was-thrown';
 
 describe('violence said the way people say it', () => {
     it('reaches the fight, and reaches it pointed at a person', () => {
         const said: Array<[string, string | undefined]> = [
             ["I cut Gu Peiyan's throat", 'Gu Peiyan'],
             ['I cut her throat', 'her'],
-            ['I slit his throat', 'his'],
+            // AND A BARE POSSESSIVE IS THE PRONOUN IT STANDS FOR.
+            //
+            // These rows read `'his'` until the possessive was normalised in
+            // the parser. `his` is not a person and resolves to nobody, so the
+            // possessive phrasings - which is how most of this block is written
+            // - reached no one, and the assertion pinned that.
+            //
+            // The same table already existed in `whoASetHangsOn`, applied when
+            // a set is resolved. It is applied once and early now instead.
+            // `her` is unchanged because the word is already both.
+            ['I slit his throat', 'him'],
             ['I break her neck', 'her'],
             ['I stab him', 'him'],
             ['I strangle him', 'him'],
-            ['I cut off his arm', 'his'],
-            ['I put my knife in his back', 'his'],
-            ['I cripple his cultivation', 'his'],
-            ['I poison his tea', 'his']
+            ['I cut off his arm', 'him'],
+            ['I put my knife in his back', 'him'],
+            ['I cripple his cultivation', 'him'],
+            ['I poison his tea', 'him']
         ];
         for (const [sentence, target] of said) {
             const got = parseIntent(sentence);
@@ -41,9 +52,23 @@ describe('violence said the way people say it', () => {
         }
     });
 
-    it('reads a killing as a killing rather than as a brawl', () => {
-        // `drive_off` is the intent that stops early, so a throat cut priced as
-        // one hands the engine a scuffle where the player described a death.
+    /**
+     * AND A KILLING IS A KILLING BECAUSE OF THE SWING, not because the sentence
+     * declared one.
+     *
+     * This asserted `intent === 'kill'` on every row, and the comment under it
+     * read *"`drive_off` is the intent that stops early, so a throat cut priced
+     * as one hands the engine a scuffle where the player described a death."*
+     * The diagnosis was exactly right and the mechanism was the problem: the
+     * fix was to price the sentence as a different GOAL, and a goal is an
+     * ending chosen in advance.
+     *
+     * What is asserted now is that each of these reaches a blow that CAN finish
+     * somebody - an edge in a throat, a spine broken, hands closed on a
+     * windpipe. Whether it does is the engine's, weighed against the body it
+     * lands on. See `how-a-blow-was-thrown.ts`.
+     */
+    it('reaches a blow that can finish somebody, rather than a brawl', () => {
         for (const sentence of [
             "I cut Gu Peiyan's throat",
             'I cut her throat',
@@ -54,7 +79,9 @@ describe('violence said the way people say it', () => {
             // the middle of it every time anybody says it.
             'I cut him down'
         ]) {
-            expect(parseIntent(sentence).intent, sentence).toBe('kill');
+            const thrown = parseIntent(sentence).thrown;
+            expect(thrown, sentence).toBeDefined();
+            expect(theWorstItCouldDo(thrown!), sentence).toBe('a_death');
         }
     });
 

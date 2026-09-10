@@ -472,13 +472,19 @@ export function takeAFightTurn(
         if (theirsToLose) {
             return {
                 fight: null,
-                // The intent is re-stated, not re-decided. `concludeConfrontation`
-                // reads the goal to pick which ending the winner permitted, and
-                // the player has just said which one they are permitting. A
-                // killing goal carried into this branch would end somebody the
-                // player had chosen not to end.
+                // The intent is re-stated, not re-decided. The player has
+                // just said what they are permitting, and a fight opened with a
+                // blade in the throat would otherwise end somebody the player
+                // had chosen not to end.
+                //
+                // This is the ONE place `toMakeAnExampleOfThem` is set from a
+                // player's act rather than from the gap, and it is legitimate
+                // here for the reason the flag's own doc gives: it is not a
+                // choice of ending made in advance. The fight is already won,
+                // the loser is already down, and sparing somebody where it can
+                // be seen is a thing the winner is now in a position to do.
                 finished: concludeFrom(
-                    { ...fight, intent: { ...fight.intent, goal: 'humiliate' } },
+                    { ...fight, intent: { ...fight.intent, toMakeAnExampleOfThem: true } },
                     mine.input.id, theirs.input.id, 'down', ctx
                 ),
                 playerAct: 'spare',

@@ -676,7 +676,7 @@ function runChallenge(
                 ambient: 'normal',
                 turn: 1,
                 intent: {
-                    goal: WHAT_THEY_CAME_TO_DO[came],
+                    thrown: WHAT_THEY_CAME_TO_DO[came],
                     // Somebody here for a bout lets the other one break off.
                     // Somebody here to end it does not.
                     willWithdraw: came !== 'to_end_them'

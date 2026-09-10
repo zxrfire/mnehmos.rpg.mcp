@@ -2400,8 +2400,13 @@ describe('a rank pointer lands on somebody who holds the rank', () => {
         // refused properly at every position on the ladder.
         expect(parseIntent('I murder a disciple of the Nine Abyss Flame Sect').action)
             .toBe('attack');
-        expect(parseIntent('I murder a disciple of the Nine Abyss Flame Sect').intent)
-            .toBe('kill');
+        // AND IT READS AS A KILLING BY THE SWING, not by a declared goal.
+        // This asserted `intent === 'kill'` until the goal model was removed;
+        // `murder` now says what it always meant - everything they have behind
+        // it - and whether anybody dies is settled by the engine against the
+        // body it lands on. See `how-a-blow-was-thrown.ts`.
+        expect(parseIntent('I murder a disciple of the Nine Abyss Flame Sect').thrown?.force)
+            .toBe('everything');
         expect(parseIntent('I assassinate the Third Lord').action).toBe('attack');
     });
 

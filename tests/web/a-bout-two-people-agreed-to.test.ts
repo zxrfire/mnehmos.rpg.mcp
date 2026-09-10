@@ -81,18 +81,33 @@ describe('the agreement is carried, and it is carried as a closed value', () => 
     });
 
     /**
-     * And it changes nothing about what is asked of the resolver. `subdue` is
-     * what an agreed bout already meant to the combat layer and it stays that,
-     * so the closed set of goals is untouched. The two sentences produce the
-     * same plan but for the goal and the terms.
+     * AND A BOUT IS THE SAME VERB, at a swing two people can walk away from.
+     *
+     * This read *"it does not touch the GOAL handed to the resolver"* and
+     * asserted `intent === 'subdue'` on a spar and `'kill'` on a killing. Both
+     * were the goal model - the aggressor naming an ending in advance - and on
+     * a spar it had a consequence: `subdue` returned `capture` whatever else
+     * happened, so a bout could not go wrong. A bout going wrong is the one
+     * thing the genre does with them constantly, and this repo has measured it
+     * happening 115 times in 2,666 replays (`nobody-is-invincible.ts`).
+     *
+     * What is asked of the resolver now is the SWING, and the agreement rides
+     * where it always belonged - on `terms`, which decides what a killing MEANT
+     * rather than whether one can happen.
      */
-    it('does not touch the goal handed to the resolver', () => {
+    it('asks the resolver for a bout swing, and marks only the terms', () => {
         const bout = parseIntent('I spar with someone of my own rank');
         const fight = parseIntent('I attack someone of my own rank');
-        expect(bout.intent).toBe('subdue');
-        expect(parseIntent('I kill the nearest cultivator').intent).toBe('kill');
+
+        // Bare hands, meant, nowhere in particular. Not a ceiling on harm.
+        expect(bout.thrown).toEqual({ with: 'fist', at: 'unstated', force: 'committed' });
+        expect(parseIntent('I kill the nearest cultivator').thrown?.force).toBe('everything');
+
+        // The same verb at the same person. Only the agreement separates them.
         expect(bout.action).toBe(fight.action);
         expect(bout.target).toBe(fight.target);
+        expect(bout.terms).toBe('agreed');
+        expect(fight.terms).toBeUndefined();
     });
 
     /**

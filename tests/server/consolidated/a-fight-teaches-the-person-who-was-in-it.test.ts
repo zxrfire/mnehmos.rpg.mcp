@@ -12,7 +12,7 @@
  *   - and the lesson is seeded, so a replayed run produces the same one.
  *
  * Plus the two other rulings that reach the database through this tool:
- * `goal: 'coerce'` reaching `submission` and leaving a person standing, and
+ * `toMakeThemComply: true` reaching `submission` and leaving a person standing, and
  * somebody who would rather die doing so.
  */
 
@@ -80,7 +80,7 @@ describe('a fight teaches the person who was in it', () => {
 
         const result = await combat({
             action: 'resolve',
-            goal: 'drive_off',
+            thrown: { with: 'open_hand', at: 'unstated', force: 'light' },
             opponent: { name: 'a rival', realmOrdinal: ordinal, maxHp: 400 }
         });
 
@@ -100,7 +100,7 @@ describe('a fight teaches the person who was in it', () => {
 
         const result = await combat({
             action: 'resolve',
-            goal: 'humiliate',
+            toMakeAnExampleOfThem: true,
             opponent: { name: 'a nobody', realmOrdinal: ordinal - 4 }
         });
 
@@ -125,7 +125,7 @@ describe('a fight teaches the person who was in it', () => {
 
         const result = await combat({
             action: 'resolve',
-            goal: 'drive_off',
+            thrown: { with: 'open_hand', at: 'unstated', force: 'light' },
             opponent: { name: 'a rival', realmOrdinal: ordinal, maxHp: 400 }
         });
 
@@ -142,7 +142,7 @@ describe('a fight teaches the person who was in it', () => {
 
         const bare = await combat({
             action: 'resolve',
-            goal: 'drive_off',
+            thrown: { with: 'open_hand', at: 'unstated', force: 'light' },
             opponent: { name: 'a rival', realmOrdinal: ordinal, maxHp: 400 }
         });
 
@@ -165,7 +165,7 @@ describe('a fight teaches the person who was in it', () => {
             setRank(db, created.cultivator.id, ordinal, { cultivationProgress: 0 });
             const result = await combat({
                 action: 'resolve',
-                goal: 'drive_off',
+                thrown: { with: 'open_hand', at: 'unstated', force: 'light' },
                 opponent: { name: 'a rival', realmOrdinal: ordinal, maxHp: 400 }
             });
             readings.push(result.taught);
@@ -188,7 +188,7 @@ describe('forcing somebody to submit, through the tool', () => {
 
         const result = await combat({
             action: 'resolve',
-            goal: 'coerce',
+            toMakeThemComply: true,
             opponent: { name: 'a courier', realmOrdinal: realmStart('core_formation') - 2 }
         });
 
@@ -210,7 +210,7 @@ describe('forcing somebody to submit, through the tool', () => {
 
         const result = await combat({
             action: 'resolve',
-            goal: 'coerce',
+            toMakeThemComply: true,
             opponent: { name: 'a courier', realmOrdinal: realmStart('core_formation') - 2 },
             submission: {
                 yields: false,
@@ -230,7 +230,7 @@ describe('forcing somebody to submit, through the tool', () => {
 
         const bad = await combat({
             action: 'resolve',
-            goal: 'coerce',
+            toMakeThemComply: true,
             opponent: { name: 'a courier', realmOrdinal: 4 },
             submission: { yields: false }
         });
@@ -254,7 +254,7 @@ describe('opening from concealment, through the tool', () => {
             setRank(db, created.cultivator.id, realmStart('core_formation'));
             return combat({
                 action: 'resolve',
-                goal: 'kill',
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
                 fightToTheEnd: true,
                 opponent: { name: 'a rival', realmOrdinal: realmStart('core_formation'), maxHp: 400 },
                 ...(opening ? { opening } : {})
@@ -278,7 +278,7 @@ describe('opening from concealment, through the tool', () => {
             setRank(db, created.cultivator.id, realmStart('core_formation'));
             const result = await combat({
                 action: 'resolve',
-                goal: 'kill',
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
                 fightToTheEnd: true,
                 opponent: { name: 'a rival', realmOrdinal: realmStart('core_formation'), maxHp: 400 },
                 ...(opening ? { opening } : {})

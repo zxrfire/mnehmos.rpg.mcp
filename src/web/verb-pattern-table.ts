@@ -10,6 +10,9 @@ import { ApproachLeverageSchema } from '../schema/cultivation.js';
 // The board's own titles, so any name the game prints is a name it accepts.
 import { SUMMONS_ENTRIES, COMMISSION_ENTRIES } from '../engine/encounters/duties.js';
 import { SENDING_REASONS } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import { A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY }
+    from '../engine/cultivation/how-a-blow-was-thrown.js';
+import { howTheySaidTheySwung } from './how-they-said-they-swung.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
 import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // The other half of the word `tell`: carrying news of a wrong TO somebody,
@@ -2071,7 +2074,16 @@ const AIMED_AT_THE_LADDER =
  */
 const TAKEN_ON_AS_SOMETHING = /\b(?:as|into) (?:a |an |my |his |her |their |our )?(?:disciple|apprentice|student|follower|junior|servant|retainer|ward)\b/i;
 
-const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|exterminate|wipe out|slaughter|massacre|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for|cut|slit|slash|stab|knife|strangle|throttle|poison|cripple|break|snap|crush|sever|hack|tear|rip/;
+/**
+ * The verbs a person can be extracted from the far side of.
+ *
+ * The second line is the assault half, added with `LAYING_HANDS_ON_SOMEBODY`.
+ * It has to be here as well as in the match: the branch decides THAT this is an
+ * attack, and this decides WHO it was on. Without it every newly-routed shove
+ * would have reached `attack` with no target and refused as "nothing to swing
+ * at", which reads worse than the `unclear` it replaced.
+ */
+const ATTACK_SUBJECT_VERBS = /attack|strike at|strike|hit|fight|exterminate|wipe out|slaughter|massacre|kill|murder|assassinate|slay|cut down|draw on|swing at|go for|go at|put a sword through|put a blade through|set upon|set on|jump|ambush|assault|take on|put down|finish|sneak up on|creep up on|waylay|lie in wait for|cut|slit|slash|stab|knife|strangle|throttle|poison|cripple|break|snap|crush|sever|hack|tear|rip|push|shove|slap|grab|punch|kick|elbow|knee|headbutt|tackle|poke|prod|swat|cuff|backhand|jab|choke|wrestle|grapple|pin|manhandle|shoulder|seize|knock|bat|twist|club|cudgel|bludgeon|brain|whack|thrash|batter|run/;
 
 /**
  * Settling a thing with your hands, which is a fight and reads as none of the
@@ -2120,13 +2132,154 @@ const VIOLENCE_TO_A_BODY =
     ;
 
 /**
+ * LAYING HANDS ON SOMEBODY, WHICH THE TABLE HAD NO READING FOR AT ALL.
+ *
+ * Measured against the real parser, eight sentences, every one `unclear`:
+ *
+ *     "i push him"     "i shove him"   "i slap him"    "i grab him"
+ *     "i punch him"    "i kick him"    "i elbow him"   "i tackle him"
+ *
+ * So the commonest violence there is - the kind that starts most fights and
+ * almost all of the ones that matter socially - was a sentence the game told
+ * the player made no sense.
+ *
+ *   *"a push is assault"* - *"i slap his hand is an attack"*
+ *
+ * These reach `attack` like everything else, because they ARE attacks. What
+ * separates a shove from a thrust is three fields on the swing, not a different
+ * verb: see `howTheySaidTheySwung` and `how-a-blow-was-thrown.ts`.
+ *
+ * WHAT THE OBJECT LIST IS PROTECTING. Every verb here has an innocent reading
+ * with a thing on the end of it - you push through a bottleneck, grab a manual,
+ * kick a door, tackle a problem, pin a notice. So a bare `the` is deliberately
+ * NOT accepted: the object has to be a person, named, pointed at, or titled.
+ * `him` is anchored on a word boundary so `push himself` stays cultivation.
+ */
+const LAYING_HANDS_ON_SOMEBODY = new RegExp([
+    // The verb, then a person.
+    String.raw`\b(?:push|pushes|pushed|shove|shoves|shoved|slap|slaps|slapped|grab|grabs|grabbed`
+    + String.raw`|punch|punches|punched|kick|kicks|kicked|elbow|elbows|elbowed|knee|knees|kneed`
+    + String.raw`|headbutt|headbutts|tackle|tackles|tackled|poke|pokes|poked|prod|prods|prodded`
+    + String.raw`|swat|swats|swatted|cuff|cuffs|cuffed|backhand|backhands|jab|jabs|jabbed`
+    + String.raw`|throttle|throttles|choke|chokes|choked|wrestle|wrestles|grapple|grapples`
+    + String.raw`|pin|pins|pinned|manhandle|manhandles|shoulder|shoulders|shouldered`
+    // The blunt half. `club him over the head` reached `unclear`, because the
+    // instrument was in the swing table but no branch routed the sentence.
+    + String.raw`|club|clubs|clubbed|cudgel|cudgels|bludgeon|bludgeons|brain|brains`
+    + String.raw`|whack|whacks|whacked|batter|batters|thrash|thrashes|beat|beats)\s+`
+    + String.raw`(?:(?:him|her|them|me)\b|[A-Z][a-z]+`
+    + String.raw`|(?:the|that|this|a|an)\s+(?:elder|disciple|senior|junior|guard|merchant|man`
+    + String.raw`|woman|boy|girl|cultivator|brother|sister|monk|master|stranger|fellow|youth`
+    // The words a player reaches for when the person has no name yet. Measured:
+    // "I punch him" routed and "I punch the thief" did not, so the same act
+    // worked or failed on whether the player had been told a name.
+    + String.raw`|thief|bandit|courier|clerk|steward|servant|attendant|beggar|boatman|driver`
+    + String.raw`|guardsman|soldier|hunter|smith|innkeeper|shopkeeper|stallholder|peddler`
+    + String.raw`|apprentice|acolyte|patriarch|matriarch|abbot|chief|lord|lady|captain`
+    + String.raw`|official|magistrate|scholar|physician|healer|cook|farmer|miner|porter)\b)`,
+    // Or the verb and a part of somebody, which is the same act said the other
+    // way round: *"i slap his hand"*. The part is stripped off the name by
+    // `THE_PART_IS_NOT_THE_PERSON` below, so the resolver still gets a person.
+    String.raw`\b(?:slap|slaps|grab|grabs|poke|pokes|prod|prods|swat|swats|knock|knocks|bat|bats`
+    + String.raw`|push|pushes|shove|shoves|seize|seizes|catch|catches|twist|twists)\s+`
+    + String.raw`(?:his|her|their|the)\s+(?:hand|hands|arm|arms|wrist|shoulder|collar|sleeve`
+    + String.raw`|chest|face|jaw|throat|robe|robes)\b`
+].join('|'));
+
+/**
+ * HOW HARD SOMEBODY SWUNG IS NOT PART OF WHO THEY SWUNG AT.
+ *
+ * Measured: *"I punch him in the face as hard as I can"* extracted the target
+ * as `him in the face as hard as i can`. The part-strip only fires on a part at
+ * the END of the string, so a force clause after the part shielded it and the
+ * whole tail survived as a name.
+ *
+ * Cut before the parts are, for the same reason `HOW_THE_FIGHT_OPENED_TAIL` is:
+ * this clause is read off the whole sentence by `howMuchWasBehindIt`, which is
+ * where it belongs.
+ */
+const HOW_HARD_TAIL =
+    /\s+(?:as hard as (?:i|he|she|they) can|with everything(?: (?:i|he|she|they) (?:have|had|has))?|with all (?:my|his|her|their) (?:strength|might|power|force)|as hard as possible|with intent to kill|full[- ]force|all[- ]out)\b.*$/i;
+
+/**
+ * A DANGLING POSSESSIVE IS THE PERSON, SAID THE OTHER WAY ROUND.
+ *
+ * Once the part is stripped, *"I cut his throat"* leaves the target as `his`,
+ * and `his` resolves to nobody. Measured across the possessive phrasings - cut
+ * his throat, break his neck, slap his hand, go for his throat - every one of
+ * them reached no person at all, which is most of how this sentence gets
+ * written.
+ *
+ * Turned back into the pronoun it stands for, so it lands on the same seam
+ * every other pronoun in the game already uses rather than needing its own.
+ *
+ * THE SAME TABLE ALREADY EXISTED, in `whoASetHangsOn` in `combat-verbs.ts`,
+ * applied when a SET is resolved. Kept identical to it on purpose - two
+ * different answers to "who does `his` mean" is worse than one in the wrong
+ * place - but applied here instead, which is once and early rather than at
+ * every call site that happens to remember.
+ */
+const THE_PRONOUN_A_POSSESSIVE_STANDS_FOR: Readonly<Record<string, string>> = Object.freeze({
+    his: 'him',
+    her: 'her',
+    their: 'them',
+    its: 'them'
+});
+
+/**
  * The part is not the person, and the resolver wants the person.
  */
 const THE_PART_IS_NOT_THE_PERSON = [
     /^(?:off|out|in|into|through|down)\s+/i,
-    /(?:'s)?\s+(?:throat|neck|spine|skull|head|arms?|hands?|legs?|eyes?|ears?|tongue|fingers?|kneecaps?|ribs?|jaw|heart|back|cultivation|dantian|meridians|foundation|golden core|core|tea|cup|food|drink)\s*$/i,
+    /(?:'s)?\s+(?:throat|neck|spine|skull|head|face|arms?|hands?|legs?|eyes?|ears?|tongue|fingers?|wrist|shoulders?|kneecaps?|ribs?|jaw|heart|chest|gut|belly|stomach|back|sleeve|collar|robes?|belt|hair|beard|cultivation|dantian|meridians|foundation|golden core|core|tea|cup|food|drink)\s*$/i,
+    // AND NEITHER IS THE PREPOSITION THAT POINTED AT IT.
+    //
+    // Measured: "i stab him in the throat" resolved to a person called
+    // "him in the". The line above strips " throat" off the end and the line
+    // at the top only strips a preposition off the FRONT, so the middle of
+    // "him | in the | throat" was left standing and then failed to resolve
+    // against anybody in the square. Every "<verb> him in the <part>" phrasing
+    // - which is how people write this - reached nobody.
+    /\s+(?:in|into|through|on|onto|at|across|over|under|behind|for|to|against|by)\s+(?:the|his|her|their|its|my|a)\s*$/i,
+    // AN ORPHANED PREPOSITION IS NOT PART OF THE NAME EITHER. "I run him
+    // through" extracts as "him through", because the verb is split around the
+    // person and only its first half is matched. Measured: it resolved to
+    // nobody, so the single most quoted killing sentence in the genre reached
+    // no one at all.
+    /\s+(?:through|over|aside|away|back|off|out|up|apart|open)\s*$/i,
+    // NOR IS HOW HARD THEY DID IT. "I shove him hard" extracted "him hard".
+    // The adverb is read off the whole sentence by `howMuchWasBehindIt`, which
+    // is where it belongs; here it is noise on the end of a name.
+    /\s+(?:hard|hardest|violently|savagely|brutally|lightly|gently|softly|quickly|twice|again|once)\s*$/i,
     /\s+down\s*$/i
 ];
+
+/**
+ * WHO WAS STRUCK, once everything that is not a person has been taken off.
+ *
+ * Pulled out of the attack branch as one named step because the ORDER of the
+ * strips is the whole of it, and inline it was four `.replace` calls deep in an
+ * object literal where the order looked incidental:
+ *
+ *   1. how the fight opened   - "from behind", "while he is not looking"
+ *   2. how hard they swung    - "as hard as I can"
+ *   3. the part, then the preposition that pointed at it, then the adverb
+ *   4. a bare possessive back into the pronoun it stands for
+ *
+ * Two and three cannot be swapped: the part-strip only fires at the end of the
+ * string, so a force clause left in place shields the part behind it and the
+ * whole tail survives as somebody's name. That is not hypothetical - it is what
+ * *"I punch him in the face as hard as I can"* did.
+ */
+function theOneStruck(input: string): string | undefined {
+    const stripped = THE_PART_IS_NOT_THE_PERSON.reduce(
+        (name, cut) => name.replace(cut, ''),
+        (extractSubject(input, ATTACK_SUBJECT_VERBS) ?? '')
+            .replace(HOW_THE_FIGHT_OPENED_TAIL, '')
+            .replace(HOW_HARD_TAIL, '')
+    ).trim();
+    return THE_PRONOUN_A_POSSESSIVE_STANDS_FOR[stripped.toLowerCase()] ?? (stripped || undefined);
+}
 
 /** The verbs that have no innocent object once a person is on the end of them. */
 const VIOLENCE_WITH_NO_OTHER_READING = new RegExp([
@@ -2756,6 +2909,10 @@ function planIntent(input: string): PlannedAction {
             // A verb somebody actually typed survives the strip; a capitalised
             // name does not. See `outsideAnyName`.
             || VIOLENCE_WITH_NO_OTHER_READING.test(bare)
+            // A push is assault. Read off `input` rather than `bare` because
+            // the object list needs the capitals: a name is how most of these
+            // say who was pushed.
+            || LAYING_HANDS_ON_SOMEBODY.test(input)
             || CRIPPLING_SOMEBODY.test(input))
         // AND IT IS NOT BEING SWORN. See `SWEARING_IT_RATHER_THAN_DOING_IT`:
         // the oath wrapper is read before what it wraps, so a promise to kill
@@ -2773,25 +2930,34 @@ function planIntent(input: string): PlannedAction {
             // so the commonest ambush phrasing in the genre reached neither the
             // fight nor a person - the manner is read off the whole sentence by
             // `OPENED_FROM_COVER` and does not belong in the target.
-            target: THE_PART_IS_NOT_THE_PERSON.reduce(
-                (name, cut) => name.replace(cut, ''),
-                (extractSubject(input, ATTACK_SUBJECT_VERBS) ?? '')
-                    .replace(HOW_THE_FIGHT_OPENED_TAIL, '')
-            ).trim() || undefined,
+            target: theOneStruck(input),
             ...(OPENED_FROM_COVER.test(text) ? { opening: 'from_concealment' as const } : {}),
-            // SAYING HOW IS SAYING HOW FAR
-            intent: /\b(?:kill|murder|assassinate|slay|finish|cut down|put (?:him|her|them) down|exterminate|wipe out|slaughter|massacre)\b/.test(text)
-                || /\b(?:cut|cuts|slit|slits|slash|slashes|open|opens)\s+(?:[A-Za-z]+(?:'s)?\s+){1,3}throat\b/i.test(input)
-                || /\b(?:break|breaks|snap|snaps|crush|crushes)\s+(?:[A-Za-z]+(?:'s)?\s+){1,3}(?:neck|spine|skull)\b/i.test(input)
-                || /\b(?:cut|cuts|slit|slits)\s+(?:his|her|their|my|the)\s+throat\b/i.test(input)
-                || /\b(?:disembowel|disembowels|strangle|strangles|throttle|throttles|smother|smothers|drown|drowns)\b/.test(text)
-                || /\bcut (?:him|her|them) down\b/.test(text)
-                ? 'kill'
-                : /\b(?:subdue|pin|restrain|capture|take alive)\b/.test(text)
-                    ? 'subdue'
-                    : /\b(?:humiliate|shame|embarrass|make an example)\b/.test(text)
-                        ? 'humiliate'
-                        : 'drive_off'
+            // SAYING HOW IS SAYING HOW, NOT SAYING HOW FAR.
+            //
+            // What stood here was a ternary that picked an ENDING - kill,
+            // subdue, humiliate, drive_off - off the words the player used,
+            // under a comment reading "SAYING HOW IS SAYING HOW FAR". Measured
+            // against the real parser, it got the commonest sentences wrong:
+            //
+            //     "i run him through"          -> drive_off
+            //     "i stab him in the throat"   -> drive_off
+            //     "i stab him in the leg"      -> drive_off
+            //
+            // A killing thrust read as shooing somebody away, and a throat and
+            // a leg given the same answer - so where the blow landed was read
+            // by the regex and then discarded. The last branch is why: every
+            // sentence that matched none of the three lists fell to the WEAKEST
+            // reading the table had.
+            //
+            //   *"just make attacks and drive away the same thing"* -
+            //   *"it shouldn't be split"* - *"do you stab them? where? how
+            //   hard?"*
+            //
+            // So it reads the swing and stops there. The ending is not the
+            // parser's to choose and never was: it falls out of what was in the
+            // hand, where it went, how much was behind it, and what the person
+            // on the end of it does about it. See `how-a-blow-was-thrown.ts`.
+            thrown: howTheySaidTheySwung(input)
         };
     }
 
@@ -2808,7 +2974,14 @@ function planIntent(input: string): PlannedAction {
         return {
             action: 'attack',
             ...(challenged.length >= 2 ? { target: challenged } : {}),
-            intent: 'subdue',
+            // A BOUT IS A SWING TOO. This said `intent: 'subdue'`, which was
+            // the old goal model declaring an ending in advance - and it made a
+            // spar unable to go wrong, which is the one thing a spar in this
+            // genre is famous for doing. What two people who expect to walk
+            // away actually throw is bare hands, meant, at nothing in
+            // particular; `terms: 'agreed'` already carries the fact that they
+            // agreed to it. See `how-a-blow-was-thrown.ts`.
+            thrown: A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY,
             terms: 'agreed'
         };
     }

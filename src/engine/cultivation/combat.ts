@@ -45,6 +45,15 @@ import {
     ORDINARILY_YIELDS,
     type WhetherTheyYield
 } from './how-far-you-went-to-make-them-comply.js';
+import {
+    A_BLOW_MEANT_TO_END_IT,
+    AN_ORDINARY_SWING,
+    itActsOnTheBody,
+    theOffenceInIt,
+    theWorstItCouldDo,
+    type HowMuchOffence,
+    type HowTheBlowWasThrown
+} from './how-a-blow-was-thrown.js';
 import type { CultivationRNG } from './rng.js';
 
 // TUNING
@@ -1097,10 +1106,43 @@ export interface ObligationSeed {
 
 export interface ConfrontationIntent {
     /**
-     * What the aggressor is actually trying to do. Decides which endings are
-     * reachable.
+     * HOW THE BLOW WAS THROWN: what was in the hand, where it went, and how
+     * much was behind it.
+     *
+     * THIS REPLACED A `goal` FIELD reading `kill | subdue | drive_off |
+     * humiliate | coerce`, which the parser picked off the player's wording.
+     * The full account is in `how-a-blow-was-thrown.ts`; the measurement that
+     * ended it was that *"I run him through"* resolved to `drive_off` and
+     * *"I stab him in the throat"* and *"I stab him in the leg"* resolved
+     * identically.
+     *
+     *   *"just make attacks and drive away the same thing"* -
+     *   *"like attacks have severity but it's all an attack"* -
+     *   *"it depends on how you attack and how the NPC responds"*
+     *
+     * An aggressor does not choose an ending. They choose a swing, and the
+     * ending falls out of that swing against the body it lands on.
      */
-    goal: 'kill' | 'subdue' | 'drive_off' | 'humiliate' | 'coerce';
+    thrown: HowTheBlowWasThrown;
+    /**
+     * The aggressor wants them COMPLYING and still standing.
+     *
+     * The one thing on this interface that is not a fact about the swing, and
+     * it is here because it is not one: coercion is leverage, and the violence
+     * is the leverage rather than the point. Whether it works is a fact about
+     * the person being leaned on - see `yields` - and never about the blow.
+     */
+    toMakeThemComply?: boolean;
+    /**
+     * They are beaten, and are being let go where it can be seen.
+     *
+     * Also not a swing, and deliberately NOT settable from a player's sentence.
+     * Humiliation is what somebody FAR ENOUGH ABOVE you does instead of killing
+     * you - see `whatTheyDoAboutIt` - and it is decided by the gap between the
+     * two of you. A player who types *"I humiliate him"* has described an
+     * outcome they are not in a position to choose.
+     */
+    toMakeAnExampleOfThem?: boolean;
     /** Whether the loser will break off rather than be finished. Usually yes. */
     willWithdraw?: boolean;
 /**
@@ -1645,15 +1687,27 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
     // coercion as somebody running away, which is the one thing a coercion is
     // not for.
     const yields = ctx.intent.yields ?? ORDINARILY_YIELDS;
-    const coercing = ctx.intent.goal === 'coerce' && winnerId === aggressorInput.id;
+    const coercing = ctx.intent.toMakeThemComply === true && winnerId === aggressorInput.id;
     if (coercing) {
         // They yield, or they do not and the fight finishes them. A body the
         // aggressor did not want is the honest price of having gone this far
         // against somebody who would rather die.
-        outcome = yields.willYield ? 'submission' : finishOutcome('kill', vector, requirement);
+        //
+        // The finishing blow is read as a committed edge rather than as the
+        // swing that opened the fight: somebody who has decided to end a
+        // refusal is no longer throwing the blow they started with, and asking
+        // `finishOutcome` about the original shove would answer that a man who
+        // would rather die walked away from it.
+        outcome = yields.willYield
+            ? 'submission'
+            : finishOutcome(A_BLOW_MEANT_TO_END_IT, vector, requirement);
         if (!yields.willYield) hp[loserInput.id] = 0;
+    } else if (ctx.intent.toMakeAnExampleOfThem === true && winnerId === aggressorInput.id) {
+        // Beaten and let go where it could be seen. Set by whoever decided the
+        // gap was wide enough for that to be the point; never by a sentence.
+        outcome = 'humiliation';
     } else if (outcome !== 'withdrawal') {
-        outcome = finishOutcome(ctx.intent.goal, vector, requirement);
+        outcome = finishOutcome(ctx.intent.thrown, vector, requirement);
     }
 
     const remnant =
@@ -1687,7 +1741,9 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
         killRequirement: requirement,
         remnant,
         brokenObjects,
-        obligations: seedObligations(outcome, winnerId, loserId, loserInput.name, loserInjuries),
+        obligations: seedObligations(
+            outcome, winnerId, loserId, loserInput.name, loserInjuries, ctx.intent.thrown
+        ),
         // WHETHER THE WINNER WAS TOUCHED IS PART OF WHAT HAPPENED.
         //
         // The same defect as the one-sided path, one size smaller and reachable
@@ -1705,20 +1761,53 @@ export function concludeConfrontation(input: ConcludeInput): ConfrontationResult
 }
 
 /**
- * Which ending the aggressor's goal and the loser's tradition actually permit.
+ * WHAT THE LOSER GOT, READ OFF THE BLOW THAT PUT THEM THERE.
+ *
+ * Called only once somebody is already beaten, so the question is never who
+ * won. It is what "beaten" turned out to MEAN, and the answer is whatever the
+ * swing could actually reach.
+ *
+ * This used to be a lookup on a declared goal - subdue meant capture, drive_off
+ * meant withdrawal, and so on - which made the ending a thing the aggressor
+ * announced in advance. It is not, and the version that was here could not
+ * express the ordinary case: a man who shoves somebody and kills them because
+ * they went down badly, or a man who means to kill and finds he has only broken
+ * an arm.
+ *
+ * THE GAP CAN STILL CARRY IT PAST THIS LINE. `theWorstItCouldDo` is the ceiling
+ * of the ACT against an ordinary body, and a cultivator four walls above their
+ * opponent is not throwing an ordinary blow. That escalation belongs to the
+ * caller, which knows the gap; what this decides is what the blow itself was
+ * good for.
  */
 function finishOutcome(
-    goal: ConfrontationIntent['goal'],
+    thrown: HowTheBlowWasThrown | undefined,
     vector: AttackVector,
     requirement: KillRequirement
 ): ConfrontationOutcome {
-    if (goal === 'subdue') return 'capture';
-    if (goal === 'humiliate') return 'humiliation';
-    if (goal === 'drive_off') return 'withdrawal';
-    // A coercion that reaches here is one whose target would not yield, and the
-    // caller has already asked and been told so. What is left is a fight being
-    // finished, which is what the caller passes 'kill' for.
-    if (goal === 'coerce') return 'submission';
+    // AN UNSTATED SWING IS THE BARE FORM, not an error and not nothing.
+    //
+    // Two things reach here without one, and both are legitimate. A fight
+    // PERSISTED before this field existed carries the old `goal` and no swing,
+    // and refusing to conclude it would strand a saved run mid-fight. And a
+    // side of a melee may carry no intent of its own, in which case it is
+    // fighting the way anybody fights.
+    //
+    // `AN_ORDINARY_SWING` is the honest reading of both: somebody swinging with
+    // what they have, at nothing in particular, meaning it.
+    const worst = theWorstItCouldDo(thrown ?? AN_ORDINARY_SWING);
+
+    // A SHOVE DOES NOT FINISH ANYBODY WHO CAN STILL STAND. They broke off, and
+    // whatever the act cost them socially it cost them through
+    // `theOffenceInIt`, not through their body.
+    if (worst === 'nothing_at_all' || worst === 'a_bruise') return 'withdrawal';
+
+    // Beaten and alive, which is what bare hands and a blade in a limb both
+    // leave behind. `crippled` is checked separately by the caller off the
+    // injuries actually sustained, so a wound that will not close still
+    // upgrades this from the record rather than from the intention.
+    if (worst === 'a_beating' || worst === 'a_wound_that_stays') return 'capture';
+
     if (vector === 'soul') {
         // Already checked that the art reaches; a soul that can be reached and
         // is ended is ended, whatever the body is doing.
@@ -1727,14 +1816,61 @@ function finishOutcome(
     return requirement.bodyIsEnough ? 'lethal' : 'body_destroyed';
 }
 
+/** How badly somebody takes an act that did nothing to their body. */
+const WHAT_AN_OFFENCE_IS_WORTH: Readonly<Record<HowMuchOffence, ObligationSeed['severity']>> =
+    Object.freeze({
+        none: 'slight',
+        a_slight: 'slight',
+        an_insult: 'serious',
+        contempt: 'grave'
+    });
+
+/** What was done, said plainly enough for somebody to hold it against you. */
+const WHAT_THEY_WILL_SAY_WAS_DONE: Readonly<Record<HowMuchOffence, string>> = Object.freeze({
+    none: 'was laid hands on and not hurt by it',
+    a_slight: 'was laid hands on and not hurt by it',
+    an_insult: 'was handled like somebody who did not need to be taken seriously',
+    contempt: 'was struck with an open hand, in front of whoever was there'
+});
+
 function seedObligations(
     outcome: ConfrontationOutcome,
     winnerId: string | null,
     loserId: string | null,
     loserName: string,
-    loserInjuries: readonly Injury[]
+    loserInjuries: readonly Injury[],
+    /** The blow that ended it. Absent on a fight persisted before it existed. */
+    thrown?: HowTheBlowWasThrown
 ): ObligationSeed[] {
     if (!winnerId || !loserId) return [];
+
+    // ── A BLOW THAT DID NOTHING TO A BODY STILL HAPPENED ─────────────────
+    //
+    //   *"and i poke probably gentlest"* - *"like probably 0 damage"* -
+    //   *"but you might still annoy someone depending on relationship"*
+    //
+    // So the bottom of the scale is not free. A poke and a slap reach no
+    // damage arithmetic at all, and the record they leave is the ONLY thing
+    // they leave - which is the whole reason `theOffenceInIt` is a second
+    // reading of the blow rather than a small number on the first.
+    //
+    // Note the severities run the other way from the damage: an open hand is
+    // worse to be on the end of than a punch, because a punch treats you as a
+    // threat. What this is worth to the person holding it is not settled here -
+    // it is read against what the two of them already are to each other, which
+    // is the obligation layer's, and it is why the same poke is nothing from a
+    // brother and a declaration from a stranger.
+    if (thrown !== undefined && !itActsOnTheBody(thrown)) {
+        const offence = theOffenceInIt(thrown);
+        return [{
+            kind: 'grudge',
+            holderId: loserId,
+            subjectId: winnerId,
+            cause: 'humiliation',
+            severity: WHAT_AN_OFFENCE_IS_WORTH[offence],
+            description: `${loserName} ${WHAT_THEY_WILL_SAY_WAS_DONE[offence]}.`
+        }];
+    }
 
     // The dead hold nothing. Everything else does, and the record is the point:
     // an NPC must be able to conclude "I cannot defeat him now, I will remember
@@ -1956,7 +2092,7 @@ function oneSided(
             'several realms above one does not create one.');
     }
 
-    const goal = ctx.intent.goal;
+    const thrown = ctx.intent.thrown;
     // The sixth ending, reachable from here too. Somebody several realms below
     // you being made to kneel is the case the outcome exists for, and it was
     // the one place it could not have happened - which would have made "I can
@@ -1968,15 +2104,22 @@ function oneSided(
     // stronger party gets the body instead: no branch anywhere makes somebody
     // more biddable for having been outmatched.
     const yields = ctx.intent.yields ?? ORDINARILY_YIELDS;
-    const refusedToKneel = goal === 'coerce' && !yields.willYield;
-    const outcome: ConfrontationOutcome = goal === 'kill' || refusedToKneel
-        ? finishOutcome('kill', vector, requirement)
-        : goal === 'subdue' ? 'capture'
-            : goal === 'humiliate' ? 'humiliation'
-                : goal === 'coerce' ? 'submission'
-                    : 'withdrawal';
+    const refusedToKneel = ctx.intent.toMakeThemComply === true && !yields.willYield;
 
-    if (goal === 'kill' || refusedToKneel) {
+    // WHAT THE BLOW COULD REACH, and then the two things that are not blows.
+    // Read in this order because both of those OVERRIDE the swing: somebody who
+    // refused to kneel gets finished whatever was in the hand, and somebody
+    // being made an example of is let go whatever was in the hand.
+    const outcome: ConfrontationOutcome = refusedToKneel
+        ? finishOutcome(A_BLOW_MEANT_TO_END_IT, vector, requirement)
+        : ctx.intent.toMakeThemComply === true ? 'submission'
+            : ctx.intent.toMakeAnExampleOfThem === true ? 'humiliation'
+                : finishOutcome(thrown, vector, requirement);
+
+    // READ OFF THE OUTCOME RATHER THAN OFF THE INTENTION. This used to test the
+    // goal again, which meant the HP and the reported ending were two separate
+    // decisions that happened to agree. They no longer can disagree.
+    if (outcome === 'lethal' || outcome === 'body_destroyed') {
         hp[defenderInput.id] = 0;
     } else {
         hp[defenderInput.id] = Math.max(1, Math.floor(defenderInput.maxHp * 0.2));
@@ -2002,7 +2145,10 @@ function oneSided(
         finished: outcome === 'lethal',
         killRequirement: requirement,
         remnant: outcome === 'body_destroyed' ? requirement.remnant : null,
-        obligations: seedObligations(outcome, aggressorInput.id, defenderInput.id, defenderInput.name, injuries[defenderInput.id]),
+        obligations: seedObligations(
+            outcome, aggressorInput.id, defenderInput.id, defenderInput.name,
+            injuries[defenderInput.id], ctx.intent.thrown
+        ),
         // WHAT WAS DONE, NOT WHAT WAS NOT
         //
         // The old hint led with "there was no exchange to resolve" and then
@@ -2664,7 +2810,7 @@ export function resolveMelee(sides: readonly SideInput[], ctx: MeleeContext): Me
             f.state = 'fallen';
             f.felledVector = vector;
             f.felledBy = fighters.find(o => o.sideIndex === winner)?.input.id ?? null;
-            if (intent.goal === 'kill') {
+            if (theWorstItCouldDo(intent.thrown ?? AN_ORDINARY_SWING) === 'a_death') {
                 hp[f.input.id] = 0;
             } else {
                 hp[f.input.id] = Math.max(1, Math.floor(f.input.maxHp * 0.2));
@@ -2983,7 +3129,12 @@ function assemble(
             const intent = felledBy !== undefined
                 ? (sides[felledBy.sideIndex].intent ?? ctx.intent)
                 : ctx.intent;
-            const outcome = finishOutcome(intent.goal, f.felledVector, requirement);
+            // Being let go where it can be seen overrides the swing here for
+            // the same reason it does in a duel: it is not a blow, it is a
+            // decision taken once somebody is already down.
+            const outcome = intent.toMakeAnExampleOfThem === true
+                ? 'humiliation'
+                : finishOutcome(intent.thrown, f.felledVector, requirement);
             fate = FATE_FOR_OUTCOME[outcome] ?? 'withdrew';
             if (fate === 'body_destroyed') remnant = requirement.remnant;
             if (fate === 'withdrew' && injuries[f.input.id].some(i => i.severity === 'crippling')) {

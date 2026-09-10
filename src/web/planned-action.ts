@@ -84,6 +84,38 @@ export const PlannedActionSchema = z.object({
      */
     opening: z.enum(['open', 'from_concealment']).optional(),
     /**
+     * HOW THE BLOW WAS THROWN: what was in the hand, where it was aimed, and how
+     * much was behind it. Set by the parser, for the same reason `opening` is.
+     *
+     * THIS FIELD EXISTS BECAUSE `intent` WAS BEING USED FOR IT, against the rule
+     * stated on `intent` four fields up - *"no engine path reads it to decide an
+     * outcome... it never reaches a conditional that produces a result."*
+     * `combat-verbs.ts` read it to choose between `kill`, `subdue`, `humiliate`
+     * and `drive_off`, which is a conditional that produces a result, and the
+     * result was somebody's death.
+     *
+     * That was the mechanism. The design defect it carried is set out in full in
+     * `engine/cultivation/how-a-blow-was-thrown.ts`: an ENDING was being read out
+     * of the opening sentence, so *"I run him through"* came back as shooing
+     * somebody away and a throat and a leg got identical answers.
+     *
+     *   *"just make attacks and drive away the same thing"* -
+     *   *"like attacks have severity but it's all an attack"* -
+     *   *"it depends on how you attack and how the NPC responds"*
+     *
+     * So it is three closed enums rather than an open string, and it describes
+     * the SWING rather than the outcome. Nothing downstream may read it to pick
+     * a winner; what it decides is what the blow can reach, which the engine
+     * then weighs against the body it landed on.
+     */
+    thrown: z.object({
+        with: z.enum(['in_hand', 'open_hand', 'fist', 'blunt', 'edge', 'art']),
+        at: z.enum([
+            'throat', 'head', 'spine', 'chest', 'gut', 'limb', 'hand', 'back', 'unstated'
+        ]),
+        force: z.enum(['a_poke', 'light', 'committed', 'everything'])
+    }).optional(),
+    /**
      * How many rations, where the sentence names a count rather than a span.
      */
     rations: z.number().int().min(1).max(100_000).optional(),
@@ -218,6 +250,12 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // letting it ride along would put a word in the ledger that means nothing.
     if (terms && name === 'attack') action.terms = terms;
 
+    // The swing, kept on the one verb that can throw one. A model is not
+    // expected to fill this in - the parser reads it off the sentence, and the
+    // merge below carries it across - but a model that does say how somebody
+    // struck has said something true, and dropping it would cost the reading.
+    if (parsed.data.thrown && name === 'attack') action.thrown = parsed.data.thrown;
+
     if (TIMED_ACTIONS.includes(name)) {
         action.days = days ?? (
             name === 'seclude' ? DEFAULT_SECLUSION_DAYS
@@ -297,6 +335,16 @@ export function carryWhatOnlyTheSentenceKnows(
     // the parser's reading was carried across.
     if (merged.opening === undefined && fromSentence.opening !== undefined) {
         merged.opening = fromSentence.opening;
+    }
+
+    // HOW THE BLOW WAS THROWN. Same reasoning as `opening` and `terms`, and it
+    // matters more than either: this is the reading that decides what the swing
+    // can reach. A model asked to plan "I run him through" returns `attack` and
+    // a target and nothing about the thrust, so without this line the engine
+    // would fall back to the bare swing and the thrust would be worth no more
+    // than a shove - which is the exact defect this replaced.
+    if (merged.thrown === undefined && fromSentence.thrown !== undefined) {
+        merged.thrown = fromSentence.thrown;
     }
 
     // WHAT THE COMPLIANCE WAS FOR

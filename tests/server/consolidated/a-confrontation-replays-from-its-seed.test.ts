@@ -153,7 +153,7 @@ describe('a confrontation replays from its seed', () => {
             setRank(getDb(), created.cultivator.id, realmStart('foundation_establishment'));
             return whatHappened(await combat({
                 action: 'resolve',
-                goal: 'kill',
+                thrown: { with: 'edge', at: 'throat', force: 'everything' },
                 fightToTheEnd: true,
                 opponent: {
                     name: 'a rival',
@@ -197,7 +197,7 @@ describe('a confrontation replays from its seed', () => {
             return whatHappened(await combat({
                 action: 'resolve',
                 cultivatorId: created.cultivator.id,
-                goal: 'subdue',
+                thrown: { with: 'fist', at: 'unstated', force: 'committed' },
                 fightToTheEnd: true,
                 opponent: { cultivatorId: rival.cultivator.id }
             }));
@@ -271,7 +271,7 @@ describe('the death gate is asked about the opponent too', () => {
         const result = await combat({
             action: 'resolve',
             cultivatorId: playerId,
-            goal: 'kill',
+            thrown: { with: 'edge', at: 'throat', force: 'everything' },
             fightToTheEnd: true,
             opponent: { cultivatorId: rivalId }
         });
@@ -304,7 +304,7 @@ describe('the death gate is asked about the opponent too', () => {
         const result = await combat({
             action: 'resolve',
             cultivatorId: playerId,
-            goal: 'subdue',
+            thrown: { with: 'fist', at: 'unstated', force: 'committed' },
             fightToTheEnd: true,
             opponent: { cultivatorId: rivalId }
         });
@@ -322,7 +322,7 @@ describe('the death gate is asked about the opponent too', () => {
         const result = await combat({
             action: 'resolve',
             cultivatorId: playerId,
-            goal: 'humiliate',
+            toMakeAnExampleOfThem: true,
             fightToTheEnd: true,
             opponent: { cultivatorId: rivalId }
         });
@@ -354,7 +354,7 @@ describe('the death gate is asked about the opponent too', () => {
         const result = await combat({
             action: 'resolve',
             cultivatorId: created.cultivator.id,
-            goal: 'kill',
+            thrown: { with: 'edge', at: 'throat', force: 'everything' },
             fightToTheEnd: true,
             opponent: { cultivatorId: rival.cultivator.id }
         });

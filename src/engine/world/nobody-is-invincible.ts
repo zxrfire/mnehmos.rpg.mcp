@@ -31,6 +31,11 @@
 
 import { evaluateDeathConditions } from '../cultivation/survival.js';
 import { realmIndexOf } from '../cultivation/realms.js';
+import {
+    A_BLOW_MEANT_TO_END_IT,
+    A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY,
+    type HowTheBlowWasThrown
+} from '../cultivation/how-a-blow-was-thrown.js';
 import type { DeathCause } from '../../schema/cultivation.js';
 import {
     whatTheBodyWants,
@@ -93,9 +98,15 @@ export function whetherTheyGotUp(input: {
  * every single emptied bar carried the outcome `capture` - 115 of 115 - and
  * `capture` is defined as *"the loser was taken alive."* Not one came back
  * `crippled` or `withdrawal`. Which is the combat layer being consistent rather
- * than protective: `finishOutcome` returns 'capture' for a subdue whatever else
- * happened in the fight, because somebody trying to STOP you does not kill you
- * however badly it goes.
+ * than protective: `finishOutcome` returns 'capture' for bare hands whatever
+ * else happened in the fight, because a beating is not a killing however badly
+ * it goes.
+ *
+ * (That reading was taken when a friendly bout passed `goal: 'subdue'`. It
+ * still holds, and for a better reason: a bout now passes the SWING two people
+ * expecting to walk away actually throw - see
+ * `A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY` - so the ceiling comes from
+ * what is in their hands rather than from an intention they declared.)
  *
  * So a death at a gathering is not an accident of arithmetic, and hunting for
  * one in the damage numbers was looking in the wrong place. It is somebody
@@ -152,10 +163,10 @@ export function whyTheyStoodUp(input: {
 
 /** What to hand the resolver for it. */
 export const WHAT_THEY_CAME_TO_DO: Readonly<
-    Record<WhatTheyStoodUpFor, 'subdue' | 'kill'>
+    Record<WhatTheyStoodUpFor, HowTheBlowWasThrown>
 > = {
-    a_test: 'subdue',
-    to_end_them: 'kill'
+    a_test: A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY,
+    to_end_them: A_BLOW_MEANT_TO_END_IT
 };
 
 /**

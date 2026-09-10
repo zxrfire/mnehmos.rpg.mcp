@@ -91,7 +91,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`fold`](#fold) | `target` | time | yes | - | - |
 | [`passage`](#passage) | `target` `intent` | time | yes | - | [2](#passage) |
 | [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [3](#oath) |
-| [`attack`](#attack) | `target` `intent` `terms` `opening` | time | yes | - | [4](#attack) |
+| [`attack`](#attack) | `target` `terms` `opening` | time | yes | - | - |
 | [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [4](#coerce) |
 | [`cultivate`](#cultivate) | `days` | time | yes | - | - |
 | [`seclude`](#seclude) | `days` | time | yes | - | - |
@@ -226,13 +226,11 @@ Intents: `read`, `swear`, `break`.
 
 ### `attack`
 
-hit somebody. "target" names them; "intent" is what the player is trying to end up with - drive_off, subdue, kill, humiliate - and "terms" is "agreed" when both sides said this was a bout (a spar, a duel, a challenge) and "open" when nobody promised anybody anything. The blows land the same either way. What the agreement changes is what a killing MEANT and who is owed something afterwards, which is why it must be set from what the player said rather than guessed. "opening" is "from_concealment" when the fight was opened from cover rather than by squaring up, which decides who gets the first round and nothing about what a blow does.
+hit somebody, at any severity. A push, a slap, a poke, a punch, a thrust through the chest - they are all this verb, and there is no separate verb for driving somebody off. "target" names the person. DO NOT SAY WHAT THE PLAYER WAS TRYING TO END UP WITH. This entry used to take an "intent" of drive_off, subdue, kill or humiliate, and that was wrong: nobody chooses an ending. They choose a swing, and what it does depends on what it lands on and on what that person does about it. The engine reads the swing off the player's own sentence - what was in their hand, where they aimed, how much was behind it - so saying nothing about it is correct and complete. "terms" is "agreed" when both sides said this was a bout (a spar, a duel, a challenge) and "open" when nobody promised anybody anything. The blows land the same either way. What the agreement changes is what a killing MEANT and who is owed something afterwards, which is why it must be set from what the player said rather than guessed. "opening" is "from_concealment" when the fight was opened from cover rather than by squaring up, which decides who gets the first round and nothing about what a blow does.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'attack'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.attack` · the deterministic parser reaches it · spends in-world time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'attack'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 
-Takes `target`, `intent`, `terms`, `opening`.
-
-Intents: `drive_off`, `subdue`, `kill`, `humiliate`.
+Takes `target`, `terms`, `opening`.
 
 ### `coerce`
 

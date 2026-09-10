@@ -29,7 +29,7 @@ describe('the words for killing more than one person', () => {
     // The harness is loaded first so the module graph initialises in the order
     // every other test in this directory initialises it; importing the table
     // ahead of it leaves `actions.ts` half-evaluated.
-    it('routes them to the same verb and the same intent as `kill`', async () => {
+    it('routes them to the same verb, at the same swing as `kill`', async () => {
         await makeGameInWorld({ seed: 'words', worldSeed: 'words' });
 
         for (const said of [
@@ -40,7 +40,11 @@ describe('the words for killing more than one person', () => {
         ]) {
             const read = parseIntent(said);
             expect(read.action, said).toBe('attack');
-            expect(read.intent, said).toBe('kill');
+            // AND AT THE SAME SEVERITY, which used to be `intent === 'kill'`.
+            // A goal was an ending declared in advance; what these words
+            // actually say is that nothing is being held back. Whether it
+            // reaches anybody is settled against the bodies it lands on.
+            expect(read.thrown?.force, said).toBe('everything');
             expect(read.target, said).toBeTruthy();
         }
     }, 120000);
