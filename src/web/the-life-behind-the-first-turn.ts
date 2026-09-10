@@ -54,6 +54,113 @@
  */
 
 import type { Birth } from '../engine/birth/birth.js';
+import { getOrigin } from '../engine/cultivation/origin.js';
+import { rankName } from '../engine/cultivation/realms.js';
+import type { AmbientQi } from '../schema/cultivation.js';
+
+/** The bands in order, so two of them can be compared without a table. */
+const HOW_MUCH_QI: readonly AmbientQi[] = ['thin', 'normal', 'dense', 'spirit_tide'];
+
+/**
+ * THE GROUND THEY STAND ON, AGAINST THE GROUND THAT RAISED THEM.
+ *
+ * Three corrections in one, all from the design owner.
+ *
+ * This first read `on ${band} ground`, and a model handed "normal ground" wrote
+ * *"the air here has always felt heavy in the lungs, a thickness you have known
+ * since childhood"* - humidity rather than spiritual density, and the wrong band
+ * besides. *"Say thick with qi."* The word `ground` alone leaves a model to
+ * guess what is thin or thick ABOUT it, and the guess is always physical.
+ *
+ * Then: *"xianxia doesn't talk about air."* So it does not. It talks about qi,
+ * and about what a person can draw from where they are standing.
+ *
+ * And the one that made the line worth having at all: *"thicker versus the place
+ * you came from."* A band on its own means nothing to somebody who has only
+ * ever stood on one. What means something is the DIFFERENCE - a farm child from
+ * a thin county standing on ordinary ground for the first time has something to
+ * measure, and the engine knows both numbers. The old line even said the
+ * opposite out loud, that they had nothing to compare it against, while holding
+ * the comparison.
+ */
+function theQiHereAgainstHome(here: AmbientQi, home: AmbientQi): string {
+    const step = HOW_MUCH_QI.indexOf(here) - HOW_MUCH_QI.indexOf(home);
+    if (step > 1) return `ground so much thicker with qi than ${WHERE_THEY_GREW_UP[home]} `
+        + 'that they have no measure for it';
+    if (step === 1) return `ground thicker with qi than ${WHERE_THEY_GREW_UP[home]}, and they `
+        + 'can feel the difference without being able to name it';
+    // Still names qi. The same band as home is the commonest case by far, and
+    // it was the one branch that said only “ground” - which is the exact word
+    // that let a model reach for weather in the first place.
+    if (step === 0) return `ground with the same qi in it as ${WHERE_THEY_GREW_UP[home]}, `
+        + 'which is the only measure of it they have ever had';
+    return `ground thinner with qi than ${WHERE_THEY_GREW_UP[home]}, which they noticed and `
+        + 'have said nothing about';
+}
+
+/** What a band is, from the inside, for the half of the sentence about home. */
+const WHERE_THEY_GREW_UP: Readonly<Record<string, string>> = Object.freeze({
+    thin: 'the county that raised them',
+    normal: 'the ground that raised them',
+    dense: 'the rich ground that raised them',
+    spirit_tide: 'the tide-ground that raised them'
+});
+
+/**
+ * ═════════════════════════════════════════════════════════════════════════
+ * NO AUTHORED CHILDHOOD. THE VARIABLES, AND THE NARRATOR WRITES THE STORY.
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * A first cut of this file carried tables of written childhoods and written
+ * reasons for leaving - "they carried water up from a river that was a long way
+ * down", and so on - drawn per origin tier. The design owner stopped it:
+ *
+ *   *"btw do not hardcode the exact starting story. Randomly generate the
+ *    starting variables, parents, location, etc. That should already be there?
+ *    And you have the LLM synthesize a story."*
+ *   *"like birth house is already tracked?"*
+ *
+ * Right on both counts, and the second is the answer to the first. The birth
+ * pass already draws every variable a childhood is made of: the origin tier and
+ * its household, the place, the ground under it, the house the family belongs
+ * to, whether that house's roll carries them and how, whether somebody spent a
+ * word to put them there, what they were left holding, and every name they have
+ * been told and by whom.
+ *
+ * So there is nothing to invent. Writing childhoods into this file was the
+ * engine composing prose, which is the one thing it is not for - the same
+ * defect as reciting a scoring rubric, arrived at from the pleasant direction.
+ *
+ * What goes below is variables. The narrator writes the sixteen years out of
+ * them, and it can, because they are specific: a household, a house, a rung
+ * that house stands at, a bar it admits at, and whether it would even have
+ * them.
+ */
+function theHouseholdTheyCameOutOf(birth: Birth): string[] {
+    const said: string[] = [];
+    const house = birth.house;
+    if (house === null) {
+        said.push(
+            'No house behind them at all, which is nine births in ten. Nobody is owed anything '
+            + 'for where they are standing and nobody is going to ask after them.'
+        );
+        return said;
+    }
+
+    // The house itself, in the terms a house is measured in. Every one of these
+    // is a drawn field, and together they are what a childhood near a house was
+    // actually like.
+    said.push(
+        `The family stands with ${house.name}, whose strongest member is at `
+        + `${rankName(house.powerOrdinal)}, and which admits at `
+        + `${rankName(house.admissionOrdinal)}.`
+    );
+    said.push(house.recruits
+        ? `${house.name} takes people in, which is how anybody near it comes to think it is `
+          + 'possible.'
+        : `${house.name} does not advertise for anybody, and never has.`);
+    return said;
+}
 
 /** How many of the names drawn at birth are worth saying in the opening. */
 export const NAMES_WORTH_SAYING_AT_THE_START = 3;
@@ -75,14 +182,16 @@ export function theLifeBehindTheFirstTurn(birth: Birth, age: number): string[] {
     // Sixteen years of breathing it, which is why the band is said as a
     // lifetime rather than as a reading. Somebody raised on thin ground has
     // never known anything else and has no reason to remark on it.
+    const home = getOrigin(birth.origin).ground;
     lines.push(
-        `${age} years in ${birth.place.name}, a ${birth.place.kind.replace(/_/g, ' ')}, `
-        + `on ${birth.ground.replace(/_/g, ' ')} ground. That is the air they have breathed `
-        + 'their whole life, and they have nothing to compare it against.'
+        `${age} years old, standing in ${birth.place.name}, a `
+        + `${birth.place.kind.replace(/_/g, ' ')}, on `
+        + `${theQiHereAgainstHome(birth.ground, home)}.`
     );
 
-    // ── WHOSE THEY ARE ───────────────────────────────────────────────────
+    // ── WHOSE THEY ARE, AND WHY THEY ARE NOT THERE ───────────────────────
     lines.push(`What they came out of: ${birth.opening.name}.`);
+    lines.push(...theHouseholdTheyCameOutOf(birth));
 
     const inside = birth.raisedInside;
     if (inside !== null) {

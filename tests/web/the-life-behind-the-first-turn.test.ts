@@ -61,12 +61,18 @@ const said = (over = {}) => theLifeBehindTheFirstTurn(birth(over), 16).join(' ')
 describe('the life behind the first turn', () => {
     it('says the years, the ground, and what they came out of', () => {
         const life = said();
-        expect(life).toMatch(/16 years in Three Walls/);
-        expect(life).toMatch(/on thin ground/);
+        expect(life).toMatch(/16 years old, standing in Three Walls/);
+        // The band is said in QI and against the ground that raised them,
+        // never as weather. The owner: *“xianxia doesn’t talk about air”*,
+        // *“say thick with qi”*, *“thicker versus the place you came from.”*
+        expect(life).toMatch(/qi/i);
+        expect(life).not.toMatch(/\bair\b/i);
         expect(life).toMatch(/A farm in a thin county/);
         // Sixteen years of breathing it, so it is said as a lifetime rather
         // than as a reading somebody just took.
-        expect(life).toMatch(/nothing to compare it against/);
+        // And it no longer claims they have nothing to compare it against
+        // while holding both numbers.
+        expect(life).not.toMatch(/nothing to compare it against/);
     });
 
     /**
@@ -135,5 +141,41 @@ describe('the life behind the first turn', () => {
     it('separates belonging to a house from being admitted to one', () => {
         const life = said({ house: { name: 'Azure Dew Sect' } });
         expect(life).toMatch(/not a rank and not an admission/);
+    });
+
+    /**
+     * AND NOTHING HERE IS A WRITTEN CHILDHOOD.
+     *
+     * A first cut carried tables of authored childhoods and authored reasons
+     * for leaving, drawn per origin tier. The design owner stopped it: *"do not
+     * hardcode the exact starting story. Randomly generate the starting
+     * variables, parents, location, etc. That should already be there? And you
+     * have the LLM synthesize a story."* And then the pointer that settles it:
+     * *"like birth house is already tracked?"*
+     *
+     * It is. The birth pass draws every variable a childhood is made of, so
+     * there was nothing to invent, and inventing it was the engine composing
+     * prose - the same defect as reciting a scoring rubric, reached from the
+     * pleasant direction.
+     */
+    it('states the house as drawn fields rather than telling a story about it', () => {
+        const life = said({
+            house: {
+                id: 'sect-azure-dew', name: 'Azure Dew Sect',
+                powerOrdinal: 21, admissionOrdinal: 2, recruits: true, regionId: 'r'
+            }
+        });
+        // The measurable things, said as measurements.
+        expect(life).toContain('Azure Dew Sect');
+        expect(life).toMatch(/strongest member is at/);
+        expect(life).toMatch(/admits at/);
+        expect(life).toMatch(/takes people in/);
+        // And no invented childhood anywhere in it.
+        expect(life).not.toMatch(/carried water|minded animals|swept a hall|pulled out of a river/i);
+    });
+
+    it('says plainly when there is no house at all, which is most births', () => {
+        const life = said({ house: null });
+        expect(life).toMatch(/No house behind them at all, which is nine births in ten/);
     });
 });
