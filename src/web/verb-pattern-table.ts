@@ -904,7 +904,20 @@ export const GUEST_SUBJECT_VERBS =
     /guest student (?:at|of|with)|guest (?:at|of|with)|study at|study under|study with|sit in (?:at|with|on)|attend at|attend|study|learn at|learn from/;
 
 export const SECT_INTENT_PATTERNS: ReadonlyArray<[SectIntent, RegExp]> = [
-    ['leave', /\b(?:leave|leaving|quit|resign|renounce|withdraw from|walk out (?:of|on)|abandon|defect|desert|break with)\b/],
+    // ── AND THE WAY PEOPLE ACTUALLY SAY THEY ARE LEAVING ─────────────────
+    //
+    // Every word in the original list is a formal one - resign, renounce,
+    // defect. Measured, the two sentences a person types instead:
+    //
+    //     "I want out"              -> UNCLEAR
+    //     "what happens if I leave" -> UNCLEAR
+    //
+    // The second is the more important of the two. Leaving forfeits a seat and
+    // a contribution balance, and `theReadThatAnswersIt` already turns a
+    // QUESTION about leaving into the standing read carrying what walking out
+    // would cost - so the read existed and the sentence that asks for it did
+    // not. A player could only find out what leaving cost by leaving.
+    ['leave', /\b(?:leave|leaving|quit|resign|renounce|withdraw from|walk out (?:of|on)|abandon|defect|desert|break with|want out|want to get out|done with (?:this|them|the sect|the clan|the house))\b/],
     ['standing', /\b(?:standing|where do i stand|my rank|what rank|my position|my contribution|how (?:am i|do i) (?:doing|rate))\b/]
 ];
 
@@ -4399,6 +4412,39 @@ function planIntent(input: string): PlannedAction {
     if (isBareDuration(text)) {
         const bare = parseDuration(text);
         if (bare !== null) return { action: 'cultivate', days: bare };
+    }
+
+    // ── THE HOUSE SENTENCES THAT NAME NO HOUSE ───────────────────────────
+    //
+    // Last, deliberately, and that is the whole design of them. The sect
+    // branch needs a house word - `sect`, `clan`, `hall` - because otherwise
+    // "I leave the room" would be a resignation. So four sentences that are
+    // plainly about a house and name none reached nothing:
+    //
+    //     "I want out"               "what happens if I leave"
+    //     "I do a duty"              "I report to my master"
+    //
+    // Down here every other verb has already had its chance, so a sentence
+    // arriving with these words in it has no competing reading left. "I leave
+    // for Iron Ridge" is travel and was claimed a thousand lines up; "I leave
+    // the room" still reaches nothing, correctly, because there is no room.
+    //
+    // The second one is the one that matters. Leaving forfeits a seat and a
+    // contribution balance, and `theReadThatAnswersIt` already turns a QUESTION
+    // about leaving into the standing read carrying exactly what walking out
+    // would take - so the read existed and the sentence asking for it did not.
+    // A player could only find out what leaving cost by leaving.
+    if (/\b(?:i\s+)?want(?:s)?\s+out\b/.test(text)
+        || /\bwhat\s+happens\s+if\s+i\s+leave\b/.test(text)) {
+        return { action: 'sect', intent: 'leave' };
+    }
+
+    // Taking a duty, and reporting in. Both are the house's own vocabulary
+    // and both had a READ - `sect/duty` lists what is on offer - with no act
+    // beside it that a plain sentence could reach.
+    if (/\b(?:i\s+)?(?:do|take|takes|accept|pick up)\s+(?:a|the|another|some)\s+(?:duty|duties|chore|errand|task)\b/.test(text)
+        || /\b(?:i\s+)?reports?\s+(?:in|to)\b/.test(text)) {
+        return { action: 'sect', intent: 'duty' };
     }
 
     // Nothing matched. The fallback is inert BY RULE: an action the engine is
