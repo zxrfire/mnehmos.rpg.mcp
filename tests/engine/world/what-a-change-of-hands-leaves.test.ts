@@ -22,7 +22,11 @@ import {
 } from '../../../src/engine/world/what-a-change-of-hands-leaves.js';
 import { makeObject, type AcquisitionMode, type ObjectSignificance } from '../../../src/engine/world/possessions.js';
 import { settleTheSpoils } from '../../../src/engine/world/war-spoils.js';
-import { severityRank, type ObligationInput } from '../../../src/engine/social/grudges.js';
+import {
+    severityRank,
+    whichWayItPoints,
+    type ObligationInput
+} from '../../../src/engine/social/grudges.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../../../src/engine/world/driver.js';
@@ -63,35 +67,50 @@ function aChange(over: Partial<AChangeOfHands> = {}): AChangeOfHands {
 }
 
 describe('which way the account points is what the mode decides', () => {
-    it('every mode that leaves anything leaves it on exactly one of the two, and the two sets do not overlap', () => {
-        const onTheLoser: AcquisitionMode[] = [];
-        const onTheReceiver: AcquisitionMode[] = [];
+    /**
+     * WHOEVER ENDS UP WITH THE THING CARRIES THE ACCOUNT.
+     *
+     * This read `holderId` directly and called the two buckets *the loser* and
+     * *the receiver*, and that is the one field a reader of this ledger may not
+     * read directly: a favour is owed TO its holder and every other kind is
+     * carried BY its holder. `whichWayItPoints` exists to end that confusion
+     * and says so in its own header. Reading the field rather than asking it is
+     * what let `gifted` and `lent` be authored pointing the wrong way and pass.
+     *
+     * Asked properly, the partition the old test was looking for turns out not
+     * to exist, and what replaces it is simpler and truer: however a thing
+     * moves, the weight lands on the party holding it afterwards. Stolen, and
+     * they hold it against you. Given, and you owe them for it. Both are about
+     * you, because you have the thing.
+     */
+    it('every mode that leaves anything leaves it on the party that ends up with the thing', () => {
+        const left: AcquisitionMode[] = [];
         const nothing: AcquisitionMode[] = [];
 
         for (const how of EVERY_MODE) {
-            const left = whatAChangeOfHandsLeaves(aChange({ how }));
-            if (left.length === 0) {
+            const rows = whatAChangeOfHandsLeaves(aChange({ how }));
+            if (rows.length === 0) {
                 nothing.push(how);
                 continue;
             }
             // One change of hands between two parties leaves one account.
-            expect(left).toHaveLength(1);
-            const row = left[0]!;
+            expect(rows).toHaveLength(1);
+            const row = rows[0]!;
             expect(row.holderId).not.toBe(row.subjectId);
-            if (row.holderId === 'them') onTheLoser.push(how);
-            else if (row.holderId === 'you') onTheReceiver.push(how);
+
+            const points = whichWayItPoints(row);
+            // `you` is the receiver in `aChange`, and is the one on the hook
+            // whichever sense the row has.
+            expect(points.sense === 'owes' ? points.owerId : points.offenderId)
+                .toBe('you');
+            left.push(how);
         }
 
-        // The partition is total and disjoint, which is the claim.
-        expect(onTheLoser.length + onTheReceiver.length + nothing.length)
-            .toBe(EVERY_MODE.length);
-        expect(onTheLoser.filter(m => onTheReceiver.includes(m))).toEqual([]);
-
-        // And none of the three is empty, so nothing here passes vacuously: the
-        // world can take a thing, be given one, and buy one, and those are three
+        expect(left.length + nothing.length).toBe(EVERY_MODE.length);
+        // Neither is empty, so nothing here passes vacuously: the world can
+        // take a thing, be given one, and buy one, and those are three
         // different afternoons.
-        expect(onTheLoser.length).toBeGreaterThan(0);
-        expect(onTheReceiver.length).toBeGreaterThan(0);
+        expect(left.length).toBeGreaterThan(0);
         expect(nothing.length).toBeGreaterThan(0);
     });
 
@@ -99,10 +118,18 @@ describe('which way the account points is what the mode decides', () => {
         const taken = whatAChangeOfHandsLeaves(aChange({ how: 'stolen' }))[0]!;
         const given = whatAChangeOfHandsLeaves(aChange({ how: 'gifted' }))[0]!;
 
-        // The same two people, the same object, opposite ends of the ledger.
-        expect(taken.holderId).toBe(given.subjectId);
-        expect(taken.subjectId).toBe(given.holderId);
+        // The same two people, the same object, and the same party carrying it
+        // - which is the sentence in the title. It is NOT a mirror of the two
+        // id columns, and asserting that it was is how `gifted` came to point
+        // the wrong way: the fields matched, and the meaning did not.
         expect(taken.kind).not.toBe(given.kind);
+
+        const forTaking = whichWayItPoints(taken);
+        const forGiving = whichWayItPoints(given);
+        expect(forTaking.sense).toBe('holds_against');
+        expect(forGiving.sense).toBe('owes');
+        expect(forTaking.sense === 'holds_against' ? forTaking.offenderId : null).toBe('you');
+        expect(forGiving.sense === 'owes' ? forGiving.owerId : null).toBe('you');
     });
 
     it('a thing that never left the party it started with leaves nothing', () => {

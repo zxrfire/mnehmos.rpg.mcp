@@ -287,10 +287,32 @@ function given(
 
     // The one act in the game that opens an account without leverage. The cause
     // is a member of `FavorCause` and was waiting for a caller.
+    //
+    // ── THE GIVER HOLDS IT, AND GETTING THIS BACKWARDS PUT THEM IN DEBT ──
+    //
+    // A FAVOUR IS OWED TO ITS HOLDER. That is the one inversion in the ledger
+    // and `whichWayItPoints` is where it is written down, in a header whose
+    // whole subject is this mistake: *a reader that gets `favor` backwards
+    // tells them somebody owes them a thing they in fact owe*.
+    //
+    // This was written the other way about, and the reader was right while the
+    // writer was wrong. Measured, by putting a gift row through
+    // `whatStandsBetweenYouAndEverybody` - the read a player gets when they ask
+    // what they owe:
+    //
+    //     Owed by you to Shen Liefeng: gifted resource ... I handed them a
+    //     flask, asking nothing for it.
+    //
+    // The player hands somebody a gift asking nothing for it, and the game puts
+    // them in debt to the person they were being generous to.
+    //
+    // `aFavourForTheWork` in `commissioning-a-craft.ts` is the same row for the
+    // same act - a thing made and handed over for nothing - and it holds it the
+    // right way about: the maker holds, the asker owes.
     const favour: ObligationInput = {
         kind: 'favor',
-        holderId: to.id,
-        subjectId: deps.giver.id,
+        holderId: deps.giver.id,
+        subjectId: to.id,
         cause: 'gifted_resource',
         severity: 'slight',
         onDay: deps.onDay,
@@ -310,9 +332,10 @@ function given(
                       + 'for singular things and is not used here.'
                     : 'One pouch lot, removed from the giver and added to the taker.')
                 + ' No day spent: nothing was attempted against them, so nothing could fail.',
-                `Favour opened: ${to.id} holds a slight favor about ${deps.giver.id} for `
-                + 'gifted_resource. Permanent until settled, and inheritable. It is the only '
-                + 'account in this engine that opens without leverage having been used.'
+                `Favour opened: ${deps.giver.id} holds a slight favor about ${to.id} for `
+                + 'gifted_resource, so it is the taker who owes. Permanent until settled, and '
+                + 'inheritable. It is the only account in this engine that opens without '
+                + 'leverage having been used.'
             ],
             prose: scene
         },

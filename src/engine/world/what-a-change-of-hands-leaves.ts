@@ -169,13 +169,25 @@ export function whatAChangeOfHandsLeaves(change: AChangeOfHands): ObligationInpu
         // The one act in this engine that opens an account without leverage,
         // and `handOver` already says so about the counted tier. This is the
         // same sentence about the tracked one.
+        //
+        // THE GIVER HOLDS IT. A favour is owed TO its holder, which is the one
+        // inversion in the ledger and is written down in `whichWayItPoints`.
+        // This was authored the other way about, and so was `handOver` - the
+        // two cite each other, which is how one mistake became two. Read back
+        // through `whatStandsBetweenYouAndEverybody` it said *Owed by you to*
+        // the person who had just been handed a gift.
+        //
+        // The title of this file's own test says the rule correctly: *what
+        // somebody lost they hold against whoever has it; what they were handed
+        // they owe for*. Whichever way a thing moves, the account weighs on
+        // whoever ends up holding the thing.
         case 'gifted':
         case 'awarded': {
             if (!change.from || !change.to || change.from.id === change.to.id) return [];
             return [{
                 kind: 'favor',
-                holderId: change.to.id,
-                subjectId: change.from.id,
+                holderId: change.from.id,
+                subjectId: change.to.id,
                 cause: 'gifted_resource',
                 severity,
                 onDay: change.onDay,
@@ -195,12 +207,17 @@ export function whatAChangeOfHandsLeaves(change: AChangeOfHands): ObligationInpu
         // the lender's, and what the holder owes is the use of it rather than
         // the thing. `a-house-holds-its-own.ts` is emphatic that reading the
         // two alike reports somebody as freer than they are.
+        //
+        // The lender holds it, for the reason directly above. This comment's
+        // own next sentence already says which way it points - *what the holder
+        // owes is the use of it* - and the row was written so that the LENDER
+        // owed the borrower for the loan.
         case 'lent': {
             if (!change.from || !change.to || change.from.id === change.to.id) return [];
             return [{
                 kind: 'favor',
-                holderId: change.to.id,
-                subjectId: change.from.id,
+                holderId: change.from.id,
+                subjectId: change.to.id,
                 cause: 'lent_resource',
                 severity,
                 onDay: change.onDay,

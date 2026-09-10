@@ -26,7 +26,7 @@
  *
  * ── AND WHAT IT LEAVES ───────────────────────────────────────────────────
  *
- * A favour the recipient holds about the giver. It is the only account in this
+ * A favour the GIVER holds, which the taker owes. It is the only account in this
  * engine that opens WITHOUT leverage - every other route runs through
  * `resolveAttempt`, which prices what you leaned on - which is the whole reason
  * the sentence is worth typing, and the reason the owner's example uses it to
@@ -38,6 +38,7 @@ import { describe, expect, it } from 'vitest';
 import { parseIntent, whatIsBeingHandedOver } from '../../src/web/actions';
 import { handOver, theLotTheyMeant, type GiveDeps } from '../../src/web/handing-somebody-a-thing';
 import type { Cultivator } from '../../src/schema/cultivation';
+import { whichWayItPoints } from '../../src/engine/social/grudges';
 
 const GIVER = { id: 'me', name: 'Wen Shuyi', spiritStones: 40 } as unknown as Cultivator;
 
@@ -182,10 +183,17 @@ describe('what the engine does with it', () => {
         expect(out.stones).toBe(40);
         expect(out.favour?.kind).toBe('favor');
         expect(out.favour?.cause).toBe('gifted_resource');
-        // The account opens the RIGHT way round: the recipient holds it about
-        // the giver, not the other way about.
-        expect(out.favour?.holderId).toBe('npc-1');
-        expect(out.favour?.subjectId).toBe('me');
+        // The account opens the RIGHT way round, and this asserted the wrong
+        // one. It read the two id columns and reasoned that "the holder" is
+        // whoever is on the hook - which is true of every kind on this ledger
+        // EXCEPT the one being written here. A favour is owed TO its holder,
+        // so holding it about the giver put the giver in debt for the gift.
+        // Asked through `whichWayItPoints`, which is the only thing allowed to
+        // answer this: the taker owes.
+        expect(out.favour?.holderId).toBe('me');
+        expect(out.favour?.subjectId).toBe('npc-1');
+        const points = whichWayItPoints(out.favour!);
+        expect(points.sense === 'owes' ? points.owerId : null).toBe('npc-1');
     });
 
     it('refuses more stones than are in the purse, and names the figure', () => {
