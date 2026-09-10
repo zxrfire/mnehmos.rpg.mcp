@@ -158,9 +158,72 @@ export interface SeclusionCrossroads {
  * It requires the ask to be the WHOLE sentence. "I stay in the village and look
  * for work" is not sitting back down, and swallowing it would steal a turn from
  * a player who meant something else entirely.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * AND A COMPOUND OF TWO STAY PHRASINGS IS STILL STAYING
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * FOUND BY PLAYING. The whole-sentence anchor above is right and it was doing
+ * more than it meant to. Eighteen answers through the real patterns, six of
+ * them forfeiting the seclusion:
+ *
+ *     "I stay put and keep sitting"     -> neither, and 1.7 years were lost
+ *     "I ignore them and keep sitting"  -> neither
+ *     "I keep going"                    -> neither
+ *     "I keep at it"                    -> neither
+ *     "I continue"                      -> neither
+ *     "I ignore it"                     -> neither
+ *
+ * The first is the one that gives the shape away: it is TWO phrasings from this
+ * very list joined by `and`, so it says "stay" twice and matched neither time.
+ * And the cost of matching neither is not a shrug - anything that is not
+ * recognised here is read as going, so the answer to an unreadable sentence was
+ * a forfeited stretch of years.
+ *
+ * The anchor is kept exactly as it was. What changed is that the whole sentence
+ * may now be a LIST of these, joined by `and` or a comma, which cannot let "I
+ * stay in the village and look for work" through: `look for work` is not on the
+ * list, so the sentence still fails as a whole.
+ *
+ * The bare idioms - `keep going`, `keep at it`, `continue`, `ignore it` - are
+ * added on the same reasoning that put `resume` and `press on` here already.
+ * At this fork there is exactly one thing to continue and one thing to ignore.
  */
-export const THE_ANSWER_IS_TO_KEEP_SITTING =
-    /^\s*(?:i\s+)?(?:(?:keep|carry on|continue|go back to|get back to|return to|resume)\s+(?:on\s+)?(?:sitting|meditating|cultivating|the\s+(?:sitting|seclusion|cultivation))|(?:sit|settle|stay|remain)\s+(?:back\s+)?(?:down|put|where i am|seated|sitting)|sit back down|stay sitting|stay seated|keep my seat|keep sitting|don'?t (?:get up|move|stop)|do not (?:get up|move|stop)|(?:i\s+)?(?:stay|remain)|(?:i\s+)?(?:sit|meditate)(?: on)?|hold (?:my )?(?:seat|position|ground)|finish the (?:sitting|seclusion|stretch)|resume|carry on|press on)\s*[.!]*\s*$/i;
+const ONE_WAY_OF_SAYING_STAY = [
+    String.raw`(?:keep|carry on|continue|go back to|get back to|return to|resume)\s+(?:on\s+)?`
+    + String.raw`(?:sitting|meditating|cultivating|the\s+(?:sitting|seclusion|cultivation))`,
+    String.raw`(?:sit|settle|stay|remain)\s+(?:back\s+)?(?:down|put|where i am|seated|sitting)`,
+    String.raw`sit back down`,
+    String.raw`stay sitting`,
+    String.raw`stay seated`,
+    String.raw`keep my seat`,
+    String.raw`keep sitting`,
+    String.raw`don'?t (?:get up|move|stop)`,
+    String.raw`do not (?:get up|move|stop)`,
+    String.raw`(?:stay|remain)`,
+    String.raw`(?:sit|meditate)(?: on)?`,
+    String.raw`hold (?:my )?(?:seat|position|ground)`,
+    String.raw`finish the (?:sitting|seclusion|stretch)`,
+    String.raw`resume`,
+    String.raw`carry on`,
+    String.raw`press on`,
+    // There is one thing to keep at, and one thing to ignore.
+    String.raw`keep (?:going|at it|on)`,
+    String.raw`continue`,
+    String.raw`ignore (?:it|them|him|her|that|the noise|the interruption)`,
+    String.raw`pay (?:it|them|him|her) no (?:mind|attention|heed)`,
+    String.raw`take no notice(?: of (?:it|them|him|her))?`,
+    String.raw`(?:do )?nothing`
+].join('|');
+
+export const THE_ANSWER_IS_TO_KEEP_SITTING = new RegExp(
+    String.raw`^\s*(?:i\s+)?(?:` + ONE_WAY_OF_SAYING_STAY + String.raw`)`
+    // ...and any number of further ways of saying the same thing, which is how
+    // people answer a question they feel strongly about.
+    + String.raw`(?:\s*(?:,|,?\s*and|,?\s*&)\s*(?:i\s+)?(?:` + ONE_WAY_OF_SAYING_STAY
+    + String.raw`))*\s*[.!]*\s*$`,
+    'i'
+);
 
 /**
  * Getting up and taking the road, said explicitly.

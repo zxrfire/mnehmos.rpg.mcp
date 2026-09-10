@@ -12559,12 +12559,52 @@ ${fit.line}`;
     }
 
     /**
-     * Anybody who was standing here as the turn opened and is now dead.
+     * ═══════════════════════════════════════════════════════════════════════
+     * ANYBODY WHO WAS STANDING HERE AS THE TURN OPENED AND FELL WHERE YOU
+     * COULD SEE IT
+     * ═══════════════════════════════════════════════════════════════════════
+     *
+     * FOUND BY PLAYING, and it is the highest-leverage defect measured in this
+     * sweep: one cause, and it reaches four separate mechanics.
+     *
+     * This read "was here, is not here, is dead" and stopped. Which is a
+     * correct description of a ROSTER and a wrong description of a SCENE,
+     * because two ordinary turns produce that shape without anybody dying in
+     * front of you:
+     *
+     * A TIME SKIP. The player sits for three years. Somewhere in those years an
+     * NPC dies - of a beast, a war, a bad breakthrough, old age - and the
+     * digest says so, correctly, as history. Then this block ran on the same
+     * screen and put them on the ground at the player's feet, dying now, in a
+     * courtyard the player had their eyes shut in. The whole call site at
+     * `sayWhoWasInIt` on the skip path throws unless `execution.timeSkip` is
+     * set, so every single one of those turns took this branch.
+     *
+     * TRAVEL. The player walks to the next town. Everybody in the square they
+     * left is "gone", and any of them the world killed while the player was on
+     * the road comes back as having fallen in front of them.
+     *
+     * The rule the roster read cannot express is the one the engine is held to
+     * everywhere else: THE ENGINE MAY ONLY STATE WHAT SOMEBODY STANDING THERE
+     * COULD PERCEIVE (AGENTS.md). To have seen somebody fall you have to have
+     * been in the room, awake, while they fell. So both are asked, and neither
+     * is a heuristic:
+     *
+     *   - the player is still in the same place they started the turn in
+     *   - the turn did not consume a SPAN, which is a digest and not a scene
+     *
+     * A death the player did not witness is not silenced by this. It is already
+     * reported by the thing that actually knows about it - the digest, the news
+     * that travels, or the next person who mentions it - which is where a death
+     * you were not present for belongs.
      */
     private theFallenAmong(
         before: readonly RosterEntry[],
-        now: readonly RosterEntry[]
+        now: readonly RosterEntry[],
+        /** Whether the player was in a position to see anybody fall at all. */
+        couldHaveSeenIt: boolean
     ): RosterEntry[] {
+        if (!couldHaveSeenIt) return [];
         const standing = new Set(now.map(row => row.id));
         const gone = before.filter(row => !standing.has(row.id));
         if (gone.length === 0) return [];
@@ -12590,11 +12630,24 @@ ${fit.line}`;
         declared: readonly DeclaredMovement[] = []
     ): void {
         const now = this.present(playerNow);
+        // WAS THIS A SCENE OR A DIGEST. See `theFallenAmong`: a turn that
+        // consumed a span, or that ended somewhere else, is not something the
+        // player watched happen. Read off `execution` rather than passed in,
+        // so it cannot be got right at one call site and wrong at the other -
+        // which is exactly how the skip path came to run this block at all.
+        const couldHaveSeenIt =
+            execution.timeSkip === null && placeName(playerBefore) === placeName(playerNow);
         const saidThisTurn = new Map<string, Set<string>>();
         for (const said of whatThePeopleHereAreAnswering({
             before: squareBefore,
             now,
-            fallen: this.theFallenAmong(squareBefore, now),
+            fallen: this.theFallenAmong(squareBefore, now, couldHaveSeenIt),
+            // The same distinction, for the people who are still standing. A
+            // stretch of years is not an incident anybody witnessed, and this
+            // channel prices every bystander against the largest thing the turn
+            // did - which on a digest is the player's own cultivation. See
+            // `wasAScene` in `scene-person-readings.ts` for what it printed.
+            wasAScene: couldHaveSeenIt,
             playerBefore,
             playerNow,
             gate: this.knowledge,

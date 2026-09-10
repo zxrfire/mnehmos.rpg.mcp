@@ -96,6 +96,51 @@ export const THE_ANSWER_IS_TO_PRESS =
  * start and routes them to travel. Inside a fight they are this instead, which
  * is the same act priced properly: travel does not turn your back on anybody.
  */
+/**
+ * SOMEBODY ELSE IS THE ONE LEAVING, OR NOBODY IS.
+ *
+ * FOUND BY PLAYING, and it is the most dangerous thing measured in this file.
+ * `run` and `escape` are both in the list above as bare words with `\b` on each
+ * side, which is correct for the frightened typist it was widened for and
+ * catastrophic for everybody else. Ten sentences through the real reader, seven
+ * of them wrong:
+ *
+ *     "I run him through"                        -> break_off
+ *     "I run my blade through his chest"         -> break_off
+ *     "I run him down"                           -> break_off
+ *     "I strike him down before he can escape"   -> break_off
+ *     "I cut off his escape"                     -> break_off
+ *     "I block his escape route"                 -> break_off
+ *     "I stop him running"                       -> break_off
+ *
+ * Every one of those is a player pressing an attack or closing off somebody
+ * else's way out, and every one of them turned the player's own back and had
+ * them flee. In a fight that is not a misread, it is a death: the header above
+ * says a flight that fails to parse is the exact death the multi-turn fight
+ * exists to make answerable, and this is the same failure pointed the other
+ * way - a KILLING that parses as a flight.
+ *
+ * The distinction the list could not make is whose movement is being described.
+ * `run` with something on the end of it is transitive - you run somebody
+ * THROUGH, you run them DOWN - and an escape that belongs to `him` is one you
+ * are almost always preventing. `my escape` is deliberately absent from that
+ * rule, because making your escape is exactly what this is for.
+ */
+const IT_IS_NOT_YOU_LEAVING = new RegExp([
+    // `run` taking an object. Running somebody through is the opposite of
+    // leaving, and it is the commonest killing sentence in the genre.
+    String.raw`\bruns?\s+(?:him|her|them|it|my|his|her|their|the|[A-Z][a-z]+)\b`,
+    // Somebody ELSE's way out, which is a thing you close rather than take.
+    String.raw`\b(?:his|her|their|its|the)\s+escape\b`,
+    // Said about them rather than about you.
+    String.raw`\b(?:he|she|they|it)\s+(?:can|could|might|will|would|tries? to|is trying to)\s+`
+    + String.raw`(?:escape|run|flee|get away|withdraw|break off)\b`,
+    // Preventing one. The verb in front is what says so.
+    String.raw`\b(?:cut|cuts|cutting|block|blocks|blocking|stop|stops|stopping|prevent|prevents`
+    + String.raw`|deny|denies|bar|bars|head|heads|close|closes|seal|seals)\b[^.!?]{0,24}`
+    + String.raw`\b(?:escape|escaping|running|fleeing|getting away|retreat)\b`
+].join('|'));
+
 export const THE_ANSWER_IS_TO_BREAK_OFF =
     // Note the shape of the `run` clause. It was written `run(?:s|ning)? (?:for
     // it|away|off)?` - a REQUIRED space before an optional tail - so "I parry
@@ -208,7 +253,13 @@ export function whatTheySaidInTheFight(said: string): FightAnswer | null {
     const line = said.trim();
     if (line.length === 0) return null;
 
-    if (THE_ANSWER_IS_TO_BREAK_OFF.test(line)) {
+    // BREAK-OFF IS READ FIRST AND SO ITS GUARD RUNS FIRST. See
+    // `IT_IS_NOT_YOU_LEAVING`: the flight list is the widest in this file by
+    // design, and its two widest words - `run` and `escape` - are also the two
+    // that appear in the commonest KILLING sentences the genre has. Read
+    // unguarded, "I run him through" turned the player's back on the person
+    // they had just described running through.
+    if (THE_ANSWER_IS_TO_BREAK_OFF.test(line) && !IT_IS_NOT_YOU_LEAVING.test(line)) {
         return { kind: 'break_off', toward: whereTheyAreHeaded(line) };
     }
     if (THE_ANSWER_IS_TO_SHOUT.test(line)) {

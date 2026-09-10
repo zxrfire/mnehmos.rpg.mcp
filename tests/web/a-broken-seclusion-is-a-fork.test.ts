@@ -268,6 +268,59 @@ describe('the two answers, in the words somebody would actually use', () => {
         }
     });
 
+    /**
+     * A COMPOUND OF TWO STAY PHRASINGS IS STILL STAYING, and getting this wrong
+     * cost years.
+     *
+     * FOUND BY PLAYING. The whole-sentence anchor these patterns use is right -
+     * the test below is what it protects - and it was doing more than it meant
+     * to. Eighteen answers through the real patterns, six matching NEITHER:
+     *
+     *     "I stay put and keep sitting"     -> neither, 1.7 years forfeited
+     *     "I ignore them and keep sitting"  -> neither
+     *     "I keep going"                    -> neither
+     *     "I keep at it"                    -> neither
+     *     "I continue"                      -> neither
+     *     "I ignore it"                     -> neither
+     *
+     * The first gives the shape away: it is two phrasings from the list above,
+     * joined by `and`. It says "stay" twice and matched neither time.
+     *
+     * And matching neither is not a shrug here. Anything not recognised is read
+     * as going - `settleAnyStandingCrossroads`, *"anything that spends a day
+     * instead of sitting is going"* - so the engine's answer to a sentence it
+     * could not read was a forfeited stretch of years. That rule is sound and
+     * is not what changed; the sentences simply never reached it as answers.
+     *
+     * The anchor is unchanged. What is allowed now is a LIST of these joined by
+     * `and` or a comma, which cannot admit the sentences the next test guards:
+     * `look for work` is on no list, so the whole match still fails.
+     */
+    it('reads a compound of two stay phrasings as staying', () => {
+        for (const said of [
+            'I stay put and keep sitting',
+            'I ignore them and keep sitting',
+            'I stay put, and I keep sitting',
+            'I sit back down and stay put',
+            'I keep going',
+            'I keep at it',
+            'I keep on',
+            'I continue',
+            'I ignore it',
+            'I ignore them',
+            'I pay them no mind',
+            'I take no notice',
+            'I do nothing',
+            'nothing'
+        ]) {
+            expect(THE_ANSWER_IS_TO_KEEP_SITTING.test(said), `"${said}"`).toBe(true);
+            // And none of them may ALSO read as leaving, which would make the
+            // fork resolve on whichever pattern the caller happened to try
+            // first rather than on what the player said.
+            expect(THE_ANSWER_IS_TO_GO.test(said), `go:"${said}"`).toBe(false);
+        }
+    });
+
     it('does not swallow a sentence that means something else entirely', () => {
         // Both of these are real verbs with real answers, and an over-eager
         // anchor here would steal the turn. "Fix the gap that was demonstrated,

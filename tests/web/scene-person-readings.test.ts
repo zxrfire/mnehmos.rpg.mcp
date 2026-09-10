@@ -90,6 +90,102 @@ describe('a scene nothing happened in', () => {
     });
 });
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * A STRETCH OF YEARS IS NOT AN INCIDENT ANYBODY WATCHED
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * FOUND BY PLAYING, seed `dm2-2`. A ten-year seclusion, cut short at 2.1 years
+ * for want of food, in a village square. On the same screen as the years-long
+ * digest:
+ *
+ *     Year 1000: Duan Wanlu, Qi Condensation Layer 11, reached the end of
+ *     their lifespan and died of old age.
+ *     ...
+ *     6 other people are here. No part of this was theirs. They saw all of it,
+ *     from close by. Every one of them answers, out loud.
+ *
+ * Six people watched somebody meditate for two years, from close by, and every
+ * one of them spoke up about it.
+ *
+ * Everything in this module is priced against `sceneWeight` - "the largest
+ * thing this turn did to anybody in it" - and on a digest turn that is the
+ * player's own two years of cultivation, which prices out as an enormous
+ * incident with an audience. But a stretch of years has no MOMENT in it. There
+ * is nothing for anybody to have seen and nothing for them to answer.
+ *
+ * ONE CAUSE, AND IT REACHED FURTHER THAN THIS. `theFallenAmong` in
+ * `turn-engine.ts` read "was here, is not here, is dead" and stopped, which is
+ * a correct description of a roster and a wrong description of a scene: an NPC
+ * who died somewhere inside those years was put on the ground at the player's
+ * feet, dying now, in a square the player had their eyes shut in. The same
+ * arithmetic did it, and the same distinction fixes both.
+ *
+ * PRESENCE SURVIVES, WITNESSING DOES NOT. Six people being there when you open
+ * your eyes is true and perceivable. That they watched and reacted is neither.
+ * The presence line has to be produced ABOVE the `read.length === 0` guard,
+ * because a digest always trips it - at zero weight `readingFor` returns null
+ * for everybody, and this module correctly has no reactions to report.
+ */
+describe('a turn that was a digest rather than a scene', () => {
+    const square = [person({ id: 'a' }), person({ id: 'b' }), person({ id: 'c' })];
+    // A seclusion: the player is years older and a rung further on. On a scene
+    // turn that is a large thing to have happened in front of people.
+    const digest = (over: Partial<Parameters<typeof whatThePeopleHereAreAnswering>[0]> = {}) =>
+        whatThePeopleHereAreAnswering({
+            before: square,
+            now: square,
+            playerBefore: player({ realmOrdinal: 4, age: 16 } as never),
+            playerNow: player({ realmOrdinal: 7, age: 18 } as never),
+            gate: gateOver(['a', 'b', 'c']),
+            wasAScene: false,
+            ...over
+        });
+
+    it('says who is standing there and stops', () => {
+        const lines = digest();
+        expect(lines).toEqual(['3 other people are here.']);
+    });
+
+    it('does not claim anybody watched it', () => {
+        const said = digest().join(' ');
+        expect(said).not.toMatch(/saw it|saw all of it|from close by|near enough/);
+        expect(said).not.toMatch(/No part of this was theirs/);
+    });
+
+    it('does not have anybody speak up about it', () => {
+        const said = digest().join(' ');
+        expect(said).not.toMatch(/answers?, out loud|says? nothing|say something/);
+    });
+
+    /**
+     * THE DEAD MAN STANDING THERE DYING. Somebody who died inside the years is
+     * not somebody who fell in front of you, and the turn must not narrate them
+     * doing it. `theFallenAmong` now returns nothing on a digest, so this is
+     * belt and braces on the module that would print it.
+     */
+    it('puts nobody on the ground at the player feet', () => {
+        const said = digest({ fallen: [person({ id: 'd', name: 'Duan Wanlu' })] }).join(' ');
+        expect(said).not.toContain('Duan Wanlu');
+        expect(said).not.toMatch(/dying|on the ground|falls/i);
+    });
+
+    it('says nothing at all when the square is empty', () => {
+        expect(digest({ now: [] })).toEqual([]);
+    });
+
+    /**
+     * AND A SCENE IS UNCHANGED. The flag defaults to a scene, so every existing
+     * caller and every test above and below this one is unaffected - which is
+     * the whole reason it is a flag rather than a rewrite of the pricing.
+     */
+    it('leaves an actual scene reading everything it read before', () => {
+        const asAScene = digest({ wasAScene: true });
+        expect(asAScene.join(' ')).toMatch(/No part of this was theirs/);
+        expect(asAScene.length).toBeGreaterThan(0);
+    });
+});
+
 describe('three people watching one thing happen', () => {
     const square = [person({ id: 'a' }), person({ id: 'b' }), person({ id: 'c' })];
     const said = () => whatThePeopleHereAreAnswering({

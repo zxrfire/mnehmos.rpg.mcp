@@ -72,6 +72,34 @@ export interface SceneAsPeopleFoundIt {
      */
     fallen?: readonly RosterEntry[];
     /**
+     * WHETHER THIS TURN WAS A SCENE OR A DIGEST. Defaults to a scene.
+     *
+     * FOUND BY PLAYING, seed `dm2-2`. A ten-year seclusion, cut short at 2.1
+     * years, in a village square, produced this on the same screen as the
+     * years-long digest:
+     *
+     *     6 other people are here. No part of this was theirs. They saw all of
+     *     it, from close by. Every one of them answers, out loud.
+     *
+     * Six people watched somebody meditate for two years, from close by, and
+     * every one of them spoke up about it.
+     *
+     * Everything this module does is priced against `sceneWeight` - "the
+     * largest thing this turn did to anybody in it" - and on a digest turn that
+     * is two years of cultivation, which prices out as an enormous incident
+     * with an audience. But a stretch of years is not an INCIDENT. There is no
+     * moment in it for anybody to have seen, and nothing for them to answer.
+     *
+     * PRESENCE SURVIVES AND WITNESSING DOES NOT, which is the whole of the
+     * distinction. Six people being here afterwards is true and worth saying;
+     * that they watched it happen and reacted is neither.
+     *
+     * Same root cause as `fallen` above - see `theFallenAmong` in
+     * `turn-engine.ts`, where a death that happened somewhere in those years
+     * was put on the ground at the player's feet by the same arithmetic.
+     */
+    wasAScene?: boolean;
+    /**
      * What each person here feels about the player, off what has passed between
      * them.
      *
@@ -209,6 +237,10 @@ export function theBearingsThisTurnCanRead(
 // ─────────────────────────────────────────────────────────────────────────
 
 export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): string[] {
+    // Read once, at the top, and used by every branch below. Two separate
+    // `scene.wasAScene !== false` tests is how a scene rule gets applied in one
+    // place and not the other.
+    const wasAScene = scene.wasAScene !== false;
     const had = new Map(scene.before.map(row => [row.id, row]));
     const declared = new Map((scene.declared ?? []).map(row => [row.personId, row]));
 
@@ -220,7 +252,12 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
         moved: movementOf(row, had.get(row.id), declared.get(row.id)),
         bodyLeft: bodyLeftOf(row, declared.get(row.id))
     }));
-    const sceneWeight = Math.max(
+    // A DIGEST HAS NO SCENE WEIGHT. Everything below is priced against "the
+    // largest thing this turn did to anybody in it", and on a stretch of years
+    // that is the player's own cultivation - which prices out as an enormous
+    // incident with an audience. Nobody watched it, because there was no moment
+    // in it to watch. See `wasAScene`.
+    const sceneWeight = !wasAScene ? 0 : Math.max(
         Math.abs(whatTheTurnDidToThePlayer(scene.playerBefore, scene.playerNow)),
         ...movements.map(m => Math.abs(m.moved)),
         // Somebody who was standing here and is not standing anywhere now. The
@@ -279,6 +316,28 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
         // worth the sentence, and a square of forty must not push them out.
         .sort((a, b) => b.asked.weight - a.asked.weight
             || (a.row.id < b.row.id ? -1 : a.row.id > b.row.id ? 1 : 0));
+
+    // ── WHO IS STANDING THERE WHEN YOU OPEN YOUR EYES ────────────────────
+    //
+    // ABOVE THE EMPTY-SCENE GUARD, because a digest always trips it. At zero
+    // scene weight `readingFor` returns null for everybody - it stops below
+    // `WORTH_A_SENTENCE` - so `read` is empty and the guard below returns
+    // nothing at all. That is correct for this module, which is a REACTIONS
+    // channel and has no reactions to report: nobody reacted, because there was
+    // no moment to react to.
+    //
+    // But somebody coming out of a two-year sitting into a square with six
+    // people in it can SEE the six people, and the time-skip facts carry no
+    // census of their own - so with nothing here the player is told nothing at
+    // all about who is around them. It was covered by accident before, as the
+    // preamble to a witness line that should never have been printed.
+    //
+    // A count and not a name: somebody the player has never been introduced to
+    // stays that way, whatever else is true. See the discovery gate.
+    if (!wasAScene) {
+        const standing = scene.now.filter(row => row.id !== scene.playerNow.id).length;
+        return standing > 0 ? [theRoom(standing, 0, 0, '', false)] : [];
+    }
 
     if (read.length === 0) return [];
     const dead = new Set((scene.fallen ?? []).map(row => row.id));
@@ -439,7 +498,8 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
             ofTheirs === null
                 ? 0
                 : watchers.filter(entry => entry.row.sectId === ofTheirs).length,
-            watchers[0].asked.reading!
+            watchers[0].asked.reading!,
+            wasAScene
         ));
     }
     return lines;
@@ -554,7 +614,13 @@ function whoIsDying(names: readonly string[], unnameable: number): string {
 /**
  * The people who are interchangeable, said once.
  */
-function theRoom(count: number, spoke: number, ofTheirs: number, reading: string): string {
+function theRoom(
+    count: number,
+    spoke: number,
+    ofTheirs: number,
+    reading: string,
+    wasAScene: boolean
+): string {
     // NAMES THEM AND STOPS. This said they "had no part in it" and then
     // `reading` said "No part of this was theirs" directly after - the same
     // sentence twice, in consecutive breaths, every time a crowd watched
@@ -562,6 +628,13 @@ function theRoom(count: number, spoke: number, ofTheirs: number, reading: string
     const who = count === 1
         ? 'One other person is here.'
         : `${count} other people are here.`;
+
+    // PRESENCE SURVIVES A DIGEST AND WITNESSING DOES NOT. Six people being in
+    // the square when somebody comes out of a two-year sitting is true and
+    // worth saying. That they watched it from close by and every one of them
+    // spoke up about it is neither, and it is what this printed. See
+    // `wasAScene` on the input.
+    if (!wasAScene) return who;
 
     // AND THE VERB AGREES. `${spoke} of them answer` printed "1 of them answer"
     // whenever exactly one spoke, which is most scenes with a crowd in them.
