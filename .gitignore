@@ -77,6 +77,12 @@ skills-lock.json
 
 # Agent measurement scratch - probes and sweep output, never part of the build
 tests/_probe/
+# And the other one, which was not listed and so kept being committed by an
+# over-broad `git add`. Five throwaway probes reached HEAD that way and ran in
+# every full suite afterwards.
+tests/scratch/
+# Scripts written to drive a probe or patch a file during a sweep.
+scratchpad/
 *-probe.txt
 wall*.txt
 origin-report.txt
