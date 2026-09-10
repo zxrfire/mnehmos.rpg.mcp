@@ -110,16 +110,39 @@ const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
 
 /**
  * The same four states, as a person standing in them would experience them.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * IT IS QI, NOT AIR
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Every one of these opened on THE AIR - "the air here gives very little back",
+ * "the air here is unremarkable", "the air here is thick enough to notice on
+ * the first breath". The design owner, ruling on the same wording one screen
+ * over:
+ *
+ *   *"thick air is not very great, xianxia doesn't talk about air"* -
+ *   *"say thick with qi"* - *"i mean thick with qi if it was qi"*
+ *
+ * And a model handed "the air here" writes humidity. Measured, one did: given
+ * ORDINARY ground it produced *"the air here has always felt heavy in the
+ * lungs, a thickness you have known since childhood"* - which is weather, and
+ * the wrong band as well.
+ *
+ * The word `air` leaves a reader to guess what is thin or thick ABOUT it, and
+ * the guess is always physical. Naming the qi costs a word and removes the
+ * guess. `sealed_vein` keeps its breath imagery because that one IS about air
+ * nobody has breathed, which is the whole point of the room.
  */
 const AMBIENT_PERCEIVED: Record<AmbientQi, string> = {
-    thin: 'The air here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
-    normal: 'The air here is unremarkable. It neither helps nor gets in the way, which is most places.',
-    dense: 'The air here is thick enough to notice on the first breath. Whatever is under this ground is close to the surface, and the ground shows signs of being worked.',
-    spirit_tide: 'The hair lifts on the arms. Breathing is easier than it was an hour ago, and it will not stay that way. Somewhere out of sight people are already moving.',
+    thin: 'The qi here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
+    normal: 'The qi here is ordinary. It neither helps nor gets in the way, which is most places.',
+    dense: 'The qi here is thick enough to feel on the first breath. Whatever is under this ground is close to the surface, and the ground shows signs of being worked.',
+    spirit_tide: 'The hair lifts on the arms. The qi is running heavier than it was an hour ago, and it will not stay that way. Somewhere out of sight people are already moving.',
     // The whole economy of exploration, in one sensation. Nothing has breathed
     // this. It is the only air in the Late Age that is not second-hand, which
-    // is why people die getting into rooms like this one.
-    sealed_vein: 'The air in here has not been breathed. It is thicker than anything outside and it does not move, and the first lungful is enough to understand why people die getting into rooms like this.'
+    // is why people die getting into rooms like this one - and it is the one
+    // band where the air itself is the fact.
+    sealed_vein: 'The air in here has not been breathed. The qi is thicker than anything outside and it does not move, and the first lungful is enough to understand why people die getting into rooms like this.'
 };
 
 export const DEATH_IN_WORLD: Record<DeathCause, string> = {

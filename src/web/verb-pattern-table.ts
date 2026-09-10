@@ -750,6 +750,14 @@ export const CEILING_QUESTION = new RegExp([
     /\bhow far (?:will|does|can)\b[^.?!]*\b(?:technique|manual|method|art|book|scripture|cultivation)\b[^.?!]*\b(?:take|carry|go|get)\b/,
     /\bwhat (?:is|'s) (?:my|the) (?:ceiling|limit|cap|wall)\b/,
     /\bwhat (?:is|'s) (?:stopping|blocking|holding) me\b/,
+    // HOW FAR ALONG AM I, which this read already answers in the same breath
+    // as the wall: *"the rung above Qi Condensation Layer 1 is priced at 100
+    // qi-units. You hold 0."* The question reached `unclear` in every phrasing
+    // measured, so the number was computed, printed for other askers, and
+    // unreachable by the sentence that asks for it.
+    /\bhow (?:much|many)\b[^.?!]*\b(?:qi|qi-units|progress|cultivation)\b[^.?!]*\b(?:have i|do i have|i have|gathered|accumulated|got)\b/,
+    /\bhow (?:close|far|near)\b[^.?!]*\b(?:am i|is it)\b[^.?!]*\b(?:next|breakthrough|break through|layer|rung|realm|stage|advancing)\b/,
+    /\bhow much (?:further|longer|more)\b[^.?!]*\b(?:until|before|to)\b[^.?!]*\b(?:next|breakthrough|break through|layer|rung|realm)\b/,
     // the neighbours a player reaches for next
     /\bwhat(?:'s| is) holding me back\b/,
     // The plainest form of the question, and it reached nothing. A player who
@@ -807,7 +815,22 @@ export const DESTINATIONS_QUESTION = new RegExp([
     /\bwhat (?:other )?places?\b[^.?!]*\b(?:can|could|should) i\b/,
     /\bwhat (?:else )?is (?:there )?(?:nearby|around|out there|beyond)\b/,
     /\bwhere is (?:there|the)\b[^.?!]*\b(?:better|stronger|denser|thicker|richer|more)\b[^.?!]*\b(?:qi|spiritual energy|spirit energy|energy|cultivation)\b/,
-    /\bwhere (?:is|are) the (?:qi|spiritual energy|spirit energy|energy) (?:better|stronger|denser|thicker|richer)\b/,
+    /\bwhere (?:is|are) the (?:qi|spiritual energy|spirit energy|energy) (?:better|stronger|denser|thicker|richer|thickest|strongest|densest|richest|best)\b/,
+    // WHERE SHOULD I CULTIVATE is a question about WHERE, and it was answered
+    // with the ladder: it routed to `ceiling`, so a player asking where to go
+    // was told they had no manual. Both facts are true and only one of them
+    // was asked for.
+    // NOT WHEN A HOUSE IS NAMED. "Where can I cultivate IN THE SECT" is a
+    // question about what a rank buys on your own house's ground, which
+    // `asksAfterGroundTime` owns and answers with days on the vein - and this
+    // pattern was taking it to the road instead.
+    //
+    // The two questions share every word but one. "Where can I cultivate" is
+    // asking which way to walk; the same sentence with a house on the end is
+    // asking what you are already entitled to. The house word is the whole of
+    // the difference and it is the same gate `asksAfterGroundTime` uses.
+    /\bwhere (?:should|can|could|would|do) i (?:cultivate|sit|meditate|train|practise|practice)\b(?![^.?!]*\b(?:sect|clan|house|pavilion|court|order|hall|compound|my own)\b)/,
+    /\bwhere(?:'s| is)? (?:the )?(?:best|a better|a good|somewhere) (?:place|spot|ground)\b[^.?!]*\b(?:cultivate|sit|meditate|train)\b(?![^.?!]*\b(?:sect|clan|house|pavilion|court|order|hall|compound)\b)/,
     // THE QUESTION THE WHOLE GAME IS ABOUT, asked the ways people ask it.
     //
     // Measured on five natural phrasings of one question: only one reached
@@ -4090,6 +4113,23 @@ function planIntent(input: string): PlannedAction {
         + 'seclude|secludes|circulate|circulates|circulating|absorb|absorbs|absorbing|'
         + 'breathe|breathes|breathing|sit|sits|settle|settles')
         || /\b(?:in seclusion|into seclusion|gather qi|refine qi|closed[- ]?door cultivation|my cultivation practice)\b/.test(text)
+        // ── AND THE WAYS PEOPLE SAY IT WITH A POSSESSIVE IN THE MIDDLE ────
+        //
+        // Measured, five phrasings of the single most common act in the game,
+        // all `unclear`: "I refine my qi", "I train my qi", "I work on my
+        // cultivation", "I draw in the ambient qi", "I practise my breathing".
+        // The list above has `refine qi` and `gather qi` as fixed pairs, so
+        // putting `my` between the verb and the noun broke every one of them -
+        // and `my` is how people write it.
+        || /\b(?:refine|refines|gather|gathers|draw in|draws in|draw|draws|circulate|circulates|build|builds|work on|works on|train|trains|practise|practice|practises|practices)\b[^.?!]{0,20}\b(?:qi|spiritual energy|spirit energy|cultivation|breathing|meridians|dantian)\b/.test(text)
+        // ── AND CARRYING ON WITH WHAT THEY WERE ALREADY DOING ─────────────
+        //
+        // "I keep cultivating", "I carry on cultivating", "I go back to
+        // cultivating" - all `unclear`, so the answer to somebody who wanted
+        // more of the thing they had just done was that the sentence made no
+        // sense. `usedAsVerb` needs the verb near the front and these put a
+        // continuation phrase in front of it.
+        || /\b(?:keep|keeps|carry on|carries on|continue|continues|go back to|goes back to|get back to|return to|resume|resumes)\b\s+(?:on\s+)?(?:cultivating|meditating|sitting|circulating|refining|gathering|the cultivation|the sitting)\b/.test(text)
         // AND THE WORDS SOMEBODY WHO HAS NOT READ THIS SETTING WOULD USE.
         // "I train for ten years" and "I make camp" reached nothing at all,
         // and a thrown-away turn is the most expensive thing this table can do.
@@ -4138,6 +4178,20 @@ function planIntent(input: string): PlannedAction {
     }
 
     if (/\b(?:look (?:around|about|up|out)|have a look|glance (?:around|about)|survey|take (?:it|the place) in|take in (?:my|the) surroundings|where am i|what do i see|what is (?:here|around))\b/.test(text)
+        // ── WHAT THE QI IS LIKE **HERE** ─────────────────────────────────
+        //
+        // Measured, all `unclear`: "is the qi good here", "how is the qi here",
+        // "what is the ground like here". The situated read has always opened
+        // on exactly this - "The qi here is ordinary. It neither helps nor gets
+        // in the way" - so the answer was being printed to everybody who typed
+        // `look` and to nobody who asked the question in words.
+        //
+        // Distinct from `DESTINATIONS_QUESTION` above, which is about somewhere
+        // ELSE. "Where is the qi better" is a road; "how is the qi here" is the
+        // ground under their feet, and answering one with the other is how the
+        // ladder lecture came back for a question about a road.
+        || /\b(?:how|what)(?:'s| is| are)?\b[^.?!]{0,24}\b(?:qi|spiritual energy|spirit energy|ground|ambient)\b[^.?!]{0,24}\b(?:here|in this place|around here|hereabouts|like)\b/.test(text)
+        || /\b(?:is|are)\s+the\s+(?:qi|spiritual energy|spirit energy|ground)\b[^.?!]{0,30}\b(?:here|good|bad|any good|thin|thick|rich|poor)\b/.test(text)
         || /^\s*(?:i\s+)?looks?\b/.test(text)) {
         return { action: 'look' };
     }

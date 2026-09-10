@@ -81,6 +81,21 @@ const MONEY = '(?:(?:spirit\\s+)?stones?|coins?|money|cash|purse|wealth)';
 const CARRIED = '(?:inventory|pouch|pouches|bag|bags|pack|packs|purse|purses|pockets?|belongings|possessions)';
 
 /**
+ * THE THINGS A PACK ACTUALLY HAS IN IT, beside the money.
+ *
+ * FOUND BY PLAYING. `how many rations do I have` routed to `market` - the game
+ * took somebody asking what they were carrying to a SHOP - and so did `how much
+ * food do I have` and `how long will my food last`. There was a `MONEY` family
+ * here and nothing for anything else, so the only possession this file could
+ * hear a question about was stones.
+ *
+ * Food is first because it is the thing a cultivator's life actually runs out
+ * of, and it is the question people ask most.
+ */
+const CARRIED_GOODS =
+    '(?:rations?|food|provisions|supplies|pills?|elixirs?|talismans?|herbs?|manuals?)';
+
+/**
  * Opening the thing up and looking, by every verb somebody uses for it.
  *
  * Required in front of a container name, so that a sentence merely MENTIONING
@@ -188,6 +203,20 @@ const ASKING_WHAT_I_HAVE: readonly RegExp[] = [
     // question and people type both.
     new RegExp(`\\b(?:how (?:much|many)|what|which)\\b[^.?!]*\\b${MONEY}\\b[^.?!]*\\b${I_HAVE}\\b`),
     new RegExp(`\\b${I_HAVE}\\b[^.?!]*\\b(?:any |enough |the |my )?${MONEY}\\b`),
+
+    // ── AND THE SAME QUESTION ABOUT ANYTHING ELSE IN THE PACK ─────────────
+    //
+    // Exactly the two shapes above, over `CARRIED_GOODS` instead of money.
+    // "How many rations do I have" and "do I have any pills" are the same
+    // question, and people type it both ways round.
+    new RegExp(
+        `\\b(?:how (?:much|many)|what|which)\\b[^.?!]*\\b${CARRIED_GOODS}\\b[^.?!]*\\b${I_HAVE}\\b`),
+    new RegExp(`\\b${I_HAVE}\\b[^.?!]*\\b(?:any |enough |the |my )?${CARRIED_GOODS}\\b`),
+    // HOW LONG IT LASTS IS A QUESTION ABOUT THE PACK, not about a shop. The
+    // read says the span beside the count for exactly this sentence.
+    new RegExp(
+        `\\bhow long\\b[^.?!]*\\b(?:my |the )?${CARRIED_GOODS}\\b[^.?!]*`
+        + `\\b(?:last|lasts|hold out|holds out|see me|keep me|go)\\b`),
 
     // "how much is in my purse", "what is left in the purse". The container is
     // required: "how much is left" on its own names nothing and stays where it

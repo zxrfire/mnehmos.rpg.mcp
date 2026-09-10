@@ -378,20 +378,29 @@ describe("a place gives the ground it has, not its province's average", () => {
      * the catalog was right the whole time and that is exactly why nothing
      * caught it.
      */
-    const AIR = /The air here ([^.]*)\./;
+    // ── AND IT IS THE QI, NOT THE AIR ────────────────────────────────────
+    //
+    // These lines opened on "the air here" until the design owner ruled on the
+    // wording: *"thick air is not very great, xianxia doesn't talk about air"*,
+    // *"say thick with qi"*. A model handed "the air here" writes humidity, and
+    // one measurably did.
+    //
+    // Nothing about WHAT this test checks changed. The band a place reports is
+    // the whole subject, and the noun in front of it is not.
+    const QI = /The qi here ([^.]*)\./;
 
     async function airAt(where: string): Promise<string> {
         const { game } = makeGame({ seed: 'ground-truth' });
         await game.newRun('Air Check');
         await game.act(`I travel to ${where}`);
         const said = (await game.act('I look around')).narration ?? '';
-        const m = said.match(AIR);
-        return m ? m[1] : '(nothing said about the air)';
+        const m = said.match(QI);
+        return m ? m[1] : '(nothing said about the qi)';
     }
 
     it('says thick ground is thick and thin ground is thin', async () => {
         // Declared dense in the catalog, and the deepest vein in the province.
-        expect(await airAt('Nine Peaks')).toMatch(/thick enough to notice/i);
+        expect(await airAt('Nine Peaks')).toMatch(/thick enough to feel/i);
         // Declared thin: a ford town and a temple ground with no vein.
         expect(await airAt('Clear River Ford')).toMatch(/gives very little back/i);
         expect(await airAt('Burnt Earth')).toMatch(/gives very little back/i);

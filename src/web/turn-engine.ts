@@ -9339,9 +9339,51 @@ ${opened.text}` : receipt,
             ? []
             : whatThisRunHasPutAside(this.legacy.leftByRun(run.id));
 
+        // ── AND THE FOOD, WHICH IS THE THING PEOPLE ASK ABOUT MOST ──────
+        //
+        // FOUND BY PLAYING. After buying a YEAR OF RATIONS, this read answered
+        // *"Nothing in the pouch at all."* It knew about pills, herbs, objects,
+        // books and the yard, and not about the one thing a cultivator's life
+        // actually runs out of.
+        //
+        // Which made two defects out of one gap. "How many rations do I have"
+        // routed to the market - the game took somebody asking what they had to
+        // a SHOP - and routing it here instead would have answered a player
+        // carrying a year of food that they had nothing.
+        //
+        // The span is said with the count because they are different facts and
+        // the second is the one being asked about: how long twenty lasts
+        // depends on the body carrying them, since hunger tapers by rung. Both
+        // come off `survival.ts`, which is the same arithmetic the seclusion
+        // provisioning quotes, so the two cannot disagree.
+        // OFF `rationsHeld` AND THE PACK'S OWN ARITHMETIC. Not
+        // `cultivator.rationsRemaining`, which is the time-skip's end state and
+        // is not where the pack lives: rations are a flag, and `drawFromPack`
+        // is the one place that knows how many days one covers for this body.
+        // Two answers to "how much food is there" is how a read comes to
+        // disagree with the thing it is reading.
+        const rations = this.rationsHeld(cultivator);
+        const multiplier = satietyBurnMultiplier(cultivator.realmOrdinal, cultivator.injuries);
+        const perRation = multiplier > 0
+            ? Math.max(1, Math.floor(ACTIONS_PER_FULL_SATIETY / multiplier))
+            : Infinity;
+        const bellyCovers = multiplier > 0
+            ? Math.floor(cultivator.satiety / (SATIETY_COST_PER_ACTION * multiplier))
+            : Infinity;
+        const fedFor = Number.isFinite(perRation) ? rations * perRation + bellyCovers : Infinity;
+
         const lines: string[] = [];
+        if (rations > 0) {
+            lines.push(
+                `Food: ${rations} ration${rations === 1 ? '' : 's'}`
+                + (Number.isFinite(fedFor)
+                    ? `, which at ${theRung(cultivator.realmOrdinal)} is about `
+                      + `${humanDays(Math.round(fedFor))} of eating.`
+                    : ', and a body at this rung has stopped needing them.')
+            );
+        }
         if (pills.length === 0 && herbs.length === 0 && carried.length === 0
-            && books.length === 0 && yard.length === 0) {
+            && books.length === 0 && yard.length === 0 && rations === 0) {
             // "Nothing at all" would be a lie with a cache in the ground, and
             // it is exactly the lie this read was ruled against: technically
             // true, and it sends the player away.
