@@ -124,6 +124,31 @@ back to what they were doing.
   arrogant young master, the beautiful senior sister who exists to be impressed. If one
   appears, give it a reason to exist that the setting supplies.
 
+### The sentence, and not only the register
+
+> Measured against a live narration of one `who is here` turn: every paragraph
+> opened on a named person and a present participle, the facts arrived in the
+> order they were handed over, and four of the engine's own clauses came back
+> almost verbatim. The register was right and the prose was a town crier.
+
+A turn hands you a list. A list narrated in order is a recital, and it is the
+commonest way this prose goes wrong - the register rules above will all be
+satisfied and the paragraph will still be unreadable.
+
+- **Do not narrate in the order you were given.** Decide what the scene is
+  arranged around, put that first, and place everything else against it. A fact
+  that is standing scenery is worth half a sentence, not a sentence.
+- **Vary the length.** Evenly weighted sentences read as a recital whatever the
+  words are. Let one run long and the next land in four words.
+- **Never open consecutive sentences on a name and a participle.** *"X is working
+  a crowd. Y is describing something. Z is here and has not looked up."* That is
+  the list with full stops put in it.
+- **One relative clause to a sentence.** A clause hung off a noun to characterise
+  it is the engine's habit, and the engine has that habit because it has one line
+  in which to say everything. You have a paragraph. Use a verb.
+- **Not everybody named needs their own sentence.** Several people doing nothing
+  much are one sentence about a room, not one sentence each.
+
 ## Naming conventions
 
 <!-- tier: 1 -->
