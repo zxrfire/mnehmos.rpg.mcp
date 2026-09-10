@@ -168,6 +168,59 @@ export function clearPendingSummons(repos: CultivationRepos, cultivatorId: strin
 }
 
 /**
+ * Who put the ask, and whose word it is, which are two facts and were printed
+ * as one.
+ *
+ * The screen said `Shu Wanping asked, and it is still standing` and three lines
+ * later `Saying no costs 14 standing with Azure Dew Sect`. Measured in play,
+ * and the two sentences disagree about whose ask it is: a reader cannot tell
+ * whether Shu Wanping wants this or the house does, and that is exactly the
+ * distinction `authority-for-an-order.ts` exists to draw - an order given in
+ * the house's name and a favour asked in person are different things and the
+ * second buys less.
+ *
+ * WHAT THE ENGINE ACTUALLY HOLDS TODAY, so nothing here invents the other half:
+ * every summons is the house's. `mouthFor` in `encounters/window.ts` picks a
+ * senior off the roll to CARRY an ask the house drew, and there is no path
+ * anywhere that produces an elder's own errand - the only person-to-player ask
+ * in the engine is `ContactKind` `'asked'`, which fires at `above <= -2` and is
+ * therefore always somebody junior. So the `personal` half of `AuthorityClaim`
+ * has no producer on this side, and this function reports the house's word
+ * rather than guessing at one.
+ */
+export interface WhoIsAsking {
+    /** The person who carried it, where one did. */
+    mouth: string | null;
+    /** Whose word it is. */
+    authority: string;
+    /** What to call whoever the player is answering, in a sentence. */
+    said: string;
+    /** Engine truth, one line. */
+    line: string;
+}
+
+export function whoIsAsking(duty: Duty): WhoIsAsking {
+    const house = duty.factionName ?? 'the house';
+    const mouth = duty.spokenBy?.name ?? null;
+    if (mouth === null) {
+        return {
+            mouth: null,
+            authority: house,
+            said: house,
+            line: `${house} sent for you, and sent nobody to say it.`
+        };
+    }
+    return {
+        mouth,
+        authority: house,
+        said: mouth,
+        line: `${mouth} carried it. The word is ${house}'s and not ${mouth}'s own: the terms `
+            + `are the house's terms, and refusing goes on the house's ledger rather than `
+            + `between the two of you.`
+    };
+}
+
+/**
  * Whether the day it had to be answered by has gone.
  *
  * `dueOnDay` is the duty layer's own field and is set when the ask is made.

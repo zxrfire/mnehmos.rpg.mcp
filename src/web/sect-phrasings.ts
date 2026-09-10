@@ -44,6 +44,12 @@ export type SectIntent =
      */
     | 'summons'
     /**
+     * Saying yes to it, which is the answer the whole mechanism was missing.
+     * `acceptDuty` had one caller - the noticeboard - so a house could send for
+     * somebody by name and the only sentence they had back was no.
+     */
+    | 'accept'
+    /**
      * Saying no to it.
      */
     | 'refuse'
@@ -91,6 +97,39 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // is the whole point of a petition was never written. Bare "what am I owed" is
     // untouched and still reaches the read.
     ['stipend', /\b(?:stipend|allowance|my dues|collect my pay|draw my pay|(?<!for )what (?:i am|i'm) owed)\b/],
+    // ── SAYING YES, WHICH HAD NO WORDS AT ALL ────────────────────────────
+    //
+    // Measured in play: a senior of the house came in person, named the work,
+    // the days, the pay and what declining would be written down as - and "I
+    // accept", "I accept and go", "I obey", "I will go", "I do as I am told"
+    // and "I answer the summons" were six blank looks. The only answer the
+    // game had to an order was to refuse it.
+    //
+    // AHEAD OF THE `summons` ROW BECAUSE ASKING IS NOT DOING. That row takes
+    // `what ... asked of me`, and `what` is a relative pronoun as often as it
+    // is a question word: "I do what the elder asked of me" was answered with
+    // the price of refusing, which is the confident opposite of what was said.
+    // The doing forms are all subject-first and no question wears one.
+    //
+    // `it`, `that` and `this` are safe here for the reason the `ignore` row
+    // below gives: `pending-summons.ts` allows exactly ONE standing ask, so
+    // the pronoun has one referent.
+    //
+    // `the duty` is deliberately NOT an object here. It is the board's own
+    // word - "I accept the duty" has meant taking a line off the wall since
+    // that verb was written - and claiming it would answer somebody standing
+    // at a noticeboard by telling them nobody has sent for them.
+    ['accept', new RegExp(
+        String.raw`\b(?:accept|accepts|accepting|agree|agrees|agreeing|consent|consents)\s+(?:to\s+)?(?:it|that|this|the summons|the call|the order|the errand|the task|the assignment|the posting|the sending)\b`
+        + String.raw`|\bi\s+(?:accept|agree|consent)\b\s*(?:and\s+(?:go|do it|set out|leave))?\s*[.!?]?$`
+        + String.raw`|\b(?:obey|obeys|obeying|comply|complies|complying)\b`
+        + String.raw`|\bdo\s+(?:as|what)\s+(?:i\s+(?:am|was)\s+)?(?:told|bid|asked|instructed|ordered)\b`
+        + String.raw`|\bi\s+(?:do|will do|shall do|go and do)\s+(?:as|what)\s+(?:the|my|our|she|he|they)\b[^.!?]*\b(?:asked|ordered|instructed|told|wanted|said)\b`
+        + String.raw`|\banswer(?:s|ing)?\s+(?:the\s+)?(?:summons|call|sending)\b`
+        + String.raw`|\bi\s+(?:will|shall)\s+go\s*[.!?]?$`
+        + String.raw`|\bgo\s+(?:as\s+(?:ordered|instructed|told|asked)|when\s+(?:the|my|our)\s+\w+\s+(?:calls|sends|asks))\b`
+        + String.raw`|\bi\s+take\s+it\s+on\b`
+    )],
     // ANSWERING A SUMMONS, AND SAYING NO TO ONE
     // A SUMMONS IS ALWAYS THE PLAYER'S OWN. "what happens if he refuses" is the
     // condition on a threat, and it reached this row because the row asks only

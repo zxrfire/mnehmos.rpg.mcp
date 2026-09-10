@@ -410,6 +410,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             // Dispatched on by the engine and undeclared until now, so the phase-1
             // glossary never told a model they existed and nothing typed reached them.
             'summons', 'refuse',
+            // And saying YES, which had no words at all until it was measured:
+            // `acceptDuty` had one caller, the board, so a house could send for
+            // somebody by name and the only answer they had was to refuse.
+            'accept',
             // And saying NOTHING to it, which is a third answer and not a
             // softer second one: refusing spends standing today, ignoring
             // spends nothing until the due day goes and then lands as a lapse.
@@ -420,8 +424,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty"
             to take something off the mission board, "donate" to pay into the ledger, "guest"
             to sit in at a house that has not taken you, "leave" to resign, "summons" to ask
-            what the house has asked of you, "refuse" to answer it no and "ignore" to answer
-            it not at all, and "siphon",
+            what the house has asked of you, "accept" to answer it yes and go, "refuse" to
+            answer it no and "ignore" to answer it not at all, and "siphon",
             "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above
             a disciple buy. Default to the read - "standing" - unless the player plainly asked
             for a step, because joining is a life's worth of allegiance and cannot be unsaid.`

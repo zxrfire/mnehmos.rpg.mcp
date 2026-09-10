@@ -858,6 +858,15 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I turn them down',
             'I will not go'
         ],
+        // AND SAYING YES, WHICH THE GAME HAD NO WORD FOR AT ALL. `acceptDuty`
+        // had one caller - the noticeboard - so a house could send for somebody
+        // by name and the only answer they had back was a refusal. See
+        // `the-only-answer-to-an-order-was-no.test.ts`.
+        'sect/accept': [
+            'I accept and go',
+            'I obey',
+            'I answer the summons'
+        ],
         // SAYING NOTHING IS ITS OWN DOOR. `I ignore the summons` sat under
         // `refuse` above and now has a verb of its own, because refusing spends
         // standing today and ignoring spends nothing until the due day goes.

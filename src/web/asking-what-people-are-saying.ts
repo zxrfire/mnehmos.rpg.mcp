@@ -24,6 +24,7 @@ import type {
     Severity
 } from '../engine/social/grudges.js';
 import { SEVERITY_ORDER } from '../engine/social/grudges.js';
+import { rumoursSpeakableBy } from '../data/cultivation/rumours-and-what-they-get-wrong.js';
 import {
     whatBeingToldOpens,
     type TheDeedAsItStands,
@@ -135,7 +136,31 @@ export function askAround(input: AskAroundInput): AskedAround {
         }
     }
 
-    if (heard.length === 0) return nothingInTheAir();
+    // ── AND WHAT PEOPLE SAY WHEN NOTHING HAS HAPPENED ────────────────────
+    //
+    // `whatTheySay` propagates EVENTS, so a square no event has reached is a
+    // square where nobody says anything - which is false about people. They
+    // still talk, and what they talk about is the powers above them.
+    //
+    // `rumours-and-what-they-get-wrong.ts` is fifty-nine authored sayings for
+    // exactly this, and no player had ever heard one. Its own header says what
+    // it is for and names the file it is the other half of: *that table
+    // answers which name could this speaker say; this one answers and what
+    // would they say about it, including the very common case where the answer
+    // is confidently false*. Half of them are wrong on purpose, which is the
+    // point - `discovery.md` puts the whole burden of the player's education
+    // onto other people's mouths, and a road that carried nothing but correct
+    // proper nouns would be a briefing with a tavern painted on it.
+    //
+    // BELOW THE EVENTS AND NEVER INSTEAD OF THEM. A thing that actually
+    // happened near enough to reach here is the better answer and keeps its
+    // place; this is what fills the silence, which is where the old answer was
+    // `nobody here has heard anything worth repeating`.
+    if (heard.length === 0) {
+        const ambient = whatTheyBelieveHere(askable, region, rng);
+        if (ambient) return ambient;
+        return nothingInTheAir();
+    }
 
     return {
         heard,
@@ -312,6 +337,82 @@ function nobodyToAsk(crowd: number): AskedAround {
 }
 
 /** People, but nothing worth their breath. A young world, or a quiet corner. */
+/**
+ * WHAT THE PEOPLE STANDING HERE BELIEVE, WHEN NOTHING HAS HAPPENED.
+ *
+ * One saying, from one person, gated on what that person could plausibly hold:
+ * `rumoursSpeakableBy` is the catalog's own reader for that and takes the
+ * standing and the house, so a farmhand does not repeat what only an inner
+ * disciple would know.
+ *
+ * ONLY `saying` EVER LEAVES THIS FUNCTION. The row also carries `underneath`,
+ * which is what is actually the case, and `accuracy`, which says whether the
+ * speaker is wrong. Neither reaches the player and neither reaches the
+ * narrator: the schema says so in the field's own comment - *this is the only
+ * field a player is ever given* - and a saying the player has been told is
+ * false is not hearsay, it is a briefing.
+ *
+ * The name is handed over where the saying names something, so what the player
+ * ends up holding is a name attached to a story that may be wrong. That is the
+ * file's whole thesis, and the knowledge layer already has the slot for it:
+ * `SpeakableName.statement` is *what the holder ends up holding, when the
+ * default sentence will not do*, and the default sentence is `X exists`.
+ *
+ * At `whisper`, which is the stage a thing somebody said in a square is worth.
+ */
+function whatTheyBelieveHere(
+    askable: readonly RosterEntry[],
+    regionId: string | null,
+    rng: ReturnType<typeof forStream>
+): AskedAround | null {
+    const speaker = askable[0];
+    if (!speaker) return null;
+
+    const could = rumoursSpeakableBy(speaker.realmOrdinal, speaker.sectId);
+    if (could.length === 0) return null;
+
+    // Weighted to the ground the speaker is standing on, and never limited to
+    // it: `regionId` on a row is documented as weight and not exclusion,
+    // because what people repeat about somewhere else is most of what anybody
+    // ever hears about somewhere else.
+    const local = could.filter(r => r.regionId !== null && r.regionId === regionId);
+    const pool = local.length > 0 && rng.chance(0.6) ? local : could;
+    const rumour = pool[Math.floor(rng.next() * pool.length)];
+    if (!rumour) return null;
+
+    const names: SpeakableName[] = rumour.aboutId === null ? [] : [{
+        kind: 'faction' as KnownEntityKind,
+        id: rumour.aboutId,
+        name: rumour.aboutName ?? rumour.aboutId,
+        stage: 'whisper' as const,
+        statement: rumour.saying
+    }];
+
+    const prose = `${speaker.name} says: ${rumour.saying}`;
+    return {
+        heard: [],
+        hearings: [{
+            mode: 'told',
+            speaker: speaker.name,
+            names,
+            // Provenance, and no verdict. `saidBy` is the KIND of person who
+            // holds this, which is a fact about the saying rather than about
+            // whether it is true.
+            note: `Held here rather than heard from anywhere. The sort of thing said by `
+                + `${rumour.saidBy}.`,
+            // Low, and it is not a distortion band: nobody is repeating an
+            // event badly, they are telling the player what they believe.
+            confidence: 0.2,
+            sourceKind: 'told',
+            stage: 'whisper',
+            prose
+        }],
+        prose: `${prose} It is what people here believe, and you have no way to weigh it.`,
+        lines: [prose],
+        opens: []
+    };
+}
+
 function nothingInTheAir(): AskedAround {
     const prose = 'You ask around. Nobody here has heard anything they think is worth '
         + 'repeating, which mostly means nothing has happened near enough to reach them.';

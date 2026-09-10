@@ -90,7 +90,7 @@ import { round2, writeAdminAudit,
 } from '../server/consolidated/cultivation-support.js';
 import { setDb } from '../storage/index.js';
 import { resetCultivationWorlds } from '../server/state/cultivation-world.js';
-import { SECTS, getSect, getTechnique } from '../data/cultivation/index.js';
+import { SECTS, getEncounter, getSect, getTechnique } from '../data/cultivation/index.js';
 import {
     IMMORTAL_ITEMS,
     ImmortalGradeSchema,
@@ -297,11 +297,15 @@ import {
 // through. Nothing about a refusal is resolved here - this file chooses which
 // branch and composes the sentence.
 import { resolveAct } from '../engine/cultivation/leadership.js';
+// The band a duty is pitched at, read the way `duties.ts` reads it rather than
+// recomputed: the board already prints it and a summons never did.
+import { regardFor } from '../engine/cultivation/regard.js';
 import {
     clearPendingSummons,
     priceOfRefusing,
     readPendingSummons,
-    summonsIsOverdue
+    summonsIsOverdue,
+    whoIsAsking
 } from './pending-summons.js';
 // Taking a thing the house owns. The act and the reasoning are there; what is
 // here is the sentence, the two facts about the played world a pure function
@@ -4949,6 +4953,12 @@ ${noticed}`;
             // Answering the house, or not, or not yet.
             case 'summons':
                 return this.refuseWhatTheHouseAsked(run, cultivator, 'asking');
+
+            // Saying yes. `acceptDuty` had one caller before this - the board -
+            // so the house could send for somebody and the only sentence they
+            // had back was a refusal.
+            case 'accept':
+                return this.goWhereTheHouseSentYou(run, cultivator, ambient);
 
             case 'refuse':
                 return this.refuseWhatTheHouseAsked(run, cultivator, 'refusing');
@@ -10712,7 +10722,8 @@ ${fit.line}`;
 
         const duty = pending.duty;
         const overdue = summonsIsOverdue(pending, today);
-        const whoAsked = duty.spokenBy ? duty.spokenBy.name : duty.factionName ?? 'the house';
+        const asking = whoIsAsking(duty);
+        const whoAsked = asking.said;
 
         // Saying nothing is only an answer once the day has gone. Until then
         // the ask is still standing, and the honest reply is the price of the
@@ -10726,6 +10737,8 @@ ${fit.line}`;
                     ? `You say nothing, and nothing is what the house has heard. It is still `
                       + `standing: ${pending.what}`
                     : `${whoAsked} asked, and it is still standing: ${pending.what}`,
+                // WHOSE ASK IT IS, WHICH THE SCREEN USED TO LEAVE OPEN.
+                asking.line,
                 `${duty.days} days, ${duty.contribution} contribution and ${duty.stones} spirit `
                 + `stone${duty.stones === 1 ? '' : 's'} on completion`
                 + (duty.cohort > 0 ? `, with ${duty.cohort} of the house alongside` : '')
@@ -10866,6 +10879,200 @@ ${fit.line}`;
             action: 'sect',
             summary: `${pending.entryId} ${overdue ? 'lapsed' : 'refused'}. ${walked.line}`,
             ok: false
+        });
+        return execution;
+    }
+
+    /**
+     * Going where the house sent you.
+     *
+     * ── THE ONLY ANSWER THE GAME HAD TO AN ORDER WAS NO ──────────────────
+     *
+     * Measured in a played world: a senior of the player's own house arrives in
+     * person, names the work, the term, the pay and what declining is written
+     * down as - and `I accept`, `I accept and go`, `I obey`, `I will go`, `I do
+     * as I am told` and `I answer the summons` were six blank looks.
+     * `acceptDuty` had exactly one caller in the repository, the noticeboard,
+     * so the house could send for somebody by name and there was nothing they
+     * could say back except to refuse.
+     *
+     * Nothing below is new machinery. It is the board's own procedure - oath,
+     * span, settle - pointed at the ask that was already standing, and it says
+     * one thing the board's does not: WHOSE work this is. A line off the wall
+     * is work you signed for; this is work the house came and put on you, and
+     * `whoIsAsking` is what separates the person who carried it from the
+     * authority behind it.
+     *
+     * ── THE ORDER OF THE THREE WRITES IS LOAD-BEARING ────────────────────
+     *
+     * The oath goes down before the span, for the board's own reason: a run
+     * that ends in the middle has to leave a standing obligation somebody can
+     * read in forty years. The FLAG is cleared before the span too, and that
+     * one is this verb's: `shortSkip` rolls encounters, and an encounter can be
+     * another summons - so a clear afterwards would throw away an ask the house
+     * made while the player was away.
+     *
+     * ── AND GOING LATE IS ALLOWED, AND SAID ──────────────────────────────
+     *
+     * `dueOnDay` is the day it had to be answered or finished by, and nothing
+     * clears the ask when it passes - only an answer does. So a player can say
+     * yes to something whose term has already run out. That is permitted here
+     * and stated in the answer rather than silently priced: what lateness
+     * should cost is a design question and there is no number in the engine
+     * for it. Refusing and lapsing both have one; going late does not.
+     */
+    private async goWhereTheHouseSentYou(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi
+    ): Promise<Execution> {
+        const today = Math.floor(run.elapsedDays);
+        const pending = readPendingSummons(this.repos, cultivator.id);
+
+        // NOBODY ASKED. The mirror of the refusal's own answer, and it points
+        // at the wall, because somebody saying yes to nothing is somebody who
+        // wants work.
+        if (!pending) {
+            const held = positionIn(this.repos, cultivator.id);
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'Nothing is being asked of you.',
+                held
+                    ? `${held.sectName} has not sent for you, so there is nothing to agree to. `
+                      + 'What is going is on the wall, and taking a line off it is a different '
+                      + 'act: you sign for that one.'
+                    : 'You belong to nothing. Nobody sends for somebody they have no claim on.',
+                `No summons flag for ${cultivator.id}`
+                + `${held ? ` at ${held.sectId}` : '; no membership'}. `
+                + 'Read only, nothing written, no turn spent.'
+            ));
+        }
+
+        const duty = pending.duty;
+        const asking = whoIsAsking(duty);
+        const overdue = summonsIsOverdue(pending, today);
+        const band = regardFor(duty.pitchOrdinal, cultivator.realmOrdinal).band;
+        const what = `${pending.what} Answered on day ${today}.`;
+        const ledger: DutyLedgerInput = {
+            repos: this.repos,
+            cultivator,
+            duty,
+            onDay: today,
+            entryId: pending.entryId,
+            what
+        };
+
+        acceptDuty(ledger);
+        clearPendingSummons(this.repos, cultivator.id);
+
+        // The catalog's own name for the work. The label is read back into
+        // prose - "Sect duty: X of 12 days was intended" - so anything but a
+        // noun phrase comes out as a broken sentence, which is how the first
+        // cut of this read.
+        const called = getEncounter(pending.entryId)?.name ?? pending.entryId;
+
+        const execution = await this.shortSkip(
+            run, cultivator, ambient, DUTY_FOCUS, `Sect duty: ${called}`,
+            duty.days, 'labour'
+        );
+
+        const after = this.repos.cultivators.getById(cultivator.id)!;
+        const doneOn = Math.floor(this.repos.runs.getById(run.id)!.elapsedDays);
+        const settlement: DutyLedgerInput = { ...ledger, cultivator: after, onDay: doneOn };
+
+        if (after.alive) {
+            const settled = completeDuty(settlement);
+            sayThisWhateverTheNarratorDoes(execution.facts, settled.line);
+            execution.facts.structure.push(
+                `encounters.completeDuty: obligation ${settled.obligation.id} fulfilled; `
+                + `contribution +${settled.contribution}, stones +${settled.stones}.`
+            );
+            execution.calls.push({
+                name: 'encounters.completeDuty',
+                action: 'sect',
+                summary:
+                    `${pending.entryId} completed. ${settled.contribution} contribution credited `
+                    + `and ${settled.stones} spirit stone(s) paid, both off the duty's own terms.`,
+                ok: true
+            });
+
+            const said = this.atHand
+                ? aDeedEntersTheWorld(this.atHand, {
+                    kind: 'opportunity',
+                    weight: isImpossibleTier(band) ? 'grave'
+                        : band === 'stretch' ? 'serious' : 'slight',
+                    day: Math.floor(this.atHand.currentDay),
+                    locationId: this.worldPlaceOf(cultivator),
+                    place: placeName(cultivator),
+                    actors: [{ id: cultivator.id, name: cultivator.name, role: 'was sent, and went' }],
+                    factionIds: duty.factionId ? [duty.factionId] : [],
+                    summary:
+                        `${duty.factionName ?? 'A house'} sent ${cultivator.name} out on `
+                        + `${pending.entryId} - ${tierNameFor(band).toLowerCase()} at `
+                        + `${rankName(duty.pitchOrdinal)} - and they went and finished it in `
+                        + `${humanDays(duty.days)}.`,
+                    unattributed:
+                        'A house asked somebody for something and did not have to ask twice.',
+                    data: {
+                        duty: pending.entryId,
+                        tier: band,
+                        pitchOrdinal: duty.pitchOrdinal,
+                        days: duty.days
+                    }
+                })
+                : null;
+            if (said) {
+                this.theWorldMoved();
+                execution.facts.structure.push(
+                    `world.aDeedEntersTheWorld: ${said.fact.id} (opportunity, ${said.weight}, `
+                    + `magnitude ${said.fact.magnitude.toFixed(2)}, ${said.fact.visibility}).`
+                );
+            }
+        } else {
+            const walked = refuseDuty({ ...settlement, outcome: 'failed' });
+            sayThisWhateverTheNarratorDoes(execution.facts, walked.line);
+            execution.calls.push({
+                name: 'encounters.refuseDuty',
+                action: 'sect',
+                summary: `${pending.entryId} not finished. ${walked.line}`,
+                ok: false
+            });
+        }
+
+        // ── WHAT THE PLAYER READS FIRST, AND KEEPS ───────────────────────
+        //
+        // Ahead of the span, because the answer to "I accept" is what was
+        // accepted and on whose word, not what the weather was on the road.
+        // In `required` as well as in `lines` for the reason `facts.ts` gives:
+        // that is the only channel a narrator cannot drop, and the first cut of
+        // this put four sentences in `lines` alone and printed none of them.
+        const opening = [
+            `You tell ${asking.said} yes, and go. ${called}: ${duty.days} days, `
+            + `${duty.contribution} contribution and ${duty.stones} spirit `
+            + `stone${duty.stones === 1 ? '' : 's'} on completion`
+            + (duty.cohort > 0 ? `, with ${duty.cohort} of the house alongside` : '')
+            + '.',
+            asking.line,
+            ...(overdue
+                ? [`The day it had to be answered by was day ${duty.dueOnDay}, and it has gone. `
+                    + 'You went anyway, and the house has the day you answered on.']
+                : [])
+        ];
+        execution.facts.lines.unshift(...opening);
+        execution.facts.required = [...opening, ...(execution.facts.required ?? [])];
+        execution.facts.structure.push(
+            `pending-summons: ${pending.entryId} accepted on day ${today}, spoken by `
+            + `${asking.mouth ?? 'nobody in person'} on ${asking.authority}'s authority, `
+            + `origin=${duty.origin} posture=${duty.posture} scale=${duty.scale} `
+            + `overdue=${overdue}. The flag is cleared before the span, so an ask made while `
+            + 'they were away survives.'
+        );
+        execution.calls.unshift({
+            name: 'encounters.acceptDuty',
+            action: 'sect',
+            summary:
+                `${pending.entryId} taken on: ${duty.days} day(s), due on day ${duty.dueOnDay}. `
+                + 'An oath row, held by the person who swore it.',
+            ok: true
         });
         return execution;
     }
