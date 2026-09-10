@@ -3067,6 +3067,10 @@ export class GameService {
                 // `how-a-blow-was-thrown.ts`.
                 return this.attack(
                     run, cultivator, ambient, action.target, action.thrown, false,
+                    // The art the sentence named, where it named one. Before
+                    // this the engine picked one on the player's behalf and
+                    // the name went into the target.
+                    action.withArt,
                     action.terms ?? 'open', action.opening ?? 'open'
                 );
 
@@ -3097,7 +3101,8 @@ export class GameService {
                     }
                 }
                 return this.attack(
-                    run, cultivator, ambient, action.target, action.thrown, true, 'open',
+                    run, cultivator, ambient, action.target, action.thrown, true,
+                    action.withArt, 'open',
                     action.opening ?? 'open', action.intent ?? 'submit',
                     // The thing the sentence named. Read only where somebody
                     // yields and something has to be chosen; the resolver never
@@ -3112,7 +3117,8 @@ export class GameService {
                 // `coerce` in `actions.ts` for why it is its own verb and not a
                 // second door onto `threaten`.
                 return this.attack(
-                    run, cultivator, ambient, action.target, action.thrown, true, 'open',
+                    run, cultivator, ambient, action.target, action.thrown, true,
+                    action.withArt, 'open',
                     action.opening ?? 'open', action.intent ?? 'submit'
                 );
 

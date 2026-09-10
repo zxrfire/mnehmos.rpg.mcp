@@ -9,6 +9,7 @@ import {
 import { openHandednessOf } from '../engine/social-leverage/how-freely-somebody-parts-with-what-they-have.js';
 import { whatSomebodyIsLike } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { getApexInstitution, getCourt } from '../data/cultivation/hierarchy.js';
+import { resolveTechnique } from './entities.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { getPill, getSect, getTechnique } from '../data/cultivation/index.js';
 import { requireRegion } from '../data/cultivation/regions.js';
@@ -254,6 +255,8 @@ export const combatVerbs = {
         thrown: HowTheBlowWasThrown | undefined,
         /** Force applied to get compliance rather than to end anybody. */
         toMakeThemComply: boolean,
+        /** The art the sentence named, where it named one. */
+        withArt: string | undefined,
         terms: BoutTerms = 'open',
         /**
          * How the fight was opened. Passed straight to the resolver, which
@@ -287,7 +290,7 @@ export const combatVerbs = {
         const asASet = theSetThisNames(query);
         if (asASet) {
             return await this.attackOverASet(
-                cultivator, asASet, thrown, toMakeThemComply, terms, opening, wanted, named
+                cultivator, asASet, thrown, toMakeThemComply, withArt, terms, opening, wanted, named
             );
         }
 
@@ -461,7 +464,30 @@ export const combatVerbs = {
         // What they are actually swinging. Absent until it was added, so every
         // played fight was fought bare by somebody holding a manual - see
         // `artTheyWouldFightWith`.
-        const techniqueId = this.artTheyWouldFightWith(cultivator) ?? null;
+        // ── AND THE ART THEY NAMED WINS OVER THE ONE WE WOULD PICK ──────
+        //
+        // FOUND BY PLAYING. "I attack him with Cross-Meridian Strike" put the
+        // art into the TARGET - the person came back as `him with
+        // Cross-Meridian Strike` - and this line then chose an art on the
+        // player's behalf regardless. So naming one did nothing twice over: the
+        // sentence lost it and the engine overrode it.
+        //
+        // Every one of the catalog's 41 attack arts was reachable to learn and
+        // unreachable to aim.
+        //
+        // A NAME THAT RESOLVES TO NOTHING FALLS BACK rather than refusing. The
+        // player may have misremembered, or be naming an art they have not
+        // learned, and `artTheyWouldFightWith` already answers "what would this
+        // person actually swing" - which is the honest answer to a fight
+        // somebody is already in.
+        //
+        // Resolved against what this cultivator ACTUALLY HOLDS, which is what
+        // `resolveTechnique` scopes itself to. Naming an art you have only
+        // heard of is not a way to swing it.
+        const namedArt = withArt !== undefined
+            ? resolveTechnique(this.repos, withArt, cultivator.id)?.id ?? null
+            : null;
+        const techniqueId = namedArt ?? this.artTheyWouldFightWith(cultivator) ?? null;
         const selfBody = combatantFromCultivator(
             cultivator, this.repos, techniqueId ?? undefined
         );
@@ -829,6 +855,7 @@ export const combatVerbs = {
         set: SetShape,
         thrown: HowTheBlowWasThrown | undefined,
         toMakeThemComply: boolean,
+        withArt: string | undefined,
         terms: BoutTerms = 'open',
         opening: 'open' | 'from_concealment' = 'open',
         wanted?: string,
@@ -842,7 +869,7 @@ export const combatVerbs = {
                 const now = this.currentRun();
                 return this.attack(
                     now.run, now.cultivator, this.ambientFor(now.cultivator, now.run),
-                    member.name, thrown, toMakeThemComply, terms, opening, wanted, named
+                    member.name, thrown, toMakeThemComply, withArt, terms, opening, wanted, named
                 );
             },
             {

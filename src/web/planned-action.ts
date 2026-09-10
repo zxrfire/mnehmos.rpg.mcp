@@ -108,6 +108,20 @@ export const PlannedActionSchema = z.object({
      * a winner; what it decides is what the blow can reach, which the engine
      * then weighs against the body it landed on.
      */
+    /**
+     * THE ART THEY NAMED, when they named one.
+     *
+     * FOUND BY PLAYING. "I attack him with Cross-Meridian Strike" extracted the
+     * target as `him with Cross-Meridian Strike` - the art was folded into the
+     * person's name, so it resolved to nobody clean AND was never read as an
+     * art. `combat-verbs.ts` then called `artTheyWouldFightWith(cultivator)`
+     * and picked whatever it liked.
+     *
+     * So naming an art in a fight did nothing at all, twice over: the sentence
+     * lost the art and the engine chose for you. Every one of the 41 attack
+     * arts in the catalog was reachable to learn and unreachable to AIM.
+     */
+    withArt: z.string().trim().min(2).max(80).optional(),
     thrown: z.object({
         with: z.enum(['in_hand', 'open_hand', 'fist', 'blunt', 'edge', 'art']),
         at: z.enum([
@@ -255,6 +269,9 @@ export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } 
     // merge below carries it across - but a model that does say how somebody
     // struck has said something true, and dropping it would cost the reading.
     if (parsed.data.thrown && name === 'attack') action.thrown = parsed.data.thrown;
+    if (parsed.data.withArt && (name === 'attack' || name === 'coerce')) {
+        action.withArt = parsed.data.withArt;
+    }
 
     if (TIMED_ACTIONS.includes(name)) {
         action.days = days ?? (
@@ -345,6 +362,14 @@ export function carryWhatOnlyTheSentenceKnows(
     // than a shove - which is the exact defect this replaced.
     if (merged.thrown === undefined && fromSentence.thrown !== undefined) {
         merged.thrown = fromSentence.thrown;
+    }
+
+    // AND THE ART THEY NAMED. Same reasoning as `thrown`: a model asked to
+    // plan "I attack him with Cross-Meridian Strike" returns `attack` and a
+    // target, and says nothing about the art - so without this the parser's
+    // reading is thrown away and the engine picks for the player again.
+    if (merged.withArt === undefined && fromSentence.withArt !== undefined) {
+        merged.withArt = fromSentence.withArt;
     }
 
     // WHAT THE COMPLIANCE WAS FOR

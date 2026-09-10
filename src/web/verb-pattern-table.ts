@@ -2274,8 +2274,38 @@ const THE_PART_IS_NOT_THE_PERSON = [
     // The adverb is read off the whole sentence by `howMuchWasBehindIt`, which
     // is where it belongs; here it is noise on the end of a name.
     /\s+(?:hard|hardest|violently|savagely|brutally|lightly|gently|softly|quickly|twice|again|once)\s*$/i,
+    // AND THE ART IS NOT PART OF THE NAME EITHER. "I attack him with
+    // Cross-Meridian Strike" extracted `him with Cross-Meridian Strike`, which
+    // resolves to nobody. The art is read off the sentence by
+    // `theArtTheyNamed` and carried on its own field.
+    /\s+(?:with|using)\s+(?:the\s+|my\s+)?[A-Za-z][\w'-]*(?:[\s-][\w'-]+)*\s*$/i,
     /\s+down\s*$/i
 ];
+
+/**
+ * THE ART THEY NAMED IN THE SENTENCE, when they named one.
+ *
+ * FOUND BY PLAYING. "I attack him with Cross-Meridian Strike" came back with
+ * the target `him with Cross-Meridian Strike` - the art folded into the
+ * person's name, so it resolved to nobody clean and was never read as an art
+ * either. `combat-verbs.ts` then asked `artTheyWouldFightWith` and picked
+ * whatever it liked, so naming one did nothing at all.
+ *
+ * Every one of the catalog's 41 attack arts was reachable to LEARN and
+ * unreachable to AIM.
+ *
+ * Gated on a capitalised name for the same reason `train_technique` is: that is
+ * how the catalog spells them and how a player types them back. "I attack him
+ * with a sword" names no art and correctly returns nothing.
+ */
+const AN_ART_IN_A_SENTENCE =
+    /\b(?:with|using)\s+(?:the\s+|my\s+)?([A-Z][\w'-]*(?:[\s-][A-Z][\w'-]*)*)\s*[.!?]?$/;
+
+export function theArtTheyNamed(input: string): string | undefined {
+    const named = AN_ART_IN_A_SENTENCE.exec(input.trim());
+    const cleaned = (named?.[1] ?? '').trim();
+    return cleaned.length >= 3 ? cleaned.slice(0, 80) : undefined;
+}
 
 /**
  * WHO WAS STRUCK, once everything that is not a person has been taken off.
@@ -2954,6 +2984,9 @@ function planIntent(input: string): PlannedAction {
             // fight nor a person - the manner is read off the whole sentence by
             // `OPENED_FROM_COVER` and does not belong in the target.
             target: theOneStruck(input),
+            ...(theArtTheyNamed(input) !== undefined
+                ? { withArt: theArtTheyNamed(input) }
+                : {}),
             ...(OPENED_FROM_COVER.test(text) ? { opening: 'from_concealment' as const } : {}),
             // SAYING HOW IS SAYING HOW, NOT SAYING HOW FAR.
             //
@@ -3731,6 +3764,23 @@ function planIntent(input: string): PlannedAction {
         // thing three hundred lines up.
         || /\b(?:train|practi[cs]e|drill|rehearse|work on)\s+my\s+(?:art|technique|method|manual|form|style|kata|stance)\b/.test(text)
         || /\b(?:read|study|go (?:over|through))\b[^.?!]*\bmy (?:book|manual|art|technique|scripture|canon)\b/.test(text)
+        // ── AND AN ART CALLED BY ITS OWN NAME ────────────────────────────
+        //
+        // Every branch above needs an art NOUN - `art`, `technique`, `stance`,
+        // `form`. A proper name has none, so measured:
+        //
+        //     "I practise the sword art"          -> train_technique
+        //     "I practise Cross-Meridian Strike"  -> UNCLEAR
+        //
+        // Which means an art could be LEARNED by name - `learn_technique`
+        // accepts one, and every catalog art is named - and then never
+        // practised by that name again. The whole 111-art dao catalog was
+        // reachable to acquire and unreachable to drill.
+        //
+        // Gated on a capitalised name, which is how the catalog spells them and
+        // how a player types them back. Lower case falls to the noun branches
+        // above, so "I train hard" is untouched.
+        || /\b(?:practi[cs]e|practise|train|drill|rehearse|work on)\s+(?:the\s+|my\s+)?[A-Z][\w'-]*(?:[\s-][A-Z][\w'-]*)*/.test(input)
         || /^(?:i\s+)?(?:practi[cs]e|train|drill|spar)\s*[.!?]?$/.test(text)
         // SPARRING WITH SOMEBODY is a core activity of the genre and the safe
         // way to meet the combat system, and "I spar with someone" resolved to
