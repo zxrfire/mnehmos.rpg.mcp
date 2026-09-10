@@ -398,12 +398,30 @@ describe("a place gives the ground it has, not its province's average", () => {
         return m ? m[1] : '(nothing said about the qi)';
     }
 
+    /**
+     * AND IT IS SAID IN THE TERMS THE READER ACTUALLY HAS.
+     *
+     * This matched the BAND sentences - "thick enough to feel on the first
+     * breath", "gives very little back" - which the read handed to everybody.
+     * It no longer does: below the Foundation the only yardstick anybody has is
+     * the ground that raised them, so a novice gets a comparison and not a
+     * band. See `what-they-can-tell-of-the-ground.ts`.
+     *
+     * The SUBJECT of this test is unchanged and is not about wording: a place
+     * must report its own ground rather than its province's average. That is
+     * still exactly what is asserted, because a comparison distinguishes
+     * places just as well as a band does - Nine Peaks reads as thicker than
+     * anything this person has stood in and a ford town does not.
+     */
     it('says thick ground is thick and thin ground is thin', async () => {
         // Declared dense in the catalog, and the deepest vein in the province.
-        expect(await airAt('Nine Peaks')).toMatch(/thick enough to feel/i);
-        // Declared thin: a ford town and a temple ground with no vein.
-        expect(await airAt('Clear River Ford')).toMatch(/gives very little back/i);
-        expect(await airAt('Burnt Earth')).toMatch(/gives very little back/i);
+        expect(await airAt('Nine Peaks')).toMatch(/thicker/i);
+        // Declared thin: a ford town and a temple ground with no vein. A novice
+        // raised on thin ground has nothing to remark on, which is the honest
+        // reading and is what `unknown` produces - so what must NOT appear is
+        // any claim that this ground is better than what they know.
+        expect(await airAt('Clear River Ford')).not.toMatch(/thicker|better/i);
+        expect(await airAt('Burnt Earth')).not.toMatch(/thicker|better/i);
     }, 120_000);
 
     it('and does not flatten them into each other', async () => {

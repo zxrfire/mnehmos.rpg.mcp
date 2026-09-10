@@ -12230,12 +12230,37 @@ ${fit.line}`;
                 ? `${carried} ration${carried === 1 ? '' : 's'} came out of the pack` +
                   `${toBuy > 0 ? `, and ${toBuy} more was bought for ${cost} spirit stones` : ' and nothing had to be bought'}. `
                 : `${rations} ration${rations === 1 ? '' : 's'} bought for ${cost} spirit stones. `)
-                // AND WHAT IS LEFT, ON BOTH BRANCHES
+                // AND WHAT THE FOOD COVERS.
+                //
+                // NOT WHAT IS LEFT IN THE PURSE. This ended both branches with
+                // `${updated.spiritStones} stones left`, and `updated` is
+                // correct at the moment provisioning runs - which is BEFORE the
+                // stretch. Anything the years then did to the purse happened
+                // after this sentence was written, and both appear on the same
+                // screen.
+                //
+                // Measured over four seeds: one in four disagreed outright. The
+                // footer said `0 stones left` and the row held 16, because the
+                // sitting had turned something up.
+                //
+                // AND IT IS STILL NAMED, BECAUSE A PRICE WITHOUT A BALANCE GETS
+                // ONE INVENTED. `a-transaction-says-what-is-left.test.ts` has
+                // the measurement: the engine ruled "bought for 8 spirit
+                // stones", the narration said "leaving you with eight spirit
+                // stones", and the purse held 16. A model handed a price and no
+                // remainder reaches for the price.
+                //
+                // So both rules hold at once by SAYING WHICH MOMENT IT IS. The
+                // stale reading was not that the number was wrong - it was
+                // right when it was written - but that nothing marked it as a
+                // number from before the years, so it sat on the same screen as
+                // the standing line and read as a contradiction.
                 + (covered >= days
-                    ? `That covers the whole stretch. ${updated.spiritStones} stones left.`
+                    ? `That covers the whole stretch, and leaves ${updated.spiritStones} in the `
+                      + 'purse as the sitting opens.'
                     : `That is food for about ${humanDays(covered)} of the ${humanDays(days)} asked for. ` +
                       'After that the belly is empty and five turns later it is fatal. ' +
-                      `${updated.spiritStones} stones left.`)
+                      `${updated.spiritStones} in the purse as the sitting opens.`)
         };
     }
 

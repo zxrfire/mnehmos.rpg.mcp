@@ -92,8 +92,20 @@ describe('a ruling that names a price names the balance', () => {
             .toMatch(/food for about/i);
 
         // The balance is stated, and it is the real one.
-        expect(ruled).toMatch(/stones left/i);
-        expect(ruled).toContain(`${after.cultivator!.spiritStones} stones left`);
+        // ── AND THE MOMENT IS NAMED WITH IT ──────────────────────────────
+        //
+        // This matched the literal words "N stones left". The rule is
+        // unchanged and is what is still asserted - a ruling that names a price
+        // names the balance, so there is no number for a model to invent - but
+        // the phrase now says WHICH MOMENT the number is from.
+        //
+        // Measured on four seeds: one in four had the provisioning footer say
+        // "0 stones left" while the row held 16, because provisioning runs
+        // BEFORE the stretch and the years then turned something up. The number
+        // was right when it was written and nothing said so, and both landed on
+        // one screen.
+        expect(ruled).toMatch(/in the purse as the sitting opens/i);
+        expect(ruled).toContain(`${after.cultivator!.spiritStones} in the purse`);
     }, 120_000);
 
     /**
@@ -113,7 +125,7 @@ describe('a ruling that names a price names the balance', () => {
         const ruled = ruledIn(seen);
         const after = await game.state();
 
-        expect(ruled).toContain(`${after.cultivator!.spiritStones} stones left`);
+        expect(ruled).toContain(`${after.cultivator!.spiritStones} in the purse`);
     }, 120_000);
 
     /**

@@ -19,6 +19,10 @@ import {
 } from '../schema/cultivation.js';
 import { insightName } from '../engine/cultivation/understanding.js';
 import { rankName, realmIndexOf } from '../engine/cultivation/realms.js';
+import { getOrigin } from '../engine/cultivation/origin.js';
+import { theyCanTell } from '../engine/social/how-an-answer-is-known.js';
+import { whatTheyCanTellOfTheGround }
+    from '../engine/cultivation/what-they-can-tell-of-the-ground.js';
 import {
     headstoneStructure,
     whatTheStoneSays,
@@ -964,6 +968,23 @@ function breakthroughProse(
 // FREE AND MINOR ACTIONS
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * The band of the ground somebody was raised on, or null where the run has no
+ * record of where that was.
+ *
+ * `getOrigin` throws on an unknown tier, which is right for a lookup and wrong
+ * for a question - "where did they grow up" has "nowhere recorded" as a real
+ * answer, and it is one this read knows how to handle.
+ */
+function theGroundThatRaisedThem(origin: string | undefined | null): AmbientQi | null {
+    if (!origin) return null;
+    try {
+        return getOrigin(origin as Parameters<typeof getOrigin>[0]).ground;
+    } catch {
+        return null;
+    }
+}
+
 export function factsForLook(
     cultivator: Cultivator,
     ambient: AmbientQi,
@@ -985,8 +1006,39 @@ export function factsForLook(
     if (standing) lines.push(standing);
     if (who) lines.push(who);
 
+    // ── WHAT THIS PERSON CAN ACTUALLY TELL OF THE GROUND ─────────────────
+    //
+    // THE FIRST READ ROUTED ON HOW IT IS KNOWN. `describeAmbientPerceived` took
+    // the band and nothing else, so a sixteen-year-old at the first rung with
+    // no method got the same confident reading as a Nascent Soul cultivator:
+    // the engine knew the band, therefore the player did.
+    //
+    // Below the Foundation the only yardstick anybody has is the ground that
+    // raised them, and on ground identical to it there is honestly nothing to
+    // notice - which is a better sentence than a band-claim as well as a truer
+    // one. See `what-they-can-tell-of-the-ground.ts` and
+    // `how-an-answer-is-known.ts`.
+    // THE COST OF ASKING WHO IS STANDING THERE, and it showed up immediately:
+    // this read now needs a fact about the asker, and not every caller has one.
+    // Five tests build a cultivator with no origin at all and `getOrigin` threw
+    // on them.
+    //
+    // Which is not a reason to reach past it. A cultivator whose origin the run
+    // never recorded HAS no remembered ground, and `null` is what that is - the
+    // answer then comes back `unknown`, correctly, rather than inventing a
+    // yardstick to be confident against.
+    const ground = whatTheyCanTellOfTheGround(
+        ambient,
+        cultivator.realmOrdinal,
+        theGroundThatRaisedThem(cultivator.origin)
+    );
+    // `theyCanTell` narrows the answer, so the branch where there is nothing to
+    // say cannot be forgotten - it is a type error rather than a review note.
+    // What is printed then is the REASON, which is the answer.
+    const qiHere = theyCanTell(ground) ? ground.value : ground.because;
+
     const prose = [
-        `${where}. ${describeAmbientPerceived(ambient)}`,
+        `${where}. ${qiHere}`,
         ...(standing ? [standing] : []),
         ...(who ? [who] : []),
         ...(noticed ? [noticed] : [])
