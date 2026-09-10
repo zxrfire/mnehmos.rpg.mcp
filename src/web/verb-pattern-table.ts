@@ -3195,7 +3195,18 @@ function planIntent(input: string): PlannedAction {
 
     // striking the barrier, and not everything with the word in it
     if (usedAsVerb(text, 'break\\s*through|breakthrough|breaks through|breaking through')
-        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|level up|levels up|levelling up|leveling up|power up|powers up|powering up|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt|push|go) (?:to |for )?(?:the )?(?:next realm|next rank|next layer|advancement))\b/.test(text)) {
+        || /\b(?:strike (?:at )?the barrier|push (?:past|through|against) the (?:barrier|bottleneck)|force (?:the |my way through the )?(?:barrier|bottleneck)|assault the barrier|attempt the (?:next )?rank|advance a rank|level up|levels up|levelling up|leveling up|power up|powers up|powering up|(?:try|attempt|make|go for) (?:a |the |my |another )?break\s*through|(?:try|attempt|push|go) (?:to |for )?(?:the )?(?:next realm|next rank|next layer|advancement))\b/.test(text)
+        // ── AND THE FORMS THAT MISSED, MEASURED ──────────────────────────
+        //
+        // Five phrasings of the other half of the core loop, all `unclear`:
+        // "I advance to the next realm", "I push through to the next layer",
+        // "I try for the next rung", "I attempt the crossing", "I break the
+        // bottleneck". The list above carries `advance a rank` and `attempt
+        // the next rank` as fixed pairs with no room for the words beside them
+        // - `realm`, `layer`, `rung`, and the setting's own word, `crossing`.
+        || /\b(?:advance|advances|rise|rises|climb|climbs|move up|step up)\b[^.?!]{0,16}\b(?:to |into |for )?(?:the )?(?:next|another)\s+(?:realm|rank|rung|layer|stage|level)\b/.test(text)
+        || /\b(?:try|tries|attempt|attempts|make|makes|go for|goes for|push|pushes)\b[^.?!]{0,20}\b(?:the |my |a |another )?(?:crossing|next rung|next layer|next realm|next stage)\b/.test(text)
+        || /\b(?:break|breaks|breaking|force|forces|crack|cracks|shatter|shatters)\b[^.?!]{0,12}\b(?:the |my |this )(?:bottleneck|barrier)\b/.test(text)) {
         return { action: 'breakthrough' };
     }
 
@@ -3425,7 +3436,19 @@ function planIntent(input: string): PlannedAction {
     // the price" is somebody buying one thing and it read as a request to see the
     // board, because "for the price" contains "the price". A board question asks
     // after prices; a purchase names one.
-    if (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices\b|what(?:'s| is) on (?:the )?(?:stalls?|counter|board))\b/.test(text)
+    // NOT EVERY PRICE IS A PRICE ON A STALL.
+    //
+    // `price of` and `cost of` are in the list below, and "what is the PRICE OF
+    // ADVANCEMENT" is not a shopping question - it is the toll a realm boundary
+    // exacts, named under exactly that phrase in the cultivation README. The
+    // game took somebody asking about it to a market, which is the same defect
+    // "how many rations do I have" had one mechanic over: a question about the
+    // player's own situation answered by a shop.
+    //
+    // Vetoed here rather than reordered, because the market branch is right
+    // about everything else it catches and the readiness read below owns this.
+    if (!/\b(?:price|cost) of (?:advancement|ascension|the crossing|breaking through)\b/.test(text)
+        && (/\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|going rate|how much (?:is|are|does)|price of|cost of|the prices\b|what(?:'s| is) on (?:the )?(?:stalls?|counter|board))\b/.test(text)
         // What the place itself deals in, which is the board question asked
         // about the town rather than about a thing. "what does this town have
         // to trade" walked the player over to talk to somebody.
@@ -3443,7 +3466,7 @@ function planIntent(input: string): PlannedAction {
         // actually use, and `whatThisPersonWouldPartWith` was already there to
         // answer it. Measured on the trope corpus as a blank look.
         || /\b(?:what|anything)\s+(?:is|are)\s+(?:he|she|they|you|the \w+)\s+offer(?:ing)?\b/.test(text)
-        || /\bwhat\s+(?:has|have)\s+(?:he|she|they|the \w+)\s+got\b/.test(text)) {
+        || /\bwhat\s+(?:has|have)\s+(?:he|she|they|the \w+)\s+got\b/.test(text))) {
         // HOW MUCH IS A THING is the commonest way anybody asks a price, and it
         // was the one phrasing whose SUBJECT was thrown away: the branch above
         // fires on it, `extractSubject` had no pattern for it, and the player
@@ -4001,7 +4024,31 @@ function planIntent(input: string): PlannedAction {
 
     // assess: what happens if I try, which is not the same as looking
     if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|do i stand a chance|judge the odds)\b/.test(text)
-        || /\b(?:can i (?:beat|win against)|would i (?:win|beat|survive|last)|what (?:are|is) my chances|out of my depth|a fight i can (?:take|win)|am i (?:a )?match for)\b/.test(text)) {
+        || /\b(?:can i (?:beat|win against)|would i (?:win|beat|survive|last)|what (?:are|is) my chances|out of my depth|a fight i can (?:take|win)|am i (?:a )?match for)\b/.test(text)
+        // ── WHAT A CROSSING WOULD COST AND WHETHER IT WOULD WORK ─────────
+        //
+        // Nine phrasings measured, all reaching nothing: "what are my odds",
+        // "how likely is it to work", "what happens if I fail", "what does a
+        // breakthrough cost", "what will it take from me", "is my foundation
+        // sound", "how good is my foundation", "what happens if my foundation
+        // is cracked".
+        //
+        // And the tenth was worse than nothing: "what is the price of
+        // advancement" routed to `market`. The Price of Advancement is the
+        // toll a realm boundary exacts - it is in the cultivation README under
+        // that name - and the game took somebody asking about it to a SHOP.
+        // Exactly the defect the ration questions had one mechanic over.
+        //
+        // The readiness read already answers all of it: five separate answers
+        // that come apart, the years held against the years the ladder credits,
+        // and what a cultivator who can attempt this may still not survive.
+        || /\b(?:what|how)\b[^.?!]{0,20}\b(?:odds|chances|likely|likelihood)\b/.test(text)
+        || /\bwhat (?:happens|would happen)\b[^.?!]{0,24}\b(?:if i fail|i fail|it fails|going wrong|foundation)\b/.test(text)
+        || /\b(?:what|how much)\b[^.?!]{0,24}\b(?:a |the |my )?(?:break\s*through|crossing|advancement|ascension)\b[^.?!]{0,16}\b(?:cost|costs|take|takes|price|priced)\b/.test(text)
+        || /\bprice of advancement\b/.test(text)
+        || /\bwhat will it take (?:from|out of) me\b/.test(text)
+        || /\b(?:is|how(?:'s| is)?)\b[^.?!]{0,12}\bmy foundation\b/.test(text)
+        || /\bmy foundation\b[^.?!]{0,20}\b(?:sound|solid|cracked|damaged|good|any good|hold)\b/.test(text)) {
         return {
             action: 'assess',
             target: extractSubject(input, /assess|size up|survive|take|handle|manage|against|enough for|beat|win|match for/)

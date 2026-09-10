@@ -15,7 +15,7 @@ import {
     type FoundationQuality
 } from '../../schema/cultivation.js';
 import { FOUNDATION_ORDINAL } from './realms.js';
-import { getSpiritRoot } from './spirit-roots.js';
+import { getSpiritRoot, type SpiritRootGrade } from './spirit-roots.js';
 import { aggregateInjuryPenalties } from './injuries.js';
 
 // EFFECTS
@@ -258,10 +258,35 @@ export function assessFoundation(
  * range here is 2 points against preparation's 3 and injuries' unbounded
  * negative. A muddled root who prepares out-lays a single root who rushes.
  */
-const ROOT_FOUNDATION_SCORE: Record<string, number> = {
+const ROOT_FOUNDATION_SCORE: Record<SpiritRootGrade, number> = {
+    // ═══════════════════════════════════════════════════════════════════════
+    // TWO GRADES WERE MISSING AND IT WAS SILENT
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // This was `Record<string, number>` with four of the SIX grades in it.
+    // `triple` and `quad` were absent, so the lookup returned `undefined`, the
+    // sum went to `NaN`, and `FOUNDATION_THRESHOLDS.find(t => NaN >= t.min)`
+    // matched nothing - which fell through the `?? 'damaged'`.
+    //
+    // So every triple and quad root in the world laid a DAMAGED foundation, at
+    // the one crossing in a run that can never be retaken, whatever they had
+    // prepared. And the reading printed `score NaN` at the player while doing
+    // it. Nothing failed; the arithmetic quietly stopped being arithmetic.
+    //
+    // TYPED EXHAUSTIVELY NOW, which is the actual fix. `Record<string, number>`
+    // is what let a grade go missing without a word; `Record<SpiritRootGrade,
+    // number>` makes a seventh grade a compile error at this table rather than
+    // a NaN in somebody's run.
+    //
+    // The two new values are not invented. The catalog orders itself by
+    // `cultivationSpeed` - mutated 1.80, single 1.50, dual 1.00, triple 0.85,
+    // quad 0.70, muddled 0.55 - and these sit where that ordering puts them,
+    // interpolated between the dual and muddled scores that were already here.
     single: 1,
     mutated: 1,
     dual: -0.5,
+    triple: -0.65,
+    quad: -0.85,
     muddled: -1
 };
 
