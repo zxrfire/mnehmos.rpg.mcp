@@ -1905,6 +1905,7 @@ export class GameService {
             ambient,
             awareness,
             company: this.company(created.cultivator),
+            realmOrdinal: created.cultivator.realmOrdinal,
             // Every fact, including the one nobody is going to tell them, so
             // the account cannot contradict the ruling below it.
             theLifeBehindThem: life.forTheNarrator
@@ -2466,7 +2467,8 @@ export class GameService {
             // Who is in it. See `describeTheRoom` for the played defect: a
             // narrator told the place and the air and nothing about the people
             // opens on an empty square, because that is the cheapest guess.
-            company: this.company(after.cultivator)
+            company: this.company(after.cultivator),
+            realmOrdinal: after.cultivator.realmOrdinal
         };
 
         // ── phase 3 ──
@@ -2621,7 +2623,8 @@ export class GameService {
             ambient: this.ambientFor(after.cultivator, after.run),
             awareness: this.awarenessOf(after.cultivator),
             filed: this.filedOutcome(execution),
-            company: this.company(after.cultivator)
+            company: this.company(after.cultivator),
+            realmOrdinal: after.cultivator.realmOrdinal
         });
 
         this.log.append(run.id, [
@@ -2671,7 +2674,8 @@ export class GameService {
             ambient: this.ambientFor(after.cultivator, after.run),
             awareness: this.awarenessOf(after.cultivator),
             filed: this.filedOutcome(execution),
-            company: this.company(after.cultivator)
+            company: this.company(after.cultivator),
+            realmOrdinal: after.cultivator.realmOrdinal
         });
 
         this.log.append(run.id, [
@@ -8337,7 +8341,8 @@ ${opened.text}` : receipt,
                 place: placeName(cultivator),
                 ambient,
                 awareness: this.awarenessOf(cultivator),
-                company: here
+                company: here,
+                realmOrdinal: cultivator.realmOrdinal
             }
         );
     }

@@ -371,6 +371,15 @@ export interface NarratorScene {
      * WRITTEN, which is the half a record cannot do. Opening only.
      */
     theLifeBehindThem?: readonly string[];
+    /**
+     * Where this cultivator stands on the ladder, for register only.
+     *
+     * `composeNarrationUser` turns it into one of the three band names in the
+     * ladder doc and sends that. The number itself never reaches a model, and
+     * the block that carries the band forbids stating a rung, because nobody in
+     * the world perceives an ordinal.
+     */
+    realmOrdinal?: number;
 }
 
 export interface Narration {

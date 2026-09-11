@@ -9,6 +9,7 @@ import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import {
     MAX_ORDINAL,
     rankName,
+    realmForOrdinal,
     progressRequiredForOrdinal
 } from '../engine/cultivation/realms.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
@@ -207,6 +208,41 @@ export function theVoiceDoc(): string {
     }
     toneCache = blocks.join(String.fromCharCode(10, 10));
     return toneCache;
+}
+
+/**
+ * THE THREE REGISTER BANDS, BY THEIR HEADINGS IN THE LADDER DOC.
+ *
+ * The prose for each band is in `what-changes-as-the-ladder-is-climbed.md` and
+ * is tier 1, so all three reach the system prompt on every turn and the model
+ * can read the contrast between them. What varies per turn is only WHICH of
+ * them applies, which is this name. Keeping the prose out of here is the point:
+ * a second copy in a template literal is the arrangement `TONE_PATH` records
+ * having already drifted once.
+ */
+export const REGISTER_BANDS = [
+    'At the bottom: a body in weather',
+    'Through the middle: a room with a door to another room',
+    'At the top: an act and the wave it makes'
+] as const;
+
+export type RegisterBand = (typeof REGISTER_BANDS)[number];
+
+/**
+ * Where a cultivator's acts stop carrying, as the band whose register fits.
+ *
+ * Keyed on the realm rather than on the ordinal so a renumbered ladder cannot
+ * move a boundary silently. The two cuts are the two places the world's own
+ * answer to somebody changes: a house stops recruiting and starts negotiating,
+ * and then a house stops being the largest thing an act can reach.
+ */
+export function theRegisterAtThisHeight(realmOrdinal: number): RegisterBand {
+    const key = realmForOrdinal(realmOrdinal).key;
+    if (key === 'qi_condensation' || key === 'foundation_establishment') return REGISTER_BANDS[0];
+    if (key === 'core_formation' || key === 'nascent_soul' || key === 'deity_transformation') {
+        return REGISTER_BANDS[1];
+    }
+    return REGISTER_BANDS[2];
 }
 
 /** Test seam: forget the cached voice doc so a later call re-reads it. */
@@ -1228,6 +1264,14 @@ export function composeNarrationUser(
         company?: Company | null;
         /** The sixteen years before turn 0, to be written rather than summarised. */
         theLifeBehindThem?: readonly string[];
+        /**
+         * Where this cultivator stands, for register only.
+         *
+         * Converted to a band name here and never printed: the narrator is told
+         * how far an act of theirs carries, which is a constraint on the prose,
+         * and is not told a rung, which it would state.
+         */
+        realmOrdinal?: number;
     },
     /**
      * WHETHER THE AMBIENT READING IS NEW INFORMATION.
@@ -1379,6 +1423,7 @@ export function composeNarrationUser(
         'opening is an act the engine never ruled, and a player who answers it is answering',
         'nobody.',
         '',
+        ...theRegisterBlock(scene.realmOrdinal),
         scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0
             // The opening carries a life AND a scene, and a flat "two or three short
             // paragraphs" here is the instruction that ate the childhood in the first
@@ -1435,6 +1480,45 @@ function theLifeBehindThemBlock(life: readonly string[]): string[] {
         '',
         'The years themselves:',
         ...life.map(line => `- ${line}`),
+        ''
+    ];
+}
+
+/**
+ * WHICH REGISTER THIS TURN IS IN.
+ *
+ * The narrator was told every rule about height except the one that governs the
+ * sentence, and was never told where on the ladder this cultivator stood, so
+ * nothing could vary: `narrationSystemPrompt` takes no arguments and
+ * `NarratorScene` carried no standing. The prose read the same at Qi
+ * Condensation and above the Lid, which the ladder doc says is wrong at one end
+ * by construction.
+ *
+ * Measured across three bands of the corpus, books weighted equally: the mean
+ * paragraph falls from 36.7 words to 30.3 and 28.3 and the six-sentence
+ * paragraph from 9.0% to 2.1% and 1.0%, price and favour words fall from 2.2
+ * per hundred sentences to 0.7 and 0.2, offstage people reacting nearly trebles
+ * from 0.9 to 2.7, and the median sentence does not move at all. The last is why
+ * the block says the sentence must not change: a model told the register climbs
+ * reaches for grandeur in the grammar, which is the one thing the corpus keeps
+ * flat.
+ *
+ * Only the band NAME is sent. The rung is not, and the instruction says so,
+ * because a narrator handed an ordinal states it and a player cannot perceive
+ * one.
+ */
+function theRegisterBlock(realmOrdinal: number | undefined): string[] {
+    if (realmOrdinal === undefined) return [];
+    return [
+        `THE REGISTER FOR THIS TURN: ${theRegisterAtThisHeight(realmOrdinal)}.`,
+        'That is the heading of a section above. Write in the register it describes: what the',
+        'prose is about, what it leaves out, and how long a paragraph runs. The sentence itself',
+        'does not change with height and must not - short, plain, a person or a thing as its',
+        'subject, at every point on the ladder.',
+        '',
+        'This is a fact about your prose and never about the world. Do not state the rung, do',
+        'not say how far anything carries, and do not have anybody remark on either. If the',
+        'reach is real the player sees it in what happens, not in a sentence about it.',
         ''
     ];
 }

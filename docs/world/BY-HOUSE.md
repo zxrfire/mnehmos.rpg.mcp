@@ -92,7 +92,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-stone-marrow-hall` · its entry: [`sects.ts:938`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 23 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 12 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 9 · [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) 5 · [`places-that-teach-a-dao.ts`](../../src/data/cultivation/places-that-teach-a-dao.ts) 4
-  …and 20 more files.
+  …and 21 more files.
 
 **Constants most about it:** `TRACKED_CRAFT`, `GUEST_ELDERS`, `BOUNTIES`, `DEALER_MARKUP`, `PAVILION_SURPLUS`, `AUCTION_ACCESS`, and 6 more
 
@@ -136,8 +136,8 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-cold-sword-sect` · its entry: [`sects.ts:1171`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 1
-  …and 2 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`sects.ts`](../../src/data/cultivation/sects.ts) 3 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 2 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 2 · [`what-changes-as-the-ladder-is-climbed.md`](../../docs/world/writing/what-changes-as-the-ladder-is-climbed.md) 1 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 1 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 1 · [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) 1
+  …and 3 more files.
 
 ### Orchid Court
 

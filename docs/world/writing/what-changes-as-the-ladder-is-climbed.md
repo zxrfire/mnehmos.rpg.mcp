@@ -9,19 +9,26 @@ design is an amalgamation and citing one work misrepresents it.
 
 **Read the next paragraph before you use anything below it.**
 
-> **The evidence here is thin, and deliberately labelled as such.** It comes
-> from about a dozen chapters, sampled at intervals across the arc of a couple
-> of long works, read once. That is a small enough sample that any single
-> observation below could be an artifact of which chapters happened to be
-> sampled, of one author's habits, or of a translator's. Nothing on this page
-> was measured, counted, or checked against a second reader.
+> **This page is now two kinds of material and they do not carry the same
+> weight.** Say which you are relying on before you rely on it.
 >
-> So this file is **a set of hypotheses about register, not a finding and not a
-> rule**. The one thing on it that carries real weight is the design owner's
-> ruling in the next section, which came from the owner and not from the
-> sample; the chapter observations are at best corroboration for it. When
-> something here disagrees with a ruling, with the code, or with what plays
-> well, it loses, and no argument from what the chapters did should be made.
+> **The rulings** came from the design owner and stand on their own. They are
+> the sections headed *One rule*, *And influence works the same way*, and the
+> gift example. Nothing overrides them.
+>
+> **[The prose register](#the-prose-register-changes-and-only-in-these-ways) is
+> measured**, across two slices of the corpus counted by script: an early slice
+> of two openings against two separate late slices, one of which is a machine
+> translation and is therefore only ever corroboration. Every figure in that
+> section appeared in BOTH late slices in the same direction, and the section
+> also lists what the two late slices disagreed about, which is discarded. That
+> is a real finding and it is allowed to correct the rest of this page.
+>
+> **Everything else is a hypothesis from a dozen chapters read once**, and is
+> labelled where it appears. Any of it could be an artifact of which chapters
+> were sampled or of a translator's habits. When one of those disagrees with a
+> ruling, with the measurement, with the code, or with what plays well, it
+> loses.
 
 The reason it is worth writing down at all: the repo's existing voice rules are
 good and they are **calibrated to the bottom of the ladder**, against a run that
@@ -164,6 +171,207 @@ decorations hanging off events, and nothing in the world pass reads one and
 changes what a house intends to do. Until something does, order two exists as
 text and order three does not exist at all.
 
+## The prose register changes, and only in these ways
+
+<!-- tier: 1 -->
+
+Everything above is about what the character can see and move. This section is
+about the SENTENCES, and it is the half that was missing: a narrator can obey
+every rule on this page and still write the same paragraph at both ends of the
+game.
+
+**How this was counted, because it decides what the figures are worth.** Three
+bands were measured by script. The low band is the opening stretch of three
+separate series openings. The middle band is three whole late volumes of one
+series whose own opening is in the low band, which makes the low-to-middle
+comparison close to controlled: the same hand, the same translator, the same
+protagonist, and only the height changed. The high band is the closing stretch
+of one further work, and that one is a machine translation, so it can confirm a
+direction already found lower down and may never establish one on its own.
+
+Books were weighted equally rather than pooled, because one of them is ten times
+the length of another and pooling let it dictate every figure.
+
+**What that buys and what it does not.** A finding below is marked **clean**
+when the three low books and the three middle books do not overlap at all on
+that measure. Anything that merely moved on the averages is marked as holding in
+some books and not others, and is written as a hint rather than a rule. The
+corpus is fifteen volumes by one hand across four series plus one by another
+hand, so a habit of one writer can reach a long way into it; the equal weighting
+and the clean/overlap split are how that is kept visible rather than argued away.
+
+### The sentence itself does not change, and this is the most important finding
+
+<!-- tier: 1 -->
+
+The mechanics of the sentence are flat across all three bands. Median sentence
+length runs 12.3 words low, 13.0 middle, 12 high. Commas per sentence run 0.82,
+0.84, 0.81. Nothing in the grammar moves.
+
+**So every rhythm rule the register already keeps applies unchanged at the top of
+the ladder.** Short declaratives. Stacked verbs. A person or a thing as the
+subject. Plain tags. No grandeur in the grammar. A narrator that reaches for long
+periodic sentences, piled subordinate clauses or an elevated diction because the
+cultivator is high has changed the one thing that demonstrably does not change,
+and the result is not high-register prose, it is a different book.
+
+What changes is what the paragraph is about and what it is willing to leave out.
+
+### The paragraph gets shorter as the reach gets longer
+
+<!-- tier: 1 -->
+
+**Clean.** Counter to the obvious guess: paragraphs do not swell into grandeur,
+they break up.
+
+| per band | low | middle | high |
+|---|---|---|---|
+| mean words in a paragraph | 36.7 | 30.3 | 28.3 |
+| paragraphs of six sentences or more | 9.0% | 2.1% | 1.0% |
+
+The long explanatory paragraph is a LOW-rung form, and it falls to about a
+quarter of its rate by the middle band. It exists at the bottom because somebody
+is working something out step by step: how the coins add up, what the beast did,
+why this is the wrong path. Higher up, a consequence that would have taken a
+paragraph to lay out is taken in a line and the next line is already elsewhere.
+
+### Money leaves the prose
+
+<!-- tier: 1 -->
+
+**Clean, and the largest confirmed movement on this page.** Words about price,
+payment, debt, favour and what a thing is worth, per hundred sentences: **2.2
+low, 0.7 middle, 0.2 high.** A third by the middle band and a tenth by the high
+one, with no overlap between the low books and the middle ones.
+
+At the bottom what a thing costs is most of what is thought about. Higher up the
+price is not mentioned, not because it is beneath mention but because nothing in
+the scene turns on it any more. This is the most writable single instruction on
+the page: **as the ladder is climbed, stop pricing things.**
+
+### The scene acquires people who are not in it
+
+<!-- tier: 1 -->
+
+**Clean.** People who are not present, reacting, per hundred sentences: **0.9
+low, 2.7 middle.** Nearly three times, with no overlap. The high band sits at
+2.2, so the direction is established low-to-middle and does not continue.
+
+This is the prose form of *rung is reach*, and it is the property a narrator is
+likeliest to miss, because nothing in a turn's facts is obviously about it. What
+it looks like is a short paragraph after the act, about people who were not
+there, who do not have it right, and who are mostly not named.
+
+**Deference moves with it and is also clean**: bowing, trembling, making way,
+not daring, per hundred sentences runs 1.3 low and 1.9 middle. How a stranger
+opens their mouth changes before anything else about them does.
+
+### Three hints, which moved on the averages and are not clean
+
+<!-- tier: 1 -->
+
+Each of these holds in the two openings this design was calibrated against and
+fails in the third, so they are worth writing toward and are not worth
+defending.
+
+- **Ground and weather thin out.** 8.6 low, 4.5 middle, 4.7 high per hundred
+  sentences, but one low book is already at the middle band's rate. Where it
+  holds, it is not the world becoming abstract; it is that mud has stopped being
+  able to cost anything.
+- **A fight becomes pressure rather than blows.** Pressure, aura, intent and
+  suppression run 2.2 low, 4.2 middle, 6.2 high, and the blow words do not
+  decrease. So the shift is additive: somebody still strikes somebody, and what
+  grows is the vocabulary in which the exchange is decided before contact.
+- **Numbers thin out.** 5.1 low, 3.4 middle, 1.5 high. The numerals that survive
+  higher up are also larger and rounder, which was read rather than counted.
+
+### What the measurement killed
+
+<!-- tier: 1 -->
+
+Each of these looked like a height property in an earlier, worse cut and did not
+survive equal weighting or the third band. **Do not write to them.**
+
+- **Speech thinning out.** The share of paragraphs carrying speech was 28.3% low
+  and 26.6% middle, with the book ranges overlapping heavily. People do not talk
+  less higher up.
+- **Blow-by-blow combat receding.** No consistent direction at all.
+- **Institutions becoming the actors.** The count swung from almost zero to the
+  highest in the corpus between two books of the same band. Nothing here.
+- **Cosmic vocabulary** - heavens, eras, the void, the sea of stars. It is one
+  work's furniture, not a register the ladder produces.
+- **Interiority turning to will, vow and resolve.** Only the negative half
+  survives, and it is the money finding already stated above: interiority does
+  not become lofty, it stops being about what things cost.
+- **Honorifics, and runs of unattributed shouting as a paragraph form.**
+
+### At the bottom: a body in weather
+
+<!-- tier: 1 -->
+
+Qi Condensation and Foundation Establishment. **Most of what is actually played
+starts and stays here**, so it is worth the most care.
+
+One person, one physical problem, priced. The prose is cold, hunger, the road,
+the count of coins, and what a stranger might do. The long working-out paragraph
+belongs here and nowhere else. Consequence reaches the end of the afternoon.
+
+> The rain had got into his shoe again. At the ford stall he counted out four
+> stones, and the woman counted them again before she let go of the sack.
+
+Wrong at this height, because it is a higher band's register worn early:
+
+> ~~The Clear River Ford would remember the morning. What he had done here would
+> reach the Azure Cloud Pavilion before the season turned.~~
+
+Nothing he does here reaches anywhere, and nobody repeats him. The failure is not
+that the sentence is grand; it is that it claims a reach he does not have.
+
+### Through the middle: a room with a door to another room
+
+<!-- tier: 1 -->
+
+Core Formation through Deity Transformation. The problem stops being physical
+and becomes procedural: who has been told, what has been sent up, which hall will
+hear it, who owes whom. Price is still in the world and has stopped being what
+the scene is about. People who are not in the room begin to react to what
+happened in it. Consequence reaches the end of the month.
+
+> Stone Marrow Hall had already sent it up. Two of the three who would hear it
+> owed the third a debt older than the matter, and he came to the door himself
+> to say when they would sit.
+>
+> By the time he was back across the yard, two disciples who had not been at the
+> door were arguing about what had been decided.
+
+### At the top: an act and the wave it makes
+
+<!-- tier: 1 -->
+
+Void Refinement and above. The act is short and the wave is the scene. Weather
+and price are gone. A fight is largely decided in the pause before it.
+
+> He said it once, in a room with four people in it, and left.
+>
+> By dusk the Cold Sword Sect had called two of its outer halls back inside the
+> wall. Nobody in either hall had been told why. In the market under the wall a
+> man who had not been in the room was explaining, with great confidence, what
+> had been said.
+
+And the fight, at the same height:
+
+> Neither of them moved. The air between them stopped carrying sound, and the
+> disciples on the wall found they were kneeling without having decided to.
+
+**Scale still comes back down.** A quiet room is a correct scene at this height,
+and the paragraph count is the evidence: the paragraph gets SHORTER here, not
+grander. What must not happen is a quiet room with no wave behind it.
+
+**And the evidence for this band is the thinnest on the page.** It rests on one
+machine-translated work. Where it merely continues a direction already clean from
+low to middle, trust it. Where it says something the middle band did not, it is
+probably an artifact of the translation.
+
 ## The unit of narration changes
 
 At the bottom it is **one person with one physical problem**: tracking an
@@ -173,9 +381,13 @@ ground are established first and the person is narrowed to afterwards.
 Through the middle it becomes **a faction**: who is on whose roll, who is owed
 what, which hall a matter has been sent up to.
 
-High up it becomes **a polity or an age**: a race, an army, an era, a treasure
-that covers a region. Individuals are referred to by class rather than by name,
-and years of consequence are summarised in a clause.
+High up it becomes **one act and the population that heard about it**. This used
+to read *a polity or an age - a race, an army, an era, a treasure that covers a
+region*, and the count does not support the polity half: how often a named
+institution is the subject of a sentence swung wildly between two books of the
+SAME band, so there is no finding there. What is clean is the crowd - people who
+are not present, reacting, nearly trebles from the low band to the middle one.
+The individuals referred to by class are the onlookers, not the combatants.
 
 And then it comes back. Late chapters still spend whole scenes on two people in
 a room noticing that a third is behaving oddly. **Scale oscillates; it does not
@@ -318,7 +530,13 @@ trying and not worth defending.
 3. **Follows from the ruling.** Neither the power-exposition ban nor the
    show-never-explain rule is about the player's height. Both are about whether
    the speaker's job is to know, and rung only changes who is standing near you.
-4. **Thin: sample only.** Scale should be allowed to come back down. A quiet room is a
-   correct late-game scene.
-5. **Thin: sample only, and worth testing.** Late-rung answers that name a capability should name its
+4. **Measured, and clean.** Four things move with height and the SENTENCE is not
+   one of them: the paragraph shortens, money leaves the prose, offstage people
+   start reacting, and deference thickens. Three further movements are real on
+   the averages and not clean, and several plausible ones were killed outright.
+   See [the prose register](#the-prose-register-changes-and-only-in-these-ways).
+5. **Measured, and it corrects item 4 of the old list.** Scale comes back down,
+   and the paragraph count is why: the long paragraph is a bottom-rung form and
+   falls to a quarter of its rate by the middle band.
+6. **Thin: sample only, and worth testing.** Late-rung answers that name a capability should name its
    price in the same answer.
