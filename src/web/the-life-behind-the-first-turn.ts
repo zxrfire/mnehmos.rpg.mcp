@@ -1,88 +1,20 @@
 /**
  * Sixteen years, said before the first turn asks anything of them.
  *
- * ═════════════════════════════════════════════════════════════════════════
- * THE DEFECT
- * ═════════════════════════════════════════════════════════════════════════
+ * The opening was a character sheet and then a look at the square, and "3 names
+ * known" was the tell: every one of those rows already carried the name, what
+ * this person believes about it and who told them, drawn at birth and reported
+ * as a digit. Nothing here is invented; it is the birth pass, printed.
  *
- * A run opened like this, and this was the whole of it:
- *
- *     shen wuyou I begins at Qi Condensation Layer 1, age 16. Born in Clear
- *     River Ford, a market town on thin ground. A farm in a thin county. 30
- *     spirit stones, under a year of seclusion. 3 NAMES KNOWN. Metal-Wood Dual
- *     Root; Might 3, Insight 3, Fortune 3, Charm 2.
- *
- *     Clear River Ford. The air here gives very little back.
- *     The day asks nothing in particular.
- *
- * A character sheet, and then an empty square. The design owner: *"if you start
- * in a place with 0 people, say it, like the beginning should narrate your life
- * up to that point"*, and, on the same screen: *"you have to know SOMETHING,
- * else the game is just dead."*
- *
- * ═════════════════════════════════════════════════════════════════════════
- * AND THE MATERIAL WAS ALREADY THERE, WHICH IS THE PART THAT MATTERS
- * ═════════════════════════════════════════════════════════════════════════
- *
- * "3 names known" is the line that gives it away. `BirthKnowledge` carries, per
- * row: the NAME, a `statement` of what this person believes about it, a
- * `sourceNote` saying who they got it from, a `stance`, and a `confidence`. All
- * five were drawn, written into the knowledge table, and then reported to the
- * player as the digit three.
- *
- * So the answer to "you have to know something" was not a system that needed
- * building. It was already drawn at birth and thrown away at the point of
- * printing.
- *
- * The same holds for the rest: `whoTheyAre` knows whether a house's roll
- * carries them and whether somebody is owed for it, `opening.name` names the
- * household they came out of, and `place` and `ground` say what sort of ground
- * they have been breathing for sixteen years.
- *
- * ═════════════════════════════════════════════════════════════════════════
- * WHAT THIS IS NOT
- * ═════════════════════════════════════════════════════════════════════════
- *
- * It is not prose. Every line is a fact with a row behind it, in the register
- * the rest of the engine uses. The engine does not get to invent a mother.
- *
- * And it does not open a second channel for the sheet. The numbers stay where
- * they were - `describeBirth` still files the mechanical line - because a
- * player who wants their attributes should not have to read a paragraph for
- * them.
- *
- * ══════════════════════════════════════════════════════════════════════════
- * AND THEN IT WAS WRITTEN, HANDED TO A MODEL, AND NEVER SEEN AGAIN
- * ══════════════════════════════════════════════════════════════════════════
- *
- * FOUND BY PLAYING, a second time, with ollama narrating. The whole of turn 0:
- *
- *     Nine Peaks. The air here is thick enough to notice on the first breath.
- *     [...] Mo Wanming is here and has not looked up. [...] It is an ordinary
- *     day and it intends to stay one.
- *
- * The sixteen years were composed, unshifted onto `facts.lines`, and handed to
- * the narrator - which is to say handed to a model asked, four hundred lines
- * later, for *"two or three short paragraphs"*. Given a dozen facts of which
- * the last three are the square in front of it, a small model writes the
- * square. Nothing was broken; the recap simply had no channel of its own, and
- * the one it shared was a request for brevity.
- *
- * The design owner: *"WHERE IS THE RECAP OF MY LIFE TO THIS POINT? HAVE THE
- * ENGINE RETURN IT FOR THE FIRST TURN."*
- *
- * So it does, and the important half of that is WHICH channel. `required`
- * exists for lines a player must read whatever the narrator does, and is the
- * wrong tool here: it matches on the words appearing in the prose, and the
- * narration prompt orders the model to *"write it again from nothing"*. A
- * required recap would therefore be appended on exactly the turns the narrator
- * did its job. See the banner on `withRequiredLines`, which names this trap.
- *
- * The recap is a RECORD, so it is filed as one: its own turn 0 engine ruling,
- * beside the sheet, in both modes, before the narrator is asked for anything.
- * The narrator still receives every fact - it must not contradict a childhood -
- * and is told they are already on the player's screen, so it writes the scene
- * instead of the summary. Two channels, one set of rows, said once.
+ * TWO CHANNELS, AND THE SPLIT IS THE POINT. `toldToThePlayer` is filed as its
+ * own turn 0 engine ruling. It was once unshifted onto `facts.lines` instead,
+ * which is to say handed to a model that is asked in the same prompt for "two
+ * or three short paragraphs" - and measured with ollama narrating, the whole of
+ * turn 0 came back as the square. Do not move it back onto the narrator's
+ * channel, and do not reach for `required` either: that matches on the words
+ * surviving into the prose, and the narration prompt orders the model to write
+ * every fact again from nothing, so a required recap appends on exactly the
+ * turns the narrator did its job.
  */
 
 import type { Birth } from '../engine/birth/birth.js';
@@ -94,26 +26,13 @@ import type { AmbientQi } from '../schema/cultivation.js';
 const HOW_MUCH_QI: readonly AmbientQi[] = ['thin', 'normal', 'dense', 'spirit_tide'];
 
 /**
- * THE GROUND THEY STAND ON, AGAINST THE GROUND THAT RAISED THEM.
+ * The ground they stand on, against the ground that raised them.
  *
- * Three corrections in one, all from the design owner.
- *
- * This first read `on ${band} ground`, and a model handed "normal ground" wrote
- * *"the air here has always felt heavy in the lungs, a thickness you have known
- * since childhood"* - humidity rather than spiritual density, and the wrong band
- * besides. *"Say thick with qi."* The word `ground` alone leaves a model to
- * guess what is thin or thick ABOUT it, and the guess is always physical.
- *
- * Then: *"xianxia doesn't talk about air."* So it does not. It talks about qi,
- * and about what a person can draw from where they are standing.
- *
- * And the one that made the line worth having at all: *"thicker versus the place
- * you came from."* A band on its own means nothing to somebody who has only
- * ever stood on one. What means something is the DIFFERENCE - a farm child from
- * a thin county standing on ordinary ground for the first time has something to
- * measure, and the engine knows both numbers. The old line even said the
- * opposite out loud, that they had nothing to compare it against, while holding
- * the comparison.
+ * Every branch names QI. This read `on ${band} ground`, and a model handed
+ * "normal ground" wrote about heavy air in the lungs: the word `ground` alone
+ * leaves a model to guess what is thin or thick about it and the guess is
+ * always weather. The comparison against home is what makes the band mean
+ * anything to somebody who has only ever stood on one.
  */
 function theQiHereAgainstHome(here: AmbientQi, home: AmbientQi): string {
     const step = HOW_MUCH_QI.indexOf(here) - HOW_MUCH_QI.indexOf(home);
@@ -121,9 +40,8 @@ function theQiHereAgainstHome(here: AmbientQi, home: AmbientQi): string {
         + 'that they have no measure for it';
     if (step === 1) return `ground thicker with qi than ${WHERE_THEY_GREW_UP[home]}, and they `
         + 'can feel the difference without being able to name it';
-    // Still names qi. The same band as home is the commonest case by far, and
-    // it was the one branch that said only “ground” - which is the exact word
-    // that let a model reach for weather in the first place.
+    // The commonest case by far, and the one branch that used to say only
+    // "ground" - the exact word that let a model reach for weather.
     if (step === 0) return `ground with the same qi in it as ${WHERE_THEY_GREW_UP[home]}, `
         + 'which is the only measure of it they have ever had';
     return `ground thinner with qi than ${WHERE_THEY_GREW_UP[home]}, which they noticed and `
@@ -145,57 +63,26 @@ export interface AFaceFromBeforeTheRun {
     readonly sourceNote: string;
 }
 
-/**
- * One statement of the life so far, and who it is for.
- *
- * TWO AUDIENCES, WHICH IS WHY THIS IS A ROW AND NOT A STRING. The narrator is
- * handed everything, including the one thing the world holds and this person
- * does not. The player is handed what they could know about themselves, in the
- * register a ruling is written in. Both come off the same row, so the two
- * accounts cannot drift apart.
- */
+/** One statement of the life so far, drawn once and rendered for two audiences. */
 interface LifeLine {
     /** The fact, as the narrator is given it. */
     readonly text: string;
     /** The same fact as the ENGINE says it to the player, where the two differ. */
     readonly toThePlayer?: string;
     /**
-     * True where the WORLD holds this and the person it is about does not. It
-     * reaches the narrator as context it must not contradict, and reaches the
-     * player on no channel at all.
+     * True where the WORLD holds this and the person it is about does not. A
+     * field rather than an instruction to the narrator, because the engine now
+     * prints this channel and an instruction would not have held.
      */
     readonly behindTheirBack?: boolean;
 }
 
 /**
- * ═════════════════════════════════════════════════════════════════════════
- * NO AUTHORED CHILDHOOD. THE VARIABLES, AND THE NARRATOR WRITES THE STORY.
- * ═════════════════════════════════════════════════════════════════════════
+ * The house, as drawn fields rather than as a story about them.
  *
- * A first cut of this file carried tables of written childhoods and written
- * reasons for leaving - "they carried water up from a river that was a long way
- * down", and so on - drawn per origin tier. The design owner stopped it:
- *
- *   *"btw do not hardcode the exact starting story. Randomly generate the
- *    starting variables, parents, location, etc. That should already be there?
- *    And you have the LLM synthesize a story."*
- *   *"like birth house is already tracked?"*
- *
- * Right on both counts, and the second is the answer to the first. The birth
- * pass already draws every variable a childhood is made of: the origin tier and
- * its household, the place, the ground under it, the house the family belongs
- * to, whether that house's roll carries them and how, whether somebody spent a
- * word to put them there, what they were left holding, and every name they have
- * been told and by whom.
- *
- * So there is nothing to invent. Writing childhoods into this file was the
- * engine composing prose, which is the one thing it is not for - the same
- * defect as reciting a scoring rubric, arrived at from the pleasant direction.
- *
- * What goes below is variables. The narrator writes the sixteen years out of
- * them, and it can, because they are specific: a household, a house, a rung
- * that house stands at, a bar it admits at, and whether it would even have
- * them.
+ * No authored childhoods here. The birth pass already draws every variable one
+ * is made of, so tables of written upbringings drawn per origin tier - an
+ * earlier cut of this file - were the engine composing prose.
  */
 function theHouseholdTheyCameOutOf(birth: Birth): LifeLine[] {
     const said: LifeLine[] = [];
@@ -205,9 +92,8 @@ function theHouseholdTheyCameOutOf(birth: Birth): LifeLine[] {
             text:
                 'No house behind them at all, which is nine births in ten. Nobody is owed '
                 + 'anything for where they are standing and nobody is going to ask after them.',
-            // The odds are a note to the NARRATOR about how unremarkable this
-            // is. To the person living it there are no odds, and an opening
-            // that told the player their birth was the common one would be the
+            // The odds are for the narrator. To the person living it there are
+            // none, and telling a player their birth was the common one is the
             // engine talking to them about its own draw.
             toThePlayer:
                 'No house behind them at all. Nobody is owed anything for where they are '
@@ -216,9 +102,6 @@ function theHouseholdTheyCameOutOf(birth: Birth): LifeLine[] {
         return said;
     }
 
-    // The house itself, in the terms a house is measured in. Every one of these
-    // is a drawn field, and together they are what a childhood near a house was
-    // actually like.
     said.push({
         text:
             `The family stands with ${house.name}, whose strongest member is at `
@@ -237,13 +120,6 @@ function theHouseholdTheyCameOutOf(birth: Birth): LifeLine[] {
 /** How many of the names drawn at birth are worth saying in the opening. */
 export const NAMES_WORTH_SAYING_AT_THE_START = 3;
 
-/**
- * The life so far, on the two channels that carry it.
- *
- * THE ONE THE ENGINE OWES. `toldToThePlayer` is filed as a turn 0 ruling of its
- * own, beside the sheet, and is the reason this type has two fields rather than
- * being a list of strings. See the banner on the caller in `turn-engine.ts`.
- */
 export interface TheLifeSoFar {
     /** Every fact, for the narrator, which must not contradict any of it. */
     readonly forTheNarrator: readonly string[];
@@ -252,17 +128,12 @@ export interface TheLifeSoFar {
 }
 
 /**
- * WHAT THIS PERSON HAS BEHIND THEM, as facts the narrator can write a life out
- * of and the engine can file as a record.
+ * What this person has behind them, ordered the way a life is: where they come
+ * from, whose they are, what that left them holding, what they have been told,
+ * and who they can already put a name to.
  *
- * Ordered the way a life is: where they come from, whose they are, what that
- * left them holding, what they have been told about the world, and who they can
- * already put a name to. The last two are the ones the opening existed without,
- * and are the reason a player used to have nothing to act on.
- *
- * @param faces The people a childhood leaves behind, already drawn and written
- *   to the knowledge table by `who-a-life-like-this-grew-up-knowing.ts`. Passed
- *   in rather than read here, because this module knows nothing about a world.
+ * @param faces Drawn and seeded by `who-a-life-like-this-grew-up-knowing.ts`.
+ *   Passed in rather than read here, because this module knows no world.
  */
 export function theLifeBehindTheFirstTurn(
     birth: Birth,
@@ -271,11 +142,8 @@ export function theLifeBehindTheFirstTurn(
 ): TheLifeSoFar {
     const lines: LifeLine[] = [];
 
-    // -- WHERE, AND WHAT SORT OF GROUND ----------------------------------
-    //
-    // Sixteen years of breathing it, which is why the band is said as a
-    // lifetime rather than as a reading. Somebody raised on thin ground has
-    // never known anything else and has no reason to remark on it.
+    // Said as a lifetime rather than as a reading. Somebody raised on thin
+    // ground has never known anything else and has no reason to remark on it.
     const home = getOrigin(birth.origin).ground;
     lines.push({
         text:
@@ -284,7 +152,6 @@ export function theLifeBehindTheFirstTurn(
             + `${theQiHereAgainstHome(birth.ground, home)}.`
     });
 
-    // -- WHOSE THEY ARE, AND WHY THEY ARE NOT THERE -----------------------
     lines.push({ text: `What they came out of: ${birth.opening.name}.` });
     lines.push(...theHouseholdTheyCameOutOf(birth));
 
@@ -300,11 +167,6 @@ export function theLifeBehindTheFirstTurn(
                     : `They grew up inside ${inside.house.name} without ever being put on its roll.`
         });
         if (inside.somebodyIsOwedForIt) {
-            // The player does not know this and the world does. Stated for the
-            // record rather than for the prose, and the narrator must not have
-            // anybody say it out loud - which is now enforced here rather than
-            // asked for, because the engine's own recap would otherwise print
-            // to the player the one thing nobody is going to tell them.
             lines.push({
                 text:
                     'Somebody spent a word to put them there and is carrying the debt for it. '
@@ -320,7 +182,6 @@ export function theLifeBehindTheFirstTurn(
         });
     }
 
-    // -- WHAT THAT LEFT THEM HOLDING --------------------------------------
     const years = birth.opening.provisionedYears;
     lines.push({
         text:
@@ -330,10 +191,6 @@ export function theLifeBehindTheFirstTurn(
                 : `about ${Math.round(years)} years of sitting still.`)
     });
 
-    // -- AND WHAT THEY HAVE BEEN TOLD, WHICH IS THE HALF THAT WAS MISSING -
-    //
-    // Reported as "3 names known" and nothing else. Every one of these rows
-    // already carried who said it and what they said.
     const told = birth.knowledge.slice(0, NAMES_WORTH_SAYING_AT_THE_START);
     if (told.length === 0) {
         lines.push({
@@ -342,9 +199,9 @@ export function theLifeBehindTheFirstTurn(
                 + 'by walking up to it.'
         });
     } else {
-        // Honest about the count. The mechanical line files the total, and
-        // saying "three names, in full" beside a sheet reading eight is the
-        // engine disagreeing with itself on one screen.
+        // The true total, because the sheet files it too and "three names, in
+        // full" beside a sheet reading eight is one screen disagreeing with
+        // itself.
         const rest = birth.knowledge.length - told.length;
         lines.push({
             text:
@@ -355,8 +212,8 @@ export function theLifeBehindTheFirstTurn(
                     : `, and this is where each came from.`)
         });
         for (const row of told) {
-            // The statement often opens with the name, and "Three Walls.
-            // Three Walls is where they are from" is the engine stuttering.
+            // "Three Walls. Three Walls is where they are from" is the engine
+            // stuttering because two fields happen to agree.
             const said = row.statement.trim();
             lines.push({
                 text: said.toLowerCase().startsWith(row.name.toLowerCase())
@@ -366,20 +223,10 @@ export function theLifeBehindTheFirstTurn(
         }
     }
 
-    // -- AND THE FACES, WHICH IS THE OTHER HALF OF THE SAME DEFECT --------
-    //
-    // FOUND BY PLAYING. The opening's suggestions read *"I ask Han Ronglu to
-    // teach me"* and *"I look at Mo Wanming"*, and the run had introduced
-    // neither: this recap covered `birth.knowledge`, which is places and
-    // houses, while the PEOPLE a childhood leaves are drawn separately by
-    // `who-a-life-like-this-grew-up-knowing.ts` and seeded straight into the
-    // knowledge table. The design owner: *"it needs to explain these names at
-    // the bottom otherwise a new player is very confused."*
-    //
-    // The same defect as "3 names known", one table over. Every row already
-    // carried a note saying how this person comes to know them, and the opening
-    // said none of it, so the first screen offered a verb pointed at somebody
-    // it had never named.
+    // The same defect as "3 names known", one table over: the opening offered
+    // "I ask Han Ronglu to teach me" over a run that had never named him,
+    // because the faces a childhood leaves live in a different table from
+    // `birth.knowledge` and this said only the latter.
     if (faces.length > 0) {
         lines.push({
             text:

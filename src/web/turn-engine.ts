@@ -1630,8 +1630,11 @@ export class GameService {
      * just sold you. The gap was on the WRITE side.
      *
      * A thing offered is worth naming. A thing HANDED OVER is worth it more.
+     *
+     * Not private: the verb files are writers too. A list the engine prints and
+     * does not record here is a list no ordinal can be counted against.
      */
-    private nameWhatTheyGot(name: string, stones?: number): void {
+    nameWhatTheyGot(name: string, stones?: number): void {
         if (name.trim().length === 0) return;
         if (this.namedThisTurn.some(thing => thing.name === name)) return;
         this.namedThisTurn.push({ name, ...(stones === undefined ? {} : { stones }) });
@@ -1885,39 +1888,25 @@ export class GameService {
         // believes about it, and who they got it from. See
         // `the-life-behind-the-first-turn.ts`.
         //
-        // AND THEN IT WAS HANDED TO A MODEL AND NEVER SEEN AGAIN. The recap was
-        // unshifted onto `facts.lines` and left at that, which is to say it was
-        // handed to a narrator that is asked, in the same prompt, for *"two or
-        // three short paragraphs"*. Measured with ollama narrating: the whole of
-        // turn 0 was the square. Given a dozen facts whose last three are the
-        // room in front of it, a small model writes the room.
-        //
-        // The design owner: *"WHERE IS THE RECAP OF MY LIFE TO THIS POINT? HAVE
-        // THE ENGINE RETURN IT FOR THE FIRST TURN."*
-        //
-        // So it is filed as what it is - a record, on the engine's own channel,
-        // beside the sheet - and reaches the player in both modes whatever a
-        // model does. `required` is the wrong tool for it and the banner on
-        // `withRequiredLines` says why: it matches on the words surviving into
-        // the prose, and this prompt orders the model to write every fact again
-        // from nothing.
+        // Filed as a ruling, not handed to the narrator alone. It was once
+        // unshifted onto `facts.lines`, and measured with ollama narrating the
+        // whole of turn 0 came back as the square. `required` is the wrong tool
+        // for it - see the banner on `withRequiredLines` - because it matches on
+        // words surviving into the prose and this prompt orders the model to
+        // write every fact again from nothing.
         const life = theLifeBehindTheFirstTurn(birth, STARTING_AGE, faces);
 
-        // `prose` is composed FIRST, and so without the recap: it is what a
-        // player reads when no model answers, and the ruling below already says
-        // all of this. Composing it after the unshift is what used to print the
-        // sixteen years twice on the engine-only path.
+        // Composed FIRST, and so without the recap: `prose` is what a player
+        // reads when no model answers, and composing it after the unshift is
+        // what printed the sixteen years twice on that path.
         facts.prose = facts.lines.join('\n\n');
         const opening = await this.narrator.narrate(facts, {
             place: placeName(created.cultivator),
             ambient,
             awareness,
             company: this.company(created.cultivator),
-            // Every fact, including the one nobody is going to tell them, so a
-            // model cannot write a childhood that contradicts the record - and
-            // so that it WRITES one. The ruling below is the guarantee; this is
-            // the account, in the genre's own words. *"The LLM should be doing
-            // that"*, and `theLifeBehindThemBlock` is where it is asked to.
+            // Every fact, including the one nobody is going to tell them, so
+            // the account cannot contradict the ruling below it.
             theLifeBehindThem: life.forTheNarrator
         });
 

@@ -237,27 +237,12 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
         ? atHome.slice(0, wanted)
         : eligible(theSamePartOfTheWorld(world, here)).slice(0, 1);
 
-    // ── AND NO TWO OF THEM ARE KNOWN THE SAME WAY ───────────────────────
-    //
-    // FOUND BY PLAYING, once the opening started saying these notes out loud
-    // rather than only writing them to the knowledge table. Three faces, drawn
-    // independently, came back as:
-    //
-    //     Fang Zhenshan. Has been at the far end of that street since before
-    //                    either of them was anybody.
-    //     Gu Lanlin.     Has been at the far end of that street since before
-    //                    either of them was anybody.
-    //     Fang Anshi.    One of the faces that was always at the well.
-    //
-    // Two word-identical sentences under two different names, which reads as a
-    // broken template rather than as two neighbours. An independent draw per
-    // face was never wrong while these notes lived in a database column nobody
-    // printed side by side; it became wrong the moment they were a list.
-    //
-    // So the notes are dealt rather than rolled: the table is shuffled once and
-    // handed out in order, and a repeat is only possible past its sixth face -
-    // which only the richest births reach, and where a childhood plausibly does
-    // hold two people known the same way.
+    // Dealt, not rolled. An independent draw per face put the same note under
+    // two different names, which reads as a broken template rather than as two
+    // neighbours - harmless while these lived in a column nobody printed side
+    // by side, wrong once the opening said them as a list. A repeat is only
+    // possible past the table's sixth face, which only the richest births
+    // reach.
     const rng = forStream(seed, 'childhood', here.id);
     const notes = [...HOW_YOU_KNOW_THEM];
     for (let i = notes.length - 1; i > 0; i--) {

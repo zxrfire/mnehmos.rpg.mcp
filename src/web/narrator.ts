@@ -363,17 +363,12 @@ export interface NarratorScene {
      */
     company?: Company | null;
     /**
-     * The life this cultivator had before the run opened, for the ONE turn that
-     * has one.
+     * The years before the run opened, for the one turn that has any.
      *
-     * A third channel, and not either of the two that existed. `lines` is what
-     * happened this turn; `required` is a line appended verbatim when the prose
-     * omits it. These are neither. They are sixteen years, they are filed as an
-     * engine ruling of their own so a player always has them, and they are
-     * handed over here to be WRITTEN - as a childhood, in the genre's own
-     * vocabulary, which is the half a record cannot do.
-     *
-     * The only producer is the opening. See `the-life-behind-the-first-turn.ts`.
+     * Neither `lines` (what happened this turn) nor `required` (appended
+     * verbatim when the prose omits it). These are already filed as an engine
+     * ruling so the player always has them, and are handed over here to be
+     * WRITTEN, which is the half a record cannot do. Opening only.
      */
     theLifeBehindThem?: readonly string[];
 }

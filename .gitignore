@@ -134,3 +134,6 @@ play.db-wal
 llm-results/
 xianxia-run-*.txt
 intent-trace-*.txt
+
+# Local scratch. Never committed, including anything explaining it.
+/reference-material/
