@@ -23,6 +23,7 @@ import {
     DEFAULT_WORK_DAYS
 } from './verb-day-costs.js';
 import { parseIntent } from './actions.js';
+import { parseDuration } from './sentence-parts.js';
 
 /**
  * Intents the prompt suggests for `move`. Suggestions, not a schema: the field
@@ -393,6 +394,38 @@ export function carryWhatOnlyTheSentenceKnows(
     // typed.
     if (merged.stones === undefined && fromSentence.stones !== undefined) {
         merged.stones = fromSentence.stones;
+    }
+
+    // ── AND A SPAN THE PLAYER SAID IN SO MANY WORDS ──────────────────────
+    //
+    // The only field here that overrides a value the model DID supply, and it
+    // is the field where doing anything else is indefensible.
+    //
+    // FOUND BY PLAYING BLIND. The sentence was `i cultivate for twenty years
+    // anyway`. The parser reads that as 7300 days and cannot read it any other
+    // way - `twenty` is in the table and `years` is the unit beside it. What
+    // ran was a five-year stretch, and the fork that ended it reported *2.4
+    // years of 5.0 are spent*, never mentioning the twenty.
+    //
+    // Fifteen years of a forty-year life, gone between the sentence and the
+    // verb, with nothing on the screen saying a shorter stretch had been
+    // substituted. And it goes both ways: a model rounding UP spends decades
+    // nobody asked for, on a clock that kills.
+    //
+    // WHY THIS ONE IS NOT `=== undefined` LIKE THE REST. Every field above is
+    // carried only where the model volunteered nothing, because the model is
+    // the better reader of what a sentence MEANS. A number the player typed is
+    // not a reading. It is the thing they put on the table, in the same class
+    // as `stones` and `rations`, and the only reason those two can use the
+    // weaker rule is that the phase-1 prompt never asks for them.
+    //
+    // Guarded on the text actually naming one: `fromSentence.days` is a
+    // DEFAULT on most sentences - `DEFAULT_SECLUSION_DAYS` and its siblings -
+    // and a default overriding a model's considered span would be this defect
+    // pointing the other way.
+    const saidOutright = parseDuration(input);
+    if (saidOutright !== null && merged.days !== saidOutright) {
+        merged.days = saidOutright;
     }
 
     return merged;

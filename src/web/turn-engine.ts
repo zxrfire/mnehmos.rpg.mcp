@@ -13855,6 +13855,75 @@ ${fit.line}`;
      * reason the whole knowledge layer exists: a name that lives only inside a
      * paragraph is a name the next turn cannot accept.
      */
+    /**
+     * The game's own vocabulary, which is never a proper name.
+     *
+     * The same ruling as `ASSESSING_THEMSELVES`, one verb over: these are the
+     * words for what happens to a cultivator, not names of things in the world,
+     * and matching them against a catalog is how a question about your own
+     * crossing gets answered with a stranger's address.
+     */
+    private static readonly THE_GAMES_OWN_WORDS = new Set([
+        'crossing', 'breakthrough', 'break through', 'barrier', 'bottleneck',
+        'cultivation', 'cultivating', 'qi', 'the dao', 'dao', 'realm', 'rank',
+        'progress', 'foundation', 'meridians', 'lifespan', 'seclusion'
+    ]);
+
+    /**
+     * An art the topic actually names, or null.
+     *
+     * ── THREE WAYS OF MATCHING THE WRONG THING ───────────────────────────
+     *
+     * This was `name.includes(topic)` over the whole catalog, with a
+     * three-character floor. Measured against the catalog as it stands:
+     *
+     *     "the"      ->  Sunfeather Conflagration
+     *     "one"      ->  Dragonbone Severing Decree
+     *     "war"      ->  Burning Heart Cinder Ward
+     *     "air"      ->  Paired-Breath Canon
+     *     "crossing" ->  Reed-Crossing Qinggong
+     *
+     * So asking anybody about almost anything could reach the art-holder read,
+     * because some three-letter run of the topic turned up INSIDE a proper name
+     * nobody had said. The last one is how it surfaced: a question about the
+     * crossing - the breakthrough, the game's own word for it - was answered by
+     * pointing at somebody who knows a movement art.
+     *
+     * Three rules, and each one closes a different one of those:
+     *
+     *   WORD BOUNDARIES. A fragment inside a longer word is not a name. This
+     *   alone kills `war` and `air`.
+     *
+     *   A FLOOR OF FOUR. `the` and `one` are whole words in several art names
+     *   and still mean nothing; no art in the catalog is named by a word that
+     *   short.
+     *
+     *   AND THE GAME'S OWN VOCABULARY IS NOT A CATALOG ENTRY. `crossing` is a
+     *   real word in a real art's name and is also what everybody calls a
+     *   breakthrough. Between those two readings the mechanic wins, because the
+     *   player who typed it meant the mechanic in every case anybody has
+     *   played.
+     *
+     * An exact full-name match is exempt from all three: somebody who types
+     * `Reed-Crossing Qinggong` has named the art and means it.
+     */
+    private static anArtByThatName(topic: string): typeof TECHNIQUES[number] | null {
+        const wanted = topic.trim().toLowerCase();
+        if (wanted.length === 0) return null;
+
+        const exact = TECHNIQUES.find(entry => entry.name.toLowerCase() === wanted);
+        if (exact) return exact;
+
+        if (wanted.length < 4) return null;
+        if (GameService.THE_GAMES_OWN_WORDS.has(wanted)) return null;
+
+        const asAWord = new RegExp(
+            `(?:^|[^a-z0-9])${wanted.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[^a-z0-9]|$)`,
+            'i'
+        );
+        return TECHNIQUES.find(entry => asAWord.test(entry.name)) ?? null;
+    }
+
     private whoTheyWouldSendYouTo(
         cultivator: Cultivator,
         asked: RosterEntry,
@@ -13863,14 +13932,11 @@ ${fit.line}`;
         if (!this.atHand) return null;
         // The catalog, ungated. What the PLAYER can place decides what they are
         // told about; it must not decide what somebody else is able to know.
-        // Straight off the catalog. A loose contains-match, because the
-        // player is naming an art they have never seen written down.
-        const wanted = topic.trim().toLowerCase();
-        const art = wanted.length < 3
-            ? null
-            : TECHNIQUES.find(entry => entry.name.toLowerCase() === wanted)
-                ?? TECHNIQUES.find(entry => entry.name.toLowerCase().includes(wanted))
-                ?? null;
+        // Straight off the catalog, because the player is naming an art they
+        // have never seen written down. NOT a bare contains-match: see
+        // `anArtByThatName`, which is where three ways of matching the wrong
+        // thing were measured.
+        const art = GameService.anArtByThatName(topic);
         if (art === null) return null;
         // Somebody who already holds it is not asking where to find it.
         if (this.repos.techniques.getKnown(cultivator.id, art.id)) return null;
