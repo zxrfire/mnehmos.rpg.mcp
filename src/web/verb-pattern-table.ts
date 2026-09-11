@@ -3121,9 +3121,15 @@ const HOW_FAR_IS_SOMEWHERE = new RegExp([
 
 /**
  * Asking what work is going, which is a question and must stay one.
+ *
+ * FOUND BY PLAYING. "I look for work" carried no modal and named no board, so
+ * it fell past this to the taking rule and signed a three-month contract - 65
+ * spirit stones earned, three months of cultivation gone, from a sentence that
+ * proposed to LOOK. Searching is the commonest way a player asks what is going,
+ * and it reads as a decision to nothing but a regex.
  */
 const ASKING_AFTER_WORK =
-    /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b/;
+    /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b|\b(?:look(?:s|ing)?|search(?:es|ing)?|ask(?:s|ing)?|hunt(?:s|ing)?|cast(?:s|ing)?\s+(?:about|around))\s+(?:about\s+|around\s+|for\s+)+(?:some\s+|any\s+|a\s+|paid\s+|paying\s+|honest\s+)*(?:work|jobs?|employment|hire|a\s+wage|a\s+living)\b|\b(?:seek(?:s|ing)?|after)\s+(?:some\s+|any\s+|a\s+|paid\s+|paying\s+|honest\s+)*(?:work|jobs?|employment)\b/;
 
 // 护法: STANDING OVER SOMEBODY ELSE'S CROSSING
 
