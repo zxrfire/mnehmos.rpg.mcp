@@ -156,8 +156,11 @@ satisfied and the paragraph will still be unreadable.
 <!-- tier: 1 -->
 
 > Played turns obeyed every rule above and came out as quiet English literary fiction:
-> right register, right facts, wrong genre. The properties below, and the reading they
-> were taken from, are in [`how-the-prose-moves.md`](./how-the-prose-moves.md).
+> right register, right facts, wrong genre. The properties below, and what was measured to
+> get them, are in [`how-the-prose-moves.md`](./how-the-prose-moves.md). Four of the rules
+> here were written off a thin sample and were wrong; the corrections are marked where they
+> sit, because a rule that was reversed is worth being able to tell from one that never
+> moved.
 
 **That opening, both ways. Same facts, same order, nothing added.**
 
@@ -183,25 +186,80 @@ Right:
     A handful of others, none of them in a hurry, none of them looking at you.
     Nothing is happening. Nothing happens here.
 
-Eight rules produce that, and they hold on every turn rather than only on an opening.
+These rules produce that, and they hold on every turn rather than only on an opening.
 
-**Paragraphs run one to three sentences, and a third of them are one.** Four is a long
-paragraph. Six does not occur. This rule enforces most of the others on its own, because
-a mood cannot be built across a paragraph that has already ended. The long sentence that
-drops into a short one is an impact beat and not a texture: about one page in one.
+**Most paragraphs run one to three sentences, and a quarter to a third of them are one.**
+Four is long. The long sentence that drops into a short one is an impact beat and not a
+texture: about one page in one.
+
+**Corrected: a long paragraph does occur, and it is always somebody working something
+out.** This page used to say six sentences does not happen. It happens about once every
+twenty paragraphs, and there are close to six thousand such paragraphs in narration alone
+across the sixteen books measured. What a long paragraph never is here is a mood built
+across half a page. It is a chain of assessment - who suspects what, what it is worth, what
+follows, what it would cost - and it ends when the conclusion is reached. See the
+interiority rule below, which is the same correction stated from the other end.
+
+Whichever length it runs, **the sentences inside it stay short.** A six-sentence paragraph
+in this genre is six short declaratives in a row, not three long ones. The paragraph got
+longer; the sentence never does.
 
 **A sentence takes a person or a thing as its subject, and grows by adding a verb
-rather than a clause.** *It is*, *There is* and *The day* are the loudest signal of the
-wrong genre, and they are how the engine's own notes are written.
+rather than a clause.** The English-novel habit is to hang a participle and a relative
+clause off the front and reach the verb last. This one puts the verbs in a row.
+
+| Wrong | Right |
+|---|---|
+| Having fetched a chair from inside, which he wiped with his sleeve out of an eagerness he would not have admitted to, he set it down. | He went in, took a chair, set it by the table, and wiped it with his sleeve. |
+| Jiang Peizhi, whose debts at the ford are known to everybody standing there, makes his offer. | Jiang Peizhi owes money at the ford. Everybody standing there knows it. He makes the offer anyway. |
+
+A participle at the front of a sentence is ordinary here and uncommon - about four
+sentences in a hundred. Write one and move on. Stacking two is the tell, and so is the
+relative clause that exists to characterise a noun the sentence has already named.
+
+**The narration argues, and it says so with a connective at the front of the sentence.**
+*However. Although. After all. As for. In fact. Of course. Therefore. Meanwhile. At the
+same time. Furthermore.* Roughly one sentence in fifteen opens on one. This prose does not
+lay two facts side by side and leave the reader to join them - it says out loud which
+follows from which, and that is a rhythm the earlier version of this page missed entirely.
+
+| Shape | Reach for | Worked |
+|---|---|---|
+| the reason, after the claim | *After all* | Nobody at the ford will carry for him. After all, the last man who did is still owed. |
+| the concession | *However*, *Although* | Although the price is fair, nobody is buying. |
+| what follows | *Therefore*, *As a result* | The elder has not answered. Therefore the matter is not settled, and everybody in the room knows it. |
+| the pivot to a new subject | *As for* | As for Jiang Peizhi, he has not looked up from the bowl once. |
+
+*As for* is the one an English novel almost never uses and this genre uses constantly. It
+changes subject without a paragraph break, which is how a short paragraph covers two
+people.
+
+The same instinct inside a sentence is **the correction**: a claim, then the reason it is
+not what the reader would assume. *It was not that the elder could not work it out. It was
+that the boy's house had never been in anything, and there was nothing to tie him to the
+one who ran.*
+
+**Never close on the day's temper, and never write somebody's interiority as scenery.**
+*The day asks nothing in particular*, *for now*, *at least for the moment*, *there is
+nothing here they would notice*. The first is the narrator settling the reader down and
+nothing here settles anybody down; the second is the narrator telling the player what they
+feel while pretending to describe a square. End on a fact, a price, or somebody's line.
 
 | Wrong | Right |
 |---|---|
 | It is the ground they were raised on. | You grew up on this ground. |
-| Having fetched a chair from inside, which he wiped with his sleeve out of an eagerness he would not have admitted to, he set it down. | He went in, took a chair, set it by the table, and wiped it with his sleeve. |
 
-**Never close on the mood or the weather.** *The day asks nothing in particular*, *for
-now*, *at least for the moment*. That is the narrator settling the reader down, and
-nothing here settles anybody down. End on a fact, a price, or somebody's line.
+**Corrected: this is not a ban on *It is* and *There is*.** This page used to call those
+the loudest signal of the wrong genre. They are not. The construction runs at about three
+sentences in a hundred across the corpus and carries most of the explanatory frames above -
+*It was the eighth month and the heat had not broken* is the genre writing plainly. What
+was actually wrong with the openings this page was written against was the mood and the
+mind-reading, not the copula.
+
+`tests/web/the-engine-does-not-close-on-the-weather.test.ts` does ban both as sentence
+OPENERS, and that guard is right where it applies: it reads ENGINE-authored strings, which
+get one line to state a fact and have no room to spend it on an existential frame. **That
+is the engine's voice. This is the narrator's, and the narrator has a paragraph.**
 
 **People speak, and the speech carries the scene.** Description frames a scene once and
 then gets out of the way. If somebody is standing in a scene and there is no speech in
@@ -209,23 +267,35 @@ it, the scene has been described rather than played. A line is not an outcome: i
 not agree to anything, settle a price, hand anything over, or state a fact you were not
 given.
 
-Two rules inside that one, and both cut against English style advice:
+Three rules inside that one, and all three cut against English style advice:
 
 - **The tag is the plain one, in the narration's own tense, and it repeats.** *Says*
   here, because this game narrates in the present; never *replied*, *murmured*, *offered*,
   *interjected*. A short manner phrase is the whole variation there is, and *coldly* is
-  the one this genre reaches for. A third of spoken lines carry no tag at all: the turn
-  order says who is talking.
+  the one this genre reaches for. **Corrected: most spoken lines carry no tag at all.**
+  This page used to say a third. It is measured at roughly two thirds, so the untagged
+  line is the default and the tagged one is the exception - the turn order says who is
+  talking. A tag on every line is the English-novel habit, and so is a different tag each
+  time.
 - **Terms are stated in full, by a person, flatly.** Where the facts carry a price, a
   bar, a term of service or a condition, the person whose terms they are says them
   straight through with no hedging. That is not the exposition the rule below forbids:
   *show, never explain* governs YOUR voice, and somebody laying out what they require is
   showing you who they are.
+- **Speech is loud, and the narration around it stays level.** Exclamation marks and
+  question marks are ordinary punctuation inside quotation marks here and are not
+  emphasis: measured at roughly one exclamation every four spoken sentences, four to five
+  times the rate in the narration beside them. Ellipsis is ordinary too, and it is
+  hesitation rather than trailing atmosphere. Stripping all three out is one of the things
+  that makes a played scene read as an English novel. Outside the quotation marks the
+  narration stays flat - an exclamation mark in YOUR voice is the narrator getting excited
+  about the world, which is the weather closer arriving from the other end.
 
 | Described | Spoken |
 |---|---|
 | Jiang Peizhi is here, pricing a thing they have no intention of buying today. | Jiang Peizhi turns the bowl over. "How much?" he says. He already knows, and puts it down. |
 | The intake will hear anybody some way into Qi Condensation, and not from the first rung of it. | "Up the steps. Reach the top and you are heard. Three days. Anyone still on the first rung, go home now and save yourself the walk." |
+| Fang Nuotao asks, with some urgency, whether the pass is open. | "Is it open? The pass - is it open?" <br> "No." <br> "Since when?" |
 
 **Standing shows in who defers, and is never stated.** Address is by station far more
 often than by name, and a bare given name is a claim of equality or an insult - the
@@ -242,13 +312,29 @@ somebody READS to this cultivator and never what rung they hold, so write the re
 |---|---|
 | One of them is above you, though on the same footing. | One of them has not spoken. The others keep half a step clear of him without appearing to. |
 
-**Interiority is one short sentence, and it assesses.** What it costs, who is above you,
-what is worth taking, who to stay away from. Often it is the body: his hands closed, his
-heart went cold. A cultivator prices a room and does not muse about one.
+**Interiority assesses, and it may run as long as the assessment does.** What it costs, who
+is above you, what is worth taking, who to stay away from, what follows from what somebody
+just said. Often it is the body: his hands closed, his heart went cold. A cultivator prices
+a room and does not muse about one.
+
+**Corrected: this page used to say interiority is ONE SHORT SENTENCE.** That half was wrong
+and it was banning the genre's most characteristic paragraph. Long interiority is constant
+here, and it is always calculation - the reasoning runs in short flat sentences for as many
+of them as the reasoning takes, and stops on the conclusion. The *assesses* half is the
+real rule and it is the one that does all the work: the narrator may reason at length and
+may never muse.
 
 | Reflection | Assessment |
 |---|---|
 | There is nothing here they would notice, because it is what noticing has always been measured from. | Nothing in this square is worth anything. You knew that before you looked. |
+| The weight of the years he had spent here settled on him, and for a moment he could not have said whether it was grief or only fatigue. | He has been at this ford eleven years. The ones who arrived after him are ahead of him now. They got there by leaving. He has not. |
+
+The second right-hand column is the shape to copy: four sentences, no image, no mood, and a
+conclusion at the end that costs somebody something. **Everything in it is a fact you were
+handed.** A long paragraph is more room to be wrong in, not licence to fill it - the name
+and discovery gate outranks every rule on this page, and a reasoned paragraph that reaches
+a conclusion the engine did not give you is the worst version of breaking it, because it
+arrives with its own argument attached.
 
 **A refusal is short, unsoftened and unexplained.** The engine composes a refusal as a
 full account of why, and that account belongs in the ruling the player can go and read.
@@ -262,8 +348,8 @@ explaining it away is the only thing that can spoil it.
 **The funny beat is three paragraphs and belongs to somebody else's mouth.** A lesser
 person complains at length - the food, the walk, the price, being cheated - a senior
 answers in one flat line, and the third paragraph is the complainer going quiet. The
-narrator does not make the joke. Questions and exclamations are ordinary punctuation in
-speech here, and stripping them out is what makes a scene read as an English novel.
+narrator does not make the joke. The complaint is where the punctuation rule above earns
+its keep: the complainer is loud on the page, and the flat line that answers is not.
 
 | Narrated | Played |
 |---|---|

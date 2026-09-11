@@ -17,6 +17,32 @@
  * still tier 1, that it arrives at a REAL played turn rather than only at a
  * direct call, and that it still carries worked pairs - a small local model
  * copies a pair and argues with a rule.
+ *
+ * ── FOUR PINNED CLAIMS WERE MEASURED AND WERE WRONG ──────────────────────
+ *
+ * The section was written off one work's opening chapters. Re-measured across
+ * sixteen books, 231,512 paragraphs and 578,664 sentences:
+ *
+ *     "Six does not occur"          12,857 paragraphs of >=6 sentences exist,
+ *                                   5,888 of them pure narration. Always
+ *                                   assessment, never mood
+ *     "A third of spoken lines
+ *      carry no tag"                two thirds do. 70% of quoted spans across
+ *                                   the corpus, 63% in the human-translated
+ *                                   books. The claim was inverted
+ *     "Interiority is one short
+ *      sentence, and it assesses"   the assesses half is the rule; the length
+ *                                   half banned the genre's commonest paragraph
+ *     "It is, There is are the
+ *      loudest signal of the
+ *      wrong genre"                 2.70 per 100 sentences, and they carry the
+ *                                   explanatory frames. Narrowed to the two
+ *                                   habits that were actually wrong
+ *
+ * So the wording assertions below name the CORRECTED rules, and a second set
+ * asserts the reverted claims are gone. That second set is the durable half:
+ * it survives any rewording and goes red if somebody restores a claim the
+ * corpus contradicts.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -43,18 +69,46 @@ describe('the narrator is told how the prose moves', () => {
     it('reaches the one narration prompt, so it reaches every narrated turn', () => {
         const prompt = narrationSystemPrompt();
         for (const rule of [
-            'Paragraphs run one to three sentences',
+            'Most paragraphs run one to three sentences',
             'The funny beat is three paragraphs',
             'takes a person or a thing as its subject',
-            'Never close on the mood or the weather',
+            'The narration argues',
+            "Never close on the day's temper",
             'People speak, and the speech carries the scene',
             'The tag is the plain one',
+            'Speech is loud',
             'Terms are stated in full, by a person',
             'Standing shows in who defers',
-            'Interiority is one short sentence, and it assesses',
+            'Interiority assesses',
             'A refusal is short, unsoftened and unexplained',
             'A jump in time is three words'
         ]) expect(prompt, rule).toContain(rule);
+    });
+
+    it('does not restore a claim the corpus contradicts', () => {
+        // Each of these shipped for a while and each is measurably false. The
+        // measurements are in this file's header and in `how-the-prose-moves.md`.
+        const prompt = narrationSystemPrompt();
+        for (const [gone, why] of [
+            ['Six does not occur', "long paragraphs exist and are the genre's reasoning paragraph"],
+            ['A third of spoken lines carry no tag', 'two thirds do; the claim was inverted'],
+            ['Interiority is one short sentence, and it assesses', 'it runs as long as the calculation']
+        ] as const) expect(prompt, why).not.toContain(gone);
+
+        // The fourth correction cannot be pinned by absence: the page states the
+        // claim in order to retract it. Pin the retraction instead.
+        expect(prompt).toContain('this is not a ban on');
+        expect(prompt).toContain("is the engine's voice. This is the narrator's");
+    });
+
+    it('still permits the long reasoning paragraph, and still forbids musing', () => {
+        // The correction that is easiest to lose: a later editor tightening the
+        // paragraph rule would silently re-ban the genre's commonest paragraph.
+        // Both halves have to survive together or the rule means nothing.
+        const prompt = narrationSystemPrompt();
+        expect(prompt).toContain('a long paragraph does occur');
+        expect(prompt).toContain('may run as long as the assessment does');
+        expect(prompt).toMatch(/reason at length and\s+may never muse/);
     });
 
     it('carries worked pairs and not only rules', () => {

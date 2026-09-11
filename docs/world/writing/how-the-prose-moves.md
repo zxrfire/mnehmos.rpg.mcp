@@ -18,22 +18,56 @@ Every fact in that is correct and every existing rule is obeyed. It reads like a
 literary novel in English. The genre does not move like that, and the design owner's ruling
 is that the whole game has to feel like the genre, not only the opening.
 
-The properties below were taken from reading early chapters of translated cultivation web
-novels and writing down what the prose actually does. Every example here is rendered into
-this world's own places and people; none of it is quoted from anywhere.
+The properties below were taken from reading translated cultivation web novels and writing
+down what the prose actually does. Every example here is rendered into this world's own
+places and people; none of it is quoted from anywhere.
 
-**This page is calibrated too narrowly and should be widened.** The first version was
-written off the opening chapters of a single work, which is enough to catch the loud
-properties - paragraph length, dialogue tags, address by rank - and not enough to tell a
-genre convention apart from one author's habit. Treat an unconfirmed property here as a
-hypothesis until a second and third source agree with it, and correct the page when they do
-not. The design owner raised exactly this risk.
+## What has now been measured, and what has not
+
+The first version of this page was written off the opening chapters of a **single work**,
+which is enough to catch the loud properties - paragraph length, dialogue tags, address by
+rank - and not enough to tell a genre convention apart from one author's habit.
+
+**It has since been measured across sixteen books: 231,512 paragraphs and 578,664
+sentences.** Fourteen of the sixteen are one author in one translated line; one is a
+different author entirely; one is a fan-edited machine translation. Where the three groups
+disagree the disagreement is stated below, because a property that holds only in the
+machine translation is an artefact of the machine.
+
+**Four claims on this page were measurably wrong and are corrected in place**, each marked
+where it sits. They are kept rather than quietly replaced, because a rule that was reversed
+is worth being able to tell from one that never moved. The tier-1 section in
+[`tone.md`](./tone.md) carries the same four corrections and the same marking.
+
+What is measured and what is still a hypothesis:
+
+| Measured across all sixteen | Still read rather than counted |
+|---|---|
+| paragraph and sentence length, and what a long paragraph contains | *address by rank* - counting honorifics is easy, counting whether one was used *instead of* a name is not |
+| dialogue share, untagged share, which tags are used | *the strong are deadpan* - a claim about characterisation, not a countable form |
+| sentence-opening connectives | *a price reverses a refusal* - a plot shape, observed repeatedly and never counted |
+| exclamation, question mark and ellipsis rates, split between speech and narration | *the crowd is one body* - same |
+| subordinators, commas, participial openers, existential openers | |
+
+**A defect in the first measuring pass is worth recording, because it is the shape this
+repo keeps finding.** The sampler tested for dialogue by looking for the curly left double
+quote. One book in the corpus is typeset with straight quotes throughout - 77,279 of them
+against 1,914 curly - so it reported **1.8% dialogue paragraphs**, which is not a style a
+novel can have. Corrected, that book reports 37.1%, the highest in the corpus, and it moved
+the pooled untagged-dialogue figure by eight points. The suspicion was first raised as an
+encoding fault; every file in the corpus decodes as clean UTF-8 with zero replacement
+characters, so that theory was wrong and the real fault was a detector that only knew one of
+the two ways a book can be typeset. **A per-book sanity floor catches this and a pooled
+average never will**: any book reporting under 10% dialogue is a broken detector, not a
+quiet author.
 
 Working material is kept in `reference-material/` at the repo root, which is gitignored in
-its entirety and may not exist at all. It explains itself if it is there. Bring back
-properties and re-rendered examples only. No titles, no authors, no distinctive invented terminology from any single work, and
-no verbatim passages - the design is the owner's own amalgamation and the repo names none of
-its sources.
+its entirety and may not exist at all. It explains itself if it is there.
+
+Bring back properties and re-rendered examples only. No titles, no authors, no distinctive
+invented terminology from any single work, and no verbatim passages - the design is the
+owner's own amalgamation and the repo names none of its sources. This page has already had
+one near-verbatim line and one lifted character name caught in it and removed.
 
 ---
 
@@ -41,12 +75,15 @@ its sources.
 
 | Section | What it covers |
 |---|---|
-| [Paragraphs are short](#paragraphs-are-short) | The single highest-leverage change |
+| [Paragraphs are short, and the long one reasons](#paragraphs-are-short-and-the-long-one-reasons) | The single highest-leverage change, and the correction to it |
 | [Sentences are declarative and stack verbs](#sentences-are-declarative-and-stack-verbs) | Clause structure |
+| [The prose argues](#the-prose-argues) | Sentence-opening connectives, the biggest thing this page missed |
 | [Dialogue carries the scene](#dialogue-carries-the-scene) | The description-to-speech ratio |
-| [Say "said"](#say-said) | Dialogue tags, against English style advice |
+| [Say "said", and usually say nothing](#say-said-and-usually-say-nothing) | Dialogue tags, against English style advice |
+| [Speech is loud](#speech-is-loud) | Punctuation, and how much of it there is |
 | [Address by rank, not by name](#address-by-rank-not-by-name) | The strongest genre marker there is |
-| [Interiority is flat and physical](#interiority-is-flat-and-physical) | Against lyrical inwardness |
+| [Interiority is flat, physical, and often long](#interiority-is-flat-physical-and-often-long) | Against lyrical inwardness, and the correction to the length rule |
+| [The copula is ordinary, and was wrongly banned](#the-copula-is-ordinary-and-was-wrongly-banned) | *It is* / *There is*, and which voice the ban belongs to |
 | [Refusal is short](#refusal-is-short) | And the engine is the worst offender |
 | [A price reverses a refusal, and nobody is ashamed](#a-price-reverses-a-refusal-and-nobody-is-ashamed) | |
 | [The strong are deadpan, the weak emote](#the-strong-are-deadpan-the-weak-emote) | How power reads on the page |
@@ -56,12 +93,15 @@ its sources.
 
 ---
 
-## Paragraphs are short
+## Paragraphs are short, and the long one reasons
 
-**One to three sentences. Almost always.** A four-sentence paragraph is a long one and a
-six-sentence one does not occur. This is the single change that does most of the work,
-because it forces every other property: you cannot accumulate subordinate clauses or build
-a mood across half a page if the paragraph ends.
+**One to three sentences, most of the time.** Measured: the median paragraph is 2
+sentences in fifteen of the sixteen books and 3 in the sixteenth; 62-90% of paragraphs are
+three sentences or fewer, clustering at 78-88%; 16-43% are a single sentence, clustering at
+24-36%. A four-sentence paragraph is a long one.
+
+This is still the single change that does most of the work, because it forces the others:
+you cannot build a mood across half a page if the paragraph ends.
 
 The narration above is four sentences welded into one block. Broken the way the genre breaks
 it, the same facts move:
@@ -72,6 +112,40 @@ it, the same facts move:
 > been worked over for it.
 >
 > An ordinary day.
+
+### Corrected: the six-sentence paragraph, which this page said does not occur
+
+It occurs **12,857 times** in the corpus - 1.6% to 12% of paragraphs depending on the book,
+5.6% pooled. **5,888 of them contain no speech at all**, so they are not a quoted exchange
+wearing a long paragraph's shape. The claim was false, and it was the most expensive thing
+on this page, because it banned the genre's most characteristic paragraph outright.
+
+**What a long paragraph here always is: assessment.** Who suspects what, what something is
+worth, what follows from what, what it would cost, why the obvious reading is wrong. One
+sampled paragraph runs, in substance: a powerful figure declines to pry into how somebody
+advanced; it was not that he was slow to work it out; it was that the man's record was
+clean; therefore there was nothing to tie him to the one who ran. Four sentences of pure
+calculation and not one image in it.
+
+Re-rendered into this world, and this is the shape to copy:
+
+> The elder does not ask how the boy reached the third rung in a year. It is not that he
+> cannot work it out. It is that the boy's house has never been in anything, his master is
+> three years dead, and nobody has come to the gate asking after him. Therefore there is
+> nothing to tie him to the business at the ford. The elder writes the name down and goes
+> on to the next one.
+
+Five sentences. Every one of them short. No mood, no image, and a conclusion at the end
+that changes what somebody does.
+
+**The rule that survives is the sentence, not the paragraph.** A long paragraph in this
+genre is six short declaratives in a row; it is never three long ones. Subordinators run at
+0.033-0.06 per sentence across the corpus and commas at 0.58-0.99 - both flat whether the
+paragraph is one sentence or eight. **The paragraph got longer and the sentence never did**,
+which is exactly why the long paragraph does not read as English literary prose.
+
+So the rule to give a narrator is not a length. It is: **the paragraph may run as long as
+the reasoning does, and it may not run one sentence past it.**
 
 ## Sentences are declarative and stack verbs
 
@@ -86,6 +160,68 @@ adding a clause that qualifies the first one.
 Four verbs, one line, no interpretation offered. The eagerness is visible in the wiping and
 is never named.
 
+Measured: the median sentence runs 11-15 words. Subordinators - *although, though,
+whereas, because, since, unless* - run at **0.033 to 0.06 per sentence**, so fewer than one
+sentence in sixteen carries one even at the top of the range. Commas run at **0.58 to 0.99
+per sentence**.
+
+**Softened: the participial opener.** This page used a fronted participle as its *Wrong*
+example, which implied the construction is absent. It is not - it opens about **4 sentences
+in 100** (2.75 to 5.41 across the books), so it is ordinary and uncommon rather than
+forbidden. What made the example wrong was the stack: a fronted participle AND a relative
+clause AND a parenthetical motive, all before the verb. One participle is fine. Two, or one
+carrying a relative clause, is the English-novel tell.
+
+## The prose argues
+
+**The largest property this page missed, and the easiest to copy.** The narration constantly
+states which fact follows from which, with a logical connective at the front of the
+sentence. Counted across the corpus, **38,291 sentence-opening connectives - 6.6 per 100
+sentences**, so roughly one sentence in fifteen. Per book it ranges 3.1 to 12.0 per 100.
+
+| Connective | Count | What it does |
+|---|---|---|
+| However | 8,599 | the reversal |
+| Although | 3,763 | the concession, taken at the front of the sentence |
+| As for | 3,474 | the pivot to a new subject without a paragraph break |
+| After all | 3,391 | the reason, supplied after the claim it justifies |
+| At the same time | 2,711 | the second thing that is also true |
+| Furthermore | 2,388 | the escalation |
+| In fact | 2,129 | the correction upward |
+| Thus | 1,874 | the consequence |
+| Of course | 1,455 | the thing the reader should already have known |
+| Meanwhile | 1,297 | elsewhere |
+| Therefore | 1,275 | the consequence, stated formally |
+
+Four of these carry nearly all of it, and each has a shape:
+
+> **After all** - the claim, then its reason. *Nobody at the ford will carry for him. After
+> all, the last man who did is still owed.*
+>
+> **However / Although** - the concession, usually opening the sentence rather than hinging
+> it. *Although the price is fair, nobody is buying.*
+>
+> **Therefore / As a result / Thus** - what follows. *The elder has not answered. Therefore
+> the matter is not settled, and everybody in the room knows it.*
+>
+> **As for** - the pivot. *As for Jiang Peizhi, he has not looked up from the bowl once.*
+
+*As for* is worth naming separately. English literary prose barely uses it; this genre uses
+it 3,474 times, and it is how a short paragraph covers two people without a break between
+them.
+
+**And the correction frame, which is the same instinct inside a sentence.** A claim, then
+the reason it is not what the reader would assume: *It was not that he could not work it
+out. It was that the record was clean.* This is the single most characteristic sentence
+pair in the corpus and it is what the long reasoning paragraph is usually built out of.
+
+**Why this matters more than it looks.** The engine hands the narrator a list of facts, and
+the failure mode this whole page exists to fix is narrating them in the order they arrived.
+A connective is the cheapest available instrument against that, because you cannot write
+*therefore* without having decided which fact follows from which. The rule *do not narrate
+in the order you were given* is hard to obey; *say which one follows* is easy, and it
+produces the same result.
+
 ## Dialogue carries the scene
 
 After the opening few paragraphs of a scene, **most lines are people talking.** Description
@@ -95,11 +231,15 @@ paragraph on how a room feels, this genre puts two people in it and lets them sp
 For the narrator this is a hard budget: if a scene has somebody in it and the prose contains
 no speech, the scene is being described rather than played.
 
-## Say "said"
+Measured: **23.1% to 37.1% of paragraphs contain speech**, 30.6% pooled. That is the floor
+rather than the target, because these are paragraphs and a long exchange is many of them;
+what it establishes is that no book in the corpus goes a page without somebody talking.
+
+## Say "said", and usually say nothing
 
 English style advice says vary your dialogue tags. **This genre does the opposite**, and
-doing it the English way is one of the loudest tells. The tag is `said`, usually with an
-adverb or a short manner phrase in front of it, and it repeats without apology.
+doing it the English way is one of the loudest tells. The tag is `said`, sometimes with a
+short manner phrase, and it repeats without apology.
 
 > "Second Brother, the Pavilion is taking disciples this year," the carter said seriously.
 >
@@ -109,9 +249,76 @@ adverb or a short manner phrase in front of it, and it repeats without apology.
 
 Not *replied*, *murmured*, *interjected*, *offered*. Said, said, said.
 
+**Measured, with a caveat that changes the claim.** Counting tag words in the window
+immediately around a quoted span, across the fourteen books in one translated line:
+**said 7,686, against 4,985 for every other tag combined** - so *said* outweighs the whole
+field by about 1.5 to 1, and outruns the next single tag (*asked*, 681) eleven to one.
+
+Pooled across all sixteen books that margin disappears: said 11,873 against 12,093 for
+everything else. The two books that reverse it are the outlier pair - a different author,
+and a machine translation, which between them supply 1,087 *laughed* and 874 *chuckled*.
+**So the honest statement is: `said` dominates in careful human translation, and tag variety
+is what a machine translation produces.** That is a useful thing to know about the failure
+mode, since a language model left alone produces the same variety for the same reason.
+
+### Corrected: most lines carry no tag at all
+
+This page's tier-1 summary said *a third of spoken lines carry no tag*. **It is the
+majority, and the claim was inverted.**
+
+| | untagged quoted spans | dialogue paragraphs with no tag anywhere |
+|---|---|---|
+| all sixteen books | **70.1%** | 73.4% |
+| the fourteen in one translated line | **62.8%** | 67.5% |
+| the outlier pair | 75.5% | 77.9% |
+
+Per book the untagged share runs 54.4% to 81.4%, and it never falls below half in any book
+in the corpus. **The untagged line is the default; the tagged line is the exception.** Turn
+order carries who is speaking, and the tag turns up when the speaker changes in a way the
+order does not make obvious, or when the manner is the point.
+
+This compounds with the rule above rather than competing with it: when a line does take a
+tag, that tag is *said*.
+
+## Speech is loud
+
+Punctuation this genre uses far more heavily than English literary prose, and stripping it
+out is a large part of why a played scene comes back sounding like a quiet novel.
+
+| | per 100 sentences |
+|---|---|
+| exclamation marks, overall | **11.26** |
+| exclamation marks, in paragraphs containing speech | **17.4** pooled, **24.1** in the human-translated books |
+| exclamation marks, in narration | 7.8 pooled, **5.3** in the human-translated books |
+| question marks, in paragraphs containing speech | **11.2** |
+| ellipsis | **5.2** |
+
+The split is the finding, not the total. **Dialogue carries four to five times the
+exclamation rate of the narration beside it.** People in this genre shout, object, refuse
+and are astonished on the page, and none of it is remarkable; the narration around them
+stays level. An exclamation mark in the narrator's own voice is the same defect as closing
+on the weather - the narrator having a reaction the world did not supply.
+
+Ellipsis at 5.2 per 100 is hesitation and being cut off, not trailing atmosphere. It belongs
+inside quotation marks for the same reason the exclamation does.
+
+> "Is it open? The pass - is it open?"
+>
+> "No."
+>
+> "Since when? I came four days -"
+>
+> "Since the day you set out," the gatekeeper says. "You could have asked at the ford."
+
 ## Address by rank, not by name
 
-**This is the strongest single marker.** People address each other by relationship and
+**Read, not counted.** This page has called it the strongest single marker since the first
+version; that ranking is a reader's impression and has not been measured. Counting
+honorifics is easy and would prove nothing - what matters is whether one was used *instead
+of* a name, and nothing here counts that. It is unquestionably present throughout the
+corpus. Treat the superlative as unconfirmed.
+
+People address each other by relationship and
 station constantly, and often exclusively: Second Brother, Fourth Uncle, Senior Sister,
 Elder, Immortal, Young Master, Sect Master, Second Sister-in-Law. A name is used to
 introduce somebody or to be rude to them.
@@ -123,9 +330,9 @@ information the reader picks up for free.
 
 The repo already tracks the relationships this needs. Use them.
 
-## Interiority is flat and physical
+## Interiority is flat, physical, and often long
 
-Thought is reported in one short sentence, usually as a body doing something.
+Reaction is reported in one short sentence, usually as a body doing something.
 
 > His heart trembled.
 >
@@ -134,9 +341,82 @@ Thought is reported in one short sentence, usually as a body doing something.
 > He was confused, and then he was curious.
 
 Not *a complicated feeling moved through him, part fear and part something he had no name
-for yet*. The genre states the reaction and moves on. Where it does go inward, it goes
-inward to **calculate** - what this costs, who could be beaten, what is owed - and not to
-reflect.
+for yet*. The genre states the reaction and moves on.
+
+### Corrected: interiority is not limited to one sentence
+
+This page, and the tier-1 rule taken from it, said interiority is **one short sentence**.
+The *reaction* is. **The assessment is not**, and the assessment is most of what this genre
+does inwardly. See [the long paragraph](#corrected-the-six-sentence-paragraph-which-this-page-said-does-not-occur):
+5,888 speechless paragraphs of six or more sentences, and reading them, they are almost all
+somebody working out what follows.
+
+So the rule has two halves and only one of them was right:
+
+| | |
+|---|---|
+| **It assesses** | true, and it is the whole rule. What it costs, who is above you, what is worth taking, who to stay away from, why the obvious reading is wrong |
+| ~~**One short sentence**~~ | false. It runs as long as the calculation takes |
+
+What stays constant through a long one is the sentence: short, flat, declarative, one
+conclusion per sentence, no image. What it may never become is **musing** - a feeling
+examined for its own sake, an atmosphere, a question with no answer coming. A cultivator
+prices a room. He does not wonder about one.
+
+> **Musing.** The years he had spent at the ford settled on him, and for a moment he could
+> not have said whether what he felt was grief or only tiredness.
+>
+> **Assessing.** He has been at this ford eleven years. The ones who arrived after him are
+> ahead of him now. They got there by leaving, and he did not. Whatever he does about that,
+> he will have to do it before the intake closes.
+
+Both are four lines of a man's inner life. Only the second one ends somewhere.
+
+**For the narrator specifically:** a long inward paragraph is more room to be wrong in, not
+licence to fill it. Every fact in it has to be one the engine handed over. A reasoned
+paragraph that reaches a conclusion nobody gave you is the worst version of breaking the
+name and discovery gate, because it arrives with its own argument attached and reads as
+authoritative.
+
+## The copula is ordinary, and was wrongly banned
+
+The tier-1 section used to say *It is*, *There is* and *The day* are **the loudest signal of
+the wrong genre**. Two of those three are wrong.
+
+Measured across the corpus, existential and copula sentence openers:
+
+| Opener | Count | per 100 sentences |
+|---|---|---|
+| It was | 10,012 | 1.73 |
+| There were | 2,411 | 0.42 |
+| There was | 2,114 | 0.37 |
+| It is | 607 | 0.10 |
+| all six forms | 15,615 | **2.70** |
+
+The corpus narrates in the past tense, so its *It was* is the construction our present-tense
+prose renders *It is*. At 2.70 per 100 it turns up about once every 37 sentences, and it
+carries most of the explanatory frames in the section above - *It was not that he could not
+work it out*, *It was a monumental matter*, *It was the eighth month and the heat had not
+broken*. **The genre uses it freely and plainly.**
+
+**What was actually wrong** with the openings this page was written against was neither of
+those. It was two other things, in the same sentences:
+
+| The real defect | The sentence it was found in |
+|---|---|
+| closing on the day's temper | *The day asks nothing in particular* |
+| the reader's own interiority written as scenery | *There is nothing here they would notice, because it is what noticing has always been measured from* |
+
+The copula was present in both and was not the fault. Banning it cost the narrator a
+sentence shape the genre uses constantly and fixed nothing.
+
+**Two voices, and the rule is different for each.**
+`tests/web/the-engine-does-not-close-on-the-weather.test.ts` bans `It is` and `There is` as
+sentence **openers**, and that guard is correct and should stay. It reads **engine-authored**
+strings: one line, stating one fact, with no room to spend on an existential frame, and the
+engine has no paragraph in which to earn one. The narrator has a paragraph. **That guard is
+about the engine's voice; this page is about the narrator's**, and the two rules differing
+is the correct outcome rather than a contradiction to reconcile.
 
 ## Refusal is short
 
