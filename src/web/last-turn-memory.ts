@@ -295,9 +295,23 @@ const A_BARE_ONE = /^(?:the\s+)?(?:that|this|it|one|same|other)(?:\s+one)?$/i;
  * are holding intakes and the player says *the intake*. Resolved exactly the
  * way `it` is, which means the ambiguity rule applies unchanged - two notices
  * on the wall and the phrase points at nothing, and the turn says so.
+ *
+ * ── AND IT IS THE PAPER WORDS AND NOTHING ELSE ───────────────────────────
+ *
+ * The first cut was wider. It held `manual`, `book`, `job`, `work` and `offer`
+ * too, and that broke on the next turn of the next session: `i buy a manual`,
+ * one turn after a WALL read, came back with *"manual" could be Cold Sword Sect
+ * or Hollow Bell Wanderers*.
+ *
+ * `ThingNamed` carries a name and a price and no KIND, so the resolver cannot
+ * tell a house from a book and matched the word against whatever the last turn
+ * happened to print. The paper words are safe because exactly one read produces
+ * them - the bills - so the listing a paper word points into is the only
+ * listing that kind can come from. Widening this list again wants a kind on the
+ * row, not more nouns here.
  */
 const A_THING_BY_ITS_KIND =
-    /^(?:the\s+|that\s+|this\s+)?(?:intake|intakes|notice|notices|bill|bills|poster|posters|posting|listing|listings|offer|offers|job|jobs|work|book|books|manual|manuals)$/i;
+    /^(?:the\s+|that\s+|this\s+)?(?:intake|intakes|notice|notices|bill|bills|poster|posters|posting|postings)$/i;
 
 /** Comparatives. Cheaper is tested first so "less expensive" is not read as expensive. */
 const THE_CHEAPER = /\b(?:cheap(?:er|est)|less expensive|least expensive|lower priced|lowest priced|more affordable)\b/i;

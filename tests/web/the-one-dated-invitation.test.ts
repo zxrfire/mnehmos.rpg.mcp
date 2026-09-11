@@ -55,7 +55,10 @@ import {
     resolvingAgainstTheLastTurn,
     type WhatTheLastTurnDid
 } from '../../src/web/last-turn-memory';
-import { theWallAnswersThis } from '../../src/web/what-is-posted-on-the-wall-here';
+import {
+    theWallAnswersThis,
+    whichHouseThePaperMeans
+} from '../../src/web/what-is-posted-on-the-wall-here';
 
 const AFTER_READING_ONE_BILL: WhatTheLastTurnDid = {
     runId: 'run', cultivatorId: 'cult', onTurn: 3, outcome: 'executed', acts: [],
@@ -196,5 +199,37 @@ describe('the wall answers for itself', () => {
 
     it('does not answer for an absent target', () => {
         expect(theWallAnswersThis(undefined, oneBill)).toBeUndefined();
+    });
+});
+
+/**
+ * AND IT SAYS WHY, WHERE IT COULD NOT SETTLE.
+ *
+ * Two notices up, `i present myself at the intake`, and the answer was the
+ * catalogue of every house in the province - correct, because a phrase with two
+ * things to point at points at neither, and completely silent about why.
+ *
+ * The player pointed somewhere. Saying which two it could have been is what lets
+ * them finish the sentence, and it is the same courtesy
+ * `sayingItCouldHaveMeantAnyOfThese` pays a demonstrative.
+ */
+describe('what it could have been', () => {
+    const twoBills = () => ({
+        bills: [{ houseName: 'Cold Sword Sect' }, { houseName: 'Hollow Bell Wanderers' }]
+    });
+
+    it('keeps both names when it cannot choose', () => {
+        const read = whichHouseThePaperMeans('the intake', twoBills);
+        expect(read.house).toBeUndefined();
+        expect(read.couldHaveBeen).toEqual(['Cold Sword Sect', 'Hollow Bell Wanderers']);
+    });
+
+    /**
+     * AND NAMES NOTHING FOR A SENTENCE THAT POINTED AT NO PAPER, so an ordinary
+     * unnamed joining sentence does not acquire a hesitation about a wall it was
+     * never about.
+     */
+    it.each(['Azure Dew Sect', 'a sect', ''])('offers nothing for %j', said => {
+        expect(whichHouseThePaperMeans(said, twoBills).couldHaveBeen).toEqual([]);
     });
 });

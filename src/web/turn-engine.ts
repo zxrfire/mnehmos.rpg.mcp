@@ -536,7 +536,7 @@ import {
 } from './ground-that-teaches-a-road.js';
 import {
     readTheWall,
-    theWallAnswersThis
+    whichHouseThePaperMeans
 } from './what-is-posted-on-the-wall-here.js';
 // `billsOnTheWall` and not `readTheWall` for the affordance gathering below.
 // The two answer the same question and only one of them WRITES: reading the
@@ -5547,8 +5547,10 @@ ${noticed}`;
         //
         // Exactly one, or nothing. Two papers up and the phrase points at
         // neither, which is the ruling every other reference keeps.
-        const query = theWallAnswersThis(target, () => readTheWall(this.knowledge, cultivator, run))
-            ?? (target ?? '').trim();
+        const fromTheWall = whichHouseThePaperMeans(
+            target, () => readTheWall(this.knowledge, cultivator, run)
+        );
+        const query = fromTheWall.house ?? (target ?? '').trim();
 
         // A CATEGORY IS NOT A NAME, AND IT MUST NOT BECOME ONE
         const named = query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)
@@ -5699,6 +5701,26 @@ ${noticed}`;
                 + 'been asked yet - this is their bar, not their answer. Walking up unannounced '
                 + 'is a look, and it can go against you; standing higher moves it, and somebody '
                 + 'putting you in front of them moves it more.'
+            );
+        }
+
+        // ── AND WHY THE PAPER DID NOT SETTLE, WHERE ONE WAS MEANT ────────
+        //
+        // FOUND BY PLAYING BLIND. Two notices up, `i present myself at the
+        // intake`, and the answer was the catalogue of every house in the
+        // province - correct, because a phrase with two things to point at
+        // points at neither, and completely silent about why.
+        //
+        // The player pointed somewhere. Saying which two it could have been is
+        // what lets them finish the sentence, and it is the same courtesy
+        // `sayingItCouldHaveMeantAnyOfThese` pays a demonstrative.
+        if (fromTheWall.couldHaveBeen.length > 1) {
+            sayThisWhateverTheNarratorDoes(
+                facts,
+                `There is more than one paper on that wall: `
+                + `${fromTheWall.couldHaveBeen.slice(0, -1).join(', ')} and `
+                + `${fromTheWall.couldHaveBeen[fromTheWall.couldHaveBeen.length - 1]}. `
+                + 'Name the house and it is settled.'
             );
         }
 

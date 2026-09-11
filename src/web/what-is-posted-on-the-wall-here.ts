@@ -213,10 +213,28 @@ export function theWallAnswersThis(
     target: string | undefined,
     wall: () => { bills: readonly { houseName: string }[] }
 ): string | undefined {
+    return whichHouseThePaperMeans(target, wall).house;
+}
+
+/**
+ * The same read, with the candidates kept when it could not settle.
+ *
+ * A player who says `the intake` at a wall holding two of them is owed the two
+ * names rather than a catalogue of every house in the province: the phrase
+ * pointed somewhere, and saying where it could have pointed is what lets them
+ * finish the sentence. The same shape `sayingItCouldHaveMeantAnyOfThese` keeps
+ * for a demonstrative.
+ */
+export function whichHouseThePaperMeans(
+    target: string | undefined,
+    wall: () => { bills: readonly { houseName: string }[] }
+): { house: string | undefined; couldHaveBeen: readonly string[] } {
     const said = (target ?? '').trim().toLowerCase();
     if (!/^(?:the|that|this)\s+(?:intake|notice|bill|poster|posting)$/.test(said)) {
-        return undefined;
+        return { house: undefined, couldHaveBeen: [] };
     }
     const names = [...new Set(wall().bills.map(bill => bill.houseName))];
-    return names.length === 1 ? names[0] : undefined;
+    return names.length === 1
+        ? { house: names[0], couldHaveBeen: names }
+        : { house: undefined, couldHaveBeen: names };
 }
