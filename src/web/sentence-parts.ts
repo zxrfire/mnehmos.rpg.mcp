@@ -191,15 +191,47 @@ export function parseCount(input: string): number | null {
 }
 
 /**
+ * A trailing "for <however long>", which is a SPAN and never a destination.
+ *
+ * FOUND BY PLAYING, and it is systematic rather than one phrasing. `for` has to
+ * be a movement preposition - *I set out for Clear River Ford* - and it is also
+ * how everybody says how long they are going for. Where the sentence carried no
+ * `to`, `for` won the race and the span became the place:
+ *
+ *     i travel north for a while    ->  move to "a while"
+ *     i walk north for a few days   ->  move to "a few days"
+ *     i head north for three days   ->  move to "three days"
+ *     i go north for a bit          ->  move to "a bit"
+ *
+ * The direction is dropped on the floor and the engine is sent looking for a
+ * place nobody named. `theNounPhrase` already knows how to cut this tail, but it
+ * only ever saw the CAPTURE - by which point the tail was the whole of it, and
+ * there was nothing left to cut back to.
+ *
+ * So it comes off the SENTENCE, before any preposition is read. A time noun is
+ * required, so "I set out for Clear River Ford" is untouched.
+ */
+const A_SPAN_AND_NOT_A_PLACE =
+    /\s+for\s+(?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|several|some|many|a few|the next|\d+)?\s*(?:while|bit|spell|stretch|day|days|week|weeks|month|months|season|seasons|year|years|decade|decades|lifetime|age|ages)\b.*$/i;
+
+/**
  * Text following a movement preposition, cleaned into a place name.
  */
 export function extractDestination(input: string): string | undefined {
-    const prepositional = /\b(?:to|towards?|into|for)\s+(.{2,80}?)\s*[.!?]?$/i.exec(input);
+    // The span comes off first. See `A_SPAN_AND_NOT_A_PLACE`.
+    //
+    // No fallback to the untrimmed sentence. "I travel for a while" names no
+    // destination at all, and handing the span back as one because nothing else
+    // was said is the defect above with an extra step - a caller that gets
+    // `undefined` asks where, which is the right question.
+    const said = input.replace(A_SPAN_AND_NOT_A_PLACE, '').trim();
+
+    const prepositional = /\b(?:to|towards?|into|for)\s+(.{2,80}?)\s*[.!?]?$/i.exec(said);
     if (prepositional) return cleanPlace(prepositional[1]);
 
     // "travel Clear River Ford" - a bare destination straight after the verb.
     const bare = /^\s*(?:i\s+)?(?:travel|go|walk|head|journey|move|depart|leave|set out)\s+(.{2,80}?)\s*[.!?]?$/i
-        .exec(input);
+        .exec(said);
     return bare ? cleanPlace(bare[1]) : undefined;
 }
 
@@ -233,8 +265,29 @@ export function theNounPhrase(raw: string): string {
     return said.trim();
 }
 
+/**
+ * A phrase that is nothing but a length of time.
+ *
+ * The other end of `A_SPAN_AND_NOT_A_PLACE`. That one cuts a span off a
+ * sentence before a preposition is read; this catches the case where the span
+ * is ALL that was captured, because every extractor in this file reads the text
+ * after a preposition and `for` is both a destination preposition and the word
+ * everybody says how long for with.
+ *
+ * Measured: "I travel for a while" named no destination, so the move branch
+ * fell through to `extractSubject`, which read past `for` and handed back "a
+ * while" as the place. Anchored whole-string on purpose - a name with a time
+ * word in it ("Nine Seasons Hall") has other words in it and is untouched.
+ */
+const NOTHING_BUT_A_LENGTH_OF_TIME =
+    // `next` and `coming` are here without `the` in front of them because
+    // `cleanPlace` takes a leading "the" off before this runs, so "the next
+    // season" arrives as "next season".
+    /^(?:a|an|one|two|three|four|five|six|seven|eight|nine|ten|several|some|many|a few|next|last|coming|following|\d+)?\s*(?:while|bit|spell|stretch|day|days|week|weeks|month|months|season|seasons|year|years|decade|decades|lifetime|age|ages)$/i;
+
 export function cleanPlace(raw: string): string | undefined {
     const cleaned = theNounPhrase(raw).replace(/^\s*the\s+/i, '').trim();
+    if (NOTHING_BUT_A_LENGTH_OF_TIME.test(cleaned)) return undefined;
     return cleaned.length >= 2 ? cleaned.slice(0, 80) : undefined;
 }
 

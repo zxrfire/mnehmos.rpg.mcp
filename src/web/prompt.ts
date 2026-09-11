@@ -886,6 +886,86 @@ export function describeWhatIsWithinReach(reach: readonly ThingWithinReach[]): s
     ];
 }
 
+/**
+ * Who is in the room, for the narrator rather than for the classifier.
+ *
+ * ── THE DEFECT THIS CLOSES ───────────────────────────────────────────────
+ *
+ * FOUND BY PLAYING BLIND, turn two of a run, one turn after a market read had
+ * listed four people selling manuals by name and price:
+ *
+ *     > i want to learn to cultivate
+ *
+ *     The air at Autumn Gate is still. There is no one here to provide a
+ *     manual, and no one to show the way. To learn is to find a method, and to
+ *     find a method is to find a teacher or a book.
+ *
+ *     A few such things exist within reach... A Lesser Qi-Gathering Manual and
+ *     the Azure Dew Gathering Canon are available...
+ *
+ * The paragraph contradicts itself two sentences apart and contradicts the
+ * previous turn outright. Four people were standing in that square.
+ *
+ * The narrator did not invent this out of nothing. It was asked to write
+ * SECOND-PERSON SCENE PROSE and never told who was in the scene: the classifier
+ * gets a `STANDING HERE` block and the narrator got place, air and a list of
+ * proper nouns the cultivator has heard of. Nothing in the prompt distinguished
+ * an empty square from a busy one, so the opening sentence was a guess, and the
+ * cheapest guess to write is an empty room.
+ *
+ * `NOTHING_CAME_BACK` cannot catch it, because the question was answered - the
+ * absence is in the SCENE rather than in the answer.
+ *
+ * ── WHY IT IS NOT THE CLASSIFIER'S BLOCK AGAIN ───────────────────────────
+ *
+ * That block exists to bind a pointing phrase, so it carries ordinals, rungs,
+ * ages and sexes and ends in an instruction about targets. Handing a prose
+ * writer a table like that produces exactly the roll call the prompt already
+ * spends a paragraph forbidding.
+ *
+ * What a narrator needs is smaller and is a CONSTRAINT rather than material:
+ * whether the room is empty, and which of the people in it may be named. It is
+ * stated in those terms and says so in as many words.
+ *
+ * The name split is the discovery gate's, unchanged: somebody whose face this
+ * cultivator cannot place has no name to give, and is counted rather than
+ * named. The narrator is told there is a person there and not who they are,
+ * which is exactly what the player can see.
+ */
+export function describeTheRoom(company: Company | null | undefined): string[] {
+    if (!company) return [];
+
+    if (company.total === 0) {
+        return [
+            '',
+            'WHO IS IN THE ROOM: nobody. This cultivator is standing here alone, and an',
+            'account may say so.'
+        ];
+    }
+
+    const named = company.named.slice(0, PEOPLE_NAMED_TO_THE_CLASSIFIER).map(p => p.name);
+    const nameless = company.total - named.length;
+    const who = [
+        named.length > 0 ? named.join(', ') : null,
+        nameless > 0
+            ? `${nameless} other${nameless === 1 ? '' : 's'} whose face${nameless === 1 ? '' : 's'} `
+              + `this cultivator cannot place, so ${nameless === 1 ? 'it has' : 'they have'} no `
+              + 'name to give'
+            : null
+    ].filter((part): part is string => part !== null).join('; and ');
+
+    return [
+        '',
+        `WHO IS IN THE ROOM: ${who}.`,
+        'This is a CONSTRAINT and not material. It is here so that you do not write an empty',
+        'room that has people in it, or a stranger into one that is empty, and so that you do',
+        'not report the place as holding nobody who could answer when somebody is standing in',
+        'it. Do not introduce these people, do not count them, and say nothing at all about',
+        "anybody the facts below are not about. An absence is the engine's to state: if the",
+        'facts do not say that something or somebody is missing, do not write that it is.'
+    ];
+}
+
 export function composeStateSummary(input: StateSummaryInput): string {
     const { cultivator, run, ambient } = input;
     const root = getSpiritRoot(cultivator.spiritRoot);
@@ -1144,6 +1224,8 @@ export function composeNarrationUser(
         hearing?: Hearing | null;
         /** The player's literal words. Shown, never parsed for an outcome. */
         playerSaid?: string | null;
+        /** Who is standing here. See `describeTheRoom` for the played defect. */
+        company?: Company | null;
     },
     /**
      * WHETHER THE AMBIENT READING IS NEW INFORMATION.
@@ -1185,6 +1267,7 @@ export function composeNarrationUser(
               + `- do not open on it and do not describe it again unless they act on it: `
               + describeAmbientPerceived(scene.ambient)
             : describeAmbientPerceived(scene.ambient),
+        ...describeTheRoom(scene.company),
         ...(scene.playerSaid ? ['', `THE PLAYER SAID, WORD FOR WORD: ${scene.playerSaid}`] : []),
         '',
         ...spokenBlock(hearing),

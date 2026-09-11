@@ -34,7 +34,6 @@ import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roo
 import { rollSex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { rollPhysique } from '../engine/cultivation/physiques.js';
 import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
-import { primaryRoadOf } from '../schema/cultivation.js';
  import {
     ACTIONS_PER_FULL_SATIETY,
     satietyBurnMultiplier,
@@ -1776,7 +1775,8 @@ export class GameService {
         const opening = await this.narrator.narrate(facts, {
             place: placeName(created.cultivator),
             ambient,
-            awareness
+            awareness,
+            company: this.company(created.cultivator)
         });
 
         // What the world contributes to this life, in the world's own words.
@@ -2231,7 +2231,11 @@ export class GameService {
             playerSaid: trimmed,
             // What the engine actually filed. Phase 3 may dress this and may
             // not contradict it; see the banner in `narrator.ts`.
-            filed: this.filedOutcome(execution, theTurnsPlan.action.action)
+            filed: this.filedOutcome(execution, theTurnsPlan.action.action),
+            // Who is in it. See `describeTheRoom` for the played defect: a
+            // narrator told the place and the air and nothing about the people
+            // opens on an empty square, because that is the cheapest guess.
+            company: this.company(after.cultivator)
         };
 
         // ── phase 3 ──
@@ -2385,7 +2389,8 @@ export class GameService {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
             awareness: this.awarenessOf(after.cultivator),
-            filed: this.filedOutcome(execution)
+            filed: this.filedOutcome(execution),
+            company: this.company(after.cultivator)
         });
 
         this.log.append(run.id, [
@@ -2434,7 +2439,8 @@ export class GameService {
             place: placeName(after.cultivator),
             ambient: this.ambientFor(after.cultivator, after.run),
             awareness: this.awarenessOf(after.cultivator),
-            filed: this.filedOutcome(execution)
+            filed: this.filedOutcome(execution),
+            company: this.company(after.cultivator)
         });
 
         this.log.append(run.id, [
@@ -7628,12 +7634,14 @@ ${opened.text}` : receipt,
 
     private async lookAfterAdmin(cultivator: Cultivator, run: Run) {
         const ambient = this.ambientFor(cultivator, run);
+        const here = this.company(cultivator);
         return await this.narrator.narrate(
-            factsForLook(cultivator, ambient, this.company(cultivator)),
+            factsForLook(cultivator, ambient, here),
             {
                 place: placeName(cultivator),
                 ambient,
-                awareness: this.awarenessOf(cultivator)
+                awareness: this.awarenessOf(cultivator),
+                company: here
             }
         );
     }
@@ -9930,13 +9938,30 @@ ${opened.text}` : receipt,
                     volumes: manual.volumes ?? null,
                     grade: manual.grade,
                     element: manual.element ?? null,
-                    subject: primaryRoadOf(manual),
+                    // `subjects`, PLURAL, and it is not a rename.
+                    //
+                    // This read `subject: primaryRoadOf(manual)` behind an `as
+                    // never`, and `ManualLike` has no `subject`. So the field
+                    // was dropped on the floor, `assessAcquisition` defaulted
+                    // `subjects` to `[]`, and `isOnRoad` - which is the whole
+                    // of how `daoMatches` recognises an art's own road - could
+                    // never return true through this verb.
+                    //
+                    // What the player got: a cultivator who has walked the
+                    // sword road for a century, asking how to carry their own
+                    // sword manual further, told `wrong_dao` - *the art is
+                    // written in a language this cultivator has spent their
+                    // life not learning*. About the book in their hands.
+                    //
+                    // Plural also matters on its own: an art on two roads is
+                    // opened by either, and `primaryRoadOf` takes `[0]`.
+                    subjects: manual.subjects ?? null,
                     category: manual.category,
                     domain: manual.domain ?? null,
                     domainDegree: manual.domainDegree,
                     opening: manual.opening ?? null,
                     derivable: manual.derivable
-                } as never,
+                },
                 seeker,
                 route,
                 realmOrdinal: cultivator.realmOrdinal,
@@ -13701,15 +13726,27 @@ ${fit.line}`;
         });
         if (placed === null) return null;
 
+        // `id` and `name`, NOT `subjectId`/`subjectName`. See the note on the
+        // sibling write in `whoTheyWouldSendYouTo`: this object had four field
+        // names `AwarenessInput` does not have and an `as never` holding the
+        // compiler off, so the id reaching the claim key was `undefined` and
+        // this line threw every time it was reached.
         this.knowledge.learnIfNew({
             holderId: cultivator.id,
             onDay: Math.floor(this.currentRun().run.elapsedDays),
             kind: named.kind,
-            subjectId: named.id,
-            subjectName: named.name,
-            stage: 'heard_of',
-            source: 'told'
-        } as never);
+            id: named.id,
+            name: named.name,
+            // `placed` - "they know where, or who, or when" - because every
+            // branch of `whatTheyCouldPlaceForYou` establishes exactly that,
+            // which is what the verb is named for. `heard_of` is not a rung on
+            // this ladder at all, so `stageRank` scored it 0 and `learnIfNew`
+            // declined to write anything even on the seeds that did not throw.
+            stage: 'placed',
+            sourceKind: 'told',
+            fromHolderId: asked.id,
+            sourceNote: `${asked.name} could place it, and said so when asked.`
+        });
         this.namedThisTurn.push({ name: named.name });
 
         const lines = [
@@ -13786,15 +13823,34 @@ ${fit.line}`;
         if (sent === null) return null;
 
         // Written before narration. See `askAround`.
+        // THE CAST WAS HIDING A CRASH, AND THE CRASH WAS IN PLAY.
+        //
+        // `AwarenessInput` takes `id`, `name` and `sourceKind`. This object
+        // passed `subjectId`, `subjectName` and `source`, none of which exist
+        // on it, and `as never` stopped the compiler saying so. So `input.id`
+        // was `undefined`, `existenceClaimKey` called `.startsWith` on it, and
+        // the turn died with a TypeError rather than an answer.
+        //
+        // It is reached whenever somebody who does not hold an art can point at
+        // somebody who does - an ordinary ask, not an edge - which is why it
+        // surfaced as an intermittent suite failure rather than a steady one:
+        // whether any such person exists is a question about the seed.
         this.knowledge.learnIfNew({
             holderId: cultivator.id,
             onDay: Math.floor(this.currentRun().run.elapsedDays),
             kind: 'cultivator',
-            subjectId: sent.id,
-            subjectName: sent.name,
-            stage: 'heard_of',
-            source: 'told'
-        } as never);
+            id: sent.id,
+            name: sent.name,
+            // Somebody standing in this square has been pointed out, so the
+            // player knows who and where; somebody on a house's roll elsewhere
+            // is a name and a house and nothing more. `heard_of` was neither -
+            // it is not a rung on this ladder, so `stageRank` scored it 0 and
+            // `learnIfNew` wrote nothing even where it did not throw.
+            stage: sent.because === 'standing right here' ? 'placed' : 'named',
+            sourceKind: 'told',
+            fromHolderId: asked.id,
+            sourceNote: `${asked.name} named them when asked after ${art.name}.`
+        });
         this.namedThisTurn.push({ name: sent.name });
 
         const said = whatTheySayAboutWhoHoldsIt(sent, art.name);

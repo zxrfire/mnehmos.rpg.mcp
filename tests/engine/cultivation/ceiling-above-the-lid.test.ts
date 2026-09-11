@@ -51,10 +51,10 @@ describe('the manual axis above the Lid', () => {
             expect(read.line).not.toBeNull();
             // The advice that was wrong.
             expect(read.line).not.toMatch(/it is a book/i);
-            expect(read.line).not.toMatch(/willing to teach them one/i);
+            expect(read.line).not.toMatch(/willing to teach/i);
             // And what is true instead, including the axis that is left.
             expect(read.line).toMatch(/no rung above this one that qi buys/i);
-            expect(read.line).toMatch(/what they understand/i);
+            expect(read.line).toMatch(/what you understand/i);
         }
     });
 
@@ -79,7 +79,7 @@ describe('the manual axis above the Lid', () => {
         // function was written to fix in the first place.
         const noBook = techniqueCeiling(20, NO_MANUAL_CEILING);
         expect(noBook.state).toBe('no_method');
-        expect(noBook.line).toMatch(/a book, or somebody willing to teach them one/);
+        expect(noBook.line).toMatch(/a book, or somebody willing to teach/);
 
         const ended = techniqueCeiling(20, 20);
         expect(ended.state).toBe('exhausted');

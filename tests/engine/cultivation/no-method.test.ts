@@ -59,8 +59,8 @@ describe('the fourth reason a manual fails somebody: there is no manual', () => 
         // MORE YEARS ARE NOT THE ANSWER, in whatever words. This pinned the
         // clause "What is missing is not years and not discipline", which was
         // one of five sentences the line used to run to; "nothing accumulates
-        // however long they sit" is the same claim in one.
-        expect(line).toMatch(/however long they sit|not years/i);
+        // however long you sit" is the same claim in one.
+        expect(line).toMatch(/however long you sit|not years/i);
         // Same rule, same reason: the claim is that sitting does not close it,
         // not the particular five words it used to close on.
         expect(line).toMatch(/nothing accumulates|nothing ever will/i);
@@ -163,13 +163,13 @@ describe('a copy in the bag is not a road, and it is not an absence either', () 
         expect(carrying.line).toMatch(/never opened/i);
         // The errand, which is `learn` and is free - not another trip to a stall.
         expect(carrying.line).not.toMatch(/It is a book/);
-        expect(carrying.line).not.toMatch(/willing to teach them one/);
+        expect(carrying.line).not.toMatch(/willing to teach/);
     });
 
     it('still says find a book to somebody who holds none', () => {
         const empty = techniqueCeiling(0, NO_MANUAL_CEILING);
 
-        expect(empty.line).toMatch(/a book, or somebody willing to teach them one/);
+        expect(empty.line).toMatch(/a book, or somebody willing to teach/);
         expect(empty.line).not.toMatch(/never opened/i);
     });
 
@@ -196,7 +196,7 @@ describe('a copy in the bag is not a road, and it is not an absence either', () 
     it('says nothing about a held copy above the Lid, where no book is the answer', () => {
         const above = techniqueCeiling(46, NO_MANUAL_CEILING, true);
 
-        expect(above.line).toMatch(/what they understand/);
+        expect(above.line).toMatch(/what you understand/);
         expect(above.line).not.toMatch(/never opened/i);
     });
 });

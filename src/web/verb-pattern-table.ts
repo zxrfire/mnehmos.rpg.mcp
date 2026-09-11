@@ -2790,6 +2790,36 @@ const INTERACT_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
 // away from her" fell through to `extractTarget`, which reads whatever follows
 // `to` - and named a person "stay away from her".
 /**
+ * Saying yes to a line that was just read off the board.
+ *
+ * FOUND BY PLAYING BLIND. Once the board is listed, the next sentence is
+ * somebody choosing off it, and only one phrasing of that reached anything.
+ * Measured against the parser: `i take the job` worked, and `i accept the job`,
+ * `i take the notice`, `i take him up on it` and `i sign for it` all reached
+ * `unclear`. A board a player can read and cannot answer is data with no verb
+ * behind it.
+ *
+ * NOTHING BARE IS HERE. `i take it` and `i do it` stay off this list and stay
+ * with the classifier, which is handed the previous turn and every name it
+ * printed. A bare demonstrative resolved by a pattern table is a guess about
+ * which listing was meant; resolved against the last turn it is a lookup. Every
+ * entry below names the THING, so there is nothing left to guess.
+ *
+ * AND `position` AND `contract` ARE NOT ON THE NOUN LIST. Both were measured
+ * taking sentences that are not about a board line: `i accept a position in the
+ * sect` is a house's roll rather than a season of hauling, and `i sign the
+ * contract with him` is an agreement between two people. A board line is a job,
+ * a posting, an errand or a notice, and those are the words for it.
+ */
+const SAYING_YES_TO_A_LINE_ON_THE_BOARD = new RegExp([
+    String.raw`\b(?:accept|accepts|accepting|accepted|sign|signs|signing|signed)\b[^.?!]{0,24}`
+    + String.raw`\b(?:job|posting|errand|commission|work|notice|listing)\b`,
+    String.raw`\btakes?\b[^.?!]{0,10}\bup on\b[^.?!]{0,20}`
+    + String.raw`\b(?:it|that|the (?:job|post|posting|offer|work|notice|listing))\b`,
+    String.raw`\btakes?\b[^.?!]{0,12}\b(?:notice|listing|posting)\b`
+].join('|'), 'i');
+
+/**
  * Asking what work is going, which is a question and must stay one.
  */
 const ASKING_AFTER_WORK =
@@ -3573,6 +3603,9 @@ function planIntent(input: string): PlannedAction {
         // the board reached nothing at all - the board names jobs, not "work".
         || /\b(?:i\s+)?takes?\s+(?:the|that|this|it|a)\s*(?:job|post|posting|position|contract|errand|commission|duty)?\b/.test(text)
             && /\b(?:job|post|posting|position|contract|errand|commission|duty)\b/.test(text)
+        || SAYING_YES_TO_A_LINE_ON_THE_BOARD.test(text)
+        // AND SAYING YES TO IT IN THE OTHER WORDS PEOPLE USE. See the
+        // constant for the four phrasings that reached nothing.
         || /\b(?:whatever|anything|something)\b[^.?!]{0,20}\bpays?\b/.test(text)
         || /\bbest[- ]paying\b|\bpays? (?:the )?(?:best|most|fastest|quickest)\b/.test(text)
         // SAYING PLAINLY THAT YOU NEED ONE

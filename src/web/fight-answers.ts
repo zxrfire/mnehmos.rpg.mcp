@@ -368,6 +368,25 @@ export interface StandingFight {
      * and not about the moment it opened.
      */
     named?: string;
+    /**
+     * Whether the ways out of a hopeless fight have already been printed.
+     *
+     * FOUND BY PLAYING BLIND, swinging three times at a Sect Warden three
+     * realms up. The routes block is appended to `required`, so it reaches the
+     * player verbatim - and it was appended on EVERY round. Three consecutive
+     * screens carried the same four options in the same 120 words, which was
+     * most of what there was to read on any of them.
+     *
+     * The same defect `ambientIsNews` is for, one subject over: a STANDING
+     * CONDITION narrated as news. The gap does not change between rounds, so
+     * neither do the routes, and a player who has read them once is not being
+     * offered anything the second time.
+     *
+     * Held on the fight rather than on the service because it is a fact about
+     * THIS fight: walking into a second hopeless one is a new situation and
+     * gets the list again.
+     */
+    routesAlreadyNamed?: boolean;
 }
 
 /** Whether a fight the service is holding is still this run's and this body's. */

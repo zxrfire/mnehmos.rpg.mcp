@@ -158,9 +158,33 @@ export function routesOutOfAGap(options: readonly string[]): RouteOutOfAGap[] {
  */
 export function sayingWhatWouldWork(
     routes: readonly RouteOutOfAGap[],
-    them: string
+    them: string,
+    /**
+     * Whether this fight has already been handed the list.
+     *
+     * FOUND BY PLAYING BLIND. This block goes into `required`, which reaches
+     * the player verbatim, and it went in on EVERY round: three consecutive
+     * screens of swinging at a Sect Warden carried the same four options in
+     * the same 120 words, and on two of those screens it was most of what
+     * there was to read.
+     *
+     * The gap does not move between rounds and neither do the routes, so this
+     * is a STANDING CONDITION being narrated as news - exactly what
+     * `composeNarrationUser`'s `ambientIsNews` exists for, one subject over.
+     *
+     * It is not withheld, because a player who has stopped reading the list is
+     * still owed the fact that swinging is not on it. What changes is that the
+     * second telling is one line instead of five.
+     */
+    alreadyTold = false
 ): string[] {
     if (routes.length === 0) return [];
+    if (alreadyTold) {
+        return [
+            `The ways out are the ones already named, and a better swing is still not `
+            + `among them. ${them} has not moved.`
+        ];
+    }
     return [
         `What works against ${them} is not a better swing. It is one of these:`,
         ...routes.map(r => `"${r.say}" - ${r.because}`)

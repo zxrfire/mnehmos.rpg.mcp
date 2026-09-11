@@ -371,14 +371,43 @@ export function techniqueCeiling(
     // NARRATOR-CORE's do-not-paraphrase rule is for. So: drop the claim about
     // the bag, keep the phrase. If this sentence ever changes again, change
     // `seclusion-verbs.ts` in the same commit or they will disagree.
+    //
+    // AND `line` IS ADDRESSED TO THE PLAYER, WHERE `label` IS NOT
+    //
+    // Found by playing blind. Every early turn of a fresh run ended on:
+    //
+    //     At the outset: No cultivation method, so nothing accumulates however
+    //     long they sit. What closes that is a book, or somebody willing to
+    //     teach them one.
+    //
+    // Second-person prose above it, a day stamp in front of it, and a stranger
+    // in it. The `they` reads as somebody else in the room.
+    //
+    // The two fields are not the same channel and were written as though they
+    // were. `label` is a row in the rate breakdown - a factor beside its
+    // multiplier, read about a cultivator - and stays person-free. `line` has
+    // three consumers and every one of them hands it to the player in their
+    // own voice: the time-skip digest pushes it as an event beside lines that
+    // already say *this stretch will strike on your behalf*; the seclusion read
+    // puts it in `required`, which exists precisely to reach the player
+    // verbatim; and the cultivate refusal sets it against a pointer that says
+    // *carries further than you stand*. `simulateTimeSkip` is imported only
+    // from `src/web/`, so no NPC is ever its subject.
+    //
+    // `whyProgressHasStopped` had already reached the same conclusion and wrote
+    // its own second-person copy of this sentence rather than use this one.
+    // That is the tell: the fact was right and the person was wrong.
     const nothingLeftToAccumulateFor = progressRequiredForOrdinal(realmOrdinal) === null;
 
     if (techniqueCap === NO_MANUAL_CEILING) {
         return {
             state: 'no_method',
             multiplier: 0,
+            // Person-free, because a factor label sits in a column beside its
+            // own multiplier rather than in anybody's prose. `line` is the
+            // field that is addressed to somebody; see the note above.
             label: nothingLeftToAccumulateFor
-                ? 'No cultivation method, and nothing left for one to carry them to'
+                ? 'No cultivation method, and no rung above for one to reach'
                 : 'No cultivation method: there is no book',
             // ONE SENTENCE, AND THE ROUTE OUT OF IT.
             //
@@ -395,13 +424,13 @@ export function techniqueCeiling(
             // the useful half is what closes it.
             line: nothingLeftToAccumulateFor
                 ? 'No cultivation method, and at ' +
-                  `${rankName(realmOrdinal)} a manual would carry them nowhere: there is no ` +
-                  'rung above this one that qi buys. What is left is what they understand.'
-                : 'No cultivation method, so nothing accumulates however long they sit. ' +
+                  `${rankName(realmOrdinal)} a manual would carry you nowhere: there is no ` +
+                  'rung above this one that qi buys. What is left is what you understand.'
+                : 'No cultivation method, so nothing accumulates however long you sit. ' +
                   (holdsAnUnlearnedCopy
-                      ? 'They are carrying a copy they have never opened, and owning it is ' +
+                      ? 'You are carrying a copy you have never opened, and owning it is ' +
                         'not reading it.'
-                      : 'What closes that is a book, or somebody willing to teach them one.')
+                      : 'What closes that is a book, or somebody willing to teach you one.')
         };
     }
 
@@ -412,11 +441,11 @@ export function techniqueCeiling(
             ? `The manual ends at ${rankName(techniqueCap ?? 0)}, and so does the ladder`
             : `The manual ends at ${rankName(techniqueCap ?? 0)}`,
         line: nothingLeftToAccumulateFor
-            ? `The manual in their hands ends at ${rankName(techniqueCap ?? 0)}, and so does ` +
+            ? `The manual in your hands ends at ${rankName(techniqueCap ?? 0)}, and so does ` +
               'everything else: there is no rung above this one that qi buys, so there is no ' +
-              'next volume to want. What is left is not a book. It is what they understand.'
-            : `The manual in their hands ends at ${rankName(techniqueCap ?? 0)}, and that is ` +
-              'where they are standing. It is not slower here; it is stopped, and no amount ' +
+              'next volume to want. What is left is not a book. It is what you understand.'
+            : `The manual in your hands ends at ${rankName(techniqueCap ?? 0)}, and that is ` +
+              'where you are standing. It is not slower here; it is stopped, and no amount ' +
               'of sitting with it changes that. What is missing is the next volume.'
     };
 }

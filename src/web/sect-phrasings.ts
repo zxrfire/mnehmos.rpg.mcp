@@ -120,7 +120,18 @@ export const SECT_INTENT_UNAMBIGUOUS: ReadonlyArray<[SectIntent, RegExp]> = [
     // that verb was written - and claiming it would answer somebody standing
     // at a noticeboard by telling them nobody has sent for them.
     ['accept', new RegExp(
-        String.raw`\b(?:accept|accepts|accepting|agree|agrees|agreeing|consent|consents)\s+(?:to\s+)?(?:it|that|this|the summons|the call|the order|the errand|the task|the assignment|the posting|the sending)\b`
+        // WHOSE ORDER IT IS SITS BETWEEN THE VERB AND THE NOUN.
+        //
+        // Measured against the parser: `i accept the order` matched and `i accept
+        // the elder's order` reached `unclear`, because the noun list had to sit
+        // immediately after the verb. That is the near-synonym trap AGENTS.md
+        // names - naming who sent for you is the more natural sentence, and it was
+        // the one that failed. Two words of slack, so a possessive or an adjective
+        // fits and a second clause does not.
+        String.raw`\b(?:accept|accepts|accepting|agree|agrees|agreeing|consent|consents)\s+(?:to\s+)?`
+        + String.raw`(?:it|that|this|(?:the|his|her|their|my|our)\s+(?:\w+(?:'s|’s)?\s+){0,2}`
+        + String.raw`(?:summons|call|order|orders|errand|task|assignment|posting|sending|`
+        + String.raw`instruction|instructions))\b`
         + String.raw`|\bi\s+(?:accept|agree|consent)\b\s*(?:and\s+(?:go|do it|set out|leave))?\s*[.!?]?$`
         + String.raw`|\b(?:obey|obeys|obeying|comply|complies|complying)\b`
         + String.raw`|\bdo\s+(?:as|what)\s+(?:i\s+(?:am|was)\s+)?(?:told|bid|asked|instructed|ordered)\b`

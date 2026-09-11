@@ -1185,8 +1185,13 @@ export const combatVerbs = {
         // A ROUTE OUT OF A HOPELESS FIGHT IS NOT OPTIONAL
         if (result.outcome === 'no_contest' && result.gap.options.length > 0) {
             const routes = sayingWhatWouldWork(
-                routesOutOfAGap(result.gap.options), held.party.name
+                routesOutOfAGap(result.gap.options), held.party.name,
+                held.routesAlreadyNamed === true
             );
+            // Marked after composing and not before, so the round that is
+            // actually handed the list is the one that counts as having been
+            // told. See `StandingFight.routesAlreadyNamed`.
+            held.routesAlreadyNamed = true;
             execution.facts.required = [...(execution.facts.required ?? []), ...routes];
             // NO SOURCE FILE NAMES IN A CHANNEL THE PLAYER READS.
             //

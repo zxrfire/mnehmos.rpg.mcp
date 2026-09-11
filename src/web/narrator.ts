@@ -43,7 +43,7 @@ import {
 import { WHAT_EACH_VERB_IS_FOR } from './what-each-verb-is-for-in-the-players-words.js';
 import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
-import type { EngineFacts } from './facts.js';
+import type { Company, EngineFacts } from './facts.js';
 import { inTheCharactersThePatternsUse } from './sentence-parts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -354,6 +354,14 @@ export interface NarratorScene {
      * What the engine actually filed this turn, for the output-side check.
      */
     filed?: FiledOutcome | null;
+    /**
+     * Who is standing in the square.
+     *
+     * A CONSTRAINT on the prose and not material for it: see
+     * `describeTheRoom` in `prompt.ts` for the played defect, which is a
+     * narrator asked to write a scene and never told whether anybody was in it.
+     */
+    company?: Company | null;
 }
 
 export interface Narration {

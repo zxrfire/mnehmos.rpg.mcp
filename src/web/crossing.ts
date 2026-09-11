@@ -248,7 +248,7 @@ export const crossingVerb = {
             if (result.immortalStatusGained) {
                 updated = this.repos.cultivators.update(cultivator.id, {
                     immortalStatus: result.immortalStatusGained
-                } as never) ?? updated;
+                }) ?? updated;
             }
 
             // Spent, whether it helped or not. A pill swallowed for a crossing
