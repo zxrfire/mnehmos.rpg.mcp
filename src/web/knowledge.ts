@@ -298,6 +298,15 @@ export class KnowledgeGate {
 
     /**
      * The world a new cultivator starts with.
+     *
+     * NOTHING HERE NAMES THE HOLDER. Who holds a row is `holder_id`, and a row
+     * that also puts the holder into its own prose is read aloud to them: the
+     * turn-0 recap and `recall` both quote `statement` and `sourceNote`
+     * verbatim, so `X is where they are from` arrived two lines under `You are
+     * sure of that much`. Nothing can re-person it on the way out either - the
+     * row next to it says *"Knowing them is not the same as being owed anything
+     * by them"* of its SUBJECT. See
+     * `an-account-of-your-own-life-is-addressed-to-you`.
      */
     seedStartingAwareness(
         holderId: string,
@@ -312,10 +321,10 @@ export class KnowledgeGate {
             name: home,
             onDay,
             sourceKind: 'witnessed',
-            sourceNote: 'Where they grew up.',
+            sourceNote: 'Grew up here.',
             stage: 'known',
             confidence: 1,
-            statement: `${home} is where they are from.`
+            statement: `${home} is home.`
         });
 
         const geography = localGeographyFor(home);
@@ -328,7 +337,7 @@ export class KnowledgeGate {
                 name: geography.region.name,
                 onDay,
                 sourceKind: 'told',
-                sourceNote: 'The province they were born in. Everybody here knows its name.',
+                sourceNote: 'The province home stands in. Everybody here knows its name.',
                 stage: 'placed',
                 statement: `${geography.region.name} is the province ${home} is in.`
             });

@@ -77,6 +77,44 @@ describe('what somebody standing here would be heard on', () => {
     });
 
     /**
+     * EVERY CLAUSE IS WRITTEN TO FOLLOW `they`, AND FIVE OF THE SIX WERE NOT.
+     *
+     * FOUND BY PLAYING. The only renderer of this column composes `What Gu Kelu
+     * can be heard on, unprompted and not to you: they ${clause}`, and the
+     * clauses had been written to follow a name - so the scene read *"they has
+     * spent most of the years this rung allows"*. Singular `they` takes plural
+     * agreement, and every branch here is read as a stranger, so there is no
+     * caller that wants the singular form.
+     */
+    it('reads grammatically after the pronoun its only renderer puts in front', () => {
+        const clauses = [
+            whatTheyWouldBeHeardOnAbout({
+                ...ORDINARY, age: yearsAt(5, THE_ROAD_IS_RUNNING_OUT + 0.05)
+            }),
+            whatTheyWouldBeHeardOnAbout({
+                ...ORDINARY, carriesForSomebodyElse: { noun: 'blade', from: 'a house' }
+            }),
+            whatTheyWouldBeHeardOnAbout({
+                ...ORDINARY, carriesForSomebodyElse: { noun: 'blade', from: 'a person' }
+            }),
+            whatTheyWouldBeHeardOnAbout({
+                ...ORDINARY,
+                ordinal: A_RUNG_WORTH_BEING_YOUNG_AT,
+                age: yearsAt(A_RUNG_WORTH_BEING_YOUNG_AT, AHEAD_OF_THE_ROAD - 0.02)
+            }),
+            whatTheyWouldBeHeardOnAbout({ ...ORDINARY, chosen: true }),
+            whatTheyWouldBeHeardOnAbout({ ...ORDINARY, rank: 'Outer Disciple' })
+        ];
+        expect(clauses.filter(clause => clause !== null)).toHaveLength(clauses.length);
+
+        const SINGULAR = /\bthey (?:has|is|was|does|carries|wears|knows|owes|spends)\b/;
+        const wrong = clauses
+            .map(clause => `they ${clause}`)
+            .filter(said => SINGULAR.test(said));
+        expect(wrong, wrong.join(' ;; ')).toEqual([]);
+    });
+
+    /**
      * AND MOST OF THE WORLD STAYS QUIET.
      *
      * `theOneThingWorthSayingAbout` states the rule: *"a world where everybody
@@ -128,7 +166,7 @@ describe('what somebody standing here would be heard on', () => {
 
         expect(whatTheyWouldBeHeardOnAbout({
             ...ORDINARY, carriesForSomebodyElse: { noun: 'blade', from: 'a house' }
-        })).toMatch(/carries a blade their house owns and they do not/);
+        })).toMatch(/carry a blade their house owns and they do not/);
 
         // AND A PERSON'S LOAN IS A DIFFERENT FACT. The owner: *"PEOPLE lend
         // too. Like you might lend your treasure to a junior brother or
@@ -143,7 +181,7 @@ describe('what somebody standing here would be heard on', () => {
         // when everything else about it is right.
         expect(whatTheyWouldBeHeardOnAbout({
             ...ORDINARY, carriesForSomebodyElse: { noun: 'urn', from: 'a house' }
-        })).toMatch(/carries an urn/);
+        })).toMatch(/carry an urn/);
     });
 
     /**

@@ -585,20 +585,29 @@ function requireTier(key: OriginTierKey): OriginTier {
  * child's world and a court child's falls out of how many rows each got.
  */
 /**
- * What the house they grew up in is to them, said without naming a rank.
+ * What the house this life grew up in is to its holder, said without naming a
+ * rank and without naming the holder.
+ *
+ * A knowledge row already carries who holds it, in `holder_id`. Putting the
+ * holder into the row's PROSE as well is a second copy of that column in a form
+ * nothing can re-person, and it is read aloud to the holder: the opening recap
+ * and `recall` both quote a row verbatim, so `they were born into` reached the
+ * player about the player. See `an-account-of-your-own-life-is-addressed-to-you`.
  */
-function whatTheHouseIsToThem(house: BirthHouse, inside: RaisedInside | null): string {
-    if (!inside) return `${house.name} is the house their family belongs to.`;
+function whatTheHouseIs(house: BirthHouse, inside: RaisedInside | null): string {
+    if (!inside) return `${house.name} is the house the family belongs to.`;
     if (inside.onTheRoll === 'by blood') {
-        return `${house.name} is the house they were born into. Its roll is its own family and `
-            + 'they are on it, at no rank in it, with the whole of its ladder still above them.';
+        return `${house.name} is the house the birth happened inside. Its roll is its own family, `
+            + 'so being on it came with the birth - at no rank in it, and with the whole of its '
+            + 'ladder still above.';
     }
     if (inside.onTheRoll === 'by taking') {
-        return `${house.name} is the house that raised them. Its roll carries them, at no rank `
-            + 'in it, and how they came to be on it was never explained to them.';
+        return `${house.name} is the house that did the raising. Its roll carries the name it `
+            + 'took in, at no rank in it, and nobody ever explained how that came about.';
     }
-    return `${house.name} is the house their family belongs to. They grew up inside its walls `
-        + 'and are not on its roll, and its own door is where they would have to start.';
+    return `${house.name} is the house the family belongs to. Its walls are where the raising `
+        + 'happened and its roll is what never followed, and its own door is where getting in '
+        + 'would have to start.';
 }
 
 function seedKnowledge(
@@ -623,8 +632,8 @@ function seedKnowledge(
         name: place.name,
         stance: 'knows',
         sourceKind: 'witnessed',
-        sourceNote: 'Where they grew up.',
-        statement: `${place.name} is where they are from.`,
+        sourceNote: 'Grew up here.',
+        statement: `${place.name} is home.`,
         confidence: 1
     });
 
@@ -639,7 +648,7 @@ function seedKnowledge(
             // Never a rank, in any of the three cases. Being on a roll and
             // being on a rung are different facts and only the first of them
             // can be inherited.
-            statement: whatTheHouseIsToThem(house, inside),
+            statement: whatTheHouseIs(house, inside),
             confidence: 1
         });
     }

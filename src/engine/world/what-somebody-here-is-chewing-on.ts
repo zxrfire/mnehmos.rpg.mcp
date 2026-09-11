@@ -121,6 +121,10 @@ const THE_BOTTOM_OF_A_HOUSE = /\b(?:outer|junior|servant|menial|probation|unrank
  * Ordered, and the order is the point: the thing most likely to be on somebody's
  * mind is the thing with a clock on it. Running out of road beats everything,
  * because it is the only one that gets worse on its own.
+ *
+ * EVERY CLAUSE IS A PREDICATE FOR `they`, and the agreement is load-bearing:
+ * the renderer says `they ${clause}`. Written to follow a NAME, five of the six
+ * printed *"they has spent most of the years this rung allows"* into a scene.
  */
 export function whatTheyWouldBeHeardOnAbout(
     person: SomebodyWithSomethingOnTheirMind
@@ -134,7 +138,7 @@ export function whatTheyWouldBeHeardOnAbout(
     // person who can see the end of what this rung bought them and is still
     // standing at the same wall. Said as the arithmetic, not as despair.
     if (spent >= THE_ROAD_IS_RUNNING_OUT) {
-        return 'has spent most of the years this rung allows and is still standing at the same wall';
+        return 'have spent most of the years this rung allows and are still standing at the same wall';
     }
 
     // ── A THING THAT IS NOT THEIRS ───────────────────────────────────────
@@ -155,8 +159,8 @@ export function whatTheyWouldBeHeardOnAbout(
         // senior wants their blade back in person, and the junior has to keep
         // looking at them until they get it.
         return borrowed.from === 'a house'
-            ? `carries ${noun} their house owns and they do not`
-            : `carries ${noun} somebody above them lent out of their own hands`;
+            ? `carry ${noun} their house owns and they do not`
+            : `carry ${noun} somebody above them lent out of their own hands`;
     }
 
     // ── AHEAD OF IT ──────────────────────────────────────────────────────
@@ -165,7 +169,7 @@ export function whatTheyWouldBeHeardOnAbout(
     // other people most of a life. A house's pick reads as this from outside
     // whether or not the house has said so out loud.
     if (spent <= AHEAD_OF_THE_ROAD && person.ordinal >= A_RUNG_WORTH_BEING_YOUNG_AT) {
-        return 'is young enough at this rung that the years are not the thing they worry about';
+        return 'are young enough at this rung that the years are not the thing they worry about';
     }
 
     // ── MARKED BY A HOUSE ────────────────────────────────────────────────
@@ -173,7 +177,7 @@ export function whatTheyWouldBeHeardOnAbout(
     // Not a rung and not an age: a decision somebody else made about them,
     // which is a different thing to carry and a noisier one.
     if (person.chosen) {
-        return 'carries a house\'s mark as the one it decided to spend on';
+        return 'carry a house\'s mark as the one it decided to spend on';
     }
 
     // ── THE BOTTOM OF A ROLL ─────────────────────────────────────────────
@@ -181,7 +185,7 @@ export function whatTheyWouldBeHeardOnAbout(
     // What a house asks of the people it asks most of. Last, because it is the
     // commonest and would otherwise drown the other three.
     if (person.rank !== null && THE_BOTTOM_OF_A_HOUSE.test(person.rank)) {
-        return 'wears the lowest rank their house gives out, and is doing what that rank is for';
+        return 'wear the lowest rank their house gives out, and are doing what that rank is for';
     }
 
     return null;

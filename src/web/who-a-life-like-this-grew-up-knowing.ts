@@ -152,10 +152,15 @@ export function aChildhoodCouldHaveContained(
  * in the knowledge table. Deliberately says nothing about family structure,
  * obligation or affection - the engine models none of those, and a note that
  * asserted one would be the prose layer inventing a system.
+ *
+ * AND NONE OF THEM NAMES THE HOLDER. The recap prints these verbatim to the
+ * person holding them, so `since before either of them was anybody` called the
+ * player `them` in a line about somebody they grew up with. Five of the six
+ * were already subjectless, which is the register these are written in.
  */
 const HOW_YOU_KNOW_THEM: readonly string[] = [
     'Grew up on the same road.',
-    'Has been at the far end of that street since before either of them was anybody.',
+    'Has been at the far end of that street since before either was anybody.',
     'Worked the same ground in the same seasons.',
     'One of the faces that was always at the well.',
     'Known by sight and by name since childhood, and by nothing else.',

@@ -44,6 +44,46 @@
  * Anything with somebody else in it is out of scope by construction, which is
  * why the corpus is those three rather than the whole narration.
  *
+ * ── THE FOURTH PLACE: THE STORED RECORDS THEMSELVES ──────────────────────
+ *
+ * Three sentences survived the pass above because they are not authored prose.
+ * They are KNOWLEDGE RECORDS, written at birth and quoted verbatim into the
+ * opening recap and into `recall`. Played with no model, the opening read:
+ *
+ *     What you came out of: A farm in a thin county.
+ *     You are standing here with 30 spirit stones, ...
+ *     Deep Snow Village is where they are from. Where they grew up.
+ *     Liang Peilu. Has been at the far end of that street since before either
+ *     of them was anybody.
+ *
+ * and mid-run `what do I know about Six Li` put the record straight against the
+ * sentence that reads it back:
+ *
+ *     Six Li is where they are from. You are sure of that much.
+ *     You were there for it. Where they grew up.
+ *
+ * A record is HELD BY somebody and rows exist for NPCs, so third person in a
+ * record is not wrong in itself. What was missing is that a holder reading
+ * their own record is being addressed.
+ *
+ * The row is persisted and `recall` reads it back out of SQLite, so a second
+ * wording would have to survive the round trip; and it cannot be derived on the
+ * way out either, because a pronoun in a record points at the holder in some
+ * rows and at the SUBJECT in others - "X is from home. Knowing them is not the
+ * same as being owed anything by them" is one of the rows being read. So the
+ * holder left the stored sentence instead, and the single wording is now right
+ * to both readers and after a round trip.
+ *
+ * These two cases sweep the RECORDS rather than the prose: every recap line
+ * that opens with a name this life holds, and the round trip through `recall`
+ * on the one place whose subject is the holder. The sweep is per line and never
+ * over the whole recap, because the line introducing the childhood faces says
+ * "owed anything by them" of the faces and is correct.
+ *
+ * Red on four of the six before the change: the home-place record in all three
+ * worlds, both through the recap and through `recall`, and the childhood-face
+ * note on the world that drew it.
+ *
  * The runs are fresh and unhurt on purpose. The standing sheet's injury line
  * says "nothing has closed them" of the INJURIES, which is a correct third
  * person about something that is not a person, and a sheet read after a fight
@@ -68,6 +108,17 @@ const ASKING_ABOUT_YOURSELF = ['what is my rank', 'how am I doing', 'how hurt am
  * one branch of it.
  */
 const WORLDS = ['addressed-a', 'addressed-b', 'addressed-c'];
+
+/** Every name this cultivator holds a record on, read out of the listing verb. */
+function namesHeld(listing: string): string[] {
+    return listing
+        .split(/\n+/)
+        .flatMap(line => {
+            const row = /^(?:People|Places|Houses|Things that happened): (.+)\.$/.exec(line.trim());
+            return row ? row[1].split(', ').map(name => name.trim()) : [];
+        })
+        .filter(name => name.length > 0);
+}
 
 function offence(text: string, what: string): string | null {
     const hit = THIRD_PERSON.exec(text);
@@ -140,6 +191,56 @@ describe('what the engine calls the player when it is the engine talking', () =>
             // Its own first sentence is this person, where they are, and the
             // ground under them. Later lines name other people and are theirs.
             expect(offence((recap as string).split('\n')[0], 'the opening sentence')).toBeNull();
+        }, 240_000);
+
+        it(`${world}: the records this life opens holding address the one holding them`, async () => {
+            const h = await makeGameInWorld({ seed: `addr-${world}`, worldSeed: world });
+            await h.game.newRun('Zzqq');
+
+            const recap = h.game.state().log
+                .filter(e => e.turn === 0 && e.role === 'engine')
+                .map(e => e.text)
+                .find(text => /^\d+ years old/.test(text)) as string;
+            expect(recap, 'the opening recap reaches the player at all').toBeDefined();
+
+            // Read out of the game rather than hard-coded: any name the recap
+            // quotes a record for is a name this verb lists.
+            const held = namesHeld((await h.game.act('what do I know')).narration);
+            expect(held.length, 'a run opens holding names').toBeGreaterThan(0);
+
+            const quoted = recap.split('\n').filter(line =>
+                held.some(name => line.startsWith(`${name}.`) || line.startsWith(`${name} `)));
+            expect(quoted.length, `the recap quotes a record: ${recap}`).toBeGreaterThan(0);
+
+            const found = quoted
+                .map(line => offence(line, 'a record quoted into the opening'))
+                .filter((hit): hit is string => hit !== null);
+            expect(found, found.join(' ;; ')).toEqual([]);
+        }, 240_000);
+
+        it(`${world}: a record read back out of the database still addresses its holder`, async () => {
+            const h = await makeGameInWorld({ seed: `addr-${world}`, worldSeed: world });
+            await h.game.newRun('Zzqq');
+
+            // The one record whose subject is the holder themselves: where they
+            // are from. `recall` reads it out of SQLite, which is what a second
+            // wording composed in memory at birth would not have survived.
+            const home = h.game.state().cultivator.location as string;
+            const { narration } = await h.game.act(`what do I know about ${home}`);
+
+            // `factsForRecall` files each record as the statement and then the
+            // line saying how it arrived, so the pair is the record. The
+            // closing sentence about whether two records are the same thing
+            // says `them` of the RECORDS and is correctly outside this slice.
+            const said = narration.split(/\n{2,}/);
+            const about = said.flatMap((part, at) =>
+                part.includes(home) ? [part, said[at + 1] ?? ''] : []);
+            expect(about.length, narration).toBeGreaterThan(0);
+
+            const found = about
+                .map(part => offence(part, 'a record read back out of the database'))
+                .filter((hit): hit is string => hit !== null);
+            expect(found, found.join(' ;; ')).toEqual([]);
         }, 240_000);
     }
 });

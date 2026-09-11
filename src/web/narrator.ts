@@ -380,6 +380,16 @@ export interface NarratorScene {
      * the world perceives an ordinal.
      */
     realmOrdinal?: number;
+    /**
+     * True of the world, not held by this cultivator.
+     *
+     * Dramatic irony rather than a discovery: the narrator may show these to the
+     * READER as a cutaway and may never write this cultivator perceiving one.
+     * `THE_READER_MAY_KNOW_MORE` in `prompt.ts` carries the rule and the pairs.
+     * Nothing gates on this - what a character may name, ask after or walk up to
+     * is `knowledge.ts` and is untouched by anything written here.
+     */
+    heldByTheWorldAndNotByThem?: readonly string[];
 }
 
 export interface Narration {
@@ -737,11 +747,26 @@ function namesTheRungTheyAreOn(clause: string, standsAt: string): boolean {
     return asNumber === undefined ? true : asNumber === Number(standingLayer);
 }
 
-/** "Layer 3". */
-const A_LAYER_IN_DIGITS = /\b(?:layer|rank|stage)\s+(\d+)\b/i;
+/**
+ * What a rung is called in the NARRATOR's prose, which is not the engine's set.
+ *
+ * FOUND BY PLAYING with a local model. It wrote *"you have reached the first
+ * rung of Qi Condensation"* - true, and the rung this cultivator is standing
+ * on - and the guard did not know `rung`, so the opening was discarded and the
+ * player got the raw fact list plus an apology. The engine's own intake notices
+ * say "not from the first rung of it", so this is the house word and the
+ * narration was reading it back.
+ *
+ * Only the two CLAUSE-side patterns take these. The two that parse `standsAt`
+ * read the engine's own `Layer N` and need no synonyms.
+ */
+const A_RUNG_WORD = '(?:layer|rank|stage|rung|level)';
 
-/** "the third layer". */
-const A_LAYER_WRITTEN_OUT = /\b(\w+)\s+(?:layer|rank|stage)\b/i;
+/** "Layer 3". */
+const A_LAYER_IN_DIGITS = new RegExp(`\\b${A_RUNG_WORD}\\s+(\\d+)\\b`, 'i');
+
+/** "the third layer", "the first rung". */
+const A_LAYER_WRITTEN_OUT = new RegExp(`\\b(\\w+)\\s+${A_RUNG_WORD}\\b`, 'i');
 
 /** The layer numbers a narrator writes out, which is all of them. */
 const WRITTEN_OUT: Record<string, number> = {
