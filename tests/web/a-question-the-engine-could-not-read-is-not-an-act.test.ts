@@ -104,3 +104,44 @@ describe('a sentence the engine could not read', () => {
         expect(parseIntent(said).action).not.toBe(FALLBACK_ACTION);
     });
 });
+
+/**
+ * AND THE EXEMPTION IS READ OFF THE SENTENCE AS WELL AS OFF THE PLAN.
+ *
+ * FOUND BY PLAYING BLIND AGAIN, after the routing above was already fixed.
+ * `what happened to him` reads as `assess` in the table and the round was STILL
+ * taken, because phase 1 is a model and the model had called it something else.
+ * The exemption was keyed on the label the model chose, so a question was
+ * charged for being described differently.
+ *
+ * What is being decided is not which verb ran. It is whether the PLAYER acted
+ * or asked, and their own sentence is the better evidence: the table's reading
+ * is a fact about what was typed, where the plan is one reader's opinion of it.
+ *
+ * Verified in play afterwards - no `combat.round` on any of three reads taken
+ * mid-fight, where all three had taken one before.
+ */
+describe('the sentence is evidence too', () => {
+    it.each([
+        'what happened to him',
+        'who is winning',
+        'how badly am i hurt',
+        'how hurt is he'
+    ])('%s reads as a free verb whatever a model calls it', said => {
+        const verb = parseIntent(said).action;
+        expect(['status', 'assess', FALLBACK_ACTION]).toContain(verb);
+    });
+
+    /**
+     * AND A STALL IS STILL A STALL. The rule this exemption sits inside is
+     * `a-fight-you-can-answer.test.ts`'s - *the blade arrives and THEN they do
+     * the thing they asked for. A fight is a situation, not a mode* - so the
+     * verbs a player could browse with must stay outside it.
+     */
+    it.each(['i go to the market', 'what is for sale', 'what news is there', 'i look around'])(
+        '%s is not exempt', said => {
+            const verb = parseIntent(said).action;
+            expect(['status', 'assess', FALLBACK_ACTION]).not.toContain(verb);
+        }
+    );
+});

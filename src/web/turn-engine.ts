@@ -1447,6 +1447,18 @@ const ADMIN_RESET = /^(?:reset|restart|regenerate|reroll|new_run|newrun)(?![a-z_
 // THE SERVICE
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * The verbs a standing fight takes no round for.
+ *
+ * `status` and `assess` are things a fighter does without looking away, and the
+ * fallback is a sentence that produced nothing at all - see the call site for
+ * the measurements behind each. Deliberately NOT `costsTheAskerNothing`, which
+ * admits `look`, `market` and `news`: a player may not browse a stall mid-duel.
+ */
+function aFightChargesNothingFor(verb: ActionName): boolean {
+    return verb === 'status' || verb === 'assess' || verb === FALLBACK_ACTION;
+}
+
 export class GameService {
     readonly db: Database.Database;
     /**
@@ -2113,9 +2125,28 @@ export class GameService {
                 // are things a fighter does without looking away, and they
                 // ANSWER. This one produced nothing at all, and a turn that
                 // produced nothing must not also take something.
-                theTurnsPlan.action.action === 'status'
-                    || theTurnsPlan.action.action === 'assess'
-                    || theTurnsPlan.action.action === FALLBACK_ACTION
+                //
+                // AND IT IS READ OFF THE SENTENCE AS WELL AS OFF THE PLAN.
+                //
+                // FOUND BY PLAYING BLIND, after the routing above was already
+                // fixed. `what happened to him` reads as `assess` in the table
+                // and the round was STILL taken, because phase 1 is a model and
+                // the model had called it something else. The exemption was
+                // keyed on the label the model chose, so a question was charged
+                // for being described differently.
+                //
+                // What is being decided here is not which verb ran. It is
+                // whether the PLAYER acted or asked, and their own sentence is
+                // the better evidence for that: the table's reading of it is a
+                // fact about what was typed, where the plan is one reader's
+                // opinion of it.
+                //
+                // Either is enough. A sentence both readers call an act is
+                // charged, which is the rule; a sentence either one calls a
+                // question is not, which is the safe direction for a charge
+                // that has cost a permanent wound.
+                aFightChargesNothingFor(theTurnsPlan.action.action)
+                    || aFightChargesNothingFor(parseIntent(trimmed).action)
             );
 
         if (carriesOn !== null && carryingOn === null) {
