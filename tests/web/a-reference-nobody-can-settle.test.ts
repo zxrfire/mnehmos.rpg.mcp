@@ -67,8 +67,13 @@ describe('a demonstrative that could be either says so', () => {
         );
         expect(out.resolutions).toEqual([]);
         expect(out.unsettled).toEqual(['it']);
-        // And the plan is untouched, because declining is not choosing.
-        expect(out.plan.action.target).toBe('it');
+        // AND THE FIELD COMES OFF. This used to assert that the plan was
+        // untouched, on the reasoning that declining to choose is not choosing
+        // - which is right about the CHOICE and was wrong about the field.
+        // Leaving the literal word on it is what sent `investigate` looking for
+        // a place called `it`; the verb is better served by a sentence that
+        // named nothing, which it already answers well.
+        expect(out.plan.action.target).toBeUndefined();
     });
 
     /**

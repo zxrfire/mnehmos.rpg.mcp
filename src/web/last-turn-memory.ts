@@ -281,6 +281,24 @@ export function theRowForCarryingOn(said: string, step: PlanStep): ToolCallRecor
  */
 const A_BARE_ONE = /^(?:the\s+)?(?:that|this|it|one|same|other)(?:\s+one)?$/i;
 
+/**
+ * A thing named by what it IS, where the last turn printed only one of them.
+ *
+ * FOUND BY PLAYING BLIND. Two recruiting notices were read off a wall, one of
+ * them holding its intake the next day. `i present myself at the intake` came
+ * back with the generic listing of every house that would take somebody of this
+ * standing, and *none of this has happened* - because `the intake` is not a
+ * demonstrative and nothing recognised it as pointing at anything.
+ *
+ * These are not pronouns. They are the CATEGORY a listing was about, used the
+ * way anybody uses it once the thing has been named: the game says two houses
+ * are holding intakes and the player says *the intake*. Resolved exactly the
+ * way `it` is, which means the ambiguity rule applies unchanged - two notices
+ * on the wall and the phrase points at nothing, and the turn says so.
+ */
+const A_THING_BY_ITS_KIND =
+    /^(?:the\s+|that\s+|this\s+)?(?:intake|intakes|notice|notices|bill|bills|poster|posters|posting|listing|listings|offer|offers|job|jobs|work|book|books|manual|manuals)$/i;
+
 /** Comparatives. Cheaper is tested first so "less expensive" is not read as expensive. */
 const THE_CHEAPER = /\b(?:cheap(?:er|est)|less expensive|least expensive|lower priced|lowest priced|more affordable)\b/i;
 const THE_DEARER = /\b(?:dear(?:er|est)|most expensive|more expensive|expensive|pricier|priciest|costlier|costliest|higher priced|highest priced)\b/i;
@@ -300,6 +318,7 @@ export function standsForSomethingNamedLastTurn(value: string | undefined): bool
     const text = value.trim();
     if (text.length === 0) return false;
     if (A_BARE_ONE.test(text)) return true;
+    if (A_THING_BY_ITS_KIND.test(text)) return true;
     if (THE_LAST_ONE.test(text)) return true;
     if (THE_CHEAPER.test(text) || THE_DEARER.test(text)) return true;
     return AN_ORDINAL.some(([pattern]) => pattern.test(text)) && /\bone\b/i.test(text);
@@ -331,7 +350,11 @@ export function whichOfTheNamedThings(
     if (named.length === 0) return null;
 
     const texts = [phrase ?? ''];
-    if (phrase === undefined || A_BARE_ONE.test(phrase.trim())) texts.push(input);
+    if (phrase === undefined
+        || A_BARE_ONE.test(phrase.trim())
+        || A_THING_BY_ITS_KIND.test(phrase.trim())) {
+        texts.push(input);
+    }
 
     for (const text of texts) {
         if (text.trim().length === 0) continue;
@@ -362,7 +385,10 @@ export function whichOfTheNamedThings(
         }
         // A demonstrative with one thing to point at points at it. With two it
         // points at nothing, and saying so is better than choosing.
-        if (A_BARE_ONE.test(text.trim()) && named.length === 1) return named[0]!;
+        if ((A_BARE_ONE.test(text.trim()) || A_THING_BY_ITS_KIND.test(text.trim()))
+            && named.length === 1) {
+            return named[0]!;
+        }
     }
     return null;
 }
@@ -457,11 +483,32 @@ export function resolvingAgainstTheLastTurn(
             if (!standsForSomethingNamedLastTurn(value)) continue;
             const thing = whichOfTheNamedThings(value, input, record.named);
             if (thing === null) {
-                // Recorded rather than dropped. See `unsettled`: a reference
-                // nobody could settle used to reach the verb as the literal
-                // word, which is how "study it" became a search for a place
-                // called `it`.
+                // ── AND THE FIELD COMES OFF ──────────────────────────────
+                //
+                // A reference nobody could settle used to reach the verb as
+                // the LITERAL WORD, and every verb then answered about a thing
+                // by that name: "I study it" searched the town for a place
+                // called `it` and reported that it did not exist.
+                //
+                // Dropping it is not losing anything. The field was never a
+                // name - `standsForSomethingNamedLastTurn` has already said it
+                // is a reference - so what reaches the verb is a sentence that
+                // named nothing, which every verb here already answers well:
+                // the listing, the board, the whole square. A phrase nobody
+                // could bind is closer to silence than it is to a name.
+                //
+                // `asking-about-a-named-thing.test.ts` had already ruled this
+                // for one sentence shape, at the parse layer: *points at the
+                // paper rather than at a name, so the admissible listing
+                // answers rather than a refusal about a house that does not
+                // exist.* This is the same ruling, moved to where it can also
+                // let the reference RESOLVE when there is something to resolve
+                // it against.
+                //
+                // And the player is told, by the line `unsettled` carries.
                 if (record.named.length > 1 && !unsettled.includes(value!)) unsettled.push(value!);
+                changed = { ...changed };
+                delete changed[field];
                 continue;
             }
             resolutions.push({ from: value!, to: thing.name });
@@ -476,7 +523,11 @@ export function resolvingAgainstTheLastTurn(
     });
 
     const action = resolve(plan.action);
-    if (resolutions.length === 0) return { plan, resolutions, unsettled };
+    // A DROP IS A CHANGE TOO. This used to return the untouched plan whenever
+    // nothing RESOLVED, which would put the literal reference straight back.
+    if (resolutions.length === 0 && action === plan.action) {
+        return { plan, resolutions, unsettled };
+    }
     return {
         plan: { ...plan, action, ...(steps ? { steps } : {}) },
         resolutions,

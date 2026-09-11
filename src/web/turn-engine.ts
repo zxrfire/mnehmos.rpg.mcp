@@ -3625,6 +3625,20 @@ ${noticedWaiting}`;
                 // WHAT IS NAILED TO THE WALL, ASKED FOR DELIBERATELY.
                 if (action.intent === 'bills') {
                     const wall = readTheWall(this.knowledge, cultivator, run);
+                    // THE ONE DATED INVITATION THIS GAME OFFERS, AND THE NEXT
+                    // SENTENCE COULD NOT POINT AT IT.
+                    //
+                    // FOUND BY PLAYING BLIND. Two notices were read off a wall,
+                    // one of them holding its intake the next day; `i present
+                    // myself at the intake` came back with the generic listing
+                    // of eight houses and *none of this has happened*.
+                    //
+                    // Naming the house works and always did. What did not was
+                    // saying `the intake`, because nothing had written the
+                    // houses on those two papers into the record the reference
+                    // resolver reads. Same write-side gap as the work board,
+                    // and the same fix.
+                    for (const bill of wall.bills) this.nameWhatTheyGot(bill.houseName);
                     return this.freeAction(run, 'look', wall.lines.length > 0
                         ? factsForToolResult(
                             `There is paper up in ${placeName(cultivator)}.`,

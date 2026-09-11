@@ -229,9 +229,20 @@ describe('taking an intake is being taken on, not opening a treasury', () => {
         const parsed = parseIntent(said);
         expect(parsed.action, said).toBe('sect');
         expect(parsed.intent, said).not.toBe('siphon');
-        // Points at the paper rather than at a name, so the admissible listing
-        // answers rather than a refusal about a house that does not exist.
-        expect(parsed.target, said).toBeUndefined();
+        // POINTS AT THE PAPER RATHER THAN AT A NAME, and it now says so.
+        //
+        // This asserted `undefined` here, on the reasoning that a target of
+        // "the intake" would reach the verb and produce a refusal about a house
+        // that does not exist. That reasoning was right and the layer was
+        // wrong: the phrase IS a reference, and dropping it at the parse meant
+        // the one sentence that answers a dated, posted invitation could never
+        // find the house that posted it.
+        //
+        // Carried as a reference instead. `resolvingAgainstTheLastTurn` binds
+        // it to whichever house the bills read named, and where nothing was
+        // read it DROPS the field - so the listing still answers, which is what
+        // this assertion was protecting.
+        expect(parsed.target, said).toBe('the intake');
     });
 
     it.each([

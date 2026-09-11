@@ -765,8 +765,67 @@ export const SECT_THEFT_PATTERN =
 /**
  * The wall, and the question somebody with no house actually asks at it.
  */
-export const RECRUITING_BILL_PATTERN =
-    /\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b|\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b|\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b|\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b/;
+/**
+ * The paper a joining sentence points at, when it points at one.
+ *
+ * ── THE ONE DATED INVITATION, AND IT COULD NOT BE ANSWERED ───────────────
+ *
+ * FOUND BY PLAYING BLIND. Two recruiting notices were read off a wall in
+ * Autumn Gate, one of them holding its intake THE NEXT DAY. Then:
+ *
+ *     > i present myself at the intake
+ *     The options for someone of your standing are few and functional. The
+ *     Burnt Earth Temple would take a Lamp Novice, and the Azure Dew Sect a
+ *     Dew Servant... None of this has happened.
+ *
+ * The generic listing of every house that would have somebody of this
+ * standing, and a footer saying nothing had happened. The player had walked up
+ * to a named, dated event and was handed a catalogue.
+ *
+ * `NOT_PART_OF_A_HOUSE_NAME_IN_A_JOINING_SENTENCE` is right that `intake` is
+ * not part of a house's name - it was put on that list for exactly this
+ * sentence shape, because "I present myself at the Hollow Bell Wanderers
+ * intake" would otherwise carry four stray words into the name. But between a
+ * house name and nothing there is a third thing: a REFERENCE to what the wall
+ * just said.
+ *
+ * So the kind word is carried through as the target rather than dropped.
+ * `standsForSomethingNamedLastTurn` recognises it, `whichOfTheNamedThings`
+ * binds it to whichever house the bills read named, and two notices on one wall
+ * settle nothing and say so - the same ruling `it` already keeps.
+ */
+const A_PAPER_ON_THE_WALL = new RegExp(
+    // A determiner, then up to one adjective - `the soonest intake`, `that
+    // second notice` - and the NOUN is what is captured. The phrase handed on
+    // is normalised to `the <noun>` so the reference resolver sees the kind it
+    // knows rather than whichever adjective somebody reached for.
+    String.raw`\b(?:the|that|this)\s+(?:\w+\s+)?(intake|notice|bill|poster|posting)\b`,
+    'i'
+);
+
+/** The paper a sentence points at, or nothing. See `A_PAPER_ON_THE_WALL`. */
+function theReferenceToAPaper(text: string): string | undefined {
+    const noun = A_PAPER_ON_THE_WALL.exec(text)?.[1];
+    return noun === undefined ? undefined : `the ${noun.toLowerCase()}`;
+}
+
+export const RECRUITING_BILL_PATTERN = new RegExp([
+    String.raw`\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b`,
+    String.raw`\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b`,
+    String.raw`\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b`,
+    String.raw`\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b`,
+    // ── ASKING FOR THE WALL WITHOUT A READING VERB ───────────────────────
+    //
+    // FOUND BY PLAYING BLIND. The bills are the only dated, concrete
+    // invitation this game hands a new player, and `what notices are here`
+    // reached `unclear`. The rows above all want either a reading verb in
+    // front of the noun or the word `posted`; the plainest way to ask - naming
+    // the thing and asking whether there is one - had no line at all.
+    String.raw`\b(?:what|which|any|are there|is there|are any|any of)\b[^.!?]{0,20}`
+    + String.raw`\b(?:notices?|bills?|posters?|placards?|papers?)\b`,
+    String.raw`\b(?:notices?|bills?|posters?|placards?)\b[^.!?]{0,20}`
+    + String.raw`\b(?:here|up|on the wall|about|around|anywhere)\b`
+].join('|'));
 
 export const SECT_DUTY_PATTERN = new RegExp([
     String.raw`\b(?:mission board|duty board|commission board|sect board|notice board|the board|sect work|sect dut(?:y|ies)|contribution)\b`,
@@ -3716,7 +3775,13 @@ function planIntent(input: string): PlannedAction {
     // WHAT IS NAILED TO THE WALL
     if (TAKING_A_POSTED_INTAKE.test(text)) {
         const house = whoseIntakeItIs(input);
-        return { action: 'sect', ...(house ? { target: house } : {}) };
+        // And where no house is named, the paper itself. See
+        // `theReferenceToAPaper` for the played defect.
+        const paper = house ? undefined : theReferenceToAPaper(text);
+        return {
+            action: 'sect',
+            ...(house ? { target: house } : paper ? { target: paper } : {})
+        };
     }
 
     // the house's own board, ahead of the mortal one
@@ -4677,7 +4742,13 @@ function planIntent(input: string): PlannedAction {
         || WHO_WOULD_TAKE_SOMEBODY_LIKE_ME.test(text)) {
         // A SENTENCE THAT NAMES NO HOUSE MUST NOT ARRIVE CARRYING ONE
         const said = extractSubject(input, /joining|join|applying to|apply to|swear (?:an oath|my oath|myself|allegiance|fealty|service) to|swear to|give (?:my|our) (?:oath|word) to|bind myself to|enter|find|look for/);
-        return { action: 'sect', ...(namesNoHouse(said) ? {} : { target: said }) };
+        if (!namesNoHouse(said)) return { action: 'sect', target: said };
+
+        // Or the paper on the wall it points at. See `theReferenceToAPaper`.
+        const paper = theReferenceToAPaper(text);
+        if (paper) return { action: 'sect', target: paper };
+
+        return { action: 'sect' };
     }
 
     // ── WHO ELSE IS DRAWING, WHICH IS NOT WHO ELSE IS HERE ───────────────
