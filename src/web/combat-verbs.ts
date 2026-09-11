@@ -993,6 +993,14 @@ export const combatVerbs = {
         });
 
         if (turn.finished) {
+            // Recorded before the field goes, because the estate settles after
+            // this and has no other way to learn that anybody was swinging.
+            // See `GameService.fightJustEnded`.
+            this.fightJustEnded = {
+                runId: run.id,
+                cultivatorId: cultivator.id,
+                onTurn: run.turn
+            };
             this.fight = null;
             return this.concludeTheFight(run, cultivator, held, turn.finished, turn);
         }

@@ -1496,6 +1496,16 @@ export class GameService {
      */
     fight: StandingFight | null = null;
     /**
+     * A fight that ended THIS TURN, and whose.
+     *
+     * `fight` is cleared before the conclusion runs, so by the time a death
+     * settles an estate there is nothing left to ask whether somebody was
+     * swinging. This is that answer, kept for exactly as long as the turn that
+     * produced it - see the note beside `standingOver` in
+     * `settleTheEstateInside` for the played defect.
+     */
+    fightJustEnded: { runId: string; cultivatorId: string; onTurn: number } | null = null;
+    /**
      * Two costly acts in one sentence, with the choice still owed.
      */
     private whichComesFirst: WhichComesFirst | null = null;
@@ -13750,6 +13760,21 @@ ${fit.line}`;
     }
 
     /**
+     * Whether a fight was standing when this cultivator died.
+     *
+     * `fight` is cleared before a conclusion runs, so `fightJustEnded` is what
+     * carries the answer this far. Scoped to the same run, body and turn: a
+     * fight that ended three turns ago says nothing about a starvation now.
+     */
+    private somebodyWasSwinging(now: { cultivator: Cultivator; run: Run }): boolean {
+        const ended = this.fightJustEnded;
+        return ended !== null
+            && ended.runId === now.run.id
+            && ended.cultivatorId === now.cultivator.id
+            && ended.onTurn >= now.run.turn - 1;
+    }
+
+    /**
      * The body of the death transition.
      *
      * Synchronous, and every one of its writes is: `settleWhatTheyWereCarrying`
@@ -13784,7 +13809,34 @@ ${fit.line}`;
             // Being in the same town when somebody starves is not standing
             // over them; killing them is. Everything else goes into the
             // ground, which is what the Late Age is made of.
-            standingOver: somebodyDidThis(deathCause)
+            // ── AND A FIGHT THAT WAS STANDING IS SOMEBODY'S DOING ────
+            //
+            // FOUND BY PLAYING BLIND, into a death. The player kept swinging at
+            // somebody stronger until it killed them, and the screen said both
+            // of these:
+            //
+            //     The world has it written down, as a small thing. 8 people
+            //     were there.
+            //
+            //     Nobody was there. What Meng Si was carrying is at Cloud Gate,
+            //     where they fell: 30 spirit stones.
+            //
+            // Two engine lines, one screen, flatly opposed - and the man who
+            // had just killed them was standing over the body.
+            //
+            // `somebodyDidThis` reads the CAUSE, and the cause cannot answer
+            // this question. `obviously_fatal_choice` has two producers:
+            // `evaluateDeathConditions` returns it for forcing a fight while
+            // barely able to stand, which is emphatically somebody's doing, and
+            // `alchemy-manage` uses it for a pill detonating in your hands,
+            // which is nobody's. One enum value, two deaths.
+            //
+            // The caller has the evidence the enum lacks. A fight standing when
+            // somebody dies is the plainest possible answer to *did somebody do
+            // this*, and it is exactly the distinction the ruling draws: being
+            // in the same town when somebody starves is not standing over them;
+            // killing them is.
+            standingOver: somebodyDidThis(deathCause) || this.somebodyWasSwinging(now)
                 ? this.present(now.cultivator).map(row => ({ id: row.id, name: row.name }))
                 : [],
             // A failed crossing leaves a scar and nothing to search.

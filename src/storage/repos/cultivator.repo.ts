@@ -653,6 +653,30 @@ export class CultivatorRepository {
         const valid = CultivatorSchema.parse({
             ...existing,
             alive: false,
+            // ── AND THE FIELD THAT IS ACTUALLY AUTHORITATIVE ─────────────
+            //
+            // FOUND BY PLAYING BLIND, into a death. The run came back
+            // `status: dead`, `deathCause: obviously_fatal_choice`,
+            // `alive: false` - and `existenceState: 'alive'`.
+            //
+            // `CultivatorSchema` says which of those two to believe, in as many
+            // words: *`existenceState` is AUTHORITATIVE: when the two could
+            // disagree, trust the state and recompute this from
+            // `isGoingConcern()`.* This function is the only thing in the game
+            // that ends a cultivator and it moved the convenience boolean and
+            // left the authoritative field saying they were alive - so anybody
+            // following the schema's own instruction read a living cultivator
+            // off a corpse.
+            //
+            // `physically_dead` for every cause on the enum, and that is not a
+            // simplification: all nine are the body going. The states where
+            // something survives it - `soul_preserved`, `remnant`,
+            // `possessing` - are not deaths this function is told about, they
+            // are transitions somebody else performs, and nothing in play
+            // produces one yet. A path that does will set the state itself
+            // rather than routing a preservation through a method named
+            // `markDead`.
+            existenceState: 'physically_dead',
             deathCause: cause,
             diedOnTurn: Math.max(0, Math.round(turn)),
             updatedAt: new Date().toISOString()
