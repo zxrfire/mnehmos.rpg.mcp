@@ -562,7 +562,30 @@ const ASKING_TO_BE_TAUGHT =
 
 /** The phrase that names WHICH art, once the clause is known to be a teaching. */
 const AFTER_THE_TEACHING_VERB =
-    /\b(?:teach me|teach it to me|train me in|train me|tutor me in|tutor me|instruct me in|instruct me|show me|guide me in|guide me through|guide me|take me through|walk me through|carry me through|carry me across|teach)\b\s*(?:the|a|an|in|how to|about)?\s*/i;
+    // `an` ahead of `a`, and a boundary behind the group: "teach me an art"
+    // left `n art` in `topic`, which then fuzzy-matched a real technique.
+    /\b(?:teach me|teach it to me|train me in|train me|tutor me in|tutor me|instruct me in|instruct me|show me|guide me in|guide me through|guide me|take me through|walk me through|carry me through|carry me across|teach)\b\s*(?:the|an|a|in|how to|about)?\b\s*/i;
+
+/**
+ * A phrase that names the KIND of thing wanted rather than one of them.
+ *
+ * FOUND BY PLAYING. "I ask Han Ronglu to teach me" reached the resolver with
+ * `topic` set to the category word - the table leaves a fragment and a model
+ * fills the field with the player's own noun - and came back as *no art called
+ * an art*: a parse failure standing where a question belongs.
+ *
+ * Only words that are always a category. Every art in the catalog is a named
+ * thing, so there is nothing here for this list to swallow.
+ */
+const A_KIND_RATHER_THAN_A_NAME =
+    /^(?:(?:the|a|an|any|some|your|his|her|their|one of|first|best)\s+)*(?:cultivation\s+|martial\s+|good\s+|useful\s+|proper\s+)?(?:arts?|techniques?|methods?|skills?|something|anything|whatever|cultivation)$/i;
+
+/**
+ * Whether this phrase named a kind of thing rather than one of them.
+ */
+export function namesAKindRatherThanAThing(phrase: string | undefined | null): boolean {
+    return A_KIND_RATHER_THAN_A_NAME.test((phrase ?? '').trim());
+}
 
 /**
  * Being put in front of somebody.

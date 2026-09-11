@@ -2039,6 +2039,28 @@ export function factsForRefusal(headline: string, scene: string, mechanical?: st
     return observable(headline, [scene], scene, mechanical ? [mechanical] : []);
 }
 
+/**
+ * A question the engine put back to the player, in somebody's mouth.
+ *
+ * The sibling of {@link factsForRefusal} and deliberately not the same shape.
+ * A refusal hands over one sentence; this hands over the LIST, because the
+ * player answers it by pointing into the list and an ordinal is counted against
+ * the order printed here. The lines are `required`, so the order survives a
+ * narrator that would otherwise resay them best-first.
+ */
+export function factsForAQuestionPutBack(
+    headline: string,
+    scene: string,
+    lines: readonly string[],
+    mechanical: string
+): EngineFacts {
+    const said = lines.filter(line => line.trim().length > 0);
+    return {
+        ...observable(headline, [...said], scene, [mechanical]),
+        required: said
+    };
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // SEMANTIC ACTIONS
 // ─────────────────────────────────────────────────────────────────────────

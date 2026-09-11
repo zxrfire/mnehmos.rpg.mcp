@@ -1365,6 +1365,20 @@ export function composeNarrationUser(
         'A sentence the engine could not read is the one case that ends in nothing, and it',
         'arrives already saying so. You will not have to invent that one.',
         '',
+        // FOUND BY PLAYING. `I ask Han Ronglu to teach me` was DECLINED by the
+        // engine and narrated as *"Teach you what?"* - an open question in an
+        // NPC's mouth, over a ruling that had closed. Nothing would have
+        // answered it, because no list had been printed for an answer to point
+        // into. Turning one outcome into another is a substance change and the
+        // rule above did not name it.
+        'A QUESTION AND A REFUSAL ARE DIFFERENT EVENTS, AND THE FACTS SAY WHICH HAPPENED.',
+        'Where they say somebody asked something back, the prose asks it, and whatever is',
+        'listed above is what an answer may name. Where they say somebody refused, would not,',
+        'or could not, the prose closes: no "what did you have in mind", no invitation to name',
+        'something, no question mark left hanging in their mouth. A refusal written as an',
+        'opening is an act the engine never ruled, and a player who answers it is answering',
+        'nobody.',
+        '',
         scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0
             // The opening carries a life AND a scene, and a flat "two or three short
             // paragraphs" here is the instruction that ate the childhood in the first
@@ -1386,37 +1400,17 @@ export function composeNarrationUser(
 }
 
 /**
- * THE ONE TURN WITH SIXTEEN YEARS BEHIND IT.
+ * The opening, which is the one turn with a life behind it.
  *
- * ── WHAT WENT WRONG, TWICE, IN OPPOSITE DIRECTIONS ───────────────────────
- *
- * The recap was composed at birth and unshifted onto `facts.lines`, which is to
- * say handed to a model that is asked, at the bottom of this same prompt, for
- * *"two or three short paragraphs"*. Measured with ollama narrating, the whole
- * of turn 0 came back as the square: *"Nine Peaks. [...] Mo Wanming is here and
- * has not looked up. [...] It is an ordinary day and it intends to stay one."*
- * Sixteen years, three people and every name the player held, dropped, because
- * the facts nearest the end of a long list are the ones a small model writes.
- *
- * The first cut of this block over-corrected: the engine filed the recap as a
- * ruling and this block told the narrator it was already on screen and not to
- * retell it. That makes the player's first contact with their own life a
- * bulleted record, which is the engine writing the opening. The design owner:
- * *"the LLM should be doing that"*, *"write as xianxia"*, *"prompt it as
- * needed."*
- *
- * ── SO BOTH CHANNELS CARRY IT, AND THEY ARE NOT THE SAME THING ───────────
- *
- * The engine files the facts as a ruling, which is what makes them survivable -
- * a model that times out, gets discarded, or is not configured at all cannot
- * cost a player their own past. This block asks for the other half: the same
- * sixteen years as a life someone lived. That is exactly the division the log
- * already runs on, where a ruling and a narration sit next to each other and
- * the ruling is the one that happened.
- *
- * The vocabulary this asks for is in `docs/world/writing/tone.md` under *the
- * words this world uses for itself*, which is tier 1 and already in the system
- * prompt above.
+ * Both channels carry those years and they do different jobs. The engine files
+ * them as a ruling, which is what survives a model that times out, gets
+ * discarded, or was never configured; this block asks for the same years as a
+ * life somebody lived. Handing them to the narrator ALONE was the original
+ * defect - measured with ollama narrating, turn 0 came back as the square and
+ * nothing else, because the facts nearest the end of a long list are the ones a
+ * small model writes. Telling it they were already on screen over-corrected the
+ * other way and made a bulleted record the player's first contact with their
+ * own past.
  */
 function theLifeBehindThemBlock(life: readonly string[]): string[] {
     if (life.length === 0) return [];

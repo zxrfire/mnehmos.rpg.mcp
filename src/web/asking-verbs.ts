@@ -108,6 +108,7 @@ import {
 import {
     type EngineFacts,
     factsForAttempt,
+    factsForAQuestionPutBack,
     factsForRefusal,
     factsForRequest,
     factsForToolResult,
@@ -146,7 +147,11 @@ import {
     thisRowIs,
     whatIsBeingPutDown
 } from './what-a-holder-would-take-for-it.js';
-import { type RequestKind, requestPutToSomebody } from './what-a-request-asks-and-of-whom.js';
+import {
+    type RequestKind,
+    namesAKindRatherThanAThing,
+    requestPutToSomebody
+} from './what-a-request-asks-and-of-whom.js';
 import {
     type TheOneAsking,
     type TheOneBeingAsked,
@@ -1035,7 +1040,12 @@ ${unnamed}`;
         const kind: RequestKind = REQUEST_KINDS.has(intent)
             ? intent as RequestKind
             : reread?.kind ?? 'a_thing';
-        const named = (topic ?? reread?.object ?? '').trim();
+        // A CATEGORY WORD IS NOT A NAME. "Teach me an art" arrives with the
+        // player's own noun in `topic`, and every reader downstream treats a
+        // non-empty field as a name: it was fuzzy-matched against the catalog
+        // and, failing that, reported as an art nobody was ever taught.
+        const said = (topic ?? reread?.object ?? '').trim();
+        const named = namesAKindRatherThanAThing(said) ? '' : said;
 
         if (query.length < 2) {
             return refused('engine.resolveParty', 'request', factsForRefusal(
@@ -1137,11 +1147,15 @@ ${unnamed}`;
             // a procedural NPC and stripping it invents a person called `95`.
             memberId: catalogPersonBehind(party.id)
         };
+        const membership = this.repos.sects.getMembership(cultivator.id);
         const asking: TheOneAsking = {
             name: cultivator.name,
             ordinal: cultivator.realmOrdinal,
             factionId: cultivator.sectId ?? null,
-            holds: cultivator.knownTechniques
+            holds: cultivator.knownTechniques,
+            // Their rung on the roll, which is what decides how far up their own
+            // house's shelf somebody of that house would volunteer to take them.
+            rankIndex: membership?.rankIndex ?? null
         };
 
         // Who they would be putting you in front of, when that is the ask.
@@ -1157,16 +1171,43 @@ ${unnamed}`;
             }
             : null;
 
+        // Read before the costing because a question the engine asks carries a
+        // price and this is where one comes from. Used three more times below:
+        // the resolver weighs it, the costing line says it, and a refusal names
+        // it as the lever the player is already holding.
+        const wanted = this.whatTheyWantOfYou(cultivator, party.id);
+
         const costing = whatItWouldCostThem({
             kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing',
             asking,
             asked,
             techniqueId: asArt?.id ?? null,
             toMeet: meeting,
-            namedButUnresolved: named
+            namedButUnresolved: named,
+            theyWant: wanted?.goal.text ?? null
         });
 
-        // A REQUEST THAT CANNOT BE PUT
+        // THEY ASK BACK, WHICH IS NOT A REFUSAL, AND THE ANSWER HAS SOMEWHERE
+        // TO LAND. The arts go onto the record of what this turn named, so an
+        // ordinal in the next sentence is counted against the order printed.
+        if (costing.askBack) {
+            for (const art of costing.askBack.offered) this.nameWhatTheyGot(art.name);
+            const putBack = this.freeAction(run, 'request', factsForAQuestionPutBack(
+                costing.askBack.headline,
+                costing.askBack.prose,
+                costing.lines,
+                costing.askBack.structure
+            ));
+            putBack.calls.push(...costing.structure.map(line => ({
+                name: 'engine.priceTheAsk',
+                action: 'request' as ActionName,
+                summary: line,
+                ok: true
+            })));
+            return putBack;
+        }
+
+        // A REQUEST THAT CANNOT BE PUT, OR THAT THEY WILL NOT ENTERTAIN
         if (costing.refusal) {
             return refused('engine.priceTheAsk', 'request', factsForRefusal(
                 costing.refusal.headline,
@@ -1187,7 +1228,6 @@ ${unnamed}`;
             ));
         }
 
-        const membership = this.repos.sects.getMembership(cultivator.id);
         const mySect = membership ? this.repos.sects.getById(membership.sectId) : null;
         const theirSect = asked.factionId ? getSect(asked.factionId) : null;
 
@@ -1206,12 +1246,6 @@ ${unnamed}`;
             // `howTheyHoldWhatTheyHave`. Who they are is established by the
             // facts above this one.
             : [...party.facts, `They ${holdsThings}.`];
-
-        // Read once and used three times: the resolver prices it, the costing
-        // line says it, and a refusal names it as the thing that is already
-        // working for the player rather than sending them off after a lever
-        // they are holding.
-        const wanted = this.whatTheyWantOfYou(cultivator, party.id);
 
         // AND WHAT A REFUSAL WOULD LEAVE BEHIND
         const pressing = cultivator.injuries.some(

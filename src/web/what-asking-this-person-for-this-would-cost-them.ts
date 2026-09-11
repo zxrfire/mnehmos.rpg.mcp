@@ -41,15 +41,23 @@
  *
  * ── AND NOTHING HERE BANS ANYTHING ───────────────────────────────────────
  *
- * The `refusal` field is only ever set where the request cannot be PUT - no
- * such art, they have never heard of the person you want to meet, they hold
- * nothing you could take. Those are incoherence, not disapproval, and every one
- * of them names what would work instead. A request that CAN be put is always
- * put, however badly it is going to go: asking a Nascent Soul elder to hand a
- * Qi Condensation nobody their house's own canon is available, is priced at
- * `a_betrayal`, and fails at odds the player can see. That is the difference
- * between the two mistakes `AGENTS.md` names - banning it, and quietly making
- * it cheap.
+ * A request that names what it wants is always put, however badly it is going
+ * to go: asking a Nascent Soul elder to hand a Qi Condensation nobody their
+ * house's own canon is available, is priced at `a_betrayal`, and fails at odds
+ * the player can see. That is the difference between the two mistakes
+ * `AGENTS.md` names - banning it, and quietly making it cheap.
+ *
+ * What the fields below settle is which of four things happened to a request
+ * that named NOTHING, because the played defect was the engine emitting one and
+ * the prose implying another:
+ *
+ *   refusal   they cannot (no such art, no road to hand on) or they will not.
+ *             The second stands even when they are carrying arts - willingness
+ *             is a decision and not an inventory check.
+ *   askBack   they are willing and want to know which. A question, with the
+ *             arts on offer in a fixed order and a price on it.
+ *
+ * A refusal always names what would work instead.
  *
  * Pure. Catalogs in, sentences out. No repository, no I/O, no RNG.
  */
@@ -60,6 +68,7 @@ import {
     isCommonlyHeld,
     noHouseCanCallItTheirs,
     manualsOf,
+    shelfReach,
     whoseArt
 } from '../engine/world/manuals.js';
 import { carriesTo, getTechnique, teachersOf } from '../data/cultivation/techniques.js';
@@ -84,6 +93,14 @@ export interface TheOneAsking {
     factionId: string | null;
     /** Art ids already on the sheet. An art they hold cannot be asked for. */
     holds: readonly string[];
+    /**
+     * Where they sit on their own house's rungs, when they are on a roll.
+     *
+     * Read only by `shelfReach`, which is the house's own rule for how far up
+     * its shelf a member of a rank may reach - and so for whether one of that
+     * house's books is a thing one of its people would volunteer.
+     */
+    rankIndex?: number | null;
 }
 
 /** The person being asked, as the roster and the world hold them. */
@@ -123,6 +140,33 @@ export interface RequestCosting {
      * carrying what would work instead.
      */
     refusal: { headline: string; prose: string; structure: string } | null;
+    /**
+     * Set when the ask is coherent and underspecified and they are willing: the
+     * engine's own question, for the narrator to put in their mouth.
+     *
+     * A separate field from {@link refusal} because they are separate events
+     * and the played defect was the two being confused. The engine declined and
+     * the prose asked *"Teach you what?"* - a question nobody had asked, which
+     * nothing would have answered, since no list had been printed for an answer
+     * to point into.
+     */
+    askBack: TheQuestionPutBack | null;
+}
+
+/**
+ * What somebody asks back when the request did not say which road.
+ */
+export interface TheQuestionPutBack {
+    headline: string;
+    prose: string;
+    structure: string;
+    /**
+     * The arts on offer, in the order they are to be printed. An ordinal in the
+     * player's next sentence is counted against this order.
+     */
+    offered: readonly { id: string; name: string }[];
+    /** What they would want for it. Never empty: a price is always one answer. */
+    terms: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -206,40 +250,117 @@ export function whatTheyCouldTeach(
 }
 
 /**
+ * Arts they would put in THIS asker's hands, which is not the set they know.
+ *
+ * A master who holds five may offer two, and the two are decided by what the
+ * leak would cost them and by the house's own rule about who may read what -
+ * both already written down and read here rather than restated:
+ *
+ *   rung 0, 1  nobody's book, or somebody else's house's. Theirs to volunteer.
+ *   rung 2     their own house's working manual. Volunteered only to somebody
+ *              on that roll, and only as far up the shelf as `shelfReach` lets
+ *              that person's rank read.
+ *   rung 3     the top of a shelf. Never volunteered.
+ *
+ * Nothing here BANS anything. An art off this list can still be asked for by
+ * name and is priced as the betrayal it is; what the list decides is what they
+ * would bring up themselves.
+ */
+export function whatTheyWouldTeachYou(
+    asked: TheOneBeingAsked,
+    asking: TheOneAsking
+): { id: string; name: string; cap: number | null }[] {
+    return whatTheyCouldTeach(asked, asking).filter(art => {
+        const owners = whoseArt(art.id);
+        const ownerId = owners.includes(asked.factionId ?? '')
+            ? asked.factionId
+            : (owners[0] ?? null);
+        const rung = betrayalOfSelling({ factionId: asked.factionId }, art.id, ownerId);
+        if (rung === 3) return false;
+        if (rung !== 2) return true;
+
+        if (!ownerId || asking.factionId !== ownerId) return false;
+        const shelf = manualsOf(ownerId);
+        const at = shelf.findIndex(m => m.id === art.id);
+        // Off the shelf entirely - a fighting art the house teaches - so the
+        // shelf's own rule has nothing to say and being on the roll is the whole
+        // of it.
+        if (at < 0) return true;
+        const ranks = getSect(ownerId)?.ranks.length ?? 1;
+        return at < shelfReach(asking.rankIndex ?? -1, ranks, shelf.length);
+    });
+}
+
+/**
+ * What they would want for it, which is a condition and not a refusal.
+ *
+ * Read off what the world already holds about them, in order of how much it is
+ * about this particular person: their own open want that this asker could
+ * reach, then the price a living transmission is on record as asking, then the
+ * honest answer that a price is a fact about which road and no road has been
+ * named.
+ */
+function whatTheyWouldWantForIt(
+    asked: TheOneBeingAsked,
+    offered: readonly { id: string }[],
+    theyWant: string | null
+): string {
+    if (theyWant) {
+        return `${asked.name} is already after something this cultivator could reach: `
+            + `${theyWant}. That is what there is to trade with.`;
+    }
+    for (const art of offered) {
+        const mine = teachersOf(art.id).find(t => t.memberId === asked.memberId);
+        if (mine) return `What ${asked.name} wants for it: ${mine.wants}`;
+    }
+    return `${asked.name} has named no price. What one road costs is not what another costs, `
+        + `so there is nothing to settle until there is a road to settle it over.`;
+}
+
+/**
  * Being taught one art by one person.
  *
- * Three questions in order, and the order matters because each one makes the
- * next meaningful: is there such an art, do they hold it, and what would
- * handing it over cost them.
+ * Four answers, and the whole job of this function is deciding WHICH ONE
+ * happened rather than emitting one and letting prose imply another. That was
+ * the played defect: the engine declined and the narration asked a question.
+ *
+ *   CANNOT    there is no road here to hand on, or the name was not an art.
+ *   WILL NOT  they are carrying roads and none is one they would pass to this
+ *             asker. A decision, and it stands even though they have arts.
+ *   ASKS BACK they are willing, and the sentence did not say which road.
+ *   A PRICE   what they would want for it, carried on the question rather than
+ *             standing in for a refusal.
  */
 function costOfTeaching(
     asking: TheOneAsking,
     asked: TheOneBeingAsked,
     techniqueId: string | null,
-    namedButUnresolved: string
+    namedButUnresolved: string,
+    theyWant: string | null
 ): RequestCosting {
     const couldTeach = whatTheyCouldTeach(asked, asking);
-    const theirShelf = couldTeach.length > 0
-        ? `What ${asked.name} is actually carrying that you are not: `
-          + `${couldTeach.slice(0, 4).map(a => a.name).join(', ')}.`
-        : '';
+    const wouldTeach = whatTheyWouldTeachYou(asked, asking);
+    // WHAT THEY WOULD TEACH, not what they hold. Naming the whole of somebody's
+    // repertoire as things that could have been asked for is both wrong - a
+    // house's top canon was never on the table - and the engine reading its own
+    // columns aloud.
+    const theirShelf = wouldTeach.length > 0
+        ? `What ${asked.name} would teach: `
+          + `${wouldTeach.slice(0, 4).map(a => a.name).join(', ')}.`
+        : couldTeach.length > 0
+            // Still a route, and the only one left: naming an art outright is a
+            // sentence the player can say and this module still prices.
+            ? `Nothing ${asked.name} is carrying is theirs to volunteer. A name said outright `
+              + `is the only way in, and it is a larger thing to ask than this was.`
+            : '';
 
     // ── AND IT GOES ON `lines`, OR ONLY THE FALLBACK EVER SAYS IT ────────
     //
-    // Every refusal below names the shelf in `refusal.prose` and nowhere else,
-    // and `composeNarrationUser` sends `lines` alone - so a model narrator
-    // replaces the one sentence that tells the player what to do next. Played,
-    // against ollama, asking somebody for a method by a description rather than
-    // a name:
-    //
-    //   engine   1 art they are carrying could have been asked for.
-    //   prose    "The name goes nowhere. She does not correct you, nor does she
-    //            offer a technique..."
-    //
-    // The player is told there is exactly one thing they could have asked for
-    // and not told what it is. AGENTS.md: a refusal names a route - and a count
-    // is not a name. Empty when they hold nothing new, which is the branch
-    // where there is genuinely no route to name.
+    // `composeNarrationUser` sends `lines` alone, so a shelf named only in
+    // `refusal.prose` is a sentence a model narrator can replace. Played against
+    // ollama: the engine said one art could have been asked for, and the prose
+    // came back *"The name goes nowhere. She does not correct you, nor does she
+    // offer a technique."* A count is not a name.
     const shelfLines = theirShelf.length > 0 ? [theirShelf] : [];
 
     // ── THEY ARE CARRYING NOTHING YOU HAVE NOT GOT ───────────────────────
@@ -266,7 +387,8 @@ function costOfTeaching(
                     + `${asked.holds.length === 1 ? '' : 's'} and the asker already has `
                     + `${asking.holds.length} of their own, leaving no road here that could be `
                     + `handed over.`
-            }
+            },
+            askBack: null
         };
     }
 
@@ -277,8 +399,9 @@ function costOfTeaching(
             lines: shelfLines,
             structure: [
                 `"${namedButUnresolved}" matched nothing in the technique catalog, so there is `
-                + `no art for the request to be about. ${couldTeach.length} art`
-                + `${couldTeach.length === 1 ? '' : 's'} they hold could have been named instead.`
+                + `no art for the request to be about. ${wouldTeach.length} art`
+                + `${wouldTeach.length === 1 ? '' : 's'} they would teach could have been named `
+                + `instead.`
             ],
             techniqueId: null,
             refusal: {
@@ -288,42 +411,76 @@ function costOfTeaching(
                     + `taught, or not by that name. ${theirShelf}`,
                 structure:
                     `Refused before the resolver, so no day was spent: "${namedButUnresolved}" `
-                    + `is not an art anybody was ever taught. ${couldTeach.length} art`
-                    + `${couldTeach.length === 1 ? '' : 's'} they are carrying could have been `
+                    + `is not an art anybody was ever taught. ${wouldTeach.length} art`
+                    + `${wouldTeach.length === 1 ? '' : 's'} they would teach could have been `
                     + `asked for.`
-            }
+            },
+            askBack: null
         };
     }
 
-    // ── NOTHING WAS NAMED, AND THEY HOLD MORE THAN ONE ───────────────────
+    // ── THEY HOLD ROADS AND WOULD PASS NONE OF THEM TO THIS ASKER ────────
+    //
+    // A different event from having nothing to teach, and it must not be
+    // dressed up as a question: nothing would answer it.
+    if (!techniqueId && wouldTeach.length === 0) {
+        return {
+            ask: 'a_real_favour',
+            lines: [],
+            structure: [
+                `${couldTeach.length} art${couldTeach.length === 1 ? ' is' : 's are'} new to the `
+                + `asker and ${couldTeach.length === 1 ? 'it is' : 'none of them is'} one `
+                + `${asked.name} would volunteer, so nothing was put forward to choose between.`
+            ],
+            techniqueId: null,
+            refusal: {
+                headline: `${asked.name} will not teach you.`,
+                prose:
+                    `They hear you out and they will not. What they are carrying is not nothing `
+                    + `and none of it is theirs to hand to somebody standing where you are - a `
+                    + `road stays inside the house that owns it until the house says otherwise. `
+                    + `Naming one yourself is still a sentence you can say, and it is a larger `
+                    + `thing to ask than this was.`,
+                structure:
+                    `Refused before the resolver, so no day was spent: ${asked.name} holds `
+                    + `${couldTeach.length} road${couldTeach.length === 1 ? '' : 's'} the asker `
+                    + `does not and would volunteer none of them. An art named outright is still `
+                    + `priced and still put.`
+            },
+            askBack: null
+        };
+    }
+
+    // ── NOTHING WAS NAMED, AND THEY WOULD TEACH MORE THAN ONE ────────────
     //
     // One candidate is not a choice and the sentence is unambiguous, so it is
     // taken. Several is a real question, and answering it with a guess would
     // spend a season on a book the player did not ask for.
     let chosen = techniqueId;
     if (!chosen) {
-        if (couldTeach.length === 1) {
-            chosen = couldTeach[0].id;
+        if (wouldTeach.length === 1) {
+            chosen = wouldTeach[0].id;
         } else {
+            const terms = whatTheyWouldWantForIt(asked, wouldTeach, theyWant);
+            const wantsToKnow = `${asked.name} wants to know which of them.`;
             return {
                 ask: 'a_real_favour',
-                lines: shelfLines,
+                lines: [theirShelf, wantsToKnow, terms],
                 structure: [
-                    `${couldTeach.length} arts they hold are new to the asker and the sentence `
-                    + `named none of them, so which road is being asked for is undecided.`
+                    `${wouldTeach.length} arts ${asked.name} would teach are new to the asker and `
+                    + `the sentence named none of them, so the ask goes back as a question `
+                    + `rather than a refusal. No day was spent.`
                 ],
                 techniqueId: null,
-                refusal: {
-                    headline: 'Taught what?',
-                    prose:
-                        `${asked.name} waits for you to say which, and it is a fair thing to wait `
-                        + `for - what somebody is carrying is not one road. ${theirShelf} Name `
-                        + `one.`,
+                refusal: null,
+                askBack: {
+                    headline: `${asked.name} asks which art.`,
+                    prose: `${theirShelf} ${wantsToKnow} ${terms}`,
                     structure:
-                        `Refused before the resolver, so no day was spent: `
-                        + `${couldTeach.length} arts were available to ask for and the sentence `
-                        + `named none. They are `
-                        + `${couldTeach.map(a => a.name).join(', ')}.`
+                        `${wouldTeach.length} arts were put forward, in this order: `
+                        + `${wouldTeach.map(a => a.name).join(', ')}.`,
+                    offered: wouldTeach.map(a => ({ id: a.id, name: a.name })),
+                    terms
                 }
             };
         }
@@ -345,7 +502,8 @@ function costOfTeaching(
                 structure:
                     `Refused before the resolver, so no day was spent: ${chosen} is not a row `
                     + `in the technique catalog.`
-            }
+            },
+            askBack: null
         };
     }
 
@@ -383,7 +541,8 @@ function costOfTeaching(
                     `Refused before the resolver, so no day was spent: the art is not one of the `
                     + `${asked.holds.length} ${asked.holds.length === 1 ? 'road' : 'roads'} `
                     + `${asked.name} is carrying.`
-            }
+            },
+            askBack: null
         };
     }
 
@@ -451,7 +610,8 @@ function costOfTeaching(
                   + 'which is where the teacher has stood.'}`
         ],
         techniqueId: art.id,
-        refusal: null
+        refusal: null,
+        askBack: null
     };
 }
 
@@ -501,7 +661,8 @@ function costOfIntroduction(
                 structure:
                     `Refused before the resolver, so no day was spent: the person to be `
                     + `introduced to resolved to nobody.`
-            }
+            },
+            askBack: null
         };
     }
 
@@ -527,7 +688,8 @@ function costOfIntroduction(
                 structure:
                     'Refused before the resolver, so no day was spent: the person being asked '
                     + 'has no reach to the person being asked about.'
-            }
+            },
+            askBack: null
         };
     }
 
@@ -549,7 +711,8 @@ function costOfIntroduction(
             + 'a sentence and their own standing if the asker turns out badly.'
         ],
         techniqueId: null,
-        refusal: null
+        refusal: null,
+        askBack: null
     };
 }
 
@@ -596,7 +759,8 @@ function costOfACourtesy(asking: TheOneAsking, asked: TheOneBeingAsked): Request
             + `which is what keeps it available to somebody carrying nothing.`
         ],
         techniqueId: null,
-        refusal: null
+        refusal: null,
+        askBack: null
     };
 }
 
@@ -632,7 +796,8 @@ function costOfDiscipleship(asking: TheOneAsking, asked: TheOneBeingAsked): Requ
             + `name on whatever the student turns out to be.`
         ],
         techniqueId: null,
-        refusal: null
+        refusal: null,
+        askBack: null
     };
 }
 
@@ -650,6 +815,14 @@ export interface RequestToPrice {
     toMeet?: { id: string; name: string; factionId: string | null; here: boolean } | null;
     /** What the player typed for the object, resolved or not. */
     namedButUnresolved?: string;
+    /**
+     * An open want of theirs this asker could reach, when there is one.
+     *
+     * `whatTheyWantThatYouCouldReach` is the source, read by the caller because
+     * it takes a repository and this module does not. Carried here so that a
+     * question the engine asks can arrive with a price on it.
+     */
+    theyWant?: string | null;
 }
 
 export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
@@ -657,7 +830,8 @@ export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
     switch (request.kind) {
         case 'teaching':
             return costOfTeaching(
-                request.asking, request.asked, request.techniqueId ?? null, named
+                request.asking, request.asked, request.techniqueId ?? null, named,
+                request.theyWant ?? null
             );
         case 'introduction':
             return costOfIntroduction(request.asked, request.toMeet ?? null, named);

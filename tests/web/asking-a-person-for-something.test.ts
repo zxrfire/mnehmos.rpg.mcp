@@ -314,10 +314,16 @@ describe('a request reaches the person, played', () => {
         const text = said.narration ?? '';
         // Either it is not an art, or they do not hold it, or they hold several
         // and want to know which. Whichever it was, THE NEXT MOVE IS IN THE
-        // SENTENCE - what this person is actually carrying, who teaches it, or
-        // that there is nothing here to be had. "No" on its own is the bug.
+        // SENTENCE - what this person would teach, who teaches it, or that
+        // there is nothing here to be had. "No" on its own is the bug.
+        //
+        // `would teach` replaced `carrying that you are not`: the list a refusal
+        // names is now what they would VOLUNTEER rather than everything they
+        // hold, because a house's top canon was never a thing that could have
+        // been asked for and naming it as one was the engine reading its own
+        // columns aloud. Same rule, narrower and truer list.
         expect(text).toMatch(
-            /carrying that you are not|teach(?:es)? it|sells a copy|nothing to teach|Nobody can walk you/
+            /would teach|theirs to volunteer|teach(?:es)? it|sells a copy|nothing to teach|Nobody can walk you/
         );
     });
 
