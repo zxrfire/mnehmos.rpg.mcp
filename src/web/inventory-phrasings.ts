@@ -78,7 +78,14 @@ export const NAMES_STONES = /\b(?:spirit\s+)?stones?\b|\bcoin\b|\bmoney\b|\bpurs
 const MONEY = '(?:(?:spirit\\s+)?stones?|coins?|money|cash|purse|wealth)';
 
 /** A container a person carries, by every name the game and its players use. */
-const CARRIED = '(?:inventory|pouch|pouches|bag|bags|pack|packs|purse|purses|pockets?|belongings|possessions)';
+// The storage ring is the setting's own name for the pouch and it was the one
+// container word missing. Measured in all three of town, sect and road: "I open
+// my storage ring" reached `unclear` and "I look in my storage ring" reached
+// `look`, while "what is in my pouch" - the same question about the same rows -
+// answered. Anchored to the two-word forms, because a bare `ring` is jewellery,
+// an object somebody is wearing, and a word inside several names.
+const CARRIED = '(?:inventory|pouch|pouches|bag|bags|pack|packs|purse|purses|pockets?|belongings|possessions'
+    + '|(?:storage|spatial|interspatial) rings?)';
 
 /**
  * THE THINGS A PACK ACTUALLY HAS IN IT, beside the money.

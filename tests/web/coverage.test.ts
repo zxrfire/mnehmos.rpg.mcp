@@ -48,9 +48,17 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I introduce myself to the guard'
     ],
     investigate: [
-        // Ruins are the one door in this world that opens on nerve rather than
-        // standing, and the most obvious sentence about them has to work.
-        'I explore the ruins',
+        // Was "I explore the ruins", for the same reason the line below was
+        // swapped and with the same answer. Routed here it produced *unresolved
+        // subject "ruins"* with a list of the PEOPLE standing about attached;
+        // routed to `site` it produces the refusal that ground was written for
+        // - *"Ground worth opening is ground somebody told you about, and you
+        // are not standing at any of it"* - which names what would make it
+        // answerable. `explore` is a site verb when a site noun is in the
+        // sentence with it and is examination otherwise, which is the guard
+        // `SITE_NOUNS` states in its own header. Swapped for a sentence that
+        // explores something that is not a ground.
+        'I explore the abandoned stall',
         'I examine the stele',
         // Was "I search the ruin for anything left", which now routes to
         // `site` and should: `ruin` became a site noun once playing showed the

@@ -84,6 +84,7 @@ import {
 } from '../engine/social/what-somebody-knows-about-themselves.js';
 import {
     askingWhatSomebodyIsAfter,
+    namesAKindRatherThanAThing,
     requestPutToSomebody,
     whatIsBeingAskedToBeTold
 } from './what-a-request-asks-and-of-whom.js';
@@ -867,7 +868,12 @@ function theReferenceToAPaper(text: string): string | undefined {
 
 export const RECRUITING_BILL_PATTERN = new RegExp([
     String.raw`\b(?:recruit(?:ing|ment)|intake|admission)\s(?:bills?|notices?|posters?|events?|drives?|days?)\b`,
-    String.raw`\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|posters?|placards?|walls?)\b`,
+    // `notices?` was on three of the rows below and missing from this one, so
+    // "I read the notice" - with the bills up on the wall in front of the
+    // player, printed by the turn before it - reached `investigate` and was
+    // refused as an unresolvable subject, with a list of the people standing
+    // here attached.
+    String.raw`\b(?:read|reads|reading|look at|looks at|looking at|check|checks|checking|study|studies|studying)\b[^.!?]*\b(?:bills?|notices?|posters?|placards?|walls?)\b`,
     String.raw`\bwhat(?:'s| is| are)?\b[^.!?]*\b(?:posted|nailed|pinned)\b`,
     String.raw`\b(?:who|what|which|any|anyone|anybody|is there|are there|is anyone|is anybody)\b[^.!?]*\b(?:recruit(?:s|ing)?|taking (?:on )?(?:disciples|students|anybody|anyone|people))\b`,
     // ── ASKING FOR THE WALL WITHOUT A READING VERB ───────────────────────
@@ -1336,6 +1342,33 @@ export const ASKED_ABOUT_THE_ASKER =
 export const A_QUESTION_ABOUT_STANDING =
     /\b(?:my reputation|what(?:'s| is) my reputation|how am i regarded|how do (?:they|people|others) (?:see|regard|treat) me|what do people think of me|my standing|what is my standing|how am i seen)\b/;
 
+/**
+ * THE PARTS OF THE SHEET THE SHEET READ ALREADY PRINTS AND COULD NOT BE ASKED FOR.
+ *
+ * `status` answers with *"Spirit root: Single Water Root. Might 3, Insight 3,
+ * Fortune 3, Charm 1. Unmarked, 50 of 50 ... The meridians are whole."* Asked
+ * for any of those BY NAME, the table had nothing: "what is my talent", "what
+ * are my spiritual roots" and "I check my dantian" reached `unclear` in town,
+ * in a sect and on the road, and "I check my injuries" was read as an ACT and
+ * priced a splint for wounds the same read says are not there.
+ *
+ * Every row is a question or an inspection. That is the whole guard, and it is
+ * load-bearing: the cultivation branch below reads a working verb over the same
+ * nouns - "I work on my meridians", "I refine my qi" - and taking those would
+ * turn a month of sitting into a character sheet.
+ */
+export const A_QUESTION_ABOUT_MY_OWN_BODY = new RegExp([
+    /\b(?:what|which|how)\b[^.?!]{0,24}\bmy (?:spirit|spiritual) roots?\b/,
+    /\bmy (?:spirit|spiritual) roots?\b[^.?!]{0,16}\b(?:grade|good|strong|pure|worth)\b/,
+    /\bwhat root do i have\b/,
+    /\bwhat (?:grade|kind|sort) (?:is|of) my root\b/,
+    /\bwhat(?:'s| is) my (?:talent|potential|aptitude|physique)\b/,
+    /\bhow talented am i\b/,
+    /\b(?:check|checks|checking|look at|looks at|examine|examines|inspect|inspects|how(?:'s| is| are)|what(?:'s| is| are))\b[^.?!]{0,16}\bmy (?:dantian|meridians)\b/,
+    /\b(?:check|checks|checking|look at|looks at|examine|examines|inspect|inspects|how bad(?:ly)?|what|how many)\b[^.?!]{0,16}\bmy (?:injur\w+|wounds?)\b/,
+    /\bwhat injur\w+ do i have\b/
+].map(pattern => pattern.source).join('|'));
+
 export const PLACE_HISTORY_PATTERNS: readonly RegExp[] = [
     /\bwhat happened (?:here|to (?:this|the)\b)/,
     /\bwhat became of (?:this|the)\b/,
@@ -1781,6 +1814,12 @@ export const RECALL_EVERYTHING = new RegExp([
     /\bwhat do i know at all\b/,
     /\bwhat have i heard\b\s*[.!?]?$/,
     /\bwhat names do i (?:have|hold|know)\b/,
+    // The same question with `who` in front of it. `what do I know` answered
+    // with 25 names split into people, places and houses; `who do I know` -
+    // asked by somebody who wants only the first of those three - reached
+    // `unclear` in town, in a sect and on the road.
+    /\bwho do i know\b/,
+    /\bwhose names do i know\b/,
     /\bwhat have i learn(?:ed|t)\b\s*[.!?]?$/,
     /\bwhat do i (?:remember|recall)\b\s*[.!?]?$/,
     // `have learned` was here and had to go. "remind me what I have learned" is
@@ -3794,7 +3833,22 @@ function planIntent(input: string): PlannedAction {
         // - `realm`, `layer`, `rung`, and the setting's own word, `crossing`.
         || /\b(?:advance|advances|rise|rises|climb|climbs|move up|step up)\b[^.?!]{0,16}\b(?:to |into |for )?(?:the )?(?:next|another)\s+(?:realm|rank|rung|layer|stage|level)\b/.test(text)
         || /\b(?:try|tries|attempt|attempts|make|makes|go for|goes for|push|pushes)\b[^.?!]{0,20}\b(?:the |my |a |another )?(?:crossing|next rung|next layer|next realm|next stage)\b/.test(text)
-        || /\b(?:break|breaks|breaking|force|forces|crack|cracks|shatter|shatters)\b[^.?!]{0,12}\b(?:the |my |this )(?:bottleneck|barrier)\b/.test(text)) {
+        || /\b(?:break|breaks|breaking|force|forces|crack|cracks|shatter|shatters)\b[^.?!]{0,12}\b(?:the |my |this )(?:bottleneck|barrier)\b/.test(text)
+        // ── AND THE CROSSING CALLED BY THE NAME OF THE RUNG IT REACHES ────
+        //
+        // The genre names each crossing after what it makes, and a player uses
+        // that name rather than the general word: condensing a core and
+        // establishing a foundation ARE the breakthrough, said at the two rungs
+        // where they happen. Both reached `unclear` in every situation
+        // measured. The engine answers them the way it answers every crossing -
+        // by naming the rung being struck for and what is still short of it -
+        // which is an answer at any rung, including the ones where the reply is
+        // that it is a long way off.
+        //
+        // The READING forms stay where they are: "is my foundation sound" is
+        // `assess`, and this line requires a making verb in front of the noun.
+        || /\b(?:condense|condenses|condensing|form|forms|forming|coalesce|coalesces|congeal|congeals)\b[^.?!]{0,16}\b(?:my |a |the )?(?:golden )?core\b/.test(text)
+        || /\b(?:establish|establishes|establishing|lay|lays|laying|build|builds|building)\b[^.?!]{0,12}\b(?:my |a |the )foundation\b/.test(text)) {
         return { action: 'breakthrough' };
     }
 
@@ -4001,10 +4055,17 @@ function planIntent(input: string): PlannedAction {
     // learning one, which is not practising one
     if (usedAsVerb(text, LEARNING_VERBS)
         || (usedAsVerb(text, LEARNING_VERBS_NEEDING_A_NOUN) && TECHNIQUE_CLASS_NOUNS.test(text))) {
-        return {
-            action: 'learn_technique',
-            target: extractSubject(input, LEARNING_SUBJECT_VERBS)
-        };
+        const named = extractSubject(input, LEARNING_SUBJECT_VERBS);
+        // A CATEGORY WORD IS NOT A NAME, which `taught-what-is-a-question-and-
+        // not-a-refusal.test.ts` established for being taught and built this
+        // reader for. Learning from a book had the same hole: "I want to learn
+        // a technique" arrived at the resolver with `technique` as a NAME and
+        // came back *unresolved technique "technique"* - a parse failure
+        // wearing a knowledge refusal, with the engine's own message naming the
+        // read that answers it. The table can take that route instead of
+        // printing it.
+        if (namesAKindRatherThanAThing(named)) return { action: 'list_techniques' };
+        return { action: 'learn_technique', target: named };
     }
 
     // selling, which is the only way a pouch becomes a purse
@@ -4914,9 +4975,26 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+    // ── PUTTING THE SENSES OUT, WHICH IS A LOOK IN THE GENRE'S OWN WORDS ──
+    //
+    // "what is the qi like here" reached `look`, which answers with the square,
+    // the people in it and the ambient band. The genre's way of asking the same
+    // thing - reaching out with the senses - reached nothing: measured as
+    // `unclear` in town, in a sect and on the road.
+    //
+    // Reading verbs only. The raising verbs over the same nouns are a month of
+    // sitting and belong to `cultivate`, which is why `gather`, `refine` and
+    // `draw in` are absent here and why this sits above that branch rather than
+    // below it.
+    if (/\b(?:sense|senses|sensing|feel out|feels out|feel for|reach out with|extend|extends|spread|spreads|cast out|put out)\b[^.?!]{0,24}\b(?:the qi|my qi|qi here|spiritual energy|spirit energy|divine sense|spiritual sense|spirit sense|senses)\b/.test(text)
+        || /\b(?:use|uses|using)\s+my\s+(?:divine|spiritual|spirit)\s+sense\b/.test(text)) {
+        return { action: 'look' };
+    }
+
     // the cultivator asking about themselves
     if (/\b(?:who am i|what(?:'s| is) my (?:situation|condition|state)|how(?:'s| is) my (?:health|condition)|am i (?:hungry|starving|injured|hurt|wounded|bleeding|dying|healthy|ok|okay|alright|well)|my (?:health|condition|situation)|tell me about myself|describe myself|look at myself|check (?:myself|my condition))\b/.test(text)
-        || /\b(?:how long (?:will|can|do|have) i (?:live|got|got left|have left)|how (?:long|much longer) have i got|how many years (?:do i have|have i got|are left|left)|what(?:'s| is) my (?:lifespan|life ?span|age)|how old am i|when (?:will|do) i die|years left)\b/.test(text)) {
+        || /\b(?:how long (?:will|can|do|have) i (?:live|got|got left|have left)|how (?:long|much longer) have i got|how many years (?:do i have|have i got|are left|left)|what(?:'s| is) my (?:lifespan|life ?span|age)|how old am i|when (?:will|do) i die|years left)\b/.test(text)
+        || A_QUESTION_ABOUT_MY_OWN_BODY.test(text)) {
         return { action: 'status' };
     }
 

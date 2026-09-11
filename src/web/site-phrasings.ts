@@ -139,7 +139,17 @@ export const SITE_PRIZE_NOUNS =
     /\b(?:what(?:'s| is) (?:behind|beyond|inside|under|on) |what(?:'s| is) (?:in there|left)|whatever(?:'s| is) (?:behind|inside|in there)|the prize|the inheritance|the grave goods|the contents|the manuals\b)/;
 
 export const SITE_ENTER_VERBS =
-    'enter|enters|entering|go inside|goes inside|step inside|steps inside|go in|goes in|'
+    // `explore` is admitted HERE, in verb position, where `SITE_NOUNS` above
+    // refuses it as a noun - and the reason is the same one that file gives for
+    // refusing it. A verb is only a site verb when a site noun is in the
+    // sentence with it, and `siteStep` requires that anchor. Measured: "I
+    // explore the ruins" reached `investigate` and came back *unresolved
+    // subject "ruins"* with a list of the PEOPLE standing here, while "I enter
+    // the ruins" reached the site step and refused honestly, naming what would
+    // make it answerable. "I explore the village" has no site noun and stays
+    // where it was.
+    'explore|explores|exploring|'
+    + 'enter|enters|entering|go inside|goes inside|step inside|steps inside|go in|goes in|'
     + 'step in|steps in|walk in|walks in|head inside|climb down into|descend into|descend|'
     // `go in` does not match "go into", because the boundary falls after `in`.
     // "I go into the ruins" reached nothing at all while "I go in" worked.

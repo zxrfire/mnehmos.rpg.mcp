@@ -60,6 +60,7 @@ import type { ActionName } from './actions.js';
 import { applyTimeSkip } from './apply.js';
 import { PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { resolvePlace, worldLocationFor } from './entities.js';
+import { loosePlaceKey } from './knowledge.js';
 import {
     howStandingHerePutIt,
     whoBeingHereIntroducesYouTo
@@ -186,6 +187,57 @@ function whatArrivingIntroduces(
     return { perceived, structure };
 }
 
+/** How many named places a refusal offers. A road question wants a few, not a gazetteer. */
+const MOST_ROADS_NAMED = 6;
+
+/**
+ * The places this cultivator could name and actually be carried to.
+ *
+ * `somewhereReal` read the other way round, which is the rule in AGENTS.md
+ * about every read running both ways: it answers *is this name a place I may
+ * go to*, and nothing answered *which names are*. So a refusal could say the
+ * name was not one and could not say what would have been.
+ *
+ * It leaks nothing. A name is on this list only where the gate would already
+ * have let the sentence through - heard of and pointable at, or a square
+ * somebody is standing in - so the player is being handed back what they have
+ * already been told.
+ */
+function theRoadsThisCultivatorKnows(engine: GameService, cultivator: Cultivator): string[] {
+    const here = loosePlaceKey(cultivator.location ?? '');
+    const named = new Map<string, string>();
+    const add = (name: string | null | undefined) => {
+        if (!name) return;
+        const key = loosePlaceKey(name);
+        if (key.length === 0 || key === here || named.has(key)) return;
+        named.set(key, name);
+    };
+
+    for (const row of engine.knowledge.awareness(cultivator.id, 'place')) {
+        if (engine.knowledge.canPointAt(cultivator.id, 'place', row.id)) add(row.name);
+    }
+    for (const row of engine.repos.cultivators.roster()) add(row.location);
+    return [...named.values()].slice(0, MOST_ROADS_NAMED);
+}
+
+/**
+ * The sentence a refusal ends with, naming the roads rather than only the gap.
+ *
+ * Measured across four situations: `move` was chosen 20 times and refused 20
+ * times, and every one of those refusals said what the name was not - *"nobody
+ * sets you right, because nobody is sure what you meant"* - while the
+ * destinations read, free and one sentence away, was printing the answer to
+ * anybody who asked for it in different words. A refusal that names no route is
+ * the one shape this engine is not allowed to produce.
+ */
+function andTheRoadsThatDoGoSomewhere(engine: GameService, cultivator: Cultivator): string {
+    const roads = theRoadsThisCultivatorKnows(engine, cultivator);
+    return roads.length === 0
+        ? ' Nowhere has been named to you yet that you could set out for, which is what asking '
+          + 'somebody here is for.'
+        : ` Somewhere you could say instead: ${roads.join(', ')}.`;
+}
+
 export const travelVerbs = {
     /**
      * Going somewhere, however it was meant.
@@ -204,7 +256,8 @@ export const travelVerbs = {
                 'Nowhere in particular.',
                 `You get as far as the edge of ${placeName(cultivator)} before it occurs to you ` +
                 'that you have not decided where you are going, and there is nothing out there ' +
-                'obliging enough to decide it for you.',
+                'obliging enough to decide it for you.'
+                + andTheRoadsThatDoGoSomewhere(this, cultivator),
                 'No destination named; location unchanged and no time passed.'
             ));
         }
@@ -286,11 +339,20 @@ export const travelVerbs = {
                 // look people give a name that is not a place" on ground the
                 // same turn had already reported as empty - "Nobody is about" -
                 // so the answer put a crowd in a place it had just emptied.
-                this.anybodyElseHere(cultivator)
+                (this.anybodyElseHere(cultivator)
                     ? `You ask after ${place.name} and get the look people give a name that is `
-                      + 'not a place. Nobody sets you right, because nobody is sure what you meant.'
+                      + 'not a place.'
                     : `You turn ${place.name} over and it does not attach to anywhere. No road `
-                      + 'you know of runs to it, and there is nobody here to ask.',
+                      + 'you know of runs to it, and there is nobody here to ask.')
+                // AND IT SAYS WHERE THE ROADS DO GO.
+                //
+                // This ended "nobody sets you right, because nobody is sure
+                // what you meant", which is a refusal declining to name a
+                // route while the destinations read - free, and one sentence
+                // away - was printing the answer to anybody who asked in
+                // different words. Nothing is opened by saying it: every name
+                // here is one the gate above would already have let through.
+                + andTheRoadsThatDoGoSomewhere(this, cultivator),
                 `Unresolved destination "${place.name}": matches no world location, no ` +
                 'occupied place and nothing this cultivator has heard of. Location unchanged, ' +
                 'no time passed.'
@@ -642,7 +704,8 @@ export const travelVerbs = {
                 'Nowhere in particular.',
                 `You get as far as the edge of ${placeName(cultivator)} before it occurs to you `
                 + 'that you have not decided where you are going, and there is nothing out there '
-                + 'obliging enough to decide it for you.',
+                + 'obliging enough to decide it for you.'
+                + andTheRoadsThatDoGoSomewhere(this, cultivator),
                 'No destination named; location unchanged and no time passed.'
             ));
         }
@@ -650,7 +713,8 @@ export const travelVerbs = {
             return refused('engine.resolvePlace', action, factsForRefusal(
                 'No road goes there.',
                 `You ask after ${place.name} and get the look people give a name that is not a `
-                + 'place. Nobody sets you right, because nobody is sure what you meant.',
+                + 'place.'
+                + andTheRoadsThatDoGoSomewhere(this, cultivator),
                 `Unresolved destination "${place.name}": matches no world location, no `
                 + 'occupied place and nothing this cultivator has heard of. Location unchanged, '
                 + 'no time passed.'

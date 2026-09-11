@@ -67,7 +67,13 @@ const OUTSIDER: Array<[string, string]> = [
     ['I go hunting', 'hunt'],
     ['I look for herbs', 'gather'],
     ['I pick herbs', 'gather'],
-    ['I explore the ruins', 'investigate'],
+    // Was `investigate`, and the row below is why it moved: a tomb and a ruin
+    // are the same kind of ground and one of them reached the site layer while
+    // the other reached general examination and was refused as an unresolvable
+    // noun, with the people standing about listed under it. Both are `site`
+    // now, and the guard is the NOUN - "I explore the village" is still
+    // examination.
+    ['I explore the ruins', 'site'],
     ['I go into the tomb', 'site'],
     ['I check my inventory', 'inventory'],
     ['I check my stats', 'status'],
