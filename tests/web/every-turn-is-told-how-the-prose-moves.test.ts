@@ -21,23 +21,37 @@
  * ── FOUR PINNED CLAIMS WERE MEASURED AND WERE WRONG ──────────────────────
  *
  * The section was written off one work's opening chapters. Re-measured across
- * sixteen books, 231,512 paragraphs and 578,664 sentences:
+ * twenty-four books, 311,360 paragraphs and 789,521 sentences - twenty-two of
+ * them professionally translated, plus one volume by another author and one
+ * machine translation held out as a control:
  *
- *     "Six does not occur"          12,857 paragraphs of >=6 sentences exist,
- *                                   5,888 of them pure narration. Always
- *                                   assessment, never mood
+ *     "Six does not occur"          16,687 paragraphs of >=6 sentences exist,
+ *                                   6,858 of them with no speech in them, and
+ *                                   the shape occurs in every book measured.
+ *                                   Always assessment, never mood
  *     "A third of spoken lines
- *      carry no tag"                two thirds do. 70% of quoted spans across
- *                                   the corpus, 63% in the human-translated
- *                                   books. The claim was inverted
+ *      carry no tag"                two thirds do - 65% of quoted spans,
+ *                                   per-book mean, and no book below 54%.
+ *                                   The claim was inverted
  *     "Interiority is one short
  *      sentence, and it assesses"   the assesses half is the rule; the length
- *                                   half banned the genre's commonest paragraph
+ *                                   half banned a paragraph the genre leans on
  *     "It is, There is are the
  *      loudest signal of the
- *      wrong genre"                 2.70 per 100 sentences, and they carry the
- *                                   explanatory frames. Narrowed to the two
- *                                   habits that were actually wrong
+ *      wrong genre"                 2.78 per 100 sentences, nowhere near zero
+ *                                   in any book, and they carry the explanatory
+ *                                   frames. Narrowed to the two habits that
+ *                                   were actually wrong
+ *
+ * Books are weighted equally rather than pooled: the corpus runs 2,821 to
+ * 90,580 paragraphs a book, so a pooled average is the longest book's opinion.
+ *
+ * One claim STRENGTHENED on the wider corpus rather than breaking. `said`
+ * outweighs every other dialogue tag combined 1.46 to 1 across the twenty-two
+ * professionally translated books (per-book mean 1.40, lowest 0.92). At
+ * sixteen books this could only be stated conditionally, because the machine
+ * translation - which runs 0.21, and produces tag variety exactly the way an
+ * unprompted model does - dragged the pooled figure to a tie.
  *
  * So the wording assertions below name the CORRECTED rules, and a second set
  * asserts the reverted claims are gone. That second set is the durable half:

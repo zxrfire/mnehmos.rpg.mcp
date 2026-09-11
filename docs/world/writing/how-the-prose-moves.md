@@ -28,11 +28,22 @@ The first version of this page was written off the opening chapters of a **singl
 which is enough to catch the loud properties - paragraph length, dialogue tags, address by
 rank - and not enough to tell a genre convention apart from one author's habit.
 
-**It has since been measured across sixteen books: 231,512 paragraphs and 578,664
-sentences.** Fourteen of the sixteen are one author in one translated line; one is a
-different author entirely; one is a fan-edited machine translation. Where the three groups
-disagree the disagreement is stated below, because a property that holds only in the
-machine translation is an artefact of the machine.
+**It has since been measured across twenty-four books: 311,360 paragraphs and 789,521
+sentences.** Twenty-two of those are professionally translated and are one author's work,
+in three series - one of twelve volumes, one of nine, and one of a single volume. The other
+two are held out as a control: one volume by a different author with a different translator,
+and one fan-edited machine translation. Where the groups disagree the disagreement is stated
+below, because a property that holds only in the machine translation is an artefact of the
+machine.
+
+**Two measuring rules, both learned the hard way and both load-bearing:**
+
+- **Weight books equally; do not pool raw paragraphs.** The corpus runs from 2,821 to 90,580
+  paragraphs a book, so a pooled average is mostly the longest book's opinion. Every figure
+  below that differs meaningfully between the two is given both ways, and the guidance
+  follows the per-book mean.
+- **Keep a per-book sanity floor on dialogue.** Any book reporting under 10% dialogue
+  paragraphs is a broken detector, not a quiet author. See the defect below.
 
 **Four claims on this page were measurably wrong and are corrected in place**, each marked
 where it sits. They are kept rather than quietly replaced, because a rule that was reversed
@@ -41,7 +52,7 @@ is worth being able to tell from one that never moved. The tier-1 section in
 
 What is measured and what is still a hypothesis:
 
-| Measured across all sixteen | Still read rather than counted |
+| Measured across all twenty-four | Still read rather than counted |
 |---|---|
 | paragraph and sentence length, and what a long paragraph contains | *address by rank* - counting honorifics is easy, counting whether one was used *instead of* a name is not |
 | dialogue share, untagged share, which tags are used | *the strong are deadpan* - a claim about characterisation, not a countable form |
@@ -58,8 +69,12 @@ the pooled untagged-dialogue figure by eight points. The suspicion was first rai
 encoding fault; every file in the corpus decodes as clean UTF-8 with zero replacement
 characters, so that theory was wrong and the real fault was a detector that only knew one of
 the two ways a book can be typeset. **A per-book sanity floor catches this and a pooled
-average never will**: any book reporting under 10% dialogue is a broken detector, not a
-quiet author.
+average never will.**
+
+A second defect, one size up, and it is the reason the equal-weighting rule exists: **for a
+while the corpus was two thirds one book by paragraph count.** Every pooled figure was that
+book reporting on itself with twenty-three others as a rounding error. Nothing in a pooled
+average announces this; the number looks like a corpus.
 
 Working material is kept in `reference-material/` at the repo root, which is gitignored in
 its entirety and may not exist at all. It explains itself if it is there.
@@ -95,10 +110,11 @@ one near-verbatim line and one lifted character name caught in it and removed.
 
 ## Paragraphs are short, and the long one reasons
 
-**One to three sentences, most of the time.** Measured: the median paragraph is 2
-sentences in fifteen of the sixteen books and 3 in the sixteenth; 62-90% of paragraphs are
-three sentences or fewer, clustering at 78-88%; 16-43% are a single sentence, clustering at
-24-36%. A four-sentence paragraph is a long one.
+**One to three sentences, most of the time.** Measured across twenty-four books: the median
+paragraph is **2 sentences in twenty of them and 3 in the other four**; 61.9-89.6% of
+paragraphs are three sentences or fewer, mean **78.7%**; 16.4-42.9% are a single sentence,
+mean **27.1%**. The median sentence runs 11-15 words. A four-sentence paragraph is a long
+one.
 
 This is still the single change that does most of the work, because it forces the others:
 you cannot build a mood across half a page if the paragraph ends.
@@ -115,10 +131,11 @@ it, the same facts move:
 
 ### Corrected: the six-sentence paragraph, which this page said does not occur
 
-It occurs **12,857 times** in the corpus - 1.6% to 12% of paragraphs depending on the book,
-5.6% pooled. **5,888 of them contain no speech at all**, so they are not a quoted exchange
-wearing a long paragraph's shape. The claim was false, and it was the most expensive thing
-on this page, because it banned the genre's most characteristic paragraph outright.
+It occurs **16,687 times** across twenty-four books - 1.6% to 12.0% of paragraphs depending
+on the book, per-book mean **4.7%**, and it is never zero in any book. **6,858 of them
+contain no speech at all**, so they are not a quoted exchange wearing a long paragraph's
+shape. The claim was false, and it was the most expensive thing on this page, because it
+banned a paragraph the genre uses constantly.
 
 **What a long paragraph here always is: assessment.** Who suspects what, what something is
 worth, what follows from what, what it would cost, why the obvious reading is wrong. One
@@ -140,12 +157,40 @@ that changes what somebody does.
 
 **The rule that survives is the sentence, not the paragraph.** A long paragraph in this
 genre is six short declaratives in a row; it is never three long ones. Subordinators run at
-0.033-0.06 per sentence across the corpus and commas at 0.58-0.99 - both flat whether the
-paragraph is one sentence or eight. **The paragraph got longer and the sentence never did**,
-which is exactly why the long paragraph does not read as English literary prose.
+0.03-0.06 per sentence across the corpus and commas at 0.58-0.99, per-book mean 0.83 - both
+flat whether the paragraph is one sentence or eight. **The paragraph got longer and the
+sentence never did**, which is exactly why the long paragraph does not read as English
+literary prose.
 
 So the rule to give a narrator is not a length. It is: **the paragraph may run as long as
 the reasoning does, and it may not run one sentence past it.**
+
+### How strong this correction is, now that there are twenty-four books
+
+Widening the corpus confirmed the correction and **narrowed how strongly it can be stated**,
+which is worth being explicit about rather than leaving in a figure.
+
+*Six does not occur* is still flatly false: long paragraphs appear in **every book measured**,
+and in the twelve-volume series alone there are 1,744 of them. But the **speechless** long
+paragraph - the pure reasoning block, with no quoted line in it - is distributed very
+unevenly:
+
+| | long paragraphs | of those, speechless |
+|---|---|---|
+| the twelve-volume series | 1,744 | 273 (**15.7%**) |
+| the nine-volume series | 4,434 | 1,166 (**26.3%**) |
+| the single-volume one | 5,240 | 3,355 (**64.0%**) |
+
+One book supplies about seventy per cent of the professionally translated corpus's
+speechless long paragraphs. **So the long reasoning block is a real and available move in
+this genre, and it is not the default.** Treat it as a register the narrator may reach for
+when there is genuinely something to work out, rather than as a shape to hit regularly. The
+short paragraph is still the house style, by a wide margin, in every book measured.
+
+This is the same trap [the top of this page](#what-has-now-been-measured-and-what-has-not)
+warns about, arriving from the other side: the first version over-generalised one work's
+habit into a ban, and a corpus of sixteen could have over-generalised one work's habit into
+a licence.
 
 ## Sentences are declarative and stack verbs
 
@@ -161,13 +206,13 @@ Four verbs, one line, no interpretation offered. The eagerness is visible in the
 is never named.
 
 Measured: the median sentence runs 11-15 words. Subordinators - *although, though,
-whereas, because, since, unless* - run at **0.033 to 0.06 per sentence**, so fewer than one
+whereas, because, since, unless* - run at **0.03 to 0.06 per sentence**, so fewer than one
 sentence in sixteen carries one even at the top of the range. Commas run at **0.58 to 0.99
-per sentence**.
+per sentence**, per-book mean 0.83.
 
 **Softened: the participial opener.** This page used a fronted participle as its *Wrong*
 example, which implied the construction is absent. It is not - it opens about **4 sentences
-in 100** (2.75 to 5.41 across the books), so it is ordinary and uncommon rather than
+in 100** (per-book mean 3.9, range 2.55 to 5.41), so it is ordinary and uncommon rather than
 forbidden. What made the example wrong was the stack: a fronted participle AND a relative
 clause AND a parenthetical motive, all before the verb. One participle is fine. Two, or one
 carrying a relative clause, is the English-novel tell.
@@ -176,22 +221,26 @@ carrying a relative clause, is the English-novel tell.
 
 **The largest property this page missed, and the easiest to copy.** The narration constantly
 states which fact follows from which, with a logical connective at the front of the
-sentence. Counted across the corpus, **38,291 sentence-opening connectives - 6.6 per 100
-sentences**, so roughly one sentence in fifteen. Per book it ranges 3.1 to 12.0 per 100.
+sentence. Counted across twenty-four books, **51,804 sentence-opening connectives**: per-book
+mean **7.8 per 100 sentences**, pooled 6.6, per-book range 3.1 to 12.0. So **roughly one
+sentence in thirteen** opens on one, and no book in the corpus goes below one in thirty-two.
+
+Counts below are over all twenty-four books.
 
 | Connective | Count | What it does |
 |---|---|---|
-| However | 8,599 | the reversal |
-| Although | 3,763 | the concession, taken at the front of the sentence |
-| As for | 3,474 | the pivot to a new subject without a paragraph break |
-| After all | 3,391 | the reason, supplied after the claim it justifies |
-| At the same time | 2,711 | the second thing that is also true |
-| Furthermore | 2,388 | the escalation |
-| In fact | 2,129 | the correction upward |
-| Thus | 1,874 | the consequence |
-| Of course | 1,455 | the thing the reader should already have known |
-| Meanwhile | 1,297 | elsewhere |
-| Therefore | 1,275 | the consequence, stated formally |
+| However | 13,702 | the reversal |
+| Although | 4,985 | the concession, taken at the front of the sentence |
+| As for | 4,615 | the pivot to a new subject without a paragraph break |
+| At the same time | 3,966 | the second thing that is also true |
+| After all | 3,914 | the reason, supplied after the claim it justifies |
+| Furthermore | 3,198 | the escalation |
+| In fact | 2,907 | the correction upward |
+| Thus | 1,908 | the consequence |
+| Of course | 1,872 | the thing the reader should already have known |
+| Therefore | 1,778 | the consequence, stated formally |
+| Meanwhile | 1,556 | elsewhere |
+| And yet | 1,047 | the reversal, with the narrator's thumb on it |
 
 Four of these carry nearly all of it, and each has a shape:
 
@@ -207,7 +256,7 @@ Four of these carry nearly all of it, and each has a shape:
 > **As for** - the pivot. *As for Jiang Peizhi, he has not looked up from the bowl once.*
 
 *As for* is worth naming separately. English literary prose barely uses it; this genre uses
-it 3,474 times, and it is how a short paragraph covers two people without a break between
+it 4,615 times, and it is how a short paragraph covers two people without a break between
 them.
 
 **And the correction frame, which is the same instinct inside a sentence.** A claim, then
@@ -231,9 +280,10 @@ paragraph on how a room feels, this genre puts two people in it and lets them sp
 For the narrator this is a hard budget: if a scene has somebody in it and the prose contains
 no speech, the scene is being described rather than played.
 
-Measured: **23.1% to 37.1% of paragraphs contain speech**, 30.6% pooled. That is the floor
-rather than the target, because these are paragraphs and a long exchange is many of them;
-what it establishes is that no book in the corpus goes a page without somebody talking.
+Measured: **23.1% to 37.1% of paragraphs contain speech**, per-book mean 29.5%. That is a
+floor rather than a target, because these are paragraphs and a long exchange is many of
+them; what it establishes is that no book in the corpus goes a page without somebody
+talking.
 
 ## Say "said", and usually say nothing
 
@@ -249,17 +299,27 @@ short manner phrase, and it repeats without apology.
 
 Not *replied*, *murmured*, *interjected*, *offered*. Said, said, said.
 
-**Measured, with a caveat that changes the claim.** Counting tag words in the window
-immediately around a quoted span, across the fourteen books in one translated line:
-**said 7,686, against 4,985 for every other tag combined** - so *said* outweighs the whole
-field by about 1.5 to 1, and outruns the next single tag (*asked*, 681) eleven to one.
+**Measured, and the widened corpus turned this from a conditional into a statement.**
+Counting tag words within 45 characters of a quoted span's edge - a loose count that scores
+every occurrence of the word anywhere in the paragraph is wrong, because it reads *he
+laughed*, *he continued walking* and *she spoke of it* as tags - across the **twenty-two
+professionally translated books**:
 
-Pooled across all sixteen books that margin disappears: said 11,873 against 12,093 for
-everything else. The two books that reverse it are the outlier pair - a different author,
-and a machine translation, which between them supply 1,087 *laughed* and 874 *chuckled*.
-**So the honest statement is: `said` dominates in careful human translation, and tag variety
-is what a machine translation produces.** That is a useful thing to know about the failure
-mode, since a language model left alone produces the same variety for the same reason.
+> **said 13,043, against 8,937 for every other tag combined - 1.46 to 1.**
+> Per-book mean ratio **1.40**, and the lowest of the twenty-two is **0.92**. The next
+> single tag (*murmured*, 1,339) is outrun better than nine to one.
+
+At sixteen books this could only be stated conditionally, because the pooled figure was a
+tie. With twenty-two it holds in every book: no professionally translated volume in the
+corpus drops *said* below rough parity with the entire rest of the field, and the average
+book runs it at nearly half again.
+
+**The control pair is what makes this worth knowing.** The different author runs 0.62. The
+fan-edited machine translation runs **0.21** - it supplies 1,087 *laughed* and 874
+*chuckled* on its own, and pooling it in is what dragged the all-24 figure down to 1.07.
+**Tag variety is what a machine produces when nobody is choosing.** A language model left
+alone produces the same variety for the same reason, which is precisely why this rule has to
+be stated to the narrator rather than assumed.
 
 ### Corrected: most lines carry no tag at all
 
@@ -268,14 +328,18 @@ majority, and the claim was inverted.**
 
 | | untagged quoted spans | dialogue paragraphs with no tag anywhere |
 |---|---|---|
-| all sixteen books | **70.1%** | 73.4% |
-| the fourteen in one translated line | **62.8%** | 67.5% |
-| the outlier pair | 75.5% | 77.9% |
+| all twenty-four, per-book mean | **65.0%** | 69.5% |
+| the twenty-two professionally translated, per-book mean | **63.6%** | 68.4% |
+| the same twenty-two, pooled | 62.3% | 67.8% |
+| the control pair, per-book mean | 80.6% | 82.4% |
 
-Per book the untagged share runs 54.4% to 81.4%, and it never falls below half in any book
-in the corpus. **The untagged line is the default; the tagged line is the exception.** Turn
-order carries who is speaking, and the tag turns up when the speaker changes in a way the
-order does not make obvious, or when the manner is the point.
+Per book the untagged share runs **53.7% to 87.4%**, and **it never falls below half in any
+book in the corpus**. **The untagged line is the default; the tagged line is the exception.**
+Turn order carries who is speaking, and the tag turns up when the speaker changes in a way
+the order does not make obvious, or when the manner is the point.
+
+Widening from sixteen books to twenty-four moved this figure by about five points and did
+not touch the rule.
 
 This compounds with the rule above rather than competing with it: when a line does take a
 tag, that tag is *said*.
@@ -285,22 +349,27 @@ tag, that tag is *said*.
 Punctuation this genre uses far more heavily than English literary prose, and stripping it
 out is a large part of why a played scene comes back sounding like a quiet novel.
 
-| | per 100 sentences |
-|---|---|
-| exclamation marks, overall | **11.26** |
-| exclamation marks, in paragraphs containing speech | **17.4** pooled, **24.1** in the human-translated books |
-| exclamation marks, in narration | 7.8 pooled, **5.3** in the human-translated books |
-| question marks, in paragraphs containing speech | **11.2** |
-| ellipsis | **5.2** |
+Per 100 sentences, over the twenty-two professionally translated books. Books weighted
+equally; the pooled figure is given where it differs, and it differs because the longest
+books are the quietest ones.
 
-The split is the finding, not the total. **Dialogue carries four to five times the
-exclamation rate of the narration beside it.** People in this genre shout, object, refuse
-and are astonished on the page, and none of it is remarkable; the narration around them
-stays level. An exclamation mark in the narrator's own voice is the same defect as closing
-on the weather - the narrator having a reaction the world did not supply.
+| | per-book mean | pooled | per-book range |
+|---|---|---|---|
+| exclamation marks, overall | **16.0** | 12.5 | 5.6 - 26.3 |
+| exclamation marks, in paragraphs containing speech | **29.0** | 24.5 | 10.8 - 48.1 |
+| exclamation marks, in narration | **8.0** | 6.3 | 1.9 - 16.7 |
+| question marks, in paragraphs containing speech | **10.8** | 10.1 | 7.0 - 16.6 |
+| ellipsis | **6.8** | 5.9 | 3.2 - 14.1 |
 
-Ellipsis at 5.2 per 100 is hesitation and being cut off, not trailing atmosphere. It belongs
-inside quotation marks for the same reason the exclamation does.
+The split is the finding, not the total. **Speech carries three to four times the
+exclamation rate of the narration beside it**, and runs at roughly **one exclamation every
+three to four spoken sentences**. People in this genre shout, object, refuse and are
+astonished on the page, and none of it is remarkable; the narration around them stays level.
+An exclamation mark in the narrator's own voice is the same defect as closing on the weather
+- the narrator having a reaction the world did not supply.
+
+Ellipsis is hesitation and being cut off, not trailing atmosphere. It belongs inside
+quotation marks for the same reason the exclamation does.
 
 > "Is it open? The pass - is it open?"
 >
@@ -348,7 +417,7 @@ for yet*. The genre states the reaction and moves on.
 This page, and the tier-1 rule taken from it, said interiority is **one short sentence**.
 The *reaction* is. **The assessment is not**, and the assessment is most of what this genre
 does inwardly. See [the long paragraph](#corrected-the-six-sentence-paragraph-which-this-page-said-does-not-occur):
-5,888 speechless paragraphs of six or more sentences, and reading them, they are almost all
+6,858 speechless paragraphs of six or more sentences, and reading them, they are almost all
 somebody working out what follows.
 
 So the rule has two halves and only one of them was right:
@@ -387,17 +456,18 @@ Measured across the corpus, existential and copula sentence openers:
 
 | Opener | Count | per 100 sentences |
 |---|---|---|
-| It was | 10,012 | 1.73 |
-| There were | 2,411 | 0.42 |
-| There was | 2,114 | 0.37 |
-| It is | 607 | 0.10 |
-| all six forms | 15,615 | **2.70** |
+| It was | 14,761 | 1.87 |
+| There were | 3,098 | 0.39 |
+| There was | 2,807 | 0.36 |
+| It is | 700 | 0.09 |
+| all six forms | 21,986 | **2.78** pooled, **2.61** per-book mean |
 
-The corpus narrates in the past tense, so its *It was* is the construction our present-tense
-prose renders *It is*. At 2.70 per 100 it turns up about once every 37 sentences, and it
-carries most of the explanatory frames in the section above - *It was not that he could not
-work it out*, *It was a monumental matter*, *It was the eighth month and the heat had not
-broken*. **The genre uses it freely and plainly.**
+Per book the range is 1.72 to 4.01 per 100, and **no book in the corpus is anywhere near
+zero.** The corpus narrates in the past tense, so its *It was* is the construction our
+present-tense prose renders *It is*. At about 2.7 per 100 it turns up roughly once every 37
+sentences, and it carries most of the explanatory frames in the section above - *It was not
+that he could not work it out*, *It was a monumental matter*, *It was the eighth month and
+the heat had not broken*. **The genre uses it freely and plainly.**
 
 **What was actually wrong** with the openings this page was written against was neither of
 those. It was two other things, in the same sentences:

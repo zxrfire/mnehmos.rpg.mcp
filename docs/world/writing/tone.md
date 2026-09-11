@@ -193,12 +193,17 @@ Four is long. The long sentence that drops into a short one is an impact beat an
 texture: about one page in one.
 
 **Corrected: a long paragraph does occur, and it is always somebody working something
-out.** This page used to say six sentences does not happen. It happens about once every
-twenty paragraphs, and there are close to six thousand such paragraphs in narration alone
-across the sixteen books measured. What a long paragraph never is here is a mood built
-across half a page. It is a chain of assessment - who suspects what, what it is worth, what
-follows, what it would cost - and it ends when the conclusion is reached. See the
+out.** This page used to say six sentences does not happen. It happens in every one of the
+twenty-four books measured, about once every twenty paragraphs, and close to seven thousand
+of those paragraphs contain no speech at all. What a long paragraph never is here is a mood
+built across half a page. It is a chain of assessment - who suspects what, what it is worth,
+what follows, what it would cost - and it ends when the conclusion is reached. See the
 interiority rule below, which is the same correction stated from the other end.
+
+**It is a move to reach for, not a shape to hit.** The long reasoning block is unevenly
+distributed - one work leans on it four times as hard as another - so the short paragraph
+remains the house style by a wide margin. Write a long one when there is genuinely something
+to work out, and not to vary the texture.
 
 Whichever length it runs, **the sentences inside it stay short.** A six-sentence paragraph
 in this genre is six short declaratives in a row, not three long ones. The paragraph got
@@ -219,7 +224,7 @@ relative clause that exists to characterise a noun the sentence has already name
 
 **The narration argues, and it says so with a connective at the front of the sentence.**
 *However. Although. After all. As for. In fact. Of course. Therefore. Meanwhile. At the
-same time. Furthermore.* Roughly one sentence in fifteen opens on one. This prose does not
+same time. Furthermore.* Roughly one sentence in thirteen opens on one. This prose does not
 lay two facts side by side and leave the reader to join them - it says out loud which
 follows from which, and that is a rhythm the earlier version of this page missed entirely.
 
@@ -251,7 +256,8 @@ feel while pretending to describe a square. End on a fact, a price, or somebody'
 
 **Corrected: this is not a ban on *It is* and *There is*.** This page used to call those
 the loudest signal of the wrong genre. They are not. The construction runs at about three
-sentences in a hundred across the corpus and carries most of the explanatory frames above -
+sentences in a hundred across the corpus, is nowhere near zero in any book measured, and
+carries most of the explanatory frames above -
 *It was the eighth month and the heat had not broken* is the genre writing plainly. What
 was actually wrong with the openings this page was written against was the mood and the
 mind-reading, not the copula.
@@ -273,10 +279,12 @@ Three rules inside that one, and all three cut against English style advice:
   here, because this game narrates in the present; never *replied*, *murmured*, *offered*,
   *interjected*. A short manner phrase is the whole variation there is, and *coldly* is
   the one this genre reaches for. **Corrected: most spoken lines carry no tag at all.**
-  This page used to say a third. It is measured at roughly two thirds, so the untagged
-  line is the default and the tagged one is the exception - the turn order says who is
-  talking. A tag on every line is the English-novel habit, and so is a different tag each
-  time.
+  This page used to say a third. It is measured at roughly two thirds, and no book measured
+  drops below half, so the untagged line is the default and the tagged one is the exception
+  - the turn order says who is talking. Where a line does take a tag, *says* outweighs every
+  other tag combined by about half again and outruns the next single tag nine to one. A tag
+  on every line is the English-novel habit, and so is a different tag each time: **tag
+  variety is what a machine produces when nobody is choosing.**
 - **Terms are stated in full, by a person, flatly.** Where the facts carry a price, a
   bar, a term of service or a condition, the person whose terms they are says them
   straight through with no hedging. That is not the exposition the rule below forbids:
@@ -284,8 +292,8 @@ Three rules inside that one, and all three cut against English style advice:
   showing you who they are.
 - **Speech is loud, and the narration around it stays level.** Exclamation marks and
   question marks are ordinary punctuation inside quotation marks here and are not
-  emphasis: measured at roughly one exclamation every four spoken sentences, four to five
-  times the rate in the narration beside them. Ellipsis is ordinary too, and it is
+  emphasis: measured at roughly one exclamation every three to four spoken sentences, three
+  to four times the rate in the narration beside them. Ellipsis is ordinary too, and it is
   hesitation rather than trailing atmosphere. Stripping all three out is one of the things
   that makes a played scene read as an English novel. Outside the quotation marks the
   narration stays flat - an exclamation mark in YOUR voice is the narrator getting excited
