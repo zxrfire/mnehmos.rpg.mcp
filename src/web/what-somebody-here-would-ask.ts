@@ -85,6 +85,24 @@ const WHAT_THEY_CALL_IT: Readonly<Record<WhatKindOfThing, string>> = {
  * Deliberately generous. The cost of offering the wrong name is a person saying
  * a name and being told no, which is a conversation; the cost of offering none
  * is the player being told their sentence did not resolve, which is not.
+ *
+ * ── AND IT IS THE CALLER'S, BECAUSE THE SCALE IS ─────────────────────────
+ *
+ * FOUND BY PLAYING BLIND, and the bar was doing nothing at all. It used to be
+ * `0.34`, a module constant, compared against whatever `likeness` returned - and
+ * both callers in the repository pass `matchScore`, which runs 0 to 100. Every
+ * candidate with any overlap whatsoever cleared a bar of 0.34, so the one figure
+ * this module documented as its threshold had never excluded anything in play.
+ *
+ * A bar only means something in the units of the thing it is measuring, and
+ * `likeness` is the caller's. So the bar comes in beside it, from the same
+ * place, for the same reason the header gives for `likeness` itself: one answer
+ * to "are these the same name", and no way for the two to drift.
+ *
+ * `WORTH_OFFERING` in `entities.ts` is what the production callers pass, and it
+ * is set at the lowest score `matchScore` awards for one shared distinctive
+ * word - so the generosity above is preserved deliberately rather than by the
+ * bar being broken.
  */
 export const CLOSE_ENOUGH_TO_OFFER = 0.34;
 
@@ -118,6 +136,11 @@ export function whatSomebodyHereWouldAsk(input: {
     readonly asker: AName;
     readonly theyCanPlace: WhatTheyCanPlace;
     readonly likeness: (said: string, name: string) => number;
+    /**
+     * The bar, in `likeness`'s own units. See `CLOSE_ENOUGH_TO_OFFER` for what
+     * went wrong when this was a constant here instead.
+     */
+    readonly closeEnough?: number;
 }): WhatTheyAsk {
     const asked = input.askedFor.trim();
     const seen = new Set<string>();
@@ -133,7 +156,7 @@ export function whatSomebodyHereWouldAsk(input: {
 
     const near = reachable
         .map(who => ({ who, score: input.likeness(asked, who.name) }))
-        .filter(one => one.score >= CLOSE_ENOUGH_TO_OFFER)
+        .filter(one => one.score >= (input.closeEnough ?? CLOSE_ENOUGH_TO_OFFER))
         .sort((a, b) => b.score - a.score)
         .slice(0, NAMES_ONE_PERSON_OFFERS);
 

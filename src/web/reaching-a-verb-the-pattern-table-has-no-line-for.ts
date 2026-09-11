@@ -418,6 +418,27 @@ export function theTableMeantIt(input: string): boolean {
 }
 
 /**
+ * The verb both candidates settle to, when they settle to the same one.
+ *
+ * Null unless: there is a runner-up, both clear the ordinary floor, the two
+ * settle to one verb under `theReadThatAnswersIt`, and that verb spends no
+ * in-world time. See the call site for the finding and why it is not a lower
+ * bar.
+ */
+function theSameAnswerTwice(nearest: NearestVerb): ActionName | null {
+    if (nearest.runnerUp === null) return null;
+    if (nearest.runnerUpScore < ACCEPT_AT) return null;
+
+    const settled = theReadThatAnswersIt({ action: nearest.action }).action;
+    if (settled !== theReadThatAnswersIt({ action: nearest.runnerUp }).action) return null;
+
+    // A read, by construction - but asserted rather than assumed, because this
+    // is the one path that acts on a score the daylight rule rejected.
+    if ((TIME_CONSUMING_ACTIONS as readonly ActionName[]).includes(settled)) return null;
+    return settled;
+}
+
+/**
  * The plan for a sentence the table could not read, or the refusal unchanged.
  *
  * `fromTable` is passed in rather than recomputed so this can never disagree
@@ -445,7 +466,39 @@ export async function verbForASentenceThePatternsMissed(
     if (nearest.score < (spendsTime ? ACCEPT_TIME_SPENDING_AT : ACCEPT_AT)) return fromTable;
     const sure = nearest.score
         + CLEAR_AIR_COUNTS_FOR * (nearest.score - nearest.runnerUpScore);
-    if (sure < SURE_ENOUGH_TO_ACT_ON) return fromTable;
+
+    // ── AND SOMETIMES THE TWO CANDIDATES ARE ONE ANSWER ──────────────────
+    //
+    // FOUND BY PLAYING BLIND. `what techniques do i know`, on a cultivator
+    // holding one manual, was answered with *"You turn the thought over and it
+    // does not resolve into anything you could actually do standing here"* -
+    // and then with a list of the people in the square, which is not what was
+    // asked about at all. `what arts do i know` answers it.
+    //
+    // The measurement says why, and it is not that the tier had never met the
+    // word:
+    //
+    //   what techniques do i know    list_techniques 0.835   learn_technique 0.831
+    //
+    // Two candidates four thousandths apart, so the daylight rule declined -
+    // correctly, by its own terms, because the model did not prefer one. But
+    // `theReadThatAnswersIt` already maps `learn_technique` to
+    // `list_techniques`: the runner-up IS the winner once the engine's own
+    // asking-is-not-doing rule has run on it. There was never a choice to make,
+    // and the tier refused over an ambiguity that does not exist.
+    //
+    // WHAT KEEPS THIS FROM BEING A LOWER BAR. The answer taken is the READ both
+    // verbs settle to, never the winner: two verbs that collapse the same way
+    // do so BECAUSE one of them is a free read of the other, and it is the free
+    // half that is unambiguous. So a sentence that is genuinely torn between
+    // `learn_technique` and `list_techniques` gets the listing - it costs
+    // nothing, names what the learning would take, and the next sentence
+    // commits. Nothing here can reach a verb that spends.
+    if (sure < SURE_ENOUGH_TO_ACT_ON) {
+        const settled = theSameAnswerTwice(nearest);
+        if (settled === null) return fromTable;
+        return { action: settled };
+    }
 
     const plan: PlannedAction = { action: nearest.action };
 

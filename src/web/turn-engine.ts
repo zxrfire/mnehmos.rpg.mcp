@@ -34,10 +34,12 @@ import { rollAttributes, rollSpiritRoot } from '../engine/cultivation/spirit-roo
 import { rollSex } from '../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { rollPhysique } from '../engine/cultivation/physiques.js';
 import { SATIETY_COST_PER_ACTION } from '../schema/cultivation.js';
- import {
+import {
     ACTIONS_PER_FULL_SATIETY,
+    assessProvisioning,
     satietyBurnMultiplier,
-    stillNeedsToEat
+    stillNeedsToEat,
+    type ProvisioningAssessment
 } from '../engine/cultivation/survival.js';
 import { simulateTimeSkip } from '../engine/cultivation/time-skip.js';
 import { rollHerb } from '../data/cultivation/index.js';
@@ -357,6 +359,7 @@ import {
     resolveSect,
     resolveTechnique,
     matchScore,
+    WORTH_OFFERING,
     andList,
     MATCH_THRESHOLD,
     type KnowledgeScope
@@ -423,13 +426,16 @@ import {
     factsForTelling,
     whatATellingLandsOn
 } from './what-a-telling-lands-on.js';
-import { facesFromHome } from './who-a-life-like-this-grew-up-knowing.js';
+import { facesFromHome, type FaceFromHome } from './who-a-life-like-this-grew-up-knowing.js';
 import type { OriginTierKey } from '../engine/cultivation/origin.js';
 // What a year of somebody's life earns, which is what bounds a purse-lift.
 // See `whatALiftTook`.
 import { observableHere, observedLine } from './practices.js';
 import {
     acceptDuty,
+    aStandingDutyOath,
+    daysServedOn,
+    recordDaysServed,
     PLAYER_ROLL_IDENTITY,
     arrivableForSpan,
     completeDuty,
@@ -699,8 +705,11 @@ import {
     theRung,
     observable,
     sayThisWhateverTheNarratorDoes,
+    sayThisFirstWhateverTheNarratorDoes,
+    shownFirstWithNoModel,
     type EngineFacts
 } from './facts.js';
+import { describeFoundation, foundationEffect } from '../engine/cultivation/foundation.js';
 import {
     canExistBeyondTheLid,
     evaluateLidTransit,
@@ -816,6 +825,7 @@ import {
 } from './view.js';
 import { type ObligationDb, ledgerAbout } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
+import type { AHolder } from '../engine/social-leverage/being-hunted.js';
 import { namesTheCoin, whatIsBeingSwapped } from './what-is-being-swapped-for-what.js';
 import {
     headlineForTheLedger,
@@ -835,6 +845,7 @@ import {
     stonesNamedIn,
     structureCalls,
     summariseToolBody,
+    ONLY_FOR_AN_OPERATOR,
     tollCalls,
     withoutTheHandlerName,
     withoutTheOverride,
@@ -1202,6 +1213,86 @@ function matchedPosting(
     const entry = whichPostingTheyMeant(wanted, offers.map(o => o.entry));
     if (entry === null) return undefined;
     return offers.find(o => o.entry.id === entry.id);
+}
+
+/**
+ * What the pack covers against a stretch of days, in the seclusion line's voice.
+ *
+ * FOUND BY PLAYING BLIND. A duty spends 20 to 90 days, eats out of the pack
+ * alone, and said nothing whatsoever about food; the seclusion verb has quoted
+ * exactly this since it was written. The asymmetry killed a run - a Dew Servant
+ * took a twenty-day posting with an empty pack and starved five days into it,
+ * having been told the wage, the term, the tier and the rung, and not the one
+ * thing that decides whether they come back.
+ *
+ * IT STATES AND DOES NOT REFUSE. Seclusion quotes the shortfall and lets the
+ * player sit down anyway; a duty does the same. Somebody who means to go hungry
+ * for a house may, and what this owes them is that they knew.
+ *
+ * AND IT SAYS THE RULE THAT DIFFERS. Seclusion tops the pack up out of the
+ * purse at the cave mouth and a duty does not (`shortSkip`: *"Only seclusion
+ * tops the pack up from the purse; this eats what is already carried"*). A
+ * player who has met the seclusion screen will otherwise carry the wrong
+ * expectation onto the road, so the sentence says the purse stays shut.
+ */
+function whatThePackCovered(food: ProvisioningAssessment, days: number): string {
+    const held = food.rationsHeld === 1 ? '1 ration' : `${food.rationsHeld} rations`;
+
+    if (food.sufficient) {
+        return food.rationsHeld > 0
+            ? `${held} in the pack, which is food for the whole of the ${humanDays(days)} asked for.`
+            : `Nothing in the pack, and the belly alone carries the whole of the `
+              + `${humanDays(days)} asked for.`;
+    }
+
+    // Nothing in the belly and nothing in the pack: the hunger starts on the
+    // first morning, and `fatalOnDay` is the day it finishes.
+    if (food.fatal) {
+        return `${food.rationsHeld > 0 ? `${held} in the pack and` : 'Nothing in the pack and'} `
+            + `nothing in the belly: there is nothing to eat on the first day of it, and `
+            + `${humanDays(food.fatalOnDay ?? 0)} of that is fatal. Nothing is bought for a duty `
+            + 'and the house provisions nobody - what is carried is what there is.';
+    }
+
+    return `${food.rationsHeld > 0 ? held : 'Nothing'} in the pack. That is food for about `
+        + `${humanDays(food.coveredDays)} of the ${humanDays(days)} asked for, and after that `
+        + 'the belly is empty and the starving begins. Nothing is bought for a duty and the '
+        + 'house provisions nobody - what is carried is what there is.';
+}
+
+/**
+ * A term that was cut short before its days were served.
+ *
+ * FOUND BY PLAYING BLIND, on one screen:
+ *
+ *     Sect duty: A Culling Notice Written From an Old Survey of 20 days was
+ *     intended.
+ *     It ran 1 day and not 20 days. Something was already on its way.
+ *     Completed. 94 spirit stones paid, and nothing on anybody's ledger.
+ *
+ * One day of a twenty-day posting, and the house paid the whole wage. The only
+ * gate on `completeDuty` was whether the cultivator was still alive, so a span
+ * `shortSkip` cut at its first interrupt settled as a finished term - and the
+ * interrupt in the played run was a piece of NEWS arriving. Measured over 24
+ * seeded runs, 2 duties were cut short and both were paid in full.
+ *
+ * Two things wrong at once: the screen contradicts itself in three consecutive
+ * sentences, and taking a posting is free money for anybody who can arrange to
+ * be interrupted.
+ *
+ * A TERM CUT SHORT IS NOT A TERM. Nothing is paid, nothing is credited, and the
+ * oath stays open and due on the day it was always due - which is the state
+ * `turn-engine` already names where `refuseDuty` is called: *a duty sworn and
+ * not finished leaves a standing obligation somebody can read in forty years.*
+ * The posting is still on the wall, so the way to close it is to take it up
+ * again and serve the term.
+ */
+function aTermCutShort(served: number, asked: number, dueOnDay: number): string {
+    return `${humanDays(Math.max(0, served))} of the ${humanDays(asked)} stand served, and then `
+        + 'it was broken off. A house pays for a finished term and not for part of one, so '
+        + `nothing is paid and nothing is credited yet. The word stands, due on day ${dueOnDay}, `
+        + `and ${humanDays(Math.max(0, asked - served))} of it are still owed: take the posting `
+        + 'up again and it carries on from here.';
 }
 
 /** Words that name nothing on their own, so a shared one means nothing. */
@@ -1760,7 +1851,7 @@ export class GameService {
         // no record as an ordinal and nothing else, so every person in the world
         // was a permanent stranger and the four verbs that need somebody to be
         // pointed at could not find one.
-        await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
+        const faces = await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
 
         // AND THE GROUND. The same ruling, applied to geography: somebody who grew
         // up here can point at the caves and the wild ground outside the village.
@@ -1794,14 +1885,40 @@ export class GameService {
         // believes about it, and who they got it from. See
         // `the-life-behind-the-first-turn.ts`.
         //
-        // Put at the FRONT of the lines, because it is what happened first.
-        facts.lines.unshift(...theLifeBehindTheFirstTurn(birth, STARTING_AGE));
+        // AND THEN IT WAS HANDED TO A MODEL AND NEVER SEEN AGAIN. The recap was
+        // unshifted onto `facts.lines` and left at that, which is to say it was
+        // handed to a narrator that is asked, in the same prompt, for *"two or
+        // three short paragraphs"*. Measured with ollama narrating: the whole of
+        // turn 0 was the square. Given a dozen facts whose last three are the
+        // room in front of it, a small model writes the room.
+        //
+        // The design owner: *"WHERE IS THE RECAP OF MY LIFE TO THIS POINT? HAVE
+        // THE ENGINE RETURN IT FOR THE FIRST TURN."*
+        //
+        // So it is filed as what it is - a record, on the engine's own channel,
+        // beside the sheet - and reaches the player in both modes whatever a
+        // model does. `required` is the wrong tool for it and the banner on
+        // `withRequiredLines` says why: it matches on the words surviving into
+        // the prose, and this prompt orders the model to write every fact again
+        // from nothing.
+        const life = theLifeBehindTheFirstTurn(birth, STARTING_AGE, faces);
+
+        // `prose` is composed FIRST, and so without the recap: it is what a
+        // player reads when no model answers, and the ruling below already says
+        // all of this. Composing it after the unshift is what used to print the
+        // sixteen years twice on the engine-only path.
         facts.prose = facts.lines.join('\n\n');
         const opening = await this.narrator.narrate(facts, {
             place: placeName(created.cultivator),
             ambient,
             awareness,
-            company: this.company(created.cultivator)
+            company: this.company(created.cultivator),
+            // Every fact, including the one nobody is going to tell them, so a
+            // model cannot write a childhood that contradicts the record - and
+            // so that it WRITES one. The ruling below is the guarantee; this is
+            // the account, in the genre's own words. *"The LLM should be doing
+            // that"*, and `theLifeBehindThemBlock` is where it is asked to.
+            theLifeBehindThem: life.forTheNarrator
         });
 
         // What the world contributes to this life, in the world's own words.
@@ -1842,6 +1959,12 @@ export class GameService {
                     `Fortune ${attributes.fortune}, Charm ${attributes.charm}. ` +
                     'Talent is rolled once and never redrawn.'
             },
+            // THE SIXTEEN YEARS, AS A RULING RATHER THAN AS A HOPE. One fact per
+            // line: an engine entry is rendered `pre-wrap`, and a record reads
+            // as a record. After the sheet because the sheet is who they are,
+            // and before the narration because the narration is the first thing
+            // that happens to them.
+            { role: 'engine' as const, turn: 0, text: life.toldToThePlayer.join('\n') },
             { role: 'narrator', turn: 0, text: opening.text }
         ]);
 
@@ -3563,7 +3686,7 @@ ${noticedWaiting}`;
                 );
 
             case 'destinations':
-                return this.destinations(run, cultivator);
+                return this.destinations(run, cultivator, action.target);
 
             case 'roads':
                 this.atHand = this.atHand ?? await this.loadWorld();
@@ -3615,7 +3738,8 @@ ${noticedWaiting}`;
                     ? whatSomebodyHereWouldAsk({
                         askedFor: rawInput,
                         ...asking,
-                        likeness: matchScore
+                        likeness: matchScore,
+                        closeEnough: WORTH_OFFERING
                     })
                     : null;
 
@@ -5554,6 +5678,70 @@ ${noticed}`;
                         + 'sect_members untouched, no turn spent.'
                     );
                 }
+
+                // ── AND WHAT THE RECORD MAKES THEM, WHICH IS THE OTHER HALF ──
+                //
+                // FOUND BY PLAYING BLIND, unaffiliated:
+                //
+                //     > what is my reputation
+                //     Unaffiliated. No stipend, no array, no elder, and nobody
+                //     to notice if this run ends badly...
+                //
+                //     > what do people think of me
+                //     (the same answer again)
+                //
+                // True, and about a HOUSE. `what do people think of me` and
+                // `how am i regarded` are routed here on purpose - a house's
+                // opinion is the standing read, and
+                // `the-singular-of-a-question-that-worked.test.ts` pins that -
+                // so the routing is not the defect. The answer stopping at
+                // membership is.
+                //
+                // `verb-pattern-table.ts` states the gap by name where it
+                // leaves `about me` with the news read: *"nothing in this game
+                // answers 'what does the world hold about me'.
+                // `whatTheWorldHoldsAbout` is the reader for it and is wired
+                // for everybody except the player, whose own record it reads
+                // only to answer who is hunting them."*
+                //
+                // It is that reader, asked the whole question instead of one
+                // field of it. Ledger-derived: what has been taken out of other
+                // people and paid out of themselves, what stands open against
+                // them, and who is in a position to act on it. Nothing here is
+                // speech - what is SAID about somebody is a different read with
+                // a different answer per listener.
+                const record = whatTheWorldHoldsAbout({
+                    db: this.db as unknown as ObligationDb,
+                    person: {
+                        id: cultivator.id,
+                        ordinal: cultivator.realmOrdinal,
+                        backing: cultivator.sectId === null
+                            ? 'none'
+                            : cultivator.sectRank ? 'backed' : 'unclaimable'
+                    },
+                    lookUpHolder: id => this.whoHoldsAnAccount(id)
+                });
+                const standing = record.is.nothingEitherWay
+                    ? 'Nothing stands on the ledger either way. Nobody is owed by you and nobody '
+                      + 'owes you, which is what an unwritten-on life looks like from outside.'
+                    : `${record.is.wrongs} thing${record.is.wrongs === 1 ? '' : 's'} stand`
+                      + `${record.is.wrongs === 1 ? 's' : ''} open against you and `
+                      + `${record.is.kindnesses} in your favour.`
+                      + (record.feuds.length > 0
+                          ? ` In a position to act on it: ${record.feuds.join(', ')}.`
+                          : '')
+                      + (record.namesWithNothingBehindThem.length > 0
+                          ? ` Holding something and unable to reach you: `
+                            + `${record.namesWithNothingBehindThem.join(', ')}.`
+                          : '');
+                read.facts.lines.push(standing);
+                read.facts.prose = `${read.facts.prose}\n\n${standing}`;
+                read.facts.structure.push(
+                    `personal-record.whatTheWorldHoldsAbout: alignment ${record.is.alignment}, `
+                    + `taken ${record.is.taken}, paid ${record.is.paid}, `
+                    + `${record.ledger.length} row(s) naming them, `
+                    + `${record.feuds.length} holder(s) able to act. ${record.is.line}`
+                );
                 return read;
             }
             case 'leave':
@@ -6834,6 +7022,69 @@ ${noticed}`;
             return this.freeAction(run, 'market', quoted);
         }
 
+        // ── AND A THING IN THE POUCH IS A PRICE QUESTION THE OTHER WAY ───
+        //
+        // FOUND BY PLAYING BLIND, one screen after gathering it:
+        //
+        //     > what is my Cloudcap Mushroom worth
+        //     What is nearest to hand, of 43 things on offer:
+        //       Bowl of millet, 1 cash each. ...
+        //
+        // Forty-three lines of ferry fares and inn beds, in answer to a question
+        // about the one thing the player owned - which the engine had priced on
+        // the screen before and priced again on the screen after.
+        //
+        // The branch above answers for something on the BOARD; `resolvePrice`
+        // reads the mortal goods catalog and a herb is not in it. So a player
+        // could be quoted for a thing they might buy and not for a thing they
+        // are holding, and the second is the question somebody actually asks.
+        //
+        // Quoted through `quotePouchSale` at the province's own multiplier -
+        // the same call `sell` pays out of - so the figure somebody is quoted
+        // is the figure they are handed. Free: nothing leaves the pouch.
+        //
+        // "my herbs", "everything", "the lot" price the whole pouch, by the same
+        // rule and the same expression `sell` reads them with. A question and
+        // the act it asks about must not disagree about what was named.
+        const held = named.length >= 3 ? listPouch(this.db, cultivator.id) : [];
+        const wholePouch = held.length > 0 && GameService.SELL_EVERYTHING.test(named);
+        const lots = wholePouch
+            ? held.map(entry => this.lotFor(entry))
+                .filter((one): one is SaleLot & { kind: PouchItemKind } => one !== null)
+            : (() => {
+                const one = held.length > 0 ? this.pouchEntryFor(held, named) : null;
+                const only = one ? this.lotFor(one) : null;
+                return only ? [only] : [];
+            })();
+
+        if (lots.length > 0) {
+            const regionId = standingOf(cultivator).regionId;
+            const local = localPrice(regionId, 100) / 100;
+            const quote = quotePouchSale(lots, { ordinal: cultivator.realmOrdinal }, local);
+            // WRITTEN HERE RATHER THAN TAKEN OFF `quote.lots[].line`, because
+            // that sentence is in the past tense - "1 sold for 4 spirit stones"
+            // - and nothing has been sold. The figures are the same figures.
+            const appraised = factsForToolResult(
+                wholePouch ? 'The pouch, appraised.' : `${lots[0].name}, appraised.`,
+                [
+                    ...quote.lots.map(one =>
+                        `${one.name}: ${one.quantity} would fetch ${one.offeredStones} spirit `
+                        + `stone${one.offeredStones === 1 ? '' : 's'} at this counter, which `
+                        + `reckons the lot at ${Math.round(one.grossStones * 10) / 10}.`),
+                    `${quote.offeredStones} spirit stone${quote.offeredStones === 1 ? '' : 's'} `
+                    + 'for the lot, and nothing has changed hands. Saying you sell it is what '
+                    + 'does that.'
+                ]
+            );
+            appraised.structure.push(
+                `quotePouchSale over ${lots.length} lot(s) at the ${regionId} multiplier `
+                + `(x${local}): gross ${Math.round(quote.grossStones)}, offered `
+                + `${quote.offeredStones}. Quoted only - nothing removed from cultivator_pouch `
+                + 'and nothing paid.'
+            );
+            return this.freeAction(run, 'market', appraised);
+        }
+
         const result = await handleMarket({
             action: 'market',
             cultivatorId: cultivator.id,
@@ -6843,6 +7094,36 @@ ${noticed}`;
             'cultivation_mortal.market', 'market', result, 'The market'
         );
         if (board.outcome !== 'executed') return board;
+
+        // ── AND A NAME NOTHING HERE ANSWERS TO SAYS SO FIRST ─────────────
+        //
+        // FOUND BY PLAYING BLIND, with an empty pouch:
+        //
+        //     > what are my herbs worth
+        //     What is nearest to hand, of 43 things on offer:
+        //       Bowl of millet, 1 cash each. ...
+        //
+        // The two branches above answer for a thing on the board and a thing in
+        // the pouch. Reaching here with a name means it is in neither, and the
+        // board is printed as though the question had been "what is for sale" -
+        // a confident answer to a question nobody asked, forty-three lines long.
+        //
+        // The listing STAYS, because what is on the counter is still worth
+        // seeing and a refusal that showed nothing would be worse. What is
+        // added is the one sentence that stops the screen from reading as an
+        // answer: the thing was named, and nothing here prices it.
+        if (category === undefined && named.length >= 3) {
+            const carrying = listPouch(this.db, cultivator.id)
+                .map(entry => this.lotFor(entry)?.name ?? entry.itemId);
+            shownFirstWithNoModel(
+                board.facts,
+                `Nothing here prices "${named}", and it is not in the pouch either. `
+                + (carrying.length > 0
+                    ? `What is: ${carrying.join(', ')}. `
+                    : 'The pouch is empty. ')
+                + 'What the counter does have:'
+            );
+        }
 
         this.atHand = this.atHand ?? await this.loadWorld();
         const offered = whatIsBeingOfferedHere(
@@ -6909,6 +7190,66 @@ ${line}`;
     ): Promise<Execution> {
         const query = (target ?? '').trim();
 
+        // ── AND IN A FIGHT, THE QUESTION IS ABOUT THE FIGHT ──────────────
+        //
+        // FOUND BY PLAYING BLIND. Mid-fight, with a named opponent on 46 of 60:
+        //
+        //     > what are my chances
+        //     Nobody standing over you is standing above you. Whatever comes
+        //     next is not in this house... 0 years at this rung, of the 50 the
+        //     ladder credits... A cultivator who can attempt this may not
+        //     survive it.
+        //
+        //     > can i beat him
+        //     (the same answer again)
+        //
+        // A player in a fight asked whether they could win it and was handed a
+        // breakthrough readiness read - a confident answer to a question nobody
+        // asked, about a crossing, while somebody was swinging at them.
+        //
+        // The ROUTING was right: both sentences reach `assess`. What was wrong
+        // is that `assess` with no target has exactly one reading, the master
+        // reading a student, and that reading is correct standing in a square
+        // and absurd standing in a fight. `ASSESSING_THEMSELVES` even lists
+        // `my chances` and `my odds` by name, and sent them the same way.
+        //
+        // And the answer existed the whole time. `whereThisFightStands` is what
+        // prints the footer under every round - both bodies, the rounds left,
+        // what breaking off comes to - which is the question, answered, in the
+        // engine's own figures. It is free, as every read of a live fight is:
+        // see `aFightChargesNothingFor`.
+        const inAFight = theFightStillStands(this.fight, run.id, cultivator.id)
+            ? this.fight!
+            : null;
+        if (inAFight
+            && (query.length === 0
+                || GameService.ASSESSING_THEMSELVES.test(query)
+                || matchScore(query, inAFight.party.name) > MATCH_THRESHOLD)) {
+            const where = whereThisFightStands(inAFight.state, ambient);
+            const yours = where.yourMaxHp > 0 ? where.yourHp / where.yourMaxHp : 0;
+            const theirs = where.theirMaxHp > 0 ? where.theirHp / where.theirMaxHp : 0;
+            // Said as a comparison rather than as two fractions, because the
+            // numbers are already on the line above and a share of a body is
+            // not a thing anybody says out loud.
+            const ahead = Math.abs(yours - theirs) < 0.05
+                ? 'Neither of you is further from the ground than the other.'
+                : yours > theirs
+                    ? `${inAFight.party.name} is the nearer of the two to being finished.`
+                    : `You are the nearer of the two to being finished.`;
+            const reckoned = factsForToolResult(`${inAFight.party.name}, reckoned mid-fight.`, [
+                where.line,
+                ahead,
+                'Looking costs nothing. The round does not move for it.'
+            ]);
+            reckoned.structure.push(
+                `unfinished-fight.whereThisFightStands: ${where.yourHp}/${where.yourMaxHp} against `
+                + `${where.theirHp}/${where.theirMaxHp}, ${where.roundsLeft} round(s) of budget `
+                + `left, break-off at ${where.flight.chance.toFixed(2)}. Read only - no round `
+                + 'spent and nothing written.'
+            );
+            return this.freeAction(run, 'assess', reckoned);
+        }
+
         // a master reading a student
         if (query.length === 0 || GameService.ASSESSING_THEMSELVES.test(query)) {
             const read = await handleAssess({
@@ -6916,9 +7257,45 @@ ${line}`;
                 cultivatorId: cultivator.id,
                 against: 'student'
             });
-            return this.fromToolResult(
+            const reckoning = this.fromToolResult(
                 'cultivation_perception.assess', 'assess', read, 'The reckoning'
             );
+
+            // ── AND WHAT THEY ARE STANDING ON ────────────────────────────
+            //
+            // FOUND BY PLAYING BLIND, one turn after a crossing that had just
+            // printed *"The foundation laid is unstable. It holds, and it
+            // complains. Cultivation runs rough and bottlenecks bite harder
+            // than they should."*
+            //
+            //     > what is my foundation like
+            //     Nobody standing over you is standing above you... 0 years at
+            //     this rung, of the 50 the ladder credits.
+            //
+            // `ASSESSING_THEMSELVES` lists `my foundation` by name and sends it
+            // here on purpose, and the read then said who could judge them and
+            // how long they had been at the rung - and nothing whatever about
+            // the structure the whole question was about.
+            //
+            // `describeFoundation` is the sentence for it and had no caller in
+            // `src/` outside the line that composes a crossing's own hint. A
+            // master reading a student reads the foundation; it is the single
+            // largest fact about anybody past Qi Condensation, and
+            // `FOUNDATION_EFFECTS` is where two cultivators at one rank stop
+            // being the same person.
+            const laid = cultivator.foundationQuality ?? 'none';
+            const onIt = laid === 'none'
+                ? 'No foundation is laid yet. Below Foundation Establishment there is nothing '
+                  + 'there to have a quality.'
+                : `The foundation under all of it is ${laid}. ${describeFoundation(laid)}`;
+            reckoning.facts.lines.push(onIt);
+            reckoning.facts.prose = `${reckoning.facts.prose}\n\n${onIt}`;
+            reckoning.facts.structure.push(
+                `cultivation.describeFoundation: ${laid}; rate x`
+                + `${foundationEffect(laid).cultivationMultiplier}, crossing `
+                + `${Math.round(foundationEffect(laid).breakthroughModifier * 100)}pp.`
+            );
+            return reckoning;
         }
 
         // ── AND A PERSON IS NOT A PLACE ──────────────────────────────────
@@ -7219,6 +7596,7 @@ ${line}`;
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
+        this.putBackWhatWasNotEaten(cultivator, skip);
         const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
@@ -7320,6 +7698,7 @@ ${line}`;
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
+        this.putBackWhatWasNotEaten(cultivator, skip);
         const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const me = applied.cultivator;
@@ -8006,8 +8385,18 @@ ${opened.text}` : receipt,
             ? [hint, ...detail]
             : detail.length > 0 ? detail : ['It is done. Nothing about it drew attention.'];
 
+        // `lines` serves the narrator and, through `summary` below, the
+        // operator. `prose` is the deterministic account a player reads with no
+        // model configured, and a raw die roll has no reader there. See
+        // `ONLY_FOR_AN_OPERATOR`.
+        const forThePlayer = lines.filter(line => !line.startsWith(ONLY_FOR_AN_OPERATOR));
+
         return {
-            facts: factsForToolResult(hint ?? lines[0], lines),
+            facts: factsForToolResult(
+                hint ?? lines[0],
+                lines,
+                (forThePlayer.length > 0 ? forThePlayer : lines).join('\n')
+            ),
             events: [],
             timeSkip: null,
             breakthrough: null,
@@ -11359,16 +11748,20 @@ ${fit.line}`;
         const overdue = summonsIsOverdue(pending, today);
         const band = regardFor(duty.pitchOrdinal, cultivator.realmOrdinal).band;
         const what = `${pending.what} Answered on day ${today}.`;
+        // See the board path: a term broken off is taken up again on the word
+        // already given, not on a second one.
+        const standing = aStandingDutyOath(this.repos, cultivator.id, pending.entryId);
+        const alreadyServed = standing ? daysServedOn(standing) : 0;
         const ledger: DutyLedgerInput = {
             repos: this.repos,
             cultivator,
             duty,
-            onDay: today,
+            onDay: standing ? standing.incurredOnDay : today,
             entryId: pending.entryId,
             what
         };
 
-        acceptDuty(ledger);
+        const sworn = acceptDuty(ledger);
         clearPendingSummons(this.repos, cultivator.id);
 
         // The catalog's own name for the work. The label is read back into
@@ -11377,16 +11770,45 @@ ${fit.line}`;
         // cut of this read.
         const called = getEncounter(pending.entryId)?.name ?? pending.entryId;
 
+        // Only what is left of it. See `daysServedOn`.
+        const stillToServe = Math.max(1, duty.days - alreadyServed);
         const execution = await this.shortSkip(
             run, cultivator, ambient, DUTY_FOCUS, `Sect duty: ${called}`,
-            duty.days, 'labour'
+            stillToServe, 'labour'
         );
 
         const after = this.repos.cultivators.getById(cultivator.id)!;
         const doneOn = Math.floor(this.repos.runs.getById(run.id)!.elapsedDays);
-        const settlement: DutyLedgerInput = { ...ledger, cultivator: after, onDay: doneOn };
+        // `acceptedOnDay` is what makes this settle the row `acceptDuty` wrote
+        // rather than write a second one beside it. See `DutyLedgerInput`.
+        const settlement: DutyLedgerInput = {
+            ...ledger, cultivator: after, onDay: doneOn, acceptedOnDay: ledger.onDay
+        };
+        // WHETHER THE TERM WAS ACTUALLY SERVED. `shortSkip` cuts a span at its
+        // first interrupt, and being alive was the only thing `completeDuty`
+        // was ever gated on. See `aTermCutShort`.
+        const served = alreadyServed + (doneOn - today);
+        const finished = served >= duty.days;
 
-        if (after.alive) {
+        if (after.alive && !finished) {
+            recordDaysServed(this.repos, sworn, served);
+            sayThisWhateverTheNarratorDoes(
+                execution.facts, aTermCutShort(served, duty.days, duty.dueOnDay)
+            );
+            execution.facts.structure.push(
+                `encounters.recordDaysServed: ${served} of ${duty.days} day(s) served on `
+                + `obligation ${sworn.id}, still open and due on day ${duty.dueOnDay}. Nothing `
+                + 'paid, nothing credited.'
+            );
+            execution.calls.push({
+                name: 'encounters.recordDaysServed',
+                action: 'sect',
+                summary:
+                    `${pending.entryId} broken off at ${served} of ${duty.days} day(s). The `
+                    + 'obligation stands, the wage is unpaid, and the days served are kept.',
+                ok: false
+            });
+        } else if (after.alive) {
             const settled = completeDuty(settlement);
             sayThisWhateverTheNarratorDoes(execution.facts, settled.line);
             execution.facts.structure.push(
@@ -11653,13 +12075,18 @@ ${fit.line}`;
         }
 
         const startDay = Math.floor(run.elapsedDays);
-        const duty = dutyFromOffer(chosen, board.membership, startDay);
+        // A TERM BROKEN OFF IS TAKEN UP AGAIN, NOT SWORN AGAIN. The word was
+        // given the first time; this is serving it. See `aStandingDutyOath`.
+        const standing = aStandingDutyOath(this.repos, cultivator.id, chosen.entry.id);
+        const swornOn = standing ? standing.incurredOnDay : startDay;
+        const alreadyServed = standing ? daysServedOn(standing) : 0;
+        const duty = dutyFromOffer(chosen, board.membership, swornOn);
         const what = `${chosen.entry.name}, off the board at ${placeName(cultivator)}.`;
         const ledger: DutyLedgerInput = {
             repos: this.repos,
             cultivator,
             duty,
-            onDay: startDay,
+            onDay: swornOn,
             entryId: chosen.entry.id,
             what
         };
@@ -11668,21 +12095,83 @@ ${fit.line}`;
         // reason accepting is a decision rather than free money: a run that
         // ends in the middle leaves a standing obligation somebody can read in
         // forty years, and `refuseDuty` is what settles it the other way.
-        acceptDuty(ledger);
+        const sworn = acceptDuty(ledger);
 
+        // ── WHAT THE PACK COVERS, BEFORE THE DAYS RUN ────────────────────
+        //
+        // FOUND BY PLAYING BLIND. A Dew Servant finished a fifty-day duty with
+        // an empty pack, took a twenty-day one, and starved to death five days
+        // in. Nothing on either screen had said a word about food.
+        //
+        // Seclusion has quoted this since it was written - *13 rations bought
+        // for 26 spirit stones. That is food for about 1.9 years of the 2 years
+        // asked for. After that the belly is empty and five turns later it is
+        // fatal* - and a duty spends the same kind of span and can kill in the
+        // same way. The asymmetry was the whole defect: the verb that spends
+        // years warns, and the verb that spends months did not.
+        //
+        // It STATES and does not refuse, which is the shape seclusion keeps: a
+        // player who wants to go hungry for a house may, and the engine's job is
+        // that they knew. And it says the rule that differs, because somebody
+        // who has met the seclusion line will otherwise expect the purse to be
+        // spent for them.
+        //
+        // `assessProvisioning` had no caller outside its own test. Every figure
+        // in the sentence is its own.
+        const food = assessProvisioning({
+            days: duty.days,
+            realmOrdinal: cultivator.realmOrdinal,
+            satiety: cultivator.satiety,
+            rations: this.rationsHeld(cultivator),
+            starvationTurns: cultivator.starvationTurns,
+            // Passed because `drawFromPack` passes them. See `ProvisioningInput`.
+            injuries: cultivator.injuries
+        });
+
+        // ONLY WHAT IS LEFT OF IT. See `daysServedOn`: a term broken off keeps
+        // the days that were served, and taking it up again finishes it rather
+        // than starting it over.
+        const stillToServe = Math.max(1, duty.days - alreadyServed);
         const execution = await this.shortSkip(
             run, cultivator, ambient, DUTY_FOCUS, `Sect duty: ${chosen.entry.name}`,
-            duty.days, 'labour'
+            stillToServe, 'labour'
         );
 
         const after = this.repos.cultivators.getById(cultivator.id)!;
         const doneOn = Math.floor(this.repos.runs.getById(run.id)!.elapsedDays);
-        const settlement: DutyLedgerInput = { ...ledger, cultivator: after, onDay: doneOn };
+        // `acceptedOnDay` is what makes this settle the row `acceptDuty` wrote
+        // rather than write a second one beside it. See `DutyLedgerInput`.
+        const settlement: DutyLedgerInput = {
+            ...ledger, cultivator: after, onDay: doneOn, acceptedOnDay: ledger.onDay
+        };
+        // WHETHER THE TERM WAS ACTUALLY SERVED. `shortSkip` cuts a span at its
+        // first interrupt, and being alive was the only thing `completeDuty`
+        // was ever gated on. See `aTermCutShort`.
+        const served = alreadyServed + (doneOn - startDay);
+        const finished = served >= duty.days;
 
         // Paid for finishing it, never for taking it on. Somebody who did not
         // come back is not owed, and the house records that rather than
         // forgetting it - which is the same answer the wage already gives.
-        if (after.alive) {
+        if (after.alive && !finished) {
+            recordDaysServed(this.repos, sworn, served);
+            sayThisWhateverTheNarratorDoes(
+                execution.facts, aTermCutShort(served, duty.days, duty.dueOnDay)
+            );
+            execution.facts.structure.push(
+                `encounters.recordDaysServed: ${served} of ${duty.days} day(s) served on `
+                + `obligation ${sworn.id}, still open and due on day ${duty.dueOnDay}. Nothing `
+                + 'paid, nothing credited.'
+            );
+            execution.calls.push({
+                name: 'encounters.recordDaysServed',
+                action: 'sect',
+                summary:
+                    `${chosen.entry.name} broken off at ${served} of ${duty.days} day(s). The `
+                    + 'obligation stands, the wage is unpaid, and the days served are kept.',
+                ok: false
+            });
+        } else if (after.alive) {
             const settled = completeDuty(settlement);
             // BEING PAID IS NOT AN INCIDENTAL DETAIL OF THE STRETCH
             sayThisWhateverTheNarratorDoes(execution.facts, settled.line);
@@ -11758,10 +12247,30 @@ ${fit.line}`;
             });
         }
 
+        // AND WHAT THERE WAS TO EAT WHILE IT RAN, said whatever else happened.
+        // Second on the screen, under the terms and above the span, because it
+        // is a term of what was agreed to rather than a note about how it went.
+        sayThisFirstWhateverTheNarratorDoes(
+            execution.facts, whatThePackCovered(food, duty.days)
+        );
+
         // One posting, taken: the terms and what it asks, on one line, because
         // there is nothing here for a group heading to be shared with.
-        execution.facts.lines.unshift(
+        //
+        // ON BOTH CHANNELS. This was `facts.lines.unshift`, and `lines` is what
+        // a NARRATOR is allowed to know - the engine-only player reads `prose`
+        // and saw none of it. So the board printed the wage, the term and the
+        // tier, the turn that agreed to them printed nothing, and the next
+        // mention of money was the payment. See `alsoShownWithNoModel`.
+        shownFirstWithNoModel(
+            execution.facts,
             `${sameTermsAs(chosen)}${whatItAsks(chosen).replace(/^ {2}/, ' ')}`
+        );
+        execution.facts.structure.push(
+            `cultivation.assessProvisioning: ${food.outcome}; ${food.rationsHeld} ration(s) held, `
+            + `${food.rationsNeeded} needed at ${food.daysPerRation} days each, `
+            + `${food.coveredDays}/${food.days} day(s) covered. Nothing bought - a duty draws on `
+            + 'the pack alone.'
         );
         execution.calls.unshift({
             name: 'encounters.acceptDuty',
@@ -12873,6 +13382,34 @@ ${fit.line}`;
         return updated ?? cultivator;
     }
 
+    /**
+     * The pack, opened for a stretch. What is not eaten goes back in.
+     *
+     * ── WHY THE WHOLE PACK AND NOT THE SHORTFALL ─────────────────────────
+     *
+     * FOUND BY PLAYING BLIND: a player was ejected from a sixty-day escort on
+     * day twenty, told *"the last of the provisions is gone"*, while carrying
+     * eight rations.
+     *
+     * This used to hand the skip only `ceil((days - bellyCovers) / perRation)`
+     * - the arithmetic minimum - and `time-skip.ts` fires a DELIBERATE
+     * interrupt on `rations === 0 && rationsUsed > 0`, whose whole reason is
+     * that *"the skip must not be the one place a player dies without a
+     * decision."* Handing over the minimum guarantees that condition on the
+     * last leg of any stretch long enough to open one ration at all, so the
+     * interrupt fired on a full pack and said the pack was empty. A warning
+     * that fires when there is nothing to warn about is worse than no warning:
+     * it is the engine lying about the one number it stopped the turn to say.
+     *
+     * So the pack goes with them and `putBackWhatWasNotEaten` takes the
+     * remainder off `skip.rationsRemaining`. Nothing is wasted, because
+     * `consumeFood` only opens one when the belly is empty - which is the
+     * concern the old arithmetic was written for, met by the skip itself.
+     *
+     * `days` is kept in the signature and deliberately unread: what a stretch
+     * needs is the skip's arithmetic now, and every caller still passes the
+     * span so the pairing reads the same way at all seven sites.
+     */
     drawFromPack(
         // `injuries` is in the Pick because `satietyBurnMultiplier` reads it: a
         // failed transformation does not get the realm's own freedom from food,
@@ -12882,16 +13419,24 @@ ${fit.line}`;
     ): number {
         const multiplier = satietyBurnMultiplier(cultivator.realmOrdinal, cultivator.injuries);
         if (multiplier <= 0) return 0;
-        const perRation = Math.max(1, Math.floor(ACTIONS_PER_FULL_SATIETY / multiplier));
-        // Only the shortfall. The belly covers the first stretch on its own,
-        // and opening a ration to cover days already paid for wastes food the
-        // player bought deliberately.
-        const bellyCovers = Math.floor(cultivator.satiety / (SATIETY_COST_PER_ACTION * multiplier));
-        const wanted = Math.ceil(Math.max(0, days - bellyCovers) / perRation);
+        void days;
         const held = this.rationsHeld(cultivator);
-        const taken = Math.max(0, Math.min(wanted, held));
-        if (taken > 0) this.setRationsHeld(cultivator, held - taken);
-        return taken;
+        if (held > 0) this.setRationsHeld(cultivator, 0);
+        return held;
+    }
+
+    /**
+     * The other half of `drawFromPack`: what the stretch did not open.
+     *
+     * MUST BE CALLED AFTER EVERY `drawFromPack`, because that one empties the
+     * pack. Every caller pairs them across one `simulateTimeSkip`.
+     */
+    putBackWhatWasNotEaten(
+        cultivator: Pick<Cultivator, 'id'>,
+        skip: { endState: { rationsRemaining: number } }
+    ): void {
+        const left = Math.max(0, Math.floor(skip.endState.rationsRemaining));
+        this.setRationsHeld(cultivator, this.rationsHeld(cultivator) + left);
     }
 
     private setRationsHeld(cultivator: Pick<Cultivator, 'id'>, held: number): void {
@@ -13550,16 +14095,27 @@ ${fit.line}`;
     /**
      * Write down the faces a life like this grew up around.
      */
+    /**
+     * Seed the faces, and HAND BACK WHO THEY WERE.
+     *
+     * It returned nothing until the opening needed to say their names. The
+     * recap could have read them off the knowledge table instead, but the table
+     * is not the same question: it holds everything this cultivator has ever
+     * been told about anybody, and at turn 0 that happens to be only these. A
+     * reader answering "who did a childhood leave behind" with "whoever is in
+     * the table" is right by accident and stops being right on turn 1.
+     */
     private async seedTheFacesFromHome(
         cultivator: Cultivator,
         origin: OriginTierKey,
         seed: string
-    ): Promise<void> {
+    ): Promise<FaceFromHome[]> {
         const world = await this.loadWorld();
-        if (!world) return;
+        if (!world) return [];
         this.atHand = world;
 
-        for (const face of facesFromHome({ world, cultivator, origin, seed })) {
+        const faces = facesFromHome({ world, cultivator, origin, seed });
+        for (const face of faces) {
             this.knowledge.learnIfNew({
                 holderId: cultivator.id,
                 kind: 'cultivator',
@@ -13573,6 +14129,7 @@ ${fit.line}`;
                 confidence: 1
             });
         }
+        return faces;
     }
 
     company(cultivator: Cultivator): Company {
@@ -14472,7 +15029,8 @@ ${fit.line}`;
         const question = whatSomebodyHereWouldAsk({
             askedFor: query,
             ...asking,
-            likeness: matchScore
+            likeness: matchScore,
+            closeEnough: WORTH_OFFERING
         });
         if (question.offered.length > 0) {
             return { said: question.said, offeredAName: true };
@@ -14613,7 +15171,6 @@ ${fit.line}`;
      * Who is actually holding something against this cultivator, derived.
      */
     private whoIsHuntingThisCultivator(cultivator: Cultivator): string[] {
-        const npcs = this.atHand?.npcs ?? [];
         return [...whatTheWorldHoldsAbout({
             db: this.db as unknown as ObligationDb,
             person: {
@@ -14626,34 +15183,45 @@ ${fit.line}`;
                     ? 'none'
                     : cultivator.sectRank ? 'backed' : 'unclaimable'
             },
-            lookUpHolder: id => {
-                const npc = npcs.find(row => row.id === id);
-                if (npc) {
-                    return {
-                        id: npc.id,
-                        name: npc.name,
-                        ordinal: npc.cultivation.realmOrdinal,
-                        houseId: npc.factionId
-                    };
-                }
-                const row = this.repos.cultivators.getById(id);
-                if (row) {
-                    return {
-                        id: row.id,
-                        name: row.name,
-                        ordinal: row.realmOrdinal,
-                        houseId: row.sectId ?? null
-                    };
-                }
-                const house = this.repos.sects.getById(id);
-                // A house is a holder like any other and has a rung: whoever
-                // answers for it. Without this every institutional account read
-                // as a holder nobody could place and was silently dropped.
-                return house
-                    ? { id: house.id, name: house.name, ordinal: house.powerOrdinal, houseId: house.id }
-                    : null;
-            }
+            lookUpHolder: id => this.whoHoldsAnAccount(id)
         }).feuds];
+    }
+
+    /**
+     * Who an id on the ledger actually is, for anybody reading a record.
+     *
+     * Lifted out of `whoIsHuntingThisCultivator` when the standing read became
+     * the second caller. One answer to "who is this holder", for the same
+     * reason `whatSomebodyHereWouldAsk` takes its matcher from its caller: two
+     * readers of one ledger that disagree about who a row belongs to would
+     * report two different worlds off the same rows.
+     */
+    private whoHoldsAnAccount(id: string): AHolder | null {
+        const npc = (this.atHand?.npcs ?? []).find(row => row.id === id);
+        if (npc) {
+            return {
+                id: npc.id,
+                name: npc.name,
+                ordinal: npc.cultivation.realmOrdinal,
+                houseId: npc.factionId
+            };
+        }
+        const row = this.repos.cultivators.getById(id);
+        if (row) {
+            return {
+                id: row.id,
+                name: row.name,
+                ordinal: row.realmOrdinal,
+                houseId: row.sectId ?? null
+            };
+        }
+        const house = this.repos.sects.getById(id);
+        // A house is a holder like any other and has a rung: whoever answers
+        // for it. Without this every institutional account read as a holder
+        // nobody could place and was silently dropped.
+        return house
+            ? { id: house.id, name: house.name, ordinal: house.powerOrdinal, houseId: house.id }
+            : null;
     }
 
     private stateView(run: Run, cultivator: Cultivator): StateView {

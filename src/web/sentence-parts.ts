@@ -377,6 +377,36 @@ export function matchIntent(text: string, table: ReadonlyArray<[string, RegExp]>
     return undefined;
 }
 
+/**
+ * The object of one of `verbs`, out of the sentence it was used in.
+ *
+ * ── AND SOMETIMES THE NOUN COMES FIRST ───────────────────────────────────
+ *
+ * FOUND BY PLAYING BLIND. Standing over a freshly gathered mushroom:
+ *
+ *     > what is this worth
+ *     What is nearest to hand, of 43 things on offer:
+ *       Bowl of millet, 1 cash each. ...
+ *
+ * Forty-three lines of ferry fares and inn beds, in answer to a question about
+ * the one thing in the player's own pouch - which the engine had priced twice
+ * on the two screens either side of that one.
+ *
+ * The routing was right all along: `verb-pattern-table.ts` reads every one of
+ * those phrasings and sends them to `sell`, whose free read is the market. What
+ * went missing was the NOUN. This looked for the object AFTER the marker word,
+ * and English puts it before in the commonest shape there is - *what is my
+ * sword worth*, *what are my herbs worth*, *what would the manual fetch*. The
+ * branch's own comment names "what is my sword worth" as a sentence it handles,
+ * and the name was being dropped on the floor one function later.
+ *
+ * So when nothing follows the marker, look in front of it, with the reader
+ * already written for a stand-in object. A bare demonstrative still resolves to
+ * nothing - "what is this worth" carries no name, and a back-reference is phase
+ * one's to settle rather than this tier's.
+ *
+ * Strictly a widening: it runs only where this returned `undefined`.
+ */
 export function extractSubject(input: string, verbs: RegExp): string | undefined {
     const afterVerb = new RegExp(
         `\\b(?:${verbs.source})\\b\\s*(?:the|a|an|for|into|at|with|about|to|on|through|around)?\\s+(.{2,80}?)\\s*[.!?]?$`,
@@ -390,7 +420,7 @@ export function extractSubject(input: string, verbs: RegExp): string | undefined
         }
         return got;
     }
-    return extractTarget(input);
+    return extractTarget(input) ?? whatWasNamedEarlier(input, verbs);
 }
 
 /**

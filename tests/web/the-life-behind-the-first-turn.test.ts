@@ -56,7 +56,12 @@ const birth = (over: Partial<{
     knowledge: over.knowledge ?? [known('Azure Dew Sect')]
 }) as never;
 
-const said = (over = {}) => theLifeBehindTheFirstTurn(birth(over), 16).join(' ');
+/** What the narrator is handed: everything, including what nobody will say. */
+const said = (over = {}) => theLifeBehindTheFirstTurn(birth(over), 16).forTheNarrator.join(' ');
+
+/** What the ENGINE files where the player reads it. */
+const told = (over = {}, faces: { name: string; sourceNote: string }[] = []) =>
+    theLifeBehindTheFirstTurn(birth(over), 16, faces).toldToThePlayer.join(' ');
 
 describe('the life behind the first turn', () => {
     it('says the years, the ground, and what they came out of', () => {
@@ -136,6 +141,83 @@ describe('the life behind the first turn', () => {
         // rather than putting it in somebody's mouth.
         expect(life).toMatch(/carrying the debt for it/);
         expect(life).toMatch(/nobody here is going to tell them/);
+    });
+
+    /**
+     * AND THE ENGINE NOW PRINTS THIS, WHICH MAKES THE ABOVE LOAD BEARING.
+     *
+     * The debt was written for a narrator under orders never to say it, and
+     * being unsayable was the whole of its protection. The recap is filed to the
+     * player directly now, so "the narrator will not repeat it" stopped being a
+     * guarantee and became a hope. It is a field on the row instead.
+     */
+    it('keeps the debt off the channel the player reads', () => {
+        const over = {
+            raisedInside: {
+                house: { name: 'Azure Cloud Pavilion' },
+                onTheRoll: 'by taking',
+                stillToClear: [],
+                somebodyIsOwedForIt: true
+            }
+        };
+        expect(said(over)).toMatch(/carrying the debt for it/);
+        expect(told(over)).not.toMatch(/debt/i);
+        expect(told(over)).not.toMatch(/spent a word/i);
+        // And the rest of that same birth still reaches them: this hides one
+        // fact, it does not hide the house.
+        expect(told(over)).toMatch(/on its roll because it took them in/);
+    });
+
+    /**
+     * THE NAMES AT THE BOTTOM OF THE SCREEN BELONG TO SOMEBODY.
+     *
+     * FOUND BY PLAYING. The opening offered *"I ask Han Ronglu to teach me"* and
+     * *"I look at Mo Wanming"* over a run that had introduced neither. The recap
+     * read `birth.knowledge`, which is places and houses; the PEOPLE a childhood
+     * leaves are drawn by `who-a-life-like-this-grew-up-knowing.ts` into a
+     * different table, and were never said. The design owner: *"it needs to
+     * explain these names at the bottom otherwise a new player is very
+     * confused."*
+     */
+    it('names the people a childhood left behind, and how they are known', () => {
+        const faces = [
+            { name: 'Han Ronglu', sourceNote: 'Grew up on the same road.' },
+            { name: 'Mo Wanming', sourceNote: 'One of the faces that was always at the well.' }
+        ];
+        const life = told({}, faces);
+        expect(life).toContain('Han Ronglu');
+        expect(life).toContain('Grew up on the same road.');
+        expect(life).toContain('Mo Wanming');
+        expect(life).toContain('One of the faces that was always at the well.');
+        // Acquaintance and nothing else. The module that draws them grants no
+        // favour, and an opening that implied one would be handing over the
+        // thing the player is supposed to go and earn.
+        expect(life).toMatch(/not the same as being owed anything by them/);
+    });
+
+    it('says nothing about people when a childhood left nobody', () => {
+        // The faces are drawn against a world, and there is not always one -
+        // `seedTheFacesFromHome` answers with none when no world is loaded. A
+        // heading with an empty list under it is the engine promising names it
+        // does not have.
+        expect(told({}, [])).not.toMatch(/People they can already put a name to/);
+    });
+
+    /**
+     * TWO CHANNELS, ONE SET OF ROWS. The player's account may drop a fact and
+     * may word one differently; it may never contain a fact the narrator was
+     * not also given, because then the engine has told the player something it
+     * is prepared to let a model contradict.
+     */
+    it('never tells the player something the narrator was not told', () => {
+        const both = theLifeBehindTheFirstTurn(birth({
+            house: {
+                id: 'sect-azure-dew', name: 'Azure Dew Sect',
+                powerOrdinal: 21, admissionOrdinal: 2, recruits: true, regionId: 'r'
+            }
+        }), 16, [{ name: 'Han Ronglu', sourceNote: 'Grew up on the same road.' }]);
+        expect(both.toldToThePlayer.length).toBeLessThanOrEqual(both.forTheNarrator.length);
+        expect(both.toldToThePlayer.length).toBeGreaterThan(0);
     });
 
     it('separates belonging to a house from being admitted to one', () => {

@@ -24,6 +24,20 @@ import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 export const MAX_LOGGED_EVENTS = 40;
 
 /**
+ * The head of a line that is for the record rather than for the player.
+ *
+ * `lines` is two audiences at once - it is what a narrator may know, and
+ * `fromToolResult` builds the operator's call summary out of it - and `prose`
+ * is what somebody with no model configured actually reads. A raw die roll
+ * belongs to the first two and to neither of the readers in the third.
+ *
+ * A prefix rather than a second array, because every producer in this file
+ * pushes onto one list and a parallel one would drift out of order with it.
+ * `fromToolResult` is the single reader that acts on it.
+ */
+export const ONLY_FOR_AN_OPERATOR = 'Roll: ';
+
+/**
  * A structure line, with the name of the function that produced it taken off.
  */
 const A_HANDLER_NAME_AT_THE_FRONT = /^[a-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+:\s*/;
@@ -292,9 +306,24 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         pushNote(lines, body.note);
     }
 
+    // ── THE ODDS IN WORDS, AND THE DIE WHERE THE DIE BELONGS ─────────────
+    //
+    // This was `Odds were ${finalChancePercent}%, rolled ${roll}.` - and
+    // `finalChancePercent` is `round2(chance * 100)`, so a player refining a
+    // pill read *"Odds were 42.86%, rolled 0.3172."* Two decimal places of a
+    // percentage is the spurious precision this repo bans in a player's face,
+    // and the roll is a fact about the random stream rather than about
+    // anything in the world. Same defect as the crossing's own account, one
+    // verb over: see `withoutTheMarkingScheme` in `facts.ts`.
+    //
+    // Split rather than deleted. The odds stay, in the idiom this engine
+    // already speaks them in; the roll goes onto its own line, which
+    // `fromToolResult` keeps for the narrator and the operator and holds out
+    // of the prose a player reads. Nothing is lost from the mechanical record.
     const odds = body.odds as { finalChancePercent?: number; roll?: number } | undefined;
     if (odds && typeof odds.finalChancePercent === 'number') {
-        lines.push(`Odds were ${odds.finalChancePercent}%, rolled ${odds.roll ?? 'unrecorded'}.`);
+        lines.push(`It stood at ${Math.round(odds.finalChancePercent)} in a hundred.`);
+        if (typeof odds.roll === 'number') lines.push(`${ONLY_FOR_AN_OPERATOR}${odds.roll}.`);
     }
 
     const produced = body.produced as { name?: string; effect?: string } | null | undefined;

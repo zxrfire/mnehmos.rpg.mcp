@@ -307,6 +307,18 @@ house, a ground, a household, a relationship - hand them over and let the narrat
 synthesise. Writing the prose into the engine is the same defect as reciting a rubric,
 reached from the pleasant direction.
 
+**Look for the answer before writing one.** When a mechanic reads badly, the reader for
+it usually already exists, is already tested, and has no sentence pointing at it. One
+blind sweep found four in a row: `assessProvisioning` warned about a span that would
+starve you and had no caller outside its own test; `whereThisFightStands` printed the
+footer under every round and could not be asked; `whatTheWorldHoldsAbout` answered what
+the world holds about a person and was wired for everybody but the player;
+`describeFoundation` said what your foundation costs you and was reachable only in the
+instant it was laid. So the first move on a bad read is to grep for the function that
+would answer it - not to design one. `scripts/find-unwired-exports.mjs` is the standing
+version of that search, and the plan's workstream U calls this shape by name: a write
+side that shipped and a read side that did not.
+
 ---
 
 # Where everything lives

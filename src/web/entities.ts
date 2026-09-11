@@ -176,6 +176,33 @@ function normalise(value: string): string {
 }
 
 /**
+ * Words long enough to count and empty enough not to.
+ *
+ * FOUND BY PLAYING BLIND. `i use the flame palm` was answered by the man in the
+ * square offering two things it could be: *"Nine Abyss Flame Sect?" they say.
+ * "Or The Abbot."* The first shares `flame` and is a fair offer. The second
+ * shares `the`.
+ *
+ * The shared-word rule below counts any word over two letters, and `the` is
+ * three. So every name in the world beginning with an article was a candidate
+ * for every sentence containing one - at 30, the same score a genuinely shared
+ * distinctive word earns. A guard testing typography rather than meaning, which
+ * `matchScore` has already been caught doing once: see the note about `it`
+ * inside `B-it-ter` two rules up.
+ *
+ * Kept tight on purpose. These are the words that appear INSIDE names in this
+ * world's catalogs and carry no identity when they do; anything that narrows a
+ * name stays in.
+ */
+const CARRIES_NO_NAME: ReadonlySet<string> = new Set([
+    'the', 'and', 'for', 'with', 'from', 'into', 'that', 'this', 'what', 'who',
+    'you', 'your', 'his', 'her', 'its', 'their', 'them', 'there', 'here'
+]);
+
+/** The lowest score worth putting to somebody as a thing they might have meant. */
+export const WORTH_OFFERING = 30;
+
+/**
  * Score a candidate name against what the player typed.
  */
 export function matchScore(query: string, candidate: string): number {
@@ -197,8 +224,11 @@ export function matchScore(query: string, candidate: string): number {
         if (Math.min(q.length, c.length) > 2 && (c.includes(q) || q.includes(c))) return 60;
     }
 
-    const qWords = new Set(q.split(' ').filter(w => w.length > 2));
-    const cWords = c.split(' ').filter(w => w.length > 2);
+    // See `CARRIES_NO_NAME`: long enough to count is not the same as carrying
+    // any of the name, and a shared `the` was scoring as high as a shared name.
+    const tells = (w: string): boolean => w.length > 2 && !CARRIES_NO_NAME.has(w);
+    const qWords = new Set(q.split(' ').filter(tells));
+    const cWords = c.split(' ').filter(tells);
     const shared = cWords.filter(w => qWords.has(w)).length;
     if (shared === 0) return 0;
     return 20 + shared * 10;

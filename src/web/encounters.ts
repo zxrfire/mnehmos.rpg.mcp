@@ -2,7 +2,7 @@
  * The turn loop's adapter onto `src/engine/encounters/`.
  */
 
-import { writeOneObligation } from '../storage/repos/obligation.repo.js';
+import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
 import {
     rollEncounters,
     arrivableFromUnheard,
@@ -732,10 +732,102 @@ export interface DutyLedgerInput {
     duty: Duty;
     /** Absolute day. `Math.floor(run.elapsedDays)`. */
     onDay: number;
+    /**
+     * The day the oath row was WRITTEN, when that is not `onDay`.
+     *
+     * FOUND BY PLAYING BLIND, and it poisoned the ledger every time a duty was
+     * finished. An obligation's id is derived by `createObligation` from
+     * `stableId(kind, holder, subject, cause, onDay, ...)` - the DAY is part of
+     * it - and `completeDuty` re-derived the oath from the settlement day while
+     * `acceptDuty` had written it on the acceptance day. Two different ids, so
+     * the settled row was a SECOND row and the accepted one was never touched:
+     *
+     *     > I put my name down for A Culling Notice Written From an Old Survey
+     *     Completed. 94 spirit stones paid.
+     *
+     *     > what oaths do i have
+     *     Owed by you to unaffiliated: service term... Due on day 20, which is
+     *     already past.
+     *
+     * Paid in full and overdue on the same run. Every duty a player has ever
+     * finished left one of these behind, and the oath read is the screen the
+     * whole social engine is read through.
+     *
+     * So the settlement carries the day the row was written and settles THAT
+     * row. Optional because a caller settling on the day it accepted is already
+     * correct without it.
+     */
+    acceptedOnDay?: number;
     /** Catalog row this duty was read off, for the description. */
     entryId: string;
     /** What the situation was, factually. Usually the occurrence summary. */
     what: string;
+}
+
+/**
+ * The word already given for this posting, when there is one.
+ *
+ * A term broken off before its days were served leaves its oath OPEN - see
+ * `aTermCutShort` in `turn-engine.ts` - and the way to close it is to take the
+ * posting up again. That second acceptance has to land on the SAME row: an
+ * obligation's id is derived from the day it was sworn, so accepting afresh
+ * would open a second word for one posting and settling would close only the
+ * newer of them. Which is the defect `acceptedOnDay` was written for, arriving
+ * by a different road.
+ *
+ * So a resumption is swearing the same word again rather than a new one, and
+ * the due day stays the day it was always due.
+ */
+export function aStandingDutyOath(
+    repos: DutyLedgerInput['repos'],
+    cultivatorId: string,
+    entryId: string
+): ObligationRecord | null {
+    const held = ledgerAbout(repos.db as unknown as DatabaseHandle, cultivatorId);
+    return held.find(row =>
+        row.kind === 'oath'
+        && row.status === 'open'
+        && row.holderId === cultivatorId
+        && row.tags.includes('duty')
+        && row.tags.includes(entryId)) ?? null;
+}
+
+/** The tag prefix days already served are written under. See `daysServedOn`. */
+const SERVED = 'served:';
+
+/**
+ * Days of this term already behind the cultivator.
+ *
+ * A term is interrupted for reasons that are not the player walking off - a
+ * person arriving, news reaching them, and above all the provisions warning,
+ * which `time-skip.ts` fires DELIBERATELY so that *"the skip must not be the one
+ * place a player dies without a decision."* Losing fifty days of a sixty-day
+ * escort to the engine being helpful is not a cost anybody agreed to, so what
+ * was served is kept and a resumption serves the remainder.
+ *
+ * Written on the oath's own tag list, which `grudges.ts` calls *"free handles
+ * for querying"* and which already carries `duty`, the origin and the catalog
+ * row. No new column, and the number travels with the word it belongs to.
+ */
+export function daysServedOn(record: ObligationRecord): number {
+    const tag = record.tags.find(t => t.startsWith(SERVED));
+    const n = tag ? Number.parseInt(tag.slice(SERVED.length), 10) : 0;
+    return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** Write what has been served so far onto the standing word. */
+export function recordDaysServed(
+    repos: DutyLedgerInput['repos'],
+    record: ObligationRecord,
+    served: number
+): ObligationRecord {
+    const kept = record.tags.filter(t => !t.startsWith(SERVED));
+    const updated: ObligationRecord = {
+        ...record,
+        tags: [...kept, `${SERVED}${Math.max(0, Math.floor(served))}`]
+    };
+    writeOneObligation(repos.db as unknown as DatabaseHandle, updated);
+    return updated;
 }
 
 /**
@@ -771,14 +863,21 @@ export interface DutySettlementResult {
  */
 export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
     const { duty, cultivator, repos } = input;
+    // THE DAY THE ROW WAS WRITTEN, NOT THE DAY IT IS BEING CLOSED. The id is
+    // derived from it. See `acceptedOnDay`.
+    const acceptedOn = input.acceptedOnDay ?? input.onDay;
     const oath = createOath({
         holderId: cultivator.id,
         subjectId: duty.factionId ?? 'unaffiliated',
         cause: duty.origin === 'summons' ? 'sect_vow' : 'service_term',
         severity: duty.refusal.severity,
-        onDay: input.onDay,
-        description: `${input.what} Accepted on day ${input.onDay}.`,
-        terms: null,
+        onDay: acceptedOn,
+        description: `${input.what} Accepted on day ${acceptedOn}.`,
+        // AND THE TERMS, WHICH `acceptDuty` WROTE AND THIS DROPPED. A settled
+        // row with `terms: null` is a row that cannot say what was agreed, and
+        // the oath read prints the terms verbatim.
+        terms: `${duty.days} days. Paid on completion: `
+            + `${duty.contribution} contribution, ${duty.stones} spirit stones.`,
         dueOnDay: duty.dueOnDay,
         tags: ['duty', duty.origin, input.entryId]
     });

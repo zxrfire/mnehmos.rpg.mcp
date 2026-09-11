@@ -366,6 +366,7 @@ export const travelVerbs = {
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
+        this.putBackWhatWasNotEaten(cultivator, skip);
         const applied = applyTimeSkip(this.repos, {
             before: cultivator, run, skip, location: arrivedAt
         });
@@ -601,6 +602,7 @@ export const travelVerbs = {
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
+        this.putBackWhatWasNotEaten(cultivator, skip);
         const applied = applyTimeSkip(this.repos, {
             before: cultivator, run, skip, location: arrivedAt
         });

@@ -363,6 +363,7 @@ export const siteVerbs = {
             ...daoHeartConditions(this.repos.db, afterGoods, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, afterGoods)
         });
+        this.putBackWhatWasNotEaten(afterGoods, skip);
         const applied = applyTimeSkip(this.repos, { before: afterGoods, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 
@@ -555,6 +556,7 @@ export const siteVerbs = {
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
+        this.putBackWhatWasNotEaten(cultivator, skip);
         const applied = applyTimeSkip(this.repos, { before: cultivator, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const spentLine =

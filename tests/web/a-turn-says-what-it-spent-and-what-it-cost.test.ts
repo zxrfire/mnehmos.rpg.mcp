@@ -209,7 +209,22 @@ describe('a duty runs under the words a person uses for it', () => {
             expect(offered, 'the board has exactly one line at ordinal 0').toBeTruthy();
             const before = h.game.state();
 
-            const { narration } = await h.game.act(said);
+            let { narration } = await h.game.act(said);
+
+            // AND THE TERM IS TAKEN UP AGAIN IF SOMETHING CUT IT, which is the
+            // finding rather than an accommodation. `I take a duty` on this
+            // seed is interrupted on day 15 of 20 - *"It ran 15 days and not 20
+            // days. Something was already on its way"* - and this used to be
+            // paid in full for it, because being alive was the only gate on
+            // `completeDuty`. A term cut short is not a term, it keeps the days
+            // it served, and the posting is still on the wall: see
+            // `a-term-cut-short-is-not-a-term.test.ts`. So the loop this test
+            // measures now takes two turns on the unlucky seeds and one on the
+            // rest, and it is the SAME loop.
+            if (!/completed/i.test(narration)) {
+                expect(narration, 'a term cut short says so').toMatch(/broken off/i);
+                narration = (await h.game.act(said)).narration;
+            }
 
             const after = h.game.state();
             expect(after.run.elapsedDays, `${said} spent the days`)

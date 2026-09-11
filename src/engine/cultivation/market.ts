@@ -100,7 +100,7 @@ export function quoteSale(input: SaleInput): SaleQuote {
         offeredStones,
         perUnitStones: quantity > 0 ? (grossStones * offeredFraction) / quantity : 0,
         regard,
-        line: describeSale(quantity, grossStones, offeredStones, offeredFraction, regard)
+        line: describeSale(quantity, grossStones, offeredStones, regard)
     };
 }
 
@@ -108,7 +108,6 @@ function describeSale(
     quantity: number,
     grossStones: number,
     offeredStones: number,
-    fraction: number,
     regard: Regard
 ): string {
     if (quantity === 0) return 'Nothing was put on the counter.';
@@ -117,15 +116,37 @@ function describeSale(
             'survives a buyer\'s margin to be worth counting out. Nobody is being unfair; it is ' +
             'simply not much.';
     }
-    const pct = Math.round(fraction * 100);
     const posture =
         regard.priceMultiplier > 1
             ? 'The counter can see this is worth more than the person holding it, and prices that in.'
             : regard.priceMultiplier < 1
                 ? 'Nobody haggles at this counter, and the terms adjust without being asked.'
                 : 'Ordinary terms.';
-    return `${quantity} sold at ${pct} of what it is worth: ${offeredStones} spirit stone` +
-        `${offeredStones === 1 ? '' : 's'} against a list of ${round1(grossStones)}. ${posture}`;
+    // ── TWO THINGS WRONG WITH THIS LINE, BOTH FOUND BY PLAYING BLIND ─────
+    //
+    //     Cloudcap Mushroom: 1 sold at 60 of what it is worth: 4 spirit
+    //     stones against a list of 7.2. Ordinary terms.
+    //
+    // A BARE PERCENTAGE WITH ITS SIGN MISSING. `Math.round(fraction * 100)`
+    // went into the sentence as `60`, so the line read "sold at 60 of what it
+    // is worth". Adding the sign is not the fix: a raw percentage in a player's
+    // prose is the engine reading its own rubric out loud, and the two stone
+    // figures already say everything it said.
+    //
+    // AND `grossStones` IS NOT A LIST. The field beside it says so - `listStones`
+    // is *"list value of one unit, before anything is applied"*, and this is
+    // list x quantity x the PROVINCE'S multiplier. Calling it a list is how one
+    // mushroom came to be worth two different amounts on two screens: it was
+    // pouched at *"worth about 8 spirit stones"*, the catalog's own figure, and
+    // then quoted against "a list of 7.2", which is this province's. Neither
+    // number was wrong and nothing said whose either one was.
+    //
+    // So the counter's figure is attributed to the counter, which is the same
+    // answer `buyProvisions` reached for the stale-purse line: both readings
+    // hold at once when the sentence says which moment and whose it is.
+    return `${quantity} sold for ${offeredStones} spirit stone` +
+        `${offeredStones === 1 ? '' : 's'}. This counter reckons the lot at ` +
+        `${round1(grossStones)}, and the rest of it is the counter's. ${posture}`;
 }
 
 function round1(n: number): number {

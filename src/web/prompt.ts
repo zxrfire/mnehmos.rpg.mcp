@@ -1226,6 +1226,8 @@ export function composeNarrationUser(
         playerSaid?: string | null;
         /** Who is standing here. See `describeTheRoom` for the played defect. */
         company?: Company | null;
+        /** The sixteen years before turn 0, to be written rather than summarised. */
+        theLifeBehindThem?: readonly string[];
     },
     /**
      * WHETHER THE AMBIENT READING IS NEW INFORMATION.
@@ -1313,6 +1315,7 @@ export function composeNarrationUser(
             ? nameable.map(name => `- ${name}`)
             : ['- (none; this cultivator has heard of nobody and nowhere but where they stand)']),
         '',
+        ...theLifeBehindThemBlock(scene.theLifeBehindThem ?? []),
         'WHAT THE ENGINE RULED - these are all the facts there are:',
         ...facts.lines.map(line => `- ${line}`),
         '',
@@ -1362,13 +1365,84 @@ export function composeNarrationUser(
         'A sentence the engine could not read is the one case that ends in nothing, and it',
         'arrives already saying so. You will not have to invent that one.',
         '',
-        'Write two or three short paragraphs of second-person narration of exactly the above.',
+        scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0
+            // The opening carries a life AND a scene, and a flat "two or three short
+            // paragraphs" here is the instruction that ate the childhood in the first
+            // place: it is the last thing the model reads before it writes.
+            ? 'Write the opening described above - the years, then the scene - as '
+              + 'second-person narration of exactly the facts given. Add no outcome that is '
+              + 'not listed. Soften nothing that is. Name nothing that is not permitted '
+              + 'above; if something acted and the player cannot name it, write the effect '
+              + 'and leave the cause unnamed. Explain no mechanism, rate, rank '
+              + 'correspondence or chain of command: the facts above are what was '
+              + 'perceived, and the structure behind them is not yours to supply.'
+            : 'Write two or three short paragraphs of second-person narration of exactly the above.',
         'Add no outcome that is not listed. Soften nothing that is. Name nothing that is not',
         'permitted above; if something acted and the player cannot name it, write the effect',
         'and leave the cause unnamed. Explain no mechanism, rate, rank correspondence or',
         'chain of command: the facts above are what was perceived, and the structure behind',
         'them is not yours to supply.'
     ].join('\n');
+}
+
+/**
+ * THE ONE TURN WITH SIXTEEN YEARS BEHIND IT.
+ *
+ * ── WHAT WENT WRONG, TWICE, IN OPPOSITE DIRECTIONS ───────────────────────
+ *
+ * The recap was composed at birth and unshifted onto `facts.lines`, which is to
+ * say handed to a model that is asked, at the bottom of this same prompt, for
+ * *"two or three short paragraphs"*. Measured with ollama narrating, the whole
+ * of turn 0 came back as the square: *"Nine Peaks. [...] Mo Wanming is here and
+ * has not looked up. [...] It is an ordinary day and it intends to stay one."*
+ * Sixteen years, three people and every name the player held, dropped, because
+ * the facts nearest the end of a long list are the ones a small model writes.
+ *
+ * The first cut of this block over-corrected: the engine filed the recap as a
+ * ruling and this block told the narrator it was already on screen and not to
+ * retell it. That makes the player's first contact with their own life a
+ * bulleted record, which is the engine writing the opening. The design owner:
+ * *"the LLM should be doing that"*, *"write as xianxia"*, *"prompt it as
+ * needed."*
+ *
+ * ── SO BOTH CHANNELS CARRY IT, AND THEY ARE NOT THE SAME THING ───────────
+ *
+ * The engine files the facts as a ruling, which is what makes them survivable -
+ * a model that times out, gets discarded, or is not configured at all cannot
+ * cost a player their own past. This block asks for the other half: the same
+ * sixteen years as a life someone lived. That is exactly the division the log
+ * already runs on, where a ruling and a narration sit next to each other and
+ * the ruling is the one that happened.
+ *
+ * The vocabulary this asks for is in `docs/world/writing/tone.md` under *the
+ * words this world uses for itself*, which is tier 1 and already in the system
+ * prompt above.
+ */
+function theLifeBehindThemBlock(life: readonly string[]): string[] {
+    if (life.length === 0) return [];
+    return [
+        'THE LIFE BEHIND THIS CULTIVATOR. This is the first turn of the run, and it is the',
+        'only one with sixteen years behind it. OPEN BY WRITING THOSE YEARS, and then bring',
+        'them to where they are standing now. This is not optional and it is not a summary:',
+        'it is the only account of their own past the player will be given in your voice,',
+        'and a narration that skips to the scene has started the story with a stranger.',
+        '',
+        'Write it as the genre writes a childhood - the household, what the ground they grew',
+        'up on gave them, whose name their family stands behind, what they were left holding,',
+        'what they have been told about the world and who told them, and the faces they have',
+        'known since before either of them was anybody. Use the vocabulary this world uses',
+        'for itself. Plain sentences, the genre\'s own nouns, no grandeur the facts do not',
+        'carry, and no invented mother, sibling, master, parting or promise: every person and',
+        'every event you may use is in the list below and nowhere else.',
+        '',
+        'Then the present, which is the scene you would ordinarily write. Because this turn',
+        'carries both, it runs longer than a turn normally does: four or five short',
+        'paragraphs, of which the last is where they are standing.',
+        '',
+        'The years themselves:',
+        ...life.map(line => `- ${line}`),
+        ''
+    ];
 }
 
 /**

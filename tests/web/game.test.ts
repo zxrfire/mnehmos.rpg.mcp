@@ -87,17 +87,31 @@ describe('character creation', () => {
         await game.newRun('Lin Que');
         const state = game.state();
 
-        // TWO engine lines now. The first says which of the two ways of playing
-        // this session is in, and it is said in both directions on purpose: a
-        // line that only appears when a key is missing is an apology, and the
-        // harness has no provider, so what it reads is the local one. The
-        // status bar's "(not configured)" describes an absent environment
-        // variable and reads like a broken install; nothing here is broken.
+        // THREE engine lines now. The first says which of the two ways of
+        // playing this session is in, and it is said in both directions on
+        // purpose: a line that only appears when a key is missing is an
+        // apology, and the harness has no provider, so what it reads is the
+        // local one. The status bar's "(not configured)" describes an absent
+        // environment variable and reads like a broken install; nothing here is
+        // broken.
+        //
+        // The second is the sheet. The third is the sixteen years behind it,
+        // and it was two until the design owner asked for it in those words:
+        // *"WHERE IS THE RECAP OF MY LIFE TO THIS POINT? HAVE THE ENGINE RETURN
+        // IT FOR THE FIRST TURN."* It is filed on the engine's own channel
+        // rather than handed to a narrator, for the reason `newRun` gives where
+        // it writes it: a model asked for "two or three short paragraphs" and
+        // given a dozen facts writes the room and not the life.
+        //
+        // Asserted by CONTENT as well as by count, because a count alone is
+        // what went stale here: the recap shipped and this line kept saying
+        // two, and a bare number cannot say which of the three went missing.
         const engine = state.log.filter(e => e.role === 'engine');
-        expect(engine).toHaveLength(2);
+        expect(engine).toHaveLength(3);
         expect(engine[0].text).toContain('Local Mode');
         expect(engine[0].text).toContain('fully playable');
         expect(engine[1].text).toContain('Talent is rolled once and never redrawn.');
+        expect(engine[2].text, engine[2].text).toMatch(/16 years old/);
         expect(state.log.filter(e => e.role === 'narrator')).toHaveLength(1);
     });
 });

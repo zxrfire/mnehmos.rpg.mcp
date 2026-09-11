@@ -128,6 +128,7 @@ export {
 import {
     WORD_NUMBER_ALTERNATION,
     parseDuration,
+    durationAskedFor,
     parseCount,
     extractDestination,
     cleanPlace,
@@ -4471,9 +4472,29 @@ function planIntent(input: string): PlannedAction {
         // version, and routing this to `attack` would turn a practice bout into
         // a fight somebody could die in.
         || /\b(?:spar|sparring|practi[cs]e|train|drill) (?:with|against)\b/.test(text)) {
+        // ── AND THE SPAN, WHICH THIS VERB WAS THE ONLY ONE TO DROP ───────
+        //
+        // FOUND BY PLAYING BLIND, and the refusal named the player's own
+        // sentence back at them as the remedy:
+        //
+        //     > i practise Cross-Meridian Strike for 60 days
+        //     Mastery 0% to 3%.
+        //     You did not say for how long, so it came to 7 days - which is
+        //     what a stretch runs when nobody names one... Say the span and it
+        //     runs that: "I practise it for ten years".
+        //
+        // They had said the span. `cultivate` has carried `days` off the
+        // sentence since it was written and this branch never did, so every
+        // practice ran seven days whatever was asked for - and then told the
+        // player they had not asked.
+        //
+        // `durationAskedFor` is the engine's own reader of a span and is
+        // already imported by this file for the verbs that take one.
+        const span = durationAskedFor(input);
         return {
             action: 'train_technique',
-            target: extractSubject(input, /practi[cs]e|train|drill|rehearse|work on/)
+            target: extractSubject(input, /practi[cs]e|train|drill|rehearse|work on/),
+            ...(span !== null ? { days: Math.max(1, Math.round(span)) } : {})
         };
     }
 
@@ -5180,14 +5201,34 @@ function planIntent(input: string): PlannedAction {
     // holds my word" and "where is my manual" are about a thing this cultivator
     // carries and belong to other verbs entirely.
     {
-        const named = HOW_FAR_IS_SOMEWHERE.exec(text);
+        // RUN AGAINST THE RAW SENTENCE AND NOT THE LOWERCASED ONE. The pattern
+        // is case-insensitive either way, and what changes is the CAPTURE: a
+        // place read off `text` comes back as "nine peaks" and is then printed
+        // at the player in a sentence about itself. A name the player typed is
+        // echoed as they typed it.
+        const named = HOW_FAR_IS_SOMEWHERE.exec(input) ?? HOW_FAR_IS_SOMEWHERE.exec(text);
         // The capture is whichever alternative matched, so the first non-empty
         // group is the thing asked after. A pronoun there is not a place.
         const asked = named?.slice(1).find(part => typeof part === 'string' && part.length > 0);
-        if ((asked !== undefined && !A_GENERIC_THING_AND_NOT_A_PLACE.test(asked.trim()))
+        const placed = asked !== undefined && !A_GENERIC_THING_AND_NOT_A_PLACE.test(asked.trim());
+        if (placed
             || /\bhow\s+long\s+(?:would|will|does)\s+it\s+take\s+to\s+(?:get|reach|walk|travel)\b/
                 .test(text)) {
-            return { action: 'destinations' };
+            // AND THE NAME GOES WITH IT.
+            //
+            // FOUND BY PLAYING BLIND. `how far is Nine Peaks` was answered with
+            // every place the cultivator could point at - five of them, none of
+            // them Nine Peaks - and the very next sentence, `i travel to Nine
+            // Peaks`, set off on an eleven-day road. The engine knew the
+            // distance and would not say it when asked.
+            //
+            // The capture was being computed on the line above and thrown away.
+            // What a read does with a name is the read's business; this
+            // branch's job is only not to lose it.
+            return {
+                action: 'destinations',
+                ...(placed ? { target: asked!.trim() } : {})
+            };
         }
     }
 

@@ -75,6 +75,58 @@ export function sayThisWhateverTheNarratorDoes(facts: EngineFacts, said: string)
 }
 
 /**
+ * A fact the player must READ in both modes, at the top of both channels,
+ * without pinning its wording.
+ *
+ * There are two player-facing channels and they are not the same one. `lines`
+ * is what a narrator is allowed to know; `prose` is the deterministic rendering
+ * a player sees when no model is configured - which AGENTS.md calls a shipping
+ * mode outright, *"it must keep working because that is a shipping mode."* So a
+ * caller that pushes onto `lines` AFTER the facts were composed has written a
+ * fact the model can use and the engine-only player never sees at all.
+ *
+ * FOUND BY PLAYING BLIND. A duty was taken and the wage, the term, the tier and
+ * the rung it was pitched at went onto `lines` alone: the board had printed the
+ * terms, the turn that AGREED to them printed none of it, and the next thing
+ * said about money was the payment. A player without a model agreed to a
+ * contract they could not read.
+ *
+ * Use this where `sayThisWhateverTheNarratorDoes` is too strong - that one puts
+ * the sentence in `required`, which holds a narrator to the words. A term, a
+ * price or a count belongs in every channel; its PHRASING is still the
+ * narrator's.
+ *
+ * The summons path had already found this and fixed it ITS way - see *what the
+ * player reads first, and keeps* in `turn-engine.ts`, whose note records that
+ * *"the first cut of this put four sentences in `lines` alone and printed none
+ * of them."* The board path was the same slip, unnoticed.
+ */
+export function shownFirstWithNoModel(facts: EngineFacts, said: string): void {
+    facts.lines.unshift(said);
+    facts.prose = facts.prose.length > 0 ? `${said}
+
+${facts.prose}` : said;
+}
+
+/**
+ * The same, at the TOP of every channel rather than the bottom.
+ *
+ * For a fact that was true BEFORE the turn resolved and is only being written
+ * afterwards because that is when the facts object exists. A warning about what
+ * was in the pack when the duty was taken reads as an excuse if it lands under
+ * the sentence saying the duty finished; it reads as a term of the agreement if
+ * it lands above it. `sayThisWhateverTheNarratorDoes` moved it on `lines` alone
+ * the first time, and `prose` is what a player without a model actually reads.
+ */
+export function sayThisFirstWhateverTheNarratorDoes(facts: EngineFacts, said: string): void {
+    facts.lines.unshift(said);
+    facts.prose = facts.prose.length > 0 ? `${said}
+
+${facts.prose}` : said;
+    (facts.required ??= []).unshift(said);
+}
+
+/**
  * A rung, named. THE ORDINAL IS NOT SAID.
  *
  * This used to append `(ordinal N)`, and the engine log is player facing, so
@@ -495,7 +547,7 @@ export function factsForTimeSkip(
     }
 
     return {
-        headline: timeSkipHeadline(skip, before, after),
+        headline: timeSkipHeadline(skip, before, after, label),
         lines,
         structure: standingStructure(after, ambient),
         prose: timeSkipProse(before, after, skip, ambient, label, askedForDays, ceilingCutFrom),
@@ -551,11 +603,44 @@ function netChangeLine(skip: TimeSkipResult): string | null {
     return `What moved: ${moved.join(', ')}.`;
 }
 
-function timeSkipHeadline(skip: TimeSkipResult, before: Cultivator, after: Cultivator): string {
+/**
+ * NOT EVERY SPAN IS SPENT SITTING DOWN, and the headline was the last place in
+ * this file that had not learned it.
+ *
+ * FOUND BY PLAYING BLIND. `timeSkipProse` two functions down already reads the
+ * label for exactly this - *travelling*, *sentOut*, *livedWithSomebody* - and
+ * opens a duty with *"You went out to it"*. The headline, which is the overlay
+ * title and the first line of the log, called every one of them a seclusion: a
+ * sixty-day escort for a house ended with *"2 months of seclusion, and nothing
+ * came for you"*, and an interrupted one with *"Seclusion broken."*
+ *
+ * The same test the prose uses, so the two cannot drift: one reader for the
+ * label, and a span that is not a sitting is not described as one.
+ */
+function timeSkipHeadline(
+    skip: TimeSkipResult,
+    before: Cultivator,
+    after: Cultivator,
+    label: string
+): string {
     if (skip.died) return `${before.name} did not come out of it.`;
     if (skip.deltas.realmOrdinal > 0) return `${rankName(before.realmOrdinal)} to ${rankName(after.realmOrdinal)}.`;
-    if (skip.interrupted) return `Seclusion broken after ${humanDays(skip.simulatedDays)}.`;
-    return `${humanDays(skip.simulatedDays)} of seclusion, and nothing came for you.`;
+    const sitting = !aSpanSpentOnItsFeet(label);
+    if (skip.interrupted) {
+        return sitting
+            ? `Seclusion broken after ${humanDays(skip.simulatedDays)}.`
+            : `Broken off after ${humanDays(skip.simulatedDays)}.`;
+    }
+    return sitting
+        ? `${humanDays(skip.simulatedDays)} of seclusion, and nothing came for you.`
+        : `${humanDays(skip.simulatedDays)} of it, and nothing came for you.`;
+}
+
+/** A road, a posting, or a household. Anything but sitting down to breathe. */
+function aSpanSpentOnItsFeet(label: string): boolean {
+    return /travel|journey|road|walk/i.test(label)
+        || /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label)
+        || /rais(?:e|ing)|child|marriage|household/i.test(label);
 }
 
 /**
@@ -575,6 +660,8 @@ function timeSkipProse(
     const where = placeName(before);
 
     // NOT EVERY SPAN IS SPENT SITTING DOWN.
+    // The three tests `aSpanSpentOnItsFeet` is the union of. Kept separate
+    // here because each picks a different opening sentence.
     const travelling = /travel|journey|road|walk/i.test(label);
     const sentOut = /dut(?:y|ies)|commission|assignment|errand|mission|task|work|labour/i.test(label);
     const livedWithSomebody = /rais(?:e|ing)|child|marriage|household/i.test(label);
@@ -650,7 +737,14 @@ function timeSkipProse(
         paragraphs.push(beats.join('\n'));
     }
 
-    if (skip.interrupted && !skip.died) {
+    // AND ONLY WHEN DAYS WERE ACTUALLY LOST.
+    //
+    // FOUND BY PLAYING BLIND: *"You came out early. 2 months of the 2 months
+    // were spent; the rest was not yours to spend."* A stretch that runs in
+    // full still sets `interrupted` when the interrupt lands on its last chunk
+    // - the provisions warning does this routinely - and the sentence then
+    // announces a loss of zero days beside two identical figures.
+    if (skip.interrupted && !skip.died && skip.simulatedDays < skip.requestedDays) {
         paragraphs.push(
             `You came out early. ${humanDays(skip.simulatedDays)} of the ${humanDays(skip.requestedDays)} were spent; the rest was not yours to spend.`
         );
@@ -887,6 +981,41 @@ function breakthroughHeadline(result: BreakthroughResult, before: Cultivator): s
     }
 }
 
+/**
+ * A mechanical sentence, with the marking scheme taken out of it.
+ *
+ * `narrationHint` is the engine's own account of a crossing and it is written
+ * for `lines` and `structure`, where every figure in it belongs.
+ * `breakthroughProse` also printed it verbatim as a paragraph, and `prose` is
+ * what a player reads when no model is configured:
+ *
+ *     Breakthrough succeeded: Qi Condensation Layer 13 to Foundation
+ *     Establishment Early, crossing into a new realm. Odds were 30.9%.
+ *     Foundation Establishment crossed. The foundation laid is unstable
+ *     (score 1.65). It holds, and it complains... Risk was 13.2%.
+ *
+ * `the-engine-states-findings-not-its-rubric.test.ts` settles what is wrong
+ * with that: *the engine may say what it found; it may not read out how it
+ * marked.* **Unstable** is the finding and a player can act on it. **1.65** is
+ * the column it was marked in. The two percentages are the same thing again,
+ * and the first of them was already said one paragraph up, in the idiom this
+ * engine speaks odds in.
+ *
+ * SCRUBBED RATHER THAN SPLIT IN TWO, and the reason is the call sites: eight
+ * places in `breakthrough.ts` compose a hint, and a second prose-safe field on
+ * each is eight chances for the two to drift apart. One reader, one rule, in
+ * one place, and the words are left exactly as the engine wrote them.
+ */
+function withoutTheMarkingScheme(hint: string): string {
+    return hint
+        // "Odds were 30.9%." / "Risk was 13.2%." - the marking, stated twice.
+        .replace(/\s*\b(?:Odds were|Risk was|Chance was)\s+[\d.]+%\.?/g, '')
+        // "(score 1.65)" - the column the finding beside it was marked in.
+        .replace(/\s*\((?:score|rated|marked)\s+[\d.]+\)/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+}
+
 function breakthroughProse(
     before: Cultivator,
     after: Cultivator,
@@ -894,12 +1023,35 @@ function breakthroughProse(
     paidWithTheBody: number
 ): string {
     const paragraphs: string[] = [];
-    const odds = `${(result.finalChance * 100).toFixed(1)}%`;
     const boundary = isBoundaryCrossing(result);
 
+    // ── THE ENGINE DOES NOT INTRODUCE ITSELF, AND IT DOES NOT SHOW THE DIE ──
+    //
+    // FOUND BY PLAYING BLIND, at the most dramatic moment the game has:
+    //
+    //     Lin Yue gathered what had been accumulated and struck at Qi
+    //     Condensation Layer 13. The engine put the odds at 30.9%, across a
+    //     realm boundary. The roll came up 0.2603.
+    //
+    // Three things at once, in one sentence a player reads at a crossing. It
+    // named THE ENGINE, in prose written to be read as a scene. It printed a
+    // bare percentage, which this repo bans in a player's face - *no `89.2%`* -
+    // while allowing in-world estimation, *a cultivator may still judge a wall
+    // as roughly one in three*. And it read out the raw roll, which is a number
+    // about the random stream and about nothing in the world.
+    //
+    // NOTHING IS LOST. The roll is already in `structure`, twice over, and that
+    // channel's own note says why it is there: *"the ROLL is the thing only this
+    // line carries: it is what makes the odds checkable rather than merely
+    // stated"*. An operator keeps it. A player was never its reader.
+    //
+    // The odds stay, in the idiom this engine already speaks them in - the
+    // combat footer has said *"gets you clear 56 times in a hundred"* under
+    // every round of every fight since it was written.
     paragraphs.push(
-        `${before.name} gathered what had been accumulated and struck at ${rankName(result.fromOrdinal)}. ` +
-        `The engine put the odds at ${odds}${boundary ? ', across a realm boundary' : ''}. The roll came up ${result.roll.toFixed(4)}.`
+        `${before.name} gathered what had been accumulated and struck at ${rankName(result.fromOrdinal)}. `
+        + `It stood at ${(result.finalChance * 100).toFixed(0)} in a hundred`
+        + `${boundary ? ', across a realm boundary' : ''}.`
     );
 
     if (result.tribulation) {
@@ -910,7 +1062,7 @@ function breakthroughProse(
         );
     }
 
-    paragraphs.push(result.narrationHint);
+    paragraphs.push(withoutTheMarkingScheme(result.narrationHint));
 
     if (result.injuriesSustained.length > 0) {
         paragraphs.push(

@@ -818,10 +818,18 @@ export const seclusionVerbs = {
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
+            // See `spanIsASitting`. `shortSkip` runs every verb that spends a
+            // handful of days, and most of them are on their feet: a duty, a
+            // journey, a day on the herb ground. Only the two sitting
+            // activities get the sentences written for a cave.
+            spanIsASitting: activity === 'seclusion' || activity === 'sealed',
             ...daoHeartConditions(this.repos.db, cultivator, Math.floor(run.elapsedDays)),
             toll: tollConditionsFor(this.repos, cultivator)
         });
 
+        // The pack goes out with them and the remainder comes back. See
+        // `drawFromPack`.
+        this.putBackWhatWasNotEaten(cultivator, skip);
         const applied = applyTimeSkip(this.repos, { before, run, skip });
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
 

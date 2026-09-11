@@ -25,6 +25,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { makeGame } from './harness';
+import { writeFlag } from '../../src/server/consolidated/cultivation-support';
+import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys';
 import { sectBoardFor } from '../../src/web/encounters';
 import { REALM_TIERS } from '../../src/engine/cultivation/realms';
 import {
@@ -211,6 +213,16 @@ describe('and the loop the board feeds turns', () => {
         const { cultivator } = await game.newRun('Aspirant');
         repos.sects.addMember(A_HOUSE, cultivator.id, 0);
         db.prepare('UPDATE cultivators SET realm_ordinal = 6 WHERE id = ?').run(cultivator.id);
+
+        // FED, AND THE SETUP WAS THE FINDING. This loop used to close with an
+        // empty pack: the cultivator starved out of every one of the four
+        // two-month terms about fifty days in - *"Nothing left to eat. 5 days of
+        // this is fatal... You came out early"* - and was credited in full four
+        // times anyway, because being alive was the only gate on `completeDuty`.
+        // See `a-term-cut-short-is-not-a-term.test.ts`. A term that is not
+        // served is not paid, so the loop this test is about only turns for
+        // somebody who can eat for the length of it.
+        writeFlag(db, cultivator.id, FLAG_RATIONS_HELD, '12');
 
         const held = () => repos.sects.getMembership(cultivator.id)!;
         expect(held().contribution).toBe(0);

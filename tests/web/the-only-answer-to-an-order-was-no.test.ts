@@ -80,6 +80,7 @@ import {
 } from '../../src/web/pending-summons';
 import { STANDING_ON_JOINING } from '../../src/engine/cultivation/leadership';
 import { readJsonFlag } from '../../src/server/consolidated/cultivation-support';
+import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
 import type { Duty } from '../../src/engine/encounters/types';
 
 const LOCAL_SECT = SECTS
@@ -198,9 +199,28 @@ describe('going where the house sent you', () => {
         // THE OATH IS ON THE LEDGER, held by the person who swore it, and it
         // carries the catalog row so somebody can read in forty years what was
         // sworn to.
-        const ledger = openLedgerBetween(harness.repos, cultivatorId, LOCAL_SECT.id);
+        //
+        // READ OFF THE WHOLE LEDGER AND NOT THE OPEN HALF OF IT, and the change
+        // is the finding rather than an accommodation. This asked
+        // `openLedgerBetween` for exactly one OPEN row after a duty had been
+        // finished and paid, and it got one - because `completeDuty` derived
+        // the oath from the settlement day while `acceptDuty` had written it on
+        // the acceptance day, so the settled row was a SECOND row and the
+        // accepted one stayed open forever. The row this line used to find was
+        // the orphan. Played, one turn after being paid in full: *"Owed by you
+        // to unaffiliated: service term... Due on day 20, which is already
+        // past."* See `a-finished-duty-is-off-the-ledger.test.ts`.
+        //
+        // What this test was ever measuring is that the word is WRITTEN, held
+        // by the swearer, and carries the catalog row. All three still hold;
+        // being open was never the point, and after a completed term it is the
+        // defect.
+        expect(openLedgerBetween(harness.repos, cultivatorId, LOCAL_SECT.id)).toHaveLength(0);
+        const ledger = ledgerAbout(harness.repos.db, cultivatorId)
+            .filter(row => row.tags.includes('duty'));
         expect(ledger).toHaveLength(1);
         expect(ledger[0].holderId).toBe(cultivatorId);
+        expect(ledger[0].status).toBe('settled');
         expect(ledger[0].tags).toContain('duty');
         expect(ledger[0].tags).toContain(pending.entryId);
 

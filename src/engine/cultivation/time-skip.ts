@@ -262,6 +262,21 @@ export interface TimeSkipContext {
      */
     botheredScale?: number;
     /**
+     * Whether the span is spent SITTING DOWN somewhere hidden.
+     *
+     * FOUND BY PLAYING BLIND. This function is the one time skip for every verb
+     * that spends days - seclusion, a duty, a journey, a day on the herb ground,
+     * a hunt - and two of the sentences it can produce were written for a cave
+     * and are a flat lie about anything else: *"Seclusion broken: somebody has
+     * found this place"*, said to a cultivator fifteen days into an escort for a
+     * house, and *"Found while in seclusion: a spirit-stone cache"*, said on a
+     * road. Nothing gated either one; the wording simply assumed the caller.
+     *
+     * Defaults to `true`, which is what every caller was getting before it
+     * existed, so a caller that does not say keeps the seclusion voice.
+     */
+    spanIsASitting?: boolean;
+    /**
      * Conditions for the price of advancement at any realm boundary crossed during the
      * skip. The candidate list must come from real rows - the engine holds no
      * database - so a caller that omits it will see the crossing find nothing
@@ -360,6 +375,9 @@ export function simulateTimeSkip(
     // caller cannot turn encounters off through it or drive the chance to
     // nonsense; turning them off is `randomEvents`, which says so.
     const botheredScale = Math.min(64, Math.max(0, ctx.botheredScale ?? 1));
+    // See `spanIsASitting`. A span on its feet gets the same events in the same
+    // order and a sentence that is true of where the cultivator actually is.
+    const sitting = ctx.spanIsASitting !== false;
     const grainAbstinence = ctx.grainAbstinence ?? false;
     const hostility = ctx.hostility;
 
@@ -1326,16 +1344,29 @@ export function simulateTimeSkip(
                           + 'somewhere out of the way; staying means having this again. '
                           + `${rankName(ordinal)} standing, `
                           + `${untreatedInjuryCount(injuries)} untreated injuries.`
-                        : canWithdraw
+                        : canWithdraw && sitting
                         ? 'Seclusion broken: somebody is close enough to matter and has not seen '
                           + 'this place yet. There is a road out that does not cross them, and it '
                           + 'is open for as long as you are not sitting down. Going costs the '
                           + 'stretch; staying means being found here, by whoever that is. '
                           + `${rankName(ordinal)} standing, `
                           + `${untreatedInjuryCount(injuries)} untreated injuries.`
-                        : 'Seclusion broken: somebody has found this place and there is no road '
+                        : canWithdraw
+                        ? 'The stretch stopped: somebody is close enough to matter and has not '
+                          + 'noticed you yet. There is a way past that does not cross them, and '
+                          + 'it is open for as long as you keep moving. Going costs what is left '
+                          + 'of the stretch; staying means being found here, by whoever that is. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : sitting
+                        ? 'Seclusion broken: somebody has found this place and there is no road '
                           + 'out that does not cross them. Whether you are sitting or standing '
                           + 'when they arrive is the only part of it still yours. '
+                          + `${rankName(ordinal)} standing, `
+                          + `${untreatedInjuryCount(injuries)} untreated injuries.`
+                        : 'The stretch stopped: somebody is close enough to matter and there is '
+                          + 'no way on that does not cross them. What you are doing when they '
+                          + 'arrive is the only part of it still yours. '
                           + `${rankName(ordinal)} standing, `
                           + `${untreatedInjuryCount(injuries)} untreated injuries.`,
                     true,
@@ -1404,7 +1435,12 @@ export function simulateTimeSkip(
                     spiritStones += stones;
                     push(
                         'opportunity',
-                        `Found while in seclusion: a spirit-stone cache worth ${stones} stones.`,
+                        sitting
+                            ? `Found while in seclusion: a spirit-stone cache worth ${stones} stones.`
+                            // Its own missed-twin four lines up is already
+                            // verb-neutral and reads correctly everywhere.
+                            : `A spirit-stone cache in the rock nearby, worth ${stones} stones, `
+                              + 'and nobody had reached it first.',
                         false,
                         { spiritStones: stones }
                     );

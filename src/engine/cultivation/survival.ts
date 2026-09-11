@@ -220,21 +220,25 @@ function clampSatiety(n: number): number {
 // projection against a real `simulateTimeSkip` run for that reason.
 
 /** What one day of this stretch costs the belly. Zero above Nascent Soul. */
-function satietyPerDay(realmOrdinal: number): number {
-    return SATIETY_COST_PER_ACTION * satietyBurnMultiplier(realmOrdinal);
+function satietyPerDay(realmOrdinal: number, injuries?: readonly Injury[]): number {
+    return SATIETY_COST_PER_ACTION * satietyBurnMultiplier(realmOrdinal, injuries);
 }
 
 /**
  * Days one full ration covers at this rung.
  */
-export function daysPerRation(realmOrdinal: number): number {
-    const perDay = satietyPerDay(realmOrdinal);
+export function daysPerRation(realmOrdinal: number, injuries?: readonly Injury[]): number {
+    const perDay = satietyPerDay(realmOrdinal, injuries);
     return perDay > 0 ? Math.floor(SATIETY_MAX / perDay) : Infinity;
 }
 
 /** Days the belly alone covers from `satiety`, before any ration is opened. */
-export function daysOfBelly(satiety: number, realmOrdinal: number): number {
-    const perDay = satietyPerDay(realmOrdinal);
+export function daysOfBelly(
+    satiety: number,
+    realmOrdinal: number,
+    injuries?: readonly Injury[]
+): number {
+    const perDay = satietyPerDay(realmOrdinal, injuries);
     return perDay > 0 ? Math.floor(clampSatiety(satiety) / perDay) : Infinity;
 }
 
@@ -244,12 +248,13 @@ export function daysOfBelly(satiety: number, realmOrdinal: number): number {
 export function rationsToCover(
     days: number,
     realmOrdinal: number,
-    satiety: number = SATIETY_MAX
+    satiety: number = SATIETY_MAX,
+    injuries?: readonly Injury[]
 ): number {
     const wanted = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : 0;
-    const perRation = daysPerRation(realmOrdinal);
+    const perRation = daysPerRation(realmOrdinal, injuries);
     if (!Number.isFinite(perRation) || wanted === 0) return 0;
-    const shortfall = Math.max(0, wanted - daysOfBelly(satiety, realmOrdinal));
+    const shortfall = Math.max(0, wanted - daysOfBelly(satiety, realmOrdinal, injuries));
     return Math.ceil(shortfall / perRation);
 }
 
@@ -264,6 +269,19 @@ export interface ProvisioningInput {
     starvationTurns?: number;
     /** On grain abstinence (辟穀), and therefore eating nothing at all. */
     grainAbstinence?: boolean;
+    /**
+     * The wounds they are carrying, because one of them takes the meals back.
+     *
+     * OMITTING THIS USED TO BE SAFE AND IS NOT ANY MORE. `satietyBurnMultiplier`
+     * has read `injuries` since a failed transformation was written - an
+     * untreated one drops somebody who had stopped eating entirely back onto a
+     * Nascent Soul's burn - and `drawFromPack`, which is what the time skip
+     * ACTUALLY eats out of, passes them. This function did not, so for exactly
+     * that cultivator it answered "the belly carries the whole of it" about a
+     * span the skip would starve them through. Two readings of one pantry, and
+     * the wrong one was the one being quoted at the player.
+     */
+    injuries?: readonly Injury[];
 }
 
 /**
@@ -316,7 +334,7 @@ export function assessProvisioning(input: ProvisioningInput): ProvisioningAssess
     const days = Number.isFinite(input.days) ? Math.max(0, Math.floor(input.days)) : 0;
     const rationsHeld = Number.isFinite(input.rations) ? Math.max(0, Math.floor(input.rations)) : 0;
     const starvedAlready = Math.max(0, Math.floor(input.starvationTurns ?? 0));
-    const perRation = daysPerRation(input.realmOrdinal);
+    const perRation = daysPerRation(input.realmOrdinal, input.injuries);
 
     // Nothing to price. Somebody who does not eat cannot be short of food, and
     // the honest answer is that the pantry is not what stands between them and
@@ -341,8 +359,8 @@ export function assessProvisioning(input: ProvisioningInput): ProvisioningAssess
         };
     }
 
-    const bellyCovers = daysOfBelly(input.satiety, input.realmOrdinal);
-    const rationsNeeded = rationsToCover(days, input.realmOrdinal, input.satiety);
+    const bellyCovers = daysOfBelly(input.satiety, input.realmOrdinal, input.injuries);
+    const rationsNeeded = rationsToCover(days, input.realmOrdinal, input.satiety, input.injuries);
     const coveredDays = Math.min(days, bellyCovers + rationsHeld * perRation);
     const uncoveredDays = Math.max(0, days - coveredDays);
 

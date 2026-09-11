@@ -58,7 +58,12 @@ import {
 import { holdsACopyOf } from '../server/consolidated/technique-manage.js';
 import { stillStands } from './choosing-what-to-do-when-a-seclusion-is-broken.js';
 import { rosterFor, sectBoardFor } from './encounters.js';
-import { resolveTechnique, worldLocationFor } from './entities.js';
+import {
+    MATCH_THRESHOLD,
+    matchScore,
+    resolveTechnique,
+    worldLocationFor
+} from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, theRung } from './facts.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
@@ -425,7 +430,16 @@ export const situatedReads = {
     /**
      * Where they could go, priced, with the qi and the province's ceiling.
      */
-    destinations(this: GameService, run: Run, cultivator: Cultivator): Execution {
+    destinations(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        /**
+         * One place, asked after by name. See the block at the foot of the
+         * method for the finding and what it does with it.
+         */
+        target?: string
+    ): Execution {
         const here = standingOf(cultivator);
         const fromRegion = requireRegion(here.regionId);
 
@@ -605,13 +619,100 @@ export const situatedReads = {
             });
         }
 
+        // ── AND ONE PLACE ASKED AFTER BY NAME IS ONE PLACE ANSWERED ──────
+        //
+        // FOUND BY PLAYING BLIND:
+        //
+        //     > how far is Nine Peaks
+        //     You are in Six Li, The Silent Cliffs... Iron Ridge: a market
+        //     town... Nine Hundred Paces: site... The Jade Face: site...
+        //     Willow Village: a village...
+        //
+        //     > i travel to Nine Peaks
+        //     Six Li. Lin Yue took to the road. Travel of 11 days was intended.
+        //
+        // Five places, none of them the one asked about, and the engine knew
+        // the road was eleven days the whole time. The name was being captured
+        // by the pattern and thrown away on the line that built the plan; it
+        // arrives now, and this is what answers it.
+        //
+        // NOT A SECOND READ. The same rows, the same renderer, narrowed to one:
+        // a separate answer for one place is how two screens come to disagree
+        // about the same road.
+        const asked = (target ?? '').trim();
+        const one = asked.length >= 3
+            ? reachable.find(row => loosePlaceKey(row.name) === loosePlaceKey(asked))
+                ?? reachable.find(row => matchScore(asked, row.name) > MATCH_THRESHOLD)
+                ?? null
+            : null;
+
+        // A NAME THEY CANNOT PLACE IS ITS OWN ANSWER, and it is the one the
+        // general read was already giving in aggregate - *"There are 2 further
+        // names you are carrying that you cannot place. You know the word and
+        // not the road."* Said about the name that was asked after, it is an
+        // answer; said about a count, with four other places under it, it is
+        // not.
+        if (asked.length >= 3 && one === null) {
+            const canPlace = reachable.map(row => row.name);
+            // ── AND THE ENGINE MUST NOT SAY THERE IS NO ROAD ─────────────
+            //
+            // The first cut of this answered "nobody here puts a road to Nine
+            // Peaks", and one sentence later `i travel to Nine Peaks` set off
+            // and arrived in eleven days. Two verbs, one place, opposite
+            // answers - which is the shape this whole pass exists to find, and
+            // it would have been introduced by the fix for it.
+            //
+            // `travel` resolves against the CATALOG (`resolvePlace`) and this
+            // read is gated on `canPointAt`, so a name held without a road is
+            // absent here and reachable there. That asymmetry is not settled
+            // here: which of the two is right is a decision about how much of
+            // the map discovery is meant to gate, and it belongs to whoever
+            // owns that. What IS settled is that the engine does not assert
+            // the road does not exist while another verb walks it.
+            //
+            // So the answer says exactly what is true from where the player is
+            // standing: they have the word and not the way, the general list
+            // is why, and setting out is still a sentence they can say. The
+            // DAYS are not stated, because that is the knowledge this read is
+            // gated on and handing it over here would make the gate a
+            // formality.
+            // `somewhereReal` and not `resolvePlace`: the latter accepts any
+            // string at all - *"places in this engine are free text"* - so it
+            // answered yes to "the moon" and to "zzzz". `somewhereReal` is the
+            // three-register check `travel` itself gates on, which is what
+            // makes this sentence agree with the verb it is describing.
+            const catalogued = this.somewhereReal(asked, cultivator);
+            const missed = factsForToolResult(`${asked}: a name, and no road with it.`, [
+                catalogued
+                    ? `You have the name ${asked} and not the way to it. Nobody standing here has `
+                      + 'put a road to it in your hearing, so what it costs to reach is not '
+                      + 'something you know yet. Saying you set out for it is still a sentence; '
+                      + 'what it asks of you is the part you would be finding out.'
+                    : `Nobody here places ${asked} at all, and it is not a name you are carrying.`,
+                canPlace.length > 0
+                    ? `What can be placed from here: ${canPlace.join(', ')}.`
+                    : 'Nothing at all can be placed from here yet.',
+                unplaceable > 0
+                    ? `${unplaceable} further name${unplaceable === 1 ? ' is' : 's are'} being `
+                      + 'carried that cannot be placed. A name reaches you when somebody says it '
+                      + 'where you can hear; asking is what closes that.'
+                    : 'Asking after it is what turns a word into a road.'
+            ]);
+            missed.structure.push(
+                `whereCouldTheyGo: "${asked}" matched none of ${reachable.length} placeable row(s) `
+                + `and ${unplaceable} unplaceable name(s); somewhereReal ${catalogued ? 'does' : 'does not'} `
+                + 'know it. Read only - nothing spent.'
+            );
+            return this.freeAction(run, 'destinations', missed);
+        }
+
         const read = whereCouldTheyGo({
             ordinal: cultivator.realmOrdinal,
             placeName: placeName(cultivator),
             regionName: fromRegion.name,
             localCeilingOrdinal: fromRegion.localCeilingOrdinal,
-            reachable,
-            unplaceable
+            reachable: one ? [one] : reachable,
+            unplaceable: one ? 0 : unplaceable
         });
 
         const facts = factsForToolResult(read.headline, read.lines);
@@ -652,7 +753,11 @@ export const situatedReads = {
         // question; what you can see comes after it and is introduced as a
         // different kind of knowing, so a player can tell at a glance which of
         // their facts came from a person and which from their own eyes.
-        if (onTheGround.length > 0) {
+        //
+        // AND NOT UNDER A QUESTION ABOUT ONE PLACE. What can be made out from
+        // up here answers "where could I go"; under "how far is Nine Peaks" it
+        // is four paragraphs between the question and its answer.
+        if (onTheGround.length > 0 && one === null) {
             facts.lines.push('', overlook.headline, ...overlook.lines);
             facts.prose = `${facts.prose}\n\n${overlook.headline}\n${overlook.lines.join('\n')}`;
         }

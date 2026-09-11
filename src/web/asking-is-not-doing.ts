@@ -334,7 +334,13 @@ export function theReadThatAnswersIt(plan: PlannedAction): PlannedAction {
             // far can I fold" are both questions about the map rather than
             // journeys, and the destinations read answers each with the roads
             // the catalog states and the days on them.
-            return { action: 'destinations' };
+            //
+            // THE PLACE RIDES ALONG. Dropping it turned "could I ride to Iron
+            // Ridge" into the whole map - a question about one road answered
+            // with every road, which is the shape this pass exists to stop. The
+            // read decides what to do with a name; the rewrite's job is not to
+            // lose it. See `destinations`.
+            return { action: 'destinations', ...(plan.target ? { target: plan.target } : {}) };
 
         case 'passage':
         case 'oath':
