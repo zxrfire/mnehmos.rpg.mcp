@@ -55,6 +55,7 @@ import {
     resolvingAgainstTheLastTurn,
     type WhatTheLastTurnDid
 } from '../../src/web/last-turn-memory';
+import { theWallAnswersThis } from '../../src/web/what-is-posted-on-the-wall-here';
 
 const AFTER_READING_ONE_BILL: WhatTheLastTurnDid = {
     runId: 'run', cultivatorId: 'cult', onTurn: 3, outcome: 'executed', acts: [],
@@ -140,5 +141,60 @@ describe('answering one', () => {
         );
         expect(out.plan.action.action).toBe('sect');
         expect(out.plan.action.target).toBeUndefined();
+    });
+});
+
+/**
+ * AND A NOTICE ON A WALL IS NOT A THING YOU WERE JUST TOLD.
+ *
+ * FOUND BY PLAYING BLIND, after the reference itself was already wired. A player
+ * read two notices, then bought a manual, learned it, and sat for six months -
+ * and `i present myself at the intake` fell back to the generic listing, because
+ * the reference resolver holds ONE TURN and the wall had been read five turns
+ * earlier.
+ *
+ * One turn of memory is the right rule for what somebody was just told: a market
+ * listing is a moment, and a stall that has moved on cannot be pointed at. A
+ * notice nailed to a wall is not that. It is a standing fact about the place,
+ * readable again by walking over to it - so a sentence pointing at one resolves
+ * against the WALL rather than against anybody's memory of it.
+ *
+ * Exactly one paper, or nothing: two up and the phrase points at neither, which
+ * is the ruling every other reference in this game keeps.
+ */
+describe('the wall answers for itself', () => {
+    const oneBill = () => ({ bills: [{ houseName: 'Cold Sword Sect' }] });
+    const twoBills = () => ({
+        bills: [{ houseName: 'Cold Sword Sect' }, { houseName: 'Hollow Bell Wanderers' }]
+    });
+    const noBills = () => ({ bills: [] as { houseName: string }[] });
+
+    it('names the house when one paper is up', () => {
+        expect(theWallAnswersThis('the intake', oneBill)).toBe('Cold Sword Sect');
+        expect(theWallAnswersThis('that notice', oneBill)).toBe('Cold Sword Sect');
+    });
+
+    it('names nobody when two are up', () => {
+        expect(theWallAnswersThis('the intake', twoBills)).toBeUndefined();
+    });
+
+    it('names nobody when the wall is bare', () => {
+        expect(theWallAnswersThis('the intake', noBills)).toBeUndefined();
+    });
+
+    /**
+     * AND IT ONLY EVER ANSWERS A PAPER REFERENCE. A house the player named, or
+     * no target at all, must reach the wall for nothing - otherwise every
+     * unnamed joining sentence in a town with one notice up would quietly
+     * become an application to that house.
+     */
+    it.each(['Azure Dew Sect', '', 'a sect', 'the sect', 'the nearest house'])(
+        'does not answer for %j', said => {
+            expect(theWallAnswersThis(said, oneBill)).toBeUndefined();
+        }
+    );
+
+    it('does not answer for an absent target', () => {
+        expect(theWallAnswersThis(undefined, oneBill)).toBeUndefined();
     });
 });

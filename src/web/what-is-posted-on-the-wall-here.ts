@@ -201,3 +201,22 @@ export function readTheWall(
 
     return { bills, lines, newLines, learned };
 }
+
+/**
+ * The house a `the intake` points at, read off the wall in front of the player.
+ *
+ * Returns undefined for anything that is not a paper reference, and for a wall
+ * holding none or holding more than one - a phrase with two things to point at
+ * points at neither, which is the ruling `whichOfTheNamedThings` keeps.
+ */
+export function theWallAnswersThis(
+    target: string | undefined,
+    wall: () => { bills: readonly { houseName: string }[] }
+): string | undefined {
+    const said = (target ?? '').trim().toLowerCase();
+    if (!/^(?:the|that|this)\s+(?:intake|notice|bill|poster|posting)$/.test(said)) {
+        return undefined;
+    }
+    const names = [...new Set(wall().bills.map(bill => bill.houseName))];
+    return names.length === 1 ? names[0] : undefined;
+}

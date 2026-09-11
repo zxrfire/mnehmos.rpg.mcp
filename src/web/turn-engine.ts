@@ -535,7 +535,8 @@ import {
     thingsCarriedThatTeachARoad
 } from './ground-that-teaches-a-road.js';
 import {
-    readTheWall
+    readTheWall,
+    theWallAnswersThis
 } from './what-is-posted-on-the-wall-here.js';
 // `billsOnTheWall` and not `readTheWall` for the affordance gathering below.
 // The two answer the same question and only one of them WRITES: reading the
@@ -5529,7 +5530,25 @@ ${noticed}`;
         }
 
         const scope = this.scopeFor(cultivator);
-        const query = (target ?? '').trim();
+        // ── A PAPER ON THIS WALL IS A FACT ABOUT THIS TOWN ───────────────
+        //
+        // FOUND BY PLAYING BLIND, after the reference itself was already wired.
+        // A player read two notices, then bought a manual, learned it, sat for
+        // six months - and `i present myself at the intake` fell back to the
+        // generic listing, because the reference resolver holds ONE TURN and
+        // the wall had been read five turns earlier.
+        //
+        // One turn of memory is the right rule for what somebody was just told:
+        // a market listing is a moment. A notice nailed to a wall is not. It is
+        // a standing fact about the place, readable again by walking over to
+        // it, and the engine can read it here for the same reason the player
+        // could - so a sentence pointing at one resolves against the wall
+        // rather than against anybody's memory of it.
+        //
+        // Exactly one, or nothing. Two papers up and the phrase points at
+        // neither, which is the ruling every other reference keeps.
+        const query = theWallAnswersThis(target, () => readTheWall(this.knowledge, cultivator, run))
+            ?? (target ?? '').trim();
 
         // A CATEGORY IS NOT A NAME, AND IT MUST NOT BECOME ONE
         const named = query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)
