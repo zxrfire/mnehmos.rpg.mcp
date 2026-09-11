@@ -156,9 +156,28 @@ export function whatIsBuiltOnThisGround(input: {
         else byParent.set(row.parentId, [row]);
     }
 
+    // ── AND ONLY WHAT IS INSIDE THIS PLACE, NOT WHAT IS UNDER IT ─────────
+    //
+    // `parentId` carries two different relations. A precinct's parent is the
+    // ground it is walled into; a settlement's parent is the PROVINCE it sits
+    // somewhere in, and a compound's parent is that same province. Walking the
+    // tree without asking which relation it was reads every house in the
+    // province as though it were a wing of wherever you happen to be standing.
+    //
+    // FOUND BY PLAYING, standing in The Jade Gorge: "I look at the buildings"
+    // reported 114 courts and 358 buildings and named the precincts of six
+    // separate houses, several of them nine days' walk away. A forecourt is not
+    // visible from a province.
+    //
+    // `interior` is the generator's own word for the first relation and is
+    // written on every room and precinct it cuts. It is the contract: anything
+    // nested that is a place in its own right - a settlement, a vein, a ruin -
+    // does not carry it and is not descended into. Anything the world starts
+    // nesting INSIDE a place has to carry it to be seen from there.
     const inside: Array<{ room: LocationRecord; depth: number }> = [];
     const walk = (id: string, depth: number) => {
         for (const child of byParent.get(id) ?? []) {
+            if (!child.tags.includes('interior')) continue;
             inside.push({ room: child, depth });
             walk(child.id, depth + 1);
         }

@@ -127,10 +127,23 @@ describe('a bigger house is bigger to stand in', () => {
         expect(roofIn(atBig), 'the bigger house named no roof at all').not.toBeNull();
     }, 300_000);
 
-    it('and a place with nothing built on it says nothing about buildings', async () => {
-        // The other half of "derived, never generated". A ford is not owed an
-        // interior, and the read that found 24 rooms in a compound must not pad
-        // a village with a sentence about its architecture.
+    it('and a place with nothing built on it answers short instead of refusing', async () => {
+        // The other half of "derived, never generated", and the half that was
+        // wrong. A village is not owed an interior and the read must not pad one
+        // with a sentence about its architecture - but the empty reading fell
+        // through to the generic resolver, and "I look at the buildings" in Nine
+        // Peaks came back as a failed SEARCH:
+        //
+        //     Nothing here matches the description. It is not in these halls,
+        //     nor is it hidden in the courtyards. Either the thing you seek is
+        //     in another place entirely, or it does not exist.
+        //
+        // The player sought no thing and the buildings plainly exist; they are
+        // standing among them. That is a refusal reporting the wrong KIND of
+        // failure, which tells the player something false about the world.
+        //
+        // So both halves are pinned: it does not describe a compound that is not
+        // there, and it does not report a miss.
         const { game, repos } = await makeGameInWorld({ seed: 'built-here-bare', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Visitor');
         const world = await game.loadWorld();
@@ -143,6 +156,36 @@ describe('a bigger house is bigger to stand in', () => {
         repos.cultivators.update(cultivator.id, { location: bare!.name });
         const turn = await game.act('I look at the buildings');
         expect(turn.narration ?? '').not.toMatch(/largest roof|courts you can count/);
+        // The look happened. Asserted on the engine's own row rather than on the
+        // prose, because in model mode the wording is the narrator's and only
+        // the ok flag is the engine's.
+        const looked = turn.toolCalls.filter(call => !call.name.startsWith('narrator.'));
+        expect(looked.length).toBeGreaterThan(0);
+        expect(looked.every(call => call.ok), 'the look was reported as a failure').toBe(true);
+    }, 300_000);
+
+    it('and does not report a house\'s courts to somebody standing in the province', async () => {
+        // `parentId` carries two relations and the first cut read them as one.
+        // A precinct's parent is the ground it is walled into; a compound's
+        // parent is the PROVINCE it sits somewhere in. Walking the tree without
+        // asking which meant standing in The Jade Gorge reported 114 courts and
+        // 358 buildings and named the precincts of six separate houses, some of
+        // them nine days' walk away.
+        const { game, repos } = await makeGameInWorld({ seed: 'built-here-wide', worldSeed: WORLD });
+        const { cultivator } = await game.newRun('Visitor');
+        const world = await game.loadWorld();
+
+        const seat = world.locations.find(row => row.kind === 'sect_seat' && row.parentId !== null)!;
+        const province = world.locations.find(row => row.id === seat.parentId)!;
+        const house = repos.sects.getById(String(seat.data.factionId))!;
+
+        repos.cultivators.update(cultivator.id, { location: province.name });
+        const prose = (await game.act('I look at the buildings')).narration ?? '';
+        expect(prose).not.toMatch(/courts you can count/);
+        for (const rank of house.ranks) {
+            expect(prose.toLowerCase(), `a ${rank} precinct was visible from the province`)
+                .not.toContain(`${rank.toLowerCase()} precinct`);
+        }
     }, 300_000);
 
     it('does not hand a visitor the names of the rooms behind the wall', async () => {

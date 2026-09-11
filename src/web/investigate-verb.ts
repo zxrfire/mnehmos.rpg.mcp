@@ -47,41 +47,94 @@ const A_WORD_THAT_NAMES_NOTHING_BY_ITSELF =
     /^(?:the\s+)?(?:it|that|this|them|those|these|one|same|other)(?:\s+one)?$/i;
 
 /**
- * The ways somebody says "what has been built here".
+ * The words for the ground itself, which `groundAtHand` also owns.
  *
- * `groundAtHand` already owns the deictics for the ground itself and they are
- * repeated here on purpose: the two reads answer the same sentence and this one
- * has more to say, so it has to be asked first or the better answer is never
- * reached. What is genuinely new is the second half - a player standing in a
- * compound says compound, buildings, walls, courts and gate, and every one of
- * those reached nothing at all.
+ * Repeated here on purpose: the two reads answer the same sentence, and where
+ * something IS built the one below has more in it, so it has to be asked first
+ * or the better answer is never reached. Where nothing is built these fall
+ * through and `groundAtHand` answers exactly as it always did.
  */
-const WHAT_IS_BUILT_HERE =
-    /^(?:the |this |these |round |around )?(?:here|place|ground|town|village|city|province|region|district|land|area|settlement|surroundings|compound|buildings?|walls?|courts?|yards?|gates?|halls?|architecture|stonework|masonry)$/i;
+const THE_GROUND_ITSELF =
+    /^(?:the |this |these |round |around )?(?:here|place|ground|town|village|city|province|region|district|land|area|settlement|surroundings)$/i;
+
+/**
+ * The words for what somebody put up on it.
+ *
+ * These reached nothing at all before, in a compound or out of one.
+ */
+const WHAT_SOMEBODY_BUILT =
+    /^(?:the |this |these |round |around )?(?:compound|buildings?|walls?|courts?|yards?|gates?|halls?|architecture|stonework|masonry)$/i;
 
 /**
  * What is built where this cultivator is standing, as a thing to examine.
  *
- * Null where nothing is built, which falls the chain through to the reads that
- * already answer for bare ground. So this adds a reading and replaces none: a
- * province, a ford and a scar behave exactly as they did.
+ * ── AND THE EMPTY CASE IS AN ANSWER, NOT A MISS ──────────────────────────
+ *
+ * FOUND BY PLAYING, standing in Nine Peaks - a town, not a compound. Only a
+ * seated house has anything nested under it, so the reading came back empty,
+ * the chain fell through to the generic resolver, and "I look at the buildings"
+ * was answered as a failed SEARCH:
+ *
+ *     Nothing here matches the description. It is not in these halls, nor is it
+ *     hidden in the courtyards. Either the thing you seek is in another place
+ *     entirely, or it does not exist.
+ *
+ * The player sought no thing, and the buildings plainly exist - they are
+ * standing among them. A refusal that reports the wrong kind of failure tells
+ * the player something false about the world, which is worse than saying
+ * little.
+ *
+ * So what a settlement holds was counted rather than assumed: `tags` carrying
+ * its kind, a `populationWeight` the simulation uses to decide where people
+ * are, and nothing else. No nested row, no `styleTags`, no holder. **The world
+ * genuinely records nothing about how an ordinary town is built**, and the
+ * honest answer to that is short and true rather than absent. It is stated as
+ * the thing an eye reaches - nothing here was laid out to one plan and nothing
+ * in the stonework attributes it, which is what `matchHouseStyle` would find -
+ * and it names the ground where the opposite is true.
+ *
+ * Nothing was widened to get there. The generic deictics still fall through.
  */
 function whatHasBeenBuiltHere(
     game: GameService,
     query: string,
     cultivator: Cultivator
 ): ResolvedEntity | null {
-    if (!WHAT_IS_BUILT_HERE.test(query.trim())) return null;
+    const asked = query.trim();
+    const aboutBuildings = WHAT_SOMEBODY_BUILT.test(asked);
+    if (!aboutBuildings && !THE_GROUND_ITSELF.test(asked)) return null;
+
     const built = theBuiltGroundUnder(game, cultivator);
-    if (built === null) return null;
-    const name = game.atHand?.locations
-        .find(row => row.id === built.reading.locationId)?.name ?? '';
+    if (built !== null) {
+        const name = game.atHand?.locations
+            .find(row => row.id === built.reading.locationId)?.name ?? '';
+        return { kind: 'place', id: name, name, facts: built.lines, structure: [built.structure] };
+    }
+
+    // "This place" is the ground read's question and it answers it well. Only a
+    // sentence that asked about the BUILDINGS is owed a sentence about them.
+    if (!aboutBuildings) return null;
+    const here = game.atHand?.locations.find(row => row.id === game.worldPlaceOf(cultivator));
+    if (!here) return null;
+
     return {
         kind: 'place',
-        id: name,
-        name,
-        facts: built.lines,
-        structure: [built.structure]
+        id: here.name,
+        name: here.name,
+        facts: [
+            // Not "you go along the fronts of them": this answers for open
+            // country and for a province as well as for a village, and a
+            // sentence that assumes there are building fronts is wrong in two
+            // of the three.
+            'Nothing standing here was put up to one plan, and nothing in the way any of it '
+            + 'is cut says who cut it.',
+            'The ground where that is not true is ground a house holds, behind its own wall.'
+        ],
+        structure: [
+            `whatIsBuiltOnThisGround(${here.id}): nothing is nested under this ground and it `
+            + 'carries no style tags, so there is nothing to attribute and nothing to '
+            + 'describe. Read only, nothing spent.'
+        ]
     };
 }
 
