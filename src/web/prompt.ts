@@ -1325,6 +1325,24 @@ export function composeNarrationUser(
         'player has already been handed that sentence by the machine, and a second copy of it',
         'in your voice is not narration.',
         '',
+        // AND THE ONE THING ORDER IS NOT FREE FOR.
+        //
+        // FOUND BY PLAYING BLIND. The work board listed five trades and the
+        // narration re-told them ordered by pay, best first. The player then
+        // typed `i take the second one` and got a different job from the one
+        // they had read second, because the engine counts its own list and the
+        // player counts the one in front of them.
+        //
+        // The licence above is right for prose and is the whole reason the
+        // accounts read like accounts. A LISTING is the exception, because the
+        // next sentence can point INTO it: `whichOfTheNamedThings` resolves
+        // "the second one" and "the last one" by position against the order the
+        // engine printed, and an ordinal means nothing against any other order.
+        'ONE THING ORDER IS NOT FREE FOR. Where the facts LIST several things - jobs, books,',
+        'houses, prices - keep them in the order they are given and keep every one of them.',
+        'A player may answer with "the second one" or "the last one", and that is counted',
+        'against the order above. Say them in your own words, in that sequence.',
+        '',
         'This licenses new WORDING and never new substance, and there is one trap in it worth',
         'naming. A fact that states the bar on something - what rank a house will hear, what a',
         'notice asks for - is telling you what somebody ELSE requires. It is not a statement',

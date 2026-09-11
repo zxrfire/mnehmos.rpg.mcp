@@ -127,3 +127,39 @@ describe('a crossing that is denied is not a crossing that happened', () => {
         )).toBe(true);
     });
 });
+
+/**
+ * A DISCARDED NARRATION WAS UNFALSIFIABLE FROM THE LOG.
+ *
+ * The boundary already shouts when it throws prose away, and its own comment
+ * says why: *the verdict has already been wrong once in a playtest, and a check
+ * that throws away good writing without saying so is unfalsifiable.* What it
+ * shouted was the KIND, and the kind is the guard's opinion rather than the
+ * evidence for it.
+ *
+ * Twice in one blind session a turn came back as the raw engine sheet, and the
+ * only way to learn which sentence had done it was to guess at prose nothing had
+ * kept. So a violation now carries the clause it tripped on - the clause and not
+ * the paragraph, because an operator log should not become a transcript of every
+ * narration the game ever wrote.
+ */
+describe('a discarded narration says which words did it', () => {
+    it('quotes the clause rather than the paragraph', () => {
+        const found = auditNarration(
+            'The wind moves over the terraces. You broke through to Qi Condensation Layer 2. '
+            + 'Somebody is watching from the wall.',
+            AT_LAYER_ONE
+        );
+        expect(found).toHaveLength(1);
+        expect(found[0]!.quote).toBe('You broke through to Qi Condensation Layer 2.');
+    });
+
+    it('quotes the absence it found, not the answer around it', () => {
+        const found = auditNarration(
+            'You take stock. The question goes unanswered. Your meridians are whole.',
+            AT_LAYER_ONE
+        );
+        expect(found.map(v => v.kind)).toEqual(['invented_absence']);
+        expect(found[0]!.quote).toBe('The question goes unanswered.');
+    });
+});

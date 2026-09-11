@@ -481,6 +481,35 @@ export interface NarrationViolation {
         | 'invented_possession'
         | 'invented_absence';
     detail: string;
+    /**
+     * The words that tripped it, where the check can point at them.
+     *
+     * A DISCARDED NARRATION WAS UNFALSIFIABLE FROM THE LOG. The boundary
+     * already shouts, and its own comment says why - *the verdict has already
+     * been wrong once in a playtest, and a check that throws away good writing
+     * without saying so is unfalsifiable*. But it shouted the KIND, and the
+     * kind is the guard's opinion. Twice in one blind session a turn came back
+     * as the raw engine sheet and the only way to find out what sentence had
+     * done it was to guess at the model's prose.
+     *
+     * The clause and not the paragraph: enough to act on, short enough that an
+     * operator log does not become a transcript of every narration the game
+     * ever wrote.
+     */
+    quote?: string;
+}
+
+/** The sentence a match sits in, trimmed for a log line. */
+function theClauseAround(text: string, at: number, length: number): string {
+    const before = Math.max(
+        ...['.', '!', '?', ';', '\n'].map(mark => text.lastIndexOf(mark, at)),
+        -1
+    );
+    const after = ['.', '!', '?', '\n']
+        .map(mark => text.indexOf(mark, at + length))
+        .filter(where => where >= 0);
+    const end = after.length > 0 ? Math.min(...after) + 1 : text.length;
+    return text.slice(before + 1, end).trim().slice(0, 200);
 }
 
 /** The rung words an advancement claim has to land on to be one. */
@@ -569,6 +598,9 @@ function insideAClauseThatDeniesIt(text: string, at: number): boolean {
     return NOT_THAT_IT_HAPPENED.test(text.slice(clauseStart + 1, at));
 }
 
+/** Where an advancement claim sits in the prose, or null for none. */
+interface WhereItSaysIt { at: number; length: number }
+
 function claimsThePlayerAdvanced(
     text: string,
     who: string | undefined,
@@ -594,13 +626,15 @@ function claimsThePlayerAdvanced(
      * ambiguous and the SUBJECT of them is not.
      */
     standsAt?: string
-): boolean {
+): WhereItSaysIt | null {
     // Every place it says it, not only the first: a paragraph that denies a
     // crossing in one sentence and asserts one in the next is still a claim.
     // See `insideAClauseThatDeniesIt` for the played defect.
     const said = new RegExp(ADVANCED_UNAMBIGUOUSLY.source, 'gi');
     for (let hit = said.exec(text); hit !== null; hit = said.exec(text)) {
-        if (!insideAClauseThatDeniesIt(text, hit.index)) return true;
+        if (!insideAClauseThatDeniesIt(text, hit.index)) {
+            return { at: hit.index, length: hit[0].length };
+        }
     }
 
     const subjects = ['you', 'your', ...(who && who.trim() ? [forRegExp(who.trim())] : [])];
@@ -613,20 +647,21 @@ function claimsThePlayerAdvanced(
         + `([^.!?]{0,60}?\\b${RUNG_WORD}\\b[^.!?]{0,12})`,
         'i'
     ).exec(text);
-    if (!claim) return false;
+    if (!claim) return null;
 
     // Same polarity rule as above, measured from the VERB rather than from the
     // start of the match: this pattern opens on the SUBJECT, so "you have not
     // yet reached" carries its own `not` inside the match, where a test on the
     // text before it cannot see it.
     const verbAt = claim[0].search(/\b(?:attained|reached)\b/i);
-    if (insideAClauseThatDeniesIt(text, claim.index + (verbAt < 0 ? 0 : verbAt))) return false;
+    if (insideAClauseThatDeniesIt(text, claim.index + (verbAt < 0 ? 0 : verbAt))) return null;
 
     // The rung it named, against the rung they are on. Absent, nothing is
     // excused and the check behaves as it always did.
+    const where = { at: claim.index, length: claim[0].length };
     const named = (standsAt ?? '').trim();
-    if (named.length === 0) return true;
-    return !new RegExp(forRegExp(named), 'i').test(claim[1] ?? '');
+    if (named.length === 0) return where;
+    return new RegExp(forRegExp(named), 'i').test(claim[1] ?? '') ? null : where;
 }
 
 /**
@@ -694,10 +729,14 @@ export function auditNarration(
     // resolved no attempt. An attempt that FAILED is a legitimate thing to
     // write about, and prose about it will contain these words.
     const granted = (filed.ranksGained ?? 0) > 0;
-    if (!granted && filed.breakthroughAttempted !== true && claimsThePlayerAdvanced(text, filed.who, filed.standsAt)) {
+    const advanced = granted || filed.breakthroughAttempted === true
+        ? null
+        : claimsThePlayerAdvanced(text, filed.who, filed.standsAt);
+    if (advanced !== null) {
         found.push({
             kind: 'invented_breakthrough',
-            detail: 'prose announces an advancement; the engine granted no rank and resolved no attempt'
+            detail: 'prose announces an advancement; the engine granted no rank and resolved no attempt',
+            quote: theClauseAround(text, advanced.at, advanced.length)
         });
     }
 
@@ -706,11 +745,13 @@ export function auditNarration(
     // Opt-in: absent means the caller has not said whether this turn answered
     // anything, and nothing is checked. `unclear` is the case that legitimately
     // ends in a non-answer, and it files `false`.
-    if (filed.answered === true && NOTHING_CAME_BACK.test(text)) {
+    const cameBackWithNothing = NOTHING_CAME_BACK.exec(text);
+    if (filed.answered === true && cameBackWithNothing !== null) {
         found.push({
             kind: 'invented_absence',
             detail:
-                'prose reports the question going unanswered; the engine answered it this turn'
+                'prose reports the question going unanswered; the engine answered it this turn',
+            quote: theClauseAround(text, cameBackWithNothing.index, cameBackWithNothing[0].length)
         });
     }
 
@@ -725,7 +766,8 @@ export function auditNarration(
         if (!claimsTheyHaveIt(text, name)) continue;
         found.push({
             kind: 'invented_possession',
-            detail: `prose has this cultivator holding ${name}, which the engine says they do not have`
+            detail: `prose has this cultivator holding ${name}, which the engine says they do not have`,
+            quote: theClauseAround(text, Math.max(0, text.toLowerCase().indexOf(name.toLowerCase())), name.length)
         });
         // One is enough to throw the account away, and listing the rest adds
         // nothing a reader of the log would act on.
@@ -1204,7 +1246,8 @@ export class ProviderNarrator implements Narrator {
                 // throws away good writing without saying so is unfalsifiable.
                 console.error(
                     `[narrator] narration discarded (${violations.map(v => v.kind).join(', ')}): `
-                    + violations.map(v => v.detail).join('; ')
+                    + violations.map(v =>
+                        v.detail + (v.quote === undefined ? '' : ` - on "${v.quote}"`)).join('; ')
                 );
                 return {
                     // And the player is told, which they were not before. See

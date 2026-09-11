@@ -350,6 +350,40 @@ export interface AReferenceResolved {
 export interface ResolvedAgainstTheLastTurn {
     readonly plan: PlanWithSteps;
     readonly resolutions: readonly AReferenceResolved[];
+    /**
+     * Phrases that ARE references and could not be settled.
+     *
+     * FOUND BY PLAYING BLIND. A stall had just listed two manuals by name and
+     * price. The player typed `i study it`, and the answer was:
+     *
+     *     You search the streets and alleys of Six Li, looking for a trace of
+     *     it... Nothing here answers to the thing you seek. It is either in
+     *     another place entirely, or it does not exist.
+     *
+     * The engine had just printed both books. It went looking for a PLACE
+     * called "it" and then told the player the thing did not exist.
+     *
+     * `whichOfTheNamedThings` was right to decline: *a demonstrative with one
+     * thing to point at points at it. With two it points at nothing, and saying
+     * so is better than choosing.* What was missing is the saying so. The
+     * resolver knew the phrase was a reference, knew it could not settle it,
+     * and dropped both facts on the floor - so the verb ran on the literal word
+     * and answered confidently about nothing.
+     */
+    readonly unsettled: readonly string[];
+}
+
+/** What the player is told when a reference pointed at more than one thing. */
+export function sayingItCouldHaveMeantAnyOfThese(
+    phrase: string,
+    named: readonly ThingNamed[]
+): string {
+    const listed = named.slice(0, MOST_NAMED_THINGS_RECALLED).map(thing => thing.name);
+    const both = listed.length === 2
+        ? `${listed[0]} or ${listed[1]}`
+        : `${listed.slice(0, -1).join(', ')} or ${listed[listed.length - 1]}`;
+    return `"${phrase}" could be ${both}, and picking one for you is not this game's to do. `
+        + 'Name it and it is settled.';
 }
 
 /**
@@ -361,6 +395,7 @@ export function resolvingAgainstTheLastTurn(
     input: string
 ): ResolvedAgainstTheLastTurn {
     const resolutions: AReferenceResolved[] = [];
+    const unsettled: string[] = [];
 
     const resolve = (action: PlannedAction): PlannedAction => {
         let changed: PlannedAction = action;
@@ -368,7 +403,14 @@ export function resolvingAgainstTheLastTurn(
             const value = changed[field];
             if (!standsForSomethingNamedLastTurn(value)) continue;
             const thing = whichOfTheNamedThings(value, input, record.named);
-            if (thing === null) continue;
+            if (thing === null) {
+                // Recorded rather than dropped. See `unsettled`: a reference
+                // nobody could settle used to reach the verb as the literal
+                // word, which is how "study it" became a search for a place
+                // called `it`.
+                if (record.named.length > 1 && !unsettled.includes(value!)) unsettled.push(value!);
+                continue;
+            }
             resolutions.push({ from: value!, to: thing.name });
             changed = { ...changed, [field]: thing.name };
         }
@@ -381,10 +423,11 @@ export function resolvingAgainstTheLastTurn(
     });
 
     const action = resolve(plan.action);
-    if (resolutions.length === 0) return { plan, resolutions };
+    if (resolutions.length === 0) return { plan, resolutions, unsettled };
     return {
         plan: { ...plan, action, ...(steps ? { steps } : {}) },
-        resolutions
+        resolutions,
+        unsettled
     };
 }
 

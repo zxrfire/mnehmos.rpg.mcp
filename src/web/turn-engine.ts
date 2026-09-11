@@ -769,6 +769,7 @@ import {
     describeTheLastTurn,
     nothingToCarryOnWith,
     resolvingAgainstTheLastTurn,
+    sayingItCouldHaveMeantAnyOfThese,
     sayingWhatItWasTakenToMean,
     sayingWhatWasCarriedOn,
     theLastTurnStillStands,
@@ -2113,6 +2114,22 @@ export class GameService {
                 execution.facts, sayingWhatItWasTakenToMean(resolved.resolutions)
             );
             execution.calls.push(theRowForAResolvedReference(resolved.resolutions, before!));
+        }
+        // AND THE ONES NOBODY COULD SETTLE, WHICH USED TO GO QUIET.
+        //
+        // `whichOfTheNamedThings` declines a demonstrative with two things to
+        // point at, on the ruling that saying so is better than choosing - and
+        // nothing said so. The phrase reached the verb as the literal word, so
+        // "I study it", one turn after a stall listed two manuals, went looking
+        // for a place called `it` and reported that it did not exist.
+        //
+        // Said whatever the narrator does, because it is the one sentence that
+        // lets the player fix it, and it names the candidates the engine itself
+        // printed rather than asking them to remember.
+        for (const phrase of resolved?.unsettled ?? []) {
+            sayThisWhateverTheNarratorDoes(
+                execution.facts, sayingItCouldHaveMeantAnyOfThese(phrase, before!.named)
+            );
         }
 
         // Doing something else with a day in it is going, and going says what
