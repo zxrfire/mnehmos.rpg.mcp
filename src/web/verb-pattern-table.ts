@@ -5173,7 +5173,30 @@ function planIntent(input: string): PlannedAction {
     // `assess` owns - it is the read that weighs somebody up.
     if (/\bhow\s+(?:hurt|badly hurt|bad|much\s+has\s+he\s+got)\b[^.?!]{0,20}\b(?:is\s+)?(?:he|she|they|him|her|them)\b/.test(text)
         || /\b(?:is|are)\s+(?:he|she|they)\s+(?:close\s+to\s+)?(?:done|finished|beaten|nearly done|about to drop|hurt)\b/.test(text)
-        || /\bhow\s+(?:is|are)\s+(?:he|she|they)\s+(?:doing|holding up|faring)\b/.test(text)) {
+        || /\bhow\s+(?:is|are)\s+(?:he|she|they)\s+(?:doing|holding up|faring)\b/.test(text)
+        // ── AND THE FOUR MORE WAYS OF ASKING IT, MEASURED MID-FIGHT ──────
+        //
+        // FOUND BY PLAYING BLIND, three rounds into a fight the player might
+        // have won. Every one of these reached `unclear`, and `unclear` was
+        // taking a guard round - so asking cost four points and, on an earlier
+        // measurement of the same shape, a permanent meridian injury:
+        //
+        //     what happened to him       what shape is he in
+        //     how much has he got left   who is winning
+        //
+        // `how hurt is he` and `how is he doing` were already here. These are
+        // the same question and the ones a person reaches for while somebody is
+        // swinging at them - the near-synonym trap, in the place where the cost
+        // of failing it is highest.
+        //
+        // `who is winning` is a question about the exchange rather than about a
+        // body, and it is answered by the same read: weighing the two of them is
+        // exactly what `assess` does.
+        || /\bwhat\s+(?:happened|has\s+happened)\s+to\s+(?:him|her|them)\b/.test(text)
+        || /\bwhat\s+(?:shape|state|condition)\s+(?:is|are)\s+(?:he|she|they)\s+in\b/.test(text)
+        || /\bhow\s+much\s+(?:has|have)\s+(?:he|she|they)\s+(?:got\s+)?(?:left|got)\b/.test(text)
+        || /\bwho\s+(?:is|'s)\s+winning\b/.test(text)
+        || /\bam\s+i\s+winning\b/.test(text)) {
         return { action: 'assess' };
     }
 

@@ -256,6 +256,7 @@ import {
     DEFAULT_RECALL_INTENT,
     DEFAULT_PASSAGE_INTENT,
     DEFAULT_OATH_INTENT,
+    FALLBACK_ACTION,
     RECALL_INTENTS,
     parseCount,
     parseIntent,
@@ -2092,8 +2093,29 @@ export class GameService {
                 // before this, three such questions cost 12 points and a permanent
                 // meridian injury - so a player deciding whether to run was charged
                 // for deciding. See `takeTheRoundFirst`.
+                //
+                // AND A SENTENCE THE ENGINE COULD NOT READ IS NOT AN ACT.
+                //
+                // FOUND BY PLAYING BLIND, mid-fight. `what happened to him` and
+                // `what shape is he in` both reach `unclear`, and both took a
+                // round: the opponent landed four points and the answer was
+                // *the question finds no answer in the air*. The player was
+                // charged for the parser failing to read them.
+                //
+                // `unclear` is defined by this file as the one branch that
+                // cannot cost anything - *no time, no food, no roll, no death.
+                // A player may type something ambiguous a hundred times and
+                // lose nothing but a moment.* A round is all four of those, and
+                // one of the three measured charges came with a permanent
+                // meridian injury.
+                //
+                // This is not the same licence as `status` and `assess`. Those
+                // are things a fighter does without looking away, and they
+                // ANSWER. This one produced nothing at all, and a turn that
+                // produced nothing must not also take something.
                 theTurnsPlan.action.action === 'status'
                     || theTurnsPlan.action.action === 'assess'
+                    || theTurnsPlan.action.action === FALLBACK_ACTION
             );
 
         if (carriesOn !== null && carryingOn === null) {
