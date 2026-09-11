@@ -40,6 +40,19 @@
  * phrasing another phrasing, and the table grows toward a language model it can
  * never be. The reader that can do that job is already running.
  *
+ * WHAT TO TEST AT THIS TIER. Engine-only mode is SUPPOSED to require the player
+ * to be specific, so a test here holds it to that and nothing more: an explicit
+ * sentence reaches the verb it names, nothing MIS-ROUTES into spending, and
+ * every name the engine prints is a name it accepts back.
+ *
+ * Not, ever, English comprehension. No back-references - `it`, `that one`, `the
+ * cheaper one` - because those resolve against the previous turn and that is
+ * phase 1's job, tested with a scripted plan. No vague sentences, and no sweeps
+ * of near-synonyms to prove this table knows them all. It does not, it never
+ * will, and the player's remedy is to say it plainly.
+ *
+ * `context.md` carries this under *What engine-only mode is for*.
+ *
  * `context.md` carries the same ruling under *Who parses what the player meant*,
  * with the sentence that produced it.
  */

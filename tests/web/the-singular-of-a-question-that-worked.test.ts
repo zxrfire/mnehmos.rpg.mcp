@@ -39,6 +39,22 @@
  * than the thing, which is the near-synonym trap AGENTS.md names: the phrasing
  * a player reaches for first is the one that fails, and they cannot find the
  * working half except by guessing.
+ *
+ * ── AND HALF OF THIS FILE IS NOT PRECEDENT ───────────────────────────────
+ *
+ * Written before the ruling in `context.md` under *What engine-only mode is
+ * for*. Read it with that split in mind, because only one half of it earns a
+ * place at this tier:
+ *
+ *   THE MIS-ROUTE ASSERTIONS EARN IT. A question about a PERSON answered with
+ *   what a HOUSE makes of you is the table doing something wrong with a
+ *   sentence it knows, and that is exactly what belongs here.
+ *
+ *   THE NEAR-SYNONYM SWEEPS DO NOT. Proving the table knows six ways to ask one
+ *   question is testing English comprehension against a regular expression.
+ *   Engine-only mode is supposed to require the player to be specific; the
+ *   phrasings it does not know are the player's cue to say it plainly, not a
+ *   defect. Do not take these lists as licence to add more.
  */
 
 import { describe, it, expect } from 'vitest';

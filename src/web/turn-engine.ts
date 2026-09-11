@@ -2173,10 +2173,32 @@ export class GameService {
             );
             execution.calls.push(theRowForCarryingOn(carriesOn, carryingOn));
         }
+        //
+        // AND ONLY WHERE SOMETHING WAS SPENT ON IT. The rule above is about a
+        // JUDGEMENT CALL the player is owed sight of, and the example it gives
+        // is the one that earns it: a decade of somebody's life going by because
+        // `keep at it` was read as another seclusion.
+        //
+        // A free read has no such stake, and the line is noise on one. Played:
+        // a player bought a manual, said `i study it`, and the turn ended on
+        // *"it" was taken to mean Lesser Qi-Gathering Manual, off what you were
+        // told a turn ago. Name it outright if it was something else.* It had
+        // read them correctly, about a book they were holding, and then
+        // explained its own reading back at them.
+        //
+        // That is the engine narrating its parser in the player's face, which is
+        // the same thing the hedge below was doing and the owner's ruling covers
+        // both: the model reads the sentence, and the seams of that reading are
+        // the operator's business unless the reading cost something.
+        //
+        // The row is pushed either way, so nothing is lost to somebody tuning
+        // phase 1 - only the sentence a player reads is.
         if (resolved && resolved.resolutions.length > 0) {
-            sayThisWhateverTheNarratorDoes(
-                execution.facts, sayingWhatItWasTakenToMean(resolved.resolutions)
-            );
+            if (!costsTheAskerNothing(theTurnsPlan.action)) {
+                sayThisWhateverTheNarratorDoes(
+                    execution.facts, sayingWhatItWasTakenToMean(resolved.resolutions)
+                );
+            }
             execution.calls.push(theRowForAResolvedReference(resolved.resolutions, before!));
         }
         // ── AND THE ONES NOBODY COULD SETTLE GO QUIET, ON PURPOSE ────────

@@ -77,6 +77,40 @@ model already has is the failure this section is about, and it has no end: every
 has another synonym and every phrasing another phrasing, and the table grows toward a
 language model it can never be. The reader that can do that job is already running.
 
+#### What engine-only mode is for, and what to test there
+
+Engine-only is the mode with no model in it. It is **supposed** to require the
+player to be specific. English understanding without a language model is hard,
+and this tier does not attempt it: what it offers is a closed vocabulary that
+answers reliably when somebody says plainly what they want.
+
+So the expectation for that mode is *name the thing, name the verb*, and a test
+at that tier should hold it to that and nothing more.
+
+**Do not test English comprehension against the pattern table.** In particular:
+
+- no back-references - `it`, `that one`, `the second one`, `the cheaper one`.
+  Those resolve against the previous turn, which is phase 1's job and is tested
+  with a scripted plan.
+- no vague or elliptical sentences, and no sweeps of near-synonyms to prove the
+  table knows them all. It does not, it never will, and the player's remedy is
+  to say it plainly.
+
+**What IS worth testing at that tier**, and all of it is about the engine rather
+than about English:
+
+- an explicit sentence reaches the verb it names,
+- nothing MIS-ROUTES into spending - a question does not execute an act, a read
+  does not take a day, a category word does not become a place or a person,
+- every name the engine PRINTS is a name it accepts back, which is the one
+  vocabulary promise this tier does make.
+
+Anaphora, ambiguity and ordinary conversational phrasing belong to phase-1
+tests, where a scripted plan stands in for the model and the thing under test is
+what the engine does with the reading - not whether a regular expression arrived
+at it.
+
+
 **And the engine never hedges at the player.** Where a reference cannot be settled,
 drop the field and let the verb answer the general question. Do not print *"X could be
 A or B, name it and it is settled"* - that sentence is the engine asking the player to

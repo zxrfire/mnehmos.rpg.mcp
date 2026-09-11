@@ -55,6 +55,21 @@
  * kind of reference against that list. A demonstrative resolved by a pattern
  * table is a guess about which listing was meant; resolved against the last
  * turn it is a lookup. Every entry pinned below names the thing.
+ *
+ * ── AND HALF OF THIS FILE IS NOT PRECEDENT ───────────────────────────────
+ *
+ * Written before the ruling in `context.md` under *What engine-only mode is
+ * for*. Only one half of it earns a place at this tier.
+ *
+ *   THE MISSING VERB EARNS IT. A board the engine prints and cannot accept a
+ *   line off is the one vocabulary promise this tier makes being broken, and
+ *   that is exactly what belongs here.
+ *
+ *   THE SYNONYM LIST DOES NOT. Proving the table knows four ways to say yes is
+ *   testing English comprehension against a regular expression. Engine-only
+ *   mode is supposed to require the player to be specific; a phrasing it does
+ *   not know is their cue to say it plainly, not a defect. Do not take the list
+ *   as licence to add more.
  */
 
 import { describe, it, expect } from 'vitest';

@@ -57,6 +57,7 @@ import {
     resolvingAgainstTheLastTurn,
     type WhatTheLastTurnDid
 } from '../../src/web/last-turn-memory';
+import { costsTheAskerNothing } from '../../src/web/asking-is-not-doing';
 
 
 const TWO_BOOKS: WhatTheLastTurnDid = {
@@ -197,4 +198,45 @@ describe('a comparative that ties settles nothing', () => {
         expect(out.resolutions.map(r => r.to)).toEqual(['Lesser Qi-Gathering Manual']);
     });
 
+});
+
+/**
+ * AND A READING IS SHOWN ONLY WHERE IT COST SOMETHING.
+ *
+ * `sayThisWhateverTheNarratorDoes` carries the resolution back to the player on
+ * AGENTS.md's rule - *where a reading is a judgement call, show it* - and the
+ * example that earns it is the one its own comment gives: a decade of somebody's
+ * life going by because `keep at it` was read as another seclusion.
+ *
+ * A free read has no such stake. Played, after the hedges came off:
+ *
+ *     > i study it
+ *     The Lesser Qi-Gathering Manual is a slim thing of six block-printed
+ *     pages... reading the pages is not the same as knowing the art.
+ *
+ *     "it" was taken to mean Lesser Qi-Gathering Manual, off what you were told
+ *     a turn ago. Name it outright if it was something else.
+ *
+ * It had read them correctly, about a book they were holding, and then explained
+ * its own reading back at them. That is the engine narrating its parser in the
+ * player's face - the same thing the candidate hedge was doing, and the same
+ * ruling covers it.
+ *
+ * The operator row is pushed either way, so nothing is lost to somebody tuning
+ * phase 1. What goes is the sentence a player reads on a turn that risked
+ * nothing.
+ */
+describe('which readings the player is shown', () => {
+    it('keeps the predicate the engine branches on', () => {
+        // A stretch of years is the case the rule was written for.
+        expect(costsTheAskerNothing({ action: 'cultivate', days: 3650 })).toBe(false);
+        expect(costsTheAskerNothing({ action: 'buy', target: 'a manual' })).toBe(false);
+        // Learning one is an act too - it takes the days it takes - so a
+        // reference resolved into a `learn` is still shown. What is not is a
+        // turn that only LOOKED at the thing.
+        expect(costsTheAskerNothing({ action: 'learn_technique', target: 'a manual' }))
+            .toBe(false);
+        expect(costsTheAskerNothing({ action: 'investigate', target: 'a manual' })).toBe(true);
+        expect(costsTheAskerNothing({ action: 'status' })).toBe(true);
+    });
 });
