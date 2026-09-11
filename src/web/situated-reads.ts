@@ -50,7 +50,7 @@ import {
 } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import { daoHeartFor, listPouch } from '../server/consolidated/cultivation-support.js';
-import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
+import { copyNamesHeldBy } from '../server/consolidated/technique-manage.js';
 import {
     requiredContributionForRank,
     requiredOrdinalForRank
@@ -167,7 +167,7 @@ export const situatedReads = {
         const manual = techniqueCeiling(
             cultivator.realmOrdinal,
             terms.techniqueCap,
-            copiesHeldBy(this.db, cultivator.id).length > 0
+            copyNamesHeldBy(this.db, cultivator.id)
         );
         const eligibility = canAttemptBreakthrough(cultivator);
         const where = standingOf(cultivator);
@@ -786,7 +786,7 @@ export const situatedReads = {
         const road = techniqueCeiling(
             cultivator.realmOrdinal,
             terms.techniqueCap,
-            copiesHeldBy(this.db, cultivator.id).length > 0
+            copyNamesHeldBy(this.db, cultivator.id)
         );
 
         const hurt = untreatedInjuries(cultivator.injuries);

@@ -44,6 +44,7 @@ import {
     type WhatTheLastTurnDid
 } from '../../src/web/last-turn-memory';
 
+
 const TWO_BOOKS: WhatTheLastTurnDid = {
     runId: 'run', cultivatorId: 'cult', onTurn: 4, outcome: 'executed', acts: [],
     named: [
@@ -138,5 +139,77 @@ describe('what the player is told', () => {
         for (const nudge of ['cheaper', 'better', 'probably', 'presumably', 'taken to mean']) {
             expect(said, nudge).not.toContain(nudge);
         }
+    });
+});
+
+/**
+ * "The cheaper one" of two things that cost the same bought the wrong book.
+ *
+ * FOUND BY PLAYING BLIND, on the turn after a stall read:
+ *
+ *     A copy of the Lesser Qi-Gathering Manual is listed at 8 spirit stones; it
+ *     opens at Qi Condensation Layer 1... the Five-Breath Circulation Scripture
+ *     is priced at 13, though it requires Qi Condensation Layer 6 to begin.
+ *     Bai Fukuan himself holds a copy of the Five-Breath Circulation Scripture,
+ *     and he is willing to let it go for 8 spirit stones.
+ *
+ *     > i buy the cheaper one
+ *     Bai Fukuan takes the eight spirit stones... It is a work that remains
+ *     silent to anyone below Qi Condensation Layer 6.
+ *
+ * Two things at eight stones, and `reduce` keeps whichever of two equal prices
+ * it met first - so the phrase settled on an ordering nobody had said anything
+ * about, and a cultivator at Layer 1 walked away with a book that opens five
+ * rungs above them instead of the one they could have opened that afternoon.
+ *
+ * It is the same ruling the demonstrative already keeps, applied to a
+ * comparative: "the cheaper one" of two things that cost the same is not a
+ * phrase with an answer, and picking one is worse than asking.
+ */
+describe('a comparative that ties settles nothing', () => {
+    const TWO_AT_EIGHT: WhatTheLastTurnDid = {
+        ...TWO_BOOKS,
+        named: [
+            { name: 'Lesser Qi-Gathering Manual', stones: 8 },
+            { name: 'Five-Breath Circulation Scripture', stones: 13 },
+            { name: "Bai Fukuan's Five-Breath Circulation Scripture", stones: 8 }
+        ]
+    };
+
+    it('does not pick one of two equal prices', () => {
+        const out = resolvingAgainstTheLastTurn(
+            { action: { action: 'buy', target: 'the cheaper one' }, source: 'model' } as never,
+            TWO_AT_EIGHT,
+            'i buy the cheaper one'
+        );
+        expect(out.resolutions).toEqual([]);
+        expect(out.unsettled).toEqual(['the cheaper one']);
+    });
+
+    /**
+     * AND A CLEAR WINNER IS STILL PICKED. Without this the fix would read as
+     * "comparatives no longer work", which is not the ruling.
+     */
+    it('still picks the only one at the price', () => {
+        const out = resolvingAgainstTheLastTurn(
+            { action: { action: 'buy', target: 'the cheaper one' }, source: 'model' } as never,
+            TWO_BOOKS,
+            'i buy the cheaper one'
+        );
+        expect(out.resolutions.map(r => r.to)).toEqual(['Lesser Qi-Gathering Manual']);
+    });
+
+    /**
+     * AND THE SHORTLIST IS THE COMPARATIVE'S OWN. Offering the thirteen-stone
+     * book back as a candidate for "the cheaper one" would be answering a
+     * narrower question with a wider list.
+     */
+    it('names only the ones at the tied price', () => {
+        const said = sayingItCouldHaveMeantAnyOfThese('the cheaper one', TWO_AT_EIGHT.named);
+        expect(said).toContain('Lesser Qi-Gathering Manual');
+        expect(said).toContain("Bai Fukuan's Five-Breath Circulation Scripture");
+        // The one that is not at the price is not on the list. Matched on the
+        // bare title, which the tied copy's own name does not contain on its own.
+        expect(said.split('Lesser Qi-Gathering Manual').length).toBe(2);
     });
 });

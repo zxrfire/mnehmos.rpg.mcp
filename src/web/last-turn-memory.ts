@@ -306,6 +306,21 @@ export function standsForSomethingNamedLastTurn(value: string | undefined): bool
 }
 
 /**
+ * The one thing at the extreme price, or null where two share it.
+ *
+ * See the note at the call site: a comparative that ties is a phrase with no
+ * answer, and answering it anyway is how a player buys the wrong book.
+ */
+function theOnlyOneAt(
+    priced: readonly ThingNamed[],
+    extreme: (...values: number[]) => number
+): ThingNamed | null {
+    const at = extreme(...priced.map(thing => thing.stones!));
+    const there = priced.filter(thing => thing.stones === at);
+    return there.length === 1 ? there[0]! : null;
+}
+
+/**
  * Which of the things the last turn named this phrase means, or null.
  */
 export function whichOfTheNamedThings(
@@ -323,12 +338,23 @@ export function whichOfTheNamedThings(
 
         const priced = named.filter(thing => typeof thing.stones === 'number');
         if (priced.length >= 2) {
-            if (THE_CHEAPER.test(text)) {
-                return priced.reduce((a, b) => (b.stones! < a.stones! ? b : a));
-            }
-            if (THE_DEARER.test(text)) {
-                return priced.reduce((a, b) => (b.stones! > a.stones! ? b : a));
-            }
+            // A TIE POINTS AT NOTHING, which is the demonstrative rule below
+            // applied to a comparative.
+            //
+            // FOUND BY PLAYING BLIND. A stall listed the Lesser Qi-Gathering
+            // Manual at 8 and the Five-Breath Circulation Scripture at 13, and
+            // a man beside it offered his own copy of the Five-Breath at 8.
+            // `i buy the cheaper one` handed over the Five-Breath: `reduce`
+            // keeps whichever of two equal prices it met first, so the phrase
+            // settled on an ordering nobody had said anything about, and the
+            // player walked away with a book they cannot open for five more
+            // rungs instead of the one they can open today.
+            //
+            // "The cheaper one" of two things that cost the same is not a
+            // phrase with an answer, and picking one is the failure this file
+            // already refuses for `it`.
+            if (THE_CHEAPER.test(text)) return theOnlyOneAt(priced, Math.min);
+            if (THE_DEARER.test(text)) return theOnlyOneAt(priced, Math.max);
         }
         if (THE_LAST_ONE.test(text)) return named[named.length - 1]!;
         for (const [pattern, at] of AN_ORDINAL) {
@@ -373,12 +399,39 @@ export interface ResolvedAgainstTheLastTurn {
     readonly unsettled: readonly string[];
 }
 
+/**
+ * The things a phrase could have meant, where it could not settle on one.
+ *
+ * The same narrowing the resolver does, kept here rather than threaded through
+ * it: a comparative has already ruled out everything that is not at the extreme
+ * price, and a demonstrative has ruled out nothing.
+ */
+export function whichOnesItCouldHaveMeant(
+    phrase: string,
+    named: readonly ThingNamed[]
+): readonly ThingNamed[] {
+    const priced = named.filter(thing => typeof thing.stones === 'number');
+    if (priced.length >= 2 && (THE_CHEAPER.test(phrase) || THE_DEARER.test(phrase))) {
+        const at = THE_CHEAPER.test(phrase)
+            ? Math.min(...priced.map(thing => thing.stones!))
+            : Math.max(...priced.map(thing => thing.stones!));
+        return priced.filter(thing => thing.stones === at);
+    }
+    return named;
+}
+
 /** What the player is told when a reference pointed at more than one thing. */
 export function sayingItCouldHaveMeantAnyOfThese(
     phrase: string,
     named: readonly ThingNamed[]
 ): string {
-    const listed = named.slice(0, MOST_NAMED_THINGS_RECALLED).map(thing => thing.name);
+    // A COMPARATIVE NAMES ITS OWN SHORTLIST. "The cheaper one" of a stall
+    // holding an 8, a 13 and another 8 could have been either of the eights
+    // and could not have been the thirteen, and offering all three back would
+    // be answering a narrower question with a wider list.
+    const listed = whichOnesItCouldHaveMeant(phrase, named)
+        .slice(0, MOST_NAMED_THINGS_RECALLED)
+        .map(thing => thing.name);
     const both = listed.length === 2
         ? `${listed[0]} or ${listed[1]}`
         : `${listed.slice(0, -1).join(', ')} or ${listed[listed.length - 1]}`;

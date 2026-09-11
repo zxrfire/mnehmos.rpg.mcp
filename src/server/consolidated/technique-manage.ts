@@ -124,6 +124,35 @@ export function copiesHeldBy(db: Database.Database, cultivatorId: string): strin
     return raw.split(',').map(id => id.trim()).filter(id => id.length > 0);
 }
 
+/**
+ * The NAMES of the unlearned copies somebody is carrying.
+ *
+ * FOUND BY PLAYING BLIND, and the defect was in what the sentence left out. A
+ * cultivator who had bought the Five-Breath Circulation Scripture and could not
+ * open it typed `i sit and cultivate for ten years`, and the engine answered:
+ *
+ *     No cultivation method, so nothing accumulates however long you sit. You
+ *     are carrying a copy you have never opened... Lesser Qi-Gathering Manual
+ *     carries further than you stand, and you could be taught it.
+ *
+ * Two sentences about two different books, and the first one does not say which
+ * book it is about. The narration fused them - *the Lesser Qi-Gathering Manual
+ * remains in your possession* - and was thrown away for inventing a possession,
+ * so the player got the raw sheet instead. The engine knew which copy was in the
+ * bag on both lines and said it on only one of them.
+ *
+ * A copy with no id in the catalog is dropped rather than named as its id: an
+ * id in a player's face is the defect `no-source-in-the-players-face` is for.
+ */
+export function copyNamesHeldBy(db: Database.Database, cultivatorId: string): string[] {
+    const named: string[] = [];
+    for (const id of copiesHeldBy(db, cultivatorId)) {
+        const technique = getTechnique(id);
+        if (technique?.name) named.push(technique.name);
+    }
+    return named;
+}
+
 export function holdsACopyOf(
     db: Database.Database,
     cultivatorId: string,

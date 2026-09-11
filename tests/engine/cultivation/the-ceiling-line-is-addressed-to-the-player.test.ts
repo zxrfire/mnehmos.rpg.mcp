@@ -47,6 +47,9 @@ import { describe, it, expect } from 'vitest';
 
 import { NO_MANUAL_CEILING, techniqueCeiling } from '../../../src/engine/cultivation/cultivation';
 
+/** A copy in the bag, named because the line names it. */
+const A_COPY_IN_THE_BAG = 'Five-Breath Circulation Scripture';
+
 /**
  * Every shape of `techniqueCeiling` that returns a line at all. Both states,
  * both sides of the copy-in-the-bag branch, and both sides of the Lid - because
@@ -55,9 +58,9 @@ import { NO_MANUAL_CEILING, techniqueCeiling } from '../../../src/engine/cultiva
  */
 const EVERY_BRANCH_THAT_SPEAKS = [
     ['no method, climbing, empty handed', () => techniqueCeiling(0, NO_MANUAL_CEILING)],
-    ['no method, climbing, carrying a copy', () => techniqueCeiling(0, NO_MANUAL_CEILING, true)],
+    ['no method, climbing, carrying a copy', () => techniqueCeiling(0, NO_MANUAL_CEILING, [A_COPY_IN_THE_BAG])],
     ['no method, above the Lid', () => techniqueCeiling(46, NO_MANUAL_CEILING)],
-    ['no method, above the Lid, carrying a copy', () => techniqueCeiling(46, NO_MANUAL_CEILING, true)],
+    ['no method, above the Lid, carrying a copy', () => techniqueCeiling(46, NO_MANUAL_CEILING, [A_COPY_IN_THE_BAG])],
     ['the manual has ended, climbing', () => techniqueCeiling(20, 20)],
     ['the manual has ended, above the Lid', () => techniqueCeiling(46, 46)]
 ] as const;

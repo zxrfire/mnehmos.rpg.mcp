@@ -35,7 +35,7 @@ import {
     daoHeartConditions,
     tollConditionsFor
 } from '../server/consolidated/cultivation-support.js';
-import { copiesHeldBy, handleListAvailable } from '../server/consolidated/technique-manage.js';
+import { copyNamesHeldBy, handleListAvailable } from '../server/consolidated/technique-manage.js';
 import type { ActionName } from './actions.js';
 import { applyTimeSkip } from './apply.js';
 import {
@@ -200,7 +200,7 @@ export const seclusionVerbs = {
         // A STRETCH WHOSE RETURN IS ZERO IS NOT SOLD SILENTLY
         const wall = techniqueCeiling(
             cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
-            copiesHeldBy(this.db, cultivator.id).length > 0
+            copyNamesHeldBy(this.db, cultivator.id)
         );
         if (wall.multiplier === 0 && !options.acknowledged) {
             return this.sittingWouldReturnNothing(cultivator, wall, days);
@@ -443,7 +443,7 @@ export const seclusionVerbs = {
         // THE CEILING, BEFORE THE DECADE RATHER THAN AFTER
         const ceiling = techniqueCeiling(
             cultivator.realmOrdinal, terms.techniqueCap,
-            copiesHeldBy(this.db, cultivator.id).length > 0
+            copyNamesHeldBy(this.db, cultivator.id)
         );
         if (ceiling.line !== null) {
             facts.lines.unshift(ceiling.line);

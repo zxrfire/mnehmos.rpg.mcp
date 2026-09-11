@@ -204,6 +204,7 @@ import {
 } from '../server/consolidated/combat-manage.js';
 import {
     copiesHeldBy,
+    copyNamesHeldBy,
     handleLearn,
     handleListAvailable,
     handlePractise,
@@ -3259,7 +3260,7 @@ ${noticedWaiting}`;
                         cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
                         // Or the sheet sends somebody to buy a book that is in
                         // their bag. See `techniqueCeiling`.
-                        copiesHeldBy(this.db, cultivator.id).length > 0
+                        copyNamesHeldBy(this.db, cultivator.id)
                     ).line
                 ));
                 // AND WHAT THEY ARE ACTUALLY CARRYING, when it is close enough

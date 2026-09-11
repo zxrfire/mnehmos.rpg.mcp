@@ -299,11 +299,30 @@ export interface TechniqueCeiling {
  * `techniqueExhausted` remains the boolean everything else reads; this is the
  * legible form, and the two cannot disagree because this calls it.
  */
+/** "A", or "A and B", or "A, B and C". */
+function aListOf(names: readonly string[]): string {
+    if (names.length <= 1) return names[0] ?? '';
+    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
 export function techniqueCeiling(
     realmOrdinal: number,
     techniqueCap?: number | null,
-    holdsAnUnlearnedCopy: boolean = false
+    /**
+     * The unlearned copies in the bag, BY NAME.
+     *
+     * This was a boolean, and the sentence it produced said "a copy" without
+     * saying which. Found by playing: a cultivator carrying the Five-Breath
+     * Circulation Scripture was told in one breath that they were carrying an
+     * unopened copy and in the next that the Lesser Qi-Gathering Manual would
+     * carry them further - two books, one of them unnamed - and the narration
+     * fused the two and was thrown away for inventing a possession.
+     *
+     * An empty list means no copy, which is what `false` meant.
+     */
+    heldCopies: readonly string[] = []
 ): TechniqueCeiling {
+    const holdsAnUnlearnedCopy = heldCopies.length > 0;
     if (!techniqueExhausted(realmOrdinal, techniqueCap)) {
         return {
             state: 'teaching',
@@ -428,8 +447,10 @@ export function techniqueCeiling(
                   'rung above this one that qi buys. What is left is what you understand.'
                 : 'No cultivation method, so nothing accumulates however long you sit. ' +
                   (holdsAnUnlearnedCopy
-                      ? 'You are carrying a copy you have never opened, and owning it is ' +
-                        'not reading it.'
+                      // NAMED, because the pointer beside this one names a
+                      // DIFFERENT book and an unnamed copy reads as that one.
+                      ? `You are carrying a copy of ${aListOf(heldCopies)} and have never ` +
+                        'opened it; owning it is not reading it.'
                       : 'What closes that is a book, or somebody willing to teach you one.')
         };
     }

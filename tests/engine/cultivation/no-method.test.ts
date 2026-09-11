@@ -23,6 +23,15 @@ import { simulateTimeSkip } from '../../../src/engine/cultivation/time-skip.js';
 import { rankName } from '../../../src/engine/cultivation/realms.js';
 import { makeCultivator } from './fixtures.js';
 
+/**
+ * A book somebody bought and never sat down with.
+ *
+ * Named rather than a bare flag, because the line beside this one names a
+ * DIFFERENT book - the one that would carry them further - and an unnamed copy
+ * reads as that one. See `techniqueCeiling`'s `heldCopies`.
+ */
+const A_COPY_IN_THE_BAG = 'Five-Breath Circulation Scripture';
+
 describe('the fourth reason a manual fails somebody: there is no manual', () => {
     it('no method and an ended manual are different facts with different labels', () => {
         // The bug, exactly: a cap of 0 and a cap of 13 both returned true from
@@ -157,7 +166,7 @@ describe('a copy in the bag is not a road, and it is not an absence either', () 
     // had said it in the same session: "the copy is now held and the art is
     // not: owning it and having sat down with it are separate facts."
     it('does not send somebody carrying an unopened copy to go and find a book', () => {
-        const carrying = techniqueCeiling(0, NO_MANUAL_CEILING, true);
+        const carrying = techniqueCeiling(0, NO_MANUAL_CEILING, [A_COPY_IN_THE_BAG]);
 
         expect(carrying.state).toBe('no_method');
         expect(carrying.line).toMatch(/never opened/i);
@@ -174,8 +183,8 @@ describe('a copy in the bag is not a road, and it is not an absence either', () 
     });
 
     it('leaves the two halves saying different things, which is the whole point', () => {
-        const carrying = techniqueCeiling(0, NO_MANUAL_CEILING, true);
-        const empty = techniqueCeiling(0, NO_MANUAL_CEILING, false);
+        const carrying = techniqueCeiling(0, NO_MANUAL_CEILING, [A_COPY_IN_THE_BAG]);
+        const empty = techniqueCeiling(0, NO_MANUAL_CEILING, []);
 
         expect(carrying.line).not.toBe(empty.line);
         // Both are still the same STATE and the same stop. Nothing accumulates
@@ -187,16 +196,65 @@ describe('a copy in the bag is not a road, and it is not an absence either', () 
 
     it('defaults to the empty-handed wording, so a caller that cannot see a pouch is unchanged', () => {
         expect(techniqueCeiling(0, NO_MANUAL_CEILING).line)
-            .toBe(techniqueCeiling(0, NO_MANUAL_CEILING, false).line);
+            .toBe(techniqueCeiling(0, NO_MANUAL_CEILING, []).line);
     });
 
     // Above the Lid a book is not the answer at all, and that sentence must not
     // acquire a copy-in-the-bag branch: there is nothing for a manual to carry
     // anybody to up there, whether they hold one or not.
     it('says nothing about a held copy above the Lid, where no book is the answer', () => {
-        const above = techniqueCeiling(46, NO_MANUAL_CEILING, true);
+        const above = techniqueCeiling(46, NO_MANUAL_CEILING, [A_COPY_IN_THE_BAG]);
 
         expect(above.line).toMatch(/what you understand/);
         expect(above.line).not.toMatch(/never opened/i);
+    });
+});
+
+/**
+ * The copy in the bag had no name, and the sentence beside it named a different
+ * book.
+ *
+ * FOUND BY PLAYING BLIND. A cultivator who had bought the Five-Breath
+ * Circulation Scripture and could not open it typed `i sit and cultivate for
+ * ten years`:
+ *
+ *     No cultivation method, so nothing accumulates however long you sit. You
+ *     are carrying a copy you have never opened, and owning it is not reading
+ *     it. The stretch returns nothing. Lesser Qi-Gathering Manual carries
+ *     further than you stand, and you could be taught it.
+ *
+ * Two sentences about two different books. The first does not say which book it
+ * is about, and the second names one - so the only book on the screen is the one
+ * they do NOT have. The narration fused them, wrote *the Lesser Qi-Gathering
+ * Manual remains in your possession*, and was thrown away for inventing a
+ * possession. The player got the raw engine sheet with an apology under it.
+ *
+ * The engine knew which copy was in the bag on both lines. It had been handed a
+ * BOOLEAN and could only say "a copy".
+ */
+describe('the copy in the bag is named', () => {
+    const SCRIPTURE = 'Five-Breath Circulation Scripture';
+
+    it('names it rather than saying "a copy"', () => {
+        const line = techniqueCeiling(0, NO_MANUAL_CEILING, [SCRIPTURE]).line!;
+        expect(line).toContain(SCRIPTURE);
+    });
+
+    it('names both when two are being carried', () => {
+        const line = techniqueCeiling(0, NO_MANUAL_CEILING, [SCRIPTURE, 'Iron Bone Canon']).line!;
+        expect(line).toContain(SCRIPTURE);
+        expect(line).toContain('Iron Bone Canon');
+    });
+
+    /**
+     * AND AN EMPTY LIST IS WHAT `false` MEANT. The parameter changed shape, and
+     * a caller that cannot see the pouch must still say exactly what it said
+     * before rather than claiming an unnamed copy.
+     */
+    it('says find a book to somebody carrying none', () => {
+        expect(techniqueCeiling(0, NO_MANUAL_CEILING, []).line)
+            .toBe(techniqueCeiling(0, NO_MANUAL_CEILING).line);
+        expect(techniqueCeiling(0, NO_MANUAL_CEILING, []).line)
+            .toMatch(/a book, or somebody willing to teach/);
     });
 });
