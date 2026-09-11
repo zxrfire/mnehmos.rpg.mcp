@@ -5427,6 +5427,13 @@ ${noticed}`;
                 && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
                 && this.knowledge.isAwareOf(asked.id, subject.kind, subject.id),
             priorDealings: this.dealingsWith(cultivator, asked.id),
+            // What comes out when nothing about the question does. `asked.ts`
+            // decides whether they get to use it.
+            onTheirMind: this.whatTheyHaveOnTheirMind(
+                asked,
+                this.atHand?.npcs.find(row => row.id === asked.id) ?? null,
+                new Set((this.atHand?.factions ?? []).map(house => house.id))
+            ),
             compelled
         });
 
@@ -5521,7 +5528,16 @@ ${noticed}`;
                     `Asked ${asked.name} about "${topic}"` +
                     `${subject ? ` (resolved to ${subject.kind} ${subject.id})` : ' (unresolved)'}. ` +
                     `Reach: ${answer.reach}.`,
-                ok: answer.reach === 'answers' || answer.reach === 'partial'
+                // `askedAbout` never declines. It runs three limits and returns
+                // one of five reaches, and a deflection is one of them rather
+                // than a failure to produce one - which is what `ok` means on
+                // this channel. Reading it off the reach made a second, lossy
+                // copy of `reach` that disagreed with the rest of its own turn:
+                // the row below recorded a name GIVEN in the answer while this
+                // row said the ask had not come off, and
+                // `a-sentence-can-be-more-than-one-call.ts` reads this flag to
+                // decide whether a leg of a compound sentence happened.
+                ok: true
             }
         ];
         if (met) {
@@ -14531,6 +14547,32 @@ ${fit.line}`;
         return faces;
     }
 
+    /**
+     * WHAT A PERSON HAS ON THEIR MIND, for the two channels that carry it.
+     *
+     * The square prints it as what you overhear; an answer that said nothing
+     * about the question prints it as what they talked about instead. Both are
+     * the same reading and it is derived here once, because a second copy of
+     * what somebody is preoccupied with would have the square and the
+     * conversation disagreeing about the same person in the same turn.
+     */
+    private whatTheyHaveOnTheirMind(
+        person: { id: string; realmOrdinal: number; age: number; sectRank: string | null },
+        row: { tags: readonly string[] } | null,
+        houseIds: ReadonlySet<string>
+    ): string | null {
+        if (row === null) return null;
+        return whatTheyWouldBeHeardOnAbout({
+            ordinal: person.realmOrdinal,
+            age: person.age,
+            rank: person.sectRank ?? null,
+            chosen: row.tags.includes('chosen'),
+            carriesForSomebodyElse: whatTheyCarryForSomebodyElse(
+                this.atHand?.objects ?? [], person.id, houseIds
+            )
+        });
+    }
+
     company(cultivator: Cultivator): Company {
         const here = this.present(cultivator);
         const named: Company['named'] = [];
@@ -14579,22 +14621,12 @@ ${fit.line}`;
                     looksUp: doing !== null && whetherTheyWouldLookUp(doing.kind),
                     playsToTheRoom: row === null ? 0 : whatSomebodyIsLike(row).room,
                     withNames: alongside,
-                    // WHAT THEY HAVE ON THEIR MIND, which is what makes a
-                    // square somewhere people are rather than somewhere people
-                    // are listed. Derived from what the world already keeps -
-                    // their years against the years their rung buys, the rank
-                    // they wear, whether a house has marked them - so there is
-                    // no stored field and no new draw. Null for most people,
-                    // which is the point.
-                    chewing: row === null ? null : whatTheyWouldBeHeardOnAbout({
-                        ordinal: person.realmOrdinal,
-                        age: person.age,
-                        rank: person.sectRank ?? null,
-                        chosen: row.tags.includes('chosen'),
-                        carriesForSomebodyElse: whatTheyCarryForSomebodyElse(
-                            this.atHand?.objects ?? [], person.id, houseIds
-                        )
-                    }),
+                    // What makes a square somewhere people are rather than
+                    // somewhere people are listed. Null for most people, which
+                    // is the point.
+                    chewing: this.whatTheyHaveOnTheirMind(
+                        { ...person, sectRank: person.sectRank ?? null }, row, houseIds
+                    ),
                     // Only from the world row, never from the roster one. The
                     // roster carries no attributes and no origin, so deriving
                     // this from it would make the same person read differently

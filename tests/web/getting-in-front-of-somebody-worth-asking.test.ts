@@ -50,6 +50,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { makeGameInWorld } from './harness';
+import { KnowledgeGate } from '../../src/web/knowledge';
 import { activeWorld } from '../../src/server/state/cultivation-world';
 import { npcsAt } from '../../src/engine/world/world-state';
 
@@ -194,21 +195,49 @@ describe('getting in front of somebody worth asking', () => {
      * list of the province's gates. If this ever goes green by accident, the
      * discovery gate has been turned into decoration and the stratum has become
      * something a beginner trips over.
+     *
+     * IT USED TO ASSERT THAT NO SEAT WAS EVER NAMED, which was the same rule
+     * stated one step too wide. `newRun`'s own `hear` call fires
+     * `offerTheRoadToAHouse` at 12%, and the opening says so in prose -
+     * *"Somebody here can point at Still Blade Peak grounds. It stands in the
+     * province and has a gate on it, and everybody here knows that much"* -
+     * writing a `placed` record with that source. One gate, named by a person,
+     * is the hook the discovery gate is opened by; the list is what must not
+     * arrive. So what is asserted is that the READ is never the source: what it
+     * can point at is snapshotted before the read runs, and every seat it could
+     * not point at then has to be absent from the answer.
      */
-    it('does not hand a fresh cultivator the gates around them', async () => {
-        const { game } = await makeGameInWorld({
+    it('never becomes the source of a gate it lists', async () => {
+        const { db, game } = await makeGameInWorld({
             worldSeed: WORLD_SEED,
             seed: `${RUN_SEED}-gated`
         });
-        await game.newRun('Lin Baoqing');
+        const created = await game.newRun('Lin Baoqing');
+        const gate = new KnowledgeGate(db);
+
+        // Both keys: a knowledge row's id is not always the location's, and
+        // `canPointAtLocation` accepts either.
+        const pointableBefore = new Set(
+            gate.awareness(created.cultivator.id, 'place')
+                .filter(row => gate.canPointAt(created.cultivator.id, 'place', row.id))
+                .flatMap(row => [row.id, row.name])
+        );
 
         const world = await activeWorld();
         const seats = world!.state.locations.filter(row => row.kind === 'sect_seat');
         expect(seats.length, 'the world has gates to keep shut').toBeGreaterThan(0);
 
         const opening = (await game.act('where can I go')).narration;
+
+        let shut = 0;
         for (const seat of seats) {
-            expect(opening, `${seat.name} was handed over unasked`).not.toContain(seat.name);
+            if (pointableBefore.has(seat.id) || pointableBefore.has(seat.name)) continue;
+            shut++;
+            expect(
+                opening,
+                `${seat.name} was named to somebody who could not point at it before the read ran`
+            ).not.toContain(seat.name);
         }
+        expect(shut, 'every gate was already pointable, so none was kept shut').toBeGreaterThan(0);
     }, 300_000);
 });

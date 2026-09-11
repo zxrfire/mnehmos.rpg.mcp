@@ -23,7 +23,19 @@
 import { parseIntent } from '../../src/web/actions';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { DAO_GROUND_TAG } from '../../src/engine/world/how-a-cultivator-comes-by-a-road.js';
-import { makeGame, planned, engineCalls } from './harness';
+import { makeGameInWorld, planned, engineCalls } from './harness';
+
+/**
+ * The world is pinned as well as the run. Unpinned, `worldEnabled` mints a
+ * world from `randomUUID`, so every played read below drew a different several
+ * hundred people and a different province on every run - which is why the dao
+ * failure at the foot of this file named a different ground each time and read
+ * as flakiness.
+ */
+const WORLD_SEED = 'somewhere-quiet-world';
+
+/** The world the gate tests below are diagnosed against. */
+const GATED_WORLD_SEED = 'gated-ground-world';
 
 describe('the question a player asks the moment occupancy matters', () => {
     it('resolves, in the ways somebody actually asks it', () => {
@@ -98,7 +110,7 @@ describe('the ground under the cultivator, on the wire', () => {
      * `what-you-can-tell-about-the-ground.test.ts`.
      */
     it('reports who is drawing on it, at the resolution the reader has', async () => {
-        const { game } = makeGame({ worldEnabled: true });
+        const { game } = await makeGameInWorld({ worldSeed: WORLD_SEED });
         await game.newRun('Wei Zhaoxun');
         await game.act('I look around');
 
@@ -116,7 +128,7 @@ describe('the ground under the cultivator, on the wire', () => {
     }, 60_000);
 
     it('answers the question with something the reader could actually tell', async () => {
-        const { game } = makeGame({ worldEnabled: true });
+        const { game } = await makeGameInWorld({ worldSeed: WORLD_SEED });
         await game.newRun('Wei Zhaoxun');
         const asked = await game.act('how crowded is it here');
 
@@ -134,7 +146,7 @@ describe('the ground under the cultivator, on the wire', () => {
      * in the same province.
      */
     it('lists ground that is not a town, with how busy each place is', async () => {
-        const { game } = makeGame({ worldEnabled: true });
+        const { game } = await makeGameInWorld({ worldSeed: WORLD_SEED });
         await game.newRun('Wei Zhaoxun');
         const where = await game.act('where can I go');
 
@@ -178,10 +190,30 @@ describe('the ground under the cultivator, on the wire', () => {
  * The fix is not an exclusion list. It is the gate the rest of the read
  * already uses, applied here too, with the ordinary local ground granted at
  * birth as a real record so the farm boy keeps his caves.
+ *
+ * ── WHAT THE SECOND TEST USED TO PIN, AND WHY IT DOES NOT ────────────────
+ *
+ * It asserted that NO dao ground was ever named. That was true when it was
+ * written and stopped being true when the ambient hearsay channel reached the
+ * opening turn: `newRun`'s own `hear` call fires `offerGroundSomebodyGoesTo`,
+ * and the player is told, in prose, at 15% - *"Somebody here mentions The Slow
+ * Bell the way you would mention a bridge... Nothing about why, and no offer to
+ * explain"* - with a `placed` record and a real source written for it. That is
+ * a hook and not a handout: a name they can point at and nothing about what it
+ * is for, and pulling on it is how the gate is meant to open. A read that then
+ * names it is doing its job.
+ *
+ * So the rule is one step narrower than the old assertion, and it is the one
+ * the describe name always claimed: THE LISTING IS NEVER THE SOURCE. That is
+ * asserted by snapshotting what can be pointed at BEFORE the read runs, which
+ * is the half the sibling above cannot cover - a record written by the read
+ * itself satisfies a check made after it.
  */
 describe('the ground is learned, not handed over', () => {
     it('names nothing this cultivator has no record for', async () => {
-        const { db, game } = makeGame({ worldEnabled: true, seed: 'gated-ground' });
+        const { db, game } = await makeGameInWorld({
+            worldSeed: GATED_WORLD_SEED, seed: 'gated-ground'
+        });
         const created = await game.newRun('Wei Zhaoxun');
         const where = await game.act('where can I go');
 
@@ -210,16 +242,39 @@ describe('the ground is learned, not handed over', () => {
         expect(named, 'nothing was named, so this proves nothing').toBeGreaterThan(0);
     }, 120_000);
 
-    it('does not hand over a road that teaches itself', async () => {
-        const { game } = makeGame({ worldEnabled: true, seed: 'gated-ground' });
-        await game.newRun('Wei Zhaoxun');
+    it('never becomes the source of a road it lists', async () => {
+        const { db, game } = await makeGameInWorld({
+            worldSeed: GATED_WORLD_SEED, seed: 'gated-ground'
+        });
+        const created = await game.newRun('Wei Zhaoxun');
+        const gate = new KnowledgeGate(db);
+
+        // Both keys, because a knowledge row's id is not always the location's
+        // and `canPointAtLocation` accepts either.
+        const pointableBefore = new Set(
+            gate.awareness(created.cultivator.id, 'place')
+                .filter(row => gate.canPointAt(created.cultivator.id, 'place', row.id))
+                .flatMap(row => [row.id, row.name])
+        );
+
         const where = await game.act('where can I go');
 
         const world = await game.loadWorld();
         const dao = world!.locations.filter(row => row.tags.includes(DAO_GROUND_TAG));
         expect(dao.length, 'no dao ground in this world to withhold').toBeGreaterThan(0);
+
+        let withheld = 0;
         for (const ground of dao) {
-            expect(where.narration ?? '', `${ground.name} leaked`).not.toContain(ground.name);
+            if (pointableBefore.has(ground.id) || pointableBefore.has(ground.name)) continue;
+            withheld++;
+            expect(
+                where.narration ?? '',
+                `${ground.name} was named to somebody who could not point at it before the read ran`
+            ).not.toContain(ground.name);
         }
+        expect(
+            withheld,
+            'every dao ground was already pointable, so nothing was withheld'
+        ).toBeGreaterThan(0);
     }, 120_000);
 });

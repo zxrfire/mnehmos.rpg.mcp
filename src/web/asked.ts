@@ -43,6 +43,20 @@ export interface AskedInput {
      * What they were asked about THEMSELVES, when that is what was asked.
      */
     aboutThemselves?: WhatTheySayAboutThemselves | null;
+    /**
+     * WHAT THEY HAVE ON THEIR MIND, as a predicate for `they`, or null.
+     *
+     * `whatTheyWouldBeHeardOnAbout`'s clause, unchanged. Read here because a
+     * person asked about something they cannot place does not fall silent -
+     * they talk about their own thing instead, which is what people do.
+     *
+     * Safe to say by construction and for two reasons. It is derived from rows
+     * an onlooker in the square could work out, and it is routed through the
+     * mouth of the person it is about, which is the second of the three ways
+     * `AGENTS.md` allows a fact to reach the narrator. It carries no proper
+     * noun: a borrowed blade is a blade until somebody names it.
+     */
+    onTheirMind?: string | null;
 }
 
 export interface Answer {
@@ -163,12 +177,62 @@ function subjectOrdinal(subject: ResolvedEntity): number | null {
 }
 
 /**
- * What came of asking.
+ * What came of asking, and what they talked about instead where nothing about
+ * the question was said.
+ */
+export function askedAbout(input: AskedInput): Answer {
+    return whatTheyTurnedItOnto(howFarTheAnswerGot(input), input);
+}
+
+/**
+ * A question nothing about was answered leaves the person holding the floor,
+ * and what comes out is whatever they already had.
+ *
+ * The three reaches below are the ones where nothing about the SUBJECT was
+ * said - they could not place it, or they placed it and are not saying. What
+ * they turn to is about themselves and discloses nothing about what was asked,
+ * which is exactly why it is safe to say and why it teaches nothing.
+ *
+ * The square already prints this reading, as what you overhear. Standing in
+ * front of the same person and asking them something could not reach it, so a
+ * player who walked up to somebody the world had given something to say got
+ * less out of the conversation than out of looking at them.
+ */
+function whatTheyTurnedItOnto(answer: Answer, input: AskedInput): Answer {
+    const clause = input.onTheirMind ?? null;
+    if (clause === null) return answer;
+    if (answer.reach !== 'blank' && answer.reach !== 'deflects' && answer.reach !== 'guesses') {
+        return answer;
+    }
+    const who = input.speakerName ?? 'The one nearest to hand';
+    return {
+        ...answer,
+        // The name leads. `who` is a PHRASE where the player cannot name them -
+        // "The one nearest to hand" - and the first cut put it mid-sentence,
+        // where a capitalised noun phrase reads as a machine having filled a
+        // slot. Every other line in this file opens on `{who}` for the same
+        // reason.
+        lines: [
+            ...answer.lines,
+            `${who} does not stay on the question, and what comes out instead is their own: `
+            + `they ${clause}.`
+        ],
+        structure: [
+            ...answer.structure,
+            'Turned onto their own subject: nothing about what was asked was said, so what they '
+            + 'already had is what came out. Derived from their own rows, carries no name, and '
+            + 'teaches nothing about the subject.'
+        ]
+    };
+}
+
+/**
+ * How far the answer got.
  *
  * Reads as a sequence of gates rather than a score, because the three limits
  * are separate and a player should be able to work out which one they hit.
  */
-export function askedAbout(input: AskedInput): Answer {
+function howFarTheAnswerGot(input: AskedInput): Answer {
     const { asked, subject, holdsIt, priorDealings } = input;
     // How the prose refers to them. A name the player has earned, or the
     // shape of a person they have not.
