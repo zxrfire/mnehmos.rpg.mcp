@@ -204,6 +204,20 @@ export interface StandingHere {
      */
     roadUnderfoot: string | null;
     /**
+     * What somebody built on this ground, where anything is built at all.
+     *
+     * Null on the great majority of the map. A compound, and anything else the
+     * world nests behind a wall, is the case where standing still and looking
+     * is worth a turn - and it is worth pointing at, because a player has no
+     * way of knowing from the outside that there is more here than a name.
+     */
+    builtHere?: {
+        /** Buildings they can see and could not put a use to. */
+        unreadable: number;
+        /** Walls they can see the outside of and not the inside. */
+        courtsClosed: number;
+    } | null;
+    /**
      * Ground somebody told them about that can be opened, and what it costs.
      */
     sitesYouCouldOpen: readonly {
@@ -399,6 +413,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     const paperOnTheWall = here.paperOnTheWall ?? null;
     const spanCounterHere = here.spanCounterHere ?? false;
     const dutiesGoing = here.dutiesGoing ?? 0;
+    const builtHere = here.builtHere ?? null;
 
     // A FIGHT IS HAPPENING, AND NOTHING ELSE IS THE SUBJECT
     if (here.fight) {
@@ -902,6 +917,25 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
                 + 'or something that carries one. Whether any of it will say anything to you is a '
                 + 'different question.'));
     }
+    // WHAT SOMEBODY BUILT HERE, WHICH IS ONLY EVER OFFERED WHERE THERE IS SOME
+    //
+    // Not a standing line. Most ground has nothing built on it and a permanent
+    // "look at the buildings" would be the panel padding a quiet square, which
+    // is the thing this file exists not to do. It surfaces on the count of what
+    // the reader cannot yet identify, so it stops offering itself to somebody
+    // who has already been told what everything is.
+    if (builtHere !== null && (builtHere.unreadable > 0 || builtHere.courtsClosed > 0)) {
+        const built = builtHere;
+        add(situation('what_is_built_here', 'I look at the buildings', 'investigate',
+            built.unreadable > 0
+                ? `${built.unreadable} building${built.unreadable === 1 ? '' : 's'} on this ground `
+                    + `${built.unreadable === 1 ? 'is' : 'are'} a roof and a wall to you and `
+                    + 'nothing else yet. The read is free and passes no time.'
+                : `${built.courtsClosed} of the courts here are shut to you. What is behind a `
+                    + 'wall you can see the outside of is a thing to ask about. The read is free '
+                    + 'and passes no time.'));
+    }
+
     // The other half of the ground, and the one nobody finds on their own.
     add(always(SAY.hunt,
         'What is out on the ground here that is worth killing, what is out there that would '

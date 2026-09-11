@@ -228,13 +228,31 @@ export function theWallAnswersThis(
 export function whichHouseThePaperMeans(
     target: string | undefined,
     wall: () => { bills: readonly { houseName: string }[] }
-): { house: string | undefined; couldHaveBeen: readonly string[] } {
+): {
+    house: string | undefined;
+    couldHaveBeen: readonly string[];
+    /**
+     * Whether the phrase was pointing at paper at all.
+     *
+     * FOUND BY PLAYING, on the turn after the opening started stating the
+     * dated intakes. `i go to the intake` against a wall holding two of them
+     * settled on neither - which is right - and then reached `resolveSect`
+     * with the literal words `the intake`, which came back as *"you have said
+     * a name and it is not one anybody has said to you"*. The engine had
+     * printed both houses on the screen above.
+     *
+     * `couldHaveBeen` cannot carry this: it is empty both for a phrase that
+     * was never a reference and for a reference against a bare wall, and the
+     * caller has to tell those apart to know whether the words are a name.
+     */
+    wasAPaperReference: boolean;
+} {
     const said = (target ?? '').trim().toLowerCase();
     if (!/^(?:the|that|this)\s+(?:intake|notice|bill|poster|posting)$/.test(said)) {
-        return { house: undefined, couldHaveBeen: [] };
+        return { house: undefined, couldHaveBeen: [], wasAPaperReference: false };
     }
     const names = [...new Set(wall().bills.map(bill => bill.houseName))];
     return names.length === 1
-        ? { house: names[0], couldHaveBeen: names }
-        : { house: undefined, couldHaveBeen: names };
+        ? { house: names[0], couldHaveBeen: names, wasAPaperReference: true }
+        : { house: undefined, couldHaveBeen: names, wasAPaperReference: true };
 }

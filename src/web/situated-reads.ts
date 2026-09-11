@@ -120,6 +120,7 @@ import {
 } from './what-this-ground-makes-and-what-leaves-it.js';
 import { noHouseStandsHighest, whoStandsBehindThem } from './who-stands-behind-them.js';
 import { whatAHouseHasToItsName } from './what-a-house-has-to-its-name.js';
+import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
 import { positionIn } from './standing.js';
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
 import { readWhatIsOnOfferHere } from './who-here-is-offering-something.js';
@@ -997,6 +998,18 @@ export const situatedReads = {
             goodsOnOfferHere: readWhatIsOnOfferHere(cultivator, this.atHand).offers
                 .map(offer => ({ name: offer.name, askStones: offer.askStones }))
                 .sort((a, b) => a.askStones - b.askStones),
+            // WHAT SOMEBODY BUILT ON THIS GROUND, WHERE ANYTHING IS BUILT
+            //
+            // The same construction the verb that answers this uses, so the
+            // panel cannot offer a look that the look then declines to give.
+            builtHere: (() => {
+                const built = theBuiltGroundUnder(this, cultivator);
+                if (built === null) return null;
+                return {
+                    unreadable: built.reading.seen.length - built.reading.named,
+                    courtsClosed: built.reading.enclosuresSeen - built.reading.enclosuresOpen
+                };
+            })(),
             roadUnderfoot: this.groundTheyCanPointAt(cultivator)
                 .find(row => row.underfoot)?.name ?? null,
             // THE DANGEROUS HALF, WHICH WAS NEVER BEING PRODUCED

@@ -25,11 +25,13 @@ import { howTheGroundReads } from '../engine/world/what-a-place-still-has-in-the
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import {
     MATCH_THRESHOLD,
+    type ResolvedEntity,
     matchScore,
     resolveAnything,
     resolveCultivator,
     worldLocationFor
 } from './entities.js';
+import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from './facts.js';
 import { refused, structureCalls } from './tool-result-prose.js';
@@ -43,6 +45,45 @@ import type { GameService } from './turn-engine.js';
  */
 const A_WORD_THAT_NAMES_NOTHING_BY_ITSELF =
     /^(?:the\s+)?(?:it|that|this|them|those|these|one|same|other)(?:\s+one)?$/i;
+
+/**
+ * The ways somebody says "what has been built here".
+ *
+ * `groundAtHand` already owns the deictics for the ground itself and they are
+ * repeated here on purpose: the two reads answer the same sentence and this one
+ * has more to say, so it has to be asked first or the better answer is never
+ * reached. What is genuinely new is the second half - a player standing in a
+ * compound says compound, buildings, walls, courts and gate, and every one of
+ * those reached nothing at all.
+ */
+const WHAT_IS_BUILT_HERE =
+    /^(?:the |this |these |round |around )?(?:here|place|ground|town|village|city|province|region|district|land|area|settlement|surroundings|compound|buildings?|walls?|courts?|yards?|gates?|halls?|architecture|stonework|masonry)$/i;
+
+/**
+ * What is built where this cultivator is standing, as a thing to examine.
+ *
+ * Null where nothing is built, which falls the chain through to the reads that
+ * already answer for bare ground. So this adds a reading and replaces none: a
+ * province, a ford and a scar behave exactly as they did.
+ */
+function whatHasBeenBuiltHere(
+    game: GameService,
+    query: string,
+    cultivator: Cultivator
+): ResolvedEntity | null {
+    if (!WHAT_IS_BUILT_HERE.test(query.trim())) return null;
+    const built = theBuiltGroundUnder(game, cultivator);
+    if (built === null) return null;
+    const name = game.atHand?.locations
+        .find(row => row.id === built.reading.locationId)?.name ?? '';
+    return {
+        kind: 'place',
+        id: name,
+        name,
+        facts: built.lines,
+        structure: [built.structure]
+    };
+}
 
 export const investigateVerb = {
     /**
@@ -93,6 +134,16 @@ export const investigateVerb = {
         // resolved to nothing and the most obvious sentence about the most
         // important feature in the game did nothing at all.
         const subject = this.ruinAtHand(query, cultivator)
+            // ── AND WHAT SOMEBODY BUILT ON IT ───────────────────────────
+            //
+            // Before `groundAtHand` because they answer the same sentence and
+            // this one has more in it. Measured standing on the Azure Cloud
+            // Pavilion's own ground - 24 interior rooms, 2,204 seats cut, an
+            // inner precinct calibrated at ordinal 41 - where "I examine this
+            // place" answered *"a name and a road and not much else that anyone
+            // here can tell you"*, and "I look at the compound" reached nothing
+            // at all.
+            ?? whatHasBeenBuiltHere(this, query, cultivator)
             // ── AND THE GROUND SOMEBODY IS ACTUALLY STANDING ON ──────────
             //
             // The same defect as "the ruins", one noun over, and it hid a whole

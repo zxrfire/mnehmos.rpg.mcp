@@ -326,6 +326,47 @@ export function survivingTags(
     return tags.filter(t => !gone.some(prefix => t.startsWith(prefix)));
 }
 
+/**
+ * A style read back off a building it was stamped on.
+ *
+ * The inverse of the `tags` half of `houseStyleOf`, and it exists because
+ * everything that wants to DESCRIBE a building has a `LocationRecord` and not a
+ * catalog row - `describeRoom` takes a `HouseStyle`, and reconstructing one from
+ * the faction would mean the description depended on what the house is like
+ * TODAY rather than on what it built. The tags are what was cut into the stone.
+ *
+ * `elementalIntensity` cannot come back: the tag records that the element
+ * reached the idiom, not by how much. It returns at the floor that produced the
+ * tag, which is the strongest claim the evidence supports.
+ */
+export function houseStyleFromTags(location: LocationRecord): HouseStyle | null {
+    const tags = styleTagsOf(location);
+    if (tags.length === 0) return null;
+    const facet = (prefix: string): string | null =>
+        tags.find(t => t.startsWith(prefix))?.slice(prefix.length) ?? null;
+
+    const idiom = facet('idiom:') as Idiom | null;
+    const material = facet('material:');
+    const trim = facet('trim:');
+    if (idiom === null || !IDIOMS.includes(idiom) || material === null || trim === null) return null;
+    const element = facet('element:');
+
+    return {
+        id: String(location.data.styleId ?? ''),
+        factionId: String(location.data.factionId ?? ''),
+        idiom,
+        materials: [material.replace(/_/g, ' '), trim.replace(/_/g, ' ')],
+        precision: (facet('precision:') as Precision | null) ?? 'fitted',
+        upkeep: (facet('upkeep:') as Upkeep | null) ?? 'patched',
+        ornament: (facet('ornament:') as Ornament | null) ?? 'plain',
+        scale: (facet('scale:') as Scale | null) ?? 'human',
+        elementalIntensity: element === null ? 0 : ELEMENTAL_IDIOM_FLOOR,
+        element,
+        deviation: element === null ? 'element' : 'scale',
+        tags
+    };
+}
+
 export interface StyleMatch {
     factionId: string;
     /** Shared facets over total facets, 0..1. */
@@ -746,7 +787,24 @@ export function growCompound(
     }
 
     // ── The formation nodes ──────────────────────────────────────────────
-    locations.push(...growNodes(seat, precinctRecords, input, style, styleData, darkNodeIds, rng));
+    locations.push(...growNodes(seat, precinctRecords, input, styleData, darkNodeIds, rng));
+
+    // ── AND THE GROUND ITSELF, WHICH IS THE THING ANYBODY LOOKS AT ───────
+    //
+    // Here rather than inside `growNodes`, where it used to sit. That function
+    // returns early when a house has no nodes, so in a pinned world FOUR of 36
+    // seats - Six Li Patrol, Silver Island Market, Hollow Bell Wanderers, Sand
+    // Well Caravan - stood on ground carrying no style at all while every
+    // precinct inside them carried the full set. `styleTagsOf` on the seat
+    // returned nothing, so nothing could attribute the compound by its
+    // stonework and the read of what is built there had no material to name.
+    //
+    // How much of itself the house can still see, recorded where somebody
+    // standing outside could count it.
+    seat.data.formationNodesTotal = Math.max(0, Math.round(input.formationNodesTotal));
+    seat.data.formationNodesLit = input.formationNodesLit;
+    seat.data.styleId = style.id;
+    seat.data.styleTags = style.tags.join(' ');
 
     return { style, precincts, locations, darkNodeIds };
 }
@@ -916,7 +974,6 @@ function growNodes(
     seat: LocationRecord,
     precinctRecords: readonly LocationRecord[],
     input: CompoundInput,
-    style: HouseStyle,
     styleData: Record<string, string>,
     darkNodeIds: string[],
     rng: CultivationRNG
@@ -995,12 +1052,6 @@ function growNodes(
             node.data.opensOnto = into.id;
         }
     }
-    // How much of itself the house can still see, recorded where somebody
-    // standing outside could count it.
-    seat.data.formationNodesTotal = total;
-    seat.data.formationNodesLit = input.formationNodesLit;
-    seat.data.styleId = style.id;
-    seat.data.styleTags = style.tags.join(' ');
     return out;
 }
 
