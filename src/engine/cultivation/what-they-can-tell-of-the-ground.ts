@@ -9,11 +9,8 @@
  * `describeAmbientPerceived(ambient)` took the band and nothing else. It has no
  * idea who is standing there, so a sixteen-year-old at the first rung with no
  * method was handed the same reading as a Nascent Soul cultivator: the band,
- * named, correctly, every time. The engine knew and therefore the player knew.
- *
- * Which is the rule AGENTS.md states, broken in the ordinary way:
- *
- *   *"the engine may only state what somebody standing there could perceive"*
+ * named, correctly, every time. The engine knew and therefore the player knew,
+ * which is AGENTS.md's perception rule broken in the ordinary way.
  *
  * ═══════════════════════════════════════════════════════════════════════════
  * WHAT A PERSON ACTUALLY GETS
@@ -38,6 +35,19 @@
  * A SPIRIT TIDE IS THE EXCEPTION AND IS EXEMPT FROM ALL OF IT. The hair lifts
  * on the arms. Nobody needs a rung to notice that the world has changed in the
  * last hour, and everybody local is already moving.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * AND EVERY READING IS SAID TWICE, BECAUSE IT HAS TWO AUDIENCES
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * A narrator is told ABOUT a cultivator; a player IS one. One string served
+ * both, so with no model configured the opening screen read *"They were raised
+ * on ground like this"* about the player, two lines above a sentence that said
+ * *"you"*. The ruling: to the player it says YOU.
+ *
+ * `value` and `because` stay third person and are the narrator's. `toThePlayer`
+ * is the same fact addressed to the person standing on the ground, and both
+ * come off one row so a reading cannot exist in one channel and not the other.
  */
 
 import type { AmbientQi } from '../../schema/cultivation.js';
@@ -71,11 +81,76 @@ const depth = (band: AmbientQi): number => {
 };
 
 /**
+ * What it is like to stand in a band, for anybody who can read one.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * IT IS QI, NOT AIR
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Every one of these opened on THE AIR - "the air here gives very little back",
+ * "the air here is unremarkable". The design owner, ruling on the wording:
+ *
+ *   *"thick air is not very great, xianxia doesn't talk about air"* -
+ *   *"say thick with qi"*
+ *
+ * And a model handed "the air here" writes humidity. Measured, one did: given
+ * ORDINARY ground it produced *"the air here has always felt heavy in the
+ * lungs, a thickness you have known since childhood"* - which is weather, and
+ * the wrong band as well. The word `air` leaves a reader to guess what is thin
+ * or thick ABOUT it, and the guess is always physical. `sealed_vein` keeps its
+ * breath imagery because that one IS about air nobody has breathed, which is
+ * the whole economy of exploration in one sensation and the reason people die
+ * getting into rooms like that.
+ *
+ * THIS TABLE WAS KEPT TWICE, here and in `facts.ts`, and the two copies had
+ * already drifted: the web copy's tide and sealed vein each carried a closing
+ * clause this one had lost. One owner now, read through
+ * `describeAmbientPerceived` by everything that wants the band named and by
+ * the two branches below that nobody needs a rung for.
+ */
+const THE_BAND_AS_A_BAND: Record<AmbientQi, string> = {
+    thin: 'The qi here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
+    normal: 'The qi here is ordinary. It neither helps nor gets in the way, which is most places.',
+    dense: 'The qi here is thick enough to feel on the first breath. Whatever is under this ground is close to the surface, and the ground shows signs of being worked.',
+    spirit_tide: 'The hair lifts on the arms. The qi is running heavier than it was an hour ago, and it will not stay that way. Somewhere out of sight people are already moving.',
+    sealed_vein: 'The air in here has not been breathed. The qi is thicker than anything outside and it does not move, and the first lungful is enough to understand why people die getting into rooms like this.'
+};
+
+/** What it is like to stand in it. The narration-safe rendering of a band. */
+export function describeAmbientPerceived(ambient: AmbientQi): string {
+    return THE_BAND_AS_A_BAND[ambient];
+}
+
+/** One reading, in the two persons its two channels take. */
+interface Reading {
+    /** About the cultivator, as the narrator is given it. */
+    readonly text: string;
+    /** The same fact addressed to the player. Omitted where nobody is named. */
+    readonly toThePlayer?: string;
+}
+
+/**
+ * A reading of the ground, for the writer and for the one standing on it.
+ *
+ * `value` and `because` are `AnAnswer`'s own and are the narrator's channel.
+ * `toThePlayer` is what the engine prints when no model answers, and it is
+ * populated whether or not there was anything to tell - where the answer is
+ * `unknown`, saying so IS the answer.
+ */
+export interface WhatTheGroundSays extends AnAnswer<string | null> {
+    readonly toThePlayer: string;
+}
+
+const bothWays = (said: Reading, answer: AnAnswer<string | null>): WhatTheGroundSays =>
+    ({ ...answer, toThePlayer: said.toThePlayer ?? said.text });
+
+/**
  * What somebody standing here can actually tell about the qi.
  *
  * Returns the SENTENCE they would arrive at, tagged with how they came by it -
- * and `null` where the honest answer is that there is nothing to say, which the
- * type makes the caller handle rather than hope about. `theyCanTell` narrows it.
+ * and a `value` of `null` where the honest answer is that there is nothing to
+ * say, which the type makes the caller handle rather than hope about.
+ * `theyCanTell` narrows it.
  *
  * The caller renders; this decides whether there is anything to render.
  */
@@ -90,67 +165,76 @@ export function whatTheyCanTellOfTheGround(
      * gap to be filled with the band.
      */
     home: AmbientQi | null
-): AnAnswer<string | null> {
-    // ── THE ONE NOBODY NEEDS A RUNG FOR ──────────────────────────────────
+): WhatTheGroundSays {
+    // ── THE TWO NOBODY NEEDS A RUNG FOR ──────────────────────────────────
     if (here === 'spirit_tide') {
-        return perceived(
-            'The hair lifts on the arms. The qi is running heavier than it was an hour ago, '
-            + 'and it will not stay that way. Somewhere out of sight people are already moving.',
+        const said = { text: THE_BAND_AS_A_BAND.spirit_tide };
+        return bothWays(said, perceived(
+            said.text,
             'A tide is a change, and a change is felt by anybody who was here before it.'
-        );
+        ));
     }
     if (here === 'sealed_vein') {
-        return perceived(
-            'The air in here has not been breathed. The qi is thicker than anything outside '
-            + 'and it does not move, and the first lungful is enough to understand why people '
-            + 'die getting into rooms like this.',
+        const said = { text: THE_BAND_AS_A_BAND.sealed_vein };
+        return bothWays(said, perceived(
+            said.text,
             'Nothing has drawn on this. It does not take a trained sense to notice that.'
-        );
+        ));
     }
 
     // ── THE TRAINED SENSE ────────────────────────────────────────────────
     if (theirOrdinal >= READS_THE_GROUND_AT) {
-        return measured(THE_BAND_AS_A_BAND[here], 'The ground is readable from the Foundation up.');
+        const said = { text: THE_BAND_AS_A_BAND[here] };
+        return bothWays(said, measured(said.text, 'The ground is readable from the Foundation up.'));
     }
 
     // ── AND THE ONLY YARDSTICK A NOVICE HAS ──────────────────────────────
     if (home === null) {
-        return unknown(
-            'They have nothing to measure this against and no sense trained to read it.'
-        );
+        const said = {
+            text: 'They have nothing to measure this against and no sense trained to read it.',
+            toThePlayer: 'You have nothing to measure this against and no sense trained to read it.'
+        };
+        return bothWays(said, unknown(said.text));
     }
     const step = depth(here) - depth(home);
     if (step === 0) {
-        return unknown(
-            'They were raised on ground like this. They have breathed nothing else and have '
-            + 'nothing to set it against.'
-        );
+        const said = {
+            text: 'They were raised on ground like this. They have breathed nothing else and '
+                + 'have nothing to set it against.',
+            toThePlayer: 'You were raised on ground like this. You have breathed nothing else and '
+                + 'have nothing to set it against.'
+        };
+        return bothWays(said, unknown(said.text));
     }
-    return perceived(
-        step > 1
-            ? 'The qi here is thicker than anything they have stood in. They have no measure '
-              + 'for it.'
-            : step === 1
-                ? 'The qi here is better than the ground that raised them. They can feel the '
-                  + 'difference and cannot put a figure on it.'
-                : step < -1
-                    ? 'The qi here is thinner than anything they have stood in, and a long '
-                      + 'sitting would show it.'
-                    : 'The qi here is thinner than the ground that raised them.',
+    const said = againstHome(step);
+    return bothWays(said, perceived(
+        said.text,
         'Below the Foundation the only reading anybody has is against where they came from.'
-    );
+    ));
 }
 
-/**
- * The band, named, for somebody whose senses reach it.
- *
- * The same four sentences the situated read has always used. They are correct
- * and were never the problem: what was wrong is who was being handed them.
- */
-const THE_BAND_AS_A_BAND: Record<AmbientQi, string> = {
-    thin: 'The qi here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
-    normal: 'The qi here is ordinary. It neither helps nor gets in the way, which is most places.',
-    dense: 'The qi here is thick enough to feel on the first breath. Whatever is under this ground is close to the surface, and the ground shows signs of being worked.',
-    spirit_tide: 'The hair lifts on the arms. The qi is running heavier than it was an hour ago, and it will not stay that way.',
-    sealed_vein: 'The air in here has not been breathed. The qi is thicker than anything outside and it does not move.'
-};
+/** How this ground reads against the ground that raised them, and nothing finer. */
+function againstHome(step: number): Reading {
+    if (step > 1) return {
+        text: 'The qi here is thicker than anything they have stood in. They have no measure '
+            + 'for it.',
+        toThePlayer: 'The qi here is thicker than anything you have stood in. You have no '
+            + 'measure for it.'
+    };
+    if (step === 1) return {
+        text: 'The qi here is better than the ground that raised them. They can feel the '
+            + 'difference and cannot put a figure on it.',
+        toThePlayer: 'The qi here is better than the ground that raised you. You can feel the '
+            + 'difference and cannot put a figure on it.'
+    };
+    if (step < -1) return {
+        text: 'The qi here is thinner than anything they have stood in, and a long sitting '
+            + 'would show it.',
+        toThePlayer: 'The qi here is thinner than anything you have stood in, and a long '
+            + 'sitting would show it.'
+    };
+    return {
+        text: 'The qi here is thinner than the ground that raised them.',
+        toThePlayer: 'The qi here is thinner than the ground that raised you.'
+    };
+}

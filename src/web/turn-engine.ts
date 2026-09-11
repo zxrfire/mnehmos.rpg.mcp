@@ -1896,10 +1896,12 @@ export class GameService {
         // write every fact again from nothing.
         const life = theLifeBehindTheFirstTurn(birth, STARTING_AGE, faces);
 
-        // Composed FIRST, and so without the recap: `prose` is what a player
-        // reads when no model answers, and composing it after the unshift is
-        // what printed the sixteen years twice on that path.
-        facts.prose = facts.lines.join('\n\n');
+        // `factsForLook` composed `prose` already, and this used to overwrite it
+        // with `lines` to keep the recap out - which it no longer is, the recap
+        // being its own log entry. What the overwrite did instead was hand turn 0
+        // the NARRATOR's channel, so the first screen of a run with no model read
+        // *"They were raised on ground like this"* about the player, above lines
+        // that said `you`. See `an-account-of-your-own-life-is-addressed-to-you`.
         const opening = await this.narrator.narrate(facts, {
             place: placeName(created.cultivator),
             ambient,

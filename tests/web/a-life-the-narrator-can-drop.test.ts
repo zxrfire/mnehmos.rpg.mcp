@@ -102,8 +102,10 @@ describe('a life the narrator can drop', () => {
 
         const recap = theRecap(db);
         // Where they come from, whose they are, and what it left them holding.
+        // This is the player's channel, so it is addressed to them - the
+        // narrator's copy of the same row still reads "What they came out of".
         expect(recap).toMatch(/years old, standing in/);
-        expect(recap).toMatch(/What they came out of:/);
+        expect(recap).toMatch(/What you came out of:/);
         expect(recap).toMatch(/spirit stones/);
     });
 

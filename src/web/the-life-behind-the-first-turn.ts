@@ -21,6 +21,7 @@ import type { Birth } from '../engine/birth/birth.js';
 import { getOrigin } from '../engine/cultivation/origin.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import type { AmbientQi } from '../schema/cultivation.js';
+import { asToldToThePlayer, asToldToTheNarrator, type SaidToBoth } from './facts.js';
 
 /** The bands in order, so two of them can be compared without a table. */
 const HOW_MUCH_QI: readonly AmbientQi[] = ['thin', 'normal', 'dense', 'spirit_tide'];
@@ -34,26 +35,47 @@ const HOW_MUCH_QI: readonly AmbientQi[] = ['thin', 'normal', 'dense', 'spirit_ti
  * always weather. The comparison against home is what makes the band mean
  * anything to somebody who has only ever stood on one.
  */
-function theQiHereAgainstHome(here: AmbientQi, home: AmbientQi): string {
+function theQiHereAgainstHome(here: AmbientQi, home: AmbientQi): SaidToBoth {
     const step = HOW_MUCH_QI.indexOf(here) - HOW_MUCH_QI.indexOf(home);
-    if (step > 1) return `ground so much thicker with qi than ${WHERE_THEY_GREW_UP[home]} `
-        + 'that they have no measure for it';
-    if (step === 1) return `ground thicker with qi than ${WHERE_THEY_GREW_UP[home]}, and they `
-        + 'can feel the difference without being able to name it';
+    const raised = WHAT_RAISED[home];
+    const [them, you] = [`${raised} them`, `${raised} you`];
+    if (step > 1) return {
+        text: `ground so much thicker with qi than ${them} that they have no measure for it`,
+        toThePlayer: `ground so much thicker with qi than ${you} that you have no measure for it`
+    };
+    if (step === 1) return {
+        text: `ground thicker with qi than ${them}, and they can feel the difference without `
+            + 'being able to name it',
+        toThePlayer: `ground thicker with qi than ${you}, and you can feel the difference `
+            + 'without being able to name it'
+    };
     // The commonest case by far, and the one branch that used to say only
     // "ground" - the exact word that let a model reach for weather.
-    if (step === 0) return `ground with the same qi in it as ${WHERE_THEY_GREW_UP[home]}, `
-        + 'which is the only measure of it they have ever had';
-    return `ground thinner with qi than ${WHERE_THEY_GREW_UP[home]}, which they noticed and `
-        + 'have said nothing about';
+    if (step === 0) return {
+        text: `ground with the same qi in it as ${them}, which is the only measure of it they `
+            + 'have ever had',
+        toThePlayer: `ground with the same qi in it as ${you}, which is the only measure of `
+            + 'it you have ever had'
+    };
+    return {
+        text: `ground thinner with qi than ${them}, which they noticed and have said nothing `
+            + 'about',
+        toThePlayer: `ground thinner with qi than ${you}, which you noticed and have said `
+            + 'nothing about'
+    };
 }
 
-/** What a band is, from the inside, for the half of the sentence about home. */
-const WHERE_THEY_GREW_UP: Readonly<Record<string, string>> = Object.freeze({
-    thin: 'the county that raised them',
-    normal: 'the ground that raised them',
-    dense: 'the rich ground that raised them',
-    spirit_tide: 'the tide-ground that raised them'
+/**
+ * What a band is, from the inside, for the half of the sentence about home.
+ *
+ * Open at the end, because the person changes with the audience and the noun
+ * does not - one table rather than a second one with `you` typed into it.
+ */
+const WHAT_RAISED: Readonly<Record<string, string>> = Object.freeze({
+    thin: 'the county that raised',
+    normal: 'the ground that raised',
+    dense: 'the rich ground that raised',
+    spirit_tide: 'the tide-ground that raised'
 });
 
 /** One person this life starts already able to put a name to. */
@@ -64,11 +86,7 @@ export interface AFaceFromBeforeTheRun {
 }
 
 /** One statement of the life so far, drawn once and rendered for two audiences. */
-interface LifeLine {
-    /** The fact, as the narrator is given it. */
-    readonly text: string;
-    /** The same fact as the ENGINE says it to the player, where the two differ. */
-    readonly toThePlayer?: string;
+interface LifeLine extends SaidToBoth {
     /**
      * True where the WORLD holds this and the person it is about does not. A
      * field rather than an instruction to the narrator, because the engine now
@@ -96,8 +114,8 @@ function theHouseholdTheyCameOutOf(birth: Birth): LifeLine[] {
             // none, and telling a player their birth was the common one is the
             // engine talking to them about its own draw.
             toThePlayer:
-                'No house behind them at all. Nobody is owed anything for where they are '
-                + 'standing and nobody is going to ask after them.'
+                'No house behind you at all. Nobody is owed anything for where you are '
+                + 'standing and nobody is going to ask after you.'
         });
         return said;
     }
@@ -145,27 +163,43 @@ export function theLifeBehindTheFirstTurn(
     // Said as a lifetime rather than as a reading. Somebody raised on thin
     // ground has never known anything else and has no reason to remark on it.
     const home = getOrigin(birth.origin).ground;
+    const ground = theQiHereAgainstHome(birth.ground, home);
+    const standingIn =
+        `${age} years old, standing in ${birth.place.name}, a `
+        + `${birth.place.kind.replace(/_/g, ' ')}, on `;
     lines.push({
-        text:
-            `${age} years old, standing in ${birth.place.name}, a `
-            + `${birth.place.kind.replace(/_/g, ' ')}, on `
-            + `${theQiHereAgainstHome(birth.ground, home)}.`
+        text: `${standingIn}${ground.text}.`,
+        toThePlayer: `${standingIn}${ground.toThePlayer ?? ground.text}.`
     });
 
-    lines.push({ text: `What they came out of: ${birth.opening.name}.` });
+    lines.push({
+        text: `What they came out of: ${birth.opening.name}.`,
+        toThePlayer: `What you came out of: ${birth.opening.name}.`
+    });
     lines.push(...theHouseholdTheyCameOutOf(birth));
 
     const inside = birth.raisedInside;
     if (inside !== null) {
-        lines.push({
-            text: inside.onTheRoll === 'by blood'
-                ? `They grew up inside ${inside.house.name}, on its roll from birth because its `
-                  + 'roll is its family, and at no rank in it.'
-                : inside.onTheRoll === 'by taking'
-                    ? `They grew up inside ${inside.house.name}, on its roll because it took them `
-                      + 'in, at no rank in it, and nobody has told them why.'
-                    : `They grew up inside ${inside.house.name} without ever being put on its roll.`
-        });
+        lines.push(inside.onTheRoll === 'by blood'
+            ? {
+                text: `They grew up inside ${inside.house.name}, on its roll from birth because `
+                    + 'its roll is its family, and at no rank in it.',
+                toThePlayer: `You grew up inside ${inside.house.name}, on its roll from birth `
+                    + 'because its roll is its family, and at no rank in it.'
+            }
+            : inside.onTheRoll === 'by taking'
+                ? {
+                    text: `They grew up inside ${inside.house.name}, on its roll because it took `
+                        + 'them in, at no rank in it, and nobody has told them why.',
+                    toThePlayer: `You grew up inside ${inside.house.name}, on its roll because it `
+                        + 'took you in, at no rank in it, and nobody has told you why.'
+                }
+                : {
+                    text: `They grew up inside ${inside.house.name} without ever being put on its `
+                        + 'roll.',
+                    toThePlayer: `You grew up inside ${inside.house.name} without ever being put `
+                        + 'on its roll.'
+                });
         if (inside.somebodyIsOwedForIt) {
             lines.push({
                 text:
@@ -178,17 +212,22 @@ export function theLifeBehindTheFirstTurn(
         lines.push({
             text:
                 `The family belongs to ${birth.house.name}, which is not a rank and not an `
-                + 'admission. It is who they would go to, not somewhere they may go.'
+                + 'admission. It is who they would go to, not somewhere they may go.',
+            toThePlayer:
+                `The family belongs to ${birth.house.name}, which is not a rank and not an `
+                + 'admission. It is who you would go to, not somewhere you may go.'
         });
     }
 
     const years = birth.opening.provisionedYears;
+    const whatTheStonesBuy = years < 1
+        ? 'not a year of sitting still.'
+        : `about ${Math.round(years)} years of sitting still.`;
     lines.push({
-        text:
-            `They are standing here with ${birth.spiritStones} spirit stones, which is `
-            + (years < 1
-                ? 'not a year of sitting still.'
-                : `about ${Math.round(years)} years of sitting still.`)
+        text: `They are standing here with ${birth.spiritStones} spirit stones, which is `
+            + whatTheStonesBuy,
+        toThePlayer: `You are standing here with ${birth.spiritStones} spirit stones, which is `
+            + whatTheStonesBuy
     });
 
     const told = birth.knowledge.slice(0, NAMES_WORTH_SAYING_AT_THE_START);
@@ -196,6 +235,9 @@ export function theLifeBehindTheFirstTurn(
         lines.push({
             text:
                 'Nobody has told them anything about anywhere. Whatever they learn, they learn '
+                + 'by walking up to it.',
+            toThePlayer:
+                'Nobody has told you anything about anywhere. Whatever you learn, you learn '
                 + 'by walking up to it.'
         });
     } else {
@@ -203,13 +245,16 @@ export function theLifeBehindTheFirstTurn(
         // full" beside a sheet reading eight is one screen disagreeing with
         // itself.
         const rest = birth.knowledge.length - told.length;
+        const howMany = `${birth.knowledge.length} name${birth.knowledge.length === 1 ? '' : 's'}`;
         lines.push({
-            text:
-                `What ${age} years got them: ${birth.knowledge.length} `
-                + `name${birth.knowledge.length === 1 ? '' : 's'}`
+            text: `What ${age} years got them: ${howMany}`
                 + (rest > 0
-                    ? `, of which these are the ones they would say first.`
-                    : `, and this is where each came from.`)
+                    ? ', of which these are the ones they would say first.'
+                    : ', and this is where each came from.'),
+            toThePlayer: `What ${age} years got you: ${howMany}`
+                + (rest > 0
+                    ? ', of which these are the ones you would say first.'
+                    : ', and this is where each came from.')
         });
         for (const row of told) {
             // "Three Walls. Three Walls is where they are from" is the engine
@@ -231,6 +276,9 @@ export function theLifeBehindTheFirstTurn(
         lines.push({
             text:
                 'People they can already put a name to. Knowing somebody is not the same as '
+                + 'being owed anything by them:',
+            toThePlayer:
+                'People you can already put a name to. Knowing somebody is not the same as '
                 + 'being owed anything by them:'
         });
         for (const face of faces) {
@@ -239,9 +287,7 @@ export function theLifeBehindTheFirstTurn(
     }
 
     return {
-        forTheNarrator: lines.map(line => line.text),
-        toldToThePlayer: lines
-            .filter(line => line.behindTheirBack !== true)
-            .map(line => line.toThePlayer ?? line.text)
+        forTheNarrator: asToldToTheNarrator(lines),
+        toldToThePlayer: asToldToThePlayer(lines.filter(line => line.behindTheirBack !== true))
     };
 }

@@ -21,7 +21,7 @@ import { insightName } from '../engine/cultivation/understanding.js';
 import { rankName, realmIndexOf } from '../engine/cultivation/realms.js';
 import { getOrigin } from '../engine/cultivation/origin.js';
 import { theyCanTell } from '../engine/social/how-an-answer-is-known.js';
-import { whatTheyCanTellOfTheGround }
+import { describeAmbientPerceived, whatTheyCanTellOfTheGround }
     from '../engine/cultivation/what-they-can-tell-of-the-ground.js';
 import {
     headstoneStructure,
@@ -45,6 +45,11 @@ import type { ClaimVerdict } from '../engine/world/recognising-whose-art-you-jus
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import { PLACE } from '../data/cultivation/place-names.js';
 
+// The band a person standing here reads is the engine's to own - `facts.ts`
+// kept a second copy of the same five sentences and the two had drifted. Still
+// reachable from here because ten call sites across the web layer ask for it.
+export { describeAmbientPerceived };
+
 export interface EngineFacts {
     /** One-line summary. Used as the overlay title and the log's first line. */
     headline: string;
@@ -64,6 +69,32 @@ export interface EngineFacts {
      */
     required?: string[];
 }
+
+/**
+ * One fact, in the two persons `lines` and `prose` take.
+ *
+ * A narrator is told ABOUT a cultivator and writes third person; a player IS
+ * the cultivator and is addressed. Both channels were built off one array of
+ * strings, so with no model configured the standing sheet opened with the
+ * player's own name and said *"nothing is asked of them"* three lines above
+ * *"however long you sit"*. The ruling: to the player it says YOU.
+ *
+ * A row rather than two lists, so a fact cannot reach one channel and not the
+ * other - `the-life-behind-the-first-turn.ts` carries the turn-0 recap the
+ * same way.
+ */
+export interface SaidToBoth {
+    /** As the narrator is given it. */
+    readonly text: string;
+    /** The same fact addressed to the player, where the person differs. */
+    readonly toThePlayer?: string;
+}
+
+export const asToldToTheNarrator = (said: readonly SaidToBoth[]): string[] =>
+    said.map(row => row.text);
+
+export const asToldToThePlayer = (said: readonly SaidToBoth[]): string[] =>
+    said.map(row => row.toThePlayer ?? row.text);
 
 /**
  * Add a fact a caller learned AFTER the prose was composed, on every channel.
@@ -164,43 +195,6 @@ const AMBIENT_IN_WORLD: Record<AmbientQi, string> = {
     sealed_vein: 'Qi density sealed vein: quadruple cultivation rate and a substantial breakthrough bonus. Never drawn on. Weight zero in the ambient roll - this is found, not encountered.'
 };
 
-/**
- * The same four states, as a person standing in them would experience them.
- *
- * ═══════════════════════════════════════════════════════════════════════════
- * IT IS QI, NOT AIR
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * Every one of these opened on THE AIR - "the air here gives very little back",
- * "the air here is unremarkable", "the air here is thick enough to notice on
- * the first breath". The design owner, ruling on the same wording one screen
- * over:
- *
- *   *"thick air is not very great, xianxia doesn't talk about air"* -
- *   *"say thick with qi"* - *"i mean thick with qi if it was qi"*
- *
- * And a model handed "the air here" writes humidity. Measured, one did: given
- * ORDINARY ground it produced *"the air here has always felt heavy in the
- * lungs, a thickness you have known since childhood"* - which is weather, and
- * the wrong band as well.
- *
- * The word `air` leaves a reader to guess what is thin or thick ABOUT it, and
- * the guess is always physical. Naming the qi costs a word and removes the
- * guess. `sealed_vein` keeps its breath imagery because that one IS about air
- * nobody has breathed, which is the whole point of the room.
- */
-const AMBIENT_PERCEIVED: Record<AmbientQi, string> = {
-    thin: 'The qi here gives very little back. A long sitting yields what a short one should, and everybody local has stopped remarking on it.',
-    normal: 'The qi here is ordinary. It neither helps nor gets in the way, which is most places.',
-    dense: 'The qi here is thick enough to feel on the first breath. Whatever is under this ground is close to the surface, and the ground shows signs of being worked.',
-    spirit_tide: 'The hair lifts on the arms. The qi is running heavier than it was an hour ago, and it will not stay that way. Somewhere out of sight people are already moving.',
-    // The whole economy of exploration, in one sensation. Nothing has breathed
-    // this. It is the only air in the Late Age that is not second-hand, which
-    // is why people die getting into rooms like this one - and it is the one
-    // band where the air itself is the fact.
-    sealed_vein: 'The air in here has not been breathed. The qi is thicker than anything outside and it does not move, and the first lungful is enough to understand why people die getting into rooms like this.'
-};
-
 export const DEATH_IN_WORLD: Record<DeathCause, string> = {
     combat_defeat: 'killed in combat',
     obviously_fatal_choice: 'forced a fight while barely able to stand',
@@ -225,11 +219,6 @@ export const DEATH_IN_WORLD: Record<DeathCause, string> = {
 /** Mechanical reading. Inspector and log only - never a narrator prompt. */
 export function describeAmbientInWorld(ambient: AmbientQi): string {
     return AMBIENT_IN_WORLD[ambient];
-}
-
-/** What it is like to stand in it. The narration-safe rendering. */
-export function describeAmbientPerceived(ambient: AmbientQi): string {
-    return AMBIENT_PERCEIVED[ambient];
 }
 
 export function describeDeathCause(
@@ -417,38 +406,54 @@ function bodyLine(cultivator: Cultivator): string | null {
 /**
  * The player's own condition, as they experience it.
  */
-export function standingLines(cultivator: Cultivator, ambient: AmbientQi): string[] {
+export function standingLines(cultivator: Cultivator, ambient: AmbientQi): SaidToBoth[] {
     const untreated = untreatedInjuryCount(cultivator.injuries);
     const root = getSpiritRoot(cultivator.spiritRoot);
     return [
-        `${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}, in ${placeName(cultivator)}.`,
-        `Spirit root: ${root.name}. Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}.`,
+        {
+            text: `${cultivator.name} stands at ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}, in ${placeName(cultivator)}.`,
+            // The name stays, in the second person. `the-player-is-you.test.ts`
+            // holds the one exemption to the whole rule - *"`who am I` answers
+            // with the name, because the name is the question"* - and this
+            // sheet is what that verb reaches.
+            toThePlayer: `You are ${cultivator.name}, at ${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}, in ${placeName(cultivator)}.`
+        },
+        { text: `Spirit root: ${root.name}. Might ${cultivator.attributes.might}, Insight ${cultivator.attributes.insight}, Fortune ${cultivator.attributes.fortune}, Charm ${cultivator.attributes.charm}.` },
         // AND WHAT THE BODY IS, WHERE IT IS ANYTHING
-        ...(bodyLine(cultivator) ? [bodyLine(cultivator) as string] : []),
+        ...(bodyLine(cultivator) ? [{ text: bodyLine(cultivator) as string }] : []),
         // THE BODY AND THE PURSE, SAID ONCE EACH.
-        `${cultivator.hp >= cultivator.maxHp
-            ? `Unmarked, ${cultivator.maxHp} of ${cultivator.maxHp}.`
-            : `${cultivator.hp} of ${cultivator.maxHp} left in the body.`} `
-        + `${cultivator.satiety >= 100 ? 'Fed.' : `Satiety ${cultivator.satiety} of 100.`} `
-        + `${cultivator.spiritStones} spirit stone${cultivator.spiritStones === 1 ? '' : 's'} in the purse.`,
+        {
+            text: `${cultivator.hp >= cultivator.maxHp
+                ? `Unmarked, ${cultivator.maxHp} of ${cultivator.maxHp}.`
+                : `${cultivator.hp} of ${cultivator.maxHp} left in the body.`} `
+            + `${cultivator.satiety >= 100 ? 'Fed.' : `Satiety ${cultivator.satiety} of 100.`} `
+            + `${cultivator.spiritStones} spirit stone${cultivator.spiritStones === 1 ? '' : 's'} in the purse.`
+        },
         // AND WHAT CARRYING THAT MANY ACTUALLY COSTS.
-        untreated === 0
-            ? 'The meridians are whole.'
-            : untreated >= CRIPPLING_UNTREATED_INJURIES
-                ? `${untreated} meridian injuries are open and nothing has closed them. `
-                  + 'At this many the body has stopped mending itself, and it will not start again '
-                  + 'until they are treated.'
-                : `${untreated} meridian injur${untreated === 1 ? 'y has' : 'ies have'} been open `
-                  + `since the day ${untreated === 1 ? 'it was' : 'they were'} taken, and nothing `
-                  + `has closed ${untreated === 1 ? 'it' : 'them'}. `
-                  + `At ${CRIPPLING_UNTREATED_INJURIES} the body stops mending itself altogether.`,
-        timeHeldAtThisRealm(cultivator.yearsAtCurrentRealm),
+        {
+            text: untreated === 0
+                ? 'The meridians are whole.'
+                : untreated >= CRIPPLING_UNTREATED_INJURIES
+                    ? `${untreated} meridian injuries are open and nothing has closed them. `
+                      + 'At this many the body has stopped mending itself, and it will not start again '
+                      + 'until they are treated.'
+                    : `${untreated} meridian injur${untreated === 1 ? 'y has' : 'ies have'} been open `
+                      + `since the day ${untreated === 1 ? 'it was' : 'they were'} taken, and nothing `
+                      + `has closed ${untreated === 1 ? 'it' : 'them'}. `
+                      + `At ${CRIPPLING_UNTREATED_INJURIES} the body stops mending itself altogether.`
+        },
+        { text: timeHeldAtThisRealm(cultivator.yearsAtCurrentRealm) },
         // WHOSE ROLL THEY ARE ON.
         cultivator.sectId
-            ? `On the roll of ${sectNameFor(cultivator.sectId)}`
-              + `${cultivator.sectRank ? `, ranked ${cultivator.sectRank}` : ''}.`
-            : 'Serves no house. Nothing is owed to them and nothing is asked of them.',
-        describeAmbientPerceived(ambient)
+            ? {
+                text: `On the roll of ${sectNameFor(cultivator.sectId)}`
+                    + `${cultivator.sectRank ? `, ranked ${cultivator.sectRank}` : ''}.`
+            }
+            : {
+                text: 'Serves no house. Nothing is owed to them and nothing is asked of them.',
+                toThePlayer: 'You serve no house. Nothing is owed to you and nothing is asked of you.'
+            },
+        { text: describeAmbientPerceived(ambient) }
     ];
 }
 
@@ -1223,7 +1228,7 @@ export function factsForLook(
     if (noticed) lines.push(noticed);
 
     const prose = [
-        `${where}. ${qiHere}`,
+        `${where}. ${ground.toThePlayer}`,
         ...(standing ? [standing] : []),
         ...(who ? [who] : []),
         ...(noticed ? [noticed] : [])
@@ -1912,36 +1917,36 @@ export function factsForStatus(
      */
     ceiling: string | null = null
 ): EngineFacts {
-    const lines = standingLines(cultivator, ambient);
+    const said = standingLines(cultivator, ambient);
     if (progressRequired === null) {
         // No figure, because there is no rung above this one priced in qi - handing
         // the narrator a number here would be handing it a lie. But saying only
         // that leaves somebody above the Lid with a status read that is entirely
         // absences, which is the opposite of the truth about them.
-        lines.push('There is nothing above this rung that qi buys, so there is no figure to report.');
-        lines.push(...daoStandingLines(cultivator));
+        said.push({ text: 'There is nothing above this rung that qi buys, so there is no figure to report.' });
+        said.push(...daoStandingLines(cultivator).map(text => ({ text })));
     } else {
-        lines.push(
-            ready
+        said.push({
+            text: ready
                 ? `Enough progress has accumulated to attempt the next rank: ${Math.round(cultivator.cultivationProgress)} of ${progressRequired} required.`
                 : `${Math.round(cultivator.cultivationProgress)} of ${progressRequired} qi-units toward the next rank. Not yet eligible.`
-        );
+        });
     }
     // Last, and required. A progress figure with no explanation attached is
     // worse than no figure: "0 of 100 toward the next rank" invites a player to
     // spend another decade on it, and the true answer is that no number of
     // decades will move it.
-    if (ceiling !== null) lines.push(ceiling);
+    if (ceiling !== null) said.push({ text: ceiling });
 
     return {
         headline: `${rankName(cultivator.realmOrdinal)}, age ${Math.floor(cultivator.age)}.`,
-        lines,
+        lines: asToldToTheNarrator(said),
         structure: [
             ...standingStructure(cultivator, ambient),
             `${Math.round(cultivator.cultivationProgress)} qi-units of the ${progressRequired} the `
             + `next rung is priced at${ready ? ', which is enough to attempt it' : ', which is not enough to attempt it'}.`
         ],
-        prose: lines.join('\n'),
+        prose: asToldToThePlayer(said).join('\n'),
         ...(ceiling !== null ? { required: [ceiling] } : {})
     };
 }
@@ -1950,7 +1955,7 @@ export function factsForTalk(cultivator: Cultivator, ambient: AmbientQi, target:
     const who = target?.trim() || 'whoever is within earshot';
     const lines = [
         `${cultivator.name} spoke to ${who}. Words, and nothing that anyone will be able to point to later.`,
-        ...standingLines(cultivator, ambient)
+        ...asToldToTheNarrator(standingLines(cultivator, ambient))
     ];
     return {
         headline: `A conversation with ${who}.`,

@@ -164,8 +164,10 @@ describe('the life behind the first turn', () => {
         expect(told(over)).not.toMatch(/debt/i);
         expect(told(over)).not.toMatch(/spent a word/i);
         // And the rest of that same birth still reaches them: this hides one
-        // fact, it does not hide the house.
-        expect(told(over)).toMatch(/on its roll because it took them in/);
+        // fact, it does not hide the house. Second person because this is the
+        // player's channel - the narrator's copy two assertions up still reads
+        // "took them in", which is what the split is for.
+        expect(told(over)).toMatch(/on its roll because it took you in/);
     });
 
     /**
