@@ -104,13 +104,32 @@ import type { EventScale, HistoricalEventKind } from '../../engine/world/history
 
 /**
  * A mission tier is a regard band, named the way a board would name it.
+ *
+ * ── AND NOT WITH A WORD THE LADDER ALREADY OWNS ──────────────────────────
+ *
+ * These read `First rank`, `Second rank` and `Third rank`, and the board line
+ * that carries one also carries the RUNG the posting is pitched at. Found by
+ * playing blind, at a sect board:
+ *
+ *     The Azure Dew Sect is seeking those at the second rank of Qi Condensation
+ *     Layer 1.
+ *
+ * Two different things called a rank, one sentence apart. The tier is a
+ * DIFFICULTY band - how far the work sits above whoever takes it - and the rung
+ * is where the taker stands on the ladder; a player reading that line has no
+ * way to know there are two scales in it, and the obvious reading is a rung of
+ * a rung.
+ *
+ * So the tiers are named for what a board is actually advertising: how much
+ * work it is. `rank`, `realm`, `layer` and `stage` all belong to the ladder and
+ * none of them may appear here.
  */
 export const TIER_NAMES: Record<RegardBand, string> = {
     unreachable: 'Standing posting',
     overmatched: 'Open posting',
-    stretch: 'First rank',
-    matched: 'Second rank',
-    assured: 'Third rank',
+    stretch: 'Hard going',
+    matched: 'Fair going',
+    assured: 'Light going',
     beneath: 'Errand',
     dismissed: 'Not posted'
 } as const;

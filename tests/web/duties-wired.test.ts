@@ -12,6 +12,7 @@
  * read in one place, written by nothing.
  */
 
+import { TIER_NAMES } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
 import { describe, it, expect } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
 import { makeGame } from './harness';
@@ -80,7 +81,7 @@ describe('contribution, which had no earner', () => {
         // The board groups postings under the terms they share, so what one
         // line says is the title, a colon, and what that posting alone asks:
         //
-        //   Azure Cloud Pavilion, second rank at Qi Condensation Layer 6:
+        //   Azure Cloud Pavilion, fair going at Qi Condensation Layer 6:
         //     An escort: 2 months, 48 contribution.
         //
         // The title is what gets typed back, and it stands before the colon.
@@ -122,7 +123,7 @@ describe('contribution, which had no earner', () => {
 
         const board = await game.act('I look at the sect mission board');
         // The board prints the title, then the tier and the rung it is pitched
-        // at, then the terms: "A Culling Notice ... - third rank at Qi
+        // at, then the terms: "A Culling Notice ... - light going at Qi
         // Condensation Layer 10: 20 days, ...". The title is what gets typed
         // back, and it is what stands before the dash.
         const named = /\n {2}([^:\n]{5,60}): /.exec(board.narration)?.[1];
@@ -204,5 +205,42 @@ describe('taking what is behind the door, and being noticed for it', () => {
             expect(repeated).toBeLessThanOrEqual(1);
             return;
         }
+    });
+});
+
+/**
+ * Two different things called a rank, one sentence apart.
+ *
+ * FOUND BY PLAYING BLIND, at a sect board:
+ *
+ *     The Azure Dew Sect is seeking those at the second rank of Qi Condensation
+ *     Layer 1.
+ *
+ * `TIER_NAMES` called the regard bands `First rank`, `Second rank` and `Third
+ * rank`, and the board line that carries one also carries the RUNG the posting
+ * is pitched at. The tier is a DIFFICULTY band - how far the work sits above
+ * whoever takes it - and the rung is where the taker stands on the ladder, and
+ * a player reading that line has no way to know there are two scales in it. The
+ * obvious reading is a rung of a rung, which does not exist.
+ *
+ * A term collision is a mechanical bug in this repo, not a wording preference.
+ * The ladder owns `rank`, `realm`, `layer` and `stage`; a board's word for how
+ * much work something is may use none of them.
+ */
+describe('the board and the ladder do not share a word', () => {
+    const OWNED_BY_THE_LADDER = /\b(?:rank|realm|layer|stage)\b/i;
+
+    it('names no tier with a word the ladder owns', () => {
+        const collisions = Object.entries(TIER_NAMES)
+            .filter(([, name]) => OWNED_BY_THE_LADDER.test(name))
+            .map(([band, name]) => `${band}: "${name}"`);
+        expect(collisions, `a board tier using a ladder word: ${collisions.join('; ')}`)
+            .toEqual([]);
+    });
+
+    /** And they are still distinct from each other, which is what a band is for. */
+    it('gives every band its own word', () => {
+        const names = Object.values(TIER_NAMES);
+        expect(new Set(names).size).toBe(names.length);
     });
 });

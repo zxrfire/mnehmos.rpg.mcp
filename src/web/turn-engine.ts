@@ -11604,6 +11604,21 @@ ${fit.line}`;
                     `${board.offers.length} thing${board.offers.length === 1 ? '' : 's'} going.`,
                 lines
             );
+            // A LINE THE NEXT SENTENCE CAN POINT AT.
+            //
+            // FOUND BY PLAYING BLIND. The board printed five duties and
+            // recorded none, so `i take the materials one` - one turn later,
+            // about a line it had just read - fell through to the MARKET and
+            // was answered with millet, lodging and a ferry crossing.
+            //
+            // Third time for this exact gap, after the work board and the
+            // recruiting bills: a listing this game prints is a listing the
+            // next sentence should be able to name, and `namedThisTurn` is what
+            // the reference resolver reads.
+            for (const offer of board.offers.slice(0, DUTIES_SHOWN)) {
+                this.nameWhatTheyGot(titleOf(offer));
+            }
+
             facts.structure.push(
                 `encounters.sectBoardFor: ${board.offers.length} offer(s), `
                 + `${board.refusals.length} withheld, membership=`

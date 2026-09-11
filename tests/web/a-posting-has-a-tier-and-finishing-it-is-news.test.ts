@@ -11,6 +11,7 @@
  * there` and `what are people saying about me` returned the identical
  * unrelated line before and after a turn.
  */
+import { TIER_NAMES } from '../../src/data/cultivation/why-a-house-puts-a-party-on-the-road';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness.js';
@@ -48,7 +49,15 @@ describe('a posting has a tier', () => {
         // The tier is the regard band and there is no second difficulty scale.
         // `dutyTermsFor` already computed the band; this asserts the board
         // RENDERS it rather than keeping it to itself.
-        expect(said).toMatch(/(first|second|third|open posting|standing|nobody comes back)/i);
+        //
+        // Matched against `TIER_NAMES` itself rather than against a copy of the
+        // words. The first cut spelled them out - `first|second|third` - and
+        // those were the words the bands used to carry, until a blind session
+        // read *"seeking those at the second rank of Qi Condensation Layer 1"*
+        // off a board and found two different things called a rank one sentence
+        // apart. The assertion is about the band REACHING the paper; which word
+        // a band uses belongs to the catalog.
+        expect(said).toMatch(new RegExp(Object.values(TIER_NAMES).join('|'), 'i'));
         // And the rung, because a tier is a difference between two rungs and
         // one of them has to be on the paper.
         expect(said).toMatch(/at (Qi Condensation|Foundation Establishment|Core Formation|Nascent Soul)/);
