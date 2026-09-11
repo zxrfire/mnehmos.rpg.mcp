@@ -3,7 +3,29 @@
  */
 
 import { z } from 'zod';
-import { randomUUID } from 'crypto';
+import { createHash } from 'crypto';
+
+
+/**
+ * A UUID-shaped id that the same seed always produces.
+ *
+ * Shaped as a UUID rather than as a readable slug so that nothing downstream
+ * can tell a derived id from a random one, and so this can replace a
+ * `randomUUID()` without anybody auditing every consumer. See the note at the
+ * call site for what an unseeded id actually cost.
+ */
+function anIdDerivedFrom(runSeed: string, stream: string, ...parts: (string | number)[]): string {
+    const hex = createHash('sha256')
+        .update(deriveSeed(runSeed, stream, ...parts))
+        .digest('hex');
+    return [
+        hex.slice(0, 8), hex.slice(8, 12),
+        // Version and variant nibbles, so it is a well-formed v4-shaped string.
+        `4${hex.slice(13, 16)}`,
+        `${((parseInt(hex[16]!, 16) & 0x3) | 0x8).toString(16)}${hex.slice(17, 20)}`,
+        hex.slice(20, 32)
+    ].join('-');
+}
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import {
@@ -24,6 +46,7 @@ import {
     TRUE_IMMORTAL_ORDINAL,
     canAttemptBreakthrough,
     effectiveLifespanYears,
+    deriveSeed,
     forStream,
     getSpiritRoot,
     progressRequiredForOrdinal,
@@ -1103,8 +1126,31 @@ export async function handleSpawnEncounter(
 
     const maxHp = 20 + attributes.might * 10 + args.ordinal * 5;
     const maxQi = 10 + attributes.insight * 5 + args.ordinal * 4;
-    const opponentId = randomUUID();
-    const siteId = randomUUID();
+    // ── THE TWO IDS WERE THE ONLY UNSEEDED THINGS IN THIS FUNCTION ───────
+    //
+    // Everything else here is derived from `run.seed` and a nonce, on purpose:
+    // the root, the attributes, the house. These two were `randomUUID()`.
+    //
+    // That is not a cosmetic inconsistency, because an id is not only a label.
+    // `resolveAttempt` draws from `forStream(run.seed, 'social_leverage', day,
+    // party.id)` - the OPPONENT'S ID is part of the stream name. So every roll
+    // made against a spawned encounter drew from a stream nobody could name
+    // twice, and a run pinned to a seed was not pinned at all.
+    //
+    // FOUND AS A FLAKY SUITE. `forcing-an-attempt-to-land.test.ts` spawns a
+    // Nascent Soul on seed `theft-1`, asserts that stealing from them without
+    // the force is refused, and passed for a long time. The test's own comment
+    // states the odds - *"ordinary play reaches it about one time in fifty"* -
+    // and on a full-suite run it reached it. A test that reads as deterministic
+    // and is not is worse than a slow one: it teaches everybody to re-run the
+    // suite until it is green, which is how the crash in `askAround` sat
+    // hiding behind an intermittent failure.
+    //
+    // Shaped as a UUID so that nothing downstream can care which branch made
+    // it, and derived from the same `nonce` and `ordinal` the rolls above use,
+    // so two spawns in one run still differ.
+    const opponentId = anIdDerivedFrom(run.seed, 'admin_encounter_id', nonce, args.ordinal);
+    const siteId = anIdDerivedFrom(run.seed, 'admin_encounter_site', nonce, args.ordinal);
     const location = args.location ?? cultivator.location ?? 'the open road';
     const name = args.name ?? `A ${realmForOrdinal(args.ordinal).name} cultivator`;
     const disposition = args.disposition ?? 'hostile';

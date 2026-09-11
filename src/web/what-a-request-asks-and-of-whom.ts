@@ -184,6 +184,12 @@ function cleanPerson(raw: string): string | undefined {
     const cleaned = raw
         .replace(THE_MONEY, ' ')
         .replace(/^(?:the|a|an|to|with|of|from|at|on|upon)\s+/i, '')
+        // A TRAILING QUESTION WORD IS NOT PART OF A NAME. "I ask her where to
+        // go" put the pivot on `to`, so the person came out as "her where" and
+        // the engine went looking for somebody by that name. See
+        // `NAMES_NOBODY`, which is the same defect where nobody was named at
+        // all; here somebody was, and the interrogative rode along with them.
+        .replace(/\s+(?:where|when|why|how|what|which|who|whether|if)$/i, '')
         .replace(/[,;:.!?]+$/, '')
         .replace(/\s+/g, ' ')
         .trim();
@@ -204,9 +210,39 @@ function cleanObject(raw: string): string | undefined {
 
 /**
  * Words that name nobody.
+ *
+ * ── A QUESTION WORD IS NOT A PERSON ──────────────────────────────────────
+ *
+ * FOUND BY PLAYING BLIND, one turn after the game had listed five destinations
+ * by name:
+ *
+ *     > i ask around about where to go
+ *     "Who told you that?" he asks. He does not wait for you to speak... He
+ *     steers the conversation toward a different subject.
+ *
+ * A deflection with a suspicious edge, about nothing, to a question nobody had
+ * put to him.
+ *
+ * The verb was `ask`, the pivot was `to`, and what was left in between became
+ * the PERSON. Measured across the phrasings of one question:
+ *
+ *     "i ask where to go"          ->  person "where",        topic "go"
+ *     "i ask around where to go"   ->  person "around where", topic "go"
+ *     "i ask someone where to go"  ->  person "someone where",topic "go"
+ *
+ * while `where can i go` and `where should i go` both reached the destinations
+ * read all along. Same question, four readings, three of them addressed to
+ * somebody called `where`.
+ *
+ * The list already held the words that mean NO PARTICULAR person - `someone`,
+ * `around`, `the locals`. What it did not hold is the words that are not a
+ * person at all, and a request cannot be put to an interrogative. Anchored
+ * whole-string like every other entry, and the two-word forms are here because
+ * `cleanPerson` strips a leading article and nothing else, so `around where`
+ * arrives intact.
  */
 const NAMES_NOBODY =
-    /^(?:around|about|it|this|that|these|those|nothing|anything|something|myself|me|someone|somebody|anyone|anybody|everyone|everybody|people|folk|locals|the locals|a stranger|a passerby|a local)$/i;
+    /^(?:around|about|it|this|that|these|those|nothing|anything|something|myself|me|someone|somebody|anyone|anybody|everyone|everybody|people|folk|locals|the locals|a stranger|a passerby|a local|(?:(?:around|about|someone|somebody|anyone|anybody|people|folk|the locals?)\s+)?(?:where|when|why|how|what|which|who|whether|if))$/i;
 
 
 // THE COURTESY THAT ASKS FOR NOTHING

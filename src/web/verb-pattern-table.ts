@@ -982,7 +982,46 @@ export const DESTINATIONS_QUESTION = new RegExp([
     // SOMEWHERE QUIET TO SIT
     /\b(?:quiet|uninhabited|unoccupied|empty|deserted|secluded|isolated|remote|uncrowded|undisturbed|lonely)\b[^.?!]*\b(?:place|places|spot|spots|cave|caves|ground|valley|mountain|mountains|wilds|wilderness|corner|somewhere)\b/,
     /\b(?:place|spot|cave|ground|somewhere)\b[^.?!]*\b(?:nobody|no one|no-one|nothing)\b[^.?!]*\b(?:else|around|there|nearby)\b/,
-    /\b(?:away from|out of) (?:the )?(?:crowd|crowds|people|town|towns|everyone|everybody)\b/
+    /\b(?:away from|out of) (?:the )?(?:crowd|crowds|people|town|towns|everyone|everybody)\b/,
+    // ── AND THE SAME QUESTION ASKED ALOUD ────────────────────────────────
+    //
+    // FOUND BY PLAYING BLIND, one turn after the game had listed five
+    // destinations by name:
+    //
+    //     > i ask around about where to go
+    //     "Who told you that?" he asks. He does not wait for you to speak...
+    //     He steers the conversation toward a different subject.
+    //
+    // A deflection, about nothing, to a question nobody had put to him. The
+    // topic had come out as the word `where`, so the ask was about a subject
+    // that does not exist and the answer was a shrug with a suspicious edge.
+    //
+    // Measured across the phrasings: `where can i go` and `where should i go`
+    // both reach this read, and `i ask where to go` came back as a request with
+    // a target of "where" and a topic of "go", `i ask around where to go` as a
+    // target of "around where", and `i ask someone where to go` as a target of
+    // "someone where". Same question, four readings, three of them nonsense.
+    //
+    // NOBODY MAY BE NAMED IN IT, which is the guard the qi-density row above
+    // already carries and for the same reason: *"I ask Bai Wanchen where the qi
+    // is better" is a question put to a PERSON, and a person answering out of
+    // what they know is the better answer - it is how the genre moves anybody
+    // anywhere.* So only the words that mean NO PARTICULAR PERSON are allowed
+    // between the verb and the question.
+    new RegExp(
+        String.raw`\bask(?:s|ed|ing)?\s+`
+        + String.raw`(?:(?:around|about|someone|somebody|anyone|anybody|people|folk|`
+        + String.raw`the locals?|a local)\s+){0,3}`
+        + String.raw`(?:about\s+)?where\s+(?:to|i\s+(?:can|could|should|might|ought to))\s+`
+        + String.raw`(?:go|travel|head|walk|set out)\b`
+    ),
+    // And the errand form of it, which names no direction at all.
+    new RegExp(
+        String.raw`\bask(?:s|ed|ing)?\s+`
+        + String.raw`(?:(?:around|about|someone|somebody|anyone|anybody|people|folk|`
+        + String.raw`the locals?|a local)\s+){0,3}`
+        + String.raw`(?:for|about)\s+(?:the\s+)?(?:directions?|the way|which way|the roads?)\b`
+    )
 ].map(r => r.source).join('|'));
 
 /**
