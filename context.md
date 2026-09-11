@@ -350,3 +350,51 @@ full. The files, briefly:
   parallel-work boundaries, and the acceptance test the design is frozen against.
   `CLAUDE.md` is a symlink to it.
 - [`README.md`](README.md) - the player-facing introduction and how to run it.
+
+## Who parses what the player meant
+
+**The model reads the sentence. The verb table is the fallback.**
+
+The point of this game is that the AI works out what somebody meant. Phase 1 is
+a model with the square, the player's own words, the previous turn and every
+name it printed in front of it, and it is far better placed to read an ordinary
+English sentence than a regular expression is.
+
+`verb-pattern-table.ts` exists for the tier below that: the sentence still has to
+work when no model answers. It is not the primary reader and must not become
+one by accretion.
+
+So when play surfaces a sentence that routes badly, the first question is
+whether **phase 1's prompt** can be made to read it - more context handed over,
+a clearer instruction, the candidates named in the block it already receives.
+A pattern is the right answer in two cases and they are narrow:
+
+- the sentence must work with no model at all, or
+- the table is actively MIS-routing - a question that executes an act, a read
+  that spends a day, a name that becomes a place.
+
+Growing a branch per synonym is neither of those. It makes the fallback the
+thing being tuned while the reader that actually runs stays untouched.
+
+**And the fallback is ALLOWED to be clunkier.** Without a model the game does not
+play as smoothly, and a player has to be explicit about what they want to do.
+That is the expected shape of the tier, not a defect in it. A sentence that
+reaches `unclear` with no model running has cost the player a moment and nothing
+else - which is exactly what `unclear` is for - and the remedy available to them
+is to say it more plainly. So a near-synonym that the table does not know is not,
+on its own, something to fix. What IS worth fixing is the table doing something
+WRONG with a sentence it does know.
+
+**Never try to replicate an LLM with a non-LLM.** A regular expression reaching for the
+understanding a model already has is the failure mode this whole section is
+about, and it does not end: every synonym has another synonym, every phrasing
+another phrasing, and the table grows toward a language model it can never be.
+The reader that can do that job is already running. Give it what it needs.
+
+**And the engine never hedges at the player.** Where a reference cannot be
+settled, drop the field and let the verb answer the general question; do not
+print *"X could be A or B, name it and it is settled"*. That sentence is the
+engine asking the player to do the model's job, and the one time it shipped it
+was also wrong - `"manual" could be Cold Sword Sect or Hollow Bell Wanderers`,
+printed at somebody looking at a stall, because a kind word had matched a
+listing of houses.

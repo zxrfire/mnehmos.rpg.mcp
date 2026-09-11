@@ -30,17 +30,31 @@
  * `it` and the verb answered confidently about a thing nobody had named.
  *
  * That is the worst shape a reference can fail in: not a refusal, and not a
- * guess, but a correct-sounding answer about something else. The remedy is one
- * sentence, and it is said whatever the narrator does, because it is the only
- * thing that lets the player fix it - and it names the candidates the engine
- * itself printed rather than asking anybody to remember them.
+ * guess, but a correct-sounding answer about something else.
+ *
+ * ── AND THE REMEDY IS A DROP, NOT A QUESTION ─────────────────────────────
+ *
+ * The first cut printed the candidates at the player - *"it" could be the Lesser
+ * Qi-Gathering Manual or the Five-Breath Circulation Scripture. Name it and it
+ * is settled.* That shipped, and was wrong twice over. The owner's ruling,
+ * watching it print the wrong pair at somebody browsing a stall:
+ *
+ *   *the point of the game is that the AI parses what you mean* - *rely on the
+ *   AI more* - *the AI can help you avoid the unsure responses*
+ *
+ * So the field comes off and nothing is said. Phase 1 has the previous turn and
+ * every name it printed, and binding `it` is its job; where it did not, the verb
+ * answers the general question, which is a better turn than a hesitation. What
+ * the resolver could not bind goes to the operator row, where somebody tuning
+ * phase 1 can read it.
+ *
+ * `context.md`, under *Who parses what the player meant*, carries the ruling.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import {
     resolvingAgainstTheLastTurn,
-    sayingItCouldHaveMeantAnyOfThese,
     type WhatTheLastTurnDid
 } from '../../src/web/last-turn-memory';
 
@@ -126,27 +140,6 @@ describe('a demonstrative that could be either says so', () => {
     });
 });
 
-describe('what the player is told', () => {
-    it('names both and asks for one', () => {
-        const said = sayingItCouldHaveMeantAnyOfThese('it', TWO_BOOKS.named);
-        expect(said).toContain('Lesser Qi-Gathering Manual');
-        expect(said).toContain('Five-Breath Circulation Scripture');
-        expect(said).toContain('"it"');
-        expect(said.toLowerCase()).toContain('name it');
-    });
-
-    /**
-     * AND IT DOES NOT PICK. The whole ruling is that choosing for the player is
-     * worse than asking, so the sentence must not read as a recommendation.
-     */
-    it('does not recommend one of them', () => {
-        const said = sayingItCouldHaveMeantAnyOfThese('it', TWO_BOOKS.named).toLowerCase();
-        for (const nudge of ['cheaper', 'better', 'probably', 'presumably', 'taken to mean']) {
-            expect(said, nudge).not.toContain(nudge);
-        }
-    });
-});
-
 /**
  * "The cheaper one" of two things that cost the same bought the wrong book.
  *
@@ -204,17 +197,4 @@ describe('a comparative that ties settles nothing', () => {
         expect(out.resolutions.map(r => r.to)).toEqual(['Lesser Qi-Gathering Manual']);
     });
 
-    /**
-     * AND THE SHORTLIST IS THE COMPARATIVE'S OWN. Offering the thirteen-stone
-     * book back as a candidate for "the cheaper one" would be answering a
-     * narrower question with a wider list.
-     */
-    it('names only the ones at the tied price', () => {
-        const said = sayingItCouldHaveMeantAnyOfThese('the cheaper one', TWO_AT_EIGHT.named);
-        expect(said).toContain('Lesser Qi-Gathering Manual');
-        expect(said).toContain("Bai Fukuan's Five-Breath Circulation Scripture");
-        // The one that is not at the price is not on the list. Matched on the
-        // bare title, which the tied copy's own name does not contain on its own.
-        expect(said.split('Lesser Qi-Gathering Manual').length).toBe(2);
-    });
 });

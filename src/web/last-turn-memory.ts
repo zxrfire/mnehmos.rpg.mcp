@@ -115,11 +115,22 @@ export function describeTheLastTurn(record: WhatTheLastTurnDid | null): string |
     }
 
     lines.push(
-        '  If the sentence below refers back to any of that - "keep at it", "again", "the',
-        '  same", "carry on", "that one", "the cheaper one" - it means one of the things',
-        '  above. Answer with the ordinary action and put the REAL name in "target"; never',
-        '  leave a demonstrative there. If nothing above answers the reference, route what',
-        '  you can and leave the rest alone rather than inventing a referent.'
+        "  RESOLVING A REFERENCE IS YOUR JOB AND NOT THE ENGINE'S. If the sentence below",
+        '  points back at any of that - "it", "that one", "the second one", "the cheaper',
+        '  one", "the intake", "the manual", "keep at it", "again", "the same", "carry on"',
+        '  - work out WHICH of the things above it means and put that REAL name in',
+        '  "target". Never leave a demonstrative or a category word there.',
+        '',
+        '  Two of them fit and you have to pick? Pick. You can see the sentence, the list',
+        '  and the square, and you are the only reader here that can weigh them: a player',
+        '  standing at a stall who says "the manual" means a manual on that stall, and one',
+        '  who has just read a wall and says "the intake" means a house on that wall. The',
+        '  engine cannot tell those apart and will not try - where you leave a reference',
+        '  unresolved the field is DROPPED and the verb answers the general question, so',
+        '  a guess you can defend is better than a blank every time.',
+        '',
+        '  If nothing above answers the reference at all, route what you can and leave the',
+        '  rest alone rather than inventing a referent.'
     );
     return lines.join('\n');
 }
@@ -437,46 +448,6 @@ export interface ResolvedAgainstTheLastTurn {
      * and answered confidently about nothing.
      */
     readonly unsettled: readonly string[];
-}
-
-/**
- * The things a phrase could have meant, where it could not settle on one.
- *
- * The same narrowing the resolver does, kept here rather than threaded through
- * it: a comparative has already ruled out everything that is not at the extreme
- * price, and a demonstrative has ruled out nothing.
- */
-export function whichOnesItCouldHaveMeant(
-    phrase: string,
-    named: readonly ThingNamed[]
-): readonly ThingNamed[] {
-    const priced = named.filter(thing => typeof thing.stones === 'number');
-    if (priced.length >= 2 && (THE_CHEAPER.test(phrase) || THE_DEARER.test(phrase))) {
-        const at = THE_CHEAPER.test(phrase)
-            ? Math.min(...priced.map(thing => thing.stones!))
-            : Math.max(...priced.map(thing => thing.stones!));
-        return priced.filter(thing => thing.stones === at);
-    }
-    return named;
-}
-
-/** What the player is told when a reference pointed at more than one thing. */
-export function sayingItCouldHaveMeantAnyOfThese(
-    phrase: string,
-    named: readonly ThingNamed[]
-): string {
-    // A COMPARATIVE NAMES ITS OWN SHORTLIST. "The cheaper one" of a stall
-    // holding an 8, a 13 and another 8 could have been either of the eights
-    // and could not have been the thirteen, and offering all three back would
-    // be answering a narrower question with a wider list.
-    const listed = whichOnesItCouldHaveMeant(phrase, named)
-        .slice(0, MOST_NAMED_THINGS_RECALLED)
-        .map(thing => thing.name);
-    const both = listed.length === 2
-        ? `${listed[0]} or ${listed[1]}`
-        : `${listed.slice(0, -1).join(', ')} or ${listed[listed.length - 1]}`;
-    return `"${phrase}" could be ${both}, and picking one for you is not this game's to do. `
-        + 'Name it and it is settled.';
 }
 
 /**

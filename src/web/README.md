@@ -42,6 +42,56 @@ Read the method bodies in `turn-engine.ts` and the verb families beside it with 
 question in mind: *where does a value from a model response become a row?* The answer is
 nowhere.
 
+### Phase 1 is the reader, and the pattern table is the fallback
+
+**The model reads the sentence.** `verb-pattern-table.ts` exists for the tier below
+it - the sentence still has to work when no model answers - and it must not become
+the primary reader by accretion.
+
+The point of this game is that the AI works out what somebody meant. Phase 1 has the
+square, the player's own words, the previous turn and every name it printed in front
+of it. It is far better placed to read an ordinary English sentence than a regular
+expression is.
+
+So when play surfaces a sentence that routes badly, the first question is whether
+**phase 1's prompt** can be made to read it: more context handed over, a clearer
+instruction, the candidates named in the block it already receives. A branch in the
+table is the right answer in two cases and they are narrow:
+
+- the sentence must work with **no model at all**, or
+- the table is actively **mis-routing** - a question that executes an act, a read
+  that spends a day, a name that becomes a place.
+
+Growing a branch per synonym is neither. It tunes the fallback while the reader that
+actually runs stays untouched.
+
+**And the fallback is allowed to be clunkier.** Without a model the game does not play
+as smoothly, and a player has to be explicit about what they want to do. That is the
+expected shape of the tier. A sentence reaching `unclear` there has cost a moment and
+nothing else, and the remedy available to the player is to say it more plainly - so a
+near-synonym the table does not know is not, on its own, a defect. What is a defect is
+the table doing something **wrong** with a sentence it does know.
+
+**Never try to replicate an LLM with a non-LLM.** A regular expression reaching for the understanding a
+model already has is the failure this section is about, and it has no end: every synonym
+has another synonym and every phrasing another phrasing, and the table grows toward a
+language model it can never be. The reader that can do that job is already running.
+
+**And the engine never hedges at the player.** Where a reference cannot be settled,
+drop the field and let the verb answer the general question. Do not print *"X could be
+A or B, name it and it is settled"* - that sentence is the engine asking the player to
+do the model's job, and the one time it shipped it was also wrong:
+
+```text
+> i buy a manual
+... a Lesser Qi-Gathering Manual, priced at 11 spirit stones ...
+"manual" could be Cold Sword Sect or Hollow Bell Wanderers, and picking one for
+you is not this game's to do. Name it and it is settled.
+```
+
+printed at somebody looking at a stall, because a kind word had matched a listing of
+houses. `context.md` carries the ruling under *Who parses what the player meant*.
+
 ### Phase 2 is one class spread across several files
 
 `GameService` was split by subject, because at 24,746 lines it had a dozen reasons to

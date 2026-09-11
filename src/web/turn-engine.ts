@@ -772,7 +772,6 @@ import {
     describeTheLastTurn,
     nothingToCarryOnWith,
     resolvingAgainstTheLastTurn,
-    sayingItCouldHaveMeantAnyOfThese,
     sayingWhatItWasTakenToMean,
     sayingWhatWasCarriedOn,
     theLastTurnStillStands,
@@ -2180,21 +2179,37 @@ export class GameService {
             );
             execution.calls.push(theRowForAResolvedReference(resolved.resolutions, before!));
         }
-        // AND THE ONES NOBODY COULD SETTLE, WHICH USED TO GO QUIET.
+        // ── AND THE ONES NOBODY COULD SETTLE GO QUIET, ON PURPOSE ────────
         //
-        // `whichOfTheNamedThings` declines a demonstrative with two things to
-        // point at, on the ruling that saying so is better than choosing - and
-        // nothing said so. The phrase reached the verb as the literal word, so
-        // "I study it", one turn after a stall listed two manuals, went looking
-        // for a place called `it` and reported that it did not exist.
+        // This block used to print the candidates at the player - *"it" could be
+        // the Lesser Qi-Gathering Manual or the Five-Breath Circulation
+        // Scripture. Name it and it is settled.* The owner's ruling, watching it
+        // print the wrong pair at somebody browsing a stall:
         //
-        // Said whatever the narrator does, because it is the one sentence that
-        // lets the player fix it, and it names the candidates the engine itself
-        // printed rather than asking them to remember.
+        //   *the point of the game is that the AI parses what you mean* -
+        //   *rely on the AI more* - *the AI can help you avoid the unsure
+        //   responses*
+        //
+        // That sentence is the engine asking the player to do phase 1's job.
+        // Phase 1 has the previous turn and every name it printed and is the
+        // thing that should be binding `it`; where it did not, the field has
+        // already come off and the verb answers the general question, which is
+        // a better turn than a hesitation.
+        //
+        // `unsettled` stays on the record - the resolver still reports what it
+        // could not bind, and `theRowForAResolvedReference` is where an operator
+        // reads it. What it no longer does is reach the player.
         for (const phrase of resolved?.unsettled ?? []) {
-            sayThisWhateverTheNarratorDoes(
-                execution.facts, sayingItCouldHaveMeantAnyOfThese(phrase, before!.named)
-            );
+            execution.calls.push({
+                name: 'engine.lastTurn',
+                action: 'reference',
+                summary:
+                    `"${phrase}" was a reference and nothing bound it: the turn before this one `
+                    + `named ${before?.named.length ?? 0} thing(s) and more than one of them `
+                    + 'fitted. The field was dropped rather than guessed at, and the verb '
+                    + 'answered without it.',
+                ok: true
+            });
         }
 
         // Doing something else with a day in it is going, and going says what
@@ -5704,23 +5719,19 @@ ${noticed}`;
             );
         }
 
-        // ── AND WHY THE PAPER DID NOT SETTLE, WHERE ONE WAS MEANT ────────
+        // ── AND THE WALL DOES NOT ASK THE PLAYER EITHER ──────────────────
         //
-        // FOUND BY PLAYING BLIND. Two notices up, `i present myself at the
-        // intake`, and the answer was the catalogue of every house in the
-        // province - correct, because a phrase with two things to point at
-        // points at neither, and completely silent about why.
-        //
-        // The player pointed somewhere. Saying which two it could have been is
-        // what lets them finish the sentence, and it is the same courtesy
-        // `sayingItCouldHaveMeantAnyOfThese` pays a demonstrative.
+        // This printed the two houses whose papers were up and asked which. Same
+        // ruling as the reference hedge above: it is the engine asking the
+        // player to do phase 1's job, and phase 1 is handed the wall's own names
+        // the turn they are read. The listing below is a real answer to somebody
+        // who pointed at a wall with two papers on it; a question is not.
         if (fromTheWall.couldHaveBeen.length > 1) {
-            sayThisWhateverTheNarratorDoes(
-                facts,
-                `There is more than one paper on that wall: `
-                + `${fromTheWall.couldHaveBeen.slice(0, -1).join(', ')} and `
-                + `${fromTheWall.couldHaveBeen[fromTheWall.couldHaveBeen.length - 1]}. `
-                + 'Name the house and it is settled.'
+            facts.structure.push(
+                `"${(target ?? '').trim()}" pointed at a wall holding `
+                + `${fromTheWall.couldHaveBeen.length} papers `
+                + `(${fromTheWall.couldHaveBeen.join(', ')}), so it bound to none of them and `
+                + 'the admissible listing answered instead.'
             );
         }
 

@@ -1,5 +1,47 @@
 /**
  * The pattern table: which verb a sentence reaches, with no model running.
+ *
+ * ══════════════════════════════════════════════════════════════════════════
+ * AND THAT CLAUSE IS THE WHOLE OF WHAT THIS FILE IS FOR
+ * ══════════════════════════════════════════════════════════════════════════
+ *
+ * The model reads the sentence. This is the fallback.
+ *
+ * The point of the game is that the AI works out what somebody meant. Phase 1
+ * has the square, the player's own words, the previous turn and every name it
+ * printed; it is far better placed to read an ordinary English sentence than a
+ * regular expression is. This file exists for the tier below that - the
+ * sentence still has to work when no model answers - and it must not become the
+ * primary reader by accretion.
+ *
+ * So when play surfaces a sentence that routes badly, the first question is
+ * whether PHASE 1'S PROMPT can be made to read it: more context handed over, a
+ * clearer instruction, the candidates named in the block it already receives.
+ * A branch here is the right answer in two cases and they are narrow:
+ *
+ *   - the sentence must work with no model at all, or
+ *   - this table is actively MIS-ROUTING - a question that executes an act, a
+ *     read that spends a day, a name that becomes a place.
+ *
+ * Growing a branch per synonym is neither. It tunes the fallback while the
+ * reader that actually runs stays untouched.
+ *
+ * AND THIS TIER IS ALLOWED TO BE CLUNKIER. Without a model the game does not
+ * play as smoothly and a player has to be explicit about what they want to do -
+ * that is the expected shape of a fallback, not a defect in it. A sentence that
+ * reaches `unclear` here has cost a moment and nothing else, and the remedy
+ * available to the player is to say it more plainly. A near-synonym this table
+ * does not know is therefore not, on its own, a thing to fix. What is worth
+ * fixing is this table doing something WRONG with a sentence it does know.
+ *
+ * NEVER TRY TO REPLICATE AN LLM WITH A NON-LLM. A regular expression reaching
+ * for the understanding a model already has is the failure this header is
+ * about, and it has no end: every synonym has another synonym and every
+ * phrasing another phrasing, and the table grows toward a language model it can
+ * never be. The reader that can do that job is already running.
+ *
+ * `context.md` carries the same ruling under *Who parses what the player meant*,
+ * with the sentence that produced it.
  */
 
 import { z } from 'zod';
