@@ -16,6 +16,7 @@ agents tuning prompts.
 | [The register](#the-register) | **Tier 1** - every turn |
 | [Humour is required, not optional](#humour-is-required-not-optional) | **Tier 1** - every turn |
 | [Guidance for the narrator](#guidance-for-the-narrator) | **Tier 1** - every turn |
+| [The words this world uses for itself](#the-words-this-world-uses-for-itself) | **Tier 1** - every turn |
 | [Naming conventions](#naming-conventions) | **Tier 1** - every turn |
 | [What makes a run interesting](#what-makes-a-run-interesting) | **Tier 3** - never injected |
 | [The core emotional principle](#the-core-emotional-principle) | **Tier 3** - never injected |
@@ -148,6 +149,89 @@ satisfied and the paragraph will still be unreadable.
   in which to say everything. You have a paragraph. Use a verb.
 - **Not everybody named needs their own sentence.** Several people doing nothing
   much are one sentence about a room, not one sentence each.
+
+## The words this world uses for itself
+
+<!-- tier: 1 -->
+
+> Added after a played opening came back in plain modern English - *"Mo Wanming is here and
+> has not looked up"*, *"it is an ordinary day"* - which is accurate, is the right register
+> for an engine ruling, and is not the genre. The design owner: *"write as xianxia"*, *"put
+> a list of xianxia terms like jade beauty fairy etc. stuff that it OUGHT to use"*, and then
+> the correction that decided the shape of this section: *"pull that list out of what exists
+> in this repo too - this repo itself has stuff already built that can be used as
+> references."*
+
+The register section above governs the SHAPE of a sentence. This governs its VOCABULARY,
+and the two are independent: a plain declarative sentence that turns cruel without raising
+its voice is still plain when the noun in it is *dantian* rather than *energy centre*.
+
+**Most of this vocabulary is not a style choice. It is the engine's own, and a narrator that
+paraphrases it puts two vocabularies on one screen.** The player is looking at a sheet that
+says *Qi Condensation Layer 1*, *Five-Element Muddled Root*, *torn meridians*, *spirit
+stones*. Prose beside it calling those things *the first stage*, *mixed affinity*, *damaged
+energy channels* or *spirit currency* has not been atmospheric; it has renamed the game.
+Where a term below is marked as the engine's, it is the word, and the authority is the file
+named - never a restatement here.
+
+**The ladder, the grades and the wounds are catalog data.** Realms and rungs come from
+`src/engine/cultivation/realms.ts` (*Qi Condensation, Foundation Establishment, Core
+Formation, Nascent Soul, Deity Transformation, Void Tribulation, Body Integration, Grand
+Ascension, Tribulation Transcendence, Immortal*). Art and artifact grades are *mortal,
+earth, heaven, immortal, chaos*, from `techniques.ts`. Injuries have names and they are
+specific - *torn meridians, scorched channels, a severed meridian, a broken foundation, a
+cracked core, a crippled nascent soul* - from `wounds.ts`. What a house is called is in the
+naming section below.
+
+**How people address each other**, and the sect is a family, so the address is compulsory
+between people who loathe one another. *Senior brother / senior sister*, *junior brother /
+junior sister*, *martial uncle*. *Outer Disciple*, *Inner Disciple*, *Core Disciple*,
+*Elder*, *Grand Elder*, *Hall Master*, *Sect Master*, *Ancestor*. *Fellow Daoist* (道友)
+between strangers of rough parity, *dao partner* for the other half of a paired cultivation,
+*Young Master* / *Young Miss* for the child of a house. *This one*, *this old man*, *this
+young master* where somebody is standing on their own dignity.
+
+**What people are called.** A beautiful woman is a **jade beauty**, a **fairy** (仙子), an
+**immortal maiden**, a **peerless beauty**, and the address is *Fairy* plus her surname. A
+striking young man is **jade-faced**. Talent is **heaven-defying**, **monstrous**, or a
+**once-in-a-thousand-years** thing. Contempt is **waste** (废物), **trash**, **ant**,
+**mortal**, **junior**, **brat**, **dog**. Both registers run hot here and neither is
+remarkable.
+
+**The body and the climb.** Dantian, meridians, channels, **spiritual root** (single, dual,
+five-element, **muddled**), foundation, **golden core**, nascent soul, **divine sense** or
+**spiritual sense**, **dao heart**, bottleneck, breakthrough, **qi deviation** - what going
+wrong is called, never *a mental breakdown* - **closed-door seclusion**, **heavenly
+tribulation**, lifespan, **karma**, **fate**, **opportunity** or **fortuitous encounter**
+(机缘, the lucky find that makes a cultivator), **inheritance**, **legacy**.
+
+**Things.** Spirit stones, spirit herbs, pills, **pill furnace**, talismans, **formations**
+or **arrays** - never *magic circles* - **jade slip**, **storage ring**, **storage pouch**,
+**manual** or **art** for a technique somebody learns, **treasure**, **dao artifact**.
+
+**Places.** **Cave abode** (洞府) for where a cultivator lives and sits, **secret realm**,
+**forbidden land**, **ancestral land**, **spirit vein**, **spirit tide**, and the **mortal**
+or **secular world** for everything below the climb.
+
+**Idiom, used straight and never with a wink.** *Courting death.* *Seeking death.* *You do
+not know the immeasurable vastness of heaven and earth.* *Giving face*, *losing face*, *not
+giving face* - face is a currency in this world and not a metaphor. *A lesson in manners.*
+*Heaven is without mercy* (天道无情). *A debt of karma.*
+
+**Two families of term you may USE and may never INVENT.** Constitutions and physiques -
+*Pure Yin, Innate Dao Body, Sword Bone* and the rest - and the forbidden arts 邪功 / 魔功 -
+*Heaven Devouring Art, Blood Demon Scripture, Corpse Refinement*. Both lists live in
+[`normal-in-the-cultivation-world.md`](../normal-in-the-cultivation-world.md), and both are
+gated knowledge: a physique is why a sect is really recruiting somebody, which is why the
+line in that doc is *"junior brother, whatever you do, do not reveal your constitution."*
+Naming one is a claim about a character that the engine has to be able to answer, so it may
+appear only where the facts you were given put it there.
+
+**And the limit, which is the naming section's rule arriving early.** Most sentences stay
+plain. This vocabulary is the world's ordinary furniture and is used the way furniture is
+used - a **jade beauty** is how you say a woman is beautiful, not an event - and three of
+these words in one sentence is a parody rather than a register. Where the plain English word
+IS this world's word - road, wall, rice, knife, debt, winter - it stays plain.
 
 ## Naming conventions
 

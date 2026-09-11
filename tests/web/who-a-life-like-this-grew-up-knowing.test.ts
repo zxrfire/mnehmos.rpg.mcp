@@ -143,6 +143,32 @@ describe('who a childhood actually puts in front of you', () => {
         expect(facesFromHome(input)).toEqual(facesFromHome(input));
     });
 
+    /**
+     * FOUND BY PLAYING, once the opening began SAYING these notes rather than
+     * only writing them to a column. Three faces came back as:
+     *
+     *     Fang Zhenshan. Has been at the far end of that street since before
+     *                    either of them was anybody.
+     *     Gu Lanlin.     Has been at the far end of that street since before
+     *                    either of them was anybody.
+     *     Fang Anshi.    One of the faces that was always at the well.
+     *
+     * The note was rolled independently per face, which is unobjectionable
+     * while nothing prints two of them together and reads as a broken template
+     * the moment something does. See `the-life-behind-the-first-turn.ts`, which
+     * is what started printing them.
+     */
+    it('does not know two neighbours in the same words', () => {
+        const world = village([0, 1, 2, 3, 4]);
+        for (const seed of ['deal-a', 'deal-b', 'deal-c', 'deal-d', 'deal-e']) {
+            const notes = facesFromHome({
+                world, cultivator: player, origin: 'thin_county', seed
+            }).map(face => face.sourceNote);
+            expect(new Set(notes).size, `${seed} dealt the same note twice: ${notes.join(' | ')}`)
+                .toBe(notes.length);
+        }
+    });
+
     it('never leaves a life with nobody, at any band in the table', () => {
         // The floor is the ruling: "at a minimum, some names."
         for (const band of FACES_A_CHILDHOOD_LEAVES) expect(band.faces).toBeGreaterThan(0);

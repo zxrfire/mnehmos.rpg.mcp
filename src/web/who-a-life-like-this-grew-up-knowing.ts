@@ -237,8 +237,34 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
         ? atHome.slice(0, wanted)
         : eligible(theSamePartOfTheWorld(world, here)).slice(0, 1);
 
+    // ── AND NO TWO OF THEM ARE KNOWN THE SAME WAY ───────────────────────
+    //
+    // FOUND BY PLAYING, once the opening started saying these notes out loud
+    // rather than only writing them to the knowledge table. Three faces, drawn
+    // independently, came back as:
+    //
+    //     Fang Zhenshan. Has been at the far end of that street since before
+    //                    either of them was anybody.
+    //     Gu Lanlin.     Has been at the far end of that street since before
+    //                    either of them was anybody.
+    //     Fang Anshi.    One of the faces that was always at the well.
+    //
+    // Two word-identical sentences under two different names, which reads as a
+    // broken template rather than as two neighbours. An independent draw per
+    // face was never wrong while these notes lived in a database column nobody
+    // printed side by side; it became wrong the moment they were a list.
+    //
+    // So the notes are dealt rather than rolled: the table is shuffled once and
+    // handed out in order, and a repeat is only possible past its sixth face -
+    // which only the richest births reach, and where a childhood plausibly does
+    // hold two people known the same way.
     const rng = forStream(seed, 'childhood', here.id);
-    return draw.map(npc => toFace(npc, rng.int(0, HOW_YOU_KNOW_THEM.length - 1)));
+    const notes = [...HOW_YOU_KNOW_THEM];
+    for (let i = notes.length - 1; i > 0; i--) {
+        const j = rng.int(0, i);
+        [notes[i], notes[j]] = [notes[j], notes[i]];
+    }
+    return draw.map((npc, at) => toFace(npc, notes[at % notes.length]));
 }
 
 /**
@@ -257,12 +283,12 @@ function theSamePartOfTheWorld(world: WorldState, here: LocationRecord): NpcReco
     return world.npcs.filter(npc => npc.locationId !== null && around.has(npc.locationId));
 }
 
-function toFace(npc: NpcRecord, at: number): FaceFromHome {
+function toFace(npc: NpcRecord, sourceNote: string): FaceFromHome {
     return {
         id: npc.id,
         name: npc.name,
         realmOrdinal: npc.cultivation.realmOrdinal,
-        sourceNote: HOW_YOU_KNOW_THEM[at],
+        sourceNote,
         // What the holder ends up carrying. A face and a name, and the explicit
         // statement that it is nothing more than that - because it is not, and
         // a record that implied otherwise would be granting a favour nobody has
