@@ -1629,6 +1629,39 @@ function describeCompany(
             // the game with room to say what they are like as well as what they
             // are at - and most people have nothing here, which is the point.
             if (met.like !== null) sentences.push(`${met.name} ${met.like}.`);
+            // ── AND WHAT THEY CAN BE HEARD ON ────────────────────────────
+            //
+            // MEASURED, with a model narrating: twelve played turns and not one
+            // line of speech in any of them, against a corpus where about three
+            // paragraphs in ten carry some. The prompt asks for dialogue and
+            // the narrator is forbidden to invent, so with nothing speakable in
+            // the facts the two instructions are in conflict and the harder one
+            // correctly wins.
+            //
+            // `whatTheyWouldBeHeardOnAbout` is what closes that, and it was
+            // being computed for every named person and rendered only by the
+            // census branch below - which answers "who is here". A LOOK takes
+            // this branch, and a look is the commonest read in the game and the
+            // whole of turn 0, so the one channel that could put words in a
+            // mouth reached the one kind of turn nobody types.
+            //
+            // Shaped as what they can be HEARD on, not as what is true of them:
+            // a stranger's spent years are not visible, and handing the bare
+            // fact over got it narrated omnisciently. Same sentence as the
+            // census, because it is the same fact.
+            // The person the ground handed over first, and otherwise whoever
+            // in the square has anything at all - one of them, on the census
+            // branch's own reasoning: three people all audibly preoccupied is a
+            // soap opera, and nobody with anything is a listing.
+            const speaking = (met.chewing ?? null) !== null
+                ? met
+                : company.named.find(person => (person.chewing ?? null) !== null) ?? null;
+            if (speaking !== null) {
+                sentences.push(
+                    `What ${speaking.name} can be heard on, unprompted and not to you: `
+                    + `they ${speaking.chewing}.`
+                );
+            }
             // The party is already inside the clause - "mid-conversation with
             // X" - so it is not repeated. What is worth saying is that they
             // came as a set, and only when the set is bigger than a pair.

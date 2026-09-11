@@ -40,10 +40,17 @@ describe('a house you were told about is not a place you were told about', () =>
 
         // Read the house out of the game's own words. Any name the game prints
         // is a name the game must accept.
-        const look = await game.act('I look around');
-        const house = A_HOUSE_ON_THE_WALL.exec(look.narration)?.[1]?.trim();
+        //
+        // THE WALL, ASKED FOR, rather than whatever a look happened to mention.
+        // The house has to be one this cultivator holds BECAUSE OF A BILL - the
+        // last assertion below is that the refusal repeats what the paper said -
+        // and a look names houses from every source. It also stopped naming any
+        // once the opening began reading the wall, because a wall already read
+        // goes quiet; asking for it prints the whole wall either way.
+        const posted = await game.act('what is posted here');
+        const house = A_HOUSE_ON_THE_WALL.exec(posted.narration)?.[1]?.trim();
         // A guard that skips the path it exists for is the defect it guards.
-        expect(house, look.narration.slice(0, 400)).toBeTruthy();
+        expect(house, posted.narration.slice(0, 400)).toBeTruthy();
 
         const went = await game.act(`I go to the ${house}`);
         const said = `${went.narration} ${(went.state.log ?? [])

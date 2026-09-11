@@ -142,13 +142,34 @@ describe('a new cultivator starts knowing almost nothing', () => {
         }
         // Houses, same rule: the county and not an inch past it. A name from
         // the next province over would be the old global-minimum bug returning.
-        const knownSects = gate.awareness(cultivator.id, 'sect').map(row => row.name);
-        expect(knownSects.length).toBeGreaterThan(0);
+        //
+        // ── AND A BILL ON THE WALL IS NOT THAT BUG ───────────────────────
+        //
+        // The opening now reads the wall where this cultivator is standing, so
+        // a house that put paper up in their own town is in their awareness on
+        // day 0 with `read` provenance and a note saying which wall. That is a
+        // second source rather than a wider floor, and the houses reduced to
+        // advertising are mostly the ones with NO province at all - so a
+        // seatless house is not local and is not a leak either.
+        //
+        // The rule being protected is about what the COUNTY grants on nobody's
+        // word but its own, so the assertion is narrowed to those rows and the
+        // rest are required to say where they came from.
+        const heardOfHouses = gate.awareness(cultivator.id, 'sect');
+        expect(heardOfHouses.length).toBeGreaterThan(0);
         const localNames = new Set(LOCAL_SECTS.map(sect => sect.name));
-        for (const name of knownSects) {
-            expect(localNames.has(name), `${name} is not a house of ${HOME_REGION.name}`).toBe(true);
+        for (const row of heardOfHouses) {
+            if (row.sourceKind === 'told') {
+                expect(localNames.has(row.name), `${row.name} is not a house of ${HOME_REGION.name}`)
+                    .toBe(true);
+                continue;
+            }
+            expect(row.sourceKind, `${row.name} entered this world from nowhere`)
+                .toBe('read');
+            expect(row.sourceNote, `${row.name} was read off nothing in particular`)
+                .toContain(HOME_PLACE);
         }
-        expect(SECTS.length).toBeGreaterThan(knownSects.length);
+        expect(SECTS.length).toBeGreaterThan(heardOfHouses.length);
     });
 
     /**
@@ -362,9 +383,18 @@ describe('the prompt never carries the answer key', () => {
             expect(stranger).not.toHaveProperty('name');
         }
         expect(summary).toContain(aHouseTheyKnow(gate, cultivator.id).name);
+        // THE RULE IS THE GATE, NOT THE COUNTY. This used to read "every house
+        // that is not local is absent", which was the same claim while the
+        // county was the only source of a house name. The opening now reads the
+        // wall, and a seatless house that put paper up in this town is held -
+        // `read`, with the wall in its provenance - so the honest form of the
+        // rule is that a name in the prompt is a name the gate holds. Read off
+        // the gate rather than off the catalog, so it cannot drift from it.
+        const held = new Set(gate.awareness(cultivator.id, 'sect').map(row => row.name));
         for (const sect of SECTS) {
-            if (isLocal(sect.id)) continue;
-            expect(summary).not.toContain(sect.name);
+            if (held.has(sect.name)) continue;
+            expect(summary, `${sect.name} reached the prompt unheard of`)
+                .not.toContain(sect.name);
         }
     });
 
@@ -539,6 +569,70 @@ describe('the narrator constitution', () => {
         expect(DISCOVERY_RULE).toMatch(/entourage tells them more/i);
         expect(DISCOVERY_RULE).toMatch(/usually not interested/i);
         expect(DISCOVERY_RULE).toMatch(/Do not explain them/i);
+    });
+
+    /**
+     * ── THE GATE WITHHELD FROM THE READER AS WELL AS FROM THE CHARACTER ──
+     *
+     * `DISCOVERY_RULE` read as "narrate only what this cultivator perceived",
+     * which is a first-person diary rather than this genre: the corpus cuts
+     * away constantly and the reader is routinely ahead of the protagonist.
+     * Ruled by the design owner that the engine should hand the narrator more
+     * and mark what is not held, rather than drop it.
+     *
+     * The split that makes it safe, and what these pin: what the CHARACTER
+     * knows still gates verbs and still lives in `knowledge.ts`, and nothing
+     * in the prompt adds to it; what the READER knows is prose and unlocks
+     * nothing. The permission is scoped to marked facts, so the block is inert
+     * when a turn marks none - which is why the rule also names the one shape
+     * already reaching a model, the turn-0 life line that says in its own
+     * words they have not been told.
+     */
+    it('lets the reader know more than the cultivator, without lifting the name gate', () => {
+        const prompt = narrationSystemPrompt();
+        expect(prompt).toContain('THE READER MAY KNOW MORE THAN THE CULTIVATOR DOES');
+        // The two kinds of knowing, and that only one of them is a rule.
+        expect(prompt).toMatch(/What the CHARACTER knows decides what they may do/);
+        expect(prompt).toMatch(/What the READER knows is prose and unlocks nothing/);
+        // Pairs rather than prose rules: a small model copies a pair.
+        expect(prompt).toContain('  LEAK     You learn that somebody paid a favour');
+        expect(prompt).toContain('  CUTAWAY  The elder had been watching him since he came');
+        expect(prompt).toContain('The subject of the sentence is the whole test');
+        // The gate is amended, not spent. A name the player was never told
+        // still may not be used at them.
+        expect(prompt).toContain('Nothing is named AT the player');
+        expect(prompt).toContain('WHAT MAY BE NAMED');
+        // And the two blocks must not contradict each other in the one prompt.
+        expect(DISCOVERY_RULE).toContain('THE READER MAY KNOW MORE THAN THE CULTIVATOR DOES');
+    });
+
+    it('makes a cutaway reach as far as the band and no further', () => {
+        // Height is already selected per turn. An unqualified cutaway licence
+        // would have a province re-planning around a villager, which is the
+        // reach error the ladder page exists to prevent.
+        expect(narrationSystemPrompt())
+            .toContain('HOW FAR A CUTAWAY REACHES IS THE REGISTER FOR THIS TURN');
+    });
+
+    it('carries the marked facts in their own block, separate from what may be stated', () => {
+        const withHeld = composeNarrationUser(
+            { lines: ['Nothing in particular happened.'], prose: '' } as never,
+            {
+                place: 'the ford',
+                ambient: 'thin',
+                heldByTheWorldAndNotByThem: ['Somebody is carrying a debt for where they stand.']
+            } as never
+        );
+        expect(withHeld).toContain('HELD BY THE WORLD, NOT BY THIS CULTIVATOR');
+        expect(withHeld).toContain('- Somebody is carrying a debt for where they stand.');
+
+        // Absent means silent. A block with no material is a permission with
+        // nothing scoped to it, which is what a small model fills in.
+        const without = composeNarrationUser(
+            { lines: ['Nothing in particular happened.'], prose: '' } as never,
+            { place: 'the ford', ambient: 'thin' } as never
+        );
+        expect(without).not.toContain('HELD BY THE WORLD');
     });
 });
 

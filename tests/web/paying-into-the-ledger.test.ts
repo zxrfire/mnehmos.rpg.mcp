@@ -76,7 +76,17 @@ describe('paying into a house', () => {
         const { cultivator } = await game.newRun('Giver');
         db.prepare('UPDATE cultivators SET spirit_stones = ? WHERE id = ?').run(purse, cultivator.id);
 
-        const known = new KnowledgeGate(db).awareness(cultivator.id, 'sect');
+        // ── AND THE COUNTY'S OWN HOUSE, NOT WHATEVER PAPER IS UP ─────────
+        //
+        // The opening now reads the wall where the run begins, so a house that
+        // put a bill up is in this awareness on day 0 - with `read` provenance,
+        // and mostly with no province at all, because a seatless house is the
+        // kind reduced to advertising. Those are exactly the houses whose door
+        // is somewhere else, and joining one from here is refused. What this
+        // helper wants is a house the county itself named, which is the `told`
+        // row the seeder wrote.
+        const known = new KnowledgeGate(db).awareness(cultivator.id, 'sect')
+            .filter(row => row.sourceKind === 'told');
         expect(known.length, `seed ${seed} left the cultivator knowing no house to join`)
             .toBeGreaterThan(0);
         await game.act(`I join the ${known[0].name}`);

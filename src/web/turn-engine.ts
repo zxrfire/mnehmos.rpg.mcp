@@ -541,9 +541,14 @@ import {
     thingsCarriedThatTeachARoad
 } from './ground-that-teaches-a-road.js';
 import {
+    postingGroundOf,
     readTheWall,
     whichHouseThePaperMeans
 } from './what-is-posted-on-the-wall-here.js';
+import {
+    whatIsLiveForYouHere,
+    type TheLiveSituation
+} from './what-is-live-for-you-here.js';
 // `billsOnTheWall` and not `readTheWall` for the affordance gathering below.
 // The two answer the same question and only one of them WRITES: reading the
 // wall grants every house on it through `learnIfNew`, and this runs on every
@@ -1872,7 +1877,50 @@ export class GameService {
         const awareness = this.knowledge.awareness(created.cultivator.id);
 
         const ambient = this.ambientFor(created.cultivator, created.run);
-        const facts = factsForLook(created.cultivator, ambient, this.company(created.cultivator));
+
+        // ── WHAT IS LIVE, BEFORE WHAT IS STANDING THERE ─────────────────
+        //
+        // FOUND BY PLAYING. Turn 0 read *"Nothing is happening. Nothing happens
+        // here"* into a square holding two dated intakes, a bar this body
+        // fails, and the book that would close it priced at a quarter of the
+        // purse on a stall ten steps away. Every one of those was reachable on
+        // the next turn and none was said: the opening was selecting the square
+        // over what is live for this player.
+        //
+        // The quiet-day line goes with it, and that is the same defect rather
+        // than a second one. `groundIsQuiet` already exists to stop a claim
+        // that nothing here is asking for anything standing above something
+        // that is, and a dated door is exactly that.
+        const live = this.theLiveSituationAt(created.run, created.cultivator, ambient);
+        const facts = factsForLook(
+            created.cultivator,
+            ambient,
+            this.company(created.cultivator),
+            null,
+            live.toldToThePlayer.length === 0
+        );
+        // AND TWO VOICES THAT WERE HAVING THE CONVERSATION ANYWAY.
+        //
+        // `hear` is the one channel in this game that produces SPEECH and an
+        // unidentified perception in the same sentence - a sect and a person
+        // named past a wall, neither explained - and every verb that reads a
+        // square calls it except the opening. Measured across played turns it
+        // is the best line the scene layer produces and it fired on none of the
+        // turns a new player reads first.
+        const overheard = this.hear(created.cultivator, created.run, 'look', null);
+
+        if (live.forTheNarrator.length > 0) facts.lines.unshift(...live.forTheNarrator);
+        if (live.toldToThePlayer.length > 0) {
+            const said = live.toldToThePlayer.join('\n\n');
+            facts.prose = facts.prose.length > 0 ? `${said}\n\n${facts.prose}` : said;
+            // The same tool the hard cultivation gate uses, and for the same
+            // reason: a dated door the model drops is a door the player never
+            // hears about, and `withRequiredLines` matches on the words
+            // surviving into the prose rather than on the model having obeyed.
+            (facts.required ??= []).unshift(...live.toldToThePlayer);
+        }
+        facts.structure.push(...live.structure);
+        if (overheard) addHearing(facts, overheard);
 
         // ── THE SIXTEEN YEARS, BEFORE THE FIRST TURN ASKS ANYTHING ──────
         //
@@ -1908,6 +1956,26 @@ export class GameService {
             awareness,
             company: this.company(created.cultivator),
             realmOrdinal: created.cultivator.realmOrdinal,
+            ...(overheard ? { hearing: overheard } : {}),
+            // The output-side half of handing over a name the player does not
+            // hold. The colours can be leant on; whose they are may not be
+            // written, and this is what catches it if it is.
+            //
+            // `standsAt` IS NOT OPTIONAL HERE, and leaving it out cost the
+            // whole opening. `auditNarration` returns early on a null `filed`,
+            // so turn 0 used to be audited not at all; filing one without the
+            // rung audited it with no exemption for a faithful rank read, and
+            // measured with gemma narrating, *"You have reached the first rung
+            // of Qi Condensation, but you hold no manual"* - true in both
+            // halves - was discarded as an invented breakthrough. Saying where
+            // somebody stands is not claiming they moved; that is what this
+            // field is for, and every other call site supplies it through
+            // `filedOutcome`.
+            filed: {
+                who: created.cultivator.name,
+                standsAt: rankName(created.cultivator.realmOrdinal),
+                onOfferAndNotHeld: live.namedAndNotHeld
+            },
             // Every fact, including the one nobody is going to tell them, so
             // the account cannot contradict the ruling below it.
             theLifeBehindThem: life.forTheNarrator
@@ -3890,7 +3958,16 @@ ${noticedWaiting}`;
                 // about the person is untouched; `factsForLook` drops only the
                 // nothing-is-wrong line, and only when the ground contradicts
                 // it.
-                const groundIsQuiet = !wrong || wrong.lines.length === 0;
+                //
+                // AND SO IS THE LIVE SITUATION. A dated door and a wall that
+                // says nothing here is asking for anything are the same
+                // contradiction one step smaller, and this is the same seam
+                // that already answers it.
+                const liveHere = action.intent === 'company' || action.intent === 'warmth'
+                    ? null
+                    : this.theLiveSituationAt(run, cultivator, ambient, 'new');
+                const groundIsQuiet = (!wrong || wrong.lines.length === 0)
+                    && (liveHere === null || liveHere.toldToThePlayer.length === 0);
                 // WHAT THE PEOPLE STANDING HERE CARRY ABOUT THIS CULTIVATOR.
                 //
                 // `whatTheSquareFeelsAbout` already runs every turn for the
@@ -3971,33 +4048,20 @@ ${line}`;
                 // house is already held writes nothing through `learnIfNew` and
                 // is dropped here on exactly that signal, so nothing has to
                 // remember that this player has stood here before.
-                const posted = readTheWall(this.knowledge, cultivator, run);
-                for (const line of posted.newLines) {
-                    looking.facts.lines.push(line);
-                    looking.facts.prose = `${looking.facts.prose}
+                // - AND THE WALL AND THE STALLS ARE HALF OF ONE READ. The
+                // paper, who is selling what, the gate nothing is accumulating
+                // against and the road out were four separate appendages here
+                // and two of them existed nowhere else in the played game.
+                // `theLiveSituationAt` is the whole of it, and it is what the
+                // opening now leads with.
+                if (liveHere !== null) {
+                    for (const line of liveHere.forTheNarrator) looking.facts.lines.push(line);
+                    for (const line of liveHere.toldToThePlayer) {
+                        looking.facts.prose = `${looking.facts.prose}
 
 ${line}`;
-                }
-                // AND WHO IN THE SQUARE IS TRADING
-                const trading = readWhatIsOnOfferHere(
-                    cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
-                );
-                const cheapest = trading.offers[0];
-                if (cheapest) {
-                    const sellers = new Set(trading.offers.map(o => o.sellerId)).size;
-                    const line =
-                        `${sellers === 1 ? 'Somebody here is' : `${sellers} people here are`} `
-                        + 'carrying something they would rather have the stones for, and not '
-                        + `hiding it. A copy of ${cheapest.name} is going for `
-                        // The unit was missing - "going for 6" - and the
-                        // sentence closed by quoting a command string at
-                        // somebody standing in a market square. What the player
-                        // may type is not something a scene knows.
-                        + `${howMany(cheapest.askStones, 'spirit stone')}.`;
-                    looking.facts.lines.push(line);
-                    looking.facts.prose = `${looking.facts.prose}
-
-${line}`;
+                    }
+                    looking.facts.structure.push(...liveHere.structure);
                 }
                 // Two people talking on the far side of a wall, who were having
                 // the conversation anyway. Nothing here is staged for the
@@ -5770,7 +5834,18 @@ ${noticed}`;
         const fromTheWall = whichHouseThePaperMeans(
             target, () => readTheWall(this.knowledge, cultivator, run)
         );
-        const query = fromTheWall.house ?? (target ?? '').trim();
+        // AND A REFERENCE THE WALL COULD NOT SETTLE IS STILL NOT A NAME.
+        //
+        // FOUND BY PLAYING, one turn after the opening began stating the dated
+        // intakes. Two papers were up, `i go to the intake` bound to neither -
+        // which is the ruling every reference here keeps - and the literal
+        // words went on to `resolveSect`, which answered *"you have said a name
+        // and it is not one anybody has said to you"* about two houses the
+        // engine had printed on the screen above. `the intake` was never a
+        // name, so it does not become one by failing to bind; dropping it
+        // reaches the listing below, which names both papers.
+        const query = fromTheWall.house
+            ?? (fromTheWall.wasAPaperReference ? '' : (target ?? '').trim());
 
         // A CATEGORY IS NOT A NAME, AND IT MUST NOT BECOME ONE
         const named = query.length >= 3 && !GENERIC_HOUSE_PHRASE.test(query)
@@ -5932,6 +6007,16 @@ ${noticed}`;
         // the turn they are read. The listing below is a real answer to somebody
         // who pointed at a wall with two papers on it; a question is not.
         if (fromTheWall.couldHaveBeen.length > 1) {
+            // AND WHICH OF THE LISTING IS THE ONE ON PAPER. A fact, not a
+            // question: the listing that answers a paper reference is a page of
+            // houses, and the two with bills up in this square are the two the
+            // sentence was about. Without it the answer is correct and the
+            // player has lost the thing they were pointing at.
+            sayThisWhateverTheNarratorDoes(
+                facts,
+                `${fromTheWall.couldHaveBeen.length} of these have paper up here: `
+                + `${fromTheWall.couldHaveBeen.join(' and ')}.`
+            );
             facts.structure.push(
                 `"${(target ?? '').trim()}" pointed at a wall holding `
                 + `${fromTheWall.couldHaveBeen.length} papers `
@@ -13830,6 +13915,129 @@ ${fit.line}`;
 
     present(cultivator: Cultivator): RosterEntry[] {
         return othersPresent(this.repos, cultivator, this.atHand);
+    }
+
+    /**
+     * Ground a book stall stands on.
+     *
+     * `manualsAStallCarries` is the catalog and has no geography in it, so
+     * `buyAManual` will sell a copy on a mountainside. Saying a stall is here
+     * is a claim about the square, so the claim is narrowed to the kinds of
+     * place that hold a market, and under-reporting is the safe direction: the
+     * verb still works where this says nothing.
+     */
+    private static readonly GROUND_WITH_A_STALL: ReadonlySet<string> =
+        new Set(['city', 'market_town', 'sect_town', 'village']);
+
+    /**
+     * What the live read has already put in front of this player, where and when.
+     *
+     * NOT PERSISTED, and that is the decision rather than an omission. It is a
+     * presentation memory - do not hand somebody the paragraph they have just
+     * read - and nothing in the world depends on it: a process that restarts
+     * restates the situation, which is what a player coming back to the game
+     * wants anyway. Writing it to `cultivator_flags` cost a plain turn one
+     * autocommit outside any transaction, which
+     * `how-many-times-a-turn-commits.test.ts` holds at zero.
+     */
+    private liveAlreadySaid: { stamp: string; keys: string[] } | null = null;
+
+    /**
+     * What is live, timed and priced where this cultivator is standing.
+     *
+     * Every part of it was already computed and only `whatIsWorthDoingStandingHere`
+     * was ever asking for it - which is a reader a player reaches by typing
+     * "what can I do here", and nothing else called. So the material existed and
+     * the opening chose the square.
+     *
+     * READS THE WALL, which grants. Standing in a square is how paper nailed up
+     * in it is seen, and `learnIfNew` is what decides whether that was new.
+     */
+    private theLiveSituationAt(
+        run: Run,
+        cultivator: Cultivator,
+        ambient: AmbientQi,
+        /**
+         * Whether paper this player has already read is stated again.
+         *
+         * `all` for the opening, where nothing has been read. `new` everywhere
+         * a player may stand in the same square day after day - see the split
+         * `WallReading` keeps and why.
+         */
+        doors: 'all' | 'new' = 'all'
+    ): TheLiveSituation {
+        const here = this.whatIsLiveHere(cultivator, ambient, run);
+        const onDay = Math.floor(run.elapsedDays);
+        const wall = readTheWall(this.knowledge, cultivator, run);
+        // WHAT THIS READ HAS ALREADY SAID ON THIS GROUND TODAY. The stamp is
+        // the ground and the day, so the memory lapses by walking or by
+        // waiting rather than by a counter.
+        const stamp = `${cultivator.id}|${(cultivator.location ?? '').trim()}|${onDay}`;
+        const alreadySaid = this.liveAlreadySaid?.stamp === stamp
+            ? this.liveAlreadySaid.keys
+            : [];
+        const posted = doors === 'all'
+            ? wall.bills
+            : wall.bills.filter(bill => wall.learned.includes(bill.houseName));
+        const road = techniqueCeiling(
+            cultivator.realmOrdinal,
+            this.rateTermsFor(cultivator).techniqueCap,
+            copyNamesHeldBy(this.db, cultivator.id)
+        );
+        const regionId = standingOf(cultivator).regionId;
+        const trading = readWhatIsOnOfferHere(
+            cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
+        );
+        const stall = GameService.GROUND_WITH_A_STALL.has(postingGroundOf(cultivator.location))
+            ? manualsAStallCarries().filter(book => book.requiredOrdinal <= cultivator.realmOrdinal)
+            : [];
+
+        const live = whatIsLiveForYouHere({
+            ordinal: cultivator.realmOrdinal,
+            spiritStones: cultivator.spiritStones,
+            practisesAMethod: road.state !== 'no_method',
+            theBindingGate: road.state === 'no_method' ? road.line : null,
+            doorsPostedHere: posted.map(bill => ({
+                houseName: bill.houseName,
+                saying: bill.saying,
+                admissionOrdinal: bill.admissionOrdinal,
+                inDays: bill.opensOnDay - onDay
+            })),
+            // Priced through `localPrice` and `cashToStones`, the same two calls
+            // `buyAManual` charges with, so the figure quoted here is the figure
+            // paid.
+            booksOnAStallHere: stall.map(book => ({
+                name: book.name,
+                askStones: Math.max(1, Math.ceil(cashToStones(localPrice(regionId, book.cash)))),
+                opensAtOrdinal: book.requiredOrdinal,
+                carriesToOrdinal: book.cap
+            })),
+            // Read with the holds filter, which `whatIsLiveHere` does not pass:
+            // offering somebody a copy of a book already in their pouch is the
+            // engine not having looked.
+            goodsOnOfferHere: trading.offers
+                .map(offer => ({ name: offer.name, askStones: offer.askStones })),
+            sellersHere: new Set(trading.offers.map(offer => offer.sellerId)).size,
+            thickerGroundWithinReach: here.thickerGroundWithinReach,
+            ambient,
+            peopleHere: here.peopleHere ?? 0,
+            // THE HOOK, AND THE WHOLE OF WHY IT IS SHAPED THIS WAY. Colours on a
+            // sleeve are seen by anybody standing there; whose they are is a
+            // thing you have to have been told. The gate decides the second and
+            // has been deciding both, which is a locked room with the key
+            // inside it - the player was shown only what they already knew, so
+            // nothing could ever be asked about.
+            coloursHereTheyCannotPlace: this.present(cultivator)
+                .filter(row =>
+                    row.sectId !== null
+                    && row.sectName !== null
+                    && !this.knowledge.isAwareOf(cultivator.id, 'sect', row.sectId))
+                .map(row => row.sectName as string),
+            dutiesGoing: here.dutiesGoing ?? 0,
+            alreadySaidHereToday: alreadySaid
+        });
+        this.liveAlreadySaid = { stamp, keys: [...alreadySaid, ...live.keysSaid] };
+        return live;
     }
 
     /**

@@ -88,19 +88,31 @@ describe('a house short of people comes looking', () => {
     it('puts a name into the player world that was not there before', async () => {
         const { game, cultivatorId, gate } = await standingIn(MARKET_TOWN);
 
-        const before = new Set(gate.awareness(cultivatorId, 'sect').map(r => r.id));
         await game.act('what is posted here');
-        const after = gate.awareness(cultivatorId, 'sect').map(r => r.id);
+        const after = gate.awareness(cultivatorId, 'sect');
 
-        const learned = after.filter(id => !before.has(id));
-        expect(learned.length).toBeGreaterThan(0);
+        // ── MEASURED ON PROVENANCE, NOT ON A DELTA ───────────────────────
+        //
+        // The delta was `before` against `after` around this one call, and it
+        // stopped measuring anything the day the OPENING started reading the
+        // wall where the run begins: the seatless houses are the ones reduced
+        // to paper, they advertise everywhere, and the same two were therefore
+        // already held before this cultivator was moved here.
+        //
+        // What the rule actually is - a wall puts a name into somebody's world
+        // that nothing else would have - is a claim about the source, and the
+        // county floor cannot write a `read` row. So it is read off the
+        // provenance, which no earlier wall can satisfy on the wrong house.
+        const fromPaper = after.filter(row => row.sourceKind === 'read');
+        expect(fromPaper.length, 'reading a wall put no name into this world')
+            .toBeGreaterThan(0);
 
         // And every one of them is a house the derivation actually chose,
         // rather than whatever happened to be nearby in a catalog.
         const advertising = new Set(
             housesThatHaveToAdvertise(openDoorsInTheWorld()).map(h => h.id)
         );
-        for (const id of learned) expect(advertising.has(id)).toBe(true);
+        for (const row of fromPaper) expect(advertising.has(row.id)).toBe(true);
     });
 
     /**
