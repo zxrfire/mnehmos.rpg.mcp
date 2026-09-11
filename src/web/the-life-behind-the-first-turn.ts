@@ -108,11 +108,13 @@ function theHouseholdTheyCameOutOf(birth: Birth): LifeLine[] {
     if (house === null) {
         said.push({
             text:
-                'No house behind them at all, which is nine births in ten. Nobody is owed '
-                + 'anything for where they are standing and nobody is going to ask after them.',
-            // The odds are for the narrator. To the person living it there are
-            // none, and telling a player their birth was the common one is the
-            // engine talking to them about its own draw.
+                'No house behind them at all. Nobody is owed anything for where they are '
+                + 'standing and nobody is going to ask after them.',
+            // The odds used to sit on the narrator's copy, as a note about how
+            // unremarkable this birth is. Measured against the local model: it
+            // repeated them - "which is the way of it for nine births in ten" -
+            // so the engine's own draw reached the player through the prose. A
+            // fact the narrator may not say is a fact not worth handing over.
             toThePlayer:
                 'No house behind you at all. Nobody is owed anything for where you are '
                 + 'standing and nobody is going to ask after you.'

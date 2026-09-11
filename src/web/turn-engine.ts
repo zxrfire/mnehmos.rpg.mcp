@@ -1913,11 +1913,16 @@ export class GameService {
         if (live.toldToThePlayer.length > 0) {
             const said = live.toldToThePlayer.join('\n\n');
             facts.prose = facts.prose.length > 0 ? `${said}\n\n${facts.prose}` : said;
-            // The same tool the hard cultivation gate uses, and for the same
-            // reason: a dated door the model drops is a door the player never
-            // hears about, and `withRequiredLines` matches on the words
-            // surviving into the prose rather than on the model having obeyed.
-            (facts.required ??= []).unshift(...live.toldToThePlayer);
+            // NOT on `required`, and the banner thirty lines below says why:
+            // that channel matches on the engine's own words surviving into the
+            // prose, and this prompt orders the model to write every fact again
+            // from nothing. Measured against the local model, which rendered
+            // every live fact faithfully and then had the whole list appended
+            // underneath its own paragraphs - the opening said the intake, the
+            // bar, the want and the price twice each.
+            //
+            // `prose` is the guarantee for a player with no model, and it is
+            // already set above.
         }
         facts.structure.push(...live.structure);
         if (overheard) addHearing(facts, overheard);

@@ -258,8 +258,16 @@ describe('the life behind the first turn', () => {
         expect(life).not.toMatch(/carried water|minded animals|swept a hall|pulled out of a river/i);
     });
 
-    it('says plainly when there is no house at all, which is most births', () => {
+    /**
+     * The odds used to be on the narrator's copy of this line. Measured against
+     * the local model, it repeated them at the player - "which is the way of it
+     * for nine births in ten" - so the engine's own draw reached the prose. A
+     * fact the narrator may not say is a fact not worth handing over.
+     */
+    it('says plainly when there is no house at all, and not how common that is', () => {
         const life = said({ house: null });
-        expect(life).toMatch(/No house behind them at all, which is nine births in ten/);
+        expect(life).toMatch(/No house behind them at all/);
+        expect(life).not.toMatch(/nine births in ten/);
+        expect(told({ house: null })).not.toMatch(/nine births in ten/);
     });
 });
