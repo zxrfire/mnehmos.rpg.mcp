@@ -3833,6 +3833,12 @@ ${noticed}`;
         // exists to prevent. Falling back to the id stays as the last resort:
         // a row about somebody nothing can name is still a row, and saying so
         // is better than dropping it.
+        /** "a favour", or "a favour and a debt", in the engine's own words. */
+        const humanList = (parts: readonly string[]): string =>
+            parts.length <= 1
+                ? parts[0] ?? 'nothing'
+                : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+
         const nameOf = (id: string): string =>
             this.repos.cultivators.getById(id)?.name
             ?? this.atHand?.npcs.find(person => person.id === id)?.name
@@ -3840,7 +3846,11 @@ ${noticed}`;
             ?? id;
 
         // ── WHAT THEY ARE ALREADY UNDER ──────────────────────────────────
-        if (intent === 'read' || (intent !== 'swear' && intent !== 'break')) {
+        // `release` is listed so it reaches its own branch below. The catch-all
+        // here means *anything this verb does not recognise is a read*, which is
+        // the right default and would otherwise swallow every new step.
+        if (intent === 'read'
+            || (intent !== 'swear' && intent !== 'break' && intent !== 'release')) {
             // AND WHAT STANDS THE OTHER WAY, which this read did not have.
             //
             // `openOathsHeldBy` is one kind out of five and one direction
@@ -3958,6 +3968,105 @@ ${noticed}`;
             facts.structure.push(
                 `openOathsHeldBy: ${carried.length} row(s) - `
                 + `${carried.map(r => `${r.id}:${r.cause}:${r.severity}`).join(', ') || 'none'}.`
+            );
+            return this.freeAction(run, 'oath', facts);
+        }
+
+        // ── LETTING SOMEBODY OFF WHAT THEY OWE YOU ───────────────────────
+        //
+        // The engine had every part of this and nobody could reach it.
+        // `whatWouldCloseIt` puts `forgiven` on every favour and every debt,
+        // and on a grudge whose holder is a person and whose weight is short of
+        // unforgivable. `settleObligation` writes it. The one existing caller
+        // is an NPC forgiving the PLAYER, for turning up wanting nothing - so
+        // the player could BE forgiven and could not forgive, which is the
+        // asymmetry AGENTS.md calls a defect outright.
+        //
+        // The sentence existed too: `i forgive his debt` routed to the ledger
+        // READ, so somebody trying to let a friend off was handed a listing.
+        //
+        // WHAT IT COSTS IS THE CLAIM. Nothing is written the other way and no
+        // tie is invented here: what happens next between two people is the
+        // approach layer's, and it already reads a closed row differently from
+        // an open one. What this verb does is give up a thing the ledger says
+        // is yours, and say so.
+        if (intent === 'release') {
+            const wanted = (target ?? '').trim();
+            const person = wanted.length > 0
+                ? this.partyPutTo(cultivator, wanted, this.scopeFor(cultivator))
+                    ?? this.somebodyAtHand(wanted, cultivator)
+                : this.somebodyAtHand('', cultivator);
+
+            if (!person) {
+                return refused('engine.openLedgerBetween', 'oath', factsForRefusal(
+                    'There is nobody to let off.',
+                    'Forgiving is done to somebody, and the sentence names nobody who is here. '
+                    + 'Say who, and the ledger between the two of you is what gets torn up.',
+                    'No party resolved for a release. Nothing written, no time passed.'
+                ));
+            }
+
+            const aHouseHere = (id: string | null): boolean =>
+                id !== null && SECTS.some(house => house.id === id);
+            const mine = openLedgerBetween(this.repos, cultivator.id, person.id)
+                .filter(row => row.holderId === cultivator.id && row.subjectId === person.id)
+                .filter(row => whatWouldCloseIt(row, {
+                    holderIsAHouse: aHouseHere(row.holderId),
+                    subjectIsAHouse: aHouseHere(row.subjectId),
+                    principalIsStillHere: true,
+                    couldBeBound: false
+                }).includes('forgiven'));
+
+            if (mine.length === 0) {
+                // AND THE TWO NOTHINGS ARE DIFFERENT NOTHINGS. A clean slate
+                // and a slate the engine will not let you wipe are not the
+                // same answer, and telling a player the first when the second
+                // is true is how somebody concludes a grudge was never written.
+                const anything = openLedgerBetween(this.repos, cultivator.id, person.id)
+                    .some(row => row.holderId === cultivator.id && row.subjectId === person.id);
+                return refused('engine.openLedgerBetween', 'oath', factsForRefusal(
+                    anything
+                        ? `What ${person.name} owes you is not yours to write off.`
+                        : `${person.name} owes you nothing.`,
+                    anything
+                        ? `There is something open against ${person.name} on your side of the `
+                          + 'ledger and it is past the weight where saying it is over ends it. '
+                          + 'Some things are answered and not forgiven.'
+                        : `Nothing stands between you that is yours to give up. ${person.name} `
+                          + 'is square with you, and a person cannot be let off a thing they do '
+                          + 'not owe.',
+                    `${person.id}: no open row held by this cultivator that admits forgiveness.`
+                ));
+            }
+
+            const said: string[] = [];
+            for (const row of mine) {
+                writeOneObligation(
+                    this.db as unknown as DatabaseHandle,
+                    settleObligation(row, {
+                        resolution: 'forgiven',
+                        onDay: today,
+                        byId: cultivator.id,
+                        note: `${cultivator.name} said it was over and asked for nothing back.`
+                    })
+                );
+                said.push(`${row.kind} at ${row.severity}`);
+            }
+
+            const facts = observable(
+                `You let ${person.name} off ${humanList(said)}.`,
+                [
+                    `${person.name} owed you ${humanList(said)}. It is closed, settled as `
+                    + 'forgiven, and nothing was taken for it.',
+                    'It was worth something on every approach you ever made to them, and it is '
+                    + 'not worth that any more. What they make of it is theirs.'
+                ],
+                `You let ${person.name} off ${humanList(said)}. Nothing was taken for it.`,
+                [
+                    `${mine.length} row(s) settled forgiven between ${cultivator.id} and `
+                    + `${person.id}: ${mine.map(r => `${r.id}:${r.kind}:${r.severity}`).join(', ')}. `
+                    + 'Nothing written the other way; no tie recorded here.'
+                ]
             );
             return this.freeAction(run, 'oath', facts);
         }

@@ -90,7 +90,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`ride`](#ride) | `target` `topic` | time | yes | - | - |
 | [`fold`](#fold) | `target` | time | yes | - | - |
 | [`passage`](#passage) | `target` `intent` | time | yes | - | [2](#passage) |
-| [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [3](#oath) |
+| [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [4](#oath) |
 | [`attack`](#attack) | `target` `terms` `opening` | time | yes | - | - |
 | [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [4](#coerce) |
 | [`cultivate`](#cultivate) | `days` | time | yes | - | - |
@@ -216,13 +216,13 @@ Intents: `board`, `buy`.
 
 ### `oath`
 
-a word given, carried or not kept. "intent" is "swear", "read" or "break"; "target" is who it is given to; "topic" is what is being sworn, in the player's own words. Breaking one is permanent and opens an account naming them, so never choose it for a question.
+a word given, carried or not kept, and a claim held or given up. "intent" is "swear", "read", "break" or "release"; "target" is who it is given to or let off; "topic" is what is being sworn, in the player's own words. Breaking one is permanent and opens an account naming them, so never choose it for a question. "release" is the OTHER DIRECTION from the rest, and the distinction is whose claim it is. "break" is walking out of a word this cultivator gave and costs them; the forgiving one is letting somebody off a debt, a favour or a grudge that is owed TO them, and it costs them the claim. "I forgive his debt" and "I let her off what she owes" are this; "I break my oath" is not.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'oath'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.oath` · the deterministic parser reaches it.
 
 Takes `target`, `intent`, `topic`.
 
-Intents: `read`, `swear`, `break`.
+Intents: `read`, `swear`, `break`, `release`.
 
 ### `attack`
 

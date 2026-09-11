@@ -284,9 +284,10 @@ export const DEFAULT_PASSAGE_INTENT: PassageIntent = 'board';
  * `break` first, because a sentence about breaking one contains every word a
  * sentence about swearing one contains.
  */
-export type OathIntent = 'break' | 'swear' | 'read';
+export type OathIntent = 'break' | 'swear' | 'read' | 'release';
 
-export const OATH_INTENTS: readonly OathIntent[] = ['break', 'swear', 'read'] as const;
+export const OATH_INTENTS: readonly OathIntent[] =
+    ['break', 'swear', 'read', 'release'] as const;
 
 /**
  * What a sentence about an oath means when it names no step.
@@ -2285,12 +2286,105 @@ export const SWEARING_IT_RATHER_THAN_DOING_IT =
 export const OATH_SUBJECT_VERBS =
     /oath to|oath with|oath before|vow to|swear to|swears to|swore to|pledge myself to|pledge to|my word to|break (?:my |the |our )?(?:oath|vow|word) (?:to|with)|indenture to|bound to|sworn to/;
 
+/**
+ * Letting somebody off what they owe you.
+ *
+ * Named rather than inline because the LEDGER READ above the oath gate has to
+ * decline it: that branch fires on the word `debt` alone, so every sentence
+ * about writing one off was answered with a listing before the oath table was
+ * ever consulted.
+ */
+/**
+ * The person out of a release, with the thing being released trimmed off.
+ *
+ * The extractor reads everything after the verb, and in every one of these
+ * sentences the ledger noun follows the person: `his debt`, `him off what he
+ * owes`, `him from his debt`. Without the trim the engine goes looking for
+ * somebody called *him from his debt* - the same defect `cleanPerson`'s
+ * trailing-question-word trim closes for a request.
+ */
+function whoIsBeingLetOff(said: string | undefined): string | undefined {
+    if (said === undefined) return undefined;
+    const trimmed = said
+        .replace(THE_THING_BEING_RELEASED, '')
+        .replace(/(?:'s|’s)\s*$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return trimmed.length >= 2 ? trimmed : undefined;
+}
+
+/** Everything from the ledger word on, which is not part of anybody's name. */
+const THE_THING_BEING_RELEASED = new RegExp(
+    String.raw`\s*\b(?:off|from|of|for)?\s*(?:the|his|her|their|my|what)?\s*`
+    + String.raw`(?:he|she|they)?\s*(?:owes?|owed)?\s*`
+    + String.raw`(?:debt|debts|favour|favours|favor|favors|obligation|obligations|oath|grudge|grudges)?`
+    + String.raw`\s*$`,
+    'i'
+);
+
+/** The verbs a person can be read off the far side of, for a release. */
+const LETTING_SOMEBODY_OFF_SUBJECT_VERBS =
+    /forgive|forgives|forgiving|forgave|pardon|pardons|pardoning|excuse|excuses|excusing|write off|writes off|wrote off|let|lets|letting|release|releases|releasing|released|free|frees|freeing/;
+
+/**
+ * The thing being let go of. Said as a noun, or as the clause everybody uses
+ * for a debt nobody wrote down.
+ */
+const A_CLAIM_YOU_HOLD = String.raw`(?:debt|debts|favour|favours|favor|favors`
+    + String.raw`|obligation|obligations|grudge|grudges|what (?:he|she|they|it) owes?`
+    + String.raw`|owes? me)`;
+
+const LETTING_SOMEBODY_OFF = new RegExp([
+    // Forgiving it outright.
+    String.raw`\b(?:forgive|forgives|forgiving|forgave|pardon|pardons|pardoning`
+    + String.raw`|excuse|excuses|excusing)\b[^.!?]{0,40}\b${A_CLAIM_YOU_HOLD}\b`,
+    // Striking it off. `wipe` is deliberately absent: "wipe out" is how this
+    // setting says slaughter, and the attack table owns it.
+    String.raw`\b(?:write|writes|writing|wrote)\s+off\b[^.!?]{0,30}\b${A_CLAIM_YOU_HOLD}\b`,
+    String.raw`\b(?:cancel|cancels|cancelling|canceling|cancelled|canceled)\b`
+    + String.raw`[^.!?]{0,30}\b${A_CLAIM_YOU_HOLD}\b`,
+    // Letting somebody off it. `it` is allowed here and nowhere else, because
+    // `let ... off` carries no other reading in this game.
+    String.raw`\b(?:let|lets|letting)\b[^.!?]{0,20}\boff\b[^.!?]{0,20}`
+    + String.raw`\b(?:${A_CLAIM_YOU_HOLD}|it)\b`,
+    // Releasing them from it.
+    String.raw`\b(?:release|releases|releasing|released|free|frees|freeing)\b`
+    + String.raw`[^.!?]{0,30}\bfrom\b[^.!?]{0,20}\b(?:${A_CLAIM_YOU_HOLD}|oath)\b`,
+    // And saying it is over, in the two idioms that can mean nothing else.
+    String.raw`\b(?:call|calls|calling)\s+(?:it|the debt|the favour|the favor)\s+`
+    + String.raw`(?:even|square|quits|settled)\b`,
+    String.raw`\bno longer owes? me\b`,
+    String.raw`\bowes? me nothing\b`
+].join('|'));
+
 /** Where somebody is stepping, when the phrasing puts the place after the fold. */
 export const FOLD_SUBJECT_VERBS =
     /fold space to|fold to|fold across to|step through space to|step across to|fold myself to|fold my way to|space to|teleport to|teleport myself to|warp to|blink to|phase to/;
 
 const OATH_INTENT_PATTERNS: ReadonlyArray<[OathIntent, RegExp]> = [
-    // Breaking, first, because every sentence about breaking one contains the
+    // ── LETTING SOMEBODY OFF, FIRST ──────────────────────────────────────
+    //
+    // Ahead of `break` and `read` because it shares a word with both: a
+    // sentence about writing off a debt contains `debt`, which the read row
+    // wants, and releasing somebody contains `release`, which reads as walking
+    // out of your own word.
+    //
+    // FOUND BY PROBING THE LEDGER'S OWN SENTENCES. `i forgive his debt` routed
+    // to `oath/read` - the player tries to let somebody off and is handed a
+    // listing. Worse than `unclear`, which at least says nothing happened.
+    //
+    // The engine had the whole of it: `whatWouldCloseIt` puts `forgiven` on
+    // every favour and every debt, and on a grudge whose holder is a person and
+    // whose weight is short of unforgivable. `settleObligation` writes it, and
+    // the one existing caller is an NPC forgiving the PLAYER. The player could
+    // be forgiven and could not forgive - the asymmetry AGENTS.md calls a
+    // defect outright.
+    //
+    // A PERSON IS REQUIRED SOMEWHERE IN THE SENTENCE OR IT IS NOT THIS. "I
+    // forgive" on its own is a mood, not an act, and the verb refuses honestly
+    // rather than picking a creditor.
+    ['release', LETTING_SOMEBODY_OFF],
+    // Breaking, second, because every sentence about breaking one contains the
     // vocabulary of swearing one. The order is the order of `OATH_INTENTS`.
     ['break', /\b(?:break|breaks|breaking|broke|broken|renounce|renounces|renouncing|repudiate|repudiates|forswear|forswears|abandon|abandons|abandoning|go back on|goes back on|going back on|walk out of|walks out of|walk away from|run from|runs from|running from|will not keep|wont keep|do not keep|stop keeping)\b/],
     ['swear', /\b(?:swear|swears|swearing|swore|give my word|gives my word|giving my word|take an oath|takes an oath|taking an oath|make an oath|makes an oath|pledge|pledges|pledging|bind myself|binds myself|binding myself)\b/],
@@ -3972,7 +4066,31 @@ function planIntent(input: string): PlannedAction {
     // what is written between this cultivator and other people; it was simply
     // answering one kind out of five and one direction out of two. It is free
     // either way, so a sentence that lands here costs the player nothing.
-    if (WHAT_IS_WRITTEN_BETWEEN_US.test(text)) {
+    // ── LETTING SOMEBODY OFF WHAT THEY OWE YOU ───────────────────────────
+    //
+    // Above the ledger read because the read fires on the word `debt` alone,
+    // and above the oath gate because none of these sentences carries oath
+    // vocabulary - `i forgive his debt` has neither `oath` nor `swear` in it
+    // and reached `unclear` the moment the read stopped claiming it.
+    //
+    // The target is whoever the sentence names and is allowed to be absent:
+    // `oath` is in `TARGETED_ACTIONS`, so a sentence with only a pronoun in it
+    // has the person filled in from who is standing here, which is the same
+    // thing an absent target means to `interact` and to `give`.
+    if (LETTING_SOMEBODY_OFF.test(text)) {
+        const whom = whoIsBeingLetOff(extractSubject(input, LETTING_SOMEBODY_OFF_SUBJECT_VERBS));
+        return {
+            action: 'oath',
+            intent: 'release',
+            ...(whom && !THE_ASKER_THEMSELVES.test(whom) ? { target: whom } : {})
+        };
+    }
+
+    // AND LETTING SOMEBODY OFF IS NOT READING THE LEDGER. This branch fires on
+    // the word `debt` alone, which is right for a question and wrong for an
+    // act: `i forgive his debt` reached it and was answered with a listing,
+    // before the oath table was consulted at all. See `LETTING_SOMEBODY_OFF`.
+    if (WHAT_IS_WRITTEN_BETWEEN_US.test(text) && !LETTING_SOMEBODY_OFF.test(text)) {
         // THE ASKER IS NOT THE OTHER PARTY. Every one of these questions has
         // the player in it - "who owes ME", "held against ME" - so the subject
         // extractor finds them and the read would narrow to rows between this

@@ -112,14 +112,36 @@ describe('meaning to do something about what you owe', () => {
         'I clear my debts',
         'I settle my debt',
         'I settle up my account',
-        'I discharge my obligation',
-        'I forgive the debt',
-        'I write off what he owes',
-        'I cancel his debt'
+        'I discharge my obligation'
     ])('%j reaches the ledger rather than nothing', said => {
         const parsed = parseIntent(said);
         expect(parsed?.action).toBe('oath');
         expect(parsed?.intent).toBe('read');
+    });
+
+    /**
+     * AND THE OTHER DIRECTION NOW HAS A VERB OF ITS OWN.
+     *
+     * These three were in the list above and asserted as `read`, which was the
+     * best available when this file was written: the ruling was that they must
+     * reach the LEDGER rather than nothing, and reaching a listing was better
+     * than `unclear`. This file's own title asks for more than that.
+     *
+     * They are not the same act as the rest of the list. "I repay what I owe"
+     * is about a claim somebody holds against this cultivator; "I forgive the
+     * debt" is about a claim this cultivator holds and is giving up. The engine
+     * has had `forgiven` on every favour and every debt since
+     * `whatWouldCloseIt` was written, and the only caller was an NPC forgiving
+     * the player - so the player could be forgiven and could not forgive.
+     */
+    it.each([
+        'I forgive the debt',
+        'I write off what he owes',
+        'I cancel his debt'
+    ])('%j lets somebody off rather than listing what is open', said => {
+        const parsed = parseIntent(said);
+        expect(parsed?.action).toBe('oath');
+        expect(parsed?.intent).toBe('release');
     });
 
     /**

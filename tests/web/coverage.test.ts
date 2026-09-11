@@ -711,7 +711,11 @@ describe('every intent behind a door is reachable from plain English too', () =>
     const OATH_PHRASINGS: Record<string, readonly string[]> = {
         read: ['what oaths am I carrying', 'who holds my word'],
         swear: ['I swear an oath to the Azure Dew Sect', 'I give my word to the Azure Dew Sect'],
-        break: ['I break my oath', 'I walk out of the vow I gave']
+        break: ['I break my oath', 'I walk out of the vow I gave'],
+        // Letting somebody off what they owe YOU, which is the other direction
+        // from every row above: those are about a word this cultivator gave,
+        // and this is about a claim they hold and are giving up.
+        release: ['I forgive his debt', 'I write off his debt', 'I let him off what he owes']
     };
 
     for (const [intent, phrasings] of Object.entries(OATH_PHRASINGS)) {
@@ -784,6 +788,18 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // no sentence asked for it: `who likes me`, `who hates me` and `who
         // trusts me` reached nothing, and `who are my enemies` was read as
         // somebody's NAME and answered with a failed lookup.
+        // LETTING SOMEBODY OFF WHAT THEY OWE YOU. A phrasing rather than a
+        // recorded gap, which is the only legal direction for that list. The
+        // machinery ran in one direction only - `settleObligation` with
+        // `forgiven` had exactly one caller and it was an NPC forgiving the
+        // PLAYER - and the sentence for the other direction was answered with a
+        // listing of what was open.
+        'oath/release': [
+            'i forgive his debt',
+            'i write off what he owes',
+            'i let him off what he owes',
+            'i release him from his debt'
+        ],
         'look/warmth': [
             'who likes me',
             'who hates me',
