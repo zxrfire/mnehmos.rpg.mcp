@@ -103,7 +103,7 @@ adverb or a short manner phrase in front of it, and it repeats without apology.
 
 > "Second Brother, the Pavilion is taking disciples this year," the carter said seriously.
 >
-> "Taking disciples?" Wang Ling's father said, his face pale.
+> "Taking disciples?" Fang Zhenshan said, his face pale.
 >
 > "It is that very Pavilion," the carter said, smiling.
 

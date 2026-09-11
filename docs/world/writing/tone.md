@@ -16,6 +16,7 @@ agents tuning prompts.
 | [The register](#the-register) | **Tier 1** - every turn |
 | [Humour is required, not optional](#humour-is-required-not-optional) | **Tier 1** - every turn |
 | [Guidance for the narrator](#guidance-for-the-narrator) | **Tier 1** - every turn |
+| [The prose is translated xianxia, not an English novel](#the-prose-is-translated-xianxia-not-an-english-novel) | **Tier 1** - every turn |
 | [The words this world uses for itself](#the-words-this-world-uses-for-itself) | **Tier 1** - every turn |
 | [Naming conventions](#naming-conventions) | **Tier 1** - every turn |
 | [What makes a run interesting](#what-makes-a-run-interesting) | **Tier 3** - never injected |
@@ -149,6 +150,139 @@ satisfied and the paragraph will still be unreadable.
   in which to say everything. You have a paragraph. Use a verb.
 - **Not everybody named needs their own sentence.** Several people doing nothing
   much are one sentence about a room, not one sentence each.
+
+## The prose is translated xianxia, not an English novel
+
+<!-- tier: 1 -->
+
+> Played turns obeyed every rule above and came out as quiet English literary fiction:
+> right register, right facts, wrong genre. The properties below, and the reading they
+> were taken from, are in [`how-the-prose-moves.md`](./how-the-prose-moves.md).
+
+**That opening, both ways. Same facts, same order, nothing added.**
+
+Wrong:
+
+    Three Walls.
+
+    Fang Nuotao is here, passing through, and asking the road rather than the town.
+    A handful of people are here besides.
+
+    It is the ground they were raised on. There is nothing here they would notice,
+    because it is what noticing has always been measured from.
+
+    The day asks nothing in particular.
+
+Right:
+
+    Three Walls. You grew up here, and it taught you nothing you could sell.
+
+    "The road," Fang Nuotao says, to nobody in particular. "Not the town. The road."
+    He is not stopping.
+
+    A handful of others, none of them in a hurry, none of them looking at you.
+    Nothing is happening. Nothing happens here.
+
+Eight rules produce that, and they hold on every turn rather than only on an opening.
+
+**Paragraphs run one to three sentences, and a third of them are one.** Four is a long
+paragraph. Six does not occur. This rule enforces most of the others on its own, because
+a mood cannot be built across a paragraph that has already ended. The long sentence that
+drops into a short one is an impact beat and not a texture: about one page in one.
+
+**A sentence takes a person or a thing as its subject, and grows by adding a verb
+rather than a clause.** *It is*, *There is* and *The day* are the loudest signal of the
+wrong genre, and they are how the engine's own notes are written.
+
+| Wrong | Right |
+|---|---|
+| It is the ground they were raised on. | You grew up on this ground. |
+| Having fetched a chair from inside, which he wiped with his sleeve out of an eagerness he would not have admitted to, he set it down. | He went in, took a chair, set it by the table, and wiped it with his sleeve. |
+
+**Never close on the mood or the weather.** *The day asks nothing in particular*, *for
+now*, *at least for the moment*. That is the narrator settling the reader down, and
+nothing here settles anybody down. End on a fact, a price, or somebody's line.
+
+**People speak, and the speech carries the scene.** Description frames a scene once and
+then gets out of the way. If somebody is standing in a scene and there is no speech in
+it, the scene has been described rather than played. A line is not an outcome: it may
+not agree to anything, settle a price, hand anything over, or state a fact you were not
+given.
+
+Two rules inside that one, and both cut against English style advice:
+
+- **The tag is the plain one, in the narration's own tense, and it repeats.** *Says*
+  here, because this game narrates in the present; never *replied*, *murmured*, *offered*,
+  *interjected*. A short manner phrase is the whole variation there is, and *coldly* is
+  the one this genre reaches for. A third of spoken lines carry no tag at all: the turn
+  order says who is talking.
+- **Terms are stated in full, by a person, flatly.** Where the facts carry a price, a
+  bar, a term of service or a condition, the person whose terms they are says them
+  straight through with no hedging. That is not the exposition the rule below forbids:
+  *show, never explain* governs YOUR voice, and somebody laying out what they require is
+  showing you who they are.
+
+| Described | Spoken |
+|---|---|
+| Jiang Peizhi is here, pricing a thing they have no intention of buying today. | Jiang Peizhi turns the bowl over. "How much?" he says. He already knows, and puts it down. |
+| The intake will hear anybody some way into Qi Condensation, and not from the first rung of it. | "Up the steps. Reach the top and you are heard. Three days. Anyone still on the first rung, go home now and save yourself the walk." |
+
+**Standing shows in who defers, and is never stated.** Address is by station far more
+often than by name, and a bare given name is a claim of equality or an insult - the
+words themselves are in the vocabulary section below. Who speaks first, who is not
+answered, who is given room, who cups their hands. And power is written as absence of
+reaction: the strong are deadpan and unhurried, the weak go pale and talk too much. That
+is also how somebody enormous enters a room without a word of awe in the prose.
+
+The published genre does state a rank gap flatly, in the narrator's own voice. This one
+cannot, and that is the only property on this page it declines: you are given how
+somebody READS to this cultivator and never what rung they hold, so write the reading.
+
+| Stated | Shown |
+|---|---|
+| One of them is above you, though on the same footing. | One of them has not spoken. The others keep half a step clear of him without appearing to. |
+
+**Interiority is one short sentence, and it assesses.** What it costs, who is above you,
+what is worth taking, who to stay away from. Often it is the body: his hands closed, his
+heart went cold. A cultivator prices a room and does not muse about one.
+
+| Reflection | Assessment |
+|---|---|
+| There is nothing here they would notice, because it is what noticing has always been measured from. | Nothing in this square is worth anything. You knew that before you looked. |
+
+**A refusal is short, unsoftened and unexplained.** The engine composes a refusal as a
+full account of why, and that account belongs in the ruling the player can go and read.
+The prose gets the words somebody would actually say. The cruelty is in the brevity, and
+explaining it away is the only thing that can spoil it.
+
+| Explained | Refused |
+|---|---|
+| He regarded you for a long moment before telling you, not unkindly, that he did not think it would be possible. | The elder's hand leaves your head. "No. Next." |
+
+**The funny beat is three paragraphs and belongs to somebody else's mouth.** A lesser
+person complains at length - the food, the walk, the price, being cheated - a senior
+answers in one flat line, and the third paragraph is the complainer going quiet. The
+narrator does not make the joke. Questions and exclamations are ordinary punctuation in
+speech here, and stripping them out is what makes a scene read as an English novel.
+
+| Narrated | Played |
+|---|---|
+| Somebody here is carrying something they would rather have the stones for. | "Four stones. Four! For a book the damp has been at, and he wants four -" <br> "Then do not buy it," the bookseller says. <br> He buys it. |
+
+**A jump in time is three words.** *That night.* *The next morning.* *Half a month
+later.* No fade, no last lingering image, no paragraph about the road.
+
+**And this is the whole game, not the opening.** The same rules on a refusal, a price
+and a blow, with the engine's own account of each on the left.
+
+| Wrong | Right |
+|---|---|
+| Not enough has accumulated. The barrier does not care how badly you want it. | You sit down and reach for it. There is nothing there to reach with. |
+| Beside the cooking pots, block-printed and much copied: Lesser Qi-Gathering Manual, eight spirit stones. | "Lesser Qi-Gathering. Eight," the bookseller says, not looking up. "The other one you cannot open, so do not ask." |
+| You land a blow on him. A minor meridian injury, and it will not close on its own. Jiang Peizhi lands a harder one on you. | Your palm lands. Something in him tears that is not going to knit itself. He does not stop. His answer arrives harder than yours did. |
+
+And the limit the vocabulary section keeps holds here too: most sentences stay
+ordinary. Every line landing hard is a page where none of them do.
 
 ## The words this world uses for itself
 
