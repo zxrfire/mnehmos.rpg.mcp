@@ -63,13 +63,34 @@ describe('a pronoun reaches the thing the last turn handed over', () => {
      * stay: a bare pronoun scored against a catalog matched inside "B-it-ter
      * Frost Needle" and resolved to it. A pronoun is only ever allowed to mean
      * something the turn before actually named.
+     *
+     * ── AND IT REFUSES AS A PRONOUN, NOT AS A FAILED SEARCH ──────────────
+     *
+     * FOUND BY PLAYING BLIND. The refusal was reaching the player as a scene:
+     *
+     *     You search the streets and alleys of Green Water City, looking for
+     *     the thing you seek... Whether the object is hidden in another city or
+     *     simply does not exist remains unknown.
+     *
+     * A confident, completed search for a thing nobody had named. That prose is
+     * right for a NAME that reached nothing - somebody looking for the Jade
+     * Sword in a town that has none - and it is the wrong scene entirely when
+     * the query IS the word `it`, because the player cannot tell from it that
+     * the problem is what they said rather than where they are.
+     *
+     * The refusal stays, because this test's ruling is right: a pronoun that
+     * means nothing is a real outcome and saying so beats quietly reading the
+     * room. What changed is that it says WHICH nothing, and that nothing was
+     * searched.
      */
     it('says so plainly when the last turn named nothing', async () => {
         const { game } = makeGame({ seed: 'it-means-nothing' });
         await game.newRun('Wen Shu');
 
         const studied = await game.act('I study it');
-        expect(studied.narration + JSON.stringify(studied.state.log ?? []))
-            .toMatch(/Unresolved subject|nothing here answers|does not exist/i);
+        const said = studied.narration + JSON.stringify(studied.state.log ?? []);
+        expect(said).toMatch(/points at nothing|no referent|Unresolved pronoun/i);
+        // And it does not stage a search that did not happen.
+        expect(studied.narration).not.toMatch(/you (?:go over|search)\b/i);
     });
 });

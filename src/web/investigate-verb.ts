@@ -38,6 +38,12 @@ import type { GameService } from './turn-engine.js';
 
 
 
+/**
+ * A word that is a pointer rather than a name. See the refusal it produces.
+ */
+const A_WORD_THAT_NAMES_NOTHING_BY_ITSELF =
+    /^(?:the\s+)?(?:it|that|this|them|those|these|one|same|other)(?:\s+one)?$/i;
+
 export const investigateVerb = {
     /**
      * Examining something.
@@ -209,6 +215,39 @@ export const investigateVerb = {
             // from inside, or the refusal itself becomes the answer key. And it
             // is written as a scene, because an error message reaching the
             // player is a scene that failed to get written.
+            // ── AND A PRONOUN FAILS DIFFERENTLY FROM A NAME ─────────────
+            //
+            // FOUND BY PLAYING BLIND. `i study it`, with no previous turn on
+            // the record for `it` to mean, came back:
+            //
+            //     You search the streets and alleys of Green Water City,
+            //     looking for the thing you seek... Whether the object is
+            //     hidden in another city or simply does not exist remains
+            //     unknown.
+            //
+            // A confident, completed search for a thing nobody had named. The
+            // sentence below is good prose for a NAME that reached nothing -
+            // somebody looking for the Jade Sword in a town that has none - and
+            // it is the wrong scene entirely when the query IS the word `it`,
+            // because the player cannot tell from it that the problem is what
+            // they said rather than where they are.
+            //
+            // Still a refusal: a pronoun that means nothing is a real outcome,
+            // and `it-means-the-thing-you-just-got.test.ts` is right that
+            // saying so is better than quietly reading the room. What changes
+            // is that it says which nothing.
+            if (A_WORD_THAT_NAMES_NOTHING_BY_ITSELF.test(query)) {
+                return refused('engine.resolveEntity', 'investigate', factsForRefusal(
+                    'That points at nothing.',
+                    `You said "${query}", and nothing you have been told lately answers to it. `
+                    + 'Nothing was searched and nowhere was gone over - the word simply has no '
+                    + 'referent yet. Name the thing and it is a different sentence.',
+                    `Unresolved pronoun "${query}": the turn before this one named nothing for `
+                    + 'it to point at, so no catalog was consulted. A bare pronoun is never '
+                    + 'matched against a catalog - see the stop list.'
+                ));
+            }
+
             return refused('engine.resolveEntity', 'investigate', factsForRefusal(
                 'Nothing here answers to it.',
                 // Searching a place fails differently from addressing a person.
