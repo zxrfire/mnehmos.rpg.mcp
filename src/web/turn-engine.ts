@@ -685,6 +685,7 @@ import {
     whoTheDescriptionFits
 } from './a-target-can-be-a-description.js';
 import {
+    factsForAQuestionPutBack,
     factsForEat,
     factsForGather,
     factsForInteraction,
@@ -782,6 +783,7 @@ import {
 // cheaper one" have something to refer to. The record is held on this service
 // beside `crossroads` and `whichComesFirst`; what it means is that module's.
 import {
+    askingWhichOfWhatWasNamed,
     carryingOnFromTheLastTurn,
     describeTheLastTurn,
     nothingToCarryOnWith,
@@ -792,11 +794,18 @@ import {
     theRowForAResolvedReference,
     theRowForCarryingOn,
     theRowForNothingToCarryOnWith,
+    theActToCarryOn,
     theSentenceCarriesOn,
+    theSentenceIsNothingButAPointer,
+    whichOfTheNamedThings,
     withoutSayingTheSameThingTwice,
     type ThingNamed,
     type WhatTheLastTurnDid
 } from './last-turn-memory.js';
+import {
+    whatTheyAskWhenNothingWasAsked,
+    whoOfThemDidYouMean
+} from './what-somebody-asks-when-nothing-was-asked.js';
 import { announceMode } from './which-mode-this-session-is-playing-in.js';
 import {
     composeStateSummary,
@@ -895,6 +904,7 @@ import {
 import { wholeWorkVolumes } from './manual-volumes.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
+import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
 import { recordPerception } from './shown-this-turn.js';
 import {
     theBearingsThisTurnCanRead,
@@ -2250,9 +2260,62 @@ export class GameService {
         const resolved = before === null || carryingOn !== null
             ? null
             : resolvingAgainstTheLastTurn(plan, before, trimmed);
-        const theTurnsPlan: PlanWithSteps = resolved && resolved.resolutions.length > 0
-            ? resolved.plan
-            : plan;
+
+        // ── AND A SENTENCE THAT IS NOTHING BUT A POINTER HAS NO FIELD ────
+        //
+        // `resolvingAgainstTheLastTurn` substitutes into a plan's `target` and
+        // `topic`, and a sentence the table read as `unclear` has neither - so
+        // "the second one", one turn after a listing, reached the resolver with
+        // nothing to substitute into and came back a blank look at the game's
+        // own listing. Measured at 60 of 744 replayed turns.
+        //
+        // Where the pointer settles on one listed thing and the last turn's act
+        // was aimed at a name, that act runs again at the new one: the player
+        // chose off a list, which is the same act at a different object.
+        // Where it does not settle, the question goes back with the listing in
+        // the order it was printed - see `askingWhichOfWhatWasNamed`.
+        //
+        // AND ONLY WHERE THERE IS GENUINELY NO FIELD, STEPS INCLUDED. A plan
+        // can read as `unclear` and still carry a target: the guard that will
+        // not let a model turn a sentence into a day-spending verb rewrites the
+        // action and leaves the steps alone. That plan is the one the field
+        // resolver was built for, and taking it here pre-empted a read that
+        // worked - caught by `a-board-can-be-pointed-at.test.ts` in one run.
+        const nothingToSubstituteInto = [...stepsOfThePlan(plan), { action: plan.action }]
+            .every(step => step.action.target === undefined && step.action.topic === undefined);
+        const pointer = plan.action.action === FALLBACK_ACTION
+            && nothingToSubstituteInto
+            && carryingOn === null
+            && before !== null
+            ? theSentenceIsNothingButAPointer(trimmed)
+            : null;
+        const pointedAt = pointer === null
+            ? null
+            : whichOfTheNamedThings(pointer, trimmed, before!.named);
+        const lastAct = pointer === null ? null : theActToCarryOn(before!);
+        // AND ONLY AN ACT THAT WAS ALREADY AIMED AT A NAME MAY BE RE-AIMED.
+        //
+        // That is the player choosing off a list they were shown, which is one
+        // act at a different object. A read that named nothing is not: its
+        // target field means something else - measured, `market` re-aimed at a
+        // book off its own listing answered *"nothing here prices the Lesser
+        // Qi-Gathering Manual"* directly above the line pricing it, because the
+        // market read's target is an item catalog and the listing was a stall.
+        // Where an act cannot be carried over, the pointer is answered by
+        // saying what it settled on, which is never wrong and is never a blank.
+        const aimedAgain: PlanWithSteps | null =
+            pointedAt !== null && lastAct !== null && lastAct.action.target !== undefined
+                ? {
+                    action: { ...lastAct.action, target: pointedAt.name },
+                    source: plan.source,
+                    note: `"${pointer}" was taken to mean ${pointedAt.name}, off the listing the `
+                        + 'turn before this one printed, and the act is the one that was aimed at '
+                        + 'a name last turn.'
+                }
+                : null;
+
+        const theTurnsPlan: PlanWithSteps = aimedAgain
+            ?? (resolved && resolved.resolutions.length > 0 ? resolved.plan : plan);
 
         // WHO WAS STANDING HERE BEFORE ANY OF IT
         const squareBefore = this.present(cultivator);
@@ -2279,6 +2342,11 @@ export class GameService {
                 `The sentence read as carrying on ("${carriesOn}") and the turn before this one `
                 + 'left no act to carry on with. No day passed and nothing was spent.'
             ))
+            : pointer !== null && aimedAgain === null
+            // A POINTER WITH NOTHING TO POINT AT, OR TOO MUCH. The listing goes
+            // back out in the order it was printed and the names are recorded
+            // again, so the ordinal in the answer has somewhere to land.
+            ? this.askWhichOfWhatWasNamed(run, before!, pointer, pointedAt)
             : await this.takeTheRoundFirst(
                 inAFight,
                 () => this.carryOutThePlan(theTurnsPlan, run, cultivator, ambient, trimmed),
@@ -4007,6 +4075,25 @@ ${line}`;
                         + `stage, with ${howMany(wrong.running, 'condition')} still running here.`
                     );
                 }
+                // ── AND WHAT IS BUILT ON IT ─────────────────────────────
+                //
+                // The same reading `I look at the buildings` gets. Without this
+                // line the two phrasings answer the same square differently,
+                // which is the near-synonym defect this reading layer keeps
+                // being fixed for.
+                {
+                    const built = theBuiltGroundUnder(this, cultivator);
+                    if (built) {
+                        for (const line of built.lines) {
+                            looking.facts.lines.push(line);
+                            looking.facts.prose = `${looking.facts.prose}
+
+${line}`;
+                        }
+                        looking.facts.structure.push(built.structure);
+                    }
+                }
+
                 // AND WHO ANSWERS FOR IT, WHERE NOBODY DOES
                 if (this.atHand && groundHere) {
                     const holder = whoAnswersForThisGround({
@@ -4724,6 +4811,32 @@ ${noticed}`;
     }
 
 
+    /**
+     * The listing put back, when a pointer had nothing or too much to point at.
+     *
+     * Free, because a question is. The names go through `nameWhatTheyGot` so
+     * they are on THIS turn's record too - without that the listing scrolls out
+     * of memory as it is printed and the ordinal in the next sentence counts
+     * against nothing.
+     */
+    private askWhichOfWhatWasNamed(
+        run: Run,
+        record: WhatTheLastTurnDid,
+        pointer: string,
+        settledOn: ThingNamed | null
+    ): Execution {
+        const asked = askingWhichOfWhatWasNamed(record, pointer, settledOn);
+        // Where it settled, only that one goes back on the record: "it" on the
+        // next turn then binds to the thing that was just agreed on rather than
+        // to a listing it is no longer about.
+        for (const thing of settledOn === null ? record.named : [settledOn]) {
+            this.nameWhatTheyGot(thing.name, thing.stones);
+        }
+        return this.freeAction(run, FALLBACK_ACTION, factsForAQuestionPutBack(
+            asked.headline, asked.prose, asked.lines, asked.structure
+        ));
+    }
+
     // ONE TARGET RESOLVER, FOR EVERY VERB AIMED AT A PERSON
 
     /**
@@ -4929,10 +5042,33 @@ ${noticed}`;
         }
 
         if (query.length < 2) {
+            // ── A REFUSAL THAT LISTED THE PEOPLE IT SAID WERE NOT THERE ──
+            //
+            // *No subject named, and nobody is co-located to have meant* - and
+            // then, on the same screen, the names of the people standing in the
+            // square. 72 of the 150 refusals on a 744-turn replay came through
+            // here, and "I introduce myself" in a square with two people in it
+            // is not a sentence anybody refuses. One person here and it is put
+            // to them, because there was never a choice to make; several and
+            // somebody asks which, with the square in a fixed order so an
+            // ordinal answers it.
+            const atHand = this.present(cultivator);
+            if (atHand.length === 1) {
+                return this.interact(
+                    run, cultivator, ambient, atHand[0]!.name, intent, topic, leverage, rawInput
+                );
+            }
+            if (atHand.length > 1) {
+                const asked = whoOfThemDidYouMean(atHand.map(row => row.name), intent);
+                for (const row of atHand) this.nameWhatTheyGot(row.name);
+                return this.freeAction(run, 'interact', factsForAQuestionPutBack(
+                    asked.headline, asked.prose, asked.lines, asked.structure
+                ));
+            }
             return refused('engine.resolveParty', 'interact', factsForRefusal(
                 'Nobody in particular.',
                 this.whoIsAbout(cultivator),
-                'Unresolved party: no subject named, and nobody is co-located to have meant. ' +
+                'Unresolved party: no subject named, and nobody is standing here to have meant. ' +
                 `${this.knownNamesLine(cultivator, scope)}`
             ));
         }
@@ -5025,6 +5161,53 @@ ${noticed}`;
         // that means what a declaration means.
         if (party.kind === 'sect' && THE_INTENTS_AIMED_AT_A_WHOLE_HOUSE.has(intent)) {
             return this.posture(run, cultivator, party.name, 'war');
+        }
+
+        // ── AND A PERSON WHO WAS WALKED UP TO ANSWERS ───────────────────
+        //
+        // Everything above this line either resolves the act or refuses it for
+        // a reason. What used to be here was neither: the party resolved, their
+        // rung, age, house, rank and whole open ledger were printed, and then
+        // `engine.resolveInteraction` came back `ok: false` with *attempt
+        // recorded; outcome not resolvable yet* - a turn spent walking up to
+        // somebody who then did not exist. 18 of 150 refusals on a 744-turn
+        // replay, and 12 more on `follow`, which reaches this verb from the
+        // movement table and has no resolver here at all.
+        //
+        // None of those is an attempt. `ATTEMPT_INTENTS` is the closed set of
+        // acts that try to MOVE somebody and every one of them is resolved
+        // above; what is left - talking, greeting, bowing, apologising,
+        // offering, falling in beside somebody - asked for nothing, so there
+        // is nothing to weigh and a resolver would be weighing air. The answer
+        // is the one `costOfTeaching` already established for a request that is
+        // coherent and underspecified: they ask back, and the ways of asking
+        // are named in a fixed order.
+        if (party.kind === 'cultivator') {
+            const asked = whatTheyAskWhenNothingWasAsked(
+                { name: party.name, heardOn: spoken?.names[0]?.name ?? null },
+                intent
+            );
+            const putBack = this.freeAction(run, 'interact', factsForAQuestionPutBack(
+                asked.headline, asked.prose, [...party.facts, ...asked.lines], asked.structure
+            ));
+            putBack.hearing = spoken;
+            if (spoken) addHearing(putBack.facts, spoken);
+            putBack.calls = [
+                {
+                    name: 'engine.resolveParty',
+                    action: 'interact',
+                    summary: `Resolved "${query}" to a ${party.kind}. ${party.facts[0]}`,
+                    ok: true
+                },
+                ...structureCalls(party.structure),
+                {
+                    name: 'engine.whatWasAsked',
+                    action: intent,
+                    summary: asked.structure,
+                    ok: true
+                }
+            ];
+            return putBack;
         }
 
         // The player gets the honest in-fiction shape of it - an approach made,
@@ -6029,6 +6212,13 @@ ${noticed}`;
                 + 'the admissible listing answered instead.'
             );
         }
+
+        // AND A LIST THE ENGINE PRINTED IS A LIST AN ORDINAL CAN BE COUNTED
+        // AGAINST. The houses go onto this turn's record in the order they were
+        // printed, which is what makes "the second one" on the next turn a
+        // lookup. Without it a player answered the game's own listing and was
+        // told nothing had been listed.
+        for (const house of heard) this.nameWhatTheyGot(house.name);
 
         facts.structure.push(
             `sect_manage.list: ${all.length} admissible, ${heard.length} known to this cultivator.`

@@ -45,6 +45,7 @@ import type { AwarenessRow } from './knowledge.js';
 import type { Hearing } from './hearsay.js';
 import type { Company, EngineFacts } from './facts.js';
 import { inTheCharactersThePatternsUse } from './sentence-parts.js';
+import { theSentenceIsNothingButAPointer } from './last-turn-memory.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // PHASE 1, AND THE ONE THING A MODEL'S READING MAY NOT DO
@@ -288,6 +289,27 @@ async function theModelIsNotWhyThisTurnIsDangerous(
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }
     if (spendsMoreThanASentence(withoutAModel.action.action)) {
+        return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
+    }
+
+    // ── A SENTENCE THAT IS NOTHING BUT A POINTER HAS NO SECOND READING ──
+    //
+    // "I take the second one" says nothing about what is being taken. The
+    // meaning is entirely in the turn before it, which no reader here can see -
+    // so the deterministic side's silence is not evidence that the model
+    // invented an act, and holding the model to it is holding it to a reader
+    // that was asked a question it cannot be asked.
+    //
+    // Measured: the semantic tier put `i take the second one` at `consume_pill`
+    // 0.809 - swallowing something - and until that guess was withdrawn it was
+    // the only reason this guard let a board-taking through, on two verbs with
+    // nothing to do with each other. A guard that passes for a wrong reason is
+    // not a guard.
+    //
+    // What still constrains the model is the listing itself: the prompt block
+    // for the previous turn is the only place a pointer has a referent, and
+    // resolving one against it is the job that block explicitly hands over.
+    if (theSentenceIsNothingButAPointer(input) !== null) {
         return { action: fromModel, declined: null, tierFailure: withoutAModel.tierFailure };
     }
 

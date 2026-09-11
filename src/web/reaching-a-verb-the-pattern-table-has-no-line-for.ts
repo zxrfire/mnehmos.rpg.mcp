@@ -78,6 +78,7 @@ import {
 } from './actions.js';
 import { HOW_A_PLAYER_SAYS_EACH_VERB } from './how-a-player-says-each-verb.js';
 import { ASKING_WHAT_IS_POSSIBLE } from './what-is-worth-doing-standing-here.js';
+import { theSentenceIsNothingButAPointer } from './last-turn-memory.js';
 import {
     MODEL_DIRECTORY,
     embed,
@@ -454,6 +455,20 @@ export async function verbForASentenceThePatternsMissed(
     if (theTableMeantIt(input)) return fromTable;
 
     if (!saysSomething(input)) return fromTable;
+
+    // ── A POINTER HAS NO MEANING OF ITS OWN TO BE NEAR ANYTHING ──────────
+    //
+    // `saysSomething` reads the sentence for content words and lets these
+    // through: `one`, `that` and `it` are on its list and `take` and `first`
+    // are not. So `I take the first one`, one turn after a wall read, was
+    // answered by the nearest verb in the space - measured as `consume_pill`,
+    // which swallows something.
+    //
+    // What the sentence points AT is in the turn before it, which this tier
+    // has no access to and no business guessing at. Declining hands it to
+    // `theSentenceIsNothingButAPointer` at the turn layer, where the listing
+    // is, and turns a guess by embedding distance into a lookup.
+    if (theSentenceIsNothingButAPointer(input) !== null) return fromTable;
 
     const nearest = await nearestVerbByMeaning(input);
     if (nearest === null) return fromTable;

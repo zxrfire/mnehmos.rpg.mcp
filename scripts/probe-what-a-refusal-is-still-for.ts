@@ -6,14 +6,17 @@
  * player actually types, in several situations and pinned worlds, and count
  * which verb was chosen and whether the turn answered.
  *
- * A refusal here is an engine call that came back `ok: false`, or the verb
- * `unclear`. Both are the player getting nothing back for a turn.
+ * A refusal here is an engine call that came back `ok: false` - which is what
+ * the turn's own inspector channel says about itself, and includes the blank
+ * look (`engine.parseIntent/unclear`, "intent not recognised"). Counting the
+ * VERB `unclear` instead over-counts: a turn can settle a back-reference and
+ * answer under that verb, and the first cut of this probe scored those as
+ * refusals and reported a fix going backwards.
  *
  *   npx tsx scripts/probe-what-a-refusal-is-still-for.ts [out.json]
  */
 
 import { makeGameInWorld } from '../tests/web/harness.js';
-import { parseIntent } from '../src/web/actions.js';
 import { SENTENCES } from './sentences-a-player-would-actually-type.js';
 
 /** Sentences that are nothing but a reference to what the last turn listed. */
@@ -64,29 +67,52 @@ async function main(): Promise<void> {
     for (const worldSeed of ['refusal-audit-a', 'refusal-audit-b']) {
         for (const [situation, leadIn] of SITUATIONS) {
             const { game } = await makeGameInWorld({ seed: `${worldSeed}-${situation}`, worldSeed });
-            await game.newRun('Prober');
-            for (const line of leadIn) {
-                try { await game.act(line); } catch { /* a lead-in that fails is still a situation */ }
-            }
+            let opened = 0;
+            const open = async () => {
+                await game.newRun(`Prober${opened++}`);
+                for (const line of leadIn) {
+                    try { await game.act(line); } catch { /* a lead-in that fails is still a situation */ }
+                }
+            };
+            await open();
             for (const said of SAID) {
-                const plan = parseIntent(said);
                 let refused = true;
                 let why = 'threw';
+                let verb = 'threw';
+                let intent: string | undefined;
                 try {
                     const turn = await game.act(said);
-                    const declined = turn.toolCalls.filter(call => !call.ok);
-                    refused = plan.action === 'unclear' || declined.length > 0;
-                    why = plan.action === 'unclear'
-                        ? 'unclear'
-                        : declined.map(c => `${c.name}/${c.action}`).join(' ');
+                    const plan = turn.toolCalls.find(c => c.name === 'narrator.plan');
+                    verb = plan?.action ?? 'none';
+                    intent = /intent=([a-z_]+)/.exec(plan?.summary ?? '')?.[1];
+                    const declined = turn.toolCalls.filter(
+                        call => !call.ok && !call.name.startsWith('narrator.')
+                    );
+                    refused = declined.length > 0;
+                    why = declined.map(c => `${c.name}/${c.action}`).join(' ');
                 } catch (err) {
-                    why = `threw: ${(err as Error).message}`;
+                    const message = (err as Error).message;
+                    why = `threw: ${message}`;
+                    // A DEAD PROBER MEASURES NOTHING. Every turn after a death
+                    // comes back refused for one reason, and the whole tail of
+                    // the corpus reads as a reading defect.
+                    if (/is dead|run is closed|no live run/i.test(message)) {
+                        await open();
+                        try {
+                            const turn = await game.act(said);
+                            const plan = turn.toolCalls.find(c => c.name === 'narrator.plan');
+                            verb = plan?.action ?? 'none';
+                            const declined = turn.toolCalls.filter(
+                                call => !call.ok && !call.name.startsWith('narrator.')
+                            );
+                            refused = declined.length > 0;
+                            why = declined.map(c => `${c.name}/${c.action}`).join(' ');
+                        } catch (second) {
+                            why = `threw twice: ${(second as Error).message}`;
+                        }
+                    }
                 }
-                rows.push({
-                    said, situation, world: worldSeed,
-                    verb: plan.action, intent: (plan as { intent?: string }).intent,
-                    refused, why
-                });
+                rows.push({ said, situation, world: worldSeed, verb, intent, refused, why });
             }
         }
     }

@@ -350,6 +350,41 @@ export function standsForSomethingNamedLastTurn(value: string | undefined): bool
 }
 
 /**
+ * The frames a pointer arrives wrapped in when somebody is choosing off a list.
+ *
+ * Stripped in order, outermost first, so "I'll have the cheaper one" comes down
+ * to the three words that do the pointing.
+ */
+const A_POINTER_IS_WRAPPED_IN: readonly RegExp[] = [
+    /^(?:i(?:'ll|'d)?|let me|give me|hand me|just)\s+/i,
+    /^(?:will|would|shall|want to|would like to)\s+/i,
+    /^(?:take|takes|have|has|want|wants|pick|picks|choose|chooses|go with|buy|buys|read|reads|do|does|try|tries|use|uses|study|studies|learn|learns)\s+/i
+];
+
+/**
+ * The pointer a sentence is made of, when it is made of nothing else.
+ *
+ * {@link standsForSomethingNamedLastTurn} answers this about a FIELD of a plan,
+ * and that is the half that was built: a plan whose `target` is "the second
+ * one" has the reference substituted before any verb sees it. A sentence that
+ * is ONLY a pointer never reaches a verb, so it never acquires a field, so the
+ * substitution had nothing to substitute into - and 60 turns of a 744-turn
+ * replay came back as a blank look at a listing the game itself had printed one
+ * turn earlier.
+ *
+ * The WHOLE sentence is the guard. A pointer inside a sentence that also says
+ * what to do with it - "I buy the second manual" - is an ordinary sentence and
+ * stays with the field-level resolver, which has always handled it.
+ */
+export function theSentenceIsNothingButAPointer(input: string): string | null {
+    let pointer = input.trim().replace(/[.!?]+$/, '').trim();
+    if (pointer.length === 0) return null;
+    for (const frame of A_POINTER_IS_WRAPPED_IN) pointer = pointer.replace(frame, '').trim();
+    if (pointer.length === 0) return null;
+    return standsForSomethingNamedLastTurn(pointer) ? pointer : null;
+}
+
+/**
  * The one thing at the extreme price, or null where two share it.
  *
  * See the note at the call site: a comparative that ties is a phrase with no
@@ -416,6 +451,69 @@ export function whichOfTheNamedThings(
         }
     }
     return null;
+}
+
+/**
+ * What is put back when a pointer could not be turned into an act.
+ *
+ * Three states and they are different events, which is the distinction
+ * `taught-what-is-a-question-and-not-a-refusal.test.ts` drew for a request and
+ * is drawn again here:
+ *
+ *   nothing was listed  there is no answer to give. Names the route.
+ *   it settled          the pointer HAS a referent and what is missing is what
+ *                       to do with it. Saying which one it was and asking what
+ *                       about it is what a game master does; asking "which of
+ *                       them" over a pointer that settled is the engine
+ *                       contradicting itself on one screen.
+ *   it did not settle   the listing goes back in the order it was PRINTED,
+ *                       because that is the order {@link whichOfTheNamedThings}
+ *                       counts an ordinal against - so "the second one" in
+ *                       answer to this question lands on the second line of it.
+ */
+export function askingWhichOfWhatWasNamed(
+    record: WhatTheLastTurnDid,
+    pointer: string,
+    settledOn: ThingNamed | null
+): { headline: string; prose: string; lines: string[]; structure: string } {
+    const named = record.named.slice(0, MOST_NAMED_THINGS_RECALLED);
+    if (named.length === 0) {
+        return {
+            headline: 'That points at nothing.',
+            prose: `"${pointer}" points back at the turn before this one, and the turn before `
+                + 'this one listed nothing to point at. Name the thing itself and it will run. '
+                + 'Nothing was spent finding that out.',
+            lines: [],
+            structure: `"${pointer}" read as a pointer at the turn before this one, which named `
+                + '0 things. No day passed and nothing was spent.'
+        };
+    }
+    if (settledOn !== null) {
+        return {
+            headline: `${settledOn.name}, then.`,
+            prose: `"${pointer}" is ${settledOn.name}. What you would do about it is the half `
+                + 'the sentence did not carry, and saying it is the whole of what is left. '
+                + 'Nothing was spent finding that out.',
+            lines: [settledOn.name
+                + (settledOn.stones === undefined ? '' : ` - ${settledOn.stones} spirit stones`)],
+            structure: `"${pointer}" settled on ${settledOn.name} off the listing the turn before `
+                + 'this one printed. The act was not carried over: the turn before this one '
+                + 'named no target and is not a free read, so re-running it at a name would be '
+                + 'choosing an act nobody typed. No day passed and nothing was spent.'
+        };
+    }
+    return {
+        headline: 'Which of them.',
+        prose: `"${pointer}" could be any of ${named.length}. They are in the order they were `
+            + 'said, so an ordinal answers this. Nothing was spent finding that out.',
+        lines: named.map((thing, at) =>
+            `${at + 1}. ${thing.name}`
+            + (thing.stones === undefined ? '' : ` - ${thing.stones} spirit stones`)
+            + (thing.from === undefined ? '' : `, from ${thing.from}`)),
+        structure: `"${pointer}" read as a pointer and settled on none of the ${named.length} `
+            + 'things the turn before this one named. Printed in that order so the next sentence '
+            + 'can count against it. No day passed and nothing was spent.'
+    };
 }
 
 /** One phrase that was resolved, for the inspector and for the player. */
