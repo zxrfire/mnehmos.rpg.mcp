@@ -2977,6 +2977,34 @@ const SAYING_YES_TO_A_LINE_ON_THE_BOARD = new RegExp([
 ].join('|'), 'i');
 
 /**
+ * Words that stand in for a place instead of naming one.
+ *
+ * What the `[A-Z]` test used to exclude, said as meaning rather than as
+ * typography. `home` is here because it is a place this game does not model as
+ * a destination, and a read that listed the roads in answer to it would be
+ * answering something else.
+ */
+const A_GENERIC_THING_AND_NOT_A_PLACE =
+    /^(?:it|that|this|there|here|home|them|him|her|us|me|one|any|some|all)$/i;
+
+/**
+ * Asking after somewhere by name: how far, which way, where, how to get there.
+ *
+ * The determiner is optional and the word after it has to be a real one - see
+ * the note at the call site for why the old capital-letter gate was the wrong
+ * test for the right distinction.
+ */
+const HOW_FAR_IS_SOMEWHERE = new RegExp([
+    String.raw`\bhow\s+far\s+(?:is|are|to)\s+(?![^.?!]*\bwhich\s+way\b)`,
+    String.raw`\bwhich\s+way\s+(?:is|to)\s+`,
+    String.raw`\bhow\s+(?:do|would|can|could)\s+i\s+(?:get|travel|walk|go)\s+to\s+`,
+    // `where is` takes the possessive out as well: "where is my manual" is
+    // about a thing in the bag and belongs to another verb entirely.
+    String.raw`\bwhere\s+(?:is|are)\s+(?!my\b|our\b|your\b|his\b|her\b|their\b)`
+].map(head => head + String.raw`(?:the\s+|a\s+|an\s+)?([a-z][a-z0-9'-]{2,}(?:\s+[a-z0-9'-]+){0,4})`)
+    .join('|'), 'i');
+
+/**
  * Asking what work is going, which is a question and must stay one.
  */
 const ASKING_AFTER_WORK =
@@ -5003,10 +5031,38 @@ function planIntent(input: string): PlannedAction {
     // Asking after somewhere you can NAME is the other question. "How far is
     // Iron Ridge" is somebody who has been told a name deciding whether it is
     // a day away or a season, and `destinations` is the read that says.
-    if (/\bhow\s+far\s+(?:is|are|to)\s+(?![^.?!]*\bwhich\s+way\b)\s*[A-Z]/.test(input)
-        || /\bwhich\s+way\s+(?:is|to)\s+[A-Z]/.test(input)
-        || /\bhow\s+long\s+(?:would|will|does)\s+it\s+take\s+to\s+(?:get|reach|walk|travel)\b/.test(text)) {
-        return { action: 'destinations' };
+    // ── AND A CAPITAL LETTER IS NOT A NAME ───────────────────────────────
+    //
+    // FOUND BY PLAYING BLIND. This read was gated on `[A-Z]` against the
+    // player's own casing, and nobody types into a game in title case. Every
+    // one of these came back `unclear` from a real session:
+    //
+    //     where is the azure dew sect       how far is the azure dew sect
+    //     how do i get to the azure dew sect    which way to the azure dew sect
+    //
+    // The capital was standing in for *this names somewhere in particular*,
+    // which is the right distinction and the wrong test: it made a read
+    // reachable only by players who capitalise, which is a typing-style exam
+    // rather than a question about what was asked.
+    //
+    // `A_GENERIC_THING_AND_NOT_A_PLACE` does the same job on meaning. What the
+    // capital was excluding is a pronoun - "how far is it", "which way is
+    // that" - and those are excluded by name now, with a determiner allowed in
+    // front of a real one so that `the azure dew sect` reads as somewhere.
+    //
+    // `where is` joins them here, and its own exclusion is the possessive: "who
+    // holds my word" and "where is my manual" are about a thing this cultivator
+    // carries and belong to other verbs entirely.
+    {
+        const named = HOW_FAR_IS_SOMEWHERE.exec(text);
+        // The capture is whichever alternative matched, so the first non-empty
+        // group is the thing asked after. A pronoun there is not a place.
+        const asked = named?.slice(1).find(part => typeof part === 'string' && part.length > 0);
+        if ((asked !== undefined && !A_GENERIC_THING_AND_NOT_A_PLACE.test(asked.trim()))
+            || /\bhow\s+long\s+(?:would|will|does)\s+it\s+take\s+to\s+(?:get|reach|walk|travel)\b/
+                .test(text)) {
+            return { action: 'destinations' };
+        }
     }
 
     // ── AND CARRYING ON THE WAY YOU WERE GOING ───────────────────────────
