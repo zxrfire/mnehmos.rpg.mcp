@@ -2211,6 +2211,17 @@ export const WHAT_IS_WRITTEN_BETWEEN_US = new RegExp([
     // Who is carrying something about you. The hazard direction.
     String.raw`^\s*(?:what|who)\b[^.!?]{0,40}\b(?:held against|holds against|holding against|has against|grudges?)\b`,
     String.raw`^\s*who\s+(?:is\s+)?(?:owed|owes)\b`,
+    // ── AND WHAT THIS CULTIVATOR IS UNDER, ASKED THE OTHER WAYS ──────────
+    //
+    // Measured against the parser: `what oaths do i have` read the ledger, and
+    // `what have i sworn`, `what am i bound to`, `what did i promise` and
+    // `what am i committed to` all reached nothing. `AN_OATH` wants the NOUN,
+    // and none of those sentences has one in it - the commonest way to ask what
+    // you are under names the ACT or the STATE rather than the thing.
+    String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:have|has|did)\s+(?:i|we)\s+`
+    + String.raw`(?:sworn|swore|promised|pledged|agreed to|given my word)\b`,
+    String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:am|are)\s+(?:i|we)\s+`
+    + String.raw`(?:bound|obliged|committed|pledged|sworn|indentured|answerable)\b`,
     // ── AND MEANING TO DO SOMETHING ABOUT IT ─────────────────────────────
     //
     // Measured, and every settlement sentence in the language reached nothing:
@@ -4550,7 +4561,32 @@ function planIntent(input: string): PlannedAction {
         // exactly the same reason - `my debts` is the question and `my debts to
         // the house are why I am here` is not.
         || /^\s*(?:so\s+|and\s+)?(?:who\s+(?:is|are)\s+)?(?:my|our)\s+(?:friends?|enemies|enemy|allies|ally|rivals?|admirers?)\s*[?.!]*\s*$/.test(text)
-        || /\b(?:am\s+i|are\s+we)\s+(?:well\s+)?(?:liked|hated|trusted|feared|welcome|resented|respected)\b/.test(text)) {
+        || /\b(?:am\s+i|are\s+we)\s+(?:well\s+)?(?:liked|hated|trusted|feared|welcome|resented|respected)\b/.test(text)
+        // ── AND THE SAME QUESTION ABOUT ONE PERSON ───────────────────────
+        //
+        // Measured against the parser: `who likes me` read the square and every
+        // singular form of it reached nothing.
+        //
+        //     does he like me          -> UNCLEAR
+        //     does she like me         -> UNCLEAR
+        //     does he trust me         -> UNCLEAR
+        //     does he hate me          -> UNCLEAR
+        //     how does he feel about me-> UNCLEAR
+        //     what does he think of me -> sect/standing
+        //
+        // The last one is the worst of them: it is about a PERSON and was
+        // answered with what a HOUSE makes of the player, which is a confident
+        // answer to a question nobody asked. The design owner asked for this
+        // question by name - *does he like you?*
+        //
+        // Answered by the square read rather than by a narrowed one. The read
+        // already says how each person present carries this cultivator, so
+        // somebody standing here is in it; somebody who is not standing here is
+        // not, and the read says who IS, which is the honest answer to a
+        // question about somebody who has walked off.
+        || /\b(?:does|do|did|would)\s+(?:he|she|they|it)\s+(?:like|likes|trust|trusts|hate|hates|resent|resents|fear|fears|respect|respects|mind|minds)\s+(?:me|us)\b/.test(text)
+        || /\bhow\s+(?:does|do)\s+(?:he|she|they)\s+(?:feel|think)\s+(?:about|of)\s+(?:me|us)\b/.test(text)
+        || /\bwhat\s+(?:does|do)\s+(?:he|she|they)\s+(?:think|make)\s+of\s+(?:me|us)\b/.test(text)) {
         // Unless it is being ASKED OF SOMEBODY, in which case it is a question
         // put to a person and not a read of the square. The same guard the two
         // branches below carry, for the same reason.
