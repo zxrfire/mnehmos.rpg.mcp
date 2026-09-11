@@ -1143,7 +1143,14 @@ describe('a conditional is not a commitment', () => {
 
         const result = await game.act("if they'll have me, I'll join");
 
-        expect(result.narration).toMatch(/would take you/i);
+        // THE CONDITION, WHICH IS THE BAR AND NOT THE GATE. This read
+        // `would take you` and the listing was promising an outcome it does
+        // not know: `admissible` is the house's standing requirement, and
+        // whether somebody walking up is TAKEN is a roll. Measured in blind
+        // play - the listing promised, the player walked a day, the door said
+        // no. Both halves this test is for are still here: the condition is
+        // settled and the terms are named.
+        expect(result.narration).toMatch(/takes people at your standing/i);
 
         // AND IT SAYS NOTHING HAPPENED, which is the half a model will
         // otherwise supply for itself. Played, before this line existed:
@@ -1171,7 +1178,7 @@ describe('a conditional is not a commitment', () => {
         await game.newRun('Mo Qianshu');
 
         const result = await game.act("if they'll have me, I'll join");
-        const named = /would take you, and would seat you as ([^.]+)\./.exec(result.narration);
+        const named = /takes people at your standing, and would seat you as ([^.]+)\./.exec(result.narration);
 
         // Never a bare yes: if a rung is named it must be a real rank word, and
         // if none is named the sentence must not pretend to terms it lacks.
@@ -1195,7 +1202,7 @@ describe('a conditional is not a commitment', () => {
         db.prepare('UPDATE cultivators SET realm_ordinal = 25 WHERE id = ?').run(cultivator.id);
 
         const read = await game.act("if they'll have me, I'll join");
-        const promised = /Azure Dew Sect would take you, and would seat you as ([^.]+)\./
+        const promised = /Azure Dew Sect takes people at your standing, and would seat you as ([^.]+)\./
             .exec(read.narration)?.[1];
         expect(promised, 'the read named no rank for a house that would take them').toBeTruthy();
 

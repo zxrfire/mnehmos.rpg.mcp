@@ -16,6 +16,11 @@ import type { CultivationRepos } from '../server/consolidated/cultivation-suppor
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
 import { worldLocationFor } from './entities.js';
 import {
+    whatSomebodyWouldSayAboutAHouse,
+    whatTheyNowHoldAboutAHouse,
+    whoCouldPointAtAHouse
+} from './where-a-house-keeps-itself.js';
+import {
     whatSomebodyWouldSayAbout,
     whatTheyNowHold,
     whoCouldPointAtAGround
@@ -290,6 +295,21 @@ export function offerHearing(input: HearingInput): Hearing | null {
     const ground = offerGroundSomebodyGoesTo(input, addressed);
     if (ground) return ground;
 
+    // ── AND WHERE A HOUSE KEEPS ITSELF ───────────────────────────────────
+    //
+    // The same channel, one subject over, and it closes a dead end measured in
+    // blind play: the join read offers seven houses, a move to one is refused
+    // with *you have the name, you do not have the road*, and the destinations
+    // read says *somebody would have to tell you where* - while the only thing
+    // anybody in the world could point at was a dao ground. See
+    // `where-a-house-keeps-itself.ts`.
+    //
+    // BELOW THE GROUND CHANNEL, which keeps its first refusal. A dao ground is
+    // the rarer thing to be handed and the one that ends a search; a house is
+    // standing there tomorrow.
+    const house = offerTheRoadToAHouse(input, addressed);
+    if (house) return house;
+
     // ── Somebody talking to the player ──
     if (addressed) {
         // A deliberate question is not the same event as a name landing in a
@@ -501,6 +521,75 @@ function offerGroundSomebodyGoesTo(
         sourceKind: 'told',
         stage: 'placed',
         prose: whatSomebodyWouldSayAbout(chosen.ground, speaker ?? 'Somebody here')
+    };
+}
+
+/**
+ * How often somebody points at a house's gate.
+ *
+ * Under the dao-ground rates. A compound with a road to it is the commoner
+ * thing to know and the less valuable thing to be told, and a player who asks
+ * around in one province for a week should end up with the local houses placed
+ * rather than with all of them at once.
+ */
+export const HOUSE_PLACED_CHANCE = 0.12;
+export const HOUSE_PLACED_WHEN_ADDRESSED = 0.3;
+
+/**
+ * Somebody here saying where a house keeps itself.
+ *
+ * Mirrors `offerGroundSomebodyGoesTo` exactly, including the two rules that
+ * channel had to learn: its OWN rng stream, so adding it does not shift a draw
+ * in any already-seeded world; and the speaker named only when the player has
+ * earned the name, because ambient talk is a voice and a voice is not an
+ * introduction.
+ */
+function offerTheRoadToAHouse(
+    input: HearingInput,
+    addressed: RosterEntry | null
+): Hearing | null {
+    const world = input.world;
+    if (!world) return null;
+    const here = worldLocationFor(world, input.cultivator.location);
+    if (!here) return null;
+
+    const offers = whoCouldPointAtAHouse(world, here.id)
+        .filter(offer => !addressed || offer.speaker.id === addressed.id)
+        .filter(offer => !input.gate.isAwareOf(input.cultivator.id, 'place', offer.house.seatId));
+    if (offers.length === 0) return null;
+
+    const rng = forStream(
+        input.run.seed,
+        'web_hearsay_house_road',
+        Math.floor(input.run.elapsedDays),
+        input.occasion,
+        input.cultivator.id
+    );
+    if (!rng.chance(addressed ? HOUSE_PLACED_WHEN_ADDRESSED : HOUSE_PLACED_CHANCE)) {
+        return null;
+    }
+
+    const chosen = offers[rng.int(0, offers.length - 1)];
+    const speaker = addressed?.name ?? null;
+    return {
+        mode: addressed ? 'told' : 'passing',
+        speaker,
+        names: [{
+            kind: 'place',
+            id: chosen.house.seatId,
+            name: chosen.house.seatName,
+            stage: 'placed',
+            statement: whatTheyNowHoldAboutAHouse(chosen.house)
+        }],
+        note:
+            `${speaker ?? 'Somebody here'} can place ${chosen.house.houseName} because `
+            + (chosen.house.theirOwn
+                ? 'they are of it.'
+                : 'its ground is in this province and has a gate on it.'),
+        confidence: 0.7,
+        sourceKind: 'told',
+        stage: 'placed',
+        prose: whatSomebodyWouldSayAboutAHouse(chosen.house, speaker ?? 'Somebody here')
     };
 }
 

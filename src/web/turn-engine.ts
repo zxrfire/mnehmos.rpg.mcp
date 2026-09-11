@@ -5383,10 +5383,28 @@ ${noticed}`;
                         ? `There is one name you have for this: ${heard[0].name}.`
                         : `The names you have for this are ${heard.slice(0, -1).map(x => x.name).join(', ')} ` +
                           `and ${heard[heard.length - 1].name}.`,
-                    // AND THE HOUSES THAT WOULD, AND ON WHAT FOOTING
+                    // ── THE HOUSES WHOSE BAR YOU CLEAR, AND ON WHAT FOOTING ──
+                    //
+                    // CLEARING A BAR IS NOT BEING TAKEN, and this said it was.
+                    // `admissible` is `recruits && ordinal >= admissionOrdinal
+                    // && door !== 'refused'` - three facts about the house's
+                    // standing requirement and this cultivator's root. Whether
+                    // they are TAKEN is a roll at the gate, off rungs past the
+                    // bar, charm, and whether the house has watched them leave
+                    // once already.
+                    //
+                    // Measured by playing blind: the listing said "the Azure Dew
+                    // Sect would take you as a Dew Servant", the player walked a
+                    // day on it, and the door came back `not_taken_on`. The
+                    // forecast was a certainty and the thing it forecast is a
+                    // coin weighted by four numbers.
+                    //
+                    // So it states the bar, which is what it knows, and leaves
+                    // the gate to the gate. The terms are still named, because
+                    // the rank they would seat you at IS settled by the bar.
                     ...heard
                         .filter(x => x.admissible === true && typeof x.wouldEnterAtRank === 'string')
-                        .map(x => `${x.name} would take you, and would seat you as `
+                        .map(x => `${x.name} takes people at your standing, and would seat you as `
                             + `${x.wouldEnterAtRank}.`),
                     ...heard
                         .filter(x => x.admissible === false && x.guestDoorOpen !== true)
@@ -5415,8 +5433,16 @@ ${noticed}`;
         if (heard.some(x => x.admissible === true)) {
             sayThisWhateverTheNarratorDoes(
                 facts,
+                // AND WHAT THE LIST IS AND IS NOT. It used to end "this is what
+                // the doors would do if you walked up to them", which is a
+                // promise about the outcome; what it holds is the bar. Walking
+                // up unannounced is a look, and it can go against you - said in
+                // the refusal's own terms, so the two screens agree about what
+                // moves it.
                 'None of this has happened. You are not on anybody\'s roll and no house has '
-                + 'been asked yet - this is what the doors would do if you walked up to them.'
+                + 'been asked yet - this is their bar, not their answer. Walking up unannounced '
+                + 'is a look, and it can go against you; standing higher moves it, and somebody '
+                + 'putting you in front of them moves it more.'
             );
         }
 
