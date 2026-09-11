@@ -661,8 +661,77 @@ function claimsThePlayerAdvanced(
     const where = { at: claim.index, length: claim[0].length };
     const named = (standsAt ?? '').trim();
     if (named.length === 0) return where;
-    return new RegExp(forRegExp(named), 'i').test(claim[1] ?? '') ? null : where;
+    // THE WHOLE CLAUSE AND NOT THE CAPTURE. The capture is a fixed window that
+    // stops twelve characters past the rung word, and the played sentence cut
+    // off mid-realm: *the first layer of Qi Conde*. What is being asked is
+    // which rung the sentence names, and the sentence is where to look.
+    return namesTheRungTheyAreOn(theClauseAround(text, claim.index, claim[0].length), named)
+        ? null
+        : where;
 }
+
+/**
+ * Whether a clause names the rung this cultivator is standing on.
+ *
+ * ── A RANK SAID BACKWARDS IS THE SAME RANK ───────────────────────────────
+ *
+ * This was a substring test for the engine's own spelling, and English does not
+ * cooperate. FOUND BY PLAYING BLIND, on TURN ONE of two separate runs - the
+ * first thing a new player ever reads, thrown away both times:
+ *
+ *     You are sixteen years old and have just reached the first layer of Qi
+ *     Condensation, though you possess no cultivation method...
+ *
+ * That is exactly true. The engine files `Qi Condensation Layer 1`; the prose
+ * says *the first layer of Qi Condensation*, which is the same rung with its
+ * two halves the other way round and the number written out. A substring test
+ * could never match it, so the most ordinary sentence in the game was an
+ * invented breakthrough.
+ *
+ * So the two are compared on what a rank IS - the realm it is in, and which
+ * layer of it - rather than on how one of them happens to be spelled.
+ *
+ * AND IT STAYS A REAL TEST. A clause naming a DIFFERENT realm fails, and so
+ * does one naming a different layer of the right realm. What it stops being is
+ * a test of word order.
+ */
+function namesTheRungTheyAreOn(clause: string, standsAt: string): boolean {
+    const realm = standsAt.replace(/\s*\b(?:layer|rank|stage)\b\s*\d+\s*$/i, '').trim();
+    if (realm.length === 0) return false;
+    if (!new RegExp(forRegExp(realm), 'i').test(clause)) return false;
+
+    // Which layer of it, where the rank has one. A clause that names the realm
+    // and no layer at all is naming the realm, which is where they are.
+    const standingLayer = /\b(?:layer|rank|stage)\s*(\d+)\s*$/i.exec(standsAt)?.[1];
+    if (standingLayer === undefined) return true;
+
+    // The digit form first and over the whole clause, because the written-out
+    // form's own pattern matches a realm word standing in front of `Layer` -
+    // "Qi Condensation Layer 1" offers `Condensation` before it offers `1`.
+    const digits = A_LAYER_IN_DIGITS.exec(clause);
+    if (digits) return Number(digits[1]) === Number(standingLayer);
+
+    const written = A_LAYER_WRITTEN_OUT.exec(clause);
+    if (written === null) return true;
+    const asNumber = WRITTEN_OUT[(written[1] ?? '').toLowerCase()];
+    // A word that is not a number in front of `layer` is not a layer being
+    // said. "Qi Condensation Layer" names the realm and no rung of it.
+    return asNumber === undefined ? true : asNumber === Number(standingLayer);
+}
+
+/** "Layer 3". */
+const A_LAYER_IN_DIGITS = /\b(?:layer|rank|stage)\s+(\d+)\b/i;
+
+/** "the third layer". */
+const A_LAYER_WRITTEN_OUT = /\b(\w+)\s+(?:layer|rank|stage)\b/i;
+
+/** The layer numbers a narrator writes out, which is all of them. */
+const WRITTEN_OUT: Record<string, number> = {
+    first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
+    sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+    one: 1, two: 2, three: 3, four: 4, five: 5,
+    six: 6, seven: 7, eight: 8, nine: 9, ten: 10
+};
 
 /**
  * Prose reporting that what was asked went unanswered.

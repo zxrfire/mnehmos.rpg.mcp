@@ -163,3 +163,47 @@ describe('a discarded narration says which words did it', () => {
         expect(found[0]!.quote).toBe('The question goes unanswered.');
     });
 });
+
+/**
+ * A RANK SAID BACKWARDS IS THE SAME RANK.
+ *
+ * FOUND BY PLAYING BLIND, on TURN ONE of two separate runs - the first thing a
+ * new player ever reads, thrown away both times:
+ *
+ *     You are sixteen years old and have just reached the first layer of Qi
+ *     Condensation, though you possess no cultivation method...
+ *
+ * Exactly true, and discarded as an invented breakthrough. The engine files
+ * `Qi Condensation Layer 1`; the prose says *the first layer of Qi
+ * Condensation*, which is the same rung with its halves the other way round and
+ * the number written out. The check was a substring test for the engine's own
+ * spelling, so it could never match - and the most ordinary sentence in the game
+ * was a violation.
+ *
+ * The two are compared on what a rank IS now: the realm it is in, and which
+ * layer of it. Word order and spelling are not the question.
+ */
+describe('a rank read in the player\'s own English', () => {
+    it.each([
+        'You have just reached the first layer of Qi Condensation.',
+        'You have reached Qi Condensation Layer 1 and no further.',
+        'You have attained the first rank of Qi Condensation, and no more than that.',
+        'You reached Qi Condensation and stopped there.'
+    ])('keeps %s', prose => {
+        expect(thrownAway(prose)).toBe(false);
+    });
+
+    /**
+     * AND A DIFFERENT RUNG IS STILL A DIFFERENT RUNG. This is what stops the
+     * comparison being a way to say anything at all as long as the realm name
+     * appears in it.
+     */
+    it.each([
+        'You have reached the ninth layer of Qi Condensation.',
+        'You have reached Qi Condensation Layer 4.',
+        'You have reached Foundation Establishment.',
+        'You have attained the third layer of Core Formation.'
+    ])('throws away %s', prose => {
+        expect(thrownAway(prose)).toBe(true);
+    });
+});
