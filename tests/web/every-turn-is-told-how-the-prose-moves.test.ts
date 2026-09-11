@@ -83,7 +83,7 @@ describe('the narrator is told how the prose moves', () => {
     it('reaches the one narration prompt, so it reaches every narrated turn', () => {
         const prompt = narrationSystemPrompt();
         for (const rule of [
-            'Most paragraphs run one to three sentences',
+            'One to three sentences is the house style at every height',
             'The funny beat is three paragraphs',
             'takes a person or a thing as its subject',
             'The narration argues',
@@ -113,6 +113,31 @@ describe('the narrator is told how the prose moves', () => {
         // claim in order to retract it. Pin the retraction instead.
         expect(prompt).toContain('this is not a ban on');
         expect(prompt).toContain("is the engine's voice. This is the narrator's");
+    });
+
+    it('does not state the paragraph rule unconditionally, and does state the sentence one', () => {
+        // ── TWO SHIPPED GUIDANCE SETS MET AT ORDINAL 0 ────────────────────
+        // This page told every turn to write one to three sentences. The ladder
+        // page had measured the paragraph SHORTENING as reach grows - 37.9 mean
+        // words low against 32.2 and 28.3, four-plus-sentence paragraphs 29.7%
+        // low against 15.8% middle, falling monotonically book by book in one
+        // arc and halving in the other - which makes the terse paragraph a
+        // HIGH-band form. Played at Qi Condensation in a market town, the
+        // opening came back clipped and world-weary: the top of the ladder
+        // written at the bottom of it.
+        //
+        // What is pinned is the SPLIT and not the wording: the paragraph is
+        // named as the part that moves with height, the sentence as the part
+        // that does not, and the bottom as the expansive band. Collapsing
+        // either half back into an unconditional rule restores the collision.
+        const prompt = narrationSystemPrompt();
+        expect(prompt).toContain('The sentence is the invariant');
+        expect(prompt).toMatch(/paragraphs of four or more[\s\S]{0,80}29\.7%/);
+        expect(prompt).toMatch(/bottom[\s\S]{0,120}long paragraph is twice as common/);
+        // The correction must not swing the other way: the low band gets a
+        // longer paragraph, not licence for the speechless reasoning block,
+        // which is distributed by work rather than by height.
+        expect(prompt).toContain('the low band does not lift that');
     });
 
     it('still permits the long reasoning paragraph, and still forbids musing', () => {

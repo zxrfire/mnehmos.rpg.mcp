@@ -260,8 +260,11 @@ export function resetNarratorCore(): void {
  */
 export const DISCOVERY_RULE = `WHAT MAY BE NAMED - this is as binding as the authority rules.
 
-This governs YOUR OWN DESCRIPTIVE VOICE. It does not gag the people in the world, and the
-distinction is the whole of it.
+This governs YOUR OWN DESCRIPTIVE VOICE, in the prose that describes what is in front of
+this cultivator. It does not gag the people in the world, and the distinction is the whole
+of it. It is also not a rule that you may only write what this cultivator perceived: see
+THE READER MAY KNOW MORE THAN THE CULTIVATOR DOES below, which says what you may do with a
+fact the world holds and they do not.
 
 In narration you may only name people, sects, places, factions and events the player has
 learned of. If you have not been given it, it does not exist as far as your own prose is
@@ -335,6 +338,78 @@ their depth:
 - Do not explain them. Nobody helpfully states what sect they are from. The player leaves
   with a fragment - a crest, a manner, a phrase, a name they may have misheard - and finds
   out later, or never.`;
+
+/**
+ * DRAMATIC IRONY, AS A PERMISSION WITH A SHAPE.
+ *
+ * The discovery gate was absolute: a fact the player did not hold was withheld
+ * from the narrator as well, so the prose could only ever report what one person
+ * perceived. Ruled wrong by the design owner - *"the engine needs to narrate
+ * things the player doesn't know - that's part of how books work"* - and the
+ * corpus agrees: the reader is routinely ahead of the protagonist, and the gap
+ * is most of the pleasure.
+ *
+ * The distinction that makes it safe is that there are two kinds of knowing and
+ * the engine only enforces one. What the CHARACTER knows gates verbs and lives
+ * in `knowledge.ts`; nothing written here adds a row to it. What the READER
+ * knows is prose and unlocks nothing.
+ *
+ * Worked pairs rather than prose rules because a small local model copies a pair
+ * and argues with a rule, and the subject of the sentence is the whole test: the
+ * cultivator perceiving it is a leak, somebody else having done it is the genre.
+ *
+ * Unconditional because it is inert without material: the permission is scoped
+ * to facts a turn MARKS as not held. The one such fact already reaching a model
+ * is the turn-0 life line that says in its own words that they have not been
+ * told, which is why that shape is named here.
+ */
+export const THE_READER_MAY_KNOW_MORE = `THE READER MAY KNOW MORE THAN THE CULTIVATOR DOES.
+
+Two kinds of knowing, and only one of them is a rule about the game.
+
+What the CHARACTER knows decides what they may do - what they can name, walk up to, ask
+after, go looking for. Nothing you write changes it. A player who reads one of these and
+then tries to act on it is refused by the engine, correctly, because they still do not hold
+it. That refusal does not contradict your prose.
+
+What the READER knows is prose and unlocks nothing. This genre cuts away constantly: a
+powerful figure privately deciding not to connect somebody with a fugitive, a clerk burning
+a page in a room the cultivator is nowhere near, a bystander's astonishment reported from
+inside her own head. A narrator that can only report what one person perceived is writing a
+diary, and this is not one.
+
+So a fact the facts below mark as held by the world and not by this cultivator MAY be shown
+to the reader. A fact that says in its own words that they have not been told is one of
+these. Show it as somebody else's, somewhere else's, or a moment ago's - never as something
+this cultivator noticed, was told, worked out, or is now acting on.
+
+  LEAK     You learn that somebody paid a favour to have you placed here.
+  LEAK     You realise the elder has been watching you since the gate.
+  LEAK     Something you cannot name is owed on your account, and you feel the weight of it.
+  CUTAWAY  Two streets over, the man who spent that word is still paying it off. He has
+           never said whose name it bought, and does not intend to.
+  CUTAWAY  The elder had been watching him since he came through the gate. He said nothing
+           about it to anybody.
+
+The subject of the sentence is the whole test, every time.
+
+Four limits, and they are hard:
+- Nothing is named AT the player. A name they have not been told still may not appear in the
+  prose that describes what is in front of them. The lists below say which names are theirs.
+- A cutaway states what somebody did or thought. It does not explain why, and it never says
+  what the thing will come to mean.
+- The player does not answer it. No wondering, no unease, no decision taken on it, no
+  conversation that is quietly about it.
+- A sentence or two, set apart, and then back to the scene. It is a cut, not a subplot.
+
+HOW FAR A CUTAWAY REACHES IS THE REGISTER FOR THIS TURN. At the bottom of the ladder it is
+somebody in the same county a moment ago, because nothing this cultivator does travels
+further than that. Higher up it is a room they are not in, in a house that is re-planning
+around something they said. Do not write a province reacting to somebody the province has
+never heard of.
+
+Narration that claims something the engine did not rule is discarded, and the player is
+shown the engine's own record instead.`;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE SETTING, COMPRESSED
@@ -643,6 +718,8 @@ resolved everything that happened. Your only job is to render its findings as pr
 ${narratorCore().text}
 
 ${DISCOVERY_RULE}
+
+${THE_READER_MAY_KNOW_MORE}
 
 ${WORLD_BIBLE}
 
@@ -1272,6 +1349,8 @@ export function composeNarrationUser(
          * and is not told a rung, which it would state.
          */
         realmOrdinal?: number;
+        /** True of the world, not held by this cultivator. See `heldByTheWorldBlock`. */
+        heldByTheWorldAndNotByThem?: readonly string[];
     },
     /**
      * WHETHER THE AMBIENT READING IS NEW INFORMATION.
@@ -1423,6 +1502,7 @@ export function composeNarrationUser(
         'opening is an act the engine never ruled, and a player who answers it is answering',
         'nobody.',
         '',
+        ...heldByTheWorldBlock(scene.heldByTheWorldAndNotByThem),
         ...theRegisterBlock(scene.realmOrdinal),
         scene.theLifeBehindThem && scene.theLifeBehindThem.length > 0
             // The opening carries a life AND a scene, and a flat "two or three short
@@ -1485,6 +1565,31 @@ function theLifeBehindThemBlock(life: readonly string[]): string[] {
 }
 
 /**
+ * FACTS THE WORLD HOLDS AND THIS CULTIVATOR DOES NOT.
+ *
+ * The per-turn half of {@link THE_READER_MAY_KNOW_MORE}, which carries the rule.
+ * Separated from the facts the prose may state outright because a small model
+ * handed one list writes from all of it.
+ *
+ * Nothing in `src/web/` fills this yet: what gets marked rather than dropped is
+ * the fact producer's half, and `facts.ts` is where that decision lives. Until
+ * something writes it the rule still binds the one fact of this shape already
+ * reaching a model - the turn-0 life line whose own text says they have not been
+ * told - which is why the rule names that shape and does not rely on this list.
+ */
+function heldByTheWorldBlock(held: readonly string[] | undefined): string[] {
+    if (!held || held.length === 0) return [];
+    return [
+        'HELD BY THE WORLD, NOT BY THIS CULTIVATOR. Every line here is true and none of it is',
+        'theirs. Show it to the READER under the cutaway rule above, or leave it out. Do not',
+        'write them noticing it, being told it, working it out, or acting on it, and do not',
+        'name any of it at them:',
+        ...held.map(line => `- ${line}`),
+        ''
+    ];
+}
+
+/**
  * WHICH REGISTER THIS TURN IS IN.
  *
  * The narrator was told every rule about height except the one that governs the
@@ -1506,6 +1611,18 @@ function theLifeBehindThemBlock(life: readonly string[]): string[] {
  * register climbs reaches for grandeur in the grammar, which is the one thing
  * twenty-one books agree stays flat.
  *
+ * AND THE PARAGRAPH RULE HAD TO BE SPLIT OUT OF `tone.md`, WHICH STATED IT
+ * UNCONDITIONALLY. Two shipped guidance sets collided at ordinal 0: one measured
+ * the paragraph shortening all the way up, the other told every turn to write
+ * one to three sentences. Played at Qi Condensation in a market town that gives
+ * the top of the ladder's register at the bottom of it. Re-cut by band, per-book
+ * mean: paragraphs of four sentences or more run 29.7% low against 15.8%
+ * middle, falling monotonically book by book in one arc (21.5, 18.3, 16.2, 12.3,
+ * 10.4) and halving in the other, while the median sentence sits at 12.7 and
+ * 13.2. So the block names the paragraph as the band-dependent half and the
+ * sentence as the invariant, separately, because a model given both in one
+ * breath relaxes whichever is nearer the end.
+ *
  * Only the band NAME is sent. The rung is not, and the instruction says so,
  * because a narrator handed an ordinal states it and a player cannot perceive
  * one.
@@ -1515,9 +1632,19 @@ function theRegisterBlock(realmOrdinal: number | undefined): string[] {
     return [
         `THE REGISTER FOR THIS TURN: ${theRegisterAtThisHeight(realmOrdinal)}.`,
         'That is the heading of a section above. Write in the register it describes: what the',
-        'prose is about, what it leaves out, and how long a paragraph runs. The sentence itself',
-        'does not change with height and must not - short, plain, a person or a thing as its',
-        'subject, at every point on the ladder.',
+        'prose is about, what it leaves out, and how long a paragraph runs.',
+        '',
+        'THE PARAGRAPH IS THE PART THAT MOVES, AND IT IS LONGEST AT THE BOTTOM. The rules',
+        'above about paragraphs of one to three sentences are the house style at every height',
+        'and are furthest in front at the top. At the bottom of the ladder the band is the',
+        'expansive one - nearly a third of paragraphs run four sentences or more - so take the',
+        'room: lay the scene out, say what a thing costs and why that matters to somebody',
+        'standing here. Clipped and world-weary is a high-band voice, and written low it is a',
+        'sixteen-year-old narrated as though they had outlived provinces.',
+        '',
+        'THE SENTENCE DOES NOT CHANGE AND MUST NOT. Short, plain, a person or a thing as its',
+        'subject, at every point on the ladder. A long paragraph here is short declaratives in',
+        'a row, never long ones; a high register is not a longer sentence.',
         '',
         'This is a fact about your prose and never about the world. Do not state the rung, do',
         'not say how far anything carries, and do not have anybody remark on either. If the',

@@ -233,6 +233,30 @@ one effect, and they are the strongest signals in the corpus by a distance:
 Book by book, the long paragraph falls from 4.3% to 1.6% across one arc and from
 12.0% to 3.5% across the other, without a reversal worth naming in either.
 
+**The same effect stated where a narrator can act on it**, because six-plus is
+too rare a shape to write to. Four sentences is where the bands actually part:
+
+| per band | low | middle |
+|---|---|---|
+| paragraphs of three sentences or fewer | 70.4% | 84.2% |
+| paragraphs of four sentences or more | 29.7% | 15.8% |
+| paragraphs of four or five | 21.2% | 13.1% |
+| median sentence, in words | 12.7 | 13.2 |
+
+The four-plus share falls monotonically book by book across one whole arc -
+21.5%, 18.3%, 16.2%, 12.3%, 10.4% - and halves across the other, so it clears
+the full-arc bar. The median sentence does not move, which is the invariant
+above measured again inside the band that has the longest paragraphs.
+
+**And the long paragraph at the bottom is not mostly the reasoning block.** At
+the bottom 13.3% of all paragraphs run four or more sentences AND carry speech,
+against 8.3% in the middle; the speechless share of long paragraphs swings from
+15% to 64% across the three bottom-band books alone. The volume that supplies
+about seventy per cent of the professional corpus's speechless long paragraphs
+is itself a book one. So the bottom's extra room is scene being laid out,
+worked through and priced, with people talking in it - and the pure reasoning
+block stays a move to reach for at every height, including this one.
+
 Counter to the obvious guess: paragraphs do not swell into grandeur, they break
 up. The long explanatory paragraph is a LOW-rung form. It exists at the bottom
 because somebody is working something out step by step: how the coins add up,
@@ -242,6 +266,12 @@ already elsewhere.
 
 **This is the single most writable instruction on the page.** As the ladder is
 climbed, break the paragraph sooner.
+
+[`tone.md`](./tone.md) used to state its paragraph rules unconditionally, which
+made the bottom of the ladder read in the top's register. Its rules are now the
+invariant - the sentence, which does not move - plus the part read off this
+table. Where the two pages disagree about a paragraph, this one is the
+measurement and it wins.
 
 ### Honorifics thin out
 
@@ -330,10 +360,33 @@ nowhere else: **the long working-out paragraph**, where somebody reasons a thing
 through step by step, and **the price of everything**. Consequence reaches the
 end of the afternoon.
 
-> The rain had got into his shoe again. At the ford stall he counted out four
-> stones, and the woman counted them again before she let go of the sack.
+**This is the expansive band, and it is the only one.** The paragraph is longest
+here and nowhere above: nearly a third of paragraphs run four sentences or more,
+against a sixth in the middle. Take the room. Set the scene before narrowing to
+the person, say what a thing costs and why that matters to somebody standing
+here, let a count of coins run to its conclusion. The player at this height has
+nothing to measure anything against, and the band that explains is the band they
+are standing in.
 
-Wrong at this height, because it is a higher band's register worn early:
+> The rain had got into his shoe again. At the ford stall he counted out four
+> stones, and the woman counted them again before she let go of the sack. Four
+> is what it was in the spring. It is what it will be after the harvest, because
+> nothing that happens at this ford moves a price.
+
+Wrong at this height, and this is the failure that actually shipped - the top of
+the ladder written at the bottom of it:
+
+> ~~Clear River Ford. You were raised on ground like this. You have breathed
+> nothing else and have nothing to set it against. Nothing is happening. Nothing
+> happens here.~~
+
+Clipped, terse and world-weary is the register of somebody who has outlived
+provinces. Sixteen years old in a market town has not earned it, and a narrator
+that opens there has spent the shortest paragraph in the game on the band that
+is measured to have the longest.
+
+Wrong at this height for the other reason, because it is a higher band's register
+worn early:
 
 > ~~The Clear River Ford would remember the morning. What he had done here would
 > reach the Azure Cloud Pavilion before the season turned.~~

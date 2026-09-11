@@ -28,6 +28,19 @@
  * and that the rung itself never reaches a model - the whole design is that the
  * narrator is told how far an act carries and not what rank produced it.
  *
+ * ── AND THE SELECTOR POINTED AT TWO TERSE BANDS ──────────────────────────
+ *
+ * The wiring was right and the prose it selected was not. `tone.md` stated its
+ * paragraph rules unconditionally - one to three sentences, a third of them one
+ * - so both bands read the same way and the bottom got the top's register: a
+ * played opening at Qi Condensation in a market town came back clipped and
+ * world-weary. Re-cut by band, paragraphs of four sentences or more run 29.7%
+ * low against 15.8% middle, falling 21.5, 18.3, 16.2, 12.3, 10.4 book by book
+ * across one arc and halving across the other, while the median sentence sits
+ * at 12.7 and 13.2. So the long explanatory paragraph is a BOTTOM-rung form.
+ * Pinned here: the bottom band's own section says it is the expansive one, and
+ * the per-turn block separates the paragraph from the sentence.
+ *
  * Broken deliberately to check it can fail: dropping `realmOrdinal` from the
  * scene at the played call site takes the two played cases red and leaves the
  * seven direct ones green, which is the split that says the wiring is what they
@@ -80,6 +93,29 @@ describe('the prose reads differently higher up', () => {
         // If the sentence rule goes, the rest of the section reads as licence to
         // write grandly at height, which is the failure it exists to prevent.
         expect(theVoiceDoc()).toContain('The sentence itself does not change');
+    });
+
+    it('names the bottom as the expansive band, which is the half that shipped backwards', () => {
+        // The band selector was right and both bands it pointed at were terse,
+        // because `tone.md` stated one-to-three sentences unconditionally. The
+        // measurement says the opposite at the bottom: four-plus-sentence
+        // paragraphs run 29.7% low against 15.8% middle, monotone book by book
+        // across one whole arc and halved across the other. A narrator given
+        // only the band NAME needs the band's own section to say so.
+        const voice = theVoiceDoc();
+        const at = voice.indexOf(REGISTER_BANDS[0]);
+        expect(at).toBeGreaterThan(-1);
+        const band = voice.slice(at, voice.indexOf(REGISTER_BANDS[1], at));
+        expect(band).toContain('This is the expansive band, and it is the only one');
+        expect(band).toMatch(/four sentences or more/);
+    });
+
+    it('tells the turn that the paragraph moves with height and the sentence does not', () => {
+        // Two instructions in one breath get the nearer one applied, so they are
+        // separate blocks. Both halves have to reach a real turn.
+        const low = composeNarrationUser(FACTS, { ...SCENE, realmOrdinal: 0 });
+        expect(low).toContain('THE PARAGRAPH IS THE PART THAT MOVES');
+        expect(low).toContain('THE SENTENCE DOES NOT CHANGE AND MUST NOT');
     });
 
     it('bands the whole ladder, and each band claims some of it', () => {

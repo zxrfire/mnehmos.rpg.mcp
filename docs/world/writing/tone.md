@@ -183,14 +183,46 @@ Right:
     "The road," Fang Nuotao says, to nobody in particular. "Not the town. The road."
     He is not stopping.
 
-    A handful of others, none of them in a hurry, none of them looking at you.
-    Nothing is happening. Nothing happens here.
+    A handful of others, none of them in a hurry, none of them looking at you. The
+    woman at the grain counter has four measures out and has been asked the price of
+    three of them this morning. She gives the same price each time. Two stones a
+    measure is what it was last year. Nobody has bought anything.
 
 These rules produce that, and they hold on every turn rather than only on an opening.
 
-**Most paragraphs run one to three sentences, and a quarter to a third of them are one.**
-Four is long. The long sentence that drops into a short one is an impact beat and not a
-texture: about one page in one.
+### The sentence is the invariant. The paragraph is where the height shows.
+
+This page shipped its paragraph rules unconditionally and they are not unconditional.
+Measured across twenty-one books of two full arcs, weighted equally: **median sentence
+length stays between twelve and fifteen words and has no consistent direction in either
+arc**, while the mean paragraph falls from 37.9 words at the bottom of the ladder to 32.2
+and 28.3. So everything below about how a SENTENCE is built holds at every height and must
+not be relaxed for a high cultivator. What is read off the band is the PARAGRAPH, and the
+band for this turn is named in the prompt; the register it belongs to is in
+[`what-changes-as-the-ladder-is-climbed.md`](./what-changes-as-the-ladder-is-climbed.md).
+
+**One to three sentences is the house style at every height. How far in front it is, is not.**
+Per-book means over the same arcs:
+
+| | bottom of the ladder | middle and above |
+|---|---|---|
+| paragraphs of three sentences or fewer | 70.4% | 84.2% |
+| paragraphs of four or more | 29.7% | 15.8% |
+| paragraphs of one sentence | 22.8% | 29.7% |
+| median sentence, in words | 12.7 | 13.2 |
+
+**At the bottom the long paragraph is twice as common, and that is a fact about the bottom
+rather than about early chapters.** The share of paragraphs running four sentences or more
+falls book by book without a reversal across one arc - 21.5%, 18.3%, 16.2%, 12.3%, 10.4% -
+and halves across the other. **The clipped, terse, nothing-is-happening paragraph is a
+HIGH-band form**, and writing it at Qi Condensation is the top of the ladder worn at the
+bottom of it: a sixteen-year-old in a market town narrated with the weariness of somebody
+who has outlived provinces.
+
+So at the bottom: more room. Lay the scene out, say what a thing costs and why that matters,
+let somebody work out how the coins add up. Four and five sentence paragraphs are ordinary
+here and a third of them go that long. Higher up, a consequence that would have taken a
+paragraph is taken in a line and the next line is already elsewhere.
 
 **Corrected: a long paragraph does occur, and it is always somebody working something
 out.** This page used to say six sentences does not happen. It happens in every one of the
@@ -200,10 +232,16 @@ built across half a page. It is a chain of assessment - who suspects what, what 
 what follows, what it would cost - and it ends when the conclusion is reached. See the
 interiority rule below, which is the same correction stated from the other end.
 
-**It is a move to reach for, not a shape to hit.** The long reasoning block is unevenly
-distributed - one work leans on it four times as hard as another - so the short paragraph
-remains the house style by a wide margin. Write a long one when there is genuinely something
-to work out, and not to vary the texture.
+**It is a move to reach for, not a shape to hit, and the low band does not lift that.** The
+speechless reasoning block - a long paragraph with no quoted line in it - is distributed
+unevenly by WORK rather than by height: within the bottom band alone it runs from 15% to 64%
+of long paragraphs across three books, and the single volume that supplies about seventy per
+cent of the corpus's speechless long paragraphs is itself a bottom-band book. What the bottom
+licenses is a longer paragraph, not specifically a speechless one: at the bottom 13.3% of all
+paragraphs run long AND carry speech, against 8.3% in the middle. So the extra room at the
+bottom is mostly scene being laid out and priced, with people talking in it. Reach for the
+pure reasoning block when there is genuinely something to work out, at any height, and not to
+fill the room the band allows.
 
 Whichever length it runs, **the sentences inside it stay short.** A six-sentence paragraph
 in this genre is six short declaratives in a row, not three long ones. The paragraph got
@@ -250,9 +288,16 @@ nothing here they would notice*. The first is the narrator settling the reader d
 nothing here settles anybody down; the second is the narrator telling the player what they
 feel while pretending to describe a square. End on a fact, a price, or somebody's line.
 
+**And the replacement for a banned closer is usually the same closer.** *Nothing is
+happening. Nothing happens here.* reads as the cure for *it is an ordinary day and it
+intends to stay one* and is the identical move: it forecasts the day's temper, it closes on
+mood, and the doubling is a rhetorical tic laid over the top. A closer is not fixed by being
+made bleaker. It is fixed by being a fact.
+
 | Wrong | Right |
 |---|---|
 | It is the ground they were raised on. | You grew up on this ground. |
+| Nothing is happening. Nothing happens here. | Two stones a measure is what it was last year. Nobody has bought anything. |
 
 **Corrected: this is not a ban on *It is* and *There is*.** This page used to call those
 the loudest signal of the wrong genre. They are not. The construction runs at about three

@@ -119,6 +119,30 @@ one.
 This is still the single change that does most of the work, because it forces the others:
 you cannot build a mood across half a page if the paragraph ends.
 
+**But those are corpus-wide figures, and the corpus is not one height.** The per-book mean
+of 78.7% three-or-fewer is the MIDDLE of the ladder with the bottom averaged into it, and a
+narrator given it as an unconditional rule writes the top of the ladder at the bottom of it.
+Re-cut by band, against the same books
+([`what-changes-as-the-ladder-is-climbed.md`](./what-changes-as-the-ladder-is-climbed.md)
+holds the banding and the rest of the height findings):
+
+| per-book mean | bottom | middle |
+|---|---|---|
+| three sentences or fewer | 70.4% | 84.2% |
+| four or more | 29.7% | 15.8% |
+| four or five | 21.2% | 13.1% |
+| six or more | 8.4% | 2.8% |
+| one sentence | 22.8% | 29.7% |
+| mean words in a paragraph | 37.9 | 32.2 |
+| median sentence, in words | 12.7 | 13.2 |
+
+The four-plus share falls monotonically book by book across one whole arc - 21.5%, 18.3%,
+16.2%, 12.3%, 10.4% - and halves across the other, so it clears the both-arcs bar the
+height page applies. **The median sentence does not move even inside the band that has the
+longest paragraphs**, which is the strongest form of the sentence/paragraph split on this
+page: the two are measured to be independent in the one place they could most easily have
+been confounded.
+
 The narration above is four sentences welded into one block. Broken the way the genre breaks
 it, the same facts move:
 
@@ -191,6 +215,24 @@ This is the same trap [the top of this page](#what-has-now-been-measured-and-wha
 warns about, arriving from the other side: the first version over-generalised one work's
 habit into a ban, and a corpus of sixteen could have over-generalised one work's habit into
 a licence.
+
+**And this qualification does not contradict the band table above, which is the thing worth
+checking.** The single volume supplying about seventy per cent of the professional corpus's
+speechless long paragraphs is itself a book one, so it sits in the bottom band - which could
+have meant the bottom band's whole extra length was that one book's habit. It is not. Split
+by what is inside the long paragraph:
+
+| per-book mean, share of ALL paragraphs | bottom | middle |
+|---|---|---|
+| four or more sentences, with speech in it | 13.3% | 8.3% |
+| four or more sentences, speechless | 16.4% | 7.6% |
+
+Both halves are roughly twice the middle's, and the speechless share OF long paragraphs
+swings 15% to 64% across the three bottom-band books while the four-plus share itself moves
+monotonically in both arcs. **So the band governs how long a paragraph may run, and the work
+governs whether a long one is a reasoning block.** Those are two different rules and neither
+licenses the other: at the bottom take the room, and still write the pure reasoning block
+only when there is genuinely something to work out.
 
 ## Sentences are declarative and stack verbs
 
