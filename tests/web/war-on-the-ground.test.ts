@@ -38,7 +38,7 @@ import {
 import { placeFor } from '../../src/web/encounters';
 import { subjectFromLocation } from '../../src/engine/world/capability';
 import { whatIsWrongWithThisGround } from '../../src/web/ground-status-lines';
-import { factsForLook } from '../../src/web/facts';
+import { factsForLook, QUIET_DAY } from '../../src/web/facts';
 import { handleMarket } from '../../src/server/consolidated/cultivation-mortal';
 import type { LocationRecord } from '../../src/engine/world/locations';
 
@@ -275,9 +275,15 @@ describe('what a war does to the ground it is fought on', () => {
     }, 300_000);
 });
 
-/** The five ways `selfNoticing` says nothing is wrong. */
-const QUIET_DAY_LINE =
-    /ordinary day|Nothing about the day is urgent|day asks nothing|going wrong at any speed|Nothing is pressing/i;
+/**
+ * The ways `selfNoticing` says nothing is wrong, read off the list itself.
+ *
+ * It used to be a hand-written alternation restating all five sentences, which
+ * is a second copy of the list: the register rewrite that replaced every one of
+ * them would have left this matching nothing and passing anyway.
+ */
+const QUIET_DAY_LINE = new RegExp(
+    QUIET_DAY.map(line => line.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
 
 /** Every engine row this turn wrote, which is where `structure` lands. */
 function logOf(result: { state: { log: Array<{ role: string; text: string }> } }): string {

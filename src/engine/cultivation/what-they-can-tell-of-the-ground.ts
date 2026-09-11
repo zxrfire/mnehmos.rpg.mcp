@@ -122,17 +122,17 @@ export function whatTheyCanTellOfTheGround(
     const step = depth(here) - depth(home);
     if (step === 0) {
         return unknown(
-            'It is the ground they were raised on. There is nothing here they would notice, '
-            + 'because it is what noticing has always been measured from.'
+            'They were raised on ground like this. They have breathed nothing else and have '
+            + 'nothing to set it against.'
         );
     }
     return perceived(
         step > 1
-            ? 'The qi here is thicker than anything they have stood in, by enough that they '
-              + 'have no measure for it.'
+            ? 'The qi here is thicker than anything they have stood in. They have no measure '
+              + 'for it.'
             : step === 1
                 ? 'The qi here is better than the ground that raised them. They can feel the '
-                  + 'difference without being able to put a figure on it.'
+                  + 'difference and cannot put a figure on it.'
                 : step < -1
                     ? 'The qi here is thinner than anything they have stood in, and a long '
                       + 'sitting would show it.'

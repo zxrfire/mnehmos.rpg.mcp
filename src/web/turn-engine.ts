@@ -5242,7 +5242,7 @@ ${noticed}`;
                 ...answer.lines,
                 `Whatever else they had to say, where the ${subject!.name} keeps its gate is `
                 + `not news in this province - anybody would have pointed. ${gate.name} is a `
-                + 'place you could set out for now.'
+                + 'place you could set out for.'
             ]
             : answer.lines;
 

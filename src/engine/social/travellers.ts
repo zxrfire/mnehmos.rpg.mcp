@@ -200,8 +200,8 @@ export function whisperStatement(place: TravellerPlace): string {
 
 /**
  * The traveller as engine prose, for the path with no model behind it. Says
- * what happened and stops: no explanation of what any of it means, no implied
- * relationship between the two names, and it ends on something ordinary.
+ * what happened and stops: no explanation of what any of it means, and no
+ * implied relationship between the two names.
  */
 export function travellerProse(traveller: Traveller): string {
     const mentioned = traveller.mentions.length > 0
@@ -211,7 +211,7 @@ export function travellerProse(traveller: Traveller): string {
     return `${traveller.shape}, ${TRAVELLER_ERRAND[traveller.kind]}. ` +
         `They came up from ${traveller.from.name}, ${traveller.daysOnTheRoad} days, ` +
         'and say so the way you would say a weekday.' + mentioned +
-        ' Then it is the weather, and then they are gone.';
+        ' They talk a while longer about the road, and then they go.';
 }
 
 function clamp01(value: number): number {

@@ -152,9 +152,9 @@ export function whatSomebodyWouldSayAboutAHouse(
 ): string {
     return house.theirOwn
         ? `${speaker} is of ${house.houseName} and says where the gate is without being asked `
-          + 'twice. It is a road like any other once somebody has walked it.'
-        : `${speaker} can point at ${house.seatName}. It is in the province and it has a gate on `
-          + 'it; knowing that much is ordinary here.';
+          + 'twice. They have walked that road.'
+        : `${speaker} can point at ${house.seatName}. It stands in the province and has a gate `
+          + 'on it, and everybody here knows that much.';
 }
 
 /** What the player ends up holding about it. */

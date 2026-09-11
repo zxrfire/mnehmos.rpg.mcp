@@ -209,7 +209,7 @@ export function summariseToolBody(body: Record<string, unknown>): string[] {
         );
         if (notYet.length > 0) {
             lines.push(
-                `On the same shelf and out of your reach for now: ${notYet.map(o =>
+                `On the same shelf and out of your reach: ${notYet.map(o =>
                     `${o.name} (${o.requiredRank})`
                 ).join('; ')}.`
             );

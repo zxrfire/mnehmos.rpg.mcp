@@ -97,16 +97,21 @@ describe('what the travel list may say about a place nobody has been to', () => 
         expect(engineRows).not.toMatch(/\b5\b/);
     });
 
+    // The two below pin the CONSEQUENCE rather than the sentence. They used to
+    // quote "over the draw of 7 it comfortably carries" verbatim, which made a
+    // register fix - the row opened `It is spoken of as ...` - look like a
+    // behaviour change. What has to survive is the capacity figure and the fact
+    // that being over it slows everybody; the wording may move.
     it('still says it is over, which is what teaches the mechanic', () => {
         const { prose } = read([place({ occupants: 9, supportedDraw: 7 })]);
-        expect(prose).toContain('over the draw of 7 it comfortably carries');
-        expect(prose).toMatch(/slowing the rest/);
+        expect(prose).toContain('7');
+        expect(prose).toMatch(/slows the rest/);
     });
 
     it('still says it is not over, so the two can be told apart', () => {
         const { prose } = read([place({ occupants: 5, supportedDraw: 7 })]);
         expect(prose).toContain('comfortably carries a draw of 7');
-        expect(prose).not.toMatch(/over the draw/);
+        expect(prose).not.toMatch(/slows the rest/);
     });
 
     it('still says when nobody draws on it, which is the row worth travelling for', () => {

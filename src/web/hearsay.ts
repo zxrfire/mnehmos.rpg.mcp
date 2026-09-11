@@ -156,7 +156,7 @@ export function hearingProse(hearing: Hearing): string {
             ? `One of them says ${names[0]}. A moment later the other says ${names[1]}.`
             : `One of them says ${names[0]}.`;
         return 'Past the wall, two voices, mid-conversation and not lowered for anybody. ' +
-            `${said} Neither stops to explain, and then it is the weather again. ` +
+            `${said} Neither stops to explain. They carry on about something else. ` +
             `You have no idea what ${names.length > 1 ? 'either of those was' : 'that was'}.`;
     }
 

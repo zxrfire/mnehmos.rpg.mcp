@@ -679,9 +679,9 @@ function timeSkipProse(
         : ambient === 'thin'
             ? `${where}. The qi is thin here; it always has been. You sat down anyway.`
             : ambient === 'spirit_tide'
-                ? `${where}. A tide was running when you sat down, and for once the air gave more than it asked.`
+                ? `${where}. A tide was running when you sat down, and for once the qi gave more than it asked.`
                 : ambient === 'dense'
-                    ? `${where}. There is a vein under this ground, close enough to feel. You sat down on top of it.`
+                    ? `${where}. A vein runs under this ground, close enough to feel. You sat down on top of it.`
                     : `${where}. You sat down and began to breathe.`;
     // What was INTENDED is what the player asked for, not what the engine
     // decided to run after it had already shortened the span. Asking for five
@@ -1778,13 +1778,11 @@ function describeCompany(
                 sentences.push(`the only other person here is ${standing}.`);
             } else if (others === 1) {
                 sentences.push(
-                    `a second is ${standing}, and the room the first leaves them ` +
-                    'is the part worth noticing.'
+                    `a second is ${standing}, and the first leaves them room.`
                 );
             } else {
                 sentences.push(
-                    `one of them is ${standing}, ` +
-                    'and the way the others move around them is the part worth noticing.'
+                    `one of them is ${standing}, and the others move around them.`
                 );
             }
         }
@@ -1815,7 +1813,7 @@ function selfNoticing(cultivator: Cultivator, groundIsQuiet = true): string {
     }
 
     if (cultivator.starvationTurns > 0) {
-        notes.push('There has been nothing to eat for long enough that it has stopped being uncomfortable and started being a clock.');
+        notes.push('Hunger stopped being uncomfortable a while ago and started being a clock.');
     } else if (cultivator.satiety <= 20) {
         notes.push('The hunger is back, and there is nothing here to answer it with.');
     }
@@ -1827,7 +1825,7 @@ function selfNoticing(cultivator: Cultivator, groundIsQuiet = true): string {
     }
 
     if (cultivator.yearsAtCurrentRealm >= stagnationYearsForOrdinal(cultivator.realmOrdinal) * 0.7) {
-        notes.push('It has been a very long time since anything moved, and the body has begun to have opinions about that.');
+        notes.push('Nothing has moved in a very long time, and the body has started to complain about it.');
     } else if (cultivator.yearsAtCurrentRealm >= 5) {
         notes.push('Nothing has shifted in years.');
     }
@@ -1855,13 +1853,24 @@ function selfNoticing(cultivator: Cultivator, groundIsQuiet = true): string {
  *
  * Not randomised - asking.md's rule about stable habits applies to the
  * whole world, not only to people. The same place always gets the same one.
+ *
+ * All five used to close on the day's temper - *"The day asks nothing in
+ * particular"*, *"It is an ordinary day and it intends to stay one"*, *"That
+ * will not last"*. The engine does not forecast the day and does not have a
+ * view of it, and closing a paragraph on the weather is the one thing
+ * `how-the-prose-moves.md` forbids outright. What is true here is narrower and
+ * is a fact: nothing about this body, this purse or this ground is asking for
+ * anything.
+ *
+ * Exported so a test that needs to recognise the quiet day reads this list
+ * rather than carrying a second copy of it.
  */
-const QUIET_DAY: readonly string[] = [
-    'Nothing about the day is urgent.',
-    'The day asks nothing in particular.',
-    'Nothing here is going wrong at any speed worth watching.',
-    'It is an ordinary day and it intends to stay one.',
-    'Nothing is pressing. That will not last, and it is not pressing yet.'
+export const QUIET_DAY: readonly string[] = [
+    'Nothing here is going wrong.',
+    'Nothing is happening. Nothing happens here.',
+    'Nothing here is broken and nothing here is short.',
+    'Nothing on this ground is asking for anything.',
+    'Nothing here needs answering.'
 ];
 
 /** A stable index from a string. Same input, same answer, every run. */

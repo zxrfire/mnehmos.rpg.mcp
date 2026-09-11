@@ -142,8 +142,8 @@ function crowd(place: Destination): string {
     if (place.occupants === 0) return ' Nobody is said to draw on it at all.';
     const over = place.occupants > place.supportedDraw;
     return over
-        ? ` It is spoken of as over the draw of ${place.supportedDraw} it comfortably `
-          + `carries, with everybody on it slowing the rest.`
+        ? ` People say more sit on it than the ${place.supportedDraw} it comfortably `
+          + `carries, and everybody on it slows the rest.`
         : ` It comfortably carries a draw of ${place.supportedDraw}, and nobody speaks of `
           + `it as crowded.`;
 }

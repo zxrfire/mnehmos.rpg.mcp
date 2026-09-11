@@ -96,7 +96,7 @@ describe('what a novice can tell of the ground', () => {
         const got = whatTheyCanTellOfTheGround('thin', NOVICE, 'thin');
         expect(got.known).toBe('unknown');
         expect(theyCanTell(got)).toBe(false);
-        expect(got.because).toMatch(/ground they were raised on/);
+        expect(got.because).toMatch(/raised on ground like this/);
     });
 
     it('and when the run does not know where they came from', () => {

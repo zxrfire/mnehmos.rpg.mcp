@@ -199,7 +199,7 @@ describe('the zero-provider narration is a situation, not a sheet', () => {
 
         expect(shown).toMatch(/purse folds flat/i);
         expect(shown).toMatch(/hunger is back/i);
-        expect(shown).toMatch(/long time since anything moved/i);
+        expect(shown).toMatch(/nothing has moved in a very long time/i);
         expect(offences(shown, SYSTEM_VOICE)).toEqual([]);
     });
 
