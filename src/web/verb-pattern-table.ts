@@ -886,7 +886,20 @@ export const CEILING_QUESTION = new RegExp([
     /\bwhy (?:is|am) (?:nothing|my progress) (?:happening|accumulating|moving)\b/,
     /\bhow far (?:does|will) my (?:manual|book|method|art) go\b/,
     /\bwhat (?:is|'s) (?:in my way|my bottleneck)\b/,
-    /\b(?:am i|have i) (?:hit|reached|run into) (?:a|my|the) (?:wall|ceiling|limit|cap)\b/
+    /\b(?:am i|have i) (?:hit|hitting|reached|reaching|run into|running into) (?:a|my|the) (?:wall|ceiling|limit|cap)\b/,
+    // AND THE TWO PHRASINGS A PLAYER REACHES FOR FIRST, WHICH REACHED NOTHING.
+    //
+    // Measured against the parser: `am i at a bottleneck` and `how close am i
+    // to breaking through` both came back `unclear`. `ASKING_RATHER_THAN_DOING`
+    // catches the shape - `am i` is interrogative by construction - but the
+    // mood pass only converts a PLAN into its free read, and there was no plan
+    // to convert. A question the table cannot route is not one the mood pass
+    // can rescue.
+    //
+    // Both are the ceiling's own question: what stands between this cultivator
+    // and the next rung, which `whyProgressHasStopped` answers gate by gate.
+    /\b(?:am|are) i (?:at|in|stuck (?:at|in|on)|up against) (?:a|my|the) (?:bottleneck|wall|barrier|ceiling|plateau)\b/,
+    /\bhow (?:close|near|far) (?:am i|is it)\b[^.?!]{0,30}\b(?:break(?:ing)? ?through|the (?:next (?:rank|rung|realm|layer)|barrier|crossing))\b/
 ].map(r => r.source).join('|'));
 
 /**

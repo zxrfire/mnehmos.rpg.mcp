@@ -6706,9 +6706,32 @@ ${line}`;
 
     /**
      * An assessment with no subject, or with the asker as the subject.
+     *
+     * ── A MECHANIC IS NOT A PLACE NAME ───────────────────────────────────
+     *
+     * FOUND BY PLAYING BLIND, on the most ordinary question in the game. The
+     * player had bought a manual, learned it, sat for a stretch, and typed:
+     *
+     *     > am i ready to break through
+     *     Mu Yan has never heard of "breakthrough".
+     *
+     * The reader routed it here correctly. The subject fell past this list, past
+     * the person check, and into the place branch - which looked up a location
+     * called `breakthrough`, did not find one, and said so in the discovery
+     * gate's own words. So a question about the player's own body was answered
+     * with a claim about what they have and have not been told.
+     *
+     * That sentence is the gate working exactly as designed about a subject it
+     * was never meant to see. `breakthrough` is not a proper noun; it is the
+     * name of a thing that happens to this cultivator, and asking whether they
+     * are ready for one is asking about themselves.
+     *
+     * So every word for a cultivator's OWN crossing and own body is on this
+     * list. It stays anchored whole-string: a place really called *The Barrier*
+     * is still a place, and `assess the barrier at Nine Peaks` names one.
      */
     private static readonly ASSESSING_THEMSELVES =
-        /^(?:my ?self|me|my (?:progress|standing|position|cultivation|prospects)|where i (?:am|stand)|whether i(?:'m| am)? (?:ready|stuck|stalled|finished|done)|if i(?:'m| am)? (?:ready|stuck|stalled)|ready|stuck|stalled)$/i;
+        /^(?:my ?self|me|my (?:progress|standing|position|cultivation|prospects)|where i (?:am|stand)|whether i(?:'m| am)? (?:ready|stuck|stalled|finished|done)|if i(?:'m| am)? (?:ready|stuck|stalled)|ready|stuck|stalled|(?:the |a |my )?break ?through|(?:the |my )?(?:barrier|crossing|bottleneck)|my (?:foundation|root|body|qi|meridians|injuries|wounds|rank|realm|state|condition|chances|odds|readiness|lifespan|age|years))$/i;
 
     /**
      * Alchemy, through the same handler the MCP tool surface calls.
