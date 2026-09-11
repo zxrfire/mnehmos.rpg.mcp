@@ -2231,7 +2231,7 @@ export class GameService {
             playerSaid: trimmed,
             // What the engine actually filed. Phase 3 may dress this and may
             // not contradict it; see the banner in `narrator.ts`.
-            filed: this.filedOutcome(execution)
+            filed: this.filedOutcome(execution, theTurnsPlan.action.action)
         };
 
         // ── phase 3 ──

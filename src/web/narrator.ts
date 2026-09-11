@@ -408,10 +408,70 @@ export interface FiledOutcome {
      * and not on the mention.
      */
     onOfferAndNotHeld?: readonly string[];
+    /**
+     * WHETHER THE ENGINE ANSWERED THE THING THE PLAYER ASKED.
+     *
+     * FOUND BY PLAYING, on turn one of a run. The opening scene read *"Mo Anzhi
+     * stands nearby, counting a pile of stones. Someone else lingers in the
+     * square"*. The player typed `where am I?`, the engine answered it in five
+     * separate ruling blocks - the place, the air, the rank, the root, the
+     * progress - and the prose came back:
+     *
+     *     You ask where you are, but the question hangs in the humid air. There
+     *     is no one immediately close enough to answer.
+     *
+     * Two people were standing there and the answer was already in hand. The
+     * narrator staged a failure it had no grounds for and invented an empty
+     * square to justify it.
+     *
+     * ── THE RULE, AND WHY IT IS NOT ABOUT WHO IS STANDING THERE ──────────
+     *
+     * The design owner: *if Mo Anzhi is nearby, then he can answer. If nobody is
+     * nearby, I ought to answer.* So the square never decides whether a question
+     * gets an answer - it decides only WHO gives it. With somebody present they
+     * can; with nobody present the narration does.
+     *
+     * And: *there can be a non-answer if the question is incoherent, but this
+     * question is coherent. I know where I am.* Which is the condition. A
+     * sentence the engine could not read is `unclear`, and prose about a
+     * question going nowhere is honest there and only there. Everywhere else the
+     * engine produced an answer, and prose reporting that none came contradicts
+     * the turn it is narrating.
+     *
+     * ── WHO IS ASKING, WHICH IS TWO THINGS AT ONCE AND STAYS THAT WAY ────
+     *
+     * The design owner: *my character does. I the player don't.* And then,
+     * immediately: *I mean it CAN BE the player asking aloud.*
+     *
+     * Both, and the engine does not get to choose. `where am I` is the player
+     * querying the game for something the character already knows - which is why
+     * a read costs nothing and passes no time - and it is also a sentence a
+     * person can say out loud in a market. A narrator may stage it either way.
+     *
+     * WHAT IS NOT FREE IS THE ENDING. Every staging has an answer available:
+     * spoken with somebody present, they answer; spoken with nobody present, the
+     * narration answers; taken as the player's query, the answer is simply
+     * given. The non-answer belongs to none of them, which is why this checks
+     * the ending and never the staging.
+     *
+     * Absent means a caller has not said, and nothing is checked - the same
+     * opt-in `onOfferAndNotHeld` takes.
+     */
+    /**
+     * The rank the engine says this cultivator is at, in the ladder's own
+     * words. See `claimsThePlayerAdvanced` for the played defect: without it,
+     * a faithful answer to `what is my rank` reads as an invented one.
+     */
+    standsAt?: string;
+    answered?: boolean;
 }
 
 export interface NarrationViolation {
-    kind: 'invented_breakthrough' | 'invented_death' | 'invented_possession';
+    kind:
+        | 'invented_breakthrough'
+        | 'invented_death'
+        | 'invented_possession'
+        | 'invented_absence';
     detail: string;
 }
 
@@ -448,16 +508,78 @@ const ADVANCED_UNAMBIGUOUSLY =
  * which is the shape {@link claimsThePlayerDied} already uses and for the same
  * reason.
  */
-function claimsThePlayerAdvanced(text: string, who: string | undefined): boolean {
+function claimsThePlayerAdvanced(
+    text: string,
+    who: string | undefined,
+    /**
+     * The rank the engine says they are at, when the caller supplies it.
+     *
+     * ── SAYING WHERE SOMEBODY STANDS IS NOT CLAIMING THEY MOVED ──────────
+     *
+     * FOUND BY PLAYING BLIND. The player typed `what is my rank`, the engine
+     * answered with the rank, and the narration was discarded as an invented
+     * breakthrough. It is the most basic read in the game and it could not be
+     * narrated: any faithful sentence about the rung somebody is on says the
+     * rung's name, and `reached <rung>` is how that sentence goes.
+     *
+     * `status` grants no rank and attempts nothing, so the guard's other two
+     * conditions were always true - which means EVERY well-written rank read
+     * was thrown away and the player got the raw sheet instead.
+     *
+     * The test is what rung is named. A sentence naming the rung the engine
+     * itself just reported is repeating the engine; a sentence naming a
+     * different one has moved them. That is the whole distinction, and it is
+     * the same shape as the fix for a house's intake bar: the words are
+     * ambiguous and the SUBJECT of them is not.
+     */
+    standsAt?: string
+): boolean {
     if (ADVANCED_UNAMBIGUOUSLY.test(text)) return true;
 
     const subjects = ['you', 'your', ...(who && who.trim() ? [forRegExp(who.trim())] : [])];
-    return new RegExp(
+    const claim = new RegExp(
         `\\b(?:${subjects.join('|')})\\b[^.!?]{0,40}\\b(?:attained|reached)\\b`
-        + `[^.!?]{0,60}\\b${RUNG_WORD}\\b`,
+        // LAZY TO THE FIRST RUNG WORD, THEN A SHORT TAIL. A rank's name does
+        // not end at its rung word - `Qi Condensation Layer 1` carries the
+        // number after it - and a capture that stopped at `Layer` could never
+        // match the rank the engine filed, so every rank read stayed flagged.
+        + `([^.!?]{0,60}?\\b${RUNG_WORD}\\b[^.!?]{0,12})`,
         'i'
-    ).test(text);
+    ).exec(text);
+    if (!claim) return false;
+
+    // The rung it named, against the rung they are on. Absent, nothing is
+    // excused and the check behaves as it always did.
+    const named = (standsAt ?? '').trim();
+    if (named.length === 0) return true;
+    return !new RegExp(forRegExp(named), 'i').test(claim[1] ?? '');
 }
+
+/**
+ * Prose reporting that what was asked went unanswered.
+ *
+ * ON THE ENDING AND NEVER ON THE STAGING. A narrator may have the question
+ * spoken aloud, or may treat it as the player's own query and simply answer
+ * it. Both are legitimate and this must not read as a vote on which. What it
+ * catches is the third thing, which is not: a coherent question that produced
+ * an answer, narrated as producing none.
+ *
+ * `nobody here to ask` on its own is deliberately NOT enough, because it is a
+ * true and ordinary sentence in an empty square that then goes on to answer.
+ * What makes it a violation is ANSWERING being the thing reported absent.
+ */
+const NOTHING_CAME_BACK = new RegExp([
+    // The question itself going nowhere.
+    String.raw`\bquestions?\b[^.!?]{0,40}\b(?:hangs?|hung|hanging)\b`,
+    String.raw`\bgo(?:es)?\s+unanswered\b`,
+    String.raw`\bwent\s+unanswered\b`,
+    String.raw`\bremains?\s+unanswered\b`,
+    // Nobody to give one. The ANSWERING is what has to be absent, not the
+    // company - see the note above.
+    String.raw`\b(?:no\s?one|nobody|no\s+person)\b[^.!?]{0,40}\bto\s+answer\b`,
+    String.raw`\bno\s+answer\b[^.!?]{0,20}\b(?:comes?|came|follows?|followed)\b`,
+    String.raw`\b(?:nobody|no\s?one)\s+(?:answers?|answered|replies|replied)\b`
+].join('|'), 'i');
 
 /**
  * Ways of saying somebody died, without the somebody.
@@ -498,10 +620,23 @@ export function auditNarration(
     // resolved no attempt. An attempt that FAILED is a legitimate thing to
     // write about, and prose about it will contain these words.
     const granted = (filed.ranksGained ?? 0) > 0;
-    if (!granted && filed.breakthroughAttempted !== true && claimsThePlayerAdvanced(text, filed.who)) {
+    if (!granted && filed.breakthroughAttempted !== true && claimsThePlayerAdvanced(text, filed.who, filed.standsAt)) {
         found.push({
             kind: 'invented_breakthrough',
             detail: 'prose announces an advancement; the engine granted no rank and resolved no attempt'
+        });
+    }
+
+    // A QUESTION THE ENGINE ANSWERED, NARRATED AS ANSWERING NOTHING.
+    //
+    // Opt-in: absent means the caller has not said whether this turn answered
+    // anything, and nothing is checked. `unclear` is the case that legitimately
+    // ends in a non-answer, and it files `false`.
+    if (filed.answered === true && NOTHING_CAME_BACK.test(text)) {
+        found.push({
+            kind: 'invented_absence',
+            detail:
+                'prose reports the question going unanswered; the engine answered it this turn'
         });
     }
 
@@ -820,7 +955,29 @@ export class ProviderNarrator implements Narrator {
                 continue;
             }
 
-            // A DECLINED STEP IS DROPPED, NEVER SUBSTITUTED
+            // DECLINING THE MODEL'S READING OF A CLAUSE IS NOT DECLINING THE
+            // CLAUSE. `plan` above substitutes the deterministic reading and
+            // runs it; this dropped the step instead, so one sentence got two
+            // treatments and the harsher one fell on the clause the model had
+            // described more fully. Played: "i go to the market and ask around"
+            // only asked around, because the model read the first clause as
+            // `move` and the table reads it as the free `market` - a costly verb
+            // where a cheap one would do, declined, and the clause went with it.
+            // `theWholeSentenceAsAPlan` would have put that same clause back on
+            // that same reading had the model omitted it.
+            //
+            // The guard's rule stands: what is substituted is the deterministic
+            // reading, so a model still cannot be why a turn spends days. Only
+            // for a clause the player typed, because for a step quoting nothing
+            // `verdict.action` is a reading of the WHOLE sentence; and only
+            // where something reads it, because `unclear` is not an act.
+            const itsOwnReading = quoted === null ? null : verdict.action;
+            if (itsOwnReading !== null && itsOwnReading.action !== FALLBACK_ACTION) {
+                declined.push(verdict.declined);
+                checked.push({ action: itsOwnReading, said: step.said });
+                continue;
+            }
+
             declined.push(verdict.declined);
             dropped.push(step);
         }

@@ -362,8 +362,16 @@ export const seclusionVerbs = {
         if (!sealed && !somewhereYouCouldFinishALongSitting(watching, atHome)) {
             const runs = aboutHowLongYouWouldGetHere(watching, atHome);
             const exposure =
-                `${watching} ${watching === 1 ? 'person' : 'people'} can see them sitting here, `
-                + `and nobody here answers to them. A stretch in a place like this runs about `
+                // SECOND PERSON, BECAUSE THIS ONE IS READ BY THE PLAYER.
+                //
+                // It goes into `facts.required`, which is appended to the prose
+                // verbatim wherever the narration does not already contain it -
+                // so a player reading second-person prose met "8 people can see
+                // THEM sitting here, and nobody here answers to THEM" directly
+                // underneath it. Measured in blind play. The dao-partner line
+                // fifteen lines below this one already says "beside you".
+                `${watching} ${watching === 1 ? 'person' : 'people'} can see you sitting here, `
+                + `and nobody here answers to you. A stretch in a place like this runs about `
                 + `${runs} days before somebody comes over about it.`;
             facts.lines.unshift(exposure);
             facts.required.push(exposure);

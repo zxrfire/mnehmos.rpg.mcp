@@ -998,11 +998,37 @@ export function factsForLook(
      */
     groundIsQuiet = true
 ): EngineFacts {
-    const lines = standingLines(cultivator, ambient);
     const where = placeName(cultivator);
     const who = describeCompany(company, cultivator.realmOrdinal, 'walking_up');
     const noticed = selfNoticing(cultivator, groundIsQuiet);
 
+    // ── A LOOK ANSWERS ABOUT THE SURROUNDINGS, NOT ABOUT THE LOOKER ──────
+    //
+    // FOUND BY PLAYING BLIND. A new player typed `where am I?` and got nine
+    // lines, of which the place was four words at the end of the first:
+    //
+    //     Shen Wuyou stands at Qi Condensation Layer 1, age 16, in Green
+    //     Water City.
+    //     Spirit root: Mutated Ice Root. Might 3, Insight 2, Fortune 3...
+    //     Unmarked, 50 of 50. Fed. 900 spirit stones in the purse.
+    //     The meridians are whole.
+    //     Newly at this rung, with nothing yet spent standing on it.
+    //     Serves no house...
+    //
+    // Seven of the nine are the character sheet. `lines` opened with
+    // `standingLines`, which is what `status` is FOR, so a question about the
+    // surroundings was answered self-first and the surroundings came last.
+    //
+    // THE PROSE HERE ALREADY KNEW. Two dozen lines down it composes
+    // `${where}. ${qiHere}` and then the company - place first, short, and
+    // correct. So the deterministic path answered the question and the channel
+    // handed to the narrator answered a different one, which is the worst
+    // version of this: the right answer existed in the same function.
+    //
+    // The sheet is not lost. `standingStructure` carries it in `structure`,
+    // which is the play log and the operator's channel, and `status` is one
+    // word away for a player who wants it.
+    const lines = [`${where}.`];
     if (standing) lines.push(standing);
     if (who) lines.push(who);
 
@@ -1036,6 +1062,13 @@ export function factsForLook(
     // say cannot be forgotten - it is a type error rather than a review note.
     // What is printed then is the REASON, which is the answer.
     const qiHere = theyCanTell(ground) ? ground.value : ground.because;
+
+    // AND THE GROUND ITSELF, WHICH ONLY THE PROSE USED TO GET. It reached the
+    // narrator by accident before, inside `standingLines`, and would have gone
+    // with the sheet - the one line in that block that was genuinely about the
+    // place and not about the person standing on it.
+    lines.push(qiHere);
+    if (noticed) lines.push(noticed);
 
     const prose = [
         `${where}. ${qiHere}`,

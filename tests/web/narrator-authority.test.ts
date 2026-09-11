@@ -153,7 +153,14 @@ describe('a hallucinating model cannot mutate state', () => {
         const userMessage = narrationCall.messages.find(m => m.role === 'user')!.content;
 
         expect(userMessage).toContain('WHAT THE ENGINE RULED');
-        expect(userMessage).toContain('Qi Condensation Layer 1');
+        // A fact THIS read produced, rather than a sample one. The rank stood
+        // here and a look no longer carries it: `factsForLook` used to open on
+        // the character sheet, so a question about the surroundings was
+        // answered self-first. See
+        // `a-question-the-engine-answered-is-not-narrated-as-silence.test.ts`.
+        // What this test is for is unchanged - everything the model is shown
+        // came from the engine - and the place is what a look rules on.
+        expect(userMessage).toContain('Clear River Ford');
         // And it is told, in the same call, that the facts are the whole truth.
         const systemMessage = narrationCall.messages.find(m => m.role === 'system')!.content;
         expect(systemMessage).toMatch(/Do not add outcomes/);

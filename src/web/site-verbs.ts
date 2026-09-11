@@ -25,6 +25,7 @@ import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-
 import { locationHistory } from '../engine/world/locations.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import { standingOf } from '../server/consolidated/cultivation-mortal.js';
+import { rankName } from '../engine/cultivation/realms.js';
 import {
     addToPouch,
     isGuidingErrorBody,
@@ -1054,7 +1055,18 @@ export const siteVerbs = {
     /**
      * The engine's own account of this turn, for the output-side check.
      */
-    filedOutcome(this: GameService, execution: Execution): FiledOutcome {
+    filedOutcome(
+        this: GameService,
+        execution: Execution,
+        /**
+         * The verb the turn ran, where the caller has it.
+         *
+         * Only `unclear` changes anything here, and a caller that does not pass
+         * it gets the honest default: a turn that produced a headline answered
+         * something. See `answered` below.
+         */
+        ranAs?: string
+    ): FiledOutcome {
         return {
             ranksGained: Math.max(0, execution.timeSkip?.deltas.realmOrdinal ?? 0)
                 + (execution.breakthrough?.outcome === 'success' ? 1 : 0),
@@ -1062,9 +1074,25 @@ export const siteVerbs = {
             // Read off the row rather than off anybody's sentence, which is the
             // whole point of this object.
             who: this.currentRun().cultivator.name,
+            // The rung they are on, so a faithful rank read is not mistaken for a
+            // claim that they moved. See .
+            standsAt: rankName(this.currentRun().cultivator.realmOrdinal),
             died: execution.timeSkip?.died === true
                 || execution.breakthrough?.outcome === 'death'
                 || !this.currentRun().cultivator.alive,
+            // WHETHER THE ENGINE ANSWERED WHAT WAS ASKED.
+            //
+            // Every turn but `unclear` did. `unclear` is the sentence the engine
+            // could not read, and prose about a question going nowhere is honest
+            // there and only there - see `FiledOutcome.answered` for the played
+            // defect, where a coherent question the engine answered in five
+            // ruling blocks was narrated as hanging unanswered in an empty
+            // square with two people standing in it.
+            //
+            // Off the action rather than off the facts: a read that legitimately
+            // finds nothing still ANSWERED, and keying on whether anything was
+            // found would let the one case this exists for through.
+            answered: execution.facts.headline.length > 0 && ranAs !== 'unclear',
             // What the engine named this turn that this cultivator does not
             // have. See `FiledOutcome.onOfferAndNotHeld` for the played defect.
             onOfferAndNotHeld: this.namedAndNotHeld(execution)
