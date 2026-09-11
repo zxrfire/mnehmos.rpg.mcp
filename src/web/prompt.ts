@@ -1494,14 +1494,17 @@ function theLifeBehindThemBlock(life: readonly string[]): string[] {
  * Condensation and above the Lid, which the ladder doc says is wrong at one end
  * by construction.
  *
- * Measured across three bands of the corpus, books weighted equally: the mean
- * paragraph falls from 36.7 words to 30.3 and 28.3 and the six-sentence
- * paragraph from 9.0% to 2.1% and 1.0%, price and favour words fall from 2.2
- * per hundred sentences to 0.7 and 0.2, offstage people reacting nearly trebles
- * from 0.9 to 2.7, and the median sentence does not move at all. The last is why
- * the block says the sentence must not change: a model told the register climbs
- * reaches for grandeur in the grammar, which is the one thing the corpus keeps
- * flat.
+ * Measured across two complete series arcs of twelve and nine books, weighted
+ * equally, with a property counting only if it trends across BOTH: the mean
+ * paragraph falls from 37.9 words to 32.2 and 28.3, the six-sentence paragraph
+ * from 8.4% to 2.8% and 1.0%, and forms of address roughly halve. Price and
+ * favour words fall from 1.6 per hundred sentences to 0.6 and 0.2, as a step at
+ * the bottom rather than a slope. Median sentence length has no consistent
+ * direction in either arc.
+ *
+ * That last is why the block says the sentence must not change: a model told the
+ * register climbs reaches for grandeur in the grammar, which is the one thing
+ * twenty-one books agree stays flat.
  *
  * Only the band NAME is sent. The rung is not, and the instruction says so,
  * because a narrator handed an ordinal states it and a player cannot perceive

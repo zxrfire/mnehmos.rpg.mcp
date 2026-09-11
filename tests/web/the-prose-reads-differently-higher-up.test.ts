@@ -7,19 +7,20 @@
  * Tribulation Transcendence is wrong at one end; the rule reached the prompt and
  * the selector did not, which made it advice a model could only guess at.
  *
- * Measured across three bands of the corpus before wiring it, books weighted
- * equally because one of them is ten times the length of another and pooling let
- * it dictate every figure. Only what separates the low books from the middle
- * ones with NO overlap is treated as a finding: the mean paragraph falls from
- * 36.7 words to 30.3 and 28.3, six-sentence paragraphs from 9.0% to 2.1% and
- * 1.0%, price and favour words from 2.2 per hundred sentences to 0.7 and 0.2,
- * and offstage people reacting nearly trebles from 0.9 to 2.7. The median
- * sentence does not move at all: 12.3 words, 13.0, 12.
+ * Measured across two complete series arcs of twelve and nine books, weighted
+ * equally because the longest book is ten times the shortest and pooling let one
+ * dictate every figure. A property counts only if it trends across BOTH arcs,
+ * book one through the last: the mean paragraph falls from 37.9 words to 32.2
+ * and 28.3, six-sentence paragraphs from 8.4% to 2.8% and 1.0%, one-sentence
+ * paragraphs rise from 22.8% to 29.7%, and forms of address roughly halve. Price
+ * and favour words fall from 1.6 per hundred sentences to 0.6 and 0.2, but as a
+ * step after the second book rather than a slope. Median sentence length has no
+ * consistent direction in either arc and stays between twelve and fifteen words.
  *
  * That last one is why the guidance says the SENTENCE must not change, and it is
  * the reason the bands are named rather than described as heights. A model told
  * only that the register climbs reaches for grandeur in the grammar, which is
- * the one thing the corpus keeps flat across the whole ladder.
+ * the one thing twenty-one books agree stays flat.
  *
  * What is pinned here is reach and variation, never wording: that all three
  * bands are tier 1 so the contrast is in every prompt, that a real played turn
