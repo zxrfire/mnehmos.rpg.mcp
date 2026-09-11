@@ -4704,6 +4704,33 @@ ${noticed}`;
             // would be a second answer to how a day costs a cultivator.
             async args => await handleCultivate(args as never) as Record<string, unknown>
         );
+        // A LISTING THE NEXT SENTENCE CAN POINT AT.
+        //
+        // FOUND BY PLAYING BLIND. The board named six trades - porter, ferryman,
+        // innkeeper, scribe, physician, caravan guard - and the next sentence
+        // was `i take the second one`, which bought a SWORD for ten stones.
+        //
+        // Every part of the resolver was already built and working.
+        // `standsForSomethingNamedLastTurn` reads ordinals, `whichOfTheNamedThings`
+        // indexes them, and both had been reading `namedThisTurn` all along. The
+        // gap was on the WRITE side, which is the same gap and the same sentence
+        // `nameWhatTheyGot` was written for: every writer was a market listing,
+        // so "the second one" resolved against the stall the player had walked
+        // past rather than the board they were looking at.
+        //
+        // Named in the order the tool returned them, because that is the order
+        // the player read them in and an ordinal means nothing otherwise. The
+        // WAGE is deliberately not carried: `ThingNamed.stones` means *spirit
+        // stones asked*, and putting a month's pay in it would print a price
+        // the board is not charging.
+        if (readingTheBoard) {
+            const listed = (result as { work?: readonly { name?: unknown }[] }).work;
+            if (Array.isArray(listed)) {
+                for (const line of listed) {
+                    if (typeof line?.name === 'string') this.nameWhatTheyGot(line.name);
+                }
+            }
+        }
         return this.fromToolResult('cultivation_mortal.work', 'work', result, 'The work');
     }
 

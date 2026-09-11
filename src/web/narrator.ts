@@ -516,6 +516,59 @@ const ADVANCED_UNAMBIGUOUSLY =
  * which is the shape {@link claimsThePlayerDied} already uses and for the same
  * reason.
  */
+/**
+ * The words that turn a crossing into a crossing that did not happen.
+ *
+ * Kept to forms that can only negate or defer. `no` is deliberately absent:
+ * "no rung above this one" is a true sentence beside a real claim, and letting
+ * it excuse one would open the guard to any prose that mentions a lack.
+ */
+const NOT_THAT_IT_HAPPENED = new RegExp([
+    String.raw`\b(?:not|never|nor|cannot|can't|won't|shan't)\b`,
+    // A subject that is nobody. `no` on its own is deliberately not here: "no
+    // rung above this one" is a true clause that can sit beside a real claim.
+    String.raw`\b(?:nothing|nobody|no\s?one|none)\b`,
+    String.raw`\b(?:have|has|had|did|do|does|is|are|was|were|will|would|could|should)n't\b`,
+    String.raw`\byet\s+to\b`,
+    String.raw`\bfar\s+from\b`,
+    String.raw`\b(?:short|shy)\s+of\b`,
+    String.raw`\bwithout\b`,
+    // The conditional and the deferred, which are the other two ways of
+    // naming a rung nobody has stood on: "before you reach", "when you reach",
+    // "until you reach", "if you reach", "so as to reach".
+    String.raw`\b(?:before|until|till|unless|when|once|if|whether|to)\b`
+].join('|'), 'i');
+
+/**
+ * Whether the claim that matched sits inside a clause that denies it.
+ *
+ * FOUND BY PLAYING BLIND, on TURN ONE of a fresh run. The player typed `where
+ * am i`, the engine answered with the place, the rung, the root and *0 of 100
+ * qi-units toward the next rank. Not yet eligible* - and the narration was
+ * thrown away as an invented breakthrough, so the first thing a new player ever
+ * read was the raw engine sheet with an apology under it.
+ *
+ * `ADVANCED_UNAMBIGUOUSLY` matches on the verb alone, by design: no house
+ * states its intake bar as *broke through*, so the phrase needs no subject. But
+ * it also needs no POLARITY, and the engine's own fact for that turn was a
+ * negative one. Any faithful sentence saying somebody has NOT crossed says
+ * "have not broken through to <rung>", which is the pattern exactly.
+ *
+ * So the same distinction the `standsAt` note already draws, one axis over: the
+ * words are ambiguous and what settles them is not in the verb. There it was
+ * the subject; here it is whether the clause asserts the thing or denies it.
+ *
+ * Scoped to the clause the match sits in, so "you have not broken through, and
+ * you broke through last year" still catches the second half.
+ */
+function insideAClauseThatDeniesIt(text: string, at: number): boolean {
+    const clauseStart = Math.max(
+        ...['.', '!', '?', ';', ',', ' - '].map(mark => text.lastIndexOf(mark, at)),
+        -1
+    );
+    return NOT_THAT_IT_HAPPENED.test(text.slice(clauseStart + 1, at));
+}
+
 function claimsThePlayerAdvanced(
     text: string,
     who: string | undefined,
@@ -542,7 +595,13 @@ function claimsThePlayerAdvanced(
      */
     standsAt?: string
 ): boolean {
-    if (ADVANCED_UNAMBIGUOUSLY.test(text)) return true;
+    // Every place it says it, not only the first: a paragraph that denies a
+    // crossing in one sentence and asserts one in the next is still a claim.
+    // See `insideAClauseThatDeniesIt` for the played defect.
+    const said = new RegExp(ADVANCED_UNAMBIGUOUSLY.source, 'gi');
+    for (let hit = said.exec(text); hit !== null; hit = said.exec(text)) {
+        if (!insideAClauseThatDeniesIt(text, hit.index)) return true;
+    }
 
     const subjects = ['you', 'your', ...(who && who.trim() ? [forRegExp(who.trim())] : [])];
     const claim = new RegExp(
@@ -555,6 +614,13 @@ function claimsThePlayerAdvanced(
         'i'
     ).exec(text);
     if (!claim) return false;
+
+    // Same polarity rule as above, measured from the VERB rather than from the
+    // start of the match: this pattern opens on the SUBJECT, so "you have not
+    // yet reached" carries its own `not` inside the match, where a test on the
+    // text before it cannot see it.
+    const verbAt = claim[0].search(/\b(?:attained|reached)\b/i);
+    if (insideAClauseThatDeniesIt(text, claim.index + (verbAt < 0 ? 0 : verbAt))) return false;
 
     // The rung it named, against the rung they are on. Absent, nothing is
     // excused and the check behaves as it always did.
