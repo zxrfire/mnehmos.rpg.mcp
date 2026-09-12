@@ -3,6 +3,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { LANE_NAMES, THE_LANES } from './the-lanes-a-sentence-can-go-down.js';
 import { fileURLToPath } from 'node:url';
 
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
@@ -23,7 +24,6 @@ import {
 } from './actions.js';
 import { MOST_CALLS_IN_ONE_TURN } from './a-sentence-can-be-more-than-one-call.js';
 import {
-    composeActionGlossary,
     composePlanSchemaFields
 } from './what-each-verb-is-for-in-the-players-words.js';
 import {
@@ -554,7 +554,17 @@ invent an omen to fill the space.`;
 /**
  * The verb list the classifier is choosing from, laid out for a prompt.
  */
-const ACTION_GLOSSARY = composeActionGlossary();
+/**
+ * The lanes, laid out for the router.
+ *
+ * Generated from the lane table for the same reason `ACTION_GLOSSARY` is
+ * generated from the action set: a second wording of a lane in a prompt string
+ * is a wording that goes stale the first time somebody edits the table.
+ */
+const LANE_GLOSSARY = LANE_NAMES.map(lane => {
+    const row = THE_LANES[lane];
+    return `  ${lane} - ${row.says}\n      intents: ${Object.keys(row.intents).join(', ')}`;
+}).join('\n');
 
 /**
  * Which verbs cost the player something, composed rather than written down.
@@ -636,20 +646,27 @@ Reply with a single JSON object and nothing else. No prose, no code fence, no ex
 outside the object.
 
 Schema:
-  {"action": <one of: ${ACTION_NAMES.join(' | ')}>,
+  {"lane": <one of: ${LANE_NAMES.join(' | ')}>,
+   "intent": <one of the intents listed under that lane>,
 ${composePlanSchemaFields()}
    "reason": <one short sentence>}
 
-Actions:
-${ACTION_GLOSSARY}
+Lanes. Pick the LANE first - what the player is doing - and then the intent inside it. You
+are not choosing between fifty-six engine routines; the engine works out which routine a
+lane and an intent stand for. Choosing the right lane and a rough intent is worth far more
+than agonising over the label.
+${LANE_GLOSSARY}
 
 Rules:
 - If the player is broke, hungry, or asking how to get money or food, "work" and "market"
   are almost always what they meant. Never answer that with "cultivate": sitting still
   burns the food they do not have, and it is the one action that can kill them for asking.
-- "action" MUST be one of the listed names. There is no other action. The list is short on
-  purpose: nearly everything social is "interact" with an "intent", and nearly everything
-  perceptual is "investigate". Reach for those before you settle for "look".
+- "lane" MUST be one of the listed lanes. If the intent you want is not listed under it, say
+  the nearest one and the engine will take the lane's ordinary reading - a right lane with a
+  rough intent is answerable, and a wrong lane is not.
+- Anything asked ABOUT THE PLAYER THEMSELVES - what they are, what they carry, what they
+  know, what they could learn, where they could go - is "consult". It is one lane on purpose:
+  the player does not know which drawer the engine keeps a fact in, and neither do you.
 - Problems in this world are meant to be solvable by negotiation, deception, alliances, escape,
   investigation, trading, faction politics, terrain, waiting, or finding someone stronger - not
   only by out-cultivating them. Route those through interact / investigate / move.

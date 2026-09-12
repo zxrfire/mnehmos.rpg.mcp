@@ -5,6 +5,7 @@
 import { z } from 'zod';
 
 import { ApproachLeverageSchema } from '../schema/cultivation.js';
+import { isALane, theVerbForThisLane } from './the-lanes-a-sentence-can-go-down.js';
 import {
     type SomebodyStandingHere,
     theNameTheVerbDropped
@@ -245,8 +246,34 @@ function absentRatherThanRejected(raw: unknown): unknown {
     return out;
 }
 
+/**
+ * A lane and an intent, turned into the verb they stand for.
+ *
+ * The model is asked for a LANE, which is a choice between thirteen things it
+ * can tell apart, rather than for one label out of fifty-six. Measured over 744
+ * played turns, the three verbs with no intent axis produced 63% of everything
+ * the game could not answer, and every verb that had one refused nothing.
+ *
+ * Runs before the schema so nothing downstream knows lanes exist: by the time
+ * `PlannedActionSchema` sees the object it carries an `action` like any other.
+ * A response that named a verb directly still works and is left alone - the
+ * table's own readings arrive that way, and so does a model that ignored the
+ * lanes.
+ */
+function theLaneExpanded(raw: unknown): unknown {
+    if (typeof raw !== 'object' || raw === null) return raw;
+    const said = raw as Record<string, unknown>;
+    if (typeof said.action === 'string' && said.action.length > 0) return raw;
+
+    const lane = typeof said.lane === 'string' ? said.lane.trim().toLowerCase() : '';
+    if (!isALane(lane)) return raw;
+
+    const intent = typeof said.intent === 'string' ? said.intent : undefined;
+    return { ...said, action: theVerbForThisLane(lane, intent) };
+}
+
 export function validatePlan(raw: unknown): { ok: true; action: PlannedAction } | { ok: false; reason: string } {
-    const parsed = PlannedActionSchema.safeParse(absentRatherThanRejected(raw));
+    const parsed = PlannedActionSchema.safeParse(absentRatherThanRejected(theLaneExpanded(raw)));
     if (!parsed.success) {
         const issue = parsed.error.issues[0];
         const path = issue?.path.join('.') || 'response';
