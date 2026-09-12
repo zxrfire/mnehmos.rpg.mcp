@@ -558,6 +558,10 @@ import {
     whatIsLiveForYouHere,
     type TheLiveSituation
 } from './what-is-live-for-you-here.js';
+import {
+    whatThereIsToWaitFor,
+    type ADatedThing
+} from './what-there-is-to-wait-for.js';
 // `billsOnTheWall` and not `readTheWall` for the affordance gathering below.
 // The two answer the same question and only one of them WRITES: reading the
 // wall grants every house on it through `learnIfNew`, and this runs on every
@@ -3592,9 +3596,23 @@ export class GameService {
                 return this.hunt(run, cultivator, ambient, action.target);
 
             case 'wait': {
+                // ── WAITING UNTIL A THING THE WORLD HAS A DATE FOR ────────
+                //
+                // The span is read off the sentence one layer up and a named
+                // event is not a span, so `i wait until the intake` arrived
+                // with no days and took the one-day default against a wall
+                // that said 24. The date was already computed; the only thing
+                // missing was somebody asking for it.
+                let waitingDays = action.days ?? SHORT_ACTION_DAYS;
+                if ((action.target ?? '').trim().length > 0) {
+                    const landed = this.whenTheNamedThingFalls(
+                        cultivator, run, action.target as string
+                    );
+                    if (landed.settled === null) return landed.refusal;
+                    waitingDays = landed.settled.inDays;
+                }
                 const waiting = await this.shortSkip(
-                    run, cultivator, ambient, WAITING_FOCUS, 'Waiting',
-                    action.days ?? SHORT_ACTION_DAYS
+                    run, cultivator, ambient, WAITING_FOCUS, 'Waiting', waitingDays
                 );
                 const noticedWaiting = this.notice(cultivator, run, 'wait');
                 if (noticedWaiting) {
@@ -4849,6 +4867,67 @@ ${noticed}`;
         };
     }
 
+
+    /**
+     * When the thing a wait names actually falls, or what there is instead.
+     *
+     * FOUND BY PLAYING, engine-only at Wind Turn: `i wait until the intake`
+     * and `i wait for the intake` both spent ONE DAY, with the wall three
+     * lines above saying the soonest was 24 days off. The span reader takes a
+     * span and an event is not one, so the sentence arrived with no days and
+     * took the handler's default - and the turn then reported success, which
+     * is worse than an answer the player can act on.
+     *
+     * `whichHouseThePaperMeans` first, because `the intake` is a reference to
+     * paper rather than a name and that read already owns what it means: one
+     * bill up and it binds, two and it points at neither. What comes back is a
+     * house name, which is what the matcher can then work with.
+     *
+     * The answer to a phrase that dates nothing is the dated things, put back
+     * as a list. Never a day: a day nobody asked for is the defect.
+     *
+     * The refusal is built only where there is one to build. `freeAction`
+     * increments the turn, so composing it beside a settled answer would spend
+     * a turn on the branch that did not happen.
+     */
+    private whenTheNamedThingFalls(
+        cultivator: Cultivator,
+        run: Run,
+        said: string
+    ): { settled: ADatedThing; refusal: null } | { settled: null; refusal: Execution } {
+        const dated = this.datedThingsHere(cultivator, run);
+        const paper = whichHouseThePaperMeans(said, () => ({
+            bills: dated.filter(thing => thing.onPaper).map(thing => ({ houseName: thing.name }))
+        }));
+        const landed = whatThereIsToWaitFor({
+            askedFor: paper.house ?? said,
+            dated,
+            likeness: matchScore,
+            closeEnough: MATCH_THRESHOLD,
+            nearEnoughToOffer: WORTH_OFFERING
+        });
+        if (landed.settled !== null) return { settled: landed.settled, refusal: null };
+
+        const facts = landed.couldHaveBeen.length === 0
+            ? factsForRefusal(
+                'Nothing here has a day on it.',
+                `You settle in to wait for ${said}, and there is nothing for the waiting to `
+                + 'end on: no paper posted here with a date on it, and no word of yours '
+                + 'falling due. Name a span instead and the days are yours to spend.',
+                `wait: "${said}" named, 0 dated things here. Nothing written, no time passed.`
+            )
+            : factsForAQuestionPutBack(
+                landed.couldHaveBeen.length === 1
+                    ? 'You did not say when.'
+                    : 'More than one of them, and you did not say which.',
+                `You settle in to wait for ${said}. What has a day on it here is this, and `
+                + 'you have not said which of it you meant.',
+                landed.couldHaveBeen.map(thing => thing.saying),
+                `wait: "${said}" reached ${landed.couldHaveBeen.length} of ${dated.length} `
+                + 'dated thing(s). Nothing written, no time passed.'
+            );
+        return { settled: null, refusal: this.freeAction(run, 'wait', facts) };
+    }
 
     /**
      * The listing put back, when a pointer had nothing or too much to point at.

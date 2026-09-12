@@ -57,14 +57,15 @@ import {
 } from '../server/consolidated/sect-manage.js';
 import { holdsACopyOf } from '../server/consolidated/technique-manage.js';
 import { stillStands } from './choosing-what-to-do-when-a-seclusion-is-broken.js';
-import { rosterFor, sectBoardFor } from './encounters.js';
+import type { ADatedThing } from './what-there-is-to-wait-for.js';
+import { openOathsHeldBy, rosterFor, sectBoardFor } from './encounters.js';
 import {
     MATCH_THRESHOLD,
     matchScore,
     resolveTechnique,
     worldLocationFor
 } from './entities.js';
-import { factsForRefusal, factsForToolResult, placeName, theRung } from './facts.js';
+import { factsForRefusal, factsForToolResult, howFarOff, placeName, theRung } from './facts.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
 import { readFlag } from '../server/consolidated/cultivation-support.js';
@@ -1189,6 +1190,60 @@ export const situatedReads = {
             withinReach,
             daysToTheSoonest: Math.max(0, Math.round(soonest - onDay))
         };
+    },
+
+    /**
+     * Everything this cultivator could wait ON, with the day it falls.
+     *
+     * Two sources, and neither is new: the paper posted where they are standing,
+     * and the words they have given. Both were computed and dated before
+     * anybody typed a sentence - `whatIsLiveForYouHere` states the first on the
+     * opening, and the ledger read states the second - and waiting reads the
+     * same rows rather than keeping a list of its own.
+     *
+     * `billsOnTheWall` and not `readTheWall`, for the reason the import comment
+     * in `turn-engine.ts` gives: resolving a sentence must not grant a player
+     * every house on the wall. A date already past is dropped; it is a fact
+     * about the calendar and not a thing anybody can wait for.
+     */
+    datedThingsHere(this: GameService, cultivator: Cultivator, run: Run): ADatedThing[] {
+        const place = placeName(cultivator);
+        const onDay = Math.floor(run.elapsedDays);
+        const ground = postingGroundOf(place);
+        const bills = ground === 'unplaceable' ? [] : billsOnTheWall({
+            field: openDoorsInTheWorld(),
+            placeName: place,
+            ground,
+            placeProvinceId: provinceOfPlace(place),
+            onDay,
+            seed: run.seed
+        });
+
+        const dated: ADatedThing[] = bills
+            .filter(bill => bill.opensOnDay > onDay)
+            .map(bill => ({
+                // The house and the word for the paper, because a player says
+                // either: "the intake" reaches every bill and settles only where
+                // one is up, and "the Cold Sword Sect intake" reaches one.
+                name: `${bill.houseName} intake`,
+                saying: bill.saying,
+                inDays: bill.opensOnDay - onDay,
+                onPaper: true
+            }));
+
+        for (const sworn of openOathsHeldBy(this.repos, cultivator.id)) {
+            if (sworn.dueOnDay === null || sworn.dueOnDay <= onDay) continue;
+            const what = (sworn.terms ?? sworn.description).trim();
+            dated.push({
+                name: what,
+                saying: `${what} Due on day ${sworn.dueOnDay}, which is `
+                    + `${howFarOff(sworn.dueOnDay - onDay)}.`,
+                inDays: sworn.dueOnDay - onDay,
+                onPaper: false
+            });
+        }
+
+        return dated.sort((a, b) => a.inDays - b.inDays);
     },
 
     /**

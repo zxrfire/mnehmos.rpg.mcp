@@ -2629,6 +2629,34 @@ export const SITTING_THAT_IS_NOT_CULTIVATION = new RegExp([
 ].join('|'), 'i');
 
 /**
+ * The thing a wait is waiting ON, when the sentence names one instead of a span.
+ *
+ * A determiner is required, and it is the whole of what keeps this narrow. "I
+ * wait for a while" and "I wait for him" carry no determiner and stay the
+ * one-day wait they have always been; `the intake` and `the Sand Well Caravan
+ * intake` are references to something the world has a date for, and the handler
+ * is the only layer that can tell which.
+ *
+ * NOT EXPORTED. The spelling repair harvests its vocabulary from this module's
+ * namespace, and these are ordinary English words rather than names anybody
+ * would misspell.
+ */
+const WAITING_FOR_A_DATED_THING =
+    /\b(?:until|till|til|for)\s+((?:the|that|this)\s+[a-z0-9''-]+(?:\s+[a-z0-9''-]+){0,4})\b/;
+
+/**
+ * Noun phrases that read like an event and that nothing in the world dates.
+ *
+ * A stretch of the day has always cost one day here and must keep costing one:
+ * "I wait for morning" is in the standing refusal corpus, and turning a
+ * sentence that worked into a refusal is the fix doing the damage it was
+ * written to undo. The recovery nouns are the branch's own vocabulary two lines
+ * above, read here so a wound cannot become a thing with a date on it.
+ */
+const NOTHING_THE_WORLD_DATES =
+    /^(?:the|that|this)\s+(?:morning|night|nightfall|dawn|daybreak|dusk|evening|sunrise|sunset|sun|moon|day|days|next day|following day|time|moment|while|hour|hours|weather|rain|storm|snow|tide|wound|wounds|injury|injuries|meridians?|bleeding|pain|swelling|qi|bruising)\b/;
+
+/**
  * Phrases where an attack word is part of an idiom about something else.
  */
 const AN_ATTACK_WORD_INSIDE_AN_IDIOM =
@@ -5314,7 +5342,19 @@ function planIntent(input: string): PlannedAction {
         // intended", to somebody who had just typed ten years. Bare "I wait"
         // still costs a day, so a misparse is no more expensive than before.
         const waited = parseDuration(text);
-        return { action: 'wait', ...(waited !== null ? { days: waited } : {}) };
+        if (waited !== null) return { action: 'wait', days: waited };
+        // AND WAITING UNTIL A THING THE WORLD HAS A DATE FOR, which is the same
+        // defect one line up with an event in place of a span: "I wait until
+        // the intake" spent a day against a wall that said 24. The phrase goes
+        // over as a target and the handler dates it - this layer has no wall to
+        // read - and where it dates nothing the answer is what there IS to wait
+        // for, never a day nobody asked for.
+        const until = WAITING_FOR_A_DATED_THING.exec(text);
+        const named = until ? until[1].trim() : '';
+        if (named.length > 0 && !NOTHING_THE_WORLD_DATES.test(named)) {
+            return { action: 'wait', target: named };
+        }
+        return { action: 'wait' };
     }
 
     // look

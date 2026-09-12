@@ -459,7 +459,16 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
      * when it reaches nobody - because a telling that reaches nobody is not a
      * telling, and the person has to be somewhere the player can speak to them.
      */
-    'tell'
+    'tell',
+    /**
+     * WHAT THE WAITING IS WAITING ON, where the sentence named a thing instead
+     * of a span. Resolved against what the world has a date for - the paper on
+     * this wall, the words this cultivator has given - and refused with those
+     * when it reaches none of them, because "I wait until the intake" spending
+     * one day is the engine reporting success on a sentence it did not read.
+     * Absent, the wait is bare and still costs a day.
+     */
+    'wait'
 ] as const;
 
 /**

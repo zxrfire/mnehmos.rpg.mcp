@@ -395,8 +395,11 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             "what roads are open to me".`
     },
     wait: {
-        takes: ['days'],
-        says: `let a day go by doing nothing in particular.`
+        takes: ['days', 'target'],
+        says: `let time go by doing nothing in particular. "days" (default 1); "target" names a
+            thing the world has a date for - an intake posted here, a word falling due - and
+            the engine spends the days between now and it. A name nothing here answers to is
+            met with what does have a day on it, never with a day nobody asked for.`
     },
     work: {
         takes: ['days', 'target'],

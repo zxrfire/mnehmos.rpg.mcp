@@ -116,7 +116,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`teacher`](#teacher) | - | nothing | yes | yes | - |
 | [`destinations`](#destinations) | - | nothing | yes | yes | - |
 | [`roads`](#roads) | - | nothing | yes | yes | - |
-| [`wait`](#wait) | `days` | time | yes | - | - |
+| [`wait`](#wait) | `days` `target` | time | yes | - | - |
 | [`work`](#work) | `days` `target` | time | yes | - | - |
 | [`market`](#market) | - | nothing | yes | yes | - |
 | [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [18](#sect) |
@@ -410,11 +410,11 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `wait`
 
-let a day go by doing nothing in particular.
+let time go by doing nothing in particular. "days" (default 1); "target" names a thing the world has a date for - an intake posted here, a word falling due - and the engine spends the days between now and it. A name nothing here answers to is met with what does have a day on it, never with a day nobody asked for.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'wait'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.shortSkip` · the deterministic parser reaches it · spends in-world time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'wait'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 
-Takes `days`.
+Takes `days`, `target`.
 
 ### `work`
 
