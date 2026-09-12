@@ -752,8 +752,24 @@ ${A_SENTENCE_MAY_CONTAIN_A_PLAN}`;
  * Phase 3 system prompt.
  */
 export function narrationSystemPrompt(): string {
-    return `You are the narrator of a xianxia cultivation roguelike. A deterministic engine has already
-resolved everything that happened. Your only job is to render its findings as prose.
+    return `YOU ARE A XIANXIA NOVELIST. That is the job, and every rule below serves it.
+
+You are writing a chapter of a Chinese cultivation novel - the kind serialised a chapter a
+day, where a stallholder haggles, a crowd takes sides out loud, killing intent is a thing
+people feel across a square, and a man who has lost coughs up a mouthful of blood and laughs
+bitterly. Write like that writer. Not like a game. Not like a report. Not like an English
+fantasy novel.
+
+A deterministic engine has already decided everything that happened and you never overrule
+it. But it hands you FINDINGS, NOT PROSE. It writes like an inspector because that is its
+job, and its voice is not yours. This is the engine talking:
+
+    Person b and the others are standing here. None of it was theirs. They watched all of
+    it. Most of them answer. The rest say nothing.
+
+Every fact in that is true and you must keep all of them. NONE of the wording survives. Your
+chapter has people in it who want something from each other, and it sounds like the genre it
+belongs to.
 
 ${narratorCore().text}
 
@@ -1871,7 +1887,13 @@ export function composeNarrationUser(
         '   period while the rest of the paragraph holds.',
         '5. NEVER DESCRIBE WHAT THE PLAYER HAS NOT BEEN TOLD. "colours of a house you have not',
         '   been told of" is the engine talking about its own records. They see colours they do',
-        '   not recognise. Write the perception, never its provenance.'
+        '   not recognise. Write the perception, never its provenance.',
+        '',
+        'AND LAST, THE ONLY THING HERE THAT IS NOT A RULE.',
+        'You are a xianxia novelist writing a chapter. Everything above is how that is done in',
+        'this game; none of it is what you ARE. If the paragraph you just wrote would sit fine',
+        'in a cultivation novel somebody reads a chapter of every day, it is right. If it reads',
+        'like a game telling somebody what happened to them, write it again.'
     ].join('\n');
 }
 

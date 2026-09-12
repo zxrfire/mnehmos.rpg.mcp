@@ -1,258 +1,124 @@
 # Open questions
 
-Everything waiting on your judgement, worst-first within each group. Written overnight
-while agents ran; I did not act on any of these unilaterally.
+Rewritten after your rulings. Everything you answered is gone from here and is being
+built; what is left is either still genuinely open, or a decision of mine you may want to
+reverse. Written the night of 11-12 September.
 
 ---
 
-## THE HEADLINE: there is not enough to do, and it is about fourfold
+## What is being built right now, from your rulings
 
-Measured, not guessed. A new instrument
-(`scripts/probe-is-there-enough-to-do-and-can-it-be-reached.ts`) swept **222 squares** —
-all 37 named places, at the three band floors, in two pinned worlds, ~100 minutes,
-model-free.
+Six agents, so you can tell what landed from what did not:
 
-| band | acts available | reads available |
-|---|---|---|
-| at the bottom | 4.0 | 4.0 |
-| through the middle | 3.3 | 4.7 |
-| at the top | 3.3 | 4.7 |
-
-**It gets WORSE as you climb, and above the bottom band there is more to look at than to
-do.** It is also flat across the map — a city offers 4.0 and a hamlet offers 4.0.
-
-**Eight verbs are ever live out of the whole action set**, and the two live everywhere,
-`site` and `move`, are both ways of LEAVING.
-
-**And the engine will not honour its own menu.** Typing back the sentences it offered:
-**780 offered, 127 refused — 16.3%.** The most-offered act in the game is refused a third
-of the times it is offered.
-
-| advertised | bottom | middle | top | the gate |
-|---|---|---|---|---|
-| duties on a board | 100% | **0%** | **none advertised** | pitched below where you stand |
-| arts on a stall | 100% | **0%** | **0%** | the book ends at or below your rung |
-| goods for sale | 72% | 1% | 0% | usable band and price |
-| dao ground | 0% | 2% | 6% | `not_of_the_house` x666 |
-
-**A year of life produces one or two sentences about the world.** Twenty years at the top:
-7300 days lived, **12 lines**. In one pinned world a one-year sitting came back with the
-inspector saying *"nothing reached this cultivator. 166 event(s) passed unheard."*
-
-**The agent's judgement, unhedged and I agree with it:** *"No. This world does not
-currently have enough to do to feel like the genre, and the deficit is not marginal."*
-
-**The good news is in the same numbers: almost none of this is a missing subsystem.** The
-duty board already generates postings at every rung and is gated off for anyone not on a
-roll. The stall catalogue tops out at Foundation Establishment Early. The dao-ground
-refusal is one reason 666 times. Each is ONE NUMBER OR ONE GATE.
-
-Thinnest first, for whoever takes the next pass:
-1. the board above the bottom band
-2. the stall's ceiling
-3. `not_of_the_house` on dao ground
-4. what a span of time delivers, and the arrival that should land when a sitting ends
-5. **a residence** — the one genuinely absent CATEGORY, and the only item here that would
-   buy a whole column of new things to do
-
-**Question:** which of these do you want taken first? (1) to (3) look like an evening
-each. (5) is a real design job.
+| | your ruling |
+|---|---|
+| **elder life + sect diplomacy** | the patriarch gives orders, not requests; postings to better cities; taking a disciple; auction both ways |
+| **dao ground + haggling** | ground is public / private / restricted, not a membership test; haggling is item-for-item and a refusal tells you what would work |
+| **news travels** | two axes, distance and importance; a breakthrough files a deed scaled by rung; a sitting delivers what arrived IF somebody would deliver to you |
+| **inventory + residence + renames** | one general inventory, not bespoke; a residence holds things and NPCs have them; manuals are complete / missing sections / ruined; rename the essayist encounters |
+| *(landed)* | the narrator is told it is a xianxia novelist, not a renderer of findings |
+| *(queued)* | the tests typecheck session |
 
 ---
 
-## A. Things I think are bugs, and would fix unless you say otherwise
+## Still open, and I could not decide them for you
 
-### 1. A breakthrough is not news, and in this genre it always is
-`aDeedEntersTheWorld` is called from fights and from sites. It is NOT called from the
-breakthrough path. So a player crosses a realm and nobody in the world ever hears about
-it. The corpus makes a breakthrough the most talked-about thing that happens: people
-react out loud, the boast is the SPEED of it, sects forbid internal fighting during one
-because that is when somebody is open, and it draws tribulation.
+Nothing. You cleared all three before going to bed, and they are routed:
 
-**Question:** file the deed, and scale how far it travels by rung — a first-rung step is
-local, a rung most people never see travels? That mirrors what destruction now does.
+- **apex arts** - every apex house holds at least one immortal and one chaos art, their
+  spent-or-kept state varied deliberately, and the giving of them political: only to the
+  chosen, only once proven. Counting comes first, so we know what the catalog holds today.
+- **subcontracting** - approved and building. The board still belongs to the house and a
+  rogue still cannot take from it; a disciple who HAS taken a duty can pay somebody else
+  to do it. Both directions, and the rogue-being-paid direction matters most because it
+  is the one that answers "a rogue has nothing to do".
+- **a rogue's quiet decade** - deliberate, and it stays quiet. But INTERRUPTION is not
+  gated on standing: two juniors brawling disturb a senior, and that is a trope rather
+  than a delivery. Delivery is gated, interruption is not.
 
-### 2. Time in seclusion is dead world-time
-Played: five years intended, one year spent, provisions ran out honestly, accounting was
-exact. And NOTHING reached the player — no message waiting, no caller turned away, no
-news. In the genre, emerging is when the backlog lands: *"a jade slip that had arrived
-half a year ago, informing him that..."*, somebody at the door with a pill bottle. The
-named price of a long sitting is being *"forgotten by the world"*, and that price is only
-legible if the world visibly moved.
+## Standing task: the elder pass
 
-**Question:** should coming out of a long sitting deliver what happened while you were
-under? I suspect the world driver already produces the events and nothing surfaces them.
+Left for me before you slept:
 
-### 3. "I take the job" after reading the board gives you day labour
-Read the duty board, see one 20-day contract, say "I take the job" — and you get three
-months of Shipmaster work instead. Not a refusal, so it is outside the blank-look
-problem; it is mis-targeting. Both readings are honest, but the board was just printed.
+> "don't forget to remind yourself to do a pass over this other stuff cuz clearly there is
+> SOMETHING to do for elders and the player can be an elder"
 
-**Question:** worth bending routing precedence for, or leave it?
+Two claims in that, and I am checking BOTH rather than taking either on faith:
 
-### 1c. An ADMIN turn returns before the world is loaded
-`this.atHand = await this.loadWorld()` runs after an admin turn returns, so a service
-whose ONLY turn so far was an admin one holds no world, and every world-facing read
-honestly answers "nobody here". It made the first cut of the affordance probe report 0
-goods and 0 roads on every square; the same square reads 3 and 23 once a `look` is played
-first.
+1. **The player can become an elder.** Verify the path is reachable by PLAYING, end to
+   end - joining, rising, holding an office - not merely arrangeable with ADMIN. A rank
+   nothing can reach is content that does not exist.
+2. **There is something for an elder to do.** The affordance probe measured 3.3 acts a
+   square at the top band against 4.0 at the bottom, so the game currently gets THINNER as
+   you climb. If the elder machinery is wired and simply not reachable, that is a very
+   different fix from it not being wired.
 
-Harmless in play, because a player does not open with ADMIN. It silently falsifies any
-measurement that arranges with ADMIN and then reads — which is most of them.
+An agent is building elder life in parallel - the patriarch's orders, postings, taking a
+disciple, auction. This pass is mine and is about REACHABILITY, which is the half an agent
+building features will not check on its own.
 
-### 1d. The duty board is empty for anyone not on a roll, by an argued decision
-`whatTheHouseItselfNeedsDone` returns `[]` without membership, so 30 of 47 rungs show a
-rogue an empty board. That is pinned by a deliberate test in
-`a-house-posts-what-it-needs-doing.test.ts`, so it is somebody's argued position rather
-than a bug — but it is also the single biggest reason there is nothing to do above the
-bottom band.
+**FIRST PASS DONE, and the answer to your first claim is YES.** Played it: join a house,
+ask to be promoted, and the engine answers
 
-**Question:** revisit it? A rogue cultivator with no work to take is most of the genre's
-protagonists for their first hundred chapters.
+    Sand Well Caravan will not raise Shen Wuyou to Carrier yet: needs realm Qi Condensation
+    Layer 5 (currently Qi Condensation Layer 1) and 100 contribution
 
-### 1b. A book cannot be smashed, though a pill can
-Found by playing, one turn after buying:
+which names the gate and exactly what would change it. The promotion machinery is wired
+for the player, not only for the simulation. There IS a path.
 
-    what am I carrying  ->  Books: Lesser Qi-Gathering Manual, ...
-    I smash the manual  ->  "...You are carrying nothing."
+**And the ladder is already visible, through a read almost nothing reaches.** `sect` with
+intent `standing` answers:
 
-A counted PILL destroys correctly (*"Qi-Gathering Pill is gone. There is nothing left
-of it to put anywhere."*). A counted BOOK is not in the destroy verb's reach at all, so
-the engine contradicts its own inventory one turn later. That is worse than a refusal —
-it is a false statement about the player's own pack.
+    Skin of Sand Well Caravan, 0 contribution, 2 spirit stones a month.
+    Nine Boards Qiu stands highest in it, at Core Formation Late and titled Waterman.
+    Carrier wants Qi Condensation Layer 5, which is 4 rungs up and 100 contribution.
 
-Almost certainly just that books are held separately from the pouch and
-`whatIsWithinReachOf` sees one and not the other. Small.
+Membership, rank, stipend, who is above you, what the next rung costs. Your visibility
+principle, already satisfied - by a read the natural sentences do not reach.
 
-### 2b. The catalog states a tribulation rule the engine does not implement
-`src/data/cultivation/inheritance-trials.ts` says outright: *"Heavenly tribulation destroys
-nearly everything the cultivator was carrying. What comes off a tribulation grave is a short
-list, and every item on it has survived the heaviest thing in the world. Anybody who died any
-other way leaves a full inventory that nothing has ever tested."* And of one trial: *"That
-ratio is the rule this catalog is built on."*
+**Three defects found, one fixed:**
 
-`estate-at-death.ts` receives a `DeathCause` and uses it for exactly one thing — whether
-somebody looted the body (`somebodyDidThis`, true only for `combat_defeat`). **A tribulation
-death leaves the same full inventory as dying of old age.** The authored trials are built on
-a ratio the live world does not produce.
+- FIXED: the sect listing said *"You are not on anybody's roll and no house has been asked
+  yet"* to somebody who had joined a turn earlier. It was gated on whether any house WOULD
+  admit you, never on whether one already had - so the engine contradicted its own
+  `sectId`. It landed on "what sect am I in", a direct question about the membership it
+  was denying.
+- ROUTED to the pattern-table agent: `what sect am I in` and `what house am I in` fall
+  through to the catalogue of houses that would take you, and `am I in a sect` is a blank
+  look. All three should reach `standing`.
+- ROUTED: `what is my rank` reaches `status`, which prints realm, root and attributes and
+  never names the house or the rank.
 
-This now sits one line from working: an agent just added "what comes off a body is marked by
-where it fell", keyed on the place's danger. Tribulation is the same shape keyed on the
-CAUSE, and it is the one cause the catalog already argues for.
+## Decisions of mine; reverse them if you disagree
 
-And it connects to what you said about a sword blocking tribulation lightning — that is the
-same rule seen from the item's side.
+### 4. Turn 0 sits outside the corpus band on purpose
+You ruled it the exception: it is about who you are, so it is narration and nobody needs
+to speak. It runs 21% speech against 24-38% everywhere else, and is the longest turn.
 
-**Question:** should the cause of death mark what comes off the body, the way the place now
-does?
+### 5. I stopped tuning the one-liner rate
+Counting said 6-30% by book. Reading said the 30% outlier is the one work by a different
+author; the other 23 run 7.2-15.2%, median 9.1%. Composition matters more than rate: two
+thirds are a flat act or reveal, a fifth a line of speech alone, an eighth the body doing
+one thing.
 
-### 3b. "Local" gossip is not local, it is just quiet
-Your ruling was *"earth people still gossip ... it is just less important"*. Destruction
-now grades correctly by significance, and earth-and-below is genuinely not silent —
-witnesses are drawn, the fact is on the record — but `circulating` has NO PROXIMITY TERM.
-So a minor event is quiet EVERYWHERE rather than known nearby and unknown far away. The
-near/far axis your ruling implies does not exist yet.
-
-Related, found the same way: witnesses are stored on a fact, but `linkFactToWhoItNames`
-links only the named ACTORS. So somebody who watched a thing happen does not carry it on
-their own record, and cannot later be the one who tells you about it — which is most of
-what a witness is for.
-
-**Question:** worth building the near/far axis? It is the difference between "small news"
-meaning low-ranked and it meaning local.
+### 6. Attribution is improving and I am leaving it alone
+The corpus carries no speech verb on 75% of its dialogue paragraphs. We were at ~100%;
+after telling the narrator it is a novelist it reads 33-50%. I am not tuning it further
+because the metric counts a closed verb list and cannot see "a voice drifts from the
+crowd".
 
 ---
 
-## B. Design questions I could not answer for you
+## For the morning, not tonight
 
-### 4. There is no haggling
-The corpus haggles constantly — delaying to lower a price, refusing one out loud,
-*"he wanted to delay and lower the price"*, *"That's... that's way too expensive!"*.
-Our prices are fixed and `haggle` routes to the market read. A whole class of
-interaction is absent.
+### 7. The prose is close and the remaining gap is paragraph length
+With the novelist identity in, speech is in band (21-43% against 24-38%) and the crowd
+talks properly - *"He's just staring at the boards," a voice drifts from the crowd.
+"Staring won't buy him a way out of this hole."* What is still off is that some turns run
+long: one came back at a 53-word median against a corpus 21-40.
 
-**Question:** is price negotiation a mechanic you want, or are fixed prices deliberate?
-
-### 5. The numbers on heaven+ manual uses — ANSWERED WELL, CONFIRM IF YOU LIKE
-heaven 3, immortal 1, chaos 1; mortal and earth unlimited. Argued rather than picked:
-
-- **Heaven 3** is read off `copiesOf` — an inner or elder shelf carries 1-3 copies, so
-  three readings a copy is a house founding a handful of people on its own art and then
-  needing a master to spend 60-250 years writing it out again. That makes `manuals.md`'s
-  existing claim TRUE rather than asserted: *"a house with one copy of the thing its
-  patriarch cultivates cannot give it to forty people."*
-- **Immortal 1 and chaos 1** because `possessions.ts` already says nothing below the Lid
-  makes either grade, there is a finite number in the world, and no process adds one.
-- **They tie on purpose.** `GRADE_ORDER` says in as many words that it is not a power
-  ordering, so a ladder at the top would be this rule inventing one.
-- Uses are per ROW, so `copyCount` multiplies — two heaven copies is six readings.
-
-**Question:** confirm, or retune. A test pins them so a change is a deliberate edit.
-
-### 5b. The manual rule binds the player and not the world
-Flagged by that agent and I agree it matters: `grantBooksToMembers` is a pure projection
-that hands houses their books at world open, and binding uses there would change what
-every house's apex book is worth. So today a player's heaven manual runs out and an
-NPC house's does not. That is the mirror image of this repo's usual defect.
-
-**Question:** should the world be bound by the same rule, knowing it repricing every
-house's shelf?
-
-### 6. Encounter names that read like designer headings
-A few of the 107 are essayist rather than in-world: *"What a Poor Prefecture Has Instead
-of Monsters"*, *"The Arithmetic, Acted On"*, *"A Region With a Ceiling"*, *"What Happens
-Afterwards"*. I measured that ZERO of the 107 reach the player in 60 turns of play — the
-`summaryTemplate` is what is read — so this is latent, not live. But the duty-board
-refusal did print one once.
-
-**Question:** rename the handful, or leave them as internal labels?
-
-### 6b. An engine module cannot read the reverse volume index
-`estate-at-death.ts` needs to know which ordered work a volume belongs to, so a corpse
-yields volumes 1 and 2 of a work rather than 1 and 3 with a hole. The reverse index lives
-in `src/web/manual-volumes.ts`, and an engine module must not import from `src/web` — so
-NPC deaths currently draw per ROW instead of per WORK.
-
-It cannot bite today: the three scattered volumes are held by houses, and houses do not
-die. The clean fix is to put the reverse index beside `SCATTERED_MANUAL_VOLUMES` in
-`src/data/cultivation/techniques.ts`, which nobody touched with agents live.
-
-**Question:** move it, or leave it until something can actually hit it?
-
----
-
-## C. Things I decided; reverse them if you disagree
-
-### 7. Turn 0 is the exception to the speech rule
-You ruled it: turn 0 is about who you are, so it is narration and nobody needs to speak.
-It currently runs 12-18% speech against 24-38% everywhere else, and is the longest turn.
-Flagging only because it is the one place our prose deliberately sits outside the corpus
-band.
-
-### 8. I stopped chasing the one-liner rate
-Counting said 6-30% by book; reading said the 30% outlier is the one work by a different
-author, and the other 23 run 7.2-15.2% with a median of 9.1%. Composition matters more
-than rate: two thirds of one-liners are a flat act or reveal, a fifth a line of speech
-alone, an eighth the body doing one thing. The prompt now says "about one in ten" and
-warns that a turn which is mostly short lines has overcorrected.
-
-### 9. Attribution is still high and I left it
-The corpus carries no speech verb on 75% of its dialogue paragraphs. Ours attributes
-most lines. Fixing this once moved single-line paragraphs 6% to 14% on its own, so it is
-the highest-leverage remaining prose lever — but the metric counts a closed verb list and
-cannot see "a voice drifts from the crowd", so I do not trust it enough to tune harder
-without reading more output.
-
----
-
-## D. Not mine to schedule
-
-### 10. Nothing typechecks the tests
-`tsconfig.json` excludes `tests/`, and vitest strips types without checking them, so a
-test file is checked by neither command anybody runs. Measured: **521 real type errors**
-in `tests/`. It already hid one live bug — a shared harness literal missing three
-required fields, which in turn propped up a wrong assertion about `/api/health`.
-Recorded in AGENTS.md with the config that reveals them, deliberately wired into no
-command, because switching it on fails on all 521 at once.
-
-**Question:** worth its own session sometime?
+### 8. 521 type errors in `tests/`
+`tsconfig.json` excludes `tests/` and vitest strips types without checking, so a test
+file is checked by neither command anybody runs. It already hid one live bug. You said to
+spin up a session for it; that is queued behind the six running now, because it will
+touch every test file and would collide with all of them.

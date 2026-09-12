@@ -6502,8 +6502,16 @@ ${noticed}`;
                     'or you would have to walk up on your own.'
                 ]);
 
-        // AND NOBODY HAS JOINED ANYTHING, SAID SO IT CANNOT BE DROPPED
-        if (heard.some(x => x.admissible === true)) {
+        // AND NOBODY HAS JOINED ANYTHING, SAID SO IT CANNOT BE DROPPED.
+        //
+        // ONLY WHEN IT IS TRUE, which it was not. The guard asked whether any
+        // house WOULD take this cultivator and never whether one already had,
+        // so somebody who joined a turn ago was told they were on nobody's roll
+        // by an engine holding their `sectId`. Played, and the sentence landed
+        // on "what sect am I in" - a direct question about the membership it
+        // was denying. A line that contradicts the engine's own state is worse
+        // than a blank look: the player has no way to tell it is wrong.
+        if (cultivator.sectId === null && heard.some(x => x.admissible === true)) {
             // AND ITS PHRASING IS THE NARRATOR'S. `sayThisWhateverTheNarratorDoes`
             // also pins the words in `required`, which appends them whole when
             // the prose does not contain them - and the prose never does, because

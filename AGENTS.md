@@ -859,6 +859,43 @@ that is somebody's deliberate project, not a thing to switch on beside an unrela
 What matters is knowing the gap exists: **a test that compiles is not a test that typechecks**,
 so when a shape changes under a test, expect the test to keep passing while being wrong.
 
+### Not having the standing to do something is not the same as seeing nothing
+
+The design owner, in capitals, and it is the most general rule on this page about how the
+engine answers:
+
+> **NOT HAVING THE STANDING TO DO SOMETHING IS NOT THE SAME AS SEEING NOTHING**
+
+A gate decides what somebody may DO. It must not decide what they may KNOW ABOUT. Those are
+two questions and the engine keeps answering the first one twice.
+
+Measured, across four unrelated systems, all of which failed the same way:
+
+- **The duty board** returned `[]` to anybody not on a house's roll, so a rogue saw bare
+  wood. The house has work; it is posted; they simply cannot be handed one. *"The board is
+  never empty, you just aren't qualified to take a job from the missions elder."*
+- **Dao ground** refused with `not_of_the_house` 666 times across a sweep - one reason,
+  no sense of whose ground it is or what would open it.
+- **Arts on a stall** measured 0% reachable above the bottom band, because every book ends
+  at or below the reader's rung.
+- **Goods** measured 1% at the middle band on usable-band and price.
+
+In each case the player is told nothing rather than told no. **A refusal that names the
+gate is content; a refusal that hides the thing is an empty world.** A board full of work
+you cannot take says what this house is doing, what it pays, and what standing would buy
+you. Bare wood says there is nothing here, which is false.
+
+**And the fix is never bespoke.** The owner again: *"make sure that this fix is not
+bespoke."* Do not write a rule about who can see a duty board. Write the rule about who may
+enter a place, and let the board be a thing inside one - everything else in that compound
+inherits it, including whatever is added next year. The same applies to the others: ground
+has an access kind, a stall has a shelf somebody may look at, a price is a number you can
+read before you cannot pay it.
+
+**Three things a good refusal carries**, and the pattern to copy is the mercy work in
+`combat-verbs.ts`: what is actually here, why it is not yours, and what would change that.
+The blank look carries none of them, and so does an empty list.
+
 ### A rule the model keeps breaking usually has a rule beside it saying to
 
 A prompt is not a list of independent instructions. The model resolves conflicts between them
