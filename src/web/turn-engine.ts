@@ -144,6 +144,7 @@ import { theLifeBehindTheFirstTurn } from './the-life-behind-the-first-turn.js';
 import { getConveyance } from '../data/cultivation/what-a-house-moves-its-people-on.js';
 import type { Price } from '../data/cultivation/mortal-world.js';
 import {
+    type WhatIsOnTheirMind,
     whatTheyCarryForSomebodyElse,
     whatTheyWouldBeHeardOnAbout
 } from '../engine/world/what-somebody-here-is-chewing-on.js';
@@ -210,7 +211,8 @@ import {
     handleLearn,
     handleListAvailable,
     handlePractise,
-    recordACopyHeld
+    recordACopyHeld,
+    theCopyLeftTheirHands
 } from '../server/consolidated/technique-manage.js';
 import {
     manualsAStallCarries
@@ -742,6 +744,7 @@ import { effectiveCapOf } from '../engine/cultivation/escapes.js';
 import { stagesHeldBy } from './stages.js';
 import { PlayLog, type LogEntry } from './log.js';
 import type { Narrator } from './narrator.js';
+import type { WhereTheyStandNow } from './prompt.js';
 // One sentence can contain a plan. The law that bounds how much of the player's
 // life it may spend lives in this module, not here; what `game.ts` owns is
 // running the steps in order against the live world. See `carryOutThePlan`.
@@ -1971,6 +1974,7 @@ export class GameService {
             awareness,
             company: this.company(created.cultivator),
             realmOrdinal: created.cultivator.realmOrdinal,
+            standing: this.theStandingStateOf(created.cultivator),
             ...(overheard ? { hearing: overheard } : {}),
             // The output-side half of handing over a name the player does not
             // hold. The colours can be leant on; whose they are may not be
@@ -2611,7 +2615,11 @@ export class GameService {
             // narrator told the place and the air and nothing about the people
             // opens on an empty square, because that is the cheapest guess.
             company: this.company(after.cultivator),
-            realmOrdinal: after.cultivator.realmOrdinal
+            realmOrdinal: after.cultivator.realmOrdinal,
+            // What they ARE and HOLD, whatever this turn did. See
+            // `theStandingStateOf`: the model told somebody carrying a manual
+            // that the manual was what they lacked.
+            standing: this.theStandingStateOf(after.cultivator)
         };
 
         // ── phase 3 ──
@@ -2767,7 +2775,8 @@ export class GameService {
             awareness: this.awarenessOf(after.cultivator),
             filed: this.filedOutcome(execution),
             company: this.company(after.cultivator),
-            realmOrdinal: after.cultivator.realmOrdinal
+            realmOrdinal: after.cultivator.realmOrdinal,
+            standing: this.theStandingStateOf(after.cultivator)
         });
 
         this.log.append(run.id, [
@@ -2818,7 +2827,8 @@ export class GameService {
             awareness: this.awarenessOf(after.cultivator),
             filed: this.filedOutcome(execution),
             company: this.company(after.cultivator),
-            realmOrdinal: after.cultivator.realmOrdinal
+            realmOrdinal: after.cultivator.realmOrdinal,
+            standing: this.theStandingStateOf(after.cultivator)
         });
 
         this.log.append(run.id, [
@@ -5187,8 +5197,20 @@ ${noticed}`;
                 { name: party.name, heardOn: spoken?.names[0]?.name ?? null },
                 intent
             );
-            const putBack = this.freeAction(run, 'interact', factsForAQuestionPutBack(
-                asked.headline, asked.prose, [...party.facts, ...asked.lines], asked.structure
+            // ── AND NOT THROUGH `factsForAQuestionPutBack` ──────────────
+            //
+            // Nothing here is a list an ordinal is counted against - it is who
+            // is standing in front of you and the ways of asking - so it must
+            // not go on `required`, which appends the engine's own wording
+            // wherever the narration did not carry it verbatim. Measured
+            // against the local model: it wrote the approach, the person and
+            // their answer in its own words, and then twelve engine sentences
+            // followed saying the same things again. `prose` is what a player
+            // with no model reads, so the block goes there and reaches them
+            // once either way.
+            const told = [...party.facts, ...asked.lines];
+            const putBack = this.freeAction(run, 'interact', observable(
+                asked.headline, told, [asked.prose, ...told].join('\n\n'), [asked.structure]
             ));
             putBack.hearing = spoken;
             if (spoken) addHearing(putBack.facts, spoken);
@@ -5502,18 +5524,25 @@ ${noticed}`;
         // engine channel and never reaches the player. Measured exactly that way
         // once: the grant landed, the destinations read listed the gate on the next
         // turn, and the turn that granted it said nothing at all.
-        const said = showed && gate
+        const alsoTheGate = showed && gate
             ? [
-                ...answer.lines,
                 `Whatever else they had to say, where the ${subject!.name} keeps its gate is `
                 + `not news in this province - anybody would have pointed. ${gate.name} is a `
                 + 'place you could set out for.'
             ]
-            : answer.lines;
+            : [];
+        const said = [...answer.lines, ...alsoTheGate];
 
         const facts = factsForToolResult(
             `${knownAlready || met ? asked.name : 'Somebody'}, asked about ${subject?.name ?? topic}.`,
-            said
+            said,
+            // What a player with no narrator reads, where the two differ. A
+            // person who turned the question onto their own subject is handed
+            // to the narrator as a state to write from, and printed as a
+            // sentence when nothing is going to write from it.
+            answer.linesToThePlayer === undefined
+                ? undefined
+                : [...answer.linesToThePlayer, ...alsoTheGate].join('\n')
         );
         facts.structure.push(...answer.structure);
         if (dropped) addHearing(facts, dropped);
@@ -8640,7 +8669,8 @@ ${opened.text}` : receipt,
                 ambient,
                 awareness: this.awarenessOf(cultivator),
                 company: here,
-                realmOrdinal: cultivator.realmOrdinal
+                realmOrdinal: cultivator.realmOrdinal,
+                standing: this.theStandingStateOf(cultivator)
             }
         );
     }
@@ -9816,6 +9846,14 @@ ${opened.text}` : receipt,
         rawInput = ''
     ): Promise<Execution> {
         // AHEAD OF THE POUCH, BECAUSE A BOOK WAS NEVER IN IT
+        //
+        // And the VOLUME ahead of the copying, because somebody holding the
+        // book and saying "I sell the manual" means the thing in their hand.
+        // See `sellAVolumeYouAreHolding` for the played refusal that said there
+        // was nothing in it.
+        const asAVolume = await this.sellAVolumeYouAreHolding(run, cultivator, (target ?? '').trim());
+        if (asAVolume) return asAVolume;
+
         const asACopy = await this.sellACopyOfAnArt(run, cultivator, (target ?? '').trim());
         if (asACopy) return asACopy;
 
@@ -9983,6 +10021,140 @@ ${opened.text}` : receipt,
                     // rung has a name and the engine has always known it.
                     + `a list of ${Math.round(quote.grossStones)}, priced by the regard a `
                     + `${theRung(cultivator.realmOrdinal)} is held in.`,
+                ok: true
+            }]
+        };
+    }
+
+    /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * THE VOLUME IN THEIR HANDS, SOLD
+     * ═══════════════════════════════════════════════════════════════════════
+     *
+     * FOUND BY PLAYING, and the refusal was false to the player's face:
+     *
+     *     > I buy the Lesser Qi-Gathering Manual
+     *     6 spirit stones of the 30 you had, and the copy is yours. 24 left.
+     *     > what is in my pouch
+     *     Books: Lesser Qi-Gathering Manual...
+     *     > I sell the manual
+     *     ... There is nothing in your hand to sell.
+     *
+     * `sell` ran `sellACopyOfAnArt` first, which is a different mechanic
+     * entirely - you know an art, you write out a copy, you sell the copy - and
+     * it refused on not having been taught. Its guard for exactly this class,
+     * *a name that is also in the pouch is the pouch's*, could not fire because
+     * A HELD VOLUME IS NOT IN THE POUCH: books live in
+     * `FLAG_MANUAL_COPIES_HELD` and the pouch is a different store.
+     *
+     * Extending that guard alone would have made the refusal correct and the
+     * sentence still unanswerable, because the pouch path cannot see a volume
+     * either. There was no path. This is it, and it runs FIRST: somebody
+     * holding the book and saying "I sell the manual" means the object in their
+     * hand, not several months at a desk copying one out.
+     *
+     * PRICED THE WAY THE BUY SIDE PRICES ONE, through `quoteSale` like every
+     * other sale, so what a counter gives back for a book is the same fact as
+     * what a counter gives back for anything else: less than list, by the
+     * regard the seller's rung is held in, at this province's own rate.
+     *
+     * AND IT IS ALLOWED WHILE THEY ARE PART WAY INTO IT. This world does not
+     * protect people from themselves. What it does is say what is true: for a
+     * book they have not finished, the copy was the road in, and `handleLearn`
+     * will want one again.
+     */
+    private async sellAVolumeYouAreHolding(
+        run: Run,
+        cultivator: Cultivator,
+        query: string
+    ): Promise<Execution | null> {
+        const held = copiesHeldBy(this.db, cultivator.id);
+        if (held.length === 0) return null;
+        if (GameService.SELL_EVERYTHING.test(query)) return null;
+
+        // A NAME, OR THE ONLY BOOK ON THEM. "I sell the manual" is a category
+        // and not a name, and it is what a player with one book actually types;
+        // with two on them it says nothing and the fuzzy match has to answer.
+        const named = query.length >= 3 ? resolveTechnique(this.repos, query, cultivator.id) : null;
+        const wanted = named && held.includes(named.id)
+            ? named.id
+            : (held.length === 1 && GameService.BOOK_IN_GENERAL.test(query) ? held[0] : null);
+        if (wanted === null) return null;
+
+        const row = getTechnique(wanted) as { name?: string } | undefined;
+        const title = row?.name ?? named?.name ?? 'the volume';
+
+        // The stall's own list where there is one, and the copyist's rate where
+        // there is not. `whatOneCopyIsWorth` already reads the first before the
+        // second, so this is one call and not a second copy of that order.
+        const list = whatOneCopyIsWorth(wanted);
+        if (list === null) {
+            return refused('world.whatOneCopyIsWorth', 'sell', factsForRefusal(
+                `Nobody here puts a price on ${title}.`,
+                'You hold it out and get a shrug. There is no going rate for a copy of this, and '
+                + 'a thing with no rate is not sold at a counter - it is handed to somebody who '
+                + 'already wanted it.',
+                `whatOneCopyIsWorth returned null for ${wanted}. Nothing sold, nothing paid, no `
+                + 'time passed.'
+            ));
+        }
+
+        const regionId = standingOf(cultivator).regionId;
+        const quote = quoteSale({
+            item: { requiredOrdinal: cultivator.realmOrdinal },
+            listStones: list,
+            quantity: 1,
+            seller: { ordinal: cultivator.realmOrdinal },
+            localMultiplier: localPrice(regionId, 100) / 100
+        });
+        const paid = Math.max(1, quote.offeredStones);
+        const known = this.repos.techniques.getKnown(cultivator.id, wanted);
+
+        const after = this.db.transaction((): Cultivator => {
+            const updated = this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: paid });
+            if (!updated) throw new GameError('Cultivator vanished mid-sale.', 500);
+            if (!theCopyLeftTheirHands(this.db, cultivator.id, wanted)) {
+                throw new GameError('The copy was gone before the counter took it.', 500);
+            }
+            this.repos.runs.incrementTurn(run.id, 1);
+            return updated;
+        })();
+
+        const facts = factsForToolResult(`${title}, sold.`, [
+            `${paid} spirit stone${paid === 1 ? '' : 's'} for it, leaving ${after.spiritStones} `
+            + 'in the purse. The copy is off you.',
+            // WHAT GOES WITH THE PAPER AND WHAT DOES NOT. Selling the book does
+            // not unlearn anything; what it costs is the road back in, and that
+            // is a fact the player may not have in mind rather than a warning.
+            known === null
+                ? 'You never sat down with it, so nothing of it stays. Whatever it would have '
+                  + 'taught you is on somebody else\'s shelf now.'
+                : known.mastery >= FULLY_MASTERED
+                    ? 'You have the whole of it already. The paper was the way in and you are '
+                      + 'past needing it.'
+                    : `You are ${(known.mastery * 100).toFixed(0)} parts in a hundred of it, and `
+                      + 'what you have you keep. The rest was in the book, and the book is gone.'
+        ]);
+        facts.structure.push(
+            `${wanted} removed from ${cultivator.id}'s held copies. quoteSale against a list of `
+            + `${list} at the ${regionId} multiplier offered ${quote.offeredStones}; paid ${paid}. `
+            + `cultivator_techniques mastery ${known === null ? 'none' : known.mastery.toFixed(2)} `
+            + 'is untouched: a copy is paper and the art is a row.'
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'technique_manage.theCopyLeftTheirHands',
+                action: 'sell',
+                summary:
+                    `One held copy of ${title} for ${paid} spirit stone(s) against a list of `
+                    + `${list}, priced through the same quoteSale every other sale uses. The art `
+                    + 'is untouched; the book is gone.',
                 ok: true
             }]
         };
@@ -12586,6 +12758,49 @@ ${fit.line}`;
         /^(?:the |my |a |any |some )?\s*(?:board|wall|duty|duties|work|sect work|commissions?|assignments?|jobs?|whatever(?:'s| is)? going|anything)\s*$/i;
 
     /**
+     * ═══════════════════════════════════════════════════════════════════════
+     * WHAT THIS CULTIVATOR IS AND HOLDS, FOR EVERY NARRATION
+     * ═══════════════════════════════════════════════════════════════════════
+     *
+     * FOUND BY PLAYING. Handed *"You are carrying a copy of Lesser Qi-Gathering
+     * Manual and have never opened it"*, the model wrote *"A Lesser
+     * Qi-Gathering Manual is what you lack"*, pointing the player at the thing
+     * in their own hand. The prompt had no account of what was in the pouch, so
+     * the sentence had nothing to be wrong against.
+     *
+     * The set is deliberately short and it is not the sheet. No attributes, no
+     * progress figures, no lifespan arithmetic: the prompt forbids restating
+     * numbers and a stat block invites exactly that. What is here is what a
+     * sentence about the world can contradict. The place is not repeated - the
+     * scene header already carries it, and a second copy would drift.
+     *
+     * Every part is derived on read. `whereTheyStandNow` in `prompt.ts` is the
+     * rendering and carries the instruction that stops it being recited.
+     */
+    private theStandingStateOf(cultivator: Cultivator): WhereTheyStandNow {
+        const house = cultivator.sectId ? getSect(cultivator.sectId)?.name ?? null : null;
+        return {
+            rank: rankName(cultivator.realmOrdinal),
+            age: Math.floor(cultivator.age),
+            spiritStones: cultivator.spiritStones,
+            booksHeld: copyNamesHeldBy(this.db, cultivator.id),
+            // The roads they have actually sat down with, which is a different
+            // fact from the books on them and is the one that decides what a
+            // stretch of sitting is worth. Named rather than capped: the cap is
+            // `rateTermsFor`'s and restating it here would be a second copy.
+            methods: cultivator.knownTechniques
+                .map(id => getTechnique(id))
+                .filter((art): art is NonNullable<typeof art> =>
+                    !!art && classOf(art) === 'cultivation')
+                .map(art => art.name),
+            untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
+            house: house === null
+                ? null
+                : `${house}${cultivator.sectRank ? `, ${cultivator.sectRank}` : ''}`
+        };
+    }
+
+    /**
      * The two terms the cultivation rate wants and this layer never supplied: what
      * the manual can carry them to, and who is teaching them.
      */
@@ -14560,7 +14775,7 @@ ${fit.line}`;
         person: { id: string; realmOrdinal: number; age: number; sectRank: string | null },
         row: { tags: readonly string[] } | null,
         houseIds: ReadonlySet<string>
-    ): string | null {
+    ): WhatIsOnTheirMind | null {
         if (row === null) return null;
         return whatTheyWouldBeHeardOnAbout({
             ordinal: person.realmOrdinal,

@@ -161,6 +161,34 @@ export function holdsACopyOf(
     return copiesHeldBy(db, cultivatorId).includes(techniqueId);
 }
 
+/**
+ * The volume leaves their hands. True when there was one to leave.
+ *
+ * The counterpart `recordACopyHeld` had no partner for a long time, and the
+ * consequence was that a book could enter this store and never leave it: `sell`
+ * had no path for a held volume at all and routed the sentence to the
+ * write-out-a-copy mechanic, which refused *"there is nothing in your hand to
+ * sell"* at somebody holding the book.
+ *
+ * WHAT IT DOES NOT TOUCH is the art. A copy is paper; whether they have sat
+ * down with it is a row in `cultivator_techniques` and is not this store's
+ * business. Selling the book you learned from does not unlearn it, and selling
+ * one you never opened takes nothing away that you had.
+ */
+export function theCopyLeftTheirHands(
+    db: Database.Database,
+    cultivatorId: string,
+    techniqueId: string
+): boolean {
+    const held = copiesHeldBy(db, cultivatorId);
+    if (!held.includes(techniqueId)) return false;
+    writeFlag(
+        db, cultivatorId, FLAG_MANUAL_COPIES_HELD,
+        held.filter(id => id !== techniqueId).join(',')
+    );
+    return true;
+}
+
 /** Idempotent: buying a second copy of a book you already own is not an event. */
 export function recordACopyHeld(
     db: Database.Database,

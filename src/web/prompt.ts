@@ -1079,6 +1079,92 @@ export function describeTheRoom(company: Company | null | undefined): string[] {
     ];
 }
 
+/**
+ * WHAT THIS CULTIVATOR IS AND HOLDS, whatever the turn did.
+ *
+ * Not the sheet. `composeStateSummary` is the sheet and is phase 1's; this is
+ * the short list of standing facts a sentence about the world can contradict.
+ */
+export interface WhereTheyStandNow {
+    /** The rung, in the engine's own spelling. */
+    rank: string;
+    age: number;
+    spiritStones: number;
+    /** Books physically on them, by name. The fact that was inverted. */
+    booksHeld: readonly string[];
+    /** The cultivation methods they have actually sat down with. */
+    methods: readonly string[];
+    /** How many things are open inside and have not closed. */
+    untreatedInjuries: number;
+    /** House, and what they are called inside it. Null for nobody's. */
+    house: string | null;
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THE STANDING STATE, AND WHY IT IS NOT SOMETHING THE NARRATOR REPORTS
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * FOUND BY PLAYING. Handed *"You are carrying a copy of Lesser Qi-Gathering
+ * Manual and have never opened it"*, the model wrote *"A Lesser Qi-Gathering
+ * Manual is what you lack"* - the opposite, pointing the player at a thing in
+ * their own hand. Nothing in the prompt said what was in the pouch, so there
+ * was nothing for the sentence to be checked against. The fix is the missing
+ * fact rather than a pass over the output.
+ *
+ * AND IT CARRIES THE HAZARD THE AMBIENT READING ALREADY COST US. A standing
+ * condition handed over on every turn becomes the opening line on every turn -
+ * measured, six turns on one island and five of them opened on the qi. An
+ * inventory handed over every turn will be recited every turn unless the
+ * instruction rides on the same lines as the fact, which is why it does.
+ *
+ * The rule, from the design owner: *unless I'm asking about the state don't
+ * tell me about the state*, and *the state influences the narration with
+ * details*. So the block is something the narrator writes FROM. The worked
+ * pairs are there because pairs are what this model follows; an abstract ban is
+ * not.
+ *
+ * The exception is the obvious one and needs no branch here: a player who asked
+ * about their own state is answered by the verbs that compose that read, and
+ * those facts arrive in the ordinary channel above.
+ */
+export function whereTheyStandNow(state: WhereTheyStandNow | null | undefined): string[] {
+    if (!state) return [];
+
+    const carrying = state.booksHeld.length > 0
+        ? `carrying ${state.booksHeld.join(', ')}`
+        : 'carrying no books';
+    const practising = state.methods.length > 0
+        ? `has sat down with ${state.methods.join(', ')}`
+        : 'has sat down with no cultivation method at all';
+    const body = state.untreatedInjuries === 0
+        ? 'meridians whole'
+        : `${state.untreatedInjuries} thing${state.untreatedInjuries === 1 ? '' : 's'} open inside `
+          + 'and not closing';
+
+    return [
+        '',
+        'WHERE THEY STAND, standing background and NOT news. It is here so that the prose',
+        'cannot contradict what they are holding or what they can do. Do not report it, do not',
+        'open on it, do not list it back: unless the player asked about their own state, the',
+        'state never becomes a line of its own. It becomes DETAIL, and the difference is the',
+        'whole of the instruction:',
+        '  a book on them - it knocks against the hip, a hand goes to it. NOT "you are carrying',
+        '  the Lesser Qi-Gathering Manual".',
+        '  a thin purse - the price is noticed, a hand closes over it. NOT "you have 24 spirit',
+        '  stones".',
+        '  torn meridians - a step is favoured, a breath comes short. NOT "your meridians are',
+        '  damaged".',
+        '  no method - the sitting yields nothing and they feel it. NOT "you have no cultivation',
+        '  method".',
+        '  no house - nobody\'s colours on them where everyone else is wearing some. NOT "you',
+        '  serve no house".',
+        `- ${state.rank}, ${state.age} years old, ${state.house ?? 'no house behind them'}`,
+        `- ${state.spiritStones} spirit stone${state.spiritStones === 1 ? '' : 's'}, ${carrying}`,
+        `- ${practising}; ${body}`
+    ];
+}
+
 export function composeStateSummary(input: StateSummaryInput): string {
     const { cultivator, run, ambient } = input;
     const root = getSpiritRoot(cultivator.spiritRoot);
@@ -1351,6 +1437,8 @@ export function composeNarrationUser(
         realmOrdinal?: number;
         /** True of the world, not held by this cultivator. See `heldByTheWorldBlock`. */
         heldByTheWorldAndNotByThem?: readonly string[];
+        /** What they are and hold, whatever this turn did. See `whereTheyStandNow`. */
+        standing?: WhereTheyStandNow | null;
     },
     /**
      * WHETHER THE AMBIENT READING IS NEW INFORMATION.
@@ -1439,6 +1527,8 @@ export function composeNarrationUser(
             : ['- (none; this cultivator has heard of nobody and nowhere but where they stand)']),
         '',
         ...theLifeBehindThemBlock(scene.theLifeBehindThem ?? []),
+        ...whereTheyStandNow(scene.standing),
+        '',
         'WHAT THE ENGINE RULED - these are all the facts there are:',
         ...facts.lines.map(line => `- ${line}`),
         '',

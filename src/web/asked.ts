@@ -10,6 +10,7 @@ import { WORKING_KNOWLEDGE_MARGIN } from './hearsay.js';
 import type {
     WhatTheySayAboutThemselves
 } from '../engine/social/what-somebody-knows-about-themselves.js';
+import type { WhatIsOnTheirMind } from '../engine/world/what-somebody-here-is-chewing-on.js';
 
 /**
  * How far the answer got. Named for what the player sees, not for the rule.
@@ -44,9 +45,9 @@ export interface AskedInput {
      */
     aboutThemselves?: WhatTheySayAboutThemselves | null;
     /**
-     * WHAT THEY HAVE ON THEIR MIND, as a predicate for `they`, or null.
+     * WHAT THEY HAVE ON THEIR MIND, in both its forms, or null.
      *
-     * `whatTheyWouldBeHeardOnAbout`'s clause, unchanged. Read here because a
+     * `whatTheyWouldBeHeardOnAbout`'s reading, unchanged. Read here because a
      * person asked about something they cannot place does not fall silent -
      * they talk about their own thing instead, which is what people do.
      *
@@ -56,13 +57,20 @@ export interface AskedInput {
      * `AGENTS.md` allows a fact to reach the narrator. It carries no proper
      * noun: a borrowed blade is a blade until somebody names it.
      */
-    onTheirMind?: string | null;
+    onTheirMind?: WhatIsOnTheirMind | null;
 }
 
 export interface Answer {
     reach: Reach;
     /** Observable. What they did, and the substance when there was any. */
     lines: string[];
+    /**
+     * `lines` as a player with no narrator configured reads them, where any of
+     * them is written differently for the two channels. Absent when they are
+     * the same, which is every reach but the three that turn onto their own
+     * subject.
+     */
+    linesToThePlayer?: string[];
     /** Which of the three limits bit, and why. Inspector only. */
     structure: string[];
     /**
@@ -205,18 +213,20 @@ function whatTheyTurnedItOnto(answer: Answer, input: AskedInput): Answer {
         return answer;
     }
     const who = input.speakerName ?? 'The one nearest to hand';
+    // The name leads. `who` is a PHRASE where the player cannot name them -
+    // "The one nearest to hand" - and the first cut put it mid-sentence, where a
+    // capitalised noun phrase reads as a machine having filled a slot. Every
+    // other line in this file opens on `{who}` for the same reason.
+    const turnedOnto = (said: string) =>
+        `${who} does not stay on the question, and what comes out instead is their own: ${said}.`;
     return {
         ...answer,
-        // The name leads. `who` is a PHRASE where the player cannot name them -
-        // "The one nearest to hand" - and the first cut put it mid-sentence,
-        // where a capitalised noun phrase reads as a machine having filled a
-        // slot. Every other line in this file opens on `{who}` for the same
-        // reason.
-        lines: [
-            ...answer.lines,
-            `${who} does not stay on the question, and what comes out instead is their own: `
-            + `they ${clause}.`
-        ],
+        lines: [...answer.lines, turnedOnto(clause.state)],
+        // AND THE SAME LINE AS A PLAYER WITH NO NARRATOR READS IT. `state` is a
+        // note to write from and not a sentence, so it cannot be what is
+        // printed when nothing is going to write from it. See
+        // `WhatIsOnTheirMind` for why the two channels differ at all.
+        linesToThePlayer: [...answer.lines, turnedOnto(`they ${clause.plainly}`)],
         structure: [
             ...answer.structure,
             'Turned onto their own subject: nothing about what was asked was said, so what they '

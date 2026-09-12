@@ -16,6 +16,7 @@ import {
 } from './actions.js';
 import {
     INTENT_SYSTEM_PROMPT,
+    type WhereTheyStandNow,
     composeIntentUser,
     composeNarrationUser,
     narrationSystemPrompt
@@ -412,6 +413,16 @@ export interface NarratorScene {
      * is `knowledge.ts` and is untouched by anything written here.
      */
     heldByTheWorldAndNotByThem?: readonly string[];
+    /**
+     * WHAT THIS CULTIVATOR IS AND HOLDS, whatever the turn did.
+     *
+     * Context for not contradicting the player's own state, never material to
+     * narrate. The model told somebody carrying a manual that the manual was
+     * what they lacked, and it said so because nothing in the prompt had told
+     * it what was in the pouch. See `whereTheyStandNow` in `prompt.ts` for the
+     * block and for why the instruction rides on the same lines as the facts.
+     */
+    standing?: WhereTheyStandNow | null;
 }
 
 export interface Narration {

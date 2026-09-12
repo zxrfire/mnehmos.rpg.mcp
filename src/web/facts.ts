@@ -32,6 +32,7 @@ import { LOW_SATIETY, lifespanCeilingFor } from '../engine/cultivation/survival.
 import { physiqueOrNull } from '../engine/cultivation/physiques.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { GroundEntitlement } from '../engine/world/the-ground-somebody-is-actually-standing-on.js';
+import type { WhatIsOnTheirMind } from '../engine/world/what-somebody-here-is-chewing-on.js';
 import type { AskWeight, AttemptResult, Wrong } from '../engine/social-leverage/index.js';
 import { whatTheirRefusalIsLike } from '../engine/social-leverage/index.js';
 import {
@@ -1156,7 +1157,11 @@ export function factsForLook(
     groundIsQuiet = true
 ): EngineFacts {
     const where = placeName(cultivator);
-    const who = describeCompany(company, cultivator.realmOrdinal, 'walking_up');
+    // Two renderings of one square, for the same reason `ground` below has two:
+    // what is handed to a model is material to write from, and what is printed
+    // when no model answered is the finished line. See `WhoIsListening`.
+    const who = describeCompany(company, cultivator.realmOrdinal, 'walking_up', 'the narrator');
+    const whoToThePlayer = describeCompany(company, cultivator.realmOrdinal, 'walking_up');
     const noticed = selfNoticing(cultivator, groundIsQuiet);
 
     // ── A LOOK ANSWERS ABOUT THE SURROUNDINGS, NOT ABOUT THE LOOKER ──────
@@ -1230,7 +1235,7 @@ export function factsForLook(
     const prose = [
         `${where}. ${ground.toThePlayer}`,
         ...(standing ? [standing] : []),
-        ...(who ? [who] : []),
+        ...(whoToThePlayer ? [whoToThePlayer] : []),
         ...(noticed ? [noticed] : [])
     ].join('\n\n');
 
@@ -1251,15 +1256,18 @@ export function factsForCompany(
     standing: string | null = null
 ): EngineFacts {
     const where = placeName(cultivator);
-    const who = describeCompany(company, cultivator.realmOrdinal, 'asked_who_is_here')
-        ?? 'Nobody is about. Whatever this place does with its people, it is not doing it here.';
+    const empty = 'Nobody is about. Whatever this place does with its people, it is not doing it here.';
+    const who = describeCompany(company, cultivator.realmOrdinal, 'asked_who_is_here', 'the narrator')
+        ?? empty;
+    const whoToThePlayer = describeCompany(company, cultivator.realmOrdinal, 'asked_who_is_here')
+        ?? empty;
 
     const lines = [who, ...(standing ? [standing] : [])];
 
     return observable(
         company.total === 0 ? `${where}, empty.` : `${company.total} about in ${where}.`,
         lines,
-        lines.join('\n\n'),
+        [whoToThePlayer, ...(standing ? [standing] : [])].join('\n\n'),
         [
             `${company.total} present: ${company.named.length} this cultivator can put a name `
             + `to, ${company.strangers.length} they cannot.`
@@ -1427,10 +1435,12 @@ export interface SomebodyInTheSquare {
      * What they have on their mind, or null - which is most people.
      *
      * See `what-somebody-here-is-chewing-on.ts`. A STATED FACT about their
-     * situation and never a mood: the narrator is what turns "has spent most of
-     * the years this rung allows" into somebody sighing over a bowl of noodles.
+     * situation and never a mood, and it arrives in two forms because the two
+     * channels want different things: a NOTE for the narrator, which is what
+     * turns into somebody sighing over a bowl of noodles, and a plain sentence
+     * for a run with no narrator behind it.
      */
-    chewing?: string | null;
+    chewing?: WhatIsOnTheirMind | null;
     /**
      * The one thing worth saying about who they are, or null for most people.
      *
@@ -1603,12 +1613,29 @@ function whatIsTrueOfTwoOfThem(ordered: readonly SomebodyInTheSquare[]): string 
     return null;
 }
 
+/**
+ * WHICH CHANNEL THIS RENDERING IS FOR.
+ *
+ * One sentence in the square differs between them and it is the one saying what
+ * somebody is preoccupied with: the narrator is handed the state as a note to
+ * write from, and a player with no narrator configured is handed the engine's
+ * own plain sentence, because in that mode there is nobody else to write one.
+ * Everything else here is identical, so this is called twice on the same
+ * company rather than composed twice.
+ */
+type WhoIsListening = 'the narrator' | 'a player with no narrator';
+
 function describeCompany(
     company: Company,
     observerOrdinal = 0,
-    how: HowYouCameToBeLooking = 'asked_who_is_here'
+    how: HowYouCameToBeLooking = 'asked_who_is_here',
+    listening: WhoIsListening = 'a player with no narrator'
 ): string | null {
     if (company.total === 0) return null;
+    const heardOn = (who: string, mind: WhatIsOnTheirMind): string =>
+        `What ${who} can be heard on, unprompted and not to you: `
+        + (listening === 'the narrator' ? mind.state : `they ${mind.plainly}`)
+        + '.';
 
     // ── ONE PERSON, OR THEIR PARTY, AND A COUNT FOR THE REST ─────────────
     //
@@ -1656,11 +1683,8 @@ function describeCompany(
             const speaking = (met.chewing ?? null) !== null
                 ? met
                 : company.named.find(person => (person.chewing ?? null) !== null) ?? null;
-            if (speaking !== null) {
-                sentences.push(
-                    `What ${speaking.name} can be heard on, unprompted and not to you: `
-                    + `they ${speaking.chewing}.`
-                );
+            if (speaking?.chewing) {
+                sentences.push(heardOn(speaking.name, speaking.chewing));
             }
             // The party is already inside the clause - "mid-conversation with
             // X" - so it is not repeated. What is worth saying is that they
@@ -1754,7 +1778,7 @@ function describeCompany(
             // them - which is precisely how the ambient qi reading became
             // wallpaper. See `what-somebody-here-is-chewing-on.ts`, which sets
             // its bars to exclude the ordinary case for the same reason.
-            if (!saidWhatIsOnSomebodysMind && (person.chewing ?? null) !== null) {
+            if (!saidWhatIsOnSomebodysMind && person.chewing) {
                 saidWhatIsOnSomebodysMind = true;
                 // SHAPED AS WHAT IT LICENSES, not as what is true.
                 //
@@ -1765,10 +1789,7 @@ function describeCompany(
                 // years somebody else has spent, so it is the engine reading
                 // its own rows aloud. Saying WHAT THEY CAN BE HEARD ON leaves
                 // the only honest rendering being the one that was wanted.
-                sentences.push(
-                    `What ${person.name} can be heard on, unprompted and not to you: `
-                    + `they ${person.chewing}.`
-                );
+                sentences.push(heardOn(person.name, person.chewing));
             }
         }
 
@@ -2094,6 +2115,19 @@ export function factsForRefusal(headline: string, scene: string, mechanical?: st
  * player answers it by pointing into the list and an ordinal is counted against
  * the order printed here. The lines are `required`, so the order survives a
  * narrator that would otherwise resay them best-first.
+ *
+ * WHICH MAKES IT THE WRONG BUILDER FOR A DESCRIPTION. `required` appends
+ * whatever of the engine's own wording did not survive into the narration, and
+ * the phase-3 prompt orders the model to write every fact again in its own
+ * words - so a SENTENCE handed to it comes back stapled under prose that
+ * already said the same thing, every time the model does its job. Measured
+ * against the local model on `I talk to <somebody>`: the whole of what the
+ * engine knew about the person followed the narration a second time, in the
+ * engine's words. `interact` was passing a person's rung, age, house and
+ * whereabouts through here, and none of that is a list anything is counted
+ * against. Only pass lines the next sentence can POINT INTO; everything else
+ * belongs in `prose`, which is already the guarantee for a player with no
+ * model. Same ruling as 591e3a85 on the opening.
  */
 export function factsForAQuestionPutBack(
     headline: string,
