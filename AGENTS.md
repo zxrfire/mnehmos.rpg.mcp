@@ -771,6 +771,35 @@ Raise it only when the machine is yours alone.
   matching and guiding errors. Follow `src/server/consolidated/character-manage.ts` and
   register in `src/server/consolidated/index.ts`.
 
+### A corpus is a set, not a sequence
+
+**A measurement that depends on the order of its own inputs is not a measurement.** Reorder
+the list and the number moves, which means the number is a property of the list rather than
+of the game.
+
+The refusal probe had this: one run per scenario, every sentence played against it in turn,
+so turn N inherited the days, the stones and the injuries of everything before it. A fight
+left standing by one sentence changed how a later one was read. Arrange fresh per sentence,
+keep the expensive part (the world) shared, and hold the property with a test that runs the
+corpus shuffled and asserts the same answer.
+
+The same rule is why a `worldEnabled` test without a `worldSeed` is broken rather than
+flaky: it mints a world from `randomUUID()`, so the arrangement is silently a different
+arrangement each run.
+
+### Early, middle and late are three different games
+
+The ladder runs 47 rungs from Qi Condensation to Immortal, and the design owner's standing
+requirement is that the game **works at all three heights and reads differently at each**.
+`docs/world/writing/what-changes-as-the-ladder-is-climbed.md` holds the measured prose half
+and names the bands.
+
+The mechanical half is easy to forget, because every fixture is cheapest to build at the
+bottom. A verb that answers a beginner and refuses an elder is invisible to a corpus of
+beginners, and so is content that only becomes reachable higher up. Anything measuring the
+game across its verbs should measure it at all three bands and report them apart - pooled
+figures hide exactly the defects that height causes.
+
 ### Three layers, and the cheap one carries the weight
 
 **Engine tests are the floor and there should be hundreds.** `parseIntent`, the harness with

@@ -1662,8 +1662,12 @@ export function composeNarrationUser(
         // carried speech against a measured third, and a fact it could not place
         // was written as "her words weaving a picture of a world you do not
         // recognize" rather than named.
-        'FOUR THINGS, CHECKED AS YOU WRITE:',
-        '1. PARAGRAPHS OF ONE TO THREE SENTENCES. If one runs to four, break it.',
+        'FIVE THINGS, CHECKED AS YOU WRITE:',
+        '1. SHORT PARAGRAPHS. Measured on this genre: 33 words is the median and a QUARTER of',
+        '   paragraphs are a single sentence. Long is not the same as expansive - if one runs',
+        '   past three sentences or forty words, break it. Let some be one line.',
+        '   BREAK IT, DO NOT DROP IT. Short paragraphs mean MORE paragraphs, never fewer facts:',
+        '   measured, the pressure to be brief made a turn lose two dated notices entirely.',
         '2. SOMEBODY SPEAKS. If a person is standing here and no one says anything, you have',
         '   described the scene instead of playing it. Put the fact they can be heard on into',
         '   their mouth.',
@@ -1671,7 +1675,10 @@ export function composeNarrationUser(
         '   name. Never "a place you do not know of" or "things you cannot place" - if the',
         '   player may not know it, write what they SEE and leave the cause unnamed.',
         '4. NO FEELINGS ASSIGNED. Not "a weight that makes you feel small". Write what is',
-        '   there and let the reader do it.'
+        '   there and let the reader do it.',
+        '5. NEVER DESCRIBE WHAT THE PLAYER HAS NOT BEEN TOLD. "colours of a house you have not',
+        '   been told of" is the engine talking about its own records. They see colours they do',
+        '   not recognise. Write the perception, never its provenance.'
     ].join('\n');
 }
 

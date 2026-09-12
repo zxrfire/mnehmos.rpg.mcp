@@ -300,13 +300,3 @@ export function theVerbForThisLane(lane: LaneName, intent: string | undefined): 
     const named = (intent ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
     return row.intents[named] ?? row.otherwise;
 }
-
-/** Every verb some lane can reach, for the test that holds the two in step. */
-export function everyVerbTheLanesReach(): ReadonlySet<ActionName> {
-    const reached = new Set<ActionName>();
-    for (const lane of Object.values(THE_LANES)) {
-        for (const verb of Object.values(lane.intents)) reached.add(verb);
-        reached.add(lane.otherwise);
-    }
-    return reached;
-}
