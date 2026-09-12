@@ -512,6 +512,13 @@ import {
     ASKING_WHAT_IS_POSSIBLE,
     ABOUT_A_MANUAL
 } from './what-is-worth-doing-standing-here.js';
+// An act the engine has no rule for is not an act it could not read. The module
+// draws the line, and it is drawn against faking mechanics rather than around a
+// list of things nobody has implemented.
+import {
+    anActNothingAnswers,
+    factsForAnActNothingAnswers
+} from './an-act-nothing-in-the-world-answers.js';
 // A sentence the engine cannot place is answered by somebody standing there
 // rather than by the narrator reporting a parse failure. What they may offer is
 // bounded by what they could know, which is derived rather than stored - the
@@ -3861,6 +3868,28 @@ ${noticedWaiting}`;
                 // - they are the one question the parser was never asked.
                 if (ASKING_WHAT_IS_POSSIBLE.test(rawInput)) {
                     return this.guidance(run, cultivator, ambient);
+                }
+
+                // AND SO DOES AN ACT NOTHING COULD FOLLOW FROM. Singing,
+                // praying and napping reached the blank look, which told the
+                // player their sentence did not resolve into anything they
+                // could do - false for every one of them. Having no rule for an
+                // act is not the same as not reading it, and the two were
+                // getting the same answer. What has a consequence the engine
+                // cannot produce stays refused; see the module for the line.
+                const performed = anActNothingAnswers(rawInput);
+                if (performed !== null) {
+                    const alone = this.freeAction(
+                        run, 'unclear', factsForAnActNothingAnswers(performed)
+                    );
+                    alone.calls = [{
+                        name: 'engine.parseIntent',
+                        action: 'unclear',
+                        summary: 'Read as an act with no rule behind it. Nothing followed, '
+                            + `no day passed and nothing was spent. Raw input: "${rawInput.slice(0, 160)}"`,
+                        ok: true
+                    }];
+                    return alone;
                 }
 
                 // The cheapest action available, and the whole reason it is in the

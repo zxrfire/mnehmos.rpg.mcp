@@ -76,6 +76,7 @@ import {
     type ActionName,
     type PlannedAction
 } from './actions.js';
+import { anActNothingAnswers } from './an-act-nothing-in-the-world-answers.js';
 import { HOW_A_PLAYER_SAYS_EACH_VERB } from './how-a-player-says-each-verb.js';
 import { ASKING_WHAT_IS_POSSIBLE } from './what-is-worth-doing-standing-here.js';
 import { theSentenceIsNothingButAPointer } from './last-turn-memory.js';
@@ -469,6 +470,19 @@ export async function verbForASentenceThePatternsMissed(
     // `theSentenceIsNothingButAPointer` at the turn layer, where the listing
     // is, and turns a guess by embedding distance into a lookup.
     if (theSentenceIsNothingButAPointer(input) !== null) return fromTable;
+
+    // ── AN ACT PERFORMED ALONE HAS NO VERB TO BE NEAR ────────────────────
+    //
+    // Every exemplar in the corpus is somebody acting on the world, so a
+    // sentence about nothing but the speaker's own body still lands on one of
+    // them. Measured: `I stretch` reached `market` - millet and ferry fares for
+    // somebody stretching - and `I say a prayer` reached `interact`/`talk`, a
+    // person spoken to who was never named.
+    //
+    // The turn layer answers these at `case 'unclear'`, and the answer is that
+    // the act was taken and nothing followed. Handing them to the nearest verb
+    // instead is the one way that answer can be lost.
+    if (anActNothingAnswers(input) !== null) return fromTable;
 
     const nearest = await nearestVerbByMeaning(input);
     if (nearest === null) return fromTable;
