@@ -53,3 +53,6 @@ console.log('\n' + rows.join('\n'));
 // speech share is expected low and only its paragraph length is comparable.
 console.log('\nCORPUS overall (every played turn)       med= 30w         speech= 31%  1-liners= 17%');
 console.log('CORPUS opening scene (not turn 0)        med= 31w         speech= 37%  1-liners= 12%');
+// The distribution matters more than the median: one sentence 29%, two 27%,
+// three 19%, four or more 25%. A third of all paragraphs run past forty words.
+console.log('CORPUS paragraph mix    1 sentence 29%   2 sentences 27%   3 sentences 19%   4+ 25%');

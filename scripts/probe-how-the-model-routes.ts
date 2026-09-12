@@ -58,6 +58,12 @@ const EXPECTED: readonly { said: string; ok: readonly string[] }[] = [
     { said: 'I want to get stronger', ok: ['unclear', 'ceiling', 'status', 'recall'] },
     { said: 'what would it take to get in', ok: ['sect', 'petition', 'ceiling', 'investigate'] },
 
+    // the wall of postings, which the game prints and expects to be named back
+    { said: 'I ask what the board says', ok: ['sect'] },
+    { said: 'what work is going', ok: ['sect', 'work'] },
+    { said: 'what duties are there', ok: ['sect'] },
+    { said: 'I take a job from the board', ok: ['sect', 'work'] },
+
     // acts
     { said: 'I sit down and work at the manual', ok: ['cultivate', 'train_technique'] },
     { said: 'I go into seclusion for a year', ok: ['seclude', 'cultivate'] },

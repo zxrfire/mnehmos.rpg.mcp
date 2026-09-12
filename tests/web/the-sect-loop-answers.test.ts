@@ -55,6 +55,33 @@ describe('the board can be acted on', () => {
     }, 120_000);
 
     /**
+     * AND SAYING WHERE IT IS DOES NOT STOP IT BEING FOUND.
+     *
+     * Found by playing: "I take a job from the board" was answered with "you
+     * read it twice and it is not there", and the same sentence then printed
+     * the one thing that was. Three phrasings did it - naming the wall the
+     * line is posted on put the whole sentence past the matcher, which read
+     * "job from the board" as a title no posting had.
+     */
+    it.each([
+        'I take a job from the board',
+        'I take a duty off the wall',
+        'I take work from the board'
+    ])('takes the only line when the sentence also names the wall: %s', async said => {
+        const { game } = makeGame({ seed: `wall-named-${said.length}`, worldEnabled: true });
+        await game.newRun('Rogue');
+        const listed = await game.act('what missions are there');
+        expect(listed.narration, 'the fixture needs one line on the wall')
+            .toMatch(/What a Poor Prefecture/);
+
+        const taken = await game.act(said);
+        expect(planned(taken).action).toBe('sect');
+        expect(taken.narration, 'naming the wall lost the line on it')
+            .not.toMatch(/it is not there/i);
+        expect(taken.narration).toMatch(/Sect duty/i);
+    }, 120_000);
+
+    /**
      * And with a wall full of them, the same sentence is a question.
      *
      * Measured before this: it came back "you read it twice and it is not

@@ -12859,7 +12859,7 @@ ${fit.line}`;
      * "the mission", "it", "that one" - a line, when there is only one line.
      */
     private static readonly THE_ONE_ON_THE_BOARD =
-        /^(?:the |that |this |it|one)?\s*(?:mission|missions|commission|job|duty|task|assignment|errand|contract|one|it)?\s*$/i;
+        /^(?:the |that |this |a |an |it|one)?\s*(?:mission|missions|commission|job|duty|task|assignment|errand|contract|work|one|it)?(?:\s+(?:from|off|on|at)\s+(?:the\s+)?(?:board|wall|notices?|postings?))?\s*$/i;
 
     /** "the board", "sect work", "whatever is going" - a wall, not a line. */
     private static readonly BOARD_IN_GENERAL =
