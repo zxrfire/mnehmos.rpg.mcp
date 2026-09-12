@@ -104,7 +104,6 @@ import {
 } from '../engine/cultivation/taking-the-heaven-ascending-golden-pill.js';
 import {
     couldTheyTellItIs,
-    whatTheirReferenceAffords,
     whereThisArtWasLearned,
     type ArtObserver,
     type ClaimVerdict
@@ -118,10 +117,7 @@ import {
     whoseArt,
     FULLY_MASTERED
 } from '../engine/world/manuals.js';
-import {
-    theLeakAsADeed,
-    theStageAWitnessReaches
-} from '../engine/social-leverage/selling-a-copy-of-somebody-elses-art.js';
+import { theLeakAsADeed } from '../engine/social-leverage/selling-a-copy-of-somebody-elses-art.js';
 import {
     AGAINST_THEIR_OWN,
     type WhatTheHouseDoes,
@@ -153,7 +149,7 @@ import {
     whatSomebodyIsLike
 } from '../engine/world/what-somebody-is-like-and-where-it-came-from.js';
 import { renownReading } from '../engine/social-leverage/entry-offer.js';
-import { canPointAt, highestStage, type KnowingStage } from '../engine/social/discovery.js';
+import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { quoteSale } from '../engine/cultivation/market.js';
 import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
@@ -947,6 +943,8 @@ import {
 // surface, and the whole of `standing-guard-over-somebody-elses-crossing.ts`,
 // which had no caller anywhere in `src/`.
 import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
+// The other half of being taught, which nothing in the engine could do.
+import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
 import { craftVerbs } from './craft-verbs.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
@@ -3923,6 +3921,14 @@ ${noticedWaiting}`;
 
             case 'learn_technique':
                 return this.learnTechnique(cultivator, action.target);
+
+            case 'teach':
+                // The same verb read from the other end. Who is being taught is
+                // `target`, which art is `topic`, and both halves are needed -
+                // see `teach` in TARGETED_ACTIONS.
+                return this.teachSomebody(
+                    run, cultivator, ambient, action.target, action.topic
+                );
 
             case 'site':
                 return this.site(run, cultivator, ambient, action.target, action.intent);
@@ -10420,25 +10426,7 @@ ${opened.text}` : receipt,
         const here = this.atHand && place
             ? npcsAt(this.atHand, place.id).filter(npc => npc.id !== cultivator.id)
             : [];
-        let houseStage: KnowingStage = 'unaware';
-        let sawIt = 0;
-        if (ownerFactionId) {
-            for (const npc of here) {
-                // Their reference for the house that owns it, off the roster
-                // and nothing else: one of theirs was taught out of this book,
-                // somebody who practises the art has held a copy, and everybody
-                // else has never been in the room. `whatTheirReferenceAffords`
-                // is the calibration and it is not restated here.
-                const reference: KnowingStage =
-                    npc.factionId === ownerFactionId ? 'known'
-                        : (npc.cultivation.techniqueIds ?? []).includes(art.id)
-                            ? 'encountered'
-                            : 'unaware';
-                const reached = theStageAWitnessReaches(whatTheirReferenceAffords(reference));
-                if (reached !== 'unaware') sawIt++;
-                houseStage = highestStage(houseStage, reached);
-            }
-        }
+        const { stage: houseStage, sawIt } = whoHereCouldSayWhoseItWas(here, ownerFactionId, art.id);
 
         // ── THE MONTHS, THE STONES, AND THE ROW ──────────────────────────
         const ambient = this.ambientFor(cultivator, run);
@@ -10489,7 +10477,10 @@ ${opened.text}` : receipt,
 
         const answered = ownerFactionId
             ? this.whatTheHouseDidAboutTheLeak({
-                run, cultivator, art, rung, ownerFactionId, mine, paid,
+                run, cultivator, art, rung, ownerFactionId, mine,
+                howItLeft:
+                    `wrote out a copy of ${art.name} and sold it for `
+                    + `${paid} spirit stone${paid === 1 ? '' : 's'}`,
                 houseStage, witnesses: sawIt, facts
             })
             : [];
@@ -10506,15 +10497,23 @@ ${opened.text}` : receipt,
 
     /**
      * What the house whose art it was does about it.
+     *
+     * HOW IT LEFT IS A SENTENCE, NOT A SALE. `manuals.md` is explicit that what
+     * a house loses is the art being OUT, and it does not become less out
+     * because it left through somebody's mouth instead of somebody's hands - so
+     * this takes the clause describing the departure rather than a price, and
+     * teaching an art on and selling a copy of it reach the same answer through
+     * the same door.
      */
-    private whatTheHouseDidAboutTheLeak(input: {
+    whatTheHouseDidAboutTheLeak(input: {
         run: Run;
         cultivator: Cultivator;
-        art: ResolvedEntity;
+        art: { id: string; name: string };
         rung: 0 | 1 | 2 | 3;
         ownerFactionId: string;
         mine: string | null;
-        paid: number;
+        /** How the art left their hands, in the ledger's own voice. */
+        howItLeft: string;
         houseStage: KnowingStage;
         witnesses: number;
         facts: EngineFacts;
@@ -10532,7 +10531,7 @@ ${opened.text}` : receipt,
             sellerIsOfTheHouse,
             sellerName: cultivator.name,
             artName: art.name,
-            stones: input.paid,
+            howItLeft: input.howItLeft,
             onDay,
             knownTo: canPointAt(input.houseStage) ? [ownerFactionId] : [],
             witnesses: input.witnesses
@@ -16107,7 +16106,7 @@ ${fit.line}`;
 }
 
 // THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
-export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs {}
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
 type CraftVerbs = typeof craftVerbs;
@@ -16122,4 +16121,5 @@ type InstitutionVerbs = typeof institutionVerbs;
 type DaoPartnerVerbs = typeof daoPartnerVerbs;
 type TakingVerbs = typeof takingVerbs;
 type GuardVerbs = typeof guardVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs);
+type TeachingVerbs = typeof teachingVerbs;
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs);

@@ -85,6 +85,12 @@ export const ACTION_NAMES = [
     'list_techniques',
     'learn_technique',
     /**
+     * HANDING A ROAD ON, which is `learn_technique` read from the other end and
+     * which nothing in the engine could do. `taught_technique` had been a
+     * `FavorCause` since the ledger was written and had no producer at all.
+     */
+    'teach',
+    /**
      * How a manual could go further, by every route there is.
      *
      * A read, and free: the decision is the content, so the comparison must not itself cost a decade.
@@ -306,6 +312,12 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
      */
     'learn_technique',
     /**
+     * Handing one on spends the months the art is worth - `monthsToCopy`, the
+     * same body of work counted the same way - and `shortSkip` runs the food
+     * clock and the encounter window over them.
+     */
+    'teach',
+    /**
      * And this one, which is even less obvious. Swallowing a pill spends no day at
      * all - and toxicity crossing `TOXICITY_TOLERANCE` mints a real poison injury
      * through the same path every other wound takes, with `evaluateDeathConditions`
@@ -454,6 +466,14 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
      */
     'guard',
     /**
+     * WHO IS BEING TAUGHT, resolved off who is standing in the square for the
+     * same reason a watch is: months at somebody's elbow happen in the same
+     * room as them. The art rides on `topic`, because this is the second verb
+     * in the set that needs both halves named and neither substitutes - see
+     * `give`.
+     */
+    'teach',
+    /**
      * Who is being told. Resolved through the same knowledge-gated party lookup
      * `interact` and `request` use, and refused with the same guiding refusal
      * when it reaches nobody - because a telling that reaches nobody is not a
@@ -525,7 +545,14 @@ export const TOPIC_ACTIONS: readonly ActionName[] = [
      * resolves like any other party, and the answer echoes it back so the player is
      * told what landed in the terms they said it in.
      */
-    'tell'
+    'tell',
+    /**
+     * `teach` uses it for WHICH ART is being handed on, resolved against what
+     * the teacher actually holds. Absent - "I teach her what I know" - the verb
+     * picks from what this teacher could volunteer to this student, and says so
+     * rather than guessing silently when there is more than one.
+     */
+    'teach'
 ] as const;
 
 /**
@@ -727,6 +754,14 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
     consume_pill: ['the_dose'],
     list_techniques: [],
     learn_technique: ['the_art'],
+    /**
+     * The months at the student's elbow run through `shortSkip`, so the food
+     * clock and the encounter window are over them like any other span. The
+     * deviation channel is the STUDENT's rather than the teacher's - the art
+     * goes onto their row, not onto the person handing it over - so it is not
+     * on this list, which is about what reaches this cultivator's body.
+     */
+    teach: ['a_span_of_days'],
     acquisition: [],
     ceiling: [],
     teacher: [],

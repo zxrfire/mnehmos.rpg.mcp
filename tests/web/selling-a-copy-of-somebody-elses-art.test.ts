@@ -195,7 +195,7 @@ describe('the four rungs land on the four severities', () => {
         sellerIsOfTheHouse: false,
         sellerName: 'Somebody',
         artName: 'the sword',
-        stones: 10,
+        howItLeft: 'sold a copy of the sword for 10 spirit stones',
         onDay: 0,
         knownTo: [PAVILION],
         witnesses: 1
@@ -221,7 +221,8 @@ describe('the four rungs land on the four severities', () => {
     it('opens nothing at all where the art is nobody\'s', () => {
         expect(theLeakAsADeed({
             rung: 0, ownerFactionId: null, sellerIsOfTheHouse: false,
-            sellerName: 'Somebody', artName: 'a primer', stones: 3, onDay: 0,
+            sellerName: 'Somebody', artName: 'a primer',
+            howItLeft: 'sold a copy of a primer for 3 spirit stones', onDay: 0,
             knownTo: [], witnesses: 4
         })).toBeNull();
     });

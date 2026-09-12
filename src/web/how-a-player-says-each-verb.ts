@@ -367,6 +367,18 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I start on the sword method for the first time',
         'I read the canon until I can actually use it'
     ],
+    // The same act from the other end, and the two share every noun - so every
+    // exemplar here pins the SPEAKER as the one giving, and not one of them
+    // contains "teach me".
+    teach: [
+        'I teach her what I know',
+        'I show him the form',
+        'I pass the method on to her',
+        'I walk him through the art step by step',
+        'I take her as a student and teach her',
+        'I hand my road on to somebody who can use it',
+        'I show the girl how it is actually done'
+    ],
     acquisition: [
         'how does somebody like me get hold of a manual',
         'what are the ways to come by an art',

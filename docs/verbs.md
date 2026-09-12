@@ -74,8 +74,8 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**56 verbs.** 17 of them take nothing from the player,
-26 spend in-world time and can therefore kill, and
+**57 verbs.** 17 of them take nothing from the player,
+27 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
 A verb the deterministic parser cannot reach is playable only where a provider is
@@ -111,6 +111,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`consume_pill`](#consume_pill) | `target` | time | yes | - | - |
 | [`list_techniques`](#list_techniques) | - | nothing | yes | yes | - |
 | [`learn_technique`](#learn_technique) | `target` | time | yes | - | - |
+| [`teach`](#teach) | `target` `topic` | time | yes | - | - |
 | [`acquisition`](#acquisition) | `target` | nothing | yes | yes | - |
 | [`ceiling`](#ceiling) | - | nothing | yes | yes | - |
 | [`teacher`](#teacher) | - | nothing | yes | yes | - |
@@ -375,6 +376,14 @@ take up an art for the first time. "target" names it. NOT the same as train_tech
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'learn_technique'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.learnTechnique` · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`.
+
+### `teach`
+
+HAND AN ART ON TO SOMEBODY ELSE - the speaker doing the teaching, which is the opposite direction from learn_technique and from request/teaching. "target" is who is being taught and must be somebody standing here; "topic" is which art, and may be left out, in which case the engine picks from what this teacher could pass to this student and asks if there is more than one. Only reachable with an art the speaker holds and has taken to the end - the same bar a master in the world has to clear to write a copy out. It spends the months the art is worth, puts the art on the other person, and opens an account in the teacher's favour. Whose art it was is priced on the same four rungs a leaked book is: handing on a house's own canon is not refused, it is answered.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'teach'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`, `topic`.
 
 ### `acquisition`
 

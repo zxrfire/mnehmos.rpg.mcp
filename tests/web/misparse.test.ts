@@ -516,7 +516,11 @@ describe('every verb is reachable from plain English', () => {
         // 护法, and the phrasing chosen is the one that had to be taken off
         // `breakthrough`: it carries the word, and it is about somebody
         // else's crossing rather than the speaker's own.
-        guard: 'I watch over his breakthrough'
+        guard: 'I watch over his breakthrough',
+        // The giving half of being taught. The phrasing carries the word
+        // `teach` and is about somebody else taking the art rather than the
+        // speaker, which is the whole of what keeps it off the teacher read.
+        teach: 'I teach her what I know'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

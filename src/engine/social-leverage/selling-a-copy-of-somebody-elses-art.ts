@@ -43,8 +43,17 @@ export interface ALeak {
     sellerIsOfTheHouse: boolean;
     sellerName: string;
     artName: string;
-    /** What they were paid, for the record. Never a weight. */
-    stones: number;
+    /**
+     * How the art left their hands, for the record. Never a weight.
+     *
+     * A clause rather than a price, because a house loses the same thing
+     * whichever way it went out - `manuals.md`: once the top of a house's shelf
+     * is out, no amount of killing you puts it back, and it does not become
+     * less out because it left through somebody's mouth. So a copy sold for
+     * stones and an art taught to somebody are one event here, and there is no
+     * second scale beside this one to drift from it.
+     */
+    howItLeft: string;
     onDay: DayIndex;
     /**
      * Everybody who got far enough up the ladder of knowing to name it, faction ids
@@ -76,9 +85,7 @@ export function theLeakAsADeed(leak: ALeak): Deed | null {
         // did has broken no promise, whatever else they have done.
         ...(leak.sellerIsOfTheHouse ? { promised: true } : {}),
         onDay: leak.onDay,
-        description:
-            `${leak.sellerName} wrote out a copy of ${leak.artName} and sold it for `
-            + `${leak.stones} spirit stone${leak.stones === 1 ? '' : 's'}.`,
+        description: `${leak.sellerName} ${leak.howItLeft}.`,
         knownTo: leak.knownTo,
         witnesses: leak.witnesses,
         participants: [leak.ownerFactionId],

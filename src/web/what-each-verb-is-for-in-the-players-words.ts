@@ -353,6 +353,19 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             root is learnable and can tear meridians on the spot, so choose this only when the
             player plainly asked to learn something.`
     },
+    teach: {
+        takes: ['target', 'topic'],
+        says: `HAND AN ART ON TO SOMEBODY ELSE - the speaker doing the teaching, which is the
+            opposite direction from learn_technique and from request/teaching. "target" is who
+            is being taught and must be somebody standing here; "topic" is which art, and may
+            be left out, in which case the engine picks from what this teacher could pass to
+            this student and asks if there is more than one. Only reachable with an art the
+            speaker holds and has taken to the end - the same bar a master in the world has to
+            clear to write a copy out. It spends the months the art is worth, puts the art on
+            the other person, and opens an account in the teacher's favour. Whose art it was
+            is priced on the same four rungs a leaked book is: handing on a house's own canon
+            is not refused, it is answered.`
+    },
     acquisition: {
         takes: ['target'],
         says: `how a manual could go further, priced by every route there is at once: finding

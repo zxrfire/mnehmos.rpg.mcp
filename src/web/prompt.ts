@@ -652,7 +652,7 @@ ${composePlanSchemaFields()}
    "reason": <one short sentence>}
 
 Lanes. Pick the LANE first - what the player is doing - and then the intent inside it. You
-are not choosing between fifty-six engine routines; the engine works out which routine a
+are not choosing between ${ACTION_NAMES.length} engine routines; the engine works out which routine a
 lane and an intent stand for. Choosing the right lane and a rough intent is worth far more
 than agonising over the label.
 ${LANE_GLOSSARY}

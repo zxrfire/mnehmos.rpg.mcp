@@ -2098,7 +2098,33 @@ export const SELLING_SUBJECT_VERBS = new RegExp(`${SELLING_VERBS}|offer|offers|o
  * Asking what a thing FETCHES rather than putting it down.
  */
 export const SELLING_ASKED_AS_A_BOARD =
-    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?)|(?:what|who)(?:'s| is| are)? (?:they|people|anybody|anyone|the others|everybody) (?:selling|trading)|who(?:'s| is| are)? (?:here )?(?:selling|trading)|what do(?:es)? (?:they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/;
+    /\b(?:what(?:'s| is) (?:for sale|on offer)|what can i buy|the prices?|(?:browse|visit|see|check|go to|head to) the (?:market|bazaar|stalls?)|(?:what|who)(?:'s| is| are)? (?:they|people|anybody|anyone|the others|everybody) (?:selling|trading)|who(?:'s| is| are)? (?:here )?(?:selling|trading)|what do(?:es)? (?:you|they|he|she|people|anybody|anyone|everybody|the \w+) (?:sell|trade|stock|have))\b/;
+
+/**
+ * THE BOARD QUESTION PUT TO THE PERSON BEHIND THE COUNTER.
+ *
+ * Every phrasing the market branch read was in the THIRD person - `what does he
+ * have`, `what has she got`, `who here is selling` - and the one word a
+ * customer standing in front of a stallholder actually uses is `you`. Measured
+ * on the refusal probe: "let me see what you have" reached `unclear` 28 turns
+ * out of 28, while the same question about the same stall one pronoun over
+ * already reached the counter.
+ *
+ * Deliberately narrow: it is the board question and NOT a question about what
+ * somebody is carrying on their person, which is a different read one mechanic
+ * over. What makes it a stall is the buying idiom around it - being shown, or
+ * being let see - rather than the pronoun on its own.
+ */
+const ASKED_OF_THE_PERSON_BEHIND_THE_COUNTER = new RegExp([
+    // Being shown it, or being let see it. The half of the idiom that carries
+    // no question word at all.
+    String.raw`\b(?:let(?:'s| us)?\s+(?:me\s+)?(?:see|have a look at|look at)|show me|let me see)`
+    + String.raw`\s+what\s+you(?:'ve|'re)?\b`,
+    // And asked as a question.
+    String.raw`\bwhat\s+(?:do|does|have|has|are|is)?\s*you(?:'ve|'re)?\s*`
+    + String.raw`(?:got|have|carry|carrying|sell|selling|stock|stocking|trade|trading|`
+    + String.raw`for sale|on offer)\b`
+].join('|'));
 
 export const BUYING_A_PERSON_OFF =
     /\b(?:bribe|bribes|bribing|pay off|pays off|grease|buy (?:his|her|their|the \w+'s) silence|pay (?:him|her|them) (?:off|to))\b/;
@@ -3298,6 +3324,105 @@ const STANDING_GUARD_IDIOM =
 const A_GUARDING_PHRASE =
     /\b(?:guard|guards|guarding|guarded|protect|protects|protecting|protected|watch over|watches over|watching over|watched over|shield|shields|shielding|cover|covers|covering|look out for|stand over|stands over|standing over|stand by|see (?:him|her|them) through)\b/;
 
+// ─────────────────────────────────────────────────────────────────────────
+// HANDING AN ART ON, WHICH IS THE HALF NOBODY COULD SAY
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The speaker doing the teaching.
+ *
+ * Measured on the refusal probe: "I teach her what I know" and "I show her the
+ * form" each reached `unclear` 28 turns out of 28. Being taught was read in a
+ * dozen phrasings and teaching in none, which is the one-way read `AGENTS.md`
+ * names - the direction the code was written for looks complete on its own.
+ *
+ * EVERY BRANCH PINS THE RECIPIENT AS SOMEBODY WHO IS NOT THE SPEAKER, which is
+ * the whole guard against eating the sentences that ask to BE taught. `teach
+ * me` is `TEACHER_QUESTION`'s and stays there; so does every phrasing that
+ * reaches it through somebody else.
+ *
+ * `train` is deliberately pronoun-only: "I train the sword method" is
+ * `train_technique` and shares the verb.
+ */
+const SOMEBODY_BEING_TAUGHT =
+    // THE SPEAKER IS NEVER THE RECIPIENT. A bare "teach me" is the teacher
+    // question and reached this branch on the open name alternative until the
+    // lookahead was added.
+    String.raw`(him|her|them|the (?:boy|girl|child|kid|lad|youngster|junior|disciple|student|`
+    + String.raw`novice|apprentice)|`
+    // AND A NAME, WITH THE WORDS THAT ARE NOT A PERSON KEPT OUT. The open
+    // alternative is what lets "I teach Yun Ciru the step" name somebody, and
+    // without the lookahead it also read "what places teach a dao" and "teach
+    // me" as people - a ground question and the teacher question, both of which
+    // own their own verbs. The lookahead sits on this alternative alone, because
+    // "the boy" above is a recipient and starts with an article.
+    + String.raw`(?!(?:a|an|the|any|some|each|every|no|what|how|why|when|where|which|who|`
+    + String.raw`me|us|myself|ourselves|anything|something|nothing|everything)\b)`
+    + String.raw`[a-z'’-]+(?: [a-z'’-]+)?)`;
+
+/**
+ * The GROUND doing the teaching, which is `roads` and not a person at all.
+ *
+ * "does this valley teach anything" is the corpus's own exemplar for the ground
+ * read, and it carries the verb with a thing after it. The recipient lookahead
+ * above keeps out the thing-pronouns; this keeps out the subject, so a sentence
+ * whose teacher is a mountain never reaches a verb that spends a season.
+ */
+const THE_GROUND_IS_DOING_THE_TEACHING =
+    /\b(?:this|that|the|a|any)\s+(?:place|ground|land|valley|mountain|peak|region|province|site|cave|river|spring|wood|forest|hill|ruin)\b[^.?!]{0,20}\b(?:teach|teaches|teaching)\b/;
+
+const TEACHING_SOMEBODY_ELSE = new RegExp([
+    String.raw`\b(?:teach|teaches|teaching|instruct|instructs|instructing|tutor|tutors|`
+    + String.raw`tutoring|coach|coaches|coaching)\s+` + SOMEBODY_BEING_TAUGHT,
+    // EVERY ALTERNATIVE CAPTURES THE RECIPIENT. The two that did not read "I
+    // show her the form" as naming nobody, and the refusal came back "you did
+    // not say who" with her standing in front of them.
+    String.raw`\b(?:train|trains|training|drill|drills|drilling|show|shows|showing)\s+`
+    + String.raw`(him|her|them)\b`,
+    String.raw`\b(?:pass|passes|passing|hand|hands|handing)\b[^.?!]{0,40}\b(?:on|down)\s+to\s+`
+    + SOMEBODY_BEING_TAUGHT,
+    String.raw`\bwalk(?:s|ing)?\s+(him|her|them)\s+through\b`,
+    String.raw`\btake\s+(him|her|them)\s+(?:on\s+)?as\s+(?:a\s+|my\s+)?(?:disciple|student|`
+    + String.raw`apprentice)\b`
+].join('|'));
+
+/**
+ * Somebody ELSE doing the teaching, at the speaker's asking.
+ *
+ * "I ask her to teach him" is a request put to a third party, and this engine
+ * has no such thing - but it is not the speaker teaching either, and reading it
+ * as one would have the player spend a season they never offered.
+ */
+const SOMEBODY_ELSE_IS_THE_TEACHER =
+    /\b(?:ask|asks|asking|beg|begs|begging|persuade|persuades|convince|convinces|request|requests|get|gets|have)\b[^.?!]{0,30}\bto\s+(?:teach|instruct|tutor|train|show)\b/;
+
+/** The phrases that mean "whatever it is you have", which name no art. */
+const NOT_THE_NAME_OF_AN_ART =
+    /^(?:what i (?:know|have|can do|picked up)|everything i know|all i know|all that i know|(?:my|the) (?:art|arts|method|methods|road|dao|style|form|forms|understanding|technique|techniques)|how (?:it is|it's) done|how to do it|the basics|a thing or two|something|anything|it|this|that)$/;
+
+/** Who is being taught, and which art, off the sentence as it was typed. */
+function whoIsBeingTaught(input: string): { target?: string; topic?: string } {
+    const found = TEACHING_SOMEBODY_ELSE.exec(input.toLowerCase());
+    if (!found) return {};
+    const who = (found.slice(1).find(group => group !== undefined) ?? '').trim();
+    // WHAT IS LEFT AFTER THE RECIPIENT, read off the sentence as typed so a
+    // catalogued name keeps its capitals for `resolveTechnique`.
+    const after = input.slice(found.index + found[0].length)
+        .replace(/^[\s,]+/, '')
+        .replace(/[.!?]+$/, '')
+        .trim();
+    const bare = after.replace(/^(?:the|my|a|an|this|that)\s+/i, '').trim();
+    // TESTED BEFORE THE ARTICLE COMES OFF AS WELL AS AFTER. "the form" is one
+    // of the phrases that names no art and "form" on its own is not on the
+    // list, so stripping first sent a fuzzy match off after the whole catalog.
+    const names = (said: string): boolean => NOT_THE_NAME_OF_AN_ART.test(said.toLowerCase());
+    const art = names(after) || names(bare) ? '' : bare;
+    return {
+        ...(who.length >= 2 ? { target: who } : {}),
+        ...(art.length >= 3 ? { topic: art.slice(0, 80) } : {})
+    };
+}
+
 /**
  * Asking who would keep a watch over YOUR crossing, which names nobody.
  */
@@ -3591,6 +3716,15 @@ function planIntent(input: string): PlannedAction {
                 ? { withArt: theArtTheyNamed(input)! }
                 : {})
         };
+    }
+
+    // HANDING AN ART ON. Beside the watch because the two are the giving pair,
+    // and both need somebody standing here before anything is spent.
+    if (TEACHING_SOMEBODY_ELSE.test(text)
+        && !SOMEBODY_ELSE_IS_THE_TEACHER.test(text)
+        && !THE_GROUND_IS_DOING_THE_TEACHING.test(text)
+        && !ROADS_QUESTION.test(text)) {
+        return { action: 'teach', ...whoIsBeingTaught(input) };
     }
 
     // 护法: STANDING OVER SOMEBODY ELSE'S CROSSING
@@ -4429,7 +4563,10 @@ function planIntent(input: string): PlannedAction {
         // actually use, and `whatThisPersonWouldPartWith` was already there to
         // answer it. Measured on the trope corpus as a blank look.
         || /\b(?:what|anything)\s+(?:is|are)\s+(?:he|she|they|you|the \w+)\s+offer(?:ing)?\b/.test(text)
-        || /\bwhat\s+(?:has|have)\s+(?:he|she|they|the \w+)\s+got\b/.test(text))) {
+        || /\bwhat\s+(?:has|have)\s+(?:he|she|they|the \w+)\s+got\b/.test(text)
+        // AND THE SAME QUESTION PUT TO THE STALLHOLDER RATHER THAN ABOUT THEM.
+        // See {@link ASKED_OF_THE_PERSON_BEHIND_THE_COUNTER}.
+        || ASKED_OF_THE_PERSON_BEHIND_THE_COUNTER.test(text))) {
         // HOW MUCH IS A THING is the commonest way anybody asks a price, and it
         // was the one phrasing whose SUBJECT was thrown away: the branch above
         // fires on it, `extractSubject` had no pattern for it, and the player

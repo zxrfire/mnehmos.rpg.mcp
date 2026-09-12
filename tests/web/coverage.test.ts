@@ -407,6 +407,15 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I study the Iron Bell Manual',
         'I take up the Cloudstep technique'
     ],
+    // The same act from the other end, which reached nothing at all until
+    // `teaching-somebody-what-you-hold.ts`. Every phrasing pins the speaker as
+    // the one giving: "teach me" is the teacher question and must not land here.
+    teach: [
+        'I teach her what I know',
+        'I show him the form',
+        'I walk her through it',
+        'I teach the boy the first form'
+    ],
     // The verb that was missing entirely, and with it the six heal_hp pills
     // and every breakthrough pill bonus ever computed.
     // One command, three costs. The question a player asks at a ceiling.

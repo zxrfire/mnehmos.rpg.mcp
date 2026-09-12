@@ -1,5 +1,5 @@
 /**
- * Thirteen lanes over fifty-six verbs.
+ * Thirteen lanes over the whole verb surface.
  *
  * Measured over 744 played turns: the three verbs carrying no intent axis
  * produced 63% of everything the game came back unable to answer - `interact`
@@ -8,7 +8,7 @@
  * `status` 36/36, `market`, `teacher`, `ceiling`, `list_techniques`.
  *
  * So the reader's difficulty was never the number of verbs. It was being asked
- * for one label out of fifty-six flat ones, several of which fit the same
+ * for one label out of the whole flat list, several of which fit the same
  * sentence. A lane is the outer choice and the intent is the inner one, and the
  * engine still decides everything after that.
  */

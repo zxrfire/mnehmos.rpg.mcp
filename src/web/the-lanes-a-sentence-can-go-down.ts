@@ -1,5 +1,5 @@
 /**
- * Thirteen lanes over fifty-six verbs.
+ * Thirteen lanes over the whole verb surface.
  *
  * ── WHAT THIS IS FOR ─────────────────────────────────────────────────────
  *
@@ -10,10 +10,11 @@
  * `teacher`, `ceiling`, `list_techniques`, zero between them.
  *
  * So the reader's difficulty was never the number of verbs. It was being asked
- * to pick one label out of fifty-six flat ones, several of which fit the same
- * sentence. Twenty-one of the fifty-six carry an intent; thirty-five do not,
- * and the thirty-five include the whole read family, which is the part a lost
- * player reaches for most.
+ * to pick one label out of a long flat list, several of which fit the same
+ * sentence. About a third of them carry an intent and the rest do not, and the
+ * rest include the whole read family, which is the part a lost player reaches
+ * for most. The exact count moves as verbs are added; the shape of the problem
+ * does not, so it is not written down here as a number.
  *
  * A lane is the outer choice, and the intent is the inner one. Choosing
  * `consult` and then `what am I carrying` is a question a model can answer;

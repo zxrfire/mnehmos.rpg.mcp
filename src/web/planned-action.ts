@@ -250,7 +250,7 @@ function absentRatherThanRejected(raw: unknown): unknown {
  * A lane and an intent, turned into the verb they stand for.
  *
  * The model is asked for a LANE, which is a choice between thirteen things it
- * can tell apart, rather than for one label out of fifty-six. Measured over 744
+ * can tell apart, rather than for one label out of the whole list. Measured over 744
  * played turns, the three verbs with no intent axis produced 63% of everything
  * the game could not answer, and every verb that had one refused nothing.
  *
