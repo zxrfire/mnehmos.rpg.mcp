@@ -15,7 +15,9 @@
  *                                   are not free, and saying they happened
  *                                   with no consequence is worse than
  *                                   refusing - the player will believe the
- *                                   inn burned.
+ *                                   inn burned. Refusing is still right; WHICH
+ *                                   refusal has since moved, see the last test
+ *                                   in this file.
  *   incoherent                      still refuses, and the misparse surface
  *                                   that teaches somebody the verbs survives.
  *
@@ -159,19 +161,42 @@ describe('played, an act with no rule is answered and costs nothing', () => {
     }, 300_000);
 
     /**
-     * THE TRAP THIS IS DESIGNED AGAINST. An arson answered with "nothing came
-     * of it" is worse than a refusal, so the sentence keeps the blank look and
-     * the list of what would work under it.
+     * THE TRAP THIS IS DESIGNED AGAINST, AND IT STILL HOLDS. An arson answered
+     * with "nothing came of it" is worse than a refusal.
+     *
+     * REWRITTEN, AND THE RULE DID NOT MOVE. This used to assert the refusal
+     * came from `engine.parseIntent` - the blank look - and that was the right
+     * assertion for as long as the engine had nowhere better to send the
+     * sentence. It has one now. `destroy` exists, it resolves a named thing
+     * against what somebody is actually holding, and a stall is not that, so
+     * these reach a refusal that SAYS SO instead of claiming the sentence was
+     * unreadable. Which it never was: the engine read "I set fire to the inn"
+     * perfectly and had no rule for the consequence, and telling a player their
+     * own plain English did not parse is the engine lying about its own state.
+     *
+     * So the assertion is now the rule rather than the route: it is refused,
+     * nothing was spent, and nobody is told the inn burned. The old one is
+     * kept underneath it in the weaker form that is still true - the blank
+     * look is gone and has not been replaced by a success.
      */
     it('still refuses an act the world would have to answer', async () => {
         const { game } = await makeGameInWorld({ worldSeed: 'an-inn-that-did-not-burn' });
         await game.newRun('Shen Wuyou');
 
         for (const said of ['I set fire to the inn', 'I smash the stall']) {
+            const before = await game.state();
             const turn = await game.act(said);
+            const after = await game.state();
+
             expect(turn.narration ?? '', said).not.toContain('Nothing follows from it');
-            expect(turn.toolCalls.some((call: { name: string; ok: boolean }) =>
-                call.name === 'engine.parseIntent' && call.ok === false), said).toBe(true);
+            // Refused, by whichever tier is entitled to refuse it.
+            expect(turn.toolCalls.some((call: { ok: boolean }) => call.ok === false), said)
+                .toBe(true);
+            // And the reason is a true one about the world rather than a claim
+            // that the sentence could not be read.
+            expect(turn.narration ?? '', said)
+                .not.toContain('does not resolve into anything');
+            expect(after.run!.elapsedDays, said).toBe(before.run!.elapsedDays);
         }
     }, 300_000);
 });

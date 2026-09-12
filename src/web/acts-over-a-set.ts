@@ -489,9 +489,9 @@ function intoSentences(line: string): string[] {
 /**
  * Who the act never got to, said the way somebody says it.
  *
- * Three names or fewer are worth saying; past that the fact is how many, and
- * every one of them is standing in the square to be looked at. The same rule
- * the room reading takes and the set fold takes.
+ * Three names or fewer are worth saying; past that, the first of them and the
+ * rest folded in behind. The same rule the room reading takes and the set fold
+ * takes, and never a count of them - see `a-group-is-named-not-counted.ts`.
  */
 export function whoWasNeverReached(names: readonly string[]): string {
     if (names.length === 0) return 'Nobody else was in it';
@@ -500,5 +500,9 @@ export function whoWasNeverReached(names: readonly string[]): string {
         return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} were never `
             + 'reached';
     }
-    return `${names.length} others behind them were never reached`;
+    // AND PAST THREE, THE FIRST OF THEM CARRIES THE REST. This read
+    // `${names.length} others behind them`, which is a tally of bystanders in
+    // narration - the defect `theRoom` was rewritten for, and the same fix: the
+    // names are already in hand, so the fold costs nothing.
+    return `${names[0]} and the others behind them were never reached`;
 }

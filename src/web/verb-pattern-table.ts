@@ -929,6 +929,43 @@ export const PILL_NOUNS = /\b(?:pills?|elixirs?|medicines?|tablets?|pellets?)\b/
 export const PILL_SUBJECT_VERBS = /take|swallow|eat|consume|use|down|dose/;
 
 /**
+ * Ending a thing on purpose.
+ *
+ * `break up` and `break in` are deliberately absent: the first is walking away
+ * from something still on the stocks, which `craft` owns, and the second is
+ * bringing an animal to heel.
+ */
+export const BREAKING_VERBS =
+    'smash|smashes|smashing|smashed|shatter|shatters|shattering|shattered|'
+    + 'destroy|destroys|destroying|destroyed|break|breaks|breaking|broke|'
+    + 'snap|snaps|snapping|snapped|crush|crushes|crushing|crushed|'
+    + 'burn|burns|burning|burned|burnt|set fire to|set alight|torch|torches';
+
+export const BREAKING_SUBJECT_VERBS =
+    /smash|shatter|destroy|break|snap|crush|burn|set fire to|set alight|torch/;
+
+/**
+ * Nouns that name a THING rather than a person, so a breaking has an object.
+ *
+ * The scenery at the bottom is on the list on purpose. A stall, an inn and a
+ * village are not things this engine models, and the sentence has to ARRIVE
+ * somewhere that knows that before anybody can be told it - see the handler,
+ * which holds the honest refusal.
+ */
+export const A_THING_THAT_CAN_BE_BROKEN =
+    /\b(?:pills?|elixirs?|medicines?|tablets?|pellets?|talismans?|manuals?|scrolls?|books?|swords?|blades?|sabres?|sabers?|spears?|staffs?|staves?|bows?|boats?|ships?|barges?|skiffs?|hulls?|carriages?|carts?|wagons?|waggons?|coaches?|cauldrons?|furnaces?|tokens?|pendants?|rings?|robes?|armour|armor|stalls?|inns?|taverns?|shops?|huts?|buildings?|villages?|towns?|walls?|gates?|formations?|arrays?|wards?)\b/;
+
+/**
+ * Sentences that share a breaking verb and are about something else entirely.
+ *
+ * A crossing, an oath, a body part, somebody's cultivation, a seal. Every one
+ * of these is already owned by a branch that reads it correctly, and every one
+ * of them contains a word from {@link BREAKING_VERBS}.
+ */
+export const NOT_A_BREAKING_AT_ALL =
+    /\b(?:break(?:s|ing)?\s+(?:up|in|through)|breakthrough|bottleneck|barrier|oath|vow|promise|neck|throat|spine|skull|ribs?|jaw|kneecaps?|cultivation|dantian|meridians?|foundation|golden core|seal|siege|camp)\b/;
+
+/**
  * Taking up an art for the first time.
  */
 export const LEARNING_VERBS =
@@ -2402,8 +2439,19 @@ export const WHAT_IS_WRITTEN_BETWEEN_US = new RegExp([
     // `what am i committed to` all reached nothing. `AN_OATH` wants the NOUN,
     // and none of those sentences has one in it - the commonest way to ask what
     // you are under names the ACT or the STATE rather than the thing.
-    String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:have|has|did)\s+(?:i|we)\s+`
-    + String.raw`(?:sworn|swore|promised|pledged|agreed to|given my word)\b`,
+    // AND THE TWO HALVES TAKE DIFFERENT GRAMMAR, which is why this read as
+    // fixed and was not. After `have`/`has` English takes the participle -
+    // "what have I sworn" - and after `did` it takes the BARE INFINITIVE:
+    // "what did I promise", never "what did I promised". One shared
+    // alternation of participles answered every `have` phrasing and no `did`
+    // one, while the comment above listed `what did i promise` as fixed.
+    // Measured: it reached `unclear`, and `what did i swear` reached
+    // `interact/negotiate` - somebody MAKING a promise rather than reading
+    // one back.
+    String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:have|has)\s+(?:i|we)\s+`
+    + String.raw`(?:sworn|promised|pledged|agreed to|given my word)\b`,
+    String.raw`^\s*(?:so\s+|and\s+)?what\s+did\s+(?:i|we)\s+`
+    + String.raw`(?:swear|promise|pledge|vow|agree to|give my word)\b`,
     String.raw`^\s*(?:so\s+|and\s+)?what\s+(?:am|are)\s+(?:i|we)\s+`
     + String.raw`(?:bound|obliged|committed|pledged|sworn|indentured|answerable)\b`,
     // ── AND MEANING TO DO SOMETHING ABOUT IT ─────────────────────────────
@@ -3715,6 +3763,25 @@ function planIntent(input: string): PlannedAction {
             ...(theArtTheyNamed(input) !== undefined
                 ? { withArt: theArtTheyNamed(input)! }
                 : {})
+        };
+    }
+
+    // BREAKING A THING, WHICH IS NOT SWINGING ONE
+    //
+    // Above the attack branch because `ATTACK_SUBJECT_VERBS` carries `break`,
+    // `snap` and `crush`, so "I break my sword" was read as a swing and
+    // `resolveParty` then found nobody to swing at. Measured on `a-xianxia-run`:
+    // "I smash the pill" reached `consume_pill` - a smashing read as a
+    // SWALLOWING - and "I smash the stall" reached the blank look.
+    //
+    // It needs a breaking verb and a thing-noun together, which is what keeps
+    // it off every sentence about a crossing, an oath or a throat.
+    if (usedAsVerb(text, BREAKING_VERBS)
+        && A_THING_THAT_CAN_BE_BROKEN.test(text)
+        && !NOT_A_BREAKING_AT_ALL.test(text)) {
+        return {
+            action: 'destroy',
+            target: extractSubject(input, BREAKING_SUBJECT_VERBS)
         };
     }
 

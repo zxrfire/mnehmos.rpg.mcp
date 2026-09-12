@@ -47,7 +47,8 @@ import {
     whatRebuildingWouldCost
 } from './a-house-holds-its-own.js';
 import { makeFact, type HistoricalFact } from './history.js';
-import { isRuined, ruin } from './possessions.js';
+import { isRuined } from './possessions.js';
+import { aBreakingEntersTheWorld } from './a-thing-somebody-ended-is-a-fact.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     whatAHouseIsMadeOf,
@@ -125,11 +126,19 @@ export function whatTheYearDidToTheGround(
             const row = state.objects[at]!;
             if (row.kind !== 'formation' || row.locationId !== seatId) continue;
             if (isRuined(row)) continue;
-            state.objects[at] = ruin(row, {
-                onDay: input.day,
-                source: input.winner.name,
-                note:
-                    `Beaten in the field year of the war with ${input.winner.name}, who could `
+            // Through the world's own breaking door, so a ward beaten down in
+            // a siege reaches the record the same way anything else broken
+            // does. `ruin` was called straight here with no `factId`, and a
+            // house losing the formation over its own seat was known only to
+            // the engagement report.
+            aBreakingEntersTheWorld(state, {
+                actor: { id: input.winner.id, name: input.winner.name, role: 'brought it down' },
+                object: row,
+                day: input.day,
+                locationId: seatId,
+                factionIds: [input.winner.id, input.loser.id],
+                how:
+                    `beaten in the field year of the war with ${input.winner.name}, who could `
                     + 'reach past it. What it was keeping out is inside.'
             });
             wardBroken = row.name;

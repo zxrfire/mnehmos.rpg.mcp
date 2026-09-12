@@ -40,8 +40,15 @@ import { KnowledgeGate } from '../../src/web/knowledge';
 const WORLD = 'people-channel-world';
 const RUN = 'people-channel';
 
-/** The engine's own signature for "and this is whether they said anything". */
-const SAID_OR_DID_NOT = /They answer, out loud\.|They say nothing/;
+/**
+ * The engine's own signature for "and this is whether they said anything".
+ *
+ * Was `/They answer, out loud\.|They say nothing/`. The modality went with the
+ * headcount ruling - *out loud* and *where the others can see it* are the
+ * engine reporting its own observation on top of the observation. What is said
+ * or not said is the fact, and it is what this matches.
+ */
+const SAID_OR_DID_NOT = /They answer\.|They say nothing/;
 const THE_ROOM = /other (people|person) here had no part in it/;
 
 /** Every phase-3 user message the provider was sent since a mark. */

@@ -40,6 +40,10 @@ import { whatItWasWorth } from '../engine/social-leverage/what-a-deed-leaves.js'
 import { whatTheyDoAboutBeingWronged } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
 import type { InheritanceRelation, ObligationInput } from '../engine/social/grudges.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
+import {
+    aBreakingEntersTheWorld,
+    type TheThingIsGone
+} from '../engine/world/a-thing-somebody-ended-is-a-fact.js';
 import { type NpcRecord, bodyStandingOn, maxBodyOf } from '../engine/world/npc-state.js';
 import { npcsInFaction } from '../engine/world/world-state.js';
 import { whatTheyRecogniseAboutIt } from '../engine/world/artifact-recognition.js';
@@ -47,7 +51,6 @@ import {
     isRuined,
     isTracked,
     revealOwnership,
-    ruin,
     transferPossession
 } from '../engine/world/possessions.js';
 import {
@@ -1580,17 +1583,27 @@ export const combatVerbs = {
             const at = this.atHand
                 ? this.atHand.objects.findIndex(o => o.id === loss.broke.objectId)
                 : -1;
-            if (this.atHand && at >= 0 && !isRuined(this.atHand.objects[at])) {
-                this.atHand.objects[at] = ruin(this.atHand.objects[at], {
-                    onDay: Math.floor(this.atHand.currentDay),
-                    source:
-                        `Swung at ${held.party.name} by ${cultivator.name}, and did not survive it.`,
-                    note: loss.broke.exposure.cause
+            // THE SAME DOOR THE `destroy` VERB GOES THROUGH. This called `ruin`
+            // straight and supplied no `factId`, so a blade breaking in a fight
+            // wrote nothing to `state.history.facts` and reached nobody who was
+            // not standing there. `aBreakingEntersTheWorld` files the fact
+            // first and ruins the row with its id, and grades how far the news
+            // goes off the thing's own significance.
+            let gone: TheThingIsGone | null = null;
+            if (this.atHand && at >= 0) {
+                gone = aBreakingEntersTheWorld(this.atHand, {
+                    actor: { id: cultivator.id, name: cultivator.name, role: 'broke it' },
+                    object: this.atHand.objects[at],
+                    day: Math.floor(this.atHand.currentDay),
+                    locationId: this.worldPlaceOf(cultivator),
+                    place: placeName(cultivator),
+                    how: `swung at ${held.party.name} and did not survive it: `
+                        + loss.broke.exposure.cause
                 });
                 // `act` persists on this flag before anything is narrated, so a
                 // restart cannot lose the loss - the same guarantee a killing
                 // gets one method down.
-                this.theWorldMoved();
+                if (gone) this.theWorldMoved();
             }
 
             // AND SAY WHAT IS LEFT, NOT WHAT ALREADY HAPPENED

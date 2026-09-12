@@ -18,6 +18,10 @@ import { composeNarrationUser } from '../../src/web/prompt.js';
 
 /** Forms of address and sentence openers, which are capitals and not names. */
 const NOT_A_NAME = new Set([
+    // Forms of address are genre commons, not names granted per run. 'Daoist'
+    // is listed alone as well as in 'Fellow Daoist' because lowercasing a
+    // sentence opener can split the pair.
+    'Daoist',
     'Fellow Daoist', 'Senior', 'Junior', 'Elder Brother', 'Elder Sister',
     'And', 'But', 'Eight', 'Eleven', 'Fifteen', 'Forty', 'Hah', 'Last', 'Millet',
     'Nine', 'No', 'Nobody', 'Only', 'That', 'The', 'Then', 'There', 'They',
@@ -46,7 +50,17 @@ describe('an example sentence may not carry a name', () => {
         const found: string[] = [];
         for (const line of examples) {
             // A capital that is not the first word of a sentence is the tell.
-            for (const [word] of line.matchAll(/\b[A-Z][a-z]+(?: [A-Z][a-z]+)*\b/g)) {
+            //
+            // BLANKING THE SENTENCE-INITIAL ONES RATHER THAN LISTING THEM. The first
+            // cut kept an allowlist of openers, which held while the examples were
+            // single lines and fell over the moment whole paragraphs went in -
+            // "Behind you two men were going at the caravan intake" is not a name
+            // called Behind. The thing checked is the same either way: a capital
+            // INSIDE a sentence.
+            const inner = line
+                .replace(/^[\s"\u201c]*[A-Z]/, m => m.toLowerCase())
+                .replace(/([.!?]\s+["\u201c]?)([A-Z])/g, (_m, lead, c) => lead + c.toLowerCase());
+            for (const [word] of inner.matchAll(/\b[A-Z][a-z]+(?: [A-Z][a-z]+)*\b/g)) {
                 if (NOT_A_NAME.has(word)) continue;
                 found.push(`${word}  <-  ${line.trim()}`);
             }

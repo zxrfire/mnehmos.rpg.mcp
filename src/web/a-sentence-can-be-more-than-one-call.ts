@@ -965,7 +965,11 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     // wants to be told something. What the step actually is, from the outside,
     // is somebody being given news they did not have.
     tell: 'carrying the news to',
-    guard: 'standing guard over the crossing'
+    guard: 'standing guard over the crossing',
+    // Not "destroying", which is the enum member with an -ing on it. What the
+    // step is, asked of somebody about to take it, is whether they mean to end
+    // the thing - and the word that carries the finality is `for good`.
+    destroy: 'breaking it for good'
 };
 
 function plainNameOf(action: ActionName): string {

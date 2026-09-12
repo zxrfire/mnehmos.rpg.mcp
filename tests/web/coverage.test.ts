@@ -559,6 +559,17 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'who would stand guard for me',
         'do I have a dao protector'
     ],
+    destroy: [
+        'I smash the pill',
+        'I break my sword',
+        'I destroy the spirit boat',
+        'I burn the manual',
+        // The scenery, which reaches the verb on purpose. The refusal that
+        // says what the engine models lives in the handler, and a sentence
+        // that never arrives cannot be answered honestly.
+        'I smash the stall',
+        'I set fire to the inn'
+    ],
     tell: [
         'I tell him that Cao Antao killed his brother',
         'I let He Peiyi know who killed his brother',
@@ -1072,7 +1083,16 @@ describe('every verb is priced as well as reachable', () => {
         // BOTH halves. A person who is actually standing here and can be named,
         // and a wrong the world already priced that this cultivator could point
         // at. No misread sentence supplies either, let alone both.
-        'tell'
+        'tell',
+        // Breaking a thing, which is `give`'s case again and for the same two
+        // reasons. It spends no day and nothing can fail, and it ends an object
+        // permanently and writes a fact with the breaker's name on it that
+        // nobody can take back. Free is as wrong for it as slow is.
+        //
+        // What makes it safe here is structural, as with `give`: it needs a
+        // named thing that resolves against what this person is actually
+        // holding. A misread sentence resolves nothing and is refused.
+        'destroy'
     ];
 
     it('puts every verb on a list, or names it as priced at execution', () => {
@@ -1109,7 +1129,14 @@ describe('every verb is priced as well as reachable', () => {
         // day and opens a grudge in the hearer's name, against whoever was
         // named, with the teller's own name on the row. Neither list is true of
         // that either.
-        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(13);
+        //
+        // 13 -> 14 for `destroy`, which is `give` a third time: no day, nothing
+        // that can fail, and an object ended permanently with a fact carrying
+        // the breaker's name that nothing can take back. The thing that makes
+        // it safe on this list is the same structural gate `give` has - it
+        // needs a named thing that resolves against what the person is holding,
+        // and a misread sentence resolves nothing.
+        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(14);
         expect(new Set(PRICED_AT_EXECUTION).size).toBe(PRICED_AT_EXECUTION.length);
     });
 

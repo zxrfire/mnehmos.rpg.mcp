@@ -754,7 +754,14 @@ describe('one life puts it aside and another life collects it', () => {
         const h = harness();
         h.purses.set('a', 500);
         const buried = handleLegacy(h.deps({ watchers: 2 }), 'bury', undefined, undefined, 7);
-        expect(buried.facts.lines.join(' ')).toContain('2 people were');
+        // The prose said `'2 people were'` standing close enough to see it,
+        // which counts the bystanders and reports the vantage they had. The
+        // design owner ruled both out; the figure is in `structure`, and what
+        // the player reads is that they were watched. See
+        // `a-group-of-people-is-named-not-counted.test.ts`.
+        expect(buried.facts.lines.join(' ')).toContain('People watched you do it');
+        expect(buried.facts.lines.join(' ')).not.toMatch(/\b2 people\b/);
+        expect(buried.facts.structure.join(' ')).toContain('2 people were');
         const [row] = h.ledger.cachesAt('Iron Ridge Ford') as CacheRecord[];
         expect(row.burial.watchers).toBe(2);
     });

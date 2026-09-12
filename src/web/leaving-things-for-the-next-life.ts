@@ -680,8 +680,15 @@ export function factsForBuried(
         record.burial.anchored
             ? `Immovable Mountain Temple has it on the survey of record. ${ANCHORING_A_CACHE.counterLine}`
             : 'Nothing is on any survey. What holds it is the ground and how well you covered it, and neither of those improves with time.',
+        // WHO WATCHED, NOT HOW MANY AND FROM WHERE. This read "4 people were
+        // standing close enough to see what you were doing", which counts the
+        // bystanders and then reports the vantage they had - the engine
+        // describing its own observation rather than saying what happened. The
+        // figure is in `structure` below, which is where a count belongs.
         watchers > 0
-            ? `${watchers === 1 ? 'Somebody was' : `${watchers} people were`} standing close enough to see what you were doing, and did not leave.`
+            ? watchers === 1
+                ? 'Somebody watched you do it, and did not leave.'
+                : 'People watched you do it, and none of them left.'
             : 'Nobody was near enough to see.',
         'You will have to remember where this is. Nothing in your head goes any further than you do, and the next person to stand here will be somebody else.'
     ];

@@ -82,6 +82,30 @@ export function howBadlyThisIsMissed(
     }
 }
 
+/**
+ * The same measure, for a thing that ended instead of changing hands.
+ *
+ * `ruin` writes a provenance entry whose holder is nobody, so an ending is a
+ * change of hands with nothing on the far end of it - which is why it is scored
+ * here and not somewhere new. One band heavier, for the one reason
+ * `whatItWasWorth` already spends a step on: it does not come back. A stolen
+ * blade is still in the world and can be got back; a broken one is not.
+ *
+ * That step is what decides how far the news goes, and it decides it through
+ * machinery that was already there. `aDeedEntersTheWorld` turns a severity into
+ * a magnitude, and `channelFor` in `digest.ts` only lets a fact reach somebody
+ * with no connection at all once the magnitude clears `MARKET_MAGNITUDE`. So a
+ * `significant` thing - heaven grade, the lowest grade the standing population
+ * cannot restock - is the first one a stranger hears about, and everything
+ * below it is talk among the people who were standing there.
+ */
+export function howBadlyItsEndingIsTaken(
+    object: { readonly significance: ObjectSignificance }
+): Severity {
+    const step = severityRank(howBadlyThisIsMissed(object)) + 1;
+    return SEVERITY_ORDER[Math.min(step, SEVERITY_ORDER.length - 1)];
+}
+
 /** A person or a house on one end of it. Both hold accounts in this engine. */
 export interface PartyToIt {
     readonly id: string;

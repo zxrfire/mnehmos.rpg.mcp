@@ -98,7 +98,11 @@ describe('the company sentence at the counts where plural stops being true', () 
         const prose = factsForCompany(standingIn('Three Walls', 0), company).prose;
 
         expect(prose).toMatch(/\bare about\b/);
-        expect(prose).toMatch(/three others/i);
+        // Was `/three others/i`. The plural is what this test is for and it is
+        // untouched; the NUMERAL went with the headcount ruling - a group is
+        // named and never tallied, so three of them are "others".
+        expect(prose).toMatch(/\bothers\b/i);
+        expect(prose).not.toMatch(/\bthree\b/i);
     });
 
     it('answers an empty square without inventing anybody', () => {

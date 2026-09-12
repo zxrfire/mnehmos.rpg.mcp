@@ -499,6 +499,28 @@ or **arrays** - never *magic circles* - **jade slip**, **storage ring**, **stora
 **forbidden land**, **ancestral land**, **spirit vein**, **spirit tide**, and the **mortal**
 or **secular world** for everything below the climb.
 
+**Violence, whose vocabulary is the most fixed in the genre.** Counted over the reference
+material: *killing intent* 2058, *trembled* 2452, *mouthful of blood* 482, *coughed up blood*
+200, *cold snort* / *snorted coldly* 657, *eyes flickered* 856, *face fell* 473, *sent
+flying* / *sent tumbling* 177, *laughed bitterly* 63. These are not flourishes to reach for;
+they are the words the genre uses when somebody is hurt or angry, and prose that reaches for
+its own instead reads translated from the wrong language.
+
+**Killing intent is a THING, not a mood.** It flashes in eyes, it abounds, it rages, it is
+recognised - *"once he realized who that killing intent belonged to"* - and other people feel
+it across a square and act on it. Never write it as a feeling somebody has; write it as
+something in the air that others notice. That is also why it does not break the
+no-feelings-assigned rule: it is a perception, and perceptions are the engine's to state.
+
+**A body coughs up a mouthful of blood.** It is the reliable image of a serious wound, and it
+is used flatly and often - not saved for a climax. Bodies tremble, are sent flying or
+tumbling, drop to their knees. A beaten cultivator laughs bitterly. Faces fall and go pale.
+Contempt is a cold snort before it is a sentence.
+
+**And the engine's wound vocabulary stays the engine's.** A *torn meridian* is a torn
+meridian, not a damaged energy channel - see the wounds list above. What the genre supplies
+is what the BODY does around it; what the engine supplies is what was injured.
+
 **Idiom, used straight and never with a wink.** *Courting death.* *Seeking death.* *You do
 not know the immeasurable vastness of heaven and earth.* *Giving face*, *losing face*, *not
 giving face* - face is a currency in this world and not a metaphor. *A lesson in manners.*

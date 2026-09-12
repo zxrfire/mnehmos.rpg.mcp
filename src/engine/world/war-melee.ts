@@ -16,7 +16,8 @@ import type { CultivationRNG } from '../cultivation/rng.js';
 import { combatantOf } from './gatherings.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import type { NpcRecord } from './npc-state.js';
-import { isRuined, ruin } from './possessions.js';
+import { isRuined } from './possessions.js';
+import { aBreakingEntersTheWorld } from './a-thing-somebody-ended-is-a-fact.js';
 import type { ObligationInput } from '../social/grudges.js';
 import { oneAccountEach } from './what-a-change-of-hands-leaves.js';
 import { whatTheConfrontationDidToThem } from './what-a-confrontation-does-to-somebody-the-world-holds.js';
@@ -30,7 +31,7 @@ import {
     type WhatTheYearDidToTheGround,
     whatTheYearDidToTheGround
 } from './what-a-year-of-war-does-to-a-compound.js';
-import type { FactionRecord, WorldState } from './world-state.js';
+import { getNpc, type FactionRecord, type WorldState } from './world-state.js';
 import type { DeathHandoff } from './time.js';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -454,10 +455,21 @@ function writeBackWhatBroke(
         done.add(weapon.objectId);
         const at = state.objects.findIndex(o => o.id === weapon.objectId);
         if (at < 0 || isRuined(state.objects[at])) continue;
-        state.objects[at] = ruin(state.objects[at], {
-            onDay: day,
-            source: 'swung at somebody it was not fit for in a war, and did not survive it',
-            note: weapon.exposure.cause
+        // Through the world's own breaking door, so a blade broken in a war
+        // reaches the record the same way one broken by a player does. Before
+        // this it called `ruin` straight with no `factId`, and nothing outside
+        // the engagement report ever knew.
+        const swung = getNpc(state, exchange.attackerId);
+        aBreakingEntersTheWorld(state, {
+            actor: {
+                id: exchange.attackerId,
+                name: swung?.name ?? 'somebody',
+                role: 'broke it'
+            },
+            object: state.objects[at],
+            day,
+            locationId: state.objects[at].locationId,
+            how: 'swung at somebody it was not fit for in a war: ' + weapon.exposure.cause
         });
         out.push({
             objectId: weapon.objectId,

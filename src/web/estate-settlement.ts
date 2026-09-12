@@ -57,6 +57,7 @@ import type Database from 'better-sqlite3';
 import type { Cultivator } from '../schema/cultivation.js';
 import {
     settleEstate,
+    whereTheyFell,
     leftSomething,
     type CountedGoods,
     type EstateAtDeath,
@@ -77,6 +78,7 @@ import {
     type LegacyGoods
 } from './leaving-things-for-the-next-life.js';
 import { worldLocationFor } from './entities.js';
+import { theWorkThisVolumeIsPartOf } from './manual-volumes.js';
 import type { EngineFacts } from './facts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -130,7 +132,8 @@ function trackedOnTheBody(
             significance: catalog.significance,
             power: catalog.power,
             description: catalog.description,
-            worldRow: worldRow ?? null
+            worldRow: worldRow ?? null,
+            partOfWork: theWorkThisVolumeIsPartOf(catalog.id)
         });
     }
 
@@ -308,6 +311,12 @@ export function settleWhatTheyWereCarrying(deps: EstateDeps): EstateOutcome {
         dead,
         onDay: worldDay ?? 0,
         locationId: graveLocationId ?? (world ? worldLocationFor(world, place)?.id ?? null : null),
+        // THE GRAVE IS NOT WHERE THEY FELL. `enshrineRun` hangs a grave row off
+        // the death site with its own danger figure, which stands for how hard
+        // the grave is to rob - a different question from how bad the ground
+        // was. What marks the goods is the site, so the site is what is read.
+        fell: world ? whereTheyFell(worldLocationFor(world, place)) : null,
+        seed: world?.seed,
         counted,
         tracked: found.tracked,
         standingOver: deps.standingOver,

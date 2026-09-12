@@ -74,7 +74,7 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**57 verbs.** 17 of them take nothing from the player,
+**58 verbs.** 17 of them take nothing from the player,
 27 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
@@ -109,6 +109,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`give`](#give) | `target` `topic` `stones` | varies | yes | - | - |
 | [`inventory`](#inventory) | - | nothing | yes | yes | - |
 | [`consume_pill`](#consume_pill) | `target` | time | yes | - | - |
+| [`destroy`](#destroy) | `target` | varies | yes | - | - |
 | [`list_techniques`](#list_techniques) | - | nothing | yes | yes | - |
 | [`learn_technique`](#learn_technique) | `target` | time | yes | - | - |
 | [`teach`](#teach) | `target` `topic` | time | yes | - | - |
@@ -360,6 +361,14 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 swallow a pill they are carrying. "target" names it. A pill bought and never taken does nothing, and this is the only verb that takes one - including the breakthrough pill, which has to be swallowed BEFORE the attempt for the attempt to know about it. Toxicity accumulates on the body whether or not anybody wanted it to.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'consume_pill'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.consumePill` · the deterministic parser reaches it · spends in-world time.
+
+Takes `target`.
+
+### `destroy`
+
+break something they are holding, or a thing of theirs standing where they are, deliberately and for good. "target" names it. It is the other end of "craft" and "refine": what this engine can make, it can unmake, and nothing else - a stall, an inn and a village are not objects the engine models and the refusal says so rather than pretending it could not read the sentence. A cheap thing is gone from the pouch and the people standing there talk about it; a heaven-grade thing keeps its row, ruined, and the news travels. Passes no time.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'destroy'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
 Takes `target`.
 

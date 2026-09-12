@@ -6,6 +6,8 @@
  * rather than a private helper of whichever verb happened to ask first.
  */
 
+import { SCATTERED_MANUAL_VOLUMES } from '../data/cultivation/techniques.js';
+
 /**
  * Which volumes of a work a holder has, for a work they already KNOW.
  *
@@ -26,4 +28,18 @@
  */
 export function wholeWorkVolumes(art: { volumes?: readonly string[] | null }): readonly string[] {
     return art.volumes ?? [];
+}
+
+/**
+ * The same question backwards: given one volume, what the whole work is.
+ *
+ * A settlement at a death holds object rows and not techniques, so it can only
+ * ask this way round - and it has to ask, because a place takes the END off a
+ * work and nothing can say which end a volume is at without the order.
+ */
+export function theWorkThisVolumeIsPartOf(objectId: string): readonly string[] | null {
+    for (const volumes of Object.values(SCATTERED_MANUAL_VOLUMES)) {
+        if (volumes.includes(objectId)) return volumes;
+    }
+    return null;
 }

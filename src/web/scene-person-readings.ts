@@ -29,6 +29,11 @@ import {
     WORTH_A_SENTENCE,
     type Bearing
 } from '../engine/social-leverage/moved-to-speak.js';
+import {
+    aGroupOfPeople,
+    howManyOfThem,
+    toOpenASentence
+} from '../engine/social-leverage/a-group-is-named-not-counted.js';
 
 /**
  * What the turn can read that the roster projection does not carry.
@@ -143,8 +148,44 @@ export interface SceneAsPeopleFoundIt {
      * module holds no state between turns and must not start.
      */
     saidLastTurn?: (personId: string) => ReadonlySet<string>;
+    /**
+     * HOW HEAVY THE THING THIS TURN DID WAS, 0..1, WHERE IT MOVED NO BODY.
+     *
+     * Everything below is priced against `sceneWeight`, and `sceneWeight` was
+     * the largest distance any BODY moved - a purse, HP, a binding, a rung, or
+     * somebody who stopped standing anywhere. So a turn that is an EVENT rather
+     * than a transfer priced at nought and the square read as idle.
+     *
+     * MEASURED, and the design owner's ruling on it: *"smashing your pill in
+     * the middle of an audience should invite some reaction"*, then *"that
+     * should fall out"*. Half of it already did - the world fact named five
+     * witnesses - and the other half could not, because nothing told this
+     * module anything had happened. Nobody was robbed, nobody was hurt, nobody
+     * changed houses, and a treasure was destroyed in front of four people.
+     *
+     * A number on the same 0..1 scale as everything else, so it folds in
+     * through the same `Math.max` and needs no case of its own.
+     * `A_THING_ENDED_IN_FRONT_OF_THEM` is what a destruction is worth; a verb
+     * that ends something else states its own.
+     */
+    theDeedItself?: number;
     /** Called once per person with everything true of them this turn. */
     noteWhatWasSaid?: (personId: string, parts: readonly string[]) => void;
+    /**
+     * THE EXACT FIGURE, FOR THE MACHINE-READABLE CHANNEL.
+     *
+     * The design owner, ruling on the headcount this module used to print:
+     * *"the engine should still tell you exactly how many in the engine ruling
+     * data ... but that's for the state itself ... not as part of narration."*
+     * Everything this function RETURNS is player-facing - the caller pushes it
+     * onto `facts.lines` and `facts.prose` - so the count cannot ride out that
+     * way, and a second return value would change a signature the one caller
+     * iterates. It leaves by the door `noteWhatWasSaid` already uses, and the
+     * caller puts it in `facts.structure`.
+     *
+     * Called at most once a turn, and not at all when the square is empty.
+     */
+    noteHowManyWereHere?: (said: string) => void;
 }
 
 /**
@@ -190,6 +231,21 @@ export const A_BINDING_MOVED = 0.6;
 
 /** And a rung, on the same scale and for the same reason. */
 export const A_RUNG_MOVED = 0.6;
+
+/**
+ * What a thing destroyed in front of people is worth, on the same scale.
+ *
+ * Set so a bystander reads at the lowest band and no higher. A witness carries
+ * `WITNESS_SHARE` of the scene, which is 0.35, so this clears
+ * `WORTH_A_SENTENCE` (0.08) at 0.21 and stays under `TOUCHED` (0.25). A
+ * treasure smashed in a square is something the square WATCHED - it is not
+ * something that happened TO anybody standing in it, and pricing it higher
+ * would have four strangers reading as though they had lost something.
+ *
+ * The same figure as `A_RUNG_MOVED` and `A_BINDING_MOVED`, and for the same
+ * reason: it is the weight of a thing that is large and is not a wound.
+ */
+export const A_THING_ENDED_IN_FRONT_OF_THEM = 0.6;
 
 /**
  * Who in the square this turn's plan actually pointed at.
@@ -258,6 +314,10 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     // incident with an audience. Nobody watched it, because there was no moment
     // in it to watch. See `wasAScene`.
     const sceneWeight = !wasAScene ? 0 : Math.max(
+        // WHAT THE TURN DID, AND NOT ONLY WHAT IT MOVED. See `theDeedItself`:
+        // every other term here is a distance some body travelled, so an event
+        // that transfers nothing priced at nought and nobody reacted to it.
+        clamp01(scene.theDeedItself ?? 0),
         Math.abs(whatTheTurnDidToThePlayer(scene.playerBefore, scene.playerNow)),
         ...movements.map(m => Math.abs(m.moved)),
         // Somebody who was standing here and is not standing anywhere now. The
@@ -332,11 +392,22 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     // all about who is around them. It was covered by accident before, as the
     // preamble to a witness line that should never have been printed.
     //
-    // A count and not a name: somebody the player has never been introduced to
-    // stays that way, whatever else is true. See the discovery gate.
+    // A name only where the player holds one: somebody they have never been
+    // introduced to stays nameless whoever they are standing beside. See the
+    // discovery gate, and `whoTheGroupIs` for the rest of what a group is
+    // called.
     if (!wasAScene) {
-        const standing = scene.now.filter(row => row.id !== scene.playerNow.id).length;
-        return standing > 0 ? [theRoom(standing, 0, 0, '', false)] : [];
+        const standing = scene.now.filter(row => row.id !== scene.playerNow.id);
+        if (standing.length === 0) return [];
+        scene.noteHowManyWereHere?.(theCensus(standing.length, 0, 0));
+        return [theRoom({
+            count: standing.length,
+            spoke: 0,
+            ofTheirs: 0,
+            reading: '',
+            wasAScene: false,
+            ...whoTheGroupIs(standing, scene.gate, scene.playerNow.id)
+        })];
     }
 
     if (read.length === 0) return [];
@@ -351,11 +422,17 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     // about a person.
     let unnamedShown = false;
     const lines: string[] = [];
-    let spokenFor = 0;
-    /** Involved, and reading exactly as they read last turn. Not overflow. */
-    let readTheSameAsLastTurn = 0;
     /** Read out this turn, before the ones that read alike are folded. */
     const readOut: { who: string; said: string }[] = [];
+    /**
+     * Everybody the loop below settled, one way or another.
+     *
+     * The overflow line used to subtract three running totals from
+     * `involved.length`, which gave a figure and no way to reach the PEOPLE -
+     * so the only thing it could say about them was how many there were. Who
+     * they are is what the sentence wants now, so who they are is what is kept.
+     */
+    const handled = new Set<string>();
 
     // ── MORE THAN ONE PERSON DYING IS ONE SENTENCE ───────────────────────
     //
@@ -398,13 +475,17 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
             .map(entry => entry.row.name);
         const unnameable = dyingAloud.length - names.length;
         const said = dyingAloud.filter(entry => entry.asked.aloud).length;
+        const spoke = howManyOfThem(said, dyingAloud.length);
         lines.push(
-            `${whoIsDying(names, unnameable)} are dying. `
+            // Capitalised here rather than in `whoIsDying`, because the same
+            // clause lands mid-sentence in a list of names and lower case is
+            // right there. It opened with a digit until the headcount went.
+            `${toOpenASentence(whoIsDying(names, unnameable))} are dying. `
             + (said === 0
                 ? 'None of them says anything.'
                 : said === dyingAloud.length
                     ? 'Each of them says a last thing.'
-                    : `${said} of them ${said === 1 ? 'says' : 'say'} a last thing. `
+                    : `${toOpenASentence(spoke.said)} ${spoke.plural ? 'say' : 'says'} a last thing. `
                       + 'The rest say nothing.')
         );
     }
@@ -457,9 +538,9 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
         // count against the cap: the cap is there to keep a crowded square from
         // pushing out the person the turn happened to, and somebody who reads
         // exactly as they read last turn is not that person.
-        if (said === null) { readTheSameAsLastTurn++; continue; }
+        if (said === null) { handled.add(entry.row.id); continue; }
         readOut.push({ who: entry.row.name, said });
-        spokenFor++;
+        handled.add(entry.row.id);
     }
     // ── AND TWO PEOPLE WHO READ THE SAME ARE ONE SENTENCE ────────────────
     //
@@ -476,33 +557,66 @@ export function whatThePeopleHereAreAnswering(scene: SceneAsPeopleFoundIt): stri
     // fold solves for the dying, one channel over.
     lines.push(...theOnesWhoReadTheSame(readOut));
 
-    // Two counts, and they are different facts. Somebody the cap pushed out was
+    // Two sets, and they are different facts. Somebody the cap pushed out was
     // in it; somebody who only watched was not, and saying so is the whole of
     // what a bystander line is for.
     // Neither the folded dead nor the people who read the same as last turn are
-    // overflow: this counts the ones the CAP pushed out, and both of those were
+    // overflow: this is the ones the CAP pushed out, and both of those were
     // said, or deliberately not said, for their own reasons.
-    const overflow = involved.length - spokenFor - readTheSameAsLastTurn - foldedIntoOne.size;
-    if (overflow > 0) {
+    const overflow = involved
+        .filter(entry => !handled.has(entry.row.id) && !foldedIntoOne.has(entry.row.id))
+        .map(entry => entry.row);
+    if (overflow.length > 0) {
+        // THE COLLECTIVE, AND DELIBERATELY NOT A NAME. This said "3 others here
+        // were in it too" - the same headcount as the room line, one paragraph
+        // down. The corpus fold that fixes the room line is wrong HERE, because
+        // the clause after it says nothing about them stands out: a sentence
+        // that singles one of them out and then says none of them is worth
+        // singling out argues with itself, and it would also put a fourth name
+        // past `PEOPLE_WORTH_A_SENTENCE`. What they ARE is a property of the
+        // set rather than of a person, so that half stays.
+        const group = aGroupOfPeople({
+            howMany: overflow.length,
+            whatTheyAre: whoTheGroupIs(overflow, scene.gate, scene.playerNow.id).whatTheyAre
+        });
         lines.push(
-            `${overflow} other${overflow === 1 ? '' : 's'} here ${overflow === 1 ? 'was' : 'were'} `
-            + 'in it too, and nothing about them stands out from the rest.'
+            `${toOpenASentence(group.said)} ${group.plural ? 'were' : 'was'} in it too, and `
+            + 'nothing about them stands out from the rest.'
         );
     }
     if (watchers.length > 0) {
         // AND WHICH OF THEM ARE NOT NEUTRAL
         const ofTheirs = whoseHouseWasInIt(read);
-        lines.push(theRoom(
-            watchers.length,
-            watchers.filter(entry => entry.asked.aloud).length,
-            ofTheirs === null
-                ? 0
-                : watchers.filter(entry => entry.row.sectId === ofTheirs).length,
-            watchers[0].asked.reading!,
-            wasAScene
-        ));
+        const spoke = watchers.filter(entry => entry.asked.aloud).length;
+        const theirs = ofTheirs === null
+            ? 0
+            : watchers.filter(entry => entry.row.sectId === ofTheirs).length;
+        scene.noteHowManyWereHere?.(theCensus(watchers.length, spoke, theirs));
+        lines.push(theRoom({
+            count: watchers.length,
+            spoke,
+            ofTheirs: theirs,
+            reading: watchers[0].asked.reading!,
+            wasAScene,
+            ...whoTheGroupIs(
+                watchers.map(entry => entry.row), scene.gate, scene.playerNow.id)
+        }));
     }
     return lines;
+}
+
+/**
+ * The figures the prose no longer prints, for `facts.structure`.
+ *
+ * Everything the room reading used to say in digits, said in digits, in the one
+ * channel that is not read to a player. The prose above and this line are
+ * computed from the same three numbers so they cannot disagree about what
+ * happened.
+ */
+function theCensus(count: number, spoke: number, ofTheirs: number): string {
+    return `${count} standing here besides the player and not individually read out; `
+        + `${spoke} of them answered aloud; ${ofTheirs} are on the roll of the house of `
+        + 'whoever this turn happened to hardest.';
 }
 
 /**
@@ -587,73 +701,128 @@ function theHeadsTogether(
         : `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`}.`;
 }
 
-/** Who they are, or how many of them there are. */
+/**
+ * Who they are, with the rest folded in behind the first of them.
+ *
+ * Past three names, this printed `${names.length} of them`. The corpus
+ * construction is the one immediately above it in this file - a person named
+ * and the remainder carried along - and it costs nothing here, because the
+ * names are already in hand.
+ */
 function namesOrCount(names: readonly string[]): string {
-    if (names.length > 3) return `${names.length} of them`;
+    if (names.length > 3) return `${names[0]} and the others`;
     if (names.length === 1) return names[0]!;
     return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
 /**
- * The dead, named where they can be named and counted where they cannot.
+ * The dead, named where they can be named.
  *
  * A count is not a name: somebody the player has never been introduced to
- * stays that way whoever they are standing beside.
+ * stays that way whoever they are standing beside - and is not tallied either,
+ * which is what `${unnameable} others whose names you do not have` was doing.
  */
 function whoIsDying(names: readonly string[], unnameable: number): string {
     const nameless = unnameable === 0
         ? null
         : unnameable === 1
             ? 'somebody whose name you do not have'
-            : `${unnameable} others whose names you do not have`;
+            : 'others whose names you do not have';
     const parts = [...names, ...(nameless === null ? [] : [nameless])];
     if (parts.length === 1) return parts[0]!;
     return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
 }
 
 /**
- * The people who are interchangeable, said once.
+ * The people who are interchangeable, said once and never counted.
+ *
+ * This opened `${count} other people are here.` and closed `${spoke} of them
+ * answer, out loud.` - which the design owner read back as *"reminder that this
+ * is not xianxia prose"*. Both halves are the same defect: a tally of the
+ * bodies in the room where the genre names the group, and a report of the
+ * vantage and the modality where the genre has the group act.
+ *
+ * `aGroupOfPeople` holds the rule and the corpus figures behind it. What is
+ * added here is the material it wants: one of them the player can name, and
+ * what they are where the roll says so.
  */
-function theRoom(
-    count: number,
-    spoke: number,
-    ofTheirs: number,
-    reading: string,
-    wasAScene: boolean
-): string {
-    // NAMES THEM AND STOPS. This said they "had no part in it" and then
-    // `reading` said "No part of this was theirs" directly after - the same
-    // sentence twice, in consecutive breaths, every time a crowd watched
-    // anything.
-    const who = count === 1
-        ? 'One other person is here.'
-        : `${count} other people are here.`;
+function theRoom(over: {
+    readonly count: number;
+    readonly spoke: number;
+    readonly ofTheirs: number;
+    readonly reading: string;
+    readonly wasAScene: boolean;
+    /** One of them the player can put a name to, where there is one. */
+    readonly named: string | null;
+    /** What they all are, where they are all the same thing. */
+    readonly whatTheyAre: string | null;
+}): string {
+    const group = aGroupOfPeople({
+        howMany: over.count,
+        named: over.named,
+        whatTheyAre: over.whatTheyAre
+    });
+    // STANDING HERE RATHER THAN BEING HERE. A group that merely exists is the
+    // inspector again with a nicer noun; a group doing something is what the
+    // corpus has on every page.
+    const who = `${toOpenASentence(group.said)} ${group.plural ? 'are' : 'is'} standing here.`;
 
     // PRESENCE SURVIVES A DIGEST AND WITNESSING DOES NOT. Six people being in
     // the square when somebody comes out of a two-year sitting is true and
-    // worth saying. That they watched it from close by and every one of them
-    // spoke up about it is neither, and it is what this printed. See
-    // `wasAScene` on the input.
-    if (!wasAScene) return who;
+    // worth saying. That they watched it and every one of them spoke up about
+    // it is neither, and it is what this printed. See `wasAScene` on the input.
+    if (!over.wasAScene) return who;
 
-    // AND THE VERB AGREES. `${spoke} of them answer` printed "1 of them answer"
-    // whenever exactly one spoke, which is most scenes with a crowd in them.
-    const voices = count === 1
-        ? (spoke === 1 ? 'They say something about it.' : 'They say nothing.')
-        : spoke === 0
+    const spoke = howManyOfThem(over.spoke, over.count);
+    const voices = over.count === 1
+        ? (over.spoke === 1 ? 'They say something about it.' : 'They say nothing.')
+        : over.spoke === 0
             ? 'None of them says anything.'
-            : spoke === count
-                ? 'Every one of them answers, out loud.'
-                : `${spoke} of them ${spoke === 1 ? 'answers' : 'answer'}, out loud. `
+            : over.spoke === over.count
+                ? 'Every one of them answers.'
+                : `${toOpenASentence(spoke.said)} ${spoke.plural ? 'answer' : 'answers'}. `
                   + 'The rest say nothing.';
 
-    const theirs = ofTheirs === 0
+    const ofTheirs = howManyOfThem(over.ofTheirs, over.count);
+    const theirs = over.ofTheirs === 0
         ? ''
-        : ofTheirs === 1
-            ? ' One of them is of the same house as the person it happened to.'
-            : ` ${ofTheirs} of them are of the same house as the person it happened to.`;
+        : ` ${toOpenASentence(ofTheirs.said)} ${ofTheirs.plural ? 'are' : 'is'} of the same house `
+          + 'as the person it happened to.';
 
-    return `${who} ${reading} ${voices}${theirs}`;
+    return `${who} ${over.reading} ${voices}${theirs}`;
+}
+
+/**
+ * Who a set of people is, in the two things the genre names a group by.
+ *
+ * A name the player holds beats everything - "the Joy Lord and the others" is
+ * the corpus workhorse. Failing that, what they all are, which the roll
+ * answers when every one of them is on the same one: the disciples in the yard,
+ * the elders. Both null in a village square full of strangers, which is the
+ * case a plain collective is for.
+ */
+function whoTheGroupIs(
+    rows: readonly RosterEntry[],
+    gate: KnowledgeGate,
+    playerId: string
+): { named: string | null; whatTheyAre: string | null } {
+    const named = rows.find(row => gate.isAwareOf(playerId, 'cultivator', row.id))?.name ?? null;
+
+    const house = rows[0]?.sectName ?? null;
+    const sameHouse = house !== null && rows.every(row => row.sectName === house);
+    if (!sameHouse) return { named, whatTheyAre: null };
+
+    const rank = rows[0]?.sectRank ?? null;
+    const sameRank = rank !== null && rows.every(row => row.sectRank === rank);
+    return {
+        named,
+        whatTheyAre: sameRank ? `${house} ${asMoreThanOne(rank)}` : `${house} people`
+    };
+}
+
+/** A rank name said of several people holding it. */
+function asMoreThanOne(rank: string): string {
+    return /s$/i.test(rank) ? rank : `${rank}s`;
 }
 
 /**
@@ -745,9 +914,12 @@ function lastSentenceFor(
     return [
         `${who}, ${standing}.`,
         'They are dying, and there was time enough in it for them to know so.',
+        // "and the not saying is visible" went with "out loud" and "from close
+        // by": the engine reporting what could be observed about its own
+        // observation. The silence is the fact and the room is standing in it.
         asked.aloud
             ? 'They say the last thing they are going to say.'
-            : 'They do not say anything, and the not saying is visible.'
+            : 'They do not say anything.'
     ].join(' ');
 }
 

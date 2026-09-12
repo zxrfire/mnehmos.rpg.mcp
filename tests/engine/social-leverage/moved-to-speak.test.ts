@@ -208,14 +208,21 @@ describe('whether they answer it out loud', () => {
         expect(ruined.aloud).toBe(true);
     });
 
-    it('says what the silence looked like rather than dropping the person', () => {
-        // THE SILENCE IS REPORTED AND IT IS VISIBLE - that is the rule, and it
-        // used to be pinned by the exact words "the not saying is visible",
-        // which was the engine reaching for an effect rather than stating the
-        // condition. The condition is that the others can see it.
+    it('reports the silence rather than dropping the person', () => {
+        // THE SILENCE IS REPORTED - that is the rule, and it is the half that
+        // has not moved. What has moved is the clause that used to carry it.
+        //
+        // It was pinned first as the exact words "the not saying is visible",
+        // then rewritten to "where the others can see it" and pinned as a
+        // requirement that the sentence say so. Both are the same defect one
+        // step apart: the engine reporting the VISIBILITY of its own
+        // observation on top of the observation, which the design owner read
+        // back on the matching "out loud" as *"reminder that this is not
+        // xianxia prose"*. The room is standing in the scene; that it can see a
+        // silence is not a further fact.
         const quiet = whetherTheySayIt(false);
         expect(quiet).toMatch(/say nothing|says nothing/i);
-        expect(quiet).toMatch(/others can see|in front of|visible/i);
+        expect(quiet).not.toMatch(/others can see|visible/i);
         expect(whetherTheySayIt(true)).not.toBe(quiet);
     });
 

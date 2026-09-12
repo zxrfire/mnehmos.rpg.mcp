@@ -66,6 +66,21 @@ export interface DestinationsRead {
     headline: string;
     lines: string[];
     structure: string[];
+    /**
+     * The places this read PRINTED, in the order it printed them.
+     *
+     * A listing this game prints is a listing the next sentence should be able
+     * to name, and the reference resolver counts an ordinal against what was
+     * recorded. Nine places came out of this read by name and none of them was
+     * written down, so `the second one` after a destinations read was answered
+     * *"the turn before this one listed nothing to point at"*.
+     *
+     * Handed back from the read rather than rebuilt by the caller off
+     * `input.reachable`: this read sorts, filters out the province you are
+     * standing in, and then prints - so any list assembled outside it is a
+     * second copy of an ordering and will disagree with the screen.
+     */
+    named: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -275,6 +290,7 @@ function theNamesHeldAndUnplaceable(
 export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
     const lines: string[] = [];
     const structure: string[] = [];
+    const named: string[] = [];
     const standing = rankName(input.ordinal);
 
     if (input.reachable.length === 0) {
@@ -294,7 +310,8 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
         return {
             headline: `Nowhere ${input.placeName} connects to that you could find.`,
             lines,
-            structure
+            structure,
+            named: []
         };
     }
 
@@ -406,6 +423,7 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
             + said
             + ceiling
         );
+        named.push(place.name);
         structure.push(mechanicalRow(place, input.localCeilingOrdinal));
     }
 
@@ -426,6 +444,7 @@ export function whereCouldTheyGo(input: DestinationsInput): DestinationsRead {
         headline: `${sorted.length} place${sorted.length === 1 ? '' : 's'} `
             + `${input.placeName} could be left for.`,
         lines,
-        structure
+        structure,
+        named
     };
 }

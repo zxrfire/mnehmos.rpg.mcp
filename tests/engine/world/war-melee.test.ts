@@ -29,6 +29,7 @@ import {
     whatAHouseCanPutOut
 } from '../../../src/engine/world/war-melee.js';
 import { isRuined, makeObject } from '../../../src/engine/world/possessions.js';
+import { whereTheGroundGotIt } from '../../../src/engine/world/estate-at-death.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 interface AtWar {
@@ -231,6 +232,23 @@ describe('a war breaks what is carried, once', () => {
         // route in `what-a-year-of-war-does-to-a-compound.ts` and by nothing
         // else, which is asserted directly below rather than being excused
         // here. Two kinds of thing, one route each, and no object with two.
+        //
+        // ── NOR IS A THING THE GROUND TOOK OFF A BODY ─────────────────────
+        //
+        // A war kills people, and a death settles an estate: what comes off a
+        // body is marked by where the body fell, which can end a thing the
+        // melee never swung. That is not a war reaching an object twice - the
+        // war reached the PERSON, and the place reached what they were
+        // carrying. It is excluded by reading the cause the settlement writes
+        // rather than by name, so this stays a statement about routes: a war
+        // has exactly one way to break a carried thing, and it is the strike
+        // record.
+        //
+        // Measured while this was added, seed `breakage-1`, 25 years of war:
+        // ONE object of the four seeds, an identity token off a dead member,
+        // and its chain reads `taken off a body in Azure Cloud Pavilion
+        // grounds` - ground the world rates at 0.1, which is the one death in
+        // ten that does not pass things down whole.
         for (let i = 0; i < 4; i++) {
             const { state } = await twoHousesAtWar(`breakage-${i}`);
             const wasRuined = new Set(
@@ -246,7 +264,10 @@ describe('a war breaks what is carried, once', () => {
                 }
             }
             const nowRuined = state.objects.filter(o =>
-                isRuined(o) && !wasRuined.has(o.id) && o.kind !== 'formation');
+                isRuined(o)
+                && !wasRuined.has(o.id)
+                && o.kind !== 'formation'
+                && whereTheGroundGotIt(o) === null);
             for (const object of nowRuined) {
                 expect(reported.has(object.id)).toBe(true);
             }

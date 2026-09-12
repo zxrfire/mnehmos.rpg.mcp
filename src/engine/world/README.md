@@ -2025,6 +2025,13 @@ manuals.ts       who holds a book, what shelf a house actually has, and who it
                  about a sword form. Whether a given person could WRITE ONE OUT
                  is a third question again - `couldWriteOutACopy`, which takes
                  the holder, because copying takes having mastered it.
+what-a-manual-has-left-in-it.ts
+                 how many times the art comes off a book before there is no
+                 book. Heaven grade and above run out; mortal and earth do not,
+                 which is `howAGradeIsStored`'s own line arriving on a second
+                 axis - a spent use is a scar and a counted thing has nowhere
+                 to write one. Learning is what spends a use; practising and
+                 being taught by a person take nothing out of a book
 gatherings.ts    the chosen of allied houses meet; meetings, bouts, rankings, sites
 what-people-are-saying.ts
                  the ledger in the mouths of people who were not there: one fact

@@ -345,6 +345,7 @@ const FALLBACK: Partial<Record<HistoricalEventKind, string>> = {
     ruin_opened: 'There is a new track up to the old compound.',
     ruin_sealed: 'The way in has been walled and nobody says by whom.',
     technique_lost: 'A formation has stopped working and nobody can restart it.',
+    object_destroyed: 'Something that could not be replaced is not in the world any more.',
     zone_forbidden: 'The animals will not go in, and neither will anyone sensible.',
     migration: 'Two of the hamlets on the low road are empty.',
     opportunity: 'Prices have moved and nobody can say why.',

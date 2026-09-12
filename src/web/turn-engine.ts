@@ -117,6 +117,11 @@ import {
     whoseArt,
     FULLY_MASTERED
 } from '../engine/world/manuals.js';
+import {
+    aManualOfThisGradeRunsOut,
+    takeTheArtOffThePage,
+    theManualInThisHandFor
+} from '../engine/world/what-a-manual-has-left-in-it.js';
 import { theLeakAsADeed } from '../engine/social-leverage/selling-a-copy-of-somebody-elses-art.js';
 import {
     AGAINST_THEIR_OWN,
@@ -794,9 +799,12 @@ import {
 // cheaper one" have something to refer to. The record is held on this service
 // beside `crossroads` and `whichComesFirst`; what it means is that module's.
 import {
+    askingForTheRestOfIt,
     askingWhichOfWhatWasNamed,
+    askingWhyThatAnswer,
     carryingOnFromTheLastTurn,
     describeTheLastTurn,
+    nothingBehindThisPointer,
     nothingToCarryOnWith,
     resolvingAgainstTheLastTurn,
     sayingWhatItWasTakenToMean,
@@ -806,10 +814,12 @@ import {
     theRowForCarryingOn,
     theRowForNothingToCarryOnWith,
     theActToCarryOn,
+    theSentenceAsksAboutTheLastAnswer,
     theSentenceCarriesOn,
     theSentenceIsNothingButAPointer,
     whichOfTheNamedThings,
     withoutSayingTheSameThingTwice,
+    type AFollowUpAboutTheAnswer,
     type ThingNamed,
     type WhatTheLastTurnDid
 } from './last-turn-memory.js';
@@ -917,7 +927,9 @@ import { whatIsWrongWithThisGround } from './ground-status-lines.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
 import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
 import { recordPerception } from './shown-this-turn.js';
+import { A_BREAKING_WAS_WRITTEN_DOWN } from './breaking-a-thing-you-are-holding.js';
 import {
+    A_THING_ENDED_IN_FRONT_OF_THEM,
     theBearingsThisTurnCanRead,
     whatThePeopleHereAreAnswering,
     whoThePlanPointedAt,
@@ -946,6 +958,7 @@ import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
 // The other half of being taught, which nothing in the engine could do.
 import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
 import { craftVerbs } from './craft-verbs.js';
+import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
 // Whose the thing is, asked of the world before anything calls a taking a theft.
@@ -1668,6 +1681,19 @@ export class GameService {
         this.namedThisTurn.push({ name, ...(stones === undefined ? {} : { stones }) });
     }
     /**
+     * How many the listing this turn printed was a cut OF.
+     *
+     * Only a reader that TRUNCATES calls this, and it is what makes "more" an
+     * honest answer rather than a relist: the memory holds the sample because
+     * the sample is what was printed, and this is the one fact about the rest
+     * of the board that survives the turn.
+     */
+    private namedOutOfThisTurn: number | null = null;
+    theListingWasACutOf(total: number): void {
+        if (!Number.isFinite(total) || total <= 0) return;
+        this.namedOutOfThisTurn = Math.max(this.namedOutOfThisTurn ?? 0, Math.floor(total));
+    }
+    /**
      * Everything the scene channel found true of each person last turn.
      *
      * Keyed by person. Read by `sayWhoWasInIt` so a reading that has not
@@ -2173,6 +2199,7 @@ export class GameService {
         this.lastTurn = null;
         this.ranThisTurn = [];
         this.namedThisTurn = [];
+        this.namedOutOfThisTurn = null;
 
         // "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID
         const carriesOn = fightAnswer === null && picked === null
@@ -2182,6 +2209,15 @@ export class GameService {
         const carryingOn = carriesOn === null || before === null
             ? null
             : carryingOnFromTheLastTurn(before, trimmed);
+
+        // "WHY" AND "MORE" ARE ABOUT THE ANSWER, NOT ABOUT ANYTHING IN IT.
+        // No model is asked either, for the reason "keep at it" is not: what
+        // they mean is entirely in the record, which no reader downstream can
+        // see, and there is no second reading of a bare "why" to fall back on.
+        const followUp = fightAnswer === null && picked === null
+            && forced === null && answered === null && heldBack === null && carriesOn === null
+            ? theSentenceAsksAboutTheLastAnswer(trimmed)
+            : null;
 
         // phase 1
         const plan: PlanWithSteps = fightAnswer !== null
@@ -2260,6 +2296,13 @@ export class GameService {
                 note: `the sentence carried on ("${carriesOn}") and the turn before it left `
                     + 'nothing to carry on with. No model read this line.'
             }
+            : followUp !== null
+            ? {
+                action: { action: 'unclear' },
+                source: 'fallback',
+                note: `the sentence asked about the answer before it ("${followUp}"). Phase 2 `
+                    + 'answers it off the record. No model read this line.'
+            }
             : await this.narrator.plan(
                 trimmed,
                 composeStateSummary({
@@ -2332,16 +2375,24 @@ export class GameService {
         // worked - caught by `a-board-can-be-pointed-at.test.ts` in one run.
         const nothingToSubstituteInto = [...stepsOfThePlan(plan), { action: plan.action }]
             .every(step => step.action.target === undefined && step.action.topic === undefined);
+        //
+        // AND A POINTER WITH NO TURN BEHIND IT IS STILL A POINTER. This was
+        // gated on `before !== null`, which is null on exactly the turns that
+        // need the answer - the first turn of a run, and every turn more than
+        // one turn after the listing, because the memory is one turn deep. All
+        // eight pointer sentences on the refusal probe came back as the blank
+        // look with nothing behind them and resolved with a listing one turn
+        // back, so the parser was never the defect; the refusal was.
         const pointer = plan.action.action === FALLBACK_ACTION
             && nothingToSubstituteInto
             && carryingOn === null
-            && before !== null
+            && followUp === null
             ? theSentenceIsNothingButAPointer(trimmed)
             : null;
-        const pointedAt = pointer === null
+        const pointedAt = pointer === null || before === null
             ? null
-            : whichOfTheNamedThings(pointer, trimmed, before!.named);
-        const lastAct = pointer === null ? null : theActToCarryOn(before!);
+            : whichOfTheNamedThings(pointer, trimmed, before.named);
+        const lastAct = pointer === null || before === null ? null : theActToCarryOn(before);
         // AND ONLY AN ACT THAT WAS ALREADY AIMED AT A NAME MAY BE RE-AIMED.
         //
         // That is the player choosing off a list they were shown, which is one
@@ -2393,6 +2444,18 @@ export class GameService {
                 `The sentence read as carrying on ("${carriesOn}") and the turn before this one `
                 + 'left no act to carry on with. No day passed and nothing was spent.'
             ))
+            : followUp !== null
+            // A QUESTION ABOUT THE ANSWER BEFORE IT, ANSWERED OFF THE RECORD.
+            ? this.answerTheFollowUp(run, before, followUp)
+            : pointer !== null && before === null
+            // AND A POINTER WITH NO TURN BEHIND IT IS TOLD SO, which is not the
+            // same news as a listing that named nothing.
+            ? this.freeAction(run, FALLBACK_ACTION, (() => {
+                const said = nothingBehindThisPointer(pointer);
+                return factsForAQuestionPutBack(
+                    said.headline, said.prose, said.lines, said.structure
+                );
+            })())
             : pointer !== null && aimedAgain === null
             // A POINTER WITH NOTHING TO POINT AT, OR TOO MUCH. The listing goes
             // back out in the order it was printed and the names are recorded
@@ -2586,7 +2649,14 @@ export class GameService {
             onTurn: after.run.turn,
             outcome: execution.outcome,
             acts: this.ranThisTurn,
-            named: withoutSayingTheSameThingTwice(this.namedThisTurn)
+            named: withoutSayingTheSameThingTwice(this.namedThisTurn),
+            // WHAT "WHY" AND "MORE" ARE ANSWERED OUT OF, and the only place
+            // either can live: the screen is gone by the time the next sentence
+            // arrives, so a follow-up about the answer has nothing to read but
+            // this record.
+            headline: execution.facts.headline,
+            account: [...execution.facts.structure],
+            namedOutOf: this.namedOutOfThisTurn
         };
         // And again, now the turn is over, BEFORE the write below. The refresh
         // at the top is what the world reads while the span runs - the player
@@ -2643,8 +2713,23 @@ export class GameService {
                     stepsOfThePlan(theTurnsPlan).map(step => step.action.target),
                     squareBefore
                 )
-            )
+            ),
+            theTurnsPlan.action.action === 'look'
         );
+        // AND THE SQUARE IS NAMED AFTER THE RECORD WAS TAKEN.
+        //
+        // The record is stamped above, before the estate settlement that a
+        // death needs and before this channel runs - so the people this turn
+        // printed would land in `namedThisTurn` a few lines too late and be
+        // cleared unread on the next turn. Re-stamped here rather than the
+        // stamp being moved down past the settlement, which is ordered the way
+        // it is for a reason that has nothing to do with this.
+        if (this.lastTurn !== null) {
+            this.lastTurn = {
+                ...this.lastTurn,
+                named: withoutSayingTheSameThingTwice(this.namedThisTurn)
+            };
+        }
 
         const scene = {
             place: placeName(after.cultivator),
@@ -3876,6 +3961,9 @@ ${noticedWaiting}`;
             case 'consume_pill':
                 return this.consumePill(run, cultivator, action.target, rawInput);
 
+            case 'destroy':
+                return this.destroy(run, cultivator, action.target);
+
             case 'list_techniques':
                 return this.listTechniques(run, cultivator, action.target);
 
@@ -5016,6 +5104,33 @@ ${noticed}`;
         }
         return this.freeAction(run, FALLBACK_ACTION, factsForAQuestionPutBack(
             asked.headline, asked.prose, asked.lines, asked.structure
+        ));
+    }
+
+    /**
+     * "Why" and "more", answered out of the turn before this one.
+     *
+     * Free, because both are questions. What "more" puts back goes through
+     * `nameWhatTheyGot` again for the reason the listing above does: a listing
+     * that scrolls out of memory as it is printed leaves the ordinal in the
+     * next sentence counting against nothing.
+     */
+    private answerTheFollowUp(
+        run: Run,
+        record: WhatTheLastTurnDid | null,
+        asked: AFollowUpAboutTheAnswer
+    ): Execution {
+        const said = asked === 'why'
+            ? askingWhyThatAnswer(record)
+            : askingForTheRestOfIt(record);
+        if (asked === 'more' && record !== null) {
+            for (const thing of record.named) this.nameWhatTheyGot(thing.name, thing.stones);
+            if (record.namedOutOf !== null && record.namedOutOf !== undefined) {
+                this.theListingWasACutOf(record.namedOutOf);
+            }
+        }
+        return this.freeAction(run, FALLBACK_ACTION, factsForAQuestionPutBack(
+            said.headline, said.prose, said.lines, said.structure
         ));
     }
 
@@ -6389,7 +6504,18 @@ ${noticed}`;
 
         // AND NOBODY HAS JOINED ANYTHING, SAID SO IT CANNOT BE DROPPED
         if (heard.some(x => x.admissible === true)) {
-            sayThisWhateverTheNarratorDoes(
+            // AND ITS PHRASING IS THE NARRATOR'S. `sayThisWhateverTheNarratorDoes`
+            // also pins the words in `required`, which appends them whole when
+            // the prose does not contain them - and the prose never does, because
+            // the prompt orders every fact rewritten from nothing. Measured with
+            // gemma narrating: He Tianhe said *"you are not on any of their rolls,
+            // and you have not been introduced"*, and all four sentences below
+            // were stapled on underneath it anyway. The design owner, on that
+            // turn: *"have the NPC explain it in world"*, and *"if you have to
+            // explain nothing happened as a separate line, the narration has
+            // failed."* The fact still reaches both channels; only the wording
+            // stops being forced.
+            shownFirstWithNoModel(
                 facts,
                 // AND WHAT THE LIST IS AND IS NOT. It used to end "this is what
                 // the doors would do if you walked up to them", which is a
@@ -7641,6 +7767,28 @@ ${line}`;
             + 'copy is worth. Reading them costs nothing: nothing bought, no time passed.'
         );
         // WHAT WAS NAMED IS WHAT "THE CHEAPER ONE" CAN MEAN NEXT TURN.
+        //
+        // ── AND THE COUNTER IS PRINTED FIRST, SO IT IS COUNTED FIRST ─────
+        //
+        // FOUND BY PLAYING. The board printed eight of forty-three goods and
+        // then two manuals off the stall, and only the manuals were written
+        // down - so `the second one`, said about a screen whose second line was
+        // a ferry crossing, bought the Five-Breath Circulation Scripture. The
+        // player was counting lines and the engine was counting rows, and they
+        // were counting different lists.
+        //
+        // `boardSample` is the same cut the prose printed, called again rather
+        // than passed through, which is the one thing that keeps the two in
+        // step: it is a pure function of the same rows. The SAMPLE is what goes
+        // on the record, because the sample is what was read - and how big a
+        // cut it was goes on too, which is what makes "more" an answer.
+        const prices = (result as { prices?: MarketPrice[] }).prices;
+        if (Array.isArray(prices) && prices.length > 0) {
+            for (const item of boardSample(prices)) {
+                if (typeof item.name === 'string') this.nameWhatTheyGot(item.name);
+            }
+            this.theListingWasACutOf(prices.length);
+        }
         const stall = (result as { manuals?: MarketPrice[] }).manuals;
         if (Array.isArray(stall)) {
             for (const book of stall) {
@@ -11437,7 +11585,16 @@ ${opened.text}` : receipt,
             }
             const out: string[] = [];
             for (const group of groups.values()) {
-                for (const row of group) out.push(`  ${nameOf(row)}`);
+                for (const row of group) {
+                    out.push(`  ${nameOf(row)}`);
+                    // AN ORDINAL COUNTS WHAT WAS PRINTED. The rows are
+                    // REGROUPED before they are printed, so registering
+                    // `compatible` in its own order would have "the second one"
+                    // counting a list nobody saw. Written here, inside the loop
+                    // that prints, because that is the only order that cannot
+                    // disagree with the screen.
+                    if (typeof row.name === 'string') this.nameWhatTheyGot(row.name);
+                }
                 out.push(carries(group[0]!, group.length));
             }
             return out;
@@ -11458,6 +11615,7 @@ ${opened.text}` : receipt,
                     : `What you are practising, ${held.length} of them:`
             );
             for (const art of held) {
+                this.nameWhatTheyGot(art.name);
                 // The same two calls `technique_manage` prices its own listing
                 // with, rather than a second reading of the catalog: what a
                 // book carries you to must not depend on which surface asked.
@@ -11522,6 +11680,10 @@ ${opened.text}` : receipt,
         if (gated > 0) {
             lines.push(`${gated} more exist and want a rank above yours.`);
         }
+        // HOW BIG A CUT THIS WAS, so "more" can say so rather than relist. The
+        // rows kept out by rank are part of it: a player asking for the rest of
+        // a list of arts is asking about those too.
+        this.theListingWasACutOf(held.length + compatible.length + conflicting.length + gated);
         if (typeof body.note === 'string' && body.note.length > 0) lines.push(body.note);
 
         const facts = factsForToolResult(
@@ -11577,6 +11739,11 @@ ${opened.text}` : receipt,
             'technique_manage.learn', 'learn_technique', result, technique.name
         );
 
+        // AND THE BOOK IS WORSE FOR HAVING BEEN READ OUT
+        if (execution.outcome !== 'refused') {
+            this.theArtCameOffTheBook(cultivator.id, technique.id, execution);
+        }
+
         // WHETHER IT IS FOR THEM, IN THE SAME BREATH
         const catalog = getTechnique(technique.id);
         // AND A SUITABILITY LINE MUST NOT ARGUE WITH A REFUSAL
@@ -11620,6 +11787,59 @@ ${fit.line}`;
             });
         }
         return execution;
+    }
+
+    /**
+     * A use spent off the book somebody just took an art out of.
+     *
+     * The player half of the rule that a heaven-grade manual and above holds a
+     * finite number of uses. Learning is what spends one -
+     * `what-a-manual-has-left-in-it.ts` says why that and nothing else - so
+     * this sits where the learning actually happened and nowhere near
+     * `practise`, which takes nothing out of a book already in the reader.
+     *
+     * WHAT FALLS OUT WITH NO CODE. `ruin` nulls `possessorId`, and both this
+     * finder and `aTakenCopyOf` ask who is holding the row - so the moment a
+     * book ends, nobody is holding it, the learn gate loses the provenance a
+     * taken copy was supplying, and a second reader is refused by the gate
+     * that was already there.
+     */
+    private theArtCameOffTheBook(
+        cultivatorId: string,
+        techniqueId: string,
+        execution: Execution
+    ): void {
+        const world = this.atHand;
+        if (!world) return;
+        const grade = getTechnique(techniqueId)?.grade;
+        if (!grade || !aManualOfThisGradeRunsOut(grade)) return;
+
+        const book = theManualInThisHandFor(world.objects, cultivatorId, techniqueId);
+        if (!book) return;
+
+        const taken = takeTheArtOffThePage(book, {
+            grade,
+            byId: cultivatorId,
+            onDay: Math.floor(world.currentDay)
+        });
+        if (!taken.took) return;
+
+        world.objects = world.objects.map(row => row.id === book.id ? taken.object : row);
+        this.theWorldMoved();
+
+        execution.facts.lines.push(taken.line);
+        execution.facts.prose = `${execution.facts.prose}\n\n${taken.line}`;
+        execution.facts.structure.push(
+            `what-a-manual-has-left-in-it: ${grade} grade, `
+            + `${taken.after.spent} of ${taken.after.allowed} spent`
+            + `${taken.ruined ? ', and the row is ruined' : ''}.`
+        );
+        execution.calls.push({
+            name: 'world.takeTheArtOffThePage',
+            action: 'learn_technique',
+            summary: taken.line,
+            ok: true
+        });
     }
 
     /**
@@ -14830,7 +15050,18 @@ ${fit.line}`;
         squareBefore: readonly RosterEntry[],
         playerBefore: Cultivator,
         playerNow: Cultivator,
-        declared: readonly DeclaredMovement[] = []
+        declared: readonly DeclaredMovement[] = [],
+        /**
+         * Whether the read the player asked for IS the square.
+         *
+         * This channel runs on EVERY turn, so registering the people it names
+         * unconditionally would put three strangers on the end of the record
+         * every time a manual was bought - and "I study it", the sentence
+         * `nameWhatTheyGot` was written for, would come back *"it could be any
+         * of four"*. The square is a listing only when looking at it was the
+         * act; the rest of the time it is scenery around one.
+         */
+        nameThemToo = false
     ): void {
         const now = this.present(playerNow);
         // WAS THIS A SCENE OR A DIGEST. See `theFallenAmong`: a turn that
@@ -14871,12 +15102,53 @@ ${fit.line}`;
             // running. The memory is held here rather than in the reader,
             // which stays a function of the scene it is handed.
             saidLastTurn: id => this.saidAboutThemLastTurn.get(id) ?? NOTHING_SAID_YET,
-            noteWhatWasSaid: (id, parts) => saidThisTurn.set(id, new Set(parts))
+            noteWhatWasSaid: (id, parts) => saidThisTurn.set(id, new Set(parts)),
+
+                    // AND THE EXACT COUNT, WHICH IS STATE AND NOT NARRATION.
+                    //
+                    // The design owner, on the scene channel counting people out loud:
+                    // *"the engine should still tell you exactly how many in the engine
+                    // ruling data ... but that is for the state itself ... not as part
+                    // of narration."* So the reading says "and the others" and the
+                    // figure comes here, where the inspector reads and no player does.
+                    // Without this line the census is computed and dropped, and the
+                    // number exists nowhere at all.
+                    noteHowManyWereHere: said => execution.facts.structure.push(said),
+
+            // AND WHAT THE TURN DID, NOT ONLY WHAT IT MOVED.
+            //
+            // `sceneWeight` was the furthest any BODY moved, so an act that
+            // transfers nothing priced at zero: a treasure smashed in a crowded
+            // square read as an idle square. The design owner, on smashing a
+            // pill in front of an audience: *"that should fall out"* - and it
+            // does, once the scene layer is told an event happened at all. The
+            // breaking writes its own marker and exports the name of it, so the
+            // two cannot drift apart on a rename.
+            theDeedItself: execution.facts.structure.some(
+                line => line.startsWith(A_BREAKING_WAS_WRITTEN_DOWN)
+            )
+                ? A_THING_ENDED_IN_FRONT_OF_THEM
+                : 0
         })) {
             execution.facts.lines.push(said);
             execution.facts.prose = execution.facts.prose.length > 0
                 ? `${execution.facts.prose}\n\n${said}`
                 : said;
+        }
+        if (nameThemToo) {
+            // In the order they were PRINTED, and read back off the whole page
+            // rather than off this channel's own lines. Two writers name the
+            // people in a square - the look read's roster and this channel -
+            // and which of them names whom varies with what changed since last
+            // turn. Reading the finished facts is the only list that cannot
+            // disagree with the screen; rebuilding it from the roster would be
+            // an ordering nobody printed.
+            const page = execution.facts.lines.join('\n');
+            const inOrder = now
+                .map(person => ({ name: person.name, at: page.indexOf(person.name) }))
+                .filter(one => one.at >= 0)
+                .sort((a, b) => a.at - b.at);
+            for (const person of inOrder) this.nameWhatTheyGot(person.name);
         }
         // Everything true of everybody this turn, printed or not: somebody
         // who read the same as last turn still reads that way, and the turn
@@ -16106,10 +16378,11 @@ ${fit.line}`;
 }
 
 // THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
-export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs {}
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
 type CraftVerbs = typeof craftVerbs;
+type DestroyVerbs = typeof destroyVerbs;
 type InvestigateVerb = typeof investigateVerb;
 type AskingVerbs = typeof askingVerbs;
 type SituatedReads = typeof situatedReads;
@@ -16122,4 +16395,4 @@ type DaoPartnerVerbs = typeof daoPartnerVerbs;
 type TakingVerbs = typeof takingVerbs;
 type GuardVerbs = typeof guardVerbs;
 type TeachingVerbs = typeof teachingVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs);
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs);

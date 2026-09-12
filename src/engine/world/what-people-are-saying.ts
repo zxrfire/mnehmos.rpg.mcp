@@ -370,7 +370,8 @@ function bend(
             house: house?.name ?? null,
             where: place ?? (locationId ? getLocation(state, locationId)?.name ?? null : null),
             years,
-            size
+            size,
+            what: typeof fact.data.brokeWhat === 'string' ? fact.data.brokeWhat : null
         }),
         named
     };
@@ -452,6 +453,13 @@ interface Saying {
     where: string | null;
     years: number;
     size: number;
+    /**
+     * What was broken, where the fact names a thing rather than only people.
+     *
+     * Read off the fact's own column and never off the summary: a teller who
+     * cannot name the doer can still name what was broken.
+     */
+    what: string | null;
 }
 
 /** How long ago, in the register somebody repeating a story uses. */
@@ -548,6 +556,13 @@ function sentenceFor(s: Saying): string {
             return `${who} came out of${at || ' somewhere'} carrying something, ${when}, ${size}.`;
         case 'technique_lost':
             return `${house ?? who} lost the last of a road nobody else holds, ${when}, ${size}.`;
+        case 'object_destroyed':
+            // The thing is named off the fact's own column rather than off the
+            // summary, because the summary carries the doer and a teller who
+            // cannot name the doer can still name what was broken.
+            return s.what !== null
+                ? `${who} broke ${s.what}${at}, ${when}, ${size}.`
+                : `${who} broke something${at} and it is not coming back, ${when}, ${size}.`;
         case 'succession':
             return `${house ?? who} has somebody new in the chair, ${when}, ${size}.`;
         case 'expulsion':

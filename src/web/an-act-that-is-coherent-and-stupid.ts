@@ -131,7 +131,9 @@ function whoSawIt(watching: readonly string[]): string {
     if (watching.length === 2) {
         return `${watching[0]} and ${watching[1]} both watch, and say nothing to each other.`;
     }
-    const others = watching.length - 2;
-    return `${watching[0]}, ${watching[1]} and ${others} `
-        + `other${others === 1 ? '' : 's'} watch the whole thing.`;
+    // TWO NAMES AND THE REST FOLDED IN. This counted the remainder - "A, B and
+    // 3 others watch the whole thing" - and a tally of the people standing
+    // around is not how this genre says a crowd. See
+    // `a-group-is-named-not-counted.ts` for the corpus figures.
+    return `${watching[0]}, ${watching[1]} and the others watch the whole thing.`;
 }

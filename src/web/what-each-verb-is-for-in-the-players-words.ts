@@ -340,6 +340,16 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             know about it. Toxicity accumulates on the body whether or not anybody wanted it
             to.`
     },
+    destroy: {
+        takes: ['target'],
+        says: `break something they are holding, or a thing of theirs standing where they are,
+            deliberately and for good. "target" names it. It is the other end of "craft" and
+            "refine": what this engine can make, it can unmake, and nothing else - a stall, an
+            inn and a village are not objects the engine models and the refusal says so rather
+            than pretending it could not read the sentence. A cheap thing is gone from the
+            pouch and the people standing there talk about it; a heaven-grade thing keeps its
+            row, ruined, and the news travels. Passes no time.`
+    },
     list_techniques: {
         takes: [],
         says: `the arts this cultivator could actually be taught, filtered by realm, spirit

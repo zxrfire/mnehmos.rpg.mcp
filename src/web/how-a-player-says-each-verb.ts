@@ -345,6 +345,15 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'time to take the pill',
         'I crack open the vial and drink it'
     ],
+    destroy: [
+        'I smash the pill',
+        'I break my sword',
+        'I destroy the spirit boat',
+        'I grind the talisman under my heel',
+        'I snap the blade over my knee',
+        'I throw the furnace down and let it shatter',
+        'I burn the manual'
+    ],
     list_techniques: [
         'what arts do I know',
         'which methods am I practising',

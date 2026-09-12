@@ -366,6 +366,9 @@ export const situatedReads = {
 
         const facts = factsForToolResult(read.headline, read.lines);
         facts.structure.push(...read.structure);
+        // A LISTING THIS GAME PRINTS IS ONE THE NEXT SENTENCE CAN NAME.
+        // In the order the read printed them, which is masters first.
+        for (const name of read.named) this.nameWhatTheyGot(name);
 
         const execution = this.freeAction(run, 'teacher', facts);
         execution.calls = [{
@@ -717,6 +720,11 @@ export const situatedReads = {
 
         const facts = factsForToolResult(read.headline, read.lines);
         facts.structure.push(...read.structure);
+        // A LISTING THIS GAME PRINTS IS ONE THE NEXT SENTENCE CAN NAME.
+        // In the order the read printed them, which is not the order they
+        // arrived in - it sorts by whether they are out of this province, then
+        // by how far the ground carries, then by distance.
+        for (const name of read.named) this.nameWhatTheyGot(name);
 
         // AND THE TWO WAYS OF GETTING THERE THAT ARE NOT THE ROAD
         if (thereIsACounterAt(placeName(cultivator))) {

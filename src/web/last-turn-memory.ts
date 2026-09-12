@@ -44,6 +44,26 @@ export interface WhatTheLastTurnDid {
     readonly acts: readonly PlanStep[];
     /** Things the turn named to the player, in the order it named them. */
     readonly named: readonly ThingNamed[];
+    /**
+     * What the turn answered with, and how it arrived there.
+     *
+     * The two fields "why" is answered out of, and the reason it could not be
+     * answered before: the previous screen is gone by the time the next
+     * sentence arrives, so this record is the only place either can live.
+     * `account` is the structure channel, which is the engine's own one-line
+     * report of every routine that ran - the same text the inspector shows.
+     */
+    readonly headline?: string;
+    readonly account?: readonly string[];
+    /**
+     * How many the listing was a cut OF, where what was printed was a sample.
+     *
+     * Eight of forty-three on offer, four arts of a hundred and fifty-five.
+     * {@link named} holds the sample because the sample is what the player
+     * read; this holds the figure that makes "more" an honest answer rather
+     * than a relist.
+     */
+    readonly namedOutOf?: number | null;
 }
 
 /**
@@ -284,6 +304,180 @@ export function theRowForCarryingOn(said: string, step: PlanStep): ToolCallRecor
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// A QUESTION ABOUT THE ANSWER YOU JUST GAVE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A follow-up that is about the previous ANSWER rather than about anything in
+ * it.
+ *
+ * Every other back-reference in this file points at an item in a listing, and
+ * the resolver has read those all along. These two do not resolve because they
+ * have no referent to resolve to: "why" asks the engine to account for what it
+ * said, and "more" asks for the rest of what it showed. Both were measured as
+ * the blank look on every turn of a 3472-turn probe, with and without a listing
+ * behind them.
+ */
+export type AFollowUpAboutTheAnswer = 'more' | 'why';
+
+/**
+ * The whole sentence and nothing else, which is the same guard
+ * {@link theSentenceIsNothingButAPointer} keeps and for the same reason.
+ *
+ * "more rations" is a quantity, "I ask why she left" is a question put to a
+ * person, and "more of the same" already means carry on with the act - an older
+ * reading, and the right one. A follow-up about the answer is a whole turn
+ * spent asking about the turn before it.
+ */
+const ASKING_FOR_THE_REST = new RegExp(
+    '^(?:'
+    + '(?:tell me |show me |give me |i want |let me (?:see|have) )?more(?: of (?:them|those|it all))?'
+    + '|(?:is there |are there |any(?:thing)? )?(?:any )?more(?: of (?:them|those))?'
+    + '|what else(?: is there)?'
+    + '|anything else'
+    + '|(?:and |show me |what about )?the rest(?: of (?:it|them|those))?'
+    + ')(?:\\s+please)?$',
+    'i'
+);
+
+const ASKING_WHY = new RegExp(
+    '^(?:'
+    + 'why(?:\\s+(?:not|though|is that|was that|is it|so|then))?'
+    + '|how come'
+    + '|(?:for|on) what (?:reason|grounds)'
+    + '|says? who'
+    + ')$',
+    'i'
+);
+
+/** Which of the two this sentence is, or null. */
+export function theSentenceAsksAboutTheLastAnswer(
+    input: string
+): AFollowUpAboutTheAnswer | null {
+    const said = input.trim().replace(/[.!?]+$/, '').trim();
+    if (said.length === 0) return null;
+    if (ASKING_WHY.test(said)) return 'why';
+    if (ASKING_FOR_THE_REST.test(said)) return 'more';
+    return null;
+}
+
+/** The four channels an answer to a follow-up is put back on. */
+export interface AnAnswerAboutTheAnswer {
+    headline: string;
+    prose: string;
+    lines: string[];
+    structure: string;
+}
+
+/** How much of the engine's own account of a turn goes back to the player. */
+export const MOST_ACCOUNT_LINES_PUT_BACK = 8;
+
+/**
+ * "Why", answered out of what the engine did rather than out of a reading of it.
+ *
+ * The structure channel is the engine's report of every routine that ran, and
+ * it is the only honest answer to this question: anything else would be the
+ * engine reasoning in prose about a refusal nothing computed, which is a
+ * narrator settling an outcome. Where the account is empty the answer says so
+ * rather than filling it.
+ */
+export function askingWhyThatAnswer(
+    record: WhatTheLastTurnDid | null
+): AnAnswerAboutTheAnswer {
+    if (record === null) {
+        return {
+            headline: 'There is no answer behind this one.',
+            prose: 'Nothing is remembered past the turn just gone, and there is no turn just '
+                + 'gone to account for. Say the thing itself and it will run. Nothing was spent '
+                + 'finding that out.',
+            lines: [],
+            structure: 'why: no turn is remembered - the memory is one turn deep and is cleared '
+                + 'with the run. No day passed and nothing was spent.'
+        };
+    }
+    const account = (record.account ?? []).slice(0, MOST_ACCOUNT_LINES_PUT_BACK);
+    const said = record.headline?.trim();
+    const answered = said ? `The turn before this one answered: ${said}` : 'The turn before this one.';
+    if (account.length === 0) {
+        return {
+            headline: 'That is all there is to it.',
+            prose: `${answered} There is nothing behind it that is not in it - the engine kept no `
+                + 'account of that turn beyond what it printed. Nothing was spent finding that out.',
+            lines: [],
+            structure: `why: the turn on ${record.onTurn} ${record.outcome === 'refused' ? 'was refused' : 'ran'} `
+                + 'and filed no structure lines. No day passed and nothing was spent.'
+        };
+    }
+    return {
+        headline: 'Why that answer.',
+        prose: `${answered} What the engine did to arrive at it is below, and that is the whole `
+            + 'of it. Nothing was spent finding that out.',
+        lines: account,
+        structure: `why: the turn on ${record.onTurn} ${record.outcome === 'refused' ? 'was refused' : 'ran'} `
+            + `${record.acts.length} act(s) and filed ${record.account?.length ?? 0} account line(s), `
+            + `of which ${account.length} are put back. No day passed and nothing was spent.`
+    };
+}
+
+/**
+ * "More", answered honestly in the three situations it arrives in.
+ *
+ * The memory holds what was NAMED, which is what was printed - so where a
+ * listing was whole, the whole of it goes back, and where it was a cut the
+ * engine says how big a cut and what gets a different one. What it never does
+ * is produce the rows it did not print: it does not hold them, and a listing
+ * conjured here would be a second answer to what is on a board.
+ */
+export function askingForTheRestOfIt(
+    record: WhatTheLastTurnDid | null
+): AnAnswerAboutTheAnswer {
+    if (record === null) {
+        return {
+            headline: 'There is nothing to have more of.',
+            prose: 'Nothing is remembered past the turn just gone, and there is no turn just '
+                + 'gone. Say what you want to see and it will run. Nothing was spent finding '
+                + 'that out.',
+            lines: [],
+            structure: 'more: no turn is remembered - the memory is one turn deep and is cleared '
+                + 'with the run. No day passed and nothing was spent.'
+        };
+    }
+    const named = record.named;
+    if (named.length === 0) {
+        return {
+            headline: 'There is no more of it.',
+            prose: 'The turn before this one did not put a list in front of you, so there is '
+                + 'nothing more of it to give. Say the thing itself and it will run. Nothing was '
+                + 'spent finding that out.',
+            lines: [],
+            structure: `more: the turn on ${record.onTurn} named 0 things. No day passed and `
+                + 'nothing was spent.'
+        };
+    }
+    const lines = named.map((thing, at) =>
+        `${at + 1}. ${thing.name}`
+        + (thing.stones === undefined ? '' : ` - ${thing.stones} spirit stones`)
+        + (thing.from === undefined ? '' : `, from ${thing.from}`));
+    const outOf = record.namedOutOf ?? null;
+    const wasACut = outOf !== null && outOf > named.length;
+    return {
+        headline: wasACut ? `${named.length} of ${outOf}.` : 'That is all of it.',
+        prose: wasACut
+            ? `You were shown ${named.length} of ${outOf}. The engine holds the ${named.length} it `
+              + 'put in front of you and not the rest of the board: naming a kind of thing is '
+              + 'what gets a different cut of it. Nothing was spent finding that out.'
+            : `The turn before this one named ${named.length}, and that is all of them. The `
+              + 'memory is one turn deep and holds what was named, not the board behind it. '
+              + 'Nothing was spent finding that out.',
+        lines,
+        structure: `more: the turn on ${record.onTurn} named ${named.length} thing(s)`
+            + (outOf === null ? '' : ` out of ${outOf}`)
+            + '. Put back in the order they were named, so an ordinal counts against the same '
+            + 'list twice. No day passed and nothing was spent.'
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE THING YOU JUST TOLD ME ABOUT
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -471,6 +665,33 @@ export function whichOfTheNamedThings(
  *                       counts an ordinal against - so "the second one" in
  *                       answer to this question lands on the second line of it.
  */
+/**
+ * A pointer with no turn behind it at all, which is not the same news.
+ *
+ * The branch below for a record that named nothing has existed since this file
+ * was written and was gated on there BEING a record - so the case a player
+ * actually meets, saying "the second one" on the first turn of a run or two
+ * turns after the listing, fell past it to the blank look. Measured: all eight
+ * of the pointer sentences on the refusal probe came back *"it does not resolve
+ * into anything you could actually do standing here"* with nothing behind them,
+ * and all eight resolve with a listing one turn back.
+ *
+ * Worded apart from that branch on purpose. *The turn before this one listed
+ * nothing* and *there is no turn before this one* are different facts, and a
+ * player who has just watched their listing lapse is owed the second one.
+ */
+export function nothingBehindThisPointer(pointer: string): AnAnswerAboutTheAnswer {
+    return {
+        headline: 'That points at nothing.',
+        prose: `"${pointer}" points back at the turn before this one, and there is no turn `
+            + 'before this one - nothing is remembered past the turn just gone. Name the thing '
+            + 'itself and it will run. Nothing was spent finding that out.',
+        lines: [],
+        structure: `"${pointer}" read as a pointer and no turn is remembered: the memory is one `
+            + 'turn deep and is cleared with the run. No day passed and nothing was spent.'
+    };
+}
+
 export function askingWhichOfWhatWasNamed(
     record: WhatTheLastTurnDid,
     pointer: string,

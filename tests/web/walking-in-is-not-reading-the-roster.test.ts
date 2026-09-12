@@ -93,8 +93,13 @@ describe('walking into a square', () => {
         for (const other of ['Cen Qingzhi', 'Mu Yanling', 'Cai Ruzhen']) {
             expect(prose).not.toContain(other);
         }
-        // And the rest are not concealed - the count is the invitation to ask.
-        expect(prose).toMatch(/three others|are here besides/);
+        // And the rest are not concealed - saying they are there is the
+        // invitation to ask. It was a COUNT that said so, `/three others|are
+        // here besides/`, until the design owner ruled that a group is named
+        // rather than tallied: the named person carries the rest, which is the
+        // reference corpus's own construction. See
+        // `a-group-of-people-is-named-not-counted.test.ts`.
+        expect(prose).toMatch(/The others are here too/);
     });
 
     it('gives the same square up in full when you actually ask', () => {
@@ -138,12 +143,20 @@ describe('walking into a square', () => {
     it('still finds you an individual in a place too full to name', () => {
         // *"It could have too many people to name independently all at once"*
         // and *"even if it holds too many you can find an individual."* Both,
-        // in one square: one person handed over by name and the other ninety
-        // nine as a number.
+        // in one square: one person handed over by name and the rest folded in
+        // behind them.
+        //
+        // This asserted `'99 people'` in the prose. The design owner ruled the
+        // headcount out - a group is named, not tallied - and the figure moved
+        // to `structure`, which is the channel a player does not read. Both
+        // halves are asserted here, because the split is the whole rule.
         const square = squareOf([somebody({ name: 'Ji Suilu', playsToTheRoom: 0.9 })], 0, 100);
-        const prose = factsForLook(standingIn('the market', 6), AMBIENT, square).prose;
+        const facts = factsForLook(standingIn('the market', 6), AMBIENT, square);
+        const prose = facts.prose;
         expect(prose).toContain('Ji Suilu');
-        expect(prose).toContain('99 people');
+        expect(prose).toMatch(/The others are here too/);
+        expect(prose).not.toMatch(/\b\d+\s+people\b/);
+        expect(facts.structure.join(' ')).toMatch(/\b100\b/);
     });
 });
 

@@ -93,8 +93,12 @@ function whatTheRoomSays(
 
     forThePlayer.push(
         council.settledBy === 'the head'
+            // "over 4 of them who were far enough away to mind" tallied the
+            // people in the room. Who objected is the fact; how many of them
+            // there were is state - see `a-group-is-named-not-counted.ts`.
             ? `The room did not want it and ${who}, who heads the house, settled it anyway - `
-              + `over ${council.against.length} of them who were far enough away to mind.`
+              + `over ${council.against.length === 1 ? 'the one' : 'the ones'} in it who `
+              + 'were far enough away to mind.'
             : council.settledBy === 'the elders, unanimous against the head'
                 ? `${who} and every other elder are on the same side of the head of the house, `
                   + 'and a head who is alone in the room does not hold it. The head was '

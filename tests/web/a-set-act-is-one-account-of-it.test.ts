@@ -72,8 +72,12 @@ describe('what was the same for all of them, said once', () => {
         // Lanyi." A colon and a list is how a field is written down.
         expect(whoWasNeverReached(['A'])).toBe('A was never reached');
         expect(whoWasNeverReached(['A', 'B'])).toBe('A and B were never reached');
+        // Was `'5 others behind them were never reached'`. A tally of the
+        // people standing around is not how this genre says a crowd - see
+        // `a-group-is-named-not-counted.ts` for the corpus figures - and the
+        // names were already in hand, so the fold costs nothing.
         expect(whoWasNeverReached(['A', 'B', 'C', 'D', 'E']))
-            .toBe('5 others behind them were never reached');
+            .toBe('A and the others behind them were never reached');
     });
 
     it('leaves a single member alone', () => {

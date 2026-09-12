@@ -80,6 +80,11 @@ export const ACTION_NAMES = [
      */
     'consume_pill',
     /**
+     * Breaking something you are holding, on purpose. The other end of `craft`
+     * and `refine`: what the engine can make, a player can unmake.
+     */
+    'destroy',
+    /**
      * The arts that could be learned, and the learning of one.
      */
     'list_techniques',
@@ -429,6 +434,10 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     // What is on the counter, resolved against THE POUCH. Bare "I sell my
     // herbs" carries no target and prices the whole pouch instead.
     'sell',
+    // WHAT IS BEING BROKEN, resolved against what they are holding and what
+    // they own standing here. A thing nobody is holding reaches nothing, which
+    // is what keeps the verb honest about the village it cannot burn.
+    'destroy',
     // The manual being asked about, by name. Resolved against what this
     // cultivator HOLDS: the question is how THEIR book goes further.
     'acquisition',
@@ -723,6 +732,11 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      * full of firewood rather than a wound.
      */
     craft: ['a_span_of_days'],
+    /**
+     * Breaking a thing costs the thing and nothing else. No span, no roll, no
+     * body cost - the act is a moment and the consequence is a record.
+     */
+    destroy: [],
     gather: ['a_span_of_days'],
     /**
      * The only verb on the strip that carries both, and it is the honest shape

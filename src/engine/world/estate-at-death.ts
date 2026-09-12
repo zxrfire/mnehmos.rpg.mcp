@@ -65,16 +65,29 @@
  *
  * WHO COUNTS AS STANDING OVER SOMEBODY is the ruling that matters, and it is
  * {@link somebodyDidThis}. Read it before passing a list.
+ *
+ * ── AND WHAT COMES OFF IS MARKED BY WHERE THE BODY FELL ──────────────────
+ *
+ * The second half of the module, and the reason it is here rather than beside
+ * manuals: a thing's condition is decided where somebody died, and this is
+ * already the one place that knows what was on the body and where the body is.
+ * See {@link howAPlaceMarksWhatComesOffABody}.
  */
 
 import type { DeathCause } from '../../schema/cultivation.js';
+import { contiguousRun } from '../cultivation/acquisition.js';
+import { forStream } from '../cultivation/rng.js';
+import type { LocationRecord } from './locations.js';
+import { ratedWhole } from './object-damage.js';
 import {
     makeObject,
     ruin,
+    shardPower,
     transferPossession,
     type ObjectKind,
     type ObjectRecord,
-    type ObjectSignificance
+    type ObjectSignificance,
+    type ProvenanceEntry
 } from './possessions.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -119,6 +132,131 @@ export function somebodyDidThis(cause: DeathCause): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// WHAT THE PLACE DOES TO WHAT IT IS GIVEN
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Where they fell, as much of it as a settlement needs to know. */
+export interface WhereTheyFell {
+    id: string;
+    name: string;
+    /** `LocationEnvironment.danger`, 0..1. The world's own figure, unscaled. */
+    danger: number;
+}
+
+/** The place as a settlement reads it, so no caller retypes `environment.danger`. */
+export function whereTheyFell(
+    location: Pick<LocationRecord, 'id' | 'name' | 'environment'> | null | undefined
+): WhereTheyFell | null {
+    if (!location) return null;
+    return { id: location.id, name: location.name, danger: location.environment.danger };
+}
+
+/** What state a thing was in when it came off the body. */
+export type ConditionAtDeath = 'unchanged' | 'damaged' | 'ruined';
+
+/**
+ * The share of an ordered work that has to survive from the beginning for what
+ * is left to be worth carrying at all.
+ *
+ * Damaged and ruined are not two kinds of loss. They are one measurement either
+ * side of this line: a work whose surviving run from the beginning is at least
+ * this share of it is a real book somebody would carry, capped lower; anything
+ * under it is routed to `ruin`. A book missing its opening is not a damaged
+ * book, it is a dead one, and `contiguousRun` already says so by returning
+ * zero - the player-facing category agrees with the arithmetic rather than
+ * offering somebody a row that looks salvageable and is not.
+ *
+ * A quarter is chosen so that the interesting outcome is the common one: of
+ * everything a place marks, three parts in four survive as something readable.
+ */
+export const NOTHING_USABLE_BELOW = 0.25;
+
+/** How often a place leaves a thing in each of the three states. */
+export interface MarkWeights {
+    unchanged: number;
+    damaged: number;
+    ruined: number;
+}
+
+/**
+ * What a place does to what comes off a body in it.
+ *
+ * ONE MAPPING, exported, and the only place danger becomes a probability.
+ *
+ * A place marks what comes off a body exactly as often as its own `danger`
+ * says - the field already means "how likely the place is to hurt somebody who
+ * belongs here", and a corpse belongs to a place more completely than anybody
+ * living does, so it is read straight rather than through a curve nobody could
+ * justify. What it marks then splits on {@link NOTHING_USABLE_BELOW}.
+ *
+ * "Died in a sect, passed down unchanged" is not a branch anywhere. A righteous
+ * house's ground is 0.1 in `architecture.ts`, so nine deaths in ten inside one
+ * leave everything whole, and the tenth is the story. Worked ground in
+ * `how-the-world-keeps-finding-more-ruins.ts` reaches 0.8, where two things in
+ * ten come out untouched and six of the remaining eight come out readable and
+ * short - which is the inheritance the genre actually runs on.
+ *
+ * ONE THING NARROWS THE DAMAGED BAND IN PRACTICE. A thing with no rung and no
+ * ordered parts cannot be worth less than whole, so for it the damaged band
+ * reads as unchanged - which is `theMark`'s existing ruling in
+ * `object-damage.ts` (no rung, nothing to lose) rather than a second answer to
+ * it. The ruined band still reaches it: a token can stop existing.
+ */
+export function howAPlaceMarksWhatComesOffABody(danger: number): MarkWeights {
+    const marked = Math.min(1, Math.max(0, danger));
+    return {
+        unchanged: 1 - marked,
+        damaged: marked * (1 - NOTHING_USABLE_BELOW),
+        ruined: marked * NOTHING_USABLE_BELOW
+    };
+}
+
+/**
+ * The cause a mark at death writes into the chain.
+ *
+ * Exported rather than spelled out at each site because the destruction and
+ * gossip layer reads causes back off the chain, and a cause that names a place
+ * is what makes one repeatable. Import it; never retype the sentence.
+ */
+export function whatThePlaceDidToIt(placeName: string): string {
+    return `${OFF_A_BODY_IN} ${placeName}`;
+}
+
+const OFF_A_BODY_IN = 'taken off a body in';
+
+/**
+ * The same read backwards: whether a place marked this row, and which place.
+ *
+ * Forward is "what does a mark say"; backward is "was this thing marked, and
+ * where". The backward half is the one anything downstream actually asks -
+ * a war wanting to know whether it broke a thing or the ground did, a house
+ * wanting to know why its property came back short - and without it every
+ * caller would match the sentence itself, which is four copies of a format
+ * string waiting to drift.
+ */
+export function whereTheGroundGotIt(
+    object: Pick<ObjectRecord, 'provenance'>
+): string | null {
+    for (let i = object.provenance.length - 1; i >= 0; i--) {
+        const source = object.provenance[i].source;
+        if (source.startsWith(`${OFF_A_BODY_IN} `)) return source.slice(OFF_A_BODY_IN.length + 1);
+    }
+    return null;
+}
+
+/** What the place did to one row. One entry per tracked thing, in input order. */
+export interface MarkAtDeath {
+    itemId: string;
+    condition: ConditionAtDeath;
+    /**
+     * For a part of an ordered work, what became of the WORK. A part inside the
+     * surviving head is itself `unchanged` while the work is `damaged`, and
+     * that distinction is the whole of the tail rule.
+     */
+    theWork: ConditionAtDeath | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // WHAT WAS ON THE BODY
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -152,6 +290,15 @@ export interface TrackedThing {
     power: number | null;
     description?: string;
     worldRow?: ObjectRecord | null;
+    /**
+     * The ordered ids of every part of the work this row is one of, or null
+     * where it stands alone. `CappedManual.volumes` is exactly this list.
+     *
+     * It is what makes the tail rule possible: a place takes the END off a work
+     * rather than a part at random, so the caller has to say what the order IS.
+     * Without it a row is a single thing and loses a rung instead.
+     */
+    partOfWork?: readonly string[] | null;
 }
 
 /** Somebody the world can name. The dead, and whoever is standing over them. */
@@ -171,8 +318,32 @@ export interface EstateInput {
     dead: NamedParty;
     /** World day. The chain is dated on the clock that runs between lives. */
     onDay: number;
-    /** The world's id for where they fell, when it has one. */
+    /**
+     * The world's id for where the goods END UP.
+     *
+     * Not the same fact as {@link EstateInput.fell}, and the difference is
+     * load-bearing rather than an oversight: the player path settles onto a
+     * grave row that `enshrineRun` creates as a CHILD of the death site, with
+     * its own danger figure standing for how hard the grave is to rob. What
+     * marked the goods is the ground the body hit.
+     */
     locationId: string | null;
+    /**
+     * Where the body fell, and how bad the ground there is.
+     *
+     * Null where the world is not running or cannot name the place, and then
+     * nothing is marked - a settlement with no world behind it has no danger
+     * figure and must not invent one.
+     */
+    fell?: WhereTheyFell | null;
+    /**
+     * The world seed, for the one draw this makes.
+     *
+     * Its own stream, keyed on the dead and on the work, so nothing else's
+     * draws move and so two bodies in one place do not share a roll. Absent
+     * means no draw happens at all and everything comes off whole.
+     */
+    seed?: string;
     counted: CountedGoods;
     tracked: readonly TrackedThing[];
     /** People close enough to go through the body. Order is the caller's. */
@@ -206,6 +377,8 @@ export interface EstateAtDeath {
     taken: CountedGoods | null;
     /** Every tracked row this death moved, in its post-death state. */
     objects: ObjectRecord[];
+    /** What the place did to each tracked row, in the order they were passed. */
+    marks: MarkAtDeath[];
     /** The mechanical line. Never narrated. */
     structure: string;
 }
@@ -252,9 +425,10 @@ export function settleEstate(input: EstateInput): EstateAtDeath {
             ? 'taken'
             : 'in the ground';
 
+    const marks = whatThePlaceLeft(input);
     const objects: ObjectRecord[] = [];
-    for (const thing of input.tracked) {
-        objects.push(moveOneThing(thing, input, destination, taker));
+    for (const [at, thing] of input.tracked.entries()) {
+        objects.push(moveOneThing(thing, input, destination, taker, marks[at].condition));
     }
 
     const anythingCounted = !countedIsEmpty(counted);
@@ -267,6 +441,7 @@ export function settleEstate(input: EstateInput): EstateAtDeath {
         buried,
         taken,
         objects,
+        marks,
         structure:
             `${input.dead.name} (${input.dead.id}) died on world day ${input.onDay}: ${input.causeNote} `
             + `${counted.spiritStones} stone(s) and ${counted.stock.length} counted stack(s) went `
@@ -274,6 +449,129 @@ export function settleEstate(input: EstateInput): EstateAtDeath {
             + `${objects.length} tracked row(s) moved`
             + (objects.length > 0 ? `: ${objects.map(o => o.id).join(', ')}` : '')
             + `. ${input.standingOver.length} person(s) were standing over the body.`
+            + (marks.some(m => m.condition !== 'unchanged' || m.theWork === 'damaged')
+                ? ` ${input.fell?.name ?? 'the ground'} marked what came off: `
+                    + marks.map(m => `${m.itemId} ${m.condition}`
+                        + (m.theWork === 'damaged' ? ' (the work lost its end)' : '')).join(', ')
+                    + '.'
+                : '')
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROLL, AT DEATH
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What state the place left each thing in.
+ *
+ * ── IT IS ROLLED HERE AND STORED, NOT ROLLED WHEN SOMEBODY FINDS IT ──────
+ *
+ * Two people who dig up the same book have to be holding the same book. Rolling
+ * a condition at discovery gives them two, and no read anywhere could tell
+ * which was true, so the condition is settled at the moment of death and lives
+ * on the row from then on.
+ *
+ * ── ONE DRAW PER WORK, NOT PER ROW ───────────────────────────────────────
+ *
+ * A work carried in three volumes is one thing that one place did one thing to.
+ * Drawing per row would let the same corpse yield a first and third volume and
+ * no second, which is precisely the hole-in-the-middle result the tail rule
+ * exists to prevent. So the stream is keyed on the WORK where there is one and
+ * on the row where there is not, and a body carrying more or fewer other things
+ * does not move any of it.
+ */
+function whatThePlaceLeft(input: EstateInput): MarkAtDeath[] {
+    const danger = input.fell?.danger ?? 0;
+    const unmarked = (): MarkAtDeath[] =>
+        input.tracked.map(t => ({ itemId: t.itemId, condition: 'unchanged', theWork: null }));
+
+    if (!input.seed || danger <= 0) return unmarked();
+
+    // Null is "the place did not touch it". Otherwise it is the share of the
+    // thing that survived, and one work drawn once however many parts of it
+    // were on the body - see the note above.
+    const drawn = new Map<string, number | null>();
+    const shareThatSurvived = (thing: TrackedThing): number | null => {
+        const key = thing.partOfWork?.join('|') ?? thing.itemId;
+        if (!drawn.has(key)) {
+            const rng = forStream(input.seed!, 'what-a-place-leaves-on-a-body', input.dead.id, key);
+            drawn.set(key, rng.next() < danger ? rng.next() : null);
+        }
+        return drawn.get(key)!;
+    };
+
+    return input.tracked.map(thing => {
+        const share = shareThatSurvived(thing);
+        const parts = thing.partOfWork ?? null;
+        const whole: MarkAtDeath = { itemId: thing.itemId, condition: 'unchanged', theWork: null };
+        if (share === null) return whole;
+
+        // ONE COMPARISON, and it decides both categories for both kinds of
+        // thing. Below the line nothing worth carrying is left, which includes
+        // every way of losing the opening of a work: `contiguousRun` would
+        // return zero for those anyway, so the category agrees with the
+        // arithmetic instead of offering a row that looks salvageable.
+        if (share < NOTHING_USABLE_BELOW) {
+            return { itemId: thing.itemId, condition: 'ruined', theWork: parts ? 'ruined' : null };
+        }
+
+        // PAGES COME OFF THE END. The head survives and the tail is gone, so
+        // what a later holder has is an unbroken run from the beginning, which
+        // is the only shape `contiguousRun` can measure and `effectiveCapOf`
+        // can price. At least one part survives by definition: that is what
+        // being above the line MEANS.
+        if (parts) {
+            const kept = parts.slice(0, Math.max(1, Math.floor(share * parts.length)));
+            const survived = contiguousRun(parts, new Set(kept)) > parts.indexOf(thing.itemId);
+            return {
+                itemId: thing.itemId,
+                condition: survived ? 'unchanged' : 'ruined',
+                theWork: 'damaged'
+            };
+        }
+
+        // NO RUNG, NOTHING TO LOSE - which is `theMark`'s own ruling in
+        // `object-damage.ts` for exactly this case, not a second answer to it.
+        // A token or a key that came through a bad place came through it.
+        const stands = thing.worldRow?.power ?? thing.power;
+        return stands === null || stands <= 0
+            ? whole
+            : { itemId: thing.itemId, condition: 'damaged', theWork: null };
+    });
+}
+
+/**
+ * The mark a place leaves on a rated thing: one rung, and a line in the chain.
+ *
+ * `shardPower` and nothing else, because it is this repo's single statement of
+ * what a thing is worth when it is not whole, and a second arithmetic here
+ * would be a second answer to that question. `ratedWhole` is read rather than
+ * assumed so that a thing already holed by `object-damage.ts` records what it
+ * stood at when it was new, not what it stood at last week.
+ *
+ * Deliberately NOT holed: a hole is something a hand at the right rung can
+ * close, and what a bad place does to a thing left lying on a corpse is not.
+ */
+function markedByThePlace(object: ObjectRecord, input: EstateInput): ObjectRecord {
+    const whole = ratedWhole(object) ?? object.power;
+    const link: ProvenanceEntry = {
+        onDay: input.onDay,
+        holderId: input.dead.id,
+        holderName: input.dead.name,
+        how: 'unknown',
+        source: whatThePlaceDidToIt(input.fell?.name ?? 'nowhere anybody named'),
+        previousHolderId: object.possessorId,
+        previousHolderName: object.possessorId ? object.ownerName || null : null,
+        factId: null,
+        note: 'It was on a body for as long as it was, in the sort of place it was in.'
+    };
+    return {
+        ...object,
+        power: shardPower(object.power),
+        tags: object.tags.includes('damaged') ? object.tags : object.tags.concat('damaged'),
+        data: { ...object.data, ratedWhole: whole ?? null },
+        provenance: object.provenance.concat(link)
     };
 }
 
@@ -290,7 +588,8 @@ function moveOneThing(
     thing: TrackedThing,
     input: EstateInput,
     destination: EstateDestination,
-    taker: NamedParty | null
+    taker: NamedParty | null,
+    condition: ConditionAtDeath
 ): ObjectRecord {
     const base = thing.worldRow ?? makeObject({
         id: estateObjectId(input.dead.id, thing.itemId),
@@ -315,7 +614,9 @@ function moveOneThing(
         transfersOwnership: true
     });
 
-    // Link two: where it went.
+    // Link two: what the place did to it. Before it moves, because it happened
+    // before anybody picked it up - and a thing nothing usable is left of never
+    // reaches link three at all, whoever was standing there.
     if (destination === 'gone with the body') {
         return ruin(onTheBody, {
             onDay: input.onDay,
@@ -323,13 +624,22 @@ function moveOneThing(
             note: input.causeNote
         });
     }
+    if (condition === 'ruined') {
+        return ruin(onTheBody, {
+            onDay: input.onDay,
+            source: whatThePlaceDidToIt(input.fell?.name ?? 'nowhere anybody named'),
+            note: input.causeNote
+        });
+    }
+    const marked = condition === 'damaged' ? markedByThePlace(onTheBody, input) : onTheBody;
 
+    // Link three: where it went.
     if (taker) {
         // `looted` and not `inherited`. Nobody left this to anybody: somebody
         // went through a body. Ownership deliberately does NOT move, which is
         // `transferPossession`'s own default and the reason it has one - the
         // dead cultivator's house can still say whose it was.
-        const took = transferPossession(onTheBody, {
+        const took = transferPossession(marked, {
             onDay: input.onDay,
             toHolderId: taker.id,
             toHolderName: taker.name,
@@ -340,7 +650,7 @@ function moveOneThing(
         return { ...took, locationId: null };
     }
 
-    const left = transferPossession(onTheBody, {
+    const left = transferPossession(marked, {
         onDay: input.onDay,
         toHolderId: null,
         toHolderName: 'nobody',

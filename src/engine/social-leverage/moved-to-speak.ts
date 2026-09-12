@@ -176,23 +176,32 @@ function readingFor(weight: number, moved: number, dealtWith: boolean): string |
             'Nothing of theirs moved. They were at the middle of it throughout.'
         ][band];
     }
+    // A WITNESS IS SOMEBODY DOING SOMETHING, NOT A VANTAGE POINT.
+    //
+    // These read "They saw all of it, FROM CLOSE BY" and "they were NEAR ENOUGH
+    // that it could have been", which is an inspector recording where somebody
+    // was standing and what they could therefore have perceived - and the
+    // second one is a guess about a thing that did not happen on top of it.
+    // Measured over the reference corpus, a group in this genre acts: *"The
+    // others were appalled as they looked onto the chase below."* The engine
+    // cannot know appalled. It can say they watched, which is what they did.
     return [
-        'No part of this was theirs. They saw it.',
-        'No part of this was theirs. They saw all of it, from close by.',
-        'No part of this was theirs, and they were near enough that it could have been.'
+        'None of it was theirs. They watched.',
+        'None of it was theirs. They watched all of it.',
+        'None of it was theirs. It happened next to them.'
     ][band];
 }
 
 /**
- * The silence, said as what it looked like.
+ * Whether they said anything.
+ *
+ * BOTH ARE FACTS AND BOTH ARE VISIBLE, which is the whole content: the room can
+ * tell either way. Saying so in the sentence - *"out loud"*, *"where the others
+ * can see it"* - is the engine reporting the modality of its own observation on
+ * top of the observation, and it arrived under every person in every scene.
  */
 export function whetherTheySayIt(aloud: boolean): string {
-    // BOTH ARE FACTS AND BOTH ARE VISIBLE, which is the whole content: the room
-    // can tell either way. "The not saying is visible" was the engine reaching
-    // for the effect instead of stating the condition.
-    return aloud
-        ? 'They answer, out loud.'
-        : 'They say nothing, where the others can see it.';
+    return aloud ? 'They answer.' : 'They say nothing.';
 }
 
 function clamp01(n: number): number {

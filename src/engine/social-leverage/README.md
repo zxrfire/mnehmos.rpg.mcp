@@ -12,6 +12,38 @@ resolver with real odds, real costs, and marks that outlive the moment.
 
 Read this before changing anything in `src/engine/social-leverage/`.
 
+## A count is state. A group is named.
+
+Two of the strings this directory produces reach the player verbatim -
+`moved-to-speak.ts` writes what a scene asks of everybody standing in it, and
+`src/web/scene-person-readings.ts` prints the result. Shown one of them, the
+design owner: *"reminder that this is not xianxia prose"*.
+
+    4 other people are here. They saw all of it, from close by. 2 of them
+    answer, out loud.
+
+Two rules came out of it, and they bind every player-facing string in this
+directory and everything that renders one.
+
+**A group of people is named, never tallied.** Measured over the reference
+corpus, the constructions are `everyone` (6744), `the others` (2461), `the
+surrounding` (1927), `the people` (1283), `the group` (1093), `the crowd` (960).
+Over 7,789 paragraphs naming a group the workhorse is a NAMED PERSON with the
+rest folded in - "the Sect Leader and the others" - which is the shape the
+engine already holds, the people the player can name plus a nameless remainder.
+`a-group-is-named-not-counted.ts` is the one place that rule lives, and where
+the roll says what a group is, it is named by that instead.
+
+**A group is a subject with a verb.** A string saying people EXIST is the
+inspector's voice with a better noun. So is one reporting the vantage or the
+modality of an observation - *from close by*, *out loud*, *where the others can
+see it*. Say what happened.
+
+**The exact figure still exists, in `facts.structure`.** That is the
+machine-readable channel and a player never reads it. A number is not wrong in
+itself - the corpus counts freely when the figure is a record somebody would
+cite - it is wrong for the people standing around.
+
 ## Why it is not in `engine/social/`
 
 `engine/social/` is **storage**, and its charter forbids three things this

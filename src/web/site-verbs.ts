@@ -422,13 +422,17 @@ export const siteVerbs = {
             // a table nothing player-facing read. See
             // `ground-the-world-found.ts` for the measurement.
             const found = this.foundGroundFor(cultivator);
-            const facts = factsForSiteListing(
-                cultivator,
-                [
-                    ...known.map(entry => ({ name: entry.name, kind: entry.kind })),
-                    ...found.map(entry => ({ name: entry.name, kind: entry.character }))
-                ]
-            );
+            const printed = [
+                ...known.map(entry => ({ name: entry.name, kind: entry.kind })),
+                ...found.map(entry => ({ name: entry.name, kind: entry.character }))
+            ];
+            const facts = factsForSiteListing(cultivator, printed);
+            // A LISTING THIS GAME PRINTS IS ONE THE NEXT SENTENCE CAN NAME.
+            // Nineteen names came out of this read comma-joined in one sentence
+            // and none was written down, so `the second one` after it had
+            // nothing to count against. `factsForSiteListing` prints this array
+            // in this order, whole, so this is what was read.
+            for (const ground of printed) this.nameWhatTheyGot(ground.name);
             for (const ground of found) facts.structure.push(...describeFoundGround(ground));
 
             const listing = this.freeAction(run, 'site', facts);

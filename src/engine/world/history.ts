@@ -77,6 +77,13 @@ export type HistoricalEventKind =
     | 'tribulation_scar'
     | 'technique_lost'
     | 'technique_recovered'
+    /**
+     * A thing stopped existing because somebody ended it.
+     *
+     * Written by whoever called `ruin`, which is the primitive, so a blade
+     * broken in a fight and a hull broken on purpose are the same kind of row.
+     */
+    | 'object_destroyed'
     | 'treasure_buried'
     | 'treasure_found'
     | 'ruin_sealed'

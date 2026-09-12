@@ -129,8 +129,12 @@ export interface RecruitingBill {
     admissionOrdinal: number;
     why: WhyItIsUpThere;
     /**
-     * Absolute day the intake opens. Inside the current posting window, so a
-     * bill is never advertising something that has already happened.
+     * Absolute day the intake opens.
+     *
+     * Fixed for the life of the paper, so reading the wall twice a month apart
+     * gives one day a month closer rather than two different days. Once it has
+     * fallen the paper names the next season's, so a bill is never advertising
+     * something that has already happened.
      */
     opensOnDay: number;
     /** What the paper says. Engine-authored fact, not narration. */
@@ -212,11 +216,25 @@ export function billsOnTheWall(input: WallInput): RecruitingBill[] {
     }
 
     const windowStart = window * A_BILL_STAYS_UP_FOR_DAYS;
+    const today = Math.floor(input.onDay);
     return drawn.map(house => {
-        // Somewhere inside the window that has not already passed, so the paper
-        // is never advertising a day that is behind the reader.
-        const remaining = windowStart + A_BILL_STAYS_UP_FOR_DAYS - Math.floor(input.onDay);
-        const opensOnDay = Math.floor(input.onDay) + rng.int(1, Math.max(1, remaining));
+        // THE DAY IS A PROPERTY OF THE PAPER, NOT OF WHOEVER IS READING IT.
+        //
+        // Anchored to `floor(onDay)` this drew a fresh future date on every
+        // read, so the intake receded as anybody walked toward it: measured at
+        // Green Water City, one house was 28 days off on day 0, 22 off on day
+        // 20, and still a day off on day 89. `datedThingsHere` publishes every
+        // bill as a thing to WAIT for, so that was a date the engine offered
+        // and then moved.
+        //
+        // Rolling a spent day on by a whole window keeps the invariant the old
+        // anchor was there for - never a date behind the reader - without the
+        // drift. One jump at the moment the intake falls is the intake having
+        // happened.
+        const inTheWindow = windowStart + rng.int(1, A_BILL_STAYS_UP_FOR_DAYS);
+        const opensOnDay = inTheWindow > today
+            ? inTheWindow
+            : inTheWindow + A_BILL_STAYS_UP_FOR_DAYS;
         const realm = realmForOrdinal(house.admissionOrdinal);
         // At the realm's own floor there is nothing above the band to qualify
         // for, so the bill says the band and stops. Above it, the bill has to
@@ -236,7 +254,7 @@ export function billsOnTheWall(input: WallInput): RecruitingBill[] {
             opensOnDay,
             saying:
                 `${house.name} is holding an intake at ${input.placeName} in `
-                + `${opensOnDay - Math.floor(input.onDay)} days, and will hear ${takesFrom}.`
+                + `${opensOnDay - today} days, and will hear ${takesFrom}.`
         };
     });
 }

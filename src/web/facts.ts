@@ -1265,7 +1265,13 @@ export function factsForCompany(
     const lines = [who, ...(standing ? [standing] : [])];
 
     return observable(
-        company.total === 0 ? `${where}, empty.` : `${company.total} about in ${where}.`,
+        // A HEADLINE IS PLAYER-FACING. This read `${company.total} about in
+        // Green Water City.` - the overlay title and the first line of the log,
+        // counting the bodies in the square. The figure is in `structure`
+        // below, which is where a count belongs.
+        company.total === 0
+            ? `${where}, empty.`
+            : `${capitalise(roughly(company.total))} in ${where}.`,
         lines,
         [whoToThePlayer, ...(standing ? [standing] : [])].join('\n\n'),
         [
@@ -1337,7 +1343,11 @@ export function factsForHowTheyCarryYou(
     return observable(
         carried.length === 0
             ? `Nothing showing on anybody in ${where}.`
-            : `${carried.length} of ${here.length} in ${where} carrying something about you.`,
+            // `${carried.length} of ${here.length}` is a ratio of people, in
+            // the overlay title. The pair is in `structure` below.
+            : carried.length === 1
+                ? `Somebody in ${where} is carrying something about you.`
+                : `Some of the people in ${where} are carrying something about you.`,
         lines,
         lines.join('\n\n'),
         [
@@ -1478,16 +1488,28 @@ export const COMPANY_SHOWN = 4;
  */
 const NOTABLE_GAP = 4;
 
-/** "a dozen", "twenty-odd" - the way somebody actually counts a square. */
+/**
+ * "a handful", "a dozen or so" - the way somebody actually reads a square.
+ *
+ * THE EXACT ENDS WERE EXACT. This opened "two other people" and "three others"
+ * and closed `${n} people`, so the commonest squares in the game and the
+ * largest one both printed a tally - and the narration prompt bans exactly the
+ * sentence the small end produced, *Never "three others are here besides"*,
+ * while being handed it in the facts. The vague middle was always right and is
+ * untouched: a person crossing a market reads a handful and a dozen or so, and
+ * neither of those is a count anybody could check.
+ *
+ * The census keeps the figure. `factsForLook` and `factsForCompany` both put it
+ * in `structure`, which is the channel a player does not read.
+ */
 function roughly(n: number): string {
     if (n === 1) return 'one other person';
-    if (n === 2) return 'two other people';
-    if (n === 3) return 'three others';
+    if (n <= 3) return 'others';
     if (n <= 5) return 'a handful of people';
     if (n <= 9) return 'half a dozen people';
     if (n <= 14) return 'a dozen or so people';
     if (n <= 25) return 'twenty-odd people';
-    return `${n} people`;
+    return 'a great many people';
 }
 
 /**
@@ -1690,18 +1712,18 @@ function describeCompany(
             // X" - so it is not repeated. What is worth saying is that they
             // came as a set, and only when the set is bigger than a pair.
             if (party > 1) {
-                sentences.push(`They are not on their own; ${roughly(party)} are with them.`);
+                sentences.push('They are not on their own; the others came with them.');
             }
             const rest = company.total - 1 - party;
             if (rest === 1) {
                 sentences.push('Somebody else is here too, and has not looked over.');
             } else if (rest > 1) {
-                // THE COUNT, AND NOTHING ABOUT WHAT A GLANCE SETTLES. This
-                // trailed "and how many of them matter is not something a
-                // glance settles" on EVERY look - the commonest action in the
-                // game, so the commonest sentence in it, and it is the engine
-                // musing rather than counting.
-                sentences.push(`${capitalise(roughly(rest))} are here besides.`);
+                // THE REST, FOLDED IN BEHIND THE ONE WHO WAS NAMED two
+                // sentences up - the construction the genre uses for a
+                // remainder. This read `${capitalise(roughly(rest))} are here
+                // besides.`, which at three produced the exact sentence the
+                // narration prompt bans by name.
+                sentences.push('The others are here too.');
             }
             return sentences.join(' ');
         }

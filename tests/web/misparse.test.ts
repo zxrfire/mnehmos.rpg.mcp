@@ -277,7 +277,19 @@ describe('the fallback is inert', () => {
              * sentence names a second party AND says something was done, so a
              * shrug cannot reach the ledger.
              */
-            'tell'
+            'tell',
+            /**
+             * `give` a third time. Breaking a thing spends no day and nothing
+             * can fail - there is nobody on the other side of it to refuse -
+             * and it ends an object permanently and files a fact with the
+             * breaker's name on it.
+             *
+             * Structurally protected the same way: the named thing has to
+             * resolve against what this person is actually holding or standing
+             * over, and a sentence the parser did not understand names nothing
+             * that resolves. A shrug breaks no swords.
+             */
+            'destroy'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -513,6 +525,10 @@ describe('every verb is reachable from plain English', () => {
         // the phrasing naming a theft, reached `interact/steal` and pointed an
         // attempt at the person being warned.
         tell: 'I tell him that Cao Antao killed his brother',
+        // The other end of `craft` and `refine`. Before it, "I break my sword"
+        // was read as swinging one at somebody, because `ATTACK_SUBJECT_VERBS`
+        // carries `break`.
+        destroy: 'I smash the pill',
         // 护法, and the phrasing chosen is the one that had to be taken off
         // `breakthrough`: it carries the word, and it is about somebody
         // else's crossing rather than the speaker's own.

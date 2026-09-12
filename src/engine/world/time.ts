@@ -5,7 +5,7 @@
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { forStream } from '../cultivation/rng.js';
 import { rankName } from '../cultivation/realms.js';
-import { settleEstate } from './estate-at-death.js';
+import { settleEstate, whereTheyFell } from './estate-at-death.js';
 import {
     classifyForObserver,
     concurrentEventsFor,
@@ -652,6 +652,12 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
         dead: { id: deceased.id, name: deceased.name },
         onDay,
         locationId: deceased.locationId,
+        // The ground they hit, which is what marks what comes off them. An NPC
+        // has no grave row of its own, so this is the same place - and it is
+        // still read as the SITE rather than assumed, because the player path
+        // settles onto a grave whose danger is a different fact.
+        fell: whereTheyFell(state.locations.find(l => l.id === deceased.locationId)),
+        seed: state.seed,
         // NPCs carry stones and no counted stock. An empty stack list is not a
         // placeholder for one that should exist: `NpcRecord` has no pack, and
         // inventing stacks here would be this file asserting an inventory

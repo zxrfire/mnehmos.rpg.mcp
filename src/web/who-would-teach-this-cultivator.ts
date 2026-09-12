@@ -146,6 +146,16 @@ export interface TeacherRead {
     structure: string[];
     /** How many the player could actually name. The inspector's headline figure. */
     nameable: number;
+    /**
+     * The people this read PRINTED by name, in the order it printed them.
+     *
+     * Masters first and then everybody else, which is not the order the caller
+     * sorted them in - so the caller cannot rebuild this list without making a
+     * second copy of an ordering. Recorded because a listing this game prints
+     * is a listing the next sentence should be able to name: two people were
+     * named here and `the second one` came back with nothing to point at.
+     */
+    named: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -332,6 +342,11 @@ export function whoWouldTeach(input: TeacherInput): TeacherRead {
                 : `Nobody ${input.name} knows of could teach them.`,
         lines,
         structure,
-        nameable: named.length
+        nameable: named.length,
+        // Masters first, then everybody else, which is the order the two loops
+        // above printed them in and not the order `input.above` arrived in.
+        named: [...masters, ...others]
+            .map(person => person.name)
+            .filter((name): name is string => typeof name === 'string')
     };
 }
