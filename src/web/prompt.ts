@@ -1652,7 +1652,26 @@ export function composeNarrationUser(
         'permitted above; if something acted and the player cannot name it, write the effect',
         'and leave the cause unnamed. Explain no mechanism, rate, rank correspondence or',
         'chain of command: the facts above are what was perceived, and the structure behind',
-        'them is not yours to supply.'
+        'them is not yours to supply.',
+        '',
+        // LAST, BECAUSE A MODEL WEIGHTS WHAT IT READ LAST. The voice doc carries
+        // all of this and sits fifteen thousand words up the prompt; measured
+        // against the local model, the four rules below are the ones that go
+        // first when the distance is that long. Paragraphs came back at five and
+        // six sentences against a measured median of two, one paragraph in five
+        // carried speech against a measured third, and a fact it could not place
+        // was written as "her words weaving a picture of a world you do not
+        // recognize" rather than named.
+        'FOUR THINGS, CHECKED AS YOU WRITE:',
+        '1. PARAGRAPHS OF ONE TO THREE SENTENCES. If one runs to four, break it.',
+        '2. SOMEBODY SPEAKS. If a person is standing here and no one says anything, you have',
+        '   described the scene instead of playing it. Put the fact they can be heard on into',
+        '   their mouth.',
+        '3. NAME IT. If the facts give you a manual, a price, a house or a person, write the',
+        '   name. Never "a place you do not know of" or "things you cannot place" - if the',
+        '   player may not know it, write what they SEE and leave the cause unnamed.',
+        '4. NO FEELINGS ASSIGNED. Not "a weight that makes you feel small". Write what is',
+        '   there and let the reader do it.'
     ].join('\n');
 }
 
