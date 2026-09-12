@@ -205,12 +205,35 @@ export function handOver(deps: GiveDeps, thing: string, stonesAsked: number | un
     }
 
     // ── A THING IN THE POUCH ─────────────────────────────────────────────
+    //
+    // AND IT SAYS WHAT COULD GO IN THE HAND. This refused with the gap and
+    // nothing else - *"the something is the part that was not said"* - which is
+    // a refusal naming no route, the one shape this engine is not allowed to
+    // produce. The player is holding the answer, and the same list `inventory`
+    // prints one sentence away was already in `deps`.
+    //
+    // Measured in the refusal probe: "I hand her everything I have" and "I let
+    // him keep it" both land here, because the reader carries no object out of
+    // either sentence. Naming the pouch does not make those sentences work -
+    // that is the reader's half - but it turns a dead end into a turn the
+    // player can answer.
     if (said.length === 0) {
+        const couldHandOver = [
+            ...deps.pouch.map(row => row.name),
+            ...(deps.giver.spiritStones > 0
+                ? [`your spirit stones (${deps.giver.spiritStones})`]
+                : [])
+        ];
         return decline(
             'You did not say what.',
             `You mean to hand ${deps.recipient.name} something, and the something is the part `
-            + 'that was not said.',
-            'No object named. Nothing moved, no time passed.'
+            + 'that was not said. '
+            + (couldHandOver.length > 0
+                ? `What you could put in their hand: ${couldHandOver.join(', ')}.`
+                : 'You are carrying nothing and your purse is empty, so there is nothing it '
+                  + 'could have been.'),
+            `No object named; ${deps.pouch.length} pouch row(s) and `
+            + `${deps.giver.spiritStones} stone(s) held. Nothing moved, no time passed.`
         );
     }
 

@@ -787,7 +787,17 @@ export const situatedReads = {
                 + `${theRung(cultivator.realmOrdinal)}. Perception, not knowledge: no name, `
                 + `holder or ceiling crosses this channel, and below `
                 + `${theRung(LEAVES_THE_GROUND)} it returns nothing at all.`,
-            ok: overlook.seen > 0
+            // A COUNT IS NOT A SUCCESS FLAG. This was `overlook.seen > 0`, and
+            // the channel returns nothing at all below `LEAVES_THE_GROUND` - so
+            // every cultivator under that rung filed a refusal for correctly
+            // seeing nothing from a height they cannot reach, on a turn whose
+            // read had already answered in full. Measured: `destinations` came
+            // back 6 of 6 refused in the refusal probe, the worst rate of any
+            // verb, for a sentence that answers in play.
+            //
+            // `ok` means the engine declined to act. Seeing nothing is an
+            // answer, and the summary above is where the floor gets said.
+            ok: true
         });
         return execution;
     },

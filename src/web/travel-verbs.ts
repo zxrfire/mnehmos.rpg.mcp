@@ -238,6 +238,40 @@ function andTheRoadsThatDoGoSomewhere(engine: GameService, cultivator: Cultivato
         : ` Somewhere you could say instead: ${roads.join(', ')}.`;
 }
 
+/**
+ * Words that say a player is going, not where they are going.
+ *
+ * `resolvePlace` accepts any string, because places in this engine are free
+ * text, so the trailing word of "I run away" arrived as a destination and the
+ * refusal reported having gone looking for a town called `away`:
+ *
+ *     You ask after away and get the look people give a name that is not a
+ *     place.
+ *
+ * Nobody named a place. Measured in the refusal probe: `move` refused 22 of 28,
+ * and the four sentences behind it are all this one thought - *I leave*, *I
+ * wander off*, *I run away*, *I get out of here*. Three carry no target at all
+ * and land correctly on the no-destination refusal; only the one with a word
+ * after the verb went wrong, which is what made it look like a different defect
+ * from its own siblings.
+ *
+ * Treating these as no destination said routes all four to one answer, and that
+ * answer names the roads. It widens nothing: a sentence that named no place
+ * still refuses, and still refuses to pick one on the player's behalf.
+ *
+ * Deliberately not here: `home`, `back` and `on`. Each could be resolved
+ * against somewhere the player has actually been, which is an answer rather
+ * than a refusal, and belongs with whoever builds that.
+ */
+const A_DIRECTION_RATHER_THAN_A_DESTINATION =
+    /^(?:away|off|out|onwards?|onward|elsewhere|somewhere|anywhere|nowhere|there|here)$/i;
+
+/** The destination the sentence named, with the direction words taken out. */
+function destinationNamed(target: string | undefined): string | undefined {
+    const said = (target ?? '').trim();
+    return A_DIRECTION_RATHER_THAN_A_DESTINATION.test(said) ? undefined : target;
+}
+
 export const travelVerbs = {
     /**
      * Going somewhere, however it was meant.
@@ -250,7 +284,7 @@ export const travelVerbs = {
         target: string | undefined,
         intent: string
     ): Promise<Execution> {
-        const place = resolvePlace(target);
+        const place = resolvePlace(destinationNamed(target));
         if (!place) {
             return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'Nowhere in particular.',
@@ -698,7 +732,7 @@ export const travelVerbs = {
         target: string | undefined,
         action: ActionName
     ): { name: string } | Execution {
-        const place = resolvePlace(target);
+        const place = resolvePlace(destinationNamed(target));
         if (!place) {
             return refused('engine.resolvePlace', action, factsForRefusal(
                 'Nowhere in particular.',

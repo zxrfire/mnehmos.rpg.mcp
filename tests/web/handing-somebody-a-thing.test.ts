@@ -276,3 +276,54 @@ describe('a consumable is reachable by its own name', () => {
         expect(parseIntent('I petition for the Heaven-Ascending Golden Pill').action).toBe('petition');
     });
 });
+
+/**
+ * A refusal that said only what was missing.
+ *
+ * FOUND BY MEASURING REFUSALS. `scripts/probe-what-a-refusal-is-still-for.ts`
+ * put `give` at 30 chosen, 24 refused, and two of the four sentences behind it
+ * carry no object out of the reader at all:
+ *
+ *     I hand her everything I have
+ *     I let him keep it
+ *
+ * Both arrive as `give()` with an empty `thing`, and the answer was the gap and
+ * nothing else - *"the something is the part that was not said"*. The player is
+ * holding the answer to the question they were just asked, and the same list
+ * `inventory` prints one sentence away was already in `deps`.
+ *
+ * This does not make either sentence work - carrying the object out of them is
+ * the reader's half, and it is not done here. It turns a dead end into a turn
+ * the player can answer, which is what a surviving refusal owes them.
+ */
+describe('naming no object at all', () => {
+    it('says what could have gone in the hand', () => {
+        const out = handOver(deps(), '', undefined);
+        expect(out.refused).toBe(true);
+        // The pouch row and the purse, both read off what the giver holds
+        // rather than hard-coded: any name the game prints it must accept.
+        expect(out.facts.prose).toContain('Qi Gathering Grass');
+        expect(out.facts.prose).toMatch(/spirit stones \(40\)/);
+    });
+
+    it('says so plainly when there is genuinely nothing', () => {
+        const out = handOver(
+            deps({
+                pouch: [],
+                giver: { id: 'me', name: 'Wen Shuyi', spiritStones: 0 } as unknown as Cultivator
+            }),
+            '',
+            undefined
+        );
+        expect(out.refused).toBe(true);
+        expect(out.facts.prose).toMatch(/carrying nothing and your purse is empty/i);
+    });
+
+    it('spends nothing either way', () => {
+        const out = handOver(deps(), '', undefined);
+        expect(out.stones).toBe(0);
+        expect(out.lot).toBeNull();
+        expect(out.favour).toBeNull();
+        expect(out.facts.structure.join(' ')).toMatch(/no time passed/i);
+    });
+});
