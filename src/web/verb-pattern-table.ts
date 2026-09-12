@@ -2799,6 +2799,46 @@ export function theArtTheyNamed(input: string): string | undefined {
 }
 
 /**
+ * AN ART PUT ON SOMEBODY, WHICH IS THE ORDER THE GENRE SAYS IT IN.
+ *
+ * `AN_ART_IN_A_SENTENCE` reads the art off the END of the sentence, so the only
+ * shape that reached `withArt` was "<swing> him with <Name>". The shape that
+ * names the art first - "I use the luck devouring art on him" - reached
+ * `unclear` 6 times out of 6 over 744 played turns.
+ *
+ * The catalog's generic nouns are what keep this off the rest of the verb
+ * table: a thing aimed at somebody counts as an art when it is spelled like one
+ * or Capitalised like one, and "I use the rope on the gate" is neither.
+ */
+const THE_CATALOG_NOUNS_FOR_AN_ART =
+    /\s+(?:arts?|techniques?|methods?|skills?|styles?|forms?|palms?|fists?|steps?|scriptures?|sutras?|manuals?)$/i;
+
+const AN_ART_PUT_ON_SOMEBODY = new RegExp(
+    '\\b(?:use|uses|using|employ|employs|employing|unleash|unleashes|unleashing'
+    + '|cast|casts|casting|invoke|invokes|invoking|work|works|working)\\s+'
+    + '(?:the\\s+|my\\s+|a\\s+|an\\s+)?'
+    + '([\\w\'’-]+(?:[\\s-][\\w\'’-]+){0,5}?)'
+    + '\\s+(?:on|against|upon|at)\\s+'
+    + '(?:the\\s+)?([\\w\'’-]+(?:\\s+[\\w\'’-]+){0,3})\\s*[.!?]?$',
+    'i'
+);
+
+/** The art and who it was put on, when the sentence named both. */
+function anArtAimedAtSomebody(input: string): { art: string; at: string } | null {
+    const found = AN_ART_PUT_ON_SOMEBODY.exec(input.trim());
+    if (!found) return null;
+    const whole = found[1].trim();
+    const art = whole.replace(THE_CATALOG_NOUNS_FOR_AN_ART, '').trim();
+    // Named like an art, or spelled like one. A bare noun with neither is some
+    // other object and this branch has nothing to say about it.
+    const spelledLikeOne = whole !== art || /^[A-Z]/.test(whole);
+    if (!spelledLikeOne || art.length < 3) return null;
+    const at = found[2].trim();
+    const who = THE_PRONOUN_A_POSSESSIVE_STANDS_FOR[at.toLowerCase()] ?? at;
+    return who.length >= 2 ? { art: art.slice(0, 80), at: who } : null;
+}
+
+/**
  * WHO WAS STRUCK, once everything that is not a person has been taken off.
  *
  * Pulled out of the attack branch as one named step because the ORDER of the
@@ -3164,7 +3204,39 @@ const HOW_FAR_IS_SOMEWHERE = new RegExp([
 const ASKING_AFTER_WORK =
     /\b(?:is|are|any)\b[^.?!]{0,20}\b(?:any |some |paying |paid |other )?(?:work|jobs?|employment)\b[^.?!]{0,20}\b(?:going|about|around|here|to be had|available|on offer)\b|\b(?:is|are) there\b[^.?!]{0,20}\b(?:work|jobs?|employment)\b|\bwhat (?:work|jobs?) (?:is|are)\b|\b(?:who|anyone|anybody|someone|somebody)\b[^.?!]{0,20}\bhiring\b|\bwho(?:'s| is)? (?:hiring|taking on|looking for hands)\b|\bwho needs (?:a hand|hands|help with|workers?|labourers?|laborers?)\b|\b(?:can|could) i\b[^.?!]{0,15}\b(?:earn|make)\b[^.?!]{0,20}\b(?:here|anything|something|stones?|coin|money|a living|a wage)\b/;
 
-// 护法: STANDING OVER SOMEBODY ELSE'S CROSSING
+// 护法: STANDING OVER SOMEBODY ELSE'S CROSSING, AND REACHING INTO ONE
+
+/**
+ * Reaching into a crossing rather than standing over it.
+ *
+ * Measured over 744 played turns: "I attack him while he is crossing" answered
+ * 6 of 6, and "I break his tribulation" and "I interfere with her breakthrough"
+ * reached nothing 12 times between them. One act, three phrasings, and the two
+ * that failed are the ones a player types.
+ *
+ * There is no interference term to route to: `computeBreakthroughOdds` clamps
+ * `protection` into [0, 1] and its own note forbids a second protection term,
+ * and `interfered_with_a_crossing` is a `Wrong` nothing produces. What the
+ * engine does hold is force put on somebody who cannot answer, which is what
+ * the working phrasing already resolves as.
+ */
+const REACHING_INTO_A_CROSSING =
+    /\b(?:break|breaks|breaking|broke|ruin|ruins|ruining|ruined|spoil|spoils|spoiling|spoilt|spoiled|wreck|wrecks|wrecking|wrecked|shatter|shatters|shattering|disrupt|disrupts|disrupting|disrupted|sabotage|sabotages|sabotaging|sabotaged|interrupt|interrupts|interrupting|interrupted|interfere with|interferes with|interfering with|interfered with|reach into|reaches into|reaching into|reached into)\b/i;
+
+/**
+ * Whose crossing it is. A possessor is required, so the player's own wall -
+ * which is spelled with every one of these nouns - cannot be reached from here.
+ */
+const SOMEBODY_ELSES_CROSSING =
+    /\b(his|her|their|its|[A-Z][\w'’-]*(?:\s+[A-Z][\w'’-]*)*(?:'s|’s))\s+(?:tribulation|breakthrough|crossing|ascension|attempt)\b/;
+
+function whoseCrossingIsBeingBroken(input: string): string | undefined {
+    if (!REACHING_INTO_A_CROSSING.test(input)) return undefined;
+    const whose = SOMEBODY_ELSES_CROSSING.exec(input)?.[1]?.trim();
+    if (!whose) return undefined;
+    const name = whose.replace(/(?:'s|’s)$/i, '').trim();
+    return THE_PRONOUN_A_POSSESSIVE_STANDS_FOR[name.toLowerCase()] ?? (name || undefined);
+}
 
 /** A word for the thing being stood over. Nothing here matches without one. */
 const A_CROSSING_BEING_MADE =
@@ -3420,6 +3492,21 @@ function planIntent(input: string): PlannedAction {
         return family;
     }
 
+    // REACHING INTO A CROSSING, WHICH IS READ BEFORE STANDING OVER ONE
+    //
+    // The two share every noun, and this one needs a possessor as well, so it
+    // is the more specific of the pair. See {@link REACHING_INTO_A_CROSSING}.
+    const broken = whoseCrossingIsBeingBroken(input);
+    if (broken !== undefined) {
+        return {
+            action: 'attack',
+            target: broken,
+            ...(theArtTheyNamed(input) !== undefined
+                ? { withArt: theArtTheyNamed(input)! }
+                : {})
+        };
+    }
+
     // 护法: STANDING OVER SOMEBODY ELSE'S CROSSING
     if (WHO_WOULD_STAND_FOR_ME.test(text)) {
         return { action: 'guard', intent: 'ask' };
@@ -3475,6 +3562,15 @@ function planIntent(input: string): PlannedAction {
                 ...(OPENED_FROM_COVER.test(text) ? { opening: 'from_concealment' as const } : {})
             };
         }
+    }
+
+    // AN ART PUT ON SOMEBODY, WHICH IS AN ATTACK WITH THE ART NAMED
+    //
+    // Above the attack branch because none of that branch's verbs is `use`, so
+    // the sentence would fall past it. See {@link anArtAimedAtSomebody}.
+    const aimed = anArtAimedAtSomebody(input);
+    if (aimed !== null && !AIMED_AT_THE_LADDER.test(text)) {
+        return { action: 'attack', target: aimed.at, withArt: aimed.art };
     }
 
     // -- attacking somebody, which had no route at all --

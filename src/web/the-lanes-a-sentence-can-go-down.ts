@@ -35,6 +35,51 @@
 
 import type { ActionName } from './action-set.js';
 
+/**
+ * AN AMBITION IS A READ, NOT AN ACT.
+ *
+ * A sentence that says what somebody WANTS - to get stronger, to be the
+ * strongest, to find a master - names no act, and forcing it onto one is how a
+ * player asking where to begin gets told that beginning is impossible. Measured:
+ * "I want to get stronger" reached no pattern, the embedding tier guessed
+ * `cultivate`, and the no-method gate refused it. All 24 `cultivate` refusals
+ * in one probe run were that gate.
+ *
+ * The engine is still called - the answer comes from state and not from the
+ * narrator's imagination - but it is called for a READ. `consult` and `perceive`
+ * never refuse, because what you are and what is in front of you are always
+ * answerable, and an answer that lists what would work is what a game master
+ * gives somebody who has said what they want.
+ *
+ * So: where a sentence is a wish, a goal, or a question about direction, take
+ * the read. Reserve the acting lanes for sentences that name an act.
+ */
+export const AN_AMBITION_IS_A_READ =
+    'AN AMBITION IS A KNOWN GOAL WITH AN UNKNOWN HOW. "I want to get stronger", "I need to '
+    + 'find a master", "what should I do" - the player has said where they are going and not '
+    + 'what they are doing, so there is no act to take. Take a READ: consult for anything '
+    + 'about themselves, perceive for anything in front of them. Never force it onto cultivate '
+    + 'or another acting lane - a read always answers and says what would work, while an act '
+    + 'they cannot perform yet only tells them no. '
+    + 'There is always a call; there is not always an act that burns a turn.';
+
+/**
+ * And how the answer is written, which is the other half.
+ *
+ * The read comes back as a list of what is live, because that is what the
+ * engine holds. A list is not what somebody who just said what they want should
+ * read back - the design owner's shape for it is the character turning it over:
+ * *"I want to get stronger, you think"*, and then the two or three things they
+ * already know of that would serve.
+ */
+export const AN_AMBITION_IS_ANSWERED_AS_THINKING =
+    'WHERE THE FACTS ARE WHAT IS LIVE FOR THIS CULTIVATOR, the player has said what they want '
+    + 'and not what they are doing. Write it as the character turning it over - the want, then '
+    + 'the two or three things they know of that would serve it, weighed the way somebody '
+    + 'weighs them. Not a menu, not numbered, and never the arithmetic: a rate, a multiplier '
+    + 'or a count of bills is the engine reasoning and must not appear. Nothing has happened '
+    + 'this turn and no time has passed, so do not write them setting off.';
+
 /** The outer choice. One of these, then an intent, and never a bare verb. */
 export const LANE_NAMES = [
     'perceive',

@@ -3,7 +3,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { LANE_NAMES, THE_LANES } from './the-lanes-a-sentence-can-go-down.js';
+import { AN_AMBITION_IS_A_READ, AN_AMBITION_IS_ANSWERED_AS_THINKING, LANE_NAMES, THE_LANES } from './the-lanes-a-sentence-can-go-down.js';
 import { fileURLToPath } from 'node:url';
 
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
@@ -664,6 +664,7 @@ Rules:
 - "lane" MUST be one of the listed lanes. If the intent you want is not listed under it, say
   the nearest one and the engine will take the lane's ordinary reading - a right lane with a
   rough intent is answerable, and a wrong lane is not.
+- ${AN_AMBITION_IS_A_READ}
 - Anything asked ABOUT THE PLAYER THEMSELVES - what they are, what they carry, what they
   know, what they could learn, where they could go - is "consult". It is one lane on purpose:
   the player does not know which drawer the engine keeps a fact in, and neither do you.
@@ -1582,6 +1583,8 @@ export function composeNarrationUser(
         'about where this cultivator stands, and prose that turns it into one has invented an',
         'advancement and will be thrown away. Rewrite how the bar is said; never move the',
         'player across it.',
+        '',
+        AN_AMBITION_IS_ANSWERED_AS_THINKING,
         '',
         'WHAT WAS ASKED HAS AN ANSWER, AND IT IS ABOVE. Never write the question as going',
         'unanswered, hanging in the air, or meeting silence, and never invent an empty square',

@@ -24,8 +24,23 @@ import { whatToSayAboutTheCure, type TheCure } from './what-would-close-this-wou
 /**
  * Somebody stepping outside the fiction to ask what there is to do.
  */
+/**
+ * AN AMBITION IS THIS QUESTION SAID AS A WISH, and belongs here rather than
+ * with the bottleneck read.
+ *
+ * "I want to get stronger" matched nothing, so the embedding tier guessed, and
+ * it guessed `cultivate` - which met the no-method gate and told a player
+ * asking where to begin that beginning was impossible. All twenty-four
+ * `cultivate` refusals in one probe run were that gate.
+ *
+ * The bottleneck read was the other candidate and is the wrong one: it explains
+ * why the wall is there. Somebody who has just said what they want is asking
+ * what to do about it, and this read answers with the things that would - the
+ * ground that draws faster, the person who could teach them, the paper on the
+ * wall.
+ */
 export const ASKING_WHAT_IS_POSSIBLE =
-    /^\s*(?:\/)?(?:.*[.?!]\s+)?(?:help|help me|halp|\\?|what (?:can|could|might) i do(?: (?:here|now|next))?|what (?:can|could) i (?:say|type|try)|what (?:do|should) i do(?: (?:here|now|next))?|what now|what next|what are (?:my|the) (?:options|choices)|what(?:'s| is) (?:my|the) (?:options|choices)|my options|i (?:don'?t|do not) know what to do|what commands are there|what are the commands|how do i play|what is there to do(?: here)?|what can be done(?: here)?|where (?:should|do|would|can) i (?:start|begin)(?: (?:here|now))?|(?:how|where) do i (?:get )?start(?:ed)?(?: (?:here|now))?|where do i go from here|what(?:'s| is)? worth doing(?: (?:here|now))?|what should i be doing(?: (?:here|now))?|i have no idea what i(?:'m| am) doing|i(?:'ve| have) no idea what i(?:'m| am) doing)\s*[.?!]*\s*$/i;
+    /^\s*(?:\/)?(?:.*[.?!]\s+)?(?:help|help me|halp|\\?|what (?:can|could|might) i do(?: (?:here|now|next))?|what (?:can|could) i (?:say|type|try)|what (?:do|should) i do(?: (?:here|now|next))?|what now|what next|what are (?:my|the) (?:options|choices)|what(?:'s| is) (?:my|the) (?:options|choices)|my options|i (?:don'?t|do not) know what to do|what commands are there|what are the commands|how do i play|what is there to do(?: here)?|what can be done(?: here)?|where (?:should|do|would|can) i (?:start|begin)(?: (?:here|now))?|(?:how|where) do i (?:get )?start(?:ed)?(?: (?:here|now))?|where do i go from here|what(?:'s| is)? worth doing(?: (?:here|now))?|what should i be doing(?: (?:here|now))?|i have no idea what i(?:'m| am) doing|i(?:'ve| have) no idea what i(?:'m| am) doing|i (?:want|need|wish|would like|would love|mean) (?:to )?(?:get|be|become|grow|be come) (?:a lot |much |far |the )?(?:stronger|strongest|more powerful|powerful|better|higher|further)|i (?:want|need|wish) (?:to )?(?:advance|progress|improve|rise|go further|get ahead|get somewhere)|i (?:want|need) (?:to )?(?:find|get) (?:a|myself a) (?:master|teacher|sect|school)|how (?:do|can|should) i (?:begin|start out))\s*[.?!]*\s*$/i;
 
 /**
  * A BARE ask after options, with nothing in it about a book.
