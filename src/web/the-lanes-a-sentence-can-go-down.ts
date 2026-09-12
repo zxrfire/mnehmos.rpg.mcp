@@ -244,7 +244,18 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
         says: 'hands rather than words',
         // `force` read as a blow rather than a demand, so it says what it
         // makes somebody do. `guard` is standing over a crossing, not warding.
-        intents: { strike: 'attack', make_them_comply: 'coerce', stand_over: 'guard' },
+        //
+        // `let_them_go` expands to the same verb as `strike` and is separated
+        // from it by the intent, which `attack` carries. Without a word for it
+        // the lane's `otherwise` was a swing, so every ordinary phrasing of
+        // restraint - "I spare her", "I stay my hand" - had a choice between
+        // hitting somebody and the blank look.
+        intents: {
+            strike: 'attack',
+            let_them_go: 'attack',
+            make_them_comply: 'coerce',
+            stand_over: 'guard'
+        },
         otherwise: 'attack'
     },
     house: {

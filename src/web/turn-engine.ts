@@ -386,6 +386,7 @@ import {
 import {
     fightView,
     theFightStillStands,
+    whatIsBeingHeldBack,
     whatTheySaidInTheFight,
     type StandingFight
 } from './fight-answers.js';
@@ -2132,6 +2133,21 @@ export class GameService {
             : null;
         const fightAnswer = inAFight === null ? null : whatTheySaidInTheFight(trimmed);
 
+        // AND SO IS A HAND HELD BACK OVER SOMEBODY WHO IS ALREADY BEATEN
+        //
+        // The same family, read by the same function, one situation further
+        // out - and gated on that situation for the reason the header of
+        // `fight-answers.ts` gives: a raw read that fires with nothing standing
+        // would be taking the sentence off the reader that is meant to have it.
+        // Somebody beaten and still on their knees IS a situation the engine
+        // holds, so restraint said over one is settled here rather than sent to
+        // a model that could turn it into a blow.
+        //
+        // With nobody kneeling the sentence goes the ordinary way, and the
+        // pattern table reads it as `attack` with the intent that says nothing
+        // is being thrown. Either road ends at `letThemGo`.
+        const beaten = fightAnswer === null ? this.whoHasYieldedToYou(cultivator) : null;
+        const heldBack = beaten === null ? null : whatIsBeingHeldBack(trimmed);
 
         const standing = stillStands(this.crossroads, run.id, cultivator)
             ? this.crossroads
@@ -2162,7 +2178,7 @@ export class GameService {
 
         // "KEEP AT IT" IS A VERB THE PLAYER ALREADY SAID
         const carriesOn = fightAnswer === null && picked === null
-            && forced === null && answered === null
+            && forced === null && answered === null && heldBack === null
             ? theSentenceCarriesOn(trimmed)
             : null;
         const carryingOn = carriesOn === null || before === null
@@ -2180,6 +2196,26 @@ export class GameService {
                 action: { action: 'attack' },
                 source: 'fallback',
                 note: `a fight is standing and the sentence answered it: ${fightAnswer.kind}.`
+            }
+            : heldBack !== null
+            ? {
+                // Same argument as the line above, one situation out. The
+                // sentence is an act of restraint whatever a model would make
+                // of it, and what it MEANS is decided by what is standing in
+                // front of the player rather than by the reading.
+                action: {
+                    action: 'attack',
+                    // WHO IT IS ABOUT, because the scene layer reads the plan's
+                    // target to tell somebody this turn dealt with from a
+                    // bystander. Without it the person who had just been let up
+                    // was narrated as a witness to it: "No part of this was
+                    // theirs. They saw all of it, from close by."
+                    ...(heldBack === 'let_them_go' && beaten !== null
+                        ? { target: beaten.name }
+                        : {})
+                },
+                source: 'fallback',
+                note: `the sentence held a hand back: ${heldBack}.`
             }
             : picked !== null
             ? {
@@ -2342,6 +2378,8 @@ export class GameService {
         // ── phase 2 ──
         const execution = fightAnswer !== null
             ? await this.answerTheFight(run, cultivator, ambient, inAFight!, fightAnswer)
+            : heldBack !== null
+            ? this.letThemGo(run, cultivator, heldBack)
             : answered === 'stay'
             ? await this.sitBackDown(run, cultivator, ambient, standing!)
             : answered === 'go'
@@ -3495,6 +3533,26 @@ export class GameService {
                 return this.investigate(run, asTheyStand, ambient, action.target);
 
             case 'attack':
+                // A HAND HELD BACK IS NOT A SWING. The restraint family plans
+                // as `attack` because that is where a fight's own answers plan
+                // to, and the intent is the whole of what separates them: read
+                // without it, "I spare her" would throw a blow at her.
+                {
+                    // Normalised, because a lane intent survives the plan in
+                    // the model's own spelling: `theVerbForThisLane` folds
+                    // spaces to underscores to look the verb up and leaves the
+                    // label alone.
+                    const restraint = (action.intent ?? '').trim().toLowerCase()
+                        .replace(/[\s-]+/g, '_');
+                    if (restraint === 'let_them_go' || restraint === 'step_between') {
+                        return this.letThemGo(
+                            run, cultivator,
+                            restraint === 'let_them_go'
+                                ? 'let_them_go'
+                                : 'step_between_two_others'
+                        );
+                    }
+                }
                 // `terms` reaches the consequence layer and nothing else. See
                 // the header on `attack` and on `whatFollowedTheBout`.
                 // `opening` reaches the resolver and decides who gets the first

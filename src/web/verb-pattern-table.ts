@@ -68,6 +68,10 @@ import { SENDING_REASONS } from '../data/cultivation/why-a-house-puts-a-party-on
 import { A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY }
     from '../engine/cultivation/how-a-blow-was-thrown.js';
 import { howTheySaidTheySwung } from './how-they-said-they-swung.js';
+// Restraint, read by the same function the fight's own answers use, so the
+// argument about which of `let him hit me` and `let him go` wins is written
+// once. See `whatIsBeingHeldBack`.
+import { whatIsBeingHeldBack } from './fight-answers.js';
 import { legacyStep } from './leaving-things-for-the-next-life.js';
 import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // The other half of the word `tell`: carrying news of a wrong TO somebody,
@@ -3653,6 +3657,34 @@ function planIntent(input: string): PlannedAction {
     const aimed = anArtAimedAtSomebody(input);
     if (aimed !== null && !AIMED_AT_THE_LADDER.test(text)) {
         return { action: 'attack', target: aimed.at, withArt: aimed.art };
+    }
+
+    // -- A HAND HELD BACK, WHICH IS NOT A SWING --
+    //
+    // Above the attack branch because it shares that branch's words: `finish
+    // him` is in the swing list and `I don't finish him` is the opposite act.
+    //
+    // The verb is `attack` because that is where a fight's own answers already
+    // plan to - `spare` has been a `FightAnswer` since `fight-answers.ts` was
+    // written - and the INTENT is what tells the handler nothing is being
+    // thrown. Without the intent this sentence would route to a swing, which is
+    // worse than the blank look it replaces.
+    //
+    // Measured before this branch existed: `I let him go`, `I spare her`, `I
+    // stay my hand` and `I stand between them` came back
+    // `engine.parseIntent/unclear` on the refusal probe, 28 turns each.
+    //
+    // No target is read off the sentence. What a sparing lands on is whoever
+    // is beaten in front of the player, which the engine already holds; a name
+    // in the sentence would be a second opinion about it.
+    {
+        const heldBack = whatIsBeingHeldBack(input);
+        if (heldBack !== null) {
+            return {
+                action: 'attack',
+                intent: heldBack === 'let_them_go' ? 'let_them_go' : 'step_between'
+            };
+        }
     }
 
     // -- attacking somebody, which had no route at all --

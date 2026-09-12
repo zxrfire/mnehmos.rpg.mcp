@@ -9,24 +9,37 @@
  * phrasings. What the probe measured is that none of the three was said INSIDE
  * a fight, because `whatTheySaidInTheFight` is consulted only while one stands.
  *
- * That gate is the design and this pins both halves of it:
+ * ── WHAT CHANGED, AND WHY IT WAS RIGHT TO CHANGE ─────────────────────────
  *
- *   IN A FIGHT   all three are `spare`, and it is not confused with the three
- *                answers that share its words - pressing takes "let him hit
- *                me", breaking off takes "let me go", yielding is the same act
- *                from the other end.
- *   OUT OF ONE   nothing is invented. There is nobody at your mercy in an empty
- *                square, and a reader that supplied one would be deciding that
- *                a fight was happening.
+ * This file used to assert that all three reached `unclear` from a standing
+ * start, on the argument that *"a reader that supplied somebody at your mercy
+ * would be deciding that a fight was happening"*. That argument is right and is
+ * kept. What was wrong was the conclusion drawn from it: `unclear` is not the
+ * engine saying there is nobody at your mercy. It is the engine saying it could
+ * not read the sentence, which is false - and a later probe measured the same
+ * three at 28 turns each, plus "I stand between them", all of them
+ * `engine.parseIntent/unclear`, 112 turns of a blank look at four of the most
+ * ordinary sentences in the genre.
  *
- * So the 18 refusals stay refusals, and the header is here so the next person
- * reading that line of the probe does not build a mercy verb over the top of a
- * working one.
+ * So the reader still supplies nobody. What it does now is route the sentence
+ * to a handler that LOOKS, and the handler says which of the two answers it is:
  *
- * One real hole came out of writing it: `show him mercy` matched nothing, while
- * `show mercy` and `show them mercy` both did. The pronoun alternation carried
- * the separating space on one branch only - `(?:him|her|them )` - which is the
- * commonest way a list of pronouns fails on two thirds of itself.
+ *   somebody is beaten     `letThemGo` resolves it. That state is
+ *   in front of you        `FLAG_YIELDING_TO_YOU`, written when a coercion ends
+ *                          in a submission, and only the taking half of it was
+ *                          reachable by any sentence.
+ *   nobody is              it refuses, and names what is missing.
+ *
+ * Both halves are pinned in `sparing-somebody-needs-somebody-to-spare.test.ts`.
+ * What this file keeps is the gate: the READER decides nothing about whether a
+ * fight is happening, and the three phrasings are still not confused with the
+ * three answers that share their words.
+ *
+ * One real hole came out of writing the first version: `show him mercy` matched
+ * nothing, while `show mercy` and `show them mercy` both did. The pronoun
+ * alternation carried the separating space on one branch only -
+ * `(?:him|her|them )` - which is the commonest way a list of pronouns fails on
+ * two thirds of itself.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -46,13 +59,31 @@ describe('staying your hand', () => {
         expect(whatTheySaidInTheFight('I yield')?.kind).toBe('yield');
     });
 
-    it('is not reachable from a standing start, because there is nobody to spare', () => {
-        // The caller's own gate: `whatTheySaidInTheFight` is asked only while a
-        // fight stands. Asserted as the absence it is - the phrasings are not
-        // in the verb table either, and adding them there would mean the reader
-        // deciding somebody was at the player's mercy.
+    /**
+     * The reader routes; it does not decide anybody is at the player's mercy.
+     *
+     * The intent is the whole of the distinction between this and a blow: the
+     * verb is `attack` because that is where a fight's own answers plan to, and
+     * a plan without the intent would swing at the person being spared.
+     */
+    it('routes to an act that looks, rather than to a blank look', () => {
         for (const said of ['I let him go', 'I spare her', 'I stay my hand']) {
-            expect(parseIntent(said).action, said).toBe('unclear');
+            const plan = parseIntent(said);
+            expect(plan.action, said).toBe('attack');
+            expect(plan.intent, said).toBe('let_them_go');
+            // Nothing is aimed. Who a sparing lands on is whoever is beaten in
+            // front of the player, and the reader does not get an opinion.
+            expect(plan.target, said).toBeUndefined();
         }
+    });
+
+    /**
+     * The words a sparing shares with acts that are not one, from the other
+     * side: the table must not take any of these.
+     */
+    it('leaves alone the sentences that only look like it', () => {
+        expect(parseIntent('I let him off what he owes').action).toBe('oath');
+        expect(parseIntent('I let it go').action).not.toBe('attack');
+        expect(parseIntent('I buy enough').action).not.toBe('attack');
     });
 });

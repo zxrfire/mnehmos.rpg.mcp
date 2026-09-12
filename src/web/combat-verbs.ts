@@ -95,7 +95,7 @@ import { whoTheyCarryFor } from './what-a-telling-lands-on.js';
 import { type DatabaseHandle, PLAYER_ROLL_IDENTITY } from './encounters.js';
 import { resolveCultivator, resolvePill } from './entities.js';
 import { factsForRefusal, factsForToolResult, placeName, theRung } from './facts.js';
-import { type StandingFight, theFightStillStands } from './fight-answers.js';
+import { type HeldBack, type StandingFight, theFightStillStands } from './fight-answers.js';
 import { routesOutOfAGap, sayingWhatWouldWork } from './gap-routes.js';
 import { loosePlaceKey } from './knowledge.js';
 import { creditIn, headTitleOf, positionIn, spendStanding } from './standing.js';
@@ -103,7 +103,7 @@ import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
 import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
-import { writeFlag } from '../server/consolidated/cultivation-support.js';
+import { clearFlag, readFlag, writeFlag } from '../server/consolidated/cultivation-support.js';
 
 /**
  * Priority at which a want is the whole of why somebody is standing there.
@@ -1336,13 +1336,132 @@ export const combatVerbs = {
     },
 
     /**
+     * Who is on their knees in front of this cultivator, when anybody is.
+     *
+     * The ONE read of `FLAG_YIELDING_TO_YOU`. What makes the flag lapse is
+     * PRESENCE rather than a timer, and a second copy of that rule would
+     * disagree with this one, so `situated-reads` asks here rather than reading
+     * the flag again beside it.
+     */
+    whoHasYieldedToYou(
+        this: GameService,
+        cultivator: Cultivator
+    ): { id: string; name: string } | null {
+        const noted = readFlag(this.db, cultivator.id, FLAG_YIELDING_TO_YOU);
+        if (!noted) return null;
+        const who = noted.split(':')[0];
+        const here = this.present(cultivator).find(row => row.id === who);
+        return here ? { id: here.id, name: here.name } : null;
+    },
+
+    /**
+     * A hand held back, with no fight standing.
+     *
+     * ── RESTRAINT NEEDS SOMETHING TO RESTRAIN ────────────────────────────
+     *
+     * Measured on the refusal probe: `I let him go`, `I spare her` and `I stay
+     * my hand` came back `engine.parseIntent/unclear` - the blank look - 28
+     * turns each. Inside a fight all three already resolved, because
+     * `whatTheySaidInTheFight` has read them since it was written. What had no
+     * answer was the other situation the engine holds: somebody beaten and
+     * still standing in front of you, which is `FLAG_YIELDING_TO_YOU` and which
+     * only the taking half of the vocabulary could reach - the strip offered
+     * *"I make X hand over what they carry"* and nothing offered to let them up.
+     *
+     * So there are two answers here and neither of them is the blank look: the
+     * act, when somebody is on their knees, and a refusal that says nobody is,
+     * when nobody is.
+     */
+    letThemGo(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        heldBack: HeldBack
+    ): Execution {
+        if (heldBack === 'step_between_two_others') {
+            const fighting = theFightStillStands(this.fight, run.id, cultivator.id)
+                ? this.fight
+                : null;
+            return refused('engine.stepBetween', 'attack', factsForRefusal(
+                'Nobody here is fighting anybody else.',
+                (fighting
+                    ? `The only fight here is yours, with ${fighting.party.name}, and there is `
+                        + 'no third person in it to come between. '
+                    : 'There is no fight in front of you to come between. ')
+                + 'What you can stop is a fight you are in: let them go once they are beaten, '
+                + 'or break off.',
+                'Stepping into a fight between two other people. The engine holds a fight as one '
+                + 'aggressor, one defender and this cultivator as one of the two; no fight '
+                + 'between two other parties exists in world state, so there is nothing to '
+                + 'stand between. Nothing was resolved and no day passed.'
+            ));
+        }
+
+        const beaten = this.whoHasYieldedToYou(cultivator);
+        if (!beaten) {
+            const fighting = theFightStillStands(this.fight, run.id, cultivator.id)
+                ? this.fight
+                : null;
+            return refused('engine.letThemGo', 'attack', factsForRefusal(
+                'Nobody here is beaten.',
+                fighting
+                    ? `${fighting.party.name} is still on their feet and still swinging. There `
+                        + 'is nothing to let go of yet.'
+                    : 'Nobody in front of you is on their knees and nobody is swinging at you, '
+                        + 'so there is no hand to hold back.',
+                'Restraint with nothing to restrain: no fight is standing for this cultivator '
+                + 'and nothing is on the yielding flag for anybody present. No day passed and '
+                + 'nothing was spent.'
+            ));
+        }
+
+        const theirRecord = this.atHand?.npcs.find(npc => npc.id === beaten.id) ?? null;
+        const facts = factsForToolResult(
+            `${beaten.name} is let go.`,
+            [`${beaten.name} is back on their feet and is no longer being held.`]
+        );
+        const execution: Execution = {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.letThemGo',
+                action: 'attack',
+                summary:
+                    `${beaten.name} had yielded and was let go. The yielding flag is cleared, `
+                    + 'so what a person on their knees can be made to do is closed again. No '
+                    + 'day passed.',
+                ok: true
+            }]
+        };
+
+        // The same routine the end of a fight uses, so a sparing is priced once
+        // and the favour it opens is written the way every other kindness is.
+        this.whatSparingThemLeft(run, cultivator, { party: beaten, theirRecord }, execution);
+
+        // THEY ARE UP, so the room stops allowing what it allowed. Written
+        // after the deed, because a deed that throws should not leave the
+        // player holding somebody who is no longer on the flag.
+        clearFlag(this.db, cultivator.id, FLAG_YIELDING_TO_YOU);
+        this.repos.runs.incrementTurn(run.id, 1);
+        return execution;
+    },
+
+    /**
      * The favour a spared person owes, written the way every other kindness is.
+     *
+     * Takes the two ends of the sparing rather than a `StandingFight`, because
+     * it is reached from both: the end of a fight somebody stopped, and a
+     * player letting up somebody who had already knelt. A `StandingFight`
+     * satisfies the shape, so the fight's own call site is unchanged.
      */
     whatSparingThemLeft(
         this: GameService,
         run: Run,
         cultivator: Cultivator,
-        held: StandingFight,
+        held: { party: { id: string; name: string }; theirRecord: NpcRecord | null },
         execution: Execution
     ): void {
         if (!this.atHand) return;

@@ -191,8 +191,60 @@ export const THE_ANSWER_IS_TO_SHOUT =
  * with nothing after it is here; `I spare a thought` is not a fight answer and
  * matches nothing, because the object list is people.
  */
+/**
+ * The half of the list that names somebody, and is therefore readable with no
+ * fight standing at all.
+ *
+ * Split because the two halves are safe in different places. Every phrasing
+ * here carries a person or a hand and means one thing wherever it is said; the
+ * bare stops below mean restraint only because something is already happening.
+ * Outside a fight only this half is consulted, so "I buy enough" cannot become
+ * an act of mercy.
+ *
+ * The last alternative takes a NAME rather than a pronoun, because the
+ * affordance strip prints one and any name the game prints is a name the game
+ * must accept. Its stop list is the words that make what follows an object
+ * rather than a person - "I let the rope go" is not mercy. The pronouns are
+ * matched by the alternative above it, which is why `her` and `his` can sit in
+ * the stop list without costing "I let her go".
+ */
+const SOMEBODY_IS_LET_GO = [
+    'spare(?:s|d)? (?:him|her|them|his life|her life|their life|the boy|the girl)',
+    // `off` is NOT here. "I let him off what he owes" is forgiving a debt and
+    // belongs to oath/release, which owned it and lost it the first time this
+    // list was consulted outside a fight. Inside one it is still a sparing -
+    // it sits in the bare half below, which only a standing fight consults.
+    'let(?:s|ting)? (?:him|her|them) (?:go|live|be|walk|stand|up)',
+    'let (?:him|her|them) (?:go|live)',
+    'show(?:s|ing)? (?:(?:him|her|them) )?mercy',
+    'have mercy',
+    'mercy on (?:him|her|them)',
+    'stay(?:s|ing)? my (?:hand|blade|sword)',
+    'stay my hand',
+    'hold(?:s|ing)? my (?:hand|blade|sword)',
+    "do(?:es)? not finish (?:him|her|them)",
+    "don'?t finish (?:him|her|them)",
+    'will not finish (?:him|her|them)',
+    "won'?t finish (?:him|her|them)",
+    'leave(?:s|ing)? (?:him|her|them) (?:alive|be|breathing|standing)',
+    "let(?:s|ting)? (?!it\\b|go\\b|the\\b|an?\\b|my\\b|his\\b|her\\b|their\\b|its\\b"
+        + "|your\\b|our\\b|me\\b|us\\b|that\\b|this\\b)[\\w'-]+(?: [\\w'-]+)? (?:go|live|be|up)"
+].join('|');
+
+/** The bare stops, which are restraint only while something is happening. */
+const THE_STOP_IS_BARE = [
+    'spare(?:s|d)?\\s*$',
+    'let(?:s|ting)? (?:him|her|them) off',
+    'stop(?:s|ping)? short',
+    'enough[.!]*\\s*$',
+    "it(?:'s| is) enough"
+].join('|');
+
 export const THE_ANSWER_IS_TO_SPARE =
-    /\b(?:spare(?:s|d)? (?:him|her|them|his life|her life|their life|the boy|the girl)|spare(?:s|d)?\s*$|let(?:s|ting)? (?:him|her|them) (?:go|live|off|be|walk|stand|up)|let (?:him|her|them) (?:go|live)|show(?:s|ing)? (?:(?:him|her|them) )?mercy|have mercy|mercy on (?:him|her|them)|stay(?:s|ing)? my (?:hand|blade|sword)|stay my hand|hold(?:s|ing)? my (?:hand|blade|sword)|do(?:es)? not finish (?:him|her|them)|don'?t finish (?:him|her|them)|will not finish (?:him|her|them)|won'?t finish (?:him|her|them)|leave(?:s|ing)? (?:him|her|them) (?:alive|be|breathing|standing)|stop(?:s|ping)? short|enough[.!]*\s*$|it(?:'s| is) enough)\b/i;
+    new RegExp(`\\b(?:${SOMEBODY_IS_LET_GO}|${THE_STOP_IS_BARE})\\b`, 'i');
+
+/** Letting somebody go, in the words that survive having no fight around them. */
+export const LETTING_SOMEBODY_GO = new RegExp(`\\b(?:${SOMEBODY_IS_LET_GO})\\b`, 'i');
 
 /**
  * Going down on one knee, which is not backing off and not blocking.
@@ -285,6 +337,58 @@ export function whatTheySaidInTheFight(said: string): FightAnswer | null {
     if (THE_ANSWER_IS_TO_SPARE.test(line)) return { kind: 'spare' };
     if (THE_ANSWER_IS_TO_KEEP_SWINGING.test(line)) return { kind: 'strike' };
     return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND THE SAME WORDS WITH NO FIGHT AROUND THEM
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Stepping into a fight between two OTHER people.
+ *
+ * The pattern exists so the engine can SAY it has no answer for this. A fight
+ * here is an `UnfinishedFight`: one aggressor, one defender, and the player as
+ * one of the two. Nothing in world state holds a fight between two other people
+ * for a third to walk into, so "I stand between them" names a situation that
+ * does not exist rather than a verb that is missing - and that is a different
+ * refusal from the engine saying it could not read the words.
+ *
+ * THE OBJECT HAS TO BE THE TWO OF THEM. Written as a bare `stands between` it
+ * took "what stands between me and Wen Shuyi", which is a read of the ledger
+ * and belongs to `oath`. `between me and <somebody>` is one person and a
+ * question; `between them` is two people and an act.
+ */
+export const THE_SENTENCE_STEPS_INTO_SOMEBODY_ELSES_FIGHT =
+    /\b(?:(?:stand|step|get|move|jump|wade)(?:s|ing)? (?:in )?between (?:them|the two|these two|those two)|put(?:s|ting)? myself between (?:them|the two)|come(?:s|ing)? between (?:them|the two)|break(?:s|ing)? (?:it|them) up|break(?:s|ing)? up (?:the|their) fight|pull(?:s|ing)? (?:them|the two of them) apart|separate(?:s|ing)? (?:them|the two))\b/i;
+
+/** The two acts of restraint a player can say when no fight is standing. */
+export type HeldBack = 'let_them_go' | 'step_between_two_others';
+
+/**
+ * Restraint, read with no fight standing.
+ *
+ * Restraint only means anything when there is something to restrain, and the
+ * engine holds two such situations: a fight, which `whatTheySaidInTheFight`
+ * already answers, and somebody beaten and still standing in front of you,
+ * which nothing could reach. Both of those and neither of them go through here;
+ * what the answer IS belongs to the caller, which is the only thing that knows
+ * whether anybody is on their knees.
+ *
+ * The sparing half DEFERS to `whatTheySaidInTheFight` rather than testing
+ * `LETTING_SOMEBODY_GO` itself, so the precedence argument written above that
+ * function is not restated here and cannot drift from it: "I let him hit me" is
+ * a press and "I let him go and back off" is somebody leaving, and both share a
+ * word with the sparing list.
+ */
+export function whatIsBeingHeldBack(said: string): HeldBack | null {
+    const line = said.trim();
+    if (line.length === 0) return null;
+    if (THE_SENTENCE_STEPS_INTO_SOMEBODY_ELSES_FIGHT.test(line)) {
+        return 'step_between_two_others';
+    }
+    return whatTheySaidInTheFight(line)?.kind === 'spare' && LETTING_SOMEBODY_GO.test(line)
+        ? 'let_them_go'
+        : null;
 }
 
 /**

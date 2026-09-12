@@ -569,6 +569,25 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
                 namesSomething: true,
                 canHurtYou: true
             });
+            // AND THE OTHER HALF OF THE SAME MOMENT.
+            //
+            // Only the taking half was sayable. AGENTS.md: where one of two
+            // opposed acts is reachable and the other is not, the engine has an
+            // opinion - and here it was the harsh one, which is the same defect
+            // as the polite one and not a virtue.
+            add({
+                id: 'let_them_go',
+                say: `I let ${here.yielding.name} go`,
+                routesTo: 'attack',
+                urgency: 'now',
+                because:
+                    `${here.yielding.name} has yielded and is still standing there. Letting `
+                    + 'them up ends it with them alive and owing you for it, and they walk '
+                    + 'away still holding what was done to them.',
+                whatItIsAbout: 'here',
+                namesSomething: true,
+                canHurtYou: false
+            });
         }
 
         // ── wounds ────────────────────────────────────────────────────────

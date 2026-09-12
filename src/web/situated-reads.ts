@@ -67,8 +67,6 @@ import {
 } from './entities.js';
 import { factsForRefusal, factsForToolResult, howFarOff, placeName, theRung } from './facts.js';
 import { whoAnswersForThisGround } from './ground-holder-lines.js';
-import { FLAG_YIELDING_TO_YOU } from './flag-keys.js';
-import { readFlag } from '../server/consolidated/cultivation-support.js';
 import {
     whatBeingAMemberTellsYou,
     whatStandingAmongYourOwnShows
@@ -944,13 +942,11 @@ export const situatedReads = {
                 this.groundPriceMultiplier(cultivator, 'medicine')
             ),
             // -- AND WHOEVER IS ON THEIR KNEES IN FRONT OF THEM -----------
-            yielding: (() => {
-                const noted = readFlag(this.db, cultivator.id, FLAG_YIELDING_TO_YOU);
-                if (!noted) return null;
-                const who = noted.split(':')[0];
-                const stillHere = roster.find(row => row.id === who);
-                return stillHere ? { name: stillHere.name } : null;
-            })(),
+            //
+            // Asked of `whoHasYieldedToYou` rather than read off the flag here.
+            // What makes it lapse is PRESENCE, and that rule was written twice:
+            // once here and once where the act of letting somebody up reads it.
+            yielding: this.whoHasYieldedToYou(cultivator),
             battered: cultivator.hp < cultivator.maxHp,
             // The threshold, the permanent, and the split - three reads that
             // existed in `injuries.ts` with no caller anywhere. See
