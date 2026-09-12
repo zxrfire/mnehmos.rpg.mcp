@@ -5,6 +5,61 @@ while agents ran; I did not act on any of these unilaterally.
 
 ---
 
+## THE HEADLINE: there is not enough to do, and it is about fourfold
+
+Measured, not guessed. A new instrument
+(`scripts/probe-is-there-enough-to-do-and-can-it-be-reached.ts`) swept **222 squares** —
+all 37 named places, at the three band floors, in two pinned worlds, ~100 minutes,
+model-free.
+
+| band | acts available | reads available |
+|---|---|---|
+| at the bottom | 4.0 | 4.0 |
+| through the middle | 3.3 | 4.7 |
+| at the top | 3.3 | 4.7 |
+
+**It gets WORSE as you climb, and above the bottom band there is more to look at than to
+do.** It is also flat across the map — a city offers 4.0 and a hamlet offers 4.0.
+
+**Eight verbs are ever live out of the whole action set**, and the two live everywhere,
+`site` and `move`, are both ways of LEAVING.
+
+**And the engine will not honour its own menu.** Typing back the sentences it offered:
+**780 offered, 127 refused — 16.3%.** The most-offered act in the game is refused a third
+of the times it is offered.
+
+| advertised | bottom | middle | top | the gate |
+|---|---|---|---|---|
+| duties on a board | 100% | **0%** | **none advertised** | pitched below where you stand |
+| arts on a stall | 100% | **0%** | **0%** | the book ends at or below your rung |
+| goods for sale | 72% | 1% | 0% | usable band and price |
+| dao ground | 0% | 2% | 6% | `not_of_the_house` x666 |
+
+**A year of life produces one or two sentences about the world.** Twenty years at the top:
+7300 days lived, **12 lines**. In one pinned world a one-year sitting came back with the
+inspector saying *"nothing reached this cultivator. 166 event(s) passed unheard."*
+
+**The agent's judgement, unhedged and I agree with it:** *"No. This world does not
+currently have enough to do to feel like the genre, and the deficit is not marginal."*
+
+**The good news is in the same numbers: almost none of this is a missing subsystem.** The
+duty board already generates postings at every rung and is gated off for anyone not on a
+roll. The stall catalogue tops out at Foundation Establishment Early. The dao-ground
+refusal is one reason 666 times. Each is ONE NUMBER OR ONE GATE.
+
+Thinnest first, for whoever takes the next pass:
+1. the board above the bottom band
+2. the stall's ceiling
+3. `not_of_the_house` on dao ground
+4. what a span of time delivers, and the arrival that should land when a sitting ends
+5. **a residence** — the one genuinely absent CATEGORY, and the only item here that would
+   buy a whole column of new things to do
+
+**Question:** which of these do you want taken first? (1) to (3) look like an evening
+each. (5) is a real design job.
+
+---
+
 ## A. Things I think are bugs, and would fix unless you say otherwise
 
 ### 1. A breakthrough is not news, and in this genre it always is
@@ -34,6 +89,26 @@ months of Shipmaster work instead. Not a refusal, so it is outside the blank-loo
 problem; it is mis-targeting. Both readings are honest, but the board was just printed.
 
 **Question:** worth bending routing precedence for, or leave it?
+
+### 1c. An ADMIN turn returns before the world is loaded
+`this.atHand = await this.loadWorld()` runs after an admin turn returns, so a service
+whose ONLY turn so far was an admin one holds no world, and every world-facing read
+honestly answers "nobody here". It made the first cut of the affordance probe report 0
+goods and 0 roads on every square; the same square reads 3 and 23 once a `look` is played
+first.
+
+Harmless in play, because a player does not open with ADMIN. It silently falsifies any
+measurement that arranges with ADMIN and then reads — which is most of them.
+
+### 1d. The duty board is empty for anyone not on a roll, by an argued decision
+`whatTheHouseItselfNeedsDone` returns `[]` without membership, so 30 of 47 rungs show a
+rogue an empty board. That is pinned by a deliberate test in
+`a-house-posts-what-it-needs-doing.test.ts`, so it is somebody's argued position rather
+than a bug — but it is also the single biggest reason there is nothing to do above the
+bottom band.
+
+**Question:** revisit it? A rogue cultivator with no work to take is most of the genre's
+protagonists for their first hundred chapters.
 
 ### 1b. A book cannot be smashed, though a pill can
 Found by playing, one turn after buying:

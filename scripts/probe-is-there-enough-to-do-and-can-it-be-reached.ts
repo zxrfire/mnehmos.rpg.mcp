@@ -74,6 +74,49 @@
  * rows are captured, and each place is read against a restored copy behind a
  * freshly constructed service. Without that, a duty taken at the fourth place
  * is on the ledger at the fifth.
+ *
+ * ── WHAT IT READ ────────────────────────────────────────────────────────
+ *
+ * 222 squares: 37 places x 3 bands x 2 pinned worlds, about 100 minutes.
+ *
+ *   ACTS LIVE IN A SQUARE      acts  median  worst   reads
+ *     at the bottom             4.0     4      3      4.0
+ *     through the middle        3.3     3      2      4.7
+ *     at the top                3.3     3      3      4.7
+ *
+ * It goes DOWN with the rung, and above the bottom band there are more things
+ * to LOOK at than to do. It is also flat across the map: a city offers 4.0 at
+ * the bottom and a hamlet offers 4.0.
+ *
+ * SEVEN VERBS ARE EVER LIVE, out of the whole action set:
+ *
+ *     site  100%   move  99%   buy  65%   sect  48%
+ *     cultivate  23%   passage  11%   request  1%   interact  0.4%
+ *
+ * The two that are live everywhere are `site` and `move`, which are both ways
+ * of LEAVING. Nothing else is offered in even two thirds of squares.
+ *
+ *   ADVERTISED AND OUT OF REACH      bottom   middle      top
+ *     duties on a board               100%       0%   none advertised at all
+ *     intakes on a wall                70%     100%     100%
+ *     arts on a stall                 100%       0%       0%
+ *     goods somebody would sell        72%       1%       0%
+ *     dao ground within reach           0%       2%       6%
+ *
+ * THE ENGINE'S OWN SENTENCES, TYPED BACK AT IT: 780 offered, 127 refused,
+ * 16.3%. Two sentences are the whole of it - `I go into <site>` refused 74
+ * times on `gate_age_and_talent`, and `I cultivate for a year` refused 50 times
+ * on `techniqueCeiling`.
+ *
+ *   WHAT A SPAN OF TIME PRODUCES      digest lines + events, per year
+ *     at the bottom                     5.0, 3.6, 4.1  (1, 5, 20 years)
+ *     through the middle                3.0, 1.8, 1.7
+ *     at the top                        2.0, 2.0, 2.0
+ *
+ * And in the second world, at every band, the one-year sitting came back with
+ * the inspector saying **nothing reached this cultivator and 166 events passed
+ * unheard**. A year of a life, and the channel that carries the world to
+ * somebody who was not looking delivered none of it.
  */
 
 import type Database from 'better-sqlite3';
