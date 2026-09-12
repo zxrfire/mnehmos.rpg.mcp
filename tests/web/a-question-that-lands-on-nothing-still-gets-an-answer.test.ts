@@ -104,15 +104,23 @@ const base = {
 
 describe('a question that lands on nothing still gets an answer', () => {
     it('says what they turn it onto, when the question reached nothing they can place', () => {
-        const onTheirMind = 'have spent most of the years this rung allows and are still standing at the same wall';
+        const onTheirMind = {
+            state: 'the years this rung allows, nearly all spent, and no rung gained by them',
+            plainly: 'have spent most of the years this rung allows and are still standing at the same wall'
+        };
 
         const withIt = askedAbout({ ...base, asked: attached(), onTheirMind });
         const withoutIt = askedAbout({ ...base, asked: attached(), onTheirMind: null });
 
         // The engine states the subject they moved to. It does not write the
-        // sentence they say about it.
-        expect(withIt.lines.join(' ')).toContain('still standing at the same wall');
+        // sentence they say about it - which is why the narrator's copy carries
+        // the STATE and the copy a player with no narrator reads carries the
+        // plain sentence. See `WhatIsOnTheirMind`.
+        expect(withIt.lines.join(' ')).toContain(onTheirMind.state);
+        expect(withIt.lines.join(' ')).not.toContain(onTheirMind.plainly);
+        expect(withIt.linesToThePlayer!.join(' ')).toContain(onTheirMind.plainly);
         expect(withoutIt.lines.join(' ')).not.toContain('still standing at the same wall');
+        expect(withoutIt.linesToThePlayer).toBeUndefined();
 
         // And says on the inspector channel that this is what happened, so a
         // reader can tell a subject-change from an answer.
@@ -123,7 +131,10 @@ describe('a question that lands on nothing still gets an answer', () => {
         const answer = askedAbout({
             ...base,
             asked: attached(),
-            onTheirMind: 'carry a blade somebody above them lent out of their own hands'
+            onTheirMind: {
+                state: 'a blade in their hands, lent by somebody above them, owed back to them',
+                plainly: 'carry a blade somebody above them lent out of their own hands'
+            }
         });
         expect(answer.teaches).toBe(false);
     });
@@ -141,7 +152,10 @@ describe('a question that lands on nothing still gets an answer', () => {
             asked: unattached(),
             subject,
             holdsIt: true,
-            onTheirMind: 'have spent most of the years this rung allows and are still standing at the same wall'
+            onTheirMind: {
+                state: 'the years this rung allows, nearly all spent, and no rung gained by them',
+                plainly: 'have spent most of the years this rung allows and are still standing at the same wall'
+            }
         });
         expect(answer.reach).toBe('answers');
         expect(answer.lines.join(' ')).not.toContain('still standing at the same wall');
