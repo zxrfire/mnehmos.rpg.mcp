@@ -151,7 +151,7 @@ export const HOLLOW_COURT_ROSTER: readonly HollowCourtMember[] = [
             'The most recent admission the province was able to watch, and even that is beyond living memory for everybody except cultivators who are themselves exceptions. What it remembers is that somebody went up and did not come back down.',
         worksOutsideAs: null,
         howFarAlong:
-            'Two rungs under the top and the furthest from it of the four, which is why the road below is fresher to this seat than to any of them. Carries the weakest of the Court\'s four objects and is still the equal of what the Long Cut is holding.',
+            'Two rungs under the top and the furthest from it of the four, which is why the road below is fresher to this seat than to any of them. Carries the weakest of the Court\'s four objects and is still the equal of what the Myriad Course Hall is holding.',
         detail:
             'The only one of the four who still occasionally answers the gate, which is why every account of meeting a Seat is probably an account of meeting this one.'
     },

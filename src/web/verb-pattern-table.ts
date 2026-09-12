@@ -632,7 +632,17 @@ export function whoIsBeingOfferedSomething(input: string): string | undefined {
         // And something after them, because a person alone is not an offer:
         // `I make him` is not this sentence and neither is `I offer her`.
         + String.raw`(?:an?|the|my|our|his|her|their|[0-9]|\w+\s)`
-    ).exec(input);
+    )
+        // THE SAME PERSON, ASKED RATHER THAN OFFERED. A price question names
+        // the other side of the table in the slot a ditransitive verb puts
+        // them in, and dropping it answered "how much does she want for it"
+        // about whoever the square happened to list first.
+        .exec(input)
+        ?? new RegExp(
+            String.raw`\b(?:how much|what)\s+(?:do|does|would|will)\s+`
+            + String.raw`(him|her|them|he|she|they|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+`
+            + String.raw`(?:wants?|takes?|asks?|charges?|let it go)\b`
+        ).exec(input);
     if (!said) return undefined;
 
     const who = said[1]!;
@@ -4511,7 +4521,34 @@ function planIntent(input: string): PlannedAction {
         // `counter` ALONE IS A PIECE OF FURNITURE. "Is there a Span counter
         // here" became a haggle, because the bare word was in this list - and
         // a counter is precisely where somebody goes to buy passage.
-        || /\b(?:i\s+)?(?:counter-?offer|lowball|beat him down|beat them down|meet (?:him|her|them) halfway)\b/i.test(text)) {
+        || /\b(?:i\s+)?(?:counter-?offer|lowball|beat him down|beat them down|meet (?:him|her|them) halfway)\b/i.test(text)
+        // ── ASKING THE FIGURE IS HALF THE EXCHANGE ───────────────────────
+        //
+        // The ruling puts the question inside the haggle rather than beside
+        // it: *"you should also be able to ask 'how much' or variations
+        // thereof."* A price asked OF A PERSON is the one shape the board
+        // patterns below cannot take - they read a thing and drop whoever was
+        // being asked, so "how much does she want for it" arrived at the
+        // market with a target of `she want for it`.
+        //
+        // `for` IS LOAD-BEARING AND NOT DECORATION. Without it this swallows
+        // "how much does she have", which is a question about somebody's purse
+        // and is pinned to the board read.
+        || /\bhow much (?:do|does|would|will) (?!i\b)[\w' -]{2,30}?(?:want|take|ask|charge|let it go)\b[^.?!]{0,12}\bfor\b/i.test(text)
+        // The whole sentence, and the shortest thing anybody says at a counter.
+        // Anchored end to end because "how much" inside a longer sentence is
+        // always about something, and that something is what the rest of these
+        // patterns and the board read are for.
+        || /^\s*how much\s*\??\s*$/i.test(text)
+        || /\bwhat(?:'s| is| are)?\s+(?:your|his|her|their)\s+(?:best\s+|asking\s+)?price\b/i.test(text)
+        || /\bwhat (?:are|is) (?:you|he|she|they) asking\b/i.test(text)
+        // ── AND A THING HELD OUT IN PLACE OF STONES ──────────────────────
+        //
+        // "I'll give you my sword instead" reached `give`, which is a GIFT:
+        // the sword left and nothing came back. What separates the two is the
+        // word at the end - instead, in exchange, in trade - and nothing else,
+        // so a plain "I give him my sword" still hands it over for nothing.
+        || /\b(?:give|giving|hand|handing|offer|offering|trade|swap|throw in)\b[^.?!]{0,40}\b(?:instead|in exchange|in trade|in return)\b/i.test(text)) {
         // AND WHO THE PRICE WAS SAID TO. A haggle happens with whoever is in
         // front of you, so no target was ever wrong here - but the sentence
         // names one and dropping it made `somebodyAtHand` guess at a face the
@@ -5246,6 +5283,29 @@ function planIntent(input: string): PlannedAction {
         && !A_HOUSE_IS_NAMED.test(text)
         && !PUTTING_THE_QUESTION_TO_SOMEBODY.test(text)) {
         return { action: 'look', intent: 'company' };
+    }
+
+    // ── AM I IN A HOUSE, AND WHICH ──────────────────────────────────────
+    //
+    // The standing read already answers this in full - the house, the rank, the
+    // stipend, who stands highest in it, and what the next rung costs in rungs
+    // and in contribution - and the sentences a player actually types did not
+    // reach it. Measured: "what sect am I in" and "what house am I in" reached
+    // `sect` with NO intent, which falls through to the catalogue of houses that
+    // would take you, so a question about the asker's own state was answered
+    // with an advertisement.
+    //
+    // Above the joining branch on purpose. "which sects would take me" is a
+    // shopping question and stays one; these are about the asker's CURRENT
+    // membership, and that is the whole of what tells them apart.
+    if (/\b(?:what|which|whose)\s+(?:sect|clan|house|order|school|hall|court|pavilion|palace|temple|sects?|houses?)\b[^.?!]*\b(?:am i|i am|do i|i belong|i serve|is mine|i'?m)\b/
+        .test(text)
+        || /\b(?:am i|was i)\s+(?:still\s+)?(?:in|on|of|with)\s+(?:a|an|any|the|my|some)?\s*(?:sect|clan|house|order|school|roll|hall|court)\b/
+            .test(text)
+        || /\bdo i (?:belong to|serve|have) (?:a|an|any|the|my)?\s*(?:sect|clan|house|order|school)\b/
+            .test(text)
+        || /\bwho am i (?:with|sworn to)\b/.test(text)) {
+        return { action: 'sect', intent: 'standing' };
     }
 
     if (/\b(?:who (?:leads|heads|runs|founded|commands)|who is (?:the )?(?:head|leader|patriarch|matriarch|master|strongest)(?: of)?|who is in charge)\b/.test(text)

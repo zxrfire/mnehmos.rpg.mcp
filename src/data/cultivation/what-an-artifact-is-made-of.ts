@@ -1,0 +1,236 @@
+/**
+ * WHAT AN ARTIFACT IS MADE OF, and whether anybody is holding it.
+ *
+ * The material economy was authored and unenforced. `whetherTheirHandsCanDoIt`
+ * carried the comment "The material gate first" and then asked only whether the
+ * maker had the RUNG for the grade; nothing anywhere asked whether a single
+ * gram of anything was on the bench. So a Void Tribulation elder could turn out
+ * heaven-grade work from an empty room.
+ *
+ * ── A SLOT IS A PREDICATE, NEVER A LIST OF IDS ───────────────────────────
+ *
+ * A recipe here is a handful of SLOTS, and a slot says what KIND of thing fills
+ * it rather than naming rows. `everyIngredientThatIs` resolves it against the
+ * two catalogs at the moment it is asked, so a row regraded, renamed, split or
+ * added arrives in every recipe that should have it and in none that should
+ * not. A list of ids would be a second copy of the catalogs and would go stale
+ * the first time one moved - which is a live risk rather than a hypothetical:
+ * a drop's grade follows the rung its source stood at when it died, so the same
+ * part of the same species exists at two grades and the set behind a slot moves
+ * on its own.
+ *
+ * The only two axes both catalogs carry are GRADE and whether the thing was
+ * GROWN or TAKEN OFF SOMETHING. That is enough, and nothing here invents a
+ * third: there is no element on a herb and no element on a beast material, so a
+ * fire slot would be a classification this file made up.
+ *
+ * ── AND SUBSTITUTION IS THE WHOLE POINT ──────────────────────────────────
+ *
+ * Measured against the catalogs as they stand: the thinnest slot in either
+ * recipe has ten materials that fill it and the widest has twenty. A recipe
+ * that wants six named rare things is a recipe nobody finishes, and it would
+ * make the artifact economy poorer rather than richer.
+ *
+ * ── WHY HEAVEN GRADE ASKS FOR ONE HEAVEN THING AND NOT THREE ─────────────
+ *
+ * Heaven-grade material comes off something that stood at `BEAST_CHANGE_ORDINAL`
+ * or above, which is the rung at which a beast has a shape and a voice and can
+ * decline - so taking one is a thing done to a person, and which houses may do
+ * it is a fact about their alignment. A recipe that demanded three of them
+ * would route every heaven-grade artifact in the world through that act. It
+ * demands one, and the slot takes a grown thing as readily as a taken one, so
+ * the herb road is open to anybody who will not hunt a person.
+ */
+
+import {
+    everyIngredientThatIs,
+    howYouWouldComeByIt,
+    whatAnIngredientIs,
+    type WhatTheCauldronIsBeingHanded,
+    type WhereAMaterialComesFrom
+} from '../../engine/cultivation/what-a-cauldron-will-take.js';
+import type { TechniqueGrade } from '../../schema/cultivation.js';
+
+/**
+ * One place in a recipe, and everything that could stand in it.
+ */
+export interface ASlot {
+    /** What it is for, in the words a refusal says out loud. */
+    readonly what: string;
+    readonly grade: TechniqueGrade;
+    /** Where it has to have come from, or null where either will do. */
+    readonly from: WhereAMaterialComesFrom | null;
+}
+
+export type Recipe = readonly ASlot[];
+
+/**
+ * The grades a recipe exists for.
+ *
+ * Mortal is off it because a mortal-grade thing is roadside work and the gate
+ * would refuse nobody. Immortal and chaos are off it because nothing below the
+ * Lid makes one at all - `madeBelowTheLid` decides that and refuses those two
+ * before a recipe is ever reached. Written as an `Exclude` rather than a
+ * literal union so a sixth grade added to the ladder fails to compile here
+ * until somebody has said which side of the line it is on.
+ */
+export type AWorkedGrade = Exclude<TechniqueGrade, 'mortal' | 'immortal' | 'chaos'>;
+
+// The wording of a slot is held to what the predicate actually says. A serpent
+// gland and a stone ox horn are both earth grade off a beast, and calling the
+// slot "a body to hold the shape" would be the file claiming a structural
+// property neither catalog carries.
+const A_BODY: ASlot = {
+    what: 'an earth-grade thing off a beast, for the substance of it',
+    grade: 'earth',
+    from: 'a_beast'
+};
+
+const A_TEMPER: ASlot = {
+    what: 'an earth-grade thing that grew, to temper it with',
+    grade: 'earth',
+    from: 'a_growing_thing'
+};
+
+const A_CARRIER: ASlot = {
+    what: 'a roadside carrier, grown or taken',
+    grade: 'mortal',
+    from: null
+};
+
+const A_HEART: ASlot = {
+    what: 'a heaven-grade heart, grown or taken',
+    grade: 'heaven',
+    from: null
+};
+
+/**
+ * The recipes. Three slots each, and the two share two of them - earth grade is
+ * what heaven grade is built on rather than a separate stock.
+ */
+export const WHAT_AN_ARTIFACT_IS_MADE_OF: Readonly<Record<AWorkedGrade, Recipe>> = {
+    earth: [A_BODY, A_TEMPER, A_CARRIER],
+    heaven: [A_HEART, A_BODY, A_TEMPER]
+};
+
+/** Whether a grade is one anything is worked out of materials for. */
+export function isAWorkedGrade(grade: TechniqueGrade): grade is AWorkedGrade {
+    return grade === 'earth' || grade === 'heaven';
+}
+
+/**
+ * What this grade is made of, or null where the question does not arise.
+ */
+export function whatItIsMadeOf(grade: TechniqueGrade): Recipe | null {
+    return isAWorkedGrade(grade) ? WHAT_AN_ARTIFACT_IS_MADE_OF[grade] : null;
+}
+
+/** Everything that fills this slot, cheapest first. */
+export function whatWouldFill(slot: ASlot): readonly WhatTheCauldronIsBeingHanded[] {
+    return everyIngredientThatIs({
+        grade: slot.grade,
+        ...(slot.from === null ? {} : { from: slot.from })
+    });
+}
+
+/** Whether this material is one of the things that fills this slot. */
+export function fillsTheSlot(slot: ASlot, materialId: string): boolean {
+    const row = whatAnIngredientIs(materialId);
+    if (row === null) return false;
+    if (row.grade !== slot.grade) return false;
+    return slot.from === null || row.from === slot.from;
+}
+
+export interface ASlotNobodyFilled {
+    slot: ASlot;
+    /** What would have filled it. Never empty while the catalogs have rows. */
+    wouldHaveDone: readonly WhatTheCauldronIsBeingHanded[];
+}
+
+/**
+ * Which slots the haul does not reach.
+ *
+ * ONE MATERIAL FILLS ONE SLOT. Two of a kind is two of a kind, and a single
+ * Stone Ox Horn is not both the body and the temper. The slots of both recipes
+ * are disjoint by construction - no two share a grade and a source - and a test
+ * holds them to it, because the moment two overlap this greedy pass has to
+ * become a matching and would quietly start giving the wrong answer instead.
+ */
+export function whatTheBenchIsShortOf(
+    grade: TechniqueGrade,
+    materialsToHand: readonly string[]
+): readonly ASlotNobodyFilled[] {
+    const recipe = whatItIsMadeOf(grade);
+    if (recipe === null) return [];
+    const unspent = materialsToHand.slice();
+    const short: ASlotNobodyFilled[] = [];
+    for (const slot of recipe) {
+        const at = unspent.findIndex(id => fillsTheSlot(slot, id));
+        if (at >= 0) {
+            unspent.splice(at, 1);
+            continue;
+        }
+        short.push({ slot, wouldHaveDone: whatWouldFill(slot) });
+    }
+    return short;
+}
+
+/** Whether this haul is a whole recipe. */
+export function theBenchIsReady(
+    grade: TechniqueGrade,
+    materialsToHand: readonly string[]
+): boolean {
+    return whatTheBenchIsShortOf(grade, materialsToHand).length === 0;
+}
+
+/**
+ * How many substitutes a refusal names before it stops.
+ *
+ * The rest are counted rather than listed. A refusal that reads out twenty rows
+ * is a catalog dump and the player stops reading it; four and a number is the
+ * shape the rest of this repo's refusals use.
+ */
+const HOW_MANY_SUBSTITUTES_A_REFUSAL_NAMES = 4;
+
+/**
+ * Why the bench is short, naming what is missing and what would stand in for
+ * it, or null where nothing is missing.
+ *
+ * The standing rule for a refusal in this repo: what is actually wanted, why
+ * this is not it, and what would change that. A bare "you cannot" carries none
+ * of the three.
+ */
+export function whyTheBenchIsShort(
+    grade: TechniqueGrade,
+    materialsToHand: readonly string[]
+): string | null {
+    const short = whatTheBenchIsShortOf(grade, materialsToHand);
+    if (short.length === 0) return null;
+    const lines = short.map(missing => {
+        const named = missing.wouldHaveDone.slice(0, HOW_MANY_SUBSTITUTES_A_REFUSAL_NAMES);
+        const rest = missing.wouldHaveDone.length - named.length;
+        const substitutes = named.map(row => row.name).join(', ')
+            + (rest > 0 ? `, or ${rest} more` : '');
+        const route = named[0] === undefined ? '' : ` ${howYouWouldComeByIt(named[0])}.`;
+        return `${missing.slot.what}: nothing here is one. ${substitutes} would each do.${route}`;
+    });
+    return `Their hands can work ${grade} grade and the bench is short by `
+        + `${short.length} of ${whatItIsMadeOf(grade)?.length ?? 0}. ${lines.join(' ')}`;
+}
+
+/**
+ * Every material any recipe reaches, for anybody stocking a room.
+ *
+ * A house's stores and the recipes have to be built against each other or the
+ * gate is correct and useless - it would name materials nobody in the world
+ * holds. This is the one read both sides go through.
+ */
+export function everyMaterialARecipeReaches(): readonly WhatTheCauldronIsBeingHanded[] {
+    const seen = new Map<string, WhatTheCauldronIsBeingHanded>();
+    for (const recipe of Object.values(WHAT_AN_ARTIFACT_IS_MADE_OF)) {
+        for (const slot of recipe) {
+            for (const row of whatWouldFill(slot)) seen.set(row.id, row);
+        }
+    }
+    return [...seen.values()].sort((a, b) => a.value - b.value || (a.id < b.id ? -1 : 1));
+}

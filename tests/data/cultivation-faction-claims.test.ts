@@ -146,10 +146,10 @@ describe('every cross-reference resolves', () => {
         const rootSill = getSect('sect-kiln-wardens')!;
         const kiln = COURTS.find(c => c.id === 'court-kiln')!;
 
-        expect(third.apexId, 'the Third Sill is an ordinary Long Cut court').toBe('apex-long-cut');
+        expect(third.apexId, 'the Third Sill is an ordinary Myriad Course Hall court').toBe('apex-myriad-course-hall');
         expect(kiln.apexId, 'the Kiln stayed with the Survey').toBe('apex-earth-vein-tower');
-        expect(getParentage(rootSill.id)?.parentFactionId, 'the Deeproot Court walked to the Long Cut')
-            .toBe('apex-long-cut');
+        expect(getParentage(rootSill.id)?.parentFactionId, 'the Deeproot Court walked to the Myriad Course Hall')
+            .toBe('apex-myriad-course-hall');
 
         // Only the two halves of the split posting are postings.
         const postings = [
@@ -166,13 +166,13 @@ describe('every cross-reference resolves', () => {
     });
 
     it('never sends the Storm Tyrant to a court under the wrong apex', () => {
-        // It answers the Earth Vein Tower. A Long Cut court cannot be its landlord,
+        // It answers the Earth Vein Tower. A Myriad Course Hall court cannot be its landlord,
         // cannot have held its probation, and cannot be what it was promoted
         // past - the Survey's own body in that province is the Kiln.
         const tyrant = getSect('sect-storm-tyrant-court')!;
         const p = getParentage(tyrant.id)!;
         expect(p.parentFactionId).toBe('apex-earth-vein-tower');
-        expect(p.note, 'the Storm Tyrant is holding from a Long Cut court again')
+        expect(p.note, 'the Storm Tyrant is holding from a Myriad Course Hall court again')
             .not.toMatch(/Third Sill/);
         expect(tyrant.ambition?.blockedBy, 'the Storm Tyrant is blocked by the wrong Sill')
             .not.toContain('court-third-sill');

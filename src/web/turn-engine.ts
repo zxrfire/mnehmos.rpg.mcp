@@ -219,6 +219,18 @@ import {
     manualsAStallCarries
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import {
+    whatTheyWillTakeFor,
+    whereTheOfferLanded,
+    whyAQuotedPriceDoesNotMove
+} from '../engine/social-leverage/what-they-will-take-instead-of-money.js';
+import {
+    howTheHaggleWent,
+    whatAHaggleSentenceIs,
+    whatIsHeldOut,
+    whatTheHaggleIsOver,
+    type WhatIsOnTheCounter
+} from './going-back-and-forth-over-a-price.js';
+import {
     FLAG_NAME_TAKEN,
     ensureCultivationDb,
     addToPouch,
@@ -325,6 +337,14 @@ import {
 import {
     THE_ROOM_COMPLAINTS_GO_TO
 } from '../engine/social-leverage/reporting-what-you-saw.js';
+import {
+    type Remit,
+    whoStaffsWhat,
+    whoTakesAReportAt
+} from '../engine/social-leverage/who-works-in-an-elders-hall.js';
+import {
+    THE_ROOM_WORK_IS_POSTED_IN
+} from '../engine/encounters/what-a-house-has-on-its-board.js';
 // Somebody walking up the hill with the player's name, and the same rows read
 // from the other end by whoever holds the room complaints go to.
 import {
@@ -619,7 +639,10 @@ import {
     type Wrong
 } from '../engine/social-leverage/index.js';
 // The board's own exchange rate, in closed form. See the function's comment.
-import { contributionPerStoneOverDays } from '../engine/encounters/duties.js';
+import {
+    contributionPerStoneOverDays,
+    pitchedWellBeneath
+} from '../engine/encounters/duties.js';
 // The board's own word for a tier. `who-goes-out-for-a-house-and-what-comes-back.ts`
 // had zero references anywhere in `src/`, so a board printed no tier at all -
 // and the tier is the first thing a person reads off a notice.
@@ -1647,6 +1670,16 @@ export class GameService {
      */
     private lastTurn: WhatTheLastTurnDid | null = null;
     /**
+     * The same record, held for the length of THIS turn so a handler can read it.
+     *
+     * `act` takes {@link lastTurn} apart at the top of every turn and keeps the
+     * survivor in a local, which is right for the pointer machinery that lives
+     * there and no use to a resolver ten frames down. A haggle needs it: "that
+     * is too expensive" names no thing, and the thing it is about is the one the
+     * screen before quoted.
+     */
+    private theTurnBefore: WhatTheLastTurnDid | null = null;
+    /**
      * Steps that ran this turn, being collected for {@link lastTurn}.
      */
     private ranThisTurn: PlanStep[] = [];
@@ -2197,6 +2230,7 @@ export class GameService {
         const before = theLastTurnStillStands(
             this.lastTurn, run.id, cultivator.id, run.turn
         ) ? this.lastTurn : null;
+        this.theTurnBefore = before;
         this.lastTurn = null;
         this.ranThisTurn = [];
         this.namedThisTurn = [];
@@ -5295,6 +5329,19 @@ ${noticed}`;
             leverage = leverage ?? 'force';
         }
 
+        // ── HAGGLING HAS ITS OWN RESOLVER, ON THE FREE SIDE ──────────────
+        //
+        // `trade` had none, so every sentence somebody types while actually
+        // haggling - a counter-offer, a complaint about the figure, a thing
+        // held out instead of stones - reached the bottom of this method and
+        // came back as a question put to the player. The obvious fix is to add
+        // `trade` to `ATTEMPT_INTENTS` and it is the wrong one: that set is
+        // what makes an intent press somebody and spend a DAY, and a haggle is
+        // a moment. See `haggleOverAPrice`.
+        if (intent === 'trade') {
+            return this.haggleOverAPrice(run, cultivator, target, topic, rawInput);
+        }
+
         const query = (target ?? '').trim();
 
         // A SET IS NOT ONE PERSON, AND THAT IS TRUE OF EVERY VERB
@@ -5595,6 +5642,189 @@ ${noticed}`;
             }
         ];
         return execution;
+    }
+
+    /**
+     * Haggling, which is a free read and may be repeated.
+     *
+     * The ruling is about LENGTH: naming a figure and hearing yes, no or "add
+     * more" is a moment, not a day. So nothing here spends time, and the only
+     * branch that costs anything is acceptance - which goes through the same
+     * purchase the `buy` verb goes through, at the same price.
+     *
+     * `trade` is deliberately absent from `ATTEMPT_INTENTS`. Membership there
+     * makes an intent press somebody and spend a day; adding it was tried and
+     * reverted, and `haggling-is-not-a-day.test.ts` holds the line.
+     *
+     * ── AND THE COUNTERPARTY IS A NAME ───────────────────────────────────
+     *
+     * No role is resolved into a roster row - a stall is not a person, and
+     * asking the world for "the stallholder" is what returned nobody. The name
+     * comes off the offer that is standing here, which carries one, and where
+     * there is none the answer is the goods and the figure.
+     */
+    private async haggleOverAPrice(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined,
+        topic: string | undefined,
+        rawInput: string
+    ): Promise<Execution> {
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const sentence = whatAHaggleSentenceIs(rawInput);
+        const named = ((topic ?? '').trim() || whatTheHaggleIsOver(rawInput) || '').trim();
+        const putDown = {
+            stones: stonesNamedIn(rawInput),
+            goods: sentence === 'offered_something_instead' ? whatIsHeldOut(rawInput) : null
+        };
+
+        // WHOSE COUNTER, WHEN THE SENTENCE PICKED ONE OUT. A pronoun is not a
+        // name and reaches nobody here on purpose: "I offer him twenty stones"
+        // means whoever is in front of you, and the offers standing in the
+        // square already say who that is.
+        //
+        // The NAME is matched against who is standing here before anything
+        // else is tried, and deliberately without asking whether the player
+        // has been introduced. The ruling, on a stallholder who resolved to
+        // nobody: the narrator names them, and the engine works from the name.
+        // `partyPutTo` cannot do this - it goes through the knowledge gate,
+        // which is the right question for whether somebody may be ASKED FOR
+        // something and the wrong one for who just quoted a figure.
+        const across = (target ?? '').trim();
+        const here = this.present(cultivator);
+        const facing = across.length < 2
+            ? null
+            : here.find(row => matchScore(across, row.name) > MATCH_THRESHOLD)
+                ?? this.somebodyAtHand(across, cultivator);
+        const standing = readWhatIsOnOfferHere(
+            cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
+        ).offers;
+        // A NAME THE SENTENCE SUPPLIED IS THE WHOLE OF WHO IS ACROSS THE
+        // TABLE, and no wider. Falling back to the square when the person
+        // named is holding nothing answered a question about one person by
+        // quoting another's figure in their mouth.
+        const candidates = facing
+            ? standing.filter(offer => offer.sellerId === facing.id)
+            : standing;
+
+        // WHICH THING. What the sentence named, then what the screen before
+        // quoted - "that is too expensive" is about the last figure said out
+        // loud and about nothing else - then the only thing on offer.
+        const pick = (want: string): AnOfferStandingHere | undefined =>
+            candidates.find(offer => matchScore(want, offer.name) > MATCH_THRESHOLD);
+        const quotedLastTurn = (this.theTurnBefore?.named ?? [])
+            .filter(thing => thing.stones !== undefined);
+        const bySentence = named.length >= 2 ? pick(named) : undefined;
+        // AN INFERRED THING BINDS ONLY WHERE IT IS THE ONLY ONE IT COULD BE.
+        // A board read names eight things at once, and "that is too expensive"
+        // after one of those must not silently settle on whichever of them the
+        // search happened to reach first.
+        const fromTheScreenBefore = quotedLastTurn
+            .map(thing => pick(thing.name))
+            .filter((found): found is AnOfferStandingHere => found !== undefined);
+        const onlyItCouldBe = fromTheScreenBefore.length > 0
+            && fromTheScreenBefore.every(found => found.thingId === fromTheScreenBefore[0].thingId)
+            ? fromTheScreenBefore[0]
+            : (candidates.length === 1 ? candidates[0] : undefined);
+        const offer = bySentence ?? onlyItCouldBe;
+        // WHETHER THE PLAYER COULD SEE WHICH THING THEY WERE CLOSING ON.
+        // Their own sentence names it; so does a square with one thing in it;
+        // and so does the screen before when that screen was about one thing
+        // and nothing else, which is what every turn of a haggle records.
+        const theyKnowWhichOne = bySentence !== undefined
+            || candidates.length === 1
+            || (quotedLastTurn.length === 1 && fromTheScreenBefore.length === 1);
+
+        if (offer) {
+            // ONE OPEN NEED, READ OFF THE PERSON RATHER THAN OFF THE THING.
+            // A standing offer is a thing somebody has already decided to part
+            // with for a figure, so the ask is light and it has a cash price -
+            // which puts most people on the stones rung and leaves the ladder
+            // free to say so when somebody is not.
+            const wants = whatTheyWillTakeFor(offer.sellerId, {
+                ask: 'a_real_favour',
+                hasACashPrice: true,
+                theyNeedSomethingDone: false
+            });
+            const went = howTheHaggleWent(
+                sentence,
+                {
+                    name: offer.name,
+                    askStones: offer.askStones,
+                    sellerName: offer.sellerName,
+                    theRateIsTheRate: false
+                },
+                putDown,
+                whereTheOfferLanded(wants, putDown.goods === null ? 'stones' : 'goods'),
+                cultivator.spiritStones
+            );
+            // ACCEPTANCE IS WHAT COSTS, and it costs exactly what buying it
+            // costs, because it is the same purchase through the same call.
+            // Going back and forth before it costs nothing at all.
+            //
+            // AND ONLY ON A THING THE PLAYER NAMED. A figure said into a
+            // square where four people are selling would otherwise close on
+            // whichever of them the search reached, and the first the player
+            // heard of it would be the receipt.
+            if (went.answer === 'yes') {
+                if (theyKnowWhichOne) {
+                    const bought = await this.buyOffSomebodyStandingHere(run, cultivator, offer);
+                    if (bought) return bought;
+                }
+                const held = factsForToolResult(
+                    `${offer.name}: your figure covers it.`,
+                    [
+                        `${offer.sellerName} is asking ${offer.askStones} spirit `
+                        + `stone${offer.askStones === 1 ? '' : 's'} and you have named more than `
+                        + `that. Say which thing you mean and it is done: "buy the ${offer.name}".`
+                    ]
+                );
+                held.structure.push(
+                    `${went.structure} Not closed: the thing was inferred from the screen before `
+                    + `rather than named, and ${candidates.length} thing(s) are on offer here.`
+                );
+                return this.freeAction(run, 'interact', held);
+            }
+            this.nameWhatTheyGot(offer.name, offer.askStones);
+            const facts = factsForToolResult(went.headline, went.lines);
+            facts.structure.push(went.structure);
+            return this.freeAction(run, 'interact', facts);
+        }
+
+        // ── A COPY OFF A STALL IS A QUOTED RATE, AND THOSE DO NOT MOVE ────
+        //
+        // Not a refusal to haggle. The figure is the same figure for the next
+        // person in the queue because the person handing it over did not set
+        // it, which is the sentence `whyAQuotedPriceDoesNotMove` exists to say.
+        const regionId = standingOf(cultivator).regionId;
+        const stall = manualsAStallCarries();
+        const onTheStall = (named.length >= 2
+            ? stall.find(book => matchScore(named, book.name) > MATCH_THRESHOLD)
+            : undefined)
+            ?? quotedLastTurn
+                .map(thing => stall.find(book => matchScore(thing.name, book.name) > MATCH_THRESHOLD))
+                .find(found => found !== undefined);
+        if (onTheStall) {
+            const counter: WhatIsOnTheCounter = {
+                name: onTheStall.name,
+                askStones: Math.max(1, Math.ceil(cashToStones(localPrice(regionId, onTheStall.cash)))),
+                sellerName: null,
+                theRateIsTheRate: true,
+                whyItDoesNotMove: whyAQuotedPriceDoesNotMove(
+                    onTheStall.name, 'at every counter that carries it'
+                )
+            };
+            const went = howTheHaggleWent(sentence, counter, putDown, null, cultivator.spiritStones);
+            this.nameWhatTheyGot(counter.name, counter.askStones);
+            const facts = factsForToolResult(went.headline, went.lines);
+            facts.structure.push(went.structure);
+            return this.freeAction(run, 'interact', facts);
+        }
+
+        // NOTHING SETTLED ON, AND THE HONEST ANSWER IS THE GOODS AND THE PRICE
+        // rather than a question put back about who was meant. The board read
+        // already names what is here, what it costs and who is holding it.
+        return this.market(run, cultivator, named.length >= 2 ? named : undefined);
     }
 
     // ── logistics ────────────────────────────────────────────────────────
@@ -7759,6 +7989,41 @@ ${noticed}`;
                 + 'and nothing paid.'
             );
             return this.freeAction(run, 'market', appraised);
+        }
+
+        // ── A BOOK ON THE STALL IS PRICED, AND THE BOARD READ SAID IT WAS NOT
+        //
+        // Played: "how much for the Lesser Qi-Gathering Manual" answered
+        // *Nothing here prices "Lesser Qi-Gathering Manual"* and then, eleven
+        // lines further down the same screen, *Lesser Qi-Gathering Manual, 8
+        // spirit stones the copy.* Two branches answered one question and only
+        // the wrong one was a headline. The stall listing was printed after
+        // the refusal because it is appended to the board, and nothing had
+        // asked it whether it carried the thing that was named.
+        //
+        // Priced through the same call `buy` prices it with, so the figure
+        // somebody is quoted is the figure they are charged.
+        if (category === undefined && named.length >= 3) {
+            const regionId = standingOf(cultivator).regionId;
+            const onTheStall = manualsAStallCarries()
+                .find(book => matchScore(named, book.name) > MATCH_THRESHOLD);
+            if (onTheStall) {
+                const stones = Math.max(
+                    1, Math.ceil(cashToStones(localPrice(regionId, onTheStall.cash)))
+                );
+                const quoted = factsForToolResult(`${onTheStall.name}, priced.`, [
+                    `${onTheStall.name} is ${stones} spirit stone${stones === 1 ? '' : 's'} a copy `
+                    + `here, block-printed. You are carrying ${cultivator.spiritStones}.`,
+                    `It opens at ${rankName(onTheStall.requiredOrdinal)} and carries as far as `
+                    + `${rankName(onTheStall.cap)}.`
+                ]);
+                quoted.structure.push(
+                    `${onTheStall.id} on the stall at the ${regionId} multiplier: ${stones} `
+                    + 'stone(s). Quoted, not bought - nothing spent and no time passed.'
+                );
+                this.nameWhatTheyGot(onTheStall.name, stones);
+                return this.freeAction(run, 'market', quoted);
+            }
         }
 
         const result = await handleMarket({
@@ -11929,6 +12194,50 @@ ${fit.line}`;
     }
 
     /**
+     * Who a taken mission is reported to, where the house has a mission hall.
+     *
+     * The hall's elder, or a disciple posted there. Null where the house has no
+     * such room - a body that admits nobody posts nothing and has nowhere to
+     * report to - and a caller must read that as "there was nobody to say it
+     * to" rather than inventing a clerk to hear it.
+     */
+    private async whoTookTheReportOfIt(cultivator: Cultivator): Promise<{
+        personId: string;
+        name: string;
+        remit: Remit;
+        hallName: string;
+        houseId: string;
+        houseName: string;
+    } | null> {
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) return null;
+        const { roster, portfolios } = await this.theHouseAround(cultivator, held);
+        const roll = [
+            { id: cultivator.id, rankIndex: held.rankIndex },
+            ...roster.map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }))
+        ];
+        const posts = whoStaffsWhat({ portfolios, roll, rankCount: held.rankCount });
+        const taker = whoTakesAReportAt({ purpose: THE_ROOM_WORK_IS_POSTED_IN, portfolios, posts });
+        if (taker === null) return null;
+
+        // A name the player can use next turn, or nobody. The catalog is the
+        // only thing that names anybody here, so somebody the roll holds and
+        // the catalog does not is a real hand the game cannot address, and
+        // saying "reported to sect-azure-cloud-pavilion-m4" would be worse than
+        // saying nothing. Same answer `whoSawIt` gives for the same reason.
+        const named = roster.find(person => person.id === taker.personId);
+        if (!named) return null;
+        return {
+            personId: taker.personId,
+            name: named.name,
+            remit: taker.remit,
+            hallName: 'The mission hall',
+            houseId: held.sectId,
+            houseName: held.sectName
+        };
+    }
+
+    /**
      * Somebody was standing there when the false decree was given.
      */
     private async somebodyWatchedThatDecree(
@@ -12677,6 +12986,26 @@ ${fit.line}`;
         // cut of this read.
         const called = getEncounter(pending.entryId)?.name ?? pending.entryId;
 
+        // ── AND THE JUNIORS ARE NOW WITH YOU ─────────────────────────────
+        //
+        // `Duty.takingOut` names them and this is the moment it stops being a
+        // sentence on a screen. Written as the world's own `out_with_a_party`
+        // activity on each of them, so who is travelling with the player is the
+        // same reading as who is travelling with anybody - see
+        // `who-is-on-the-road-with-you.ts` - and so the pass that brings every
+        // party in the world home brings this one home too, on the day the term
+        // ends. Nothing stores a roster.
+        //
+        // BEFORE THE SPAN, because the span is the errand. A term cut short
+        // leaves the player standing somewhere with the juniors still alongside,
+        // which is the state the travel verbs were taught to read.
+        const alongside = this.putThemOnTheRoadWithYou(cultivator, duty.takingOut, {
+            note: `Out for ${duty.factionName ?? 'the house'} on ${called}, `
+                + `with ${cultivator.name}.`,
+            onDay: today,
+            untilDay: today + duty.days
+        });
+
         // Only what is left of it. See `daysServedOn`.
         const stillToServe = Math.max(1, duty.days - alreadyServed);
         const execution = await this.shortSkip(
@@ -12788,6 +13117,13 @@ ${fit.line}`;
             + (duty.cohort > 0 ? `, with ${duty.cohort} of the house alongside` : '')
             + '.',
             asking.line,
+            // WHO IS ACTUALLY ALONGSIDE, BY NAME. `cohort` is a count and the
+            // sentence above already says it; this is the people, and they are
+            // with the player until the term ends rather than for the sentence.
+            ...(alongside.length > 0
+                ? [`${alongside.join(', ')} ${alongside.length === 1 ? 'is' : 'are'} with you `
+                    + `from here until day ${today + duty.days}, and go where you go.`]
+                : []),
             ...(overdue
                 ? [`The day it had to be answered by was day ${duty.dueOnDay}, and it has gone. `
                     + 'You went anyway, and the house has the day you answered on.']
@@ -13008,6 +13344,24 @@ ${fit.line}`;
         // forty years, and `refuseDuty` is what settles it the other way.
         const sworn = acceptDuty(ledger);
 
+        // ── AND YOU SAID SO TO SOMEBODY ──────────────────────────────────
+        //
+        // The design owner: *"to take a mission YOU HAVE TO REPORT IT TO
+        // SOMEONE, THE MISSION HALL WHICH THE MISSION ELDER IS RESPONSIBLE FOR.
+        // EITHER REPORT TO THAT ELDER OR TO A DISCIPLE WORKING IN HIS HALL."*
+        // Taking work off a wall was a solo act against a piece of paper, so
+        // there was nobody for anything to be noticed BY.
+        //
+        // AND THIS IS WHERE THE EYEBROW LANDS. It used to ride the settlement
+        // line, which put it at completion and addressed it to nobody. An elder
+        // taking a disciple's notice is noticed by the person the notice is
+        // handed to, and now there is one. The engine names who and states the
+        // gap; the face they make is the narrator's.
+        // Read here, beside the write it belongs to, and said once the span has
+        // produced a facts object to say it into.
+        const reported = await this.whoTookTheReportOfIt(cultivator);
+        const beneathThem = pitchedWellBeneath(duty.pitchOrdinal, cultivator.realmOrdinal);
+
         // ── WHAT THE PACK COVERS, BEFORE THE DAYS RUN ────────────────────
         //
         // FOUND BY PLAYING BLIND. A Dew Servant finished a fifty-day duty with
@@ -13047,6 +13401,23 @@ ${fit.line}`;
             run, cultivator, ambient, DUTY_FOCUS, `Sect duty: ${chosen.entry.name}`,
             stillToServe, 'labour'
         );
+
+        // Said FIRST, because it happened first: the report is the act of
+        // taking, and the span is what followed it.
+        if (reported !== null) {
+            sayThisWhateverTheNarratorDoes(
+                execution.facts,
+                `${reported.hallName} at ${reported.houseName}. It was taken in front of `
+                + `${reported.name}, who ${reported.remit === 'decides_about_the_room'
+                    ? 'holds that room'
+                    : 'works in it'}.`
+            );
+            execution.facts.structure.push(
+                `who-works-in-an-elders-hall.whoTakesAReportAt: mission_hall at `
+                + `${reported.houseId} taken by ${reported.personId} (${reported.remit}).`
+            );
+        }
+        if (beneathThem !== null) sayThisWhateverTheNarratorDoes(execution.facts, beneathThem);
 
         const after = this.repos.cultivators.getById(cultivator.id)!;
         const doneOn = Math.floor(this.repos.runs.getById(run.id)!.elapsedDays);

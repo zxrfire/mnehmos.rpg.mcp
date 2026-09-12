@@ -87,7 +87,7 @@ describe('what a phrase describes', () => {
             alignment: 'righteous'
         });
         expect(theDescriptionThisIs('you, void refinement cultivator')).toMatchObject({
-            realmKey: 'void_refinement'
+            realmKey: 'void_tribulation'
         });
     });
 
@@ -251,12 +251,12 @@ describe('a realm answers to what it is called and to what it was', () => {
         ['you, void tribulation cultivator', 'the name now'],
         ['you, void refinement cultivator', 'the name it was']
     ])('%s reaches the same rung (%s)', said => {
-        expect(theDescriptionThisIs(said)).toMatchObject({ realmKey: 'void_refinement' });
+        expect(theDescriptionThisIs(said)).toMatchObject({ realmKey: 'void_tribulation' });
     });
 
     it('prints only the name it has now', () => {
         expect(realmForOrdinal(29).name).toBe('Void Tribulation');
-        expect(Object.values(A_REALM_ANSWERS_TO)).toContain('void_refinement');
+        expect(Object.values(A_REALM_ANSWERS_TO)).toContain('void_tribulation');
         // A retired name is never a tier's own name, or it would be printed.
         for (const retired of Object.keys(A_REALM_ANSWERS_TO)) {
             expect(REALM_TIERS.some(t => t.name.toLowerCase() === retired), retired).toBe(false);

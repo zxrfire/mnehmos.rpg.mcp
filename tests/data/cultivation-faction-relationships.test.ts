@@ -187,7 +187,7 @@ describe('faction relationships - the two bodies nobody joins', () => {
     });
 
     it('the Deeproot Court answers one apex and is severed from the other, and both agree', () => {
-        const long = relationshipBetween(ROOT_SILL, 'apex-long-cut');
+        const long = relationshipBetween(ROOT_SILL, 'apex-myriad-course-hall');
         expect(long?.stance).toBe('above');
         expect(long?.kind).toBe('apex_and_posting');
         // Warm upward against a patron that is only civil back, which is the
@@ -201,10 +201,15 @@ describe('faction relationships - the two bodies nobody joins', () => {
     });
 
     it('the current patron in the tie is the one the parentage table names', () => {
-        expect(FACTION_PARENTAGE[ROOT_SILL]?.parentFactionId).toBe('apex-long-cut');
+        expect(FACTION_PARENTAGE[ROOT_SILL]?.parentFactionId).toBe('apex-myriad-course-hall');
+        // Reported under each body's canonical id, which for a body with an
+        // apex row and a sect row is the sect one. Both of these acquired a
+        // sect row when they stopped being powers with nobody on their rolls.
         const above = relsFor(ROOT_SILL).filter(r => r.stance === 'above').map(r => r.otherId);
-        expect(above).toContain('apex-long-cut');
-        expect(above).toContain('apex-earth-vein-tower');
+        for (const id of ['apex-myriad-course-hall', 'apex-earth-vein-tower']) {
+            const aliases = idsForFaction(id);
+            expect(above.some(o => aliases.includes(o)), `${id} is not above the Third Sill`).toBe(true);
+        }
     });
 });
 

@@ -167,7 +167,7 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
         yearsAgo: 900,
         provinceId: 'province-low-fall',
         what: 'The Earth Vein Tower reposted the court on the datum. Most of the Wardens declined the reposting and left, and the two halves each kept one of the names the body had been carrying for nine hundred years.',
-        parties: ['court-kiln', 'sect-kiln-wardens', 'apex-earth-vein-tower', 'apex-long-cut'],
+        parties: ['court-kiln', 'sect-kiln-wardens', 'apex-earth-vein-tower', 'apex-myriad-course-hall'],
         accounts: {
             'court-kiln':
                 'The ground did not move. Everything the Kiln is - the datum, the nodes, the rota, the perimeter - was here before the reposting and was here after it, and the only thing that walked out of the gate was a roll of names and an administrative word. The Court states this without heat and has never said anything else.',
@@ -175,8 +175,8 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
                 'Nobody was asked, about a thing every one of them had wanted. That is the fact the Deeproot Court puts first and the one the Kiln never mentions: the Survey reposted a nine-hundred-year-old body without consulting a single person standing in it, and what most of the Wardens declined was not the work but being reassigned to it by letter. The roll walked. The rota came with the people who had been walking it.',
             'apex-earth-vein-tower':
                 'A routine reposting of a court, executed correctly, on a schedule. The Survey has never characterised it otherwise in any document, has never referred to the departed body in correspondence, and lists the Kiln Court as its court on the datum. Whether that is composure or the absence of an answer is not something the Survey has been asked in a room where it would have to reply.',
-            'apex-long-cut':
-                'Some people became available and a schedule had room. The Long Cut did not send anybody, did not solicit, and did not say a word in public; it offered a posting to a body that had walked out of another one, which is the second time it has done exactly that, and it has acknowledged neither.'
+            'apex-myriad-course-hall':
+                'Some people became available and a schedule had room. The Myriad Course Hall did not send anybody, did not solicit, and did not say a word in public; it offered a posting to a body that had walked out of another one, which is the second time it has done exactly that, and it has acknowledged neither.'
         },
         explains: 'the claim'
     },
@@ -460,6 +460,35 @@ export const SHARED_EVENTS: readonly SharedEvent[] = [
 // ─────────────────────────────────────────────────────────────────────────
 
 export const FACTION_HISTORY: Record<string, FactionHistory> = {
+    // ── the two unnameable apexes ─────────────────────────────────────
+    // `sharedEvents` is empty on both, and that is not a gap: every shared
+    // event these two are party to is authored against their APEX ids, and
+    // `sharedEventsFor` is checked against the id this record is filed under.
+    // The Kiln schism and the Storm Tyrant rows are in SHARED_EVENTS under
+    // `apex-earth-vein-tower` and `apex-myriad-course-hall`.
+    'sect-earth-vein-tower': {
+        factionId: 'sect-earth-vein-tower',
+        origin:
+            'Nobody can date it, including the house. What the register holds is a first measurement rather than a founding: four arterial veins walked and written down, a datum driven, and every figure since taken off that one point. The province that grew on top of the eleven veins those four branch into has never known whose datum it is standing on, and the Survey has not been in the position of having to say - it renews, occasionally declines to renew, and explains nothing, and seventeen institutions have arranged four hundred years of politics around a body they cannot name.',
+        whyTheGapIs:
+            'It is building, slowly, and it has been building for nine hundred years without hurrying, which is what a body that measures does instead of reaching. The house raises reliably to Grand Ascension and has put three people through the Lid in three thousand years, and the distance between those two figures is not decay and not access - it is one copy of one road, read in one hall, taught by the one person who cannot be spared for it. Everything else on the shelf is there to get somebody as far as that room.',
+        whatTheUnlitNodesWere:
+            'A diagram for a working seat rather than a fortress: the storehouse, the chamber under the datum vault, and a drafting floor cut for a great many more clerks than the Survey has ever posted at once. Fifty-seven of the eighty-eight are dark, and what they were for is written down in a hand the present Surveyors can read and have never had the people to light.',
+        whereTheWrongBeliefComesFrom:
+            'The Survey believes its silence is read as composure, and it was, for something like six centuries, by a province that had no other explanation for a body winning arbitrations it did not attend. It stopped being the general reading about two hundred years ago, when the second of two arterials was worked by parties nobody could identify and the couriers were turned back at three borders without consequence. A substantial minority now reads the silence as having no answer, and the Survey has no instrument anywhere in its procedure that could tell it which reading is current.',
+        sharedEvents: []
+    },
+    'sect-myriad-course-hall': {
+        factionId: 'sect-myriad-course-hall',
+        origin:
+            'A founder drove something through from the other side, a seat was built around it afterwards, and the schedule began. That is the whole of the origin the Hall holds, and the ordering is the content: the object came first and the institution is what accumulated around a thing that could not be moved. Eleven hundred years of driven ground have been administered face by face from that seat, with no client sects, no leases and nothing delegated anywhere in five provinces, and the count of what is left in the sealed cases has been published, decreasing, the whole time.',
+        whyTheGapIs:
+            'It never had the thing that would close it and has never pretended otherwise. The Hall produces competence at a rate nobody in the world matches - no prodigies, no gaps, nobody who has not done the work below them - and it has not produced a crossing in an age, because the road at the top of its shelf opens with four rungs that most people do not get through and is taught by somebody who cannot leave the Nail. A house that ranks by work and refuses to rank by anything else gets an unusually even roll and no peak, and it regards the trade as settled.',
+        whatTheUnlitNodesWere: null,
+        whereTheWrongBeliefComesFrom:
+            'The Hall believes its four-rung ladder is read as fair, and inside the driven provinces it is: a carver knows exactly what a rung costs and that nobody can be talked into one. The reading outside is the opposite and was arrived at just as reasonably, because a body with no rung to appeal to and no title that means seniority is a body with nobody a petitioner can be sent to. Every house that has ever tried to ask the Hall for something has found there was no room to ask in, and has concluded that this was the point rather than the shape.',
+        sharedEvents: []
+    },
     // ── the Azure grant ───────────────────────────────────────────────
     'sect-azure-cloud-pavilion': {
         factionId: 'sect-azure-cloud-pavilion',

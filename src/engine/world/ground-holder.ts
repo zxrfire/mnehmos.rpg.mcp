@@ -117,6 +117,45 @@ function chainFrom(
 }
 
 /**
+ * Whether this ground sits at, or anywhere under, that ground.
+ *
+ * The same chain `whoHoldsTheGround` walks, read in the other direction, and
+ * the inverse question is the one somebody standing in a town actually asks:
+ * that read answers *whose ground am I on* by looking UPWARD for a holder, and
+ * a named settlement has none - the houses are nested INSIDE it. Measured on a
+ * pinned world: 988 of 1063 location records carry a holder and 0 of the 12
+ * places a player's `location` can be do, because the held ones are the
+ * compounds, precincts and vaults sitting under those names.
+ */
+export function sitsWithin(
+    locations: readonly LocationRecord[],
+    locationId: string | null | undefined,
+    containerId: string | null | undefined
+): boolean {
+    if (!locationId || !containerId) return false;
+    return chainFrom(locations, locationId).some(step => step.id === containerId);
+}
+
+/**
+ * The province this ground is in, as a location id.
+ *
+ * The nearest `region` ancestor, which is the level `seedRegions` creates and
+ * hangs everything else off. Bounded on purpose: the outermost ancestor would
+ * be one root for the world, and a province is the largest body somebody
+ * standing in a market town has any relationship with.
+ */
+export function theProvinceAround(
+    locations: readonly LocationRecord[],
+    locationId: string | null | undefined
+): string | null {
+    if (!locationId) return null;
+    for (const step of chainFrom(locations, locationId)) {
+        if (step.kind === 'region') return step.id;
+    }
+    return null;
+}
+
+/**
  * The prefecture whose register carries this place, by name.
  *
  * By NAME because that is what the catalog stores: a prefecture's `seat` and

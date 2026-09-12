@@ -20,3 +20,26 @@ the fix is usually the pyramid, not the draw.
 | [`river.ts`](./river.ts) | River Generation Module Generates rivers using flow accumulation algorithm. |
 | [`structures.ts`](./structures.ts) | Helper to convert 2D coords to 1D index |
 | [`validation.ts`](./validation.ts) | - |
+
+---
+
+## Where else to look
+
+- [`../world/README.md`](../world/README.md) - **who exists is not decided here.**
+  `world/seeding.ts` turns the catalogs into a population that is already running when the
+  player arrives; this directory decides the ground under them. Two different seeds, two
+  different files, and the population is the one people look for here first.
+- [`../../data/cultivation/regions/README.md`](../../data/cultivation/regions/README.md) - the
+  authored map the generated terrain sits beneath: five provinces, their prefectures and
+  arterials, and the names the generated half gets in
+  `what-the-people-who-saw-it-call-it.ts`.
+- [`../../server/state/README.md`](../../server/state/README.md) - `cultivation-world.ts` owns
+  the world seed. A run seed without a world seed does not reproduce anything, and that is the
+  usual reason a generated-world test drifts.
+- [`../../services/README.md`](../../services/README.md) -
+  `generated-world-persistence.service.ts` is what makes a generated world survive a restart.
+- [`../dsl/README.md`](../dsl/README.md) - `validation.ts` here is called from the rules DSL,
+  which is the only non-server consumer of this directory.
+- [`../../schema/README.md`](../../schema/README.md) - `biome.ts`, `tile.ts`, `region.ts`,
+  `river.ts` and `structure.ts` are the shapes produced.
+

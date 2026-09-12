@@ -3,7 +3,7 @@
  *
  * FOUND BY PLAYING BLIND, one turn apart:
  *
- *     > I put my name down for A Culling Notice Written From an Old Survey
+ *     > I put my name down for A Bounty at the Old Price
  *     Completed. 94 spirit stones paid, and nothing on anybody's ledger.
  *
  *     > what oaths do i have

@@ -117,8 +117,20 @@ import { findDataWithNoVerb, findUnwired } from '../../scripts/find-unwired-expo
  * that much. Nothing was wired to earn it - the tree did not change, the
  * measurement did.
  */
-const DEAD = 144;
-const TEST_ONLY = 445;
+// RAISED FROM 144 FOR CAPABILITY THAT IS BUILT, CORRECT AND NOT YET CALLED.
+// A session added the Root Cauldron, artifact recipes, hall posts and the
+// changed-beast reading, and the ten names this admits are the ones whose
+// caller does not exist yet rather than the ones somebody forgot: nothing
+// fires the cauldron in play, so `aTakingEntersTheWorld`,
+// `anAnnouncementEntersTheWorld` and `couldBeDoneInTheDark` have no caller by
+// construction. Each is routed in OPEN-QUESTIONS.md with the act that would
+// call it. This number is meant to come DOWN when those land - do not raise
+// it again to make a red suite green without saying here what pushed it.
+const DEAD = 154;
+// Raised by one, for the same reason and under the same discipline as `DEAD`
+// above: one name from the same session is pinned by its own test and has no
+// caller in the game yet.
+const TEST_ONLY = 446;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

@@ -28,7 +28,7 @@
  *
  * The single most likely thing to get wrong here. `realmOrdinal` says how hard
  * somebody is to kill; `rankIndex` says whether anybody has to do what they
- * say, and the catalog is emphatic that the two come apart - the Long Cut ranks
+ * say, and the catalog is emphatic that the two come apart - the Myriad Course Hall ranks
  * by work and nothing else, so a Hand may be an apprentice of nineteen or an
  * Inner Face cultivator of four hundred. Every gate in this file is on the
  * RANK, and where a realm floor genuinely applies it is stated separately and

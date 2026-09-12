@@ -34,3 +34,28 @@ this engine already keeps.
 | [`blind-spot-detector.ts`](./blind-spot-detector.ts) | Blind-spot detector - the §3.5 fog-as-information thesis encoded. |
 | [`hazard-detector.ts`](./hazard-detector.ts) | Hazard detector - reads from committed state only. |
 | [`hierarchy-of-controls.ts`](./hierarchy-of-controls.ts) | Hierarchy-of-Controls ranker. |
+
+---
+
+## Where else to look
+
+- [`../social/README.md`](../social/README.md) - the cultivation-side answer to "what did they
+  notice": `what-a-look-at-somebody-reaches.ts`, `presence-recognition.ts`,
+  `stealth-perception.ts`, `what-they-can-place-about-you.ts`. Seeing somebody and knowing
+  something about them are separate questions with separate homes.
+- [`../cultivation/README.md`](../cultivation/README.md) - where a divine-sense budget would
+  have to plug in. Rung is what scales the pool, and `price-of-advancement.ts` today speaks of
+  an elder's attention only as fortune.
+- [`../../schema/README.md`](../../schema/README.md) - `perception.ts` is the
+  hierarchy-of-controls model as a queryable primitive, and it is the contract this directory
+  is written against.
+- [`../../storage/repos/README.md`](../../storage/repos/README.md) -
+  `perception-assessment.repo.ts` holds the committed state this directory refuses to read
+  past. The refusal is the point: it will not report what has not been filed.
+- [`../../server/consolidated/README.md`](../../server/consolidated/README.md) -
+  `perception-manage.ts` is the only live caller. Nothing in `web/` reaches this yet, so a
+  player cannot see any of it.
+- [`../world/README.md`](../world/README.md) - the ground a hazard would be on:
+  `what-is-true-of-a-place-right-now.ts`, `what-goes-wrong-with-a-place-and-what-ends-it.ts`,
+  `the-ward-a-house-raised-over-its-own-ground.ts`.
+

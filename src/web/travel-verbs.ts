@@ -41,6 +41,15 @@ import {
     couldFlyOnTheirOwnBlade,
     priceJourney
 } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
+import type { NpcRecord } from '../engine/world/npc-state.js';
+import {
+    namesOf,
+    takeThemWithYou,
+    theSlowestOfThem,
+    theyComeWithYou,
+    whoIsOnTheRoadWith,
+    whyAFoldLeavesThemStanding
+} from '../engine/world/who-is-on-the-road-with-you.js';
 import {
     SPAN_CASH_PER_WALKED_DAY,
     SPAN_ROUTES,
@@ -492,6 +501,15 @@ export const travelVerbs = {
         const perceived = introduced.perceived;
         facts.structure.push(...introduced.structure);
 
+        // AND THE PEOPLE WHO CAME WITH YOU. A road has no capacity: everybody
+        // walks, and a party on foot costs what one person costs.
+        const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
+        if (came) {
+            facts.lines.push(came.line);
+            facts.required = [...(facts.required ?? []), came.line];
+            facts.structure.push(came.structure);
+        }
+
         return {
             facts,
             events: skip.events,
@@ -757,6 +775,122 @@ export const travelVerbs = {
         return { name: place.name };
     },
 
+    // ─────────────────────────────────────────────────────────────────────
+    // AND WHO ELSE IS GOING
+    //
+    // `who-is-on-the-road-with-you.ts` holds the argument for reading the party
+    // off the companions' own activities rather than storing one. What belongs
+    // here is the half that is about the four verbs, and it is short, because
+    // two of the three pricing modules already had the answer:
+    //
+    //   `move`      everybody walks. A road is not a vehicle and has no
+    //               capacity, so a party on foot costs what one person costs.
+    //   `ride`      `priceJourney` takes `heads` and turns them into TRIPS
+    //               against the conveyance's own capacity. A cart that holds
+    //               four and a party of nine is three trips.
+    //   `passage`   `quotePassageAtACounter` takes `heads` and charges the fare
+    //               per head, and takes `worstPassengerOrdinal` because *a party
+    //               arrives together and waits for the person the crossing was
+    //               hardest on*. Both sentences are that module's, not this one's.
+    //   `fold`      takes nobody. `CapabilityGrant.spatial_folding` says so in
+    //               its own terms - one body, a volume budget of about a sword,
+    //               *no companion and no passenger at any size*.
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Put named people on the road with this cultivator.
+     *
+     * The one producer today is the escort duty: a house asks a senior to take
+     * juniors out, `Duty.takingOut` names them, and saying yes is what puts
+     * them alongside. The activity written is the world sim's own - the same
+     * shape `the-world-changing-on-its-own.ts` writes for a party it sends -
+     * so `bringHomeWhoeverIsDue` ends the term and sends them back with nothing
+     * added here.
+     *
+     * Returns the names actually put on the road, which is not always everybody
+     * named: a duty can name somebody the world has no row for.
+     */
+    putThemOnTheRoadWithYou(
+        this: GameService,
+        cultivator: Cultivator,
+        party: readonly { id: string; name: string }[],
+        input: { note: string; onDay: number; untilDay: number }
+    ): string[] {
+        const world = this.atHand;
+        if (!world || party.length === 0) return [];
+        const changed = takeThemWithYou(world.npcs, {
+            party,
+            leaderId: cultivator.id,
+            note: input.note,
+            onDay: input.onDay,
+            untilDay: input.untilDay
+        });
+        if (changed.length === 0) return [];
+        for (const row of changed) {
+            const at = world.npcs.findIndex(npc => npc.id === row.id);
+            if (at >= 0) world.npcs[at] = row;
+        }
+        this.theWorldMoved();
+        return namesOf(changed);
+    },
+
+    /** Everybody on the road with this cultivator today. */
+    whoIsWithYouOnTheRoad(
+        this: GameService,
+        cultivator: Cultivator,
+        run: Run
+    ): readonly NpcRecord[] {
+        if (!this.atHand) return [];
+        return whoIsOnTheRoadWith(this.atHand.npcs, cultivator.id, Math.floor(run.elapsedDays));
+    },
+
+    /**
+     * Move whoever is still on the road with them to where they have arrived.
+     *
+     * AFTER the world advance, not before, and that ordering is the whole of
+     * how a term that ran out mid-journey is handled: `bringHomeWhoeverIsDue`
+     * has already sent those people back to where they set out from, so they
+     * are not on the road any more and do not arrive. Nothing here decides
+     * that - the pass that brings every other party in the world home decides
+     * it, and this reads the result.
+     */
+    theyArrivedWithYou(
+        this: GameService,
+        cultivator: Cultivator,
+        run: Run,
+        arrivedAt: string
+    ): { names: string[]; line: string; structure: string } | null {
+        const world = this.atHand;
+        if (!world) return null;
+        const place = worldLocationFor(world, arrivedAt);
+        if (!place) return null;
+
+        const today = Math.floor(run.elapsedDays);
+        const moved = theyComeWithYou(world.npcs, {
+            leaderId: cultivator.id,
+            arrivedAt: place.id,
+            onDay: today
+        });
+        if (moved.length === 0) return null;
+
+        for (const row of moved) {
+            const at = world.npcs.findIndex(npc => npc.id === row.id);
+            if (at >= 0) world.npcs[at] = row;
+        }
+        this.theWorldMoved();
+
+        const names = namesOf(moved);
+        return {
+            names,
+            line: `${howMany(names.length, 'person')} came with you and `
+                + `${names.length === 1 ? 'is' : 'are'} standing here: ${names.join(', ')}.`,
+            structure:
+                `who-is-on-the-road-with-you: ${names.length} moved to ${place.id} on day `
+                + `${today}, read off their own out_with_a_party activity. No party record `
+                + 'is stored anywhere.'
+        };
+    },
+
     /** The world's own name for somewhere, which is what gets stored. */
     theWorldsNameFor(this: GameService, place: string): string {
         const bare = (name: string) => name.replace(/^the\s+/i, '').toLowerCase();
@@ -794,16 +928,22 @@ export const travelVerbs = {
             ? CONVEYANCES.find(c => c.name.toLowerCase().includes(wanted)
                 || wanted.includes(c.name.toLowerCase().replace(/^an? /, '')))
             : undefined;
+        // EVERYBODY WHO IS GOING, and `priceJourney` turns that into trips
+        // against the conveyance's own capacity. Read before the journey,
+        // because a party is what decides which conveyance is the right one.
+        const withYou = this.whoIsWithYouOnTheRoad(cultivator, run);
+        const heads = 1 + withYou.length;
+
         const chosen = (asked && available.some(a => a.conveyance.id === asked.id)
             ? available.find(a => a.conveyance.id === asked.id)!
-            : bestForThisRoad(available, walkingDays, 1))
+            : bestForThisRoad(available, walkingDays, heads))
             ?? available[0];
 
         const journey = priceJourney({
             walkingDays,
             conveyance: chosen.conveyance,
             power: chosen.power,
-            heads: 1
+            heads
         });
 
         const { skip, applied, world, perceived, structure: introducedBy } =
@@ -824,6 +964,19 @@ export const travelVerbs = {
             journey.arrivalReads
         ];
         if (journey.wrongToolNote) lines.push(journey.wrongToolNote);
+        // WHAT IT HOLDS AGAINST HOW MANY ARE GOING. `priceJourney` also returns
+        // `daysForEverybody` for this, and it is NOT spent here: `conv-on-foot`
+        // declares `heads: 1` like everything else, so the same arithmetic
+        // charges five people walking nine days for a one-day road. The capacity
+        // is a true fact about the thing and is said; the extra legs are an open
+        // question against that module rather than a number invented here.
+        if (journey.trips > 1) {
+            lines.push(
+                `${chosen.conveyance.name} holds ${howMany(chosen.conveyance.heads, 'person')}. `
+                + `There are ${heads} of you, so it goes back for the rest: `
+                + `${howMany(journey.trips, 'trip')}.`
+            );
+        }
         if (asked && !available.some(a => a.conveyance.id === asked.id)) {
             lines.push(
                 `There is no ${asked.name.toLowerCase()} to be had here. What the road got `
@@ -832,16 +985,22 @@ export const travelVerbs = {
         }
         lines.push(...applied.tollLines, ...world.lines);
 
+        const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
+        if (came) lines.push(came.line);
+
         const facts = factsForToolResult(
             `${arrivedAt}, on ${chosen.conveyance.name.toLowerCase()}.`, lines
         );
+        if (came) facts.required = [...(facts.required ?? []), came.line];
         facts.structure.push(
             `priceJourney: ${chosen.conveyance.id} at power ${chosen.power ?? 'none'}, `
             + `${walkingDays} walking day(s) -> ${journey.daysOneWay}; `
-            + `saved ${journey.daysSavedAgainstWalking}; `
+            + `saved ${journey.daysSavedAgainstWalking}; heads ${heads}, `
+            + `trips ${journey.trips}; `
             + `available ${available.map(a => a.conveyance.id).join(', ')}.`,
             ...world.structure,
-            ...introducedBy
+            ...introducedBy,
+            ...(came ? [came.structure] : [])
         );
 
         return {
@@ -883,6 +1042,28 @@ export const travelVerbs = {
         if ('facts' in going) return going;
 
         const arrivedAt = this.theWorldsNameFor(going.name);
+
+        // ── A FOLD TAKES NOBODY, AND IT IS THE GRANT THAT SAYS SO ────────
+        //
+        // Not a rule about parties. `CapabilityGrant.spatial_folding` states
+        // its own terms - one body and what that body is carrying, against a
+        // volume budget of about a sword, *no companion and no passenger at any
+        // size* - and this is the first caller in a position to be told no by
+        // it. Refused rather than resolved with the party left behind: which
+        // one of those is right is a design question (`OPEN-QUESTIONS.md`),
+        // and stepping out of the world in front of the juniors you were told
+        // to escort is not a thing to do to somebody by default.
+        const withYou = this.whoIsWithYouOnTheRoad(cultivator, run);
+        if (withYou.length > 0) {
+            return refused('engine.priceFold', 'fold', factsForRefusal(
+                'A fold takes one body.',
+                whyAFoldLeavesThemStanding(withYou),
+                `${withYou.length} on the road with ${cultivator.id} `
+                + `(${withYou.map(npc => npc.id).join(', ')}). spatial_folding carries no `
+                + 'passenger. Location unchanged, no time passed.'
+            ));
+        }
+
         const road = this.daysOnTheRoadTo(cultivator, going.name);
         // A road inside one province is unpriced rather than free, and a fold
         // across one is a reach of under a day. Charged at the floor, and said
@@ -1080,9 +1261,17 @@ export const travelVerbs = {
         }
 
         // ── AND BUYING ONE ───────────────────────────────────────────────
+        //
+        // A FARE EACH, AND THE PARTY WAITS FOR THE WORST OF THEM. Both are
+        // `quotePassageAtACounter`'s own answers - the fare is `walked * heads`
+        // and the settling is read off `worstPassengerOrdinal` because *a party
+        // arrives together and waits for the person the crossing was hardest
+        // on*. Nothing here decides either; this only stops asserting that the
+        // player is travelling alone.
+        const withYou = this.whoIsWithYouOnTheRoad(cultivator, run);
         const quote = quotePassageAtACounter(route, {
-            heads: 1,
-            worstPassengerOrdinal: cultivator.realmOrdinal,
+            heads: 1 + withYou.length,
+            worstPassengerOrdinal: theSlowestOfThem(cultivator.realmOrdinal, withYou),
             cashPerWalkedDayReplaced: rate,
             onDay: today
         });
@@ -1125,20 +1314,31 @@ export const travelVerbs = {
             `${howMany(quote.daysSavedAgainstWalking, 'day')} saved against the `
             + `${route.walkedDaysItReplaces} on the road.`,
             quote.notCovered,
+            ...(withYou.length > 0
+                ? [`${howMany(quote.heads, 'place')} bought, not one. The clerk counts heads and `
+                    + `the fare is ${quote.fareCash} cash for the lot of you.`]
+                : []),
             ...learned,
             ...applied.tollLines,
             ...world.lines
         ];
 
+        const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
+        if (came) lines.push(came.line);
+
         const facts = factsForToolResult(`${route.toPlace}, through the span.`, lines);
+        if (came) facts.required = [...(facts.required ?? []), came.line];
         facts.structure.push(
             `quotePassageAtACounter: ${route.id}, fare ${quote.fareCash} cash at ${rate} per `
-            + `walked day, ${quote.settlingDays} settling day(s) at ordinal `
-            + `${cultivator.realmOrdinal} (folding floor ${FOLD_FLOOR_ORDINAL}), `
+            + `walked day for ${quote.heads} head(s), ${quote.settlingDays} settling day(s) at `
+            + `ordinal ${theSlowestOfThem(cultivator.realmOrdinal, withYou)} - the worst of the `
+            + `party, not the player's ${cultivator.realmOrdinal} - (folding floor `
+            + `${FOLD_FLOOR_ORDINAL}), `
             + `${quote.daysSpent} day(s) spent, ${quote.daysSavedAgainstWalking} saved. `
             + `Witnessed by ${THE_SPAN_HOUSE_ID}.`,
             ...world.structure,
-            ...introducedBy
+            ...introducedBy,
+            ...(came ? [came.structure] : [])
         );
 
         return {

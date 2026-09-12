@@ -210,3 +210,24 @@ something that opens a file.
 - [`../engine/social/README.md`](../engine/social/README.md) - why nothing there decays
 - [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - the survival ratchet these rows record
 - [`../web/README.md`](../web/README.md) - the other front door onto the same database
+
+---
+
+## Where else to look
+
+- [`./repos/README.md`](./repos/README.md) - one class per table, owning the SQL for it.
+  Nothing above this layer writes a query.
+- [`../schema/README.md`](../schema/README.md) - the shapes that cross into these tables. A
+  migration and a schema change land together or they do not land.
+- [`../server/transport/README.md`](../server/transport/README.md) - `tenant-token.ts` is where
+  `tenant-context.ts` gets its value. Every query is scoped by it, so a missing tenant is a
+  silent cross-run read rather than an error.
+- [`../server/state/README.md`](../server/state/README.md) - the world seed. What is in SQLite
+  is rebuildable from a seed plus the catalogs, which is why a bad database is one to rebuild
+  rather than rescue.
+- [`../engine/people/README.md`](../engine/people/README.md) -
+  `folding-a-persons-two-knowledge-keys-into-one.ts` here is the storage side of the same split
+  that file documents: one human being, two tables, two ids.
+- [`../server/consolidated/README.md`](../server/consolidated/README.md) - almost every tool
+  opens with `getDb()`, so a change to the handle or to tenant scoping is felt there first.
+

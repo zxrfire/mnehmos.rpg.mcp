@@ -39,6 +39,7 @@ import {
 } from '../../src/data/cultivation/techniques.js';
 import { SECTS, SECT_ANCESTRY } from '../../src/data/cultivation/sects.js';
 import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
+import { idsForFaction } from '../../src/data/cultivation/governance-and-water-rights.js';
 import { INHERITANCE_TRIALS, GRAVES } from '../../src/data/cultivation/inheritance-trials.js';
 import { allDaoCarvings } from '../../src/data/cultivation/false-immortals.js';
 
@@ -62,13 +63,12 @@ function routesTo(techniqueId: string): Route[] {
     for (const s of SECTS) {
         if (s.teaches.includes(techniqueId)) out.push({ kind: 'taught', where: s.id });
     }
-    // The four roads to the top of the ladder, which two of the four holders
-    // cannot express as a teach list because they have no sect row at all.
-    // Without this the Earth Vein Tower's and the Long Cut's roads read as arts
-    // nothing in the world can hand to anybody, which is the opposite of what
-    // is true about them: each is held by one of the four bodies with somebody
-    // standing in the band the book is written for, and lent, on terms, to
-    // people that body has already decided about.
+    // The four roads to the top of the ladder. All four holders have a shelf
+    // now, so this route is no longer the only way two of them are reachable -
+    // it stays because the holding is a fact about the road catalog and not
+    // about the teach list: each is held by one of the four bodies with
+    // somebody standing in the band the book is written for, and lent, on
+    // terms, to people that body has already decided about.
     for (const road of THE_DEEPEST_ROADS) {
         if (road.techniqueId === techniqueId) out.push({ kind: 'apex_road', where: road.factionId });
     }
@@ -224,12 +224,15 @@ describe('the route agrees with the provenance', () => {
         }
         // And the four are one per body, held rather than published: each is on
         // at most one sect shelf, and the holder is the body the road catalog
-        // names.
+        // names - under either of its ids, because a body with an apex row and
+        // a sect row has two and the shelf is under the sect one.
         for (const road of THE_DEEPEST_ROADS) {
             const shelves = SECTS.filter(x => x.teaches.includes(road.techniqueId)).map(x => x.id);
             expect(shelves.length, `${road.techniqueId} is on ${shelves.length} shelves`)
                 .toBeLessThanOrEqual(1);
-            if (shelves.length === 1) expect(shelves[0]).toBe(road.factionId);
+            if (shelves.length === 1) {
+                expect(idsForFaction(road.factionId), road.techniqueId).toContain(shelves[0]);
+            }
         }
     });
 });

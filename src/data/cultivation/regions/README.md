@@ -30,3 +30,27 @@ OPEN, so a mismatch answers with the wrong province rather than throwing.
 | [`the-map.ts`](./the-map.ts) | Regions - five of them, and the contrast between them is the content. |
 | [`white-stair.ts`](./white-stair.ts) | The White Stair: the qi is in the ice and the ice is going. |
 | [`wide-field.ts`](./wide-field.ts) | The Yellow Plain: flat, dug over, nine cities, and no high ground anybody could fortify. |
+
+---
+
+## Where else to look
+
+- [`../README.md`](../README.md) - the rest of the catalog. Houses are seated in provinces, so
+  `sects.ts`, `hierarchy.ts` and `what-each-house-makes-and-what-crosses-the-water.ts` are read
+  alongside these files constantly.
+- [`../../../engine/world/README.md`](../../../engine/world/README.md) - what a place becomes
+  once a world is running: `locations.ts`,
+  `the-ground-somebody-is-actually-standing-on.ts`, `what-is-built-on-this-ground.ts`,
+  `being-on-their-ground.ts`, and `what-a-place-still-has-in-the-ground.ts`.
+- [`../../../engine/worldgen/README.md`](../../../engine/worldgen/README.md) - the generated
+  ground beneath the authored map. `what-the-people-who-saw-it-call-it.ts` here is what names
+  the half that comes out of a seed.
+- [`../../../../docs/world/places/README.md`](../../../../docs/world/places/README.md) - the
+  prose for the same ground: ruins, closed ground, architecture.
+- [`../../../web/README.md`](../../../web/README.md) - how ground reaches a player:
+  `web/places.ts`, `web/what-can-be-reached-from-here.ts`,
+  `web/where-this-cultivator-could-go.ts`, `web/what-you-can-tell-about-the-ground.ts`.
+- [`../../../engine/spatial/README.md`](../../../engine/spatial/README.md) - the pathfinder
+  waiting on this graph. It is written for a tile grid and this is a place graph, which is the
+  gap between them.
+

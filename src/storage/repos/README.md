@@ -50,3 +50,26 @@ The two rules that matter when adding one:
 | [`world-snapshot.repo.ts`](./world-snapshot.repo.ts) | - |
 | [`world-state.repo.ts`](./world-state.repo.ts) | PARAMETER BUILDERS |
 | [`world.repo.ts`](./world.repo.ts) | - |
+
+---
+
+## Where else to look
+
+- [`../README.md`](../README.md) - migrations, the idempotent-ALTER pattern, the db handle and
+  tenant scoping. A new table is a migration there and a class here, in the same commit.
+- [`../../schema/README.md`](../../schema/README.md) - the shapes stored. A field comment there
+  is often the only statement of a unit or of whether absent means zero or unknown.
+- [`../../engine/world/README.md`](../../engine/world/README.md) - repositories import engine
+  types directly (`world-state.repo.ts`, `world-snapshot.repo.ts`, `npc-memory.repo.ts`). Most
+  of the world layer is derived per read on purpose; what is in here is the part that is not.
+- [`../../server/consolidated/README.md`](../../server/consolidated/README.md) - the widest
+  caller. If a tool is building SQL, the query belongs in a class here instead.
+- [`../../web/README.md`](../../web/README.md) - the played game reaches past the tool surface
+  for exactly two of these: `obligation.repo.ts` and `cultivator.repo.ts`. Everything else a
+  verb needs comes through the engine, and a third repository appearing in `web/` imports is
+  worth questioning.
+- [`../../agent/prompt/slices/README.md`](../../agent/prompt/slices/README.md) -
+  `agent.repo.ts`, `character.repo.ts`, `inventory.repo.ts`, `npc-memory.repo.ts` and
+  `scene.repo.ts` are read once per slice, every invoke. A slow query there is paid on every
+  model call.
+

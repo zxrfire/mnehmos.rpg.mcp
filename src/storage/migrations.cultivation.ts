@@ -709,6 +709,43 @@ function addCultivationColumns(db: Database.Database): void {
     }
 
     thePouchBelongsToWhoeverIsCarryingIt(db);
+    theBooksJoinThePouch(db);
+}
+
+/**
+ * Move held manuals out of `manual_copies_held` and into the one pack.
+ *
+ * A book was a comma-joined flag and a pill was a pouch row, so every verb
+ * written over held things reached one and not the other: `destroy` told a
+ * player holding a manual they were carrying nothing, one turn after the
+ * inventory read had printed it.
+ *
+ * The flag rows are DELETED rather than left in place, because a second copy
+ * of a fact is the thing this change exists to remove - leaving them would
+ * give a later reader two answers to what somebody is holding.
+ */
+function theBooksJoinThePouch(db: Database.Database): void {
+    const stale = db
+        .prepare(
+            "SELECT cultivator_id, value FROM cultivator_flags WHERE key = 'manual_copies_held'"
+        )
+        .all() as { cultivator_id: string; value: string }[];
+    if (stale.length === 0) return;
+
+    console.error(`[Migration] Moving held manuals into cultivator_pouch for ${stale.length} holder(s)`);
+    const put = db.prepare(`
+        INSERT INTO cultivator_pouch (holder_id, item_id, item_kind, quantity, updated_at)
+        VALUES (?, ?, 'manual', 1, datetime('now'))
+        ON CONFLICT(holder_id, item_id) DO NOTHING
+    `);
+    db.transaction(() => {
+        for (const row of stale) {
+            for (const id of (row.value ?? '').split(',').map(s => s.trim()).filter(Boolean)) {
+                put.run(row.cultivator_id, id);
+            }
+        }
+        db.prepare("DELETE FROM cultivator_flags WHERE key = 'manual_copies_held'").run();
+    })();
 }
 
 /**

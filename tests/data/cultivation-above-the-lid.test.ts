@@ -270,11 +270,11 @@ describe('the rung that is one person wide', () => {
         // Reported from the harness, not computed here. No margin constant, no
         // weight function and no arithmetic lives in the lore layer.
         expect(inventory.andItIsMeasuredRatherThanClaimed).toMatch(/Earth Vein Tower/);
-        expect(inventory.andItIsMeasuredRatherThanClaimed).toMatch(/Long Cut/);
+        expect(inventory.andItIsMeasuredRatherThanClaimed).toMatch(/Myriad Course Hall/);
         expect(inventory.andTheOneInFiveIsThePoint).toMatch(/one time in five/i);
         // And the ordering it reports tracks objects rather than rungs, which
         // is checkable against the catalog the objects are in.
-        const longCut = artifactsOwnedBy('apex-long-cut').map(a => a.power ?? 0);
+        const longCut = artifactsOwnedBy('apex-myriad-course-hall').map(a => a.power ?? 0);
         const deepSurvey = artifactsOwnedBy('apex-earth-vein-tower').map(a => a.power ?? 0);
         expect(Math.max(...longCut)).toBeGreaterThan(Math.max(...deepSurvey));
     });

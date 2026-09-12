@@ -47,17 +47,17 @@ import { QUIET_MARCHES_PREFECTURES } from './quiet-marches.js';
 //   - the Earth Vein Tower `holds` four arterials beneath the Jade Gorge, and there
 //     are four Surveyors, one per arterial. So there are four arterials, and
 //     they are named here.
-//   - the Long Cut holds driven ground across FIVE provinces and the Ninth
+//   - the Myriad Course Hall holds driven ground across FIVE provinces and the Ninth
 //     Face Court administers "the Silent Cliffs and four provinces beyond it".
 //     So there are five, and Chi Yuanru's schedule bands are what tells them
 //     apart.
 //   - `court-third-sill` administers the third arterial, sits in the Jade Gorge,
-//     and its `apexId` is `apex-long-cut`. That is not a note about a court.
+//     and its `apexId` is `apex-myriad-course-hall`. That is not a note about a court.
 //     It means the arterial that every surveyed vein in the Earth Vein Tower's one
 //     province branches from is administered by the other apex, and neither
 //     of them has ever said so in a document.
 //
-// THE ASYMMETRY IS THE FINDING, and it was sitting in the data. The Long Cut
+// THE ASYMMETRY IS THE FINDING, and it was sitting in the data. The Myriad Course Hall
 // is broad and shallow: five provinces, forty staff, everything administered
 // directly, nothing delegated. The Earth Vein Tower is narrow and deep: ONE
 // province, four arterials under it, a filled ladder, and a storehouse it has
@@ -165,7 +165,7 @@ export const PROVINCES: readonly Province[] = [
         onPaper:
             'The Earth Vein Tower holds the arterial system and the province standing on it: four arterials, eleven surveyed veins, seventeen institutions, and a datum nobody local can place.',
         onTheGround:
-            'Two of the four arterials have no administrator, one is a datum nobody draws on, and the fourth - the only one anything branches from - is administered by a court that answers to the Long Cut. The Survey holds one province and is present on two basins of it, and both of those two are over the northern watershed and have been for as long as anybody has walked them.',
+            'Two of the four arterials have no administrator, one is a datum nobody draws on, and the fourth - the only one anything branches from - is administered by a court that answers to the Myriad Course Hall. The Survey holds one province and is present on two basins of it, and both of those two are over the northern watershed and have been for as long as anybody has walked them.',
         prefectureIds: LOW_FALL_PREFECTURES.map(p => p.id),
         whatIsKnownOfIt: null,
         startingAwareness: 'known'
@@ -175,12 +175,12 @@ export const PROVINCES: readonly Province[] = [
         name: REGION_NAME.SILENT_CLIFFS,
         standing: 'played',
         regionId: ADJACENT_REGION_ID,
-        heldByApexId: 'apex-long-cut',
+        heldByApexId: 'apex-myriad-course-hall',
         administeredByCourtId: 'court-ninth-face',
         governingFact:
             'The qi is not gone; it was driven into the stone. There is nothing in the air and a great deal in the rock, and the only way to get at it is to cut.',
         onPaper:
-            'One of five driven provinces held directly by the Long Cut, administered face by face through the Ninth Face Court, with no client sects, no leases and no vassals anywhere in the arrangement.',
+            'One of five driven provinces held directly by the Myriad Course Hall, administered face by face through the Ninth Face Court, with no client sects, no leases and no vassals anywhere in the arrangement.',
         onTheGround:
             'Two workable faces, a worked-out cemetery district, a staked corridor nobody scheduled, a burn edge that moves, and a face that cannot be worked and is walked anyway. Eleven people at a counter administer all of it.',
         prefectureIds: QUIET_MARCHES_PREFECTURES.map(p => p.id),
@@ -197,12 +197,12 @@ export const PROVINCES: readonly Province[] = [
         name: 'The Coldwater Cut',
         standing: 'named_only',
         regionId: null,
-        heldByApexId: 'apex-long-cut',
+        heldByApexId: 'apex-myriad-course-hall',
         administeredByCourtId: 'court-ninth-face',
         governingFact:
-            'The driven stone there is still deep, so the first century of the Long Cut course schedule is almost entirely Coldwater and everything else waits.',
+            'The driven stone there is still deep, so the first century of the Hall\'s course schedule is almost entirely Coldwater and everything else waits.',
         onPaper: 'First band of five on the course schedule, and it has held the position for as long as the schedule has existed.',
-        onTheGround: 'Nobody in either played province has been, and the Long Cut does not publish what it takes out.',
+        onTheGround: 'Nobody in either played province has been, and the Myriad Course Hall does not publish what it takes out.',
         prefectureIds: [],
         whatIsKnownOfIt:
             'A name on a schedule the Clearwater Ward countersigns once every twenty years without reading past its own line, and a rumour among Iron Ridge carvers that there is somewhere the tools are better.',
@@ -213,7 +213,7 @@ export const PROVINCES: readonly Province[] = [
         name: 'Broken Stone',
         standing: 'named_only',
         regionId: null,
-        heldByApexId: 'apex-long-cut',
+        heldByApexId: 'apex-myriad-course-hall',
         administeredByCourtId: 'court-ninth-face',
         governingFact: 'Second band. Worked hard for eleven hundred years and still returning enough to keep a course open.',
         onPaper: 'Second band of five, and the only one that has ever moved up rather than down.',
@@ -227,11 +227,11 @@ export const PROVINCES: readonly Province[] = [
         name: 'The Sixteen Faces',
         standing: 'named_only',
         regionId: null,
-        heldByApexId: 'apex-long-cut',
+        heldByApexId: 'apex-myriad-course-hall',
         administeredByCourtId: 'court-ninth-face',
         governingFact: 'Third band, and the only driven province where more than one face is open at a time, which is what the name is.',
         onPaper: 'Third band of five, and it has been third for two hundred years.',
-        onTheGround: 'Unknown here, and the Long Cut has never had reason to describe it to anybody in the Silent Cliffs.',
+        onTheGround: 'Unknown here, and the Myriad Course Hall has never had reason to describe it to anybody in the Silent Cliffs.',
         prefectureIds: [],
         whatIsKnownOfIt: 'A name, and the fact that it is above the Silent Cliffs in the queue, which is the only comparative figure anybody in Iron Ridge has ever heard.',
         startingAwareness: 'unaware'
@@ -241,7 +241,7 @@ export const PROVINCES: readonly Province[] = [
         name: 'Grey Cut',
         standing: 'named_only',
         regionId: null,
-        heldByApexId: 'apex-long-cut',
+        heldByApexId: 'apex-myriad-course-hall',
         administeredByCourtId: 'court-ninth-face',
         governingFact: 'Fourth band, one place above the Silent Cliffs, and it has been sliding for two centuries in the same direction the Silent Cliffs slid.',
         onPaper: 'Fourth band of five, and it is the only one of the five that has ever moved downward twice.',

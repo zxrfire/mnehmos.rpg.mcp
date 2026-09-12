@@ -61,7 +61,13 @@
 
 import { makeGameInWorld } from './harness';
 import { parseIntent } from '../../src/web/verb-pattern-table';
-import { ledgerAbout } from '../../src/storage/repos/obligation.repo';
+import { ledgerAbout, writeOneObligation } from '../../src/storage/repos/obligation.repo';
+import { upsertRelationship } from '../../src/engine/world/npc-state';
+import {
+    A_MASTER_STANDS_THIS_FAR_ABOVE,
+    whatABondOpens,
+    whetherYouMayTake
+} from '../../src/engine/social-leverage/taking-somebody-as-your-own';
 
 const WORLD = 'a-xianxia-run';
 
@@ -283,5 +289,124 @@ describe('handing on an art that belongs to a house', () => {
         expect(everythingSaid(turn)).toMatch(/'s art and you are not theirs/);
         expect(turn.toolCalls.map(call => call.name))
             .toContain('social.whatTheHouseDoesAboutIt');
+    }, 120_000);
+});
+
+/**
+ * ── AND THE SAME LESSON IS A DIFFERENT TRANSACTION TO YOUR OWN DISCIPLE ──
+ *
+ * `RelationshipKind` carried `master` and `disciple` and nothing in `src/` wrote
+ * either; `recruit_disciples` added an integer to `ledger.ownFollowing`, and an
+ * integer cannot be disappointed in you. `taking-somebody-as-your-own.ts` gives
+ * the bond a producer, and the first thing it is asked to do is change an act
+ * that already existed rather than add one beside it.
+ *
+ * Teaching a stranger is a kindness: months of your life went into somebody with
+ * no claim on them, and `taught_technique` opens against them. Teaching your own
+ * disciple opens nothing, because it was already promised - it discharges the
+ * `teaching_term` oath sworn when they knelt.
+ *
+ * THE PRECONDITION IS ARRANGED AND IS NOT YET REACHABLE BY PLAYING. There is no
+ * verb that seals a bond: wiring one needs `action-set.ts`, the pattern table and
+ * the turn engine, three of which are held by other agents tonight. So the bond
+ * is arranged through the engine module that writes it, which is the shape a
+ * verb would use, and this is a gap written down rather than a gap licensed.
+ *
+ * WHAT WENT RED FIRST:
+ *   x teaching your own disciple opens no favour against them
+ *       -> a `taught_technique` favour was written, exactly as for a stranger
+ *   x and it settles the term the master swore
+ *       -> the oath stayed open; nothing anywhere read the tie
+ */
+describe('teaching somebody who is already yours', () => {
+    const adminBefore = process.env.ADMIN_MODE;
+    beforeAll(() => { process.env.ADMIN_MODE = 'true'; });
+    afterAll(() => {
+        if (adminBefore === undefined) delete process.env.ADMIN_MODE;
+        else process.env.ADMIN_MODE = adminBefore;
+    });
+
+    async function aMasterAndTheirDisciple() {
+        const harness = await makeGameInWorld({
+            seed: 'xianxia', worldSeed: WORLD, adminMode: true
+        });
+        await harness.game.newRun('Prober');
+        // Far enough up that somebody in the square is a disciple's distance
+        // below, which is the bar `whetherYouMayTake` reads off the band table.
+        await harness.game.act('ADMIN set_realm ordinal=12');
+        await harness.game.act(`I learn ${AN_ART_A_BEGINNER_CAN_HOLD}`);
+        await harness.game.act(`I practise ${AN_ART_A_BEGINNER_CAN_HOLD} for 3 years`);
+        await harness.game.act('I buy a year of provisions');
+
+        const world = await harness.game.loadWorld();
+        const me = harness.game.state().cultivator;
+        const student = harness.game.present(me)
+            .filter(row => row.id !== me.id)
+            .find(row => {
+                const npc = world!.npcs.find(other => other.id === row.id);
+                return npc !== undefined
+                    && !npc.cultivation.techniqueIds.includes(ITS_ID)
+                    && me.realmOrdinal - npc.cultivation.realmOrdinal
+                        >= A_MASTER_STANDS_THIS_FAR_ABOVE;
+            });
+        return { harness, me, student, world };
+    }
+
+    it('opens no favour against them, and serves the term the master swore', async () => {
+        const { harness, me, student, world } = await aMasterAndTheirDisciple();
+        expect(student, 'nobody here stands far enough below to be taken as a disciple')
+            .toBeTruthy();
+
+        const npc = world!.npcs.find(row => row.id === student!.id)!;
+        const may = whetherYouMayTake(
+            { id: me.id, name: me.name, ordinal: me.realmOrdinal },
+            { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal }
+        );
+        expect(may.may, may.reason).toBe(true);
+
+        // SEAL IT. The rows a verb would write, written by the module that
+        // decides them rather than by hand here.
+        const opened = whatABondOpens({
+            master: { id: me.id, name: me.name, ordinal: me.realmOrdinal },
+            student: { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal },
+            onDay: Math.floor(world!.currentDay)
+        });
+        const theirTie = opened.ties.find(tie => tie.holderId === npc.id)!;
+        const at = world!.npcs.findIndex(row => row.id === npc.id);
+        world!.npcs[at] = upsertRelationship(npc, {
+            targetId: theirTie.targetId,
+            targetName: theirTie.targetName,
+            kind: theirTie.kind,
+            standing: theirTie.standing,
+            note: theirTie.note
+        }, Math.floor(world!.currentDay));
+        harness.game.theWorldMoved();
+        for (const oath of opened.oaths) writeOneObligation(harness.db, oath);
+
+        const owedBefore = ledgerAbout(harness.db, student!.id)
+            .filter(row => row.cause === 'taught_technique').length;
+
+        const turn = await harness.game.act(
+            `I teach ${student!.name} ${AN_ART_A_BEGINNER_CAN_HOLD}`
+        );
+        expect(gotTheBlankLook(turn)).toBe(false);
+
+        // The art still goes in. Nothing about the bond makes the lesson cheaper.
+        const after = await harness.game.loadWorld();
+        expect(after!.npcs.find(row => row.id === student!.id)?.cultivation.techniqueIds)
+            .toContain(ITS_ID);
+
+        // AND NO FAVOUR OPENED. They are yours; you did what you swore.
+        expect(
+            ledgerAbout(harness.db, student!.id)
+                .filter(row => row.cause === 'taught_technique').length,
+            'a disciple was made to owe their own master a favour for being taught'
+        ).toBe(owedBefore);
+
+        // AND THE TERM IS SERVED.
+        const term = ledgerAbout(harness.db, me.id)
+            .find(row => row.cause === 'teaching_term' && row.subjectId === student!.id);
+        expect(term?.status).toBe('settled');
+        expect(term?.settlement?.resolution).toBe('oath_fulfilled');
     }, 120_000);
 });

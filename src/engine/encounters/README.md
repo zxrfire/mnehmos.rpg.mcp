@@ -62,6 +62,10 @@ select.ts       the pool and the two-stage draw
 tokens.ts       filling {token} slots, and the discovery rule as code
 resolve.ts      stance, deltas, the confrontation descriptor, the SimEvent
 duties.ts       the summons, the board, scale, the cohort, what refusing costs
+passing-a-duty-down-to-somebody-else.ts
+                a member hiring their errand out. The board gate is untouched:
+                what makes it a trade is that contribution is worth nothing
+                off a roll and stones are worth the same to everybody
 contact.ts      the people you live with, and how a tie accumulates
 suitability.ts  whether the thing you found is for YOU
 sendoff.ts      "nothing further for you here", grounded in an assessment
@@ -366,6 +370,82 @@ forcing it produced "Azure Cloud Pavilion has not sent anyone" immediately
 followed by Azure Cloud Pavilion sending this cultivator. The house is now
 named once, in the duty line, where it unambiguously means the party asking.
 
+### The board is for disciples, and an elder can still read it
+
+Two rungs of one rule, and the rule is AGENTS.md's: *not having the standing to
+do something is not the same as seeing nothing.*
+
+**The wall carries its own top rung, not the reader's.** `whatAHouseHasOnItsBoard`
+generated one pitch - whoever was standing in front of it - so at ordinal 40 in
+a house whose strongest NPC stands at 41 the board measured 0 offers and 7
+refusals: every row was pitched at the elder, and `howAnAskReaches` correctly
+routed all of them to word of mouth. `reachOfTheRest` is the house minus the
+reader, `theTopOfTheWall` reads the same boundary `howAnAskReaches` already
+draws, and a reader above it gets that notice too. After: 7 offers, pitched at
+29 and 38.
+
+**A wall does not decide who is worth its work.** `summonable` answers *would the
+house spend this person on this*, which is the question when the house is
+choosing and the wrong one off paper. `takeableOffAWall` keeps the refusal for
+what is pitched above the reader and drops it for what is under them. Taking
+one is never priced differently: the design owner's word is that an elder taking
+a disciple's notice is *met with an eyebrow*, and an eyebrow is the narrator's
+job.
+
+### And taking it is said to somebody
+
+The eyebrow has a face. The design owner: *"to take a mission YOU HAVE TO REPORT
+IT TO SOMEONE, THE MISSION HALL WHICH THE MISSION ELDER IS RESPONSIBLE FOR.
+EITHER REPORT TO THAT ELDER OR TO A DISCIPLE WORKING IN HIS HALL."* Taking work
+off a wall was a solo act against a piece of paper, so there was nobody for
+anything to be noticed by, and `pitchedWellBeneath` rode `completeDuty`'s
+settlement line - saying it after the fact and to nobody.
+
+The gap was structural. An office in this engine is a ROOM, and
+`whoIsInChargeOfWhat` filtered on `sealed`; `RoomPurpose` had 21 rooms and no
+mission hall, so the missions elder was named in `docs/world/houses/discovery.md`
+and in three refusal strings with nowhere to stand. A hall disciples walk into to
+take work cannot be a locked room, so `office` had to stop being `sealed` before
+the room could exist at all. Three changes, all in `architecture.ts` and
+`what-an-elder-is-in-charge-of.ts`:
+
+- `office` is its own column, equal to `sealed` on every purpose that existed
+  before, so the deal is unchanged.
+- `mission_hall` sits at **depth 0.3**, under every other office. Load-bearing:
+  offices sort deepest-first and are dealt round robin, so a room inserted ABOVE
+  the others shifts all of them, which is what the reverted ancestral hall did.
+- `who-works-in-an-elders-hall.ts` reads who WORKS in a room as well as who is
+  over it. A post is a sub-job, not a rung - nothing there touches `rankIndex` -
+  and `remitOf` is two values rather than a table of favours: the holder DECIDES
+  about a room, the staff HANDLE what passes through it. That is what makes a
+  hall open when the elder is out, and it is the whole mechanism behind bribing
+  a hand for something that passes through their room.
+
+`THE_ROOM_WORK_IS_POSTED_IN` sits beside the board for the same reason
+`THE_ROOM_COMPLAINTS_GO_TO` sits beside the reporting module: which room is a
+system's front door is that system's fact, not the architecture table's.
+
+### And an elder is asked to go out with the juniors
+
+The more likely elder scene, per the design owner: a peer or the patriarch asks
+somebody senior to accompany disciples who have taken work beyond the sect's
+ground.
+
+Nothing generates it. The occasion is a posting the board already made at a
+junior's rung - the same row the change above put on the wall - and the party is
+`whoTheHouseCanSend` read against the roll, which is the pass the world uses for
+parties the player never sees. `whatAHouseWouldSendYouOn` keeps the
+`wellBeneathYou` rows and `window.ts` drops the ones the house has nobody for,
+because the roll lives there and `duties.ts` is arithmetic over one person's
+standing.
+
+`Duty.takingOut` names them; `cohort` is set to the same count, because "5 of
+the house alongside" beside eight named people was one fact kept twice. The ask
+is `word_of_mouth` by construction, `spokenBy` is the asker rather than a
+carrier on this one row, and declining costs standing through the path
+`pending-summons.ts` already owns. Measured at ordinal 40 over 60 seeds: 3 asks,
+0 escorts before, 2 after.
+
 ## Suitability, and why anybody leaves the cave
 
 Comprehension and consumables are suited to a PERSON. A manual you cannot read
@@ -484,3 +564,27 @@ and it never touches damage, a resolution, or a capability gap.
 - **It does not invent people.** The cast is supplied. An encounter that needs a
   person and is handed an empty place produces a person-free fact instead.
 - **It does not advance the clock, apply deltas, or persist anything.**
+
+---
+
+## Where else to look
+
+- [`../cultivation/README.md`](../cultivation/README.md) - what an encounter is calibrated
+  against: rung, regard, injuries, and what a house will spend on somebody.
+- [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the authored side:
+  `encounters.ts`, `why-a-house-puts-a-party-on-the-road.ts`, `contingencies.ts`, and the
+  faction tables that decide who asks whom.
+- [`../world/README.md`](../world/README.md) - where an encounter lands.
+  `who-goes-out-for-a-house-and-what-comes-back.ts`, `opportunities.ts`, `gatherings.ts` and
+  `who-is-on-the-road-with-you.ts` are the world-scale versions of the same events.
+- [`../social-leverage/README.md`](../social-leverage/README.md) - the seam between a duty and
+  a favour. `what-a-house-asks-of-somebody-it-cannot-order.ts` sits in THIS directory and is
+  where the two meet: once a house cannot order somebody, the price, the refusal and what it
+  leaves behind are all worked out over there.
+- [`../social/README.md`](../social/README.md) - an arrival is only an encounter if somebody
+  notices it. `arrival-exposure-read.ts` here meets `presence-recognition.ts` and
+  `what-they-can-place-about-you.ts` there.
+- [`../../web/README.md`](../../web/README.md) - `web/encounters.ts`,
+  `web/what-is-posted-on-the-wall-here.ts` and `web/what-is-live-for-you-here.ts` are how any
+  of this reaches a player.
+

@@ -206,6 +206,7 @@ describe('what the narration says left the purse, left the purse', () => {
         const takes: string[] = [];
         const refusals: string[] = [];
         const wrong: string[] = [];
+        const absent: string[] = [];
 
         for (let n = 0; n < 10; n++) {
             const { db, game } = await makeGameInWorld({
@@ -233,7 +234,15 @@ describe('what the narration says left the purse, left the purse', () => {
                 : Number(
                     /(\d+) spirit stones? went with it/.exec(call?.summary ?? '')?.[1] ?? NaN
                 );
-            expect(Number.isFinite(spent), `no spend in: ${call?.summary}`).toBe(true);
+            // AWARENESS IS NOT PRESENCE, and this sweep used to assume it was.
+            // `KnowledgeGate.awareness` lists everybody the player has heard
+            // of, which includes named figures standing four provinces away -
+            // seed `purse-4` picks one - and a bribe put to somebody who is not
+            // in the room is refused before it reaches the machine, correctly.
+            // Skipping such a seed cannot hide a real break, because both arms
+            // below still have to be exercised across the ten.
+            if (!call) { absent.push(`purse-${n}`); continue; }
+            expect(Number.isFinite(spent), `no spend in: ${call.summary}`).toBe(true);
 
             if (spent > 0) {
                 takes.push(`purse-${n}`);
@@ -257,6 +266,8 @@ describe('what the narration says left the purse, left the purse', () => {
         }
 
         expect(wrong, 'the prose and the purse disagree').toEqual([]);
+        expect(absent.length, 'every world picked somebody who was not there')
+            .toBeLessThan(10);
         // Both arms have to have been exercised, or this proves half of it.
         expect(takes.length, 'no bribe landed across ten worlds').toBeGreaterThan(0);
         expect(refusals.length, 'no bribe was refused across ten worlds').toBeGreaterThan(0);

@@ -103,6 +103,15 @@ export type RelationshipKind =
     | 'child'
     | 'master'
     | 'disciple'
+    /**
+     * A bond somebody ended, which is not the same fact as no bond. The kind
+     * changes and the row stays, because a disciple who left eleven years ago is
+     * still a fact about both of them - the ruling
+     * `how-near-you-stand-to-somebody.ts` already makes by keeping `former_`
+     * under the same roof. Written by `taking-somebody-as-your-own.ts`.
+     */
+    | 'former_master'
+    | 'former_disciple'
     | 'ally'
     | 'rival'
     | 'enemy'

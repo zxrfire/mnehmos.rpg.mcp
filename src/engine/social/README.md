@@ -439,3 +439,33 @@ model above.
 - [`../../storage/README.md`](../../storage/README.md) - how these tables are migrated
 - [`../../../docs/world/houses/people.md`](../../../docs/world/houses/people.md) - why NPCs are protagonists of their own lives
 - [`../../../docs/world/houses/dao-houses.md`](../../../docs/world/houses/dao-houses.md) - the houses that study these principles directly
+
+---
+
+## Where else to look
+
+- [`../social-leverage/README.md`](../social-leverage/README.md) - the biggest consumer of this
+  layer by far. Memory is what is held; leverage is what is done with it - a grudge becoming an
+  act, a secret becoming a price.
+- [`../world/README.md`](../world/README.md) - the people these records are about. `NpcRecord`
+  and `getNpc` in `world/npc-state.ts` / `world/world-state.ts`, and
+  `world/what-people-are-saying.ts` for the rumour side of the same question.
+- [`../cultivation/README.md`](../cultivation/README.md) - a **seal** spans both directories:
+  `what-laying-a-qi-seal-takes.ts` here is the social cost of laying one, and
+  `cultivation/a-qi-seal-is-put-on-a-person.ts` is the seal itself. Anybody searching for jail,
+  imprisonment or house arrest wants those two files.
+- [`../perception/README.md`](../perception/README.md) - what somebody can SEE is a different
+  question from what they know. `what-a-look-at-somebody-reaches.ts` and
+  `stealth-perception.ts` here are the cultivation-side read; `perception/` holds the retained
+  attentional-capacity model that would price divine sense as a budget.
+- [`../../storage/repos/README.md`](../../storage/repos/README.md) - `npc-memory.repo.ts` and
+  `secret.repo.ts`, plus
+  [`../../storage/folding-a-persons-two-knowledge-keys-into-one.ts`](../../storage/folding-a-persons-two-knowledge-keys-into-one.ts),
+  which is where the two ids one person can be known by are reconciled.
+- [`../../web/README.md`](../../web/README.md) - the player-facing end: `web/knowledge.ts`,
+  `web/operator-knowledge-reach.ts`, `web/hearsay.ts`. A stage that never reaches one of those
+  is a ladder nobody climbs.
+- [`../../agent/prompt/README.md`](../../agent/prompt/README.md) - the `secrets` slice hands a
+  bound NPC's model private text. That is a prompt input and not a filed fact; only
+  `recordKnowledge` here makes it something the world can be asked about later.
+

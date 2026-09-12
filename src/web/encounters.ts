@@ -32,7 +32,13 @@ import { theRung } from './facts.js';
 import {
     whatAHouseHasOnItsBoard
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
-import { dutyTermsFor, summonable } from '../engine/encounters/duties.js';
+import { dutyTermsFor, takeableOffAWall } from '../engine/encounters/duties.js';
+import {
+    howAnAskReaches,
+    whyItIsNotOnTheWall,
+    whyYouCannotBePostedThere
+} from '../engine/encounters/how-an-ask-reaches-somebody.js';
+import { thereIsNoDoorAt } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
 import type {
     HouseAsItStands
 } from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
@@ -55,6 +61,7 @@ import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import type { ObligationRecord } from '../engine/social/grudges.js';
 import { othersPresent } from './hearsay.js';
 import { worldLocationFor } from './entities.js';
+import { theProvinceAround } from '../engine/world/ground-holder.js';
 // One direction only. `pending-summons.ts` imports the flag helpers, the house
 // arithmetic and the leadership prices, and imports nothing from this file -
 // which is what keeps the ledger writers below and the ask above it out of a
@@ -136,6 +143,10 @@ export interface EncounterRequest {
 /** Roll the window. Call this BEFORE provisioning or simulating anything. */
 export function encountersFor(deps: EncounterDeps, request: EncounterRequest): EncounterRoll {
     const { cultivator } = request;
+    const membership = request.membership ?? membershipFor(deps, cultivator);
+    // The same reading the board takes, so what the house would post and what
+    // it would send for are one account of the house rather than two.
+    const standing = theHouseAsItStands(deps, cultivator, membership);
     return rollEncounters({
         seed: request.seed,
         startDay: request.startDay,
@@ -155,7 +166,12 @@ export function encountersFor(deps: EncounterDeps, request: EncounterRequest): E
         cast: castFor(deps, cultivator),
         names: namesFor(deps, cultivator),
         arrivable: request.arrivable,
-        membership: request.membership ?? membershipFor(deps, cultivator),
+        membership,
+        house: standing?.house ?? null,
+        ...(standing === null ? {} : {
+            reachOfTheHouse: standing.reach,
+            reachOfTheRest: standing.reachOfTheRest
+        }),
         locatability: request.locatability ?? locatabilityFor(deps, cultivator),
         roster: request.roster ?? rosterFor(deps, cultivator)
     });
@@ -550,16 +566,18 @@ export interface SectBoard {
  */
 export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectBoard {
     const membership = membershipFor(deps, cultivator);
+    // AND WHAT THE HOUSE ITSELF NEEDS DOING. The catalogue is a fixed list with
+    // ordinal windows on it, and measured through this very function it holds
+    // ONE offer at the bottom rung and NOTHING AT ALL from Core Formation
+    // upward. A house's own postings are pitched at whoever is reading the
+    // board, so the board does not run out - and they are the sendings that
+    // house was going to make anyway, so nothing here is invented. See
+    // `what-a-house-has-on-its-board.ts`.
+    const wall = whatTheHouseItselfNeedsDone(deps, cultivator, membership);
+
     const offers = [
         ...commissionBoard(cultivator.realmOrdinal, membership),
-        // AND WHAT THE HOUSE ITSELF NEEDS DOING. The catalogue is a fixed list
-        // with ordinal windows on it, and measured through this very function
-        // it holds ONE offer at the bottom rung and NOTHING AT ALL from Core
-        // Formation upward. A house's own postings are pitched at whoever is
-        // reading the board, so the board does not run out - and they are the
-        // sendings that house was going to make anyway, so nothing here is
-        // invented. See `what-a-house-has-on-its-board.ts`.
-        ...whatTheHouseItselfNeedsDone(deps, cultivator, membership)
+        ...wall.offers
     ].sort((a, b) => b.terms.contribution - a.terms.contribution ||
             b.terms.stones - a.terms.stones ||
             (a.entry.id < b.entry.id ? -1 : 1));
@@ -567,62 +585,228 @@ export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectB
     return {
         membership,
         offers,
-        refusals: boardRefusals(cultivator.realmOrdinal, membership).map(row => ({
-            entryId: row.entry.id,
-            name: row.entry.name,
-            reason: row.regard.reaction
-        }))
+        refusals: [
+            ...boardRefusals(cultivator.realmOrdinal, membership).map(row => ({
+                entryId: row.entry.id,
+                name: row.entry.name,
+                reason: row.regard.reaction
+            })),
+            ...wall.refusals
+        ]
+    };
+}
+
+export interface TheHouseAndItsReach {
+    house: HouseAsItStands;
+    /** The highest rung this house has anybody standing on. */
+    reach: number;
+    /**
+     * The same, counting everybody EXCEPT the reader. What the wall is written
+     * for: the reader is not one of the people a notice is aimed at.
+     */
+    reachOfTheRest: number;
+}
+
+/**
+ * The house whose wall this is, and how far it can send anybody.
+ *
+ * The reader's own house where they have one, and otherwise whoever holds the
+ * ground they are standing on - because a wall in a town is that town's holder's
+ * wall, and somebody who is on nobody's roll can still read it. The design
+ * owner: *"the board is never empty, you just aren't qualified to take a job
+ * from the missions elder."*
+ *
+ * ONE JOIN, READ TWICE. The board a member walks up to and the ask that arrives
+ * at their door are the same rows, so they take the same reading of the house -
+ * a second projection here would be two opinions about whether the house is at
+ * war.
+ *
+ * AND THE PERSON BEING ASKED IS ON THE ROLL. The reach was taken off the NPCs
+ * alone, which is right for a stranger reading a stall and wrong for a member:
+ * an elder standing at a rung nobody else in their house has reached IS the
+ * person the house would send, and clamping the pitch to the strongest NPC left
+ * every posting ten or more rungs beneath them, which is the band `summonable`
+ * drops. So the board went empty at exactly the rung that made somebody worth
+ * sending. The design owner's rule is unchanged - *sects only offer work they
+ * have disciples able to reach* - and this counts a disciple the roll already
+ * holds.
+ */
+export function theHouseAsItStands(
+    deps: EncounterDeps,
+    cultivator: Cultivator,
+    membership: Membership | null
+): TheHouseAndItsReach | null {
+    if (!deps.world || !membership) return null;
+    const faction = deps.world.factions.find(f => f.id === membership.factionId);
+    if (!faction || faction.dissolvedOnDay !== null) return null;
+
+    // The reader counts toward the reach only when the reader is on the roll.
+    // A stranger reading somebody else's wall is not one of the people that
+    // house could send, however high they stand.
+    //
+    // AND THE REST OF THE HOUSE IS COUNTED APART, because the two numbers
+    // answer two questions. What the house could send this person on reads the
+    // first; where its WALL tops out reads the second, and a wall pitched off a
+    // reach the reader themselves supplied is a wall written for one person.
+    let reachOfTheRest = 0;
+    for (const npc of deps.world.npcs) {
+        if (npc.factionId !== faction.id || npc.status !== 'alive') continue;
+        if (npc.cultivation.realmOrdinal > reachOfTheRest) {
+            reachOfTheRest = npc.cultivation.realmOrdinal;
+        }
+    }
+    const reach = Math.max(reachOfTheRest, membership ? cultivator.realmOrdinal : 0);
+
+    return {
+        house: {
+            id: faction.id,
+            name: faction.name,
+            holdsGround: deps.world.locations.some(l => l.controllingFactionId === faction.id),
+            standing: faction.standing,
+            // What somebody has turned up recently, which is the house's own
+            // reason for putting a party on the road after it.
+            hasAFind: deps.world.history.facts.some(f => f.kind === 'treasure_found')
+        },
+        reach,
+        reachOfTheRest
     };
 }
 
 /**
- * The house's own postings, priced by the same rule as everything else.
+ * What the house has on its wall, split into what this person may take and what
+ * they may only read.
  *
- * Nothing without a house and nothing without a world: a rogue reads whatever
- * the catalogue has, which is what being on nobody's roll means.
+ * NOT HAVING THE STANDING TO DO SOMETHING IS NOT THE SAME AS SEEING NOTHING.
+ * The gate decides what may be TAKEN; it must not decide what may be KNOWN
+ * ABOUT. Both halves of that were broken here and both were silent: a reader on
+ * no roll got an empty array, and a member who did not clear a posting's band
+ * had it dropped with a bare `continue`. So above the rung the catalogue runs
+ * out at, the wall said nothing at all - which reads as a world with nothing in
+ * it rather than as a world that has not opened to you yet.
+ *
+ * A refusal carries what is actually there, why it is not yours, and what would
+ * change that. An empty list carries none of the three.
  */
+interface TheWall {
+    offers: DutyCandidate[];
+    refusals: { entryId: string; name: string; reason: string }[];
+}
+
+/**
+ * Every house whose wall this is: your own where you have one, and otherwise
+ * the houses SEATED where you are standing.
+ *
+ * IN THE SAME PROVINCE, and the two readings that are not it are both measured.
+ *
+ * `whoHoldsTheGround` answers *whose ground is this* by walking UPWARD from
+ * where you stand looking for a holder. Right inside a compound, wrong in a
+ * town: 988 of 1063 location records on a pinned world carry a holder and NONE
+ * of the twelve places a player's `location` can be does, because the held ones
+ * are the compounds nested under those names.
+ *
+ * Nesting the other way does not work either. `seedFactions` hangs a house's
+ * seat off the REGION rather than off a settlement - `seedSectGround(state, cf,
+ * region, ...)` - so a sect's ground is a sibling of the towns and not inside
+ * one, and asking which houses sit within this town answers none, everywhere.
+ *
+ * So the province is the join, which is also the one the recruiting wall
+ * already uses: a notice board in a market town carries the work of the houses
+ * whose gates are in that province, and that is what a notice board is for.
+ */
+function theHousesWhoseWallThisIs(
+    deps: EncounterDeps,
+    cultivator: Cultivator,
+    membership: Membership | null
+): TheHouseAndItsReach[] {
+    const own = theHouseAsItStands(deps, cultivator, membership);
+    if (own) return [own];
+    if (!deps.world) return [];
+
+    const here = worldLocationFor(deps.world, cultivator.location);
+    const province = theProvinceAround(deps.world.locations, here?.id);
+    if (province === null) return [];
+
+    const out: TheHouseAndItsReach[] = [];
+    for (const faction of deps.world.factions) {
+        if (faction.dissolvedOnDay !== null) continue;
+        if (theProvinceAround(deps.world.locations, faction.seatLocationId) !== province) continue;
+        let reach = 0;
+        for (const npc of deps.world.npcs) {
+            if (npc.factionId !== faction.id || npc.status !== 'alive') continue;
+            if (npc.cultivation.realmOrdinal > reach) reach = npc.cultivation.realmOrdinal;
+        }
+        out.push({
+            house: {
+                id: faction.id,
+                name: faction.name,
+                holdsGround: faction.controlledLocationIds.length > 0,
+                standing: faction.standing,
+                hasAFind: deps.world.history.facts.some(f => f.kind === 'treasure_found')
+            },
+            reach,
+            // Nobody off the roll is counted into a house's reach, so a
+            // stranger's reading of the wall is the whole house either way.
+            reachOfTheRest: reach
+        });
+    }
+    return out;
+}
+
 function whatTheHouseItselfNeedsDone(
     deps: EncounterDeps,
     cultivator: Cultivator,
     membership: Membership | null
-): DutyCandidate[] {
-    if (!membership || !deps.world) return [];
-    const faction = deps.world.factions.find(f => f.id === membership.factionId);
-    if (!faction || faction.dissolvedOnDay !== null) return [];
+): TheWall {
+    const wall: TheWall = { offers: [], refusals: [] };
 
-    const standing: HouseAsItStands = {
-        id: faction.id,
-        name: faction.name,
-        holdsGround: deps.world.locations.some(l => l.controllingFactionId === faction.id),
-        standing: faction.standing,
-        // What somebody has turned up recently, which is the house's own
-        // reason for putting a party on the road after it.
-        hasAFind: deps.world.history.facts.some(f => f.kind === 'treasure_found')
-    };
-
-    // WHAT THIS HOUSE CAN ACTUALLY REACH, off its own roll. A board is bounded
-    // by the people who could be sent, so a strong disciple in a weak house
-    // reads a weak board - which is a true thing about the house they joined.
-    let reach = 0;
-    for (const npc of deps.world.npcs) {
-        if (npc.factionId !== faction.id || npc.status !== 'alive') continue;
-        if (npc.cultivation.realmOrdinal > reach) reach = npc.cultivation.realmOrdinal;
+    for (const standing of theHousesWhoseWallThisIs(deps, cultivator, membership)) {
+        for (const entry of whatAHouseHasOnItsBoard({
+            house: standing.house,
+            ordinal: cultivator.realmOrdinal,
+            reachOfTheHouse: standing.reach,
+            // What the wall itself carries, which is not the same list as what
+            // the house would send this reader on. See `reachOfTheRest`.
+            reachOfTheRest: standing.reachOfTheRest
+        })) {
+            const terms = dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission');
+            // THE BOARD IS FOR DISCIPLES AND AN ELDER IS TOLD. The generator is
+            // the same rows either way; what differs is the road they come by.
+            // Read before the roll and the band, because a thing that was never
+            // wall work is not a thing this reader failed to qualify for.
+            const reaches = howAnAskReaches({
+                pitchOrdinal: terms.pitchOrdinal,
+                reachOfTheHouse: standing.reach
+            });
+            const why = reaches === 'word_of_mouth'
+                ? whyItIsNotOnTheWall(standing.house.name)
+                : membership === null
+                    // A ROLL IS NOT ALWAYS A ROAD. Two bodies in this world
+                    // admit nobody, so "earn a place on the roll" is a road
+                    // that does not exist and the honest answer names the
+                    // nomination instead.
+                    ? thereIsNoDoorAt(standing.house.id)
+                        ? whyYouCannotBePostedThere(standing.house.name)
+                        : `${standing.house.name} posts this to its own. Nobody off the roll is handed `
+                          + `one, and a place on ${standing.house.name}'s roll is what changes that.`
+                    // AND A WALL DOES NOT DECIDE WHO IS WORTH ITS WORK. What
+                    // `summonable` answers is whether the HOUSE would spend
+                    // this person on this, which is the question when the house
+                    // is choosing. Off paper the person is choosing, and the
+                    // design owner ruled it plainly: an elder can read the
+                    // board and could take from it, met with an eyebrow.
+                    // `takeableOffAWall` keeps the refusal for what is pitched
+                    // above them and drops it for what is pitched under them.
+                    : takeableOffAWall(terms.regard.band)
+                        ? null
+                        : terms.regard.reaction;
+            if (why === null) {
+                wall.offers.push({ entry, terms, weight: entry.weight });
+                continue;
+            }
+            wall.refusals.push({ entryId: entry.id, name: entry.name, reason: why });
+        }
     }
-
-    const out: DutyCandidate[] = [];
-    for (const entry of whatAHouseHasOnItsBoard({
-        house: standing,
-        ordinal: cultivator.realmOrdinal,
-        reachOfTheHouse: reach
-    })) {
-        const terms = dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission');
-        // The same gate the catalogue goes through. A posting pitched where the
-        // reader cannot survive it is not offered to them, it is refused, and
-        // `boardRefusals` is where a refusal belongs.
-        if (!summonable(terms.regard.band)) continue;
-        out.push({ entry, terms, weight: entry.weight });
-    }
-    return out;
+    return wall;
 }
 
 /**
@@ -648,7 +832,10 @@ export function dutyFromOffer(
         scale: terms.scale,
         cohort: terms.cohort,
         access: terms.access,
-        spokenBy: null
+        // A wall does not ask anybody anything, and nobody takes a line off one
+        // on somebody else's behalf. Both are the summons path's business.
+        spokenBy: null,
+        takingOut: []
     };
 }
 
@@ -742,7 +929,7 @@ export interface DutyLedgerInput {
      * `acceptDuty` had written it on the acceptance day. Two different ids, so
      * the settled row was a SECOND row and the accepted one was never touched:
      *
-     *     > I put my name down for A Culling Notice Written From an Old Survey
+     *     > I put my name down for A Bounty at the Old Price
      *     Completed. 94 spirit stones paid.
      *
      *     > what oaths do i have
@@ -901,13 +1088,20 @@ export function completeDuty(input: DutyLedgerInput): DutySettlementResult {
         }
     })();
 
+    // THE EYEBROW IS NOT STATED HERE ANY MORE, and where it moved to is the
+    // point. This line rode the settlement, which put "posted eleven rungs
+    // under you" at COMPLETION and addressed it to nobody. The design owner:
+    // *"the eyebrow is raised by the mission elder... to take a mission YOU
+    // HAVE TO REPORT IT TO SOMEONE."* So it belongs at the taking, in front of
+    // the person the report was made to - `pitchedWellBeneath` is now said in
+    // `duty()` beside `whoTakesAReportAt`.
     return {
         obligation: settled,
         contribution: credited,
         stones: duty.stones,
         line: credited > 0
-            ? `Completed. ${credited} contribution credited with ` +
-              `${duty.factionName ?? 'the house'}, and ${duty.stones} spirit stones paid.`
+            ? `Completed. ${credited} contribution credited with `
+              + `${duty.factionName ?? 'the house'}, and ${duty.stones} spirit stones paid.`
             : `Completed. ${duty.stones} spirit stones paid, and nothing on anybody's ledger.`
     };
 }

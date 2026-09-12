@@ -269,3 +269,23 @@ their own advancement.
   are born onto
 - [`../world/hunting-a-spirit-beast.ts`](../world/hunting-a-spirit-beast.ts) -
   `bloodlineTierForChild`, and the argument for why a line wastes
+
+---
+
+## Where else to look
+
+- [`../social/README.md`](../social/README.md) - the heaviest dependency here. A match is made
+  out of what two families know and believe about each other, and what they will admit to
+  knowing.
+- [`../social-leverage/README.md`](../social-leverage/README.md) - the bargaining machinery a
+  match reuses: what somebody would take for a thing they will not sell, what they will take
+  instead of money, who has to agree before it leaves the store.
+- [`../world/README.md`](../world/README.md) - where the result is filed: a change of hands, an
+  estate at death, who is left when somebody dies, and the ties an ordinary life produces.
+- [`../birth/README.md`](../birth/README.md) - the far end of a match. A child a house will not
+  keep is decided there (`world/a-child-their-own-house-will-not-keep.ts`), not here.
+- [`../cultivation/README.md`](../cultivation/README.md) - rung is half of what a house is
+  bargaining over, and lifespan is why the timing of a match matters at all.
+- [`../../web/README.md`](../../web/README.md) - `web/match-verbs.ts` and
+  `web/match-phrasings.ts` are the only way a player reaches any of this.
+

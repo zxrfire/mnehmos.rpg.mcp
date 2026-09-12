@@ -8,7 +8,7 @@
  *
  * ── WHAT WAS PLAYED ──────────────────────────────────────────────────────
  *
- *     > I put my name down for A Culling Notice Written From an Old Survey
+ *     > I put my name down for A Bounty at the Old Price
  *     ...
  *     ENGINE  20 days of seclusion, and nothing came for you.
  *

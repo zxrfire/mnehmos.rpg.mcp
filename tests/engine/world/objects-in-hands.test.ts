@@ -30,7 +30,7 @@ import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { combatantOf } from '../../../src/engine/world/gatherings.js';
 import { assessPower } from '../../../src/engine/cultivation/combat.js';
 import { worldIdForCatalogPerson } from '../../../src/engine/world/a-catalog-person-and-their-world-row.js';
-import { APEX_INSTITUTIONS } from '../../../src/data/cultivation/governance-and-water-rights.js';
+import { APEX_INSTITUTIONS, COURTS } from '../../../src/data/cultivation/governance-and-water-rights.js';
 import { NAMED_FIGURES } from '../../../src/data/cultivation/named-figures.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import type { WorldCatalog } from '../../../src/engine/world/catalog.js';
@@ -96,7 +96,14 @@ describe('a rated object reaches the person the catalog says is holding it', () 
         // In its owner's hold. `war-melee.ts` excludes a house's stores from
         // breakage on exactly this test, so moving one out of the vault is a
         // decision and not a tidy-up.
-        expect(byId.get('sent-datum-lamp')?.possessorId).toBe('apex-earth-vein-tower');
+        //
+        // The Lamp is entered in the artifact catalog against the APEX id and
+        // resolves here to the sect one, which is the join `seedArtifacts`
+        // makes and the reason this reads as a hold at all: the Earth Vein
+        // Tower has a house row now, the world files its faction under the sect
+        // id, and before the join its vault belonged to nobody the world could
+        // name.
+        expect(byId.get('sent-datum-lamp')?.possessorId).toBe('sect-earth-vein-tower');
         expect(byId.get('artifact-the-standing-weight')?.possessorId).toBe('house-immovable-mountain');
 
         // Held by nobody, which is a real state and not a gap.
@@ -170,19 +177,34 @@ describe('the possessor column, counted', () => {
                 const holder = object.possessorId!;
                 const apex = APEX_INSTITUTIONS.find(a => a.id === holder);
                 const ancestor = NAMED_FIGURES.find(f => f.id === holder);
+                const court = COURTS.find(c => c.id === holder);
 
                 expect(
-                    apex !== undefined || ancestor !== undefined,
+                    apex !== undefined || ancestor !== undefined || court !== undefined,
                     `${object.name} is held by ${holder}, which is neither a body the governance `
                     + 'catalog names nor an ancestor above the Lid. That is a mapping failure, '
                     + 'not a designed absence.'
                 ).toBe(true);
 
                 if (apex) {
-                    // A body nobody can join. `factionId: null` in the
-                    // governance catalog is why the world mints no faction row
-                    // for it, and holding its own property is the hold state.
-                    expect(apex.factionId, `${apex.name} would have a faction row`).toBeNull();
+                    // An apex reaching this bucket means the world minted no
+                    // faction row for it, which happens only when it carries no
+                    // `factionId` at all. That used to be two of the three; all
+                    // three are houses now, so this branch should be dead, and
+                    // it stays as the guard rather than the report. If an apex
+                    // with a sect row turns up here, `seedArtifacts` has stopped
+                    // joining an apex id to the row the world files it under and
+                    // its treasury is sitting in nobody's hold again.
+                    expect(apex.factionId, `${apex.name} has a faction row and its property is not in it`)
+                        .toBeNull();
+                    expect(object.ownerId).toBe(holder);
+                }
+                if (court) {
+                    // A court holds ground and property and is not a house. It
+                    // is a POSTING - nobody joins one, people are appointed to
+                    // it - so the world mints no roll for it and therefore no
+                    // faction row, and its property has nowhere else to sit.
+                    // A third designed absence, not a fourth mapping failure.
                     expect(object.ownerId).toBe(holder);
                 }
                 if (ancestor) {

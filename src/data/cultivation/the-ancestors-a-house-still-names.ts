@@ -148,6 +148,86 @@ export interface AncestralRecords {
  * content-side, stripped by `SectSchema.parse`, read at request time.
  */
 export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
+    // THE TWO UNNAMEABLE APEXES. Both have a founder who went through the Lid
+    // and a line that still answers, and neither CLAIMS anything, because a
+    // claim is something you make in public and neither of them says anything
+    // in public at all. `partingGift` is null on both on purpose: what the
+    // founder left is the `sentDown` object on the apex row, and a second copy
+    // of it here would be two catalogs stating one fact.
+    'sect-earth-vein-tower': {
+        ancestors: [
+            {
+                name: 'The first Assessor, whose name the register gives as a figure rather than a word',
+                fate: 'ascended',
+                realmOrdinal: TRUE_IMMORTAL_ORDINAL,
+                yearsAgo: 900,
+                afterCrossing: 'still_above',
+                rememberedFor: 'Crossed, and sent back an instrument rather than an heirloom. Everything the house measures is measured against it, and the four occasions on which somebody has spoken up the channel are entered in the register with the date and nothing else.'
+            },
+            {
+                name: 'The Assessor of the third arterial, second of that office',
+                fate: 'dead',
+                realmOrdinal: 41,
+                yearsAgo: 1_900,
+                afterCrossing: null,
+                rememberedFor: 'Went up from the third arterial and did not come back down, and the Survey files the crossing under the district she was working rather than under the crossing. That filing is the house in one line.'
+            },
+            {
+                name: 'The clerk who began the standing inventory',
+                fate: 'dead',
+                realmOrdinal: null,
+                yearsAgo: 600,
+                afterCrossing: null,
+                rememberedFor: 'Wrote the first annual count of the storehouse under the datum vault and the sentence that still heads it, and the figure has not changed in the six hundred years since.'
+            }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'ancient',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote:
+            'Nobody outside the house knows there is a line to name, which is the whole of its standing on this axis. A house that cannot be named cannot be envied for its ancestors, and the Survey has never found that a loss - what an ancestor buys elsewhere is deference, and the Survey has never needed to be deferred to in a room it does not attend.'
+    },
+    'sect-myriad-course-hall': {
+        ancestors: [
+            {
+                name: 'The founder, entered on the schedule as a face and a date',
+                fate: 'ascended',
+                realmOrdinal: TRUE_IMMORTAL_ORDINAL,
+                yearsAgo: 1_100,
+                afterCrossing: 'still_above',
+                rememberedFor: 'Drove something through from the other side rather than sending it, and nothing has ever come back down the same way. The entry in the schedule is one line long and has the date on it, like everything else here.'
+            },
+            {
+                name: 'The two who went up on driven ground',
+                fate: 'ascended',
+                realmOrdinal: TRUE_IMMORTAL_ORDINAL,
+                yearsAgo: 2_600,
+                afterCrossing: 'still_above',
+                rememberedFor: 'Two crossings in one age, both from worked faces, and nothing since. The Hall has never treated them as evidence of anything except that the ground was deeper then.'
+            },
+            {
+                name: 'The Course Keeper who wrote the first century of schedule',
+                fate: 'dead',
+                realmOrdinal: 38,
+                yearsAgo: 1_000,
+                afterCrossing: null,
+                rememberedFor: 'Set out the bands the five provinces are still worked in, and the hand is legible enough that carvers a thousand years later can read the order they were meant to be taken in.'
+            }
+        ],
+        claimsLivingAncestor: false,
+        claimIsTrue: false,
+        recency: 'ancient',
+        dormant: null,
+        partingGift: null,
+        lastOffering: null,
+        discoverableTraces: [],
+        standingNote:
+            'The Hall has three crossings in its record and has never once put the number in front of anybody, because standing here is what you have finished rather than what somebody before you finished. A carver who has closed a face clean outranks a wall of names, and the house means that in writing rather than as a sentiment.'
+    },
     // THE PREEMINENT INSTITUTION OF THE PRESENT AGE The last confirmed crossing in
     // the world was this one. The Pavilion is not the strongest sect by its living
     // members - it is roughly the fourth or fifth - and none of that matters,

@@ -14,6 +14,7 @@ import {
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { getArtifact } from '../../data/cultivation/artifacts.js';
+import type { PouchItemKind } from '../../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import {
     hostilityReasonFor,
     ordinaryBandFor,
@@ -382,7 +383,12 @@ export function recordRankGained(
 
 // POUCH - what a cultivator carries
 
-export type PouchItemKind = 'pill' | 'herb' | 'artifact';
+/**
+ * Re-exported rather than restated. The size table in
+ * `what-a-body-can-carry-and-what-a-ring-holds.ts` has to answer for every
+ * kind, so it owns the list and a new kind fails to compile there first.
+ */
+export type { PouchItemKind } from '../../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 
 export interface PouchEntry {
     itemId: string;
@@ -402,6 +408,19 @@ export function listPouch(db: Database.Database, cultivatorId: string): PouchEnt
 /** Rated objects being carried. Not counted stock; see {@link listPouch}. */
 export function listCarriedArtifacts(db: Database.Database, cultivatorId: string): PouchEntry[] {
     return allPouchRows(db, cultivatorId).filter(entry => entry.kind === 'artifact');
+}
+
+/**
+ * The books in a pack.
+ *
+ * Held here rather than in a store of their own, which is the whole of the
+ * ruling: a pill and a book are both things somebody is carrying, and a verb
+ * over what somebody is carrying has to reach both or it will contradict the
+ * inventory read one turn later. `copiesHeldBy` in `technique-manage.ts` is the
+ * named read; this is the row underneath it.
+ */
+export function listHeldManuals(db: Database.Database, holderId: string): PouchEntry[] {
+    return allPouchRows(db, holderId).filter(entry => entry.kind === 'manual');
 }
 
 /**

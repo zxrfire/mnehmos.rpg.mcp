@@ -3,7 +3,7 @@
  *
  * FOUND BY PLAYING BLIND. Three consecutive sentences off one screen:
  *
- *     Sect duty: A Culling Notice Written From an Old Survey of 20 days was
+ *     Sect duty: A Bounty at the Old Price of 20 days was
  *     intended.
  *     It ran 1 day and not 20 days. Something was already on its way.
  *     Completed. 94 spirit stones paid, and nothing on anybody's ledger.

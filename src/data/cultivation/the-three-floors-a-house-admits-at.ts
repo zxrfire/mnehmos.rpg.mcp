@@ -4,6 +4,7 @@
 
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { FACTION_CHARACTER } from './faction-character.js';
+import { APEX_INSTITUTIONS } from './governance-and-water-rights.js';
 import { SECTS, SECT_ADMISSION } from './sects.js';
 import type { Sex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 
@@ -49,13 +50,44 @@ export interface HouseFloors {
 }
 
 /**
+ * Houses whose rank 0 is a CLASS rather than a floor.
+ *
+ * The reach below prices a house's rungs off what it reliably produces, which
+ * assumes the ladder is climbed by the people it produces. Two houses say on
+ * their own rank rows that theirs is not: everyone from a village intake to a
+ * Deity Transformation elder brought in from a subsidiary is Unplaced, and
+ * everyone on a face at any realm is a Hand. Pricing rung 0 off their top-end
+ * production puts the bottom of the Survey above Core Formation and strands the
+ * roll this catalog actually authored - a sixty-year Second Mark, a Sill-Sworn
+ * who carries renewals, a Hand of ninety years - below the floor of their own
+ * rank.
+ *
+ * Derived rather than listed: both declare that realm stops deciding rank below
+ * a rung their own pipeline has already passed, which is the fact. The Azure
+ * Cloud Pavilion declares the same thing about a rung its pipeline is nowhere
+ * near, so its bands are still read off what it turns out, as they should be.
+ *
+ * This held for free while neither house had a character record under its sect
+ * id. Both have one now.
+ */
+function rankIsAClassRatherThanAFloor(factionId: string): boolean {
+    const production = FACTION_CHARACTER[factionId]?.production.reliableOrdinal;
+    if (production === undefined) return false;
+    return APEX_INSTITUTIONS.some(
+        apex => apex.factionId === factionId && apex.ranksByRealmAboveOrdinal < production
+    );
+}
+
+/**
  * How far this house's ground and shelf carry somebody it took in.
  */
 export function groundReachOf(factionId: string): number | undefined {
     const sect = SECT_BY_ID.get(factionId);
     if (!sect) return undefined;
     const admission = sect.admissionOrdinal;
-    const production = FACTION_CHARACTER[factionId]?.production.reliableOrdinal ?? admission;
+    const production = rankIsAClassRatherThanAFloor(factionId)
+        ? admission
+        : FACTION_CHARACTER[factionId]?.production.reliableOrdinal ?? admission;
     return Math.min(sect.powerOrdinal, Math.max(admission, production) + ABOVE_PRODUCTION);
 }
 

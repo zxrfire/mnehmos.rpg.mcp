@@ -40,6 +40,7 @@ import { removeFromPouch } from '../server/consolidated/cultivation-support.js';
 import { getPill } from '../data/cultivation/pills.js';
 import { getHerb } from '../data/cultivation/herbs.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
+import { getTechnique } from '../data/cultivation/techniques.js';
 import { matchScore } from './entities.js';
 import type Database from 'better-sqlite3';
 
@@ -108,6 +109,17 @@ function countedHoldings(db: Database.Database, cultivatorId: string): CountedHo
                     itemId: row.item_id,
                     name: herb.name,
                     significance: howMuchAGradeIsWorthTracking(herb.grade)
+                });
+            }
+            continue;
+        }
+        if (row.item_kind === 'manual') {
+            const art = getTechnique(row.item_id);
+            if (art) {
+                held.push({
+                    itemId: row.item_id,
+                    name: art.name,
+                    significance: howMuchAGradeIsWorthTracking(art.grade)
                 });
             }
             continue;

@@ -250,3 +250,26 @@ of sects, techniques or pills. They change, and a number written into prose goes
 silently while reading as though it were checked. Say "the full ladder", "the top of the
 ladder", "the catalog". `MAX_ORDINAL` in `src/engine/cultivation/realms.ts` is the
 authority on the ladder's bounds; the catalogs are the authority on their own size.
+
+---
+
+## Where else to look
+
+The code side of this bible. Each of these is the module that enforces what the prose here
+describes:
+
+- [`../../src/README.md`](../../src/README.md) - the index of the whole tree, with a table of
+  the names the code uses for things this bible names differently.
+- [`../../src/data/cultivation/README.md`](../../src/data/cultivation/README.md) - the
+  machine-readable half of this world. Every house, road, pill, herb, beast and named figure
+  described here is a row there, and the two must not disagree.
+- [`../../src/engine/cultivation/README.md`](../../src/engine/cultivation/README.md) - what
+  climbing actually costs, in numbers: realms, roots, manuals, deviation, crossings.
+- [`../../src/engine/world/README.md`](../../src/engine/world/README.md) - the world as it is
+  at a given moment rather than as it is described: who exists, where, holding what, owing whom.
+- [`../../src/engine/social/README.md`](../../src/engine/social/README.md) - who has heard
+  what. `KnowledgeRecord` per holder, and the `KnowingStage` ladder that decides whether a
+  person can be named or pointed at. Most of what reads as "rumour" in this bible is that.
+- [`../../src/web/README.md`](../../src/web/README.md) - what a player can actually type, and
+  where the prose rules in [`writing/`](./writing/README.md) are enforced.
+

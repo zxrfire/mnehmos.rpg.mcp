@@ -21,6 +21,19 @@ import {
 } from '../engine/encounters/index.js';
 import type { EncounterRoll } from '../engine/encounters/types.js';
 import { wardHalfLifeYears } from '../engine/world/how-far-gone-a-formation-is.js';
+import { aCrossingEntersTheWorld } from '../engine/world/a-crossing-enters-the-world-as-news.js';
+import type { TheWorldNowHoldsIt } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
+import {
+    type StandingThingsAreSentTo,
+    whatWasDeliveredWhileTheyWereSitting
+} from '../engine/world/digest.js';
+import { howFarOff, regionOf, type TellerStanding } from '../engine/world/what-people-are-saying.js';
+import { asItReachesWhereTheyAre } from '../engine/encounters/arrivals.js';
+import type { ArrivableFact } from '../engine/encounters/types.js';
+import { abodeLocationId } from '../engine/world/immortal-world.js';
+import { getLocation, type WorldState } from '../engine/world/world-state.js';
+import { houseFlagKey, type HouseLedger } from '../server/consolidated/sect-leadership.js';
+import { positionIn } from './standing.js';
 import type {
     AmbientQi,
     Cultivator,
@@ -33,6 +46,7 @@ import {
     isGuidingErrorBody,
     persistUnderstanding,
     daoHeartConditions,
+    readJsonFlag,
     tollConditionsFor
 } from '../server/consolidated/cultivation-support.js';
 import { copyNamesHeldBy, handleListAvailable } from '../server/consolidated/technique-manage.js';
@@ -97,6 +111,115 @@ export function doorScaleOverStretch(
     const throughTheDoor = fraction + (1 - fraction) * (1 - held);
     // A HIDDEN DOOR IS A DIFFERENT KIND OF PROTECTION AND MULTIPLIES WITH IT.
     return hidden ? throughTheDoor * concealmentScale(setByOrdinal) : throughTheDoor;
+}
+
+/**
+ * The pending world, sized by how near each of it happened to where they sit.
+ *
+ * A cultivator sitting alone on a mountain is still sitting SOMEWHERE, and the
+ * arrival path had no proximity term at all, so a war two provinces off was as
+ * likely to break a sitting as a brawl in the courtyard. See
+ * `asItReachesWhereTheyAre`, and note that this is NOT gated on standing: the
+ * world happening beside somebody reaches them whoever they are.
+ *
+ * Applied here rather than where the pending list is built, because how near a
+ * thing is depends on where they are sitting now.
+ */
+function asTheyReachThisPlace(
+    world: WorldState | null,
+    arrivable: readonly ArrivableFact[],
+    cultivator: Cultivator,
+    locationId: string | null
+): ArrivableFact[] {
+    if (!world || arrivable.length === 0) return [...arrivable];
+    const byId = new Map(world.history.facts.map(fact => [fact.id, fact]));
+    const sittingHere: TellerStanding = {
+        id: cultivator.id,
+        name: cultivator.name,
+        realmOrdinal: cultivator.realmOrdinal,
+        locationId,
+        regionId: regionOf(world, locationId),
+        factionId: cultivator.sectId ?? null
+    };
+    return asItReachesWhereTheyAre(arrivable, fact => {
+        const row = byId.get(fact.factId);
+        return row ? howFarOff(world, row, sittingHere) : 'unplaceable';
+    });
+}
+
+/**
+ * Whether this is somebody the world has a reason to carry things to.
+ *
+ * Every term is a reason rather than a score - a roll to be on, a rung whose
+ * business piles up, people who answer to the name, a door to knock on - so a
+ * rogue with none of them gets nothing, which is the ruling and not a gap. The
+ * arithmetic is `digest.ts`'s; this only reads the four facts off the run.
+ */
+function whoWouldReach(
+    repos: CultivationRepos,
+    world: WorldState | null,
+    cultivator: Cultivator
+): StandingThingsAreSentTo {
+    const held = positionIn(repos, cultivator.id);
+    const ledger = held
+        ? readJsonFlag<HouseLedger>(repos.db, cultivator.id, houseFlagKey(held.sectId))
+        : null;
+    return {
+        inAHouse: held !== null,
+        tier: held?.tier ?? null,
+        ownFollowing: Math.max(0, ledger?.ownFollowing ?? 0),
+        // The only dwelling this engine gives a person is an abode above the
+        // Lid. Below it, buildings are a house's and not anybody's, so this is
+        // false for nearly everybody and says so rather than guessing.
+        hasASeat: world !== null
+            && getLocation(world, abodeLocationId(cultivator.id)) !== null
+    };
+}
+
+/**
+ * File every realm boundary a sitting went through into the world's own record.
+ *
+ * The two ways of climbing the same ladder have to leave the same trace. A wall
+ * struck on command goes through `crossing.ts`; a wall crossed inside a ten-year
+ * sitting comes out of the skip as a `breakthrough_success` event and went
+ * nowhere at all, so a decade that carried somebody two realms was, to everybody
+ * outside the cave, something that had not happened.
+ *
+ * Dated on the day of the crossing rather than the day the door opened, off the
+ * event's own offset against the world clock as the stretch began - the two
+ * clocks are one clock, so the sum is the day the world was on when it happened.
+ * A crossing per boundary, because two realms in one sitting is two events.
+ */
+function anyWallCrossedInHereIsNews(
+    world: WorldState,
+    skip: TimeSkipResult,
+    worldDayAtStart: number,
+    who: {
+        id: string;
+        name: string;
+        locationId: string | null;
+        place: string | null;
+        factionIds: readonly string[];
+    }
+): TheWorldNowHoldsIt[] {
+    const filed: TheWorldNowHoldsIt[] = [];
+    for (const event of skip.events) {
+        if (event.kind !== 'breakthrough_success') continue;
+        const from = Number(event.data?.fromOrdinal);
+        const to = Number(event.data?.toOrdinal);
+        if (!Number.isFinite(from) || !Number.isFinite(to)) continue;
+        const row = aCrossingEntersTheWorld(world, {
+            who: { id: who.id, name: who.name, role: 'crossed' },
+            fromOrdinal: from,
+            toOrdinal: to,
+            day: worldDayAtStart + Math.max(0, Math.floor(event.dayOffset)),
+            locationId: who.locationId,
+            place: who.place,
+            factionIds: who.factionIds
+        });
+        if (row) filed.push(row);
+    }
+    return filed;
 }
 
 /**
@@ -221,7 +344,10 @@ export const seclusionVerbs = {
                 days,
                 activity: sealed ? 'sealed' : 'seclusion',
                 cultivator,
-                arrivable: this.pendingArrivals,
+                arrivable: asTheyReachThisPlace(
+                    this.atHand, this.pendingArrivals, cultivator,
+                    this.worldPlaceOf(cultivator)
+                ),
                 // The row id is a randomUUID and would make the run
                 // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
                 rollIdentity: PLAYER_ROLL_IDENTITY
@@ -309,10 +435,23 @@ export const seclusionVerbs = {
         });
 
         const applied = applyTimeSkip(this.repos, { before: provisioned, run, skip });
+        // Held before the advance, because a crossing inside the stretch happened
+        // on the day it happened and not on the day the sitting ended.
+        const worldDayAtStart = Math.floor(this.atHand?.currentDay ?? 0);
         // The world spends exactly the days the cultivator spent. Not the days
         // that were asked for: a skip cut short by a wound stops the world at
         // the same hour it stopped the cultivator.
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
+        const crossings = this.atHand
+            ? anyWallCrossedInHereIsNews(this.atHand, skip, worldDayAtStart, {
+                id: cultivator.id,
+                name: cultivator.name,
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                factionIds: cultivator.sectId ? [cultivator.sectId] : []
+            })
+            : [];
+        if (crossings.length > 0) this.theWorldMoved();
         const verb: ActionName = sealed ? 'seclude' : 'cultivate';
 
         // WHAT ACTUALLY HAPPENED, AGAINST WHAT WAS GOING TO
@@ -460,13 +599,46 @@ export const seclusionVerbs = {
                 + 'than provisions alone.'
             );
         }
+        // ── AND WHAT WAS WAITING WHEN THE DOOR OPENED ────────────────────
+        //
+        // The half of every span that reached nobody went onto `pendingArrivals`
+        // and only ever came back as an INTERRUPTION during a later sitting, so
+        // coming out found nothing: measured on a one-year sitting, "nothing
+        // reached this cultivator. 166 event(s) passed unheard."
+        //
+        // Gated on standing, and the zero is the design - see
+        // `whatWasDeliveredWhileTheyWereSitting`. A rogue on thin ground still
+        // reads the unheard count and nothing else.
+        //
+        // NOT marked required. `withRequiredLines` matches literally, so a line
+        // a narrator renders in its own words is missing from the match and gets
+        // appended underneath the paragraph that already said it. These go the
+        // way `world.lines` go - into the prose the narrator is handed and into
+        // `structure` for the operator - which is the same seam and the same
+        // reasoning.
+        const post = whatWasDeliveredWhileTheyWereSitting(
+            this.pendingArrivals, whoWouldReach(this.repos, this.atHand, applied.cultivator)
+        );
+        this.pendingArrivals = post.stillWaiting;
+
         facts.lines.push(...applied.tollLines);
         facts.lines.push(...enc2.lines);
         facts.lines.push(...world.lines);
+        const delivered = post.delivered.length > 0 ? [post.headline, ...post.lines] : [];
+        facts.lines.push(...delivered);
         facts.structure.push(...enc2.structure);
         facts.structure.push(...world.structure);
-        if (world.lines.length > 0) {
-            facts.prose = `${facts.prose}\n\n${world.lines.join('\n')}`;
+        if (post.delivered.length > 0) {
+            facts.structure.push(
+                `${post.delivered.length} thing(s) that had reached this cultivator by no channel `
+                + `during the stretch were delivered on waking, and ${post.stillWaiting.length} `
+                + 'were not. Who gets post is standing and not distance: a roll to be on, a rung '
+                + 'whose business piles up, people who answer to the name, a door to knock on.'
+            );
+        }
+        const said = [...world.lines, ...delivered];
+        if (said.length > 0) {
+            facts.prose = `${facts.prose}\n\n${said.join('\n')}`;
         }
 
         return {
@@ -789,7 +961,10 @@ export const seclusionVerbs = {
                 days,
                 activity,
                 cultivator,
-                arrivable: this.pendingArrivals,
+                arrivable: asTheyReachThisPlace(
+                    this.atHand, this.pendingArrivals, cultivator,
+                    this.worldPlaceOf(cultivator)
+                ),
                 // The row id is a randomUUID and would make the run
                 // irreproducible from its seed. See PLAYER_ROLL_IDENTITY.
                 rollIdentity: PLAYER_ROLL_IDENTITY

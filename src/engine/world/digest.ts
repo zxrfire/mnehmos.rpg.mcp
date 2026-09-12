@@ -384,6 +384,151 @@ function headlineFor(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// COMING OUT AND FINDING WHAT ARRIVED
+//
+// A digest answers what reached somebody who was THERE. Somebody who sat behind
+// a door for twenty years was not, and the machinery for that half was wired
+// with no far end: the unheard events go onto `pendingArrivals`, which only ever
+// re-entered as an interruption during a LATER sitting. There was no waking up
+// to a stack of post. Measured on a one-year sitting: "nothing reached this
+// cultivator. 166 event(s) passed unheard."
+//
+// THE GATE IS STANDING AND NOT DISTANCE, and the zero is the design. A house
+// posts its notices, an office generates business that piles up, your own
+// disciples write, and a seat is a door somebody can knock on. A rogue alone on
+// thin ground has none of those and hears nothing, which is what makes the
+// silence mean something rather than read as a defect.
+//
+// Whether the world happening NEXT to somebody breaks their sitting is a
+// different question with a different answer - it is not gated on standing at
+// all - and it lives with the encounter window, not here.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What makes somebody a person the world delivers things to.
+ *
+ * Structural rather than a cultivator, because nothing here is about a
+ * cultivator: an NPC elder coming out of a hundred-year sitting is owed exactly
+ * the same post and by exactly the same reasoning.
+ */
+export interface StandingThingsAreSentTo {
+    /** On a house's roll at all. */
+    inAHouse: boolean;
+    /**
+     * Where they stand in it. `AuthorityTier` as a string, to avoid the import.
+     * Null for somebody on no roll.
+     */
+    tier: 'ordered' | 'ordering' | 'elder' | 'head' | null;
+    /** How many people answer to this name personally. */
+    ownFollowing: number;
+    /** A place of their own that somebody could come to the door of. */
+    hasASeat: boolean;
+}
+
+/**
+ * Cap on how much one waking hands over.
+ *
+ * A stack of post is a scene; a newsfeed is an interface. The digest limit above
+ * exists for the same reason and this is deliberately smaller than it, because
+ * what is being handed over here is the half that did NOT reach them - it is
+ * belated by definition, and the belated half should never outweigh the half
+ * they actually lived through.
+ */
+export const MOST_A_WAKING_DELIVERS = 5;
+
+/** What each tier is worth in things somebody bothers to bring you. */
+const WHAT_A_RUNG_GENERATES: Readonly<Record<
+    NonNullable<StandingThingsAreSentTo['tier']>, number
+>> = Object.freeze({
+    ordered: 0,
+    ordering: 1,
+    elder: 2,
+    head: 3
+});
+
+/**
+ * How many things find their way to somebody who was not there to hear them.
+ *
+ * Zero is the common answer and is not a failure. Each term is a REASON somebody
+ * would carry something to this person, so the sum is a count of reasons rather
+ * than a score: no reason, no delivery.
+ */
+export function howMuchWouldBeDeliveredTo(standing: StandingThingsAreSentTo): number {
+    let letters = 0;
+    // The house posts what it decides, and being on the roll is being told.
+    if (standing.inAHouse) letters += 1;
+    if (standing.tier !== null) letters += WHAT_A_RUNG_GENERATES[standing.tier];
+    // Your own people write, and the second one writing does not double it.
+    if (standing.ownFollowing > 0) letters += Math.min(2, standing.ownFollowing);
+    // Somebody is at the door once they work out you have woken.
+    if (standing.hasASeat) letters += 1;
+    return Math.min(MOST_A_WAKING_DELIVERS, letters);
+}
+
+/** One thing that was waiting. The shape `arrivableFromUnheard` produces. */
+export interface SomethingThatWasWaiting {
+    factId: string;
+    day: number;
+    magnitude: number;
+    /** Already attribution-gated. Contains no name they lack a record for. */
+    text: string;
+}
+
+export interface WhatWasWaiting<F extends SomethingThatWasWaiting> {
+    /** What somebody actually brought them, oldest first. */
+    delivered: F[];
+    /** What is still nobody's business to carry. Stays pending. */
+    stillWaiting: F[];
+    /** One line per delivered item, in the same order. Never narration. */
+    lines: string[];
+    /**
+     * What was kept and by how much, in one line. Empty when nothing came.
+     *
+     * The same job `headlineFor` does above: a count of what reached somebody is
+     * a fact and it is the one a reader needs before a stack of consequences
+     * makes sense. It says a thing was carried and never who felt what about it.
+     */
+    headline: string;
+}
+
+/**
+ * Hand over what arrived while somebody was not listening.
+ *
+ * Chosen biggest first, because what somebody bothers to carry is what mattered,
+ * and then SAID oldest first, because that is the order a person reads a stack of
+ * post in. The two orders are different on purpose and the tests pin both.
+ */
+export function whatWasDeliveredWhileTheyWereSitting<F extends SomethingThatWasWaiting>(
+    waiting: readonly F[],
+    standing: StandingThingsAreSentTo
+): WhatWasWaiting<F> {
+    const room = howMuchWouldBeDeliveredTo(standing);
+    if (room <= 0 || waiting.length === 0) {
+        return { delivered: [], stillWaiting: [...waiting], lines: [], headline: '' };
+    }
+
+    const taken = [...waiting]
+        .sort((a, b) => b.magnitude - a.magnitude || a.day - b.day
+            || (a.factId < b.factId ? -1 : 1))
+        .slice(0, room);
+    const took = new Set(taken.map(f => f.factId));
+    const delivered = taken.sort((a, b) => a.day - b.day || (a.factId < b.factId ? -1 : 1));
+
+    return {
+        delivered,
+        stillWaiting: waiting.filter(f => !took.has(f.factId)),
+        // The consequence verbatim. It was authored name-free at the event and
+        // gated through `unattributedTextOf` before it ever got here, so framing
+        // it again would be this layer writing prose - which the header above
+        // says it does not do.
+        lines: delivered.map(f => f.text),
+        headline: `${delivered.length} thing${delivered.length === 1 ? '' : 's'} had been kept `
+            + `for this cultivator while the door was shut, and ${
+                waiting.length - delivered.length} had not.`
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // BUILDING AN ACCESS FROM A SET
 // ─────────────────────────────────────────────────────────────────────────
 

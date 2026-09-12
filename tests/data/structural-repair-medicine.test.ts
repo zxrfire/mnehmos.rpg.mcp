@@ -210,7 +210,7 @@ describe('the sent-down ledger', () => {
             .map(h => h.factionId);
         expect(new Set(holders)).toEqual(new Set([
             'apex-earth-vein-tower',
-            'apex-long-cut',
+            'apex-myriad-course-hall',
             'sect-azure-cloud-pavilion'
         ]));
     });

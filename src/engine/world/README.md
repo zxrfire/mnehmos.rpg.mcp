@@ -536,6 +536,51 @@ Two rules on it:
 Opening an account is still the obligation ledger's job. A deed that warrants no grudge gets
 the fact and no grudge.
 
+### News has two axes, and they are independent
+
+> **Importance decides whether a story crosses a province. Distance decides when it gets
+> there. Neither substitutes for the other.**
+
+`airtimeOf` in `what-people-are-saying.ts` scored a fact by magnitude, scale, how far above
+the teller its people stood, and its age - and never read `teller.regionId`, which
+`TellerStanding` has carried the whole time. So a minor event was quiet EVERYWHERE instead of
+known in the street it happened in and unknown a province away, and a market whose job is
+what the people standing HERE say is happening reported the top of the world and never the
+town. `tests/web/a-fresh-world-has-somebody-to-tell.test.ts` holds the measurement.
+
+`howFarOff` is the one distance read and everything that needs one imports it:
+
+- **`airtimeOf`** gates on `DAYS_NEWS_TAKES` before anything else, so a thing that happened
+  this morning a province away has not happened here yet, and then subtracts
+  `WHAT_THE_DISTANCE_COSTS`, which a big story survives and a small one does not.
+- **`handsItPassedThrough`** spends the same read for its region term, so how far a story
+  came and how much of it survived cannot disagree about where the teller is standing.
+- **`asItReachesWhereTheyAre`** in `../encounters/arrivals.ts` sizes an arriving world event
+  by how near it happened to where somebody is SITTING, which is why two juniors brawling in
+  the courtyard can break a seclusion and a war two provinces off arrives as a remark.
+
+**Somebody who was in it or saw it is `'here'` wherever they are now.** They did not hear
+the news; they carried it, which is what makes `witnessIds` worth storing.
+
+### A crossing is news, and how far it goes is the rung
+
+`a-crossing-enters-the-world-as-news.ts` files a realm boundary through
+`aDeedEntersTheWorld`, from both doors onto the same ladder - the wall struck on command and
+the wall crossed inside a sitting. It supplies two of the three terms and invents no scheme
+of its own: `scale` is how far the crossing PHYSICALLY reached (a Foundation Establishment
+crossing happens inside one body; a tribulation crossing puts weather over a mountain),
+`weight` is how heavily the world takes it, and who it means something to is the realm-gap
+term `airtimeOf` already had. A rung inside a realm files nothing.
+
+### Coming out of a sitting finds what arrived, if anybody would deliver to you
+
+`whatWasDeliveredWhileTheyWereSitting` in `digest.ts` hands over the unheard half of a span
+when somebody wakes. **The gate is standing, not distance**: a house posts its notices, an
+office generates business that piles up, your own disciples write, a seat is a door somebody
+knocks on - and a rogue alone on thin ground has none of those and hears nothing. The zero is
+the ruling and not a gap. Whether the world happening NEXT to somebody breaks their sitting is
+a separate question with a separate answer, and it is not gated on standing at all.
+
 ### The world contains things that almost happened
 
 History must record **failed branches** - not alternate timelines, simply possibilities
@@ -1960,6 +2005,18 @@ sheltering.ts    what being inside something is worth, and it is not a bonus.
                  about `how-far-gone-a-formation-is.ts`, which prices somebody
                  WORKING AT a door over time; this is force put through a thing
                  now, and the two answer different acts
+somewhere-that-is-theirs.ts
+                 a residence is a place with a pack, at every height.
+                 `settleAbode` built one and built it above the Lid only;
+                 `capability-gaps-by-realm.md` ruled that the generic machinery
+                 was all present and this was a call site rather than a
+                 subsystem, so the generic half lives here and the immortal
+                 abode is one caller of it. `residenceOf` is the ONE read for
+                 both layers, derived off the location table rather than stored
+                 on the person. The pack is not a new store:
+                 `whereTheyKeepTheirThings` hands out the residence's id as a
+                 `cultivator_pouch` holder key, which is why an NPC's residence
+                 holds things on exactly the same footing as a player's
 war-melee.ts     the live caller: a war between two houses, which is a group
                  fight and nothing else. Ruled by the design owner - *this can
                  be easily simulated as a group fight, not bespoke* - so it
@@ -2025,6 +2082,16 @@ manuals.ts       who holds a book, what shelf a house actually has, and who it
                  about a sword form. Whether a given person could WRITE ONE OUT
                  is a third question again - `couldWriteOutACopy`, which takes
                  the holder, because copying takes having mastered it.
+what-a-house-asks-of-somebody-not-of-it.ts
+                 the access axis, and it is not about dao ground - it is about
+                 a place a house holds. Public, private, or had on terms: a
+                 fee, an art written out, or being somebody the house is glad
+                 to see. Held ground used to answer every outsider
+                 `not_of_the_house` and nothing else, 1998 times across a
+                 1702-read sweep. Nothing here is a new currency - the fee is
+                 a season of the best-paid work open at the ground's own floor,
+                 the copy is `couldWriteOutACopy` over something the house has
+                 not got, and the relations are the obligation ledger
 what-a-manual-has-left-in-it.ts
                  how many times the art comes off a book before there is no
                  book. Heaven grade and above run out; mortal and earth do not,
@@ -2308,3 +2375,35 @@ Caveat, stated because the numbers invite over-reading: the fit columns are 5 se
 Qi column is 3. The A > B > C ORDERING is paired on identical seeds and is safe; the
 magnitudes are not, and unpaired seed-to-seed spread on this measure has been seen at 5
 points. Do not quote -2.16 as a constant.
+
+---
+
+## Where else to look
+
+- [`../social/README.md`](../social/README.md) - **what anybody KNOWS is not in this
+  directory.** `social/knowledge.ts` holds `KnowledgeRecord` per holder - a stance, a source,
+  a confidence - and `social/discovery.ts` carries the six-rung `KnowingStage` ladder over
+  those same records, with `canName` and `canPointAt` as the gates. Grepping `world/` for
+  `knows` / `knownBy` / `hasHeard` finds nothing and proves nothing.
+- [`../cultivation/README.md`](../cultivation/README.md) - the heaviest dependency of this
+  layer. Realms and rungs, manual quality, injuries and what mends them, deviation, and what a
+  crossing asks of a dao heart.
+- [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the authored rows
+  `seeding.ts` turns into a running world. After seeding, this layer is what is true and the
+  catalog is only where it came from.
+- [`../social-leverage/README.md`](../social-leverage/README.md) - a fact filed here becomes
+  something somebody DOES over there: what a house does when it catches you, what somebody does
+  about being wronged, what would settle an account this heavy.
+- [`../people/README.md`](../people/README.md) - `NpcRecord` is one of two shapes a person has.
+  `Person` and `everybodyDrawingHere` are the read that covers both, and a new caller should
+  usually want that rather than either table.
+- [`../../storage/repos/README.md`](../../storage/repos/README.md) - `world-state.repo.ts` and
+  `world-snapshot.repo.ts` are what survives a restart. Most of this layer is derived per read
+  on purpose - before adding a field, check it cannot be read off the world instead.
+- [`../../web/README.md`](../../web/README.md) - every consumer. A fact filed here that no verb
+  reads is invisible to the player, and that is the commonest way work in this directory is
+  wasted.
+- [`../encounters/README.md`](../encounters/README.md) and
+  [`../household/README.md`](../household/README.md) - the two systems that write into this
+  world rather than only reading it: what a house asks of somebody, and what a match changes.
+

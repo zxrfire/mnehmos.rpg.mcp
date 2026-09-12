@@ -34,6 +34,7 @@ import {
     STARTING_SPIRIT_STONES,
     TechniqueGradeSchema,
     type AmbientQi,
+    type Cultivator,
     type TechniqueGrade
 } from '../../schema/cultivation.js';
 import { ACTIONS_PER_FULL_SATIETY } from '../../engine/cultivation/survival.js';
@@ -59,7 +60,20 @@ import { PILLS, getPill } from '../../data/cultivation/pills.js';
 import { HERBS, getHerb } from '../../data/cultivation/herbs.js';
 import { ARTIFACTS, getArtifact } from '../../data/cultivation/artifacts.js';
 import { REGIONS } from '../../data/cultivation/regions.js';
-import { SECTS } from '../../data/cultivation/sects.js';
+import { SECTS, getSect } from '../../data/cultivation/sects.js';
+import { BEAST_CHANGE_ORDINAL, type Beast } from '../../data/cultivation/beasts.js';
+import {
+    howThisOneDealsWithPeople,
+    theOnesThatCanBeStoodUp,
+    theSpeciesTheyMeant,
+    whatTheirRungGivesThemInstead,
+    whatThisHouseKnowsOf,
+    whatTheyDoAboutANameTheyDoNotHave,
+    whatTheyHaveARecordFor,
+    whereTheMannerCameFrom,
+    whyThisOneIsNotSomebody,
+    type ARecordAskedFor
+} from '../../engine/world/a-beast-that-took-a-shape-is-somebody.js';
 import { SITES, type Site } from '../../data/cultivation/inheritance-trials.js';
 import { MATCH_THRESHOLD, matchScore } from '../../web/entities.js';
 // The closed set of playable verbs. Imported rather than restated so that a
@@ -693,7 +707,25 @@ const RosterSchema = z.object({
 
 const SpawnEncounterSchema = z.object({
     action: z.literal('spawn_encounter'),
-    ordinal: ordinalArg('How strong this person is. The one argument with no sensible default.'),
+    // OPTIONAL ONLY BECAUSE `species` CAN ANSWER IT. Nothing else may default
+    // it: a rung is what an encounter IS, and a surface that guesses one has
+    // decided how dangerous the world is. A species carries its own ordinal in
+    // the catalog, so naming one is naming a rung by another road, and a line
+    // with neither is still refused below.
+    ordinal: ordinalArg('How strong this person is. Needs no default when `species` is given - the catalog carries that species\' rung.').optional(),
+    /**
+     * Stand up a beast past the change, as a person.
+     *
+     * NOT A SECOND KIND OF SPAWN. A beast past `BEAST_CHANGE_ORDINAL` is
+     * somebody - `beasts.ts` puts it among the people and says so outright -
+     * so it is the same action with a species named, and it gets the same
+     * persisted row, the same rolled talent and the same knowledge record
+     * everybody else gets. What it gets that a human spawn does not is the
+     * awareness its history implies, which is nothing at all about
+     * institutions.
+     */
+    species: z.string().min(1).max(80).optional()
+        .describe('A beast species from the catalog that has made the change - id, name, or the one word people say ("fox", "ape", "seam"). Stands it up as a PERSON, at its own rung unless ordinal says otherwise.'),
     name: z.string().min(1).max(100).optional()
         .describe('What to call them. Defaults to "A <realm> cultivator".'),
     location: z.string().optional()
@@ -706,8 +738,13 @@ const SpawnEncounterSchema = z.object({
     // nothing else. See `dispositionReaches`: there is still no store for how
     // somebody is disposed toward the player right now, and this does not invent
     // one.
-    disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional().default('hostile')
-        .describe('How they are disposed toward the player. Defaults to hostile.'),
+    // THE DEFAULT MOVED OUT OF THE SCHEMA AND INTO THE HANDLER, because there
+    // are now two defaults and the schema cannot see which applies: a named
+    // species that has kept every arrangement it made for a hundred and forty
+    // years does not open by attacking, and a zod `.default()` leaves the
+    // handler unable to tell a typed `hostile` from an assumed one.
+    disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional()
+        .describe('How they are disposed toward the player. Defaults to hostile, or to indifferent when `species` named somebody past the change.'),
     // Which house answers for them, and so how far they go when wronged. See
     // the comment beside `sectId` in the handler.
     alignment: SectAlignmentSchema.optional()
@@ -1104,6 +1141,112 @@ export async function handleSpawnSite(args: z.infer<typeof SpawnSiteSchema>): Pr
     };
 }
 
+/**
+ * What a thing that took a shape brings into the room, read rather than stored.
+ *
+ * NOTHING HERE DECIDES ANYTHING. The manner is derived from the species row;
+ * the knowledge is whatever the gate answers when it is asked. If somebody
+ * later tells this person about a house, the same call returns a different
+ * answer with no code changing - which is the test that this is a read.
+ *
+ * WHICH HOUSES IT ASKS ABOUT IS WHAT MAKES A SETTING A SETTING. The
+ * institutions in play are the ones standing here: whoever is at this location
+ * and whose roll they are on, plus the player's own house. So a sect compound
+ * asks about the house whose compound it is, and an eating house asks about
+ * whichever house's people happen to be eating in it. The question is the
+ * same; the room changes what it is asked about.
+ */
+function whatSomebodyWhoTookAShapeBringsIntoTheRoom(input: {
+    repos: ReturnType<typeof ensureCultivationDb>;
+    species: Beast;
+    ordinal: number;
+    opponentId: string;
+    cultivator: Cultivator;
+    location: string;
+    knowledge: KnowledgeGate;
+}) {
+    const { repos, species, ordinal, opponentId, cultivator, location, knowledge } = input;
+    const everybody = repos.cultivators.list();
+
+    // WHOSE NAMES ARE IN PLAY HERE. Ordered and de-duplicated so two runs of
+    // the same scene ask the same questions in the same order.
+    const houseIds: string[] = [];
+    const consider = (id: string | null | undefined) => {
+        if (id && !houseIds.includes(id)) houseIds.push(id);
+    };
+    consider(cultivator.sectId);
+    for (const person of everybody) {
+        if (person.id === opponentId) continue;
+        if (person.location === location) consider(person.sectId);
+    }
+    houseIds.sort();
+
+    const asked: ARecordAskedFor[] = houseIds.map(id => ({
+        kind: 'sect' as const,
+        name: getSect(id)?.name ?? id,
+        stage: knowledge.stageOf(opponentId, 'sect', id)
+    }));
+    // The place they are standing in is a name like any other, and they have
+    // not got it either - being somewhere is not the same as having been told
+    // what it is called.
+    asked.push({
+        kind: 'place',
+        name: location,
+        stage: knowledge.stageOf(opponentId, 'place', location)
+    });
+
+    const records = whatTheyHaveARecordFor(asked);
+
+    // ── AND BACK THE OTHER WAY, OFF THE ROLLS ─────────────────────────────
+    const housesOnIt = houseIds.map(id => {
+        const sect = getSect(id);
+        const roll = everybody
+            .filter(person => person.sectId === id)
+            .map(person => ({
+                id: person.id,
+                rankIndex: sect ? sect.ranks.indexOf(person.sectRank ?? '') : -1
+            }));
+        const read = whatThisHouseKnowsOf({
+            roll,
+            rankCount: sect?.ranks.length ?? 0,
+            stageFor: holderId => knowledge.stageOf(holderId, 'cultivator', opponentId)
+        });
+        return {
+            house: sect?.name ?? id,
+            rollHere: roll.length,
+            anybody: read.anybody,
+            deciders: read.deciders
+        };
+    });
+
+    return {
+        species: species.id,
+        // Two axes, kept apart on the way out as well as on the way in.
+        howTheyDeal: howThisOneDealsWithPeople(species),
+        mannerDerivedFrom: whereTheMannerCameFrom(species),
+        noRecordFor: records.none.map(a => a.name),
+        // WHERE THE TWO AXES MEET, AND IT IS ONE BEHAVIOUR. The absence is the
+        // knowledge axis; what they do about it is the manner axis; and
+        // `beasts.ts` already says the absence shows twice - not knowing when
+        // at ease, inventing badly when trying. Emitted only when there is
+        // actually a name they have not got, because otherwise it is a fact
+        // about nothing.
+        ...(records.none.length > 0
+            ? { andAboutThoseNames: whatTheyDoAboutANameTheyDoNotHave(species) }
+            : {}),
+        hasARecordFor: records.held.map(a => `${a.name}: ${a.stage}`),
+        knowledgeLines: records.lines,
+        andTheirRung: whatTheirRungGivesThemInstead(species, ordinal),
+        whatTheHousesHereKnowOfThem: housesOnIt,
+        note:
+            'Two axes and they are independent. What they know is the awareness table, held per '
+            + 'person, and no row was written to say they are ignorant of anything - `unaware` is '
+            + 'what an absent row reads as. How they deal is derived from the species row and is '
+            + 'stored nowhere. Neither is an instruction: "has no record for this" is a fact, and '
+            + 'confused, naive and simple are characterisation and are not the engine\'s.'
+    };
+}
+
 export async function handleSpawnEncounter(
     args: z.infer<typeof SpawnEncounterSchema>
 ): Promise<object> {
@@ -1114,18 +1257,70 @@ export async function handleSpawnEncounter(
 
     const { run, cultivator } = resolved;
 
+    // ── A SPECIES, WHERE ONE WAS NAMED ────────────────────────────────────
+    const species = args.species === undefined ? null : theSpeciesTheyMeant(args.species);
+    if (args.species !== undefined && species === null) {
+        return guidingError(
+            'unknown_species',
+            `"${args.species}" is not a beast this catalog carries.`,
+            {
+                asked: args.species,
+                nearest: theOnesThatCanBeStoodUp().map(b => b.name),
+                hint: 'Only a species past the change can be stood up as a person. ADMIN lifts '
+                    + 'content gates, not truth: it does not invent a species.'
+            }
+        );
+    }
+    if (species !== null) {
+        const why = whyThisOneIsNotSomebody(species);
+        if (why !== null) {
+            return guidingError('not_somebody', why, {
+                asked: args.species,
+                nearest: theOnesThatCanBeStoodUp().map(b => b.name),
+                hint: 'Reading the ordinal instead of `speaks` is the mistake this refusal '
+                    + 'exists to stop. Use spawn_encounter without a species for an ordinary '
+                    + 'person at any rung.'
+            });
+        }
+    }
+
+    // A SPECIES CARRIES A RUNG AND AN EXPLICIT ONE STILL WINS, but never below
+    // the change: what makes this somebody is the change, and a fox at 12 is
+    // an animal that cannot be stood in a room and talked to.
+    const askedOrdinal = args.ordinal ?? species?.ordinal;
+    if (askedOrdinal === undefined) {
+        return guidingError(
+            'no_ordinal',
+            'spawn_encounter needs an ordinal. A rung is the one argument with no sensible '
+            + 'default, because a rung is what an encounter is - unless a species was named, '
+            + 'which brings its own.',
+            {
+                // The same three fields zod's own refusal carries, because the
+                // refusal moved out of zod and the operator must not be able to
+                // tell. `ordinal` stopped being a required FIELD when `species`
+                // became able to answer it, and it did not stop being required.
+                accepts: Object.keys(SpawnEncounterSchema.shape).filter(k => k !== 'action'),
+                hint: 'ADMIN spawn_encounter ordinal=41, or ADMIN spawn_encounter species=fox, '
+                    + 'which brings its own.'
+            }
+        );
+    }
+    const ordinal = species === null
+        ? askedOrdinal
+        : Math.max(askedOrdinal, BEAST_CHANGE_ORDINAL);
+
     // A real cultivator, with talent rolled from the run seed exactly as the
     // player's was. Nothing about this opponent is asserted.
     const nonce = repos.cultivators.list().length;
-    const rootRng = forStream(run.seed, 'admin_encounter_root', nonce, args.ordinal);
-    const attrRng = forStream(run.seed, 'admin_encounter_attrs', nonce, args.ordinal);
+    const rootRng = forStream(run.seed, 'admin_encounter_root', nonce, ordinal);
+    const attrRng = forStream(run.seed, 'admin_encounter_attrs', nonce, ordinal);
     const spiritRoot = rollSpiritRoot(rootRng.next());
     const attributes = rollAttributes([
         attrRng.next(), attrRng.next(), attrRng.next(), attrRng.next()
     ]);
 
-    const maxHp = 20 + attributes.might * 10 + args.ordinal * 5;
-    const maxQi = 10 + attributes.insight * 5 + args.ordinal * 4;
+    const maxHp = 20 + attributes.might * 10 + ordinal * 5;
+    const maxQi = 10 + attributes.insight * 5 + ordinal * 4;
     // ── THE TWO IDS WERE THE ONLY UNSEEDED THINGS IN THIS FUNCTION ───────
     //
     // Everything else here is derived from `run.seed` and a nonce, on purpose:
@@ -1149,11 +1344,18 @@ export async function handleSpawnEncounter(
     // Shaped as a UUID so that nothing downstream can care which branch made
     // it, and derived from the same `nonce` and `ordinal` the rolls above use,
     // so two spawns in one run still differ.
-    const opponentId = anIdDerivedFrom(run.seed, 'admin_encounter_id', nonce, args.ordinal);
-    const siteId = anIdDerivedFrom(run.seed, 'admin_encounter_site', nonce, args.ordinal);
+    const opponentId = anIdDerivedFrom(run.seed, 'admin_encounter_id', nonce, ordinal);
+    const siteId = anIdDerivedFrom(run.seed, 'admin_encounter_site', nonce, ordinal);
     const location = args.location ?? cultivator.location ?? 'the open road';
-    const name = args.name ?? `A ${realmForOrdinal(args.ordinal).name} cultivator`;
-    const disposition = args.disposition ?? 'hostile';
+    const name = args.name ?? species?.name ?? `A ${realmForOrdinal(ordinal).name} cultivator`;
+    // A SPECIES OVERRIDES THE HOSTILE DEFAULT AND THE CATALOG SAYS WHICH WAY.
+    // `disposition` on a beast row is the houses' own three-way axis and is
+    // about terms rather than about threat, so it does not map onto this
+    // field - what it does say is that a thing which has kept every
+    // arrangement for a hundred and forty years does not open by attacking.
+    // An explicit argument still wins.
+    const disposition = args.disposition
+        ?? (species === null ? 'hostile' : 'indifferent');
     // The house that answers for them, found by the alignment asked for and
     // pitched as near this person's rung as the catalog allows - a Void
     // Refinement elder belongs to a house that has Void Tribulation people in
@@ -1164,7 +1366,7 @@ export async function handleSpawnEncounter(
             .filter(s => s.alignment === args.alignment)
             .slice()
             .sort((a, b) =>
-                Math.abs(a.powerOrdinal - args.ordinal) - Math.abs(b.powerOrdinal - args.ordinal)
+                Math.abs(a.powerOrdinal - ordinal) - Math.abs(b.powerOrdinal - ordinal)
                 || a.id.localeCompare(b.id))[0] ?? null;
     const knowledge = new KnowledgeGate(repos.db);
 
@@ -1181,7 +1383,7 @@ export async function handleSpawnEncounter(
             maxHp,
             qi: maxQi,
             maxQi,
-            age: 20 + args.ordinal * 4,
+            age: 20 + ordinal * 4,
             location,
             // AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU. The
             // entry rank comes with the house: a house answers for somebody it
@@ -1189,10 +1391,10 @@ export async function handleSpawnEncounter(
             // house membership with no rung on it would leave this person's
             // house doing nothing at all about whatever is done to them.
             ...(house ? { sectId: house.id, sectRank: house.ranks[0] } : {}),
-            spiritStones: STARTING_SPIRIT_STONES * (1 + args.ordinal)
+            spiritStones: STARTING_SPIRIT_STONES * (1 + ordinal)
         });
         // The rank change takes the same road every rank change takes.
-        if (args.ordinal > 0) repos.cultivators.advanceRealm(opponentId, args.ordinal);
+        if (ordinal > 0) repos.cultivators.advanceRealm(opponentId, ordinal);
 
         // THE PLAYER HAS TO BE ABLE TO NAME THEM
         knowledge.learnIfNew({
@@ -1207,8 +1409,8 @@ export async function handleSpawnEncounter(
             stance: 'knows',
             confidence: 1,
             statement: disposition === 'hostile'
-                ? `${name} is standing here, at ${rankName(args.ordinal)}, and means harm.`
-                : `${name} is standing here, at ${rankName(args.ordinal)}, and is ${disposition}.`
+                ? `${name} is standing here, at ${rankName(ordinal)}, and means harm.`
+                : `${name} is standing here, at ${rankName(ordinal)}, and is ${disposition}.`
         });
 
         repos.db.prepare(`
@@ -1216,7 +1418,7 @@ export async function handleSpawnEncounter(
                 (id, run_id, kind, name, ordinal, location, contents, admin_spawned, discovered, created_on_day)
             VALUES (?, ?, 'encounter', ?, ?, ?, ?, 1, 0, ?)
         `).run(
-            siteId, run.id, name, args.ordinal, location,
+            siteId, run.id, name, ordinal, location,
             JSON.stringify({
                 opponentCultivatorId: opponentId,
                 disposition
@@ -1224,10 +1426,39 @@ export async function handleSpawnEncounter(
             run.elapsedDays
         );
 
+        // ── AND THE OTHER END OF THE RELATION, WHICH IS A ROW LIKE ANY ────
+        //
+        // Awareness is held by PEOPLE and is not the player's privilege:
+        // `knowledge_records.holder_id` is whoever holds it, `askedAbout`
+        // already reads `isAwareOf(who.id, ...)` to decide whether the person
+        // being asked has anything to say, and `whatTheyRecogniseAboutIt`
+        // already reads `stageOf(them.id, 'sect', house)` as its reference
+        // axis. So bidirectional needs no relation table and no second store:
+        // the row above is what the player knows of them, and this one is what
+        // they know of the player. Either may be missing and usually both are.
+        //
+        // ONLY THIS ONE ROW IS WRITTEN, AND THAT IS THE WHOLE DESIGN. Nothing
+        // is written to say this person has never heard of a house, because
+        // `unaware` is what no row reads as - and what nobody has ever said in
+        // front of them is most of the world, for everybody, always. A spawn
+        // that seeded institutions here would be authoring a biography.
+        knowledge.learnIfNew({
+            holderId: opponentId,
+            kind: 'cultivator',
+            id: cultivator.id,
+            name: cultivator.name,
+            onDay: Math.max(0, Math.floor(run.elapsedDays)),
+            sourceKind: 'witnessed',
+            stage: 'encountered',
+            sourceNote: 'Standing in front of them. Nobody told them anything.',
+            statement: `${cultivator.name} is standing here.`
+        });
+
         writeAdminAudit(repos, 'spawn_encounter', run.id, {
             encounterId: siteId,
             opponentCultivatorId: opponentId,
-            ordinal: args.ordinal,
+            species: species?.id ?? null,
+            ordinal: ordinal,
             spiritRoot: spiritRoot.key,
             attributes,
             location,
@@ -1236,6 +1467,11 @@ export async function handleSpawnEncounter(
     })();
 
     const opponent = repos.cultivators.getById(opponentId)!;
+    const tookAShape = species === null
+        ? null
+        : whatSomebodyWhoTookAShapeBringsIntoTheRoom({
+            repos, species, ordinal, opponentId, cultivator, location, knowledge
+        });
 
     return {
         adminMode: true,
@@ -1244,6 +1480,7 @@ export async function handleSpawnEncounter(
         opponent: describeCultivator(repos, opponent, run),
         disposition,
         location,
+        ...(tookAShape ? { tookAShape } : {}),
         // AGENTS.md: any name the game prints is a name the game must accept.
         // These reach the person through the ordinary player verbs, and they
         // work because the knowledge record above made them nameable.
@@ -1259,14 +1496,14 @@ export async function handleSpawnEncounter(
         },
         gateLifted: {
             playerOrdinal: cultivator.realmOrdinal,
-            opponentOrdinal: args.ordinal,
+            opponentOrdinal: ordinal,
             // A RATIO IS NOT TWELVE DECIMAL PLACES
             powerRatio: roundRatio(
-                realmForOrdinal(args.ordinal).powerMultiplier /
+                realmForOrdinal(ordinal).powerMultiplier /
                 realmForOrdinal(cultivator.realmOrdinal).powerMultiplier
             ),
             howTheyCompare: comparePower(
-                realmForOrdinal(args.ordinal).powerMultiplier /
+                realmForOrdinal(ordinal).powerMultiplier /
                 realmForOrdinal(cultivator.realmOrdinal).powerMultiplier
             ),
             note:
@@ -2545,7 +2782,7 @@ const definitions: Record<AdminAction, ActionDefinition> = {
             'encounter', 'spawn_enemy', 'spawn_npc', 'spawn_person',
             'spawn_cultivator', 'npc', 'enemy', 'opponent', 'stage_encounter'
         ],
-        description: 'CREATES A PERSON. A real, persisted NPC cultivator at any strength you name, standing where the player is standing unless told otherwise, with spirit root and attributes rolled from the run seed and advanced through advanceRealm like anybody else. This is the action for "put an X in front of me" - a fight, a conversation, a threat. It does NOT create a place; that is spawn_site.'
+        description: 'CREATES A PERSON. A real, persisted NPC cultivator at any strength you name, standing where the player is standing unless told otherwise, with spirit root and attributes rolled from the run seed and advanced through advanceRealm like anybody else. This is the action for "put an X in front of me" - a fight, a conversation, a threat. It does NOT create a place; that is spawn_site. Name a `species` past the change and the person it stands up is a beast that took a shape: same row, same rolled talent, and the awareness its history implies, which is nothing at all about institutions.'
     },
     spawn_site: {
         schema: SpawnSiteSchema,
@@ -2652,6 +2889,7 @@ deterministic mutation and returns what the engine actually did.
 - roster           every cultivator in the world with rank, location, sect, standing (read-only)
 - spawn_site       reveals a real catalogued site by ordinal or by name; awareness gate only
 - spawn_encounter  a REAL persisted NPC cultivator with engine-rolled talent at any ordinal
+                   species=<fox|ape|seam> stands up a beast past the change, as a person
 - grant_item       catalog pills, herbs and ARTIFACTS into the real pouch. A rated object can be
                    asked for by rung - 'ordinal=45 kind=artifact' - or by its catalog name
 - set_ambient      relocates to a place the engine genuinely derives that band for, this block only
@@ -2700,6 +2938,8 @@ Actions: ${ACTIONS.join(', ')}`,
         kind: z.enum(['grave', 'trial', 'pill', 'herb', 'artifact', 'place', 'sect', 'any']).optional(),
         name: z.string().optional(),
         location: z.string().optional(),
+        species: z.string().optional()
+            .describe('For spawn_encounter: a beast species past the change, stood up as a person.'),
         disposition: z.enum(['hostile', 'wary', 'indifferent', 'friendly']).optional(),
         alignment: SectAlignmentSchema.optional(),
         itemId: z.string().optional(),
@@ -2950,6 +3190,32 @@ export async function handleAdminManage(
                 for (const line of data.sayThis) out.push(`    ${line}`);
             }
             out.push(String(data.gateLifted?.note ?? ''));
+            // ── WHAT A THING THAT TOOK A SHAPE BROUGHT WITH IT ────────────
+            //
+            // Printed as two separate blocks because they are two independent
+            // axes, and an operator who reads them as one has been told the
+            // wrong thing: a blunt creature that cannot name a house and a
+            // careful one that cannot name a house are different scenes.
+            const shape = data.tookAShape;
+            if (shape) {
+                out.push(heading('what they brought into the room'));
+                out.push('HOW THEY DEAL - derived from the species row, stored nowhere:');
+                for (const line of shape.howTheyDeal ?? []) out.push(`    ${line}`);
+                out.push('WHAT THEY HAVE A RECORD FOR - read off the awareness table:');
+                for (const line of shape.knowledgeLines ?? []) out.push(`    ${line}`);
+                if (shape.andAboutThoseNames) out.push(`    ${shape.andAboutThoseNames}`);
+                out.push('AND WHAT THEY DO KNOW - off the rung and off the catalog:');
+                for (const line of shape.andTheirRung ?? []) out.push(`    ${line}`);
+                for (const house of shape.whatTheHousesHereKnowOfThem ?? []) {
+                    out.push(
+                        `${house.house} knows of them: ${house.anybody} across ${house.rollHere} `
+                        + `name(s) on its roll standing here, ${house.deciders} among whoever `
+                        + 'decides in it.'
+                    );
+                }
+                out.push(String(shape.mannerDerivedFrom ?? ''));
+                out.push(String(shape.note ?? ''));
+            }
         } else if (data.set === true && data.band) {
             // This fell through to a generic "Action performed: set" shrug,
             // which is the invisible-fallback defect: the alias the engine

@@ -96,7 +96,7 @@ describe('the pyramid', () => {
         expect(chain[0]).toBe('sect-fallen-grain-caravan');
         expect(chain).toContain('sect-clearwater-ward');
         expect(chain).toContain('court-ninth-face');
-        expect(chain[chain.length - 1]).toBe('apex-long-cut');
+        expect(chain[chain.length - 1]).toBe('apex-myriad-course-hall');
         expect(tierOf('sect-fallen-grain-caravan')).toBeGreaterThanOrEqual(3);
 
         // A vein-holder is nearer the top than its own sub-holder.
@@ -182,7 +182,7 @@ describe('the four governance models', () => {
     });
 
     it('makes direct rule do all the work and recruit for itself', () => {
-        expect(DIRECT_RULE.apexId).toBe('apex-long-cut');
+        expect(DIRECT_RULE.apexId).toBe('apex-myriad-course-hall');
         expect(DIRECT_RULE.intakeModel).toBe('tests everyone');
         expect(DIRECT_RULE.intake).toMatch(/register|clerk|tested/i);
         expect(DIRECT_RULE.staffing.length).toBeGreaterThan(80);
@@ -327,7 +327,7 @@ describe('above the map', () => {
         expect(onTheDatum.name).toBe('The Kiln Court');
         expect(onTheDatum.embodiedByFactionId).toBeNull();
         expect(getParentage('sect-kiln-wardens')!.relation).toBe('court');
-        expect(getParentage('sect-kiln-wardens')!.parentFactionId).toBe('apex-long-cut');
+        expect(getParentage('sect-kiln-wardens')!.parentFactionId).toBe('apex-myriad-course-hall');
         // The Wardens' oddities in the sect catalog are what the reveal explains.
         expect(getSect('sect-kiln-wardens')!.recruits).toBe(false);
     });
@@ -774,7 +774,7 @@ describe('the sent-down treasures', () => {
         // And the two are good at different things, so they are not one prize
         // described twice.
         expect(byId['apex-earth-vein-tower'].asAnArtifact).toMatch(/conceal|formation|arbitration|lied to/i);
-        expect(byId['apex-long-cut'].asAnArtifact).toMatch(/fixed|ground|perimeter/i);
+        expect(byId['apex-myriad-course-hall'].asAnArtifact).toMatch(/fixed|ground|perimeter/i);
     });
 
     it('names a contender set much wider than the Court', () => {
@@ -795,7 +795,7 @@ describe('the sent-down treasures', () => {
         // One can be carried off. One cannot, and has to be used in place -
         // which is a different heist and a different kind of siege.
         expect(byId['apex-earth-vein-tower'].ifUncovered).toMatch(/taken|carried/i);
-        expect(byId['apex-long-cut'].ifUncovered).toMatch(/cannot be carried|in place/i);
+        expect(byId['apex-myriad-course-hall'].ifUncovered).toMatch(/cannot be carried|in place/i);
     });
 });
 
@@ -902,7 +902,7 @@ describe('the third apex: young, visible, and holding outright', () => {
         const byId = Object.fromEntries(APEX_INSTITUTIONS.map(a => [a.id, a]));
         expect(byId['apex-azure-cloud'].stock.remaining).toBe('nearly_intact');
         expect(byId['apex-earth-vein-tower'].stock.remaining).toBe('spent');
-        expect(byId['apex-long-cut'].stock.remaining).toBe('depleted');
+        expect(byId['apex-myriad-course-hall'].stock.remaining).toBe('depleted');
         // And nobody can restock, for the same reason every time.
         for (const a of APEX_INSTITUTIONS) {
             expect(a.stock.cannotRestock, a.id).toMatch(/Lid|through|come back|second source/i);
@@ -960,8 +960,8 @@ describe('the Azure Cloud intake', () => {
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Hollow Court/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Void Tribulation/);
         expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Earth Vein Tower/);
-        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Long Cut/);
-        // And it does not contradict the Long Cut, which tests everybody already.
+        expect(AZURE_CLOUD_INTAKE.whyNobodyElseCanDoIt).toMatch(/Myriad Course Hall/);
+        // And it does not contradict the Myriad Course Hall, which tests everybody already.
         expect(DIRECT_RULE.intakeModel).toBe('tests everyone');
         expect(AZURE_CLOUD_INTAKE.intakeModel).not.toBe(DIRECT_RULE.intakeModel);
     });
@@ -1002,7 +1002,7 @@ describe('the Azure Cloud intake', () => {
         const pr = AZURE_CLOUD_INTAKE.probation;
         expect(pr.stagedCommitment).toMatch(/Probation is cheap/i);
         expect(pr.stagedCommitment).toMatch(/Full admission is expensive/i);
-        expect(pr.stagedCommitment).toMatch(/Earth Vein Tower and the Long Cut could not/i);
+        expect(pr.stagedCommitment).toMatch(/Earth Vein Tower and the Myriad Course Hall could not/i);
         expect(pr.theLength).toMatch(/four to seven years/i);
         expect(pr.theLength).toMatch(/continuous cost/i);
     });

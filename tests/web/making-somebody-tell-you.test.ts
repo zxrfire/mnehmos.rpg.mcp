@@ -31,7 +31,7 @@ import {
 } from '../../src/web/making-somebody-tell-you';
 import type { Answer } from '../../src/web/asked';
 import type { AttemptResult } from '../../src/engine/social-leverage/index';
-import { makeGame, engineCalls } from './harness';
+import { makeGame, engineCalls , makeGameInWorld } from './harness';
 
 const answer = (patch: Partial<Answer>): Answer => ({
     reach: 'answers', couldKnow: true, lines: [], structure: [],
@@ -389,14 +389,22 @@ describe('played', () => {
      * And a demand for a thing nobody in the room could know does not spend a
      * day, because it could not have worked. Refused before the resolver, on
      * the same reasoning the missing-sum refusal on a bribe already uses.
+     *
+     * THE TOPIC IS DELIBERATELY NOT IN ANY CATALOG. It used to name a real
+     * house, which worked only while that name failed to resolve - and the
+     * moment the matcher stopped being confused by a leading "the", the name
+     * bound, the nearest cultivator turned out to have heard of it, and the
+     * refusal correctly stopped firing. A test for "nobody could know this"
+     * has to name something nobody could know, or it is really a test for
+     * whatever the parser happens not to recognise this week.
      */
     it('spends nothing on a demand that could never have landed', async () => {
-        const { game } = makeGame({ seed: 'demand-blank', worldEnabled: true });
+        const { game } = await makeGameInWorld({ seed: 'demand-blank', worldSeed: 'demand-blank-world' });
         await game.newRun('Demander');
         await game.act('I look around');
 
         const asked = await game.act(
-            'I question the nearest cultivator about the Hollow Court'
+            'I question the nearest cultivator about the Vermilion Ledger of Nine Winters'
         );
 
         expect(asked.narration).toContain('It does not change what they have to tell.');

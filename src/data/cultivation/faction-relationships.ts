@@ -122,9 +122,9 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         aStandsTo: 'alongside',
         kind: 'two_bodies_nobody_joins',
         what:
-            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Earth Vein Tower, the Deeproot Court took the roll and the founding posting order four provinces away under the Long Cut, and neither has written to the other since.',
+            'Every other court in the world is a sect: it has members, an intake, a ladder and a seat, and the word court describes what it administers rather than what kind of institution it is. These two are the exception and they are the only exception. Nobody applies to either; somebody stands there because a decision was taken elsewhere, about them, by an apex or by a house friendly to one. That shared shape is why the split was available at all - a posting can be reposted and a sect cannot - and it is the one thing each of them knows about the other that nobody else in the world knows about either. They ran as one posting under two names for nine hundred years and they are two institutions now: the Kiln kept the datum, the nine hundred lit nodes and the perimeter under the Earth Vein Tower, the Deeproot Court took the roll and the founding posting order four provinces away under the Myriad Course Hall, and neither has written to the other since.',
         since:
-            'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Earth Vein Tower reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Long Cut was waiting for them.',
+            'Nine hundred years as one posting under two names, and roughly a lifetime as two institutions: the Earth Vein Tower reposted the court without consulting anybody standing in it, most of the Wardens declined the reposting, and the Myriad Course Hall was waiting for them.',
         a: {
             warmth: 'cold',
             howTheyPutIt:
@@ -152,7 +152,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         what:
             'The Earth Vein Tower posted this body, named it, and staffed it for nine hundred years, and it does not any more. It is the only administration in the world that has ever changed patrons, and what moved was people rather than ground: the roll and the founding posting order walked out and the datum stayed where it was. The Survey has never referred to the departed body in correspondence, which leaves the sharpest fact in the arrangement standing unaddressed - the name being ignored is the Survey own word, invented by the Survey, for a posting the Survey created.',
         since:
-            'The reposting, and the walk that followed it. Living memory by the standards of the bodies involved, and the second administration the Long Cut has taken from the Survey in that span.',
+            'The reposting, and the walk that followed it. Living memory by the standards of the bodies involved, and the second administration the Myriad Course Hall has taken from the Survey in that span.',
         a: {
             warmth: 'distant',
             howTheyPutIt:
@@ -173,18 +173,18 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     },
     {
         id: 'rel-the-root-sill-and-the-schedule-that-took-it-in',
-        aId: 'apex-long-cut',
+        aId: 'apex-myriad-course-hall',
         bId: 'sect-kiln-wardens',
         aStandsTo: 'above',
         kind: 'apex_and_posting',
         what:
-            'The Long Cut appoints into this posting now, by schedule or by nomination from a house under it or friendly to it, and the people standing in it were appointed by one apex and are appointed by another, into the same posting, under the same title, on the strength of a roll that predates both arrangements. What the Long Cut acquired with them was a claim on the strongest sealed thing anybody has established the existence of, and it acquired it by offering some disaffected appointees a place, without a word having to be said out loud.',
+            'The Myriad Course Hall appoints into this posting now, by schedule or by nomination from a house under it or friendly to it, and the people standing in it were appointed by one apex and are appointed by another, into the same posting, under the same title, on the strength of a roll that predates both arrangements. What the Myriad Course Hall acquired with them was a claim on the strongest sealed thing anybody has established the existence of, and it acquired it by offering some disaffected appointees a place, without a word having to be said out loud.',
         since:
-            'The walk. The Long Cut offered a schedule rather than a rank, which was the only offer in the world that would have been taken, and it has never acknowledged making it.',
+            'The walk. The Myriad Course Hall offered a schedule rather than a rank, which was the only offer in the world that would have been taken, and it has never acknowledged making it.',
         a: {
             warmth: 'civil',
             howTheyPutIt:
-                'A place in the schedule was available and was taken. The Long Cut ranks people by faces worked and deaths avoided, it owns every act it takes by name, and it has never described this one as anything but an ordinary arrangement working.',
+                'A place in the schedule was available and was taken. The Myriad Course Hall ranks people by faces worked and deaths avoided, it owns every act it takes by name, and it has never described this one as anything but an ordinary arrangement working.',
             andSoTheyDo:
                 'Schedules the appointments and says nothing about where the body came from. The Course Keepers have begun handing returning appointees the faces nobody else is given, without recording why.',
             grievance: null
@@ -302,13 +302,13 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-two-old-apexes',
         aId: 'apex-earth-vein-tower',
-        bId: 'apex-long-cut',
+        bId: 'apex-myriad-course-hall',
         aStandsTo: 'alongside',
         kind: 'rivals',
         what:
             'The two apexes nobody can date. They agree entirely that what a house believes is not a term of any contract, and disagree entirely about whether you delegate at all: one grants veins to tenants on twelve-year terms and reads the reports, and the other holds every face itself with a posted staff of about forty and has no tenants to have a view about. Both have known the other answer for eleven hundred years and neither has ever raised it. In that span one of them has taken two of the other administrations and neither has acknowledged it.',
         since:
-            'Longer than either keeps a record of. The Third Sill has administered an arterial for the Long Cut inside a province the Earth Vein Tower holds for longer than either apex can date, and neither has ever explained or raised that either.',
+            'Longer than either keeps a record of. The Third Sill has administered an arterial for the Myriad Course Hall inside a province the Earth Vein Tower holds for longer than either apex can date, and neither has ever explained or raised that either.',
         a: {
             warmth: 'civil',
             howTheyPutIt:
@@ -357,13 +357,13 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-pavilion-and-the-long-cut',
         aId: 'apex-azure-cloud',
-        bId: 'apex-long-cut',
+        bId: 'apex-myriad-course-hall',
         aStandsTo: 'alongside',
         kind: 'rivals',
         what:
-            'The same objection pointed at a body that has no tenants to have a view about. The Long Cut has never encountered the question the Pavilion is asking, because there are no institutions on its ground to hold beliefs - everybody there is staff and everything there is a schedule - and that is the whole of the deadlock: the Survey can be argued with about a tenant, and the Long Cut cannot, because it has none.',
+            'The same objection pointed at a body that has no tenants to have a view about. The Myriad Course Hall has never encountered the question the Pavilion is asking, because there are no institutions on its ground to hold beliefs - everybody there is staff and everything there is a schedule - and that is the whole of the deadlock: the Survey can be argued with about a tenant, and the Myriad Course Hall cannot, because it has none.',
         since:
-            'Since the Pavilion became an apex and began publishing a standard. The Long Cut has had to answer questions about the Clearwater Ward twice in ninety years that it would not otherwise have been asked.',
+            'Since the Pavilion became an apex and began publishing a standard. The Myriad Course Hall has had to answer questions about the Clearwater Ward twice in ninety years that it would not otherwise have been asked.',
         a: {
             warmth: 'cold',
             howTheyPutIt:
@@ -443,11 +443,11 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     {
         id: 'rel-the-hollow-court-and-the-long-cut',
         aId: 'sect-hollow-court',
-        bId: 'apex-long-cut',
+        bId: 'apex-myriad-course-hall',
         aStandsTo: 'alongside',
         kind: 'tolerated',
         what:
-            'The Court holds four mountains and the richest vein in the world on nobody grant, inside no schedule, answering to nothing. The Long Cut runs five provinces of driven ground by owning every act on it by name, and has never scheduled anything that touches the four mountains.',
+            'The Court holds four mountains and the richest vein in the world on nobody grant, inside no schedule, answering to nothing. The Myriad Course Hall runs five provinces of driven ground by owning every act on it by name, and has never scheduled anything that touches the four mountains.',
         since:
             'Long enough that no record anywhere carries a first instance. The absence of any instrument between them is the whole of the relation.',
         a: {

@@ -78,11 +78,44 @@ describe('a portfolio is a room with a bar on it', () => {
     });
 
     it('agrees with the room table about which purposes are offices', () => {
-        const sealed = ROOM_PURPOSES.filter(p => roomAuthorityOf(p).sealed);
+        // READS `office`, WHICH USED TO BE `sealed`. One column was answering
+        // both "does this door lock" and "is somebody in charge of this", and
+        // the cost was concrete: the mission hall is a room disciples walk into
+        // to take work, so it cannot lock, so under the old reading the
+        // missions elder could not exist - while being named in the docs and in
+        // three refusal strings. AGENTS.md's `sealed` table is the same defect
+        // measured from the qi side.
+        const offices = ROOM_PURPOSES.filter(p => roomAuthorityOf(p).office);
         const portfolios = whoIsInChargeOfWhat({
             rooms: ROOM_PURPOSES, roll: ROLL, rankCount: LADDER
         });
-        expect(portfolios.map(p => p.purpose).sort()).toEqual([...sealed].sort());
+        expect(portfolios.map(p => p.purpose).sort()).toEqual([...offices].sort());
+    });
+
+    it('and an office need not lock, which is the whole reason the columns split', () => {
+        // Would go red the moment somebody folds `office` back into `sealed`.
+        expect(roomAuthorityOf('mission_hall').office).toBe(true);
+        expect(roomAuthorityOf('mission_hall').sealed).toBe(false);
+    });
+
+    it('and a room added under the shallowest office moves nobody', () => {
+        // THE CONSTRAINT THAT MADE THE LAST ATTEMPT FAIL. Offices are sorted
+        // deepest-first and dealt round robin, so a room inserted ABOVE the
+        // existing ones shifts every holder after it - which is what the
+        // reverted ancestral hall did, and the note on that room records that
+        // no rung in the sect could get the discipline hall back afterwards.
+        // The mission hall sits at 0.3, under every other office, so it appends.
+        //
+        // Asserted as behaviour rather than as a depth number: what must hold is
+        // that adding it changed nobody's room.
+        const without = whoIsInChargeOfWhat({ rooms: ROOMS, roll: ROLL, rankCount: LADDER });
+        const with_ = whoIsInChargeOfWhat({
+            rooms: [...ROOMS, 'mission_hall'], roll: ROLL, rankCount: LADDER
+        });
+        for (const before of without) {
+            const after = with_.find(p => p.purpose === before.purpose);
+            expect(after?.holderId, `${before.purpose} changed hands`).toBe(before.holderId);
+        }
     });
 });
 

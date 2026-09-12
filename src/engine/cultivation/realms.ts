@@ -8,7 +8,7 @@ export type RealmKey =
     | 'core_formation'
     | 'nascent_soul'
     | 'deity_transformation'
-    | 'void_refinement'
+    | 'void_tribulation'
     | 'body_integration'
     | 'grand_ascension'
     | 'tribulation_transcendence'
@@ -138,7 +138,7 @@ export const REALM_TIERS: readonly RealmTier[] = [
         // every save, every stored technique row and every fact in a ledger
         // that was written years of world-time ago, to buy nothing a reader
         // ever sees. So the display name moved and the key did not.
-        key: 'void_refinement',
+        key: 'void_tribulation',
         name: 'Void Tribulation',
         hanzi: '虛劫',
         ordinalStart: 29,
@@ -240,7 +240,7 @@ export const REALM_TIERS: readonly RealmTier[] = [
  * this except the readers that turn a player's words into a rung.
  */
 export const A_REALM_ANSWERS_TO: Readonly<Record<string, RealmKey>> = {
-    'void refinement': 'void_refinement'
+    'void refinement': 'void_tribulation'
 };
 
 export const MAX_ORDINAL = 46;

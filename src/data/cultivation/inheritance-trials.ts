@@ -1428,11 +1428,11 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
             whoTheyGoFor: 'Whoever in the reader\'s house is going to stand where those four candidates stood, which at Grand Ascension is always somebody younger and is never the reader.',
             whatComesBackForThatPerson: 'Four separate accounts of the hours before an attempt at the last crossing, written by four people who did not know about each other and did not come back, which is the only document of its kind anybody holds.'
         },
-        factionIds: ['apex-long-cut', 'court-ninth-face'],
+        factionIds: ['apex-myriad-course-hall', 'court-ninth-face'],
         outside: {
             marker: 'A ring of boundary stones on high open ground, set at a spacing nobody local uses, enclosing about two hundred paces of ground on which nothing grows and nothing has for a very long time. Four of the stones are cut on the faces that point inward. From outside the ring the four faces cannot be seen at all.',
             rumour: 'The Silent Cliffs will tell you it is where the authorisations are taken, and that a person is walked up there and left, and that whoever walks up does not walk down. All three parts are true and none of them is what the stones are for.',
-            attributedTo: 'The Long Cut',
+            attributedTo: 'The Myriad Course Hall',
             lastPartySaid: 'Nobody organises an entry. Herders cross the ring every season on the shortest line between two grazings and have done for centuries, and not one of them has ever had a reason to walk to a stone and look at the side facing away from them.',
             whatAKnowledgeablePartyReads: 'A ring is an enclosure and an enclosure has an inside. Cutting on the inward faces means the cutting was done by somebody who was already inside and expected the reader to be inside too, and the only people who have ever been inside that ring on purpose are candidates who were walked up there to attempt the last crossing. Four faces means four of them stopped on the way to their own death and cut something, which is not a thing a person does casually.',
             whatAnIgnorantPartyConcludes: 'That the ring is a marked hazard, which it is, and that the stones are the marking, which they are not. Every account of the site in either province describes it from outside, because describing it from outside is free and does not involve standing on two hundred paces of ground that has taken nine hundred years of what comes down at a crossing.',
@@ -1441,7 +1441,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
         },
         interior: {
             chamber: 'Two hundred paces of open ground under open sky, with four cut faces on it that can only be read from where the candidate stood. Each face carries one character in a different hand from a different century, and the four hands are separated by three hundred years at the widest. The four characters are the same character. They are cut at the same size, with the same stroke order, and they agree with each other exactly, which is the whole of what the site has to say and is not a small thing to have established.',
-            setBy: 'Four candidates of the Long Cut, separately, none of whom knew what the others had done, each in the hours before an attempt at the last crossing. Nobody arranged it and nobody calibrated it for anybody; it is four people writing down the one thing they had that they did not want to take up with them, in the only place they were certain a later candidate would be standing.',
+            setBy: 'Four candidates of the Myriad Course Hall, separately, none of whom knew what the others had done, each in the hours before an attempt at the last crossing. Nobody arranged it and nobody calibrated it for anybody; it is four people writing down the one thing they had that they did not want to take up with them, in the only place they were certain a later candidate would be standing.',
             gates: [
                 {
                     kind: 'strength',
@@ -1461,7 +1461,7 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                         }
                     ],
                     test: 'Establishing that the four hands agree. Any reader can see four characters; what the site is actually offering is the fact that four people three centuries apart cut the identical thing, which means the thing is fixed and therefore sayable, which is the entire content of the inheritance.',
-                    strengthDoesNotHelp: 'Two parties have crossed the ring at strength, read all four faces, copied them accurately and left with nothing, because a copy of a character is not a pronunciation and neither is four copies. The Long Cut holds both sets of rubbings in its own archive and has never got anything out of them either.',
+                    strengthDoesNotHelp: 'Two parties have crossed the ring at strength, read all four faces, copied them accurately and left with nothing, because a copy of a character is not a pronunciation and neither is four copies. The Myriad Course Hall holds both sets of rubbings in its own archive and has never got anything out of them either.',
                     below: 'The reader leaves with four accurate copies of one character and no art. It is the commonest outcome by a distance and it is not a punishment; it is simply what a written record of a sound is worth to somebody who has never heard the sound.'
                 }
             ],
@@ -1475,12 +1475,12 @@ export const INHERITANCE_TRIALS: readonly InheritanceTrial[] = [
                     'hollow-second-body'
                 ],
                 other: [
-                    'Four names, four dates and four ranks at the moment of attempt, cut small at the foot of each face, which is a better record of what the last crossing takes than anything the Long Cut has ever published.',
-                    'The plain fact that the four hands agree, which is worth more to the Jade Register Hall than the art is, and which the Long Cut would prefer stayed on the stones.'
+                    'Four names, four dates and four ranks at the moment of attempt, cut small at the foot of each face, which is a better record of what the last crossing takes than anything the Myriad Course Hall has ever published.',
+                    'The plain fact that the four hands agree, which is worth more to the Jade Register Hall than the art is, and which the Myriad Course Hall would prefer stayed on the stones.'
                 ],
                 immortalItemId: null
             },
-            afterwards: 'Nothing changes and nothing is spent. The stones are stones, the ring is still ground that gives nothing back, and the next claimant reads the same four faces. What the site loses when somebody takes it is exclusivity, which the Long Cut has never had and has never wanted, because a candidate who cannot get to the ring is not a candidate it would have authorised.'
+            afterwards: 'Nothing changes and nothing is spent. The stones are stones, the ring is still ground that gives nothing back, and the next claimant reads the same four faces. What the site loses when somebody takes it is exclusivity, which the Myriad Course Hall has never had and has never wanted, because a candidate who cannot get to the ring is not a candidate it would have authorised.'
         }
     },
 
@@ -1945,13 +1945,13 @@ export const GRAVES: readonly Grave[] = [
                 {
                     what: 'A case of the court\'s own manufacture, closed, containing the countersigned authorisation for the attempt and nothing else. She was carrying the paperwork.',
                     proven: true,
-                    survived: 'The crossing, closed, which the Clearwater Ward has been told about and has never been able to get the Long Cut to acknowledge in writing.',
+                    survived: 'The crossing, closed, which the Clearwater Ward has been told about and has never been able to get the Myriad Course Hall to acknowledge in writing.',
                     techniqueId: null,
                     immortalItemId: null
                 }
             ],
             whatTheDeathDidToTheContents: 'It took everything else, including her. A failed crossing does not leave a body and it did not leave a pouch, a manual, a stone, a pill or a robe: what is on eleven li of ground is three objects, and they are three objects because the lightning went through everything she had and these did not stop being things. The inverse is exact - the poorest inventory in this catalog and the only one with a warranty on it.',
-            afterwards: 'The scar is permanent and will not hold qi again. What comes off it comes off it once, and the Long Cut has not authorised a candidate since, which means there is unlikely to be another site of this kind in either province in anybody\'s lifetime.'
+            afterwards: 'The scar is permanent and will not hold qi again. What comes off it comes off it once, and the Myriad Course Hall has not authorised a candidate since, which means there is unlikely to be another site of this kind in either province in anybody\'s lifetime.'
         }
     },
 

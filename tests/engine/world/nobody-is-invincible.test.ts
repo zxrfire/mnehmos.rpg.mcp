@@ -324,16 +324,39 @@ describe('and then the elders decide', () => {
         // the elders like the dude that killed, of course. intentional is
         // fine."*
         //
-        // So the claim is about a room that holds nothing either way, which is
-        // most rooms: they stop.
+        // So the claim is about a room that holds nothing either way: they
+        // stop. The ruling has not moved. What moved is how this test arranges
+        // "indifferent".
+        //
+        // WHAT THIS USED TO DO, AND WHY IT WAS THE WRONG ARRANGEMENT. It left
+        // `readingOf` at its default, which is `openHandednessOf` - each
+        // decider's TEMPERAMENT - and then asserted that every house in a
+        // lived world stops. That is not an indifferent room, it is the mean
+        // of a random draw, and a universal over a random draw is hostage to
+        // how many people the world happens to contain.
+        //
+        // MEASURED, two arms in one session at seed `inv-rooms` after 150
+        // years: adding two houses to the catalog (the two ancient apexes,
+        // which acquired sect rows) shifted the simulation enough that the
+        // Thousand Treasure Pavilion's four survivors came out leaning +0.11
+        // on temperament alone, and its room carried on. The control arm, the
+        // same seed with those two factions filtered out of the catalog in
+        // memory, had every room stop. Neither arm says anything about the
+        // ruling: nothing in `WHAT_A_DEATH_MOVES_A_ROOM` changed, and a room
+        // of four unusually open-handed people carrying on is the ruling
+        // working rather than failing.
+        //
+        // So the arrangement is now the claim: an actually indifferent room,
+        // every house, and the shift has to carry it under on its own.
         for (const house of (await aLivedWorld()).factions) {
             const ruling = whetherItGoesOn({
                 who: 'the_hosts_own',
                 how: 'past_the_mark',
                 roll: rollFor(await aLivedWorld(), house.id),
-                rankCount: house.ranks.length
+                rankCount: house.ranks.length,
+                readingOf: () => 0
             });
-            expect(ruling.goesOn).toBe(false);
+            expect(ruling.goesOn, `${house.id} carried on from an indifferent room`).toBe(false);
         }
     });
 

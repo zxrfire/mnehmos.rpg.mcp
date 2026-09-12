@@ -14,6 +14,8 @@ import {
 } from '../../data/cultivation/beasts.js';
 import type { HerbBiome } from '../../data/cultivation/herbs.js';
 import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
+import { gradeOfWhatABodyYields } from '../cultivation/a-cultivators-body-is-material.js';
+import type { TechniqueGrade } from '../../schema/cultivation.js';
 import {
     narrowToOffered,
     regardOf,
@@ -301,6 +303,29 @@ export function readTheThing(beast: Beast, hunterOrdinal: number): string {
 // and nobody at all above that.
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * What grade a drop actually is, which is a fact about the SOURCE and not about
+ * the row.
+ *
+ * The design owner: material *"happens to come off a spirit beast the same way
+ * bones come off a dead cultivator"* - so there is no beast rule here at all.
+ * `gradeOfWhatABodyYields` is the one that already answers this for a dead
+ * cultivator, and a dead beast is answered by the same call.
+ *
+ * Which means a Thunder Hawk Core is a Thunder Hawk Core and how deep the hawk
+ * was when it fell is what decides whether it is earth or heaven. The row's own
+ * `grade` is what the species yields at its best; this is what THIS one yielded.
+ *
+ * And it puts the alignment bar where nobody had to author one: the heaven-grade
+ * version only comes off a source at or above `BEAST_CHANGE_ORDINAL`, and
+ * anything standing there has a shape and a voice and can decline.
+ *
+ * The material never speaks. The thing it came off could.
+ */
+export function gradeOfWhatItYielded(sourceOrdinal: number): TechniqueGrade {
+    return gradeOfWhatABodyYields(sourceOrdinal) ?? 'mortal';
+}
+
 export type HarvestShape = 'counted' | 'tracked';
 
 /**
@@ -385,6 +410,8 @@ export function objectForBeastMaterial(init: {
 }): ObjectRecord {
     const { material, beast } = init;
     const somebody = readsAsSomebody(beast);
+    // The source's rung, not the row's field. See `gradeOfWhatItYielded`.
+    const grade = gradeOfWhatItYielded(beast.ordinal);
 
     const blank = makeObject({
         id: init.id,
@@ -398,7 +425,7 @@ export function objectForBeastMaterial(init: {
         locationId: null,
         tags: [
             'beast_material',
-            `grade:${material.grade}`,
+            `grade:${grade}`,
             `source:${beast.id}`,
             ...(material.core ? ['core'] : []),
             ...(somebody ? ['taken_from_something_that_spoke'] : [])
@@ -407,7 +434,7 @@ export function objectForBeastMaterial(init: {
             materialId: material.id,
             beastId: beast.id,
             beastOrdinal: beast.ordinal,
-            grade: material.grade,
+            grade,
             value: material.value,
             core: material.core,
             spoke: somebody

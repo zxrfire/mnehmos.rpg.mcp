@@ -24,6 +24,7 @@ import { forStream } from './rng.js';
 // back would close a runtime cycle. Re-exported below so callers of the
 // routes have one import site.
 import {
+    NO_MANUAL_CEILING,
     ORDINARY_REALM_SPAN,
     OPENING_COST_PER_EXCESS_REALM,
     openingMultiplier,
@@ -214,6 +215,41 @@ export function contiguousRun(ordered: readonly string[], held: ReadonlySet<stri
     return run;
 }
 
+/**
+ * The three states a manual is ever in.
+ *
+ * Ruled by the design owner, and the list is closed: *"just have 3 categories
+ * for manuals: ruined, missing sections, complete"*.
+ */
+export type ManualCondition = 'complete' | 'missing sections' | 'ruined';
+
+/**
+ * Which of the three, and UNREADABLE is the only test for the third.
+ *
+ * The engine deliberately does not track which parts are gone in order to
+ * answer this. A work is readable from the beginning or it is not, which is
+ * what `contiguousRun` already computes - so a book missing its opening is
+ * ruined on the same rule as a book nobody holds a page of, rather than on a
+ * second rule written for it. The design owner: *"just treat a manual with a
+ * missing front section as ruined ... they're all classified as ruined if it's
+ * unreadable."*
+ *
+ * `alreadyRuined` is the copy the world has ended - a heaven-grade book read
+ * out to its last use, a thing somebody smashed. It short-circuits, because a
+ * complete set of volumes does not argue with a destroyed object.
+ */
+export function whatConditionAManualIsIn(
+    ordered: readonly string[],
+    held: ReadonlySet<string>,
+    alreadyRuined = false
+): ManualCondition {
+    if (alreadyRuined) return 'ruined';
+    if (ordered.length === 0) return 'complete';
+    const run = contiguousRun(ordered, held);
+    if (run === 0) return 'ruined';
+    return run === ordered.length ? 'complete' : 'missing sections';
+}
+
 // E1. THE SCATTERED SET
 //
 // Route 1b. A canon that exists only as separated volumes in three different
@@ -227,6 +263,13 @@ export function contiguousRun(ordered: readonly string[], held: ReadonlySet<stri
 export interface EffectiveCap {
     /** What to feed `CultivationOptions.techniqueCap`. Null means uncapped. */
     cap: number | null;
+    /**
+     * Which of the three states this holder's copy is in.
+     *
+     * Said on every read so no caller has to work it out, which is what stops
+     * a fourth description of a book appearing somewhere.
+     */
+    condition: ManualCondition;
     /** The complete work's own ceiling, for comparison. */
     wholeCap: number | null;
 /**
@@ -284,6 +327,7 @@ export function effectiveCapOf(
     if (volumes === null || volumes.length === 0) {
         return {
             cap: reached,
+            condition: 'complete',
             wholeCap,
             writtenTo: reached,
             stagesHeld: added,
@@ -317,6 +361,7 @@ export function effectiveCapOf(
         // The complete work IS the whole book, so stages written since count.
         return {
             cap: reached,
+            condition: 'complete',
             wholeCap,
             writtenTo: reached,
             stagesHeld: added,
@@ -347,12 +392,27 @@ export function effectiveCapOf(
         cursor = shardPower(cursor);
     }
     const dropped = cursor === null ? null : Math.max(0, cursor);
-    const cap = dropped === null || dropped > MAX_ORDINAL ? null : dropped;
     const notional = wholeCap === null ? MAX_ORDINAL + 1 : wholeCap;
-    const rungsLost = Math.max(0, notional - (dropped ?? notional));
+
+    // A RUINED BOOK HAS NO CEILING, because it has no first page.
+    //
+    // The arithmetic above stepped a three-volume canon capped at 41 down to 38
+    // for a holder with NOTHING in hand, and printed "there is nothing here to
+    // practise" in the same object. The number and the sentence disagreed, and
+    // the sentence was the right one. Ruined is now the single test - see
+    // `whatConditionAManualIsIn` - and it answers with the same value a
+    // cultivator holding no manual at all gets.
+    const condition = whatConditionAManualIsIn(volumes, held);
+    const cap = condition === 'ruined'
+        ? NO_MANUAL_CEILING
+        : dropped === null || dropped > MAX_ORDINAL ? null : dropped;
+    const rungsLost = condition === 'ruined'
+        ? notional
+        : Math.max(0, notional - (dropped ?? notional));
 
     return {
         cap,
+        condition,
         wholeCap,
         // The world may have written further; this holder cannot stand on it
         // while any part of the book itself is missing. Reported anyway, so a
@@ -363,9 +423,13 @@ export function effectiveCapOf(
         volumesTotal: volumes.length,
         missing: [...missing],
         rungsLost,
-        line: volumesHeld === 0
-            ? `${title} exists in ${volumes.length} volumes and none of them are in hand. ` +
-              'There is nothing here to practise.'
+        line: condition === 'ruined'
+            ? (volumesHeld === 0
+                ? `${title} exists in ${volumes.length} volumes and none of them are in hand. ` +
+                  'There is nothing here to practise.'
+                : `${title} is ${volumes.length} volumes and ${volumesHeld} of them are in hand, ` +
+                  'and the one it opens with is not. A work read out of order is not a work: ' +
+                  'without the beginning there is nothing here to practise.')
             : `${title} is ${volumes.length} volumes and ${volumesHeld} of them are in hand` +
               `${run < volumesHeld
                   ? `, but only the first ${run} run unbroken - the rest cannot be read past ` +

@@ -579,7 +579,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 'Everybody else in the world, including every institution that would pay enormously for it and several that have tried. There is no archive anywhere with a correct account, because the correct accounts are held by people who do not write things down and people who have been asked not to.',
             apexBlindSpot: {
                 categoryConfirmed:
-                    'Both the Earth Vein Tower and the Long Cut know that a False Immortal is wandering. Neither disputes it and neither ever has: the sightings are too consistent in kind, the incidents require the category, and both institutions established it independently and wrote it down. The category is not the problem.',
+                    'Both the Earth Vein Tower and the Myriad Course Hall know that a False Immortal is wandering. Neither disputes it and neither ever has: the sightings are too consistent in kind, the incidents require the category, and both institutions established it independently and wrote it down. The category is not the problem.',
                 theOpenQuestion:
                     'Whether it is the same one. Sightings across three centuries, in provinces that do not connect, described by people who never met and who describe different men - and no way to establish continuity of identity between any two of them. It could be one existence walking for three hundred years. It could be four, in sequence. The evidence supports both equally and has never leaned.',
                 bothConcluded:
@@ -682,7 +682,7 @@ export const WANDERERS: readonly Wanderer[] = [
                 'Touch the Standing Edge, for the same reason and more directly: it is the object she left, and the Pavilion is only holding it',
                 'Interfere with a crossing in progress anywhere, since what waits at the far side of one is the one constituency he cannot be indifferent to',
                 'Break anything that a party above the Lid arranged deliberately, at any size, including arrangements he finds ridiculous',
-                'Touch the Earth Vein Tower or the Long Cut, which is not restraint at all - he has nothing against either, wants nothing they hold, and finds administration boring'
+                'Touch the Earth Vein Tower or the Myriad Course Hall, which is not restraint at all - he has nothing against either, wants nothing they hold, and finds administration boring'
             ],
             theDeterrent:
                 'Something would come down and settle it. That is the whole of what he knows: not who, not what, not how many, and not whether it would be anybody he could name. He is aware that Ru Anjing went through and reasons about her arrangements accordingly, but he does not know that she would come, or that it would be her, or that what came would be a person at all. He has declined to find out, which is a different thing from being afraid of a known punishment.',

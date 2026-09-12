@@ -77,7 +77,7 @@ export const SATIETY_BURN_BY_REALM: Readonly<Record<RealmKey, number>> = {
     core_formation: 1 / 120,
     nascent_soul: 1 / 600,
     deity_transformation: 0,
-    void_refinement: 0,
+    void_tribulation: 0,
     body_integration: 0,
     grand_ascension: 0,
     tribulation_transcendence: 0,

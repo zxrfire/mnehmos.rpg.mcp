@@ -56,7 +56,8 @@ import { getSect } from '../data/cultivation/sects.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { highestStage, type KnowingStage } from '../engine/social/discovery.js';
-import { createObligation } from '../engine/social/grudges.js';
+import { createObligation, settleObligation } from '../engine/social/grudges.js';
+import { whatTeachingYourOwnSettles } from '../engine/social-leverage/taking-somebody-as-your-own.js';
 import { theStageAWitnessReaches } from '../engine/social-leverage/selling-a-copy-of-somebody-elses-art.js';
 import { aDeedEntersTheWorld } from '../engine/world/a-deed-enters-the-world-as-a-fact.js';
 import { whatTheirReferenceAffords } from '../engine/world/recognising-whose-art-you-just-watched.js';
@@ -71,8 +72,8 @@ import {
     whoseArt
 } from '../engine/world/manuals.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
-import type { NpcRecord } from '../engine/world/npc-state.js';
-import { writeOneObligation } from '../storage/repos/obligation.repo.js';
+import { relationshipWith, type NpcRecord } from '../engine/world/npc-state.js';
+import { ledgerAbout, writeOneObligation } from '../storage/repos/obligation.repo.js';
 import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import { type DatabaseHandle } from './encounters.js';
 import { resolveTechnique } from './entities.js';
@@ -640,6 +641,24 @@ export const teachingVerbs = {
             data: { techniqueId: art.id, months, rung }
         });
 
+        // ── AND WHETHER THEY ARE YOURS ───────────────────────────────────
+        //
+        // The bond doing work on a transaction that already existed rather than
+        // adding one beside it. Teaching a stranger is a kindness and opens a
+        // favour they owe you. Teaching your own disciple opens nothing: it is
+        // what you swore when they knelt, and it discharges the `teaching_term`
+        // that was sworn with it. A master who never teaches is left carrying an
+        // open oath with a due date on it, which is the whole difference between
+        // a disciple and a headcount.
+        //
+        // Read off the student's own tie row, which is where the world keeps it.
+        const theyAreYours = relationshipWith(student, cultivator.id)?.kind === 'master';
+        const bond = whatTeachingYourOwnSettles({
+            teacherId: cultivator.id,
+            studentId: student.id,
+            theyAreYours
+        });
+
         if (deed) {
             calls.push({
                 name: 'world.aDeedEntersTheWorld',
@@ -651,6 +670,20 @@ export const teachingVerbs = {
                 ok: true
             });
             for (const opens of deed.leaves?.opens ?? []) {
+                // The fact is filed either way - the world saw the same lesson -
+                // and only the ledger consequence differs. Anything the deed
+                // opens that is NOT the teaching favour still stands.
+                if (!bond.opensAFavour && opens.cause === 'taught_technique') {
+                    calls.push({
+                        name: 'social.whatTeachingYourOwnSettles',
+                        action: 'teach',
+                        summary:
+                            `${student.name} is already ${cultivator.name}'s disciple, so no `
+                            + `favour is opened. ${bond.why}`,
+                        ok: true
+                    });
+                    continue;
+                }
                 const record = createObligation({ ...opens, triggeringEventId: deed.fact.id });
                 writeOneObligation(this.db as unknown as DatabaseHandle, record);
                 calls.push({
@@ -660,6 +693,32 @@ export const teachingVerbs = {
                         `${record.id}: ${record.holderId} holds a ${record.severity} `
                         + `${record.kind} about ${record.subjectId} for ${record.cause}, off `
                         + `${deed.fact.id}.`,
+                    ok: true
+                });
+            }
+        }
+
+        // ── AND THE TERM THE MASTER SWORE IS SERVED ──────────────────────
+        if (bond.settles === 'teaching_term') {
+            for (const open of ledgerAbout(this.db as unknown as DatabaseHandle, cultivator.id)) {
+                if (open.status !== 'open') continue;
+                if (open.cause !== 'teaching_term') continue;
+                if (open.holderId !== cultivator.id || open.subjectId !== student.id) continue;
+                writeOneObligation(
+                    this.db as unknown as DatabaseHandle,
+                    settleObligation(open, {
+                        resolution: 'oath_fulfilled',
+                        onDay,
+                        byId: cultivator.id,
+                        note: `Walked ${student.name} down ${art.name}.`
+                    })
+                );
+                calls.push({
+                    name: 'social.settleObligation',
+                    action: 'teach',
+                    summary:
+                        `${open.id} (oath, teaching_term) is fulfilled: the road owed to `
+                        + `${student.name} was walked.`,
                     ok: true
                 });
             }

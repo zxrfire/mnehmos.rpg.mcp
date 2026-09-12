@@ -333,7 +333,7 @@ export const PILL_GRADE_REALM: Readonly<Record<TechniqueGrade, RealmKey>> = {
     mortal: 'foundation_establishment',
     earth: 'core_formation',
     heaven: 'nascent_soul',
-    immortal: 'void_refinement',
+    immortal: 'void_tribulation',
     // LEVEL WITH IMMORTAL, AND IT IS THE LAST OF THE PEER RULING
     //
     // Both top grades are FOR 29 and up. Chaos sat at Tribulation
@@ -347,7 +347,7 @@ export const PILL_GRADE_REALM: Readonly<Record<TechniqueGrade, RealmKey>> = {
     // dangerous. `grade-spread.ts` reads this ordinal twice, for the overdraw
     // and for the detonation, because they are the same stored energy let go
     // two different ways.
-    chaos: 'void_refinement'
+    chaos: 'void_tribulation'
 };
 
 /** Rungs above its own band over which a pill loses half its effect. */

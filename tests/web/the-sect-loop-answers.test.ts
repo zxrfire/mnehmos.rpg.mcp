@@ -45,7 +45,7 @@ describe('the board can be acted on', () => {
         const { game } = makeGame({ seed: 'take-the-mission', worldEnabled: true });
         await game.newRun('Rogue');
         const listed = await game.act('what missions are there');
-        expect(listed.narration).toMatch(/What a Poor Prefecture/);
+        expect(listed.narration).toMatch(/Culling Work in a Thin District/);
 
         const taken = await game.act('I take the mission');
         expect(planned(taken).action).toBe('sect');
@@ -72,7 +72,7 @@ describe('the board can be acted on', () => {
         await game.newRun('Rogue');
         const listed = await game.act('what missions are there');
         expect(listed.narration, 'the fixture needs one line on the wall')
-            .toMatch(/What a Poor Prefecture/);
+            .toMatch(/Culling Work in a Thin District/);
 
         const taken = await game.act(said);
         expect(planned(taken).action).toBe('sect');
@@ -108,13 +108,13 @@ describe('the board can be acted on', () => {
         // Asserted on the parser directly: `planned()` reports the verb the
         // planner chose and not the intent inside it, and the intent is the
         // whole point here.
-        const parsed = parseIntent('I take What a Poor Prefecture Has Instead of Monsters');
+        const parsed = parseIntent('I take Culling Work in a Thin District');
         expect(parsed.action).toBe('sect');
         expect(parsed.intent).toBe('duty');
-        expect(parsed.target).toMatch(/poor prefecture/i);
+        expect(parsed.target).toMatch(/thin district/i);
 
         const { game } = await inAHouse('take-by-title');
-        const taken = await game.act('I take What a Poor Prefecture Has Instead of Monsters');
+        const taken = await game.act('I take Culling Work in a Thin District');
         expect(taken.narration).not.toMatch(/it is not there/i);
         expect(taken.narration).toMatch(/Sect duty/i);
     }, 120_000);
@@ -138,7 +138,7 @@ describe('the numbers a member is judged on', () => {
 
         expect(asked.narration).not.toMatch(/It is done/);
         expect(asked.narration, 'answered with the job board instead of the balance')
-            .not.toMatch(/What a Poor Prefecture/);
+            .not.toMatch(/Culling Work in a Thin District/);
         expect(asked.narration).toMatch(/contribution/i);
         // The promotion refusal states both requirements and both current
         // values. This is held to the same standard before the refusal.

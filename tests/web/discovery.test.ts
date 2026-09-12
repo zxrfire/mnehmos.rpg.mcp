@@ -211,9 +211,16 @@ describe('a new cultivator starts knowing almost nothing', () => {
 
         // A name everyone in the county repeats is a belief, not a certainty,
         // and it is stored as one.
-        const sect = gate.awareness(cultivator.id, 'sect')[0];
+        //
+        // FOUND BY THE ROW ORDER MOVING. This read `[0]`, which was the county
+        // name only for as long as the county was the only thing that could
+        // grant a house at birth. A wall in the opening square now grants names
+        // too - read ones, at `placed` - so the assertion is made about the
+        // county row rather than about whichever row happened to be first.
+        const sect = gate.awareness(cultivator.id, 'sect')
+            .find(row => /county/i.test(row.sourceNote))!;
+        expect(sect, 'the county named no house at all').toBeDefined();
         expect(sect).toMatchObject({ stance: 'believes', sourceKind: 'told', stage: 'named' });
-        expect(sect.sourceNote).toMatch(/county/i);
     });
 
     it('knows the province over the border by name and no more', async () => {

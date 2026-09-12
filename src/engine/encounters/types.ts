@@ -6,6 +6,8 @@ import type { SimEvent } from '../../schema/cultivation.js';
 import type { DutyAccess, DutyOrigin, DutyPosture, DutyScale, RefusalTerms } from './duties.js';
 import type { Contact, ContactPerson, TieChange } from './contact.js';
 import type { EncounterEntry, EncounterKind } from '../../data/cultivation/encounters.js';
+import type { HouseAsItStands } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
+import type { GoingWithYou } from './who-a-senior-is-asked-to-take-out.js';
 
 // WHAT THE CULTIVATOR IS DOING
 
@@ -254,6 +256,16 @@ export interface Duty {
     scale: DutyScale;
     /** Peers sent with them. Where rivals, debts and witnesses come from. */
     cohort: number;
+    /**
+     * The juniors this ask is to ACCOMPANY, by name, where it is one.
+     *
+     * Distinct from `cohort`, which is how many of the house are going and is
+     * the ordinary case. This is the other scene: a posting pitched beneath the
+     * person being asked, and the reason anybody would put it to them is that
+     * somebody has to go with the people whose job it is. Empty where the ask
+     * is pitched at them.
+     */
+    takingOut: readonly GoingWithYou[];
     /** What the sending reaches that they could not reach alone. */
     access: DutyAccess;
     /**
@@ -368,6 +380,24 @@ export interface EncounterRollInput {
      * The house's own roster, with whatever the record already says about each.
      */
     roster?: readonly ContactPerson[];
+    /**
+     * The house as it stands today, so it can send somebody on its own business
+     * rather than only on what the catalogue happens to hold at this rung.
+     *
+     * Omitted, the summons draw falls back to the hand-authored entries alone,
+     * which is what a caller with no world knows.
+     */
+    house?: HouseAsItStands | null;
+    /**
+     * The highest rung the house has anybody standing on, the person being
+     * asked included. Bounds what it will send anybody on.
+     */
+    reachOfTheHouse?: number;
+    /**
+     * The same, counting everybody EXCEPT the person being asked. Where the
+     * house's wall tops out, and so where the juniors' work is pitched.
+     */
+    reachOfTheRest?: number;
     /** Who is standing there. Empty is legal and is honestly handled. */
     cast?: readonly EncounterPerson[];
     names?: EncounterNamePools;

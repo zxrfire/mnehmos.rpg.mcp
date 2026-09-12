@@ -35,7 +35,7 @@ import {
 export const REFINING_REALM_BY_GRADE: Readonly<Record<TechniqueGrade, RealmKey>> = {
     mortal: 'qi_condensation',
     earth: 'core_formation',
-    heaven: 'void_refinement',
+    heaven: 'void_tribulation',
     immortal: 'immortal',
     chaos: 'immortal'
 };

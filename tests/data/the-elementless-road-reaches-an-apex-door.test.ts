@@ -151,9 +151,17 @@ describe('the elementless road reaches an apex door', () => {
             const open = stillTeachingAt(o);
             expect(open.length).toBeGreaterThan(0);
             expect(open.every(b => b.element !== null)).toBe(true);
+            // Four books now, and all four are elemental, which is the claim.
+            // The two earth ones arrived with the two ancient apexes: they are
+            // the deepest elemental road on each of those shelves and the
+            // reason `houseElementalCharacterOf` reads either house as earth at
+            // all. They widen the neck for an earth root and do nothing for an
+            // elementless one, which is the fact this test exists to hold.
             expect(open.map(b => b.id).sort()).toEqual([
                 'cinder-lung-tempering-canon',  // fire, The Severed
-                'rime-heart-stillness-canon'    // ice, the Frostmirror Court
+                'deep-vein-anchoring-canon',    // earth, the Earth Vein Tower
+                'rime-heart-stillness-canon',   // ice, the Frostmirror Court
+                'worked-seam-canon'             // earth, the Myriad Course Hall
             ]);
         }
 

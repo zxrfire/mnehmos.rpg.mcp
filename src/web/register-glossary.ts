@@ -54,7 +54,7 @@ const IMMORTAL = tier('immortal');
 const LAST_CLIMBED = tier('tribulation_transcendence');
 /** The three destinations an immortal object can cap at. */
 const DEITY = tier('deity_transformation');
-const VOID_REFINEMENT = tier('void_refinement');
+const VOID_REFINEMENT = tier('void_tribulation');
 const GRAND_ASCENSION = tier('grand_ascension');
 /** The realm whose sub-ranks show most plainly that the vocabulary is local. */
 const BODY_INTEGRATION = tier('body_integration');
@@ -182,9 +182,9 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                 meaning:
                     'What this house actually keeps accounts in - deference, unpaid bills, years of '
                     + 'service, crossings owed, nothing at all. It is how the house can be paid, and it '
-                    + 'is the most reliable way to predict what it will and will not trade. Absent on the '
-                    + 'two apexes nobody can join, which is a hole in the catalog rather than an '
-                    + 'institution that trades in nothing, and their entries say so instead of guessing.'
+                    + 'is the most reliable way to predict what it will and will not trade. Where an '
+                    + 'entry has none it is a hole in the catalog rather than an institution that '
+                    + 'trades in nothing, and the entry says so instead of guessing.'
             },
             {
                 term: 'Teaches',

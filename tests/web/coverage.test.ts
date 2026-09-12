@@ -346,7 +346,7 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I offer an alliance to the Frostmirror Court',
         'I propose a pact with the Storm Tyrant Court',
         'I demand tribute from the Azure Dew Sect',
-        'I go over to the Long Cut'
+        'I go over to the Myriad Course Hall'
     ],
     seal: [
         'I wake our sealed ancestor',

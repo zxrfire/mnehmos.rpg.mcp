@@ -101,7 +101,7 @@ const BELIEVED_BY_REALM: Partial<Record<RealmKey, BeliefRow>> = Object.fromEntri
         withinTier: 'Nobody outside one is in a position to tell the sub-ranks apart.'
     },
     {
-        realm: 'void_refinement',
+        realm: 'void_tribulation',
         count: 4,
         statement: 'Four, if you count the one under the Silent Cliffs, and people argue about whether to.',
         withinTier: 'Not distinguishable from outside, and asking is considered rude.'

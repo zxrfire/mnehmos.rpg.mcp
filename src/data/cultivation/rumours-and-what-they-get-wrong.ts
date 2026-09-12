@@ -691,10 +691,10 @@ const ABOUT_INSTITUTIONS: readonly Rumour[] = [
     },
     {
         id: 'rumour-long-cut-is-a-road-company',
-        saying: 'The Long Cut is a road outfit. They keep the ground open across the provinces and they take a cut of what moves on it, which is where the name comes from.',
+        saying: 'The Myriad Course Hall is a road outfit. They keep the ground open across the provinces and they take a cut of what moves on it, which is where the name comes from.',
         saidBy: 'a border-road placer, confidently',
-        aboutId: 'apex-long-cut',
-        aboutName: 'the Long Cut',
+        aboutId: 'apex-myriad-course-hall',
+        aboutName: 'the Myriad Course Hall',
         accuracy: 'garbled',
         underneath: 'It holds driven ground across provinces and administers all of it directly, which from a road is indistinguishable from a road company. The name is not about a cut of anything and the placer has reverse-engineered an etymology from a business he understands.',
         consequence: 'A confident wrong explanation that circulates faster than the correct one because it is shorter and answers the question, which is the general reason garbled sayings win.',

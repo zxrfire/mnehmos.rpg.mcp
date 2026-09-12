@@ -293,7 +293,7 @@ export const OTHERS_WHO_NOTICED: readonly {
         whatTheyLack:
             'Any means whatsoever. The Pavilion has appraisers, couriers and a vault nobody has located, and nothing that would survive five minutes in a room with an apex. It also has far too much to lose: it holds a charter from the party in question.',
         whatTheyDoWithIt:
-            'Prices it. The Pavilion quietly discounts the risk of Survey enforcement in its own internal terms, has never explained why to its own Council Seats, and treats the observation as commercially useful rather than strategically interesting. It has read the absence as discretion, which is the same wrong conclusion the Long Cut has reached and for the same reason: it is the reading a party with something to lose finds comfortable.'
+            'Prices it. The Pavilion quietly discounts the risk of Survey enforcement in its own internal terms, has never explained why to its own Council Seats, and treats the observation as commercially useful rather than strategically interesting. It has read the absence as discretion, which is the same wrong conclusion the Myriad Course Hall has reached and for the same reason: it is the reading a party with something to lose finds comfortable.'
     },
     {
         factionId: 'sect-hollow-bell-wanderers',

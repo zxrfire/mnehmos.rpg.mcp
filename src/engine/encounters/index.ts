@@ -160,6 +160,14 @@ export {
 } from './arrivals.js';
 
 export {
+    whatTheSeniorIsBeingAskedFor,
+    whoASeniorIsAskedToTakeOut,
+    whoAsksASeniorToGo,
+    type GoingWithYou,
+    type OnTheRoll
+} from './who-a-senior-is-asked-to-take-out.js';
+
+export {
     ARRIVAL_INTERRUPT_MAGNITUDE,
     SUMMONS_SPAN_CHANCE,
     SUMMONS_TURN_CHANCE,

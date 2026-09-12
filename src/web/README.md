@@ -649,7 +649,7 @@ Two things this must keep getting right.
 
 **Rank is not realm.** `realmOrdinal` says how hard somebody is to kill; `rankIndex` says
 whether anybody has to do what they say. The catalog is emphatic that the two come apart -
-the Long Cut ranks by work and nothing else, so a Hand may be an apprentice of nineteen or
+the Myriad Course Hall ranks by work and nothing else, so a Hand may be an apprentice of nineteen or
 an Inner Face cultivator of four hundred. Every gate in `standing.ts` is on the rank.
 
 **The gate goes before the target resolves, for the acting branches.** Both refusals are
@@ -1049,6 +1049,35 @@ Three things it must keep getting right:
   one fills the gap where it put nothing. Found by playing, twice: before the constants
   every demand reached the resolver at `leverage: none`, and after them a rogue two realms
   below read as somebody worth listening to.
+
+### A haggle is an `interact` intent with a resolver on the FREE side
+
+`trade` sits in `INTERACT_INTENTS` and had nothing behind it, so a counter-offer, a
+complaint about a figure and a thing held out in place of stones all fell past every
+branch above and came back as a question put to the player.
+
+The obvious wiring is to add `trade` to `ATTEMPT_INTENTS` and it is wrong. That set is
+what routes an intent to `pressSomebody`, and pressing somebody spends a day; the ruling
+is about length - *"would it be a day in d&d? heck no"* - so the whole exchange is
+`freeAction` and may be repeated, and **acceptance is the only branch that costs**, at
+whatever `buyOffSomebodyStandingHere` already charges.
+
+[`going-back-and-forth-over-a-price.ts`](going-back-and-forth-over-a-price.ts) reads the
+sentence and composes the answer; it decides no medium. Which of stones, goods, a favour,
+a service or a hold somebody will take stays in
+[`what-they-will-take-instead-of-money.ts`](../engine/social-leverage/what-they-will-take-instead-of-money.ts),
+and its line is passed through verbatim - the kind of thing is checked before the amount
+of it, so a figure that clears the ask is still refused by somebody who will not take
+money, and the refusal names what would have worked.
+
+**The counterparty is a name, never a role.** A stall is not a person, and resolving one
+through `partyPutTo` returned nobody, which the player read as an empty square. The name
+comes off the offer standing here (`AnOfferStandingHere.sellerName`) or off the player's
+own sentence matched against who is present - deliberately not through the knowledge
+gate, which answers whether somebody may be ASKED FOR something and not who just quoted
+a figure. Where there is no name at all the answer is the goods and the figure, which is
+what a board rate is: `whyAQuotedPriceDoesNotMove` says why it will not move, and it does
+not.
 
 ### A theft's `topic` is a thing, and it is taken off the field before anything reads it
 
@@ -1488,6 +1517,32 @@ transaction, because a save that has the injuries but not the aging is worse tha
 that has neither.
 
 ---
+
+## Coming out of a sitting finds what was delivered, and what came near is what stopped it
+
+Two different things happen to somebody who sat behind a door for twenty years, and only one
+of them is about who they are.
+
+**Delivery is gated on standing.** `runSeclusion` hands the unheard half of the span to
+`whatWasDeliveredWhileTheyWereSitting` (`../engine/world/digest.ts`), which counts REASONS
+somebody would carry something over: a roll to be on, a rung whose business piles up, people
+who answer to your name, a door to knock on. A rogue alone on thin ground has none and gets
+nothing, and the silence is the ruling rather than a gap. Before this, `pendingArrivals` only
+ever re-entered as an interruption during a LATER sitting, so waking found nothing at all -
+measured on a one-year sitting, *"nothing reached this cultivator. 166 event(s) passed
+unheard."*
+
+**Interruption is not gated on standing.** `asTheyReachThisPlace` sizes the pending world by
+how near each of it happened to where the cultivator is SITTING, through
+`asItReachesWhereTheyAre` and the one distance read in
+`../engine/world/what-people-are-saying.ts`. Two juniors brawling in the courtyard can break
+a senior's sitting; a war two provinces off arrives as a remark. Nothing branches on what
+kind of event it was.
+
+**The delivered lines are not marked `required`.** `withRequiredLines` matches literally, so
+a line a narrator renders in its own words is missing from the match and is appended
+underneath the paragraph that already said it. They travel the way `world.lines` travel -
+into `facts.prose`, and into `structure` for the operator.
 
 ## A seclusion the engine stopped is a question, not a bulletin
 
@@ -2228,3 +2283,33 @@ what would work are different useful things.
 - [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - what phase 2 actually runs
 - [`../agent/provider/README.md`](../agent/provider/README.md) - provider selection and config precedence
 - [`../storage/README.md`](../storage/README.md) - the database both front doors share
+
+---
+
+## Where else to look
+
+- [`../engine/world/README.md`](../engine/world/README.md) - the state every verb reads and
+  writes, and by far the heaviest dependency here. `getNpc` and `NpcRecord` in
+  `world-state.ts` / `npc-state.ts`, the day clock in `time.ts`, what somebody owns in
+  `possessions.ts`, what is true of a place in `what-is-true-of-a-place-right-now.ts`.
+- [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - the arithmetic behind
+  every number a verb prints: `realms.ts` (`MAX_ORDINAL`, `rankName`,
+  `progressRequiredForOrdinal`), manual quality, injuries, deviation, what a crossing asks.
+- [`../engine/social/README.md`](../engine/social/README.md) - **whether somebody knows a
+  thing is not a `world/` question.** `KnowledgeRecord` per holder with a `Stance` of
+  `knows`/`believes`/`suspects`/`ignorant`, and the six-rung `KnowingStage` ladder whose
+  `canName` / `canPointAt` decide whether a verb may print a name at all.
+- [`../engine/social-leverage/README.md`](../engine/social-leverage/README.md) - what it costs
+  to move somebody who does not have to do it: asks, threats, debts, what a house does when it
+  catches you. Most asking verbs bottom out here.
+- [`../data/cultivation/README.md`](../data/cultivation/README.md) - every name a verb prints
+  comes out of a catalog. Nothing in `web/` invents a house, a pill, a place or a person.
+- [`../server/consolidated/README.md`](../server/consolidated/README.md) - the same engine
+  exposed as MCP tools. A verb and a tool that both wrap one engine call is the duplication to
+  check for before adding either.
+- [`../agent/provider/README.md`](../agent/provider/README.md) - `LLMProvider` and
+  `ProviderFactory`. The only model-facing code this package touches; the bound-NPC runtime in
+  [`../agent/README.md`](../agent/README.md) is a different loop entirely.
+- [`../engine/people/README.md`](../engine/people/README.md) - `everybodyDrawingHere` is how a
+  verb asks who is standing here without caring which of the two person tables they came from.
+

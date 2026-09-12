@@ -467,7 +467,11 @@ describe('ADMIN answers in the words it was addressed in', () => {
         it('says which arguments an action takes when one is missing', async () => {
             await newRun();
             const result = await admin({ action: 'spawn_encounter' });
-            expect(result.error).toBe('validation_error');
+            // `no_ordinal` rather than `validation_error` since `species` became
+            // able to answer the rung: a bare line is no longer a schema failure
+            // but a semantic one, and it has to carry the same three things
+            // zod's refusal carried or the change is a regression in help.
+            expect(result.error).toBe('no_ordinal');
             expect(result.message).toContain('ordinal');
             expect(result.accepts).toContain('ordinal');
         });

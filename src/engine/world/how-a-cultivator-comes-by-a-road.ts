@@ -23,6 +23,11 @@ import {
 } from './how-the-world-keeps-finding-more-ruins.js';
 import type { NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
+import {
+    whatAHouseAsksOf,
+    type ShortOfTheTerms,
+    type WhatTheyCouldPutUp
+} from './what-a-house-asks-of-somebody-not-of-it.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SEEDING THE GROUND
@@ -93,6 +98,7 @@ export function seedPlacesThatTeachADao(state: WorldState): LocationRecord[] {
                 daoSubject: place.subject,
                 daoFromOrdinal: place.fromOrdinal,
                 daoAccess: place.access,
+                daoAdmits: place.admits,
                 daoStandingRequired: place.standingRequired,
                 catalogRegionId: place.regionId,
                 // Zero, so `drawBirthplace` never puts a child on a terrace
@@ -154,10 +160,15 @@ export type ShortOfAGround =
     | 'nobody_has_found_it'
     /** It is in another province and they are not in it. */
     | 'somewhere_else'
-    /** A house holds it and they are not of that house. */
+    /** A house keeps it to its own, and they are not of that house. */
     | 'not_of_the_house'
     /** Of the house, and not far enough up its own ladder to be let near it. */
     | 'standing'
+    /**
+     * A house that would let them on, on terms they have not met. Three of
+     * them, priced in `what-a-house-asks-of-somebody-not-of-it.ts`.
+     */
+    | ShortOfTheTerms
     /** They can stand on it. It is not legible to them at this rung. */
     | 'below_the_floor';
 
@@ -169,6 +180,12 @@ export interface GroundAsTheRuleReadsIt {
     subject: string;
     /** `held` | `open` | `buried` | `carving`. Widened so a caller may pass a `data` value. */
     access: string;
+    /**
+     * Who the holder lets on: `anybody`, `its own`, or the terms it sets. The
+     * axis `standingRequired` cannot carry, because standing rations the
+     * house's OWN people and says nothing about anybody else.
+     */
+    admits: string;
     fromOrdinal: number;
     standingRequired: number;
     heldByFactionId: string | null;
@@ -189,6 +206,11 @@ export interface SomebodyStanding {
     factionId: string | null;
     /** Index into their own house's ladder. Negative for anybody in no house. */
     factionRankIndex: number;
+    /**
+     * What they could put up at a gate that asks for something. Absent means
+     * nothing, which is where every `NpcRecord` in the world stands today.
+     */
+    couldPutUp?: WhatTheyCouldPutUp;
 }
 
 export interface HowSomebodyStandsToAGround {
@@ -215,17 +237,35 @@ export function howSomebodyStandsToAGround(
     // hiding the reader from it, so it comes first.
     if (!ground.found) return { ...away, shortBy: 'nobody_has_found_it' };
 
-    if (ground.access === 'held') {
-        if (!who.factionId || who.factionId !== ground.heldByFactionId) {
-            return { ...away, shortBy: 'not_of_the_house' };
-        }
+    const ofTheHouse = who.factionId !== null && who.factionId === ground.heldByFactionId;
+
+    if (ground.access === 'held' && ofTheHouse) {
         // Of the house. They know the terrace is up there; they are not let on
-        // it. This is what membership is worth and what standing costs.
+        // it. This is what membership is worth and what standing costs, and no
+        // fee and no favour is a way round your own house's ladder.
         if (who.factionRankIndex < ground.standingRequired) {
             return { knowsWhereItIs: true, inReach: false, shortBy: 'standing' };
         }
-    } else if (!who.regionCatalogId || who.regionCatalogId !== ground.regionCatalogId) {
-        return { ...away, shortBy: 'somewhere_else' };
+    } else {
+        // WHOSE GROUND IT IS, NOT WHETHER THEY ARE ON THE ROLL. Membership was
+        // the whole gate and it refused 666 times in one 222-square sweep with
+        // one sentence. A house keeping a terrace to its own is one of three
+        // answers, and an outsider who is turned away from the other two is
+        // being told a price rather than a fact about their name.
+        if (ground.access === 'held' && ground.admits === 'its own') {
+            return { ...away, shortBy: 'not_of_the_house' };
+        }
+        // An outsider has to travel there, which is the same bar open ground
+        // has always put on everybody.
+        if (!who.regionCatalogId || who.regionCatalogId !== ground.regionCatalogId) {
+            return { ...away, shortBy: 'somewhere_else' };
+        }
+        if (ground.access === 'held') {
+            const short = whatAHouseAsksOf(ground, who.ordinal, who.couldPutUp);
+            if (short !== null) {
+                return { knowsWhereItIs: true, inReach: false, shortBy: short };
+            }
+        }
     }
 
     if (who.ordinal < ground.fromOrdinal) {
@@ -251,6 +291,14 @@ export function groundAtLocation(location: LocationRecord): GroundAsTheRuleReads
         domain: domain as InsightDomain,
         subject: String(location.data.daoSubject ?? location.name),
         access,
+        // Absent on ground the world dug out of a ruin, and on any record
+        // written before houses were asked the question. The holder decides the
+        // default: a hole nobody is standing on admits anybody, and a house
+        // that has not said otherwise keeps what it holds.
+        admits: String(
+            location.data.daoAdmits
+            ?? (location.controllingFactionId ? 'its own' : 'anybody')
+        ),
         fromOrdinal: Number(location.data.daoFromOrdinal ?? 0),
         standingRequired: Number(location.data.daoStandingRequired ?? 0),
         heldByFactionId: location.controllingFactionId,
@@ -271,6 +319,7 @@ export function groundFromCatalogRow(row: PlaceThatTeachesADao): GroundAsTheRule
         domain: row.domain,
         subject: row.subject,
         access: row.access,
+        admits: row.admits,
         fromOrdinal: row.fromOrdinal,
         standingRequired: row.standingRequired,
         heldByFactionId: row.heldBy,
@@ -588,6 +637,7 @@ export function applyRoadsComprehended(
                 catalogRegionId: region.data.catalogRegionId ?? null,
                 daoDomain: domain,
                 daoAccess: 'buried',
+                daoAdmits: 'anybody',
                 daoFromOrdinal: Number(location.data.floorOrdinal ?? 0),
                 // Safe to take the name directly: `applyRuinProspecting` runs
                 // earlier in the same year (day+40 against day+110) and repairs

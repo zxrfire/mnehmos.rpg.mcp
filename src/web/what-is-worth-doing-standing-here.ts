@@ -275,6 +275,12 @@ export interface StandingHere {
      */
     dutiesGoing?: number;
     /**
+     * Work on the same wall that is NOT being put to this cultivator, with the
+     * engine's reason attached. Read rather than taken, and counted apart so
+     * nothing can mistake one for the other.
+     */
+    dutiesNotYours?: number;
+    /**
      * Past the Lid, where none of the mortal-world lines apply at all.
      */
     aboveTheLid: boolean;
@@ -428,6 +434,7 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     const paperOnTheWall = here.paperOnTheWall ?? null;
     const spanCounterHere = here.spanCounterHere ?? false;
     const dutiesGoing = here.dutiesGoing ?? 0;
+    const dutiesNotYours = here.dutiesNotYours ?? 0;
     const builtHere = here.builtHere ?? null;
 
     // A FIGHT IS HAPPENING, AND NOTHING ELSE IS THE SUBJECT
@@ -897,12 +904,22 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
     }
 
     // WHAT THE BOARD IS ASKING FOR, AT THIS RUNG
-    if (!here.aboveTheLid && dutiesGoing > 0) {
-        add(inTheSquare(SAY.duties, 'open',
-            `${dutiesGoing} thing${dutiesGoing === 1 ? '' : 's'} on the wall `
-            + `${dutiesGoing === 1 ? 'is' : 'are'} being put to somebody at your rung, with `
-            + 'what each pays. Work that is asked for by name is worth more than work you go '
-            + 'looking for.'));
+    //
+    // AND WHAT IT IS ASKING OF SOMEBODY ELSE. A gate decides what may be taken
+    // and must not decide what may be read: a wall with six things on it and
+    // none of them yours is a wall with six things on it, and knowing what a
+    // house is doing is how anybody works out what standing would be worth.
+    // Gated on the count either way, because a wall with nothing on it is the
+    // one case where there is genuinely nothing to read.
+    if (!here.aboveTheLid && (dutiesGoing > 0 || dutiesNotYours > 0)) {
+        add(inTheSquare(SAY.duties, 'open', dutiesGoing > 0
+            ? `${dutiesGoing} thing${dutiesGoing === 1 ? '' : 's'} on the wall `
+              + `${dutiesGoing === 1 ? 'is' : 'are'} being put to somebody at your rung, with `
+              + 'what each pays. Work that is asked for by name is worth more than work you go '
+              + 'looking for.'
+            : `${dutiesNotYours} thing${dutiesNotYours === 1 ? '' : 's'} on the wall, and none `
+              + 'of them being put to you. The wall says what each is and on whose account, '
+              + 'which is what tells you what standing here would be worth.'));
     }
 
     // AND SOMEBODY IS STANDING RIGHT THERE

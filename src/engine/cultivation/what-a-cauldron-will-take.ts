@@ -31,8 +31,8 @@
  * cannot say which is not a refusal anybody can act on.
  */
 
-import { getHerb } from '../../data/cultivation/herbs.js';
-import { getBeastMaterial } from '../../data/cultivation/beasts.js';
+import { HERBS, getHerb } from '../../data/cultivation/herbs.js';
+import { BEAST_MATERIALS, getBeastMaterial } from '../../data/cultivation/beasts.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 
 /**
@@ -109,4 +109,38 @@ export function howYouWouldComeByIt(material: WhatTheCauldronIsBeingHanded): str
     return material.from === 'a_beast'
         ? `${material.name} comes off a spirit beast, and the beast has to be dealt with first`
         : `${material.name} grows, and somebody has to be standing where it grows`;
+}
+
+/**
+ * The same read backwards: given a grade and a source, what reaches it.
+ *
+ * `whatAnIngredientIs` answers "what is this id", and until now nothing could
+ * ask "what would do instead" - so a recipe or a refusal that wanted to name a
+ * substitute had to carry its own list of ids, which is the second copy that
+ * goes stale the first time a catalog row is regraded.
+ *
+ * Sorted by value, cheapest first, because that is the order somebody short of
+ * a thing wants to hear it in.
+ */
+export function everyIngredientThatIs(filter: {
+    grade?: TechniqueGrade;
+    from?: WhereAMaterialComesFrom;
+    /** The rung the gatherer stands at. Omit to ignore where it has to be got. */
+    withinReachOf?: number;
+}): readonly WhatTheCauldronIsBeingHanded[] {
+    const rows: WhatTheCauldronIsBeingHanded[] = [];
+    for (const herb of HERBS) {
+        const row = whatAnIngredientIs(herb.id);
+        if (row !== null) rows.push(row);
+    }
+    for (const material of BEAST_MATERIALS) {
+        const row = whatAnIngredientIs(material.id);
+        if (row !== null) rows.push(row);
+    }
+    return rows
+        .filter(row => filter.grade === undefined || row.grade === filter.grade)
+        .filter(row => filter.from === undefined || row.from === filter.from)
+        .filter(row =>
+            filter.withinReachOf === undefined || row.harvestOrdinal <= filter.withinReachOf)
+        .sort((a, b) => a.value - b.value || (a.id < b.id ? -1 : 1));
 }

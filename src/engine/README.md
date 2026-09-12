@@ -159,3 +159,38 @@ engineering and is kept; the game-facing surface above it is what has been repla
 described a game this engine no longer runs, and the D&D combat engine went with them. Combat is
 now `cultivation/combat.ts` - the categorical realm gap, composite power, upsets that have to be
 paid for, and the two traditions' different answers to being killed.
+
+---
+
+## Where else to look
+
+Every subsystem below this file, and the question each one answers:
+
+- [`birth/`](./birth/README.md) - whose child a run opens as.
+- [`cultivation/`](./cultivation/README.md) - realms, roots, manuals, injuries, pills,
+  deviation, crossings. The largest thing `world/` depends on.
+- [`world/`](./world/README.md) - what is true right now: who exists, where, holding what,
+  owing whom, and the day clock over it.
+- [`social/`](./social/README.md) - what people know and believe. `KnowledgeRecord`,
+  `Stance`, `KnowingStage`. **Not in `world/`, and this is the usual wrong turn.**
+- [`social-leverage/`](./social-leverage/README.md) - what it costs to move a person.
+- [`household/`](./household/README.md) - matches, children, what a house would take.
+- [`encounters/`](./encounters/README.md) - things happening to somebody.
+- [`people/`](./people/README.md) - one read over the two tables a person is stored in.
+- [`perception/`](./perception/README.md) - what somebody can see, and what they miss.
+- [`worldgen/`](./worldgen/README.md) - the ground, deterministic from the world seed.
+- [`spatial/`](./spatial/README.md), [`strategy/`](./strategy/README.md) - retained from the
+  D&D substrate for folding space and for war between houses. Neither is wired.
+- [`dsl/`](./dsl/README.md) - a small expression language for authored rules.
+
+Outside this tree:
+
+- [`../data/cultivation/README.md`](../data/cultivation/README.md) - the authored tables every
+  system here reads. Arithmetic lives here; facts live there.
+- [`../web/README.md`](../web/README.md) - the only consumer that matters. A system nothing in
+  `web/` reaches is a system the player cannot see, which is the commonest defect in this tree.
+- [`../schema/README.md`](../schema/README.md) - the shapes that cross a boundary, and the
+  closed enums this engine branches on.
+- [`../storage/repos/README.md`](../storage/repos/README.md) - what of all this is persisted.
+  `pubsub.ts` beside this file is the one thing here that is neither.
+

@@ -1,12 +1,12 @@
 # Bastion - Publishing Workflow
 
-*Canonical home for the Bastion publishing convention. This workflow originated in [`bastion-website-spec.md`](docs/bastion/bastion-website-spec.md) §7; it lives here so it doesn't drift inside a longer spec and can be referenced as a standalone procedure.*
+*Canonical home for the Bastion publishing convention. It began as one section of a longer website spec that came with the fork and has since been removed; it lives here so it does not drift inside a larger document and can be referenced as a standalone procedure.*
 
 ---
 
 ## Header - provenance
 
-- **Origin:** `bastion-website-spec.md` §7 ("Publishing workflow - the documented convention").
+- **Origin:** a section of the fork's website spec, which has been removed from this repository.
 - **Canonical home:** this file (`PUBLISHING.md`) is now the single source of truth for the publish step.
 - **Scope:** how a committed scene in the rpg-mcp ledger becomes a published page (and, when narrated, an audio episode) on the Bastion site, served from `docs/` via GitHub Pages.
 
@@ -90,7 +90,7 @@ One biography update = one build = one commit. The git history reads as a publis
 ## Invariants (do not violate)
 
 1. **`docs/` is generated. Never hand-edit a file under `docs/`.**
-   Edit content (`bastion/biographies/<slug>/chapters/*.md`), themes (`bastion/biographies/<slug>/theme.yaml`), or templates - and rebuild. This is the fix for the Naruto5e site's hand-authored drift, and the reason the build is idempotent.
+   Edit content (`bastion/biographies/<slug>/chapters/*.md`), themes (`bastion/biographies/<slug>/theme.yaml`), or templates - and rebuild. This is the fix for hand-authored drift, and the reason the build is idempotent.
 
 2. **Hash-gated narration only.**
    `narrate.mjs` MUST consult `audio/.hashes.json` and skip any chapter whose narration text hash is unchanged. Re-voicing unchanged chapters is a bug, not a no-op-with-cost.
@@ -118,4 +118,4 @@ If all five hold, the publish is done. If any fails, fix at the corresponding st
 
 ---
 
-*See also:* `bastion-website-spec.md` (the full website spec, of which §7 was the seed of this file), `bastion-deliverables.md` (the manifest tracking PUBLISHING.md's status), and `CLAUDE.md` (the git-pulse rule the SHIP step extends).
+*See also:* `CLAUDE.md` for the repository's working conventions.

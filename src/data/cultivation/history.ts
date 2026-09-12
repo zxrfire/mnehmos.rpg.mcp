@@ -213,7 +213,7 @@ export const AGES: readonly Age[] = [
             statement:
                 'The Beacon Fire Age ended in the Settlement: an arrangement, not a treaty, under which water is granted rather than taken and a party that wants a holder gone stops renewing instead of attacking. Nobody knows who convened it, no instrument bearing that name survives, and the Vermilion Seal Terrace does not hold one.',
             truth: 'unresolved',
-            heldBy: ['house-vermilion-seal', 'house-ninefold-karma', 'apex-earth-vein-tower', 'apex-long-cut'],
+            heldBy: ['house-vermilion-seal', 'house-ninefold-karma', 'apex-earth-vein-tower', 'apex-myriad-course-hall'],
             evidence: [
                 'the practice changed within about a decade across both provinces and every tradition, which is not how customs change and is exactly how instruments do',
                 'the Vermilion Seal Terrace holds eleven agreements dated to that decade, all of them subsidiary, all of them referring to terms they do not restate',
@@ -626,7 +626,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
     {
         id: 'origin-grain-of-the-stone',
         name: 'The Grain of the Stone',
-        heldBy: ['apex-long-cut', 'sect-fallen-grain-caravan'],
+        heldBy: ['apex-myriad-course-hall', 'sect-fallen-grain-caravan'],
         currency: 'minority',
         account:
             'That there is no ladder, only material. The Cut Road position, held by carvers and by nobody in the Jade Gorge, is that the realms are simply the points at which the material fails and has to be worked differently, and that the Drawn dressed a workshop fact up as cosmology because they cultivate in the air where nothing can be seen. A carver will tell you the boundaries are where the stone changes, and will not be joking.',
@@ -638,7 +638,7 @@ export const ORIGIN_ACCOUNTS: readonly OriginAccount[] = [
             'the seam is material, is worked with tools, and can be quarried, which makes cultivation on this account a trade with a stock rather than a mystery'
         ],
         theProblem:
-            'It is wrong about the Drawn and knows it is not permitted to be. The ordinals are the same for cultivators who have never touched stone, on ground with no workable face within a province, and the account has to say that this is a coincidence of two materials having the same grain. The Long Cut, which is legalistic and honest, records the account as the tradition\'s position and does not defend it.',
+            'It is wrong about the Drawn and knows it is not permitted to be. The ordinals are the same for cultivators who have never touched stone, on ground with no workable face within a province, and the account has to say that this is a coincidence of two materials having the same grain. The Myriad Course Hall, which is legalistic and honest, records the account as the tradition\'s position and does not defend it.',
         demonstrablyWrong: null
     }
 ];
@@ -743,7 +743,7 @@ export const LID_THEORIES: readonly LidTheory[] = [
             'the crossing cannot be attempted early or late, only when the convergence has arrived, which every practitioner reports and which is a statement about possibility and not about geography'
         ],
         cannotAnswer:
-            'Objects come down. Golden pills, talismans, the Standing Edge, a nail driven through from above and still sitting in the Long Cut\'s seat chamber. A narrowing does not send freight. There is a physical object in a room in the Silent Cliffs that somebody on the other side put there, which is the plainest possible refutation of a theory that says there is no other side to put things from.',
+            'Objects come down. Golden pills, talismans, the Standing Edge, a nail driven through from above and still sitting in the Myriad Course Hall\'s seat chamber. A narrowing does not send freight. There is a physical object in a room in the Silent Cliffs that somebody on the other side put there, which is the plainest possible refutation of a theory that says there is no other side to put things from.',
         theirAnswerToThat:
             'That the objects are evidence of something and not necessarily of a place, and that a sighting cannot be cast on a thing that is not a party, so the House has no instrument that reaches the question. Everybody including the House regards this as weak. The Open Hall faction has argued for two centuries that the House should either obtain a reading on the Ninth Nail or stop holding the theory.',
         ifItIsTrue:
@@ -1066,18 +1066,18 @@ export const CALENDARS: readonly Calendar[] = [
         id: 'calendar-face-years',
         name: 'Face years',
         regionId: 'region-quiet-marches',
-        keptBy: ['apex-long-cut', 'sect-clearwater-ward', 'sect-six-li-patrol'],
+        keptBy: ['apex-myriad-course-hall', 'sect-clearwater-ward', 'sect-six-li-patrol'],
         countsFrom:
-            'The first cut on the founding face, which is a schedule entry rather than a treaty: the Long Cut dates from work rather than from agreement, and considers this the more honest practice. The present year is 1,489.',
+            'The first cut on the founding face, which is a schedule entry rather than a treaty: the Myriad Course Hall dates from work rather than from agreement, and considers this the more honest practice. The present year is 1,489.',
         presentYear: 1_489,
         isTheOriginCorrect: {
             statement:
                 'The epoch of the Face years is a dated schedule entry, which makes it the better-evidenced of the two origins and does not make it convertible to the other one.',
             truth: 'reconstructed',
-            heldBy: ['apex-long-cut', 'house-shrinking-earth'],
+            heldBy: ['apex-myriad-course-hall', 'house-shrinking-earth'],
             evidence: [
                 'the entry exists, in the schedule, in a continuous series with entries either side of it',
-                'the Long Cut has never revised the series and publishes a decreasing stock count against it, which is the same administration being honest about a different number',
+                'the Myriad Course Hall has never revised the series and publishes a decreasing stock count against it, which is the same administration being honest about a different number',
                 'the founding face is a physical place and has been worked continuously since'
             ],
             claimedOutcomes: [],
@@ -1155,7 +1155,7 @@ export const THE_CALENDAR_OFFSET: Claim = {
     statement:
         'The Great Peace and the Face years are twenty-eight years apart by universal commercial practice, thirty-one by the Immovable Mountain Temple\'s survey notes, and thirty-three by the Ninefold Karma Palace\'s unpublished computation from inheritance intervals. No event is dated in both reckonings, so nothing bridges them.',
     truth: 'unresolved',
-    heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'house-ninefold-karma', 'apex-long-cut'],
+    heldBy: ['house-shrinking-earth', 'house-immovable-mountain', 'house-ninefold-karma', 'apex-myriad-course-hall'],
     evidence: [
         'twenty-eight is what every freight and border contract has used for fifteen hundred years, on no stated basis, because the first one to need a number picked one',
         'thirty-one is the Immovable Mountain Temple\'s figure, derived from the advance of a physical edge against its own survey, and it has never pressed the point',

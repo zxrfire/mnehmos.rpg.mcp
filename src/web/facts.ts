@@ -1564,6 +1564,11 @@ function whatTheyAreToEachOther(holder: string, kind: string, other: string): st
     switch (kind) {
         case 'master': return `${holder} studies under ${other}`;
         case 'disciple': return `${other} studies under ${holder}`;
+        // AN ENDED BOND IS NOT NO BOND, and an unrendered kind falls through to
+        // `null` here, which would have made every severed bond invisible in the
+        // square the two of them are standing in.
+        case 'former_master': return `${holder} once studied under ${other}`;
+        case 'former_disciple': return `${other} once studied under ${holder}`;
         case 'parent': return `${other} raised ${holder}`;
         case 'child': return `${holder} raised ${other}`;
         case 'spouse': return `${holder} and ${other} are married`;
@@ -3718,7 +3723,15 @@ export function factsForACommission(
     const lines: string[] = [];
     const thing = `${ask.grade}-grade ${ask.named}`;
 
-    if (!answer.hands.theyCan) {
+    if (answer.hands.theBenchIsShortOf.length > 0) {
+        // A HAND THAT CANNOT AND A BENCH THAT IS BARE ARE TWO ANSWERS, and the
+        // difference is a realm somebody has to reach against a morning's
+        // gathering. Saying the maker "cannot make it" here would send the
+        // asker after the wrong thing entirely, and the rung they would go and
+        // chase is one the maker already has.
+        lines.push(`${makerName} can make it and the stuff is not here.`);
+        lines.push(answer.hands.why ?? '');
+    } else if (!answer.hands.theyCan) {
         lines.push(`${makerName} cannot make it. ${answer.hands.why ?? ''}`.trim());
         if (answer.hands.insteadTheyCouldMake !== null) {
             lines.push(

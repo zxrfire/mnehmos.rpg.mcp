@@ -72,6 +72,7 @@
 
 import type { Sect, SpiritRootKey, TechniqueCategory } from '../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../engine/cultivation/realms.js';
+import { APEX_INSTITUTIONS } from './governance-and-water-rights.js';
 import {
     delegatedFrom,
     getPrefecture,
@@ -444,6 +445,17 @@ export interface DaoHouseDispute {
     consequence: string;
 }
 
+/**
+ * An apex's own rank ladder, read off the governance catalog rather than
+ * retyped here. Two bodies have a row in both tables and one ladder between
+ * them; a second copy of it would drift the first time a rung was added.
+ */
+function apexLadder(apexId: string): string[] {
+    const apex = APEX_INSTITUTIONS.find(a => a.id === apexId);
+    if (!apex) throw new Error(`no apex ${apexId}`);
+    return apex.ranks.map(r => r.title);
+}
+
 const REGIONAL_SECTS: readonly SectEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     // RIGHTEOUS
@@ -521,7 +533,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
         ambition: {
             wants:
                 'The other two to price what a house does on the axis they refuse to price, and to say so where it can be quoted. It is not asking either of them to change; it is asking them to answer in their own words instead of in a silence, which is the only move available to a body that objects and cannot act.',
-            blockedBy: ['apex-earth-vein-tower', 'apex-long-cut'],
+            blockedBy: ['apex-earth-vein-tower', 'apex-myriad-course-hall'],
             wouldCost:
                 'Nothing it can be made to pay, and everything it would rather not spend. Any two apexes can end any third, both of the others know exactly what the Pavilion would do afterwards, and being the only one of the three whose behaviour follows from its doctrine is what keeps it safe and what makes it useless in a room. Pressing harder converts a standing objection into an event, and an event is the one thing a house three hundred and eighty years old cannot afford against two nobody can date.',
             contestedWith: [],
@@ -934,6 +946,128 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     // ═══════════════════════════════════════════════════════════════════
     // NEUTRAL
     // ═══════════════════════════════════════════════════════════════════
+    // THE TWO ANCIENT APEXES, AS HOUSES.
+    //
+    // Both carried `factionId: null` and no row here for a long time, and the
+    // governance catalog argued the case at length: bodies nobody could join,
+    // with no roll, no shelf and nothing to teach. Overturned. A power with
+    // nobody in it is a number rather than an institution, and neither of these
+    // was ever supposed to be one - the Survey takes village intakes into a
+    // class called Unplaced and the Hall employs everybody standing on a face.
+    // What actually makes them hard to reach is `startingAwareness: 'unaware'`:
+    // a beginner cannot name them, and a body you cannot name is a body you
+    // cannot walk to. The door is ordinary; finding it is not.
+    //
+    // The posting bodies are the opposite case and stay exactly as they are.
+    // `sect-kiln-wardens` teaches nothing and takes nobody because it is not a
+    // school - it is a frontier posting other houses second people into.
+    {
+        id: 'sect-earth-vein-tower',
+        name: 'Earth Vein Tower',
+        alignment: 'neutral',
+        // The apex row is the authority on everything above the map; this row
+        // is what it is like to be on the roll. See APEX_INSTITUTIONS.
+        powerOrdinal: 43,
+        ranks: apexLadder('apex-earth-vein-tower'),
+        // Everyone from a village intake upward is Unplaced, so the bar is a
+        // bar rather than a filter, and where somebody stands inside that class
+        // is decided by sponsorship and results instead.
+        admissionOrdinal: 3,
+        stipend: [6, 22, 70, 220, 640, 1_500, 3_200],
+        teaches: [
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            // The non-earth half, and it is deliberate rather than leftover: a
+            // body that measures veins for a living takes whatever root walks
+            // in and has somewhere to put it. Water and metal, beside the elementless
+            // pair every house in the world starts people on.
+            'slack-water-foundation-canon',
+            'iron-silt-settling-canon',
+            // The earth half, and the deepest elemental road on the shelf is
+            // the second of them, which is what makes `houseElementalCharacterOf`
+            // read this house as earth at all.
+            'stone-marrow-foundation-canon',
+            'deep-vein-anchoring-canon',
+            // Its own road to the top of the ladder, held in one copy, read in
+            // the hall and never carried out. See `THE_DEEPEST_ROADS`.
+            'arterial-sounding-canon'
+        ],
+        signatureTechniqueId: 'deep-vein-anchoring-canon',
+        specialities: ['cultivation', 'support'],
+        rivals: [],
+        territory: 'A vault under the centre of the Jade Gorge, the four arterial veins the eleven surveyed ones branch from, and the datum every survey in the province is measured against.',
+        recruits: true,
+        compound: {
+            inherited: true,
+            formationNodesTotal: 88,
+            formationNodesLit: 31,
+            remnant: 'A storehouse inventoried once a year by a clerk who has never had to change a figure, and a ledger of those inventories going back six hundred years in eleven hands.'
+        },
+        description:
+            'The house that holds the water, from inside a building nobody in the province can point to. Being on its roll is nothing like being in a sect: a village intake and a Deity Transformation elder brought in from a subsidiary are both Unplaced, correction comes down from people three realms below you, and the one number a cultivator has spent their life raising decides nothing at all about where they stand. What it gives in exchange is a shelf that does not stop - a road for whatever root walked in, and at the far end of it a book read in the hall under somebody who is not going to leave the room. Almost nobody arrives by applying, because almost nobody can name it to apply to; the ordinary way on is to be called upward by a house that already holds a grant, and to come back unable to say where you went.',
+        ambition: {
+            wants:
+                'To never again be put in a position where it has to answer in public for a grant it has signed, which is the one thing the Pavilion can make happen and the one thing the Survey has no procedure for.',
+            blockedBy: ['apex-azure-cloud'],
+            wouldCost:
+                'The posture. Answering once establishes that it answers, and the whole of the Survey\'s position is that the question is never put - so the only moves available are a concession nobody would see and a response nobody could miss, and it has been refusing to choose between them for three hundred years.',
+            contestedWith: [],
+            movedOn:
+                'It has quietly restructured two procedures around never being made to answer in public and has never explained why either changed.'
+        }
+    },
+    {
+        id: 'sect-myriad-course-hall',
+        name: 'Myriad Course Hall',
+        alignment: 'neutral',
+        powerOrdinal: 42,
+        ranks: apexLadder('apex-myriad-course-hall'),
+        // A Hand is somebody present on a face and working it. There is no
+        // examination anywhere in the arrangement, which is why the bar is the
+        // lowest of the three apexes and means the least.
+        admissionOrdinal: 1,
+        stipend: [5, 18, 90, 700, 2_800],
+        teaches: [
+            'lesser-qi-gathering-manual',
+            'foundation-tempering-scripture',
+            // A trade manual written by stonewrights in stonewrights' words -
+            // dig to something that will hold, fill in courses, let each course
+            // set before you load it. No house has ever been proud of teaching
+            // it and this one has never understood why that would matter.
+            'stone-marrow-foundation-canon',
+            'struck-ground-foundation-canon',
+            'interred-soul-canon',
+            // One method held from the core to the far side of Deity
+            // Transformation without being put down, which is the shape of
+            // everything here: a schedule you do not come off.
+            'standing-mirror-first-register',
+            'worked-seam-canon',
+            'driven-ground-endurance-canon'
+        ],
+        signatureTechniqueId: 'worked-seam-canon',
+        specialities: ['cultivation', 'defense'],
+        rivals: [],
+        territory: 'Driven ground across five provinces, administered face by face, and a seat in the Silent Cliffs built around a nail that cannot be moved.',
+        recruits: true,
+        compound: {
+            inherited: false,
+            formationNodesTotal: 34,
+            formationNodesLit: 34,
+            remnant: 'Spoil stacked in courses too neat for a local crew, on a face that was worked out and abandoned eleven hundred years ago and has not slumped since.'
+        },
+        description:
+            'The other ancient power, and the only institution in the world that employs everybody it deals with. There are no client sects on its ground, no leases and no vassals: a carver\'s relationship is with the large thing itself, which puts them on a face, records what they finish, and does not know their name. Four rungs cover every practitioner in five provinces, so an apprentice of nineteen and an Inner Face cultivator of four hundred are both Hands until a face is worked to completion without a death on it, and the century in between counts for nothing. Its library is the same argument written out - trade manuals in trade vocabulary, a register somebody starts at Core Formation and never puts down, and at the top a road that treats the last realm as a face to be worked, with the failure modes listed and dated.',
+        ambition: {
+            wants:
+                'The claim it acquired on the strongest sealed thing anybody has established the existence of, made real without a word having to be said out loud about how it got there.',
+            blockedBy: ['apex-earth-vein-tower'],
+            wouldCost:
+                'The silence, which is the asset. It took in a whole posting of the Survey\'s disaffected appointees and neither party has ever acknowledged it; asserting the claim converts an arrangement both of them find comfortable into an event, and the Hall has no procedure for an event and has never wanted one.',
+            contestedWith: [],
+            movedOn:
+                'It has entered the returning appointees on the schedule like everybody else and started quietly giving them the faces nobody else is given, without recording why.'
+        }
+    },
     {
         id: 'sect-stone-marrow-hall',
         name: 'Stone Marrow Hall',
@@ -1695,7 +1829,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
             remnant: 'Nineteen nodes lit along the caldera rim and nineteen dark, in an alternating ring, because the sect could only read every other line of the diagram.'
         },
         description:
-            'A caldera fortress on the vent vein, reached by one bridge kept in poor repair on purpose, with nineteen of thirty-eight nodes lit in an alternating ring because the sect could read every other line of the diagram and lit exactly what it understood. Its library is the hottest thing in the catalog - the ashfall crescent, the molten core scripture, the sunfeather conflagration, the burning-heart ward and the nine-abyss transformation - so its people fight by outlasting the heat they are standing in, and its elders are visibly not human any more in one specific way each. It is the one demonic sect in the province that holds from the Long Cut rather than the Earth Vein Tower, which means the apex with a doctrine about who holds ground has no instrument on it at all, and it is the only body of any alignment that hands an applicant the full text of a transformation contract before they sign - total honesty about a monstrous bargain, which reads to everybody as recruitment. Its pipeline works for a reason nobody else can copy, because the contract works and the cost is paid later and by the individual, and it is alone among the high factions in not having concluded that the road upward is shut - which is either the only clear sight in either province or the contract talking.',
+            'A caldera fortress on the vent vein, reached by one bridge kept in poor repair on purpose, with nineteen of thirty-eight nodes lit in an alternating ring because the sect could read every other line of the diagram and lit exactly what it understood. Its library is the hottest thing in the catalog - the ashfall crescent, the molten core scripture, the sunfeather conflagration, the burning-heart ward and the nine-abyss transformation - so its people fight by outlasting the heat they are standing in, and its elders are visibly not human any more in one specific way each. It is the one demonic sect in the province that holds from the Myriad Course Hall rather than the Earth Vein Tower, which means the apex with a doctrine about who holds ground has no instrument on it at all, and it is the only body of any alignment that hands an applicant the full text of a transformation contract before they sign - total honesty about a monstrous bargain, which reads to everybody as recruitment. Its pipeline works for a reason nobody else can copy, because the contract works and the cost is paid later and by the individual, and it is alone among the high factions in not having concluded that the road upward is shut - which is either the only clear sight in either province or the contract talking.',
         ambition: {
             wants:
                 'A court of its own, on the grounds that the transformation curriculum is the third irreplaceable thing in the province and the other two were promoted for exactly that.',
@@ -1942,7 +2076,7 @@ const REGIONAL_SECTS: readonly SectEntry[] = [
     //
     // Every other house in this catalog holds from somebody. A Jade Gorge sect
     // holds a twelve-year grant, a Yellow Plain body holds a lease with a
-    // deposit on it, a Silent Cliffs district holds a face the Long Cut scheduled,
+    // deposit on it, a Silent Cliffs district holds a face the Myriad Course Hall scheduled,
     // a northern court holds an elevation and pays for the pass. The apexes
     // divide the land between them and nominate whoever holds the ground,
     // and the reason they prefer a bad holder to an empty seat is written out
@@ -3031,6 +3165,25 @@ export const SECT_ADMISSION: Record<string, SectAdmission> = {
         preferredRoots: ['single_metal', 'dual_metal_wood'],
         requirement:
             'To be a disciple: Qi Condensation Layer 4 or better, and one clean strike shown to a Sword Elder. That bar has never moved and is not the door most people come through. The Pavilion also tests uncultivated mortals, takes the best of them onto probation at the very bottom of the ladder, and carries them for years before deciding - wide intake, narrow conversion, and the requirement above still waiting at the far end. And it will not be skipped: the Pavilion is asked perhaps twice a decade to take somebody under the bar on the word of a person who could make it awkward to refuse, and it refuses, in the same words each time, on the stated ground that a bar it moves once is not a bar. Being handed a child by somebody at the top of the world gets you what walking up the mountain gets you, which is a probation place and an honest look. See `AZURE_CLOUD_INTAKE` in `hierarchy.ts` and `a-favour-skips-the-admission-bar.ts`.'
+    },
+    // The two ancient apexes. Both bars are low and neither is the obstacle:
+    // what stops somebody applying is that a beginner cannot name the body to
+    // apply to. See `startingAwareness` on each apex row.
+    'sect-earth-vein-tower': {
+        minOrdinal: 3,
+        // Named roots the shelf does not carry, which is the whole statement:
+        // a house that surveys veins for a living takes the root that walked in
+        // and has a road for it. `houseElementalCharacterOf` reads this as the
+        // door being wider than the shelf, and it is.
+        preferredRoots: ['single_earth', 'muddled_five_element', 'single_metal'],
+        requirement:
+            'Qi Condensation Layer 4, and somebody already inside willing to put their own standing behind you. There is no examination and no admission day: an intake arrives because a house that holds a grant was asked to send somebody up, or because a Marked surveyor met them on a vein and wrote a name down. Almost everybody who arrives stays Unplaced for the rest of their life, and the Survey says so at the door rather than afterwards.'
+    },
+    'sect-myriad-course-hall': {
+        minOrdinal: 1,
+        preferredRoots: ['single_earth', 'muddled_five_element'],
+        requirement:
+            'Being present on a face and working it. That is the whole of it: there is no examination, no sponsor and no ceremony, and a person who turns up at a driven province and is put on a face is a Hand from the day their name goes on the schedule. What the Hall will not do is let anybody skip a rung afterwards, because a rung here is a face worked to completion without a death on it, and a face nobody finished is not a thing a word from anyone can produce.'
     },
     'sect-verdant-spring-valley': {
         minOrdinal: 2,

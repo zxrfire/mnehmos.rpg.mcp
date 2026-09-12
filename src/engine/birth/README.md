@@ -245,3 +245,24 @@ rows.
   birth inside a house. `seedKnowledge` writes the province row itself for that
   case; the border provinces a settlement-born child hears named are still
   missing for a seat-born one.
+
+---
+
+## Where else to look
+
+- [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the tables a birth
+  draws from: houses, the three floors a house admits at, indentures, named figures, and the
+  wrongs a family already carries.
+- [`../cultivation/README.md`](../cultivation/README.md) - what the draw becomes: root,
+  physique, rung and the progress arithmetic that runs from there.
+- [`../social/README.md`](../social/README.md) - a birth is the first set of ties. Who knows
+  the family, who is owed by it, and what is already believed about it.
+- [`../world/README.md`](../world/README.md) - the world a birth lands in.
+  `the-families-a-world-opens-holding.ts`, `the-wrongs-a-world-opens-holding.ts`,
+  `the-ties-an-ordinary-life-produces.ts` and `where-the-seeded-population-was-born.ts` are the
+  same question asked of everybody rather than of one child.
+- [`../household/README.md`](../household/README.md) - the other end of the same subject: what
+  a child costs the two people who have one, and which route a match took.
+- [`../../web/README.md`](../../web/README.md) - `web/the-life-behind-the-first-turn.ts` and
+  `web/who-a-life-like-this-grew-up-knowing.ts` are how a birth is told to a player.
+

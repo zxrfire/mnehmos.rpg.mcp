@@ -59,3 +59,27 @@ the file, because the argument is the content.
 Indexes: [`../INDEX.md`](../INDEX.md) by situation,
 [`../BY-HOUSE.md`](../BY-HOUSE.md) by house.
 Both also reach the design prose in `src/data/cultivation/`.
+
+---
+
+## Where else to look
+
+- [`../../../src/engine/social-leverage/README.md`](../../../src/engine/social-leverage/README.md) -
+  what a house DOES about you, in code: `what-a-house-will-do-about-it.ts`,
+  `what-a-house-does-when-it-catches-you.ts`, `entry-offer.ts`,
+  `what-an-elder-is-in-charge-of.ts`, `authority-for-an-order.ts`.
+- [`../../../src/engine/world/README.md`](../../../src/engine/world/README.md) - a house as a
+  running thing: `a-house-holds-its-own.ts`,
+  `what-a-house-is-made-of-and-what-brings-it-down.ts`, `promotion-inside-a-house.ts`,
+  `what-a-house-keeps-in-its-treasury.ts`, `whether-a-house-is-dying-or-simply-has-few-people.ts`.
+- [`../../../src/engine/encounters/README.md`](../../../src/engine/encounters/README.md) - what
+  a house puts in front of somebody: its board, its duties, and who it sends out.
+- [`../../../src/engine/household/README.md`](../../../src/engine/household/README.md) -
+  marriage between houses, and what a house would take for a match.
+- [`../../../src/engine/strategy/README.md`](../../../src/engine/strategy/README.md) - the
+  layer that would decide what a house does about ANOTHER house over time. It exists,
+  retained from the substrate, and is not wired - which is why that question currently has
+  prose here and no machinery.
+- [`../../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md) - the
+  house tables themselves, in context with the rest of the catalog.
+

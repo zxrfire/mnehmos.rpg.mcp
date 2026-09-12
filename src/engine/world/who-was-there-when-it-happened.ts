@@ -234,9 +234,18 @@ export function linkFactToWhoItNames(
     // recurrence. Presence is a fact about the world; the trajectory is a fact
     // about the person; and they were never the same list.
     const named = new Set<string>(fact.actors.map(a => a.id));
-    if (named.size === 0) return;
+    // ── AND BEING SEEN IS PROOF OF LIFE, WHOEVER THE EVENT WAS ABOUT ─────
+    //
+    // The sentence under the `lastConfirmedOnDay` write below - somebody who was
+    // standing there was, demonstrably, still around - is an argument about
+    // WITNESSES, and it reached actors only. So a bystander drawn into a fact in
+    // year 3000 kept whatever staleness they had beforehand and the world held
+    // proof of life that nothing read. They are confirmed here and still not
+    // linked, which is the distinction the block above draws.
+    const present = new Set<string>([...named, ...fact.witnessIds]);
+    if (present.size === 0) return;
     const byId = npcIndexFor(state);
-    for (const id of named) {
+    for (const id of present) {
         const at = byId.get(id);
         if (at === undefined) continue;
         const npc = state.npcs[at];
@@ -244,7 +253,8 @@ export function linkFactToWhoItNames(
         // roster would otherwise write onto the wrong person, which is a far
         // worse failure than a missed link.
         if (!npc || npc.id !== id) continue;
-        const alreadyLinked = npc.historyFactIds.includes(fact.id);
+        const linkIt = named.has(id);
+        const alreadyLinked = !linkIt || npc.historyFactIds.includes(fact.id);
         const confirmed = Math.max(npc.lastConfirmedOnDay, onDay);
         if (alreadyLinked && confirmed === npc.lastConfirmedOnDay) continue;
         state.npcs[at] = {
@@ -256,6 +266,26 @@ export function linkFactToWhoItNames(
             lastConfirmedOnDay: confirmed
         };
     }
+}
+
+/**
+ * Every fact this person was standing in front of, in the order they happened.
+ *
+ * The read that runs the other way from `trajectoryOf`, and the one that makes a
+ * witness worth storing: a trajectory answers what happened TO somebody, and
+ * until this there was no way to ask what somebody SAW - which is the whole of
+ * what having been there is good for, since it is what lets them be the one who
+ * tells you.
+ *
+ * Derived off `witnessIds` rather than off a second list on the person. Presence
+ * is a fact about the world and it is already stored exactly once; a mirror of
+ * it on the roster would be a copy to drift, and `historyFactIds` is not the
+ * place for it - see the block above for the measurement that settled that.
+ */
+export function whatTheySaw(state: WorldState, npc: NpcRecord): HistoricalFact[] {
+    return state.history.facts
+        .filter(f => f.witnessIds.includes(npc.id))
+        .sort((a, b) => a.day - b.day || (a.id < b.id ? -1 : 1));
 }
 
 /**

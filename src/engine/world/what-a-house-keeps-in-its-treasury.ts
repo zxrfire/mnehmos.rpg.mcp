@@ -54,6 +54,12 @@ import {
 } from '../cultivation/what-you-refine-in.js';
 import { refiningOrdinalFor } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
 import {
+    everyIngredientThatIs,
+    type WhatTheCauldronIsBeingHanded
+} from '../cultivation/what-a-cauldron-will-take.js';
+import { WHAT_AN_ARTIFACT_IS_MADE_OF } from '../../data/cultivation/what-an-artifact-is-made-of.js';
+import {
+    howAGradeIsStored,
     howMuchAGradeIsWorthTracking,
     keptAs,
     makeObject,
@@ -228,6 +234,7 @@ export function seedTreasuries(state: WorldState): ObjectRecord[] {
         // it and its heaven-grade dose is a row with a history, for the same
         // reason and by the same call.
         out.push(...whatElseTheHouseKeeps(house.id, name, roomFor, acting, today));
+        out.push(...whatTheHouseKeepsToWorkWith(house.id, name, roomFor, acting, today));
 
         // ── AND WHO IT KNOWS BY NAME ─────────────────────────────────────
         //
@@ -385,6 +392,167 @@ function whatElseTheHouseKeeps(
 }
 
 /**
+ * THE RAW STOCK: what a house has to work WITH, as opposed to what it has made.
+ *
+ * A recipe that names material nobody in the world holds is a gate that is
+ * correct and useless, so the stores and `what-an-artifact-is-made-of.ts` are
+ * built against each other and this reads that module's own slots rather than
+ * an authored list. A house stocks against the recipes it could actually work,
+ * which means a house that can work a grade can complete that grade's recipe by
+ * construction - and a house that cannot reach a material still cannot hold it,
+ * which is the part that keeps the heaven band scarce.
+ *
+ * ── TWO FILTERS, BOTH ALREADY FACTS ABOUT THE HOUSE ──────────────────────
+ *
+ * `bestFurnaceAHouseCouldKeep` is the ceiling - the ornament rule the furnace
+ * above already follows, applied to the stuff as well as to the vessel. And
+ * `harvestOrdinal` is the floor from the other end: a house cannot stock what
+ * nobody it can field would survive going to get. Between them a hill sect has
+ * roadside herbs and nothing else, and a house at Void Tribulation has cores.
+ *
+ * ── AND NO DRAW, FOR THE REASON THE REST OF THIS FILE GIVES ──────────────
+ *
+ * Cheapest first, which is the catalogs' own statement about what is common.
+ * What separates two houses of the same standing is what has HAPPENED to them
+ * since, and that is the world sim's to say rather than a roll at seeding.
+ *
+ * ── NOTHING HERE READS AN ELEMENT, AND IT IS NOT AN OVERSIGHT ────────────
+ *
+ * A house's element is readable off its shelf, and neither catalog carries an
+ * element on a material - a herb has a biome and a core has a source beast.
+ * Giving a fire house fire reagents would need a second classification of every
+ * row in both tables, invented here, and it would be the copy that drifts.
+ */
+function whatTheHouseKeepsToWorkWith(
+    houseId: string,
+    houseName: string,
+    roomFor: (purpose: RoomPurpose | null) => string | null,
+    acting: number,
+    today: number
+): ObjectRecord[] {
+    const ceiling = refiningOrdinalFor(bestFurnaceAHouseCouldKeep(acting));
+    const wanted = new Map<string, WhatTheCauldronIsBeingHanded>();
+    for (const recipe of Object.values(WHAT_AN_ARTIFACT_IS_MADE_OF)) {
+        for (const slot of recipe) {
+            if (refiningOrdinalFor(slot.grade) > ceiling) continue;
+            const reachable = everyIngredientThatIs({
+                grade: slot.grade,
+                ...(slot.from === null ? {} : { from: slot.from }),
+                withinReachOf: acting
+            });
+            for (const row of whatOfThisAHouseKeeps(reachable, slot.grade, acting)) {
+                wanted.set(row.id, row);
+            }
+        }
+    }
+
+    const out: ObjectRecord[] = [];
+    for (const material of [...wanted.values()].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+        const significance = howMuchAGradeIsWorthTracking(material.grade);
+        const rowId = `stock-${houseId}-${material.id}`;
+        const tags = [
+            'material',
+            material.from === 'a_beast' ? 'beast_material' : 'herb',
+            `grade:${material.grade}`
+        ];
+        if (howAGradeIsStored(material.grade) === 'counted') {
+            const lot = makeResourceLot({
+                id: rowId,
+                resource: material.name,
+                quantity: howManyOfACommonThing(acting),
+                source: `the ${houseName} stores`,
+                acquiredOnDay: today,
+                holderId: null,
+                holderName: houseName,
+                how: material.from === 'a_beast' ? 'looted' : 'found',
+                significance
+            });
+            // `makeResourceLot` mints a `currency` row, which is right for a
+            // purse and wrong for a sack of moss - and anything hunting for
+            // material looks at `kind`, so a counted stack filed as currency is
+            // a stack nothing can find.
+            lot.kind = 'material';
+            lot.ownerId = houseId;
+            lot.ownerName = houseName;
+            lot.locationId = roomFor(whereInTheHouseItSits('material', significance, tags));
+            lot.tags = tags;
+            lot.data = {
+                ...lot.data,
+                materialId: material.id,
+                grade: material.grade,
+                value: material.value
+            };
+            out.push(lot);
+            continue;
+        }
+        // ONE OF IT. A heaven-grade core is a row with a history, and which one
+        // a house is holding is a question somebody can be asked - which is the
+        // whole of what `howAGradeIsStored` means by tracked.
+        out.push(makeObject({
+            id: rowId,
+            name: material.name,
+            kind: 'material',
+            significance,
+            description:
+                `Held by ${houseName}, and held rather than stocked: there is one of these and `
+                + 'the house knows where it is.',
+            possessorId: null,
+            ownerId: houseId,
+            ownerName: houseName,
+            // Not a weapon and not a finished thing. It has a grade instead.
+            power: null,
+            locationId: roomFor(whereInTheHouseItSits('material', significance, tags)),
+            tags,
+            data: {
+                materialId: material.id,
+                grade: material.grade,
+                value: material.value,
+                quantity: 1
+            }
+        }));
+    }
+    return out;
+}
+
+/**
+ * Which of the things that would fill a slot this house actually has.
+ *
+ * `howAGradeIsStored` draws the line and this is that line said as stock. A
+ * COUNTED grade is a shelf: several kinds, cheapest first, and more of them the
+ * further the house's own best hand stands above the rung that can work them. A
+ * TRACKED grade is ONE ROW, because that is what tracked means - there is one of
+ * it and the house knows where it is, and four cores in a drawer would make the
+ * scarce thing routine.
+ *
+ * AND THE TRACKED ONE IS INDEXED BY STANDING RATHER THAN DRAWN. No RNG here, for
+ * the reason the top of this file gives: a stronger house is holding a dearer
+ * thing, which is a fact about the house, and which particular core it bought
+ * is what the world sim is for.
+ */
+export function whatOfThisAHouseKeeps(
+    reachable: readonly WhatTheCauldronIsBeingHanded[],
+    grade: TechniqueGrade,
+    acting: number
+): readonly WhatTheCauldronIsBeingHanded[] {
+    const above = acting - refiningOrdinalFor(grade);
+    if (above < 0 || reachable.length === 0) return [];
+    if (howAGradeIsStored(grade) === 'counted') {
+        const kinds = Math.max(
+            1,
+            Math.min(HOW_WIDE_A_SHELF_GOES, 1 + Math.floor(above / A_RUNG_PER_EXTRA_KIND))
+        );
+        return reachable.slice(0, kinds);
+    }
+    return [reachable[Math.min(reachable.length - 1, above)]!];
+}
+
+/** How many kinds of a counted material a house ever keeps at once. */
+const HOW_WIDE_A_SHELF_GOES = 4;
+
+/** How far a house has to stand above the gate to keep one more kind. */
+const A_RUNG_PER_EXTRA_KIND = 5;
+
+/**
  * The two things a house bothers keeping slips for.
  *
  * Both, always, because they answer the two questions a house has about
@@ -506,6 +674,10 @@ export function whereInTheHouseItSits(
     if (tags.includes('cauldron')) return 'furnace_room';
     switch (kind) {
         case 'pill':
+        // Raw stock sits where it is worked, which for a herb and for a core is
+        // the same room. `tribute_room` is where a house puts what came in as a
+        // gift, and a sack of moss did not.
+        case 'material':
             return 'alchemy_hall';
         case 'manual':
             return 'scripture_pavilion';

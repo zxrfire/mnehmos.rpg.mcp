@@ -33,16 +33,18 @@ import {
     gradeRank
 } from '../../data/cultivation/techniques.js';
 import {
+    addToPouch,
     describeCultivator,
     ensureCultivationDb,
     guidingError,
     isGuidingErrorBody,
-    readFlag,
+    listHeldManuals,
+    pouchQuantity,
+    removeFromPouch,
     resolveActiveRun,
     round2,
     round4,
     summariseInjury,
-    writeFlag,
     type CultivationRepos
 } from './cultivation-support.js';
 import { describeDeath } from '../../engine/cultivation/survival.js';
@@ -114,14 +116,18 @@ const CONFLICT_MASTERY_FACTOR = 0.5;
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Which manuals this cultivator owns a physical copy of.
+ * Where a book lived before books were held where everything else is held.
+ *
+ * Kept for the migration that empties it and for nothing else. A player who
+ * bought a manual could be told by the destroy verb, one turn after the
+ * inventory read had listed it, that they were carrying nothing - because this
+ * was a second store and no verb over held things could see into it.
  */
 export const FLAG_MANUAL_COPIES_HELD = 'manual_copies_held';
 
-export function copiesHeldBy(db: Database.Database, cultivatorId: string): string[] {
-    const raw = readFlag(db, cultivatorId, FLAG_MANUAL_COPIES_HELD);
-    if (!raw) return [];
-    return raw.split(',').map(id => id.trim()).filter(id => id.length > 0);
+/** Which manuals this holder owns a physical copy of. */
+export function copiesHeldBy(db: Database.Database, holderId: string): string[] {
+    return listHeldManuals(db, holderId).map(entry => entry.itemId);
 }
 
 /**
@@ -144,9 +150,9 @@ export function copiesHeldBy(db: Database.Database, cultivatorId: string): strin
  * A copy with no id in the catalog is dropped rather than named as its id: an
  * id in a player's face is the defect `no-source-in-the-players-face` is for.
  */
-export function copyNamesHeldBy(db: Database.Database, cultivatorId: string): string[] {
+export function copyNamesHeldBy(db: Database.Database, holderId: string): string[] {
     const named: string[] = [];
-    for (const id of copiesHeldBy(db, cultivatorId)) {
+    for (const id of copiesHeldBy(db, holderId)) {
         const technique = getTechnique(id);
         if (technique?.name) named.push(technique.name);
     }
@@ -155,10 +161,10 @@ export function copyNamesHeldBy(db: Database.Database, cultivatorId: string): st
 
 export function holdsACopyOf(
     db: Database.Database,
-    cultivatorId: string,
+    holderId: string,
     techniqueId: string
 ): boolean {
-    return copiesHeldBy(db, cultivatorId).includes(techniqueId);
+    return copiesHeldBy(db, holderId).includes(techniqueId);
 }
 
 /**
@@ -177,27 +183,21 @@ export function holdsACopyOf(
  */
 export function theCopyLeftTheirHands(
     db: Database.Database,
-    cultivatorId: string,
+    holderId: string,
     techniqueId: string
 ): boolean {
-    const held = copiesHeldBy(db, cultivatorId);
-    if (!held.includes(techniqueId)) return false;
-    writeFlag(
-        db, cultivatorId, FLAG_MANUAL_COPIES_HELD,
-        held.filter(id => id !== techniqueId).join(',')
-    );
-    return true;
+    if (!holdsACopyOf(db, holderId, techniqueId)) return false;
+    return removeFromPouch(db, holderId, techniqueId, pouchQuantity(db, holderId, techniqueId));
 }
 
 /** Idempotent: buying a second copy of a book you already own is not an event. */
 export function recordACopyHeld(
     db: Database.Database,
-    cultivatorId: string,
+    holderId: string,
     techniqueId: string
 ): void {
-    const held = copiesHeldBy(db, cultivatorId);
-    if (held.includes(techniqueId)) return;
-    writeFlag(db, cultivatorId, FLAG_MANUAL_COPIES_HELD, [...held, techniqueId].join(','));
+    if (holdsACopyOf(db, holderId, techniqueId)) return;
+    addToPouch(db, holderId, techniqueId, 'manual', 1);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

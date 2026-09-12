@@ -69,6 +69,14 @@ export type OathCause =
     | 'marriage_pact'
     | 'blood_pact'
     | 'service_term'
+    /**
+     * The master's half of what `service_term` is the disciple's half of. One
+     * promise, recorded once per person because the ledger is held per person.
+     * Added when `taking-somebody-as-your-own.ts` gave the bond a producer: the
+     * ledger could already say what a disciple owed and had no word at all for
+     * what a master did, so a master who never taught was in breach of nothing.
+     */
+    | 'teaching_term'
     | 'silence'
     | 'other';
 

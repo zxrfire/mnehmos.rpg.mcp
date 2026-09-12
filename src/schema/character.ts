@@ -125,7 +125,7 @@ export const CharacterSchema = z.object({
         .describe('Character currency in gold, silver, and copper denominations'),
 
     // Background and alignment - accepted previously but silently dropped on
-    // persistence (no migration column). See docs/bastion/05-world-brief-vs-tool-surface.md.
+    // persistence, because there was no migration column to put them in.
     background: z.string().optional()
         .describe('Character background (e.g. "Soldier", "Charlatan", "Folk Hero")'),
     alignment: z.string().optional()

@@ -51,6 +51,7 @@ import {
     type NpcRecord
 } from './npc-state.js';
 import { makeObject, transferPossession, type ObjectRecord } from './possessions.js';
+import { theyTakeGroundAndMakeItTheirs } from './somewhere-that-is-theirs.js';
 import {
     currentEraQiDensity,
     getFaction,
@@ -1216,59 +1217,52 @@ export function settleAbode(state: WorldState, input: SettleAbodeInput): SettleA
 
     ensureImmortalLayer(state);
 
-    const id = abodeLocationId(npc.id);
-    const already = getLocation(state, id);
-    if (already) {
+    // THE GENERIC HALF IS NOT HERE ANY MORE. An abode is a residence with the
+    // immortal layer's parameters, and `somewhere-that-is-theirs.ts` is the
+    // one that knows what a residence is - including that it holds a pack.
+    // What stays here is what is true only up here: the qi, the thresholds
+    // nothing below True Immortal can meet, and the secrecy.
+    const rng = forStream(state.seed, 'immortal-abode', npc.id);
+    const settled = theyTakeGroundAndMakeItTheirs(state, {
+        residentId: npc.id,
+        onDay: input.onDay,
+        locationId: abodeLocationId(npc.id),
+        name: input.name?.trim() || `the ${placeName(rng).toLowerCase()}`,
+        layer: IMMORTAL_LAYER,
+        parentId: IMMORTAL_LANDING_LOCATION_ID,
+        shape: {
+            kind: 'cave',
+            description:
+                'Ground taken out of the open and made into somewhere. Nobody contested it, '
+                + 'because there is a great deal of ground up here and nothing on it anybody '
+                + 'wants; what it is worth is that it is theirs, which on this layer is a '
+                + 'thing a newcomer has none of.',
+            ambient: 'spirit_tide',
+            qiDensity: IMMORTAL_QI_DENSITY,
+            thresholds: makeThresholds(
+                TRUE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL, MAX_ORDINAL
+            ),
+            hazards: [],
+            environment: makeEnvironment({
+                spiritualDensity: IMMORTAL_QI_DENSITY,
+                danger: 0.1,
+                resources: ['qi'],
+                climate: 'unweathered',
+                politicalControl: `${npc.name}, and nobody has argued`,
+                specialRules: IMMORTAL_SPECIAL_RULES.slice()
+            }),
+            tags: ['immortal', 'abode']
+        }
+    });
+    Object.assign(state, settled.state);
+    const abode = settled.residence!;
+
+    if (!settled.created) {
         // Already settled. The one thing this still does is put them in it,
         // because a resident who wandered to the landing has an abode they are
         // simply not standing in.
-        return {
-            ...base,
-            ok: true,
-            abode: already,
-            created: false,
-            detail: `${already.name} is already theirs, and has been since they made it.`
-        };
+        return { ...base, ok: true, abode, created: false, detail: settled.detail };
     }
-
-    const rng = forStream(state.seed, 'immortal-abode', npc.id);
-    const abode = makeLocation({
-        id,
-        name: input.name?.trim() || `the ${placeName(rng).toLowerCase()}`,
-        kind: 'cave',
-        layer: IMMORTAL_LAYER,
-        parentId: IMMORTAL_LANDING_LOCATION_ID,
-        description:
-            'Ground taken out of the open and made into somewhere. Nobody contested it, '
-            + 'because there is a great deal of ground up here and nothing on it anybody '
-            + 'wants; what it is worth is that it is theirs, which on this layer is a '
-            + 'thing a newcomer has none of.',
-        ambient: 'spirit_tide',
-        qiDensity: IMMORTAL_QI_DENSITY,
-        thresholds: makeThresholds(
-            TRUE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL, MAX_ORDINAL
-        ),
-        hazards: [],
-        environment: makeEnvironment({
-            spiritualDensity: IMMORTAL_QI_DENSITY,
-            danger: 0.1,
-            resources: ['qi'],
-            climate: 'unweathered',
-            politicalControl: `${npc.name}, and nobody has argued`,
-            specialRules: IMMORTAL_SPECIAL_RULES.slice()
-        }),
-        discovered: true,
-        tags: ['immortal', 'abode'],
-        data: { heldById: npc.id, heldByName: npc.name, settledOnDay: input.onDay }
-    });
-    abode.origin.fromDay = input.onDay;
-    Object.assign(state, upsertLocation(state, abode));
-
-    Object.assign(state, upsertNpc(state, {
-        ...npc,
-        locationId: abode.id,
-        updatedOnDay: input.onDay
-    }));
 
     // Secret, and it stays that way. Nothing below the Lid learns that
     // somebody up there has built anything, because there is no signal across

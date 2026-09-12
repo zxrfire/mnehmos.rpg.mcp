@@ -29,7 +29,7 @@ import type { ImmortalGrade } from '../../data/cultivation/immortal-items.js';
  */
 export const STEP_CEILING_BY_GRADE: Readonly<Record<ImmortalGrade, RealmKey>> = {
     lower: 'deity_transformation',
-    middle: 'void_refinement',
+    middle: 'void_tribulation',
     higher: 'grand_ascension'
 };
 

@@ -225,13 +225,13 @@ describe('a court is a handful of people doing a job on somebody else\'s vein', 
             .toBe('Deeproot Court');
         expect(kiln.name).not.toBe(walked.name);
         // The half that STAYED is under the old apex; the half that WALKED is
-        // under the Long Cut. If these two ever read the same way round as each
+        // under the Myriad Course Hall. If these two ever read the same way round as each
         // other, the bodies have been swapped.
         expect(kiln.apexId, 'the half on the datum stayed with the Survey').toBe('apex-earth-vein-tower');
         expect(
             getParentage('sect-kiln-wardens')?.parentFactionId,
-            'the half that walked went to the Long Cut'
-        ).toBe('apex-long-cut');
+            'the half that walked went to the Myriad Course Hall'
+        ).toBe('apex-myriad-course-hall');
         // AND NEITHER OF THEM ARGUES ABOUT IT ANY MORE. Each body used to carry
         // a partisan `lineageDispute` claiming to be the real house, and this
         // test asserted that both existed and disagreed. Both records are gone:
@@ -381,7 +381,7 @@ describe('a faction wants something, and somebody is in the way', () => {
         // It used to assert three CLAIMANTS and there are two, which is a
         // correction rather than a loss. The third was the Storm Tyrant Court,
         // which answers the Earth Vein Tower directly and holds no Third Sill grant
-        // - so a claim by it on a Long Cut court's arterial was a claim it had
+        // - so a claim by it on a Myriad Course Hall court's arterial was a claim it had
         // no standing to make. It is still a party to the contest, and both
         // remaining claimants still name it, which is the shape that is
         // actually true: two houses want the arterial and all three of them are

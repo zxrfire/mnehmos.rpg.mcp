@@ -3,7 +3,15 @@
  */
 
 import { makeObject, type ObjectRecord } from '../../engine/world/possessions.js';
+import { NASCENT_SOUL_ORDINAL } from '../../engine/cultivation/existence.js';
+import { refiningOrdinalFor } from '../../engine/cultivation/who-can-refine-a-grade-of-medicine.js';
+import {
+    theSameCultivationIn,
+    type ACountOfBodies
+} from '../../engine/cultivation/how-much-cultivation-a-body-carries.js';
+import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import { idsForFaction } from './hierarchy.js';
+import type { Awareness } from './governance-and-water-rights.js';
 
 /**
  * Every artifact, strongest first.
@@ -74,7 +82,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: '',
         possessorId: 'figure-set-hand-eleven',
         description:
-            'A carver\'s tool, in the hand of a carver who crossed from driven ground twenty-six centuries ago and files rather than speaks. The Ninth Nail the Long Cut has been standing behind for all of that time is not a piece of this and never was: it is a second, lesser thing, cut deliberately at the rung that can be left, by somebody who knew they would not be here to hold anything.',
+            'A carver\'s tool, in the hand of a carver who crossed from driven ground twenty-six centuries ago and files rather than speaks. The Ninth Nail the Myriad Course Hall has been standing behind for all of that time is not a piece of this and never was: it is a second, lesser thing, cut deliberately at the rung that can be left, by somebody who knew they would not be here to hold anything.',
         tags: ['immortal-made', 'carried', 'above-the-lid', 'never-below']
     }),
     makeObject({
@@ -125,9 +133,9 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         kind: 'artifact',
         significance: 'legendary',
         power: 45,
-        ownerId: 'apex-long-cut',
-        ownerName: 'The Long Cut',
-        possessorId: 'apex-long-cut',
+        ownerId: 'apex-myriad-course-hall',
+        ownerName: 'The Myriad Course Hall',
+        possessorId: 'apex-myriad-course-hall',
         description:
             'A fixed point in a world where nothing else is fixed. Ground near it cannot be moved, folded or unmade, which settles most fights before anybody swings at anything.',
         tags: ['immortal-made', 'sent-down', 'never-carried', 'known-to-exist']
@@ -160,6 +168,38 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
             'The same, one rung down. What the province knows is that four people went in, and that the mountains are visited while the occupants are not; what it does not know is that all four are carrying something an apex would empty a vault for.',
         tags: ['immortal-made', 'carried', 'undeclared']
     }),
+    // THE ROOT CAULDRON, IN TWO PIECES. One object, and the only reason there
+    // are two rows is that it is not in one place. See `THE_ROOT_CAULDRON`
+    // below for the recipes, the gate they read, and what the split cost.
+    makeObject({
+        id: 'cauldron-the-belly',
+        name: 'The Cauldron Belly',
+        kind: 'artifact',
+        significance: 'legendary',
+        power: 44,
+        ownerId: 'court-kiln',
+        ownerName: 'The Kiln Court',
+        possessorId: 'court-kiln',
+        knownOwnershipBy: ['court-kiln', 'apex-earth-vein-tower', 'sect-kiln-wardens'],
+        description:
+            'The lower half of a refining vessel, set into the datum at the world\'s root and not liftable by anybody. What it takes is cultivators, body and soul, and what it returns is a blade - the same blade, every time, which is why anybody holding one can be asked where they got it.',
+        tags: ['immortal-made', 'containment', 'half-of:the-root-cauldron', 'makes-a-blade', 'never-carried', 'known-to-exist']
+    }),
+    makeObject({
+        id: 'cauldron-the-lid',
+        name: 'The Cauldron Lid',
+        kind: 'artifact',
+        significance: 'legendary',
+        power: 44,
+        ownerId: 'sect-kiln-wardens',
+        ownerName: 'Deeproot Court',
+        possessorId: 'sect-kiln-wardens',
+        knownOwnershipBy: ['sect-kiln-wardens', 'apex-myriad-course-hall', 'court-kiln'],
+        data: { lastFiredYearsAgo: 890 },
+        description:
+            'The upper half of the same vessel, fed the same way and returning a shield instead of a blade. A lid is the part of a cauldron that comes off, which is the whole of why this is the half that walked and the other one did not. It has fired once since it walked, eight hundred and ninety years ago, and its rest is over.',
+        tags: ['immortal-made', 'containment', 'half-of:the-root-cauldron', 'makes-a-shield', 'known-to-exist']
+    }),
     // ── 43: the most VALUABLE object there is, and the least use in a duel ─
     makeObject({
         id: 'hollow-turned-ledger',
@@ -184,7 +224,7 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         ownerName: 'The Hollow Court',
         possessorId: 'hollow-court-fourth-seat',
         description:
-            'The weakest of the Court\'s four and still the equal of the Long Cut\'s Nail. The Fourth Seat is the youngest and the one most likely to be met, on the grounds that they are the only one who still occasionally answers the gate.',
+            'The weakest of the Court\'s four and still the equal of the Myriad Course Hall\'s Nail. The Fourth Seat is the youngest and the one most likely to be met, on the grounds that they are the only one who still occasionally answers the gate.',
         tags: ['immortal-made', 'carried', 'undeclared']
     }),
     makeObject({
@@ -254,6 +294,24 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         tags: ['forged', 'office-issued', 'mutated-root-only']
     }),
     makeObject({
+        // WHAT THE WHOLE CAULDRON MAKES, and the ordinals on all three rows
+        // below are read off `refiningOrdinalFor` rather than chosen: nothing
+        // worked these, so what they can be is what the grade's own working
+        // asks of a hand, and no more.
+        id: 'artifact-cauldron-born-pair',
+        name: 'A Cauldron-Born Pair',
+        kind: 'artifact',
+        significance: 'legendary',
+        power: refiningOrdinalFor('heaven'),
+        ownerId: 'apex-earth-vein-tower',
+        ownerName: 'The Earth Vein Tower',
+        possessorId: 'apex-earth-vein-tower',
+        knownOwnershipBy: ['apex-earth-vein-tower', 'court-kiln'],
+        description:
+            'A sword and a shield that are one object and have never been apart. Three exist, all three in the Survey vault and all three out of the Hundred Schools Age, when the world held more cultivators at the top of the ladder than it has held since, and every one of them predates the reposting - a pair can only come out of the whole vessel, the vessel stood whole only under the Survey, and it has not been whole in nine hundred years. So a pair in a hand names a side as well as a century.',
+        tags: ['from:the-root-cauldron', 'derangement-bearing', 'three-exist', 'made-while-it-was-whole', 'known-to-exist']
+    }),
+    makeObject({
         id: 'artifact-the-severed-ledger-blade',
         data: { daoDomain: 'karma' },
         name: 'The Severing Canon',
@@ -306,6 +364,34 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
         description:
             'The instrument the Gate Warden carries, which closes a working and holds it closed against the pressure of the vein. It is a tool that happens to be dangerous rather than a weapon that happens to be useful, and the Court has never described it as either.',
         tags: ['forged', 'office-issued']
+    }),
+    makeObject({
+        id: 'artifact-cauldron-born-blade',
+        name: 'A Cauldron-Born Blade',
+        kind: 'artifact',
+        significance: 'significant',
+        power: refiningOrdinalFor('earth'),
+        ownerId: 'apex-earth-vein-tower',
+        ownerName: 'The Earth Vein Tower',
+        possessorId: 'apex-earth-vein-tower',
+        knownOwnershipBy: ['apex-earth-vein-tower', 'court-kiln', 'sect-kiln-wardens'],
+        description:
+            'One blade, with no shield anywhere that matches it, which places it exactly: made after the split, by a half working alone. It is the only object of its kind in the world and it is the only figure in the Survey storehouse that has gone up in nine hundred years. It has never been issued to anybody.',
+        tags: ['from:the-root-cauldron', 'derangement-bearing', 'one-exists', 'made-after-the-split', 'never-issued']
+    }),
+    makeObject({
+        id: 'artifact-cauldron-born-shield',
+        name: 'A Cauldron-Born Shield',
+        kind: 'artifact',
+        significance: 'significant',
+        power: refiningOrdinalFor('earth'),
+        ownerId: 'apex-myriad-course-hall',
+        ownerName: 'The Myriad Course Hall',
+        possessorId: 'apex-myriad-course-hall',
+        knownOwnershipBy: ['apex-myriad-course-hall', 'sect-kiln-wardens', 'court-kiln'],
+        description:
+            'The other half\'s output, and the same story: one shield made over and over, identical enough that two of them side by side cannot be told apart by anybody who has handled either. Nine are in the seat chamber. The Hall publishes a decreasing count of its sealed cases and has never published this one.',
+        tags: ['from:the-root-cauldron', 'derangement-bearing', 'nine-exist', 'never-issued']
     }),
     makeObject({
         id: 'artifact-azure-sword-tally',
@@ -428,11 +514,213 @@ export const ARTIFACTS: readonly ObjectRecord[] = [
 
 
 /**
+ * The lowest rung that carries anything at all.
+ *
+ * Not the floor itself: somebody who has never advanced has spent nothing, so
+ * no quantity of them adds up to a working. One rung up is the cheapest fuel
+ * that is fuel.
+ */
+const THE_BOTTOM_OF_THE_LADDER = REALM_TIERS[0]!.ordinalStart + 1;
+
+/** The rung the whole vessel's recipe is written at. */
+const VOID_TRIBULATION_ORDINAL =
+    REALM_TIERS.find(t => t.key === 'void_tribulation')!.ordinalStart;
+
+/**
+ * The Root Cauldron: a liability, and what it costs to be tempted by it.
+ *
+ * Not a weapon and not a tomb. It is a refining vessel that takes cultivators
+ * as its material, so the two courts are staff on a working site rather than
+ * mourners at a door - which is why there is a rota and why there are leaks to
+ * walk down.
+ *
+ * A HALF IS A LIABILITY AND THE WHOLE IS A PRIZE, and which of the two it is
+ * depends only on how much of it you are holding. A half buys a city of the
+ * weak for an earth-grade sword, and `refiningOrdinalFor` opens earth grade at
+ * seventeen, which thousands of ordinary cultivators stand at: an idiotic
+ * trade, and the reason both halves sit idle. The whole makes a heaven-grade
+ * object, and what it takes to make one is the point - see `whatItSubstitutes`.
+ * So the two apexes each hold the worthless version and jointly hold the
+ * valuable one, which neither can assemble.
+ *
+ * THE GATE IS THE ENGINE'S OWN. `existence.ts` hangs the soul states on
+ * `NASCENT_SOUL_ORDINAL`, and this reads the same band rather than adding a
+ * rule. Above it `aSoulThisOldCanRefuse` is true and the vessel gets nothing,
+ * so every recipe below has to be paid out of the ranks beneath it.
+ */
+export const THE_ROOT_CAULDRON = {
+    /**
+     * The two recipes, as counts of bodies at a rung. `theSameCultivationIn`
+     * reads either at any other rung off the ladder's own power curve, so there
+     * is no table here of what a Qi Condensation is worth.
+     */
+    whole: { bodies: 10, ordinal: VOID_TRIBULATION_ORDINAL } as ACountOfBodies,
+    half: { bodies: 10, ordinal: NASCENT_SOUL_ORDINAL } as ACountOfBodies,
+    /** Eight hundred and eighty-eight years between firings. */
+    restsForYears: 888,
+    yields:
+        'The whole vessel returns one sword and shield that are a single heaven-grade object. The belly alone returns an earth-grade blade and the lid alone an earth-grade shield. Nothing else in the world makes any of the three.',
+    andTheyAreTheSameObjectEveryTime:
+        'It is not a smith and it does not vary, so what comes out is a duplicate rather than a new thing: one blade made repeatedly, one shield made repeatedly. Holding one is therefore evidence of where it came from, read the way any marked property is read, and nobody has ever had to prove it.',
+    andWhatItIsWorth:
+        'Set the ordinals beside the prices. `refiningOrdinalFor` opens earth grade at seventeen and heaven grade at twenty-nine, so a half costs a city for something a Core Formation cultivator forges. That is the whole argument against a half.',
+    whatItSubstitutes:
+        'And the argument FOR the whole, which is not that it skips the material. Making a heaven-grade artifact takes a hand at twenty-nine AND heaven-grade material, and the material has to be found and killed for: six things in the catalog carry it, a Thunder Hawk Core, a Grave Hound Core, a Glacier Lynx Core, a White Tiger Core, a Tortoise Plastron and an Earth Dragon Scale. The cauldron meets the same requirement out of a different stock. A certain quantity of people is heaven-grade material, and the vessel is what performs the equivalence.',
+    andWhoThatTempts:
+        'Two kinds of hard. The honest road is a beast that has to be tracked and beaten, which is slow, uncertain and your own body. The cauldron is politically ruinous and carries no personal risk at all, and the people it takes were condemned by a sentence somebody else handed down, so nobody has to stand in front of a living thing and do it themselves. That is the benefit and it is the whole of it - a bureaucratic one, which is exactly what two neutral administrative apexes would find reasonable. The person this tempts is somebody at twenty-nine who wants the artifact and would rather spend other people than face an Earth Dragon.',
+    andTheAlignmentFaultLine:
+        'Which is the line the material economy runs along. A righteous house does not hunt a person and a neutral one might, and at and above `BEAST_CHANGE_ORDINAL` a beast is a person - so which roads to material are open to a house is a fact about its alignment. Both bodies holding a half are the neutral pair, which is why neither experiences any of this as a compromise, and why the one righteous apex is the one that revolts.',
+    andWhyAnybodyFeedsItAtAll:
+        'Because they are holding it, and not the other way round. The custody came first: it must not be loose. The executions were going to happen regardless, and since the vessel is standing there the condemned go into it rather than somewhere else and something comes out. That is the whole of the reasoning and it is the register of two neutral apexes - no programme, no ambition, a sentence that had to be carried out and a thing with no better use.',
+    whoCanWorkIt:
+        'Twenty-nine, and that is true of a half as well as the whole - the same rung `refiningOrdinalFor` opens heaven grade at. Counted through the catalog: thirty-two cultivators in the world stand there or above, and every one of them is the seat of a house, the head of an apex or a Seat of the Hollow Court. So a firing is not something a garrison does. Somebody from the summit has to attend, which is why it is an occasion rather than a procedure and why it pairs with a judgement handed down in person.',
+    whatItDoesToWhoeverCarriesOne:
+        'Bloodlust, and it has to be held down. `WHAT_A_HALF_MAD_STRETCH_DOES` is already this mechanic - a stretch somebody was not entirely steering, resolved as deeds rather than as a status word - and the fight unpicked, the thing taken and the month of not stopping are its rows. Both apexes know what they are holding and both keep theirs.',
+    /**
+     * Every way of loading a half, none of them cheap. Derived by
+     * `theSameCultivationIn`; the figures are here because the shape of the
+     * ladder is the entry and a reader should not have to run it.
+     */
+    whatAHalfCosts: [
+        'ten at Nascent Soul: ten of the strongest people in a province, taken alive. Only a body that can condemn them can do it, which is why the lawful fuel is condemned high-realm cultivators and why the lawful road is also the quiet one.',
+        'sixteen at Core Formation Perfection: a war against a real house, won without killing any of the sixteen.',
+        'fifty at Foundation Establishment Perfection: a smaller war, still a war.',
+        'twenty-eight thousand five hundred and eighty-three at the floor of the ladder: no war at all, and no arrangement of secrecy that survives the next harvest count.'
+    ],
+    andTheWholeIsTheSameLadderTimesEleven:
+        'One hundred and nine at Nascent Soul, or three hundred and ten thousand three hundred and six at the floor. The price never becomes low; it changes currency, from a war that can be lost to a crime that cannot be hidden.',
+    /**
+     * Three reasons, in this order, and the first makes the other two
+     * unnecessary. The world COULD pay. It does not, because the trade is
+     * idiotic.
+     */
+    whyNobodyFiresIt: [
+        'The arithmetic is absurd AT A HALF. A city, or a war, for an object an ordinary Core Formation cultivator could forge, held by bodies that are not short of one. It is not absurd at the whole, which is why the whole is the one that cannot be assembled.',
+        'It would cost them politically. Three hundred thousand mortals and the righteous houses beneath them revolt, and so does the Azure Cloud Pavilion - which is the standoff the apex entries already describe, arriving at a specific act. Both cauldron-holding apexes are the neutral pair, so neither is restrained by principle. They are restrained by the third one having some.',
+        'Their dao hearts. `whatACrossingAsksOfTheDaoHeart` reads what a life brings to a crossing, and everybody who can work this stands at twenty-nine or above with the rest of the ladder still in front of them - the heads who would actually order it most of all. The ones who could pay the price are the ones who can least afford to.'
+    ],
+    /**
+     * Four locks, none of them doing the work on its own, which is why nine
+     * hundred years of this has needed no particular guarding.
+     */
+    theFourLocks: ['politics', 'arithmetic', 'economics', 'capability'],
+    whyTheWholeHasNeverFired:
+        'Not the seal and not the arithmetic. The two halves are held by two postings answering two different apexes, so putting them together needs either an agreement between bodies that have not raised anything with each other in eleven hundred years, or a half taken off an apex\'s own subordinate. The schism was a political accident and it installed a two-key lock nobody designed.',
+    andEachHalfNeedsNobody:
+        'Which is the other half of the same sentence. Either apex can fire its own whenever it likes, without permission and without anybody being told, so the world lives permanently with two working execution grounds and one impossible one - and the impossible one is safe precisely because the other two are unsupervised.',
+    whyItIsGuarded:
+        'Not to keep it. Whoever steals a half acquires an object they cannot work: to fire it they must recruit, buy or coerce one of thirty-two named people, every one of whom sits at the top of a house, can already craft what it makes, and would be risking their own crossing. That is a conspiracy with a cast list rather than a heist, and the thief has also just taken something off an apex, which gives every apex a reason to end them that costs no dao heart at all.',
+    whoDecidesWhoGoesIn:
+        'Both apexes holding a half refuse the alignment axis - one because it is not a term of the grant, one because it has never had a counterparty to read one off - and what they put in are condemned high-realm cultivators, which is a judgement on that axis. Neither has been asked to answer that in a room where it would have to.',
+    andPeopleWouldKnow:
+        'Two independent tells, and a player can work from either to the other. The weapon in somebody\'s hand says which cauldron made it. The hole in the population says one was fired, at a loudness `howLoudTakingPeopleIs` reads off the head count - ten condemned is a matter inside one house, and twenty-eight thousand is a province counting its dead.',
+    whatTheSplitDid:
+        'It capped the thing. Safer, and not safe: a half is still a catastrophe, and the two differ in scale and in product rather than in kind.',
+    andAPairDatesItself:
+        'The rest is why any of this is countable and it is also a calendar. A pair can only have come out of the whole vessel, and the vessel has not been whole since the reposting nine hundred years ago - so a pair predates the split and a lone sword or a lone shield postdates it, and anybody holding one can be placed in history by whether it has its mate. Nobody had to write that down; it falls out of the interval.',
+    andTheRestIsNotWhatStopsIt:
+        'The eight hundred and eighty-eight years is a minimum between firings and not a schedule. Both halves are ready and have been ready for centuries. What governs the rate is how often the world produces a condemned high-realm cultivator, which is rarely: they are not waiting on the vessel, they are waiting on somebody to deserve it. So the standing tension is not a date arriving. It is that the sum comes out differently for somebody who cannot forge at seventeen and has no crossing to lose.',
+    whoHandsItDown:
+        'By convention the elder holding the punishment portfolio, in person. What he hands down is a SENTENCE - where the body goes afterwards is disposal, and disposal is not what he is ruling on, which is why the public notice is a death sentence and complete as far as it goes. Nothing is being concealed at the moment of judgement because at that moment there is nothing yet to conceal. Reading the names out is convention rather than a lock, so a firing nobody published is a reachable state of the world and one person\'s decision rather than an institution\'s.'
+} as const;
+
+/**
+ * The most times a vessel COULD have fired in this many years.
+ *
+ * A ceiling and nothing else. How many times it actually fired is a small
+ * authored number that sits under this, because each firing needed somebody to
+ * assemble the fuel and that has almost never been possible - the rest has
+ * never been the binding constraint and dividing history by it would invent a
+ * cadence the world does not have.
+ */
+export function mostFiringsIn(years: number): number {
+    return Math.max(0, Math.floor(years / THE_ROOT_CAULDRON.restsForYears));
+}
+
+/** Years still to run before a vessel last fired this long ago may fire again. */
+export function yearsUntilItMayFireAgain(yearsSinceItLastFired: number): number {
+    return Math.max(0, THE_ROOT_CAULDRON.restsForYears - yearsSinceItLastFired);
+}
+
+/** Whether a vessel that last fired this long ago is ready. */
+export function itMayFireAgain(yearsSinceItLastFired: number): boolean {
+    return yearsUntilItMayFireAgain(yearsSinceItLastFired) <= 0;
+}
+
+/**
+ * What each recipe costs paid at the floor of the ladder, which is how it would
+ * actually be paid: above Nascent Soul a cultivator resists, so the fuel has to
+ * come from underneath and there are far more people underneath.
+ *
+ * Both figures are massacres and they differ in scale rather than in kind. The
+ * split capped the larger one; it disarmed nothing. Computed off
+ * `powerMultiplierForOrdinal` so no figure here can be typed wrong or go stale.
+ */
+export function whatTheCauldronCostsAtTheBottom(): { half: number; whole: number } {
+    return {
+        half: theSameCultivationIn(THE_ROOT_CAULDRON.half, THE_BOTTOM_OF_THE_LADDER),
+        whole: theSameCultivationIn(THE_ROOT_CAULDRON.whole, THE_BOTTOM_OF_THE_LADDER)
+    };
+}
+
+/**
+ * What anybody at this awareness can be told about the Root Cauldron.
+ *
+ * The reveal sits UNDER the one the apex material already builds - a strange
+ * order guarding a vein it draws nothing from is the evidence in plain view
+ * that the province is a tenancy, and this is the next layer on the same
+ * bodies. So every tier below the last is true, boring and complete as far as
+ * it goes, and none of them is the sentence that joins the execution notices to
+ * the object.
+ *
+ * The public record is available the whole way down: a high-realm cultivator
+ * was caught and sentenced, which surprises nobody. What is held back is where
+ * the body went.
+ *
+ * Null means say nothing rather than say a hedge - `actsWithoutAttribution` is
+ * the register at that tier, and the narrator has effects to use without names.
+ */
+export function whatIsSaidOfTheCauldronAt(awareness: Awareness): string | null {
+    switch (awareness) {
+        case 'unaware':
+            return null;
+        case 'whisper':
+            return 'There is an order on the deep vein that lights every node it holds, '
+                + 'draws nothing, and has turned away everybody who ever walked up to it.';
+        case 'named':
+            return 'They are not eccentric and they are not local. They are staff, posted, '
+                + 'doing an assigned job on ground they do not own.';
+        case 'placed':
+            return 'What they are posted over is one object in two pieces, and the other '
+                + 'piece is four provinces away under the other power.';
+        case 'encountered':
+        case 'known':
+            return 'It is a refining vessel. What the execution notices name is what goes '
+                + 'into it, and the sword and the shield are what comes out.';
+    }
+}
+
+/** Everything the Root Cauldron has ever produced, by the mark it leaves. */
+export function cameOutOfTheRootCauldron(): readonly ObjectRecord[] {
+    return ARTIFACTS.filter(a => a.tags.includes('from:the-root-cauldron'));
+}
+
+/**
  * Everything a given party owns. Not artifact-tier-specific in any way.
  */
 export function artifactsOwnedBy(ownerId: string): readonly ObjectRecord[] {
     const ids = idsForFaction(ownerId);
     return ARTIFACTS.filter(a => a.ownerId !== null && ids.includes(a.ownerId));
+}
+
+/**
+ * What this house stands over, where what it stands over is a containment.
+ *
+ * Derived rather than listed, so a second containment added to the table is on
+ * its holder's board the same afternoon and nobody has to remember a roster.
+ */
+export function containmentHeldBy(ownerId: string): readonly ObjectRecord[] {
+    return artifactsOwnedBy(ownerId).filter(a => a.tags.includes('containment'));
 }
 
 /** Everything a given person or house is physically holding right now. */

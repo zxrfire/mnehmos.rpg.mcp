@@ -183,7 +183,7 @@ export function trialForOrdinal(ordinal: number): TrialKind {
         case 'core_formation': return 'the_condensation';
         case 'nascent_soul': return 'the_birthing';
         case 'deity_transformation': return 'the_merging';
-        case 'void_refinement': return 'the_emptiness';
+        case 'void_tribulation': return 'the_emptiness';
         case 'body_integration': return 'the_joining';
         case 'grand_ascension': return 'the_ascent';
         default: return 'none';

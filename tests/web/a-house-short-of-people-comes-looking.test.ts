@@ -107,12 +107,23 @@ describe('a house short of people comes looking', () => {
         expect(fromPaper.length, 'reading a wall put no name into this world')
             .toBeGreaterThan(0);
 
-        // And every one of them is a house the derivation actually chose,
-        // rather than whatever happened to be nearby in a catalog.
+        // And every INTAKE among them is a house the derivation actually
+        // chose, rather than whatever happened to be nearby in a catalog.
+        //
+        // THE WALL CARRIES MORE THAN INTAKES NOW, which is why this reads the
+        // provenance note rather than every `read` row. A house that would
+        // never hear an application still posts work and still warns the
+        // province about its own ground, and a name off one of those is a name
+        // no recruitment derivation would ever have chosen - see
+        // `the-wall-carries-work-a-house-will-give-a-stranger.test.ts`. The
+        // claim held here is unchanged: a RECRUITING BILL names a house that
+        // has to advertise.
         const advertising = new Set(
             housesThatHaveToAdvertise(openDoorsInTheWorld()).map(h => h.id)
         );
-        for (const row of fromPaper) expect(advertising.has(row.id)).toBe(true);
+        const fromABill = fromPaper.filter(row => row.sourceNote.includes('recruiting bill'));
+        expect(fromABill.length, 'no intake named anybody').toBeGreaterThan(0);
+        for (const row of fromABill) expect(advertising.has(row.id)).toBe(true);
     });
 
     /**

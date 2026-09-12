@@ -451,7 +451,7 @@ describe('what the broken statuses are called', () => {
         core_formation: ['core'],
         nascent_soul: ['nascent', 'soul'],
         deity_transformation: ['transformation'],
-        void_refinement: ['refinement'],
+        void_tribulation: ['refinement'],
         body_integration: ['integration'],
         grand_ascension: ['ascension'],
         tribulation_transcendence: ['tribulation']

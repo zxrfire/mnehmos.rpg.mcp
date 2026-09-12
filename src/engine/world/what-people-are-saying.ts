@@ -38,6 +38,85 @@ const SCALE_REACH: Record<EventScale, number> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────
+// THE TWO AXES
+//
+// Distance and importance, and they are independent. Important news travels
+// far and unimportant news stays local, so importance decides WHETHER a story
+// crosses a province; distance decides WHEN it gets there, and a big thing
+// that has just happened is local and enormous - everybody here knows it and
+// nobody a province away does yet.
+//
+// Only one of the two existed. `airtimeOf` read magnitude, scale, the realm gap
+// and the age, and never read `teller.regionId`, which `TellerStanding` has
+// carried the whole time. So a minor event was quiet EVERYWHERE rather than
+// known in the street it happened in, and a market whose entire job is what the
+// people standing HERE say is happening reported the top of the world and never
+// the town. Measured in the header of
+// `tests/web/a-fresh-world-has-somebody-to-tell.test.ts`: standing next to the
+// dead man's father in the town where the killing happened, every discovery
+// verb in the game returned nothing.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** How far the teller is standing from where it happened. */
+export type HowFarOff = 'here' | 'in the region' | 'a region away' | 'unplaceable';
+
+/**
+ * How long news takes to cover each band, in days.
+ *
+ * News moves at the speed of the people carrying it. Until it has had time to
+ * get there it has not got there, which is the half of the ruling that is about
+ * when you hear rather than whether.
+ */
+export const DAYS_NEWS_TAKES: Readonly<Record<HowFarOff, number>> = Object.freeze({
+    here: 0,
+    'in the region': 20,
+    'a region away': 180,
+    unplaceable: 0
+});
+
+/**
+ * What crossing each band costs a story in airtime.
+ *
+ * The figures are set against what `airtimeOf` already awards: a personal event
+ * at the floor scores about 0.9, so a province away silences it outright, and a
+ * regional event at high magnitude scores about 2.6 and survives the crossing
+ * with room to spare. That is the ruling in two numbers - important news travels
+ * far, unimportant news stays local - and it is a judgement worth arguing with
+ * in one place rather than a threshold buried in a branch.
+ */
+const WHAT_THE_DISTANCE_COSTS: Readonly<Record<HowFarOff, number>> = Object.freeze({
+    here: 0,
+    'in the region': 0.7,
+    'a region away': 2,
+    unplaceable: 0
+});
+
+/**
+ * Where this teller is standing relative to where it happened.
+ *
+ * Somebody who was in it or saw it is 'here' wherever they are now, because they
+ * did not hear the news - they brought it. That is most of what a witness is
+ * for, and it is the one read that makes `witnessIds` worth storing: the fact
+ * finds its way to a province it has not reached because a person walked there.
+ *
+ * A fact with no place the world models is 'unplaceable' and pays no distance
+ * term at all. Priced at nothing rather than at the worst band deliberately: a
+ * fact the world cannot site is not a fact the world knows to be far away.
+ */
+export function howFarOff(
+    state: WorldState,
+    fact: HistoricalFact,
+    teller: TellerStanding
+): HowFarOff {
+    if (fact.witnessIds.includes(teller.id)) return 'here';
+    if (fact.actors.some(a => a.id === teller.id)) return 'here';
+    if (fact.locationId === null) return 'unplaceable';
+    if (teller.locationId != null && teller.locationId === fact.locationId) return 'here';
+    if (teller.regionId === null) return 'unplaceable';
+    return regionOf(state, fact.locationId) === teller.regionId ? 'in the region' : 'a region away';
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // SHAPE
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -92,6 +171,15 @@ export interface TellerStanding {
     id: string;
     name: string;
     realmOrdinal: number;
+    /**
+     * The place they are standing, where the caller knows it.
+     *
+     * The finer of the two distance reads: a thing that happened in this square
+     * is nearer than a thing that happened in this province, and the two bands
+     * are the difference between a quarrel being repeated and a quarrel being
+     * forgotten. Optional because several callers only know the province.
+     */
+    locationId?: string | null;
     /** Region id, for whether this happened anywhere near them. */
     regionId: string | null;
     factionId: string | null;
@@ -125,7 +213,11 @@ export function circulating(
 /**
  * How much a fact gets said out loud.
  *
- * Four terms, and the second is the one the design turns on.
+ * Two axes and three further terms. The axes are distance and importance, and
+ * they compose rather than blend: importance is everything added, distance is
+ * one subtraction and one gate, so a story either carries far enough to survive
+ * the crossing or it does not, and either way it has to have had time to get
+ * there first.
  */
 function airtimeOf(
     state: WorldState,
@@ -133,6 +225,12 @@ function airtimeOf(
     teller: TellerStanding,
     onDay: number
 ): number {
+    const far = howFarOff(state, fact, teller);
+
+    // NOT YET. Distance governs when as well as whether, so a thing that
+    // happened this morning a province away has not happened here.
+    if (onDay - fact.day < DAYS_NEWS_TAKES[far]) return 0;
+
     // How big the world thought it was when it happened.
     let weight = 0.4 + fact.magnitude + SCALE_REACH[fact.scale] * 0.5;
 
@@ -152,7 +250,10 @@ function airtimeOf(
     const years = Math.max(0, (onDay - fact.day) / DAYS_PER_YEAR);
     weight -= Math.min(1.5, years / 400);
 
-    return weight;
+    // And the distance, which is what the importance above is spent on. A thing
+    // big enough clears a province and a thing that is not never does, however
+    // long anybody waits - so waiting is not what a small story is short of.
+    return weight - WHAT_THE_DISTANCE_COSTS[far];
 }
 
 /** The tallest person named on a fact, as the world currently holds them. */
@@ -191,8 +292,9 @@ export function handsItPassedThrough(
     const years = Math.max(0, (onDay - fact.day) / DAYS_PER_YEAR);
     hands += Math.min(3, Math.floor(years / YEARS_PER_HAND));
 
-    const where = regionOf(state, fact.locationId);
-    if (where !== null && teller.regionId !== null && where !== teller.regionId) hands += 1;
+    // The same distance read `airtimeOf` spends, so how far it came and how much
+    // of it survived cannot disagree about where the teller is standing.
+    if (howFarOff(state, fact, teller) === 'a region away') hands += 1;
 
     const gap = highestOrdinalIn(state, fact) - teller.realmOrdinal;
     if (gap >= OUT_OF_REACH_GAP) hands += 2;

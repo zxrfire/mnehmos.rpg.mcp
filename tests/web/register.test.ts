@@ -486,7 +486,7 @@ describe('what a faction entry actually says', () => {
     });
 
     it('leads with what the house is, never with where it is', () => {
-        // The rejection this rewrite answers, as a test. The Long Cut opened
+        // The rejection this rewrite answers, as a test. The Myriad Course Hall opened
         // on a definition of what driven ground is, which taught a reader who
         // did not know the setting nothing and a reader who did nothing new.
         for (const d of reg.dossiers) {
@@ -860,7 +860,7 @@ describe('the entries that were weakest', () => {
 
             // And what kind of institution it is, which is how it ranks people.
             // Four titles covering every practitioner in five provinces says
-            // more about the Long Cut than any figure on the sheet.
+            // more about the Myriad Course Hall than any figure on the sheet.
             const joined = d.synopsis.join(' ');
             expect(a.rankNote.length, `${d.id} has no rank note`).toBeGreaterThan(0);
             expect(a.lastRealmCount).toBeGreaterThan(0);
@@ -873,7 +873,7 @@ describe('the entries that were weakest', () => {
     it('names everything that answers to an apex, from both catalogs', () => {
         // The two tables hold different halves and neither is a superset: a
         // court names its apex on its own row, and anything else points upward
-        // from the parentage table. The Long Cut's only direct tenant lives in
+        // from the parentage table. The Myriad Course Hall's only direct tenant lives in
         // the second, and reading one table lost it.
         for (const d of apexDossiers) {
             const ids = idsForFaction(d.id);
@@ -923,16 +923,19 @@ describe('the entries that were weakest', () => {
 
     it('says how an institution nobody can join can be paid', () => {
         // The one question a reader has about a body they can never walk into.
-        // A house with a gate answers it by having a gate; an apex does not,
-        // and for a while the sheet could not answer it at all because neither
-        // hidden apex had a row in the character catalog. Both have one now, so
-        // the assertion is that the answer is used rather than that the gap is
-        // reported - and the branch that reports a gap is still guarded below,
-        // because a future apex could arrive without a row.
-        // A house with a door answers the question by having a door, so this is
-        // about the ones with none rather than about the tier.
-        const doorless = apexDossiers.filter(d => d.wayIn === null);
-        expect(doorless.length, 'every apex can be walked into').toBeGreaterThan(0);
+        // A house with a gate answers it by having a gate, so this is about the
+        // ones with none.
+        //
+        // IT USED TO READ `apexDossiers` AND THAT PREMISE IS GONE. Two apexes
+        // were powers with nobody in them and no door; they are houses now, with
+        // rolls and an intake, and the gate that keeps them hard to reach moved
+        // from the roll to the naming. So every apex can be walked into, and the
+        // question survives anyway - what has no door now is the POSTINGS, which
+        // admit nobody because nobody applies to a posting. Filtering every
+        // dossier rather than one tier is what makes the test follow the fact
+        // instead of the other way round.
+        const doorless = reg.dossiers.filter(d => d.wayIn === null);
+        expect(doorless.length, 'every body in the world can be walked into').toBeGreaterThan(0);
 
         for (const d of doorless) {
             const joined = d.synopsis.join(' ');
@@ -1435,11 +1438,16 @@ describe('what a faction is reaching for', () => {
         for (const sect of withAmbition) {
             const d = reg.dossiers.find(x => x.id === sect.id);
             expect(d?.ambition, `${sect.id} ambition dropped`).toBeTruthy();
-            expect(flat, `${sect.id} wants not rendered`)
+            // `flatProse`, NOT `flat`: a field longer than the disclosure
+            // threshold is rendered as a lead plus a foldable holding the rest,
+            // so the summary label lands in the middle of the sentence and a
+            // 40-character needle straddles it. `flat` passed here only while
+            // every ambition in the catalog happened to be short enough.
+            expect(flatProse, `${sect.id} wants not rendered`)
                 .toContain(sect.ambition!.wants.slice(0, 40));
-            expect(flat, `${sect.id} cost not rendered`)
+            expect(flatProse, `${sect.id} cost not rendered`)
                 .toContain(sect.ambition!.wouldCost.slice(0, 40));
-            expect(flat, `${sect.id} movedOn not rendered`)
+            expect(flatProse, `${sect.id} movedOn not rendered`)
                 .toContain(sect.ambition!.movedOn.slice(0, 40));
         }
     });

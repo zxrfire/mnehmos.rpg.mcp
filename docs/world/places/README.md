@@ -37,3 +37,23 @@ the files above**, in header comments and exported constants that no search of
 Indexes: [`../INDEX.md`](../INDEX.md) by situation,
 [`../BY-HOUSE.md`](../BY-HOUSE.md) by house.
 Both also reach the design prose in `src/data/cultivation/`.
+
+---
+
+## Where else to look
+
+- [`../../../src/data/cultivation/regions/README.md`](../../../src/data/cultivation/regions/README.md) -
+  one file per province, plus the prefectures, arterials and rank translations that join them.
+- [`../../../src/engine/world/README.md`](../../../src/engine/world/README.md) - ground as it
+  is right now: `locations.ts`, `the-ground-somebody-is-actually-standing-on.ts`,
+  `what-is-true-of-a-place-right-now.ts`, `ruin-mechanics.ts`,
+  `how-the-world-keeps-finding-more-ruins.ts`, `what-a-place-still-has-in-the-ground.ts`.
+- [`../../../src/engine/worldgen/README.md`](../../../src/engine/worldgen/README.md) - the
+  generated half of the map: height, climate, biome, rivers and lakes, deterministic from the
+  world seed.
+- [`../../../src/web/README.md`](../../../src/web/README.md) - how a player reaches ground:
+  `places.ts`, `what-can-be-reached-from-here.ts`, `where-this-cultivator-could-go.ts`,
+  `what-you-can-tell-about-the-ground.ts`.
+- [`../../../src/engine/spatial/README.md`](../../../src/engine/spatial/README.md) - the
+  pathfinder kept for folding space, and the gap between its tile grid and this place graph.
+

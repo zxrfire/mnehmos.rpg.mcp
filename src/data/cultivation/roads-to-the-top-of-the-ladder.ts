@@ -163,14 +163,14 @@ export const THE_DEEPEST_ROADS: readonly DeepRoadHolding[] = [
             'From the house\'s own succession, which is the ordinary case and the least interesting answer: whoever held the seat taught whoever was going to hold it next, and the chain is as old as the Survey and has never been written down as a chain.'
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         techniqueId: 'driven-ground-endurance-canon',
         copies: 2,
         whyThatManyCopies:
-            'Two, and both are scheduled objects like everything else here: the second was made because the first is carried and a carried document gets wet, and the Long Cut priced the replacement against the loss and made the copy. It took the holder of the seat somewhat over seven years, entered on the record as seven years of a face nobody worked, which is the only entry of its kind in the schedule.',
+            'Two, and both are scheduled objects like everything else here: the second was made because the first is carried and a carried document gets wet, and the Myriad Course Hall priced the replacement against the loss and made the copy. It took the holder of the seat somewhat over seven years, entered on the record as seven years of a face nobody worked, which is the only entry of its kind in the schedule.',
         access: 'lent',
         accessTerms:
-            'Lent on a term, in writing, with the return date on the document, exactly as everything else in this arrangement is issued. Nobody has ever failed to return one and the Long Cut has never had to consider what it would do about that, which it regards as evidence that the terms are set correctly.',
+            'Lent on a term, in writing, with the return date on the document, exactly as everything else in this arrangement is issued. Nobody has ever failed to return one and the Myriad Course Hall has never had to consider what it would do about that, which it regards as evidence that the terms are set correctly.',
         teachers: [
             {
                 who: 'The Nail-Keeper',
@@ -180,10 +180,10 @@ export const THE_DEEPEST_ROADS: readonly DeepRoadHolding[] = [
             }
         ],
         capacityNote:
-            'One teacher, available sometimes, and the hardest opening of any road in the world in front of the student before the teaching starts to matter. The Long Cut states both figures to anybody it offers this to, at the time, in writing, because stating the price at the time is the one thing it does that nobody has ever complained about.',
+            'One teacher, available sometimes, and the hardest opening of any road in the world in front of the student before the teaching starts to matter. The Myriad Course Hall states both figures to anybody it offers this to, at the time, in writing, because stating the price at the time is the one thing it does that nobody has ever complained about.',
         gradedByStanding: null,
         whereTheTeachingComesFrom:
-            'From the previous holder of the seat, on a handover, on a date. The Long Cut has a record of every one of them and has never made anything of the fact that it is the only continuous teaching lineage at this height that anybody could actually produce a document for.'
+            'From the previous holder of the seat, on a handover, on a date. The Myriad Course Hall has a record of every one of them and has never made anything of the fact that it is the only continuous teaching lineage at this height that anybody could actually produce a document for.'
     },
     {
         factionId: 'sect-hollow-court',

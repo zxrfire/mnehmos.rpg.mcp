@@ -165,13 +165,22 @@ describe('a shelf is a working library', () => {
             const roads = roadsOf(s.teaches);
             carry.set(s.id, roads.length ? Math.max(...roads.map(capOf)) : 0);
         }
-        // Two houses reach the top of the ladder; both hold a road nobody else
-        // has. Everything else stops at Grand Ascension or below.
+        // FOUR houses reach the top of the ladder, and each holds a road nobody
+        // else has. It was two until the two ancient apexes stopped being
+        // powers with no shelf: their roads were already in the catalog and
+        // already theirs, and what changed is that the bodies holding them now
+        // have a teach list to put them on. Everything else stops at Grand
+        // Ascension or below.
         const toTheTop = [...carry.entries()]
             .filter(([, c]) => c >= 45)
             .map(([id]) => id)
             .sort();
-        expect(toTheTop).toEqual(['sect-azure-cloud-pavilion', 'sect-hollow-court']);
+        expect(toTheTop).toEqual([
+            'sect-azure-cloud-pavilion',
+            'sect-earth-vein-tower',
+            'sect-hollow-court',
+            'sect-myriad-course-hall'
+        ]);
         // And a house that teaches no road at all is a power that does not
         // recruit, never a house with an empty library.
         for (const s of SECTS) {

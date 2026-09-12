@@ -203,11 +203,52 @@ const CARRIES_NO_NAME: ReadonlySet<string> = new Set([
 export const WORTH_OFFERING = 30;
 
 /**
+ * A leading article, which is not part of a name.
+ *
+ * `\s+` after it on purpose and for the reason `loosePlaceKey` gives next door:
+ * `^the-` rather than `^the`, so "Theodore's Rest" is not quietly renamed.
+ */
+const A_LEADING_ARTICLE = /^the\s+/;
+
+/**
  * Score a candidate name against what the player typed.
+ *
+ * ── ONE SIDE LOSING ITS ARTICLE MUST NOT COST THE MATCH ─────────────────
+ *
+ * FOUND BY PLAYING. `I ask The Reader at Burnt Earth which house she is from`
+ * was answered by a village girl standing nearby, about a topic called "The
+ * Reader at Burnt Earth" - so the person the sentence named was scenery, and
+ * every fact the engine held about her was unreachable.
+ *
+ * The two halves of it were each defensible. `parseAsk` hands the whole tail to
+ * `cleanPlace`, which takes a leading "the" off, so the query arrived as
+ * `reader at burnt earth which house she is from`. The candidate still had its
+ * article. The prefix rule below is what carries a name followed by the rest of
+ * a question - it is why `ask Mo Qingyan which house she is from` works at all -
+ * and `q.startsWith(c)` cannot fire when only one side was stripped. It fell
+ * through to word-sharing and scored 50 against a threshold of 55.
+ *
+ * So it was never about beasts, or long names, or prepositions: it is any
+ * person, place or house whose name begins with "The", asked about in a
+ * sentence with no `about` in it. The catalog is full of them, and two of the
+ * three things in the world that took a human shape are among them.
+ *
+ * The fix is the comparison the place keys already make: drop the article from
+ * BOTH sides and take the better of the two readings. Strictly a widening -
+ * nothing that matched before can match less - and it cannot make a wrong name
+ * win, because the stripped comparison is the same comparison on shorter
+ * strings.
  */
 export function matchScore(query: string, candidate: string): number {
-    const q = normalise(query);
-    const c = normalise(candidate);
+    const direct = scoreOfNames(normalise(query), normalise(candidate));
+    const q = normalise(query).replace(A_LEADING_ARTICLE, '');
+    const c = normalise(candidate).replace(A_LEADING_ARTICLE, '');
+    // Only worth a second reading where an article was actually in the way.
+    if (q === normalise(query) && c === normalise(candidate)) return direct;
+    return Math.max(direct, scoreOfNames(q, c));
+}
+
+function scoreOfNames(q: string, c: string): number {
     if (q.length === 0 || c.length === 0) return 0;
     if (q === c) return 100;
 

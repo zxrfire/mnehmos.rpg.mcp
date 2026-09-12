@@ -155,27 +155,27 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'The honest reason the Survey is an apex is not conquest and not competence, though it has a great deal of the latter. It is that somebody above the Lid is still answering, and only one other body in the world can say the same.'
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         kind: 'answering_channel',
         ancestor: {
             name: 'The Heaven-Splitting Chisel, named on the schedule and nowhere else',
-            whatTheyWere: 'A carver who crossed from driven ground, which the Long Cut regards as the more difficult road and does not argue about with anybody',
+            whatTheyWere: 'A carver who crossed from driven ground, which the Myriad Course Hall regards as the more difficult road and does not argue about with anybody',
             crossedYearsAgo: 2_600
         },
         whatItReturns:
-            'Objects, exactly as with the Survey, and received the same way: found, receipted, entered on the schedule, and never discussed. The Long Cut has never had a word from the other side either, and has never expected one.',
+            'Objects, exactly as with the Survey, and received the same way: found, receipted, entered on the schedule, and never discussed. The Myriad Course Hall has never had a word from the other side either, and has never expected one.',
         cadence:
             'Ages apart, unrequestable, and unguaranteed. The schedule carries the arrivals as dated entries with nothing in the reason column, which is the most the administration is willing to write down.',
         gradeCeiling: 'higher',
         gradeNote:
-            'Two thousand six hundred years across, answering at intervals measured in ages, sending well when it sends. The Long Cut holds the only higher-grade talisman in existence and two middle pills against it, which is a thinner stock than the Pavilion by any count and a better one by the only measure that decides what can actually be done with it.',
+            'Two thousand six hundred years across, answering at intervals measured in ages, sending well when it sends. The Myriad Course Hall holds the only higher-grade talisman in existence and two middle pills against it, which is a thinner stock than the Pavilion by any count and a better one by the only measure that decides what can actually be done with it.',
         thePersonItAnswersFor: null,
         usability:
-            'Fully usable and fully governed. The Long Cut owns every act it takes by name, so an object it cannot reorder is the hardest possible thing for it to spend: there is no vassal to attribute the decision to and no authority above it to authorise the loss. The result is a body that can act on anything except this.',
+            'Fully usable and fully governed. The Myriad Course Hall owns every act it takes by name, so an object it cannot reorder is the hardest possible thing for it to spend: there is no vassal to attribute the decision to and no authority above it to authorise the loss. The result is a body that can act on anything except this.',
         whatItExplains: [
             'why a body administering five provinces on forty staff is nonetheless an apex',
             'why a schedule amendment against the standing entry has been submitted three times and answered by restating the entry',
-            'why the Long Cut does not compare notes with the Earth Vein Tower about any of it'
+            'why the Myriad Course Hall does not compare notes with the Earth Vein Tower about any of it'
         ],
         note:
             'The two apexes hold the same category of asset from different ancestors, and neither institution knows whether the two are acquainted, hostile, or unaware of each other. Neither has ever asked the other. Flowing Light Tower would give a great deal for the answer and has no instrument that reaches it.'
@@ -206,7 +206,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'and, with the protector arrangement, why they are a collaboration rather than four recluses - see HOLLOW_COURT_COLLABORATION'
         ],
         note:
-            'The Earth Vein Tower and the Long Cut get objects; the Court gets accounts of the crossing. Neither apex can ask for what the Court has and the Court has never offered - not out of secrecy, but because it has not occurred to any of them that anybody else would find it useful. They are not withholding. They are simply not thinking about anyone else at all.'
+            'The Earth Vein Tower and the Myriad Course Hall get objects; the Court gets accounts of the crossing. Neither apex can ask for what the Court has and the Court has never offered - not out of secrecy, but because it has not occurred to any of them that anybody else would find it useful. They are not withholding. They are simply not thinking about anyone else at all.'
     },
     {
         factionId: 'sect-azure-cloud-pavilion',
@@ -237,7 +237,7 @@ export const IMMORTAL_CHANNELS: readonly ImmortalChannel[] = [
             'why the two apexes find its position alarming without being able to say it is better than theirs'
         ],
         note:
-            'The difference the apexes understand and almost nobody else does. Azure Cloud has an income, from a person, at the bottom of the range. The Earth Vein Tower and the Long Cut have a relationship with something ancient that answers rarely and sends the top of the range. Neither is straightforwardly better and the four cannot be put in a single order, which is why every attempt to rank them produces an argument.'
+            'The difference the apexes understand and almost nobody else does. Azure Cloud has an income, from a person, at the bottom of the range. The Earth Vein Tower and the Myriad Course Hall have a relationship with something ancient that answers rarely and sends the top of the range. Neither is straightforwardly better and the four cannot be put in a single order, which is why every attempt to rank them produces an argument.'
     }
 ];
 
@@ -268,7 +268,7 @@ export const IMMORTAL_MOTIVE = {
         'Ru Anjing is the rule producing an exception rather than a fact about one woman. She has a living sister - a real relationship with a real person who is alive right now - and that is the only category of thing that reliably outweighs the sum above. Everything downstream follows from it: she answers every nine to fourteen years instead of once an age, she sends as much as she can manage at the only grade she can reach, and the Azure Cloud Pavilion is the one holder in the world whose stock rises - because of sisterly love rather than because of anything the sect did.',
     readTheApexesThisWay: [
         'Earth Vein Tower: three ancestors, all of them nineteen centuries or more gone, all of them institutional rather than personal. Rare answers and good grade is exactly what the rule predicts for ties that have decayed to nothing but provenance.',
-        'Long Cut: two ancestors, same shape, same answer rate. Fewer ties, same decay, and an administration that has never expected more.',
+        'Myriad Course Hall: two ancestors, same shape, same answer rate. Fewer ties, same decay, and an administration that has never expected more.',
         'Hollow Court: six, and what comes back is accounts of the crossing rather than objects - because the tie there is professional interest rather than affection. They are being answered by people who find the question interesting, which is a weaker tie than love and a stronger one than reverence.',
         'Azure Cloud: one ancestor, three hundred and eighty years, and a living sister. The highest answer rate in the world, the lowest grade in the world, and both are the same fact.'
     ]
@@ -474,7 +474,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             'Several ancestors and heavy depletion produces rationing from fear of running out. The Survey counts to the unit, minutes every movement, requires all four Surveyors, and has granted one requisition in eleven - not because the stock is precious in the abstract, but because it has watched the interval lengthen twice within its own records and has drawn the obvious conclusion in writing.'
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         count: 2,
         tier: 'extraordinary',
         mostRecentCrossingYearsAgo: 2_600,
@@ -486,7 +486,7 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
             // records without comment and which nobody outside has ever been
             // able to get an explanation of. Two people went up in the same
             // year, on the same ground, and only one of them is named.
-            { title: 'The Heaven-Splitting Chisel, named on the schedule and nowhere else', yearsAgo: 2_600, was: 'whoever drove the Nail through from the other side, which the Long Cut states and does not elaborate', afterCrossing: 'still_above' },
+            { title: 'The Heaven-Splitting Chisel, named on the schedule and nowhere else', yearsAgo: 2_600, was: 'whoever drove the Nail through from the other side, which the Myriad Course Hall states and does not elaborate', afterCrossing: 'still_above' },
             { title: 'Bai Zhuo', yearsAgo: 2_600, was: 'a cutter with no patron and a posted staff that did not notice until it was over', afterCrossing: 'still_above' }
         ],
         depletion: 'light',
@@ -496,9 +496,9 @@ export const LINEAGE_STANDINGS: readonly LineageStanding[] = [
         whatDepletionLooksLike:
             'Very little. The intervals are enormous and always were, the arrivals are dated on the schedule with nothing in the reason column, and almost nothing has ever been spent - two objects held against two ancestors, with three refused amendments in three hundred years and no grant on record at all. What looks like severity from outside is a stock that has barely been touched.',
         resilience:
-            'Two channels, which is thin insurance, and the Long Cut has never needed to find out: neither has gone silent within its records, and the administration does not plan around the possibility because it has no procedure that would.',
+            'Two channels, which is thin insurance, and the Myriad Course Hall has never needed to find out: neither has gone silent within its records, and the administration does not plan around the possibility because it has no procedure that would.',
         behaviour:
-            'Two ancestors and light depletion produces rationing from not needing much, which reads identically to fear from outside and is a different thing. The Long Cut refuses because the schedule provides no occasion, not because it is frightened of the count - it administers driven ground on a horizon of centuries and has never encountered a case its instrument could read.'
+            'Two ancestors and light depletion produces rationing from not needing much, which reads identically to fear from outside and is a different thing. The Myriad Course Hall refuses because the schedule provides no occasion, not because it is frightened of the count - it administers driven ground on a horizon of centuries and has never encountered a case its instrument could read.'
     },
     {
         factionId: 'sect-azure-cloud-pavilion',
@@ -593,7 +593,7 @@ export function standingsAreNotATotalOrder(): {
         byChannel: byRemainingChannel().map(l => l.factionId),
         byVolume: byVolume().map(l => l.factionId),
         byGrade: byGradeCeiling().map(l => l.factionId),
-        note: 'Three questions, three different answers, and no way to combine them. The Pavilion is first on volume, last on grade and near the top on channel; the Long Cut is first on grade and thin on volume; the Court holds no objects at all and is the top of the public tier table. Anybody who produces a single ranking has chosen an axis and not said so.'
+        note: 'Three questions, three different answers, and no way to combine them. The Pavilion is first on volume, last on grade and near the top on channel; the Myriad Course Hall is first on grade and thin on volume; the Court holds no objects at all and is the top of the public tier table. Anybody who produces a single ranking has chosen an axis and not said so.'
     };
 }
 

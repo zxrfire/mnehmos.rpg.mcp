@@ -10,6 +10,7 @@ import {
     type SendingReason
 } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import { getParentage, getSubsidiariesOf } from '../../data/cultivation/governance-and-water-rights.js';
+import { containmentHeldBy } from '../../data/cultivation/artifacts.js';
 import { regardFor, type Regard } from '../cultivation/regard.js';
 import { clampOrdinal } from '../cultivation/realms.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
@@ -55,7 +56,8 @@ export const NEED_PREDICATES: Record<ReasonNeed, (house: HouseAsItStands) => boo
     a_parent: house => getParentage(house.id)?.parentFactionId != null,
     an_ally: house => Object.values(house.standing).some(v => v >= ALLIED_STANDING),
     a_rival: house => Object.values(house.standing).some(v => v <= RIVAL_STANDING),
-    a_find: house => house.hasAFind
+    a_find: house => house.hasAFind,
+    a_containment: house => containmentHeldBy(house.id).length > 0
 };
 
 /**
@@ -148,7 +150,9 @@ export interface Candidate {
  * Who the house may put on this, strongest first.
  */
 export function whoTheHouseCanSend(
-    posting: Posting,
+    // Only the two columns it reads, so the escort pass can ask the same
+    // question off a board row without building a whole Posting to do it.
+    posting: Pick<Posting, 'ceilingOrdinal' | 'hands'>,
     roster: readonly Candidate[]
 ): readonly Candidate[] {
     const ceiling = posting.ceilingOrdinal;

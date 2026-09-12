@@ -62,3 +62,29 @@ Two things that surprise people:
 | [`where-a-cultivator-is-standing.ts`](./where-a-cultivator-is-standing.ts) | Where a cultivator is standing, as a province and a place. |
 | [`world-manage.ts`](./world-manage.ts) | Consolidated World Management Tool Replaces 7 separate tools for world lifecycle management: create_world, get_world, list_worlds, delete_world, update_world_environment, generate_world, get_world_state |
 | [`world-map.ts`](./world-map.ts) | Consolidated World Map Tool Replaces 7 separate tools for world map operations: get_world_map_overview, get_region_map, get_world_tiles, apply_map_patch, preview_map_patch, find_valid_poi_location, suggest_poi_locations |
+
+---
+
+## Where else to look
+
+- [`../../engine/cultivation/README.md`](../../engine/cultivation/README.md) and
+  [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the two heaviest
+  dependencies of this directory. A tool computes nothing of its own: it validates, calls, and
+  formats.
+- [`../../storage/repos/README.md`](../../storage/repos/README.md) - one class per table, and
+  the only place SQL is written. A tool that reaches for `getDb()` and writes a query is doing
+  a repository's job.
+- [`../utils/README.md`](../utils/README.md) - `RichFormatter`. Eighteen modules here print
+  through it, so a change to its furniture changes every tool's output at once.
+- [`../state/README.md`](../state/README.md) - the world singleton and the world seed a tool
+  reads through rather than re-deriving.
+- [`../../web/README.md`](../../web/README.md) - the played game over the same engine. Before
+  adding a tool, check whether a verb already does it: a tool and a verb wrapping one engine
+  call is the duplication that costs most here.
+- [`../../agent/runtime/README.md`](../../agent/runtime/README.md) - `agent-manage.ts` and
+  `combat-manage.ts` are the only callers of `invokeAgent` anywhere in the repo.
+- [`../../schema/README.md`](../../schema/README.md) - the shapes arguments are validated
+  against, which is what makes this a boundary rather than a pass-through.
+- [`../handlers/README.md`](../handlers/README.md) - `spatial-manage.ts` re-exports from there
+  rather than implementing. It is the only tool that still does.
+

@@ -30,6 +30,14 @@
  *           will never be promoted is genuinely stuck in a way a rogue is not
  *           stuck: the rogue can go somewhere else.
  *
+ *           STANDING IS NOT THE WHOLE GATE, and for a long time it was read as
+ *           one: every outsider got `not_of_the_house` and nothing else, 1998
+ *           times across a 1702-read sweep. Standing rations the house's OWN
+ *           people. What it does to anybody else is a separate field, `admits`,
+ *           and it has three answers rather than one - open, kept to its own,
+ *           or had on terms. Two of the nine stand open, two are private, and
+ *           five are the middle that did not exist.
+ *
  *   OPEN    Nobody holds it. Anybody who is standing in the province and high
  *           enough to read it takes what is there. The cost is geography - you
  *           are born where you are born, and four of these are one province
@@ -129,6 +137,35 @@ export type DaoGroundDomain = z.infer<typeof DaoGroundDomainSchema>;
 export const DaoGroundAccessSchema = z.enum(['held', 'open', 'buried', 'carving']);
 export type DaoGroundAccess = z.infer<typeof DaoGroundAccessSchema>;
 
+/**
+ * And who the holder lets on, which is a different question from how the ground
+ * got to be somebody's.
+ *
+ * Held ground was refused to every outsider with one reason, 666 times in a
+ * 222-square sweep, because membership was the whole gate. It is not: depending
+ * on whose ground it is, a terrace is public, private, or had on terms. The
+ * three restricted terms are the ones the engine can already price - stones, an
+ * art written out, and being somebody the house is glad to see - and
+ * `engine/world/what-a-house-asks-of-somebody-not-of-it.ts` does the pricing.
+ *
+ * Five values rather than an access kind beside a terms field, because two
+ * statements of one fact drift. `accessKindOf` derives public/private/
+ * restricted from this and nothing stores it.
+ */
+export const DaoGroundAdmitsSchema = z.enum([
+    /** Nobody is on the door, or nobody is turned away at it. */
+    'anybody',
+    /** The house's own, and nobody else. `not_of_the_house` is the answer. */
+    'its own',
+    /** Spirit stones at the gate, for a season. */
+    'a fee',
+    /** An art written out and left on the house's shelf. */
+    'a copy',
+    /** Somebody the house has reason to be glad to see. */
+    'good relations'
+]);
+export type WhoMaySit = z.infer<typeof DaoGroundAdmitsSchema>;
+
 export const PlaceThatTeachesADaoSchema = z.object({
     id: z.string().min(3),
     /** The name the world uses. Printed, and therefore typeable back. */
@@ -156,6 +193,13 @@ export const PlaceThatTeachesADaoSchema = z.object({
      * years of sweeping actually buys.
      */
     standingRequired: z.number().int().min(0).max(5),
+    /**
+     * Who the holder lets sit, which is the axis `standingRequired` cannot
+     * carry: standing rations the house's OWN people and says nothing about
+     * anybody else. See `engine/world/what-a-house-asks-of-somebody-not-of-it.ts`
+     * for what each of the three restricted terms costs and who prices it.
+     */
+    admits: DaoGroundAdmitsSchema,
     /** What the place physically is. */
     description: z.string().min(80),
     /** What a visitor does there, and why it teaches anything. */
@@ -166,6 +210,9 @@ export const PlaceThatTeachesADaoSchema = z.object({
 ).refine(
     row => row.access === 'held' || row.standingRequired === 0,
     { message: 'nobody has standing at a ground nobody holds' }
+).refine(
+    row => row.access === 'held' || row.admits === 'anybody',
+    { message: 'nobody sets terms at a ground nobody is standing on the door of' }
 );
 export type PlaceThatTeachesADao = z.infer<typeof PlaceThatTeachesADaoSchema>;
 
@@ -203,6 +250,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'sect-azure-cloud-pavilion',
         standingRequired: 1,
+        // The Pavilion does not lower a bar, for anybody, ever, and the cliff is the bar.
+        admits: 'its own',
         description:
             'Four hundred spans of gorge wall above the Pavilion terraces, cut end to end by one woman over thirty-one years. Nothing is written on it. The strokes are dated by depth and by which of them cross which, and they are not a curriculum - they are one person failing at the same problem several thousand times and being wrong differently each time.',
         what:
@@ -218,6 +267,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'sect-cinnabar-crucible-sect',
         standingRequired: 2,
+        // The Hall buys at a fixed rate and does not haggle, and it sells watch-time the same way.
+        admits: 'a fee',
         description:
             'A furnace under the Hall compound that has not been allowed to go out in nine hundred and forty years, banked and fed in six-hour watches by people whose entire duty it is. The brickwork has taken on the shape of what has been refined in it, and the interior is no longer the shape anybody built.',
         what:
@@ -233,6 +284,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'house-ninefold-karma',
         standingRequired: 2,
+        // The house prices every obligation with a term attached. An afternoon on the floor is one more line.
+        admits: 'a fee',
         description:
             'The room every arbitration in the province is issued out of: a stone floor scored in nine rings, with the house\'s working ledgers stacked against the walls in the order they were closed rather than by date. Six centuries of who owed what to whom, and what happened to them afterwards.',
         what:
@@ -248,6 +301,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'house-flowing-light',
         standingRequired: 3,
+        // Eight hundred years of daily record. What the house takes is more record.
+        admits: 'a copy',
         description:
             'A windowless chamber under the house seat in which one hour takes a measurably different length of time to pass than it does outside, by an amount the house has recorded daily for eight hundred years and has never been able to change. The record is the holding; the room is only where it is kept.',
         what:
@@ -263,6 +318,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'sect-nine-peaks-ascetic-order',
         standingRequired: 0,
+        // The stair is how the food gets up. Anybody carrying a load is on it and nobody asks whose.
+        admits: 'anybody',
         description:
             'The service stair cut into the vein face below the Order\'s lowest peak, eleven hundred steps of it, worn through in the middle to the depth of a hand. Everything the Order eats goes up it on somebody\'s back, twice a day, in all weather, and it has done for two centuries.',
         what:
@@ -278,6 +335,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'sect-stone-marrow-hall',
         standingRequired: 2,
+        // Thirty-two nodes unexplained, and the Hall has never covered them. It will read anything anybody has written.
+        admits: 'a copy',
         description:
             'A survey diagram of a formation nobody now living can light, cut into the floor of the Stone Marrow Hall\'s drafting hall at full scale because it was the only way to check the line lengths. Nine of its forty-one nodes are understood. The Stone Marrow Hall has never claimed otherwise and has never covered the other thirty-two.',
         what:
@@ -293,6 +352,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'house-nine-nether',
         standingRequired: 3,
+        // Being let in is done to a member. There is no door for a stranger to be turned away from.
+        admits: 'its own',
         description:
             'A room the house has held for as long as it has been a house, with no door in it and no record of one ever being cut. It is entered, by the four people alive who can, and none of them can describe the entering afterwards in a way that survives being written down.',
         what:
@@ -308,6 +369,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'sect-frostmirror-court',
         standingRequired: 2,
+        // The Court sets a depth and a time, for people it has reason to want to watch.
+        admits: 'good relations',
         description:
             'The working face of the glacier the Court dug its curriculum out of, kept open and kept cold, with the strata of four separate ages of ice standing exposed in a wall a hundred spans high. Things are visible in it that the Court has decided not to cut out.',
         what:
@@ -323,6 +386,8 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'held',
         heldBy: 'sect-lantern-hall',
         standingRequired: 1,
+        // The tablets are in the entrance hall on purpose. Anybody who comes in can dust one.
+        admits: 'anybody',
         description:
             'Every name the Temple has buried, on tablets, in the entrance hall rather than the interior, on purpose. Eleven thousand of them. The oldest are illegible and have not been recut, which is doctrine and is stated as doctrine.',
         what:
@@ -340,6 +405,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'open',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'A flight of stone steps running down off a headland into open water, going somewhere that is no longer there. At the low tide of the year eleven of them are dry. Nobody has counted the rest and the people who have tried are the reason it is called that.',
         what:
@@ -355,6 +421,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'open',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'The crossing every cart out of the western workings has used for six hundred years, where the driven stone comes up through the streambed in ridges and the water runs fast over it. It has ground four spans of rock away in living memory and it grinds anything standing in it.',
         what:
@@ -370,6 +437,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'open',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'Nine hundred spans of ploughland fused to green glass in a single stroke, in a province with no high ground and nothing to fuse it, on a date every one of the nine cities records and none of them explains. The furrows are still visible under it. It has never been leased.',
         what:
@@ -385,6 +453,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'open',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'A bronze bell in the ice above the highest holding, struck once by the ice moving and not again for between four and nine years. Nobody rings it. Three separate parties have tried and it does not sound when it is struck by a person.',
         what:
@@ -400,6 +469,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'open',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'A surfacing in the Burial Sands that has stayed open longer than any other on record - eleven years and counting - and has nothing in it. Not thin qi: none, in a pocket eight spans across, in the middle of the richest unheld vein in the world. It moves like the rest of the ground and it has not closed.',
         what:
@@ -415,6 +485,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'open',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'The open court the nine cities hear leasehold disputes in, sitting eleven months of the year in whichever city is least offended by the last ruling. Anybody may attend and most people do, because in a province where every institution holds a lease, every ruling is about everybody.',
         what:
@@ -430,6 +501,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'open',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'The abandoned refining terraces of the last western house that could work the driven stone, forty of them stepped up a hillside, every crucible still seated and every one of them cracked in the same place. The house did not fail; it ran out of stone and left, and nobody has been back for the equipment because there is nothing wrong with it.',
         what:
@@ -447,6 +519,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'buried',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'A survey office of an age that ended, under nine spans of flood silt in the east of the province, holding the working register of a formation network that covered ground the Yellow Plain no longer has a name for. The register was never finished. The unfinished part is the part that is legible.',
         what:
@@ -462,6 +535,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'buried',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'A pillared hall on the seabed four days out, upright, roofed, and standing on nothing - there is no rock under the Drowned Sea and there is none under this either. Whatever it was built on is not there and the hall has not fallen.',
         what:
@@ -477,6 +551,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'buried',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'An assay room taken by the ice mid-run, with every crucible still seated, every fire long out, and the whole of one refinement stopped at whatever stage it had reached. Eleven vessels, eleven different stages, one recipe.',
         what:
@@ -492,6 +567,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'buried',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'A terrace under the gorge scree where a tribulation came down on a person who did not survive it, long enough ago that the province has forgotten which. The lightning took nearly everything they were carrying, which is the ordinary rule, and it did not take the terrace, and the terrace is what is worth having.',
         what:
@@ -533,6 +609,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'carving',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'An overhang two days above the last village on the stair, worked across about eleven paces of dry rock in a single afternoon and never touched since. The hand is unhurried and completely ordinary, the way a man writes when the person he is explaining to is standing next to him, and it stops mid-argument because the argument was finished out loud.',
         what:
@@ -548,6 +625,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'carving',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'The inner face of a drainage cut behind an abandoned holding, carrying a single running figure worked down its length and revised eleven times, each revision smaller than the last. Nobody local can read it and everybody local knows it is there. It has been variously explained as a tax record, a flood mark and a curse.',
         what:
@@ -563,6 +641,7 @@ export const PLACES_THAT_TEACH_A_DAO: readonly PlaceThatTeachesADao[] = [
         access: 'carving',
         heldBy: null,
         standingRequired: 0,
+        admits: 'anybody',
         description:
             'A field boundary stone, on the side that faces away from the road, worked over about a day and a half by somebody who then left the district. Two thirds of it is a careful account of a thing that did not complete. The last third is the same account started again from a different place and abandoned, and the abandonment is legible.',
         what:

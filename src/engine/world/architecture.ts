@@ -480,6 +480,17 @@ export type RoomPurpose =
      * Where a house holds one of its own.
      */
     | 'punishment_hall'
+    /**
+     * Where the house's work is posted, taken, and reported as taken.
+     *
+     * THE ONE OFFICE THAT IS NOT A LOCKED ROOM, and the reason `office` had to
+     * stop being `sealed`. The design owner: *"to take a mission YOU HAVE TO
+     * REPORT IT TO SOMEONE, THE MISSION HALL WHICH THE MISSION ELDER IS
+     * RESPONSIBLE FOR."* Before this the missions elder was a phrase in three
+     * refusal strings and a docs page with nowhere in the world to stand, so
+     * taking board work had no counterparty at all.
+     */
+    | 'mission_hall'
     | 'residence'
     | 'formation_node';
 
@@ -500,6 +511,20 @@ interface PurposeSpec {
      */
     qiLift: number;
     sealed: boolean;
+    /**
+     * Whether somebody is IN CHARGE of this room.
+     *
+     * Split off `sealed`, which was doing this job as a third thing on top of
+     * "locked door" and the qi pocket it had already been split from. AGENTS.md
+     * names that conflation by measurement, and it had one concrete cost: a
+     * room cannot be an office unless it locks, so the missions elder - a role
+     * the docs and three refusal strings already name - had nowhere to stand,
+     * because a hall disciples walk into to take work is not a locked room.
+     *
+     * Equal to `sealed` on every purpose that existed before the split, so
+     * `whoIsInChargeOfWhat` deals exactly what it dealt.
+     */
+    office: boolean;
     /** Heads the room was cut for, per unit of the compound's scale. */
     capacityPer: number;
     hazards: string[];
@@ -523,23 +548,37 @@ const WHERE_A_HOUSE_PUTS_SOMEBODY_IT_IS_HOLDING = Object.freeze({
 
 const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // ── The outer face. Anyone can stand here; that is the point of it. ──
-    gatehouse: { kind: 'hall', depth: 0, obviousness: 1, qiLift: 0, sealed: false, capacityPer: 0.05, hazards: [] },
-    forecourt: { kind: 'hall', depth: 0, obviousness: 1, qiLift: 0, sealed: false, capacityPer: 0.6, hazards: [] },
-    practice_yard: { kind: 'hall', depth: 0.15, obviousness: 0.9, qiLift: 0, sealed: false, capacityPer: 1, hazards: [] },
-    refectory: { kind: 'hall', depth: 0.1, obviousness: 0.85, qiLift: 0, sealed: false, capacityPer: 0.8, hazards: [] },
-    dormitory: { kind: 'hall', depth: 0.1, obviousness: 0.8, qiLift: 0, sealed: false, capacityPer: 1, hazards: [] },
+    gatehouse: { kind: 'hall', depth: 0, obviousness: 1, qiLift: 0, sealed: false, office: false, capacityPer: 0.05, hazards: [] },
+    forecourt: { kind: 'hall', depth: 0, obviousness: 1, qiLift: 0, sealed: false, office: false, capacityPer: 0.6, hazards: [] },
+    practice_yard: { kind: 'hall', depth: 0.15, obviousness: 0.9, qiLift: 0, sealed: false, office: false, capacityPer: 1, hazards: [] },
+    refectory: { kind: 'hall', depth: 0.1, obviousness: 0.85, qiLift: 0, sealed: false, office: false, capacityPer: 0.8, hazards: [] },
+    dormitory: { kind: 'hall', depth: 0.1, obviousness: 0.8, qiLift: 0, sealed: false, office: false, capacityPer: 1, hazards: [] },
 
     // ── The working middle. What the house actually does all day. ────────
-    scripture_pavilion: { kind: 'hall', depth: 0.45, obviousness: 0.6, qiLift: 0, sealed: false, capacityPer: 0.15, hazards: [] },
-    archive: { kind: 'vault', depth: 0.75, obviousness: 0.2, qiLift: 0, sealed: true, capacityPer: 0.04, hazards: ['formation'] },
-    alchemy_hall: { kind: 'hall', depth: 0.4, obviousness: 0.6, qiLift: 0, sealed: false, capacityPer: 0.2, hazards: [] },
-    furnace_room: { kind: 'chamber', depth: 0.5, obviousness: 0.35, qiLift: 12, sealed: false, capacityPer: 0.06, hazards: ['heat'] },
-    infirmary: { kind: 'hall', depth: 0.3, obviousness: 0.7, qiLift: 0, sealed: false, capacityPer: 0.25, hazards: [] },
-    workshop: { kind: 'hall', depth: 0.35, obviousness: 0.55, qiLift: 0, sealed: false, capacityPer: 0.2, hazards: [] },
-    audience_hall: { kind: 'hall', depth: 0.55, obviousness: 0.75, qiLift: 0, sealed: false, capacityPer: 0.3, hazards: [] },
-    tribute_room: { kind: 'vault', depth: 0.6, obviousness: 0.3, qiLift: 0, sealed: true, capacityPer: 0.05, hazards: [] },
-    meditation_cell: { kind: 'chamber', depth: 0.5, obviousness: 0.4, qiLift: 8, sealed: false, capacityPer: 0.12, hazards: [] },
-    vein_chamber: { kind: 'chamber', depth: 0.7, obviousness: 0.25, qiLift: 30, sealed: false, capacityPer: 0.05, hazards: ['formation', 'pressure'] },
+    scripture_pavilion: { kind: 'hall', depth: 0.45, obviousness: 0.6, qiLift: 0, sealed: false, office: false, capacityPer: 0.15, hazards: [] },
+    archive: { kind: 'vault', depth: 0.75, obviousness: 0.2, qiLift: 0, sealed: true, office: true, capacityPer: 0.04, hazards: ['formation'] },
+    alchemy_hall: { kind: 'hall', depth: 0.4, obviousness: 0.6, qiLift: 0, sealed: false, office: false, capacityPer: 0.2, hazards: [] },
+    furnace_room: { kind: 'chamber', depth: 0.5, obviousness: 0.35, qiLift: 12, sealed: false, office: false, capacityPer: 0.06, hazards: ['heat'] },
+    infirmary: { kind: 'hall', depth: 0.3, obviousness: 0.7, qiLift: 0, sealed: false, office: false, capacityPer: 0.25, hazards: [] },
+    workshop: { kind: 'hall', depth: 0.35, obviousness: 0.55, qiLift: 0, sealed: false, office: false, capacityPer: 0.2, hazards: [] },
+    // AN OFFICE THAT DOES NOT LOCK, and the one the whole `office`/`sealed`
+    // split was for. Disciples walk in to take work and to say they have taken
+    // it, so a door on it would be the room failing at its only job.
+    //
+    // DEPTH 0.3 IS LOAD-BEARING AND IT IS WHY THIS ONE LANDS WHERE THE
+    // ANCESTRAL HALL DID NOT. `whoIsInChargeOfWhat` sorts offices DEEPEST-FIRST
+    // and deals them round-robin, so a room's index - and therefore every
+    // room's index after it - depends on where it sorts. The reverted attempt
+    // put the ancestral hall at 0.85, above four of the five offices, and
+    // shifted all of them; the note on that room still says no rung could get
+    // discipline back afterwards. The shallowest office today is the tribute
+    // room at 0.6, so anything under that APPENDS and moves nothing. Deepening
+    // this room past 0.6 would reintroduce that defect exactly.
+    mission_hall: { kind: 'hall', depth: 0.3, obviousness: 0.9, qiLift: 0, sealed: false, office: true, capacityPer: 0.25, hazards: [] },
+    audience_hall: { kind: 'hall', depth: 0.55, obviousness: 0.75, qiLift: 0, sealed: false, office: false, capacityPer: 0.3, hazards: [] },
+    tribute_room: { kind: 'vault', depth: 0.6, obviousness: 0.3, qiLift: 0, sealed: true, office: true, capacityPer: 0.05, hazards: [] },
+    meditation_cell: { kind: 'chamber', depth: 0.5, obviousness: 0.4, qiLift: 8, sealed: false, office: false, capacityPer: 0.12, hazards: [] },
+    vein_chamber: { kind: 'chamber', depth: 0.7, obviousness: 0.25, qiLift: 30, sealed: false, office: false, capacityPer: 0.05, hazards: ['formation', 'pressure'] },
 
     // ── The inner end. Where the house keeps what it will not spend. ─────
     // NOT SEALED, AND THE KEEPER IS THEREFORE STILL ONLY A NAME. MEASURED.
@@ -564,8 +603,8 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // to keep doing this. The Keeper wants that fixed first - portfolios keyed
     // to a room rather than to a position in a list - and then this line is one
     // word.
-    ancestral_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, capacityPer: 0.1, hazards: [] },
-    under_hall: { kind: 'vault', depth: 1, obviousness: 0.05, qiLift: 20, sealed: true, capacityPer: 0.01, hazards: ['sealed_qi', 'formation'] },
+    ancestral_hall: { kind: 'hall', depth: 0.85, obviousness: 0.5, qiLift: 0, sealed: false, office: false, capacityPer: 0.1, hazards: [] },
+    under_hall: { kind: 'vault', depth: 1, obviousness: 0.05, qiLift: 20, sealed: true, office: true, capacityPer: 0.01, hazards: ['sealed_qi', 'formation'] },
     // THE ONE ROOM CUT TO BE BAD GROUND, and the negative lift is the whole
     // mechanism rather than decoration. Every other room in this table either
     // leaves the ground alone or improves it; this one is built to take the vein
@@ -575,16 +614,16 @@ const PURPOSE: Record<RoomPurpose, PurposeSpec> = {
     // anywhere. Obvious enough that everybody in the house knows where it is - a
     // discipline hall nobody can find deters nobody - and sealed, because what it
     // holds can walk.
-    punishment_hall: { kind: 'vault', depth: 0.65, obviousness: 0.5, qiLift: -10, sealed: true, capacityPer: 0.04, hazards: ['formation'] },
-    treasury: { kind: 'vault', depth: 0.9, obviousness: 0.25, qiLift: 0, sealed: true, capacityPer: 0.03, hazards: ['formation'] },
+    punishment_hall: { kind: 'vault', depth: 0.65, obviousness: 0.5, qiLift: -10, sealed: true, office: true, capacityPer: 0.04, hazards: ['formation'] },
+    treasury: { kind: 'vault', depth: 0.9, obviousness: 0.25, qiLift: 0, sealed: true, office: true, capacityPer: 0.03, hazards: ['formation'] },
     // No qi lift. What seniority buys here is space and privacy, not a better
     // vein - a residence is a room and the ground under it is the ground under
     // everything else. The one place the house style bends is this room, and it
     // bends along `HouseStyle.deviation`.
-    residence: { kind: 'hall', depth: 0.95, obviousness: 0.45, qiLift: 0, sealed: false, capacityPer: 0.05, hazards: [] },
+    residence: { kind: 'hall', depth: 0.95, obviousness: 0.45, qiLift: 0, sealed: false, office: false, capacityPer: 0.05, hazards: [] },
 
     // ── Outside the walls, and the reason the gate is not the only way. ──
-    formation_node: { kind: 'chamber', depth: 0, obviousness: 0.15, qiLift: 0, sealed: false, capacityPer: 0.01, hazards: ['formation'] }
+    formation_node: { kind: 'chamber', depth: 0, obviousness: 0.15, qiLift: 0, sealed: false, office: false, capacityPer: 0.01, hazards: ['formation'] }
 };
 
 export const ROOM_PURPOSES = Object.keys(PURPOSE) as RoomPurpose[];
@@ -592,9 +631,11 @@ export const ROOM_PURPOSES = Object.keys(PURPOSE) as RoomPurpose[];
 /**
  * Whether a room is one somebody is in charge of, and how far in it sits.
  */
-export function roomAuthorityOf(purpose: RoomPurpose): { sealed: boolean; depth: number } {
+export function roomAuthorityOf(
+    purpose: RoomPurpose
+): { sealed: boolean; office: boolean; depth: number } {
     const spec = PURPOSE[purpose];
-    return { sealed: spec.sealed, depth: spec.depth };
+    return { sealed: spec.sealed, office: spec.office, depth: spec.depth };
 }
 
 /** The purpose a location was built for, or null when it was not built by us. */
@@ -622,6 +663,7 @@ function roomName(purpose: RoomPurpose, style: HouseStyle, precinct: Precinct): 
         case 'furnace_room': return 'the furnace floor';
         case 'infirmary': return 'the infirmary';
         case 'workshop': return 'the workshop';
+        case 'mission_hall': return inward ? 'the posting cut' : 'the mission hall';
         case 'audience_hall': return 'the audience hall';
         case 'tribute_room': return 'the tribute room';
         case 'meditation_cell': return inward ? 'the sitting cuts' : 'the meditation cells';
@@ -817,6 +859,11 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     const specialities = new Set(input.specialities.map(s => s.toLowerCase()));
 
     if (input.recruits) out.push('dormitory', 'refectory');
+    // A house that takes people in has work for them and somewhere they go to
+    // say they have taken it. The same column the dormitory reads: a house
+    // that recruits nobody has nobody to post to, and its sendings are settled
+    // between the people who decide them.
+    if (input.recruits) out.push('mission_hall');
     // A house that can read what it inherited keeps it on shelves. A house
     // that cannot keeps it in a locked room, and that is the same fact wearing
     // a different door: `formationIntegrity` is how much of the inheritance

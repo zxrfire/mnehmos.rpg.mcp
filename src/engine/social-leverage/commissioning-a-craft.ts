@@ -54,6 +54,11 @@ import {
     couldCutAWayOut,
     type WhatIsInTheSlip
 } from '../world/a-talisman-is-one-act-somebody-already-paid-for.js';
+import {
+    whatTheBenchIsShortOf,
+    whyTheBenchIsShort,
+    type ASlotNobodyFilled
+} from '../../data/cultivation/what-an-artifact-is-made-of.js';
 import { howMuchAGradeIsWorthTracking } from '../world/possessions.js';
 import { DISPOSITION_BANDS, openHandednessOf } from './how-freely-somebody-parts-with-what-they-have.js';
 import {
@@ -104,22 +109,43 @@ export interface WhetherTheirHandsCanDoIt {
     insteadTheyCouldMake: TechniqueGrade | null;
     /** Null where they can. Names the realm, never a judgement. */
     why: string | null;
+    /**
+     * The slots nothing on the bench reached. Empty where the materials were
+     * whole AND where nobody said what was on the bench at all - those are two
+     * different states and `theyCan` is the field that tells them apart.
+     */
+    theBenchIsShortOf: readonly ASlotNobodyFilled[];
 }
 
 /**
- * Whether this pair of hands could make it at all. The material gate first,
- * because it is the one that names a realm to reach for.
+ * Whether this pair of hands could make it at all.
+ *
+ * THE RUNG FIRST, because it is the one that names a realm to reach for, and
+ * because somebody who cannot work the grade has no use for a shopping list.
+ * Then the folds, which are capabilities rather than stock. Then the stuff.
+ *
+ * The stuff gate did not exist. This function's comment said "the material gate
+ * first" and then checked only the rung, so the whole material economy was
+ * authored in prose and enforced nowhere: an elder at Void Tribulation turned
+ * out heaven-grade work from an empty room.
  */
 export function whetherTheirHandsCanDoIt(
     ask: WhatYouAskedThemToMake,
-    makerOrdinal: number
+    makerOrdinal: number,
+    /**
+     * Catalog ids of what is actually on the bench. OMITTED IS NOT EMPTY: a
+     * caller that does not know what anybody is holding gets the rung answer
+     * and no material answer, rather than a refusal it has no grounds for.
+     */
+    materialsToHand?: readonly string[]
 ): WhetherTheirHandsCanDoIt {
     const insteadTheyCouldMake = highestGradeRefinableAt(makerOrdinal);
     if (!canRefineGrade(ask.grade, makerOrdinal)) {
         return {
             theyCan: false,
             insteadTheyCouldMake,
-            why: whyTheCauldronRefuses(ask.grade, makerOrdinal)
+            why: whyTheCauldronRefuses(ask.grade, makerOrdinal),
+            theBenchIsShortOf: []
         };
     }
     if (ask.aRing && !couldFoldARing(ask.grade, makerOrdinal)) {
@@ -129,7 +155,8 @@ export function whetherTheirHandsCanDoIt(
             // The refusal that names the honest route, which had no caller
             // anywhere: nobody was ever told WHY a ring could not be made for
             // them, only that it could not.
-            why: whyTheFoldWillNotHold(ask.grade, makerOrdinal)
+            why: whyTheFoldWillNotHold(ask.grade, makerOrdinal),
+            theBenchIsShortOf: []
         };
     }
     if (ask.slip === 'a_way_out' && !couldCutAWayOut(makerOrdinal)) {
@@ -138,10 +165,26 @@ export function whetherTheirHandsCanDoIt(
             insteadTheyCouldMake,
             why: 'They can work the materials, and what you are asking them to fold into the '
                 + 'paper is a road they cannot walk themselves. Nobody puts a way out in a slip '
-                + 'they could not take. A strike slip of the same grade is within their hands.'
+                + 'they could not take. A strike slip of the same grade is within their hands.',
+            theBenchIsShortOf: []
         };
     }
-    return { theyCan: true, insteadTheyCouldMake, why: null };
+    // A RING IS FOLDED AND NOT WORKED, so no recipe reaches it. Its grade names
+    // how much it holds rather than what it is made of, which is the same
+    // reason `couldFoldARing` answers it and `canRefineGrade` cannot, and the
+    // same reason `whatACommissionComesTo` prices it as a fold.
+    if (materialsToHand !== undefined && !ask.aRing) {
+        const short = whatTheBenchIsShortOf(ask.grade, materialsToHand);
+        if (short.length > 0) {
+            return {
+                theyCan: false,
+                insteadTheyCouldMake,
+                why: whyTheBenchIsShort(ask.grade, materialsToHand),
+                theBenchIsShortOf: short
+            };
+        }
+    }
+    return { theyCan: true, insteadTheyCouldMake, why: null, theBenchIsShortOf: [] };
 }
 
 /**
@@ -260,6 +303,17 @@ export interface AskingSomebodyToMakeYouSomething {
     stonesOffered?: number;
     /** Anything singular put down instead. Priced by `whatItWouldTake`. */
     onTheTable?: readonly OnTheTable[];
+    /**
+     * Catalog ids of the material on the bench, from either side. Omitted means
+     * nobody asked, which is not the same as an empty bench - see
+     * `whetherTheirHandsCanDoIt`.
+     *
+     * Whose stuff it is is deliberately not a field here. A master who has the
+     * stock and a disciple who walked in with it are the same bench as far as
+     * the hands are concerned; who paid for it is the ledger's question, and the
+     * ledger already reads it through `onTheTable`.
+     */
+    materialsToHand?: readonly string[];
     /** Open records between these two, in either direction. */
     ledger?: readonly ObligationRecord[];
     onDay: DayIndex;
@@ -315,7 +369,11 @@ export interface WhetherTheyWillMakeIt {
 export function askingSomebodyToMakeYouSomething(
     input: AskingSomebodyToMakeYouSomething
 ): WhetherTheyWillMakeIt {
-    const hands = whetherTheirHandsCanDoIt(input.ask, input.maker.ordinal);
+    const hands = whetherTheirHandsCanDoIt(
+        input.ask,
+        input.maker.ordinal,
+        input.materialsToHand
+    );
     const priceInStones = whatACommissionComesTo(input.ask.grade);
 
     if (!hands.theyCan) {
@@ -328,7 +386,14 @@ export function askingSomebodyToMakeYouSomething(
             whatMovedThem: { favoursOwed: 0, wrongsHeld: 0, heaviest: null },
             agreed: false,
             owed: null,
-            line: `${input.ask.named}: their hands cannot. ${hands.why ?? ''}`.trim()
+            // A HAND THAT CANNOT AND A BENCH THAT IS BARE ARE TWO ANSWERS. One
+            // is a realm somebody has to reach and the other is a morning's
+            // gathering, and a line that said "their hands cannot" about the
+            // second would send the asker after the wrong thing entirely.
+            line: hands.theBenchIsShortOf.length > 0
+                ? `${input.ask.named}: their hands can and the stuff is not here. `
+                  + `${hands.why ?? ''}`.trim()
+                : `${input.ask.named}: their hands cannot. ${hands.why ?? ''}`.trim()
         };
     }
 

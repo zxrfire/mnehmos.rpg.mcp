@@ -161,22 +161,34 @@ export interface APortfolio {
  * people heaviest-voice-first, round robin.
  */
 export function whoIsInChargeOfWhat(input: {
-    /** Every room the house has. Unsealed ones are dropped here. */
+    /** Every room the house has. Rooms nobody runs are dropped here. */
     rooms: readonly RoomPurpose[];
     /** The house's roll and ladder, read by the module that owns deciders. */
     roll: readonly OnTheRoll[];
     rankCount: number;
 }): APortfolio[] {
-    const sealed = [...new Set(input.rooms)]
+    // `office`, NOT `sealed`. They were one column until the mission hall
+    // needed to be run by somebody without being locked, and `architecture.ts`
+    // carries the argument. Every purpose that existed before the split has
+    // `office === sealed`, so this deals exactly what it dealt.
+    //
+    // AND THE DEAL IS POSITIONAL, WHICH IS A CONSTRAINT ON ADDING ROOMS rather
+    // than a bug to route around here. Offices sort deepest-first and are dealt
+    // round robin, so a room inserted ABOVE existing ones shifts every one of
+    // them - that is what the reverted ancestral hall did, and the note on that
+    // room records that no rung could get the discipline hall back afterwards.
+    // A room added BELOW the shallowest office appends and moves nothing, which
+    // is why `mission_hall` sits at 0.3 and says so.
+    const offices = [...new Set(input.rooms)]
         .map(purpose => ({ purpose, ...roomAuthorityOf(purpose) }))
-        .filter(r => r.sealed)
+        .filter(r => r.office)
         .sort((a, b) => b.depth - a.depth || a.purpose.localeCompare(b.purpose));
 
     const room = whoDecidesIn({ roll: input.roll, rankCount: input.rankCount });
     if (room.length === 0) {
-        return sealed.map(r => ({ purpose: r.purpose, holderId: null, depth: r.depth }));
+        return offices.map(r => ({ purpose: r.purpose, holderId: null, depth: r.depth }));
     }
-    return sealed.map((r, i) => ({
+    return offices.map((r, i) => ({
         purpose: r.purpose,
         holderId: room[i % room.length].id,
         depth: r.depth

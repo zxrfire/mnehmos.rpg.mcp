@@ -41,7 +41,9 @@ cultivator does not need a carter to mention that there is a mountain over there
 | [Making somebody tell you](#making-somebody-tell-you) | the player puts weight behind a question |
 | [The ladder of knowing](#the-ladder-of-knowing) | the player learns of something new, or their grasp of it is in question |
 | [Encountering something from above](#encountering-something-from-above) | the player meets something plainly beyond their stratum |
+| [A gate decides what you may do, never what you may see](#a-gate-decides-what-you-may-do-never-what-you-may-see) | anything is about to refuse the player: a gate, a board, a hall, a shelf, a door |
 | [The houses that need people come looking](#the-houses-that-need-people-come-looking) | the player is in a town, a city or at a crossroads with no house behind them |
+| &nbsp;&nbsp;[An intake is one kind of notice](#an-intake-is-one-kind-of-notice-and-it-is-the-smallest) | the player is reading a wall, a board or a public notice in a settlement |
 | [The hard rule for the narrator](#the-hard-rule-for-the-narrator) | the narrator is about to name a place, house, or person |
 | [Why this is the payoff](#why-this-is-the-payoff) | **Tier 3** - never injected |
 | [Characters assume you know](#characters-assume-you-know) | an NPC talks past the player about things the player has never heard of |
@@ -244,6 +246,73 @@ Other reliable notes:
 - **The stratum keeps existing afterwards.** Whatever was revealed does not become
   reachable because it was seen. Seeing is a knowledge state, not an access state.
 
+## A gate decides what you may do, never what you may see
+
+<!-- tier: 2 trigger="anything is about to refuse the player: a gate, a board, a hall, a shelf, a door" -->
+
+> **Not having the standing to do something is not the same as seeing nothing.**
+
+Everything above this section is about how a name reaches somebody. This one is about the
+opposite motion - a house refusing them - and it exists because a refusal is the single
+most common way this world is described to a player, and the easiest place to describe
+nothing at all.
+
+**Two questions, and the engine keeps answering the first one twice.** *May they do this*
+is a question about standing, and the answer is very often no. *May they know about this*
+is a question about where they are standing and what is in front of them, and the answer
+is very often yes. A house's gate settles the first. It has no business settling the
+second, and when it does, the player is handed an empty world in place of a closed door.
+
+**The worked case is the duty board**, because it is the one the whole rule was written
+off. The board is in the compound; an outsider usually cannot get to it, and the reason is
+that they could not get IN, not that there is nothing on it. **The board is never empty.
+Somebody simply is not qualified to take a job from the missions elder.** The house has
+work this season, the work pays, and an elder is handing it out - all of which is true
+whether or not the person asking will ever be handed one. A read that hands back bare wood
+has not refused them. It has lied about the world, and the lie is expensive, because a
+board full of work you cannot take is one of the best things a compound can contain.
+
+**A rank whose duties are invisible until you hold it is not a ladder.** This is the half
+that matters for the genre rather than for the engine. A junior who can see exactly what
+the elders are doing, what it pays, and what it would take to be sent - and can do nothing
+about any of it yet - is the engine of half the plots here: the resentment, the shortcut,
+the favour asked of the wrong person, the year spent qualifying. Hide the rung above and
+none of that has anywhere to start. The promotion stops being a thing somebody wanted and
+becomes a thing that happened to them.
+
+**Three things a good refusal carries.** The pattern to copy is the mercy work in
+[`combat-verbs.ts`](../../../src/web/combat-verbs.ts), where being told no arrives with
+the whole situation attached:
+
+1. **What is actually here.** The board, the shelf, the ground, the price - stated, in the
+   same detail somebody qualified would get.
+2. **Why it is not yours.** Named. Not *you cannot*, but *this is the missions elder's to
+   give and you are not on the roll*.
+3. **What would change that.** The rung, the roll, the introduction, the stones. A gate
+   with no stated key is a wall, and a player cannot plan against a wall.
+
+A refusal carrying all three is content. A refusal carrying none of them is an empty
+world, and so is an empty list - **a blank look and `[]` are the same defect wearing
+different clothes**.
+
+**And the fix is never bespoke.** Do not write a rule about who may SEE a duty board.
+Write the rule about who may enter a place, put the board inside one, and everything else
+in that compound inherits it - including whatever gets added next year. The same shape
+answers the others: ground has an access kind, a stall has a shelf somebody may look at, a
+price is a number that can be read before it cannot be paid. A visibility rule written for
+one noun is a rule that will be missing from the next noun.
+
+**Measured, across four systems that had never met.** Dao ground refused with one reason
+and no sense of whose ground it was, 666 times in a sweep. Arts on a stall measured 0%
+reachable above the bottom band, because every book on it ended at or below the reader's
+own rung. Goods measured 1% at the middle band. And the board returned `[]`. Four
+subsystems, one mistake, and in every case the player was told nothing rather than told no.
+
+**The wall outside the compound is this rule from the other side**, and it is the cheapest
+version of it: see [the houses that need people come
+looking](#the-houses-that-need-people-come-looking). The gate stays shut and the paper on
+the wall still says what the house wants, what it pays, and that taking it is not a way in.
+
 ## The houses that need people come looking
 
 <!-- tier: 2 trigger="the player is in a town, a city or at a crossroads with no house behind them" -->
@@ -257,10 +326,10 @@ we will hear anybody at such a rung.* It is ordinary, it is free to read, and it
 name at `placed` off a `read` source like anything else on the ladder - a name and a
 place, never an introduction. The bar written on the paper is the real bar.
 
-**The great houses do not advertise, and that is the whole of what the paper tells you.**
-A house whose name people already say has no reason to spend the paper, so being on a
-wall is itself a fact about the house - and a legible one, before the player knows
-anything else about the world's rankings:
+**The great houses do not advertise FOR DISCIPLES, and that is the whole of what an intake
+bill tells you.** A house whose name people already say has no reason to spend the paper on
+an admission day, so being on a wall *for that reason* is itself a fact about the house -
+and a legible one, before the player knows anything else about the world's rankings:
 
 - **No address on it.** The house owns no ground. Nothing to inherit, and nothing to be
   thrown out of.
@@ -277,6 +346,48 @@ and is exactly the door somebody with nothing should be walking through.
 are several, each for its own catalogued reason - needs people just as badly and cannot
 afford an address. What that produces is worth having: the houses a newcomer can see are
 the ones that can afford to be seen, and the others find *you*.
+
+### An intake is one kind of notice, and it is the smallest
+
+<!-- tier: 2 trigger="the player is reading a wall, a board or a public notice in a settlement" -->
+
+**A house publishes when it wants something from people who are not its own**, and
+recruitment is only the case where the thing it wants is people. The rest of what it wants
+goes up on the same wall, from ANY house rather than only from the ones at the bottom of
+the field - which is the [gate rule](#a-gate-decides-what-you-may-do-never-what-you-may-see)
+applied to the outside of a compound. An apex that would never hear an application still
+wants bone at mortal grade, still has an errand it would rather hire than send its own on,
+and still answers for a road somebody is about to walk down.
+
+| What goes up | Where it comes from |
+|---|---|
+| **An intake** | the house needs people and cannot get them by name alone |
+| **A search** | one of its own is alive on the plate and has stopped answering. See [Tokens shatter](./trust.md#tokens-shatter-so-somebody-has-to-be-taken-alive) - a house with no plates never posts one, because it has not been told |
+| **Work** | an errand where nothing but stones is at stake. It pays, and it is not a way in |
+| **A warning** | ground the house answers for, and what is moving on it. It asks nothing of anybody |
+
+**The dividing line is what the house is risking.** It hires a stranger where the worst
+case is losing stones. It sends its own wherever its standing, its grant or its face is on
+the line - a tribute collection, a marriage party, an answer to the body above it. Somebody
+met on a wall cannot carry a house's face, and every house knows it.
+
+**This is the honest answer to a rogue cultivator having nothing to do, and it costs the
+inner gate nothing.** The board inside the compound stays shut; the wall outside carries
+exactly the work a house is willing to give a stranger, said plainly, with the fact that it
+buys no place on the roll said just as plainly. That is where a whole early career comes
+from in this genre, and the player never has to be let in to start one.
+
+**A date on paper is a date.** Whatever a notice states as a day is fixed for the life of
+the paper, so walking toward an intake brings it closer rather than pushing it away. Most
+notices name no day at all, which is the cheapest way to keep that promise.
+
+**What the engine has no answer for yet: a bounty.** The obvious fifth kind is a house
+paying for an account of a death it cannot explain - a shattered plate and no body, which
+[`items.md`](../things/items.md) already reads from the other end as provenance. The
+channel would carry it unchanged; what is missing is the fact it would be gated on.
+A death currently reaches the house's own reading of its hall and stops there, so nothing
+can tell a death the house witnessed from one it only felt on the wall - and posting the
+second is content while posting the first is a funeral notice.
 
 ## The hard rule for the narrator
 

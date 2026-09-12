@@ -11,7 +11,7 @@
  * THE PINNING IS NOT A CHOICE OF LIFESTYLE
  * `APEX_INSTITUTIONS` records one person at the last realm per house, and every
  * one of them is `pinned`. The Earth Vein Tower's sits under the datum vault "on top
- * of what the founder sent down". The Long Cut's is the one who could settle
+ * of what the founder sent down". The Myriad Course Hall's is the one who could settle
  * anything permanently and is sitting on it instead. The Azure Cloud's is Ru
  * Anwei, in the inner hall, three hundred and eighty years at the first rung of
  * the last realm and no further.

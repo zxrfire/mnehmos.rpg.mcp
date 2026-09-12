@@ -171,6 +171,11 @@ export const BEAST_CORE_ORDINAL = 17;
  * has a voice, it can decline, and cultivators who forget that are the ones
  * who open with a sword.
  *
+ * AND IT GOES BACK AS IT DIES. A beast that took a shape returns to the beast
+ * shape at the point of death, so the core is cut out of an animal. It hides
+ * nothing - who that was can still be established, and the killing leaves what
+ * any killing leaves.
+ *
  * KEEP THIS CONSTANT SEPARATE FROM `BEAST_CORE_ORDINAL`. Bundling the two
  * is the mistake this pair exists to prevent: a single constant covering both
  * puts speech at Core Formation, which is inside every province's ordinary
@@ -221,8 +226,11 @@ export const WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS = {
         + 'above gives, and the survey is the house\'s too, because nobody else on '
         + 'that ground can read it.',
     whyItIsJuniorsWhoGo:
-        `Both errands stop at ordinal ${BEAST_CHANGE_ORDINAL}. Nobody hunts a `
-        + 'person, and nothing that speaks arrives in a tide, so the whole trade '
+        `Both errands stop at ordinal ${BEAST_CHANGE_ORDINAL}. A RIGHTEOUS house `
+        + 'does not hunt a person, and that bar holds; a neutral one might, and for a '
+        + 'neutral apex it is not a lapse but ordinary conduct. What is true of every '
+        + 'house is only the operational half - nothing that speaks arrives in a tide, '
+        + 'so the whole trade '
         + 'lives below the rung a house\'s own strongest are standing on. Sending an '
         + 'elder is not caution, it is waste, and a house that does it has usually '
         + 'mistaken a driver for the tide. So the party at the gate is juniors with '
@@ -233,6 +241,42 @@ export const WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS = {
         + 'first without eventually answering for the second, and a house that has '
         + 'spent forty years taking the first and calling the second bad luck is the '
         + 'ordinary case rather than the exception.'
+} as const;
+
+/**
+ * Three roads to material off a changed beast, and which one a house may walk
+ * is read off its alignment.
+ *
+ * Above `BEAST_CHANGE_ORDINAL` the thing carrying the material is a person, so
+ * ASKING is a road and not a joke - which matters beyond the courtesy of it,
+ * because it is the only road a righteous house can walk at all. Without it,
+ * righteousness is locked out of the top of the artifact economy by arithmetic
+ * rather than by anybody deciding so.
+ *
+ * AND IT IS ONE DERIVATION, NOT A SET OF RARE ROWS. A drop's grade is a
+ * function of the source's rung when it died - `gradeOfWhatItYielded`, which is
+ * the same call that answers for a dead cultivator. Same beast, same part: kill
+ * it young and you get the earth-grade version, kill it old and you get the
+ * heaven-grade one. The material never speaks; the thing it came off could.
+ *
+ * NO NEW CURRENCY. What an ask is made of is
+ * `what-they-will-take-instead-of-money.ts` - stones, goods, a favour, a
+ * service, a hold - and having done somebody a kindness is what puts you on the
+ * FAVOUR rung with that person. It changes which rung you are standing on and
+ * never the size of the ask, which is why goodwill is real and is usually not
+ * enough on its own. Whether it is enough is `whatItWouldTake`'s arithmetic and
+ * nothing here touches it.
+ *
+ * A refusal is ordinary and has to name the rung that would have worked, the
+ * way every refusal in this engine does.
+ */
+export const THREE_ROADS_TO_WHAT_A_PERSON_CARRIES = {
+    killItYoung: 'Below the change it is an animal, and what comes off it is the earth-grade version. Available to anybody, and it is what everybody does.',
+    killItOld: 'The heaven-grade version only comes off a source at or above the change, and anything standing there has a shape and a voice and can decline. So this is killing somebody, and a righteous house may only do it to one behaving as a demonic party behaves. The bar is on the act rather than on the appearance of it: the body goes back to its beast shape as it dies, it hides nothing, and the bar holds whether or not anybody finds out.',
+    ask: 'Open to anybody, steep, and refusable. The only road to the heaven-grade version a righteous house has, and the reason the righteous half of the world is not shut out of the top of the economy by arithmetic.',
+    substitute: 'The Root Cauldron: supply people in place of the material. Ordinary conduct for a neutral apex and unavailable to a righteous one, which is the same fault line arriving at an object.',
+    andWhyNobodyLetsOneGrowOld:
+        'Falls out of the first two rather than being a rule. Everybody has a reason to take one early and a much larger reason not to, and the gap between those two reasons is the whole of why anything at that rung is rare.'
 } as const;
 
 

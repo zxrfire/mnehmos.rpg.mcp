@@ -3283,3 +3283,51 @@ underwritten and that is the thing to fix.
 needed one file" is worth keeping only while somebody could go and see it. Once the file is
 split, the number is history, and history belongs in git. The fastest check: if a reader
 grepped for the name in this example, would they find it?
+
+### Track the bare minimum. Everything else is a reading
+
+**State is a liability, and most of what looks like state is a question.** Before adding a
+field, a set, a counter or a per-entity record, establish that the answer cannot be DERIVED
+from what the world already holds. A house's element is read off its shelf; a drop's grade is
+read off how deep the source was when it fell; what is known in a place is read off distance,
+elapsed days and how many mouths it crossed. None of those is stored, and each of them would
+have been a field in a worse version of this repo.
+
+**A stored fact can disagree with the world. A reading cannot.** That is the whole argument.
+Two sources for one question is the defect this codebase spends most of its time undoing, and
+it always begins as a convenience.
+
+**Where something genuinely must be tracked, track it for the fewest entities that need it.**
+The distinction already exists and has a name: `howAGradeIsStored` answers `counted` or
+`tracked`, because a thing with identity gets a row and a thing without gets a number. The same
+line applies to people. Somebody the world holds gets remembered; a face in a crowd does not,
+and does not need to - a crowd has no identity to remember anything with.
+
+**The test: could two answers to this question ever be in the repo at once?** If yes, you are
+adding state. Derive it instead, or say in a comment why the derivation is impossible.
+
+### A capability you cannot find is usually in a directory you did not think of
+
+**Grepping one directory and concluding a thing does not exist is the most expensive mistake
+available here**, because the answer is not "nothing happens" - it is a second implementation
+of something the repo already does well, which is the defect this file spends most of its
+length warning about.
+
+**Worked example, and it was mine.** Asked whether the engine tracks what each NPC knows, I
+grepped `src/engine/world/` and `src/schema/` for `knows` / `knownBy` / `hasHeard`, found
+nothing, and reported that knowledge is derived per place and never stored. That was wrong in
+every part. `src/engine/social/knowledge.ts` holds `KnowledgeRecord` - per holder, with a
+stance, a source, a stored confidence, and a nullable `factId` whose comment calls the null
+case the most dangerous row in the table - and `src/engine/social/discovery.ts` carries the
+six-rung ladder over it as `stage:` tags on those same records. A whole subsystem, one
+directory sideways. An agent acting on my answer would have built a second one.
+
+**The lesson is about the ORGANISING PRINCIPLE, not about searching harder.** This repo is
+laid out by what a thing IS, not by who consumes it. Knowledge is social, so it is in
+`social/`, not in `world/` where the consumer lives. Before concluding anything is absent:
+search the whole of `src/`, search for the CONCEPT in the genre's words as well as your own
+(the jail is a `seal`; the tell is `reference` and `seeming`), and read the README of every
+directory that could plausibly own the idea.
+
+**And say "I did not find it" rather than "it does not exist."** The two sentences authorise
+completely different next actions, and only one of them is what you actually established.

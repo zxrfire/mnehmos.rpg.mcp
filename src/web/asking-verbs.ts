@@ -5,6 +5,11 @@
 import { getSect } from '../data/cultivation/index.js';
 import { writeOneObligation } from '../storage/repos/obligation.repo.js';
 import { transmissionsBy } from '../data/cultivation/techniques.js';
+import {
+    whatTheyWillTakeFor,
+    whereTheOfferLanded,
+    whyAQuotedPriceDoesNotMove
+} from '../engine/social-leverage/what-they-will-take-instead-of-money.js';
 import { earningsPerYear } from '../engine/cultivation/origin.js';
 import { forStream } from '../engine/cultivation/rng.js';
 import {
@@ -133,6 +138,7 @@ import { whatTheyCanPlaceAbout } from '../engine/social/what-they-can-place-abou
 import { whatTheAskCameTo } from './saying-what-an-ask-cost-and-how-likely-it-was.js';
 import { addHearing, refused, stonesNamedIn, structureCalls } from './tool-result-prose.js';
 import { whatTheyWereAskedToMake } from './what-somebody-was-asked-to-make.js';
+import { materialBeingCarriedBy, materialInThePouch } from './what-is-on-the-bench.js';
 import { askingSomebodyToMakeYouSomething } from '../engine/social-leverage/index.js';
 import { TRAVEL_FOCUS, WRONG_BEHIND_INTENT } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
@@ -1755,6 +1761,14 @@ ${done.lines.join(' ')}`;
                 ? { nearness: 'house' as const }
                 : {}),
             stonesOffered: stonesNamedIn(rawInput) ?? 0,
+            // WHAT IS ACTUALLY ON THE BENCH. Without this the material economy
+            // was authored and unenforced: hands at the right rung turned out
+            // earth- and heaven-grade work out of an empty room. Mortal grade
+            // asks for nothing, so nobody's first talisman is affected.
+            materialsToHand: [
+                ...materialInThePouch(this.db, cultivator.id),
+                ...materialBeingCarriedBy(this.atHand?.objects ?? [], party.id)
+            ],
             onDay: Math.floor(run.elapsedDays)
         });
 
@@ -1814,9 +1828,9 @@ ${done.lines.join(' ')}`;
         if (!thing.pastTheCashLine) {
             return refused('engine.pillTradeTier', 'request', factsForRefusal(
                 'That one is simply bought.',
-                `${thing.name} is not something anybody bargains over - it is made constantly, `
-                + `it is on boards, and ${party.name} would wonder why you were asking them `
-                + `instead of a counter. "buy a ${thing.name}" is the sentence.`,
+                `${whyAQuotedPriceDoesNotMove(thing.name, 'on every board in the province')} `
+                + `${party.name} would wonder why you were asking them instead of a counter. `
+                + `"buy a ${thing.name}" is the sentence.`,
                 `${thing.id} is below the barter line, so it has a cash price and no barter. `
                 + 'See buying-and-bartering-pills.ts, manuals.ts and artifacts.ts.'
             ));
@@ -1939,12 +1953,41 @@ ${done.lines.join(' ')}`;
             + `${answer.theBestOnTheTable} against a bar of ${answer.theHeightToReach}.`
         ];
 
+        // ── AND WHICH MEDIUM THEY ARE ON, WHICH IS THE HALF THAT LETS A
+        // PLAYER CHANGE WHAT THEY OFFER ─────────────────────────────────
+        //
+        // `whatItWouldTake` does the arithmetic - does what is on the table
+        // reach as high as the thing does. It cannot say what the offer has to
+        // be MADE OF, and without that a refusal is the end of an exchange
+        // rather than information about it. The ladder runs stones, goods, a
+        // favour, a service, a hold, and being asked for money is the mild end.
+        const theAsk: AskWeight = weight.thePriceWasMet
+            ? 'a_real_favour'
+            : 'against_their_interest';
+        const theyWillTake = whatTheyWillTakeFor(party.id, {
+            ask: theAsk,
+            // Everything below the cash line was refused above, so anything
+            // still being priced here is past it by construction.
+            hasACashPrice: false,
+            theyNeedSomethingDone: need?.goal != null
+        });
+        const landed = whereTheOfferLanded(
+            theyWillTake,
+            putDown === null ? 'stones' : offered ? 'goods' : 'a service'
+        );
+        structure.push(
+            `They are on the ${theyWillTake} rung of what somebody will take; what was put `
+            + `down reads as ${landed.offered}. Right kind of thing = `
+            + `${landed.theRightKindOfThing}.`
+        );
+
         // ASKING THE PRICE IS A QUESTION, NOT AN ATTEMPT
         if (kind === 'terms') {
             const facts = factsForToolResult(
                 `${party.name}, on what it would take.`,
                 [
                     `You say what you are after and ask what it would take. ${answer.line}`,
+                    landed.line,
                     ...(need?.goal
                         ? [`What they are carrying of their own: ${need.goal.text}`]
                         : [])
@@ -2023,7 +2066,8 @@ ${done.lines.join(' ')}`;
 
         const lines = [
             `You put down ${answer.theBestPutDown ?? 'nothing anybody could hold'} for a `
-            + `${thing.name}. ${answer.line}`
+            + `${thing.name}. ${answer.line}`,
+            landed.line
         ];
 
         const took = result.outcome === 'taken' || result.outcome === 'turned';

@@ -17,7 +17,13 @@ import {
     placeRateMultiplier
 } from './activity.js';
 import { drawEncounter, encounterPool, type WeightedEntry } from './select.js';
-import { summonsPool, type DutyCandidate } from './duties.js';
+import { theReasonBehind } from './what-a-house-has-on-its-board.js';
+import {
+    summonable,
+    summonsPool,
+    whatAHouseWouldSendYouOn,
+    type DutyCandidate
+} from './duties.js';
 import {
     CONTACT_SPAN_CHANCE,
     CONTACT_TURN_CHANCE,
@@ -25,6 +31,10 @@ import {
     withinSocialRange,
     type ContactPerson
 } from './contact.js';
+import {
+    whoASeniorIsAskedToTakeOut,
+    whoAsksASeniorToGo
+} from './who-a-senior-is-asked-to-take-out.js';
 import { resolveOccurrence } from './resolve.js';
 import { fillTokens } from './tokens.js';
 import { valenceOf } from './valence.js';
@@ -298,7 +308,62 @@ function attemptSummons(
         : 1;
     if (findable <= 0) return null;
 
-    const pool = summonsPool(input.cultivator.realmOrdinal, membership);
+    const roster = input.roster ?? [];
+    // THE JUNIORS THIS ROW WOULD PUT ON THE ROAD, where it is pitched under the
+    // person being asked. Computed here rather than in `duties.ts` because it
+    // needs the roll, and `duties.ts` is arithmetic over one person's standing.
+    const juniorsOn = (candidate: DutyCandidate) =>
+        candidate.terms.pitchOrdinal < input.cultivator.realmOrdinal
+            ? whoASeniorIsAskedToTakeOut({
+                pitchOrdinal: candidate.terms.pitchOrdinal,
+                // The errand's own headcount where the row came from a reason,
+                // which is the same number the world uses when it sends a party
+                // of its own. `cohort` is the fallback and is a different fact -
+                // how many of the house go ALONGSIDE somebody at this rank.
+                hands: theReasonBehind(candidate.entry.id)?.hands
+                    ?? Math.max(1, candidate.terms.cohort),
+                roster,
+                seniorId: input.cultivator.id,
+                seniorOrdinal: input.cultivator.realmOrdinal
+            })
+            : [];
+
+    const pool = [
+        ...summonsPool(input.cultivator.realmOrdinal, membership),
+        // THE HOUSE'S OWN BUSINESS, which is what stops the ask running out.
+        // The hand-authored entries carry fixed ordinal windows and the highest
+        // of them closes at 33, so above Void Tribulation a house had nothing
+        // to send anybody on at all. These are pitched at the rung the person
+        // being asked stands on, so there is no rung they run out at.
+        //
+        // AND THEY ARE THE HEAD'S WORD. A notice on a wall has nobody speaking;
+        // somebody arriving with the house's own business is arriving with a
+        // decision that was taken at the top of it. `mouthFor` picks who walked
+        // over, which is a different fact and is not this one - the distinction
+        // `whoIsAsking` already draws between the mouth and the authority.
+        ...(input.house
+            ? whatAHouseWouldSendYouOn({
+                ordinal: input.cultivator.realmOrdinal,
+                membership,
+                house: input.house,
+                ...(input.reachOfTheHouse === undefined
+                    ? {}
+                    : { reachOfTheHouse: input.reachOfTheHouse }),
+                ...(input.reachOfTheRest === undefined
+                    ? {}
+                    : { reachOfTheRest: input.reachOfTheRest }),
+                givenBy: { rankIndex: membership.rankCount - 1, isHead: true }
+            })
+            : [])
+    // ONLY THE ROWS THAT ARE HERE BECAUSE OF THE ESCORT. A band `summonable`
+    // already allowed is an ordinary ask and keeps its own reason for existing -
+    // gating those on a roster emptied the pool for anybody the house had
+    // nothing at their own rung for, and three summons tests went red saying so.
+    // What needs a party is what `wellBeneathYou` let in, which is nothing but
+    // an escort. Filtered before the draw: a pick landing on a row with no party
+    // would be a turn in which the house sent for somebody and said nothing.
+    ].filter(candidate =>
+        summonable(candidate.terms.regard.band) || juniorsOn(candidate).length > 0);
     if (pool.length === 0) return null;
 
     const rng = forStream(input.seed, 'enc.summons', absoluteDay, stage, input.cultivator.id);
@@ -309,6 +374,40 @@ function attemptSummons(
     const candidate = pickCandidate(pool, which);
     const terms = candidate.terms;
     const mouth = mouthFor(input, membership, rng);
+
+    // AND THE ASK THAT IS NOT ABOUT YOU. The design owner: what is more likely
+    // than an elder being handed an elder's errand is a peer or the patriarch
+    // asking them to take some disciples out - juniors who have taken work that
+    // goes beyond the sect's ground.
+    //
+    // Read off the ask already drawn rather than drawn separately: a posting
+    // pitched under the person being asked IS a junior's job, and the house's
+    // own roll says which juniors could be on it. So there is no second duty
+    // generator and no escort catalogue - the occasion is the board's own row.
+    const takingOut = juniorsOn(candidate);
+    // AND WHO PUT IT. `mouthFor` picks whoever walked over, which is the right
+    // answer for an order the house drew and the wrong one here: somebody is
+    // being asked to spend their own time on a junior's job, and that is a peer
+    // or the head asking, not a message. The carrier and the authority stay two
+    // facts; on this ask they are the same person.
+    const asker = takingOut.length === 0
+        ? null
+        : whoAsksASeniorToGo({
+            roster,
+            seniorId: input.cultivator.id,
+            headRankIndex: membership.rankCount - 1
+        });
+    const askerOnTheRoll = asker === null
+        ? null
+        : roster.find(person => person.id === asker.id) ?? null;
+    const spokenBy: DutyMouth | null = askerOnTheRoll === null ? mouth : {
+        id: askerOnTheRoll.id,
+        name: askerOnTheRoll.name,
+        rankIndex: askerOnTheRoll.rankIndex,
+        realmOrdinal: askerOnTheRoll.realmOrdinal,
+        known: askerOnTheRoll.known ?? false,
+        detail: askerOnTheRoll.detail ?? null
+    };
 
     const duty: Duty = {
         origin: terms.origin,
@@ -322,9 +421,15 @@ function attemptSummons(
         dueOnDay: absoluteDay + terms.days,
         refusal: terms.refusal,
         scale: terms.scale,
-        cohort: terms.cohort,
+        // ONE COUNT, NOT TWO. `cohortFor` answers *how many of the house go
+        // alongside somebody at this rank*, which is the right number for an
+        // ask pitched at the person. On an escort the people going alongside
+        // ARE the juniors, and carrying both numbers put "5 of the house
+        // alongside" on the same screen as eight named people.
+        cohort: takingOut.length > 0 ? takingOut.length : terms.cohort,
         access: terms.access,
-        spokenBy: mouth
+        spokenBy,
+        takingOut
     };
 
     const filled = fillTokens({

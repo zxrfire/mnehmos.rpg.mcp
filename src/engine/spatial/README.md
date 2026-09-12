@@ -45,3 +45,22 @@ grid.
 |---|---|
 | [`engine.ts`](./engine.ts) | - |
 | [`heap.ts`](./heap.ts) | Min-heap implementation for efficient priority queue operations in A* pathfinding. |
+
+---
+
+## Where else to look
+
+- [`../world/how-far-somebody-can-fold-space-and-what-it-costs.ts`](../world/how-far-somebody-can-fold-space-and-what-it-costs.ts) -
+  the fold as it exists today: a price on a jump between two named places, with nothing saying
+  which places a fold can reach THROUGH. That gap is what this directory is being kept for.
+- [`../../data/cultivation/regions/README.md`](../../data/cultivation/regions/README.md) - the
+  graph the grid would have to become: provinces, prefectures, arterials and the roads between
+  named places. `the-map.ts` and `map-by-bearing.ts` are the shape of the real data.
+- [`../../server/handlers/README.md`](../../server/handlers/README.md) - the OTHER spatial
+  model, and the live one: `RoomNode`, `Exit` and `NodeNetwork`, served through
+  `consolidated/spatial-manage.ts`. It does not call anything in this directory.
+- [`../../schema/README.md`](../../schema/README.md) - `spatial.ts` holds the room and exit
+  shapes; `Point` and `TerrainCostMap` here are local types with no schema behind them.
+- [`../../storage/repos/README.md`](../../storage/repos/README.md) - `spatial.repo.ts` is where
+  the room graph is persisted. Nothing persists a path.
+

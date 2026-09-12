@@ -33,7 +33,7 @@ const TEXT = {
 
 
     items:
-        'Seventeen are held and thirty-one were ever known, so nearly half the supply is somewhere nobody is saying. Quantity and quality then part company. The Pavilion holds nine of the seventeen and every one of them is lower grade, while the only higher-grade Step sits with the Deep Survey and the only higher-grade Dealing with the Long Cut. Most of the supply and none of the ceiling.',
+        'Seventeen are held and thirty-one were ever known, so nearly half the supply is somewhere nobody is saying. Quantity and quality then part company. The Pavilion holds nine of the seventeen and every one of them is lower grade, while the only higher-grade Step sits with the Deep Survey and the only higher-grade Dealing with the Myriad Course Hall. Most of the supply and none of the ceiling.',
 
 };
 

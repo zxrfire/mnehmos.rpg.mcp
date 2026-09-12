@@ -361,7 +361,7 @@ describe('the standoff at the top of the world', () => {
         })[0];
 
         // The arena is not only a duel, and once the round budget was fixed
-        // it stopped being one. Nothing takes the Long Cut one against one any
+        // it stopped being one. Nothing takes the Myriad Course Hall one against one any
         // more - and the file has never claimed anything did. What it has
         // always claimed is that any two of them together can end any third,
         // and that is the arena the strongest house actually stands in. So the
@@ -380,7 +380,7 @@ describe('the standoff at the top of the world', () => {
         // The lever the setting says is the real one, checked. Losing your
         // court has to matter, or "the courts might defect" is decoration.
         const survey = APEX_INSTITUTIONS.find(a => a.id === 'apex-earth-vein-tower')!;
-        const longCut = APEX_INSTITUTIONS.find(a => a.id === 'apex-long-cut')!;
+        const longCut = APEX_INSTITUTIONS.find(a => a.id === 'apex-myriad-course-hall')!;
         const loyal = winRate(survey.id, longCut.id, true);
         const defected = winRateWithDefection(survey.id, longCut.id);
         expect(defected, 'a defection must not make the defender stronger')
@@ -450,7 +450,7 @@ describe('the prose matches what was measured', () => {
         expect(WHY_NOBODY_MOVES.andTheWarGoesToNOBODY).toMatch(/Five bodies against five/i);
         expect(WHY_NOBODY_MOVES.andTheCourtsKnowExactlyWhatTheyAreWorth).toMatch(/administration rather than a believer/i);
         // Was /Third Sill Court/, which was the wrong court and had been for as
-        // long as this claim existed. The Third Sill has answered the Long Cut
+        // long as this claim existed. The Third Sill has answered the Myriad Course Hall
         // for longer than either apex keeps a record of and has never changed
         // patrons; the one administration in the catalog that ever did is the
         // Deeproot Court, which walked when the Earth Vein Tower reposted it - and a

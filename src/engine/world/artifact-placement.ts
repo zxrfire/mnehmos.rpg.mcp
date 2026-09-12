@@ -50,6 +50,7 @@ import type { WorldState } from './world-state.js';
 import type { ObjectRecord } from './possessions.js';
 import { ARTIFACTS } from '../../data/cultivation/artifacts.js';
 import { isCatalogPerson, worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
+import { idsForFaction } from '../../data/cultivation/governance-and-water-rights.js';
 
 /**
  * Put the artifact catalog into the world.
@@ -68,23 +69,44 @@ import { isCatalogPerson, worldIdForCatalogPerson } from './a-catalog-person-and
 export function seedArtifacts(state: WorldState): ObjectRecord[] {
     const factions = new Set(state.factions.map(f => f.id));
     const seats = new Map(state.factions.map(f => [f.id, f.seatLocationId]));
+
+    /**
+     * The id this world files a body under, which is not always the id the
+     * catalog names it by.
+     *
+     * A body with a row in `APEX_INSTITUTIONS` and a row in `SECTS` has two
+     * ids, and `seedFactions` mints the faction under the sect one. Artifacts
+     * owned by the two ancient apexes are entered against the apex id, so
+     * without this join their treasuries resolved to no faction at all - the
+     * Polestar Lamp sat in a vault the world did not believe anybody held,
+     * outside the house-stores exclusion `war-melee.ts` reads and outside the
+     * hold bucket. Same join as the person one below, one table over.
+     */
+    const asTheWorldFilesIt = (id: string): string => {
+        if (factions.has(id)) return id;
+        return idsForFaction(id).find(alias => factions.has(alias)) ?? id;
+    };
+
     const out: ObjectRecord[] = [];
 
     for (const row of ARTIFACTS) {
         // A kind, not an object. See the banner.
         if (row.significance === 'mundane') continue;
+        const ownerId = row.ownerId ? asTheWorldFilesIt(row.ownerId) : row.ownerId;
         // Seat it where its owner sits, when the owner is a house this world
         // has. Everything else keeps whatever the catalog said.
-        const locationId = row.ownerId && factions.has(row.ownerId)
-            ? seats.get(row.ownerId) ?? row.locationId
+        const locationId = ownerId && factions.has(ownerId)
+            ? seats.get(ownerId) ?? row.locationId
             : row.locationId;
         // Ownership is not touched. Holding a thing and owning it are two
         // facts (`docs/world/things/items.md`), and only the holder is a body
         // that has to be findable in `state.npcs`.
-        const possessorId = row.possessorId !== null && isCatalogPerson(row.possessorId)
-            ? worldIdForCatalogPerson(row.possessorId)
-            : row.possessorId;
-        out.push({ ...row, possessorId, locationId, tags: [...row.tags, 'seeded'] });
+        const possessorId = row.possessorId === null
+            ? null
+            : isCatalogPerson(row.possessorId)
+                ? worldIdForCatalogPerson(row.possessorId)
+                : asTheWorldFilesIt(row.possessorId);
+        out.push({ ...row, ownerId, possessorId, locationId, tags: [...row.tags, 'seeded'] });
     }
     return out;
 }

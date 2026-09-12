@@ -381,7 +381,7 @@ describe('combat_manage', () => {
             const result = await combat({
                 action: 'resolve',
                 thrown: { with: 'edge', at: 'throat', force: 'everything' },
-                opponent: { name: 'an ancestor', realmOrdinal: realmStart('void_refinement') }
+                opponent: { name: 'an ancestor', realmOrdinal: realmStart('void_tribulation') }
             });
 
             expect(['no_contest', 'lethal']).toContain(result.outcome);

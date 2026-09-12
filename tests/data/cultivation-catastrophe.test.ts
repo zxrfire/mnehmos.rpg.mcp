@@ -141,7 +141,7 @@ describe('how somebody at the top of an apex dies', () => {
     it('makes the artifact the reason it is hard, and names all three', () => {
         const a = DEATHS_AVAILABLE.andThenTheArtifact;
         expect(a).toMatch(/Earth Vein Tower/);
-        expect(a).toMatch(/Long Cut/);
+        expect(a).toMatch(/Myriad Course Hall/);
         expect(a).toMatch(/Azure Cloud/);
         expect(a, 'they are weapons that do not strike').toMatch(/not one of them is a sword/i);
     });
@@ -316,10 +316,10 @@ describe('the stall, which is why two is not the number', () => {
             const apex = APEX_INSTITUTIONS.find(a => a.name === name)!;
             return COURTS.filter(c => c.apexId === apex.id).length;
         };
-        // The Third Sill went to the Long Cut, which is why these are not
+        // The Third Sill went to the Myriad Course Hall, which is why these are not
         // what they were: see WHY_NOBODY_MOVES.andItHasHappenedOnce.
         expect(countFor('The Earth Vein Tower')).toBe(1);
-        expect(countFor('The Long Cut')).toBe(2);
+        expect(countFor('The Myriad Course Hall')).toBe(2);
         // The Pavilion has a court now: the Azure Mist, which was filed as
         // a feeder for three centuries on a power figure that stopped being
         // true in the second one.

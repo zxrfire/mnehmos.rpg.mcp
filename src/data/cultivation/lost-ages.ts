@@ -461,10 +461,10 @@ export const MEDICINE_HOLDINGS: readonly MedicineHolding[] = [
         whatBecameOfIt: null
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         standing: 'holds_one',
         howItIsKnown:
-            'One of the three sealed cases in the seat chamber, and the Long Cut publishes the count of the cases without ever saying what is in them. Everybody who has thought about it has worked out what one of the three probably is, which is a large part of why the Silent Cliffs has arranged itself so carefully around never being the fourth emergency.',
+            'One of the three sealed cases in the seat chamber, and the Myriad Course Hall publishes the count of the cases without ever saying what is in them. Everybody who has thought about it has worked out what one of the three probably is, which is a large part of why the Silent Cliffs has arranged itself so carefully around never being the fourth emergency.',
         whatBecameOfIt: null
     },
     {

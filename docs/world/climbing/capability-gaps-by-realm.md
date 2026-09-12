@@ -272,7 +272,7 @@ The worked list, with the verdict on each:
 
 | Meaning | Verdict | Note |
 |---|---|---|
-| A permanent cultivation residence | **absent** | `settleAbode` exists and is **immortal-layer only** (`immortal-world.ts`). Below the Lid a cultivator has nowhere that is theirs, no place to store anything, nothing to defend. The generic machinery is all present - locations have owners, objects have `locationId`, `evaluateAccess` gates a door - so this is a call site, not a subsystem |
+| A permanent cultivation residence | **half built** | Was **absent**: `settleAbode` was immortal-layer only, so below the Lid a cultivator had nowhere that was theirs and no place to store anything. The generic half is now `somewhere-that-is-theirs.ts` and `settleAbode` is one caller of it - `residenceOf` answers at every height, and `whereTheyKeepTheirThings` hands out the residence's id as a `cultivator_pouch` holder, so a place holds things by BEING a holder and an NPC's residence works the same way. What is still missing is the entry point: no verb settles one, and nothing in worldgen assigns one, so the capability exists and nothing reaches it |
 | Basic formations | **absent** | There is no formation system anywhere. `'formation'` is a hazard string, a `CapabilityModifierSource`, and a location affinity. Nothing lays one |
 | Storing and manipulating qi in more sophisticated ways | **built, invisibly** | This *is* the satiety table and the progress curve. It needs saying, not building |
 | Establishing a personal inheritance | **absent for the living** | `legacy.ts` builds a gated grave when you die. Divestment before a crossing is named in `price-of-advancement.ts` as the author of the whole inheritance economy and there is no verb for it |
@@ -1104,9 +1104,13 @@ of new machinery. Nothing here is bespoke; every item reads columns that already
    that closes - a house that put terms to somebody and was not answered does not ask twice,
    which is already what `Approach.declining` says. Held out of this change because
    `window.ts` and the encounter payload types are in flight.
-2. **A residence below the Lid.** `settleAbode` generalised off the immortal layer. Gives
-   Foundation Establishment a place, a store, and something to lose. Locations, objects and
-   access gates are all already generic; this is call sites and a migration.
+2. **A residence below the Lid.** Done as a capability, not as a thing a player can reach.
+   `settleAbode` is generalised off the immortal layer into
+   `somewhere-that-is-theirs.ts`, and the store came free: `cultivator_pouch` stopped being
+   keyed on a cultivator some time ago, so a residence holds things by being a holder and
+   an NPC's residence is not a second mechanism. **What is left is the two call sites** - a
+   verb that settles one, and worldgen putting people in the ones they already have. Both
+   need the verb table and the turn engine, which is where this stopped.
 3. **A decision about `heldGrants`, before any grant work at all.** This was *"the five inert
    grants - cheapest possible win, the class arrays already carry them and the predicates are
    already the right shape"*, and that was wrong for the reason the correction above gives:

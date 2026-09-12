@@ -204,10 +204,10 @@ export const SENT_DOWN_SPENDINGS: readonly SentDownSpending[] = [
     },
     {
         yearsAgo: 860,
-        spentByFactionId: 'apex-long-cut',
+        spentByFactionId: 'apex-myriad-course-hall',
         onWoundKey: null,
         entry:
-            'The schedule records the object leaving the standing entry, the date, and the four signatures required to move it. The reason column is empty, as it is for every arrival, and the Long Cut has never been willing to say whether that emptiness is discretion or a lost page.'
+            'The schedule records the object leaving the standing entry, the date, and the four signatures required to move it. The reason column is empty, as it is for every arrival, and the Myriad Course Hall has never been willing to say whether that emptiness is discretion or a lost page.'
     },
     {
         yearsAgo: 410,
@@ -222,10 +222,10 @@ export const SENT_DOWN_SPENDINGS: readonly SentDownSpending[] = [
  * The one nobody can produce.
  */
 export const SENT_DOWN_UNACCOUNTED = {
-    heldByFactionId: 'apex-long-cut',
+    heldByFactionId: 'apex-myriad-course-hall',
     count: 1,
     note:
-        'The schedule carries eight arrivals against the Long Cut across two thousand six hundred years and the standing entry reads two. Three are accounted for by the spending above and by the two the Long Cut holds; the eighth was receipted, entered, and has not been seen since a hand-over ninety years ago. The Long Cut has not amended the schedule, because amending it would require somebody to write down which of the two figures is wrong.'
+        'The schedule carries eight arrivals against the Myriad Course Hall across two thousand six hundred years and the standing entry reads two. Three are accounted for by the spending above and by the two the Myriad Course Hall holds; the eighth was receipted, entered, and has not been seen since a hand-over ninety years ago. The Myriad Course Hall has not amended the schedule, because amending it would require somebody to write down which of the two figures is wrong.'
 } as const;
 
 // WHO HAS WHAT, AT THE START OF THE WORLD
@@ -263,15 +263,15 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
             'The four Surveyors, unanimously, against a Requisition Against Standing Stock. The form exists, has been submitted eleven times, and has been granted once.'
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         medicineId: 'repair-unbroken-pattern',
         count: 2,
         howGot:
-            'Found, receipted, entered on the schedule as a dated arrival with nothing in the reason column, which is the most the Long Cut has ever been willing to write down about any of it.',
+            'Found, receipted, entered on the schedule as a dated arrival with nothing in the reason column, which is the most the Myriad Course Hall has ever been willing to write down about any of it.',
         whyStillHeld:
-            'The Long Cut owns every act it takes by name, so an object it cannot reorder is the hardest possible thing for it to spend: no vassal to attribute the decision to and no authority above it to authorise the loss. A schedule amendment against the standing entry has been submitted three times and answered each time by restating the entry.',
+            'The Myriad Course Hall owns every act it takes by name, so an object it cannot reorder is the hardest possible thing for it to spend: no vassal to attribute the decision to and no authority above it to authorise the loss. A schedule amendment against the standing entry has been submitted three times and answered each time by restating the entry.',
         whoDecides:
-            'Four signatures against the standing entry, which is the same instrument that governs every other irreplaceable line the Long Cut carries.'
+            'Four signatures against the standing entry, which is the same instrument that governs every other irreplaceable line the Myriad Course Hall carries.'
     },
     {
         factionId: 'sect-azure-cloud-pavilion',
@@ -301,13 +301,13 @@ export const STRUCTURAL_REPAIR_HOLDINGS: readonly RepairHolding[] = [
         whoDecides: 'The four Surveyors, by the same quorum that governs the standing stock.'
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         medicineId: 'repair-soul-seating',
         count: 1,
         howGot:
-            'Taken in settlement of a grant dispute two hundred years ago, from a house that could not pay in stones and could pay in this. The Long Cut recorded it as a receipt and has never described it as a purchase.',
+            'Taken in settlement of a grant dispute two hundred years ago, from a house that could not pay in stones and could pay in this. The Myriad Course Hall recorded it as a receipt and has never described it as a purchase.',
         whyStillHeld:
-            'Because selling it would announce that the Long Cut has one, and a body of forty staff administering five provinces does not announce what it is holding. This is the plainest instance in the catalog of the reason `items.md` puts first: a weak house holding a valuable thing is not rich, it is quiet.',
+            'Because selling it would announce that the Myriad Course Hall has one, and a body of forty staff administering five provinces does not announce what it is holding. This is the plainest instance in the catalog of the reason `items.md` puts first: a weak house holding a valuable thing is not rich, it is quiet.',
         whoDecides: 'Four signatures, as with everything else on the standing entry.'
     },
     {

@@ -11,7 +11,10 @@
 import { ENCOUNTERS, type EncounterEntry } from '../../data/cultivation/encounters.js';
 import { regardFor, type Regard } from '../cultivation/regard.js';
 import type { RegardBand } from '../../schema/cultivation.js';
-import { MAX_ORDINAL } from '../cultivation/realms.js';
+import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
+import type { SendingReason } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import type { HouseAsItStands } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
+import { whatAHouseHasOnItsBoard } from './what-a-house-has-on-its-board.js';
 import type { Membership } from './types.js';
 
 // WHAT KIND OF THING IT IS
@@ -60,6 +63,54 @@ const SUMMONABLE_BANDS: readonly RegardBand[] = ['stretch', 'matched', 'assured'
 
 export function summonable(band: RegardBand): boolean {
     return SUMMONABLE_BANDS.includes(band);
+}
+
+/**
+ * Bands where the work is far enough under somebody that nobody would have
+ * thought of them for it.
+ *
+ * `assured` is deliberately not here: four to nine rungs down is a comfortable
+ * job, not a job for a junior.
+ */
+const WELL_BENEATH_BANDS: readonly RegardBand[] = ['beneath', 'dismissed'];
+
+export function wellBeneathYou(band: RegardBand): boolean {
+    return WELL_BENEATH_BANDS.includes(band);
+}
+
+/**
+ * Whether somebody reading a wall may take this line off it.
+ *
+ * The difference from {@link summonable} is the difference between a wall and a
+ * person. `summonable` answers *would the house spend this person on this* -
+ * which is the right question when the house is choosing somebody, and the
+ * wrong one when the person is choosing off paper. A house does not stop an
+ * elder taking down a disciple's notice; it notices.
+ *
+ * So what is still refused off a wall is only what is pitched ABOVE the reader
+ * far enough that handing it over would be the house sending somebody who
+ * cannot do it.
+ */
+export function takeableOffAWall(band: RegardBand): boolean {
+    return summonable(band) || wellBeneathYou(band);
+}
+
+/**
+ * That this duty is pitched well under whoever took it, as a fact and nothing
+ * else. Null when it is not.
+ *
+ * The engine states it; the eyebrow is the narrator's. Anything here that
+ * performed the reaction - a clerk's face, a pause at the desk - would be the
+ * engine writing the scene, and both halves would then be written twice.
+ *
+ * Both figures are visible to anybody standing there: a notice says what rung
+ * it is pitched at, and a cultivator's rung is the first thing a room reads.
+ */
+export function pitchedWellBeneath(pitchOrdinal: number, ordinal: number): string | null {
+    const regard = regardFor(pitchOrdinal, ordinal);
+    if (!wellBeneathYou(regard.band)) return null;
+    return `It was posted at ${rankName(clampOrdinal(pitchOrdinal))}, ${regard.gap} rungs under `
+        + `${rankName(clampOrdinal(ordinal))}, which is where the person who took it stands.`;
 }
 
 // READING THE CATALOG
@@ -171,7 +222,8 @@ export function dutyTermsFor(
     entry: EncounterEntry,
     ordinal: number,
     membership: Membership | null,
-    origin: DutyOrigin
+    origin: DutyOrigin,
+    givenBy?: WhoIsSpeaking | null
 ): DutyTerms {
     const pitchOrdinal = clampOrdinal(entry.threatOrdinal ?? entry.minOrdinal);
     const regard = regardFor(pitchOrdinal, ordinal);
@@ -179,7 +231,7 @@ export function dutyTermsFor(
 
     const scale = scaleFor(tags);
     const days = daysFor(tags, scale);
-    const posture = postureFor(membership);
+    const posture = postureFor(membership, givenBy);
 
     // What comes back scales with how far the thing is beneath the person
     // doing it, which is `yieldMultiplier` doing the job it exists for. An
@@ -198,7 +250,7 @@ export function dutyTermsFor(
         // the whole difference membership buys.
         contribution: membership ? Math.max(1, Math.round(base * yieldScale * (days / 20))) : 0,
         stones: Math.max(1, Math.round(base * 1.4 * yieldScale)),
-        refusal: refusalFor(entry, tags, membership, origin, scale),
+        refusal: refusalFor(entry, tags, membership, origin, scale, givenBy),
         regard,
         scale,
         cohort: cohortFor(scale, membership),
@@ -259,10 +311,38 @@ function daysFor(tags: ReadonlySet<string>, scale: DutyScale): number {
 }
 
 /**
- * Told, assigned, or asked.
+ * Who put the ask, where a person put it rather than a wall.
+ *
+ * `isHead` is the house's own flag and is not derived from the rung: a house
+ * can have somebody at the top rung who is not its head, and the distinction
+ * matters here because the head's word is the one that does not get argued
+ * with.
  */
-export function postureFor(membership: Membership | null): DutyPosture {
+export interface WhoIsSpeaking {
+    rankIndex: number;
+    isHead: boolean;
+}
+
+/**
+ * Told, assigned, or asked.
+ *
+ * Read off the GAP between whoever is speaking and whoever is being spoken to,
+ * not off where the listener sits on the ladder. A notice nailed to a wall has
+ * nobody speaking, and for that case the ladder is the whole answer: the higher
+ * you are the more the house is asking rather than telling.
+ *
+ * The head of the house speaking to you is a different sentence, and the design
+ * owner ruled it the other way round - *"once you hit elder the sect isn't
+ * going to ask you for stuff, the patriarch just tells you to do things."*
+ * There is nobody above the head to consult them on the head's behalf, so the
+ * head tells at every rung, including the one just below their own.
+ */
+export function postureFor(
+    membership: Membership | null,
+    givenBy?: WhoIsSpeaking | null
+): DutyPosture {
     if (!membership) return 'assigned';
+    if (givenBy?.isHead) return 'told';
     const top = Math.max(1, membership.rankCount - 1);
     const share = Math.min(1, Math.max(0, membership.rankIndex / top));
     if (share < 0.34) return 'told';
@@ -270,12 +350,33 @@ export function postureFor(membership: Membership | null): DutyPosture {
     return 'consulted';
 }
 
+/**
+ * The ledger's severities, weakest first, so a step up is a step along a list
+ * the grudge layer already owns rather than a second scale.
+ */
+const HOW_BADLY_IT_WAS_NOT_KEPT: readonly RefusalTerms['severity'][] =
+    ['slight', 'serious', 'grave', 'unforgivable'];
+
+/**
+ * One band heavier, and never as far as desertion.
+ *
+ * `unforgivable` belongs to walking out of a war and nothing else reaches it,
+ * which is what makes it mean anything.
+ */
+function aBandHeavier(severity: RefusalTerms['severity']): RefusalTerms['severity'] {
+    const at = HOW_BADLY_IT_WAS_NOT_KEPT.indexOf(severity);
+    // Never downward: something that already reaches desertion stays there.
+    const to = Math.max(at, Math.min(at + 1, HOW_BADLY_IT_WAS_NOT_KEPT.length - 2));
+    return HOW_BADLY_IT_WAS_NOT_KEPT[to] ?? severity;
+}
+
 function refusalFor(
     entry: EncounterEntry,
     tags: ReadonlySet<string>,
     membership: Membership | null,
     origin: DutyOrigin,
-    scale: DutyScale
+    scale: DutyScale,
+    givenBy?: WhoIsSpeaking | null
 ): RefusalTerms {
     // Joining a house is the vow. Refusing what it asks is that vow not kept,
     // and the ledger already has the word for it.
@@ -284,13 +385,23 @@ function refusalFor(
     // Leaving a war is desertion, and the ledger has a word above grave for
     // exactly this. It is reachable only from a house at war, which is the
     // point: nothing else a member can decline is worth that word.
-    const severity = scale === 'total' && membership
+    const base: RefusalTerms['severity'] = scale === 'total' && membership
         ? 'unforgivable'
         : scale === 'total' || tags.has('tide') || tags.has('obligation')
             ? 'grave'
             : tags.has('support') || tags.has('reward') || entry.threatOrdinal !== null
                 ? 'serious'
                 : 'slight';
+
+    // AND AN ORDER YOU CANNOT REFUSE IS WHAT MAKES IT AN ORDER. Refusing what
+    // the head of your house told you to do is a different act from declining
+    // a notice nobody signed, and the ledger had one word for both. The
+    // posture was already computed and was not being read.
+    //
+    // Only where somebody is on the roll: a house's head has nothing to hold
+    // against a stranger who did not do them a favour.
+    const anOrder = membership !== null && givenBy?.isHead === true;
+    const severity = anOrder ? aBandHeavier(base) : base;
 
     const what = scale === 'total' && origin === 'summons'
         ? `Recalled over ${entry.name.toLowerCase()} and did not report.`
@@ -302,9 +413,12 @@ function refusalFor(
         kind: 'grudge',
         cause,
         severity,
-        description: membership
-            ? `${what} The house had counted on it.`
-            : `${what} It was not owed to anybody, and it was noticed.`
+        description: !membership
+            ? `${what} It was not owed to anybody, and it was noticed.`
+            : anOrder
+                ? `${what} It was an order and not an ask, given by the head of the house, `
+                  + 'and everybody who heard it knows which of the two it was.'
+                : `${what} The house had counted on it.`
     };
 }
 
@@ -325,6 +439,71 @@ export interface DutyCandidate {
 export function summonsPool(ordinal: number, membership: Membership | null): DutyCandidate[] {
     if (!membership) return [];
     return poolFrom(SUMMONS_ENTRIES, ordinal, membership, 'summons');
+}
+
+/**
+ * What this house would send THIS member on, off its own state.
+ *
+ * MEASURED, before this existed. `summonsPool` filters the eight hand-authored
+ * `SUMMONS_ENTRIES` on their ordinal windows alone, and the windows stop: every
+ * rung above 33 had nothing, at any rank, and the pool at the bottom rung of a
+ * house was identical to the pool at its top. So a house stopped sending for
+ * somebody at exactly the rung that made them worth sending.
+ *
+ * Nothing new is invented to fix it. `whatAHouseHasOnItsBoard` pitches the
+ * house's own reasons at whatever rung the reader stands on, which is what
+ * makes it impossible to run out of, and `reasonsOpenTo` gates each reason on
+ * what is true of the house today. It was wired to the board and to nothing
+ * else, so the house could be browsed and could not send for anybody.
+ *
+ * The board and the sending are therefore the same rows read twice - once as
+ * paper somebody walks up to, once as somebody arriving at your door - and the
+ * only difference between them is the origin and who is speaking.
+ */
+export function whatAHouseWouldSendYouOn(input: {
+    ordinal: number;
+    membership: Membership | null;
+    house: HouseAsItStands;
+    /** The highest rung the house has anybody standing on. */
+    reachOfTheHouse?: number;
+    /**
+     * The highest rung anybody OTHER than this person stands on, where the
+     * caller knows. What it buys is the house's own wall rung, which is where
+     * the juniors' work is pitched - and a junior's job is a thing a house puts
+     * to a senior, as somebody to send WITH them. See
+     * `who-a-senior-is-asked-to-take-out.ts`.
+     */
+    reachOfTheRest?: number;
+    /** Where each reason would send them, when the world knows. */
+    placeFor?: (reason: SendingReason) => string | null;
+    /** Who put it, where a person did. Decides the posture and nothing else. */
+    givenBy?: WhoIsSpeaking | null;
+}): DutyCandidate[] {
+    if (!input.membership) return [];
+    const out: DutyCandidate[] = [];
+    for (const entry of whatAHouseHasOnItsBoard({
+        house: input.house,
+        ordinal: input.ordinal,
+        ...(input.reachOfTheHouse === undefined ? {} : { reachOfTheHouse: input.reachOfTheHouse }),
+        ...(input.reachOfTheRest === undefined ? {} : { reachOfTheRest: input.reachOfTheRest }),
+        ...(input.placeFor === undefined ? {} : { placeFor: input.placeFor })
+    })) {
+        const terms = dutyTermsFor(
+            entry, input.ordinal, input.membership, 'summons', input.givenBy
+        );
+        // A sending pitched where the person sent cannot survive it is not put
+        // to them, which is the gate every other pool goes through.
+        //
+        // WORK UNDER THEM IS KEPT, AND IS NOT THE SAME ASK. A house does not
+        // send an elder to do a disciple's errand; it asks them to go out with
+        // the disciples whose errand it is. Whether there ARE any is a fact
+        // about the roll and the caller holds the roll, so the caller drops the
+        // row where the house has nobody to send.
+        if (!summonable(terms.regard.band) && !wellBeneathYou(terms.regard.band)) continue;
+        out.push({ entry, terms, weight: entry.weight });
+    }
+    out.sort((a, b) => (a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0));
+    return out;
 }
 
 /**

@@ -126,6 +126,12 @@ export function askAround(input: AskAroundInput): AskedAround {
             id: person.id,
             name: person.name,
             realmOrdinal: person.realmOrdinal,
+            // The finer of the two distance bands. Without it everybody in this
+            // square reads as "somewhere in this province", and the thing that
+            // happened in this street is worth the same as the thing that
+            // happened four days' walk away - which is most of what a market
+            // ask is for.
+            locationId: here?.id ?? null,
             regionId: region,
             factionId: person.sectId
         };

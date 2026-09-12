@@ -9,7 +9,7 @@
 
 import type { Bearing, Region, RegionBranch } from './region-schema.js';
 import { REGIONS, getRegionForFaction } from './the-map.js';
-import { HOME_REGION_ID } from './region-ids.js';
+import { ADJACENT_REGION_ID, HOME_REGION_ID } from './region-ids.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE MAP BY BEARING
@@ -69,14 +69,19 @@ export function bearingOfFaction(factionId: string): Bearing | undefined {
  * Two of the three are in the centre and one is in the west, and that is the
  * arrangement rather than an untidiness: the Earth Vein Tower administers the
  * arterial system the eleven Jade Gorge veins branch from, the Pavilion holds
- * the gorge outright, and the Long Cut holds driven ground of which the
+ * the gorge outright, and the Myriad Course Hall holds driven ground of which the
  * Silent Cliffs is one province and not the largest. Nothing seats an apex in the
  * north or the east, and both absences are load-bearing - the Yellow Plain is
  * the province where nobody holds land, and the White Stair is administered
  * from over a pass by a body seated somewhere else.
  *
- * `seatedIn` is null for a body that holds provinces rather than a seat a
- * province contains, which is two of the three.
+ * `seatedIn` was null for two of the three while those two were powers with no
+ * roll. They are houses now, and a house stands somewhere: all three seats are
+ * in a province's seating list. What still separates them is that only one of
+ * the three can be NAMED by somebody who has not been told - see
+ * `startingAwareness` on each apex row - so "a seat anybody can walk up to" is
+ * a claim about awareness rather than about geography, and it is still true of
+ * exactly one of them.
  */
 export function apexSeats(): {
     apexId: string;
@@ -90,8 +95,8 @@ export function apexSeats(): {
             apexId: 'apex-earth-vein-tower',
             name: 'The Earth Vein Tower',
             bearing: 'centre',
-            seatedIn: null,
-            why: 'It holds the four arterial veins the eleven surveyed ones branch from, and the datum every survey in the province is measured against. Its seat is a vault under the centre and it appears in no province\'s seating list, because a province seats houses and the Survey is what the houses hold from.'
+            seatedIn: HOME_REGION_ID,
+            why: 'It holds the four arterial veins the eleven surveyed ones branch from, and the datum every survey in the province is measured against. Its seat is a vault under the centre, and it is in the Jade Gorge seating list because a house with a roll stands somewhere - which does not make it findable, since the province holds from it without being able to say so.'
         },
         {
             apexId: 'apex-azure-cloud',
@@ -101,11 +106,11 @@ export function apexSeats(): {
             why: 'The only apex that is also a sect anybody can walk up to, holding the gorge vein at Green Water City outright and on no grant from anyone. It is in the Jade Gorge seating list because it is genuinely a house in the province as well as a power above it.'
         },
         {
-            apexId: 'apex-long-cut',
-            name: 'The Long Cut',
+            apexId: 'apex-myriad-course-hall',
+            name: 'The Myriad Course Hall',
             bearing: 'west',
-            seatedIn: null,
-            why: 'It administers driven ground face by face, across five provinces of which the Silent Cliffs is the nearest and the smallest. It has no client sects, no leases and no vassals, so there is nothing to seat: what it holds is a schedule, and the schedule is worked from a seat built around something that cannot be moved.'
+            seatedIn: ADJACENT_REGION_ID,
+            why: 'It administers driven ground face by face, across five provinces of which the Silent Cliffs is the nearest and the smallest. It has no client sects, no leases and no vassals, so what is seated in the Silent Cliffs is the Hall itself: a schedule, a roll of everybody working a face, and a seat built around something that cannot be moved.'
         }
     ];
 }

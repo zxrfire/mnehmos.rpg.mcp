@@ -182,13 +182,13 @@ describe('which house stands highest', () => {
     /**
      * AND NEVER A RAW ID. The three orderings mix sects with apex institutions
      * and a court, and `getSect` knows only the first - so falling back to the
-     * id put `apex-long-cut` in front of a player.
+     * id put `apex-myriad-course-hall` in front of a player.
      */
     it('names every body in the ranking the way the world names it', () => {
         const said = noHouseStandsHighest(nameOfAnyBody).lines.join(' ');
         expect(said).not.toMatch(/\bapex-[a-z-]+\b/);
         expect(said).not.toMatch(/\bsect-[a-z-]+\b/);
-        expect(said).toContain('The Long Cut');
+        expect(said).toContain('The Myriad Course Hall');
         expect(said).toContain('The Earth Vein Tower');
     });
 });

@@ -2054,7 +2054,7 @@ function curriculumLine(d: SectDossier): string | null {
             // An apex with no teach list still ranks its people, and how it does
             // that IS the introduction to what kind of institution it is. Four
             // titles covering every practitioner in five provinces says more
-            // about the Long Cut than any figure on the sheet.
+            // about the Myriad Course Hall than any figure on the sheet.
             const ladder = d.titles.length
                 ? `${count(d.titles.length)} titles cover everybody in it - ${series(d.titles)} - and `
                 : '';
@@ -2219,7 +2219,13 @@ function answeringLine(d: SectDossier): string | null {
     }
 
     // how it can be paid
-    if (a && d.capability && d.wayIn === null) {
+    //
+    // THE QUESTION IS ABOUT HAVING NO DOOR, NOT ABOUT BEING AN APEX. It used to
+    // require an apex record, which was true of the doorless bodies at the time
+    // and is not now: the apexes have rolls and an intake, and what admits
+    // nobody is a POSTING - people are appointed to one, so there is no
+    // application to make. Same clause, asked of whoever actually has no door.
+    if (d.capability && d.wayIn === null) {
         said.push(sentence(
             'Nobody joins it, so the only thing worth knowing about dealing with it is what it counts: '
             + spliceable(upTo(d.capability.unitOfValue, 230))
@@ -2930,10 +2936,10 @@ function buildDossiers(
         };
     });
 
-    // The Earth Vein Tower and the Long Cut hold no sect row because they are not sects.
-    // Synthesising an entry for them is not padding: they are the first and second
-    // factions on this list, and a register whose top two entries are missing
-    // describes a different world.
+    // All three apexes now have a sect row, so this branch produces nothing
+    // today and is not dead: an apex is not required to have one, and a
+    // register whose top entries are missing describes a different world. It
+    // stays as the fallback for an apex that arrives without a house.
     const covered = new Set(fromSects.map(d => d.id));
     const apexOnly: SectDossier[] = APEX_INSTITUTIONS
         .filter(a => !covered.has(a.id) && !(a.factionId && covered.has(a.factionId)))
@@ -3056,7 +3062,11 @@ function buildDossiers(
                 })),
             partingGift: null,
             artifacts: [] as RegisterArtifact[],
-            ambition: buildAmbition(a.id),
+            // THE SAME JOIN `capability` MAKES TWO FIELDS UP. An apex is filed
+            // under its own id and its ambition is authored on the house row,
+            // so reading only `a.id` drops it - which is invisible, because the
+            // synopsis prints `wants` from elsewhere and only the panel is gone.
+            ambition: buildAmbition(a.id) ?? (a.factionId ? buildAmbition(a.factionId) : null),
             history: buildHistory(a.id),
             demonic: buildDemonic(a.id),
             posting: buildPosting(getParentage(a.id)?.posting),

@@ -1,5 +1,24 @@
 /**
- * The bill nailed to a wall, and which houses are reduced to nailing one up.
+ * What a house nails to a wall in a town, and which houses nail up which kind.
+ *
+ * TWO CHANNELS IN ONE, AND RECRUITMENT IS THE SMALLER OF THEM. A bill for
+ * disciples is posted only by the houses at the bottom of the field, and being
+ * on a wall for that reason is itself the tell - `housesThatHaveToAdvertise`
+ * derives it and `WHAT_THE_PAPER_GIVES_AWAY` says what it gives away.
+ *
+ * Everything else a house posts runs on the opposite rule: ANY house publishes
+ * when it wants something from people who are not its own, and an apex that
+ * would never hear an application still wants bone at mortal grade and still
+ * answers for a road. That is the fix for the measured defect below and it is
+ * the only honest answer to a rogue cultivator having nothing to do.
+ *
+ * MEASURED: one channel, one message. Before `noticesOnTheWall`, the whole of
+ * what any house could ever publish outward was an intake, so somebody with no
+ * house standing in a market town read that three failing houses would hear
+ * them and learned nothing else about a world of thirty-six. The inner duty
+ * board stays shut - that is a question about who may take a job. The wall
+ * outside is a question about what is there to know, and the two are not the
+ * same question.
  */
 
 import { forStream } from '../cultivation/rng.js';
@@ -170,7 +189,7 @@ export const THE_SAME_TELL_AGAIN: Record<WhyItIsUpThere, string> = {
  * Whose word reaches this ground.
  */
 export function reachesThisGround(
-    house: DoorInTheField,
+    house: { provinceId: string | null },
     placeProvinceId: string | null
 ): boolean {
     if (house.provinceId === null) return true;
@@ -283,5 +302,207 @@ export function whatABillGrants(bill: RecruitingBill): {
         statement:
             `${bill.houseName} takes disciples - ${bill.takesFrom} - and was recruiting at `
             + `${bill.placeName}.`
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// EVERYTHING ELSE A HOUSE PUTS ON A WALL
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What a house is asking a stranger for.
+ *
+ * Each shape carries FACTS and no wording. The wall writes the paper, because
+ * the paper is engine-authored and a caller that composed its own sentence
+ * would be a second voice for one channel.
+ */
+export type TheAsk =
+    /**
+     * One of its own, alive on the plate and not answering. Gated on the house
+     * having plates at all - see `a-house-knows-its-own-by-a-plate-and-a-token.ts`,
+     * where a house with nobody at Foundation is never told anything.
+     */
+    | { kind: 'missing'; who: string; unseenForDays: number }
+    /** Work it would rather hire than send its own on. */
+    | { kind: 'work'; what: string; days: number; hands: number }
+    /** Ground it answers for, and what is happening on it. */
+    | { kind: 'warning'; what: string };
+
+export interface HouseWithSomethingToSay {
+    id: string;
+    name: string;
+    provinceId: string | null;
+    /** The same gate the intake uses. A body that cannot afford an address posts nothing. */
+    postsInPublic: boolean;
+    asks: readonly TheAsk[];
+}
+
+export type NoticeKind = 'intake' | TheAsk['kind'];
+
+export interface Notice {
+    kind: NoticeKind;
+    houseId: string;
+    houseName: string;
+    placeName: string;
+    /** What the paper says. Engine-authored fact, not narration. */
+    saying: string;
+    /**
+     * What reading it does NOT buy, which is the half a blank wall never said.
+     */
+    andWhatItIsNot: string;
+    /**
+     * The absolute day the paper names, or null where it names none.
+     *
+     * A DATE THE WORLD STATES DOES NOT MOVE BECAUSE SOMEBODY LOOKED AT IT. The
+     * intake learned this the expensive way - see the comment in
+     * `billsOnTheWall` - and the cheapest way for the rest to keep it is to
+     * state no date unless the paper genuinely has one.
+     */
+    onDay: number | null;
+    /** The intake behind this notice, where it is one. */
+    bill: RecruitingBill | null;
+}
+
+/**
+ * What taking one of these does not get you, per kind.
+ *
+ * The wall's half of the rule the duty board broke: a stranger may read
+ * everything here, and reading it does not put them on anybody's roll. Saying
+ * so is content - it is the difference between a house that will not have you
+ * and a house that has nothing.
+ */
+export const WHAT_A_NOTICE_DOES_NOT_BUY: Record<TheAsk['kind'], string> = {
+    missing:
+        'Bringing them back is paid and it is not a way in. The house is asking the province '
+        + 'a question it cannot answer from inside its own walls.',
+    work:
+        'It is hired work and not a place on the roll. Nobody who takes it is of the house '
+        + 'afterwards, and the board inside the compound is still shut to them.',
+    warning:
+        'It asks nothing of anybody. A house that holds ground says what is happening on it, '
+        + 'and what somebody does about that is their own business.'
+};
+
+/** How the paper words one ask. */
+function whatThePaperSays(house: HouseWithSomethingToSay, ask: TheAsk): string {
+    switch (ask.kind) {
+        case 'missing':
+            return `${house.name} is asking after ${ask.who}, of their own, not seen for `
+                + `${ask.unseenForDays} days. The plate cut for them is whole.`;
+        case 'work':
+            return `${house.name} is paying for hands and is not asking whose disciple you are. `
+                + `${ask.what} About ${ask.days} days, and it wants ${ask.hands} of them.`;
+        case 'warning':
+            return `${house.name} answers for ground in this province and has put up a warning. `
+                + ask.what;
+    }
+}
+
+/**
+ * Everything nailed up here today, of every kind.
+ *
+ * The intakes are `billsOnTheWall` unchanged, drawn on their own stream, so a
+ * run that reads a wall gets the same houses it always did. The rest draw on a
+ * stream of their own, which is what makes this file's arrival invisible to any
+ * seeded run that never asks for it.
+ */
+export function noticesOnTheWall(input: WallInput & {
+    speaking: readonly HouseWithSomethingToSay[];
+}): Notice[] {
+    const slots = BILLS_A_WALL_CARRIES[input.ground];
+    if (slots <= 0) return [];
+
+    const out: Notice[] = billsOnTheWall(input).map(bill => ({
+        kind: 'intake' as const,
+        houseId: bill.houseId,
+        houseName: bill.houseName,
+        placeName: bill.placeName,
+        saying: bill.saying,
+        andWhatItIsNot: WHAT_THE_PAPER_GIVES_AWAY[bill.why],
+        onDay: bill.opensOnDay,
+        bill
+    }));
+
+    // One paper per ask, so a house with two things to say takes two nails and
+    // competes with itself for them like anybody else.
+    const pool = input.speaking
+        .filter(house => house.postsInPublic && reachesThisGround(house, input.placeProvinceId))
+        .flatMap(house => house.asks.map(ask => ({ house, ask })))
+        .sort((a, b) => a.house.id.localeCompare(b.house.id)
+            || a.ask.kind.localeCompare(b.ask.kind));
+
+    const window = Math.floor(Math.max(0, input.onDay) / A_BILL_STAYS_UP_FOR_DAYS);
+    const rng = forStream(input.seed, 'wall_notices', input.placeName, window);
+
+    const drawn: { house: HouseWithSomethingToSay; ask: TheAsk }[] = [];
+    while (pool.length > 0) drawn.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]!);
+
+    // ONE OF EACH KIND BEFORE A SECOND OF ANY, which is the same rule
+    // `THE_SAME_TELL_AGAIN` keeps one layer up: a wall carrying three houses
+    // all after beast bone tells a reader one thing three times. Thirty-six
+    // houses want materials and nineteen hold ground, so a flat draw fills a
+    // city wall with the commonest ask and the channel stops teaching
+    // anything. The order inside each kind is still the seeded draw.
+    const queues = new Map<NoticeKind, typeof drawn>();
+    for (const row of drawn) {
+        const held = queues.get(row.ask.kind);
+        if (held) held.push(row);
+        else queues.set(row.ask.kind, [row]);
+    }
+    const order: typeof drawn = [];
+    while (order.length < drawn.length) {
+        for (const queue of queues.values()) {
+            const next = queue.shift();
+            if (next) order.push(next);
+        }
+    }
+
+    for (const { house, ask } of order.slice(0, slots)) {
+        out.push({
+            kind: ask.kind,
+            houseId: house.id,
+            houseName: house.name,
+            placeName: input.placeName,
+            saying: whatThePaperSays(house, ask),
+            andWhatItIsNot: WHAT_A_NOTICE_DOES_NOT_BUY[ask.kind],
+            // NO DATE. Not an omission: none of these three is an appointment.
+            // An ask that grows one states it from the fact that produced it,
+            // never from the day it was read.
+            onDay: null,
+            bill: null
+        });
+    }
+
+    return out;
+}
+
+/**
+ * The knowledge a notice grants, shaped for `KnowledgeGate.learnIfNew`.
+ *
+ * The same grant a bill makes, for the same reason: a house put its own name on
+ * a public wall, which is a fact about the house and a name the reader now
+ * holds from a source they can point at. An intake keeps `whatABillGrants`,
+ * whose statement says what the house TAKES; nothing else on the wall does.
+ */
+export function whatANoticeGrants(notice: Notice): {
+    kind: 'sect';
+    id: string;
+    name: string;
+    sourceKind: 'read';
+    sourceNote: string;
+    stage: 'placed';
+    statement: string;
+} {
+    if (notice.bill) return whatABillGrants(notice.bill);
+    return {
+        kind: 'sect',
+        id: notice.houseId,
+        name: notice.houseName,
+        sourceKind: 'read',
+        sourceNote:
+            `A notice posted at ${notice.placeName}. The house put it there itself, which is a `
+            + 'fact about the house.',
+        stage: 'placed',
+        statement: notice.saying
     };
 }

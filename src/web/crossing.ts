@@ -49,8 +49,9 @@ import {
 } from '../server/consolidated/cultivation-support.js';
 import { theRollLands } from '../server/consolidated/forcing-an-attempt-to-land.js';
 import { carriedAcross } from '../storage/repos/cultivator.repo.js';
+import { aCrossingEntersTheWorld } from '../engine/world/a-crossing-enters-the-world-as-news.js';
 import { tollLine } from './apply.js';
-import { factsForBreakthrough } from './facts.js';
+import { factsForBreakthrough, placeName } from './facts.js';
 import { tollCalls } from './tool-result-prose.js';
 import { DELIBERATE_PREPARATION } from './turn-constants.js';
 import { type Execution, GameError, type ToolCallRecord } from './turn-wire-shapes.js';
@@ -278,6 +279,33 @@ export const crossingVerb = {
             return updated;
         })();
 
+        // ── AND THE WORLD HEARS ABOUT IT ────────────────────────────────
+        //
+        // `aDeedEntersTheWorld` was reached from fights and from sites and never
+        // from here, so the largest thing that happens to a person in this genre
+        // appended nothing to `state.history.facts` - the one table
+        // `circulating`, `retell` and `buildPlayerDigest` read. A player crossed
+        // a realm and nobody ever heard.
+        //
+        // How far it goes is `a-crossing-enters-the-world-as-news.ts`'s question
+        // and it answers null for a layer, which is most rungs. Guarded on the
+        // world being loaded the way every other played write in this package
+        // is: a crossing struck through the REST endpoint runs before any world
+        // load and files nothing, which is a gap in that endpoint rather than
+        // here.
+        const filed = this.atHand && after.realmOrdinal > cultivator.realmOrdinal
+            ? aCrossingEntersTheWorld(this.atHand, {
+                who: { id: cultivator.id, name: cultivator.name, role: 'crossed' },
+                fromOrdinal: cultivator.realmOrdinal,
+                toOrdinal: after.realmOrdinal,
+                day: Math.floor(this.atHand.currentDay),
+                locationId: this.worldPlaceOf(cultivator),
+                place: placeName(cultivator),
+                factionIds: cultivator.sectId ? [cultivator.sectId] : []
+            })
+            : null;
+        if (filed) this.theWorldMoved();
+
         const calls: ToolCallRecord[] = [{
             name: 'engine.attemptBreakthrough',
             action: 'breakthrough',
@@ -349,6 +377,19 @@ export const crossingVerb = {
                           + 'channel - open.'
                         : 'The crossing was survived and not completed. The Lid does not open '
                           + 'twice for the same name, and rank stops moving here.'),
+                ok: true
+            });
+        }
+        if (filed) {
+            calls.push({
+                name: 'world.aCrossingEntersTheWorld',
+                action: 'breakthrough',
+                summary:
+                    `${filed.fact.id} (realm_crossing, ${filed.weight}, scale `
+                    + `${filed.fact.scale}, magnitude ${filed.fact.magnitude.toFixed(2)}, `
+                    + `${filed.fact.visibility}) written to the world's history on day `
+                    + `${filed.fact.day}. ${filed.fact.witnessIds.length} witness id(s). The `
+                    + 'crossing is now repeatable as news, and how far it carries is the rung.',
                 ok: true
             });
         }

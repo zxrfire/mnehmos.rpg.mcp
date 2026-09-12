@@ -144,7 +144,7 @@ describe('the ceiling on his behaviour', () => {
     it('leaves the apex institutions alone for no reason at all', () => {
         const r = getWanderer(LU_SHENG)!.restraint;
         expect(r.noMotiveNote).toMatch(/no reason|nothing against|boring|not caution/i);
-        expect(r.willNotDo.join(' ')).toMatch(/Earth Vein Tower|Long Cut/);
+        expect(r.willNotDo.join(' ')).toMatch(/Earth Vein Tower|Myriad Course Hall/);
     });
 
     it('keeps the occasion consistent with the Pavilion holding three', () => {

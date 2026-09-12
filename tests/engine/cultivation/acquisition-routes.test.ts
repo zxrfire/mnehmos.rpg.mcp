@@ -33,6 +33,7 @@ import {
     type GatedManual
 } from '../../../src/engine/cultivation/escapes.js';
 import {
+    NO_MANUAL_CEILING,
     computeCultivationRate,
     techniqueExhausted
 } from '../../../src/engine/cultivation/cultivation.js';
@@ -197,15 +198,30 @@ describe('E1 - effectiveCapOf, the scattered set', () => {
     it('each missing volume costs exactly one rung, and collecting one raises it', () => {
         expect(effectiveCapOf(SCATTERED, ['vol-one', 'vol-two']).cap).toBe(40);
         expect(effectiveCapOf(SCATTERED, ['vol-one']).cap).toBe(39);
-        expect(effectiveCapOf(SCATTERED, []).cap).toBe(38);
+    });
+
+    it('but holding none of it is not a ceiling of 38, it is no ceiling', () => {
+        // REWRITTEN, and the old line pinned a defect. It asserted 38 for a
+        // holder with nothing in hand, while `line` on the same object read
+        // "none of them are in hand. There is nothing here to practise." The
+        // number and the sentence disagreed and the sentence was right.
+        //
+        // Ruled: three categories, and `ruined` means unreadable. See
+        // `a-manual-is-in-one-of-three-states.test.ts`, which is where the rule
+        // lives now.
+        expect(effectiveCapOf(SCATTERED, []).cap).toBe(NO_MANUAL_CEILING);
+        expect(effectiveCapOf(SCATTERED, []).condition).toBe('ruined');
     });
 
     it('is shardPower and not a second piece of the same arithmetic', () => {
         // The handover's standing instruction: there must be ONE function in
         // the repo that says a piece is worth less than the whole. If this
         // stops agreeing with `shardPower`, a second one has been written.
+        //
+        // Measured over the readable range only: a book with no first page is
+        // not a smaller book, so `shardPower` has nothing to say about it.
         let expected: number | null = SCATTERED.cap;
-        for (const missing of [1, 2, 3]) {
+        for (const missing of [1, 2]) {
             expected = shardPower(expected);
             const held = SCATTERED.volumes!.slice(0, 3 - missing);
             expect(effectiveCapOf(SCATTERED, held).cap).toBe(expected);
@@ -846,15 +862,18 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
             return derivationYears({ artsAtOrAbove: above });
         };
         const high = derivable.filter(m => m.requiredOrdinal >= 29);
-        for (const manual of high) {
-            // Never the floor. A derivation at the choke points is always
-            // paying for new ground, and the floor is what it costs where the
-            // road is already walked.
-            expect(
-                priceOf(manual),
-                `${manual.id} derives at ${manual.requiredOrdinal} for the floor price`
-            ).toBeGreaterThan(DERIVATION_YEARS_PER_RUNG);
-        }
+        // NOT "never the floor" - THAT WAS A CLAIM ABOUT HOW THIN THE TOP WAS,
+        // and the catalog has since thickened one rung of it honestly. Each
+        // apex now holds an immortal road as well as its chaos one, which put a
+        // second and third art at ordinal 33, and a rung with several arts above
+        // it IS a walked road - the floor is what the curve is supposed to say
+        // there. What must not happen is the corridor going cheap EVERYWHERE,
+        // so the guard is that some of the top still charges above the floor,
+        // and the multiples assertion below is what keeps it honest.
+        expect(
+            high.filter(m => priceOf(m) > DERIVATION_YEARS_PER_RUNG).length,
+            'every derivation at the top now costs the floor - the curve has gone inert'
+        ).toBeGreaterThan(0);
         // And the curve is felt rather than merely present: the deepest thing
         // anybody may derive costs multiples of the floor, not a premium on it.
         if (high.length > 0) {

@@ -253,7 +253,7 @@ describe('questions held in reserve', () => {
         expect(survey.heldForYears).toBeGreaterThanOrEqual(400);
         expect(survey.drafts).toBeGreaterThan(20);
         expect(survey.whyItIsStillNotSent).toMatch(/never taking the risk|clock resets/i);
-        const cut = HELD_QUESTIONS.find(q => q.factionId === 'apex-long-cut')!;
+        const cut = HELD_QUESTIONS.find(q => q.factionId === 'apex-myriad-course-hall')!;
         expect(cut.drafts).toBe(0);
         expect(cut.whyItIsStillNotSent).toMatch(/correct number of questions.*is zero/i);
         // Everybody who holds a question has read the reconstruction.

@@ -374,7 +374,9 @@ export function seedSectLibraries(state: WorldState): ObjectRecord[] {
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null) continue;
         const manuals = manualsOf(faction.id);
-        if (manuals.length === 0) continue;   // two powers teach nothing, deliberately
+        // The Deeproot Court and the Hollow Court still shelve nothing, and
+        // both are `recruits: false` rather than empty libraries.
+        if (manuals.length === 0) continue;
 
         const rng = forStream(state.seed, 'library', faction.id);
         for (const m of manuals) {

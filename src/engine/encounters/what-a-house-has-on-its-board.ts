@@ -1,12 +1,8 @@
 /**
  * The board is what the house needs doing, not a list somebody wrote out.
  *
- * The design owner: *"missions, they need to rank up to inner by completing
- * missions that gives rewards. autogenerate them."*
- *
  * MEASURED FIRST, through the board's own API. `commissionBoard` reads the
- * hand-authored `COMMISSION_ENTRIES` and filters them by ordinal window, and
- * what that leaves a player is:
+ * hand-authored `COMMISSION_ENTRIES` and filters them by ordinal window:
  *
  *     ordinal  0  Qi Condensation            1 offer
  *     ordinal 12  Qi Condensation            3 offers
@@ -15,26 +11,36 @@
  *     ordinal 17  Core Formation             NOTHING
  *     ... and nothing at every rung above it, to Immortal.
  *
- * So two thirds of the ladder has no work on it at all, and the bottom rung -
- * where a new player stands - has exactly one thing to do, worth 10
- * contribution against the 100 that buys the first promotion. The loop the
- * design owner asked for cannot turn.
+ * Two thirds of the ladder with nothing on it, against a first promotion that
+ * costs 100 contribution.
  *
- * AND THE GENERATOR ALREADY EXISTED. A house in this world already decides to
- * put people on the road: `reasonsOpenTo` gives the reasons THAT house has
- * right now, each gated on a predicate about its actual state - it holds
- * ground, it has a rival, somebody found something, it has a subsidiary that
- * owes it. `postingFor` pitches one of those at a rung. That is a mission. All
- * that was missing was offering one to the player instead of to an NPC.
- *
- * Which is why nothing here invents content. A posted duty is the house's own
- * sending with somebody else's name on it, and a house with no rival posts no
- * work against a rival.
+ * AND THE GENERATOR ALREADY EXISTED. `reasonsOpenTo` gives the reasons THAT
+ * house has right now, each gated on a predicate about its actual state, and
+ * `postingFor` pitches one at a rung. All that was missing was offering one to
+ * the player instead of to an NPC. So nothing here invents content: a house
+ * with no rival posts no work against a rival.
  *
  * ONE PRICING RULE. These go back through `dutyTermsFor` exactly like a
- * catalogue row - contribution, stones, term, refusal and cohort all come out
- * of the same arithmetic. A second pricing path here would be a second opinion
- * about what work is worth.
+ * catalogue row. A second pricing path here would be a second opinion about
+ * what work is worth.
+ *
+ * ── AND THE WALL HELD ONE PITCH, WHICH WAS THE READER'S OWN ──────────────
+ *
+ * Measured again after the delivery split landed, at ordinal 40 in a house
+ * whose strongest NPC stands at 28: five postings, all pitched at 40, all
+ * routed to `word_of_mouth` by {@link theTopOfTheWall}'s boundary, and so
+ * FIVE REFUSALS AND NO OFFERS. The wall the disciples were reading was not in
+ * the list at all, because the list was generated at the reader.
+ *
+ * The design owner: the board is for disciples, elders can read it, and they
+ * could take from it - met with an eyebrow. Which is the standing rule that
+ * NOT HAVING THE STANDING TO DO SOMETHING IS NOT THE SAME AS SEEING NOTHING,
+ * arriving one rung further up than it was last applied.
+ *
+ * So where the caller knows what the REST of the house can reach, the wall
+ * carries its own top rung as well as the reader's. Whether that is takeable
+ * is the caller's question and `takeableOffAWall` answers it; what is decided
+ * here is only that the notice exists to be read.
  */
 
 import type { EncounterEntry } from '../../data/cultivation/encounters.js';
@@ -48,6 +54,7 @@ import {
     type HouseAsItStands
 } from '../world/who-goes-out-for-a-house-and-what-comes-back.js';
 import { clampOrdinal } from '../cultivation/realms.js';
+import type { RoomPurpose } from '../world/architecture.js';
 
 /**
  * How far above and below its pitch a posting is still worth offering.
@@ -57,6 +64,35 @@ import { clampOrdinal } from '../cultivation/realms.js';
  * either side.
  */
 export const HOW_WIDE_A_NOTICE_READS = 2;
+
+/**
+ * The room a house's work is posted in, and taken in front of somebody in.
+ *
+ * The design owner: *"to take a mission YOU HAVE TO REPORT IT TO SOMEONE, THE
+ * MISSION HALL WHICH THE MISSION ELDER IS RESPONSIBLE FOR."* A constant beside
+ * the board for the same reason `THE_ROOM_COMPLAINTS_GO_TO` sits beside the
+ * reporting module: the room is a fact about what this system is for, and the
+ * architecture table should not have to know which of its rooms is which
+ * system's front door.
+ */
+export const THE_ROOM_WORK_IS_POSTED_IN: RoomPurpose = 'mission_hall';
+
+/**
+ * The highest rung this house still nails up, or null where it nails up
+ * nothing at all.
+ *
+ * `howAnAskReaches` draws the same line from the other side - a posting whose
+ * readable band touches the house's ceiling is that house's top work and is
+ * carried by a person - so the top of the wall is the rung just under it. One
+ * boundary, read twice, rather than a second number that would drift from it.
+ *
+ * Null below that, which is a small house whose every errand is somebody's
+ * word: there is nobody under its top for a notice to be aimed at.
+ */
+export function theTopOfTheWall(reach: number): number | null {
+    const top = Math.floor(reach) - HOW_WIDE_A_NOTICE_READS - 1;
+    return Number.isFinite(top) && top >= 0 ? clampOrdinal(top) : null;
+}
 
 /**
  * What a reason is, as the encounter layer classifies things.
@@ -177,22 +213,68 @@ export function whatAHouseHasOnItsBoard(input: {
      * Omit it for no ceiling, which is what a caller without a world knows.
      */
     reachOfTheHouse?: number;
+    /**
+     * The highest rung the house has anybody OTHER than the reader standing
+     * on. The wall is written for those people, so this is what decides where
+     * its top notice is pitched.
+     *
+     * It is a separate number from `reachOfTheHouse` because that one counts
+     * the reader - deliberately, so an elder's own ask is not clamped ten rungs
+     * beneath them - and a wall written off it would be a wall written for one
+     * person. Omit it and the reader's own pitch is the whole board, which is
+     * what a caller with no roll to read still knows.
+     */
+    reachOfTheRest?: number;
     /** Where each reason would send them, when the world knows. */
     placeFor?: (reason: SendingReason) => string | null;
 }): EncounterEntry[] {
     const reach = input.reachOfTheHouse;
     const pitch = reach === undefined ? input.ordinal : Math.min(input.ordinal, reach);
-    const out: EncounterEntry[] = [];
+
+    // A WALL IS A WALL: anybody standing in front of it reads all of it. The
+    // top notice is added only when the reader stands ABOVE it, because below
+    // that the reader's own pitch already IS the wall and a second row would
+    // be the same job posted twice.
+    const wall = input.reachOfTheRest === undefined
+        ? null
+        : theTopOfTheWall(input.reachOfTheRest);
+    const pitches = wall !== null && wall < pitch ? [pitch, wall] : [pitch];
+
+    // Keyed by id because a reason's own ceiling can clamp two pitches onto one
+    // rung, and the same notice twice is what `whichPostingTheyMeant` reads as
+    // a player who has not said which.
+    const byId = new Map<string, EncounterEntry>();
     for (const reason of reasonsOpenTo(input.house)) {
-        out.push(aPostingAsAnOffer({
-            reason,
-            house: { id: input.house.id, name: input.house.name },
-            pitchOrdinal: pitch,
-            placeName: input.placeFor?.(reason) ?? null
-        }));
+        for (const pitchedAt of pitches) {
+            const offer = aPostingAsAnOffer({
+                reason,
+                house: { id: input.house.id, name: input.house.name },
+                pitchOrdinal: pitchedAt,
+                placeName: input.placeFor?.(reason) ?? null
+            });
+            byId.set(offer.id, offer);
+        }
     }
+    const out = [...byId.values()];
     out.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return out;
+}
+
+/**
+ * The reason a posted row was made from, or null for a catalogue row.
+ *
+ * The id is `posted-<house>-<reason>-<pitch>` and this reads the reason back
+ * out of it, which is how {@link whichPostingTheyMeant} already identifies a
+ * row. What it buys a caller is the reason's own columns - above all `hands`,
+ * the number of people that sending puts on the road, which is a fact about the
+ * errand rather than about whoever is reading it.
+ */
+export function theReasonBehind(entryId: string): SendingReason | null {
+    if (!entryId.startsWith('posted-')) return null;
+    for (const reason of SENDING_REASONS) {
+        if (entryId.includes(reason.id)) return reason;
+    }
+    return null;
 }
 
 /**

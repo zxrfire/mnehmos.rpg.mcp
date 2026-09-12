@@ -34,6 +34,7 @@
  */
 
 import { z } from 'zod';
+import { idsForFaction } from './governance-and-water-rights.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // ATTESTATION
@@ -270,15 +271,15 @@ export const HELD_QUESTIONS: readonly {
             'Because they know exactly what they will get: precisely what they ask for, from somebody who will not look up. The Ward is the best-informed body in the world about how cold its own channel is, and the caution follows from the information rather than from fear.'
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         heldForYears: 0,
         drafts: 0,
         theProblem:
-            'None. The Long Cut has a working channel and holds no question at all, which is a policy and not an oversight.',
+            'None. The Myriad Course Hall has a working channel and holds no question at all, which is a policy and not an oversight.',
         theCurrentWording:
             'There is no wording. The schedule carries the arrivals as dated entries with nothing in the reason column, and the administration has never entered an outgoing one.',
         whyItIsStillNotSent:
-            'Because the Long Cut owns every act by name and a question is an act whose consequences it could not own. It has read page six, it agrees with page six, and it has drawn the conclusion that the other two apexes will not draw: that the correct number of questions to ask something that answers exactly is zero.'
+            'Because the Myriad Course Hall owns every act by name and a question is an act whose consequences it could not own. It has read page six, it agrees with page six, and it has drawn the conclusion that the other two apexes will not draw: that the correct number of questions to ask something that answers exactly is zero.'
     }
 ];
 
@@ -453,8 +454,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         name: 'Set Hand Eleven',
         alsoCalled: 'the First Course, named on the schedule and nowhere else',
         kind: 'immortal_ancestor',
-        factionId: 'apex-long-cut',
-        whatTheyWere: 'A carver who crossed from driven ground, which the Long Cut regards as the harder road and declines to argue about with anybody.',
+        factionId: 'apex-myriad-course-hall',
+        whatTheyWere: 'A carver who crossed from driven ground, which the Myriad Course Hall regards as the harder road and declines to argue about with anybody.',
         yearsAgo: 2600,
         attestation: 'secure',
         attestationNote:
@@ -462,8 +463,8 @@ export const IMMORTAL_ANCESTORS: readonly NamedFigure[] = [
         answers: 'answers',
         juniority: 1,
         manner:
-            'Twenty-six centuries, and answers in the schedule\'s own format: a dated entry, a face, and a completion mark. The Long Cut finds this entirely natural and has never once remarked on the fact that its ancestor files rather than speaks.',
-        note: 'The Long Cut is the only institution in the world whose immortal ancestor is recorded as a completed piece of work rather than as a person, and it does not regard the distinction as meaningful.'
+            'Twenty-six centuries, and answers in the schedule\'s own format: a dated entry, a face, and a completion mark. The Myriad Course Hall finds this entirely natural and has never once remarked on the fact that its ancestor files rather than speaks.',
+        note: 'The Myriad Course Hall is the only institution in the world whose immortal ancestor is recorded as a completed piece of work rather than as a person, and it does not regard the distinction as meaningful.'
     },
     {
         id: 'figure-ru-anjing',
@@ -1212,9 +1213,21 @@ export function getNamedFigure(id: string): NamedFigure | undefined {
     return BY_ID.get(id);
 }
 
-/** Every name a faction holds, across all four kinds. */
+/**
+ * Every name a faction holds, across all four kinds.
+ *
+ * Resolved through `idsForFaction` because a body with a row in
+ * `APEX_INSTITUTIONS` and a row in `SECTS` has two ids and one set of names,
+ * and the names were written against whichever id existed at the time.
+ */
 export function figuresFor(factionId: string): readonly NamedFigure[] {
-    return BY_FACTION.get(factionId) ?? [];
+    const direct = BY_FACTION.get(factionId);
+    if (direct) return direct;
+    for (const alias of idsForFaction(factionId)) {
+        const found = BY_FACTION.get(alias);
+        if (found) return found;
+    }
+    return [];
 }
 
 export function figuresOfKind(kind: FigureKind): readonly NamedFigure[] {

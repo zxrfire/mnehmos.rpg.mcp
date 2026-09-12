@@ -375,6 +375,19 @@ export const HOW_THE_FOLD_PRICES_OUT = howTheFoldPricesOut();
 // ═════════════════════════════════════════════════════════════════════════
 
 /**
+ * The kinds of thing one pack holds, and there is one pack.
+ *
+ * Declared here rather than beside the store because THIS is the exhaustive
+ * reader: the switch below must answer for every kind, so a kind added without
+ * a size fails to compile. The store re-exports it.
+ *
+ * `manual` was the last bespoke holding. A held copy of a book lived in a
+ * per-cultivator flag, so nothing written against held things could see one -
+ * the destroy verb told a player holding a book they were carrying nothing.
+ */
+export type PouchItemKind = 'pill' | 'herb' | 'artifact' | 'manual';
+
+/**
  * WHAT ONE OF A CATALOG THING TAKES UP.
  *
  * `ObjectRecord` carries its own `volume` and `weight`, because a world object
@@ -395,7 +408,7 @@ export const HOW_THE_FOLD_PRICES_OUT = howTheFoldPricesOut();
  * encumbrance figure. Somebody told "it will not fit" and somebody told "you
  * cannot lift it" go and do two different things about it.
  */
-export function whatOneOfTheseTakes(kind: 'pill' | 'herb' | 'artifact'): HowMuchRoomItTakes {
+export function whatOneOfTheseTakes(kind: PouchItemKind): HowMuchRoomItTakes {
     switch (kind) {
         // A pill in a wax case. Small, dense, and the reason a purse of them
         // runs a body out of carrying weight before it runs out of room.
@@ -409,12 +422,17 @@ export function whatOneOfTheseTakes(kind: 'pill' | 'herb' | 'artifact'): HowMuch
         // world object gets, and for the same reason.
         case 'artifact':
             return { volume: WHAT_A_CARRIED_THING_TAKES, weight: WHAT_A_CARRIED_THING_WEIGHS };
+        // A bound volume. Bulkier than a blade for what it weighs, which is
+        // why somebody carrying a shelf of them feels it as room rather than
+        // as load - and why a cultivator reads one and leaves it behind.
+        case 'manual':
+            return { volume: 1.2, weight: 0.5 };
     }
 }
 
 /** What a whole pouch amounts to. Stacks counted, not listed. */
 export function whatAllOfThatTakes(
-    held: readonly { kind: 'pill' | 'herb' | 'artifact'; quantity: number }[]
+    held: readonly { kind: PouchItemKind; quantity: number }[]
 ): HowMuchRoomItTakes {
     let volume = 0;
     let weight = 0;

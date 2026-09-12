@@ -192,7 +192,7 @@ describe('route 1b through the funnel - a partial set is honestly reported', () 
 
     it('holding none of them is a refusal, not a quiet zero', () => {
         const report = assessAcquisition({ manual: scattered, seeker, route: 'volume', heldVolumeIds: [] });
-        expect(report.refusals).toContain('no_volumes_in_hand');
+        expect(report.refusals).toContain('ruined');
         expect(report.usable).toBe(false);
     });
 

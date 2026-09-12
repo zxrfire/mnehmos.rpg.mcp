@@ -160,7 +160,9 @@ export const ReasonNeedSchema = z.enum([
     /** A negative standing edge toward a live house. */
     'a_rival',
     /** Somebody has just found something: a site, a cache, a seat. */
-    'a_find'
+    'a_find',
+    /** It stands over something sealed. `containmentHeldBy`, non-empty. */
+    'a_containment'
 ]);
 export type ReasonNeed = z.infer<typeof ReasonNeedSchema>;
 
@@ -341,6 +343,26 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         factKind: 'opportunity',
         scale: 'regional',
         weight: 5
+    },
+    {
+        id: 'sending-to-dispel-a-leak',
+        name: 'Dispelling a leak',
+        what: 'Something sealed is letting go of what it holds, a little at a '
+            + 'time, and the people posted over it walk it down before it reaches '
+            + 'the perimeter.',
+        needs: 'a_containment',
+        // None. A leak does not read the rung of whoever answers it, and the
+        // bodies posted over one run from a hill village to an apex's chosen.
+        ceilingOrdinal: null,
+        days: 8,
+        hands: 3,
+        atStake: 'the_ground_itself',
+        factKind: 'ruin_sealed',
+        scale: 'local',
+        // The heaviest of any reason here, and it is the only one that is not a
+        // decision: the others are things a house CHOOSES to send people out
+        // for. This is a rota.
+        weight: 40
     },
     {
         id: 'sending-to-a-war',

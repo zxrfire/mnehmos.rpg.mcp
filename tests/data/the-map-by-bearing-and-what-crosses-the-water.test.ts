@@ -119,10 +119,18 @@ describe('the map has a compass on it', () => {
         expect(new Set(seats.map(s => s.bearing)).size).toBeLessThan(seats.length);
         expect(seats.filter(s => s.bearing === 'centre').length).toBe(2);
         expect(seats.filter(s => s.bearing === 'west').length).toBe(1);
-        // Exactly one apex is also a house you could walk up to.
+        // All three apexes now stand in a province's seating list, because all
+        // three are houses with rolls - that was overturned after two of them
+        // spent a long time as powers with nobody in them. What separates them
+        // is not geography any more, it is naming: exactly one can be named by
+        // somebody who has not been told, and the other two are seated in a
+        // province that cannot say whose seat it is.
         const walkUpTo = seats.filter(s => s.seatedIn !== null);
-        expect(walkUpTo.length).toBe(1);
-        expect(walkUpTo[0].apexId).toBe('apex-azure-cloud');
+        expect(walkUpTo.length).toBe(3);
+        const nameable = seats.filter(
+            s => APEX_INSTITUTIONS.find(a => a.id === s.apexId)!.startingAwareness !== 'unaware');
+        expect(nameable.length).toBe(1);
+        expect(nameable[0].apexId).toBe('apex-azure-cloud');
     });
 });
 

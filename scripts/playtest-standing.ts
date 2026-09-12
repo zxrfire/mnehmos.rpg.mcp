@@ -300,7 +300,7 @@ const ASKS: [string, string][] = [
     ['I offer an alliance to the Frostmirror Court', 'the visible half of a conspiracy'],
     ['I demand tribute from the Azure Dew Sect', 'being owed'],
     ['I petition the Third Sill Court for a grant', 'the currency of the whole pyramid'],
-    ['I defect to the Long Cut', 'what two courts have already done'],
+    ['I defect to the Myriad Course Hall', 'what two courts have already done'],
 
     // ── the dead, and the ones above the Lid ─────────────────────────────
     ['I wake our sealed ancestor', 'the seal under your own mountain'],

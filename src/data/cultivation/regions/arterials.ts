@@ -63,7 +63,7 @@ export const ARTERIALS: readonly Arterial[] = [
         administeredByCourtId: 'court-third-sill',
         drawnOnBy: 'The eleven surveyed veins of the Jade Gorge, and through them every granted sect in the province.',
         note:
-            'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Long Cut. The Earth Vein Tower has not stated in any document that its province\'s working arterial is administered by the other apex, the Long Cut has not either, and both are counting on the Jade Gorge never asking whose name is on the countersignature.'
+            'The only arterial anything branches from, and therefore the only one that generates a grant book, an apportionment, a courier and a queue. It is administered by a court that answers to the Myriad Course Hall. The Earth Vein Tower has not stated in any document that its province\'s working arterial is administered by the other apex, the Myriad Course Hall has not either, and both are counting on the Jade Gorge never asking whose name is on the countersignature.'
     },
     {
         id: 'arterial-the-black-ice-vein',

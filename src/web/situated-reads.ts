@@ -41,6 +41,7 @@ import {
     stallPriceStones
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { thereIsACounterAt } from '../engine/world/where-the-measured-span-still-answers.js';
+import { ledgerAbout, type ObligationDb } from '../storage/repos/obligation.repo.js';
 import {
     AMBIENT_QI_RATE_MULTIPLIER,
     type AmbientQi,
@@ -76,6 +77,7 @@ import {
     type ThingThatTeaches,
     groundThatTeachesARoad,
     groundUnderfoot,
+    housesGladToSeeYou,
     howAPlayerStands,
     thingsCarriedThatTeachARoad,
     whatThisGroundTeaches,
@@ -827,7 +829,8 @@ export const situatedReads = {
         const who = howAPlayerStands(
             world,
             underfoot ?? worldLocationFor(world, cultivator.location),
-            cultivator
+            cultivator,
+            this.housesGladToSeeThem(cultivator)
         );
         const all = groundThatTeachesARoad(world, who, underfoot?.id ?? null);
         const mine = this.groundTheyCanPointAt(cultivator);
@@ -920,6 +923,12 @@ export const situatedReads = {
         const pouch = listPouch(this.db, cultivator.id);
         const here = placeName(cultivator);
         const roster = this.present(cultivator);
+        // One board read, split two ways: what is being put to them, and what
+        // is on the same wall and is not.
+        const theWall = sectBoardFor(
+            { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
+            cultivator
+        );
 
         return {
             satiety: cultivator.satiety,
@@ -978,10 +987,10 @@ export const situatedReads = {
             // is a different number at every rung and is the reason the duty
             // line is gated on the count rather than on membership. An empty
             // board offered as an affordance is a refusal with a button on it.
-            dutiesGoing: sectBoardFor(
-                { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
-                cultivator
-            ).offers.length,
+            dutiesGoing: theWall.offers.length,
+            // And what the same wall is asking of somebody else. A gate decides
+            // what may be taken and must not decide what may be read.
+            dutiesNotYours: theWall.refusals.length,
             // The read half only. `readWhatIsOnOfferHere` writes nothing; the
             // granting variant is reached by a player who actually looked.
             peopleHereWithSomethingToSell: new Set(
@@ -1302,6 +1311,23 @@ export const situatedReads = {
         });
     },
 
+    /**
+     * Houses that would be glad to see this cultivator, off the open ledger.
+     *
+     * Read here rather than inside the rule because the ledger is a repository
+     * and the rule is pure. A house that lets outsiders onto its ground on good
+     * relations is asking this question and nothing else answers it.
+     */
+    housesGladToSeeThem(this: GameService, cultivator: Cultivator): string[] {
+        const world = this.atHand;
+        if (!world) return [];
+        return housesGladToSeeYou(
+            ledgerAbout(this.repos.db as unknown as ObligationDb, cultivator.id),
+            cultivator.id,
+            personId => world.npcs.find(n => n.id === personId)?.factionId ?? null
+        );
+    },
+
     groundTheyCanPointAt(this: GameService, cultivator: Cultivator): GroundNearby[] {
         const world = this.atHand;
         if (!world) return [];
@@ -1309,7 +1335,8 @@ export const situatedReads = {
         const who = howAPlayerStands(
             world,
             underfoot ?? worldLocationFor(world, cultivator.location),
-            cultivator
+            cultivator,
+            this.housesGladToSeeThem(cultivator)
         );
         const all = groundThatTeachesARoad(world, who, underfoot?.id ?? null);
         if (all.length === 0) return [];
@@ -1639,7 +1666,7 @@ export const situatedReads = {
         if (!named || named.trim().length < 3) {
             // EVERY KIND OF BODY, because the three orderings mix sects with
             // apex institutions and a court, and `getSect` knows only the
-            // first. Falling back to the id put `apex-long-cut` in front of a
+            // first. Falling back to the id put `apex-myriad-course-hall` in front of a
             // player, which is the raw-id leak the register bans.
             const spread = noHouseStandsHighest(id => this.nameOfAnyBody(id));
             const facts = factsForToolResult('Nobody stands highest.', spread.lines);

@@ -244,7 +244,24 @@ describe('sects are reachable from plain English', () => {
         const result = await game.act('I look for a sect that will take me');
         const shown = result.narration;
 
-        for (const name of heard) expect(shown).toContain(name);
+        // THE RULE IS ONE-WAY, AND IT USED TO LOOK TWO-WAY BY ACCIDENT.
+        //
+        // This asserted that every name the player holds is offered, which held
+        // only while the one channel that could grant a house name was a
+        // recruiting bill - so every known house was, by construction, a house
+        // that would take you. The wall now carries work and warnings from
+        // houses that would never hear an application, and a name held for one
+        // of those is not an offer and must not be printed as one.
+        //
+        // What the test is for is the other direction: nothing is offered that
+        // nobody has named. That is the register staying shut.
+        const held = new Set(heard);
+        expect(heard.some(name => shown.includes(name)), 'not one name the player holds was offered')
+            .toBe(true);
+        for (const sect of SECTS) {
+            if (held.has(sect.name)) continue;
+            expect(shown, `${sect.name} was named and nobody had said it`).not.toContain(sect.name);
+        }
 
         // And the register stays shut: the tool returns every admissible sect
         // in the campaign, and the player sees the ones somebody has named.

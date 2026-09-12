@@ -82,6 +82,13 @@ import {
     type SomebodyHolding,
     type SomebodyStanding
 } from '../engine/world/how-a-cultivator-comes-by-a-road.js';
+import {
+    accessKindOf,
+    feeForSittingOn,
+    type WhatTheyCouldPutUp
+} from '../engine/world/what-a-house-asks-of-somebody-not-of-it.js';
+import { whichWayItPoints } from '../engine/social/grudges.js';
+import type { ObligationRecord } from '../engine/social/grudges.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { getRegion } from '../data/cultivation/regions.js';
 import { getSect } from '../data/cultivation/sects.js';
@@ -274,13 +281,60 @@ export function whatThisGroundWants(
             const rank = rankTitle(ground.ground.heldByFactionId, ground.ground.standingRequired);
             return {
                 shortBy: short,
-                because: `${ground.name} is ${house ?? 'a house'}'s, and you are not `
-                    + `${house ? `one of theirs` : 'of that house'}.`,
+                because: `${ground.name} is ${house ?? 'a house'}'s, and they keep it to their `
+                    + `own. There is no price on it and nobody to put one on it.`,
                 wouldWork: rank
                     ? `${house} would have to take you in, and then you would have to reach `
                         + `${rank}. This is what a house is selling and it is the one asset `
                         + 'it cannot sell you separately.'
                     : `${house ?? 'The house'} would have to take you in first.`
+            };
+        }
+        // ── THE THREE THE HOUSE WOULD OPEN, AND WHAT IT WANTS ────────────
+        //
+        // NOT HAVING THE STANDING TO DO SOMETHING IS NOT THE SAME AS SEEING
+        // NOTHING. Every one of these is a refusal with a price attached, which
+        // is a turn worth playing; the sentence it replaced was "you are not
+        // one of theirs" and it was said 666 times in one 222-square sweep.
+        case 'the_fee': {
+            const house = houseName(ground.ground.heldByFactionId);
+            const fee = feeForSittingOn(ground.ground.fromOrdinal);
+            return {
+                shortBy: short,
+                because: `${house ?? 'The house'} lets outsiders sit on ${ground.name}, and `
+                    + `charges for it. ${fee === null
+                        ? 'Not in stones, at this height - nobody is paid to stand where it '
+                          + 'stands.'
+                        : `The gate asks ${fee} spirit stones for a season and you are not `
+                          + 'carrying it.'}`,
+                wouldWork: fee === null
+                    ? `Come back with something other than money, or reach ${rankName(
+                        ground.ground.fromOrdinal)} inside a house that holds ground like it.`
+                    : `Carry ${fee} stones to the gate. They do not care who you are, which `
+                        + 'is the whole of what you are buying.'
+            };
+        }
+        case 'nothing_to_write_out': {
+            const house = houseName(ground.ground.heldByFactionId);
+            return {
+                shortBy: short,
+                because: `${house ?? 'The house'} lets outsiders sit on ${ground.name} for a `
+                    + `copy of something it has not got. You are carrying nothing it wants, `
+                    + `or nothing you could put on paper.`,
+                wouldWork: 'Bring an art the house does not already hold, and know it well '
+                    + 'enough to write it out. A road on their own shelf is not payment, and '
+                    + 'a method you half know is a thing you know rather than a thing you have.'
+            };
+        }
+        case 'a_stranger_to_them': {
+            const house = houseName(ground.ground.heldByFactionId);
+            return {
+                shortBy: short,
+                because: `${house ?? 'The house'} lets people it is glad to see sit on `
+                    + `${ground.name}. It has never heard of you.`,
+                wouldWork: 'Do something for them, or for one of theirs, and let it be on the '
+                    + 'ledger. Money does not answer this one - that is why it is a different '
+                    + 'gate and not a steeper price.'
             };
         }
         case 'standing': {
@@ -436,6 +490,40 @@ function rankTitle(factionId: string | null, index: number): string | null {
 }
 
 /**
+ * Houses with reason to be glad to see this person.
+ *
+ * The obligation ledger answers it and nothing new stores it. A house is glad
+ * to see somebody one of its people OWES and holds nothing against - both read
+ * through `whichWayItPoints`, which is where the exception that a favour runs
+ * the other way from a debt is written down.
+ *
+ * A grudge anywhere on the roll cancels the whole house: a terrace let out on
+ * good terms is let out by people who talk to each other.
+ */
+export function housesGladToSeeYou(
+    ledger: readonly ObligationRecord[],
+    personId: string,
+    houseOf: (personId: string) => string | null
+): string[] {
+    const owed = new Set<string>();
+    const soured = new Set<string>();
+    for (const record of ledger) {
+        if (record.status !== 'open') continue;
+        const points = whichWayItPoints(record);
+        if (points.sense === 'owes') {
+            if (points.owedId !== personId) continue;
+            const house = houseOf(points.owerId);
+            if (house) owed.add(house);
+        } else {
+            if (points.offenderId !== personId) continue;
+            const house = houseOf(points.aggrievedId);
+            if (house) soured.add(house);
+        }
+    }
+    return [...owed].filter(id => !soured.has(id));
+}
+
+/**
  * How a cultivator standing somewhere reads to the engine's rule.
  *
  * The province is resolved through the WORLD rather than the region gazetteer,
@@ -447,11 +535,25 @@ function rankTitle(factionId: string | null, index: number): string | null {
 export function howAPlayerStands(
     state: WorldState,
     at: LocationRecord | null,
-    cultivator: { realmOrdinal: number; sectId: string | null; sectRank: string | null }
+    cultivator: {
+        realmOrdinal: number; sectId: string | null; sectRank: string | null;
+        spiritStones?: number; knownTechniques?: readonly string[];
+    },
+    /**
+     * Houses this cultivator has reason to be welcome at. The obligation ledger
+     * is the source and it takes a repository, so the caller reads it - the
+     * same posture `theyWant` takes in the request costing.
+     */
+    onGoodTermsWith: readonly string[] = []
 ): SomebodyStanding {
     const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
     return {
         ordinal: cultivator.realmOrdinal,
+        couldPutUp: {
+            spiritStones: cultivator.spiritStones ?? 0,
+            holds: cultivator.knownTechniques ?? [],
+            onGoodTermsWith
+        },
         regionCatalogId: at ? regionCatalogIdOf(state, at.id) : null,
         factionId: cultivator.sectId,
         // A rank INDEX off the house's own ladder, because `standingRequired`
@@ -470,13 +572,18 @@ export function howAPlayerHolds(
     at: LocationRecord | null,
     cultivator: {
         id: string; realmOrdinal: number; sectId: string | null; sectRank: string | null;
-    }
+        spiritStones?: number; knownTechniques?: readonly string[];
+    },
+    onGoodTermsWith: readonly string[] = []
 ): SomebodyHolding {
-    return { ...howAPlayerStands(state, at, cultivator), id: cultivator.id };
+    return {
+        ...howAPlayerStands(state, at, cultivator, onGoodTermsWith),
+        id: cultivator.id
+    };
 }
 
-export { howSomebodyStandsToAGround, groundAtLocation };
+export { howSomebodyStandsToAGround, groundAtLocation, accessKindOf, feeForSittingOn };
 export type {
     SomebodyStanding, SomebodyHolding, HowSomebodyStandsToAGround, ShortOfAGround,
-    GroundAsTheRuleReadsIt
+    GroundAsTheRuleReadsIt, WhatTheyCouldPutUp
 };

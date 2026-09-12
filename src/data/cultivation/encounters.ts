@@ -396,7 +396,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // catalog behind these entries is `beasts.ts`.
     {
         id: 'enc-thin-prefecture-beasts',
-        name: 'What a Poor Prefecture Has Instead of Monsters',
+        name: 'Culling Work in a Thin District',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
         weight: 38,
@@ -411,7 +411,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-culling-notice-mispriced',
-        name: 'A Culling Notice Written From an Old Survey',
+        name: 'A Bounty at the Old Price',
         kind: 'spirit_beast',
         simEventKind: 'npc_event',
         weight: 26,
@@ -426,7 +426,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-beast-hunting-cultivators',
-        name: 'Something Hunting Cultivators Specifically',
+        name: 'The Core-Eater',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
         weight: 30,
@@ -441,7 +441,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-beast-holding-a-vein',
-        name: 'Something Is Already On the Vein',
+        name: 'A Beast Sitting on the Vein',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
         weight: 22,
@@ -471,7 +471,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-beast-that-speaks',
-        name: 'Something That Speaks',
+        name: 'A Beast That Has Learned to Speak',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
         weight: 10,
@@ -486,7 +486,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-beast-contract-offered',
-        name: 'Terms Offered by Something That Is Not a Person',
+        name: 'A Standing Contract With a Beast',
         kind: 'spirit_beast',
         simEventKind: 'npc_event',
         weight: 5,
@@ -501,7 +501,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-old-thing-under-the-compound',
-        name: 'Something Under the Compound',
+        name: 'The Lower Chamber Is Occupied',
         kind: 'spirit_beast',
         simEventKind: 'encounter',
         weight: 8,
@@ -1092,7 +1092,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-attention-from-a-robbed-grave',
-        name: 'Attention From a Robbed Grave',
+        name: 'A Sect Comes for Its Dead',
         kind: 'grave',
         simEventKind: 'encounter',
         weight: 20,
@@ -1127,7 +1127,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-thin-region-ceiling',
-        name: 'A Region With a Ceiling',
+        name: 'Nobody Here Passes Qi Condensation',
         kind: 'misfortune',
         simEventKind: 'resource_depleted',
         weight: 35,
@@ -1172,7 +1172,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-cull-for-qi',
-        name: 'The Arithmetic, Acted On',
+        name: 'A Valley Cleared of Its Cultivators',
         kind: 'misfortune',
         simEventKind: 'encounter',
         weight: 18,
@@ -1193,7 +1193,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     // threat.
     {
         id: 'enc-ledger-audit-notice',
-        name: 'Audit Notice',
+        name: 'An Inherited Debt Called In',
         kind: 'dao_house',
         simEventKind: 'npc_event',
         weight: 40,
@@ -1208,7 +1208,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-oath-witness-required',
-        name: 'Witness Required',
+        name: 'An Oath That Needs a Witness',
         kind: 'dao_house',
         simEventKind: 'npc_event',
         weight: 45,
@@ -1268,7 +1268,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-anchorhold-perimeter-refusal',
-        name: 'Perimeter Refusal',
+        name: 'Turned Back at the Perimeter',
         kind: 'dao_house',
         simEventKind: 'npc_event',
         weight: 30,
@@ -1283,7 +1283,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-span-station-closed',
-        name: 'Station Closed to the Cultivator',
+        name: 'Refused a Place on the Span',
         kind: 'dao_house',
         simEventKind: 'npc_event',
         weight: 28,
@@ -1313,7 +1313,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-house-member-killed',
-        name: 'What Happens Afterwards',
+        name: 'The House Sends Nobody',
         kind: 'dao_house',
         simEventKind: 'npc_event',
         weight: 18,
@@ -1495,7 +1495,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
         // anywhere carried one, so route 3 - what a dead cultivator was practising
         // is still on them - was unreachable.
         id: 'enc-what-they-were-practising',
-        name: 'A Body, and What Was On It',
+        name: 'A Body With the Manual Still On It',
         kind: 'grave',
         simEventKind: 'opportunity',
         weight: 26,
@@ -1738,7 +1738,7 @@ export const ENCOUNTERS: readonly EncounterEntry[] = [
     },
     {
         id: 'enc-one-clause-in-reply',
-        name: 'One Clause in Reply',
+        name: 'An Offering Answered in One Line',
         kind: 'dao_house',
         simEventKind: 'npc_event',
         weight: 24,

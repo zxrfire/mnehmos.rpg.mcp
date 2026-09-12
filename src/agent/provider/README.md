@@ -124,3 +124,25 @@ env vars above.
 - [`../../../AGENTS.md`](../../../AGENTS.md) - the provider-neutrality working agreement
 - [`../../web/README.md`](../../web/README.md) - how the narrator consumes a provider
 - [`../../../context.md`](../../../context.md) - the runtime agent architecture
+
+---
+
+## Where else to look
+
+- [`../runtime/README.md`](../runtime/README.md) - what calls a provider, and the gates in
+  front of it: `preflight.ts` decides whether to spend a call at all, `circuit.ts` decides
+  whether to keep trying.
+- [`../prompt/README.md`](../prompt/README.md) - where the `ChatMessage[]` comes from for a
+  bound character, in a fixed slice order.
+- [`../audit/README.md`](../audit/README.md) - `replay.ts` issues a direct provider call on
+  purpose, bypassing the runtime. If you change a provider's error shape, that is the second
+  caller to check.
+- [`../README.md`](../README.md) - what this subtree is for, and the distinction that catches
+  people: a bound NPC's loop is here, and the PLAYER's loop is in `web/`.
+- [`../../web/README.md`](../../web/README.md) - the heaviest consumer of this directory and
+  the only one that matters to a player: `web/server.ts` builds the provider, `web/narrator.ts`
+  and `web/register-prose.ts` use it.
+- [`../../server/consolidated/README.md`](../../server/consolidated/README.md) - provider
+  configuration and status reach a caller through the tool surface, so a status field added
+  here surfaces there.
+

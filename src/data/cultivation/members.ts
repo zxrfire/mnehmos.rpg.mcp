@@ -845,6 +845,108 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // LOW FALL - NEUTRAL
     // ═══════════════════════════════════════════════════════════════════
 
+    // --- Earth Vein Tower ---------------------------------------------
+    // The house had no roll at all until the ruling that a power with nobody in
+    // it is a number. These five are what it is like inside: a class called
+    // Unplaced that holds almost everybody, correction that runs downward from
+    // people who are weaker than you, and one person under the vault the whole
+    // arrangement is built around never having to spend.
+    {
+        id: 'member-qiao-lanshi',
+        name: 'Qiao Lanshi',
+        factionId: 'sect-earth-vein-tower',
+        rankIndex: 0,
+        rank: 'Unplaced',
+        realmOrdinal: 4,
+        role: 'peer',
+        wants: 'to find out what the building is called',
+        fears: 'being sent back to the village with a sealed letter she is not allowed to read',
+        detail: 'Was walked off a vein by a woman with a survey rod eleven months ago and has not been outside since. Copies figures she does not understand into a fair hand, and is good enough at it that nobody has explained them.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-bian-ruo',
+        name: 'Bian Ruo',
+        factionId: 'sect-earth-vein-tower',
+        rankIndex: 0,
+        rank: 'Unplaced',
+        realmOrdinal: 6,
+        role: 'rival',
+        wants: 'a mark, from anybody, before the year turns',
+        fears: 'thirty years of this',
+        detail: 'Arrived from a sect that had called him a Core Disciple and has been Unplaced for four years, which he mentions.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: {
+            grievance: 'Somebody arrived after him, said nothing about where they came from, and is being given work he asked for.',
+            beatableBecause: 'He argues rank in a house that does not have one below Sill-Sworn, so every complaint he makes is heard as a complaint about the institution rather than about a person. The clerks have started routing his errands through somebody else to avoid the conversation, which is exactly the thing he is complaining about, and he has not noticed that he built it.'
+        },
+        teaching: null
+    },
+    {
+        id: 'member-tang-yuzhi',
+        name: 'Tang Yuzhi',
+        factionId: 'sect-earth-vein-tower',
+        rankIndex: 2,
+        rank: 'Second Mark',
+        realmOrdinal: 7,
+        role: 'master',
+        wants: 'the third arterial walked once more before her eyes go',
+        fears: 'signing a figure she has not personally stood on',
+        detail: 'Sixty years a Second Mark without embarrassment, which is what the rung is for. Gives instruction to people four realms above her and neither party finds it strange.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: {
+            knows: 'How a perimeter is fixed to a datum, and why every figure in the province is ultimately measured against one nobody local can place.',
+            mayNotSay: 'Whose datum it is, on standing instruction, and she will say that there is an instruction rather than pretend there is not.',
+            costsThem: 'A day of the rota each time, walked by somebody else, which she makes up by walking two.'
+        }
+    },
+    {
+        id: 'member-lou-zhensheng',
+        name: 'Lou Zhensheng',
+        factionId: 'sect-earth-vein-tower',
+        rankIndex: 4,
+        rank: 'Sill-Sworn',
+        realmOrdinal: 9,
+        role: 'senior',
+        wants: 'the posting back that he was moved off eleven years ago',
+        fears: 'a renewal season in which somebody asks him to explain a refusal in front of the applicant',
+        detail: 'Carries the grant renewals to houses four hundred years older than he is, hands them over without sitting down, and has never once been asked to wait.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-mu-chengyan',
+        name: 'Mu Chengyan',
+        factionId: 'sect-earth-vein-tower',
+        rankIndex: 6,
+        rank: 'Assessor of the Deep',
+        realmOrdinal: 43,
+        role: 'senior',
+        wants: 'not to be sent anywhere',
+        fears: 'a dispute large enough that attending it in person becomes the cheaper option',
+        detail: 'Has not left the chamber under the datum vault in four hundred years. Reads what the four arterials send up, rules on it, and the rulings cannot be appealed - and every one of them was issued by somebody who could not have enforced it in the room.',
+        // Not produced here and not inherited from a predecessor's stock: she
+        // arrived at the last realm on the road the house holds one copy of,
+        // and the ladder under her stops at thirty-nine.
+        outlier: true,
+        outlierReason: 'arrived',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+
     // --- Stone Marrow Hall ------------------------------------------
     {
         id: 'member-pan-mingyu',
@@ -2483,6 +2585,106 @@ const AUTHORED_MEMBERS: readonly Member[] = [
     // Tool-names and face-numbers, no clan names, and a ceiling that
     // arrives four realms earlier than it does one province over.
     // ═══════════════════════════════════════════════════════════════════
+
+    // --- Myriad Course Hall ------------------------------------------------
+    // Four rungs for five provinces, and standing is what you have finished.
+    // A Hand may be nineteen or four hundred and the schedule does not
+    // distinguish them in writing, which is why this roll reads flat.
+    {
+        id: 'member-course-shu',
+        name: 'Course Shu',
+        factionId: 'sect-myriad-course-hall',
+        rankIndex: 0,
+        rank: 'Hand',
+        realmOrdinal: 2,
+        role: 'peer',
+        wants: 'a face of her own before her hands go',
+        fears: 'the cough starting early, the way her father\'s did',
+        detail: 'Nineteen, four seasons on the schedule, and can already tell by sound which course of a face is about to come away. Sings the count out loud while cutting, which the crew have stopped pretending to mind.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-spoil-yan',
+        name: 'Spoil Yan',
+        factionId: 'sect-myriad-course-hall',
+        rankIndex: 0,
+        rank: 'Hand',
+        realmOrdinal: 4,
+        role: 'rival',
+        wants: 'a face closed without a death on it, which is the only thing here that counts',
+        fears: 'being the death on somebody else\'s',
+        detail: 'Has worked three faces to the last course and lost a man on each of them, and can name all three. Still a Hand after ninety years, which the schedule does not comment on and he does.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: {
+            grievance: 'Somebody on his own crew closed a face clean in eleven years and was entered as a Set Hand in the same week he was passed over for the fourth time.',
+            beatableBecause: 'He works fast at the end of a face because the record is a date, and every one of the three deaths was in the last course. Anybody who has read the schedule can see the pattern; he has read it more often than anybody and has never once looked at it that way.'
+        },
+        teaching: null
+    },
+    {
+        id: 'member-set-hand-que',
+        name: 'Set Hand Que',
+        factionId: 'sect-myriad-course-hall',
+        rankIndex: 1,
+        rank: 'Set Hand',
+        realmOrdinal: 5,
+        role: 'master',
+        wants: 'to be left on the same face until it is finished',
+        fears: 'being made a Face Master, which would mean being told where to cut by a schedule instead of by the stone',
+        detail: 'Closed a face in fourteen years with nobody hurt on it and has the date. Teaches by putting a chisel in somebody\'s hand and saying nothing for an hour.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: true,
+        rivalry: null,
+        teaching: {
+            knows: 'How to read whether a course will hold before it is loaded, which is most of what keeps a crew alive on driven ground.',
+            mayNotSay: 'What is on the schedule beyond the current band, because the bands are issued one at a time and she has not been given the next.',
+            costsThem: 'Hours off her own face, which the schedule does not extend for teaching and never has.'
+        }
+    },
+    {
+        id: 'member-deep-band-tuo',
+        name: 'Deep Band Tuo',
+        factionId: 'sect-myriad-course-hall',
+        rankIndex: 3,
+        rank: 'Course Keeper',
+        realmOrdinal: 8,
+        role: 'senior',
+        wants: 'the Coldwater bands finished in the order they were written',
+        fears: 'an exception, of any kind, for any reason',
+        detail: 'Holds a century of the schedule and writes the whole word out rather than abbreviate. Has refused two requests from houses that could have made it awkward, in the same eleven words each time, and kept the copies.',
+        outlier: false,
+        outlierReason: null,
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
+    {
+        id: 'member-nail-duan',
+        name: 'Nail Duan',
+        factionId: 'sect-myriad-course-hall',
+        rankIndex: 4,
+        rank: 'Nail-Keeper',
+        realmOrdinal: 42,
+        role: 'senior',
+        wants: 'nothing that is not already on the schedule',
+        fears: 'the seat being empty for a season',
+        detail: 'Sits at the Nail, which cannot be moved, and therefore neither can he. The handover that put him there is entered in the schedule between a face and a face, with a date, in the same hand as everything else.',
+        // The Hall produces competence at a rate nobody matches and has not
+        // produced a crossing in an age; the seat is the one person on the roll
+        // its own ladder cannot account for.
+        outlier: true,
+        outlierReason: 'last_of_age',
+        goodCompany: false,
+        rivalry: null,
+        teaching: null
+    },
 
     // --- Clearwater Ward ---------------------------------------------------
     {

@@ -33,7 +33,13 @@ const MAX = 400;
 
 /** Not duplication worth reporting. */
 const BENIGN = [
-    /^\[?\s*\.\.\/\.\.\/src/,          // a link to the same file from two docs
+    // A CROSS-REFERENCE IS NOT A PASSAGE. Two documents pointing at the same
+    // third file write the same line because it is the same file - and since
+    // every module README now carries a "where else to look" section, the
+    // popular targets are cited from a dozen places on purpose. This used to
+    // match exactly two `../` and missed every link that climbed three.
+    /^\[?\s*(?:\.\.\/)+/,
+    /\]\(\s*(?:\.\.?\/)+[^)]*\)/,   // a markdown link is the line's whole content
     /^see \[/,                          // a shared cross-reference line
     // Two files importing the same names from the same module is what a shared
     // dependency LOOKS like, not a passage somebody wrote out twice. The

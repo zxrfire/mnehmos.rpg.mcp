@@ -34,3 +34,25 @@ the files above**, in header comments and exported constants that no search of
 Indexes: [`../INDEX.md`](../INDEX.md) by situation,
 [`../BY-HOUSE.md`](../BY-HOUSE.md) by house.
 Both also reach the design prose in `src/data/cultivation/`.
+
+---
+
+## Where else to look
+
+- [`../../../src/engine/world/README.md`](../../../src/engine/world/README.md) - an object once
+  somebody owns it: `possessions.ts`, `ownership-transfer.ts`, `provenance.ts`,
+  `object-damage.ts`, `what-a-body-can-carry-and-what-a-ring-holds.ts`,
+  `what-is-out-on-loan-and-who-lent-it.ts`.
+- [`../../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md) -
+  what a thing DOES: `market.ts`, `buying-and-bartering-pills.ts`,
+  `what-grade-of-medicine-a-wound-needs.ts`, `whether-a-weapon-survives-being-used.ts`,
+  `who-can-refine-a-grade-of-medicine.ts`.
+- [`../../../src/engine/social-leverage/README.md`](../../../src/engine/social-leverage/README.md) -
+  what somebody would take for a thing they will not sell, what they will take instead of
+  money, and who has to agree before it leaves the store.
+- [`../../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md) - the
+  object tables in context with the rest of the catalog.
+- [`../../../src/web/README.md`](../../../src/web/README.md) - how a player handles objects:
+  `register-items.ts`, `handing-somebody-a-thing.ts`, `market-prices.ts`,
+  `what-is-being-swapped-for-what.ts`, `object-theft.ts`.
+

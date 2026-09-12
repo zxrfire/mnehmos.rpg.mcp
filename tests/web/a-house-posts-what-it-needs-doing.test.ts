@@ -24,11 +24,13 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { makeGame } from './harness';
+import { makeGame, makeGameInWorld } from './harness';
 import { writeFlag } from '../../src/server/consolidated/cultivation-support';
 import { FLAG_RATIONS_HELD } from '../../src/web/flag-keys';
 import { sectBoardFor } from '../../src/web/encounters';
-import { REALM_TIERS } from '../../src/engine/cultivation/realms';
+import { REALM_TIERS, rankName } from '../../src/engine/cultivation/realms';
+import { BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts';
+import { pitchedWellBeneath } from '../../src/engine/encounters/duties';
 import {
     whatAHouseHasOnItsBoard,
     whichPostingTheyMeant
@@ -57,17 +59,61 @@ async function aMemberReadingTheBoard(seed: string) {
     };
 }
 
+/**
+ * The same reader, on a PINNED world.
+ *
+ * Which rungs a house's wall carries is a fact about who is on its roll, so a
+ * `worldEnabled` run with no `worldSeed` mints that roll afresh from
+ * `randomUUID` and any assertion about the wall's shape is an assertion about
+ * a world that existed once.
+ */
+async function anElderReadingTheBoard() {
+    const { game, repos, db } = await makeGameInWorld({
+        seed: 'board-elder-reads', worldSeed: 'a-house-posts-what-it-needs-doing',
+        worldEnabled: true
+    });
+    const { cultivator } = await game.newRun('Elder');
+    repos.sects.addMember(A_HOUSE, cultivator.id, 0);
+    const sect = repos.sects.getById(A_HOUSE)!;
+    repos.sects.setRank(A_HOUSE, cultivator.id, sect.ranks.length - 2);
+    const world = await game.loadWorld();
+    const deps = {
+        repos, world,
+        knowledge: { knows: () => true, isAwareOf: () => true, learn: () => undefined }
+    } as never;
+    return {
+        boardAt(ordinal: number) {
+            db.prepare('UPDATE cultivators SET realm_ordinal = ? WHERE id = ?')
+                .run(ordinal, cultivator.id);
+            return sectBoardFor(deps, repos.cultivators.getById(cultivator.id)!);
+        }
+    };
+}
+
 describe('a house posts what it needs doing', () => {
-    it('has work on it at every rung of the ladder', async () => {
-        // THE WHOLE POINT. Not "more offers" - offers AT ALL, above the rung
-        // where the catalogue stopped. Two thirds of the ladder had none.
+    it('has work for somebody at every rung, by one road or the other', async () => {
+        // THE WHOLE POINT. Not "more offers" - work AT ALL, above the rung where
+        // the catalogue stopped. Two thirds of the ladder had none.
+        //
+        // AND THE ROAD IT COMES BY IS NOT THE RULE. This asserted `offers` at
+        // every rung, which pinned the WALL rather than the house having work.
+        // The design owner then ruled: *"tasks for elders aren't on the board,
+        // they're word of mouth. the board is for disciples."* So high-rung work
+        // deliberately leaves the wall and arrives by somebody being sent -
+        // `howAnAskReaches` decides which road, off the house's own reach, with
+        // no branch on rank. Measured at a house reaching 30: a reader at 2 or
+        // 24 gets five on the wall and none by mouth; at 28 or 30, none on the
+        // wall and five by mouth.
+        //
+        // So the assertion is that the house HAS something for this rung, and
+        // that when the wall is bare it is bare for that reason and says so.
         const reading = await aMemberReadingTheBoard('board-every-rung');
         for (const tier of REALM_TIERS) {
             for (const ordinal of [tier.ordinalStart, tier.ordinalEnd]) {
                 const board = reading.boardAt(ordinal);
                 expect(
-                    board.offers.length,
-                    `nothing to do at ordinal ${ordinal} (${tier.key})`
+                    board.offers.length + board.refusals.length,
+                    `nothing to do at ordinal ${ordinal} (${tier.key}), by either road`
                 ).toBeGreaterThan(0);
             }
         }
@@ -77,13 +123,90 @@ describe('a house posts what it needs doing', () => {
         // A posting is pitched at whoever is reading it, which is why the board
         // does not run out - and it is also why the pay has to move, or an
         // elder and a novice are paid the same for the house's hardest work.
+        //
+        // MEASURED ONLY WHERE THE WALL CARRIES IT AT THE READER'S OWN RUNG.
+        // This compared ordinal 40 against 20 and read `Math.max` of an empty
+        // list - `-Infinity` - once elder-rung asks left the wall for word of
+        // mouth. A refusal row carries no terms, so pay above the split is not
+        // readable through this door, and the top of the wall is pitched at the
+        // house rather than at the reader.
+        //
+        // That the off-wall asks are priced by the same path is pinned
+        // separately, by 'every posting is priced by the same rule as the
+        // catalogue'.
         const reading = await aMemberReadingTheBoard('board-pay');
         const best = (ordinal: number) => Math.max(
             ...reading.boardAt(ordinal).offers.map(o => o.terms.contribution)
         );
         expect(best(20)).toBeGreaterThan(best(0));
-        expect(best(40)).toBeGreaterThan(best(20));
     }, 300_000);
+
+    it('and an elder reads the disciples\' wall and can take a line off it', async () => {
+        // PINNED WORLD, because what this asserts is which rungs a house's wall
+        // carries and that is a fact about who is on its roll. An unpinned
+        // `worldEnabled` run mints a world from `randomUUID`, so the roll is a
+        // different roll every time and a green run means nothing.
+        // REWRITTEN, AND THE OLD ASSERTION WAS PINNING THE DEFECT. It read
+        // `high.offers.length === 0` and called a bare wall correct, justified
+        // by the delivery split: elder work is word of mouth, so the wall has
+        // nothing. The second half of that does not follow from the first. The
+        // wall was bare because the board held ONE pitch - the reader's own -
+        // so the disciples' notices were never generated for an elder to read.
+        //
+        // MEASURED at ordinal 40, in a house whose strongest NPC stands at 41:
+        // 0 offers and 7 refusals before, 7 offers after, pitched at 29 and 38.
+        //
+        // The design owner: the board is for disciples; an elder can read it
+        // and could take from it, met with an eyebrow. Which is also the
+        // standing rule - NOT HAVING THE STANDING TO DO SOMETHING IS NOT THE
+        // SAME AS SEEING NOTHING - applied one rung further up than before.
+        //
+        // The delivery split is untouched and is asserted here too: the ask
+        // pitched at the elder themselves is still carried by a person.
+        const reading = await anElderReadingTheBoard();
+        const high = reading.boardAt(40);
+
+        const posted = high.offers.filter(o => o.entry.id.startsWith('posted-'));
+        expect(posted.length, 'the wall is bare at an elder\'s rung').toBeGreaterThan(0);
+
+        // Every line is pitched at or under the rung reading it, and the wall
+        // carries the house's own top notice as well as the ones a reason's own
+        // ceiling happens to have pushed down there. Both halves are asserted
+        // because each was reachable without the other, and a run with only the
+        // second went green on an earlier cut of this test.
+        for (const offer of posted) {
+            expect(offer.terms.pitchOrdinal, offer.entry.name).toBeLessThanOrEqual(40);
+        }
+        const pitches = new Set(posted.map(o => o.terms.pitchOrdinal));
+        expect(pitches.size, 'the wall holds one rung only').toBeGreaterThan(1);
+        expect([...pitches].some(p => p < 40)).toBe(true);
+        expect(
+            [...pitches].some(p => p > BEAST_CHANGE_ORDINAL && p < 40),
+            'nothing between the reason ceilings and the reader, so the wall\'s own top is missing'
+        ).toBe(true);
+
+        // The elder's own rung is still not posted. This is what would go red
+        // if the fix had been to put everything back on the wall.
+        expect(high.refusals.some(row => /word/i.test(row.reason))).toBe(true);
+    }, 300_000);
+
+    it('and taking one from well under you is stated, not refused', () => {
+        // The engine's whole share of the eyebrow. It states which rung the
+        // notice was posted at against which rung took it, and stops; a clerk's
+        // face in an engine string would be the engine writing the scene.
+        //
+        // Asserted at the function rather than through a played board because
+        // which gap a given house produces is a fact about that house's roll,
+        // and the rule is not.
+        const said = pitchedWellBeneath(29, 40);
+        expect(said).not.toBeNull();
+        expect(said!).toContain(rankName(29));
+        expect(said!).toContain(rankName(40));
+
+        // And it is silent where the gap is an ordinary one, so the line means
+        // something when it is there.
+        expect(pitchedWellBeneath(38, 40)).toBeNull();
+    });
 
     it('and every posting is priced by the same rule as the catalogue', async () => {
         // One pricing path. A second one here would be a second opinion about

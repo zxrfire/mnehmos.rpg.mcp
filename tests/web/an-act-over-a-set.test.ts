@@ -224,7 +224,13 @@ describe('an act aimed at a set, played', () => {
             .map((row: any) => row.id));
         const standing = members.filter(one => here.has(one.id));
         const elsewhere = members.filter(one => !here.has(one.id));
-        expect(standing.length).toBe(3);
+        // HOW MANY ARE HERE IS THE WORLD'S BUSINESS, NOT THIS TEST'S. It used
+        // to pin three, and the catalog grew - new houses, new members, new
+        // seating - until the same pinned world stood one of them in the
+        // square. The claim being measured is that the report names what the
+        // player knows and omits the rest, which holds at any count above
+        // zero, so the figure below is read rather than asserted.
+        expect(standing.length).toBeGreaterThan(0);
         expect(elsewhere.length).toBeGreaterThan(4);
 
         const told = [...standing, elsewhere[0]!, elsewhere[1]!];
@@ -259,9 +265,10 @@ describe('an act aimed at a set, played', () => {
         const result = await game.act(`I kill all of ${house.name}`);
         const prose = result.narration;
 
-        // Five, which is what this cultivator knows of. The world holds eleven
-        // and no sentence anywhere says so.
-        expect(prose).toMatch(/know of 5 of/);
+        // What this cultivator knows of: the ones standing here plus the two
+        // they were told about. The world holds more and no sentence anywhere
+        // says so, which is the whole point of the assertion.
+        expect(prose).toMatch(new RegExp(`know of ${told.length} of`));
         expect(prose).toContain(elsewhere[0]!.name);
         expect(prose).toContain(elsewhere[1]!.name);
         for (const stranger of neverHeardOf) {

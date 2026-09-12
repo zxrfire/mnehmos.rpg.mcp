@@ -150,7 +150,7 @@ export const IMMORTAL_ITEMS: readonly ImmortalItem[] = [
         grades: {
             higher: 'May deliver a cultivator into Grand Ascension and no higher, so the greatest crossing it enables is Body Integration Marrow to Grand Ascension Rising Body - ordinal 36 to 37, the last boundary on the mortal plane. One is known to exist and the Earth Vein Tower holds it. It is still one rung, still only from Perfection, and it still stops dead below 41. See `THE_LAST_REALM_IS_UNBUYABLE`.',
             middle: 'May deliver a cultivator into Void Tribulation and no higher: at best Deity Transformation Final Turn to Void Tribulation First Tempering, ordinal 28 to 29. That is the boundary most careers end at, which makes a middle the difference between a regional power and one of the dozen strongest people in a province - and it is one rung, from the top, like every other grade. Three are known.',
-            lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation First Turn, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Earth Vein Tower, one on the Long Cut schedule.'
+            lower: 'May deliver a cultivator into Deity Transformation and no higher: at best Nascent Soul Perfection to Deity Transformation First Turn, ordinal 24 to 25. Not a lesser effect - the same single crossing every grade performs, capped at a lower destination - and 25 is body and soul merged, two thousand years of lifespan, and a region learning your name. Nine are known: seven at the Azure Cloud Pavilion, one at the Earth Vein Tower, one on the Myriad Course Hall schedule.'
         },
         effectNote:
             'It carries a cultivator across exactly one realm boundary, from Perfection of their current realm into Early of the next, and it does nothing else at all. It is not a ride from wherever somebody happens to be standing: what it moves is one rung, from where the recipient stands to Early of the next realm, and Perfection is where that is worth the most rather than where it is required. The grade caps how high that destination may be. What would have been forty years of sitting at Perfection, or a century, or a lifetime that ran out at the boundary, is simply done - and the body arrives without having built the road to it, which every physician who has examined a recipient has remarked on and none can quantify. See `THE_STEP_AND_THE_BOUNDARY` and `ONCE_IN_A_LIFE`.',
@@ -454,9 +454,9 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
             'Not connected. Saving the arterial system makes refusal indefensible on the pill and does not reach this line at all, and a petitioner who has just done the Survey an enormous service and asks for the talisman instead has, in the view of all four Surveyors, misunderstood what they are standing in front of.'
     },
 
-    // ── the Long Cut: receipted, scheduled, and slower than a life ─────
+    // ── the Myriad Course Hall: receipted, scheduled, and slower than a life ─────
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         itemId: 'immortal-heaven-ascending-golden-pill',
         count: 3,
         byGrade: { higher: 0, middle: 2, lower: 1 },
@@ -467,9 +467,9 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
             'The Course Keepers together, unanimously, at a schedule revision rather than on request - which means the body that would decide is not assembled when anybody asks and cannot be assembled early. A petition arriving between revisions is receipted, logged, and waits.',
         anyoneMayRefuse: true,
         sufficientReason:
-            'Nothing in the schedule provides for it. The Long Cut administers driven ground on a horizon measured in centuries and treats a human career as a rounding error, so a case that turns on one person having very little time is not a case the instrument can read at all.',
+            'Nothing in the schedule provides for it. The Myriad Course Hall administers driven ground on a horizon measured in centuries and treats a human career as a rounding error, so a case that turns on one person having very little time is not a case the instrument can read at all.',
         costOfSayingYes:
-            'Three becomes two, and the Long Cut is the holder least able to justify any of it: it owns every act by name, has no vassal to attribute anything to, and would have to minute the decision as its own. The administration is legalistic precisely because it cannot deflect, and this is among the largest things it could do without being able to deflect.',
+            'Three becomes two, and the Myriad Course Hall is the holder least able to justify any of it: it owns every act by name, has no vassal to attribute anything to, and would have to minute the decision as its own. The administration is legalistic precisely because it cannot deflect, and this is among the largest things it could do without being able to deflect.',
         theForm:
             'A schedule amendment, receipted on submission and answered at the next revision, which is up to twenty years away. Three have been submitted. All three were answered with the original entry restated and no reasoning, which is the standard form of a refusal here and is not intended as contempt.',
         recordedRefusal: {
@@ -481,7 +481,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
             afterwards:
                 'The carver died of dust-lung two years before the revision was held. The Court was notified of the refusal in the ordinary way and filed it.',
             probablyRight:
-                'By its own instrument it was correct, and the instrument is what makes the Long Cut governable at all: a body administering five provinces on forty staff cannot start reading cases on their merits without ceasing to be able to administer anything. The cost of that consistency was that the only person the Clearwater Ward ever asked for was dead before the question was heard.',
+                'By its own instrument it was correct, and the instrument is what makes the Myriad Course Hall governable at all: a body administering five provinces on forty staff cannot start reading cases on their merits without ceasing to be able to administer anything. The cost of that consistency was that the only person the Clearwater Ward ever asked for was dead before the question was heard.',
             costAnyway:
                 'Clearwater Ward has never submitted another amendment of any kind, on any subject, in sixty years - not out of protest, which it would consider improper, but because it now regards the instrument as something that does not answer. An administration that stops being petitioned by its own bureau has lost something it cannot measure and has no line for.'
         },
@@ -489,15 +489,15 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
             'The same body, the same revision cycle, and the same answer in every recorded instance: a receipt, and the entry restated. If the driven ground itself was at stake and an outsider is why it held, refusing at the next revision becomes indefensible to most of the Keepers - and the revision is still up to twenty years away, and one Keeper can still hold out, and nobody will explain.'
     },
     {
-        factionId: 'apex-long-cut',
+        factionId: 'apex-myriad-course-hall',
         itemId: 'immortal-root-recasting-talisman',
         count: 1,
         byGrade: { higher: 1, middle: 0, lower: 0 },
         countIsKnownTo:
-            'The Course Keepers. Outside the administration it is not known at all, and the Earth Vein Tower does not know the Long Cut holds the only higher-grade one in existence, which is the single largest gap in either register.',
+            'The Course Keepers. Outside the administration it is not known at all, and the Earth Vein Tower does not know the Myriad Course Hall holds the only higher-grade one in existence, which is the single largest gap in either register.',
         releaseMode: 'collective_consent',
         decidedBy:
-            'The Course Keepers together, unanimously, at a revision, exactly as with the pill - the Long Cut draws no procedural distinction between the two objects, which outsiders find either admirable or alarming depending on what they came for.',
+            'The Course Keepers together, unanimously, at a revision, exactly as with the pill - the Myriad Course Hall draws no procedural distinction between the two objects, which outsiders find either admirable or alarming depending on what they came for.',
         anyoneMayRefuse: true,
         sufficientReason:
             'Never described and never petitioned for. It sits on the schedule as an entry with no date, and every Keeper for three centuries has read it aloud at revisions without any of them proposing anything about it.',
@@ -507,7 +507,7 @@ export const IMMORTAL_HOLDINGS: readonly Holding[] = [
             'The same schedule amendment, which does not distinguish the two entries and has never been submitted against this one. The Keepers are aware that it could be, and have never discussed what they would do.',
         recordedRefusal: null,
         savingTheSect:
-            'The Long Cut has never connected the two and would regard the connection as a category error. The most a petitioner has ever received on this line is a receipt confirming that their submission was received, which is accurate and is all it says.'
+            'The Myriad Course Hall has never connected the two and would regard the connection as a category error. The most a petitioner has ever received on this line is a receipt confirming that their submission was received, which is accurate and is all it says.'
     }
 ];
 
@@ -580,7 +580,7 @@ export const STOCK_VERSUS_FLOW = {
     whyFlowIsSoRare:
         'Because flow needs a benefactor who both answers often and still remembers that answering matters, and that means a recent crossing with a living tie. There is one of those in the world. Every other line upward runs to somebody who crossed millennia ago, answers at intervals measured in ages, and can no longer feel what a request costs the people making it - see `THE_DECAY_OF_MEMORY` in `named-figures.ts`.',
     theTwoAxesDoNotAlign: [
-        'The old lines - the Hollow Court, the Earth Vein Tower, the Long Cut - hold a proper pyramid: one higher apiece where they have one at all, a little middle, more lower, and most of what they were ever sent long since spent. Quality without flow.',
+        'The old lines - the Hollow Court, the Earth Vein Tower, the Myriad Course Hall - hold a proper pyramid: one higher apiece where they have one at all, a little middle, more lower, and most of what they were ever sent long since spent. Quality without flow.',
         'The Azure Cloud Pavilion holds more objects than anybody else in the world and not one of them above lower grade. Flow without quality.'
     ],
     whyAzureCloudIsAllLower:
@@ -604,7 +604,7 @@ export const STOCK_VERSUS_FLOW = {
     itIsALongBet:
         'The admirable part is that nobody now living will see it resolve. Seven crossings at 24 to 25, over decades, feeding a climb that takes millennia and that the Pavilion cannot assist past 28 in any case. They are spending everything they have on raising the odds for somebody who has not been born, in an institution that will not know whether it worked. That is not cleverness. It is an institution behaving as though the future is real.',
     whoElseHasWorkedItOut:
-        'The Earth Vein Tower has, exactly and independently, and can do nothing about it - which is the sharpest position of the four. Its register holds one higher Step, one middle and one lower, and there is no operation in the world that converts a higher into six lowers. It understands the argument perfectly, agrees with it, and holds the wrong inventory to act on it, which the four Surveyors have discussed once and minuted in a single line. The Long Cut has not raised the question, because a body that treats a human career as a rounding error has no instrument that could read the argument. The Hollow Court does not need to: it is the thing at the top of the funnel that everybody else is trying to produce.'
+        'The Earth Vein Tower has, exactly and independently, and can do nothing about it - which is the sharpest position of the four. Its register holds one higher Step, one middle and one lower, and there is no operation in the world that converts a higher into six lowers. It understands the argument perfectly, agrees with it, and holds the wrong inventory to act on it, which the four Surveyors have discussed once and minuted in a single line. The Myriad Course Hall has not raised the question, because a body that treats a human career as a rounding error has no instrument that could read the argument. The Hollow Court does not need to: it is the thing at the top of the funnel that everybody else is trying to produce.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -704,7 +704,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-nine-peaks-ascetic-order',
         itemId: 'immortal-heaven-ascending-golden-pill',
-        throughLine: 'The Long Cut line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since. The part nobody in the province has ever remarked on is that the Order stands on ground the Earth Vein Tower holds and was fed by the other apex entirely, three times, in writing, and that neither apex has ever explained the arrangement or been asked to. It is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sill court, which passed objects down to its clients three times in the history of the Order and has not since. The part nobody in the province has ever remarked on is that the Order stands on ground the Earth Vein Tower holds and was fed by the other apex entirely, three times, in writing, and that neither apex has ever explained the arrangement or been asked to. It is a historical fact about where the object came from rather than a live relationship anybody could draw on.',
         everReceived: { higher: 0, middle: 0, lower: 3 },
         stillHeld: { higher: 0, middle: 0, lower: 1 },
         countedByTheRegisters: false,
@@ -742,7 +742,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-verdant-spring-valley',
         itemId: 'immortal-heaven-ascending-golden-pill',
-        throughLine: 'The Long Cut line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume. The chain still exists and has simply stopped moving: the Sill has sent nothing down it in two centuries, the Order sends nothing further, and the Hall has never established which of the two stopped first.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sill court and the Nine Peaks above it, which is two removes and shows in the volume. The chain still exists and has simply stopped moving: the Sill has sent nothing down it in two centuries, the Order sends nothing further, and the Hall has never established which of the two stopped first.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -754,7 +754,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-frostmirror-court',
         itemId: 'immortal-root-recasting-talisman',
-        throughLine: 'The Long Cut line, through the Third Sill court, exactly once and never again - and the Ward has never been able to establish whether "never again" was a decision anybody took or simply what happened. It has raised the question twice, in eleven years of letters, and both times inside a paragraph about something else.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sill court, exactly once and never again - and the Ward has never been able to establish whether "never again" was a decision anybody took or simply what happened. It has raised the question twice, in eleven years of letters, and both times inside a paragraph about something else.',
         everReceived: { higher: 0, middle: 0, lower: 1 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,
@@ -766,7 +766,7 @@ export const RECEIPT_HISTORIES: readonly ReceiptHistory[] = [
     {
         factionId: 'sect-cinnabar-crucible-sect',
         itemId: 'immortal-root-recasting-talisman',
-        throughLine: 'The Long Cut line, through the Third Sill court, which sent one object to the Hall and has sent nothing since - and the Hall now holds from the Frostmirror instead, so the door that object came through is not one it can knock on any more. Neither party knew at the time that it was the last, which is the ordinary way a line ends.',
+        throughLine: 'The Myriad Course Hall line, through the Third Sill court, which sent one object to the Hall and has sent nothing since - and the Hall now holds from the Frostmirror instead, so the door that object came through is not one it can knock on any more. Neither party knew at the time that it was the last, which is the ordinary way a line ends.',
         everReceived: { higher: 0, middle: 1, lower: 0 },
         stillHeld: { higher: 0, middle: 0, lower: 0 },
         countedByTheRegisters: true,

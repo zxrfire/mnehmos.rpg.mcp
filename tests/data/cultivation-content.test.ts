@@ -39,6 +39,7 @@ import {
     transmissionModeOf
 } from '../../src/data/cultivation/techniques.js';
 import { THE_DEEPEST_ROADS } from '../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
+import { idsForFaction } from '../../src/data/cultivation/governance-and-water-rights.js';
 import { WANDERERS, getWanderer } from '../../src/data/cultivation/wanderers.js';
 import { SPIRIT_ROOTS } from '../../src/engine/cultivation/spirit-roots.js';
 import { DiceEngine } from '../../src/math/dice.js';
@@ -1006,15 +1007,18 @@ describe('the Late Age: provenance and the exploration loop', () => {
             expect(t.provenance, `${t.id} cannot be taught in this age`).not.toBe('taught');
         }
 
-        // And each of the four is on exactly one house's shelf, or on none at
-        // all where the holder is an apex with no sect row - which is a fact
-        // about the register's tables rather than about the world, and the
-        // holding is recorded either way.
+        // And each of the four is on exactly one house's shelf, and it is that
+        // road's own holder's. Resolved through `idsForFaction` because a body
+        // with an apex row and a sect row has two ids: the road catalog files
+        // the holding under whichever one it was written against, and the shelf
+        // is under the sect one.
         for (const road of THE_DEEPEST_ROADS) {
             const houses = SECTS.filter(s => s.teaches.includes(road.techniqueId));
             expect(houses.length, `${road.techniqueId} is on ${houses.length} shelves`)
                 .toBeLessThanOrEqual(1);
-            if (houses.length === 1) expect(houses[0].id).toBe(road.factionId);
+            if (houses.length === 1) {
+                expect(idsForFaction(road.factionId), road.techniqueId).toContain(houses[0].id);
+            }
         }
     });
 

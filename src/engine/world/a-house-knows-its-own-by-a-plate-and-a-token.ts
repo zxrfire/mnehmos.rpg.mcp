@@ -325,6 +325,88 @@ export function whatAHouseMakesOfSilence(input: {
 export const WHEN_SILENCE_BECOMES_A_CAPTIVE = 90;
 
 // ═════════════════════════════════════════════════════════════════════════
+// WHAT THE HALL SAYS TODAY
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * One name on a house's roll, as the hall reads it.
+ *
+ * `daysSinceAnybodySawThem` is the world's own `lastConfirmedOnDay` against the
+ * day, not a second clock: a house does not keep a register of who has been
+ * seen, it notices that somebody stopped turning up.
+ */
+export interface OneOnTheRoll {
+    memberId: string;
+    memberName: string;
+    /** Their rung, which decides whether a plate was ever cut for them. */
+    rankIndex: number;
+    holderIsAlive: boolean;
+    daysSinceAnybodySawThem: number;
+}
+
+export interface WhatTheHallSays {
+    memberId: string;
+    memberName: string;
+    /** Carried through, because how long is half of what the house would say. */
+    unseenForDays: number;
+    reading: ReturnType<typeof whatAHouseMakesOfSilence>;
+}
+
+/**
+ * WHAT A HOUSE LEARNS OFF ITS OWN WALL OF PLATES.
+ *
+ * The plates were being CUT and never READ. `seedTreasuries` hangs one for
+ * every disciple of every house that can cut them, so a fresh world holds
+ * hundreds - and nothing in `src/` asked any of them a question. A house could
+ * lose a disciple and the engine did not notice, which is the one fact
+ * `docs/world/houses/trust.md` says a house cannot miss.
+ *
+ * A DERIVATION AND NOT AN EVENT. Nothing is written and nothing is notified.
+ * The hall is recomputed from the roll every time it is asked, which is why
+ * there is no call site that can forget to shatter a plate.
+ *
+ * AND AN EMPTY LIST FOR A HOUSE THAT CANNOT CUT THEM, which is not the same as
+ * a list of `nothing_yet`. A house with nobody at Foundation is not told its
+ * people are fine. It is not told anything.
+ */
+export function whatTheHallSays(input: {
+    ordinalsOnTheRoll: readonly number[];
+    roll: readonly OneOnTheRoll[];
+}): WhatTheHallSays[] {
+    if (!thisHouseCanIssue(input.ordinalsOnTheRoll)) return [];
+    return input.roll.map(member => ({
+        memberId: member.memberId,
+        memberName: member.memberName,
+        unseenForDays: member.daysSinceAnybodySawThem,
+        reading: whatAHouseMakesOfSilence({
+            theyHaveAPlate: carriesATokenAt(member.rankIndex),
+            holderIsAlive: member.holderIsAlive,
+            daysSinceAnybodySawThem: member.daysSinceAnybodySawThem
+        })
+    }));
+}
+
+/**
+ * The ones a house would ask strangers about.
+ *
+ * A DEATH IS NOT A SEARCH. A shattered plate closes the question - the house
+ * knows, the moment it goes - so there is nothing to ask anybody for. What
+ * sends paper out of a compound is the other reading: alive, and nobody can
+ * find them.
+ */
+export function theOnesNobodyCanFind(
+    readings: readonly WhatTheHallSays[]
+): { memberId: string; memberName: string; unseenForDays: number }[] {
+    return readings
+        .filter(row => row.reading === 'somebody_has_them')
+        .map(row => ({
+            memberId: row.memberId,
+            memberName: row.memberName,
+            unseenForDays: row.unseenForDays
+        }));
+}
+
+// ═════════════════════════════════════════════════════════════════════════
 // AND WHOSE JOB IT IS
 // ═════════════════════════════════════════════════════════════════════════
 
@@ -354,3 +436,44 @@ export const THE_KEEPER_OF_THE_ROLL = 'Keeper of the Roll';
  * lookup - the same call the punishment hall and the treasury already use.
  */
 export const THE_ROOM_THE_ROLL_IS_KEPT_IN = WHERE_THE_PLATES_HANG;
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHAT A TOKEN IS FOR WHEN SOMEBODY IS CARRYING A MARKED OBJECT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Some objects say where they came from. A token says whose you are. Asked
+ * together, they are a check anybody senior can run in a doorway.
+ *
+ * THE CHALLENGE FIRES ON THE ASKER'S KNOWLEDGE, NOT ON THE OBJECT. Somebody who
+ * does not know what the thing is sees a good sword and asks nothing, which is
+ * why this takes a flag from the caller rather than reading the object twice.
+ *
+ * AND IT PUTS A QUESTION RATHER THAN ANSWERING ONE. The tag authenticates the
+ * LINE and not the person, so a genuine token in the wrong hands still reads as
+ * a member of that house - the seam the module already declines to close. What
+ * comes back here is what the two objects say and whether the two agree. Who is
+ * lying is not a thing an object can answer.
+ */
+export type WhatTheTwoSay =
+    /** The asker does not know what the object is, so there is no question. */
+    | 'nothing to ask'
+    /** They name the same house. Which proves nothing about the person. */
+    | 'they agree'
+    /** They name different houses, and that is a thing to be explained. */
+    | 'they do not agree'
+    /** No token at all, which is its own answer and a harsh one. */
+    | 'no token to read';
+
+export function whatTheTwoSay(input: {
+    /** True only where the person asking knows what such an object is. */
+    theAskerKnowsWhatItIs: boolean;
+    /** The house the object can only have come from, or null for an ordinary thing. */
+    theObjectNames: string | null;
+    /** The house the token names, or null where they carry none. */
+    theTokenNames: string | null;
+}): WhatTheTwoSay {
+    if (!input.theAskerKnowsWhatItIs || input.theObjectNames === null) return 'nothing to ask';
+    if (input.theTokenNames === null) return 'no token to read';
+    return input.theObjectNames === input.theTokenNames ? 'they agree' : 'they do not agree';
+}

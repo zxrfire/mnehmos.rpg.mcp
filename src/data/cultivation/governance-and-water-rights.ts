@@ -580,11 +580,12 @@ export const ApexInstitutionSchema = z.object({
          *
          * The reason is mundane and should be written that way. Nothing
          * metaphysical happens if the Lamp leaves. The headquarters is simply
-         * full of valuable things and the defence is presence: take the Lamp
+         * full of valuable things and the defence is one person: take the Lamp
          * and the one last-realm cultivator out of the vault and what remains
-         * is a building holding several centuries of accumulated wealth behind
-         * seals that a lesser sect could work through given time and an
-         * absence. It is a security posture, not a mystical necessity.
+         * is a building holding several centuries of accumulated wealth, a roll
+         * of clerks and marks who cannot stop anybody, and seals that a lesser
+         * sect could work through given time and an absence. It is a security
+         * posture, not a mystical necessity - and a roll is not a garrison.
          */
         cannotLeave: z.object({
             portable: z.literal(true),
@@ -615,7 +616,7 @@ export const ApexInstitutionSchema = z.object({
      *
      * The prose field above says what an apex holds; this says where, and the
      * two of them together make the shape of each apex legible for the first
-     * time. The Long Cut is broad and shallow - five driven provinces, forty
+     * time. The Myriad Course Hall is broad and shallow - five driven provinces, forty
      * posted staff, nothing delegated. The Earth Vein Tower is narrow and deep -
      * ONE province, four arterials under it, and a court on the only arterial
      * anything branches from that answers to the other apex.
@@ -646,9 +647,13 @@ export const ApexInstitutionSchema = z.object({
     rankNote: z.string().min(120),
     /** Default awareness for a starting cultivator. Always 'unaware'. */
     /**
-     * Two of the three are unnameable and start at `unaware`. The third is a
-     * sect with a front gate, and that difference is most of what makes it the
-     * least stable of them - it can be found, petitioned, joined and watched.
+     * All three are houses with rolls and shelves. Two of them are unnameable
+     * and start at `unaware`, which is not the same as unjoinable: a body you
+     * cannot name is a body you cannot walk to, and what buys a road in is
+     * learning the name first. The third has a front gate, and that difference
+     * is most of what makes it the least stable of them - it can be found,
+     * petitioned, joined and watched by anybody, on any day, without a word
+     * from a returning elder.
      */
     startingAwareness: AwarenessSchema,
     /** Where a name could legitimately come from, if it ever does. */
@@ -683,7 +688,7 @@ export type ApexInstitution = z.infer<typeof ApexInstitutionSchema>;
 //     a title from that apex's own `ranks`. That is what a posting means. The
 //     Earth Vein Tower's ladder says outright that Sill-Sworn is an appointment to a
 //     court rather than an honour, and this field is the other end of that
-//     sentence: the people in these rosters are Survey and Long Cut staff on a
+//     sentence: the people in these rosters are Survey and Myriad Course Hall staff on a
 //     posting, not a local body that grew where it stands.
 //
 // The Kiln is the case that proves the rule and is written to. Its offices are
@@ -774,7 +779,7 @@ export const CourtSchema = z.object({
      * always having done so. On one court, and it is not a transfer.
      *
      * NO COURT IN THIS CATALOG HAS EVER CHANGED PATRONS. This doc used to say
-     * one had, and named the Third Sill, which has answered the Long Cut for
+     * one had, and named the Third Sill, which has answered the Myriad Course Hall for
      * longer than either apex keeps a record of - inside a province the Deep
      * Survey holds, which neither has ever explained or raised. The body that
      * did move is the Deeproot Court, and it is a POSTING rather than a court: you
@@ -861,7 +866,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 // ─────────────────────────────────────────────────────────────────────────
 // APEX INSTITUTIONS
 //
-// THREE. The Azure Cloud Pavilion, The Long Cut, and The Earth Vein Tower.
+// THREE. The Azure Cloud Pavilion, The Myriad Course Hall, and The Earth Vein Tower.
 //
 // This comment said "two, one per tradition" for a long time while the array
 // below held three, which is worth more than a correction, because both halves
@@ -878,7 +883,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 //
 //   - "ONE PER TRADITION" CANNOT BE TRUE OF THREE BODIES AND TWO TRADITIONS.
 //     Two of them are `tradition-drawn` - the Earth Vein Tower and the Azure Cloud
-//     Pavilion - and the Long Cut is the only `tradition-cut` apex. Which is
+//     Pavilion - and the Myriad Course Hall is the only `tradition-cut` apex. Which is
 //     itself a fact rather than an untidiness: the Cut has one and the Drawn
 //     have two, and the two Drawn apexes are the pair with the least in common.
 //
@@ -887,22 +892,29 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 // a label; the doctrine says what the institution actually prices, which is the
 // thing a player can act on. The three are deliberately not one of each:
 //
-//   Azure Cloud Pavilion   righteous. The only apex with a position, and it
-//                          enforces it at its own gate. Being the only one with
-//                          a stated position makes it the only one whose
-//                          behaviour the other two can predict - which is
-//                          most of why nobody moves on it.
-//   The Earth Vein Tower        neutral by indifference. It recognises whoever holds
-//                          the ground and prices delivery and backlash. It does
-//                          not read an alignment field at all.
-//   The Long Cut           neutral by procedure. It prices the schedule and the
-//                          record, and it does not read an alignment field
-//                          either - for the opposite reason, because it grants
-//                          to nobody and employs everybody, so there is no
-//                          counterparty to have an alignment in the first place.
+//   Azure Cloud Pavilion     righteous. The only apex with a position, and it
+//                            enforces it at its own gate. Being the only one
+//                            with a stated position makes it the only one whose
+//                            behaviour the other two can predict - which is
+//                            most of why nobody moves on it.
+//   The Earth Vein Tower     neutral by indifference. It recognises whoever
+//                            holds the ground and prices delivery and backlash.
+//                            It does not read an alignment field at all.
+//   The Myriad Course Hall   neutral by procedure. It prices the schedule and
+//                            the record, and it does not read an alignment
+//                            field either - for the opposite reason, because it
+//                            grants to nobody and employs everybody, so there
+//                            is no counterparty to have an alignment at all.
+//
+// ALL THREE ARE HOUSES. Two of them carried `factionId: null` for a long time
+// and this file argued for it; that was overturned. Each has a sect row, a roll
+// and a shelf now, and what separates them is `startingAwareness`: one can be
+// named by anybody and two cannot, so the door is ordinary and finding it is
+// not. The bodies that genuinely take nobody are the two postings - the Kiln
+// Court and the Deeproot Court - and they are not sects and never were.
 //
 // Two neutrals, and the difference between their neutralities is the sharpest
-// thing about the standoff. The Survey and the Long Cut agree completely about
+// thing about the standoff. The Survey and the Myriad Course Hall agree completely about
 // morality being irrelevant and disagree completely about whether you delegate
 // at all, which is the deepest disagreement two administrations can have and is
 // not a grievance. They deadlock without either being able to name a reason to
@@ -914,7 +926,7 @@ export type GuestElder = z.infer<typeof GuestElderSchema>;
 export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
     {
         id: 'apex-earth-vein-tower',
-        factionId: null,
+        factionId: 'sect-earth-vein-tower',
         name: 'The Earth Vein Tower',
         traditionId: 'tradition-drawn',
         // Tribulation Transcendence Late. Above the Hollow Court, which is the
@@ -934,7 +946,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         heritage: 'ancient',
         secondStrongestOrdinal: 39,
         depthNote:
-            'A filled ladder underneath, and the Survey does not publish where it thins because it does not thin anywhere anyone has been able to check. Losing the seated one would be a catastrophe of a specific kind - the Lamp becomes takeable - and would not be an institutional collapse. There is a great deal of Survey below the Survey.',
+            'A filled ladder underneath, and the Survey does not publish where it thins because it does not thin anywhere anyone has been able to check. It is a roll rather than a staff: intakes, marks, sponsors, a shelf, and four courts full of postings. Losing the seated one would be a catastrophe of a specific kind - the Lamp becomes takeable - and would not be an institutional collapse. There is a great deal of Survey below the Survey.',
         // Neutral, and the doctrine below is what that word is actually
         // carrying. It is not balance between good and evil - it is a body
         // that does not read the axis, because the axis is not a term of the
@@ -946,7 +958,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         whetherItsWordSkipsABar:
             'It will, anywhere in its own arrangement, and it does not have to ask twice - a tenant holding a twelve-year grant does not refuse the body that renews it, and everybody in the Jade Gorge understands that a Survey request is a request in form only. It is the same realpolitik it runs on territory, applied to a person, and the Survey does not pretend otherwise. What it takes is not stones: it is a term added to what the house already owes, unstated, uncollected and available, so a house that has been done a favour by the Survey is a house that will be asked for something later and will not be in a position to weigh it. What it will not do is push at a bar that cannot move, and it knows exactly which those are - a request to place a child at the Frostmirror comes back in one line saying the arts would kill them.',
         howItConductsItselfWithTheOtherApexes:
-            'Unshockable, and specifically not cynical about it - the Survey has principles and has costed them, which is a different thing from not having any. It has had the Pavilion\'s argument put to it before, by bodies that no longer exist, and it answers the same way every time in the same number of words. What it does not do is treat the Pavilion as amusing. A body that says out loud what everyone has agreed not to say is a problem rather than a joke, and this one has a living immortal behind it, so the Survey has quietly restructured two procedures around never being made to answer in public and has never explained why either changed. With the Long Cut it is different and much older: they agree entirely that the axis is irrelevant and disagree entirely about whether you delegate at all, they have both known the other\'s answer for eleven hundred years, and neither has ever raised it.',
+            'Unshockable, and specifically not cynical about it - the Survey has principles and has costed them, which is a different thing from not having any. It has had the Pavilion\'s argument put to it before, by bodies that no longer exist, and it answers the same way every time in the same number of words. What it does not do is treat the Pavilion as amusing. A body that says out loud what everyone has agreed not to say is a problem rather than a joke, and this one has a living immortal behind it, so the Survey has quietly restructured two procedures around never being made to answer in public and has never explained why either changed. With the Myriad Course Hall it is different and much older: they agree entirely that the axis is irrelevant and disagree entirely about whether you delegate at all, they have both known the other\'s answer for eleven hundred years, and neither has ever raised it.',
         instability:
             // Written to stand alone. It used to open "Almost none, and the
             // exception is specific:", which is an answer to an unstated
@@ -955,11 +967,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             // as a non-sequitur. Every field in this record has to read as a
             // sentence somebody could have said, not as the second half of an
             // exchange.
-            'The Survey is almost entirely stable, and its one exposure is specific: the position rests on one person not standing up. Anything large enough to require her attention elsewhere ends the arrangement in an afternoon, and the Survey has structured four hundred years of procedure around never producing such a thing. It is stable in the way a held breath is stable.',
+            'The Survey is almost entirely stable, and its one exposure is specific: the position rests on one person not standing up. The roll underneath her is not a second answer to that - it is surveyors, clerks and court postings spread over a province, deep enough that the institution would survive her and nowhere near deep enough to hold the vault for a season without her. Anything large enough to require her attention elsewhere ends the arrangement in an afternoon, and the Survey has structured four hundred years of procedure around never producing such a thing. It is stable in the way a held breath is stable.',
         lastRealm: {
             count: 1,
             pinned: true,
-            holderName: null,
+            holderName: 'Mu Chengyan',
             note: 'One, seated under the datum vault and cultivating without interruption, on top of what the founder sent down. The Survey administers a vein system across a province on the strength of a single person who has not left a room in four hundred years, and its entire posture - the couriers, the unappealable arbitration, the letters that do not wait for an answer - is built to make sure nobody ever needs to test whether that person would come out.'
         },
         sentDown: {
@@ -980,17 +992,17 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                 whatItCouldDo:
                     'Nothing physically stops four Surveyors carrying it out of the vault, and its effects would travel with it. A holder who cannot be lied to about where anything is, formations that do not resolve against it, concealment that does not hold in front of it, and any boundary dispute anywhere in the world over on arrival. Walked into a room, it settles the room. There is no faction in either province that could argue with it in person and several that would simply concede on sight.',
                 whyItNeverWill:
-                    'Because the headquarters would be empty. Nothing happens to the institution if the Lamp goes out of the door - no structure fails, nothing is unanchored, and the Survey would be exactly as capable in the field. The problem is that the seat is full of valuable things and the defence is presence: the Lamp and the one seated under the vault are what keeps the place unopened, and both of them would be somewhere else. It is a logistics problem and a security posture, and the Survey has never dressed it up as anything more interesting.',
+                    'Because the seat would be undefended, which is not the same as empty. Nothing happens to the institution if the Lamp goes out of the door - no structure fails, nothing is unanchored, and the Survey would be exactly as capable in the field. The problem is that the seat is full of valuable things and the defence is one person: there are clerks, an intake and a shelf in that building on any ordinary day, and not one of them is what a crew planning to open a vault is counting. The Lamp and the one seated under it are what keeps the place unopened, and both of them would be somewhere else. It is a logistics problem and a security posture, and the Survey has never dressed it up as anything more interesting.',
                 whatExposedMeans: [
-                    'A building with several centuries of accumulated wealth in it and nobody of consequence inside: the standing stock, the founding volumes, the arterial survey in its original hand, artifacts entered on the register and never described, and the sealed volumes for years four hundred to nine hundred.',
+                    'A building with several centuries of accumulated wealth in it and nobody of consequence inside: the standing stock, the founding volumes, the arterial survey in its original hand, artifacts entered on the register and never described, and the sealed volumes for years four hundred to nine hundred. There are people in it. They are marks and intakes and a clerk who has never changed a figure, and what they can do about a competent crew is send word.',
                     'Seals that hold against a casual attempt and are not proof against a competent crew with weeks and no interruptions. They were cut to deter, and deterrence assumes somebody is coming home.',
-                    'The one seated under the vault cannot carry it. Nobody can. She could take the Lamp and perhaps two other things, and everything else stays in a room whose only real defence has just walked out of the province.',
+                    'The one seated under the vault cannot carry it. Nobody can. She could take the Lamp and perhaps two other things, and everything else stays in a room full of people whose whole deterrent has just walked out of the province with her.',
                     'The courts would keep functioning throughout, which is the part that makes it survivable and also the part that makes it tempting: the Survey would still be the Survey, minus whatever was taken, and would have to explain the gap in a register it publishes to itself.'
                 ],
                 howQuickly:
                     'The absence is the whole window. A crew that knows the vault is unattended has exactly as long as the journey lasts, and a Survey party walking a dispute in person is gone for weeks. Nothing about it needs to be fast - it needs to be uninterrupted, which is the same thing from the other side.',
                 theBind:
-                    'Their single greatest asset is the one thing they cannot take anywhere, and the reason is not grand. They stay put because leaving means being robbed. They could settle any dispute in the world by attending it, and would come back to a lighter building - so the Lamp has never left the chamber, and the Survey has never once turned up to anything in person.',
+                    'Their single greatest asset is the one thing they cannot take anywhere, and the reason is not grand. They stay put because leaving means being robbed. The roll does not answer it: a house of surveyors, clerks and court postings is a great many people and not one of them is a garrison, and the ladder tops out at thirty-nine below her. They could settle any dispute in the world by attending it, and would come back to a lighter building - so the Lamp has never left the chamber, and the Survey has never once turned up to anything in person.',
                 whoWouldTry:
                     'Not an apex, which is what makes it a real risk rather than a theoretical one. An ordinary ambitious sect with a formation master, a decent crew and patience - the Ashen Forge Clan could field one, the Crimson Abyss Fortress would pay for one, and there are eleven institutions in the province with the means and no standing to lose. None of them would face the Survey. All of them can count.',
                 deferenceLogic:
@@ -1000,11 +1012,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
                     what: 'Two arterial veins were being worked simultaneously by parties the Survey could not identify, its couriers were being turned back at three borders, and a Sill ruling was openly ignored for the first time in the institutional record. It was the closest the arterial system has come to being taken out of Survey administration, and everybody involved knew it.',
                     proposedBy: 'The Surveyor of the second arterial, seconded by the Sill-Sworn at the Kiln, in writing, in a minute that still exists - which is the only occasion in the record on which the Kiln has been a party to anything the Survey was deciding.',
                     theArgumentThatStopped:
-                        'The Surveyor of the fourth arterial asked who was sitting on the vault while they did this. Nobody had an answer, because there is not one: there is one person of consequence at the seat, she was the person they proposed to send, and the building she would be leaving contains everything the institution has ever been given. The minute records the question and no reply, and then the proposal being withdrawn by the party that made it. It is four lines long and it is the whole of the Survey self-understanding: they are not an army, they are a very well-supplied office with one guard.',
+                        'The Surveyor of the fourth arterial asked who was sitting on the vault while they did this. Nobody had an answer, because there is not one: the roll is long and there is one person on it who could hold that room, she was the person they proposed to send, and the building she would be leaving contains everything the institution has ever been given. The minute records the question and no reply, and then the proposal being withdrawn by the party that made it. It is four lines long and it is the whole of the Survey self-understanding: they are not an army, they are a very large office with one guard.',
                     outcome: 'The Lamp stayed in the chamber. The Survey lost the two arterials for nineteen years, recovered them by ordinary administration and outliving the parties, and has never revisited the question. The Surveyor who proposed it was not censured and served another two hundred years.'
                 },
                 whoOutsideKnows:
-                    'The Long Cut has wondered for two centuries why the Survey never brings the object to a dispute in person, and its files record the observation as institutional discretion - the reading one legalistic body naturally reaches about another. The gap between discretion and cannot is the entire intelligence question. If the Long Cut ever established that the Survey stays home because leaving means being robbed, it would hold the most valuable thing either apex has about the other: not that the Survey is strong, which everybody knows, but that its strength has a fixed address and one guard, and that every unappealable ruling for four hundred years has been issued by an institution that could not have enforced it in person. Nobody else has even the observation. Immovable Mountain Temple, which has noticed that its own datum stone refers to a survey it does not hold, is closer than it knows and is asking a different question.'
+                    'The Myriad Course Hall has wondered for two centuries why the Survey never brings the object to a dispute in person, and its files record the observation as institutional discretion - the reading one legalistic body naturally reaches about another. The gap between discretion and cannot is the entire intelligence question. If the Myriad Course Hall ever established that the Survey stays home because leaving means being robbed, it would hold the most valuable thing either apex has about the other: not that the Survey is strong, which everybody knows, nor that it is large, which its courts make obvious, but that its strength has a fixed address and one guard, and that every unappealable ruling for four hundred years has been issued by an institution that could not have enforced it in person. Nobody else has even the observation. Immovable Mountain Temple, which has noticed that its own datum stone refers to a survey it does not hold, is closer than it knows and is asking a different question.'
             },
             ifUncovered:
                 'It is a physical object in a room, and the room is guarded by exactly one person. If that person is ever elsewhere it can be taken by anyone who can reach the chamber - and the Court, which has four people who would each have a reason, is only the most obvious. Every sect holding a sealed ancestor is holding a single-use asset, and this is the object that would justify spending it - a permanent advantage for a one-off, which is a trade a great many quiet mountains have already priced.',
@@ -1021,7 +1033,11 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             { title: 'Second Mark', decidedBy: 'results: surveys completed, grants administered, errors not made', note: 'Where a competent person spends sixty years without embarrassment.' },
             { title: 'First Mark', decidedBy: 'service of a kind the Survey does not describe in writing', note: 'First Marks give instruction to Second Marks regardless of the realms involved, and this is not remarked upon.' },
             { title: 'Sill-Sworn', decidedBy: 'appointment to a court, which is a posting rather than an honour', note: 'The rank at which realm finally begins to matter again, because the work begins to require it.' },
-            { title: 'Surveyor', decidedBy: 'the previous Surveyor of that arterial, and nothing else', note: 'Four of them. One per arterial vein.' }
+            { title: 'Surveyor', decidedBy: 'the previous Surveyor of that arterial, and nothing else', note: 'Four of them. One per arterial vein.' },
+            // The seat had no rung for four hundred years because nobody was
+            // reading the ladder as a ladder anybody stood on. It is the top of
+            // it, and `THE_DEEPEST_ROADS` has been naming its holder all along.
+            { title: 'Assessor of the Deep', decidedBy: 'handover from the previous Assessor, on a date, and never by a vote', note: 'One, under the datum vault, and the only rung on this ladder that is a person rather than a class.' }
         ],
         rankIsOrdinalDerived: false,
         ranksByRealmAboveOrdinal: 29,
@@ -1044,18 +1060,18 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'The institution that holds the water. It does not appear in any market-town account of the world, its name is not spoken at an outer gate, and the sects of the Jade Gorge experience it as the weather: grants that are renewed, occasionally are not, and are never explained. It is ancient in the way the province is not, it survived whatever made the age late, and it regards a four-hundred-year-old sect mountain the way that sect regards a tenant farmer with a good record.'
     },
     {
-        id: 'apex-long-cut',
-        factionId: null,
-        name: 'The Long Cut',
+        id: 'apex-myriad-course-hall',
+        factionId: 'sect-myriad-course-hall',
+        name: 'The Myriad Course Hall',
         traditionId: 'tradition-cut',
-        // One rung below the Earth Vein Tower and by the same logic. The Long Cut
+        // One rung below the Earth Vein Tower and by the same logic. The Myriad Course Hall
         // administers everything itself, so its floor is not what its tenants
         // can field - it has none - but what it must be able to walk into.
         powerOrdinal: 42,
         stock: {
             remaining: 'depleted',
             description:
-                'Three sealed cases in the seat chamber, and the Long Cut publishes the count. It has published a decreasing count for eleven hundred years, which is the most honest thing any institution in the setting does and also an extremely effective deterrent.',
+                'Three sealed cases in the seat chamber, and the Myriad Course Hall publishes the count. It has published a decreasing count for eleven hundred years, which is the most honest thing any institution in the setting does and also an extremely effective deterrent.',
             buys:
                 'Three emergencies, and everyone knows it is three, so the Silent Cliffs has arranged itself carefully around never being the fourth.',
             cannotRestock:
@@ -1064,33 +1080,33 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         heritage: 'ancient',
         secondStrongestOrdinal: 38,
         depthNote:
-            'Forty posted staff, and the top of them is much closer to the seat than anyone outside assumes. The Long Cut does everything itself, which over eleven hundred years has produced an unusually even distribution: no prodigies, no gaps, and nobody who has not done the work below them.',
+            'Forty posted staff, and the top of them is much closer to the seat than anyone outside assumes. Forty is the number holding a schedule, not the number on the roll - everybody on a face is on it, at every realm, and the ladder has four rungs for all of them. The Hall does everything itself, which over eleven hundred years has produced an unusually even distribution: no prodigies, no gaps, and nobody who has not done the work below them.',
         // Also neutral, and not the same neutrality. The Survey has decided the
-        // axis is not a term; the Long Cut has never had a counterparty to read
+        // axis is not a term; the Myriad Course Hall has never had a counterparty to read
         // one off. It grants to nobody and employs everybody, which is a
         // stranger position than the Survey's and is what deadlocks the two.
         alignment: 'neutral',
         alignmentDoctrine:
-            'It prices the schedule and the record, and there is nothing else in the arrangement to price. The Long Cut does not grant, lease or recognise - it posts staff and gives them faces to work - so the question of what an institution on its ground believes cannot arise, because there are no institutions on its ground. Its own ladder is the argument written out: a Set Hand is a face worked to completion without a death on it, recorded by date, and a Face Master at Foundation Establishment directs Hands at Core Formation, because the face is what is being ranked and not the person. It levies nothing, because everybody is already staff; it takes no tribute, because there is nobody to take it from; and when it fights, it fights with its own. Where the Survey has decided that morality is not a term of the contract, the Long Cut has never encountered the question, and the difference is the whole of the deadlock: the Survey can be argued with about a tenant, and the Long Cut cannot, because it has none. The only recognition it has ever extended was to people rather than to ground - the one administration in the world that has ever changed patrons walked out of the Survey\'s arrangement, was offered a schedule, and took it.',
+            'It prices the schedule and the record, and there is nothing else in the arrangement to price. The Myriad Course Hall does not grant, lease or recognise - it posts staff and gives them faces to work - so the question of what an institution on its ground believes cannot arise, because there are no institutions on its ground. Its own ladder is the argument written out: a Set Hand is a face worked to completion without a death on it, recorded by date, and a Face Master at Foundation Establishment directs Hands at Core Formation, because the face is what is being ranked and not the person. It levies nothing, because everybody is already staff; it takes no tribute, because there is nobody to take it from; and when it fights, it fights with its own. Where the Survey has decided that morality is not a term of the contract, the Myriad Course Hall has never encountered the question, and the difference is the whole of the deadlock: the Survey can be argued with about a tenant, and the Myriad Course Hall cannot, because it has none. The only recognition it has ever extended was to people rather than to ground - the one administration in the world that has ever changed patrons walked out of the Survey\'s arrangement, was offered a schedule, and took it.',
         whetherItsWordSkipsABar:
-            'It will, and it prices it honestly, which is the difference between the two of them. The Long Cut employs rather than grants so it cannot lean on a tenant - what it has is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Long Cut regards as evidence that it sets them correctly rather than as evidence that nobody dares.',
+            'It will, and it prices it honestly, which is the difference between the two of them. The Myriad Course Hall employs rather than grants so it cannot lean on a tenant - what it has is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Myriad Course Hall regards as evidence that it sets them correctly rather than as evidence that nobody dares.',
         howItConductsItselfWithTheOtherApexes:
-            'Patient in the specific way of a body that keeps records. The Long Cut does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Silent Cliffs\' silent arrangements legible by contrast, and the Long Cut has had to answer questions about the Clearwater Ward twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken the only administration that has ever moved and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
+            'Patient in the specific way of a body that keeps records. The Myriad Course Hall does not argue, it schedules, and its whole conduct with the other two is that it will still be here on the date. It finds the Pavilion inconvenient rather than absurd - an apex that publishes its standard and refuses on it makes the Silent Cliffs\' silent arrangements legible by contrast, and the Myriad Course Hall has had to answer questions about the Clearwater Ward twice in ninety years that it would not otherwise have been asked. With the Survey it is courteous and total: it has taken the only administration that has ever moved and acknowledged nothing, and the Survey has acknowledged nothing back, and both understand this as the arrangement working rather than as hostility.',
         instability:
-            'The Nail cannot be moved, so the Long Cut cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
+            'The Nail cannot be moved, so the Myriad Course Hall cannot retreat with it, cannot hide it and cannot bargain with it. Its whole position is a siege it has been winning by default for so long that the staff of forty treat the seat as geography rather than as a garrison.',
         whatItHasTakenFromOtherPatrons:
-            'One of the Earth Vein Tower\'s administrations, in living memory, and it did not send anybody for it. Deeproot Court walked rather than fought, over a reposting nobody standing in it had been consulted about, and it was offered a place and took it. What the Long Cut got was a claim on the strongest sealed thing anybody has established the existence of, acquired by taking in some disaffected appointees, without a word having to be said out loud. It is the only administration in the world that has ever changed patrons. The Long Cut has never acknowledged it and neither has the Survey, and both of them understand that as the arrangement working rather than as hostility.',
+            'One of the Earth Vein Tower\'s administrations, in living memory, and it did not send anybody for it. Deeproot Court walked rather than fought, over a reposting nobody standing in it had been consulted about, and it was offered a place and took it. What the Myriad Course Hall got was a claim on the strongest sealed thing anybody has established the existence of, acquired by taking in some disaffected appointees, without a word having to be said out loud. It is the only administration in the world that has ever changed patrons. The Myriad Course Hall has never acknowledged it and neither has the Survey, and both of them understand that as the arrangement working rather than as hostility.',
         lastRealm: {
             count: 1,
             pinned: true,
-            holderName: null,
-            note: 'One, and the Long Cut is more honest about it than the Survey is: the posted staff of forty exists precisely because the one who could settle anything permanently is sitting on the thing that must not be left. Legalism is what an institution does when its strongest member cannot be spent.'
+            holderName: 'Nail Duan',
+            note: 'One, and the Myriad Course Hall is more honest about it than the Survey is: the posted staff of forty exists precisely because the one who could settle anything permanently is sitting on the thing that must not be left. Legalism is what an institution does when its strongest member cannot be spent.'
         },
         sentDown: {
             id: 'sent-ninth-nail',
             name: 'The Ninth Nail',
             description:
-                'A nail, and it is genuinely a nail: a hand span of dull metal that the founder of the Long Cut drove through from the other side rather than sent. It is the only object in the Silent Cliffs that does not move, and every perimeter in five provinces is surveyed off it.',
+                'A nail, and it is genuinely a nail: a hand span of dull metal that the founder of the Myriad Course Hall drove through from the other side rather than sent. It is the only object in the Silent Cliffs that does not move, and every perimeter in five provinces is surveyed off it.',
             uses: [
                 'comprehension at the last realm - it was driven through the Lid from above, so it is a worked example of the crossing that can be held in the hand, and the Cut tradition holds this to be worth more than any manual',
                 'a channel upward, in one direction only: things can be said along it, and nothing has ever been said back'
@@ -1098,9 +1114,9 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             asAnArtifact:
                 'It is a fixed point in a world where nothing else is fixed, which sounds academic until somebody tries to move, fold or unmake ground near it and finds that they cannot. The Silent Cliffs has never lost a perimeter within sight of it. Anyone holding it holds ground absolutely, which is worth having whether or not they ever intend to look upward.',
             reserveTerms:
-                'The Long Cut cannot move it and has stopped pretending that this is a policy. It is where it is. The seat was built around it afterwards.',
+                'The Myriad Course Hall cannot move it and has stopped pretending that this is a policy. It is where it is. The seat was built around it afterwards.',
             ifUncovered:
-                'It cannot be carried off, which makes the problem different rather than smaller: anyone who reaches it can use it in place for as long as they are left alone there, and the only reason nobody has is that somebody is always sitting on it. The Long Cut is candid inside its own records that if the seat is ever vacated the contenders will not be the Court alone but every sect that has been maintaining a seal and waiting for a reason to spend it.',
+                'It cannot be carried off, which makes the problem different rather than smaller: anyone who reaches it can use it in place for as long as they are left alone there, and the only reason nobody has is that somebody is always sitting on it. The Myriad Course Hall is candid inside its own records that if the seat is ever vacated the contenders will not be the Court alone but every sect that has been maintaining a seal and waiting for a reason to spend it.',
             cannotLeave: null,
             intact: true
         },
@@ -1116,20 +1132,24 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
         holdsPrefectureIds: [],
         courtIds: ['court-ninth-face', 'court-third-sill'],
         ranks: [
-            { title: 'Hand', decidedBy: 'being present on a face and working it, and nothing else whatsoever', note: 'Everyone below the top, at every realm, and the Long Cut sees no reason to subdivide people by how much qi they hold.' },
+            { title: 'Hand', decidedBy: 'being present on a face and working it, and nothing else whatsoever', note: 'Everyone below the top, at every realm, and the Myriad Course Hall sees no reason to subdivide people by how much qi they hold.' },
             { title: 'Set Hand', decidedBy: 'a face worked to completion without a death on it, recorded by date', note: 'The first distinction, and it is a record of work rather than a rank of person.' },
             { title: 'Face Master', decidedBy: 'assignment to a face, which is given by the schedule and taken back by it', note: 'A Face Master at Foundation Establishment directs Hands at Core Formation, because the face is what is being ranked.' },
-            { title: 'Course Keeper', decidedBy: 'the schedule itself: who is trusted with a century of it, decided upward', note: 'The rank at which a person stops being told where to cut.' }
+            { title: 'Course Keeper', decidedBy: 'the schedule itself: who is trusted with a century of it, decided upward', note: 'The rank at which a person stops being told where to cut.' },
+            // Same gap as the Survey's, closed the same way: the seat is a rung
+            // and was not on the ladder. `THE_DEEPEST_ROADS` calls its holder
+            // the Nail-Keeper and always has.
+            { title: 'Nail-Keeper', decidedBy: 'handover on a date, entered on the schedule like everything else here', note: 'One, at the Nail, and the schedule records the handover the way it records a face.' }
         ],
         rankIsOrdinalDerived: false,
         ranksByRealmAboveOrdinal: 33,
         rankNote:
-            'The Long Cut ranks by work and by nothing else, which carvers consider obvious and every visiting Drawn cultivator finds insulting. Four titles cover every practitioner in every driven province, so a Hand may be an apprentice of nineteen or an Inner Face cultivator of four hundred, and the institution does not distinguish them in writing. Standing is what you have finished. A carver who has held a face for a century and a carver who arrived last spring are both Hands until a face is completed, and the century does not count for anything at all.',
+            'The Myriad Course Hall ranks by work and by nothing else, which carvers consider obvious and every visiting Drawn cultivator finds insulting. Four titles cover every practitioner in every driven province, so a Hand may be an apprentice of nineteen or an Inner Face cultivator of four hundred, and the institution does not distinguish them in writing. Standing is what you have finished. A carver who has held a face for a century and a carver who arrived last spring are both Hands until a face is completed, and the century does not count for anything at all.',
         startingAwareness: 'unaware',
         awarenessSources: [
             'the Clearwater Ward grant book, whose renewals are countersigned by an office it never names',
             'a Fallen Grain Caravan salvage crew that opened something and found the schedule already written on the wall in a hand nobody uses',
-            'a Long Cut inspection, which happens roughly twice a century and is mistaken locally for a rich merchant party'
+            'a Myriad Course Hall inspection, which happens roughly twice a century and is mistaken locally for a rich merchant party'
         ],
         actsWithoutAttribution: [
             'the Clearwater Ward abruptly stops issuing grants for a season and gives no reason, having been given none',
@@ -1137,7 +1157,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'a face nobody could work is found open, worked out and abandoned, with the spoil stacked in courses too neat for a local crew'
         ],
         description:
-            'The other apex, over the other tradition, and it does not do any of this the way the Earth Vein Tower does. The Long Cut grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Silent Cliffs. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
+            'The other apex, over the other tradition, and it does not do any of this the way the Earth Vein Tower does. The Myriad Course Hall grants nothing to anyone. It holds driven ground across five provinces itself, administers every face itself, and deals with the people on them itself, which means nothing is skimmed and it reads its own reports - and means it must do all of the work with a posted staff of about forty. It is consequently taut, extremely legalistic, and almost impossible to provoke: it owns every act by name, so it does very little quickly. There is no intermediate institution anywhere in the Silent Cliffs. A carver\'s relationship is with the large thing itself, which is impersonal, consistent, and does not know their name.'
     },
     {
         id: 'apex-azure-cloud',
@@ -1236,7 +1256,7 @@ export const APEX_INSTITUTIONS: readonly ApexInstitution[] = [
             'It does not need to. Alone among the three it acts in its own name, which is a luxury and, increasingly, a liability - every refusal it makes is attributable, dated and remembered by whoever was refused.'
         ],
         description:
-            'The third apex, the youngest by an order of magnitude, and the only one anybody can walk to. It holds the gorge outright on no grant, having been made independent by Ru Anjing in the decades before her crossing, and it holds the newest object in the world sent down from the other side of the Lid. Everything the Earth Vein Tower and the Long Cut achieve through being unnameable, the Pavilion achieves through being unambiguous - and it is the one position of the three that can be lost without a fight, because prestige from a single event decays on a schedule nobody controls.'
+            'The third apex, the youngest by an order of magnitude, and the only one anybody can walk to. It holds the gorge outright on no grant, having been made independent by Ru Anjing in the decades before her crossing, and it holds the newest object in the world sent down from the other side of the Lid. Everything the Earth Vein Tower and the Myriad Course Hall achieve through being unnameable, the Pavilion achieves through being unambiguous - and it is the one position of the three that can be lost without a fight, because prestige from a single event decays on a schedule nobody controls.'
     }
 ];
 
@@ -1246,7 +1266,7 @@ export const COURTS: readonly Court[] = [
         id: 'court-third-sill',
         name: 'The Third Sill Court',
         // Not transferred, and this comment used to say it was. The Third Sill
-        // has administered the third arterial under the Long Cut for longer
+        // has administered the third arterial under the Myriad Course Hall for longer
         // than either apex keeps a record of, inside a province the Earth Vein Tower
         // holds - which is an anomaly nobody has ever raised and is the closest
         // thing in the catalog to a fact about how the two old apexes actually
@@ -1261,7 +1281,7 @@ export const COURTS: readonly Court[] = [
         // trap and it has already caught somebody - anything about the ground,
         // the datum or the nodes means the Kiln; anything about the third
         // arterial and the grants hanging off it means this one.
-        apexId: 'apex-long-cut',
+        apexId: 'apex-myriad-course-hall',
         // Grand Ascension Late. Its strongest tenant is the Storm Tyrant Court at
         // Body Integration Perfection, and a court that could not answer its own
         // tenant would be issuing suggestions rather than grants.
@@ -1409,7 +1429,7 @@ export const COURTS: readonly Court[] = [
         // relationship in `faction-relationships.ts` rather than two
         // irreconcilable claims about who is real.
         officesNote:
-            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Earth Vein Tower, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it: the Survey reposted the court, most of the Wardens declined the reposting and left, and the Long Cut took them in. Ji Wanluo is Keeper of the Kiln, the rota is walked on the schedule by the people who are here, and the body four provinces away is a separate institution the Kiln has no dealings with.',
+            'The offices are the four Warden ranks the province has been reading off the gate for nine hundred years, because there is nothing else to reveal: the Kiln issues no grants, administers no tenants and has no correspondence, so it has no drafting office, no courier and no apportionment. What it has is a datum, nine hundred formation nodes and a perimeter, and the work is walking all three on a schedule. The second column used to be the whole of the reveal - a Keeper of the Kiln was a Sill-Sworn of the Earth Vein Tower, which explained nine hundred years of refusing applicants, taking nothing out of the richest ground in the world, and having no grievance. It explains less now, because the people who found that sentence intolerable are not here to be described by it: the Survey reposted the court, most of the Wardens declined the reposting and left, and the Myriad Course Hall took them in. Ji Wanluo is Keeper of the Kiln, the rota is walked on the schedule by the people who are here, and the body four provinces away is a separate institution the Kiln has no dealings with.',
         roster: [
             {
                 id: 'court-officer-ji-wanluo',
@@ -1542,17 +1562,17 @@ export const COURTS: readonly Court[] = [
     {
         id: 'court-ninth-face',
         name: 'The Ninth Face Court',
-        apexId: 'apex-long-cut',
+        apexId: 'apex-myriad-course-hall',
         // The Ninth Face Court's tenants are small - the Clearwater Ward at Nascent Soul
         // Early - so this is far above what the Silent Cliffs requires. A court of the
-        // Long Cut is not sized against its province.
+        // Myriad Course Hall is not sized against its province.
         powerOrdinal: 37,
         highWaterMark: {
             name: 'Yun Baiheng',
             ordinal: 44,
             yearsAgo: 90,
             end: 'attempted',
-            note: 'The Face took her to the end of Tribulation Transcendence on driven ground, which is the thing a court exists to be able to do once, and she went up alone in the spring and attempted the crossing. There is a scar in the high Silent Cliffs, eleven li of ground that has not held qi since, and there is no body, because a failed crossing does not leave one. It is the most recent attempt anybody in either province can date, and the Long Cut has not authorised a candidate since.'
+            note: 'The Face took her to the end of Tribulation Transcendence on driven ground, which is the thing a court exists to be able to do once, and she went up alone in the spring and attempted the crossing. There is a scar in the high Silent Cliffs, eleven li of ground that has not held qi since, and there is no body, because a failed crossing does not leave one. It is the most recent attempt anybody in either province can date, and the Myriad Course Hall has not authorised a candidate since.'
         },
         administers: 'The driven ground of the Silent Cliffs and four provinces beyond it that the Silent Cliffs has never heard named.',
         grantsInRegionId: 'region-quiet-marches',
@@ -1568,7 +1588,7 @@ export const COURTS: readonly Court[] = [
         ],
         embodiedByFactionId: null,
         officesNote:
-            'The Long Cut ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Clearwater Ward book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Silent Cliffs has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Long Cut has never seen why one would.',
+            'The Myriad Course Hall ranks by work and its court does the same, so every office here is a face: one person holds the course, one holds the schedule that is countersigned into the Clearwater Ward book, one assesses faces across the four provinces, and one holds a face that cannot be worked and never will be. Nothing is decided by realm and it shows - the man who signs the only document the Silent Cliffs has ever been governed by stands eleven rungs below the woman who walks eleven li of dead ground four times a year and records that it is unchanged. Neither office contains the other and the Myriad Course Hall has never seen why one would.',
         roster: [
             {
                 id: 'court-officer-qiao-shendu',
@@ -1601,7 +1621,7 @@ export const COURTS: readonly Court[] = [
                 apexRank: 'Face Master',
                 wants: 'the face struck off the course, which she has never requested',
                 fears: 'that it will be struck off, and that the record will stop',
-                detail: 'Was Yun Baiheng\'s Set Hand for forty years and asked for the posting the season after; her quarterly return has said unchanged three hundred and sixty times and she writes the word out in full every time. She is a Face Master who was never made a Set Hand of the Long Cut, because the one face she worked to completion had a death on it.'
+                detail: 'Was Yun Baiheng\'s Set Hand for forty years and asked for the posting the season after; her quarterly return has said unchanged three hundred and sixty times and she writes the word out in full every time. She is a Face Master who was never made a Set Hand of the Myriad Course Hall, because the one face she worked to completion had a death on it.'
             },
             {
                 id: 'court-officer-shao-kang',
@@ -1629,6 +1649,38 @@ export const COURTS: readonly Court[] = [
 const NO_TERMS = null;
 
 export const FACTION_PARENTAGE: Record<string, Parentage> = {
+    // ── the two ancient apexes, as houses ───────────────────────────────
+    // They stand at the top of the stack the same way the Pavilion does, and
+    // they are here because the pyramid has to place every faction in the sect
+    // catalog somewhere - which it could not do while these two had no row.
+    'sect-earth-vein-tower': {
+        factionId: 'sect-earth-vein-tower',
+        governance: 'unassailable',
+        relation: 'apex',
+        parentFactionId: null,
+        holds: 'The four arterial veins the eleven surveyed ones branch from, the datum the province measures against without knowing whose it is, and a vault under the centre that nobody has ever been shown.',
+        terms: NO_TERMS,
+        standing: 'not_applicable',
+        awarenessOfApex: 'known',
+        costOfIndependence: null,
+        unbackedReason: null,
+        independenceStance: 'indifferent',
+        note: 'Independence is not a thing this house bought or defends. It is the body every grant in the Jade Gorge is ultimately held from, and the question of who it answers to has never been asked in a room where anybody could have answered it.'
+    },
+    'sect-myriad-course-hall': {
+        factionId: 'sect-myriad-course-hall',
+        governance: 'unassailable',
+        relation: 'apex',
+        parentFactionId: null,
+        holds: 'Driven ground across five provinces, held directly and administered face by face, with no client sects, no leases and no vassals anywhere in the arrangement.',
+        terms: NO_TERMS,
+        standing: 'not_applicable',
+        awarenessOfApex: 'known',
+        costOfIndependence: null,
+        unbackedReason: null,
+        independenceStance: 'indifferent',
+        note: 'There is nothing between the Hall and a carver, which is what makes it the least deniable institution in the world and the one with the least to say about itself. It owns every act by name and consequently does very little quickly.'
+    },
     // ── holders of a Jade Gorge vein, from the Third Sill ────────────────
     // ── the two Azure feeders ──────────────────────────────────────────
     // The Pavilion grants to these two and to nobody else, which makes its
@@ -1961,10 +2013,10 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         // which is the part the Survey finds hardest to answer. It is the ONE
         // administration in the world that has ever changed patrons, and it
         // walked rather than fought. Three other fields in this file used to
-        // say the Long Cut had taken TWO of the Survey's administrations while
+        // say the Myriad Course Hall had taken TWO of the Survey's administrations while
         // a fourth said it was the only one that has ever moved; the fourth was
         // right and the other three have been corrected to it.
-        parentFactionId: 'apex-long-cut',
+        parentFactionId: 'apex-myriad-course-hall',
         holds: 'The datum: the root vein, held on nobody\'s behalf but the Survey\'s, and drawn on by nobody at all.',
         terms: NO_TERMS,
         standing: 'not_applicable',
@@ -1977,17 +2029,17 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         // roll of everybody who had ever held one. See `PostingSchema`.
         posting: {
             appointedBy:
-                'The Long Cut, by schedule, or a sect under the Long Cut or friendly to it, by nomination - which is the change nobody outside has registered and the sharpest fact about this body. The people standing here were appointed by one apex and are now appointed by another, into the same posting, under the same title, on the strength of a roll that predates both arrangements. The admission figure on its own row is what a posting requires rather than what an applicant could meet, and there has been no applicant in nine hundred years because there is no way to be one.',
+                'The Myriad Course Hall, by schedule, or a sect under the Myriad Course Hall or friendly to it, by nomination - which is the change nobody outside has registered and the sharpest fact about this body. The people standing here were appointed by one apex and are now appointed by another, into the same posting, under the same title, on the strength of a roll that predates both arrangements. The admission figure on its own row is what a posting requires rather than what an applicant could meet, and there has been no applicant in nine hundred years because there is no way to be one.',
             whatItIsWorthFromBelow:
-                'The same step up, from a different set of houses. A carver sent from a Long Cut face arrives holding a Warden rank that the Long Cut\'s own ladder does not contain, in a body whose roll goes back to the first four - and the Long Cut, which ranks people by faces worked and deaths avoided and nothing else, has quietly acquired the one posting in its whole arrangement that confers a standing rather than a record. It has never commented on that either.',
+                'The same step up, from a different set of houses. A carver sent from one of the Hall\'s faces arrives holding a Warden rank that the Myriad Course Hall\'s own ladder does not contain, in a body whose roll goes back to the first four - and the Myriad Course Hall, which ranks people by faces worked and deaths avoided and nothing else, has quietly acquired the one posting in its whole arrangement that confers a standing rather than a record. It has never commented on that either.',
             whatItIsWorthFromAbove:
                 'More, not less, and for a reason the Kiln cannot match: this is the body holding the founding posting order that names the first four Wardens, and a term entered on that roll goes under nine hundred years of names. An apex\'s chosen who takes it is buying that. What nobody says at the ceremony is that the Earth Vein Tower has never referred to this body in correspondence since the schism, so a term here is a credential two of the three apexes read and the third passes over in silence.',
             andAfterwards:
-                'They go back higher, into a Long Cut arrangement that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Deeproot Court is closer to being a career here than it is four provinces away, and the roll is why.',
+                'They go back higher, into an arrangement of the Hall\'s that has no rungs to promote them into, which is the problem this body has created for its own patron and has not been asked about. A returning appointee is a Hand again on paper and something else in every room, and the Course Keepers have started assigning them the faces nobody else is given without recording why. More of them stay than at the Kiln. The Deeproot Court is closer to being a career here than it is four provinces away, and the roll is why.',
             andBeingPassedOver:
                 'Cuts deeper here, because the roll is public and the Kiln\'s is not. Everybody who was ever appointed is a name somebody can read, so everybody who was not is a person standing next to a document with a gap where they should be. Two of the grievances in the Silent Cliffs that nobody has traced run back to a nomination that went to somebody else, and one of them has been inherited twice.',
             andWhatTheTermIsWorthAfterwards:
-                'The same precedence, and a sharper version of it, because the Long Cut ranks people by faces worked and deaths avoided and has no vocabulary for standing at all. A returning appointee is a Hand again on paper and is first in the queue in every room, and nobody has ever written down why - the Course Keepers have simply started giving them the faces nobody else is given. What the Long Cut has acquired without noticing is a credential its own ladder cannot express, held by the only people in its whole arrangement who went somewhere uncomfortable on purpose, and it is the one thing across five provinces of driven ground that is not decided by a schedule.'
+                'The same precedence, and a sharper version of it, because the Myriad Course Hall ranks people by faces worked and deaths avoided and has no vocabulary for standing at all. A returning appointee is a Hand again on paper and is first in the queue in every room, and nobody has ever written down why - the Course Keepers have simply started giving them the faces nobody else is given. What the Myriad Course Hall has acquired without noticing is a credential its own ladder cannot express, held by the only people in its whole arrangement who went somewhere uncomfortable on purpose, and it is the one thing across five provinces of driven ground that is not decided by a schedule.'
         },
         // A SCHISM, AND THEN TWO BODIES. This entry used to carry the mirror
         // of the Kiln Court's `lineageDispute`: an argument that the half that
@@ -1996,7 +2048,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         // anywhere settles it. That is gone, and what replaces it is simpler
         // and harder: they split, and they have run independently ever since.
         // This body took the roll and the founding posting order and answers
-        // the Long Cut; the Kiln Court kept the datum, the nodes and the
+        // the Myriad Course Hall; the Kiln Court kept the datum, the nodes and the
         // perimeter and answers the Earth Vein Tower. Neither writes to the other
         // and neither has asked to. See `faction-relationships.ts` for how
         // they stand, which is one relationship rather than two claims.
@@ -2009,14 +2061,14 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         governance: 'administered',
         relation: 'administration',
         parentFactionId: 'court-ninth-face',
-        holds: 'Nothing of its own. It administers both workable faces on the Long Cut\'s behalf, from a counter, with a register.',
+        holds: 'Nothing of its own. It administers both workable faces on the Myriad Course Hall\'s behalf, from a counter, with a register.',
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
         costOfIndependence: null,
         unbackedReason: null,
         independenceStance: null,
-        note: 'Not a sect and not a tenant: a bureau. The Ward issues grants because the Long Cut has delegated the counter work to a local staff of eleven, and its famous discretion extends exactly as far as the schedule it is given. The absolute hegemon of the Silent Cliffs is a clerk\'s office with a stamp, and every carver in the region has organised their entire life around the stamp without once asking whose it is.'
+        note: 'Not a sect and not a tenant: a bureau. The Ward issues grants because the Myriad Course Hall has delegated the counter work to a local staff of eleven, and its famous discretion extends exactly as far as the schedule it is given. The absolute hegemon of the Silent Cliffs is a clerk\'s office with a stamp, and every carver in the region has organised their entire life around the stamp without once asking whose it is.'
     },
     'sect-fallen-grain-caravan': {
         factionId: 'sect-fallen-grain-caravan',
@@ -2104,7 +2156,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
             'Nobody is owed anything and nobody owes them anything, which cuts both ways and cuts harder in one direction: the shed has no arbitration, no escort underwriting, no valuation it can dispute and nobody to appeal a bounty to. About a fifth of the people in it cannot leave the sand at all, because nine eastern gates post a standing rate for an unregistered cultivator brought in upright, and the shed is where the unregistered are.',
         unbackedReason: 'nothing_there_a_document_could_hold',
         independenceStance: 'indifferent',
-        note: 'Nobody has refused to back them and nobody has offered. Clearwater Ward has no record of the shed, the Long Cut schedules faces and there is no face, and the eastern cities deal with the ground by posting a rate at nine gates rather than by administering it. The Caravan have never applied to anybody and could not say who they would apply to.'
+        note: 'Nobody has refused to back them and nobody has offered. Clearwater Ward has no record of the shed, the Myriad Course Hall schedules faces and there is no face, and the eastern cities deal with the ground by posting a rate at nine gates rather than by administering it. The Caravan have never applied to anybody and could not say who they would apply to.'
     },
 
     'sect-ancient-bough-grove': {
@@ -2461,13 +2513,13 @@ export function arrivalStateFor(_fromFactionId: string, toInstitutionId: string)
 
 // -------------------------------------------------------------------------
 // DIRECT RULE
-// No feeder, so it recruits itself. The Long Cut commits to the wide option:
+// No feeder, so it recruits itself. The Myriad Course Hall commits to the wide option:
 // it tests everybody, on a schedule, and the schedule is the most ordinary
 // and most frightening document in the Silent Cliffs.
 // -------------------------------------------------------------------------
 
 export const DIRECT_RULE = {
-    apexId: 'apex-long-cut',
+    apexId: 'apex-myriad-course-hall',
     regionId: 'region-quiet-marches',
     intakeModel: 'tests everyone' as const,
     intake:
@@ -2483,7 +2535,7 @@ export const DIRECT_RULE = {
     whatItFeelsLike:
         'There is no local sect to belong to, no familiar hierarchy, and nobody nearby to petition. Petitioning means addressing a clerk. Joining a federated power means joining a sect; joining a direct ruler means being processed.',
     noSkim:
-        'Nothing is taken by an intermediate tier, and the reports the Long Cut reads are its own rather than what a subsidiary wanted it to hear - which is exactly the trade it made in exchange for doing all of the work itself.'
+        'Nothing is taken by an intermediate tier, and the reports the Myriad Course Hall reads are its own rather than what a subsidiary wanted it to hear - which is exactly the trade it made in exchange for doing all of the work itself.'
 } as const;
 
 // -------------------------------------------------------------------------
@@ -2502,7 +2554,7 @@ export const AZURE_CLOUD_INTAKE = {
     theTrade:
         'Two facts about the Pavilion are already established and they answer each other. It is one person deep, with about ninety disciples and six at Core Formation, and it is the richest institution in the region because a woman on the other side of the Lid loves her sister and sends what she can every nine to fourteen years. Thin on members, rich in resources. There is exactly one rational move available to an institution in that position, and the Pavilion has been making it for a century: spend the thing you have in surplus to buy the thing you lack. They are converting medicine, materials and stones into people.',
     whyNobodyElseCanDoIt:
-        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Tribulation floor with evidence they could cross, and nothing else counts toward it. The Earth Vein Tower and the Long Cut are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
+        'And nobody else at that height can copy it, which is why it reads as the sharpest difference at the top of the world rather than as a house style. The Hollow Court, which is unassailable rather than an apex and sits in no tier of this file, will not look at anybody below a Void Tribulation floor with evidence they could cross, and nothing else counts toward it. The Earth Vein Tower and the Myriad Course Hall are rationing their consumables so hard that their own elders are refused: a Survey elder who asked for a lower Heaven-Ascending Golden Pill for a promising second would be told no, in writing, with the standing stock cited. Not one of those three could fund a heavy loss rate on unproven mortals even if it wanted to.',
     itIsCircumstanceNotValues:
         'Nothing here is a difference of principle. Put the Earth Vein Tower in the Pavilion\'s position - one benefactor, an income, ninety disciples and a stock it cannot spend - and the Survey would run the same programme inside a decade, with better records. Put the Pavilion on the Survey\'s footing and it would ration exactly as hard. The programme is a consequence of a sister, and it would end the year the sending stopped.',
     theOtherReason:
@@ -2549,7 +2601,7 @@ export const AZURE_CLOUD_INTAKE = {
         theRound:
             'The mechanism, and it is deliberate breadth: a probationer is rotated past the sword yard, the formation floor, the pill rooms, the array works, the archive, the beast pens and the outer edge of the inner hall, in a cycle that repeats with variations for as long as they are held. The stated reason is that the sect does not want narrow servants. The working reason is that a probationer who has only ever been shown one thing has only ever been offered one chance, and the Pavilion learned that the hard way long enough ago that the lesson is now just the schedule.',
         stagedCommitment:
-            'And this is the concrete affordability mechanism, which is the whole reason the programme exists at their resource level and not at anybody else. Probation is cheap: a bed, food, a share of a teacher who is teaching a room anyway, and time. Full admission is expensive: a sponsor who stakes their standing, a place on the disciple list every rival reads the week it changes, a share of the stock, and medicine that comes off a shelf that only ever goes down. So the sect commits nothing scarce until exposure has done its work, and it can be wrong nine times out of ten at the cheap stage. The Earth Vein Tower and the Long Cut could not run even the cheap stage, because for them the bed and the teacher are the scarce things.',
+            'And this is the concrete affordability mechanism, which is the whole reason the programme exists at their resource level and not at anybody else. Probation is cheap: a bed, food, a share of a teacher who is teaching a room anyway, and time. Full admission is expensive: a sponsor who stakes their standing, a place on the disciple list every rival reads the week it changes, a share of the stock, and medicine that comes off a shelf that only ever goes down. So the sect commits nothing scarce until exposure has done its work, and it can be wrong nine times out of ten at the cheap stage. The Earth Vein Tower and the Myriad Course Hall could not run even the cheap stage, because for them the bed and the teacher are the scarce things.',
         theLength:
             'Four to seven years, occasionally nine, and the length is not padding. Exposure needs repetition and chance, so the instrument only works if it runs long, which means the Pavilion is carrying a dozen people at any time it has not decided about and may never keep. That is a real and continuous cost, it is visible to every rival who counts the compound, and it is a large part of why this programme is unique to them rather than obvious to everybody.',
         notAllForPromise:
@@ -2705,7 +2757,7 @@ export const REGION_GOVERNANCE: Record<string, {
     },
     'region-quiet-marches': {
         model: 'administered',
-        apexId: 'apex-long-cut',
+        apexId: 'apex-myriad-course-hall',
         fromBelow:
             'One administration, a register and a schedule. No intermediate institution of any kind, nobody local with authority to decide anything, and a counter with a queue at it. Consistent, impersonal, and it does not know your name.',
         joining: 'Joining a direct ruler means being processed: a test you sat at seven, an entry in a register you may read, and a decision made elsewhere by somebody you will never meet.'
@@ -2901,7 +2953,7 @@ export function getParentage(factionId: string): Parentage | undefined {
  * staff, the officers it has posted into courts, and the clients underneath it,
  * whose ceilings include sealed ancestors that are single-use and are not
  * members of anything. A figure summed across those reads as a headcount, is
- * reported as one, and then surprises the person who wrote it - the Long Cut
+ * reported as one, and then surprises the person who wrote it - the Myriad Course Hall
  * has forty posted staff and exactly one person above ordinal 41, and any
  * larger number said about it is a mobilisation rather than a roll.
  *
@@ -2996,8 +3048,8 @@ export function idsForFaction(id: string): string[] {
 // What is true is plainer. There was a schism, and there are two bodies. The
 // Kiln Court holds the datum, the nine hundred lit nodes and the perimeter,
 // under the Earth Vein Tower. Deeproot Court holds the roll and the founding
-// posting order, four provinces away, under the Long Cut. They do not
+// posting order, four provinces away, under the Myriad Course Hall. They do not
 // correspond and neither has asked to. Each fact sits on the body it belongs
-// to; the third party's share - what the Long Cut got out of taking them in -
-// is on `apex-long-cut`; and how the two regard each other is one relationship
+// to; the third party's share - what the Myriad Course Hall got out of taking them in -
+// is on `apex-myriad-course-hall`; and how the two regard each other is one relationship
 // in `faction-relationships.ts`, with a side apiece.

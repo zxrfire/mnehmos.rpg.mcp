@@ -7,6 +7,7 @@
  * All ordinals are on the one shared ladder.
  */
 import { TRUE_IMMORTAL_ORDINAL } from '../../engine/cultivation/realms.js';
+import { idsForFaction } from './governance-and-water-rights.js';
 
 export interface ProductionTier {
     /** Highest ordinal it can currently produce reliably, from its own intake. */
@@ -64,8 +65,41 @@ export interface FactionCharacter {
     distinctSentence: string;
 }
 
+/**
+ * WHAT THE TWO ANCIENT APEXES TURN OUT, HELD ONCE.
+ *
+ * Each of these bodies has an apex row and a sect row, and both rows carry a
+ * character record: the apex one answers what the institution is from outside
+ * and how it can be paid, the sect one answers what it is like to be on the
+ * roll. Those are two questions. What a house PRODUCES is not - it is one fact
+ * about one institution, so it is written here and referenced from both rather
+ * than typed twice. A second copy would not fail; it would drift, and then the
+ * register would quietly quote two pipelines for one house.
+ */
+const WHAT_THE_SURVEY_TURNS_OUT: ProductionTier = {
+    reliableOrdinal: 37,
+    currentCount: 4,
+    peakOrdinal: 46,
+    peakCount: 3,
+    yearsSinceLastPeak: 1_900,
+    note: 'Three crossings in three thousand years, the most recent nineteen hundred years ago, and the Survey files each of them under the district they worked rather than under the crossing. It produces Grand Ascension reliably and has never once treated that as the point.'
+};
+
+const WHAT_THE_SCHEDULE_TURNS_OUT: ProductionTier = {
+    reliableOrdinal: 38,
+    currentCount: 40,
+    peakOrdinal: 46,
+    peakCount: 2,
+    yearsSinceLastPeak: 2_600,
+    note: 'Two crossings, both twenty-six hundred years ago and both on driven ground, and nothing since. Forty posted staff with an unusually even distribution and no prodigies at all - the Myriad Course Hall produces competence at a rate nobody matches and has not produced a crossing in an age.'
+};
+
 export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
-    // THE TWO THAT CANNOT BE JOINED
+    // THE TWO UNNAMEABLE APEXES, TWICE EACH, AND THE TWO ROWS ANSWER DIFFERENT
+    // QUESTIONS. The apex id carries what the institution is to the world and
+    // what it can be paid in; the sect id carries what it is like to stand on
+    // its roll, which is the half a member experiences and none of the apex
+    // fields reach. `characterRecordOf` prefers whichever id it is handed.
 
     'apex-earth-vein-tower': {
         knownFor: {
@@ -74,47 +108,78 @@ export const FACTION_CHARACTER: Record<string, FactionCharacter> = {
             theGap: 'What it is strong at is the thing nobody experiences as strength. A house that wins arbitrations it does not attend leaves no impression at all on the people it beats, which is why its reputation is smaller than the Pavilion\'s and its position is not.'
         },
         practice: 'Everything is minuted, including refusals, including the refusals of Surveyors who give no reason. The register is read by successors and the Survey behaves accordingly: it does not act in a way it would be embarrassed to have written down, which outsiders read as caution and is closer to vanity.',
-        grievance: 'That the one administration in the world that has ever changed patrons walked out of its arrangement and into the Long Cut\'s in living memory, and that it has not been able to think of a reply that would not concede the point.',
+        grievance: 'That the one administration in the world that has ever changed patrons walked out of its arrangement and into the Myriad Course Hall\'s in living memory, and that it has not been able to think of a reply that would not concede the point.',
         fear: 'Being made to attend something. The whole position rests on one person not standing up, and every year that nothing requires her to is a year the arrangement was not tested.',
         lateness: 'Constitutionally. It arrives after everything, by design, because a body that measures cannot also be a body that hurries - and it has never once been early to anything in nine hundred years.',
         disagreement: 'Whether the standing stock exists to be spent. Two Surveyors hold that an unreorderable line item is a thing you keep; two hold that a thing never spent is a thing you do not have. The register records that the question has been raised eleven times and settled none.',
         wrongAbout: 'That its silence is read as composure. A substantial minority of the province reads it as having no answer, and the Survey has no instrument that could tell it which.',
         unitOfValue:
             'The datum. What the Survey counts is whether a figure it published is still true, and nothing else converts into that - not stones, not standing, not a favour, not a life. It cannot be paid, and this is the single most useful thing to know about it: a petitioner offering anything at all has already misunderstood the room. What it can be given is a correction, and the only people who have ever moved the Survey are the ones who arrived holding a measurement it had got wrong.',
-        production: {
-            reliableOrdinal: 37,
-            currentCount: 4,
-            peakOrdinal: 46,
-            peakCount: 3,
-            yearsSinceLastPeak: 1_900,
-            note: 'Three crossings in three thousand years, the most recent nineteen hundred years ago, and the Survey files each of them under the district they worked rather than under the crossing. It produces Grand Ascension reliably and has never once treated that as the point.'
-        },
+        production: WHAT_THE_SURVEY_TURNS_OUT,
         distinctSentence: 'It has won four hundred years of arbitrations it never had to attend, and the reason is not procedural.'
     },
 
-    'apex-long-cut': {
+    'apex-myriad-course-hall': {
         knownFor: {
             outside: 'Driven ground, to the few who know the term at all - and the term is doing a great deal of work, because most of the province could not say what was driven or by whom.',
             actuallyGoodAt: 'Making ground refuse to move, which is worth nothing in a market and everything in a fight. And taking in other people\'s administrations without appearing to have done anything.',
             theGap: 'Its two most consequential acquisitions in living memory both walked in on their own, so there is nothing for the province to have witnessed. A house that gains by being the better option leaves no story behind it.'
         },
-        practice: 'Four titles cover every practitioner in every driven province, ranked by work and nothing else, so a Hand may be an apprentice of nineteen or an Inner Face cultivator of four hundred. Carvers consider this obvious. Every visiting Drawn cultivator finds it insulting, and the Long Cut has never adjusted for a visitor.',
-        grievance: 'That the Earth Vein Tower has never once referred to either defection in correspondence, which denies the Long Cut the acknowledgement that would make them mean something.',
+        practice: 'Four titles cover every practitioner in every driven province, ranked by work and nothing else, so a Hand may be an apprentice of nineteen or an Inner Face cultivator of four hundred. Carvers consider this obvious. Every visiting Drawn cultivator finds it insulting, and the Myriad Course Hall has never adjusted for a visitor.',
+        grievance: 'That the Earth Vein Tower has never once referred to either defection in correspondence, which denies the Myriad Course Hall the acknowledgement that would make them mean something.',
         fear: 'That the two courts it took will discover they dislike each other more than either dislikes the Survey. One left over a grant book and one over a name, and neither rates the other\'s reason.',
-        lateness: 'Never, and it is not a virtue. The Nail cannot be moved, so the Long Cut is already wherever it is going to be, and everything it does has the flat quality of a thing that did not have to travel.',
+        lateness: 'Never, and it is not a virtue. The Nail cannot be moved, so the Myriad Course Hall is already wherever it is going to be, and everything it does has the flat quality of a thing that did not have to travel.',
         disagreement: 'Whether taking in the Deeproot Court was a gain or a precedent. It acquired a forty-four and a body of people who have proved they will walk out of an arrangement they dislike, and nobody senior has said the second half out loud.',
         wrongAbout: 'That its rank ladder is read as egalitarian. Outside the driven provinces it is read as an institution that cannot be negotiated with, because there is no rung to appeal to and no title that means seniority.',
         unitOfValue:
-            'Work done on the ground, counted in courses cut and faces held. Everything else is invisible to it - a stone offered to the Long Cut is not refused so much as not understood as an offer, and standing acquired anywhere else does not transfer at the border. It can be paid, which makes it the more approachable of the two, but only in the one currency: turn up and do the work, for as long as it takes, and be counted. Nineteen years and four hundred are both acceptable answers to how long.',
-        production: {
-            reliableOrdinal: 38,
-            currentCount: 40,
-            peakOrdinal: 46,
-            peakCount: 2,
-            yearsSinceLastPeak: 2_600,
-            note: 'Two crossings, both twenty-six hundred years ago and both on driven ground, and nothing since. Forty posted staff with an unusually even distribution and no prodigies at all - the Long Cut produces competence at a rate nobody matches and has not produced a crossing in an age.'
-        },
+            'Work done on the ground, counted in courses cut and faces held. Everything else is invisible to it - a stone offered to the Myriad Course Hall is not refused so much as not understood as an offer, and standing acquired anywhere else does not transfer at the border. It can be paid, which makes it the more approachable of the two, but only in the one currency: turn up and do the work, for as long as it takes, and be counted. Nineteen years and four hundred are both acceptable answers to how long.',
+        production: WHAT_THE_SCHEDULE_TURNS_OUT,
         distinctSentence: 'Its whole position is a siege it has been winning by default for so long that the staff treat the seat as geography rather than as a garrison.'
+    },
+
+    // ── THE SAME TWO BODIES, FROM INSIDE THE GATE ────────────────────────
+    // Both took a `SECTS` row when it was overturned that a power with nobody
+    // in it is an institution. These rows are the roll: what a person on it
+    // does all day, what the class they are filed under costs them, and what
+    // the building is short of. Nothing here restates the apex row above, and
+    // where the two touch the same fact - what the house turns out - they share
+    // one record rather than each keeping a figure.
+
+    'sect-earth-vein-tower': {
+        knownFor: {
+            outside: 'Nothing with a name attached, and that is the whole of the outside view. Being on this roll is not a thing anybody can be congratulated for, because the people who would do the congratulating have not been told where you went and you are not permitted to tell them.',
+            actuallyGoodAt: 'Turning a villager into an administrator, at a scale nothing else in the province approaches. What comes off this roll is people who can hold a figure, walk a perimeter and refuse to sign one they have not personally stood on, and it turns out more of them in a decade than every school in the gorge takes in.',
+            theGap: 'A clerk is not a story, and the handful of names on this roll anybody would recognise all arrived at the height they are standing at. The house that made everybody else has never been credited with making anyone.'
+        },
+        quietlyStopped: 'Going anywhere. Nobody has been sent to anything in four hundred years, and the register files each absence as a procedure rather than as a choice - a courier instead of an envoy, a ruling instead of a hearing, an arbitration concluded from a room nobody attended. The one minute that puts the actual reason in writing is four lines long, was withdrawn by the party who wrote it, and is still on the shelf with no reply under it.',
+        practice: 'Nobody is answered in the room they asked in. A question goes onto the sheet for that day, the sheet goes up, and the reply comes back by courier some days later in one sentence that does not refer to the conversation it settles. Petitioners who have travelled a month find this insulting and are told, accurately, that it is how everybody is dealt with, including the four arterials and including the seat.',
+        grievance: 'That a house asked to send somebody up does it, gets back a person who is not permitted to say where she went, and then tells the province she was taken - as though four hundred years of correction were an abduction rather than a training.',
+        fear: 'A season in which the seat is somewhere else. Everybody on the roll can list what is in those rooms, everybody knows what is standing between that and a competent crew with weeks to spend, and everybody knows it is one person who does not leave the chamber.',
+        lateness: 'Thirty-one of eighty-eight nodes lit, and the Survey can say exactly what every dark one was laid for - it has never had the people to light them, which is a different admission and a worse one. The drafting floor under them was cut for several times the clerks the house has ever posted at once.',
+        disagreement: 'Whether Unplaced has stopped being a class. Two of the four arterials hold that a word covering a village intake of eleven months and an elder brought in from a subsidiary is no longer doing any work; the clerks who deal with both hold that the day it is subdivided is the day realm starts deciding things here again. It has been raised at every renewal season for ninety years and has never once been minuted.',
+        wrongAbout: 'It tells every intake at the door that Unplaced is a bar rather than a filter, and that where a person starts closes nothing. Its own roll says otherwise: almost everybody who arrives is Unplaced when they die, and the ones who were not were marked inside their first year by somebody who had walked a vein beside them, which is a thing that happens to you rather than a thing you do.',
+        unitOfValue:
+            'A name somebody else has put their own standing behind. Nothing here can be bought and nothing opens by climbing - a mark is another person\'s risk taken on your account, it stands only while they are willing to lose by it, and it can be withdrawn without a reason being given. Cultivators who arrive carrying stones find inside a week that there is nothing in the building to spend them on, and the ones who arrive carrying a rung find out slower.',
+        production: WHAT_THE_SURVEY_TURNS_OUT,
+        distinctSentence: 'The one house in the world where a village intake of eleven months and an elder four realms above her hold the same rank, and where that rank is the one almost everybody on the roll dies holding.'
+    },
+
+    'sect-myriad-course-hall': {
+        knownFor: {
+            outside: 'Work, and a wage, in the five provinces that have heard of it at all. Ask anybody standing on a face who they work for and the answer is not a name - it is that the large thing puts you on a face, writes down what you finish, and pays on the day.',
+            actuallyGoodAt: 'Keeping people alive on stone that kills them. The only distinction the schedule records is a face closed with nobody dead on it, so the whole of what a crew teaches a new hand is how not to be the death on somebody else\'s - and because it is a trade rather than an art, it can be put into the hands of anybody who turns up.',
+            theGap: 'What it is best at is a thing that did not happen, entered as a date. Nobody has ever looked at an unbroken stretch of record and been impressed by it.'
+        },
+        practice: 'A face is read out before it is worked, and the reading is the whole of the ceremony: what the stone is, who cut the course under it, how long it took them and what they were paid. Then the next name on the schedule steps up. Nobody is introduced, nobody is thanked, and a carver who has been on the roll three hundred years is read out in the same eleven words as one who arrived in spring.',
+        grievance: 'That a man who has worked three faces to the last course is a Hand at ninety years, that the rule doing it to him is the same rule that put him on a face at nineteen with nobody to speak for him, and that there is no room anywhere in five provinces in which either half of that can be raised.',
+        fear: 'The cough. It is not a hazard of the work, it is the work - it takes more carvers than everything else combined, nothing purchasable moves the odds, and a crew can hear which of them it has started in well before the man himself will say so.',
+        lateness: 'Thirty-four of thirty-four nodes lit, all of them the house\'s own cutting, which makes this the one holding in the catalog where the age does not show in the diagram at all. It shows in the cases instead. There are three, they are sealed, the count is published, and it has only ever gone down.',
+        disagreement: 'Whether a face closed clean measures the carver or the stone. The crews on the thin bands hold that a clean close is largely a matter of which band you were handed; the schedule does not distinguish and has never been asked to in writing, because anything asked in writing here is on the record for good and everybody on a face knows it.',
+        wrongAbout: 'Everybody on a face believes the schedule is written out of the record. It is written a band at a time and issued a band at a time, and the people who hold more than one band of it at once can be counted on a hand - so the flattest institution in the world is also the one where what a carver may know about their own next decade is settled by somebody they will never be in a room with.',
+        unitOfValue:
+            'A date. Everything anybody holds here is an entry with a day against it - a face closed, a handover, a death - and nothing else is written down at all, so standing cannot be lent, inherited, argued or bought. A carver who wants something asks for it to go on the schedule, and what comes back is a date or it is nothing.',
+        production: WHAT_THE_SCHEDULE_TURNS_OUT,
+        distinctSentence: 'Nothing here is had out of turn, and the proof of it is the seat: the handover that put the strongest person in five provinces where he is went onto the schedule with a date against it, between two faces.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -926,6 +991,30 @@ export const PROVENANCE_PENDING: ReadonlySet<string> = new Set([
 ]);
 
 export const HIGH_REALM_PROVENANCE: Record<string, HighRealmProvenance> = {
+    'sect-earth-vein-tower': {
+        highestOrdinal: 43,
+        climbedYearsAgo: 400,
+        climbedWhere:
+            'The chamber under the datum vault, on the four arterial veins the province branches off without knowing it, and on a road the house holds one copy of and has never made a second of.',
+        ageNote:
+            'Late Age, which is the part the Survey does not find remarkable and everybody else would. She climbed on ground the house itself measured and priced, in this era, and the register entry for it is three lines long and gives the district.',
+        whyNobodyHasSince:
+            'Nobody has, in four hundred years, and the reason is on the record rather than in dispute: there is one copy of the road, it is read in the hall in the presence of somebody who is not going to leave the room, and the only person who can teach it is the person the house cannot spare. The Assessor of the Deep has costed a second copy twice - somewhat over nine years of his own hours, during which the road would be unavailable - and concluded twice that the arrangement is better as it stands.',
+        settledBelief:
+            'The province holds that the arterials are administered by a body with a great many strong people in it. What is actually there is a long roll that tops out at thirty-nine and one woman who has not left a room in four hundred years, and the gap between those two readings is the most valuable thing anybody could learn about this house.'
+    },
+    'sect-myriad-course-hall': {
+        highestOrdinal: 42,
+        climbedYearsAgo: 700,
+        climbedWhere:
+            'A face in the Silent Cliffs worked to completion in the ordinary way, and then the seat, which cannot be left. Nothing about the climb was unusual and the schedule records it between two other faces.',
+        ageNote:
+            'Late Age, on driven ground, which the Hall regards as the only interesting fact about it: the ground was not richer then and the method has not changed, so the difference between this climb and the ones that failed is time and the order they were taken in.',
+        whyNobodyHasSince:
+            'Nobody has in seven hundred years, and the Hall states the two reasons to anybody it offers the road to, at the time, in writing. The opening is four rungs of the hardest start of any road in the world, and the house does not regard that as a defect. And the teacher cannot leave the Nail, so a student comes to the ground rather than the other way round, and the hours come out of the same arrangement that administers five provinces of driven face by name.',
+        settledBelief:
+            'Every driven province holds that the seat is simply very old, which is true and is not the reason. It is a body that has produced competence at a rate nobody matches for eleven hundred years and has produced a crossing in none of them, and it has never once presented the two facts as a puzzle.'
+    },
     'sect-azure-mist-court': {
         highestOrdinal: 37,
         climbedYearsAgo: 340,
@@ -1221,12 +1310,33 @@ export function factionsHoldingDormantArts(): string[] {
 
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * A body with a row in `APEX_INSTITUTIONS` and a row in `SECTS` has two ids.
+ * Where only one of them carries a record the lookup resolves the other to it;
+ * where both do, the id it is handed wins, because the two rows answer
+ * different questions about the same house.
+ *
+ * The reach that rank bands are priced off is a separate matter and is decided
+ * in `the-three-floors-a-house-admits-at.ts`, which excludes the two houses
+ * whose rank 0 is a class rather than a floor. It used to get that for free
+ * from those houses having no record under their sect id; they have one now.
+ */
+function characterRecordOf(factionId: string): FactionCharacter | undefined {
+    const direct = FACTION_CHARACTER[factionId];
+    if (direct) return direct;
+    for (const alias of idsForFaction(factionId)) {
+        const found = FACTION_CHARACTER[alias];
+        if (found) return found;
+    }
+    return undefined;
+}
+
 export function getFactionCharacter(factionId: string): FactionCharacter | undefined {
-    return FACTION_CHARACTER[factionId];
+    return characterRecordOf(factionId);
 }
 
 export function getProductionTier(factionId: string): ProductionTier | undefined {
-    return FACTION_CHARACTER[factionId]?.production;
+    return characterRecordOf(factionId)?.production;
 }
 
 /**

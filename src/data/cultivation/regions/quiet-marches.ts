@@ -168,6 +168,11 @@ export const THE_QUIET_MARCHES: Region = {
     politicsNote:
         'Direct rule. The province is administered by the institution that holds it, through a local bureau of eleven people at the weir, and there are no client sects anywhere in it - no leases, no vassals, no local hierarchy to belong to. Clearwater Ward looks like a hegemon and is a counter. There is no rivalry here because there is nobody to be rival with: only application, refusal, and an appeal form that is logged and answered years later.',
     factionIds: [
+        // The seat itself, built around the Nail. Its presence here is not a
+        // client relationship and does not contradict `politicsNote`: there are
+        // still no client sects in the province, because the Hall is the one
+        // institution in it and everybody on a face is on its roll.
+        'sect-myriad-course-hall',
         'sect-clearwater-ward',
         'sect-six-li-patrol',
         'sect-fallen-grain-caravan',
@@ -286,7 +291,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: 'court-ninth-face',
         subHoldings: [],
         onPaper:
-            'One of two workable faces in the province, entered on the Long Cut course schedule in the bottom band, administered by the Clearwater Ward from a counter at Iron Ridge.',
+            'One of two workable faces in the province, entered on the Hall\'s course schedule in the bottom band, administered by the Clearwater Ward from a counter at Iron Ridge.',
         onTheGround:
             'Grant access at forty stones a day and a queue of eleven. The Court holds nothing of its own here: it apportions somebody else\'s face on somebody else\'s schedule and has no authority to make an exception.',
         discrepancy: 'none',
@@ -348,7 +353,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         onPaper:
             'The staked road corridor. It is on the register as a line of survey with no face in it, and a district with no face has no holder, so the column is blank.',
         onTheGround:
-            'Repainted every year by six people nobody pays, on ground the Long Cut has never scheduled, and leaving the stakes is how visitors die here.',
+            'Repainted every year by six people nobody pays, on ground the Myriad Course Hall has never scheduled, and leaving the stakes is how visitors die here.',
         discrepancy: 'no_holder_of_record',
         note:
             'The Silent Cliffs answer to the Clear River Ford unsurvey, arrived at from the opposite direction: not ground too disputed to certify, but ground too worthless to schedule, kept alive by people who were never appointed to keep it.'
@@ -382,7 +387,7 @@ export const QUIET_MARCHES_PREFECTURES: readonly Prefecture[] = [
         delegatedFromId: 'court-ninth-face',
         subHoldings: [],
         onPaper:
-            'A face on the Long Cut course that cannot be worked, held by a Face Master of the Ninth Face Court, with a quarterly return that has read unchanged three hundred and sixty times.',
+            'A face on the Hall\'s course that cannot be worked, held by a Face Master of the Ninth Face Court, with a quarterly return that has read unchanged three hundred and sixty times.',
         onTheGround:
             'Eleven li of high Silent Cliffs that has not held qi in ninety years, since a woman went up alone in the spring and attempted the crossing. There is no body, because a failed crossing does not leave one.',
         discrepancy: 'none',

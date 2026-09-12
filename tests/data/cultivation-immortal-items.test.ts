@@ -131,7 +131,7 @@ describe('who holds them', () => {
         expect(holders.has('sect-azure-cloud-pavilion')).toBe(true);
         // The other two are the administrators of the world, not sects.
         expect(holders.has('apex-earth-vein-tower')).toBe(true);
-        expect(holders.has('apex-long-cut')).toBe(true);
+        expect(holders.has('apex-myriad-course-hall')).toBe(true);
         // Nobody else holds anything.
         for (const sect of SECTS) {
             if (holders.has(sect.id)) continue;
@@ -296,14 +296,14 @@ describe('three grades, and the comparison they make', () => {
         expect(higher, 'the top of the range must stay vanishing').toBeLessThanOrEqual(2);
         // One each to the two ancient channels, and none to the fresh one.
         expect(gradeCeilingOf('apex-earth-vein-tower')).toBe('higher');
-        expect(gradeCeilingOf('apex-long-cut')).toBe('higher');
+        expect(gradeCeilingOf('apex-myriad-course-hall')).toBe('higher');
         expect(gradeCeilingOf('sect-azure-cloud-pavilion')).toBe('lower');
     });
 
     it('inverts the table: the Pavilion is deepest and worst', () => {
         const pavilion = totalHeldBy('sect-azure-cloud-pavilion');
         const survey = totalHeldBy('apex-earth-vein-tower');
-        const longCut = totalHeldBy('apex-long-cut');
+        const longCut = totalHeldBy('apex-myriad-course-hall');
         // Most in total, by a distance.
         expect(pavilion.total).toBeGreaterThan(survey.total + longCut.total - 2);
         expect(pavilion.total).toBeGreaterThan(survey.total);
@@ -612,7 +612,7 @@ describe('stock versus flow', () => {
             expect(h.byGrade.middle, 'the Pavilion must hold no middle grade').toBe(0);
         }
         expect(gradeCeilingOf('apex-earth-vein-tower')).toBe('higher');
-        expect(gradeCeilingOf('apex-long-cut')).toBe('higher');
+        expect(gradeCeilingOf('apex-myriad-course-hall')).toBe('higher');
         expect(gradeCeilingOf('sect-azure-cloud-pavilion')).toBe('lower');
     });
 
@@ -651,7 +651,7 @@ describe('stock versus flow', () => {
     it('gives the Earth Vein Tower the argument and the wrong inventory', () => {
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Earth Vein Tower has, exactly and independently/i);
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/converts a higher into six lowers/i);
-        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Long Cut has not raised the question/i);
+        expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Myriad Course Hall has not raised the question/i);
         expect(STOCK_VERSUS_FLOW.whoElseHasWorkedItOut).toMatch(/Hollow Court does not need to/i);
     });
 });

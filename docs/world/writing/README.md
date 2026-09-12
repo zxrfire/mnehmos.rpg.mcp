@@ -21,3 +21,20 @@ of `docs/world` because the engine loads it at run time.
 Indexes: [`../INDEX.md`](../INDEX.md) by situation,
 [`../BY-HOUSE.md`](../BY-HOUSE.md) by house.
 Both also reach the design prose in `src/data/cultivation/`.
+
+---
+
+## Where else to look
+
+- [`../../../src/web/README.md`](../../../src/web/README.md) - where these rules are enforced
+  in code. `prompt.ts` is the one module to tune when the prose is wrong; `narrator.ts` is the
+  wall between what the engine decided and what the narrator may say.
+- [`../../../AGENTS.md`](../../../AGENTS.md) - the repo-wide version of the same discipline:
+  the engine states facts and the narrator writes sentences, and an engine string that
+  forecasts, infers or sets a mood is the immersion defect.
+- [`../../verbs.md`](../../verbs.md) - every verb a player can reach, in a player's own words.
+- [`../../../src/web/what-each-verb-is-for-in-the-players-words.ts`](../../../src/web/what-each-verb-is-for-in-the-players-words.ts) -
+  the same thing as code, which is what the model is actually shown.
+- [`../NARRATOR-CORE.md`](../NARRATOR-CORE.md) - the text that IS auto-injected, as opposed to
+  everything else in this tree, which is reference for people and agents.
+

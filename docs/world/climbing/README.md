@@ -42,3 +42,23 @@ the files above**, in header comments and exported constants that no search of
 Indexes: [`../INDEX.md`](../INDEX.md) by situation,
 [`../BY-HOUSE.md`](../BY-HOUSE.md) by house.
 Both also reach the design prose in `src/data/cultivation/`.
+
+---
+
+## Where else to look
+
+- [`../../../src/engine/cultivation/README.md`](../../../src/engine/cultivation/README.md) -
+  the arithmetic behind every claim on this page: `realms.ts` for the ladder,
+  `manual-quality.ts` for what an art is worth, `deviation.ts` and
+  `what-goes-wrong-at-a-realm-boundary.ts` for what failure does.
+- [`../../../src/data/cultivation/README.md`](../../../src/data/cultivation/README.md) - the
+  authored tables these files already link into, in context with the rest of the catalog.
+- [`../../../src/engine/world/README.md`](../../../src/engine/world/README.md) - climbing as it
+  happens to everybody rather than to one person: `ladder-odds.ts`,
+  `a-crossing-enters-the-world-as-news.ts`, `recording-what-a-crossing-did.ts`,
+  `manuals.ts`, `what-a-manual-has-left-in-it.ts`.
+- [`../../../src/engine/birth/README.md`](../../../src/engine/birth/README.md) - where a
+  cultivator's root, physique and starting standing come from, before any of this applies.
+- [`../../../src/web/README.md`](../../../src/web/README.md) - how a player climbs:
+  `practices.ts`, `seclusion-verbs.ts`, `crossing.ts`, `why-progress-has-stopped.ts`.
+

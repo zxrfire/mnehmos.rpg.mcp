@@ -41,3 +41,28 @@ should: see [the declaration-list note](../../docs/comment-cleanup-rules.md).
 | [`tile.ts`](./tile.ts) | - |
 | [`turn-state.ts`](./turn-state.ts) | Action schema for batch submission |
 | [`world.ts`](./world.ts) | - |
+
+---
+
+## Where else to look
+
+- [`../storage/repos/README.md`](../storage/repos/README.md) - where these shapes land. A
+  column and a field that disagree is the defect these schemas exist to prevent, and
+  `../storage/migrations*.ts` is the other half of any change here.
+- [`../engine/cultivation/README.md`](../engine/cultivation/README.md) - the arithmetic over
+  `cultivation.ts`. The closed enums here are what that directory branches on, so widening one
+  is never a local change.
+- [`../engine/world/README.md`](../engine/world/README.md) - **the world is not Zod.**
+  `NpcRecord`, `NpcGoal`, `NpcActivity` and `ExistenceState` are plain interfaces in
+  `engine/world/npc-state.ts`. Searching `schema/` for the NPC shape finds `character.ts`,
+  which is a different thing: the identity row the agent runtime drives.
+- [`../engine/social/README.md`](../engine/social/README.md) - likewise `KnowledgeRecord`,
+  `Stance`, `SourceKind` and `KnowingStage` are defined in `engine/social/`, not here. Only
+  `secret.ts` of that subject is a schema.
+- [`../server/consolidated/README.md`](../server/consolidated/README.md) - the boundary these
+  are enforced at. A tool's argument schema is the reason a model cannot widen what the engine
+  accepts.
+- [`../engine/people/README.md`](../engine/people/README.md) - `Cultivator` here and
+  `NpcRecord` there are the two tables one person can be in; `Person` is the read that covers
+  both.
+

@@ -210,7 +210,7 @@
  *     core_formation             7.30 ..  7.63       6.60 ..  8.61     6.85 .. 12.04
  *     nascent_soul               5.02 ..  5.52       6.00 ..  6.65     4.56 ..  7.53
  *     deity_transformation       2.76 ..  3.21       2.15 ..  2.80     2.18 ..  3.69
- *     void_refinement            0.99 ..  1.00       0.98 ..  1.20     0.78 ..  1.38
+ *     void_tribulation            0.99 ..  1.00       0.98 ..  1.20     0.78 ..  1.38
  *     body_integration           1.38 ..  1.41       1.57 ..  1.60     1.17 ..  1.59
  *     grand_ascension            0.39 ..  0.40       0.39 ..  0.40     0.39 ..  0.40
  *     tribulation_transcendence  0.39 ..  0.40       0.39 ..  0.40     0.39 ..  0.40

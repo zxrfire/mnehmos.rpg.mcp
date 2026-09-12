@@ -205,10 +205,10 @@ export const FAVOUR_STANCES: readonly FavourStance[] = [
     {
         factionId: 'sect-kiln-wardens',
         answer: 'no bar to skip, because there is no door',
-        why: 'The same absence, four provinces away and signed by the other apex. Appointment is by the Long Cut, or by a sect under it or friendly to it, and its admission figure is what a posting requires rather than what an applicant could meet - there has been no applicant in nine hundred years because there is no way to be one. A Deeproot Court heir is a shape the arrangement cannot produce, and the reason is not that the bar is high: it is that the Court has no members in the sense the word usually carries.',
+        why: 'The same absence, four provinces away and signed by the other apex. Appointment is by the Myriad Course Hall, or by a sect under it or friendly to it, and its admission figure is what a posting requires rather than what an applicant could meet - there has been no applicant in nine hundred years because there is no way to be one. A Deeproot Court heir is a shape the arrangement cannot produce, and the reason is not that the bar is high: it is that the Court has no members in the sense the word usually carries.',
         andWhatItTakes: null,
         andWhetherItsOwnWordMovesAnybody:
-            'Its nominations carry, inside the Long Cut, and that is the whole of its influence - a body holding the founding posting order is worth being on good terms with, and the Course Keepers have never once declined one of its names.'
+            'Its nominations carry, inside the Myriad Course Hall, and that is the whole of its influence - a body holding the founding posting order is worth being on good terms with, and the Course Keepers have never once declined one of its names.'
     }
 ];
 
@@ -231,7 +231,7 @@ export const THE_APEXES_THAT_TRADE = {
     theDeepSurvey:
         'It will place anybody, anywhere in its own arrangement, and it does not have to ask twice - a tenant holding a twelve-year grant does not refuse the body that renews it, and everybody in the Jade Gorge understands that a Survey request is a request in form only. What it takes is not stones. It takes the thing it always takes: a term added to what the house already owes, unstated, uncollected, and available. A house that has been done a favour by the Survey is a house that will be asked for something later and will not be in a position to weigh it.',
     theLongCut:
-        'It will do the same and it prices it honestly, which is the difference. The Long Cut employs rather than grants, so it cannot lean on a tenant - what it has instead is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Long Cut regards as evidence that it sets them correctly.',
+        'It will do the same and it prices it honestly, which is the difference. The Myriad Course Hall employs rather than grants, so it cannot lean on a tenant - what it has instead is a schedule, five provinces of driven ground and forty posted staff, and what it trades is a place in that schedule. The price is stated at the time, in writing, and is generally a term of work from somebody the asking house would rather have kept. Nobody has ever complained about the terms, which the Myriad Course Hall regards as evidence that it sets them correctly.',
     andWhatTheyWillNotDo:
         'Neither will move a bar that cannot be moved, and both know exactly which those are. Asking the Earth Vein Tower to place a child at the Frostmirror gets a one-line reply saying the arts would kill them; asking either of them to place one at the Hollow Court gets no reply at all. A word is not a lever against a wall, and the two apexes are better than anybody in the world at knowing the difference - which is most of why their words are worth anything.',
     andWhyThePavilionIsNotHere:
@@ -298,6 +298,18 @@ export function favourStanceOf(factionId: string): FavourStance | undefined {
             'An obligation, unstated at the time and collected later. Houses at this level do not name a price for a favour because naming one makes it a transaction that ends, and an unnamed one does not.',
         andWhetherItsOwnWordMovesAnybody: null
     };
+}
+
+/**
+ * Whether this body has no door at all: arrival is by appointment to a posting
+ * rather than by admission, so there is nothing to apply to and nobody to ask.
+ *
+ * Read off the stance rather than off `recruits`, because the stance is the
+ * field that already carries the distinction and it covers courts as well as
+ * sects.
+ */
+export function thereIsNoDoorAt(factionId: string): boolean {
+    return favourStanceOf(factionId)?.answer === 'no bar to skip, because there is no door';
 }
 
 /** Every house whose bar will not move, with the reason. */

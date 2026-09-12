@@ -36,6 +36,14 @@ export function wholeWorkVolumes(art: { volumes?: readonly string[] | null }): r
  * A settlement at a death holds object rows and not techniques, so it can only
  * ask this way round - and it has to ask, because a place takes the END off a
  * work and nothing can say which end a volume is at without the order.
+ *
+ * AND IT STAYS IN THIS MODULE, ruled. The open question was whether to move it
+ * somewhere an engine module could reach, so a corpse yielding volumes two and
+ * three could be described as a manual with a hole in it. Under the three
+ * categories there is no such description - that is a RUINED manual, and
+ * `whatConditionAManualIsIn` answers it off the unbroken run without needing to
+ * know which parts are gone. The move would have bought a description the
+ * design does not have.
  */
 export function theWorkThisVolumeIsPartOf(objectId: string): readonly string[] | null {
     for (const volumes of Object.values(SCATTERED_MANUAL_VOLUMES)) {

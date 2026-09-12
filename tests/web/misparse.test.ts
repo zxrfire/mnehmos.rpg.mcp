@@ -2018,7 +2018,7 @@ describe('institutions acting on each other', () => {
         ['I offer an alliance to the Frostmirror Court', 'posture', 'alliance'],
         ['I petition the Third Sill Court for a grant', 'petition', 'grant'],
         ['I demand tribute from the Azure Dew Sect', 'posture', 'tribute'],
-        ['I go over to the Long Cut', 'posture', 'defect'],
+        ['I go over to the Myriad Course Hall', 'posture', 'defect'],
         // Two of the twelve are NOT new verbs, and finding that out was worth
         // more than either verb would have been. Both were already implemented
         // and both were one phrasing away from working.

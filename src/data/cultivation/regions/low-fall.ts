@@ -90,6 +90,11 @@ export const THE_LOW_FALL: Region = {
         'Federated. Seventeen institutions holding single veins on twelve-year grants from something none of them names in public, competing for standing with whoever renews them rather than for the veins themselves - which is why the province argues constantly and burns rarely. It is the only province in the world where a holding can be granted at all, because it is the only one where a vein can be surveyed, and the four provinces around it each solved the same problem a different way. A newcomer with talent has options here, and every one of them is somebody else\'s tenant.',
     factionIds: [
         'sect-azure-cloud-pavilion',
+        // Seated here because its vault is here, not because the province
+        // grants it anything - the Jade Gorge holds from it. It is in the list
+        // for the same reason the Pavilion is: a house with a roll stands
+        // somewhere, and a house that stands nowhere cannot be walked to.
+        'sect-earth-vein-tower',
         'sect-azure-mist-court',
         'sect-azure-dew-sect',
         'sect-verdant-spring-valley',

@@ -129,13 +129,13 @@ export function doseId(factionId: string, medicineId: string, index: number): st
 /**
  * The name of a holder, whether or not this world instantiates it as a faction.
  *
- * TWO OF THE FIVE TRACKED HOLDERS ARE NOT FACTIONS AND CANNOT BE. The Deep
- * Survey and the Long Cut carry `factionId: null` in the governance catalog on
- * purpose - they are bodies nobody can join, they have no seat in the province,
- * and the world seeder therefore never makes a faction row for them. The same is
- * true of two of the four courts. That is a fact about the setting rather than a
- * defect, and it is why this module resolves a holder's name through the
- * governance catalog instead of assuming `state.factions` has everybody.
+ * A HOLDER IS NOT ALWAYS A FACTION ROW. Two of the four courts are postings
+ * rather than houses and never get one. The three apexes do now - each carries
+ * a `factionId` - but a holder is filed under its APEX id here, and a faction
+ * row is filed under its sect id, so the two do not meet without a lookup. That
+ * is why this module resolves a holder's name through the governance catalog
+ * instead of assuming `state.factions` has everybody under the id it was asked
+ * about.
  */
 function holderNameOf(state: WorldState, holderId: string): string {
     const faction = state.factions.find(f => f.id === holderId);

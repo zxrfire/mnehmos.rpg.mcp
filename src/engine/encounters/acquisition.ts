@@ -137,7 +137,12 @@ export type AcquisitionRefusal =
     | 'no_matching_dao'
     | 'wrong_dao'
     | 'already_past_its_cap'
-    | 'no_volumes_in_hand'
+    /**
+     * The book cannot be read at all: no part of it is in hand, or the part
+     * that opens it is not. One refusal rather than two, because the three
+     * categories make `ruined` the single test - see `whatConditionAManualIsIn`.
+     */
+    | 'ruined'
     | 'standing_not_assessed';
 
 /**
@@ -192,9 +197,17 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
     }
 
     // the ceiling
+    //
+    // RUINED IS ASKED FIRST, because a ruined book has no ceiling and the
+    // cap comparison would otherwise refuse it as "already past its cap" -
+    // which is a true sentence about the number and a false one about the
+    // book. The reason somebody cannot use it is that it will not open.
     const techniqueCap = ceiling.cap;
     const raisesTheCeiling = techniqueCap === null || techniqueCap > ordinal;
-    if (!raisesTheCeiling) {
+    if (ceiling.condition === 'ruined') {
+        refusals.push('ruined');
+        lines.push(ceiling.line);
+    } else if (!raisesTheCeiling) {
         refusals.push('already_past_its_cap');
         lines.push(
             `${manual.name} ends at ${rankName(techniqueCap)}, and this cultivator is ` +
@@ -202,7 +215,6 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
             'slower there, it is stopped.'
         );
     } else if (ceiling.volumesTotal > 0) {
-        if (ceiling.volumesHeld === 0) refusals.push('no_volumes_in_hand');
         lines.push(ceiling.line);
     }
 
@@ -230,7 +242,7 @@ export function assessAcquisition(input: AcquisitionInput): AcquisitionReport {
         refusals.includes('wrong_dao') ||
         refusals.includes('no_matching_dao') ||
         refusals.includes('already_past_its_cap') ||
-        refusals.includes('no_volumes_in_hand');
+        refusals.includes('ruined');
 
     return {
         usable: !hardRefusal,

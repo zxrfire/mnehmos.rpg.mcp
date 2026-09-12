@@ -624,7 +624,7 @@ describe('the population curve is a different shape from the prodigy curve', () 
                 ambient
             });
             const tribulation = measured.tiers.find(t => t.realm === 'tribulation_transcendence')!;
-            const voidRefinement = measured.tiers.find(t => t.realm === 'void_refinement')!;
+            const voidRefinement = measured.tiers.find(t => t.realm === 'void_tribulation')!;
             expect(
                 tribulation.share,
                 `${ambient} puts people at the last realm as a matter of course`

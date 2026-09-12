@@ -27,6 +27,10 @@ The catalog that models all of this is
 
 <!-- tier: 3 -->
 
+- [`discovery.md`](./discovery.md#a-gate-decides-what-you-may-do-never-what-you-may-see) - **read
+  this before writing any refusal a house makes.** A gate decides what somebody may do and
+  never what they may know about, and the wall outside a compound is the same rule from
+  the other side
 - [`dao-houses.md`](./dao-houses.md) - the other kind of formidable faction
 - [`immortals.md`](../climbing/immortals.md) - what is on the other end of an offering
 - [`economy.md`](../things/economy.md) - what a sect's scarcity actually trades in

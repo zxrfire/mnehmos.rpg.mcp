@@ -317,7 +317,9 @@ below falls straight out of it:
   house - only unexplained ones.
 - **And a disciple who is missing while their plate is still whole is the worse signature.**
   The house knows they live and knows they are not answering, which is precisely what a captive
-  looks like. **That is when the posters go out.**
+  looks like. **That is when the posters go out** - onto the same walls the intakes are nailed
+  to, as one kind of notice among four. See [an intake is one kind of
+  notice](./discovery.md#an-intake-is-one-kind-of-notice-and-it-is-the-smallest).
 - **So a stolen token is hot from the moment it is taken.** The posters *are* the cancellation,
   and they travel at the speed of the gossip system: through hands, distorted, degrading with
   distance. The window is the gap between the taking and the notice arriving, and it closes
@@ -747,14 +749,14 @@ mistakes it for a description of the running world will build on sand.
 | **Realm as the perceptual axis** | **exists**, everywhere |
 | **`KnowingStage`** - the reference axis, per subject | **exists**, `src/engine/social/discovery.ts` |
 | **`RESERVED_SURNAMES`** - lineage names never rolled | **wired**, `src/engine/world/reading-a-lineage-off-a-name.ts` |
-| **`surnameOf`** - reading a family off a name | **wired**, through `lineageNameOf` in the same file, and reached by `resolveCultivator` |
+| **Reading a family off a name** | **wired**, and this row used to point at the wrong function: `surnameOf` is a two-line split in `history.ts` used by the family seeder. The lineage read is `lineageNameOf` -> `readALineageOffAName` -> `readTheRollFor` in `reading-a-lineage-off-a-name.ts`, and `resolveCultivator` in `src/web/entities.ts` calls the last two, gated on the reader holding a name for the house |
 | **Recognising whose art you just watched** | **built**, `src/engine/world/recognising-whose-art-you-just-watched.ts`, and reachable by typing *"is this the Azure Cloud's art"* |
-| **Life plates, and tokens that shatter** | **do not exist** anywhere in the repo |
-| **A jade tag carrying a house's name** | **does not exist** as an identity object |
-| **Sealed ancestors** | **in the catalogs** - `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`, `UNOWNED_ANCESTORS` - and **nothing in `src/engine/` reads them** |
-| **The ground as a third axis** | **built**, `src/engine/social-leverage/ground-trust.ts`, off `src/engine/world/ground-holder.ts`. **Reached by the world and not yet by the player**: the NPC simulation fills `AttemptInput.where` at both its calls and `GameService.pressSomebody` does not |
+| **Life plates, and tokens that shatter** | **built and now read**, `src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.ts`. A plate is cut by somebody at Foundation or above, which is a HOUSE-level gate and not a person-level one: a house with nobody at that rung has no plates for anybody, so it cannot read its own roll and is never told when one of its own dies. `seedTreasuries` hangs one for every disciple of every house that can cut them; `whatTheHallSays` reads the roll against them, and a whole plate over somebody nobody has seen for a season is what puts a search on a wall in a town. **A SHATTERED plate still reaches nothing outside the hall**: the reading says they are dead, and no world fact, knowledge row or notice follows from it. Which is a gap and not a decision - the house that holds a shattered plate and no account of it is exactly the house that would pay a stranger for one |
+| **A jade tag carrying a house's name** | **built**, same file. Issued from rank 1 up (`carriesATokenAt`) |
+| **Sealed ancestors** | **in the catalogs** - `SECT_ANCESTRY.dormant`, `HELD_INSTRUMENTS`, `UNOWNED_ANCESTORS` - and read only where they are LISTED: `src/web/lore.ts` walks the held instruments and the unowned, `src/web/register.ts` reads a house's roll of them. **Nothing in `src/engine/` reads any of the three**, so a sealed ancestor is still something the world can describe and not something it can do anything with |
+| **The ground as a third axis** | **built and reached by the player**, `src/engine/social-leverage/ground-trust.ts`, off `src/engine/world/ground-holder.ts`. This row said the player could not reach it; `pressSomebody` now fills `where` with `theGroundBetweenThem(this.atHand, this.worldPlaceOf(cultivator))` at all three of its call sites in `asking-verbs.ts` |
 | **Who holds the ground under a town** | **wired**, through `PREFECTURES` in `data/cultivation/regions.ts`, which nothing in `src/` read before it |
-| **The Burial Sands** | **prose only.** It is not in `REGIONS`, so the seeder mints no location for it, no settlement in it exists, and `ADMIN set_location location=The Burial Sands` answers *"is not a place"* |
+| **The Burial Sands** | **on the map.** This row said it was prose only and not in `REGIONS`; `THE_BLOWN_GROUND_AS_REGION` in `regions/the-blown-ground.ts` puts it there, carrying six places - Wind Turn is a market town, Halfway Gate a waystation, and four sites. The rest of the row (no settlement, admin refusing the name) went stale with it and has been cut rather than restated unmeasured |
 
 **The encouraging half:** both axes already existed, so the two checks now built are a *reading*
 of state the world keeps rather than new state it had to grow. **The discouraging half:** the

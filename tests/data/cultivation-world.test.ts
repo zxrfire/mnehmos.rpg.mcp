@@ -964,6 +964,11 @@ describe('survivors of a richer age', () => {
         // Content must not carry a second copy of a reachability measurement.
         expect(survivorsOfARicherAge().length).toBeGreaterThanOrEqual(2);
         expect(survivorsOfARicherAge(35).every(s => s.provenance.highestOrdinal > 35)).toBe(true);
-        expect(survivorsOfARicherAge(41)).toEqual([]);
+        // 43 rather than 41. The ceiling moved when the two unnameable apexes
+        // acquired sect rows and brought their own provenance with them, and
+        // the Survey's forty-three is now the highest recorded climb in the
+        // catalog. The two above it - the Hollow Court's seats - are in
+        // `PROVENANCE_PENDING` and deliberately hold no record.
+        expect(survivorsOfARicherAge(43)).toEqual([]);
     });
 });

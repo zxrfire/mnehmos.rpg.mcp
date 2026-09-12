@@ -2,6 +2,7 @@
  * The world arriving instead of being reported.
  */
 
+import type { HowFarOff } from '../world/what-people-are-saying.js';
 import type { ArrivableFact } from './types.js';
 
 /** A world fact, reduced to what deciding on arrival actually needs. */
@@ -57,4 +58,61 @@ export function arrivableFromUnheard<F extends FactLike>(
 
     out.sort((a, b) => a.day - b.day || (a.factId < b.factId ? -1 : 1));
     return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHERE IT HAPPENED
+//
+// The list above filters on size and on whether the digest already reported it,
+// and on nothing else, so a war on the far side of the continent was exactly as
+// likely to land on a sitting as two juniors brawling in the next courtyard -
+// and, because `ARRIVAL_INTERRUPT_MAGNITUDE` reads the raw figure, exactly as
+// likely to stop it. The same missing axis `what-people-are-saying.ts` had,
+// pointed at a different consumer, and fixed with the same read.
+//
+// It is applied where the list is CONSUMED rather than where it is built, and
+// that is not an implementation convenience: how near a thing is depends on
+// where the cultivator is standing NOW, and a fact filed while they were in one
+// province may be consumed while they are sitting in another.
+//
+// Nothing here is gated on standing. Delivery is - a rogue with no house and no
+// disciple gets no post, and `digest.ts` says why - but the world happening next
+// to somebody who is trying to concentrate reaches them whoever they are.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * How much of a thing's size is felt where somebody is actually standing.
+ *
+ * Near is amplified and far is damped rather than cut: something a province away
+ * still turns up, and it turns up as a thing somebody mentions instead of a
+ * thing that gets you off the mat. The two bands the engine cannot place any
+ * better than "somewhere in this province" and "nowhere it models" are left at
+ * one, so a fact with no site behaves exactly as it always has.
+ */
+export const HOW_MUCH_OF_IT_REACHES: Readonly<Record<HowFarOff, number>> = Object.freeze({
+    here: 1.6,
+    'in the region': 1,
+    'a region away': 0.45,
+    unplaceable: 1
+});
+
+/**
+ * The same things, sized by how near they happened to where somebody is sitting.
+ *
+ * Branches on nothing but the distance. The ruling is explicitly non-exhaustive,
+ * so a kind of event nobody has written yet is weighted exactly like one that
+ * exists, and a table of interruption types would be the thing it warns against.
+ *
+ * Copies rather than mutates, because the pending list outlives one window and a
+ * cultivator who walks to another province has to be able to be handed the same
+ * facts at a different distance.
+ */
+export function asItReachesWhereTheyAre<F extends ArrivableFact>(
+    arrivable: readonly F[],
+    howFar: (fact: F) => HowFarOff
+): F[] {
+    return arrivable.map(fact => ({
+        ...fact,
+        magnitude: Math.max(0, Math.min(1, fact.magnitude * HOW_MUCH_OF_IT_REACHES[howFar(fact)]))
+    }));
 }

@@ -22,7 +22,8 @@ import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
 import { TECHNIQUES, getTechnique, carriesTo } from '../../src/data/cultivation/techniques.js';
 import {
     APEX_INSTITUTIONS,
-    getApexInstitution
+    getApexInstitution,
+    idsForFaction
 } from '../../src/data/cultivation/governance-and-water-rights.js';
 
 const HOLLOW = 'sect-hollow-court';
@@ -39,7 +40,7 @@ describe('the deepest roads - the catalog', () => {
         const holders = THE_DEEPEST_ROADS.map(r => r.factionId).sort();
         expect(holders).toEqual([
             'apex-earth-vein-tower',
-            'apex-long-cut',
+            'apex-myriad-course-hall',
             'sect-azure-cloud-pavilion',
             HOLLOW
         ].sort());
@@ -182,15 +183,39 @@ describe('the deepest roads - the shelves they sit on', () => {
         for (const road of THE_DEEPEST_ROADS) {
             const shelves = SECTS.filter(s => s.teaches.includes(road.techniqueId));
             expect(shelves.length, road.techniqueId).toBeLessThanOrEqual(1);
-            if (shelves.length) expect(shelves[0].id).toBe(road.factionId);
+            // Either of the holder's ids. A body with an apex row and a sect
+            // row has two, and the road catalog files the holding under the
+            // one it was written against.
+            if (shelves.length) {
+                expect(idsForFaction(road.factionId), road.techniqueId).toContain(shelves[0].id);
+            }
         }
     });
 
-    it('leaves the two hidden apexes with a holding and no shelf, which is the point', () => {
-        for (const id of ['apex-earth-vein-tower', 'apex-long-cut']) {
+    it('puts every apex road on its own holder\'s shelf, which it was not always', () => {
+        // WHAT THIS USED TO ASSERT, AND WHY IT WAS RIGHT TO CHANGE IT. It read
+        // "leaves the two hidden apexes with a holding and no shelf, which is
+        // the point", and pinned `factionId: null` on both ancient apexes: two
+        // powers with a road nobody could be taught, no roll and no door. That
+        // decision was overturned by the design owner - a power with nobody in
+        // it is a number rather than an institution - so both are houses now,
+        // each with a sect row, a roll and a shelf that ends in its own road.
+        //
+        // What has NOT changed is what made them unreachable in the first
+        // place: `startingAwareness` is still `unaware` on both, so a beginner
+        // cannot name the body, and a body you cannot name is a body you cannot
+        // apply to. The gate moved from the roll to the knowing, which is where
+        // this setting keeps it everywhere else.
+        for (const id of ['apex-earth-vein-tower', 'apex-myriad-course-hall']) {
             const apex = APEX_INSTITUTIONS.find(a => a.id === id)!;
-            expect(apex.factionId, `${id} has acquired a sect row`).toBeNull();
-            expect(deepRoadOf(id), `${id} holds no road`).toBeDefined();
+            expect(apex.factionId, `${id} is a power with no house`).not.toBeNull();
+            expect(apex.startingAwareness, `${id} can be named by a beginner`).toBe('unaware');
+            const road = deepRoadOf(id);
+            expect(road, `${id} holds no road`).toBeDefined();
+            const house = getSect(apex.factionId!)!;
+            expect(house, `${apex.factionId} has no sect row`).toBeDefined();
+            expect(house.teaches, `${apex.factionId} does not shelve its own road`)
+                .toContain(road!.techniqueId);
         }
     });
 
@@ -208,7 +233,9 @@ describe('the deepest roads - the shelves they sit on', () => {
     });
 
     it('never gives anything below the top of the world one of these', () => {
-        const holders = new Set(THE_DEEPEST_ROADS.map(r => r.factionId));
+        // Every id each holder answers to, because two of the four are filed
+        // under an apex id and shelve under a sect one.
+        const holders = new Set(THE_DEEPEST_ROADS.flatMap(r => idsForFaction(r.factionId)));
         for (const t of TECHNIQUES) {
             if (!whoHoldsDeepRoad(t.id)) continue;
             for (const s of SECTS) {

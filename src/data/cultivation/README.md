@@ -39,6 +39,7 @@ contract and the tests are the validator.
 | `recipes.ts` | One recipe per pill | Ingredients resolve to real herbs; success rate falls as grade rises; refinement adds value; `requiredOrdinal` is raised to the grade's own refining floor and never typed in below it |
 | `herbs.ts` | The ingredient layer under alchemy | Value rises with grade, availability falls, and the realm needed to survive where it grows rises |
 | `beasts.ts` | The population that is not human, its materials and its tides | One ladder: danger is a realm ordinal, never a stat block. Anything that speaks is at least Core Formation |
+| `what-an-artifact-is-made-of.ts` | The recipe behind an earth- or heaven-grade working, and whether the bench reaches it | A slot is a PREDICATE over the two material catalogs - a grade and whether the thing was grown or taken - never a list of ids, because a drop's grade follows the rung its source stood at and a list would go stale. No two slots of one recipe overlap, and every heaven recipe is fillable without a beast core |
 | `sects.ts` | Sects, Dao houses, destroyed houses | Every sect is *late*: none of them built what they live in |
 | `encounters.ts` | The tables the time-skip draws from | `summaryTemplate` is an engine-authored factual summary, never prose |
 | `false-immortals.ts` | Ordinal 45: the three legacy paths, the trajectory, the vacant dao protector post, and the faces the living one leaves where he lectures | Rank is shut and the dao is not. No sealed ancestor anywhere may sit at or above ordinal 45, no house has a serving False Immortal protector, and the post is vacant rather than abolished. The one who is still alive holds no object of any rung, and nothing may quietly give him one |
@@ -351,3 +352,29 @@ past the change, which is the whole reason beasts are hunted rather than avoided
 - [`../../../docs/world/houses/sects.md`](../../../docs/world/houses/sects.md) - what the sect catalog is a model of
 - [`../../../docs/world/things/economy.md`](../../../docs/world/things/economy.md) - what things cost and why
 - [`../../../docs/world/climbing/immortals.md`](../../../docs/world/climbing/immortals.md) - what `false-immortals.ts` is a model of
+
+---
+
+## Where else to look
+
+- [`./regions/README.md`](./regions/README.md) - one file per province, plus the tables that
+  join them. A region's places and local material live with the region rather than in a
+  comparative table.
+- [`../../engine/cultivation/README.md`](../../engine/cultivation/README.md) - the arithmetic
+  over these tables. A number that varies by pill, herb, road or house is a row here; what is
+  computed from it is a file there.
+- [`../../engine/world/README.md`](../../engine/world/README.md) - what these rows become once
+  a run opens. `seeding.ts` draws the population out of them, and from that moment the world
+  state is what is true and this directory is only where it came from.
+- [`../../engine/social/README.md`](../../engine/social/README.md) - what anybody actually
+  knows of the material in here is per holder: `KnowledgeRecord` and the `KnowingStage`
+  ladder. `rumours-and-what-they-get-wrong.ts` is the authored half of the same idea.
+- [`../../engine/encounters/README.md`](../../engine/encounters/README.md) - the heaviest
+  consumer after `world/` and `web/`: what a house puts on its board, who it sends out, and
+  what it asks of somebody it cannot order.
+- [`../../web/README.md`](../../web/README.md) - every name a player reads comes from here, and
+  `web/register-*.ts` is where these tables are turned into what a turn can print.
+- [`../../../docs/world/README.md`](../../../docs/world/README.md) - the prose half of the same
+  world, split by topic. The bible is canon for the narrator; these files are canon for the
+  engine, and they must not disagree.
+

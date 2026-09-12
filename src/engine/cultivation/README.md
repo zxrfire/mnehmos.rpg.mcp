@@ -1252,3 +1252,29 @@ was met, and hands the resulting state to `survival.ts`.
 - [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the content the engine resolves against
 - [`../../../docs/world/climbing/qi.md`](../../../docs/world/climbing/qi.md) - what qi is, and why density decides everything
 - [`../../../docs/world/history/the-late-age.md`](../../../docs/world/history/the-late-age.md) - why the ladder has a practical ceiling it did not used to have
+
+---
+
+## Where else to look
+
+- [`../../schema/README.md`](../../schema/README.md) - the largest single dependency of this
+  directory. `schema/cultivation.ts` carries the vocabulary - `Cultivator`, realms, roots,
+  injuries, obligations - and the closed enums everything here branches on.
+- [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - the authored side of
+  the same subject. A number that varies by house, pill, herb or road is a table there; the
+  arithmetic over it is a file here.
+- [`../world/README.md`](../world/README.md) - the largest consumer. What this directory
+  computes about one person, that one applies to everybody the world holds.
+- [`../social/README.md`](../social/README.md) - a **seal** is half here
+  (`a-qi-seal-is-put-on-a-person.ts`) and half there (`what-laying-a-qi-seal-takes.ts`). The
+  mechanical lid is this side; who may lay one and what it costs them socially is that side.
+- [`../birth/README.md`](../birth/README.md) - where a cultivator's opening numbers come from.
+  Root, physique and starting standing are decided at birth, not by anything here.
+- [`../encounters/README.md`](../encounters/README.md) - the heaviest external caller after
+  `world/`: what a house teaches, sends somebody out for, or puts them on probation over.
+- [`../../web/README.md`](../../web/README.md) - every verb that prints a rung, a progress bar
+  or a grade reads `realms.ts`. If a number looks wrong to a player, the two places to check
+  are here and `web/`.
+- [`../../../docs/world/climbing/README.md`](../../../docs/world/climbing/README.md) - the prose the
+  ladder is supposed to feel like, and the design rationale behind the rungs.
+

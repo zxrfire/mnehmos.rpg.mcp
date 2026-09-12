@@ -582,6 +582,14 @@ what-an-answer-costs.ts                 what saying it would cost the person bei
 how-freely-somebody-parts-with-what-they-have.ts
                                         one number per person, from their id and
                                         never from their house
+what-they-will-take-instead-of-money.ts the medium, not the figure: stones,
+                                        goods, a favour, a service, a hold, in
+                                        that order, because being asked for
+                                        money is the mild end. Read off
+                                        `PURSE_REACH` and disposition. A
+                                        refusal names the rung that would have
+                                        worked, which is what lets a player
+                                        change what they offer
 what-a-house-will-do-about-it.ts        the alignment split, entirely downstream
 when-somebody-works-out-what-you-did.ts the delayed discovery and its grudge
 going-further-than-an-agreed-bout-allowed.ts
@@ -864,3 +872,30 @@ who were there carry, which is `truth depends on proximity` at its bluntest.
 - [`../social/README.md`](../social/README.md) - the storage layer this writes into
 - [`../cultivation/regard.ts`](../cultivation/regard.ts) - where the standing term comes from
 - [`../world/manuals.ts`](../world/manuals.ts) - `ifCaughtPractising`, the pattern the alignment split copies
+
+---
+
+## Where else to look
+
+- [`../social/README.md`](../social/README.md) - what this layer acts on. `KnowledgeRecord`,
+  `Stance` and the `KnowingStage` ladder decide whether somebody can even be named before any
+  of the leverage here has a target.
+- [`../cultivation/README.md`](../cultivation/README.md) - standing is leverage: rung, regard,
+  and what somebody far above you does about it. Half the refusals in here are a rung
+  comparison underneath.
+- [`../world/README.md`](../world/README.md) - the facts a leverage act consumes and produces:
+  a deed entering the world as a fact, what a change of hands leaves, what is out on loan and
+  who lent it.
+- [`../household/README.md`](../household/README.md) - a match is leverage with a contract on
+  it. `what-a-house-would-take-for-a-match.ts` and `what-declining-somebody-leaves.ts` are the
+  same bargaining logic under a different name.
+- [`../encounters/README.md`](../encounters/README.md) - an ask that a house can ORDER is a
+  duty, not leverage. `what-a-house-asks-of-somebody-it-cannot-order.ts` there is the seam
+  between the two directories.
+- [`../../data/cultivation/README.md`](../../data/cultivation/README.md) - what a house is
+  willing to do, and to whom: faction character, indentures, demonic sects, what two houses
+  both have a hand on.
+- [`../../web/README.md`](../../web/README.md) - where these become sentences a player can
+  type: the asking verbs, `what-a-threat-promises.ts`, `going-back-and-forth-over-a-price.ts`,
+  `what-asking-this-person-for-this-would-cost-them.ts`.
+

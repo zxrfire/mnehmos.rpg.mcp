@@ -621,15 +621,20 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     'chaos-origin-scripture': 'pristine',
     'lifespan-devouring-heaven-theft': 'corrupt',
 
-    // ── The four roads that reach the top of the ladder. Refined at the three
-    // apexes, because each was written once by one person for one successor
-    // and has been kept rather than improved. Pristine at the Hollow Court,
-    // which is the only body that has had generation after generation of
-    // people take the same road to its end and write down what they found -
-    // and that difference is the same difference the `opening` field states.
+    // ── The roads that reach the top of the ladder. Refined at the apexes,
+    // because each was written once by one person for one successor and has
+    // been kept rather than improved. Pristine at the Hollow Court, which is
+    // the only body that has had generation after generation of people take
+    // the same road to its end and write down what they found - and that
+    // difference is the same difference the `opening` field states.
     'clear-terrace-ascension-canon': 'refined',
     'arterial-sounding-canon': 'refined',
     'driven-ground-endurance-canon': 'refined',
+    // The two apex houses' own immortal roads, added when those bodies stopped
+    // being powers with nobody in them. Same tier for the same reason as their
+    // three neighbours above, and not a new case.
+    'deep-vein-anchoring-canon': 'refined',
+    'worked-seam-canon': 'refined',
     'protected-crossing-canon': 'pristine',
 
     // ── The treasures. Wide-span books are pristine BECAUSE they are wide: a
@@ -2066,6 +2071,45 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         description:
             'Everybody knows lightning does not strike the same place twice. The Court has the bodies of forty-one people who established that it does, a partial manual assembled out of what the last eleven of them left, and a standing position that the saying is the single most expensive piece of folk wisdom in the province. Sixteen rungs above the only other lightning road in the world, with nothing whatsoever in between.'
     }),
+    // The two rungs below each ancient apex's own chaos road, added when those
+    // two bodies stopped being powers with no shelf. Each is the deepest
+    // ELEMENTAL book its house has, which is what makes the house read as an
+    // earth house at all - `house-elemental-character.ts` takes the element off
+    // the deepest surviving road and nothing else says it.
+    art({
+        id: 'deep-vein-anchoring-canon',
+        name: 'Deep Vein Anchoring Canon',
+        category: 'cultivation',
+        grade: 'immortal',
+        element: 'earth',
+        // Anchoring is formation work: the method is holding a body still
+        // against a reference that is not local, which is what the Lamp does.
+        domain: 'formation',
+        domainDegree: 2,
+        requiredOrdinal: 33,
+        qiCost: 260,
+        damage: null,
+        cooldown: 0,
+        description:
+            'Body Integration taken as a surveying problem: the cultivator fixes themselves to the deep vein the way a perimeter is fixed to a datum, and every later rung is measured off that one point rather than off how they felt on the day. It is unforgiving of a bad start and almost impossible to lose once set, which is the trade the whole method is, and it is written in the hand the Survey writes a figure in - no encouragement anywhere in it, and the failure modes listed before the method.'
+    }),
+    art({
+        id: 'worked-seam-canon',
+        name: 'Worked Seam Canon',
+        category: 'cultivation',
+        grade: 'immortal',
+        element: 'earth',
+        // The seam IS the body on this road, so the domain is body rather than
+        // element: what is being worked is the practitioner, in stone terms.
+        domain: 'body',
+        domainDegree: 2,
+        requiredOrdinal: 33,
+        qiCost: 250,
+        damage: null,
+        cooldown: 0,
+        description:
+            'The seam a carver has been laying since their first face, opened along its whole length and worked again from the bottom. It is the only book in the world that treats a cultivator as a face: so many courses, in this order, each one set before the next is loaded, with the dates somebody else finished them on in the margin. Nothing in it is encouraging and nothing in it is obscure, and carvers who have read both say it is the plainer half of the Hall\'s two deep roads.'
+    }),
 
     art({
         id: 'heaven-conversing-primordial-canon',
@@ -2157,7 +2201,7 @@ export const TECHNIQUES: readonly TechniqueEntry[] = [
         cooldown: 0,
         opening: { rungs: 4, rateMultiplier: 0.3 },
         description:
-            'The Long Cut\'s road, written like a schedule because everything the Long Cut writes is a schedule. It carries a reader to the top of the ladder by treating the last realm as a face to be worked rather than a state to be attained: so many rungs, in this order, with the failure modes listed and dated. The four rungs of the opening are the hardest start of any road in the world, and the house does not regard that as a defect, on the stated ground that anybody who cannot get through them was going to die further up.'
+            'The Myriad Course Hall\'s road, written like a schedule because everything the Myriad Course Hall writes is a schedule. It carries a reader to the top of the ladder by treating the last realm as a face to be worked rather than a state to be attained: so many rungs, in this order, with the failure modes listed and dated. The four rungs of the opening are the hardest start of any road in the world, and the house does not regard that as a defect, on the stated ground that anybody who cannot get through them was going to die further up.'
     }),
     art({
         id: 'protected-crossing-canon',

@@ -74,7 +74,7 @@ describe('the holdings are live state', () => {
     });
 
     it('places tracked doses on holders the world does not instantiate as factions', () => {
-        // The Earth Vein Tower and the Long Cut carry `factionId: null` in the
+        // The Earth Vein Tower and the Myriad Course Hall carry `factionId: null` in the
         // governance catalog on purpose, so they never become faction rows -
         // and they hold most of the sent-down stock. If this ever returns zero,
         // the seeder has started requiring a faction and the count is wrong.

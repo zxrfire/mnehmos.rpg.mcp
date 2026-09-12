@@ -66,7 +66,6 @@ export type LoreBand = 'local' | 'regional' | 'world' | 'deep';
 export type LoreCatalog =
     | 'sects'
     | 'destroyed-houses'
-    | 'apex'
     | 'courts'
     | 'guest-elders'
     | 'members'
@@ -85,7 +84,7 @@ export type LoreCatalog =
 
 /** Every catalog this module draws from. The regression test's checklist. */
 export const LORE_CATALOGS: readonly LoreCatalog[] = [
-    'sects', 'destroyed-houses', 'apex', 'courts', 'guest-elders', 'members',
+    'sects', 'destroyed-houses', 'courts', 'guest-elders', 'members',
     'wanderers', 'sealed-held', 'sealed-unowned', 'immortal-channels',
     'immortal-items', 'ages', 'dead-civilisations', 'lid-theories',
     'origin-accounts', 'regions', 'places', 'auction-venues'
@@ -144,7 +143,14 @@ function sectRows(): Mentionable[] {
         id: sect.id,
         name: sect.name,
         catalog: 'sects' as const,
-        deep: false,
+        // AN APEX IS A SECT WITH PEOPLE IN IT, so it comes through here with
+        // every other house rather than out of a catalog of its own. What the
+        // old `apex` rows carried that this one did not is not apex-ness: it is
+        // that nobody has heard of them, which is `startingAwareness` on the
+        // body's own row. Two of the three are `unaware`; the Azure Cloud
+        // Pavilion is `named`, being the one with a front gate. Hardcoding
+        // either answer buried one of them.
+        deep: startsUnheardOf(sect.id),
         floorOrdinal: sect.powerOrdinal >= COMMON_CURRENCY_ORDINAL ? 0 : sect.powerOrdinal,
         regionId: regionOfFaction(sect.id),
         insiderFactionId: sect.id
@@ -170,20 +176,10 @@ function destroyedHouseRows(): Mentionable[] {
     }));
 }
 
-/**
- * The institutions above the map.
- */
-function apexRows(): Mentionable[] {
-    return APEX_INSTITUTIONS.map(apex => ({
-        kind: 'sect' as const,
-        id: apex.id,
-        name: apex.name,
-        catalog: 'apex' as const,
-        deep: true,
-        floorOrdinal: apex.powerOrdinal,
-        regionId: null,
-        insiderFactionId: apex.id
-    }));
+/** Whether a beginner has never had this house's name said in front of them. */
+function startsUnheardOf(factionId: string): boolean {
+    const apex = APEX_INSTITUTIONS.find(a => a.factionId === factionId || a.id === factionId);
+    return apex?.startingAwareness === 'unaware';
 }
 
 /**
@@ -491,6 +487,11 @@ function buildLore(): Mentionable[] {
     const rows = [
         ...regionRows(),
         ...auctionVenueRows(),
+        // ABOVE THE MAP BEFORE ON IT. The dedupe below keeps the first row for a
+        // name, and the three apexes now also hold ordinary house rows - so with
+        // `sectRows` first every apex row was dropped and the catalog went silent.
+        // The apex reading is the truer one for these three: it carries
+        // `deep: true`, which is what keeps the names out of ordinary talk.
         ...sectRows(),
         ...courtRows(),
         ...guestElderRows(),
@@ -504,7 +505,6 @@ function buildLore(): Mentionable[] {
         ...heldInstrumentRows(),
         ...unownedAncestorRows(),
         ...immortalChannelRows(),
-        ...apexRows(),
         ...wandererRows()
     ];
 

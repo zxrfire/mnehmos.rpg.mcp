@@ -13,6 +13,7 @@ import type { EncounterEntry } from '../../data/cultivation/encounters.js';
 import type { SimEvent } from '../../schema/cultivation.js';
 import { interruptsThrough } from './activity.js';
 import { valenceOf } from './valence.js';
+import { whatTheSeniorIsBeingAskedFor } from './who-a-senior-is-asked-to-take-out.js';
 import type {
     Confrontation,
     Duty,
@@ -237,9 +238,17 @@ function dutyLine(duty: Duty | null): string {
     // The cohort is the half that outlives the duty. People at your own rung
     // who were there, saw what was done, and are still about afterwards is
     // where every rivalry and every debt in this game is going to come from.
-    const withThem = duty.cohort > 0
-        ? ` ${duty.cohort} others of the house are going.`
-        : '';
+    //
+    // AND WHERE THEY HAVE NAMES, THE COUNT IS NOT THE FACT. An ask to go out
+    // with juniors on a job pitched under you is a scene because of who they
+    // are; `${n} others of the house are going` is the same sentence whoever
+    // they turn out to be. See `who-a-senior-is-asked-to-take-out.ts`.
+    const taking = duty.takingOut ?? [];
+    const withThem = taking.length > 0
+        ? whatTheSeniorIsBeingAskedFor(taking)
+        : duty.cohort > 0
+            ? ` ${duty.cohort} others of the house are going.`
+            : '';
     // Who carried it. An order from a named elder who has an opinion about
     // somebody is a different object from an order from an institution, and
     // the house has a roster, so it is never the second.

@@ -250,10 +250,10 @@ describe('provinces, arterials and prefectures', () => {
         }
     });
 
-    it('THE ASYMMETRY: the Long Cut is broad, the Survey is deep, and the Pavilion holds no province', () => {
+    it('THE ASYMMETRY: the Myriad Course Hall is broad, the Survey is deep, and the Pavilion holds no province', () => {
         const byId = new Map(APEX_INSTITUTIONS.map(a => [a.id, a]));
         const survey = byId.get('apex-earth-vein-tower')!;
-        const longCut = byId.get('apex-long-cut')!;
+        const longCut = byId.get('apex-myriad-course-hall')!;
         const pavilion = byId.get('apex-azure-cloud')!;
 
         expect(survey.holdsProvinceIds).toEqual([LOW_FALL_PROVINCE_ID]);
@@ -307,8 +307,8 @@ describe('provinces, arterials and prefectures', () => {
         expect(court.apexId).not.toBe(getProvince(LOW_FALL_PROVINCE_ID)!.heldByApexId);
     });
 
-    it('the driven schedule covers exactly the Long Cut provinces, with the Silent Cliffs last', () => {
-        const longCut = APEX_INSTITUTIONS.find(a => a.id === 'apex-long-cut')!;
+    it('the driven schedule covers exactly the Myriad Course Hall provinces, with the Silent Cliffs last', () => {
+        const longCut = APEX_INSTITUTIONS.find(a => a.id === 'apex-myriad-course-hall')!;
         expect([...DRIVEN_PROVINCE_SCHEDULE_ORDER].sort())
             .toEqual([...longCut.holdsProvinceIds].sort());
         expect(DRIVEN_PROVINCE_SCHEDULE_ORDER[DRIVEN_PROVINCE_SCHEDULE_ORDER.length - 1])
