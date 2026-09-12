@@ -10,6 +10,7 @@ import { GameService } from '../../src/web/game';
 import { DeterministicNarrator, ProviderNarrator } from '../../src/web/narrator';
 import type { Narrator } from '../../src/web/narrator';
 import { createApp, type ProviderStatus } from '../../src/web/server';
+import { announceMode } from '../../src/web/which-mode-this-session-is-playing-in';
 import { ensureCultivationDb, type CultivationRepos } from '../../src/server/consolidated/cultivation-support';
 import { createWorld, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 
@@ -224,7 +225,11 @@ export async function makeGameInWorld(options: HarnessOptions = {}): Promise<Har
 export const TEST_PROVIDER_STATUS: ProviderStatus = {
     name: 'ollama',
     model: 'test-model',
-    configured: false
+    configured: false,
+    ...(() => {
+        const said = announceMode({ kind: 'deterministic', providerName: null });
+        return { mode: said.mode, modeLabel: said.label, modeLine: said.line };
+    })()
 };
 
 export interface HttpHarness {

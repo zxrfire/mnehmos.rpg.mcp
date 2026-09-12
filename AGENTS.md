@@ -831,6 +831,34 @@ PLAYING, or the measurement is of a state no player can occupy. That is not hypo
 unreachable precondition hides a gameplay defect, and this repo has shipped content nothing
 could reach three times over.
 
+### Nothing typechecks the tests, and they have drifted
+
+`tsconfig.json` excludes `tests`, and vitest runs through esbuild, which strips types without
+checking them. So a test file is checked by **neither** command anybody runs, and a type error
+in one is invisible in both directions.
+
+Found when `ProviderStatus` grew three fields and `TEST_PROVIDER_STATUS` in the shared web
+harness was never updated - a broken literal sitting in the file every played test imports,
+green the whole time. Measured across the tree the same way: **521 real type errors** in
+`tests`, once vitest's globals are supplied.
+
+To see them, point a config at both trees and include vitest's globals as a FILE rather than
+through `types` - `"types": ["vitest/globals"]` does not resolve here and yields ten thousand
+phantom `Cannot find name 'expect'`:
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*", "tests/**/*", "node_modules/vitest/globals.d.ts"],
+  "exclude": ["node_modules/.bin", "dist"]
+}
+```
+
+**This is not wired into any command on purpose.** Turning it on today fails on 521 errors and
+that is somebody's deliberate project, not a thing to switch on beside an unrelated change.
+What matters is knowing the gap exists: **a test that compiles is not a test that typechecks**,
+so when a shape changes under a test, expect the test to keep passing while being wrong.
+
 ### A rule the model keeps breaking usually has a rule beside it saying to
 
 A prompt is not a list of independent instructions. The model resolves conflicts between them

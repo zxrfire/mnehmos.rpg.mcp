@@ -45,9 +45,12 @@ describe('GET /api/health', () => {
             version: '9.9.9',
             adminMode: false
         });
-        expect(Object.keys(res.body.provider).sort()).toEqual(['configured', 'model', 'name']);
+        expect(Object.keys(res.body.provider).sort()).toEqual(
+            ['configured', 'mode', 'modeLabel', 'modeLine', 'model', 'name']
+        );
         expect(typeof res.body.provider.name).toBe('string');
         expect(typeof res.body.provider.configured).toBe('boolean');
+        expect(['local', 'ai']).toContain(res.body.provider.mode);
     });
 
     it('reflects admin mode when it is on', async () => {
