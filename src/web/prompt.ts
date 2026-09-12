@@ -665,6 +665,11 @@ Rules:
   the nearest one and the engine will take the lane's ordinary reading - a right lane with a
   rough intent is answerable, and a wrong lane is not.
 - ${AN_AMBITION_IS_A_READ}
+- WHERE TWO READINGS FIT, TAKE THE ONE THAT ANSWERS. A sentence that can be read two ways
+  should be read as the simpler case rather than the edge case, so long as the simple reading
+  is genuinely justified. Read as a question it answers; read as an act it may refuse for
+  something the player has not got yet. Both are honest and only one gives them something.
+  This is a tie-break and not a licence to answer a different question.
 - THE CALLS MEASURED WRONG, and the rule each one teaches. These are the sentences a router
   gets wrong most often, so read them before you answer:
     "I want to join a sect"        -> house/join.  A wish that NAMES an act may be taken as

@@ -79,8 +79,8 @@ export const AN_AMBITION_IS_ANSWERED_AS_THINKING =
     'WHERE THE FACTS ARE WHAT IS LIVE FOR THIS CULTIVATOR, the player has said what they want '
     + 'and not what they are doing. Write it as the character turning it over - the want, then '
     + 'the two or three things they know of that would serve it, weighed the way somebody '
-    + 'weighs them. Not a menu, not numbered, and never the arithmetic: a rate, a multiplier '
-    + 'or a count of bills is the engine reasoning and must not appear. Nothing has happened '
+    + 'weighs them. Not a menu, not numbered, and never the arithmetic the engine used to '
+    + 'decide - that is its reasoning and must not appear. Nothing has happened '
     + 'this turn and no time has passed, so do not write them setting off. '
     + 'ANSWER THE HOW, FROM WHERE THEY ARE STANDING. A want is not refused and it is not '
     + 'granted: it is answered with the next thing that would actually serve it, named and '
@@ -89,6 +89,29 @@ export const AN_AMBITION_IS_ANSWERED_AS_THINKING =
     + 'AND IT MAY BE WRY. Somebody wishing to join a house while standing at its gate is funny, '
     + 'and this genre says so rather than pretending not to notice. Let the character notice. '
     + 'The humour is theirs and never the narrator winking over their shoulder.';
+
+/**
+ * WHERE TWO READINGS FIT, TAKE THE ONE THAT ANSWERS.
+ *
+ * A sentence that can be read two ways should be read as the simpler case, not
+ * the edge case - so long as the simple reading is genuinely justified and not
+ * a dodge. "I want to join a sect" is both a wish and an act; read as the wish
+ * it answers with the bar and the gate, read as the act it may refuse for a
+ * rung the player has not reached. Both are honest readings of the sentence and
+ * only one of them gives the player something.
+ *
+ * This is not a licence to answer a different question. It is a tie-break, and
+ * it applies only where the reading really does fit. A sentence with one
+ * meaning still goes where that meaning goes, and a refusal a game master would
+ * also give is still correct.
+ *
+ * AND THE INTENT WORDS ARE HELD TO THE SAME BAR. An intent named wider than the
+ * routine behind it drags wide sentences onto a narrow handler, which is a
+ * refusal the reader caused. Measured: `reachable` pointed at a verb that only
+ * answers how a manual you hold could go further, and the model sent it "what
+ * would it take to get in" - a house's admission bar. The word was the whole of
+ * the mistake.
+ */
 
 /** The outer choice. One of these, then an intent, and never a bare verb. */
 export const LANE_NAMES = [
@@ -157,10 +180,22 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
             standing: 'status',
             carried: 'inventory',
             arts: 'list_techniques',
-            reachable: 'acquisition',
+            // NOT `reachable`, which is what this said first. The verb behind it
+            // is narrow - how a manual you already hold could go further, by
+            // finding the next volume, being taught it, or writing it out - and
+            // a broad intent word drags broad sentences onto it. Measured: the
+            // model sent "what would it take to get in", which is a house's
+            // admission bar, to `acquisition`. An intent word wider than the
+            // routine it names is the collision this layer exists to remove.
+            go_further_with_a_manual: 'acquisition',
             ceiling: 'ceiling',
             teachers: 'teacher',
-            where: 'destinations',
+            // Names the READ and not a motive. `where_i_could_go` pulled "I
+            // want to get stronger" onto it, because travelling somewhere
+            // thicker is one way to get stronger and the word invited the
+            // reasoning. An intent word should say what comes back, not why
+            // somebody might want it.
+            places_within_reach: 'destinations',
             roads: 'roads',
             known: 'recall',
             heard: 'news'
@@ -195,17 +230,21 @@ export const THE_LANES: Readonly<Record<LaneName, Lane>> = Object.freeze({
     },
     trade: {
         says: 'stones for things and things for stones',
-        intents: { buy: 'buy', sell: 'sell', give: 'give', prices: 'market' },
+        // `give` is the player parting with THEIRS. A demand made of
+        // somebody else is fight/make_them_comply, and the two collided.
+        intents: { buy: 'buy', sell: 'sell', give_mine_away: 'give', prices: 'market' },
         otherwise: 'market'
     },
     speak: {
         says: 'anything done to or with a PERSON',
-        intents: { talk: 'interact', tell: 'tell', ask: 'request' },
+        intents: { talk: 'interact', tell_them_something: 'tell', ask_them_for: 'request' },
         otherwise: 'interact'
     },
     fight: {
         says: 'hands rather than words',
-        intents: { strike: 'attack', force: 'coerce', guard: 'guard' },
+        // `force` read as a blow rather than a demand, so it says what it
+        // makes somebody do. `guard` is standing over a crossing, not warding.
+        intents: { strike: 'attack', make_them_comply: 'coerce', stand_over: 'guard' },
         otherwise: 'attack'
     },
     house: {

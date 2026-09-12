@@ -3295,7 +3295,12 @@ const NOT_SOMEBODY_BEING_GUARDED =
  * The tail that says WHEN or HOW LONG rather than WHO.
  */
 const WHEN_RATHER_THAN_WHO =
-    /\s*\b(?:for|over|during|through|across|in)\s+(?:the\s+)?(?:a\s+|an\s+)?(?:next\s+)?[0-9]*\s*(?:day|days|week|weeks|month|months|year|years|decade|decades|season|seasons|while|stretch|span)\b.*$/i;
+    // The count may be WRITTEN. `parseDuration` reads "a hundred days" as 100
+    // and this did not strip it, so "I stand guard over Han Peiwu for a hundred
+    // days" came back looking for somebody called "Han Peiwu for a hundred
+    // days" - a name the square could not match, answered as "you did not say
+    // who" while they were standing in it.
+    /\s*\b(?:for|over|during|through|across|in)\s+(?:the\s+)?(?:a\s+|an\s+)?(?:next\s+)?(?:[\w-]+\s+){0,3}(?:day|days|week|weeks|month|months|year|years|decade|decades|season|seasons|while|stretch|span)\b.*$/i;
 
 /**
  * The finger, when the sentence pointed instead of naming.
@@ -3317,7 +3322,12 @@ const THE_PERSON_A_POINTER_STANDS_FOR: Readonly<Record<string, string>> = Object
 
 function whoWasPointedAtForTheWatch(input: string): string | undefined {
     const found = A_WATCH_POINTED_AT_RATHER_THAN_NAMED.exec(input);
-    const word = (found?.[1] ?? found?.[2] ?? found?.[3] ?? '').toLowerCase();
+    const word = found?.[1] ?? found?.[2] ?? found?.[3];
+    // A CAPITAL IS A SURNAME AND NOT A PRONOUN. `He`, `Shi`, `Wu` and `Hou` are
+    // all surnames in this catalog, so a case-insensitive `he` turns "I stand
+    // guard while He Minxue crosses" into a gesture at nobody - measured, that
+    // sentence went from reaching `wouldStandGuard` to "you did not say who".
+    if (!word || word !== word.toLowerCase()) return undefined;
     return THE_PERSON_A_POINTER_STANDS_FOR[word];
 }
 
@@ -5059,7 +5069,7 @@ function planIntent(input: string): PlannedAction {
     }
 
     // assess: what happens if I try, which is not the same as looking
-    if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|is th(?:is|e) (?:place|square|town|village|city|ground|road) safe|are we safe|is this safe|do i stand a chance|judge the odds)\b/.test(text)
+    if (/\b(?:size up|weigh (?:my|the) chances|assess|how dangerous|could i (?:survive|take|handle|manage)|what (?:would|will) happen if i|am i (?:strong|ready) enough|is it safe|is th(?:is|e) (?:place|square|town|village|city) safe|are we safe|do i stand a chance|judge the odds)\b/.test(text)
         || /\b(?:can i (?:beat|win against)|would i (?:win|beat|survive|last)|what (?:are|is) my chances|out of my depth|a fight i can (?:take|win)|am i (?:a )?match for)\b/.test(text)
         // ── MEASURING YOURSELF AGAINST SOMETHING ─────────────────────────
         //

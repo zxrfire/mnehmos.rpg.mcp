@@ -59,6 +59,29 @@
  *
  * A refusal always names what would work instead.
  *
+ * ── THE OTHER DIRECTION IS A GAP, NOT A DECISION ─────────────────────────
+ *
+ * A player can be taught and cannot teach. "I teach her what I know" and "I
+ * show her the form" each reached `unclear` 6 times out of 6 over 744 played
+ * turns, and the reason is not the reader: there is no verb for handing a road
+ * on, no handler behind one, and nothing anywhere in `src/` that writes an art
+ * onto another person from the played side. `taught_technique` has been a
+ * `FavorCause` since the ledger was written and has no producer - the same
+ * signature `shielded_crossing` carried until `standing-guard.ts` gave it an
+ * act.
+ *
+ * The READ inverts for free and is the reason this is worth recording rather
+ * than merely noting: `TheOneAsking` and `TheOneBeingAsked` are symmetric, so
+ * `whatTheyWouldTeachYou(player, them)` already answers which of the player's
+ * arts are theirs to volunteer to this particular person, filtered by the same
+ * house rule. What is missing is only the act - the span, the art written onto
+ * the student, and the deed - which is the shape `standGuard` already runs for
+ * the other giving mechanic.
+ *
+ * Written down rather than half-built. An ask-back with nothing behind it
+ * points a player at an affordance that does not exist, which is the failure
+ * `gap-routes.ts` keeps its own `NO_VERB_CARRIES_THESE` list to avoid.
+ *
  * Pure. Catalogs in, sentences out. No repository, no I/O, no RNG.
  */
 

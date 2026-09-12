@@ -173,9 +173,20 @@ export const guardVerbs = {
         // A bare "who would stand guard for me" is the free half of this verb
         // and is answered below by `whoWouldStandOverYourCrossing`. What lands
         // here is a sentence that named somebody the square does not hold.
-        const subjectRow = wanted.length >= 2
-            ? here.find(row => row.name.toLowerCase().includes(wanted))
-            : undefined;
+        // A POINTED FINGER RESOLVES THE WAY IT DOES FOR EVERY OTHER VERB.
+        // `somebodyAtHand` is what `attack` puts "him" through, and a watch is
+        // kept over the same people a blow is aimed at. Without it, the three
+        // watch sentences in the played corpus - all of which point rather than
+        // name - came back "you did not say who" while somebody stood there.
+        const pointedAt = wanted.length >= 2
+            ? this.somebodyAtHand(wanted, cultivator)
+            : null;
+        const subjectRow = wanted.length < 2
+            ? undefined
+            : (pointedAt && pointedAt.id !== cultivator.id
+                ? here.find(row => row.id === pointedAt.id)
+                : undefined)
+              ?? here.find(row => row.name.toLowerCase().includes(wanted));
         if (!subjectRow) {
             return refused('guard.whoIsHere', 'guard', factsForRefusal(
                 wanted.length >= 2

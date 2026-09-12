@@ -80,9 +80,15 @@ export const THE_ANSWER_IS_TO_GUARD =
  * The genre's own move and the reason `press` exists: you eat what is coming so
  * that what you are throwing arrives. Note that this is NOT "I give up" - see
  * the guard list for what somebody who wants to stop being hit says.
+ *
+ * A bare `everything I have` used to be here and is not a fight word. Measured
+ * once a fight could stand across the played corpus: "I hand her everything I
+ * have" came back as pressing the attack, so a gift read as a swing. The
+ * committing forms - `throw everything`, `go all in` - carry their own verb and
+ * lose nothing.
  */
 export const THE_ANSWER_IS_TO_PRESS =
-    /\b(?:let(?:s|ting)? (?:him|her|them|it) (?:hit|strike|land|cut|through)|take(?:s|ing)? (?:the|his|her|their|it) (?:hit|blow|strike|cut)|eat(?:s|ing)? (?:the|his|her|their) (?:hit|blow|strike)|wear(?:s|ing)? (?:the|it|his|her|their) (?:hit|blow)|press(?:es|ing)? (?:in|on|forward|the attack)|push(?:es|ing)? (?:in|through|forward)|go(?:es|ing)? all in|everything (?:i|I) (?:have|have got|ve got)|throw(?:s|ing)? everything|commit(?:s|ting)?(?: to it| everything)?|ignore(?:s|ing)? the (?:pain|wound|blow)|do(?:es|ing)? not (?:defend|guard)|don'?t (?:defend|guard|block))\b/i;
+    /\b(?:let(?:s|ting)? (?:him|her|them|it) (?:hit|strike|land|cut|through)|take(?:s|ing)? (?:the|his|her|their|it) (?:hit|blow|strike|cut)|eat(?:s|ing)? (?:the|his|her|their) (?:hit|blow|strike)|wear(?:s|ing)? (?:the|it|his|her|their) (?:hit|blow)|press(?:es|ing)? (?:in|on|forward|the attack)|push(?:es|ing)? (?:in|through|forward)|go(?:es|ing)? all in|throw(?:s|ing)? everything|commit(?:s|ting)?(?: to it| everything)?|ignore(?:s|ing)? the (?:pain|wound|blow)|do(?:es|ing)? not (?:defend|guard)|don'?t (?:defend|guard|block))\b/i;
 
 /**
  * Getting out.
@@ -186,7 +192,7 @@ export const THE_ANSWER_IS_TO_SHOUT =
  * matches nothing, because the object list is people.
  */
 export const THE_ANSWER_IS_TO_SPARE =
-    /\b(?:spare(?:s|d)? (?:him|her|them|his life|her life|their life|the boy|the girl)|spare(?:s|d)?\s*$|let(?:s|ting)? (?:him|her|them) (?:go|live|off|be|walk|stand|up)|let (?:him|her|them) (?:go|live)|show(?:s|ing)? (?:him|her|them )?mercy|have mercy|mercy on (?:him|her|them)|stay(?:s|ing)? my (?:hand|blade|sword)|stay my hand|hold(?:s|ing)? my (?:hand|blade|sword)|do(?:es)? not finish (?:him|her|them)|don'?t finish (?:him|her|them)|will not finish (?:him|her|them)|won'?t finish (?:him|her|them)|leave(?:s|ing)? (?:him|her|them) (?:alive|be|breathing|standing)|stop(?:s|ping)? short|enough[.!]*\s*$|it(?:'s| is) enough)\b/i;
+    /\b(?:spare(?:s|d)? (?:him|her|them|his life|her life|their life|the boy|the girl)|spare(?:s|d)?\s*$|let(?:s|ting)? (?:him|her|them) (?:go|live|off|be|walk|stand|up)|let (?:him|her|them) (?:go|live)|show(?:s|ing)? (?:(?:him|her|them) )?mercy|have mercy|mercy on (?:him|her|them)|stay(?:s|ing)? my (?:hand|blade|sword)|stay my hand|hold(?:s|ing)? my (?:hand|blade|sword)|do(?:es)? not finish (?:him|her|them)|don'?t finish (?:him|her|them)|will not finish (?:him|her|them)|won'?t finish (?:him|her|them)|leave(?:s|ing)? (?:him|her|them) (?:alive|be|breathing|standing)|stop(?:s|ping)? short|enough[.!]*\s*$|it(?:'s| is) enough)\b/i;
 
 /**
  * Going down on one knee, which is not backing off and not blocking.
