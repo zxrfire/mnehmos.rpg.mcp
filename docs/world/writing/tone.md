@@ -478,6 +478,19 @@ wrong is called, never *a mental breakdown* - **closed-door seclusion**, **heave
 tribulation**, lifespan, **karma**, **fate**, **opportunity** or **fortuitous encounter**
 (机缘, the lucky find that makes a cultivator), **inheritance**, **legacy**.
 
+**Running out, which the genre has more ways of saying than any other state.** A cultivator
+near the end of what their rung allows is one of this world's commonest situations and the
+engine states it flatly - *most of the years this rung allows, spent*. That is the fact, not
+the sentence. Written, it is **the flames of life burning out**, the lamp guttering, the
+years run thin, a body the dao has finished with, blood gone quiet, an old cultivator who
+will die at the rung he is standing on. **Lifespan** is a resource and its end is a fact
+about a person, so it is said about them and not about a number: *he had stopped talking
+about the next rung* says it, and so does *his cultivation had not moved in thirty years*.
+
+A **bottleneck** is where somebody is stuck and it is spoken of as a wall, a barrier, a
+threshold that will not open. Somebody who has given up is **settled**, and settling is a
+real end in this world rather than a failure to mention politely.
+
 **Things.** Spirit stones, spirit herbs, pills, **pill furnace**, talismans, **formations**
 or **arrays** - never *magic circles* - **jade slip**, **storage ring**, **storage pouch**,
 **manual** or **art** for a technique somebody learns, **treasure**, **dao artifact**.
