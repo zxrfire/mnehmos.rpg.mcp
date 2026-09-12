@@ -831,6 +831,44 @@ PLAYING, or the measurement is of a state no player can occupy. That is not hypo
 unreachable precondition hides a gameplay defect, and this repo has shipped content nothing
 could reach three times over.
 
+### A rule the model keeps breaking usually has a rule beside it saying to
+
+A prompt is not a list of independent instructions. The model resolves conflicts between them
+the way anybody does - the more SPECIFIC one wins, and a per-turn block beats a general one
+silently, without any sign that the general one was overruled.
+
+Measured on the narration prompt. Every played turn came back inside the corpus band for
+paragraph length and how often somebody spoke; turn 0 alone came back at twice the length
+with nobody speaking at all. The register rules had not failed. Turn 0 has its own block and
+that block said *"it runs longer than a turn normally does"* and *"plain sentences"* - one
+read as longer PARAGRAPHS and the other as the opposite of the register, and between them
+they beat every rule at the end of the prompt. The crowd never spoke for the same reason: the
+block naming who is present said to *"say nothing at all about anybody the facts are not
+about"*, which was written against inventing a named stranger and read as a ban on the
+faceless people making any sound.
+
+So when the model will not do something you have told it to do, **read the rest of the prompt
+before writing the rule a third time**. The instruction that is beating you is usually
+narrower, older, and about something else.
+
+**And measure per turn, never pooled.** Turn 0 hid behind the average for a long time,
+because a turn at twice the target and three turns inside it average out to fine.
+
+### An example moves a local model where a rule does not
+
+Told SHORT PARAGRAPHS with a measured median attached, the model wrote 56 words. Given two
+worked sentences per rule it wrote 31 against a corpus 29, and the rules had not changed.
+
+Keep them to a handful per rule, identically formatted, and say in the prompt that they are
+shapes to vary rather than stock to reuse - the few-shot literature and this repo agree that
+a long list of examples overfits where a short varied one generalises.
+
+**An example carries no proper noun.** Every name in this game is granted per run from what
+that cultivator has been told, and an example sits in the prompt on every turn of every run -
+so a name inside one is a name in the prompt of a player who never heard it.
+`an-example-may-not-carry-a-name.test.ts` pins this by shape; `discovery.test.ts` caught the
+first two by reading the knowledge table, and only knows about sects.
+
 ### Comments earn their keep
 
 > *"I would have made it shorter, but I did not have the time."*
