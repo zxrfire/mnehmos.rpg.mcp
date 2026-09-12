@@ -554,7 +554,8 @@ import {
 import {
     postingGroundOf,
     readTheWall,
-    whichHouseThePaperMeans
+    whichHouseThePaperMeans,
+    whoEachHouseIsLookingFor
 } from './what-is-posted-on-the-wall-here.js';
 import {
     whatIsLiveForYouHere,
@@ -1306,7 +1307,7 @@ function whatThePackCovered(food: ProvisioningAssessment, days: number): string 
  *
  * FOUND BY PLAYING BLIND, on one screen:
  *
- *     Sect duty: A Culling Notice Written From an Old Survey of 20 days was
+ *     Sect duty: A Bounty at the Old Price of 20 days was
  *     intended.
  *     It ran 1 day and not 20 days. Something was already on its way.
  *     Completed. 94 spirit stones paid, and nothing on anybody's ledger.
@@ -2927,9 +2928,37 @@ export class GameService {
         };
     }
 
+    /**
+     * WHO EACH HOUSE IS ASKING AFTER, WHICH ONLY THE WORLD KNOWS.
+     *
+     * A house cuts a life plate for every disciple it can and reads its own roll
+     * off them: an intact plate with nobody seen for a season is MISSING, which
+     * is a different fact from dead and is the one that goes on a town wall.
+     * Those plates were being cut and never read - the three readings had no
+     * caller anywhere in `src/`, so a seeded world carried hundreds of them as
+     * objects and a member disappearing reached nobody.
+     *
+     * Empty with no world open, which `readTheWall` reads as a wall carrying no
+     * searches - the honest answer rather than a missing one.
+     */
+    private whoIsBeingLookedFor(): ReturnType<typeof whoEachHouseIsLookingFor> {
+        return this.atHand === null ? new Map() : whoEachHouseIsLookingFor(this.atHand);
+    }
+
     /** Strike the barrier now. Refuses loudly when the engine says it is not legal. */
     async breakthrough(): Promise<BreakthroughApiResult> {
         this.useOwnDb();
+        // AND THE WORLD HAS TO BE OPEN, OR THE CROSSING IS NEWS TO NOBODY.
+        //
+        // A crossing files a fact the world hears about, scaled by the rung -
+        // Foundation Establishment is personal, Tribulation Transcendence is
+        // continental. This endpoint never loaded the world, so a breakthrough
+        // struck through the REST door reached `aCrossingEntersTheWorld` with
+        // nothing to write to and the single most talked-about event in the
+        // genre happened silently. The played path loads it; this one did not,
+        // which is the same defect shape as an ADMIN turn returning before the
+        // load.
+        this.atHand = this.atHand ?? await this.loadWorld();
         const { run, cultivator } = this.requireLiveRun();
         const eligibility = canAttemptBreakthrough(cultivator);
         if (!eligibility.eligible) {
@@ -4194,7 +4223,9 @@ ${noticedWaiting}`;
 
                 // WHAT IS NAILED TO THE WALL, ASKED FOR DELIBERATELY.
                 if (action.intent === 'bills') {
-                    const wall = readTheWall(this.knowledge, cultivator, run);
+                    const wall = readTheWall(
+                        this.knowledge, cultivator, run, this.whoIsBeingLookedFor()
+                    );
                     // THE ONE DATED INVITATION THIS GAME OFFERS, AND THE NEXT
                     // SENTENCE COULD NOT POINT AT IT.
                     //
@@ -6352,7 +6383,8 @@ ${noticed}`;
         // Exactly one, or nothing. Two papers up and the phrase points at
         // neither, which is the ruling every other reference keeps.
         const fromTheWall = whichHouseThePaperMeans(
-            target, () => readTheWall(this.knowledge, cultivator, run)
+            target,
+            () => readTheWall(this.knowledge, cultivator, run, this.whoIsBeingLookedFor())
         );
         // AND A REFERENCE THE WALL COULD NOT SETTLE IS STILL NOT A NAME.
         //
@@ -6425,10 +6457,19 @@ ${noticed}`;
             ));
         }
 
+        // EVERY HOUSE THIS CULTIVATOR HAS HEARD OF, INCLUDING THE SHUT ONES.
+        //
+        // This asked for admissible houses only, so a house whose name the
+        // player holds and whose door is closed to them VANISHED - and the
+        // sentences for exactly that case were already written a few lines
+        // below and could never match anything. The rule, from AGENTS.md: NOT
+        // HAVING THE STANDING TO DO SOMETHING IS NOT THE SAME AS SEEING
+        // NOTHING. Knowing a house exists and being unable to enter it is two
+        // facts, and the second one is worth playing toward.
         const listing = await handleList({
             action: 'list',
             cultivatorId: cultivator.id,
-            admissibleOnly: true
+            admissibleOnly: false
         });
         if (isGuidingErrorBody(listing)) {
             return this.fromToolResult('sect_manage.list', 'sect', listing, 'The sects');
@@ -6442,9 +6483,9 @@ ${noticed}`;
                 'No door you know of.',
                 'You do not know the name of a single order that takes people on. Somebody would ' +
                 'have to say one in front of you first, and nobody has.',
-                `${all.length} order(s) in the world would admit somebody. None of them is a name `
-                + 'this cultivator holds, and the listing is not offered as a substitute for '
-                + 'having heard one.')
+                `${all.length} order(s) exist, ${all.filter(x => x.admissible === true).length} of `
+                + 'which would admit somebody. None of them is a name this cultivator holds, and '
+                + 'the listing is not offered as a substitute for having heard one.')
             : factsForToolResult(
                 `${heard.length} order${heard.length === 1 ? '' : 's'} you could put yourself in front of.`,
                 [
@@ -6493,11 +6534,20 @@ ${noticed}`;
                             + 'its intake is open to you now - it takes people at the floor, '
                             + 'carries them, and decides about them later.'),
                     // AND HOW MANY YOU HAVE NO NAME FOR
-                    ...(all.length > heard.length
-                        ? [`There are ${all.length - heard.length} more that would take somebody `
-                            + 'like you and that you have no name for. Nobody has said them in '
-                            + 'front of you yet.']
-                        : []),
+                    // COUNTED OFF THE ONES THAT WOULD ACTUALLY TAKE THEM. The
+                    // listing stopped asking for admissible houses only, so
+                    // `all` now carries the shut doors too - and this sentence
+                    // says "would take somebody like you", which they would not.
+                    ...(() => {
+                        const unheardAndOpen = all.filter(x =>
+                            x.admissible === true
+                            && !heard.some(known => known.id === x.id)).length;
+                        return unheardAndOpen > 0
+                            ? [`There are ${unheardAndOpen} more that would take somebody like you `
+                                + 'and that you have no name for. Nobody has said them in front of '
+                                + 'you yet.']
+                            : [];
+                    })(),
                     'Knowing a name is not an introduction. Somebody would have to put you in front of them, ' +
                     'or you would have to walk up on your own.'
                 ]);
@@ -12856,11 +12906,15 @@ ${fit.line}`;
                 || GameService.BOARD_IN_GENERAL.test(wanted))) {
             const lines: string[] = [];
             if (board.offers.length === 0) {
+                const wallHasThingsOnIt = board.refusals.length > 0;
                 lines.push(board.membership
                     ? 'Nothing on the wall is being put to somebody at this rank. That is not the '
                       + 'same as an empty wall, and everyone who walks past it knows the difference.'
-                    : 'You belong to nothing, so there is no wall. Commission work goes to people '
-                      + 'somebody can send for.');
+                    : wallHasThingsOnIt
+                        ? 'None of what is on this wall is yours to take. Commission work goes to '
+                          + 'people somebody can send for, and nobody can send for you.'
+                        : 'You belong to nothing, so there is no wall. Commission work goes to '
+                          + 'people somebody can send for.');
             } else {
                 lines.push(board.membership
                     ? 'What the house is asking for, and what it pays:'
@@ -14787,7 +14841,9 @@ ${fit.line}`;
     ): TheLiveSituation {
         const here = this.whatIsLiveHere(cultivator, ambient, run);
         const onDay = Math.floor(run.elapsedDays);
-        const wall = readTheWall(this.knowledge, cultivator, run);
+        const wall = readTheWall(
+                        this.knowledge, cultivator, run, this.whoIsBeingLookedFor()
+                    );
         // WHAT THIS READ HAS ALREADY SAID ON THIS GROUND TODAY. The stamp is
         // the ground and the day, so the memory lapses by walking or by
         // waiting rather than by a counter.

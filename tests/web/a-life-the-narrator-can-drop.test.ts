@@ -163,9 +163,17 @@ describe('a life the narrator can drop', () => {
         const provider = new ScriptedProvider({ narrations: ['prose'] });
         await anOpening({ provider });
 
+        // TOLD APART FROM THE ROUTER, NOT BY THE NARRATOR'S FIRST WORDS.
+        //
+        // This found the call by `startsWith('You are the narrator')` and broke
+        // when that opening was rewritten - the narrator is now told it is a
+        // xianxia novelist rather than a renderer of findings, which is a change
+        // to the prompt's ARGUMENT and not to anything this test is about. Two
+        // system prompts exist; the other one says so in its own first line, so
+        // ruling it out cannot go stale on a rewrite of either.
         const narration = provider.calls.find(call =>
-            (call.messages.find(m => m.role === 'system')?.content ?? '')
-                .startsWith('You are the narrator'));
+            !(call.messages.find(m => m.role === 'system')?.content ?? '')
+                .startsWith('You are the intent router'));
         expect(narration, 'the opening never asked for prose').toBeDefined();
 
         const asked = narration!.messages.find(m => m.role === 'user')?.content ?? '';
@@ -188,7 +196,7 @@ describe('a life the narrator can drop', () => {
 
         const system = provider.calls
             .map(call => call.messages.find(m => m.role === 'system')?.content ?? '')
-            .find(text => text.startsWith('You are the narrator')) ?? '';
+            .find(text => !text.startsWith('You are the intent router')) ?? '';
 
         expect(system).toContain('The words this world uses for itself');
         expect(system).toMatch(/jade beauty/);

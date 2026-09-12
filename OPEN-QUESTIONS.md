@@ -21,6 +21,38 @@ Six agents, so you can tell what landed from what did not:
 
 ---
 
+## ANSWERED: the immortal/chaos count, and one thing that needs your call
+
+You asked me to check whether there are enough immortal and chaos arts for the
+single-use rule to matter. Measured on a seeded world, population 400:
+
+- **The catalog is fine: 26 immortal arts and 29 chaos arts.** Not few at all.
+- **The WORLD is the problem.** Across 124 library rows and 36 live houses, only **6
+  immortal and 2 chaos distinct arts sit on any shelf anywhere**. 30 of 36 houses hold no
+  immortal road; 34 of 36 hold no chaos road.
+- **So the bottleneck is `TAUGHT`** — each house's `teaches` list — not the number of arts
+  that exist. Your instinct was right about the symptom and wrong about the cause.
+
+**Your apex rule is already satisfied wherever it CAN be.** Of the three `APEX_INSTITUTIONS`
+only one is a house: `apex-azure-cloud`. It already holds exactly one immortal (Silk Drawing
+Scripture) and one chaos (Clear Terrace Ascension Canon). The Earth Vein Tower and The Long
+Cut have `factionId: null`, are in no faction row, and teach nothing — which
+`seedSectLibraries` records as deliberate (*"two powers teach nothing, deliberately"*) and
+`governance-and-water-rights.ts` argues for at length.
+
+**The call you need to make:** those two apexes cannot be given arts without overturning a
+stated design decision about what they ARE. Leave them as powers that teach nothing, or
+make them houses?
+
+**And the bigger finding underneath it.** `sect-kiln-wardens` (Deeproot Court) sits at
+ceiling **44 — the highest in the world**, holds the strongest sealed ancestor, and
+**teaches nothing at all**. Spreading immortal and chaos roads across the high houses is
+what would actually produce "multiple chosen like the novels", and it is a catalog edit
+plus the political half of who gets the one reading. Routed to the elder agent, since it is
+the same `refreshChosen` / `chooseTheChosen` machinery.
+
+---
+
 ## Still open, and I could not decide them for you
 
 Nothing. You cleared all three before going to bed, and they are routed:
@@ -111,7 +143,40 @@ crowd".
 
 ## For the morning, not tonight
 
-### 7. The prose is close and the remaining gap is paragraph length
+### 7. The prose has arrived, and here is the evidence
+
+Telling the narrator it is a novelist rather than a renderer of findings did it. A played
+turn, gemma narrating, `I ask Tang Xuxue about the caravan`:
+
+    "Fifteen stones," the stallholder says.
+
+    Thirty stones in the purse. Fifteen for the book. It is a steep price for a farm boy,
+    but it is the...
+
+    "The Great Peace is the only one moving this season," Tang Xuxue says. "If you are
+    looking for a sea..."
+
+    "The Great Peace? Hah! They'll take any fool with a few stones to spare."
+
+    "And most of those fools end up as crow-feed before the first moon."
+
+    Tang Xuxue does not look at the voices in the crowd. There is no reason to.
+
+Unattributed crowd taking sides, contempt, hyperbole, a named person pointedly ignoring
+them, and a one-line beat to close. Measured across four played turns:
+
+| | ours | corpus |
+|---|---|---|
+| median words | 21-44 | 21-40 |
+| speech | 38-71% | 24-38% |
+| **attribution** | **0-33%** | **~25%** |
+| one-liners | 0-29% | 7-15% |
+
+**Attribution was the last big lever and it has landed** - about 100% down to 0-33%, which
+is at or below the corpus. Speech runs high on some turns and one-liners swing either side;
+both are variance rather than a direction, and I am not tuning further.
+
+### 7b. Old note: the remaining gap was paragraph length
 With the novelist identity in, speech is in band (21-43% against 24-38%) and the crowd
 talks properly - *"He's just staring at the boards," a voice drifts from the crowd.
 "Staring won't buy him a way out of this hole."* What is still off is that some turns run

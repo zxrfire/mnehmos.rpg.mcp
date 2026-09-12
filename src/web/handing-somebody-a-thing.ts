@@ -49,6 +49,12 @@
  */
 
 import type { Cultivator } from '../schema/cultivation.js';
+// ONE SOURCE FOR WHAT A POUCH HOLDS. This file spelt the union out a second
+// time as PouchItemKind, and a book was unified into the pouch
+// elsewhere - so a manual became storable and stayed ungivable, which is the
+// shape AGENTS.md warns about: two places that must agree, and only one of
+// them told.
+import type { PouchItemKind } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import type { EngineFacts } from './facts.js';
 import type { ObligationInput } from '../engine/social/grudges.js';
 import { NAMES_STONES } from './inventory-phrasings.js';
@@ -56,7 +62,7 @@ import { NAMES_STONES } from './inventory-phrasings.js';
 /** What the giver is carrying, as the pouch keeps it. */
 export interface GoodStackHeld {
     itemId: string;
-    kind: 'pill' | 'herb' | 'artifact';
+    kind: PouchItemKind;
     quantity: number;
     name: string;
 }
@@ -82,10 +88,10 @@ export interface GiveDeps {
     /**
      * Names of the arts this cultivator holds a COPY of.
      *
-     * Read only to refuse honestly. See {@link handOver}: a copy of a manual is
-     * a knowledge row with a provenance rather than a counted pouch row, so it
-     * cannot be moved by the two-row arithmetic this verb does, and the person
-     * in front of the player has nowhere for it to go.
+     * Read only to refuse honestly. See {@link handOver}: the lot this verb
+     * hands its caller is a pill, a herb or a rated object, and a book is none
+     * of the three - not because there is nowhere to put one, which there now
+     * is, but because the moving half has not been widened.
      */
     heldArts: readonly string[];
     /** Absolute world day, for the favour's own clock. */
@@ -99,7 +105,7 @@ export interface GiveOutcome {
     /** Stones to move off the giver and onto the recipient. Zero for a thing. */
     stones: number;
     /** The pouch lot to move, when a thing rather than stones was handed over. */
-    lot: { itemId: string; kind: 'pill' | 'herb' | 'artifact'; quantity: number; name: string } | null;
+    lot: { itemId: string; kind: PouchItemKind; quantity: number; name: string } | null;
     /** The favour the recipient now holds, for the caller to write. */
     favour: ObligationInput | null;
 }
@@ -240,12 +246,16 @@ export function handOver(deps: GiveDeps, thing: string, stonesAsked: number | un
     // ── A COPY OF AN ART IS THE THIRD TIER, AND THIS VERB DOES NOT REACH IT ─
     //
     // Refused by name rather than by falling through to "you are not carrying
-    // that", which would be a lie: they ARE carrying it. `alchemy_manage.inventory`
-    // says the shape of it in its own words - a copy of a manual is a knowledge
-    // row with a provenance rather than a counted pouch row - so it cannot move
-    // by the two-row arithmetic above, and the person in front of the player
-    // has nowhere to put one: `copiesHeldBy` is a cultivator flag and the
-    // several hundred people in the world are not cultivator rows.
+    // that", which would be a lie: they ARE carrying it.
+    //
+    // THE OLD REASON WAS THE BESPOKE STORE AND IT IS GONE. A copy used to be a
+    // per-cultivator flag, so there was nowhere for a book to go - the several
+    // hundred people in the world are not cultivator rows. A copy is now a
+    // `manual` row in the one pack, keyed on a free-form holder, so the taker
+    // has somewhere to put one. What still stops this verb is that `handOver`
+    // hands its caller a lot to move and the caller's lot shape is pills,
+    // herbs and rated objects; until that widens, refusing is the honest
+    // answer and the reason has to be the real one.
     //
     // The route that DOES exist is named, because a refusal owes the player
     // one. `sellACopyOfAnArt` is the whole machine for putting a method into
@@ -260,9 +270,9 @@ export function handOver(deps: GiveDeps, thing: string, stonesAsked: number | un
             + 'into somebody else\'s hands means writing it out, which is months of work and '
             + 'wants the whole of the art rather than the parts you have. Selling a copy is the '
             + 'road, and it starts the same way.',
-            `"${said}" resolved to a held copy of ${artHeld}. A copy is a knowledge row with a `
-            + 'provenance rather than a counted pouch row, so it does not move on this verb\'s '
-            + 'two-row arithmetic, and the taker has no flag to hold it in. See '
+            `"${said}" resolved to a held copy of ${artHeld}. The copy is a \`manual\` row in the `
+            + 'one pack and the taker could hold one; what this verb cannot do is move it, '
+            + 'because the lot it hands its caller is a pill, a herb or a rated object. See '
             + '`sellACopyOfAnArt`. Nothing moved, no time passed.'
         );
     }
