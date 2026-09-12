@@ -771,6 +771,37 @@ Raise it only when the machine is yours alone.
   matching and guiding errors. Follow `src/server/consolidated/character-manage.ts` and
   register in `src/server/consolidated/index.ts`.
 
+### Three layers, and the cheap one carries the weight
+
+**Engine tests are the floor and there should be hundreds.** `parseIntent`, the harness with
+no provider, resolution, refusals, state. They are deterministic, they cost milliseconds, and
+they are where a mechanic is proved. If a question can be answered without a model, answer it
+without a model - most can, and reaching for the model to check a routing decision wastes
+thirty seconds on something `parseIntent` answers instantly.
+
+**Model-routing tests are the middle and there should be a dozen.** When a provider is
+configured the model reads the sentence FIRST and the table is the fallback, so the table
+being right proves only half the game. A change can improve one and cost the other: the lane
+layer measured worse on its first cut and only a model-side comparison caught it. Keep the
+corpus small and aimed at the sentences routers actually get wrong.
+
+**Prose tests are the top and there should be a handful.** Does it read like the genre, does
+it carry arithmetic it should not, does it contradict what the player is holding. These cost
+tens of seconds each and cannot be made cheap, so spend them where only prose will do.
+
+Anything needing a live model **skips when none answers**, and says so. A suite that cannot
+run on a machine with no GPU is a suite that stops being run, and the floor has to stay
+runnable everywhere. `scripts/probe-what-a-refusal-is-still-for.ts` and
+`scripts/probe-how-the-model-routes.ts` are the two standing instruments; they are scripts
+rather than tests because they are measurements, not assertions.
+
+**And preconditions are arranged fast but proved reachable slowly.** A scenario may be set up
+by any means, admin included - a fixture that takes forty played turns to reach is a fixture
+that goes flaky. But every precondition needs a sibling test that reaches the same state by
+PLAYING, or the measurement is of a state no player can occupy. That is not hypothetical: an
+unreachable precondition hides a gameplay defect, and this repo has shipped content nothing
+could reach three times over.
+
 ### Comments earn their keep
 
 > *"I would have made it shorter, but I did not have the time."*

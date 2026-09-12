@@ -665,6 +665,23 @@ Rules:
   the nearest one and the engine will take the lane's ordinary reading - a right lane with a
   rough intent is answerable, and a wrong lane is not.
 - ${AN_AMBITION_IS_A_READ}
+- THE CALLS MEASURED WRONG, and the rule each one teaches. These are the sentences a router
+  gets wrong most often, so read them before you answer:
+    "I want to join a sect"        -> house/join.  A wish that NAMES an act may be taken as
+                                                   the act. Where they plainly cannot act on
+                                                   it yet, the read is right too - both are
+                                                   answers. What is wrong is reading it as a
+                                                   list of names they already hold.
+    "I want to get stronger"       -> a read.      A wish with no act in it is not one.
+    "what would it take to get in" -> house.       Asking a house's price is about the house,
+                                                   not about what you could acquire.
+    "empty your pockets"           -> fight/force. A demand is coercion, not a blow. Nobody
+                                                   has been struck.
+    "is this place safe"           -> perceive.    Weighing a place is looking at it.
+    "I sense the qi here"          -> perceive.    The ground, not a person.
+    "I sit down"                   -> cultivate.   Sitting is how this world cultivates.
+  The pronoun settles whose a thing is: a player says "I" and "my" about themselves and never
+  "your", so "your purse" is somebody else's and the sentence is a demand.
 - Anything asked ABOUT THE PLAYER THEMSELVES - what they are, what they carry, what they
   know, what they could learn, where they could go - is "consult". It is one lane on purpose:
   the player does not know which drawer the engine keeps a fact in, and neither do you.

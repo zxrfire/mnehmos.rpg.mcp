@@ -61,7 +61,10 @@ export const AN_AMBITION_IS_A_READ =
     + 'about themselves, perceive for anything in front of them. Never force it onto cultivate '
     + 'or another acting lane - a read always answers and says what would work, while an act '
     + 'they cannot perform yet only tells them no. '
-    + 'There is always a call; there is not always an act that burns a turn.';
+    + 'There is always a call; there is not always an act that burns a turn. '
+    + 'BUT A WISH THAT NAMES AN ACT IS THE ACT: "I want to join a sect" is house/join and "I '
+    + 'want to buy a manual" is trade/buy. Only a wish with no act in it - stronger, better, '
+    + 'somewhere - is a read.';
 
 /**
  * And how the answer is written, which is the other half.
@@ -78,7 +81,14 @@ export const AN_AMBITION_IS_ANSWERED_AS_THINKING =
     + 'the two or three things they know of that would serve it, weighed the way somebody '
     + 'weighs them. Not a menu, not numbered, and never the arithmetic: a rate, a multiplier '
     + 'or a count of bills is the engine reasoning and must not appear. Nothing has happened '
-    + 'this turn and no time has passed, so do not write them setting off.';
+    + 'this turn and no time has passed, so do not write them setting off. '
+    + 'ANSWER THE HOW, FROM WHERE THEY ARE STANDING. A want is not refused and it is not '
+    + 'granted: it is answered with the next thing that would actually serve it, named and '
+    + 'concrete - the gate that is right there, the elder who could be approached, the paper '
+    + 'on the wall with a date on it. '
+    + 'AND IT MAY BE WRY. Somebody wishing to join a house while standing at its gate is funny, '
+    + 'and this genre says so rather than pretending not to notice. Let the character notice. '
+    + 'The humour is theirs and never the narrator winking over their shoulder.';
 
 /** The outer choice. One of these, then an intent, and never a bare verb. */
 export const LANE_NAMES = [
