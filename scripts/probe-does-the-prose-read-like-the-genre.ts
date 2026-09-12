@@ -38,7 +38,19 @@ function measure(label: string, text: string) {
     const ps = text.split(/\n+/).map(p => p.trim()).filter(Boolean);
     const sp = ps.filter(p => /["“]/.test(p)).length;
     const one = ps.filter(p => (p.match(/[.!?]/g) ?? []).length <= 1 && words(p) <= 14).length;
-    rows.push(`${label.padEnd(34)} paras=${String(ps.length).padStart(2)}  med=${String(med(ps.map(words))).padStart(3)}w  max=${String(Math.max(...ps.map(words))).padStart(3)}w  speech=${pct(sp, ps.length).padStart(4)}  1-liners=${pct(one, ps.length).padStart(4)}`);
+    // ATTRIBUTION IS A FLOOR, NOT A RATE. This counts a closed list of
+    // speech verbs, and a narrator writing "a voice drifts from the crowd"
+    // is attributing in a way no list catches - so read a LOW number as
+    // meaning something and a high one as meaning what it says. It is here
+    // because it is what separated our dialogue from the corpus: measured,
+    // three quarters of this genre's speech paragraphs carry no speech verb
+    // at all, and the single-line paragraphs follow from that rather than
+    // from any rule about rhythm - stated three ways in three positions,
+    // they would not move until attribution did.
+    const said = new RegExp('\\b(?:say|says|said|ask|asks|asked|repl(?:y|ies|ied)|answers?|answered|murmurs?|murmured|shouts?|shouted|calls?|called|adds?|added|whispers?|whispered|cries|cried|tells?|told|offers?|offered)\\b', 'i');
+    const spoken = ps.filter(p => /["“]/.test(p));
+    const attributed = spoken.filter(p => said.test(p)).length;
+    rows.push(`${label.padEnd(34)} paras=${String(ps.length).padStart(2)}  med=${String(med(ps.map(words))).padStart(3)}w  max=${String(Math.max(...ps.map(words))).padStart(3)}w  speech=${pct(sp, ps.length).padStart(4)}  1-liners=${pct(one, ps.length).padStart(4)}  attributed=${spoken.length ? pct(attributed, spoken.length).padStart(4) : '   -'}`);
     if (process.env.SHOW) ps.forEach(p => console.log('   ' + String(words(p)).padStart(3) + 'w ' + (/["“]/.test(p) ? 'S ' : '. ') + p.slice(0, 100)));
 }
 for (const e of game.state().log) if (e.role === 'narrator') measure('TURN 0 (opening)', e.text);
@@ -56,3 +68,4 @@ console.log('CORPUS opening scene (not turn 0)        med= 31w         speech= 3
 // The distribution matters more than the median: one sentence 29%, two 27%,
 // three 19%, four or more 25%. A third of all paragraphs run past forty words.
 console.log('CORPUS paragraph mix    1 sentence 29%   2 sentences 27%   3 sentences 19%   4+ 25%');
+console.log('CORPUS dialogue         one quoted run 80%   NO attribution verb 75%');
