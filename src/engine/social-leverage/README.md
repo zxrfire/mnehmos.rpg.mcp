@@ -867,9 +867,37 @@ principal who is not on that list opens **no account at all**, because a grudge 
 against somebody and they have no name to put on it. What still exists is what the people
 who were there carry, which is `truth depends on proximity` at its bluntest.
 
+## A nomination is not a favour, and collapsing the two loses the mechanic
+
+`who-can-put-your-name-up-for-a-posting.ts` is the instrument for the two bodies in this
+world that admit nobody. **A favour moves an admission bar; these have none**, so there is
+nothing for one to move, and `a-favour-skips-the-admission-bar.ts` says so in both their
+entries. The two differ in who pays, which is the part a later reader will be tempted to
+simplify away:
+
+| | a favour | a nomination |
+|---|---|---|
+| what it moves | a stated bar | nothing. There is no bar |
+| who decides | the house with the bar | the apex, about you, elsewhere |
+| who pays | the asker, in a `favor` held by the person asked | **the nominator**, in a `blocked_advancement` grudge held by somebody who was passed over |
+
+So `spendAWord` writes a debt pointing at the asker and `aNameGoesUp` writes a grudge
+pointing at the house that chose. **Nothing is owed to the nominator by the person whose
+name went up**, and a `createFavor` appearing in that producer is the mechanic being
+rewritten into a second copy of the favour.
+
+**Who may nominate is derived, never listed** - the parentage chain, `Parentage.standing`
+and the relationship layer, in that order. One of these two postings has already changed
+apexes once, and a per-house table would have been wrong the day it did.
+
+Nothing here decides whether anybody agrees. `whatANominationWouldTake` settles what the
+ask weighs (`against_their_interest`, so never stones) and what the body giving it would be
+spending; `resolveAttempt` is still the only thing that moves a person.
+
 ## Related
 
 - [`../social/README.md`](../social/README.md) - the storage layer this writes into
+- [`../birth/spending-a-word-to-place-a-child.ts`](../birth/spending-a-word-to-place-a-child.ts) - the favour half, and the comment that named this road for years without building it
 - [`../cultivation/regard.ts`](../cultivation/regard.ts) - where the standing term comes from
 - [`../world/manuals.ts`](../world/manuals.ts) - `ifCaughtPractising`, the pattern the alignment split copies
 

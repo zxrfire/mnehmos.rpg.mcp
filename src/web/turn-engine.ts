@@ -602,6 +602,7 @@ import {
 } from '../engine/world/what-somebody-standing-here-would-part-with.js';
 import { assessAcquisition, type AcquisitionRoute } from '../engine/encounters/index.js';
 import {
+    theReasonBehind,
     whichPostingTheyMeant
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
 import type {
@@ -640,7 +641,9 @@ import {
 } from '../engine/social-leverage/index.js';
 // The board's own exchange rate, in closed form. See the function's comment.
 import {
-    contributionPerStoneOverDays,
+    contributionPerStoneDonated,
+    DONATION_DISCOUNT,
+    ORDINARY_DUTY_DAYS,
     pitchedWellBeneath
 } from '../engine/encounters/duties.js';
 // The board's own word for a tier. `who-goes-out-for-a-house-and-what-comes-back.ts`
@@ -746,6 +749,7 @@ import {
     factsForToolResult,
     howFarOff,
     humanDays,
+    twoSpansToldApart,
     placeName,
     theRung,
     observable,
@@ -1153,18 +1157,6 @@ const POINTING_AT_A_RANK = /\b(elder|disciple|master|warden|head)\b/i;
  */
 export { PROVISION_COST_STONES };
 
-/** What a thing costs, in whichever currency it is actually sold in. */
-/**
- * How many lines of a price board get read out.
- */
-/**
- * What a donation is worth against the same money earned by serving.
- */
-const DONATION_DISCOUNT = 1 / 3;
-
-/** Reference span when a house is offering nothing to take a median of. */
-const DEFAULT_DUTY_DAYS = 20;
-
 /**
  * The interact intents that are ATTEMPTS TO MOVE SOMEBODY.
  */
@@ -1353,11 +1345,33 @@ function whatThePackCovered(food: ProvisioningAssessment, days: number): string 
  * again and serve the term.
  */
 function aTermCutShort(served: number, asked: number, dueOnDay: number): string {
-    return `${humanDays(Math.max(0, served))} of the ${humanDays(asked)} stand served, and then `
-        + 'it was broken off. A house pays for a finished term and not for part of one, so '
+    const apart = twoSpansToldApart(Math.max(0, served), asked);
+    return (apart === null
+        ? 'The term was broken off before its days were served. '
+        : `${apart[0]} of the ${apart[1]} stand served, and then it was broken off. `)
+        + 'A house pays for a finished term and not for part of one, so '
         + `nothing is paid and nothing is credited yet. The word stands, due on day ${dueOnDay}, `
         + `and ${humanDays(Math.max(0, asked - served))} of it are still owed: take the posting `
         + 'up again and it carries on from here.';
+}
+
+/**
+ * The name of the work, in words.
+ *
+ * FOUND BY PLAYING an escort: *"posted-sect-azure-dew-sect-sending-an-escort-20:
+ * 60 days, 120 contribution..."*. `getEncounter` reads the hand-authored
+ * catalog, and a house's own work is not in it - the board generates its rows at
+ * read time in `aPostingAsAnOffer` - so the lookup missed for every posting a
+ * house has ever made and the fallback handed the row id to a player.
+ *
+ * The id is not opaque: it is built out of a closed table of reasons, and
+ * `theReasonBehind` already reads one back out of it. AN ID IS NEVER A NAME, so
+ * the last resort is a noun phrase too.
+ */
+function theNameOfTheWork(entryId: string): string {
+    return getEncounter(entryId)?.name
+        ?? theReasonBehind(entryId)?.name
+        ?? 'What the house asked for';
 }
 
 /** Words that name nothing on their own, so a shared one means nothing. */
@@ -1801,7 +1815,14 @@ export class GameService {
         ambientDb = this.db;
         this.repos = ensureCultivationDb();
         this.log = new PlayLog(this.db);
-        this.knowledge = new KnowledgeGate(this.db);
+        // WITH THE WORLD, because this is the one place a world is actually
+        // held. Nothing writes a knowledge row for one of the world's own
+        // people, so without this every question asked ABOUT an NPC - does the
+        // person you are questioning have anything to say, does the person in
+        // front of you recognise the house whose blade you are holding - came
+        // back false for everybody in the world. The supplier is read at query
+        // time: `atHand` is reloaded per action.
+        this.knowledge = new KnowledgeGate(this.db, () => this.atHand);
         this.sites = new SiteLedger(this.db);
         this.legacy = new LegacyLedger(this.db);
         this.worldEnabled = options.worldEnabled ?? true;
@@ -12980,11 +13001,10 @@ ${fit.line}`;
         const sworn = acceptDuty(ledger);
         clearPendingSummons(this.repos, cultivator.id);
 
-        // The catalog's own name for the work. The label is read back into
-        // prose - "Sect duty: X of 12 days was intended" - so anything but a
-        // noun phrase comes out as a broken sentence, which is how the first
-        // cut of this read.
-        const called = getEncounter(pending.entryId)?.name ?? pending.entryId;
+        // The name of the work. The label is read back into prose - "Sect duty:
+        // X of 12 days was intended" - so anything but a noun phrase comes out
+        // as a broken sentence, which is how the first cut of this read.
+        const called = theNameOfTheWork(pending.entryId);
 
         // ── AND THE JUNIORS ARE NOW WITH YOU ─────────────────────────────
         //
@@ -14156,13 +14176,23 @@ ${fit.line}`;
         }
 
         const floor = Math.max(1, this.repos.sects.stipendForRank(sect.id, 0));
-        const board = sectBoardFor(
-            { repos: this.repos, knowledge: this.knowledge, world: this.atHand },
-            cultivator
-        );
-        const spans = board.offers.map(offer => offer.terms.days).sort((a, b) => a - b);
-        const reference = spans.length > 0 ? spans[Math.floor(spans.length / 2)] : DEFAULT_DUTY_DAYS;
-        const rate = contributionPerStoneOverDays(reference) * DONATION_DISCOUNT;
+        // ── THE BOARD'S CONTENTS DO NOT PRICE MONEY ──────────────────────
+        //
+        // This read the MEDIAN SPAN of whatever was posted to this person.
+        // Measured across three seeded worlds, 342 readers: at one rung the
+        // median came out 30, 60 or 90 days depending on the house, so a
+        // hundred stones bought 36, 71 or 107 contribution against a first
+        // promotion of 100 - and 31 of 114 readers at the bottom band could
+        // buy their next rung outright with a hundred stones. Adding two
+        // `regional` sending reasons moved every board's median 60 to 90 and
+        // repriced the whole game, which nobody adding a duty reason could
+        // have known.
+        //
+        // The rule is unchanged: a stone buys `DONATION_DISCOUNT` of what the
+        // board would have paid for the same work. What it is read against is
+        // the ORDINARY ERRAND rather than today's notices - the unit of work
+        // the contribution line is already measured in.
+        const rate = contributionPerStoneDonated();
 
         if (amount === undefined) {
             return this.freeAction(run, 'sect', factsForToolResult(
@@ -14172,9 +14202,10 @@ ${fit.line}`;
                     + 'house pays its least important member in a month, and a clerk is not going '
                     + 'to open the book for less.',
                     `Above it, ${sect.name} credits about ${rate.toFixed(2)} contribution the `
-                    + `stone. The board pays better: the same money earned by serving is worth `
-                    + `${(rate / DONATION_DISCOUNT).toFixed(2)} the stone, because contribution is `
-                    + 'a record of service and buying it is not serving.',
+                    + `stone. The board pays better: an ordinary errand served out is worth `
+                    + `${(rate / DONATION_DISCOUNT).toFixed(2)} the stone and a long posting more `
+                    + 'again, because contribution is a record of service and buying it is not '
+                    + 'serving.',
                     `You are carrying ${cultivator.spiritStones}. Name a sum.`
                 ]
             ));
@@ -14241,7 +14272,8 @@ ${fit.line}`;
         );
         facts.structure.push(
             `donate: ${offered} stones -> ${credited} contribution at ${rate} `
-            + `(median duty span ${reference} days, discount ${DONATION_DISCOUNT}, floor ${floor}).`
+            + `(ordinary errand ${ORDINARY_DUTY_DAYS} days, discount ${DONATION_DISCOUNT}, `
+            + `floor ${floor}).`
         );
         facts.structure.push(paidIn === null
             ? 'No world row for this house, so the stones left the purse and reached no '
@@ -14254,7 +14286,8 @@ ${fit.line}`;
             action: 'sect',
             summary:
                 `${offered} stone(s) -> ${credited} contribution. Rate ${rate} the stone, derived `
-                + `from contributionPerStoneOverDays(${reference}) x ${DONATION_DISCOUNT}. `
+                + `from contributionPerStoneDonated(), the ordinary errand's own rate at `
+                + `${DONATION_DISCOUNT}. `
                 + `Floor ${floor} = stipend at rank 0.`,
             ok: true
         }];

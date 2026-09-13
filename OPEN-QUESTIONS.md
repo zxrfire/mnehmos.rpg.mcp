@@ -1,10 +1,109 @@
 # Open questions
 
-Rewritten after your rulings. Everything you answered is gone from here and is being
-built; what is left is either still genuinely open, or a decision of mine you may want to
-reverse. Written the night of 11-12 September.
+**Read the four items under WHAT STILL NEEDS YOU. Everything below that is history:**
+**either answered and built, or a decision of mine left visible so you can reverse it.**
+
+Started the night of 11-12 September and appended to through the 12th by nine agents, so
+the sections below are in the order they were written rather than in order of importance.
+Anything headed with a date or "being built right now" has since landed.
 
 ---
+
+## WHAT STILL NEEDS YOU
+
+All four are done, measured, and none of them was blocking anything already built. They
+are kept here with what landed and what is still open under each.
+
+1. **DONE - a posting on the board no longer reprices money**, and the second reading was
+   the one that was right. `donate` read contribution off the MEDIAN SPAN of whatever was
+   posted to you, so three new sending reasons took 100 spirit stones from 71 contribution
+   to 107 against a first promotion of 100. The rule is untouched - buying is still
+   `DONATION_DISCOUNT` of the board's own rate - and the SPAN is now the ordinary errand,
+   `ORDINARY_DUTY_DAYS`, which is the span `dutyTermsFor` already measures every duty's
+   contribution against. So the rate is one number for every house and every rung, and a
+   duty reason added tomorrow cannot move it.
+
+   Measured, three seeded worlds, 342 readers, both arms in one run
+   (`scripts/probe-what-a-donation-buys.ts`):
+
+   |  | median span | 100 stones bought | against the promotion | bought a rung outright |
+   |---|---|---|---|---|
+   | bottom band | 30-90 (60) | 36-107 (71) | 0.36-1.07 | 31 of 114 |
+   | middle | 30-90 (90) | 36-107 (107) | 0.01-1.07 | 1 of 114 |
+   | top | 90 | 107 | 0.00-0.04 | 0 |
+   | **all three, after** | not read | **24** | **0.24 at the first rung** | **0** |
+
+   The anchor was not only drifting with the catalog: at ONE rung it already came out 30,
+   60 or 90 days depending on the house, so the same hundred stones met three different
+   answers for no reason a player could see. What replaces it makes one statement that
+   holds everywhere - **buying a rung costs three times the money serving for it would
+   have paid you**, which is `DONATION_DISCOUNT` read as a sentence.
+
+   The third reading, a fixed span, is what landed; the first, that the median is a fact
+   about the house, is what was rejected, and the section below headed with the same
+   finding records why. Guarded by
+   `tests/engine/encounters/a-posting-does-not-reprice-a-donation.test.ts` and a played
+   assertion in `tests/web/paying-into-the-ledger.test.ts`, red-checked by putting the
+   median back.
+
+   **One residual, and it is yours because it is a catalog number.** The FLOOR under a
+   donation is the house's own lowest stipend, which is per house and right. At one house
+   of 38 it is big enough that the smallest donation the house will accept buys a first
+   rung: The Hollow Court pays 500 a month at its bottom rank, and 500 stones is 119
+   contribution against a rung of 100. The fix is a stipend or a floor, not an anchor.
+
+2. **DONE - what `sealed` means on a ruin**, and it uncovered a dead mechanic under it.
+   `howThisGroundIsShut` in
+   `src/engine/world/a-door-that-closes-is-not-a-door-nobody-opened.ts` reads the record
+   as open, shut until its season, or shut until somebody opens it, and names the day the
+   next door opens. No new field. Measured over twelve pinned worlds: 144 ruins at day 0,
+   72 with a cycle, 9 open, 72 shut until a season, 63 shut until somebody opens them; at
+   two hundred years 445 ruins, 264 open, 72 / 109, 217 spent.
+
+   **What still needs you: the world has never once opened one of these doors.**
+   `nextOpeningDay` answers null for anything sealed, every seeded ruin with a cycle is
+   sealed, and `applyConvergences` reads exactly that function - so across twelve worlds
+   run two hundred years each the world opened and shut **zero** doors on its own. The
+   reading now gets past the flag (`whenTheScheduleNextOpens` in `convergence.ts`); the
+   yearly pass was left alone because making half the world's ancient sites start opening
+   is a world-simulation change, not a reading. `readSchedule`, the gated half that tells
+   a house when a door is due and is exactly the information edge you described, has no
+   caller anywhere.
+
+3. **DONE - monopoly**, as the act and the accounts it opens.
+   `shutAPublicRuin` in `src/engine/world/a-house-that-shuts-a-public-ruin.ts`.
+   `controllingFactionId` on a ruin now means a house has shut something public, which is
+   the meaning `whoTurnsYouAwayFrom` already reads as somebody standing at the door. Who
+   is angry is derived: the houses seated in the ruin's own province. Measured over the
+   same twelve worlds at day 0 - of 456 house-and-open-ruin pairs the act is available on
+   41, refused 358 times for the province and 57 for want of anybody who could stand
+   there, and each one that lands opens a median of 18 accounts.
+
+   **What still needs you: nothing types it and nothing does anything about it.** There is
+   no verb in `src/web/`, so only the engine can perform it; and an angry house holds an
+   account it never acts on, because `whatTheHouseDoesAboutIt` answers for a house and a
+   person, not for a house and a house.
+
+4. **DONE - a gathering can fold into itself**, and no kind is exempt from the ratchet
+   any more. `reserveFactSlot` in `history.ts` hands out the fact id and the row's place
+   in the ledger WITHOUT the row, so the four passes get the id their ties carry and the
+   row is appended once, with what actually happened in it. No restructure was needed:
+   the passes were never the obstacle, the id was. Measured, eight worlds across ten
+   horizons from 200 to 1,000 years - gathering duplicates 2 to 0, every other world 0 to
+   0 with its row count unchanged, which is also the evidence that nothing else moved.
+
+   The sweep turned up a second thing worth knowing: **`gathering` was the only writer in
+   the world layer that appends and rewrites** (`resolveFact` and `explainFact` could do
+   the same damage and have no callers), but it was NOT the only source of duplicate rows.
+   Nine callers pass `recur: false` deliberately - two promotions to the same seat are two
+   events in one career - and the guard could not tell those from a failure to fold, so it
+   would have failed on `recur-world-b` and two others. Rows that asked to keep their own
+   now say so on themselves (`keptItsOwnRow`), which is what let the `gathering` exception
+   come out without a kind replacing it.
+
+---
+
+## History, in the order it was written
 
 ## What is being built right now, from your rulings
 
@@ -242,11 +341,26 @@ So the most sought-after position in the world has a stated road and nothing imp
 it. That is the failure pattern this repo keeps hitting: a capability written on one side
 and nothing routed to it. I did not build a nomination system on my own initiative.
 
-What is in, as the thin honest version: `whyYouCannotBePostedThere` in
-`how-an-ask-reaches-somebody.ts`, wired in `src/web/encounters.ts`, so a player reading
-either court's wall is told the work exists, that there is no bar to clear, and that the
-road is a nomination from the apex above or from a house below on good enough terms. What
-is missing is any way to earn one.
+**BUILT.** `src/engine/social-leverage/who-can-put-your-name-up-for-a-posting.ts` is the
+instrument: who may nominate whom, derived from the parentage chain, `Parentage.standing`
+and the relationship layer rather than listed; what the ask weighs; what it costs the
+NOMINATOR, which is the half that makes it a different instrument from a favour - a
+`blocked_advancement` grudge held by somebody passed over, about the house that chose,
+where a favour leaves a debt owed to the person asked. `whyYouCannotBePostedThere` now
+names the bodies whose names that apex reads and how many rungs short the reader is, and
+`petition` answers a posting in the instrument's own terms.
+
+Measured: 13 of 38 sects reach a posting at all; the Kiln Court's apex reads 4 sects' names
+plus the Court's own, the Deeproot Court's 8 plus its own. **The work stands at ordinal 25
+and 21 - twenty-odd rungs above where a run opens - so this is a mid-game road, and the
+engine says the number rather than pretending otherwise.**
+
+**What is still missing, and it is one thing:** nothing in the game GRANTS one.
+`aNameGoesUp` writes the rows a granted nomination produces and has no caller, because
+being posted is not a state a run can be in - there is no Warden rank a player can hold and
+no term to serve. What would call it is a `request` at a person inside a nominating house
+resolving `taken`, plus somewhere to put the posting. Until that exists the road is
+legible, priced and walkable up to its last step.
 
 ### 10. The bloodlust and the wardens' madness are ONE mechanic, and it is already built
 
@@ -617,3 +731,199 @@ over each companion's own `out_with_a_party` activity, and `move`, `ride` and `p
   charges the whole party's fare to the player's own purse and refuses if it is short, with no
   sense that five disciples of a house travelling on the house's errand might be paid for by the
   house. `whatTheHouseWillPartWith` is where that would be asked.
+
+### 20. Adding a posting repriced money, and that coupling is yours to rule on
+
+BUILT: three occasions in `SENDING_REASONS` so an escort is not always an errand - a visit to
+another house, a friendly competition, and a walk to the edge of forbidden ground. Two new
+`needs` keys, no branches.
+
+FOUND ON THE WAY, and it was the only thing here that was not mine to settle. `donate` in
+`turn-engine.ts` priced contribution off the MEDIAN SPAN of what was on this person's board:
+
+    const spans = board.offers.map(o => o.terms.days).sort(...)
+    const reference = spans[floor(spans.length / 2)] ?? DEFAULT_DUTY_DAYS
+    const rate = contributionPerStoneOverDays(reference) * DONATION_DISCOUNT
+
+`daysFor` gives 90 days to a regional posting, 60 to one staking an obligation, 30 to an
+open-ended one and 20 to the rest, so the median sits among a handful of discrete spans and two
+more regional rows tipped it. Measured on the seed that test pins, same house, same sentence:
+
+    before   9 -> 7 offers, spans 90 90 90 60 30 20 20, median 60, 100 stones -> 71 contribution
+    after    9 offers,      spans 90 90 90 90 90 60 30 20 20, median 90, 100 stones -> 107
+
+The RULE is untouched - buying is still exactly `DONATION_DISCOUNT` of the board's own rate, so
+it is still strictly worse than serving. What moved is what money is worth against a promotion,
+and the first promotion costs 100 contribution: a hundred stones used to be about seven tenths
+of a rung and is now a rung and a bit.
+
+Three readings, and none is an agent's to pick:
+
+- The median is right and the number is right: a house whose work is long-haul values a donation
+  more, and that is a fact about the house.
+- The reference should be what this person could actually SERVE, not everything posted at them.
+  Today a posting they will never take still moves what their money buys.
+- The reference should not ride the board at all. A fixed span makes the rate a constant and
+  makes the catalog safe to extend, at the cost of the derivation the owner asked for.
+
+**RULED AND BUILT: the third, and the cost it was supposed to carry turned out not to exist.**
+The span is `ORDINARY_DUTY_DAYS`, and the derivation is entirely intact - the rate is still
+`contributionPerStoneOverDays` at a span, still the board's own arithmetic, still nothing
+hand-picked. What was given up is only that the span comes from today's notices.
+
+Why the first reading was tested and rejected. It reads as a fact about the house and is not
+one: the same house's median moves when the world moves, and across three seeded worlds the
+median at ONE rung came out 30, 60 or 90 days depending on which house you had joined, which no
+player can see, ask about or plan around. A house whose work runs long is a real fact and it is
+already paid - serving a 90 day posting credits four and a half times what an errand does. Saying
+it twice, once in the work and once in the price of the ledger, is the same fact stored in two
+places.
+
+And the owner's own candidate, **what the house pays per day**, was measured and does not work:
+`stipend` is a RETAINER rather than a wage. At the bottom band it runs 1 to 500 stones a month
+and is 0.05 to 4.39 of what one errand pays for a day; at the top, 30 to 12,000, and up to 72
+times errand pay. Anchoring money to it would swing what a donation buys by three orders of
+magnitude between houses, which is the drift complained of, worse. The stipend keeps the job it
+already has here, which is the FLOOR under a donation - a house will not open the book for less
+than it pays its least important member in a month - and that one is per house and correct.
+
+The rule now states in one sentence: **buying a rung costs three times the money serving for it
+would have paid you**, everywhere, forever, which is `DONATION_DISCOUNT` read out loud.
+
+`tests/web/paying-into-the-ledger.test.ts` was pinning `contributionPerStoneOverDays(20)` - which
+is `DEFAULT_DUTY_DAYS`, the EMPTY-board fallback, not a span the engine uses when anything is
+posted. It was passing on a rounding: the board's median was already 60, the rate was 71.43, the
+ledger stored 71, and the assertion was `71 < 71.43`. It now reads both rates out of the engine's
+own answer and asserts the rule, so it moves with a retune instead of breaking on one. The header
+records what changed and why.
+
+TWO SMALLER THINGS, both pre-existing and both visible in a played escort:
+
+- **The duty id is printed at the player.** A played accept narrates
+  `posted-sect-azure-dew-sect-sending-an-escort-20: 90 days, 180 contribution ...`. That is a
+  row id in player-facing prose, on every posted duty, and it predates this change.
+- **A term that ran its full length still says it was cut short.** The same turn prints
+  *"It ran 3 months and not 3 months. Something was already on its way."*
+
+### 21. DONE - a gathering could not fold into itself, and the ledger's ratchet was holding by luck
+
+`a-fact-that-keeps-happening-is-one-row.ts` exists because a two-thousand-year world held 4,556
+rows saying something an earlier row already said. It folds on the way in: `appendWorldFact`
+computes a recurrence key off the pending fact and extends the row that already carries it.
+
+`holdGathering` cannot use that, and nothing said so. It appends its row with a PROVISIONAL
+summary - *"X received the chosen of N allied houses"* - because every tie it writes has to carry
+the fact id and the id does not exist until the row does, then fills the real sentence and the
+real `data` in on the stored record. The recurrence decision is therefore taken on a sentence the
+row does not keep, so two finished gatherings that come out identical are looked up under two
+different placeholder keys, never meet, and sit in the ledger as two rows saying the same thing.
+
+Surfaced, not caused, by the occasions work: the new sending reasons moved which reason each
+house draws, which moved the draw order, which moved which gatherings happen. Measured across
+horizons, `fixtureCatalog`, `eventsPerYear: 2`:
+
+    recur-world     1 duplicate, always kind `gathering`, at 290/295/300/305/310/400 years
+    recur-world-b   0 duplicates, at every one of those horizons
+
+The duplicate is two competitions four years apart with the same three attendees, the same
+placings and the same sentence. Folding them would be CORRECT and is what the module is for.
+
+**FIXED, and the restructure was not needed.** The four passes were never the obstacle - the
+ID was. `reserveFactSlot(ledger)` in `history.ts` takes the next fact id AND the row's place in
+the ledger without creating the row; the passes run against that id exactly as they did against
+the appended row's; then the row is appended once, with the real sentence, the real `data` and
+the real consequences, and `appendFact` splices it into the place held for it. So the recurrence
+decision is taken on what the row keeps, and the RNG streams, the fact ids and the ledger order
+are all byte-for-byte what they were.
+
+Two edges it has to answer, both in the code:
+
+- **A folded gathering leaves its slot unused.** `appendWorldFact` returns the row that already
+  said it, under a different id, and the ties were written with the slot's. `pointTiesAt` moves
+  them. It is complete rather than best-effort: `write` is the only thing in `gatherings.ts` that
+  puts the id anywhere durable, and every call to it pushes a tie, so the ties ARE the list of
+  places to look.
+- **The recurrence index counts how far along the ledger it has read**, and a row spliced into
+  the middle would leave one row indexed twice and one never indexed. `noteRowInsertedAt` takes
+  account of it, and does nothing where the ledger has no index yet.
+
+Measured after, eight worlds across ten horizons from 200 to 1,000 years, same catalog and
+`eventsPerYear: 2`: **gathering duplicates 2 to 0** (`recur-world-e` at 500 years and past it,
+the only world of the eight that produced the coincidence), and every other world 0 to 0 with
+its row count unchanged to the row - which is the evidence that nothing but the fold moved.
+
+**And the sweep answered a question the finding did not ask.** `gathering` was the only writer
+in the world layer that appends-then-rewrites - `resolveFact` and `explainFact` in `history.ts`
+would do the same damage and have no callers anywhere - but it was not the only source of
+duplicate rows. Nine callers pass `recur: false` on purpose, and those rows are duplicates by
+design: two promotions to the same seat are two events in one career. The guard could not tell
+a decision from a failure, so with the `gathering` exception removed it would have failed on
+`recur-world-b`, `-c` and `-d` for rows that are correct. `appendWorldFact` now marks an
+opted-out row `keptItsOwnRow` in `data`, which is excluded from the recurrence key, so the guard
+reads it without changing what anything collides with.
+
+Two attempted fixes that do NOT work, kept so nobody spends the afternoon again:
+
+- Re-filing the row in the recurrence index after the rewrite. The index is not the problem; the
+  LOOKUP is, and it happens before the rewrite.
+- Putting the day in `data` so rows never collide. That makes the invariant hold by making
+  folding impossible, which is the opposite of what the module is for.
+
+### 22. Monopolising a ruin is a real act with a real cost, and nothing in the world performs it
+
+Your ruling: a ruin is an open object, public by agreement, and a sect that monopolises one
+angers everybody else. `a_find` now reads what a house KNOWS rather than what it holds -
+`aFindThisHouseCouldSendFor` in
+`src/engine/world/who-goes-out-for-a-house-and-what-comes-back.ts` - and it reads
+`controllingFactionId` nowhere. Which leaves that column on a ruin meaning nothing at all.
+
+**It should mean monopoly, and that is a sharper meaning than the one it has.** On a seat or a
+vein it means ordinary ownership. On open ground it can only mean a house has shut everybody
+else out, which is the one thing the genre says costs you. Nothing writes it for a ruin today
+(measured: 0 of 144 at day 0 and 0 of 379 at two hundred years, twelve pinned worlds), so the
+column is free to be given that meaning without a migration.
+
+**What the act would be, in files that already exist.** An `ObligationRecord` per house shut
+out - `src/engine/social/grudges.ts` - held against the monopolist, at a `Severity` scaled by
+what the ground is worth. Who to open one against is `circleCandidatesFor` in `gatherings.ts`
+read inside out: the bodies seated in that province are exactly the ones with a claim. What a
+house DOES about it is already written in `what-a-house-does-when-it-catches-you.ts` and
+`what-a-body-wants-is-what-its-deciders-want.ts`. The verb a player would type has no home yet.
+
+This is a bigger piece than the reading and was deliberately not folded into it.
+
+**Two things the reading turned up on the way, both worth their own look:**
+
+- **Every seeded ruin is off the map.** `seedWorld` writes 12 ruins per world with
+  `parentId: null`, and their ids run `loc-ruin-<region index>-<n>` - so the NAME says which
+  province a ruin belongs to and the record does not. `theProvinceAround` is therefore null for
+  all 144 of them, no house is seated near any ruin at day 0, and anything province-scoped
+  reads zero on a fresh world. Ruins the simulation creates later are parented normally: 405 of
+  429 houses have an open one in their province at two hundred years.
+- **`sealed` means two different things on a ruin and the catalog does not say which.** One is
+  a door that has never been opened - `ruin_opened` in `the-world-changing-on-its-own.ts`
+  unseals it once, tags it `emptied`, and it never shuts again. The other is a door that
+  closes: a ruin with an `OpeningCycle` seals and unseals on its own schedule, carrying an
+  `open_now` tag, which is your sealed realm. 72 of 144 seeded ruins carry a cycle and 72 do
+  not, and nothing distinguishes the two states on the record. The reading treats `sealed` as
+  "shut today" either way, which is right for both; anything that wants to tell a spent ruin
+  from one waiting for its season has to read `cycle` and `emptied`, and should say so.
+
+**And nothing writes a knowledge row for a world NPC.** Every writer of `knowledge_records`
+names the player or somebody an operator spawned, so a read over a house's roll through the
+knowledge gate alone is `unaware` everywhere.
+
+**SETTLED, and the answer is that nothing should.** A row per person per fact is an unbounded
+table - measured on a seeded world of 250 at one thousand years, 28,488 of them, or 8,804
+collapsed to one per person per PLACE, both roughly linear in the world's age. What a world
+NPC knows is READ off the ledger the world already keeps, and there are now three readings
+rather than one: having been there, the province talking about it, and this house's own party
+coming back and saying so. `src/engine/world/README.md` has the table, the rungs and what each
+one moved.
+
+**What is still open is the PLAYER-FACING half.** `KnowledgeGate` in `src/web/knowledge.ts` is
+constructed from a `Database` in about twenty places and has no world handle, so `isAwareOf`,
+`stageOf` and `canPointAt` still answer `unaware` for a world NPC - which is what
+`asking-verbs.ts` asks to decide whether the person being questioned has anything to say, and
+what `combat-verbs.ts` asks for `referenceFor`. The route is an optional second reader on the
+gate, wired at the call sites that hold a world; it is not a row.

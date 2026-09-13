@@ -205,8 +205,9 @@ function priorAgeRuin(over: Record<string, unknown> = {}) {
         id: 'loc-ruin-2-3',
         name: 'Three Stone Array',
         kind: 'ruin',
-        // `locationFromRuin` sets no parentId. That is the seeding pass, and it
-        // is what `findUndiscoveredUnder` documents from the other side.
+        // Unplaced. `settleTheSeededPastIntoProvinces` now gives every seeded
+        // site a province, so this shape is the fallback rather than the normal
+        // case - which is what the last test in this file is about.
         parentId: null,
         discovered: true,
         discoveredOnDay: null,
@@ -261,15 +262,33 @@ describe('a ruin the province got into a lifetime ago', () => {
     });
 
     /**
-     * A site in no province is not four provinces away - it is unplaced, which
-     * is exactly the sort of ground somebody stumbles onto. If the seeding pass
-     * ever parents these, this stops firing and the ordinary rule takes over.
+    /**
+     * CHANGED, AND WHY. This used to assert that a prior-age ruin WITH a
+     * province was scoped to it, which held only because the seeding pass gave
+     * none of them one. `settleTheSeededPastIntoProvinces` does now, and the
+     * assertion went from covering an edge case to covering all twelve: a run
+     * opened with nothing to aim at for the five players in six born somewhere
+     * else, against the standing ruling that it should open and you should know
+     * about it.
+     *
+     * The opening is written at `scale: 'regional'` for exactly this reason -
+     * "a name that never leaves the county is a name nobody can aim at" - so the
+     * province filter is not asked of ground that stood open before this life
+     * began, wherever it stands. A prospected find is unchanged and is still
+     * both province-scoped and knowledge-gated.
      */
-    it('is not filtered out of a province it was never put in', () => {
-        const world = { locations: [priorAgeRuin()] } as never;
-        expect(foundGroundIn(world, 'loc-region-low-fall', () => true)).toHaveLength(1);
-        // A parented one is scoped exactly as before.
-        const parented = { locations: [priorAgeRuin({ parentId: 'loc-region-elsewhere' })] } as never;
-        expect(foundGroundIn(parented, 'loc-region-low-fall', () => true)).toHaveLength(0);
+    it('is nameable wherever it stands, which a prospected find is not', () => {
+        const here = { locations: [priorAgeRuin({ parentId: 'loc-region-low-fall' })] } as never;
+        expect(foundGroundIn(here, 'loc-region-low-fall', () => true)).toHaveLength(1);
+
+        const elsewhere = { locations: [priorAgeRuin({ parentId: 'loc-region-elsewhere' })] } as never;
+        expect(foundGroundIn(elsewhere, 'loc-region-low-fall', () => true)).toHaveLength(1);
+
+        const unplaced = { locations: [priorAgeRuin()] } as never;
+        expect(foundGroundIn(unplaced, 'loc-region-low-fall', () => true)).toHaveLength(1);
+
+        // And the find the world uncovered during the run stays local.
+        const found = { locations: [find({ parentId: 'loc-region-elsewhere' })] } as never;
+        expect(foundGroundIn(found, 'loc-region-low-fall', () => true)).toHaveLength(0);
     });
 });

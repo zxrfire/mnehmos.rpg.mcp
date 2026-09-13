@@ -39,14 +39,28 @@ import {
     whyYouCannotBePostedThere
 } from '../engine/encounters/how-an-ask-reaches-somebody.js';
 import { thereIsNoDoorAt } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
-import type {
-    HouseAsItStands
+import { whoCouldNominateInto } from '../engine/social-leverage/who-can-put-your-name-up-for-a-posting.js';
+import {
+    aFindThisHouseCouldSendFor,
+    forbiddenGroundInTheProvinceOf,
+    whatAHousesOwnErrandsBringBack,
+    whatAnybodyCouldHaveOfTheGround,
+    whatStandingOnItGives,
+    whatTheAirCarriesOfTheGround,
+    whereTheOpenGroundIs,
+    type WhereTheOpenGroundIs,
+    type HouseAsItStands
 } from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
+// The one answer to who a house would sit down with. The world holds its own
+// gatherings off this same reading, so a visit and a friendly competition are
+// offered to exactly the houses the world would have put in a room together.
+import { circleCandidatesFor } from '../engine/world/gatherings.js';
 import type { Cultivator, SimEvent } from '../schema/cultivation.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
-import { npcsAt, type WorldState } from '../engine/world/world-state.js';
+import { npcsAt, type FactionRecord, type WorldState } from '../engine/world/world-state.js';
 import { dangerDeltaInArea } from '../engine/world/what-is-true-of-a-place-right-now.js';
 import type { LocationRecord } from '../engine/world/locations.js';
+import type { KnowingStage } from '../engine/social/discovery.js';
 import type { KnowledgeGate } from './knowledge.js';
 import { createGrudge, createOath, settleObligation } from '../engine/social/grudges.js';
 import {
@@ -62,6 +76,12 @@ import type { ObligationRecord } from '../engine/social/grudges.js';
 import { othersPresent } from './hearsay.js';
 import { worldLocationFor } from './entities.js';
 import { theProvinceAround } from '../engine/world/ground-holder.js';
+import {
+    isInTheAirFor,
+    regionOf,
+    whereThisPersonIsStanding,
+    type TellerStanding
+} from '../engine/world/what-people-are-saying.js';
 // One direction only. `pending-summons.ts` imports the flag helpers, the house
 // arithmetic and the leadership prices, and imports nothing from this file -
 // which is what keeps the ledger writers below and the ask above it out of a
@@ -596,6 +616,84 @@ export function sectBoardFor(deps: EncounterDeps, cultivator: Cultivator): SectB
     };
 }
 
+/**
+ * Whether this house knows of open ground near it worth sending for.
+ *
+ * Asked rather than decided here, exactly as the two readings beside it are, so
+ * the wall a player reads and the world's own sendings cannot come to different
+ * conclusions about what this house has.
+ *
+ * THE ROLL IS EVERYBODY IN THE HOUSE, the player's mirror row included. What one
+ * of its people knows is what the house knows, and the player is one of its
+ * people the moment they are on the roll.
+ */
+interface HowTheGroundIsKnown {
+    knowsTheGround: (holderId: string, locationId: string) => KnowingStage;
+    cameBack: (factionId: string, locationId: string) => KnowingStage;
+}
+
+/**
+ * The three ways a house's people could have come by the ground near them,
+ * built once for a whole walk.
+ *
+ * ONE BUILDER, because the world's own sendings compose exactly these three and
+ * a wall that composed two of them would quietly say a house had not heard of
+ * something the world had already sent it after.
+ */
+function howTheGroundIsKnownIn(world: WorldState): HowTheGroundIsKnown {
+    const standingOnIt = whatStandingOnItGives(world.history.facts);
+    const day = Math.floor(world.currentDay);
+    const region = new Map<string | null, string | null>();
+    const regionFor = (locationId: string | null): string | null => {
+        const had = region.get(locationId);
+        if (had !== undefined) return had;
+        const found = regionOf(world, locationId);
+        region.set(locationId, found);
+        return found;
+    };
+    const tellers = new Map<string, TellerStanding | null>();
+    const tellerAt = (holderId: string): TellerStanding | null => {
+        const had = tellers.get(holderId);
+        if (had !== undefined) return had;
+        const npc = world.npcs.find(n => n.id === holderId) ?? null;
+        const built = npc ? whereThisPersonIsStanding(world, npc, regionFor) : null;
+        tellers.set(holderId, built);
+        return built;
+    };
+    return {
+        knowsTheGround: whatAnybodyCouldHaveOfTheGround(
+            standingOnIt,
+            whatTheAirCarriesOfTheGround({
+                facts: world.history.facts,
+                inTheAirFor: (fact, holderId) => {
+                    const teller = tellerAt(holderId);
+                    return teller !== null && isInTheAirFor(world, fact, teller, day);
+                }
+            })
+        ),
+        cameBack: whatAHousesOwnErrandsBringBack(world.history.facts)
+    };
+}
+
+function aFindThisHouseKnowsOf(
+    world: WorldState,
+    faction: FactionRecord,
+    openGround: WhereTheOpenGroundIs,
+    known: HowTheGroundIsKnown
+): boolean {
+    return aFindThisHouseCouldSendFor({
+        ground: openGround,
+        houseId: faction.id,
+        seatLocationId: faction.seatLocationId,
+        roll: world.npcs
+            .filter(npc => npc.factionId === faction.id && npc.status === 'alive')
+            .map(npc => ({ id: npc.id, rankIndex: npc.factionRankIndex })),
+        rankCount: faction.ranks.length,
+        stageFor: known.knowsTheGround,
+        errands: known.cameBack
+    }) !== null;
+}
+
 export interface TheHouseAndItsReach {
     house: HouseAsItStands;
     /** The highest rung this house has anybody standing on. */
@@ -663,9 +761,22 @@ export function theHouseAsItStands(
             name: faction.name,
             holdsGround: deps.world.locations.some(l => l.controllingFactionId === faction.id),
             standing: faction.standing,
-            // What somebody has turned up recently, which is the house's own
-            // reason for putting a party on the road after it.
-            hasAFind: deps.world.history.facts.some(f => f.kind === 'treasure_found')
+            // What THIS house has standing open, asked rather than decided
+            // here: the world's own sendings read the same function, so the
+            // board and the world cannot disagree about whether it has one.
+            hasAFind: aFindThisHouseKnowsOf(
+                deps.world,
+                faction,
+                whereTheOpenGroundIs(deps.world.locations),
+                howTheGroundIsKnownIn(deps.world)
+            ),
+            // WHO THIS HOUSE WOULD SIT DOWN WITH, and it is asked rather than
+            // decided here: a visit and a friendly competition both need a body
+            // on the other end, and the world already answers that question when
+            // it decides who it holds a gathering between.
+            sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
+            standsNearForbiddenGround:
+                forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId)
         },
         reach,
         reachOfTheRest
@@ -726,6 +837,12 @@ function theHousesWhoseWallThisIs(
     const province = theProvinceAround(deps.world.locations, here?.id);
     if (province === null) return [];
 
+    // Both built once for the whole walk. The reading below is per house per
+    // ruin, and each half of it walks something long: the ledger of a
+    // long-lived world, and every location in it.
+    const known = howTheGroundIsKnownIn(deps.world);
+    const openGround = whereTheOpenGroundIs(deps.world.locations);
+
     const out: TheHouseAndItsReach[] = [];
     for (const faction of deps.world.factions) {
         if (faction.dissolvedOnDay !== null) continue;
@@ -741,7 +858,10 @@ function theHousesWhoseWallThisIs(
                 name: faction.name,
                 holdsGround: faction.controlledLocationIds.length > 0,
                 standing: faction.standing,
-                hasAFind: deps.world.history.facts.some(f => f.kind === 'treasure_found')
+                hasAFind: aFindThisHouseKnowsOf(deps.world, faction, openGround, known),
+                sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
+                standsNearForbiddenGround:
+                    forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId)
             },
             reach,
             // Nobody off the roll is counted into a house's reach, so a
@@ -785,7 +905,19 @@ function whatTheHouseItselfNeedsDone(
                     // that does not exist and the honest answer names the
                     // nomination instead.
                     ? thereIsNoDoorAt(standing.house.id)
-                        ? whyYouCannotBePostedThere(standing.house.name)
+                        // And the road is named with names on it. Which bodies
+                        // the apex takes names from is the province's own
+                        // arrangement rather than anybody's secret, but it is
+                        // still a thing somebody had to be told, so it is
+                        // filtered through what this reader knows.
+                        ? whyYouCannotBePostedThere(standing.house.name, {
+                            bodyId: standing.house.id,
+                            ordinal: cultivator.realmOrdinal,
+                            houseId: null,
+                            namesTheyKnow: whoCouldNominateInto(standing.house.id)
+                                .map(c => c.nominatorId)
+                                .filter(id => deps.knowledge.isAwareOf(cultivator.id, 'sect', id))
+                        })
                         : `${standing.house.name} posts this to its own. Nobody off the roll is handed `
                           + `one, and a place on ${standing.house.name}'s roll is what changes that.`
                     // AND A WALL DOES NOT DECIDE WHO IS WORTH ITS WORK. What

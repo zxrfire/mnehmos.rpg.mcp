@@ -17,6 +17,7 @@
  */
 
 import { HOW_WIDE_A_NOTICE_READS } from './what-a-house-has-on-its-board.js';
+import { whatWouldPutYouThere } from '../social-leverage/who-can-put-your-name-up-for-a-posting.js';
 
 /** The two ways a house's work gets to somebody. */
 export type HowItReaches =
@@ -62,14 +63,40 @@ export function howAnAskReaches(input: {
  *
  * An appointment is not an admission, so the leverage is on whoever nominates
  * and never on the gate.
+ *
+ * NAMING THE ROAD AND NAMING NOBODY ON IT IS STILL A WALL. The first cut said a
+ * nomination was the instrument and stopped there, so a reader learned that
+ * there was a road and could not have found it - which is the same defect as the
+ * empty duty board, one layer up. `reader` is optional because a caller with no
+ * cultivator in hand (a catalog read, a test) still wants the general sentence;
+ * where there is one, the specific half comes from
+ * `who-can-put-your-name-up-for-a-posting.ts` and is derived, so a house that
+ * changes patrons changes what this says.
  */
-export function whyYouCannotBePostedThere(houseName: string): string {
-    return `${houseName} has the work and nobody applies for it. There is no bar here to `
+export function whyYouCannotBePostedThere(
+    houseName: string,
+    reader?: {
+        bodyId: string;
+        ordinal: number;
+        houseId?: string | null;
+        namesTheyKnow?: readonly string[];
+    }
+): string {
+    const general = `${houseName} has the work and nobody applies for it. There is no bar here to `
         + 'clear and no application anybody has ever made: people stand at that gate because '
         + 'somebody decided it about them, elsewhere. What puts you there is a nomination - '
         + 'from the power above it, or from a house below it that is on good enough terms to '
         + 'have its names taken - so whatever would move one of those is the road, and the '
         + 'gate itself is not.';
+    if (!reader) return general;
+
+    const specifics = whatWouldPutYouThere({
+        intoBodyId: reader.bodyId,
+        readerOrdinal: reader.ordinal,
+        readerHouseId: reader.houseId ?? null,
+        ...(reader.namesTheyKnow ? { namesTheReaderKnows: reader.namesTheyKnow } : {})
+    });
+    return specifics.length === 0 ? general : `${general} ${specifics.join(' ')}`;
 }
 
 export function whyItIsNotOnTheWall(houseName: string): string {

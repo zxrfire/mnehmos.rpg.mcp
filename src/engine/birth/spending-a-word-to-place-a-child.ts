@@ -259,7 +259,11 @@ export type WordRefused =
     | 'already open'
     /** The bar does not move. Not for this asker, not for anybody. */
     | 'bar will not move'
-    /** There is no door. A word is the wrong instrument; a nomination is not. */
+    /**
+     * There is no door. A word is the wrong instrument and a nomination is the
+     * right one, which is now a thing rather than a sentence:
+     * `social-leverage/who-can-put-your-name-up-for-a-posting.ts`.
+     */
     | 'no door to skip'
     /** The child already meets the house's own door on their own ordinal. */
     | 'child already qualifies'

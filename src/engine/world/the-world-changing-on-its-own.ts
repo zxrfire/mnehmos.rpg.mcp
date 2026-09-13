@@ -127,7 +127,7 @@ import {
 import { shameTag } from '../social/shame.js';
 import { fosterageTermsOf } from '../../data/cultivation/sects.js';
 import type { OriginTierKey } from '../cultivation/origin.js';
-import { applyGatherings } from './gatherings.js';
+import { applyGatherings, circleCandidatesFor } from './gatherings.js';
 import {
     fightTheWarsThisYear,
     highestRankAlive,
@@ -135,6 +135,25 @@ import {
 } from './war-melee.js';
 import type { ObligationInput } from '../social/grudges.js';
 import {
+    isInTheAirFor,
+    // CIRCULATION'S OWN SPELLING OF IT, and not the `regionOf` further down this
+    // file. The two walk the parent chain to different stopping points, and
+    // `howFarOff` compares the fact's region - computed with this one - against
+    // `teller.regionId`. A teller built with the local one would be measured
+    // against a region it was never in, and the whole province would go quiet.
+    regionOf as theRegionNewsIsMeasuredIn,
+    whereThisPersonIsStanding,
+    type TellerStanding
+} from './what-people-are-saying.js';
+import type { OnTheRoll } from '../social-leverage/what-a-body-wants-is-what-its-deciders-want.js';
+import {
+    aFindThisHouseCouldSendFor,
+    forbiddenGroundInTheProvinceOf,
+    whatAHousesOwnErrandsBringBack,
+    whatAnybodyCouldHaveOfTheGround,
+    whatStandingOnItGives,
+    whatTheAirCarriesOfTheGround,
+    whereTheOpenGroundIs,
     postingFor,
     reasonsOpenTo,
     resolveSending,
@@ -1788,11 +1807,41 @@ const WORTH_REPEATING = 0.35;
 function applySendings(state: WorldState, year: number, day: number): number {
     const rng = forStream(state.seed, 'sendings', year);
     const roster = new Map<string, Candidate[]>();
+    const roll = new Map<string, OnTheRoll[]>();
     const at = new Map<string, number>();
+    // Where each name on a roll is standing, for whether the province's talk
+    // reaches them. Built once and memoised on both halves: `regionOf` walks a
+    // location's parents, and this is asked once per person per piece of ground.
+    const province = new Map<string | null, string | null>();
+    const regionFor = (locationId: string | null): string | null => {
+        const had = province.get(locationId);
+        if (had !== undefined) return had;
+        const found = theRegionNewsIsMeasuredIn(state, locationId);
+        province.set(locationId, found);
+        return found;
+    };
+    const tellers = new Map<string, TellerStanding | null>();
+    const tellerAt = (holderId: string): TellerStanding | null => {
+        const had = tellers.get(holderId);
+        if (had !== undefined) return had;
+        const index = at.get(holderId);
+        const npc = index === undefined ? undefined : state.npcs[index];
+        const built = npc ? whereThisPersonIsStanding(state, npc, regionFor) : null;
+        tellers.set(holderId, built);
+        return built;
+    };
     for (let i = 0; i < state.npcs.length; i++) {
         const npc = state.npcs[i];
         at.set(npc.id, i);
         if (npc.status !== 'alive' || !npc.factionId) continue;
+        // WHO THE HOUSE KNOWS THROUGH IS EVERYBODY ON THE ROLL, including the
+        // player's mirror row, which the party below still excludes. Knowing
+        // something is not being spent on an errand, and a house does not stop
+        // knowing what one of its people knows because that person is not the
+        // world's to move.
+        const knowers = roll.get(npc.factionId);
+        const who = { id: npc.id, rankIndex: npc.factionRankIndex };
+        if (knowers) knowers.push(who); else roll.set(npc.factionId, [who]);
         // The player's mirror row is never spent by the world. Sending the
         // character on an errand they did not take is the engine taking a
         // decision that is theirs.
@@ -1801,6 +1850,25 @@ function applySendings(state: WorldState, year: number, day: number): number {
         const row = { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal };
         if (bucket) bucket.push(row); else roster.set(npc.factionId, [row]);
     }
+
+    // Both built once for the whole pass. The reading below is per house per
+    // ruin, and each half of it walks something long: the ledger of a
+    // two-hundred-year world, and every location in it.
+    const standingOnIt = whatStandingOnItGives(state.history.facts);
+    // The other half of what a house knows of the ground near it: not who stood
+    // there, but which of its own parties came back and said so.
+    const cameBack = whatAHousesOwnErrandsBringBack(state.history.facts);
+    const knowsTheGround = whatAnybodyCouldHaveOfTheGround(
+        standingOnIt,
+        whatTheAirCarriesOfTheGround({
+            facts: state.history.facts,
+            inTheAirFor: (fact, holderId) => {
+                const teller = tellerAt(holderId);
+                return teller !== null && isInTheAirFor(state, fact, teller, day);
+            }
+        })
+    );
+    const openGround = whereTheOpenGroundIs(state.locations);
 
     let sent = 0;
     for (const faction of state.factions) {
@@ -1827,16 +1895,31 @@ function applySendings(state: WorldState, year: number, day: number): number {
 
         if (!rng.chance(SENDINGS_PER_HOUSE_YEAR)) continue;
 
+        // KEPT, NOT THROWN AWAY. This was asked as a predicate and the answer
+        // discarded, so the errand a house opened because it knew of a door
+        // sent the party somewhere else entirely and the door stayed unvisited.
+        const find = aFindThisHouseCouldSendFor({
+            ground: openGround,
+            houseId: faction.id,
+            seatLocationId: faction.seatLocationId,
+            roll: roll.get(faction.id) ?? [],
+            rankCount: faction.ranks.length,
+            stageFor: knowsTheGround,
+            errands: cameBack
+        });
+
         const house: HouseAsItStands = {
             id: faction.id,
             name: faction.name,
             holdsGround: faction.controlledLocationIds.length > 0,
             standing: faction.standing,
-            // Read off what the world already holds rather than a new store:
-            // an unopened site anybody could go and dig.
-            hasAFind: state.locations.some(
-                l => l.kind === 'ruin' && !l.sealed && l.controllingFactionId === faction.id
-            )
+            // The same three readings the player's board takes, so a house does
+            // not visit somebody the world would not have put it in a room with,
+            // and does not open a find the board would say it does not know of.
+            hasAFind: find !== null,
+            sitsDownWith: circleCandidatesFor(state, faction).map(f => f.id),
+            standsNearForbiddenGround:
+                forbiddenGroundInTheProvinceOf(state.locations, faction.seatLocationId)
         };
         const reasons = reasonsOpenTo(house);
         if (reasons.length === 0) continue;
@@ -1849,11 +1932,49 @@ function applySendings(state: WorldState, year: number, day: number): number {
         // come back from. The draw still reaches a rung above them now and again,
         // which is where a sending becomes a story.
         const best = party0.reduce((n, c) => Math.max(n, c.ordinal), 0);
+
+        // ── WHERE THEY GO, AND IT IS DECIDED BEFORE THE POSTING IS WRITTEN ───
+        //
+        // The party stands there until the term is up. Before this a sending was
+        // resolved without anybody moving: measured, 74 of 76 NPCs who survived
+        // two hundred years never changed location once. `setLocation` is the
+        // mover, and it had no caller anywhere in the repository.
+        //
+        // AND THE POSTING IS SITED HERE RATHER THAN AT THE HALL THEY LEFT FROM.
+        // `posting.locationId` says what it is for - "the place, carried for the
+        // sighting" - and it was handed the house's own seat, so the ledger row
+        // for every errand in the world said the errand happened at home and
+        // `sighted.locationId` named the courtyard the party walked out of
+        // rather than the ground it reached and could not take. Nothing in the
+        // world's own record then said anybody had been anywhere, which is why a
+        // house's knowledge of its own province stopped at whoever happened to
+        // die there.
+        const goingTo = whereASendingGoes({
+            needs: reason.needs,
+            fromLocationId: faction.seatLocationId,
+            theFind: find?.locationId ?? null,
+            seatsInPlay: state.factions
+                .filter(f => f.id !== faction.id && f.dissolvedOnDay === null)
+                .map(f => f.seatLocationId)
+                .filter((id): id is string => id !== null),
+            // GROUND SOMEBODY CAN STAND ON, and not a hall. A region is a
+            // container - `populationWeightOf` is zero for one - and a party
+            // posted to one is inside the map rather than on it. Seats are
+            // excluded because the errands that go to a hall are the ones where
+            // a house receives you, and those read `seatsInPlay`.
+            elsewhere: state.locations
+                .filter(l => l.kind !== 'sect_seat'
+                    && isBelowTheLid(l)
+                    && populationWeightOf(l) > 0)
+                .map(l => l.id),
+            pick: count => rng.int(0, Math.max(0, count - 1))
+        });
+
         const posting = postingFor({
             reason,
             house,
             pitchOrdinal: best + rng.int(-5, 1),
-            locationId: faction.seatLocationId,
+            locationId: goingTo ?? faction.seatLocationId,
             // What they went on: the best thing in the yard, which is the best
             // thing the house could pay for. Null is walking, and walking is
             // what the reason's own term already assumes.
@@ -1878,40 +1999,14 @@ function applySendings(state: WorldState, year: number, day: number): number {
             party,
             departsOnDay: day,
             rng,
-            location: faction.seatLocationId
-                ? state.locations.find(l => l.id === faction.seatLocationId) ?? null
+            // The ground they reached, for the date it next stands open. Asking
+            // the seat for that answered when the house's own front door opens.
+            location: goingTo
+                ? state.locations.find(l => l.id === goingTo) ?? null
                 : null
         });
         sent++;
 
-        // ── AND THEY GO ──────────────────────────────────────────────────
-        //
-        // The posting names a place off the reason's own `needs` key, and the
-        // party stands there until the term is up. Before this a sending was
-        // resolved without anybody moving: measured, 74 of 76 NPCs who survived
-        // two hundred years never changed location once.
-        //
-        // `setLocation` is the mover, and it had no caller anywhere in the
-        // repository.
-        const goingTo = whereASendingGoes({
-            needs: reason.needs,
-            fromLocationId: faction.seatLocationId,
-            seatsInPlay: state.factions
-                .filter(f => f.id !== faction.id && f.dissolvedOnDay === null)
-                .map(f => f.seatLocationId)
-                .filter((id): id is string => id !== null),
-            // GROUND SOMEBODY CAN STAND ON, and not a hall. A region is a
-            // container - `populationWeightOf` is zero for one - and a party
-            // posted to one is inside the map rather than on it. Seats are
-            // excluded because the errands that go to a hall are the ones where
-            // a house receives you, and those read `seatsInPlay`.
-            elsewhere: state.locations
-                .filter(l => l.kind !== 'sect_seat'
-                    && isBelowTheLid(l)
-                    && populationWeightOf(l) > 0)
-                .map(l => l.id),
-            pick: count => rng.int(0, Math.max(0, count - 1))
-        });
         if (goingTo !== null) {
             const partyIds = party.map(p => p.id);
             // EVERYBODY WHO WENT, including the ones who will not come back.
@@ -2106,9 +2201,22 @@ function applyPostings(state: WorldState, year: number, day: number): number {
     const seats = new Set(state.factions
         .map(f => f.seatLocationId)
         .filter((id): id is string => id !== null));
+    // AND A POST IS KEPT WHERE PEOPLE ARE. `populationWeightOf` defaults to 1
+    // for any row that does not carry the key, so it says "somebody lives here"
+    // about every place that is not a container - which was harmless only while
+    // the unpopulated kinds were in no province and this pass filters by parent.
+    // `settleTheSeededPastIntoProvinces` gave the prior ages provinces and the
+    // pass immediately began posting people into sealed ruins and onto
+    // tribulation scars: measured over the `demography` seed at eighty years,
+    // 59 of 575 living people were stationed in a ruin, 16 more were standing on
+    // dead ground, settlements fell from 466 to 366, and a village emptied.
+    // A house keeps somebody in a TOWN, which is what the name here has always
+    // said. Where a party GOES is a different question and `whereASendingGoes`
+    // answers it - a ruin is a fine place to send an expedition and no place to
+    // keep a resident.
     const towns = state.locations.filter(l =>
         !seats.has(l.id)
-        && l.kind !== 'sect_seat'
+        && l.kind === 'settlement'
         && isBelowTheLid(l)
         && populationWeightOf(l) > 0);
     if (towns.length === 0) return 0;

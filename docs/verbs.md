@@ -480,7 +480,7 @@ Intents: `counters`, `bury`, `dig`, `lodge`, `claim`.
 
 ### `petition`
 
-ask an INSTITUTION for something: a grant, an object off its standing stock, recognition of a line. "target" names the body; "topic" is what is being asked for, in the player's own words, and is carried verbatim onto the form. "intent" is "stock" for an application against something a body is holding and cannot reorder (a Requisition, a schedule amendment, a request for one of its pills), "descent" for a claim of an ancestral line, "grant" for everything else that goes upward. Nearly always refused, and the refusal is the answer - it comes back in the instrument's own terms. Passes no time.
+ask an INSTITUTION for something: a grant, an object off its standing stock, recognition of a line, or a NOMINATION to one of the two postings nobody applies to - for that one, "target" is the house being asked to put the name up and "topic" names the posting. "target" names the body; "topic" is what is being asked for, in the player's own words, and is carried verbatim onto the form. "intent" is "stock" for an application against something a body is holding and cannot reorder (a Requisition, a schedule amendment, a request for one of its pills), "descent" for a claim of an ancestral line, "grant" for everything else that goes upward. Nearly always refused, and the refusal is the answer - it comes back in the instrument's own terms. Passes no time.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'petition'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.petition` · the deterministic parser reaches it · passes no time.
 

@@ -130,7 +130,11 @@ const DEAD = 154;
 // Raised by one, for the same reason and under the same discipline as `DEAD`
 // above: one name from the same session is pinned by its own test and has no
 // caller in the game yet.
-const TEST_ONLY = 446;
+// 446 -> 448: two more names from the same session, pinned by their own tests
+// and not yet called by the game. Same discipline as `DEAD` above - this
+// number is meant to come DOWN, and nobody may raise it without saying here
+// what pushed it.
+const TEST_ONLY = 448;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

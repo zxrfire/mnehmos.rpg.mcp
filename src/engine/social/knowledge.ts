@@ -58,6 +58,16 @@ export type Stance = 'knows' | 'believes' | 'suspects' | 'ignorant';
 export type HolderKind = 'character' | 'public';
 
 /**
+ * The kinds of thing whose existence somebody can be aware of.
+ *
+ * Here rather than in `web/knowledge.ts`, where it was, because the engine
+ * reading that answers this question for a world NPC cannot import from `web/`
+ * and a second spelling of a four-member union is a second source of truth.
+ * `web/knowledge.ts` re-exports it, so every existing importer is unchanged.
+ */
+export type KnownEntityKind = 'cultivator' | 'sect' | 'place' | 'event';
+
+/**
  * Where the claim came from. `fabricated` is a first-class source: flagging a
  * deliberate lie where it enters is what lets the engine answer later whether
  * any of this was ever true.

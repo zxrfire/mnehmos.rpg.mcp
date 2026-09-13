@@ -246,20 +246,24 @@ export function foundGroundOf(location: LocationRecord): FoundGround {
  * in the same place, over a place the catalog could not list. Prospected finds
  * are unchanged: those are discoveries and are spent by whoever made them.
  *
- * ── AND THE PROVINCE FILTER CANNOT REACH THEM EITHER ─────────────────────
+ * ── AND THE PROVINCE FILTER IS NOT ASKED OF IT EITHER ────────────────────
  *
- * `locationFromRuin` sets no `parentId`, so **a seeded ruin is in the world and
- * in no province** - which `findUndiscoveredUnder` in
- * `how-the-world-keeps-finding-more-ruins.ts` had already found and documented,
- * for the same reason: it made the whole seeded stock unreachable to a pass that
- * filtered by region. Its answer was that a party from anywhere may claim one,
- * and this is the same answer from the player's side.
+ * The county argument does not stop at the county for this one kind of ground,
+ * and the world's own record says so: `openTheShallowestRuin` writes the opening
+ * at `scale: 'regional'` because *"a name that never leaves the county is a name
+ * nobody can aim at"*, and calls it the one piece of closed ground anybody can
+ * point at. So the province filter is asked of prospected finds and skipped for
+ * ground that stood open before this life began. The listing already draws the
+ * line the right way round in the player's own words: *knowing a name is not a
+ * map, and getting to one is its own sentence.*
  *
- * A site that is in no province is not four provinces away - it is unplaced,
- * which is exactly the sort of ground somebody stumbles onto. So the province
- * filter is asked of everything that HAS a province and skipped for what does
- * not. If the seeding pass ever parents these, this stops firing on its own and
- * the ordinary rule takes over.
+ * This used to happen by accident. `locationFromRuin` set no `parentId`, so the
+ * whole seeded stock fell through a clause meant for unplaced ground, and
+ * `a-run-opens-with-somewhere-to-aim-at.test.ts` passed on it. When
+ * `settleTheSeededPastIntoProvinces` gave them provinces, the run opened with
+ * nothing to aim at for the five players in six born in some other province -
+ * against a standing ruling that *"it should open, you should know about it"*.
+ * The exception is deliberate now and is written where it can be read.
  */
 export function foundGroundIn(
     world: WorldState | null,
@@ -267,10 +271,11 @@ export function foundGroundIn(
     holdsRecordFor: (locationId: string) => boolean
 ): FoundGround[] {
     if (!world) return [];
+    const inThisProvince = (row: LocationRecord): boolean =>
+        regionId === null || row.parentId === null || row.parentId === regionId;
     return world.locations
         .filter(isFoundGround)
-        .filter(row => regionId === null || row.parentId === null || row.parentId === regionId)
-        .filter(row => isOpenedPriorAgeRuin(row) || holdsRecordFor(row.id))
+        .filter(row => isOpenedPriorAgeRuin(row) || (inThisProvince(row) && holdsRecordFor(row.id)))
         .map(foundGroundOf)
         .sort((a, b) => (b.setByOrdinal ?? 0) - (a.setByOrdinal ?? 0) || (a.name < b.name ? -1 : 1));
 }

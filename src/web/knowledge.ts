@@ -6,10 +6,12 @@ import type Database from 'better-sqlite3';
 import {
     recordKnowledge,
     type KnowledgeRecord,
+    type KnownEntityKind,
     type SourceKind,
     type Stance
 } from '../engine/social/knowledge.js';
 import {
+    canName,
     canPointAt as stageCanPointAt,
     confidenceForStage,
     highestStage,
@@ -21,14 +23,21 @@ import {
     stanceForStage,
     type KnowingStage
 } from '../engine/social/discovery.js';
+import {
+    whatOneOfTheWorldsOwnPeopleKnows,
+    type WhatSomebodyKnowsOfIt
+} from '../engine/world/what-one-of-the-worlds-own-people-knows.js';
+import type { WorldState } from '../engine/world/world-state.js';
 import { theOneIdAPersonIsKnownBy } from '../engine/world/a-catalog-person-and-their-world-row.js';
 import { localGeographyFor } from './lore.js';
 import { theOperatorReachesPast } from './operator-knowledge-reach.js';
 
 /**
- * Entity kinds whose existence is gated.
+ * Entity kinds whose existence is gated. Owned by `engine/social/knowledge.ts`,
+ * because the engine reading that answers this question for a world NPC cannot
+ * import from here.
  */
-export type KnownEntityKind = 'cultivator' | 'sect' | 'place' | 'event';
+export type { KnownEntityKind };
 
 /**
  * Stances that count as having heard of something.
@@ -116,14 +125,41 @@ interface RawRow {
 
 /**
  * Reader and writer for existence awareness.
+ *
+ * TWO READERS, AND ONLY ONE OF THEM STORES ANYTHING. `knowledge_records` is
+ * the authority on what a named holder has been told, and it holds the player
+ * and whoever an operator spawned. Nothing writes a row for one of the world's
+ * own people and nothing should, so every question asked about a world NPC
+ * came back `unaware` - and the consumers acted on it, refusing to let a
+ * cultivator answer a question about their own house and letting nobody in the
+ * world recognise anything on sight.
+ *
+ * So a gate may be handed a world, and where it has one it asks the world the
+ * question instead of inventing a row. The composition is `highestStage`:
+ * stages never fall, a row is the authority where a row exists, and the
+ * reading can only ever add. A gate with NO world behaves exactly as it did -
+ * the supplier is checked for `undefined` and nothing else happens - which is
+ * what keeps the twenty bare constructions legal.
  */
 export class KnowledgeGate {
     private readonly insertStmt: Database.Statement;
     private readonly awareStmt: Database.Statement;
     private readonly listStmt: Database.Statement;
     private readonly claimStmt: Database.Statement;
+    /**
+     * The world, asked for rather than held.
+     *
+     * A supplier because the gate outlives any one load: `GameService` reloads
+     * `atHand` per action and a gate holding the handle it was built with
+     * would answer off a world several turns stale.
+     */
+    private readonly worldAtHand?: () => WorldState | null;
+    /** The built reading, and which world it was built over. */
+    private theWorldItReads: WorldState | null = null;
+    private readingTheWorld: WhatSomebodyKnowsOfIt | null = null;
 
-    constructor(db: Database.Database) {
+    constructor(db: Database.Database, worldAtHand?: () => WorldState | null) {
+        this.worldAtHand = worldAtHand;
         this.insertStmt = db.prepare(`
             INSERT OR IGNORE INTO knowledge_records (
                 id, holder_id, holder_kind, claim_key, fact_id, stance, statement, detail,
@@ -167,10 +203,18 @@ export class KnowledgeGate {
 
     /**
      * Has this holder ever heard of it? The predicate the whole rule rests on.
+     *
+     * The stored row is asked first and short-circuits, so the hot path costs
+     * exactly what it did. The world is asked last, and only when the rows and
+     * the operator have both said no.
      */
     isAwareOf(holderId: string, kind: KnownEntityKind, id: string): boolean {
         if (this.awareStmt.get(holderId, existenceClaimKey(kind, id)) !== undefined) return true;
-        return theOperatorReachesPast(holderId, 'isAwareOf', kind, id);
+        if (theOperatorReachesPast(holderId, 'isAwareOf', kind, id)) return true;
+        // `canName` and not a rank comparison: the floor at which a name may be
+        // said is a property of the ladder, and `whisper` is where the stored
+        // half sits too - `suspects` is an aware stance.
+        return canName(this.whatTheWorldSays(holderId, kind, id));
     }
 
     /**
@@ -181,7 +225,28 @@ export class KnowledgeGate {
         for (const row of this.rowsFor(holderId, kind, id)) {
             stage = highestStage(stage, stageOfRaw(row));
         }
-        return stage;
+        return highestStage(stage, this.whatTheWorldSays(holderId, kind, id));
+    }
+
+    /**
+     * What the world itself says about a holder it holds a row for.
+     *
+     * `unaware` with no world, with no world loaded, and for every holder the
+     * world does not have - which is the player and everybody an operator
+     * spawned. Built once per world handle: the reading walks the ledger, and
+     * a long-lived world's ledger is long.
+     */
+    private whatTheWorldSays(
+        holderId: string, kind: KnownEntityKind, id: string
+    ): KnowingStage {
+        if (!this.worldAtHand) return 'unaware';
+        const world = this.worldAtHand();
+        if (!world) return 'unaware';
+        if (world !== this.theWorldItReads || this.readingTheWorld === null) {
+            this.readingTheWorld = whatOneOfTheWorldsOwnPeopleKnows(world);
+            this.theWorldItReads = world;
+        }
+        return this.readingTheWorld(holderId, kind, id);
     }
 
     /**
@@ -210,6 +275,12 @@ export class KnowledgeGate {
 
     /**
      * Everything this holder has heard of, optionally of one kind.
+     *
+     * ROWS ONLY, DELIBERATELY. The world reading answers about one named thing;
+     * enumerating it would mean walking several hundred people, several hundred
+     * houses and every place in the world per call, which is the combinatorial
+     * walk the absent table would have been. Every caller of this is asking
+     * about the player or an operator's character, who have rows.
      */
     awareness(holderId: string, kind?: KnownEntityKind): AwarenessRow[] {
         const rows = this.listStmt.all(holderId) as RawRow[];

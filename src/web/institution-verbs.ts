@@ -23,6 +23,17 @@ import {
     whatBringingItDownWouldTake
 } from '../engine/world/what-a-house-is-made-of-and-what-brings-it-down.js';
 import { canExistBeyondTheLid } from '../engine/cultivation/existence.js';
+import {
+    type APosting,
+    type NoNominationReaches,
+    howFarShortOfThePosting,
+    thePostingAt,
+    thePostings,
+    whatANominationWouldTake,
+    whatThisHousesNameReaches,
+    whatWouldPutYouThere,
+    whoCouldNominateInto
+} from '../engine/social-leverage/who-can-put-your-name-up-for-a-posting.js';
 import type { Cultivator, Run } from '../schema/cultivation.js';
 import { writeFlag } from '../server/consolidated/cultivation-support.js';
 import { handlePetition, handleWake } from '../server/consolidated/sect-politics.js';
@@ -129,6 +140,102 @@ function theWordForWhatWouldHappenToTheirSeat(
           + 'thing they will feel.';
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// A POSTING, WHICH IS ASKED FOR BY A DIFFERENT INSTRUMENT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The words somebody uses when they are after one of the two postings.
+ *
+ * A CLOSED SET AND A LOOKUP, NOT AN INFERENCE. The bodies are resolved by name
+ * out of `thePostings()` first; this pattern only decides whether a sentence
+ * that named no body is about a posting at all, and it exists because "I ask the
+ * Frostmirror Court to put my name up" names the nominator and not the seat -
+ * which is the sentence a player who has read the board would actually type.
+ */
+const A_POSTING_IS_WHAT_IS_WANTED =
+    /\b(?:posting|posted|nominate|nominates|nominated|nomination|nominations|warden|wardens|wardenship|put my name|my name up|name forward|a seat at)\b/i;
+
+/** Whether this phrase names one of the postings, out of the closed set. */
+function thePostingNamedIn(phrase: string | undefined): APosting | undefined {
+    const wanted = (phrase ?? '').trim();
+    if (wanted.length < 3) return undefined;
+    return thePostings().find(p =>
+        matchScore(wanted, p.bodyName) > MATCH_THRESHOLD
+        || matchScore(wanted, p.bodyId) > MATCH_THRESHOLD);
+}
+
+/**
+ * Whether this phrase names a body that is NOT one of the postings.
+ *
+ * Only a veto. What it protects is the guess below it: a sentence that names a
+ * house with a door is a sentence about that house, whatever else is in it.
+ */
+function someOtherBodyIsNamedIn(phrase: string | undefined): boolean {
+    const wanted = (phrase ?? '').trim();
+    if (wanted.length < 3) return false;
+    const postings = new Set(thePostings().map(p => p.bodyId));
+    return SECTS.some(s => !postings.has(s.id) && matchScore(wanted, s.name) > MATCH_THRESHOLD);
+}
+
+/**
+ * Which posting this petition is about, if any.
+ *
+ * Three roads in, and the third is the one that makes the verb reachable: a
+ * player who has been told a nomination is the road goes and asks a HOUSE, and
+ * the seat they mean is the one that house's name actually reaches. Where the
+ * house reaches both or neither, nothing is guessed and the handler says so.
+ */
+function whichPostingIsMeant(
+    target: string | undefined,
+    matter: string | undefined,
+    namedId: string | null
+): APosting | undefined {
+    const byName = thePostingNamedIn(matter) ?? thePostingNamedIn(target);
+    if (byName) return byName;
+    if (!A_POSTING_IS_WHAT_IS_WANTED.test(`${matter ?? ''} ${target ?? ''}`)) return undefined;
+    if (namedId === null) return undefined;
+    // AND A BODY THEY DID NAME IS NOT GUESSED PAST. "put my name forward for the
+    // Azure Cloud Pavilion" named a house with a door, and the fallback below
+    // answered about a posting four provinces away because that was the one the
+    // house asked could reach. A sentence that names a body is about that body.
+    if (someOtherBodyIsNamedIn(matter) || someOtherBodyIsNamedIn(target)) return undefined;
+    const reaches = whatThisHousesNameReaches(namedId);
+    return reaches.length === 1 ? thePostingAt(reaches[0].intoBodyId) : undefined;
+}
+
+/**
+ * What a body that cannot carry this name says about why.
+ *
+ * Each of the four names what would change it, because a refusal that does not
+ * is the blank look this repo keeps finding. `there is a door there` is the one
+ * that matters most: the player asked for the wrong instrument, and the right
+ * one exists and is already built.
+ */
+function theWayThatIsShut(
+    why: NoNominationReaches,
+    askedName: string,
+    posting: APosting
+): string {
+    switch (why) {
+        case 'they have no name to put up here':
+            return `${askedName} is not a house ${posting.appointingApexName} takes names from. `
+                + 'It could write, and what would arrive is a letter. Standing with one of the '
+                + 'houses whose names are read is the thing that is missing, and it is not '
+                + 'something this house can lend you.';
+        case 'the work stands further up than they do':
+            return `${askedName} could put a name up and yours is not one it could put up yet. `
+                + 'The distance is the whole of what is wrong here and it is the one part of '
+                + 'this nobody else can close for you.';
+        case 'there is a door there':
+            return `${askedName} is not being asked about a posting at all. That house admits `
+                + 'people, so what reaches it is an application or a word from somebody it '
+                + 'cannot comfortably refuse, and neither of those is a nomination.';
+        default:
+            return `${askedName} is not a body this arrangement contains.`;
+    }
+}
+
 export const institutionVerbs = {
     /**
      * The ground a house is seated on, or null.
@@ -162,6 +269,16 @@ export const institutionVerbs = {
 
         const position = positionIn(this.repos, cultivator.id);
         const named = this.factionMeant(target, cultivator);
+
+        // A POSTING IS NOT A GRANT AND A PETITION IS THE WRONG SHAPE FOR IT.
+        // Two bodies in this world admit nobody, so a petition sent up a chain
+        // toward one of them travels to a body that has no procedure to receive
+        // it. What answers instead is the instrument that does apply, in its own
+        // terms - which is what this verb is documented to do with a refusal.
+        const posting = whichPostingIsMeant(target, matter, named?.id ?? null);
+        if (posting) {
+            return this.aPostingIsAskedFor(run, cultivator, posting, named, position, target);
+        }
 
         // A body was named and it resolved to nothing, so the request has not
         // been made. Falling through to the player's own chain here would send
@@ -238,6 +355,110 @@ export const institutionVerbs = {
                 : 'Sent by somebody who serves no house. There is no rank on the letter.'
         );
         return execution;
+    },
+
+    /**
+     * Somebody asking for one of the two seats nobody applies to.
+     *
+     * THE ANSWER IS ALWAYS A REFUSAL AND IS NEVER A BLANK ONE. There is no
+     * procedure by which this verb could grant a posting - the apex decides it,
+     * elsewhere, about you - so what the player is owed is the instrument's own
+     * terms: how far off the work stands, which bodies' names that apex reads,
+     * whether the one they asked is one of them, and what putting a name up
+     * would cost the house that did it. Three things a good refusal carries, and
+     * the third one is the road.
+     *
+     * The odds of anybody agreeing are not computed here and must not be. A
+     * house does not nominate; a PERSON in it carries a name, and moving a
+     * person is `resolveAttempt`'s, reached by asking one.
+     */
+    aPostingIsAskedFor(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        posting: APosting,
+        named: { id: string; name: string } | null | undefined,
+        position: HousePosition | null,
+        /** What the player actually typed for the body, resolved or not. */
+        target?: string
+    ): Execution {
+        const asked = named && named.id !== posting.bodyId ? named : null;
+        const knows = (id: string) => this.knowledge.isAwareOf(cultivator.id, 'sect', id);
+        const carriers = whoCouldNominateInto(posting.bodyId)
+            .filter(c => c.howFar !== 'it is an appointment, not a nomination');
+
+        const lines: string[] = whatWouldPutYouThere({
+            intoBodyId: posting.bodyId,
+            readerOrdinal: cultivator.realmOrdinal,
+            readerHouseId: position?.sectId ?? null,
+            namesTheReaderKnows: carriers.map(c => c.nominatorId).filter(knows)
+        });
+
+        // AND WHAT THE BODY THEY ACTUALLY ASKED WOULD BE SPENDING. The half a
+        // petition can answer that nothing else can: they named a house, and
+        // the terms come back in that house's own position rather than in
+        // general.
+        if (asked) {
+            const would = whatANominationWouldTake({
+                askerId: cultivator.id,
+                askerOrdinal: cultivator.realmOrdinal,
+                nominatorId: asked.id,
+                // The house is asked; who inside it carries the name is the
+                // next sentence and not this one. Priced against the house's
+                // own id so nothing here invents a person.
+                askedOfId: asked.id,
+                intoBodyId: posting.bodyId
+            });
+            lines.push(typeof would === 'string'
+                ? theWayThatIsShut(would, asked.name, posting)
+                : `${asked.name} could put a name up and it would be ${would.howFar}. `
+                  + `${would.andWhatItCostsThem} Nobody in that house does it for stones: what `
+                  + `somebody carrying a name would take for carrying it is ${would.theyWillTake}.`);
+        } else if (this.namedButUnresolved(target, named ?? null)) {
+            // THEY DID NAME ONE AND IT IS NOT A NAME THEY HOLD. A different
+            // answer from having named nobody, and the honest one: a body they
+            // have never been told about cannot be asked for anything, and
+            // saying "you named no house" to somebody who named one is the
+            // engine reporting its own lookup as their sentence.
+            lines.push(`You have said a name and it is not one you hold. Nobody has said `
+                + `${(target ?? '').trim()} in front of you, and a nomination is carried by a `
+                + 'body you could find and stand in front of.');
+        } else {
+            lines.push('You have named no house to put it up. A nomination is a thing a body '
+                + 'does, and asking the gate is asking the one party in the arrangement that '
+                + 'was never going to be consulted.');
+        }
+
+        lines.push('Nothing is filed. There is no form here and there never was one.');
+
+        const facts = factsForRefusal(
+            `${posting.bodyName}: there is no application to make.`,
+            lines.join(' '),
+            `${posting.bodyId} is a posting. ${posting.appointingApexId} appoints into it; `
+            + `${carriers.length} bodies' names are read, of which `
+            + `${carriers.filter(c => knows(c.nominatorId)).length} are known to this cultivator. `
+            + `The work requires ordinal ${posting.theWorkRequires}; this cultivator is `
+            + `${howFarShortOfThePosting(posting.bodyId, cultivator.realmOrdinal)?.rungsShort ?? 0} `
+            + `rung(s) short. ${standingStructure(position, null)}`
+        );
+
+        this.repos.runs.incrementTurn(run.id, 1);
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'refused',
+            calls: [{
+                name: 'engine.nomination',
+                action: 'petition',
+                summary:
+                    `A posting was asked for at ${posting.bodyId}. Refused by construction: `
+                    + 'no procedure admits anybody to a posting, and the instrument that reaches '
+                    + 'one is a nomination from a body the appointing apex takes names from.',
+                ok: false
+            }]
+        };
     },
 
     /**

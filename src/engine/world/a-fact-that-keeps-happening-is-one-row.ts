@@ -59,8 +59,29 @@ export const RECURRENCE_KEYS = [
     'recurrences',
     'firstOccurrenceDay',
     'lastOccurrenceDay',
-    'recurredOnDays'
+    'recurredOnDays',
+    'keptItsOwnRow'
 ] as const;
+
+/**
+ * The `data` key that says a row was told to keep its own row.
+ *
+ * A caller can opt out - `appendWorldFact` with `recur: false` - and several
+ * do, for reasons that are theirs: two promotions to the same seat are two
+ * events in one career, and folding them would delete the career. Without a
+ * mark on the row, an opted-out pair is indistinguishable from a pair this
+ * module FAILED to fold, so the guard that asserts no two rows say the same
+ * thing cannot tell a decision from a defect - measured, eight worlds across
+ * ten horizons: every duplicate left in the ledger after the gathering fix is
+ * an opt-out. Excluded from the key above, so marking a row does not change
+ * what it collides with.
+ */
+export const KEPT_ITS_OWN_ROW = 'keptItsOwnRow';
+
+/** Whether this row was told to keep its own row whatever else is on the books. */
+export function keptItsOwnRow(fact: HistoricalFact): boolean {
+    return fact.data[KEPT_ITS_OWN_ROW] === true;
+}
 
 /**
  * The most occurrence days written onto a row.
@@ -156,6 +177,27 @@ function indexFor(ledger: HistoryLedger): LedgerIndex {
 /** The row this occurrence belongs to, if the ledger already holds one. */
 export function rowThisRecurs(ledger: HistoryLedger, pending: PendingFact): HistoricalFact | null {
     return indexFor(ledger).byKey.get(recurrenceKeyOf(pending)) ?? null;
+}
+
+/**
+ * Take account of a row that was put into the middle of the ledger.
+ *
+ * The index tracks how far along the ledger it has read, and everything else
+ * appends at the end, so a row filling a slot reserved earlier - see
+ * `reserveFactSlot` - would otherwise leave the count pointing one row short:
+ * one row indexed twice and one never indexed at all.
+ *
+ * Does nothing where the ledger has no index yet, because there is then nothing
+ * to keep consistent and the first lookup will read the whole thing anyway.
+ */
+export function noteRowInsertedAt(ledger: HistoryLedger, row: HistoricalFact, at: number): void {
+    const index = INDEXES.get(ledger);
+    // A row inserted BEYOND what has been read changes nothing: the prefix the
+    // count describes is the same prefix it was.
+    if (!index || at > index.indexedUpTo) return;
+    const key = recurrenceKeyOf(row);
+    if (!index.byKey.has(key)) index.byKey.set(key, row);
+    index.indexedUpTo++;
 }
 
 /**

@@ -167,11 +167,72 @@ export const CONTRIBUTION_BASE = 8;
 export const CONTRIBUTION_PER_ORDINAL = 1.6;
 
 /**
+ * The span an ordinary errand runs to, and the span every duty's contribution
+ * is measured against.
+ *
+ * One number doing both jobs, which is why it is named rather than typed three
+ * times: {@link daysFor} returns it for a row carrying no scale tag, and
+ * {@link dutyTermsFor} divides by it, so a duty of this length credits exactly
+ * its base. It is the unit of work on a board.
+ */
+export const ORDINARY_DUTY_DAYS = 20;
+
+/**
+ * Stones the board pays for one errand's worth of contribution.
+ *
+ * The other half of {@link ORDINARY_DUTY_DAYS}: on an errand of that length a
+ * duty credits `base` contribution and pays `base * this` in stones, so the two
+ * constants together ARE the board's exchange rate and nothing else sets it.
+ */
+export const STONES_PER_ERRAND_OF_CONTRIBUTION = 1.4;
+
+/**
  * How much stone-value the board itself puts on one point of contribution.
  */
 export function contributionPerStoneOverDays(days: number): number {
     const span = Number.isFinite(days) && days > 0 ? days : 1;
-    return span / (20 * 1.4);
+    return span / (ORDINARY_DUTY_DAYS * STONES_PER_ERRAND_OF_CONTRIBUTION);
+}
+
+/**
+ * The board's own exchange rate at the span that belongs to the work rather
+ * than to what is currently pinned up.
+ *
+ * ── THE BOARD'S CONTENTS MUST NOT PRICE MONEY ────────────────────────────
+ *
+ * `donate` took the MEDIAN SPAN of whatever was posted to the reader and priced
+ * off that. The rule was defensible - you pay a discount on what the house
+ * would have paid you for the work - and the anchor was not: a board's contents
+ * move with the CATALOG, so adding two `regional` sending reasons moved the
+ * median from 60 days to 90 and took a hundred stones from 71 contribution to
+ * 107, against a first promotion that costs 100. Nobody adding a duty reason
+ * had any way to know they were repricing every donation in the game.
+ *
+ * So the span is the ordinary errand: the unit of work the contribution line is
+ * already measured in. Everything else in `dutyTermsFor` cancels - the base,
+ * the pitch and the regard all divide out - so what is left is the one exchange
+ * rate the board has, at the one span that belongs to the work rather than to
+ * what is currently pinned up. A stone buys the same contribution at every rung
+ * of every house, which is what makes the ratio to a promotion stable enough to
+ * balance against.
+ */
+export function contributionPerStoneOnAnOrdinaryErrand(): number {
+    return contributionPerStoneOverDays(ORDINARY_DUTY_DAYS);
+}
+
+/** What a donation is worth against the same money earned by serving. */
+export const DONATION_DISCOUNT = 1 / 3;
+
+/**
+ * What one spirit stone buys in a house's ledger when it is paid in.
+ *
+ * The whole donation rule, in one place: the board's rate for the ordinary
+ * errand, discounted, because a record of service bought is not service. It
+ * takes no board and no house on purpose - see
+ * {@link contributionPerStoneOnAnOrdinaryErrand}.
+ */
+export function contributionPerStoneDonated(): number {
+    return contributionPerStoneOnAnOrdinaryErrand() * DONATION_DISCOUNT;
 }
 
 export interface DutyTerms {
@@ -248,8 +309,10 @@ export function dutyTermsFor(
         // No house, no ledger to be credited in. A rogue doing the same work
         // for the same people is paid in stones and in nothing else, which is
         // the whole difference membership buys.
-        contribution: membership ? Math.max(1, Math.round(base * yieldScale * (days / 20))) : 0,
-        stones: Math.max(1, Math.round(base * 1.4 * yieldScale)),
+        contribution: membership
+            ? Math.max(1, Math.round(base * yieldScale * (days / ORDINARY_DUTY_DAYS)))
+            : 0,
+        stones: Math.max(1, Math.round(base * STONES_PER_ERRAND_OF_CONTRIBUTION * yieldScale)),
         refusal: refusalFor(entry, tags, membership, origin, scale, givenBy),
         regard,
         scale,
@@ -307,7 +370,7 @@ function daysFor(tags: ReadonlySet<string>, scale: DutyScale): number {
     if (tags.has('obligation')) return 60;
     if (tags.has('timed')) return 12;
     if (tags.has('quest')) return 30;
-    return 20;
+    return ORDINARY_DUTY_DAYS;
 }
 
 /**

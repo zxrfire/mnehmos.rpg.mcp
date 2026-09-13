@@ -505,6 +505,28 @@ Every significant thing that happens is appended as a dated, attributed, located
 `truth` can say **unresolved**, which is what stops the database secretly knowing
 everything. See [`../social/README.md`](../social/README.md).
 
+### The prior ages happen before the map, and have to be put on it
+
+`seedPriorAges` runs first, so the ruins and scars it leaves are minted before any province
+exists and `locationFromRuin` has no province to name. **A ground is in a province: no
+province, no ground** - the same rule the dao grounds keep below - so
+`settleTheSeededPastIntoProvinces` runs once the map is there and gives every one of them a
+parent. `createWorld` calls it after its own regions; `seedWorld` asks for none of those and
+calls it again after `seedRegions`, because the catalog's provinces are the map that world
+uses.
+
+**The province is drawn, not read.** A ruin's id carries the AGE it fell in
+(`ruin-<age>-<n>`), which reads like a province and is not one, and nothing in the prior ages
+knows the map - so there is no fact to recover. One rng stream per site, uniform over the
+provinces on that site's layer.
+
+Measured at day 0 over twelve pinned worlds before it existed: 144 seeded ruins and 65 scars
+in no province, against every other kind fully placed, and 0 of 456 houses with open ground
+in their own province. After: all placed, and 60 of 456. Two readers had grown a
+parentless-site branch to cope - `findUndiscoveredUnder` and
+[`../../web/ground-the-world-found.ts`](../../web/ground-the-world-found.ts) - and both are
+fallbacks now rather than the normal path.
+
 ### A played deed is a fact like any other, and the ledger points at it
 
 **Every write goes through `appendWorldFact`, never `appendFact`.** The world-level append
@@ -561,6 +583,75 @@ town. `tests/web/a-fresh-world-has-somebody-to-tell.test.ts` holds the measureme
 
 **Somebody who was in it or saw it is `'here'` wherever they are now.** They did not hear
 the news; they carried it, which is what makes `witnessIds` worth storing.
+
+### What a world NPC knows is a reading. Nothing writes them a knowledge row
+
+> **`knowledge_records` holds the player and whoever an operator spawned. No path anywhere
+> writes one for a world NPC, and none should: what the world's own people know is read off
+> the ledger the world already keeps.**
+
+This is the shape, not a gap. A row per person per fact per year is an unbounded table, and
+it is the one this layer would grow fastest: measured on a seeded world of 250 at one
+thousand years, one row per person per fact is **28,488** and one per person per PLACE is
+**8,804**, both roughly linear in the world's age. Every reading below writes nothing.
+
+Three of them are about GROUND, composed by `whatAnybodyCouldHaveOfTheGround` in
+`who-goes-out-for-a-house-and-what-comes-back.ts` so a caller cannot quietly ask a narrower
+question than the world does:
+
+| reading | what it answers | rung |
+|---|---|---|
+| `whatStandingOnItGives` | an actor or a witness on a fact sited there WAS there | `stageCeilingFor('witnessed')` |
+| `whatTheAirCarriesOfTheGround` | the province is saying something about the place, where this person is standing | `stageCeilingFor('told')` |
+| `whatAHousesOwnErrandsBringBack` | this house's own party went and came back, and reported in its hall | `stageCeilingFor('told')` |
+
+**And the gate itself can now ask.** `whatOneOfTheWorldsOwnPeopleKnows` composes those three
+and asks the same questions about a HOUSE, a PERSON and a FACT, and `KnowledgeGate` takes it
+as an OPTIONAL second reader - wired in `turn-engine.ts`, which is the one place a world is
+held, and absent in the twenty bare constructions that only ever ask about the player. The
+composition at the gate is `highestStage`, which is safe because the reading answers
+`unaware` about every holder the world does not hold: the player has no `NpcRecord`, so it
+can only ever add to what the rows say.
+
+Why it had to exist: two player-facing consumers were acting on the `false`.
+`asking-verbs` refused a demand with `they_do_not_know` on behalf of somebody who would in
+fact know, and `combat-verbs` fed `unaware` into `whatTheyRecogniseAboutIt`, so nobody in
+the world ever recognised anything on sight. Measured over three pinned worlds, two gates
+over one database differing only in the second reader
+(`scripts/probe-what-one-of-the-worlds-own-people-knows.ts`):
+
+| question asked of a world NPC | asked | before | after |
+|---|---|---|---|
+| their own house | 101 | 0.0% | 100.0% |
+| the place they are standing in | 180 | 0.0% | 100.0% |
+| a house seated in their province | 165 | 0.0% | 100.0% |
+| somebody in the same square | 180 | 0.0% | 100.0% |
+| a uniform sweep of houses | 1440 | 0.0% | 93.1% |
+| a uniform sweep of places | 1440 | 0.0% | 0.0% |
+| a uniform sweep of people | 1428 | 0.0% | 0.6% |
+| an owned thing read for what it is | 1760 | 0.8% | 82.0% |
+
+**The 93% is one branch and is worth knowing about.** 447 of 480 house answers come back at
+`placed`, from the air reading: the world's seeded history is loud, because `airtimeOf`
+adds up to 2.2 for a fact naming people far above the hearer, and the great houses are named
+on facts like that. The two sweeps that barely move are the honest control - a random place
+out of 1164 and a random person out of 456 are still nothing to a villager, which is what
+says the reading is answering a question rather than saying yes.
+
+**The air reading asks circulation its own question and does not restate it.**
+`isInTheAirFor` is `airtimeOf` exposed for one fact instead of ranked over all of them, so
+how far news gets is decided in exactly one place. It is asked about the handful of facts
+sited on the ground actually under consideration, which is why it costs nothing: the
+expensive version is `circulating` per person.
+
+**And a teller is built by `whereThisPersonIsStanding`**, because `howFarOff` compares the
+fact's region against `teller.regionId` and a teller assembled without one hears nothing
+that did not happen in the square they are standing in - silently.
+
+Measured, three seeded worlds advanced two hundred years, houses whose DECIDERS could point
+at open ground in their own province: **24, 24, 29 of 29, 32, 42** with standing-there
+alone; **28, 26, 34** with all three. Day 0 is still zero everywhere, for the separate
+reason that every seeded ruin carries `parentId: null` and sits in no province at all.
 
 ### A crossing is news, and how far it goes is the rung
 
@@ -2104,6 +2195,10 @@ what-people-are-saying.ts
                  the ledger in the mouths of people who were not there: one fact
                  rendered from fields that may have been swapped on the way, by a
                  named teller who always tells it the same way
+what-one-of-the-worlds-own-people-knows.ts
+                 the gate's optional second reader: where a world NPC stands on
+                 one house, place, person or fact, read off the world and stored
+                 nowhere
 the-ties-an-ordinary-life-produces.ts
                  households, teaching lines, shared service and being passed
                  over - the supply of people who would notice you were gone
@@ -2214,6 +2309,29 @@ they take?* If it is a number, it belongs in the encounter layer.
   `location.sealed` meant breaking a site's outer seal left a place nobody could enter any
   part of. Only the deepest wing is separately sealed; whether the site is shut is
   `evaluateAccess`'s question.
+
+### Two kinds of shut, and one name on a door
+
+Two readings over columns that already existed. Neither stores anything.
+
+- **`a-door-that-closes-is-not-a-door-nobody-opened.ts`** - `sealed` on a ruin carries a
+  door nobody has ever opened and the closed half of an `OpeningCycle`, and both read as
+  "nobody gets in now", which is all any consumer needed until something wanted to WAIT.
+  `howThisGroundIsShut` tells them apart on the cycle and names the day the next door
+  opens. Measured over twelve pinned worlds: 144 ruins at day 0, 72 with a cycle, 9 open,
+  72 shut till a season, 63 shut till somebody opens them; 445 / 264 / 72 / 109 at two
+  hundred years. **The schedule has to be read past the flag** -
+  `whenTheScheduleNextOpens` in `convergence.ts` - because `nextOpeningDay` answers null
+  for anything sealed and every cycled ruin is sealed. `applyConvergences` reads that same
+  function and therefore opened **zero** doors across twelve worlds over two hundred years
+  each. That is recorded in `OPEN-QUESTIONS.md` and is not fixed.
+- **`a-house-that-shuts-a-public-ruin.ts`** - ground is public by agreement, so
+  `controllingFactionId` on a ruin can only mean a house has shut it to everybody else.
+  `whoTurnsYouAwayFrom` already reads that column as somebody at the door, which is the
+  whole downstream consequence. Who is angered is derived from the province the ruin is
+  in, one `ObligationRecord` each, severity off what the province has left and what the
+  ground was worth. Measured at day 0: available on 41 of 456 house-and-open-ruin pairs,
+  a median of 18 accounts each. A monopoly is meant to be rare and expensive.
 
 ### The measurement, and what it is
 

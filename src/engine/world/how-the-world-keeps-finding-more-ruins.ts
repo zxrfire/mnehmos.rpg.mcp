@@ -1132,14 +1132,16 @@ function findUndiscoveredUnder(state: WorldState, regionId: string): LocationRec
     for (const location of state.locations) {
         if (location.kind !== 'ruin' || location.discovered) continue;
         if (location.tags.includes('emptied')) continue;
-        // The prior ages hang their ruins off nothing: `locationFromRuin` sets no
-        // `parentId`, so a seeded site is in the world and in no province.
-        // Measured, that made the whole seeded stock unreachable by this pass - a
-        // thousand-year run found a hundred and sixteen sites and not one of them
-        // was ground the catalog already held. A party from anywhere may claim one,
-        // which is both the honest reading (parties travel, and a site nobody can
-        // place is exactly the sort somebody stumbles onto) and the only one that
-        // does not require re-parenting the seeding pass.
+        // A site in no province may be claimed by a party from anywhere, which is
+        // the honest reading: parties travel, and a site nobody can place is
+        // exactly the sort somebody stumbles onto.
+        //
+        // This used to be the normal case rather than the edge one. The prior ages
+        // hung their ruins off nothing, so the whole seeded stock was unreachable
+        // by this pass - a thousand-year run found a hundred and sixteen sites and
+        // not one was ground the catalog already held. `settleTheSeededPastIntoProvinces`
+        // now places them at seeding, so what falls through here is whatever else
+        // ends up unplaced.
         if (location.parentId === null) {
             if (parentless === null) parentless = location;
             continue;

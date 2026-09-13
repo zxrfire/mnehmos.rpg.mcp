@@ -1438,6 +1438,55 @@ export function locationsFromPriorAges(prior: PriorAges): LocationRecord[] {
 }
 
 /**
+ * Put the seeded past into the provinces the world was given.
+ *
+ * `seedPriorAges` writes several ages of history before the map exists, so a
+ * ruin knows the seat it stood on as free text and nothing else, and
+ * `locationFromRuin` had no province to name. Its id carries the AGE it fell
+ * in - `ruin-<age>-<n>` - which reads like a province and is not one.
+ *
+ * Measured over twelve pinned worlds at day 0: 144 seeded ruins and 65 scars,
+ * none of them in any province, against every other kind fully placed. Houses
+ * with open ground in their own province went 0 of 456 to 60 of 456, and at
+ * two hundred years `probe-what-occasions-a-house-can-offer.ts` moved the
+ * `a_find` occasion from 151 open to 306. Two callers had already worked around
+ * the absence in place - `findUndiscoveredUnder` and `foundGroundIn` both skip
+ * the province filter for a parentless site - and both are fallbacks now.
+ *
+ * The day-0 occasion is still zero, and that is a second gate rather than this
+ * one: a house must also have somebody who has STOOD on the ground, and no fact
+ * in a fresh world is sited at a prior-age ruin.
+ * `what-the-prior-ages-left-stands-in-a-province.test.ts` carries the numbers.
+ *
+ * THE PROVINCE IS DRAWN, because there is no fact to read. Nothing in the prior
+ * ages knows the map and nothing on the map knows the prior ages; what is wrong
+ * is the absence, not a lost value. One stream per site so no existing draw
+ * shifts, and uniform over the provinces on the site's own layer, because a
+ * weighting would be this file having an opinion about where the past happened.
+ */
+export function settleTheSeededPastIntoProvinces(
+    locations: readonly LocationRecord[],
+    seed: string
+): LocationRecord[] {
+    const provincesOnLayer = new Map<LayerKey, string[]>();
+    for (const location of locations) {
+        if (location.kind !== 'region') continue;
+        const on = provincesOnLayer.get(location.layer);
+        if (on) on.push(location.id); else provincesOnLayer.set(location.layer, [location.id]);
+    }
+    if (provincesOnLayer.size === 0) return locations.slice();
+
+    return locations.map(location => {
+        if (location.parentId !== null) return location;
+        if (location.kind !== 'ruin' && location.kind !== 'scar') return location;
+        const provinces = provincesOnLayer.get(location.layer);
+        if (!provinces || provinces.length === 0) return location;
+        const rng = forStream(seed, 'where-the-seeded-past-stands', location.id);
+        return { ...location, parentId: provinces[rng.int(0, provinces.length - 1)] };
+    });
+}
+
+/**
  * What a completed crossing left in the ground under it.
  */
 function groundACrossingLifted(

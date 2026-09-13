@@ -443,7 +443,7 @@ it describes.
 | [`what-an-indenture-is-and-what-happens-when-it-ends.ts`](../../src/data/cultivation/what-an-indenture-is-and-what-happens-when-it-ends.ts) | What an indenture is, what the years are for, and what a person walks out into on the day the term is served. | 175 | - |
 | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | What each house makes, and what crosses the water because it makes it. | 506 | - |
 | [`what-two-houses-both-have-a-hand-on.ts`](../../src/data/cultivation/what-two-houses-both-have-a-hand-on.ts) | What two houses both have a hand on, and therefore what they are contending over whether or not anybody wrote it down. | 294 | - |
-| [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | Why a house puts a party on the road. A sending is a party, a destination, a REASON, a cost in time, a rung band it is survivable at, and a thing that happens to the house if it goes wrong. | 411 | - |
+| [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | Why a house puts a party on the road. A sending is a party, a destination, a REASON, a cost in time, a rung band it is survivable at, and a thing that happens to the house if it goes wrong. | 492 | - |
 | [`wounds.ts`](../../src/data/cultivation/wounds.ts) | The wound table - every way a person in this world can be hurt, as data. | 377 | [`injuries.md`](climbing/injuries.md) |
 
 <!-- END GENERATED: catalog -->
@@ -715,32 +715,32 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `WANDERERS` | [`wanderers.ts`](../../src/data/cultivation/wanderers.ts) | 6 | 12 |
 | `GRAVE_CONTENTS_BANDS` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 6 | 14 |
 | `SENT_DOWN_UNACCOUNTED` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 7 | - |
-| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 7 | 12 |
 | `LOST_MATERIALS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 7 | 13 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 7 | 15 |
 | `ANCIENT_ARTS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | 7 | 17 |
-| `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 7 | 29 |
 | `FACTION_CHARACTER` | [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) | 7 | 32 |
 | `SECT_ANCESTRY` | [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) | 7 | 45 |
 | `IMMORTAL_CHANNELS` | [`crossings.ts`](../../src/data/cultivation/crossings.ts) | 8 | 4 |
 | `GRADE_ORDER` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 8 | 9 |
 | `ENCOUNTERS` | [`encounters.ts`](../../src/data/cultivation/encounters.ts) | 8 | 19 |
+| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 9 | 14 |
+| `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 10 | 29 |
 | `BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 12 | 82 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 13 | 31 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 48 |
-| `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 14 | 17 |
+| `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 17 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
 | `STRUCTURAL_REPAIR_MEDICINES` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 21 |
 | `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 18 | 76 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 19 | 29 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 20 | 22 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 41 |
-| `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 24 | 92 |
+| `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 92 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 122 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 35 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 40 | 163 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 69 | 333 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 78 | 76 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 73 | 348 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 79 | 77 |
 
 <!-- END GENERATED: design-constants -->
 

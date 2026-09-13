@@ -5,6 +5,7 @@
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { EventScale, HistoricalFact } from './history.js';
 import { getFaction, getLocation, getNpc, type WorldState } from './world-state.js';
+import type { NpcRecord } from './npc-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -211,6 +212,28 @@ export function circulating(
 }
 
 /**
+ * Whether this one fact is being said out loud where this person is standing.
+ *
+ * The same answer {@link circulating} takes, asked about one fact instead of
+ * ranked over all of them. Exported rather than re-derived because the caller
+ * that wanted it - what a house has heard about the ground near it - only has a
+ * handful of facts to ask about and would otherwise have paid for a ranked
+ * sweep of the whole ledger per person, or, far worse, written a second and
+ * cheaper rule about how far news gets. There is one rule about that and it is
+ * {@link airtimeOf}.
+ */
+export function isInTheAirFor(
+    state: WorldState,
+    fact: HistoricalFact,
+    teller: TellerStanding,
+    onDay: number
+): boolean {
+    if (fact.visibility === 'secret') return false;
+    if (fact.day > onDay) return false;
+    return airtimeOf(state, fact, teller, onDay) > 0;
+}
+
+/**
  * How much a fact gets said out loud.
  *
  * Two axes and three further terms. The axes are distance and importance, and
@@ -313,6 +336,28 @@ export function handsItPassedThrough(
 /** What survives `hands` retellings. */
 export function fidelityAfter(hands: number): number {
     return 1 / (1 + Math.max(0, hands - 1) * HAND_DECAY);
+}
+
+/**
+ * A world row, as somebody the air reaches.
+ *
+ * One spelling, because three callers had written their own and a teller built
+ * without `regionId` hears nothing that did not happen in the square they are
+ * standing in - which is a silent failure, not an error.
+ */
+export function whereThisPersonIsStanding(
+    state: WorldState,
+    npc: Pick<NpcRecord, 'id' | 'name' | 'cultivation' | 'locationId' | 'factionId'>,
+    regionFor: (locationId: string | null) => string | null = id => regionOf(state, id)
+): TellerStanding {
+    return {
+        id: npc.id,
+        name: npc.name,
+        realmOrdinal: npc.cultivation.realmOrdinal,
+        locationId: npc.locationId,
+        regionId: regionFor(npc.locationId),
+        factionId: npc.factionId
+    };
 }
 
 /** The province-level container a place sits in. Null when unknown. */

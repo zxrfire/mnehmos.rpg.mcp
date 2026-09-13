@@ -58,6 +58,7 @@ import {
     QI_DENSITY_MAX,
     clampQiDensity,
     qiFraction,
+    settleTheSeededPastIntoProvinces,
     type LocationRecord
 } from './locations.js';
 import { addGoal, createNpc, setRealm, upsertRelationship, type NpcRecord } from './npc-state.js';
@@ -233,6 +234,12 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     const priorFacts = state.history.facts.length;
 
     const regionLocations = seedRegions(state, opts.catalog, presentDay);
+    // And now the prior ages have somewhere to be. `createWorld` was asked for
+    // no provinces of its own, so the ruins and scars it minted came back in no
+    // province at all; the catalog's are the map this world actually uses, and
+    // this is the first line at which they exist. See
+    // `settleTheSeededPastIntoProvinces`.
+    state.locations = settleTheSeededPastIntoProvinces(state.locations, opts.seed);
     const factions = seedFactions(state, opts.catalog, regionLocations, presentDay);
     const npcs = seedPopulation(state, opts.catalog, factions, population, presentDay);
     // AFTER the population, so every procedural person draws exactly what they

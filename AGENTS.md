@@ -928,6 +928,21 @@ Keep them to a handful per rule, identically formatted, and say in the prompt th
 shapes to vary rather than stock to reuse - the few-shot literature and this repo agree that
 a long list of examples overfits where a short varied one generalises.
 
+**AN EXAMPLE TEACHES EVERYTHING IT DEMONSTRATES, INCLUDING WHAT NOBODY MEANT TO TEACH.** The
+worked haggling scene existed to show paragraph rhythm and it was written in the past tense.
+The prompt never stated a tense anywhere, so the model learned one from the only place it was
+shown - and narration began sliding between past and present inside a single session, which
+reads as two narrators. The example was correct about its own subject and wrong about a
+property nobody was thinking about. So when you add or edit one, read it for tense, person,
+attribution, paragraph length and register, not only for the rule it is under.
+
+**AND A RULE WITH NO EXAMPLE LOSES TO AN EXAMPLE ELSEWHERE.** The crowd rule asks in plain
+words for lines with "no name, no description, no speaker identified" and carried no example;
+pooled over played turns the model attributed three quarters of spoken paragraphs where this
+genre attributes one in four, and nearly all the excess was the crowd - "a voice calls out
+from the crowd", "another voice adds". Stating a rule harder does not fix this. Showing three
+bare lines does.
+
 **An example carries no proper noun.** Every name in this game is granted per run from what
 that cultivator has been told, and an example sits in the prompt on every turn of every run -
 so a name inside one is a name in the prompt of a player who never heard it.

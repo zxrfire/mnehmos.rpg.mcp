@@ -56,6 +56,7 @@ import { forStream } from '../cultivation/rng.js';
 import {
     locationsFromPriorAges,
     makeLocation,
+    settleTheSeededPastIntoProvinces,
     type LocationRecord
 } from './locations.js';
 import { createMemoryStore, type MemoryStore } from './memory.js';
@@ -323,10 +324,10 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
             `the world has carried. No confirmed ascension in living memory.`
     });
 
-    const locations: LocationRecord[] = prior ? locationsFromPriorAges(prior) : [];
+    const unplaced: LocationRecord[] = prior ? locationsFromPriorAges(prior) : [];
     for (let i = 0; i < regionCount; i++) {
         const rng = forStream(opts.seed, 'region', i);
-        locations.push(
+        unplaced.push(
             makeLocation({
                 id: `loc-region-${i}`,
                 name: placeName(rng),
@@ -337,6 +338,11 @@ export function createWorld(opts: CreateWorldOptions): WorldState {
             })
         );
     }
+
+    // The provinces exist only now, so this is the first moment the seeded past
+    // can be told where it stands. `seedWorld` asks for no provinces here and
+    // takes them from the catalog, so it runs this again once it has them.
+    const locations = settleTheSeededPastIntoProvinces(unplaced, opts.seed);
 
     return {
         id: opts.id ?? `world-${opts.seed}`,

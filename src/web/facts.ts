@@ -369,6 +369,34 @@ export function humanDays(days: number): string {
         const months = Math.round(d / 30);
         return `${months} month${months === 1 ? '' : 's'}`;
     }
+    return wholeDays(d);
+}
+
+/**
+ * Two spans set against each other, in a unit that can tell them apart.
+ *
+ * FOUND BY PLAYING a ninety-day posting broken off at day 88: *"It ran 3 months
+ * and not 3 months."* `humanDays` buckets anything past 60 days into whole
+ * months, so both halves of the contrast rendered identically and the sentence
+ * asserted a difference the reader cannot see.
+ *
+ * The guards around these sentences were already numeric and were already
+ * right - the numbers do differ. The defect is one layer out: the guard decides
+ * whether there is anything to say, and the sentence then says it through a
+ * formatter that cannot show it. So this drops to exact days when the words
+ * collide, and answers null when even days cannot separate them - at which
+ * point the caller says nothing, because there is nothing anybody could be
+ * told.
+ */
+export function twoSpansToldApart(a: number, b: number): [string, string] | null {
+    const inWords: [string, string] = [humanDays(a), humanDays(b)];
+    if (inWords[0] !== inWords[1]) return inWords;
+    const inDays: [string, string] = [wholeDays(a), wholeDays(b)];
+    return inDays[0] === inDays[1] ? null : inDays;
+}
+
+function wholeDays(days: number): string {
+    const d = Math.max(0, Math.round(days));
     return `${d} day${d === 1 ? '' : 's'}`;
 }
 
@@ -516,10 +544,14 @@ export function factsForTimeSkip(
     const required: string[] = [];
 
     lines.push(`${label} at ${placeName(before)}. ${describeAmbientPerceived(ambient)}`);
+    // See `twoSpansToldApart`: null is the case where the two spans are the
+    // same span as far as anybody can be told, and the honest line is the one
+    // that states a single span rather than two identical ones.
+    const ranTo = twoSpansToldApart(skip.requestedDays, skip.simulatedDays);
     lines.push(
-        skip.simulatedDays === skip.requestedDays
+        ranTo === null
             ? `${humanDays(skip.requestedDays)} passed as asked.`
-            : `${humanDays(skip.requestedDays)} was asked for; ${humanDays(skip.simulatedDays)} passed before something returned control.`
+            : `${ranTo[0]} was asked for; ${ranTo[1]} passed before something returned control.`
     );
     if (skip.interrupted && skip.interruptReason) {
         lines.push(`The engine stopped the skip: ${skip.interruptReason.replace(/[_:]/g, ' ')}.`);
@@ -710,13 +742,15 @@ function timeSkipProse(
     }
 
     paragraphs.push(`${opening} ${label} of ${humanDays(asked)} was intended.`);
-    if (asked > skip.requestedDays) {
+    const cutTo = asked > skip.requestedDays
+        ? twoSpansToldApart(skip.requestedDays, asked)
+        : null;
+    if (cutTo !== null) {
         paragraphs.push(
             // THE SPAN WAS CUT, AND SOMETHING CUT IT. The claim below depends on
             // this saying so; the mystifying about doors shut on understandings
             // nobody voiced was the engine dressing a scheduling fact.
-            `It ran ${humanDays(skip.requestedDays)} and not ${humanDays(asked)}. `
-            + 'Something was already on its way.'
+            `It ran ${cutTo[0]} and not ${cutTo[1]}. Something was already on its way.`
         );
     }
 
@@ -750,9 +784,13 @@ function timeSkipProse(
     // full still sets `interrupted` when the interrupt lands on its last chunk
     // - the provisions warning does this routinely - and the sentence then
     // announces a loss of zero days beside two identical figures.
-    if (skip.interrupted && !skip.died && skip.simulatedDays < skip.requestedDays) {
+    const spent = skip.interrupted && !skip.died && skip.simulatedDays < skip.requestedDays
+        ? twoSpansToldApart(skip.simulatedDays, skip.requestedDays)
+        : null;
+    if (spent !== null) {
         paragraphs.push(
-            `You came out early. ${humanDays(skip.simulatedDays)} of the ${humanDays(skip.requestedDays)} were spent; the rest was not yours to spend.`
+            `You came out early. ${spent[0]} of the ${spent[1]} were spent; `
+            + 'the rest was not yours to spend.'
         );
     }
 

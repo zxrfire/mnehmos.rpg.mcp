@@ -11,8 +11,15 @@
  * There are exactly three places in this file where a reason changes a
  * mechanic, and every one of them is a column rather than a case:
  * {@link SendingReason.ceilingOrdinal}, {@link SendingReason.needs} and
- * {@link SendingReason.factKind}. A tenth reason wants a row and no code. An
- * eleventh reusing an existing `needs` key wants a row and no predicate.
+ * {@link SendingReason.factKind}. A reason wants a row and no code. One reusing
+ * an existing `needs` key wants a row and no predicate.
+ *
+ * Held, on the three added for the escort occasions: the visit and the
+ * competition are one new key and two rows, and the second row cost nothing at
+ * all. A new key costs a predicate in `NEED_PREDICATES`, a column on
+ * `HouseAsItStands` where the world has to answer it, and a destination in
+ * `WHERE_A_NEED_SENDS_YOU` - three tables that will not compile until they are
+ * filled, which is the point of them.
  *
  * ── What was already here, and is therefore not here ─────────────────────
  *
@@ -56,10 +63,10 @@
  *
  * ── The list is not closed, and that is the ruling ───────────────────────
  *
- * Ten rows is what somebody could think of in one sitting, not an enumeration
- * of the ways a house can want something. The eleventh must cost a row and
- * nothing else, and the moment a reader has to add a branch to add a reason,
- * this file has failed at the only thing it exists for.
+ * The first ten rows were what somebody could think of in one sitting, not an
+ * enumeration of the ways a house can want something. The next must cost a row
+ * and nothing else, and the moment a reader has to add a branch to add a
+ * reason, this file has failed at the only thing it exists for.
  *
  * The failure to watch for is therefore not a missing reason. It is a reader
  * who wants to add one and finds they have to add a case with it. Every column
@@ -162,7 +169,23 @@ export const ReasonNeedSchema = z.enum([
     /** Somebody has just found something: a site, a cache, a seat. */
     'a_find',
     /** It stands over something sealed. `containmentHeldBy`, non-empty. */
-    'a_containment'
+    'a_containment',
+    /**
+     * A live house this one would sit down with: an ally, or a body seated in
+     * the same province that neither side is hostile to. `sitsDownWith`.
+     *
+     * NOT `an_ally`. A house courts the bodies it is not yet allied with, and
+     * at world open the only positive standing any house carries is toward its
+     * own patron - so an errand keyed on an ally is an errand to your landlord.
+     * The circle is who a house would receive and be received by, which is the
+     * question a visit and a meet both ask.
+     */
+    'a_counterpart',
+    /**
+     * The world has closed ground in this house's own province.
+     * `standsNearForbiddenGround`.
+     */
+    'forbidden_ground'
 ]);
 export type ReasonNeed = z.infer<typeof ReasonNeedSchema>;
 
@@ -215,7 +238,13 @@ export type SendingReason = z.infer<typeof SendingReasonSchema>;
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Ten reasons a house puts people on the road.
+ * The reasons a house puts people on the road.
+ *
+ * Three were added after the escort path landed, because every escort was an
+ * errand: the occasion a senior is asked to take juniors out on is whatever the
+ * house had on its board, so the spread of OCCASIONS is this list and nothing
+ * else. Two of the three needed one new `needs` key between them and none of
+ * them needed a branch.
  */
 export const SENDING_REASONS: readonly SendingReason[] = [
     {
@@ -363,6 +392,58 @@ export const SENDING_REASONS: readonly SendingReason[] = [
         // decision: the others are things a house CHOOSES to send people out
         // for. This is a rota.
         weight: 40
+    },
+    {
+        id: 'sending-to-be-received',
+        name: 'A visit to another house',
+        what: 'Another house has said it will receive a party from this one, and '
+            + 'the party is the house as far as anybody there is concerned.',
+        needs: 'a_counterpart',
+        ceilingOrdinal: null,
+        days: 60,
+        hands: 5,
+        atStake: 'standing_with_a_house',
+        factKind: 'gathering',
+        scale: 'regional',
+        weight: 11
+    },
+    {
+        id: 'sending-to-a-friendly-competition',
+        name: 'A friendly competition',
+        what: 'Another house is putting its juniors up against this one\'s, on a day '
+            + 'both houses named, with the elders of both standing at the edge of it.',
+        needs: 'a_counterpart',
+        ceilingOrdinal: null,
+        days: 35,
+        hands: 6,
+        atStake: 'standing_with_a_house',
+        // `gatherings.ts` holds the world's own version of this - a circle, a
+        // host, cross-house boards, and `whoCouldHaveStoppedIt` deciding whether
+        // a bout stops at a floored body. Its ledger word is `gathering` and
+        // this files under the same one, so the meet a house was sent to and the
+        // meet the world held read as one kind of event.
+        factKind: 'gathering',
+        scale: 'regional',
+        weight: 9
+    },
+    {
+        id: 'sending-to-the-edge-of-forbidden-ground',
+        name: 'To the edge of forbidden ground',
+        what: 'Ground in the province stopped being ground, and the house walks its '
+            + 'own out to the line to see what is there before somebody walks into it.',
+        needs: 'forbidden_ground',
+        ceilingOrdinal: null,
+        days: 20,
+        hands: 4,
+        atStake: 'the_ground_itself',
+        factKind: 'zone_forbidden',
+        scale: 'local',
+        // Low, and it is the only reason here whose availability is a property
+        // of world TIME rather than of the house. Measured on twelve seeded
+        // worlds: zero forbidden zones at day 0 and none at fifty years, five
+        // and two at two hundred. The ground has to be spoiled before anybody
+        // can be walked out to look at it.
+        weight: 6
     },
     {
         id: 'sending-to-a-war',

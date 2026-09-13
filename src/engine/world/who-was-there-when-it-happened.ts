@@ -56,8 +56,18 @@
  */
 
 import { forStream } from '../cultivation/rng.js';
-import { appendFact, type HistoricalFact, type PendingFact } from './history.js';
-import { foldOccurrenceInto, rowThisRecurs } from './a-fact-that-keeps-happening-is-one-row.js';
+import {
+    appendFact,
+    type HistoricalFact,
+    type PendingFact,
+    type ReservedFactSlot
+} from './history.js';
+import {
+    foldOccurrenceInto,
+    noteRowInsertedAt,
+    rowThisRecurs,
+    KEPT_ITS_OWN_ROW
+} from './a-fact-that-keeps-happening-is-one-row.js';
 import type { NpcRecord } from './npc-state.js';
 import type { WorldState } from './world-state.js';
 
@@ -144,12 +154,20 @@ export function whoWasThere(state: WorldState, input: PresenceInput): string[] {
  * A statement the ledger already holds is EXTENDED rather than repeated. See
  * `a-fact-that-keeps-happening-is-one-row.ts` for what counts as the same fact
  * and why the merge cannot lose anything. Pass `recur: false` where a caller
- * genuinely needs its own row whatever else is on the books.
+ * genuinely needs its own row whatever else is on the books; the row is marked
+ * as having asked for that, so a guard can tell a decision from a failure.
+ *
+ * `reserved` fills a slot taken earlier with `reserveFactSlot`, for the one
+ * caller that has to know the fact id before it can say what the fact is. The
+ * recurrence decision is still taken here and on the finished statement, so a
+ * reserved slot can come back unused - the returned row is then the row that
+ * already said it, under a different id. A caller that wrote that id into
+ * anything has to move those references onto the row it gets back.
  */
 export function appendWorldFact(
     state: WorldState,
     pending: PendingFact,
-    opts: { bystanders?: boolean; recur?: boolean } = {}
+    opts: { bystanders?: boolean; recur?: boolean; reserved?: ReservedFactSlot } = {}
 ): HistoricalFact {
     const witnessIds = pending.witnessIds.length > 0
         ? pending.witnessIds
@@ -160,7 +178,9 @@ export function appendWorldFact(
             visibility: pending.visibility,
             factionIds: pending.factionIds
         });
-    const occurrence: PendingFact = { ...pending, witnessIds };
+    const occurrence: PendingFact = opts.recur === false
+        ? { ...pending, witnessIds, data: { ...pending.data, [KEPT_ITS_OWN_ROW]: true } }
+        : { ...pending, witnessIds };
 
     const existing = opts.recur === false ? null : rowThisRecurs(state.history, occurrence);
     if (existing) {
@@ -171,7 +191,8 @@ export function appendWorldFact(
         return existing;
     }
 
-    const stored = appendFact(state.history, occurrence);
+    const stored = appendFact(state.history, occurrence, opts.reserved ?? null);
+    if (opts.reserved) noteRowInsertedAt(state.history, stored, opts.reserved.at);
     linkFactToWhoItNames(state, stored);
     return stored;
 }

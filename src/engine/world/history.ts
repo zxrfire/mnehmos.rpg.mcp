@@ -301,11 +301,41 @@ export function eraForDay(ledger: HistoryLedger, day: number): Era | null {
 }
 
 /**
- * Append one fact.
+ * A place in the ledger taken now and written into later.
+ *
+ * For a writer whose consequences carry the fact id and whose sentence is not
+ * known until those consequences have happened: a gathering writes every
+ * relationship it creates while it runs, and each one names the row. Taking the
+ * id first lets the row be appended ONCE, with its finished sentence, rather
+ * than appended provisionally and rewritten - which is what
+ * `a-fact-that-keeps-happening-is-one-row.ts` needs, since it decides whether
+ * the ledger already says this from the statement itself.
+ *
+ * `at` as well as `id`, because facts written while the event runs are appended
+ * in between. Without the position the event would sit after its own deaths.
  */
-export function appendFact(ledger: HistoryLedger, fact: PendingFact): HistoricalFact {
+export interface ReservedFactSlot {
+    id: string;
+    at: number;
+}
+
+/** Take the next id and the next place, to be filled by `appendFact` later. */
+export function reserveFactSlot(ledger: HistoryLedger): ReservedFactSlot {
+    const slot = { id: `f${ledger.nextFactSeq}`, at: ledger.facts.length };
+    ledger.nextFactSeq++;
+    return slot;
+}
+
+/**
+ * Append one fact, or fill a slot reserved earlier.
+ */
+export function appendFact(
+    ledger: HistoryLedger,
+    fact: PendingFact,
+    slot: ReservedFactSlot | null = null
+): HistoricalFact {
     const record: HistoricalFact = {
-        id: `f${ledger.nextFactSeq}`,
+        id: slot ? slot.id : `f${ledger.nextFactSeq}`,
         eraId: fact.eraId ?? eraForDay(ledger, fact.day)?.id ?? 'era-0',
         year: yearOfDay(fact.day),
         day: fact.day,
@@ -330,6 +360,10 @@ export function appendFact(ledger: HistoryLedger, fact: PendingFact): Historical
         claimedOutcomes: fact.claimedOutcomes,
         data: fact.data
     };
+    if (slot) {
+        ledger.facts.splice(Math.min(slot.at, ledger.facts.length), 0, record);
+        return record;
+    }
     ledger.nextFactSeq++;
     ledger.facts.push(record);
     return record;

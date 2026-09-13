@@ -56,6 +56,28 @@ export interface Convergence {
     remaining: number;
 }
 
+/**
+ * The next day the SCHEDULE opens this place, whether or not the record
+ * currently says shut.
+ *
+ * `nextOpeningDay` answers null for anything sealed, which is right where
+ * `sealed` means a door nobody has ever opened and wrong where it means the
+ * closed half of a cycle - and on a ruin the column carries both. Measured:
+ * every seeded ruin with a cycle is sealed, so the cyclical half of the world
+ * could not say when it was next due, and `applyConvergences` reads
+ * `nextOpeningDay` on exactly those rows, gets null, and never opens one.
+ *
+ * The flag is set aside rather than the modulo restated, so this and
+ * `isOpenOn` cannot come to different conclusions about a schedule.
+ */
+export function whenTheScheduleNextOpens(
+    location: LocationRecord,
+    fromDay: number
+): number | null {
+    if (!location.cycle) return null;
+    return nextOpeningDay({ ...location, sealed: false }, fromDay);
+}
+
 export function convergenceOf(location: LocationRecord, day: number): Convergence {
     if (!location.cycle) {
         return {
@@ -71,7 +93,7 @@ export function convergenceOf(location: LocationRecord, day: number): Convergenc
     }
     const open = isOpenOn(location, day);
     const closes = nextClosingDay(location, day);
-    const opens = open ? null : nextOpeningDay(location, day);
+    const opens = open ? null : whenTheScheduleNextOpens(location, day);
     const windowDays = Math.max(1, location.cycle.openDays);
     const daysLeft = open && closes !== null ? Math.max(0, closes - day) : 0;
     return {

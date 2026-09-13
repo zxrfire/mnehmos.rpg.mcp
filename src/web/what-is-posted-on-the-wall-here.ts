@@ -137,12 +137,38 @@ const WHAT_A_REASON_PUTS_ON_A_WALL: Record<AtStake, TheAsk['kind'] | null> = {
  *
  * READ OFF THE CATALOG, like the rest of this file. `HouseAsItStands` is
  * satisfied from the same columns `openDoorsInTheWorld` uses, with `standing`
- * empty and `hasAFind` false - which is not a simplification: a freshly seeded
- * world sets `standing: {}` on every faction and grows it by simulation, so the
- * catalog and a new world answer these predicates identically. A house whose
- * standing has since moved wants the world's copy, and the world is not
- * reachable from this layer; `whoEachHouseIsLookingFor` below is where that
- * seam is, and it takes the world as an argument for exactly this reason.
+ * empty - which is not a simplification: a freshly seeded world sets
+ * `standing: {}` on every faction and grows it by simulation, so the catalog
+ * and a new world answer that predicate identically. A house whose standing has
+ * since moved wants the world's copy, and the world is not reachable from this
+ * layer; `whoEachHouseIsLookingFor` below is where that seam is, and it takes
+ * the world as an argument for exactly this reason.
+ *
+ * AND THREE PREDICATES THE CATALOG CANNOT ANSWER, two of which cost something.
+ * `a_counterpart`, `forbidden_ground` and `a_find` all read the world rather
+ * than the catalog, and all three are left unset here.
+ *
+ *   a_counterpart      costs nothing. A visit and a friendly competition both
+ *                      stake `standing_with_a_house`, which
+ *                      {@link WHAT_A_REASON_PUTS_ON_A_WALL} already puts on no
+ *                      wall: they are not a stranger's business.
+ *   forbidden_ground   IS a gap, written down rather than licensed. It stakes
+ *                      `the_ground_itself`, so it is a `warning`, and a town
+ *                      wall in a province where the ground has turned ought to
+ *                      carry one. It does not, because the warning is a fact
+ *                      about the world and this layer holds no world. The route
+ *                      is `alsoAsking`, which exists for exactly this seam.
+ *   a_find             the same gap, and the same route.
+ *                      `aFindThisHouseCouldSendFor` is the one reading of it
+ *                      and it takes location records and a house's roll: which
+ *                      ruins stand, which are still shut, which province each
+ *                      is in and who has been to one are all world facts, and
+ *                      the catalog holds no location row and no roll at all. So
+ *                      this layer genuinely cannot answer it - it is left false
+ *                      for that reason and not because a house never has one.
+ *                      It stakes `stones`, so it is `work`, and a town wall in
+ *                      a province where a house is opening something ought to
+ *                      carry the hiring notice.
  */
 export function housesWithSomethingToSay(
     alsoAsking: ReadonlyMap<string, readonly TheAsk[]> = new Map()

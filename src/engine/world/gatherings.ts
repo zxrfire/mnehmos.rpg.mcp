@@ -18,7 +18,7 @@ import {
 import type { Injury } from '../../schema/cultivation.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { isBelowTheLid } from './layers.js';
-import { fillConsequences, makeFact, type HistoricalFact } from './history.js';
+import { fillConsequences, makeFact, reserveFactSlot, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { recordPermanentWounds } from './recording-the-day-a-wound-was-taken.js';
 import type { LocationRecord } from './locations.js';
@@ -359,46 +359,34 @@ export function holdGathering(
     let summary = '';
     const changes: string[] = [];
 
-    // The fact id has to exist before the ties do, because every row this
-    // writes carries it and "which relationships originate at a gathering" has
-    // to be answerable from the relationship alone two centuries later. So the
-    // fact is appended first with a provisional summary and its narrative
-    // fields are filled in afterwards, in place, on the stored record.
-    const fact = appendWorldFact(state, makeFact({
-        day,
-        kind: 'gathering',
-        scale: 'regional',
-        actors: attendees.map(n => ({ id: n.id, name: n.name, role: 'attended' })),
-        witnessIds: attendees.map(n => n.id),
-        locationId,
-        factionIds: sending.map(s => s.faction.id),
-        visibility: 'public',
-        magnitude: kind === 'meeting' ? 0.3 : 0.55,
-        summary: `${circle.host.name} received the chosen of ${sending.length - 1} allied houses.`,
-        data: {
-            gathering: kind,
-            unattributed:
-                'There are unfamiliar colours on the road up to the compound, and the '
-                + 'inns have put their prices up.'
-        }
-    }));
+    // THE ID BEFORE THE SENTENCE, NOT THE ROW BEFORE THE SENTENCE.
+    //
+    // Every tie below carries the fact id, so "which relationships originate at
+    // a gathering" is answerable from the relationship alone two centuries
+    // later. That id used to be got by appending the row first with a
+    // provisional sentence and rewriting it afterwards, which made the row
+    // unfoldable: `appendWorldFact` decides whether the ledger already says
+    // this FROM the sentence, and the sentence it saw was a placeholder no two
+    // gatherings could collide under. Two identical afternoons sat in the
+    // ledger as two rows saying the same thing.
+    const slot = reserveFactSlot(state.history);
 
     switch (kind) {
         case 'meeting':
-            summary = runMeeting(state, attendees, day, fact.id, rng, ties);
+            summary = runMeeting(state, attendees, day, slot.id, rng, ties);
             break;
         case 'challenge':
-            summary = runChallenge(state, circle, attendees, day, fact.id, rng, ties, placings);
+            summary = runChallenge(state, circle, attendees, day, slot.id, rng, ties, placings);
             break;
         case 'competition': {
-            const result = runCompetition(state, circle, attendees, day, fact.id, rng, ties, placings);
+            const result = runCompetition(state, circle, attendees, day, slot.id, rng, ties, placings);
             summary = result.summary;
             selectedUpwardId = result.selectedUpwardId;
             break;
         }
         case 'expedition': {
             if (!site) return null;
-            const result = runExpedition(state, attendees, site, day, fact.id, rng, ties, placings);
+            const result = runExpedition(state, attendees, site, day, slot.id, rng, ties, placings);
             summary = result.summary;
             scoring = result.scoring;
             break;
@@ -410,11 +398,22 @@ export function holdGathering(
     }
 
     const excluded = uninvitedNear(state, circle);
-    const stored = state.history.facts.find(f => f.id === fact.id);
-    if (stored) {
-        stored.summary = summary;
-        stored.data = {
-            ...stored.data,
+    const stored = appendWorldFact(state, makeFact({
+        day,
+        kind: 'gathering',
+        scale: 'regional',
+        actors: attendees.map(n => ({ id: n.id, name: n.name, role: 'attended' })),
+        witnessIds: attendees.map(n => n.id),
+        locationId,
+        factionIds: sending.map(s => s.faction.id),
+        visibility: 'public',
+        magnitude: kind === 'meeting' ? 0.3 : 0.55,
+        summary,
+        data: {
+            gathering: kind,
+            unattributed:
+                'There are unfamiliar colours on the road up to the compound, and the '
+                + 'inns have put their prices up.',
             scoring,
             // Scalars only: `data` is a flat bag by contract, so lists are
             // joined rather than nested. Both are read back by the harness.
@@ -423,8 +422,8 @@ export function holdGathering(
                 .map(p => `${p.place}. ${p.name} (${p.factionId ?? 'unbacked'})`)
                 .join(' | '),
             selectedUpwardId
-        };
-        stored.consequences = fillConsequences({
+        },
+        consequences: fillConsequences({
             immediate: summary,
             beneficiaries: placings.filter(p => p.place === 1)
                 .map(p => ({ id: p.npcId, name: p.name, role: 'first' })),
@@ -441,8 +440,15 @@ export function holdGathering(
             tenYearsLater: ties.length > 0
                 ? 'The people who were in that room still know each other.'
                 : 'Nobody who was there can say anything came of it.'
-        });
-    }
+        })
+    }), { reserved: slot });
+
+    // AND WHERE THE AFTERNOON FOLDED INTO ONE THE LEDGER ALREADY HELD, the ties
+    // follow it. The slot's id was written into every relationship the passes
+    // touched and belongs to no row; the row that says this happened is the one
+    // that came back. Every place that id can have reached is a tie, because
+    // `write` is the only thing in this file that puts it anywhere durable.
+    if (stored.id !== slot.id) pointTiesAt(state, ties, slot.id, stored.id);
 
     // And the houses move, a notch, because their juniors did. This is the only
     // thing in the world that CREATES a positive standing edge: everything else
@@ -464,8 +470,37 @@ export function holdGathering(
         scoring,
         ties,
         selectedUpwardId,
-        fact: stored ?? fact as HistoricalFact
+        fact: stored
     };
+}
+
+/**
+ * Move every tie this gathering wrote onto the row that ended up holding it.
+ *
+ * `write` is the only durable home the fact id has - it goes onto the
+ * relationship as a `factIds` entry and nowhere else - and every call to it
+ * pushed a tie, so the ties are a complete list of where to look.
+ */
+function pointTiesAt(
+    state: WorldState,
+    ties: readonly GatheringTie[],
+    was: string,
+    now: string
+): void {
+    for (const tie of ties) {
+        const at = state.npcs.findIndex(n => n.id === tie.fromId);
+        if (at < 0) continue;
+        const holder = state.npcs[at];
+        const which = holder.relationships.findIndex(r => r.targetId === tie.toId);
+        if (which < 0) continue;
+        const row = holder.relationships[which];
+        if (!row.factIds.includes(was)) continue;
+        const factIds = row.factIds.filter(id => id !== was);
+        if (!factIds.includes(now)) factIds.push(now);
+        const relationships = holder.relationships.slice();
+        relationships[which] = { ...row, factIds };
+        state.npcs[at] = { ...holder, relationships };
+    }
 }
 
 /**

@@ -28,6 +28,7 @@ import {
     circlesOf,
     holdGathering
 } from '../../../src/engine/world/gatherings.js';
+import { occurrencesOf } from '../../../src/engine/world/a-fact-that-keeps-happening-is-one-row.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -284,6 +285,67 @@ describe('what a gathering leaves behind', () => {
         }
         expect(held.fact.kind).toBe('gathering');
         expect(held.fact.data.gathering).toBe(held.kind);
+    });
+
+    /**
+     * ── THE SAME AFTERNOON TWICE IS ONE ROW ──────────────────────────────
+     *
+     * The row was appended with a placeholder sentence and rewritten afterwards,
+     * so the recurrence decision was taken on the placeholder and two identical
+     * gatherings never met. Measured on a seeded world: two rows, word for word
+     * the same, sitting beside each other.
+     *
+     * The people and the houses are wound back between the two, which is what
+     * makes the afternoons identical. A meeting rather than a bout, because a
+     * bout draws its rng off the fact id and two slots would fight differently.
+     */
+    it('folds a second identical gathering into the row that already says it', () => {
+        const { state } = build({
+            edges: [['house-b', 'house-a', 0.4], ['house-c', 'house-a', 0.4]],
+            chosen: { 'house-a': 2, 'house-b': 2, 'house-c': 2 },
+            purse: 50_000
+        });
+        const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
+        const npcs = clone(state.npcs);
+        const factions = clone(state.factions);
+
+        let stream = 0;
+        let first = holdGathering(state, circlesOf(state)[0], state.currentDay, forStream('fold', '0'));
+        while (first && first.kind !== 'meeting' && stream < 40) {
+            state.npcs = clone(npcs);
+            state.factions = clone(factions);
+            state.history.facts.length = 0;
+            state.history.nextFactSeq = 1;
+            stream++;
+            first = holdGathering(state, circlesOf(state)[0], state.currentDay, forStream('fold', String(stream)));
+        }
+        expect(first?.kind).toBe('meeting');
+
+        // Wind the people and the houses back. The ledger is NOT wound back -
+        // it is the thing under test.
+        state.npcs = clone(npcs);
+        state.factions = clone(factions);
+        const again = holdGathering(
+            state, circlesOf(state)[0], state.currentDay + 4380, forStream('fold', String(stream))
+        )!;
+
+        const rows = state.history.facts.filter(f => f.kind === 'gathering');
+        expect(rows).toHaveLength(1);
+        expect(again.fact.id).toBe(first!.fact.id);
+        expect(occurrencesOf(rows[0])).toBe(2);
+        // And the second afternoon's ties name the row that survived, not the
+        // slot that was reserved for a row never written.
+        for (const tie of again.ties) {
+            const from = state.npcs.find(n => n.id === tie.fromId)!;
+            const row = from.relationships.find(r => r.targetId === tie.toId)!;
+            expect(row.factIds).toContain(again.fact.id);
+        }
+        const ids = new Set(state.history.facts.map(f => f.id));
+        for (const npc of state.npcs) {
+            for (const row of npc.relationships) {
+                for (const id of row.factIds) expect(ids.has(id)).toBe(true);
+            }
+        }
     });
 
     it('files a fact with the attending houses and the uninvited ones', () => {

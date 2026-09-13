@@ -16,6 +16,7 @@ import { createWorld } from '../../../src/engine/world/world-state.js';
 import { appendWorldFact } from '../../../src/engine/world/who-was-there-when-it-happened.js';
 import {
     describeWithRecurrence,
+    keptItsOwnRow,
     lastOccurrenceOf,
     occurrencesOf,
     recurrenceKeyOf
@@ -38,8 +39,8 @@ const renewal = (day: number, over: Partial<PendingFact> = {}): PendingFact => m
     ...over
 });
 
-function advanced(years = 300): WorldState {
-    const seeded = seedWorld({ seed: 'recur-world', catalog: fixtureCatalog(), presentYear: 1000, population: 250 });
+function advanced(years = 300, seed = 'recur-world'): WorldState {
+    const seeded = seedWorld({ seed, catalog: fixtureCatalog(), presentYear: 1000, population: 250 });
     return advanceWorldYears(seeded.state, years, { pressure: { eventsPerYear: 2 } }).state;
 }
 
@@ -176,12 +177,53 @@ describe('the ledger stays walkable', () => {
         expect(state.npcs.find(n => n.id === 'npc-b')!.historyFactIds).toEqual([]);
     });
 
+    /**
+     * ── THE RATCHET, WITH NO KIND EXEMPT ─────────────────────────────────
+     *
+     * This named `gathering` as an exception: `holdGathering` appended its row
+     * with a provisional summary and rewrote it, so the recurrence decision was
+     * taken on a sentence the row did not keep and two identical afternoons
+     * could never meet. `reserveFactSlot` gives the passes their fact id without
+     * the row, so the row is appended once with what actually happened in it.
+     * Measured, eight worlds, ten horizons from 200 to 1,000 years,
+     * `fixtureCatalog`, `eventsPerYear: 2`:
+     *
+     *     gathering duplicates    2 -> 0  (`recur-world-e`, 500y and past it)
+     *     every other world       0 -> 0, row counts unchanged
+     *
+     * The exception is gone and no kind replaces it. What the assertion allows
+     * for instead is a DECISION: `recur: false`, which several callers pass
+     * because two promotions to the same seat are two events in one career.
+     * Those rows say so on themselves.
+     *
+     * Two worlds, because one is a coin flip - `recur-world` never produced the
+     * coincidence at any horizon, which is how this stayed hidden.
+     */
     it('still holds a row for every distinct thing that happened', () => {
         // The saving must come from repetition and from nothing else. Distinct
         // statements are the count that must NOT fall.
-        const state = advanced();
-        const distinct = new Set(state.history.facts.map(f => recurrenceKeyOf(f)));
-        expect(distinct.size).toBe(state.history.facts.length);
+        for (const state of [advanced(), advanced(500, 'recur-world-e')]) {
+            const foldable = state.history.facts.filter(f => !keptItsOwnRow(f));
+            const seen = new Map<string, string>();
+            const said: string[] = [];
+            for (const fact of foldable) {
+                const key = recurrenceKeyOf(fact);
+                const first = seen.get(key);
+                if (first) said.push(`${fact.kind} ${first} and ${fact.id}: ${fact.summary}`);
+                else seen.set(key, fact.id);
+            }
+            expect(said.slice(0, 5)).toEqual([]);
+        }
+    });
+
+    it('marks the rows that asked to keep their own', () => {
+        const state = world();
+        appendWorldFact(state, renewal(400_000), { recur: false });
+        const second = appendWorldFact(state, renewal(500_000), { recur: false });
+        expect(state.history.facts.every(keptItsOwnRow)).toBe(true);
+        // The mark is this module's own and stays out of the key, so a row that
+        // carries it still collides with exactly what it collided with before.
+        expect(recurrenceKeyOf(second)).toBe(recurrenceKeyOf(renewal(500_000)));
     });
 
     it('accounts for every occurrence it folded away', () => {

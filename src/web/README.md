@@ -1629,7 +1629,7 @@ Three files, and the split between them is the contract:
 
 | | |
 |---|---|
-| `knowledge.ts` | what this cultivator has ever heard of. The gate the whole rule rests on |
+| `knowledge.ts` | what this cultivator has ever heard of. The gate the whole rule rests on, plus an optional second reader for what the world's own people know |
 | `lore.ts` | the **speakable world**: every name anybody could say, and the terms for saying it |
 | `hearsay.ts` | whether a name gets said in this scene, which, and by whom |
 
