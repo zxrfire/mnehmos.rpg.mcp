@@ -30,6 +30,15 @@
  * Nothing here decides whether an offer is ACCEPTED. That is
  * `whatItWouldTake`'s arithmetic and it is untouched: this says what the offer
  * has to be MADE OF before that arithmetic is worth doing.
+ *
+ * ── AND EACH RUNG HAS TO BE MADE OF SOMETHING ───────────────────────────
+ *
+ * Naming a rung nothing in the engine can produce is the same defect as having
+ * no ladder. `a service` was that for a long time: measured, the one changed
+ * beast reachable everywhere wanted one 93% of the time and nothing anywhere
+ * recorded that a service had been done. It is
+ * `a-service-is-something-done.ts` now, and a caller reading this ladder reads
+ * that for what standing on this rung is made of.
  */
 
 import type { AskWeight } from './an-attempt-to-move-somebody.js';

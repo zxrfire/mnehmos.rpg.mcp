@@ -122,7 +122,13 @@ describe('every sentence next door still reaches its own verb', () => {
     it.each([
         // Spoken TO somebody. The route requires the asker as the indirect
         // object, and this is the whole of what that guard is for.
-        ['I tell him I am from the Azure Dew Sect', 'interact'],
+        //
+        // "I tell him I am from the Azure Dew Sect" was here and is now `tell`,
+        // which is a change in that verb rather than a leak in this one: `tell`
+        // took on an account of the speaker, and the hearer ends up holding a
+        // knowledge row saying who this cultivator said they were. The guard
+        // these rows exist for is untouched and the two below still carry it -
+        // neither names a house, a rung or a name, so neither is an account.
         ['I tell the elder my name', 'interact'],
         ['I tell her I will be back', 'interact'],
         // The world's talk, whose pattern is end-anchored for exactly this.

@@ -43,14 +43,20 @@ import { whoCouldNominateInto } from '../engine/social-leverage/who-can-put-your
 import {
     aFindThisHouseCouldSendFor,
     forbiddenGroundInTheProvinceOf,
+    groundAPartyCanBeSentTo,
     whatAHousesOwnErrandsBringBack,
     whatAnybodyCouldHaveOfTheGround,
     whatStandingOnItGives,
     whatTheAirCarriesOfTheGround,
+    whereASendingGoes,
     whereTheOpenGroundIs,
+    whichHousesAReasonIsAbout,
+    type AFindThisHouseHas,
     type WhereTheOpenGroundIs,
     type HouseAsItStands
 } from '../engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
+import type { SendingReason } from '../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import { forStream } from '../engine/cultivation/rng.js';
 // The one answer to who a house would sit down with. The world holds its own
 // gatherings off this same reading, so a visit and a friendly competition are
 // offered to exactly the houses the world would have put in a room together.
@@ -680,7 +686,7 @@ function aFindThisHouseKnowsOf(
     faction: FactionRecord,
     openGround: WhereTheOpenGroundIs,
     known: HowTheGroundIsKnown
-): boolean {
+): AFindThisHouseHas | null {
     return aFindThisHouseCouldSendFor({
         ground: openGround,
         houseId: faction.id,
@@ -691,7 +697,7 @@ function aFindThisHouseKnowsOf(
         rankCount: faction.ranks.length,
         stageFor: known.knowsTheGround,
         errands: known.cameBack
-    }) !== null;
+    });
 }
 
 export interface TheHouseAndItsReach {
@@ -703,6 +709,16 @@ export interface TheHouseAndItsReach {
      * for: the reader is not one of the people a notice is aimed at.
      */
     reachOfTheRest: number;
+    /** Where its gate is, so a posting can be sent anywhere but home. */
+    seatLocationId: string | null;
+    /**
+     * The open ground it knows of, kept rather than reduced to a yes.
+     *
+     * `house.hasAFind` IS this being non-null - see the reasons the board
+     * offers - and the errand a house opens BECAUSE it knows of a door has to
+     * be able to say which door, or it sends the party somewhere else.
+     */
+    find: AFindThisHouseHas | null;
 }
 
 /**
@@ -755,21 +771,23 @@ export function theHouseAsItStands(
     }
     const reach = Math.max(reachOfTheRest, membership ? cultivator.realmOrdinal : 0);
 
+    // What THIS house has standing open, asked rather than decided here: the
+    // world's own sendings read the same function, so the board and the world
+    // cannot disagree about whether it has one - or about which one it is.
+    const find = aFindThisHouseKnowsOf(
+        deps.world,
+        faction,
+        whereTheOpenGroundIs(deps.world.locations),
+        howTheGroundIsKnownIn(deps.world)
+    );
+
     return {
         house: {
             id: faction.id,
             name: faction.name,
             holdsGround: deps.world.locations.some(l => l.controllingFactionId === faction.id),
             standing: faction.standing,
-            // What THIS house has standing open, asked rather than decided
-            // here: the world's own sendings read the same function, so the
-            // board and the world cannot disagree about whether it has one.
-            hasAFind: aFindThisHouseKnowsOf(
-                deps.world,
-                faction,
-                whereTheOpenGroundIs(deps.world.locations),
-                howTheGroundIsKnownIn(deps.world)
-            ),
+            hasAFind: find !== null,
             // WHO THIS HOUSE WOULD SIT DOWN WITH, and it is asked rather than
             // decided here: a visit and a friendly competition both need a body
             // on the other end, and the world already answers that question when
@@ -779,7 +797,9 @@ export function theHouseAsItStands(
                 forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId)
         },
         reach,
-        reachOfTheRest
+        reachOfTheRest,
+        seatLocationId: faction.seatLocationId,
+        find
     };
 }
 
@@ -852,13 +872,14 @@ function theHousesWhoseWallThisIs(
             if (npc.factionId !== faction.id || npc.status !== 'alive') continue;
             if (npc.cultivation.realmOrdinal > reach) reach = npc.cultivation.realmOrdinal;
         }
+        const find = aFindThisHouseKnowsOf(deps.world, faction, openGround, known);
         out.push({
             house: {
                 id: faction.id,
                 name: faction.name,
                 holdsGround: faction.controlledLocationIds.length > 0,
                 standing: faction.standing,
-                hasAFind: aFindThisHouseKnowsOf(deps.world, faction, openGround, known),
+                hasAFind: find !== null,
                 sitsDownWith: circleCandidatesFor(deps.world, faction).map(f => f.id),
                 standsNearForbiddenGround:
                     forbiddenGroundInTheProvinceOf(deps.world.locations, faction.seatLocationId)
@@ -866,10 +887,60 @@ function theHousesWhoseWallThisIs(
             reach,
             // Nobody off the roll is counted into a house's reach, so a
             // stranger's reading of the wall is the whole house either way.
-            reachOfTheRest: reach
+            reachOfTheRest: reach,
+            seatLocationId: faction.seatLocationId,
+            find
         });
     }
     return out;
+}
+
+/**
+ * Where each posting on a wall would send whoever took it, by name.
+ *
+ * WHY A NOTICE SAID NOTHING ABOUT WHERE IT WENT. `aPostingAsAnOffer` has taken
+ * a `placeName` since it was written and nothing anywhere passed one, so every
+ * line on every board in the game read "An escort, for the Azure Cloud
+ * Pavilion" - the house, the work, and no destination.
+ *
+ * `whereASendingGoes` is the world's own answer and is asked rather than
+ * repeated: which houses a reason is about, the ground the house knows of, and
+ * everywhere a party can be put down. So a wall and the world's own errands
+ * cannot send the same party to two different places.
+ *
+ * NEVER AN ID. A location the world cannot name comes back null and the notice
+ * goes up without a destination, which is what it did before. A row id printed
+ * where a name belongs is the defect `an-ask-is-called-what-it-is-and-never-its-row`
+ * was written against.
+ *
+ * The draw is keyed to the house and the reason rather than to a run, because
+ * the notice's own id is, and a wall that names a different village each time
+ * it is read is a wall with nothing on it.
+ */
+function whereAPostingWouldSendThem(
+    world: WorldState,
+    standing: TheHouseAndItsReach
+): (reason: SendingReason) => string | null {
+    const elsewhere = groundAPartyCanBeSentTo(world.locations);
+    const seatOf = (houseId: string): string | null =>
+        world.factions.find(f => f.id === houseId && f.dissolvedOnDay === null)
+            ?.seatLocationId ?? null;
+
+    return reason => {
+        const goingTo = whereASendingGoes({
+            needs: reason.needs,
+            fromLocationId: standing.seatLocationId,
+            theFind: standing.find?.locationId ?? null,
+            seatsInPlay: whichHousesAReasonIsAbout(reason.needs, standing.house)
+                .map(seatOf)
+                .filter((id): id is string => id !== null),
+            elsewhere,
+            pick: count => forStream(standing.house.id, 'posting_destination', reason.id)
+                .int(0, Math.max(0, count - 1))
+        });
+        if (goingTo === null) return null;
+        return world.locations.find(l => l.id === goingTo)?.name ?? null;
+    };
 }
 
 function whatTheHouseItselfNeedsDone(
@@ -880,13 +951,17 @@ function whatTheHouseItselfNeedsDone(
     const wall: TheWall = { offers: [], refusals: [] };
 
     for (const standing of theHousesWhoseWallThisIs(deps, cultivator, membership)) {
+        const world = deps.world;
         for (const entry of whatAHouseHasOnItsBoard({
             house: standing.house,
             ordinal: cultivator.realmOrdinal,
             reachOfTheHouse: standing.reach,
             // What the wall itself carries, which is not the same list as what
             // the house would send this reader on. See `reachOfTheRest`.
-            reachOfTheRest: standing.reachOfTheRest
+            reachOfTheRest: standing.reachOfTheRest,
+            ...(world === null || world === undefined
+                ? {}
+                : { placeFor: whereAPostingWouldSendThem(world, standing) })
         })) {
             const terms = dutyTermsFor(entry, cultivator.realmOrdinal, membership, 'commission');
             // THE BOARD IS FOR DISCIPLES AND AN ELDER IS TOLD. The generator is

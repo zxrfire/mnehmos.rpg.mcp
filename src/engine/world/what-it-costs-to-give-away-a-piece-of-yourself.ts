@@ -85,7 +85,7 @@ const WHERE_AN_ABILITY_LIVES: Record<Beast['ability']['kind'], string> = {
  * each band is held by the whole hide or the whole shell. Read off the catalog
  * so a new row moves it, rather than typed here where it would drift.
  */
-export function whatTheCatalogPaysAt(grade: TechniqueGrade): number {
+function whatTheCatalogPaysAt(grade: TechniqueGrade): number {
     const values = BEAST_MATERIALS
         .filter(m => m.grade === grade)
         .map(m => m.value)
@@ -152,23 +152,34 @@ export function whatItCouldPartWith(beast: Beast): readonly APieceOfItself[] {
     return [{ material: mintedPieceOf(beast), inTheCatalog: false }];
 }
 
+/**
+ * The piece the sentence actually named, and nothing where it named none.
+ *
+ * The strict half, for a caller that has not yet established that a piece of
+ * a body is what is being asked for at all. A generic ask - to be taught, to
+ * be travelled with - names no piece, and a reader that fell back to the
+ * cheapest one would answer every question put to a creature as a question
+ * about its fur.
+ */
+export function thePieceTheyNamed(
+    beast: Beast,
+    named: string | null
+): APieceOfItself | null {
+    const wanted = (named ?? '').trim().toLowerCase();
+    if (wanted.length < 2) return null;
+    return whatItCouldPartWith(beast).find(p =>
+        p.material.name.toLowerCase().includes(wanted)
+        || wanted.includes(p.material.name.toLowerCase())
+        || wanted.split(/\s+/).some(word =>
+            word.length >= 3 && p.material.name.toLowerCase().includes(word))) ?? null;
+}
+
 /** The piece somebody named, or the cheapest one when they named nothing. */
 export function thePieceTheyAskedFor(
     beast: Beast,
     named: string | null
 ): APieceOfItself | null {
-    const pieces = whatItCouldPartWith(beast);
-    if (pieces.length === 0) return null;
-    const wanted = (named ?? '').trim().toLowerCase();
-    if (wanted.length >= 2) {
-        const hit = pieces.find(p =>
-            p.material.name.toLowerCase().includes(wanted)
-            || wanted.includes(p.material.name.toLowerCase())
-            || wanted.split(/\s+/).some(word =>
-                word.length >= 3 && p.material.name.toLowerCase().includes(word)));
-        if (hit) return hit;
-    }
-    return pieces[0];
+    return thePieceTheyNamed(beast, named) ?? whatItCouldPartWith(beast)[0] ?? null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -189,8 +200,8 @@ export function thePieceTheyAskedFor(
  * how long a thing takes to come back is a fact about the material, and what
  * that length MEANS is a fact about who is waiting.
  */
-export const A_PIECE_IS_A_SCRATCH_BELOW = 0.02;
-export const A_PIECE_IS_A_MAIMING_ABOVE = 0.25;
+const A_PIECE_IS_A_SCRATCH_BELOW = 0.02;
+const A_PIECE_IS_A_MAIMING_ABOVE = 0.25;
 
 /** What the giver is left with, stated in the machinery that already says it. */
 export interface WhatGivingItCost {
@@ -230,6 +241,12 @@ const DOES_NOT = 'severed-meridian';
 export function whatGivingItCosts(input: {
     beast: Beast;
     piece: APieceOfItself;
+    /**
+     * Whose body it came off - the ONE standing on this ground, not the
+     * species. A shame is held about a person, and the person here is the
+     * individual `idOfTheOneOnThisGround` names.
+     */
+    subjectId: string;
     turn: number;
     onDay: number;
     /** Who is standing there. Empty is the private case and costs no standing. */
@@ -255,7 +272,7 @@ export function whatGivingItCosts(input: {
         turn: input.turn,
         woundType,
         description:
-            `${piece.material.name}, pulled out of ${beast.name} by ${beast.name}. `
+            `${beast.name} pulled ${piece.material.name} out of itself. `
             + `${growsBackInYears} year${growsBackInYears === 1 ? '' : 's'} before the body has `
             + `it again, against the ${span} it has to spend.`
     };
@@ -273,7 +290,7 @@ export function whatGivingItCosts(input: {
         wound,
         doesNotComeBack: isPermanentWound(woundType),
         shame: input.seenBy.length === 0 ? null : {
-            subjectId: beast.id,
+            subjectId: input.subjectId,
             cause: 'gave_up_part_of_themselves',
             severity: standing,
             onDay: input.onDay,
@@ -286,7 +303,7 @@ export function whatGivingItCosts(input: {
         },
         note:
             `${piece.material.name} (${piece.material.grade}, `
-            + `${piece.inTheCatalog ? 'catalog row' : 'minted'}) off ${beast.id} at ordinal `
+            + `${piece.inTheCatalog ? 'catalog row' : 'minted'}) off ${input.subjectId} at ordinal `
             + `${beast.ordinal}: ${growsBackInYears}y regrowth / ${span}y span = `
             + `${(share * 100).toFixed(1)}% -> ${severity}, ${woundType}, permanent=`
             + `${isPermanentWound(woundType)}. Seen by ${input.seenBy.length}.`

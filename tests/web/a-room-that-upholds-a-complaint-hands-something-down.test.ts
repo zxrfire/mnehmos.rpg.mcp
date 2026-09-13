@@ -360,7 +360,16 @@ describe('played, holding the room complaints go to', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('handing it down', () => {
-    it('says which module carries out the ones it does not', async () => {
+    /**
+     * This once read "says which module carries out the ones it does not",
+     * because five of the seven sentences were routed and none of them ran.
+     * All seven are carried out now - `a-room-carries-out-more-than-a-fine.
+     * test.ts` is where each one is proved - and what survives here is the
+     * half that still matters: A SENTENCE THE STORE CANNOT CARRY SAYS SO. This
+     * call gives no `byOrdinal`, so what a seal would hold cannot be read, and
+     * the report is a refusal rather than a success nobody can find in a table.
+     */
+    it('never reports a sentence it did not carry out', async () => {
         const { harness, other } = await aRoomAndSomebodyInFrontOfIt('hands-down-routed');
         const complaint = complain(harness, other.id, 'serious');
         const handed = handDownWhatTheRoomDecided({
@@ -374,7 +383,7 @@ describe('handing it down', () => {
             houseName: HOUSE.name,
             onDay: 1,
             // A demonic reading of the same row, which reaches a sentence this
-            // handler does not run.
+            // call has not given the handler enough to run.
             brought: brought('demonic')
         });
         expect(handed.notCarriedOutHere).not.toBeNull();

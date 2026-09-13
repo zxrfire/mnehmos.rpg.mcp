@@ -743,7 +743,12 @@ describe('every intent behind a door is reachable from plain English too', () =>
         // Letting somebody off what they owe YOU, which is the other direction
         // from every row above: those are about a word this cultivator gave,
         // and this is about a claim they hold and are giving up.
-        release: ['I forgive his debt', 'I write off his debt', 'I let him off what he owes']
+        release: ['I forgive his debt', 'I write off his debt', 'I let him off what he owes'],
+        // Going and doing something for somebody, which is the rung of the
+        // offer ladder above a favour. It carries no oath noun, so it reaches
+        // the verb through its own branch above the gate rather than through
+        // `AN_OATH`.
+        serve: ['I do him a service', 'I do a service for the old man', 'I serve out my term']
     };
 
     for (const [intent, phrasings] of Object.entries(OATH_PHRASINGS)) {
@@ -860,6 +865,16 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I ask my master to cut me a talisman',
             'I pay Elder Fang 400 stones to craft me a talisman'
         ],
+        // ASKING SOMEBODY TO COME WITH YOU, which is the only way a party
+        // exists that is not a house assigning one. Priced as a real favour -
+        // their days, not their standing - which is why a purse reaches it here
+        // and does not reach a rung two rows down.
+        'request/company': [
+            'I ask Elder Fang to come with me',
+            'I invite Elder Fang to travel with me for a month',
+            'come with me',
+            'I beg Elder Fang to come with me to the Salt Road'
+        ],
         // ASKING TO BE RAISED, which is the road that replaced buying a rung
         // with cash. It arrives as a request whichever word it was asked with -
         // nothing downstream may read that a bribe was meant - and the house's
@@ -937,6 +952,17 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'who is in charge here',
             'who holds this ground',
             'whose land is this'
+        ],
+        // THE RUNG OF THE OFFER LADDER NOTHING COULD STAND ON. `a service` was
+        // named by `what-they-will-take-instead-of-money.ts` and produced by
+        // nothing, so the commonest high-end refusal in the game asked for a
+        // thing no sentence could do. Three of its siblings above sit in
+        // `UNTESTED_DOORS`; this one is written here because it arrived with
+        // its road.
+        'oath/serve': [
+            'I do him a service',
+            'I do a service for the old man',
+            'I serve out my term'
         ]
     };
 

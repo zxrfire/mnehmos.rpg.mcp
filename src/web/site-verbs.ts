@@ -96,6 +96,7 @@ import {
     readGates,
     resolveSite
 } from './trials.js';
+import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { ENTERING_DAYS, ENTERING_FOCUS, STARTING_AGE } from './turn-constants.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
@@ -207,7 +208,23 @@ export const siteVerbs = {
             );
         }
 
+        // AND WHETHER THE DOOR IS EVEN THERE TODAY. Standing outside a ruin on a
+        // schedule and being told only what its walls would do to you leaves out
+        // the fact that decides everything else: whether it is open, and what it
+        // would take to be in and back out inside the window.
+        const door = whatTheDoorHereSays(
+            this,
+            cultivator,
+            ground.name,
+            // From where they are standing, at what the catalog prices the road
+            // at. It states nothing for most finds and a road nobody priced is
+            // not a road anybody may invent a figure for.
+            this.daysOnTheRoadTo(cultivator, ground.name) ?? 0
+        );
+        if (door) lines.push(...door.lines);
+
         const facts = factsForToolResult(`${ground.name}, from outside.`, lines);
+        if (door) facts.structure.push(...door.structure);
         const floor = ground.access?.floorOrdinal;
         facts.structure.push(
             `Ground of ${ground.character} character`

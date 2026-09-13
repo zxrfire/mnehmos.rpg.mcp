@@ -1217,6 +1217,18 @@ export function cultivationContext(
     };
 }
 
+/**
+ * How many people a place holds, relative to the others.
+ *
+ * Zero for a container - a region is a name over other places and nobody stands
+ * on it - which is why this is also the test for whether anybody can be sent
+ * somewhere or born there.
+ */
+export function populationWeightOf(location: LocationRecord): number {
+    const raw = Number(location.data.populationWeight ?? 1);
+    return Number.isFinite(raw) && raw >= 0 ? raw : 1;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // CYCLES
 // Closed-form. Asking about a day three centuries out costs the same as asking

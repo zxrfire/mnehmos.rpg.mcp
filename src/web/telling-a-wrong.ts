@@ -225,6 +225,27 @@ function cleanAddressee(raw: string): string | undefined {
  * sentence goes back to the table untouched.
  */
 export function whatIsBeingTold(input: string): ATelling | null {
+    const telling = aTellingPutToSomebody(input);
+    if (telling === null) return null;
+    // The whole of the narrowing, and it is checked against the CLAIM rather
+    // than the whole sentence, so a wrong word sitting inside the addressee's
+    // name cannot make an ordinary conversation into a telling.
+    return A_WRONG_WAS_DONE.test(telling.claim) ? telling : null;
+}
+
+/**
+ * The same sentence read for its two halves and nothing else: who is being
+ * addressed, and what is being said to them.
+ *
+ * Split out of {@link whatIsBeingTold} for the second reader of the same shape -
+ * `an-account-of-yourself.ts`, where the clause says what the SPEAKER is rather
+ * than what somebody did. Where an addressee stops and a claim starts is one
+ * question, and two copies of the answer would drift.
+ *
+ * It narrows nothing, so on its own it takes far too much: every caller applies
+ * its own test to the claim.
+ */
+export function aTellingPutToSomebody(input: string): ATelling | null {
     const trimmed = input.trim();
 
     const letForm = LET_THEM_KNOW.exec(trimmed);
@@ -247,10 +268,6 @@ function assemble(rawPerson: string, rawClaim: string): ATelling | null {
     if (person === undefined) return null;
     const claim = cleanClaim(rawClaim);
     if (claim === undefined) return null;
-    // The whole of the narrowing, and it is checked against the CLAIM rather
-    // than the whole sentence, so a wrong word sitting inside the addressee's
-    // name cannot make an ordinary conversation into a telling.
-    if (!A_WRONG_WAS_DONE.test(claim)) return null;
     return { person, claim };
 }
 

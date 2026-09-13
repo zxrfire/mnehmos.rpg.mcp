@@ -98,6 +98,7 @@ import {
     whoWouldWalkYouIn,
     type AHouseYouCouldWalkTo
 } from './walking-up-to-a-house.js';
+import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
@@ -218,6 +219,23 @@ function whatArrivingIntroduces(
     if (gate) {
         lines.push(...gate.lines);
         structure.push(gate.structure);
+    }
+
+    // AND A DOOR THAT SHUTS SAYS SO. Ground on a sixty-year cycle is a door as
+    // much as a gatehouse is, and until this nothing reached
+    // `beingAtADoorOnTheDayItOpens` at all: a player could stand on a ruin whose
+    // window is a week and never be told there was a window.
+    const door = whatTheDoorHereSays(
+        game,
+        cultivator,
+        cultivator.location ?? '',
+        // They are on it. The road is behind them and none of the window went
+        // on getting here.
+        0
+    );
+    if (door) {
+        lines.push(...door.lines);
+        structure.push(...door.structure);
     }
 
     const told = theStructureYouWereTold(game, cultivator);

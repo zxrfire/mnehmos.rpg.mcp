@@ -90,7 +90,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`ride`](#ride) | `target` `topic` | time | yes | - | - |
 | [`fold`](#fold) | `target` | time | yes | - | - |
 | [`passage`](#passage) | `target` `intent` | time | yes | - | [2](#passage) |
-| [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [4](#oath) |
+| [`oath`](#oath) | `target` `intent` `topic` | varies | yes | - | [5](#oath) |
 | [`attack`](#attack) | `target` `terms` `opening` | time | yes | - | - |
 | [`coerce`](#coerce) | `target` `intent` `opening` | time | yes | - | [4](#coerce) |
 | [`cultivate`](#cultivate) | `days` | time | yes | - | - |
@@ -218,13 +218,13 @@ Intents: `board`, `buy`.
 
 ### `oath`
 
-a word given, carried or not kept, and a claim held or given up. "intent" is "swear", "read", "break" or "release"; "target" is who it is given to or let off; "topic" is what is being sworn, in the player's own words. Breaking one is permanent and opens an account naming them, so never choose it for a question. "release" is the OTHER DIRECTION from the rest, and the distinction is whose claim it is. "break" is walking out of a word this cultivator gave and costs them; the forgiving one is letting somebody off a debt, a favour or a grudge that is owed TO them, and it costs them the claim. "I forgive his debt" and "I let her off what she owes" are this; "I break my oath" is not.
+a word given, carried, served out or not kept, and a claim held or given up. "intent" is "swear", "read", "break", "release" or "serve"; "target" is who it is given to, let off or done for; "topic" is what is being sworn or undertaken, in the player's own words. Breaking one is permanent and opens an account naming them, so never choose it for a question. "serve" is DOING SOMEBODY A SERVICE, which is a rung of the offer ladder and is not a favour. A favour is an account somebody carries; a service is a stretch of days spent on their business, and it is discharged by spending them rather than by being owed. Said once it opens the term, said again to the same person it serves the term out. "I do him a service", "I do a service for her", "I serve out my term" are this. "release" is the OTHER DIRECTION from the rest, and the distinction is whose claim it is. "break" is walking out of a word this cultivator gave and costs them; the forgiving one is letting somebody off a debt, a favour or a grudge that is owed TO them, and it costs them the claim. "I forgive his debt" and "I let her off what she owes" are this; "I break my oath" is not.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'oath'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.oath` · the deterministic parser reaches it.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'oath'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
 Takes `target`, `intent`, `topic`.
 
-Intents: `read`, `swear`, `break`, `release`.
+Intents: `read`, `swear`, `break`, `release`, `serve`.
 
 ### `attack`
 
@@ -300,7 +300,7 @@ Takes `target`.
 
 ### `hunt`
 
-go out after a beast. "target" may name what is being looked for. Distinct from gather, which digs up things that do not move, and from attack, which is a person. What comes back is a body worth something at a counter, which is the other half of where high-grade material in this world comes from - and what is out there can be far above the person looking for it.
+go out after a beast. "target" may name what is being looked for. Distinct from gather, which digs up things that do not move, and from attack, which is a person. What comes back is a body worth something at a counter, which is the other half of where high-grade material in this world comes from - and what is out there can be far above the person looking for it. A hunt means the kill unless the sentence says otherwise; one that says it is taking the thing alive is heard, and what it leaves standing can then be let up or stripped like anybody else.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'hunt'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.hunt` · the deterministic parser reaches it · spends in-world time.
 
@@ -540,7 +540,7 @@ Intents: `history`, `ground_time`, `crowding`, `bills`, `company`, `holder`, `wa
 
 report the cultivator's own condition. Passes no time.
 
-Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'status'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.freeAction` · the deterministic parser reaches it · passes no time.
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'status'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · passes no time.
 
 ### `assess`
 
@@ -576,7 +576,7 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `tell`
 
-TELL SOMEBODY THAT A WRONG WAS DONE - to them, or to somebody of theirs. The other direction of news: that one asks what people are saying, this one carries it to the person it is about. "target" is who is being told and they have to be here; "topic" is what is being said, in the player's own words, including the name of whoever is being blamed if the sentence gives one. Use it for "I tell him that Cao Antao killed his brother", "I let her know who killed her master", "I tell him what happened to his brother" and "I tell him that I killed his brother". Passes no time. Route it whether or not the claim is true - naming the wrong person, or a killing that never happened, is an ordinary thing to say and the engine is what answers for it. NOT for "tell me about X", which is a question and belongs to investigate, and NOT for a threat, which is about something that has not happened yet.
+TELL SOMEBODY THAT A WRONG WAS DONE - to them, or to somebody of theirs. The other direction of news: that one asks what people are saying, this one carries it to the person it is about. "target" is who is being told and they have to be here; "topic" is what is being said, in the player's own words, including the name of whoever is being blamed if the sentence gives one. Use it for "I tell him that Cao Antao killed his brother", "I let her know who killed her master", "I tell him what happened to his brother" and "I tell him that I killed his brother". Passes no time. Route it whether or not the claim is true - naming the wrong person, or a killing that never happened, is an ordinary thing to say and the engine is what answers for it. ALSO FOR TELLING SOMEBODY WHO YOU ARE, which is the same act one subject over: "I tell the gate guard that I am of the Cinnabar Crucible Sect", "I introduce myself to the steward as a Core Formation cultivator", "I tell her my name is Shen Wuyi". Route those the same way whether or not any of it is so - the engine holds what this cultivator actually is and decides. A bare greeting with no name, house or rung in it is interact, not this. NOT for "tell me about X", which is a question and belongs to investigate, and NOT for a threat, which is about something that has not happened yet.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'tell'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.loadWorld` · the deterministic parser reaches it.
 

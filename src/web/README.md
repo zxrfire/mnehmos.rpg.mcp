@@ -964,6 +964,34 @@ Three properties, and none of them is optional:
 The refusal where nobody is present is content rather than a gap: a cultivator
 forty years into a cave asking what is happening in the world is asking a wall.
 
+### `tell` also carries an account of yourself, and it may not be so
+
+`SourceKind` has carried `fabricated` since the knowledge layer was written and
+the only producer was a rumour the world had already marked invented. Nothing
+wrote one for somebody inventing an account of THEMSELVES, so arriving in a new
+province under a name, a house and a rung that are not yours had no
+representation, and nothing in the world was ever known to be untrue.
+
+[`an-account-of-yourself.ts`](an-account-of-yourself.ts) is that half of the
+verb. Three things about it are load-bearing:
+
+- **The world decides, not the words.** Which parts of an account are not so is a
+  comparison against the speaker's own name, roll and rung. The same sentence
+  writes `told` from somebody who is who they say they are and `fabricated` from
+  somebody who is not, and nothing reads the sentence for sincerity.
+- **Both ends, in one writer.** The hearer holds the claim; the speaker holds
+  having given it, on the same claim key, with the hearer named in the note. A
+  claim whose author holds no record of having made it is one nothing in the
+  world can trace back, and `provenanceOf` reaches either end from the other.
+- **The catch needed no new read.** Two holders, one subject, two statements that
+  do not match. That is `provenanceOf` twice and a comparison; there is no
+  reconciler, and there must not be - deciding which of two accounts is right is
+  the omniscient view the layer exists to deny.
+
+The world's own people do it at a seeded rate on the one path where somebody
+gives their name, which is answering a question. A rate rather than a pass:
+nothing models why this person is travelling under another house's name.
+
 ### The sheet reports what the cultivator can perceive, not what the engine knows
 
 `discovery.md`'s rule applied to a measurement rather than to a name.
@@ -1078,6 +1106,16 @@ gate, which answers whether somebody may be ASKED FOR something and not who just
 a figure. Where there is no name at all the answer is the goods and the figure, which is
 what a board rate is: `whyAQuotedPriceDoesNotMove` says why it will not move, and it does
 not.
+
+**And it carries over the turn, because a haggle is several of them.** Only the first
+sentence of an exchange usually names anybody, so every one after it searched the square
+again and the exchange was accounted against nobody one turn after the screen had printed
+a name. Whoever the turn before established is who the next figure is said to, read off
+`ThingNamed.from` on the last-turn record - not a second store of who we were just
+talking to. It binds only where the screen before established ONE person, which is the
+rule the THING in the same handler already goes through: a board read names eight things
+from eight sellers, and continuing with whichever the record listed first is the same
+re-pick. A name in the sentence still beats the scene.
 
 ### A theft's `topic` is a thing, and it is taken off the field before anything reads it
 
@@ -2277,6 +2315,9 @@ what would work are different useful things.
 - [`house-property-theft.ts`](house-property-theft.ts) - taking a thing your own house owns, and why possession moves while ownership does not
 - [`object-theft.ts`](object-theft.ts) - taking one named thing off somebody who is not your own house, and why a moored craft was out of reach of every possession query in the engine
 - [`craft-verbs.ts`](craft-verbs.ts) - the joint between the player's sentence and the bill of materials, and where a launched craft becomes a row
+- [`making-a-thing-at-your-own-bench.ts`](making-a-thing-at-your-own-bench.ts) - the other half of `craft`: the artifact recipe, your own hands, and the thing that comes off it
+- [`taking-the-materials-off-the-bench.ts`](taking-the-materials-off-the-bench.ts) - what a recipe takes and from which store, all of it or none of it
+- [`what-is-on-the-bench.ts`](what-is-on-the-bench.ts) - the material within reach of a craft, per unit, with where each one is kept
 - [`register.ts`](register.ts) - the standing register, and the only place to change it
 - [`places.ts`](places.ts) - the world map view, and the rule against inventing geography
 - [`ground-that-teaches-a-road.ts`](ground-that-teaches-a-road.ts) - dao ground as a player meets it, and what a ground that will not teach says instead

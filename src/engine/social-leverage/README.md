@@ -582,6 +582,16 @@ what-an-answer-costs.ts                 what saying it would cost the person bei
 how-freely-somebody-parts-with-what-they-have.ts
                                         one number per person, from their id and
                                         never from their house
+a-service-is-something-done.ts          the rung above a favour, which had no
+                                        store, no write and no read. A service
+                                        is an `oath` row at `service_term` held
+                                        by whoever gave their word: it names a
+                                        span of days and is discharged by
+                                        serving them, where a favour is a claim
+                                        discharged by being called in. Same
+                                        ledger, same shape `acceptDuty` already
+                                        writes for work off a board, with no
+                                        house on it
 what-they-will-take-instead-of-money.ts the medium, not the figure: stones,
                                         goods, a favour, a service, a hold, in
                                         that order, because being asked for

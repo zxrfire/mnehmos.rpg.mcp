@@ -132,6 +132,7 @@ const CAUSES: readonly ShameCause[] = [
     'expelled',
     'broke_an_oath',
     'fled_a_fight',
+    'gave_up_part_of_themselves',
     'other'
 ] as const;
 

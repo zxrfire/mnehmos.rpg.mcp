@@ -24,6 +24,16 @@
  * third: there is no element on a herb and no element on a beast material, so a
  * fire slot would be a classification this file made up.
  *
+ * ── AND THE RECIPE TAKES WHAT IT NAMES ───────────────────────────────────
+ *
+ * The first cut of this file was a gate and only a gate: it could say a bench
+ * was short and nothing anywhere ever took a gram of anything off one. The
+ * design owner: *"recipes should take stuff out of your inventory."*
+ * `whatTheRecipeSpends` is that, and it is the SAME WALK as the shortfall -
+ * `howTheBenchReadsAgainst` does it once and both are reads of the answer - so
+ * the gate and the spend cannot come to disagree about which unit fills which
+ * slot. `web/taking-the-materials-off-the-bench.ts` is what acts on it.
+ *
  * ── AND SUBSTITUTION IS THE WHOLE POINT ──────────────────────────────────
  *
  * Measured against the catalogs as they stand: the thinnest slot in either
@@ -182,7 +192,7 @@ export interface ASlotSomethingFills {
  * disagree the first time a slot's predicate moves, and disagreeing means
  * refusing over a thing you took or taking a thing you refused over.
  */
-export function howTheBenchReadsAgainst(
+function howTheBenchReadsAgainst(
     grade: TechniqueGrade,
     materialsToHand: readonly string[]
 ): { filled: readonly ASlotSomethingFills[]; short: readonly ASlotNobodyFilled[] } {

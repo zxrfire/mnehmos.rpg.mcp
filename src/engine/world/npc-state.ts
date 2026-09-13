@@ -246,6 +246,22 @@ export type ActivityKind =
      * `duties.ts` is the task, `why-a-house-puts-a-party-on-the-road.ts` is the
      * reason, and `who-goes-out-for-a-house-and-what-comes-back.ts` is what
      * happens to the party. Somebody at this is somebody a player can join.
+     *
+     * ── AND THE PARTY IS EMPTY, IN EVERY WORLD ───────────────────────────
+     *
+     * Measured across three pinned worlds of about 457 people each: 11 to 14
+     * are at this, and every one of them has `withIds` of length 0. The draw in
+     * `what-somebody-is-at-when-you-walk-up.ts` writes the activity through
+     * `bare`, which sets no party, and the pairing pass in the same file skips
+     * musterers outright - so nobody has ever said yes to one, and the sentence
+     * above describes a party with nothing in it.
+     *
+     * The player-facing half now exists: asking somebody to come along is the
+     * `company` request kind, and `whereTheyAlreadyAre` reads a musterer's
+     * `withIds` so that whoever has already agreed comes with them. That read
+     * is correct and returns nothing today. What is missing is the world
+     * filling the party in, which is a decision about who agrees to whose
+     * errand and belongs in the draw rather than here.
      */
     | 'mustering'
     /**

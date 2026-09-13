@@ -91,7 +91,7 @@ export function whatThisPersonHasOnTheBench(
  * Pills and books in the same table resolve to nothing and drop out, which is
  * what `whatAnIngredientIs` returning null means.
  */
-export function unitsInThePouch(
+function unitsInThePouch(
     db: Database.Database,
     holderId: string
 ): AUnitOnTheBench[] {
@@ -121,7 +121,7 @@ export function unitsInThePouch(
 const A_STACK_WORTH_COUNTING = 8;
 
 /** The material rows this person is physically carrying. */
-export function unitsBeingCarriedBy(
+function unitsBeingCarriedBy(
     objects: readonly ObjectRecord[],
     personId: string
 ): AUnitOnTheBench[] {

@@ -1,10 +1,24 @@
 /**
- * Scratch: per-year cost of `advanceWorldYears`, and a fingerprint of what the
- * world produced, so a performance change can be proved not to have moved the
- * simulation.
+ * What a simulated year costs, and whether a change to the world moved it.
  *
- *   npx tsx scripts/scratch-perf-table.ts 50,100,200,400,800 > out.txt
- *   npx tsx scripts/scratch-perf-table.ts 400 --seeds a,b,c --fingerprint
+ *   npx tsx scripts/probe-what-a-simulated-year-costs.ts 50,100,200,400,800,1200,1600
+ *   npx tsx scripts/probe-what-a-simulated-year-costs.ts 400 --seeds a,b,c --fingerprint
+ *
+ * TWO INSTRUMENTS IN ONE, because a performance change has to carry both. The
+ * table says what a year costs at each horizon; `--fingerprint` prints a total
+ * and characteristic shape of the world that came out, and a change that is
+ * only meant to be cheaper has to leave every line of it byte-identical.
+ *
+ * Cost per year rises with the size of the world's own two append-only arrays,
+ * so a figure is only comparable against another taken at the SAME horizon on
+ * the SAME tree. Measured on one seed before the lookup indexes went in: 31.2ms
+ * per simulated year at 50 years, 32.0 at 400, 103.6 at 1,200 and 147.2 at
+ * 1,600. See `OPEN-QUESTIONS.md` for what is still unbounded.
+ *
+ * To find WHERE the time goes rather than how much of it there is:
+ *
+ *   node --cpu-prof --cpu-prof-dir=<dir> --import <tsx loader> \
+ *       scripts/probe-what-a-simulated-year-costs.ts 1200
  */
 
 import { seedWorld } from '../src/engine/world/seeding.js';
@@ -20,6 +34,13 @@ const wantFingerprint = args.includes('--fingerprint');
 
 const catalog = await loadCultivationCatalog();
 
+/**
+ * Enough of the world to notice a simulation that moved.
+ *
+ * Deliberately not a hash: when one of these does move, the line says WHICH,
+ * and a count that changed by one is a different finding from a ledger that
+ * changed shape.
+ */
 function fingerprint(state: WorldState): Record<string, unknown> {
     const shape = worldShape(state);
     const kinds: Record<string, number> = {};
@@ -66,8 +87,7 @@ function fingerprint(state: WorldState): Record<string, unknown> {
     };
 }
 
-const rows: string[] = [];
-rows.push('horizon\tseed\tms\tms/year\tnpcs\tfacts');
+const rows: string[] = ['horizon\tseed\tms\tms/year\tnpcs\tfacts'];
 for (const horizon of horizons) {
     for (const seed of seeds) {
         const { state } = seedWorld({ seed, catalog });

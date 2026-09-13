@@ -2084,30 +2084,40 @@ them: `canReproduce` defines mastery as standing at the manual's `cap` and an ar
 
 ## A compound has an outside, and the gate between them is a door with three roads
 
-A seated house is three rows in `locations`, not one, and the contract is that all three
-are derived from the same catalog columns and none of them is authored per house:
+A seated house is a seat and the walls behind it, and the two are different questions:
 
     <house> grounds   `seedSectGround`. The seat, the gate and the forecourt, with the
                       whole interior of `architecture.ts` hanging off it. Entry threshold
-                      zero, because anybody may walk up to a door.
+                      zero, because anybody may walk up to a door - and a recruiting
+                      house's outer precinct is zero as well, which is what lets somebody
+                      be refused while standing somewhere rather than nowhere.
     the precincts     `growCompound`. One wall per rung, calibrated. This is what is
                       actually shut, and it was already shut before any of this.
-    the town below    `the-town-at-the-foot-of-a-house.ts`. A `settlement` tagged
-                      `foot_town`, linked to the province on one side and to the gate on
-                      the other, a day below it.
-
-**The town is the square a refusal happens in.** Before it, the map went province, then
-wall: a gate that turned somebody away would have left them standing on a road with the
-house as a name again. Its size and its trades read off `powerOrdinal`, `recruits`,
-`reliableOrdinal` against the peak, `formationIntegrity`, `specialities` and `alignment` -
-the same columns the rooms read, in the same shape. A house that recruits has petition
-scribes and root readers; a house whose arrays are dark is being stripped by a salvage
-yard; a demonic one has tables that ask nothing about where a thing came from.
 
 **Measured**, three pinned worlds, a starting player on day 0, 38 seated houses each:
-`I travel to <house>` reached **0 of 38** before and **38 of 38** after. The house's own
-name resolves to its town; `<house> grounds` resolves to the gate; somebody on the roll
-rides to the gate either way.
+`I travel to <house>` reached **0 of 38** before and **38 of 38** after. The seat is
+called `<house> grounds` and `somewhereReal` matches on names, so the only string that
+ever reached a compound was one no player would type. `walking-up-to-a-house.ts` is the
+half that resolves a house's name to its seat; both `<house>` and `<house> grounds` reach
+the same door, which is the rule about a read running both ways.
+
+**The town outside the wall is a READING of the seat, not a second place.**
+`the-town-at-the-foot-of-a-house.ts` derives what trades there and who is permanently
+standing about on nobody's roll from the house's own columns - `powerOrdinal`,
+`recruits`, `reliableOrdinal` against the peak, `formationIntegrity`, `specialities`,
+`alignment` - the same columns the rooms read, in the same shape. A house that recruits
+has petition scribes and root readers; a house whose arrays are dark is being stripped by
+a salvage yard; a demonic one has tables that ask nothing about provenance.
+
+The first cut seeded it as a real `settlement` row per house and that **halved the
+world's population density**, which is measured and written up in that file's header: a
+world opens with 400 people over 22 settlements and 38 more places took the tail below
+what eighty years of ordinary demography can sustain. Both arms in one command, one seed,
+only the town rows removed between them: **0 empty settlements without them, 8 with**.
+Holding the density would need about 1,090 people, 2.7x the simulation's cost. So the
+market is computed on arrival and nothing is stored. **What that does not give**, as the
+gap it is: the town has no road of its own, no residents in `npcs`, and no encounters.
+Closing it needs a world population scaled to the map it is spread over.
 
 `standing-at-the-gate-of-a-house.ts` answers the door, and it answers with all three
 roads rather than a boolean, because **not having the standing to go in is not the same
@@ -2117,16 +2127,17 @@ as seeing nothing**:
 - **you are a guest** - somebody of standing walked you in. Who may host is a rank
   reading off `ELDER_RUNG_FLOOR`, which already carries the fact that *no house makes an
   elder of its outer or inner disciples*, so the first rung above it is the conclave rung
-  under whichever name a house uses. An outer or inner disciple cannot host and can spend
-  a favour upward; that second step has no verb yet and the gate says so.
-- **you go around** - not wired, and **it does not need a new subsystem**. Three of the
-  four pieces already exist and are already reachable. `reachThrough` takes `enteredAt` -
-  somebody who arrived inside, having gone around the walls - and has since it was
-  written. `concealmentHolds` in `../cultivation/regard.ts` is the concealment reading: a
-  declared approach holds unless a witness stands at or above your own rung, which is
-  exactly the question the people on a gate ask, and
-  `../social/what-they-can-place-about-you.ts` already calls it. And
-  `what-a-house-does-when-it-catches-you.ts` is the consequence of failing.
+  under whichever name a house uses. Whether a host actually does it is the obligation
+  ledger: an open `debt` or `favor` they hold toward you. An outer or inner disciple
+  cannot host and can spend a favour upward; that second step has no verb yet and the
+  gate says so rather than hiding it.
+- **you go around** - not wired, and **it needs no new subsystem**. Three of the four
+  pieces exist and are reachable. `reachThrough` takes `enteredAt` - somebody who arrived
+  inside, having gone around the walls - and has since it was written. `concealmentHolds`
+  in `../cultivation/regard.ts` is the concealment reading: a declared approach holds
+  unless a witness stands at or above your own rung, which is exactly the question the
+  people on a gate ask, and `../social/what-they-can-place-about-you.ts` already calls it.
+  `what-a-house-does-when-it-catches-you.ts` is the cost of failing.
   `src/engine/perception/` and `src/engine/spatial/` are NOT where to look: both are
   retained D&D substrate with no player path, perception has no concealment reading at
   all, and spatial is grid A* waiting on the fold. What is missing is a verb that
@@ -2415,7 +2426,10 @@ ONE act, so burning it to arrive leaves nothing to leave with. Measured over twe
 per site, 36.2% of the world's houses could walk in and back out inside the window, 1.8%
 needed a fold, 62.1% could not make it at all - and at the seven-day windows 0 to 8%. **A
 door is a local event.** Nothing here stores anything; depth is the same halving
-`expeditionBudget` does, applied to a window already part spent.
+`expeditionBudget` does, applied to a window already part spent. **Routed by
+`src/web/walking-up-to-a-door-that-closes.ts`**, from the travel arrival and from standing
+outside found ground; the wait and the window are said only where `readSchedule` holds,
+because `StandingAtTheDoor` carries the ungated day beside the gated reading.
 
 **`ruin-mechanics.ts` - the test for anything added here.** *Does it change what the player
 knows, what they are, or what the rules of the place are - rather than how much damage

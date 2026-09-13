@@ -656,7 +656,7 @@ const ASKING_TO_BE_RAISED =
  * that asks for nothing and has its own reader two hundred lines up.
  */
 export const ASKING_THEM_TO_COME =
-    /\b(?:come (?:with|along with) (?:me|us)|come along\b|travel(?:ling)? with (?:me|us)|ride with (?:me|us)|walk with (?:me|us)|go with (?:me|us)|journey with (?:me|us)|join (?:me|us)(?!\s+(?:for|at)\b)|accompany (?:me|us)|escort (?:me|us)|take me with (?:you|him|her|them)|on the road with (?:me|us)|at my side|(?:be|as) my (?:companion|escort|guard on the road))\b/i;
+    /\b(?:come (?:with|along with) (?:me|us)|come along\b|travel(?:ling)? with (?:me|us)|ride with (?:me|us)|(?:walk|ride|travel|go) (?:the )?(?:road|way) with (?:me|us)|walk with (?:me|us)|go with (?:me|us)|journey with (?:me|us)|join (?:me|us)(?!\s+(?:for|at)\b)|accompany (?:me|us)|escort (?:me|us)|take me with (?:you|him|her|them)|on the road with (?:me|us)|at my side|(?:be|as) my (?:companion|escort|guard on the road))\b/i;
 
 /**
  * Where the party would be bound, when the sentence says.

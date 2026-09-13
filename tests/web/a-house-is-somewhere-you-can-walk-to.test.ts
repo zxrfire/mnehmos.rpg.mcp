@@ -15,29 +15,32 @@
  * NAMES. So the compound existed, the road existed, and the only string that
  * reached either was one no player would ever type.
  *
- * And there was nowhere to be turned away TO. The map went province, then wall,
- * so a gate that refused somebody would have left them standing on a road with
- * the house as a name again. `the-town-at-the-foot-of-a-house.ts` is the
- * missing square, derived from the house's own columns the way its rooms are.
+ * And reaching the ground was not the same as meeting a door. The seat opens at
+ * an entry threshold of zero - anybody may walk up to a gate - so the compound's
+ * own walls did their work three courts further in and nothing at all happened
+ * at the gate itself. `the-town-at-the-foot-of-a-house.ts` and
+ * `standing-at-the-gate-of-a-house.ts` are the two halves of what was missing,
+ * both derived from the house's own columns the way its rooms are.
  *
  * After: **38 of 38 in all three worlds.**
  *
  * ── WHAT IS PINNED HERE, AND WHAT IS NOT ─────────────────────────────────
  *
- * The three roads and the shape of the refusal, never a name, a rung, a count
- * or a town. Which house this world puts where is an artefact of the catalog
+ * The three roads and the shape of the refusal, never a name, a count or a
+ * house. Which house this world puts where is an artefact of the catalog
  * and of the seed, and both move. So every arm asks the ENGINE which house it
  * is about, reads the names out of the world, and asserts what the player would
  * notice:
  *
- *   turned away  the journey happens, the player ends up OUTSIDE, and the
- *                refusal names what would change it rather than hiding the
- *                house. NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS
- *                SEEING NOTHING.
- *   belongs      somebody on the roll is not stopped, and their road ends on
- *                the ground itself and not in the market below it.
+ *   turned away  the journey happens, the player ends up at the gate in the
+ *                forecourt, and the refusal names the town outside the wall and
+ *                what would change the answer rather than hiding the house.
+ *                NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING
+ *                NOTHING.
+ *   belongs      somebody on the roll is not stopped.
  *   a guest      somebody who is owed by a host walks in behind them. Who may
- *                host is `authorityTier` above `ordered` and not a new field.
+ *                host is read off `ELDER_RUNG_FLOOR` - the rung below which no
+ *                house makes an elder of anybody - and is not a new field.
  *
  * RED-CHECKED. With the redirect in `move` removed, the first arm fails on the
  * player never having left home; with `couldHostAGuest` widened to everybody on
@@ -47,33 +50,31 @@
 
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
-import { footTownId } from '../../src/engine/world/the-town-at-the-foot-of-a-house';
 import { couldHostAGuest } from '../../src/engine/world/standing-at-the-gate-of-a-house';
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { createDebt } from '../../src/engine/social/grudges';
 
 const WORLD = 'a-house-you-can-walk-to';
 
-/** A seated house this world actually built a town for, asked of the engine. */
-function aHouseWithATown(world: { locations: any[]; factions: any[] }) {
+/** A seated house, asked of the engine rather than named. */
+function aSeatedHouse(world: { locations: any[]; factions: any[] }) {
     for (const faction of world.factions) {
-        const town = world.locations.find(row => row.id === footTownId(faction.id));
         const seat = world.locations.find(
             row => row.kind === 'sect_seat' && row.data?.factionId === faction.id
         );
-        if (town && seat) return { faction, town, seat };
+        if (seat) return { faction, seat };
     }
     return null;
 }
 
 describe('a house is somewhere you can walk to', () => {
-    it('lands a stranger in the town below the gate and says what would open it', async () => {
+    it('lands a stranger at the gate and says what would open it', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-stranger', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Stranger');
         const world = await game.loadWorld();
-        const found = aHouseWithATown(world);
-        expect(found, 'this world seeded no house with a town below it').not.toBeNull();
-        const { faction, town, seat } = found!;
+        const found = aSeatedHouse(world);
+        expect(found, 'this world seeded no house with a seat').not.toBeNull();
+        const { faction, seat } = found!;
 
         const home = cultivator.location;
         const turn = await game.act(`I travel to the ${faction.name}`);
@@ -81,28 +82,35 @@ describe('a house is somewhere you can walk to', () => {
 
         // THE JOURNEY HAPPENED. The defect this replaces refused it outright.
         expect(after, 'saying a house\'s name still went nowhere').not.toBe(home);
-        // AND IT ENDED OUTSIDE. A stranger does not walk into a compound.
-        expect(after).toBe(town.name);
-        expect(after).not.toBe(seat.name);
+        // AND IT ENDED AT THE DOOR. The seat is the gate and the forecourt.
+        expect(after).toBe(seat.name);
 
         const prose = turn.narration ?? '';
-        // The house is named rather than hidden, the door is placed, and the
-        // refusal carries what would change it. Asserted as claims and not as
-        // sentences: the wording is the narrator's and may move.
+        // The house is named rather than hidden, the door is placed, the town
+        // outside the wall is there to stand in, and the refusal carries what
+        // would change it. Asserted as claims and not as sentences: the wording
+        // is the narrator's and may move.
         expect(prose).toContain(faction.name);
-        expect(prose).toContain(seat.name);
         expect(prose.toLowerCase()).toContain('gate');
+        expect(
+            /forecourt/i.test(prose),
+            'the player was refused and not told where that leaves them standing'
+        ).toBe(true);
+        expect(
+            /outside the wall/i.test(prose),
+            'there was nothing outside the wall to be turned away among'
+        ).toBe(true);
         expect(
             /roll|applicant/i.test(prose),
             'the refusal said no and did not say what a place on the roll would do'
         ).toBe(true);
     }, 180_000);
 
-    it('does not stop somebody of the house, and their road ends on the ground', async () => {
+    it('does not stop somebody of the house', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-member', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Disciple');
         const world = await game.loadWorld();
-        const { faction, town, seat } = aHouseWithATown(world)!;
+        const { faction, seat } = aSeatedHouse(world)!;
 
         // Arranged fast, which `AGENTS.md` permits: what is being measured is
         // the gate's answer to somebody on a roll, not how they got on it.
@@ -110,8 +118,7 @@ describe('a house is somewhere you can walk to', () => {
 
         const turn = await game.act(`I travel to the ${faction.name}`);
         const after = repos.cultivators.getById(cultivator.id)!.location;
-        expect(after, 'a member was routed to the market instead of home').toBe(seat.name);
-        expect(after).not.toBe(town.name);
+        expect(after, 'a member did not reach their own house').toBe(seat.name);
 
         const prose = turn.narration ?? '';
         expect(
@@ -124,7 +131,7 @@ describe('a house is somewhere you can walk to', () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-guest', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Guest');
         const world = await game.loadWorld();
-        const { faction, seat } = aHouseWithATown(world)!;
+        const { faction, seat } = aSeatedHouse(world)!;
 
         // WHO MAY HOST IS A RANK READING. Asked of the same function the gate
         // asks, so the test cannot disagree with the engine about which rung it

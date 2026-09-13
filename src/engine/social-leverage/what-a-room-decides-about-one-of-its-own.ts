@@ -6,7 +6,7 @@
  * `false-decree-reports.ts` writes the row the room receives; every sentence a
  * room can hand down is already a module - a rebuke is an `ObligationRecord`, a
  * fine is contribution and stones, taking back what was given is
- * `a-house-bestows-a-thing-on-somebody-who-earned-it.ts`, years sealed is
+ * `a-house-takes-back-what-it-handed-over.ts`, years sealed is
  * `whatLayingASealTakes` in the `punishment_hall`, crippling is `'crippling'`
  * severity and a permanent wound, and death is the ordinary act anybody can do
  * to anybody. What was missing was one function between them.
@@ -125,8 +125,8 @@ export const WHO_CARRIES_IT_OUT: Readonly<Record<Sentence, string>> = Object.fre
     'a rebuke': 'grudges.ts, as one ObligationRecord held by the house',
     'a fine': 'sect.repo.addContribution and cultivator.repo.applyDeltas, priced off duties.ts',
     'what the house gave is taken back':
-        'a-house-bestows-a-thing-on-somebody-who-earned-it.ts, and its gift-and-loan split '
-        + 'decides whether this is a sanction at all',
+        'a-house-takes-back-what-it-handed-over.ts, whose gift-and-loan split decides whether '
+        + 'this is a loan called in or a seizure',
     'years sealed and held':
         'what-laying-a-qi-seal-takes.ts, in the punishment_hall, renewed at each expiry',
     'the capability taken':

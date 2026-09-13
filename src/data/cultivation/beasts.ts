@@ -1257,8 +1257,8 @@ export const BEASTS: readonly Beast[] = [
         changedManner: 'Changes the subject twice in a sentence and moves seat mid-conversation, and is genuinely surprised that anybody found this difficult to follow.'
     },
     {
-        id: 'beast-ash-crow',
-        name: 'Ash Crow',
+        id: 'beast-burn-crow',
+        name: 'Burn Crow',
         nature: 'herd',
         disposition: 'neutral',
         ordinal: 2,
@@ -2564,9 +2564,9 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
     },
     {
         id: 'mat-crow-quill',
-        name: 'Ash Crow Quill',
+        name: 'Burn Crow Quill',
         grade: 'mortal',
-        sourceBeastId: 'beast-ash-crow',
+        sourceBeastId: 'beast-burn-crow',
         taking: 'shed',
         core: false,
         value: 3,

@@ -2448,6 +2448,11 @@ function sourcePhrase(sourceKind: string): string {
     if (sourceKind === 'told') return 'Somebody said it to you.';
     if (sourceKind === 'overheard') return 'You were not meant to hear it.';
     if (sourceKind === 'inferred') return 'Nobody told you; you put it together.';
+    // A row somebody made up, read back to whoever holds it. True from either
+    // end - the hearer was told it and the teller said it - and it must stay
+    // true from either end, because this sentence reaches a player who was lied
+    // to as well as one who did the lying. What it may never do is say which.
+    if (sourceKind === 'fabricated') return 'Somebody said it.';
     return 'Where it came from is not clear even to you.';
 }
 
@@ -2467,6 +2472,8 @@ function heldRoute(sourceKind: string): string {
     if (sourceKind === 'told') return 'told to them directly';
     if (sourceKind === 'overheard') return 'overheard';
     if (sourceKind === 'inferred') return 'inferred, and told to them by nobody';
+    // The inspector channel, which is the one place this may be said plainly.
+    if (sourceKind === 'fabricated') return 'stated to them, and not so';
     return `arrived by ${sourceKind.replace(/_/g, ' ')}`;
 }
 

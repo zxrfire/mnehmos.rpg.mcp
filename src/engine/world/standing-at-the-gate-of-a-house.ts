@@ -10,6 +10,13 @@
  *
  * THE THREE ROADS, and they are the whole of it.
  *
+ * WHERE THIS HAPPENS is the seat itself, which `seedSectGround` describes as
+ * *gate, forecourt, halls* and opens at an entry threshold of zero. Standing
+ * there is standing at the door with the market around you, not inside the
+ * walls: the precincts behind it carry their own thresholds and always did.
+ * `the-town-at-the-foot-of-a-house.ts` says why the market is a reading of that
+ * row rather than a second one, and what it costs.
+ *
  *   you belong      you are on the roll, and the gate is a door you use.
  *   you are a guest somebody of standing brought you. Who may host is a rank
  *                   reading and not a field: anybody the house lets give an
@@ -34,7 +41,6 @@
 import { ELDER_RUNG_FLOOR, isElderRank, isHeadOfHouse } from '../cultivation/leadership.js';
 import { purposeOf } from './architecture.js';
 import type { LocationRecord } from './locations.js';
-import { theHouseAboveThisTown } from './the-town-at-the-foot-of-a-house.js';
 
 /** How somebody is standing at a gate they have walked up to. */
 export type HowYouStandAtAGate = 'on the roll' | 'brought in' | 'turned away';
@@ -78,15 +84,6 @@ export interface AtTheGateInput {
     theirPeopleHere: readonly SomebodyOfTheHouse[];
     /** Who has already agreed to bring them in, where anybody has. */
     hostedBy?: SomebodyOfTheHouse | null;
-    /**
-     * Whether they are standing at the gate or a road below it.
-     *
-     * The same three roads either way, and what an eye reaches is different:
-     * that a gate is held is common knowledge in the town beneath it, and how
-     * far along the wall anybody is actually watching is something you have to
-     * be looking at it to say.
-     */
-    atTheGate: boolean;
 }
 
 export interface WhatTheGateSays {
@@ -129,11 +126,8 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
         facts.push(`${input.hostedBy!.name} walks you past the gate. You are here as their guest `
             + 'and on no roll.');
     } else {
-        facts.push(input.atTheGate
-            ? `The gate of the ${input.factionName} is held. Nobody on it is senior and none of `
-              + 'them has to be.'
-            : `The gate of the ${input.factionName} is held, which everybody down here knows `
-              + 'without having tried it.');
+        facts.push(`The gate of the ${input.factionName} is held. Nobody on it is senior and `
+            + 'none of them has to be.');
         // WHAT WOULD CHANGE IT, and all three roads are said, not one.
         facts.push(input.recruits
             ? `A place on the roll would open it. The ${input.factionName} looks at people from `
@@ -150,20 +144,18 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
         } else {
             facts.push('Nobody of the house is out here to ask.');
         }
-        if (input.atTheGate) {
-            // WHERE THEY ACTUALLY ARE, because being turned away and being
-            // nowhere are different. A compound's outer court is open ground at
-            // a house that takes applicants - `growCompound` sets its entry
-            // threshold to zero for exactly that reason - so somebody refused
-            // is standing in the forecourt and not on a road. What is shut is
-            // everything behind the next wall.
-            facts.push('You are at the gate and in the forecourt, which is as far as the road '
-                + 'goes. Every court behind this one is walled and calibrated.');
-            // THE THIRD ROAD IS SAID BECAUSE IT IS REAL. Every piece of it is
-            // built and reachable - `enteredAt`, `concealmentHolds`, and what a
-            // house does when it catches you. What is missing is a verb.
-            facts.push('The wall is a wall. It is not watched along its whole length.');
-        }
+        // WHERE THEY ACTUALLY ARE, because being turned away and being nowhere
+        // are different. A compound's outer court is open ground at a house
+        // that takes applicants - `growCompound` sets its entry threshold to
+        // zero for exactly that reason - so somebody refused is standing in the
+        // forecourt among the people the market is made of. What is shut is
+        // everything behind the next wall.
+        facts.push('You are at the gate and in the forecourt, which is as far as the road goes. '
+            + 'Every court behind this one is walled and calibrated.');
+        // THE THIRD ROAD IS SAID BECAUSE IT IS REAL. Every piece of it is built
+        // and reachable - `enteredAt`, `concealmentHolds`, and what a house does
+        // when it catches you. What is missing is a verb.
+        facts.push('The wall is a wall. It is not watched along its whole length.');
     }
 
     return {
@@ -183,22 +175,13 @@ export function standingAtTheGateOf(input: AtTheGateInput): WhatTheGateSays {
 /**
  * Whose gate this place is, or null where it is nobody's.
  *
- * One read for the three rows that are all the same fact: the seat, the
- * gatehouse room inside it, and the town at its foot. Nothing else in the world
- * answers, which is what keeps an ordinary province road from being a door.
+ * Two rows are the same fact - a house's seat and the gatehouse room inside it -
+ * and nothing else in the world answers, which is what keeps an ordinary
+ * province road from being a door.
  */
 export function whoseGateThisIs(location: LocationRecord | null | undefined): string | null {
     if (!location) return null;
-    if (location.kind === 'sect_seat' || purposeOf(location) === 'gatehouse') {
-        const id = (location.data as { factionId?: unknown }).factionId;
-        if (typeof id === 'string' && id.length > 0) return id;
-        return location.controllingFactionId;
-    }
-    return theHouseAboveThisTown(location);
-}
-
-/** Whether standing here is standing outside the wall rather than inside it. */
-export function isOutsideTheWall(location: LocationRecord | null | undefined): boolean {
-    return location !== null && location !== undefined
-        && theHouseAboveThisTown(location) !== null;
+    if (location.kind !== 'sect_seat' && purposeOf(location) !== 'gatehouse') return null;
+    const id = (location.data as { factionId?: unknown }).factionId;
+    return typeof id === 'string' && id.length > 0 ? id : location.controllingFactionId;
 }

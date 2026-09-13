@@ -128,11 +128,19 @@ interface RawRow {
  *
  * TWO READERS, AND ONLY ONE OF THEM STORES ANYTHING. `knowledge_records` is
  * the authority on what a named holder has been told, and it holds the player
- * and whoever an operator spawned. Nothing writes a row for one of the world's
- * own people and nothing should, so every question asked about a world NPC
- * came back `unaware` - and the consumers acted on it, refusing to let a
- * cultivator answer a question about their own house and letting nobody in the
- * world recognise anything on sight.
+ * and whoever an operator spawned. Nothing ENUMERABLE is written for one of the
+ * world's own people and nothing should be - several hundred people against
+ * several hundred houses and every place is the combinatorial walk the absent
+ * table would have been - so every question asked about a world NPC came back
+ * `unaware`, and the consumers acted on it, refusing to let a cultivator answer
+ * a question about their own house and letting nobody in the world recognise
+ * anything on sight.
+ *
+ * A row for a world NPC is written where the thing held CANNOT be derived from
+ * the world, which is one case: somebody was told something that is not so.
+ * `an-account-of-yourself.ts` is the only writer, the reading below cannot
+ * produce a claim that never happened, and the row is deliberately one the
+ * world would never have generated.
  *
  * So a gate may be handed a world, and where it has one it asks the world the
  * question instead of inventing a row. The composition is `highestStage`:

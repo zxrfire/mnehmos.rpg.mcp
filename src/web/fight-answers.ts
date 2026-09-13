@@ -392,14 +392,25 @@ export type HeldBack = 'let_them_go' | 'step_between_two_others';
  * function is not restated here and cannot drift from it: "I let him hit me" is
  * a press and "I let him go and back off" is somebody leaving, and both share a
  * word with the sparing list.
+ *
+ * `somebodyIsOnTheirKnees` says whether the caller is holding one. It admits
+ * {@link THE_STOP_IS_BARE} for the reason that constant's own header gives: the
+ * bare stops need a situation to settle what `it` refers to, and a fight is not
+ * the only situation the engine holds. A beaten thing standing in front of
+ * somebody settles it exactly as well - and *"I spare it"* is what a player
+ * types over a beast, because `it` is the only pronoun anybody uses for one.
  */
-export function whatIsBeingHeldBack(said: string): HeldBack | null {
+export function whatIsBeingHeldBack(
+    said: string,
+    somebodyIsOnTheirKnees = false
+): HeldBack | null {
     const line = said.trim();
     if (line.length === 0) return null;
     if (THE_SENTENCE_STEPS_INTO_SOMEBODY_ELSES_FIGHT.test(line)) {
         return 'step_between_two_others';
     }
-    return whatTheySaidInTheFight(line)?.kind === 'spare' && LETTING_SOMEBODY_GO.test(line)
+    if (whatTheySaidInTheFight(line)?.kind !== 'spare') return null;
+    return LETTING_SOMEBODY_GO.test(line) || somebodyIsOnTheirKnees
         ? 'let_them_go'
         : null;
 }

@@ -79,6 +79,8 @@ import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 // like every other verb family's reader, so the harvested spelling vocabulary
 // is unmoved. See `telling-a-wrong.ts`.
 import { whatIsBeingTold } from './telling-a-wrong.js';
+// And the third half of it: telling somebody who YOU are.
+import { whatIsBeingGivenAsAnAccount } from './an-account-of-yourself.js';
 // Who a player named as sitting an art with them. The match's own vocabulary,
 // because the words are the match's - see that file's own section header.
 import { whoIsSittingWithThem } from './match-phrasings.js';
@@ -341,15 +343,18 @@ export const PASSAGE_INTENTS: readonly PassageIntent[] = ['buy', 'board'] as con
 export const DEFAULT_PASSAGE_INTENT: PassageIntent = 'board';
 
 /**
- * The three things somebody can do about a word, in the order they are tested.
+ * What somebody can do about a word, in the order they are tested.
  *
  * `break` first, because a sentence about breaking one contains every word a
- * sentence about swearing one contains.
+ * sentence about swearing one contains. `serve` is not in that contest at all -
+ * it is reached by {@link DOING_SOMEBODY_A_SERVICE}, above the oath gate,
+ * because a sentence about going and doing a thing for somebody carries no oath
+ * vocabulary.
  */
-export type OathIntent = 'break' | 'swear' | 'read' | 'release';
+export type OathIntent = 'break' | 'swear' | 'read' | 'release' | 'serve';
 
 export const OATH_INTENTS: readonly OathIntent[] =
-    ['break', 'swear', 'read', 'release'] as const;
+    ['break', 'swear', 'read', 'release', 'serve'] as const;
 
 /**
  * What a sentence about an oath means when it names no step.
@@ -2573,6 +2578,60 @@ export const SWEARING_IT_RATHER_THAN_DOING_IT =
 /** Who the word is given to, or who holds the one being broken. */
 export const OATH_SUBJECT_VERBS =
     /oath to|oath with|oath before|vow to|swear to|swears to|swore to|pledge myself to|pledge to|my word to|break (?:my |the |our )?(?:oath|vow|word) (?:to|with)|indenture to|bound to|sworn to/;
+
+/**
+ * Going and doing something for somebody, which is the service rung of the
+ * offer ladder and had no sentence at all.
+ *
+ * ABOVE THE OATH GATE, for the reason {@link WHAT_IS_WRITTEN_BETWEEN_US} is:
+ * `AN_OATH` wants the NOUN, and none of these sentences has one in it. It
+ * carries `term of service` anyway, so the two must not fight - this branch is
+ * tested first and takes any sentence about SERVING one, leaving the read of
+ * what a term says to the gate below.
+ *
+ * DELIBERATELY NARROW, and the word `service` or `term` has to be in it. "I do
+ * him a favour" is not here on purpose: a favour is the rung below and is a
+ * standing account rather than work, and a sentence that means either would
+ * make the two rungs one.
+ */
+export const DOING_SOMEBODY_A_SERVICE = new RegExp([
+    // Doing one, named as one.
+    String.raw`\b(?:do|does|doing|did)\s+(?:\w+\s+)?a\s+service\b`,
+    String.raw`\bdo\s+a\s+service\s+for\b`,
+    // Serving a term out, which is what the second step actually is.
+    String.raw`\b(?:serve|serves|serving|served)\s+(?:out\s+)?`
+    + String.raw`(?:my|the|his|her|their|our)\s+(?:term|service)\b`,
+    String.raw`\b(?:serve|serves|serving|served)\s+out\s+(?:what|the\s+term)\b`,
+    // Offering to be the one who does it.
+    String.raw`\b(?:i|we)\s+(?:will\s+|would\s+)?(?:do|perform|carry\s+out)\s+`
+    + String.raw`(?:the\s+|this\s+|that\s+)?service\b`
+].join('|'), 'i');
+
+/** The verbs a person can be read off the far side of, for a service. */
+const SERVICE_SUBJECT_VERBS =
+    /a service for|service for|service to|term for|term to|do|does|doing|did|for/;
+
+/**
+ * The person out of a service sentence, with the work trimmed off either end.
+ *
+ * `extractSubject` reads everything after the verb, and these sentences put the
+ * work on both sides of the name - "do HIM a service", "a service for HIM". The
+ * same trim `whoIsBeingLetOff` does for a release, for the same reason: without
+ * it the engine goes looking for somebody called "a service".
+ */
+function whoTheServiceIsFor(said: string | undefined): string | undefined {
+    if (said === undefined) return undefined;
+    const trimmed = said
+        .replace(
+            /^(?:out\s+)?(?:my|the|his|her|their|our)?\s*(?:term|service)\s+(?:for|to)\s+(?:the\s+|a\s+)?/i,
+            ''
+        )
+        .replace(/^(?:a\s+|the\s+)?service\s+(?:for|to)\s+(?:the\s+|a\s+)?/i, '')
+        .replace(/\s*\b(?:a|the|my|his|her|their)?\s*(?:service|term)\s*[.!?]*\s*$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return trimmed.length >= 2 ? trimmed : undefined;
+}
 
 /**
  * Letting somebody off what they owe you.
@@ -4860,6 +4919,23 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+    // GOING AND DOING SOMETHING FOR SOMEBODY, which is the rung of the offer
+    // ladder nothing could reach. Above both gates below: the ledger read
+    // claims `what`, and `AN_OATH` claims `term of service` - so "what is my
+    // term of service" would swallow "I serve out my term" if this sat under
+    // either. A QUESTION IS STILL A QUESTION, so a sentence that opens as one
+    // is left to the read.
+    if (DOING_SOMEBODY_A_SERVICE.test(text) && !/^\s*(?:what|which|who|how)\b/.test(text)) {
+        const whom = whoTheServiceIsFor(extractSubject(input, SERVICE_SUBJECT_VERBS));
+        const undertaken = matterAsked(input);
+        return {
+            action: 'oath',
+            intent: 'serve',
+            ...(whom && !THE_ASKER_THEMSELVES.test(whom) ? { target: whom } : {}),
+            ...(undertaken ? { topic: undertaken } : {})
+        };
+    }
+
     // AND LETTING SOMEBODY OFF IS NOT READING THE LEDGER. This branch fires on
     // the word `debt` alone, which is right for a question and wrong for an
     // act: `i forgive his debt` reached it and was answered with a listing,
@@ -5019,7 +5095,13 @@ function planIntent(input: string): PlannedAction {
         && !/\b(?:manual|book|scripture|technique|art|teacher|master|sect|house)\b/.test(text)) {
         return {
             action: 'hunt',
-            target: extractSubject(input, /hunt|hunting|cull|culling|track|tracking|stalk|stalking|traps?|trapping|snares?|snaring|look for|search for|go for|go out after|go after/)
+            target: extractSubject(input, /hunt|hunting|cull|culling|track|tracking|stalk|stalking|traps?|trapping|snares?|snaring|look for|search for|go for|go out after|go after/),
+            // THE SAME READER `attack` USES, and the bare form is the only
+            // difference: a hunt with nothing said about the force is a
+            // killing. Without this the verb threw `everything` at whatever it
+            // met whatever the sentence said, so *"I take it alive"* was a
+            // sentence the engine could not hear.
+            thrown: howTheySaidTheySwung(input, 'everything')
         };
     }
 
@@ -5591,6 +5673,18 @@ function planIntent(input: string): PlannedAction {
     const told = whatIsBeingTold(input);
     if (told) {
         return { action: 'tell', target: told.person, topic: told.claim };
+    }
+
+    // ── AND TELLING SOMEBODY WHO YOU ARE, WHICH MAY NOT BE WHO YOU ARE ───
+    //
+    // The same verb, because it is the same act: words put to one person who
+    // then holds something. Below the wrong so a sentence carrying both stays a
+    // telling, and above `interact`, whose `talk` intent already owns
+    // "introduce myself" bare - naming a house or a rung is what separates an
+    // account from a greeting, and `whatIsBeingGivenAsAnAccount` requires one.
+    const gave = whatIsBeingGivenAsAnAccount(input);
+    if (gave) {
+        return { action: 'tell', target: gave.person, topic: gave.claim };
     }
 
     // ── WHAT A LOOK ALONE WOULD TELL ─────────────────────────────────────

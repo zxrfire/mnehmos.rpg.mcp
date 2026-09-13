@@ -26,7 +26,13 @@ export interface ThingNamed {
     readonly name: string;
     /** Spirit stones asked, when the listing quoted one. */
     readonly stones?: number;
-    /** Who is offering it, when the listing said. Shown in the prompt block only. */
+    /**
+     * Who is offering it, when the listing said.
+     *
+     * Read by the prompt block and by the haggle, which is what carries a
+     * counterparty from one turn of it to the next: the person the screen
+     * before put behind the counter is who the next figure is said to.
+     */
     readonly from?: string;
 }
 

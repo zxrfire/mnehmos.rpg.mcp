@@ -97,7 +97,7 @@ import {
  * that names the honest route is worth more than a silent absence, and because
  * the absence is real: `whatARingCosts` prices one and nothing mints one.
  */
-export const A_RING_IS_NOT_FOLDED_AT_A_BENCH =
+const A_RING_IS_NOT_FOLDED_AT_A_BENCH =
     'A storage ring is not worked out of materials at all. Somebody folds a space and holds it '
     + 'folded, which is why the ones that exist are counted in single figures and why a house '
     + 'that has one knows exactly who folded it. Nothing in this world folds one to order.';
@@ -120,7 +120,11 @@ export interface MakingPlan {
     headline: string;
     lines: string[];
     structure: string[];
-    /** Set on `make`. */
+    /**
+     * The ask and the bench it was read against, both present or neither: a
+     * plan carrying one without the other would let `landTheMaking` spend a
+     * bench the gate never looked at.
+     */
     ask?: WhatYouAskedThemToMake;
     bench?: readonly AUnitOnTheBench[];
 }

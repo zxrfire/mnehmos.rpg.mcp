@@ -70,6 +70,20 @@ describe('what makes somebody somebody is `speaks`, never the rung', () => {
             expect(whyThisOneIsNotSomebody(found!), one).toBeNull();
         }
     });
+
+    it('reads a short name from the front of a word and not out of the middle', () => {
+        // GROWING THE CATALOG TOOK THE APE AWAY. `ape` matched `beast-paper-
+        // moth` on a raw `includes`, two rows came back, and the reader answers
+        // null on an ambiguity - so a species a player could name yesterday
+        // stopped existing because an unrelated row was added today. The
+        // collision is arbitrary and gets likelier with every row, which is why
+        // this is pinned rather than left to the three names above.
+        expect(theSpeciesTheyMeant('ape')?.id).toBe('beast-white-ape-of-the-gorge');
+        expect(theSpeciesTheyMeant('paper')?.id).toBe('beast-paper-moth');
+        // And the front of a word still reaches what it is the front of, which
+        // is the whole reason `fox` and `seam` resolve at all.
+        expect(theSpeciesTheyMeant('fox')?.ability.name.toLowerCase()).toContain('fox');
+    });
 });
 
 describe('the manner is read off the species row and two species do not agree', () => {

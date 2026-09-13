@@ -1,12 +1,10 @@
 /**
- * The town below a house's gate: everybody who wants something from it and
- * cannot walk in.
+ * The town at a house's gate: everybody who wants something from it and cannot
+ * walk in.
  *
  * A compound with nothing outside it leaves a refused visitor standing nowhere.
  * Measured on three pinned worlds before this existed: 38 seated houses each,
- * and `I travel to <house>` reached 0 of them - the seat is a world row named
- * `<house> grounds`, the house's own name reached nothing, and there was no
- * third place between the province road and the wall.
+ * and `I travel to <house>` reached 0 of them.
  *
  * DERIVED, NEVER AUTHORED. Same shape as `growCompound`: the house's own
  * columns decide how big the town is and what trades in it. A house that
@@ -15,21 +13,45 @@
  * stripped by the people at its foot. There is no `if (factionId === ...)` here
  * and there must never be one.
  *
- * WHAT IS STORED IS THE HOUSE'S ID AND NOTHING ELSE. The trades are a function
- * of the catalog row, so they are computed on every read rather than written
- * into `data` where they would drift from the house they describe.
+ * ── IT IS A READING OF THE SEAT AND NOT A SECOND PLACE, AND THAT WAS MEASURED
+ *
+ * The first cut seeded one `settlement` row per house, linked to the province on
+ * one side and to the gate on the other. It worked, and it halved the world.
+ *
+ * A world opens with `population: 400` spread over 22 settlements - about
+ * eighteen people each - and 38 more places took that to seven. Over eighty
+ * years of ordinary births and deaths the tail then dies out, and an empty
+ * settlement produces person-free events forever, which is the condition
+ * `demography.test.ts` exists to hold. Both arms in one command, one seed, only
+ * the towns removed between them:
+ *
+ *     without the town rows   22 settlements, 0 empty after 80 years
+ *     with them               60 settlements, 8 empty
+ *
+ * Reweighting moved the number and never reached zero: at a village's weight 8
+ * were empty, at a market town's 3 were, and two of those were catalog places
+ * that had been fine before. **The map got denser and the population did not.**
+ * Holding the density would need about 1,090 people, which is 2.7x the world
+ * simulation's cost and is not a change to make in passing.
+ *
+ * So the seat carries it. `seedSectGround` already describes its own row as
+ * *gate, forecourt, halls*, the outer precinct of a recruiting house is already
+ * open ground with an entry threshold of zero, and what was missing was never a
+ * square - it was the market, the standing crowd, and the door saying no. Those
+ * are computed on arrival from the house's catalog row, so nothing is stored,
+ * nothing drifts, and the world's demography is untouched.
+ *
+ * **What this does NOT give**, written down as the gap it is: the town is not
+ * somewhere with its own road, its own residents in `npcs`, or its own
+ * encounters. A player cannot walk down from the gate to the market and back.
+ * Closing that needs a world population scaled to the map it is spread over,
+ * and that is a decision for whoever owns the simulation's cost.
+ *
+ * PURE. A catalog row in, a reading out.
  */
 
 import { getSect, type SectEntry } from '../../data/cultivation/sects.js';
 import { getProductionTier } from '../../data/cultivation/faction-character.js';
-import { makeEnvironment, makeLocation, makeThresholds, type LocationRecord } from './locations.js';
-import { ordinaryBandFor } from './qi-scale.js';
-
-/** What marks a settlement as the one at a house's gate, and whose gate it is. */
-export const THE_TAG_A_FOOT_TOWN_CARRIES = 'foot_town';
-
-/** Stable id, so the seat and the town can each find the other. */
-export const footTownId = (factionId: string): string => `loc-${factionId}-town`;
 
 /**
  * The house's own columns, reduced to what the town reads.
@@ -114,14 +136,6 @@ export function howManyLiveBelow(input: WhatTheTownIsBelow): number {
     return household + hopefuls + trade + scavenging;
 }
 
-/**
- * What the ground outside the wall is worth to cultivate on.
- *
- * The floor of the scale, and deliberately: the vein is inside, which is most
- * of why the wall is there.
- */
-const TOWN_QI_DENSITY = 1;
-
 /** Village, town, city. A gate town is rarely the third. */
 export type TownSize = 'village' | 'town' | 'city';
 
@@ -132,54 +146,6 @@ export function howBigTheTownBelowIs(input: WhatTheTownIsBelow): TownSize {
     const heads = howManyLiveBelow(input);
     if (heads >= A_CITY_RATHER_THAN_A_TOWN) return 'city';
     return heads >= A_TOWN_RATHER_THAN_A_VILLAGE ? 'town' : 'village';
-}
-
-// WHAT IT IS CALLED
-
-/**
- * The qualifier off the house's own name, without its type noun.
- *
- * Two words where the name has three or more, so the Azure Cloud Pavilion's
- * town is Azure Cloud and not Azure - which is the family register
- * `place-names.md` blesses, a client house and its patron sharing a word.
- * The type noun itself is dropped rather than matched against a list, because
- * the list lives in the parser layer and this is the engine.
- */
-export function theWordsATownTakesFromItsHouse(factionName: string): string {
-    const words = factionName.trim().replace(/^the\s+/i, '').split(/\s+/).filter(Boolean);
-    if (words.length <= 1) return words.join(' ') || 'Gate';
-    return words.slice(0, Math.min(2, words.length - 1)).join(' ');
-}
-
-/** Nouns in the size order they are reached for, then the rest as fallbacks. */
-const SETTLEMENT_NOUN: Readonly<Record<TownSize, string>> = {
-    village: 'Village',
-    town: 'Town',
-    city: 'City'
-};
-
-const NOUNS_IN_ORDER: readonly string[] = ['Village', 'Town', 'City', 'Ford'];
-
-/**
- * What the town is called, avoiding a name the map already carries.
- *
- * A collision is not cosmetic: `buildLore` dedupes every mentionable by name,
- * and `place-names.md` records a settlement called Orchid Court swallowing the
- * house of that name. `taken` is the loose keys of everywhere that already
- * exists, and the caller supplies it.
- */
-export function theNameOfTheTownBelow(
-    input: WhatTheTownIsBelow,
-    taken: ReadonlySet<string> = new Set()
-): string {
-    const words = theWordsATownTakesFromItsHouse(input.factionName);
-    const first = SETTLEMENT_NOUN[howBigTheTownBelowIs(input)];
-    const key = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    for (const noun of [first, ...NOUNS_IN_ORDER]) {
-        const name = `${words} ${noun}`;
-        if (!taken.has(key(name))) return name;
-    }
-    return `${words} Ford`;
 }
 
 // WHAT TRADES THERE
@@ -309,95 +275,4 @@ export function whoWaitsBelow(input: WhatTheTownIsBelow): string[] {
         out.push('Merchants who followed the money and stayed.');
     }
     return out;
-}
-
-// THE PLACE ITSELF
-
-/** Read back: whether this row is a gate town, and whose. */
-export function theHouseAboveThisTown(location: LocationRecord): string | null {
-    if (!location.tags.includes(THE_TAG_A_FOOT_TOWN_CARRIES)) return null;
-    const id = (location.data as { factionId?: unknown }).factionId;
-    return typeof id === 'string' && id.length > 0 ? id : null;
-}
-
-/** The gate town of a house, or null where the world seeded none. */
-export function theTownBelow(
-    locations: readonly LocationRecord[],
-    factionId: string
-): LocationRecord | null {
-    const id = footTownId(factionId);
-    return locations.find(row => row.id === id) ?? null;
-}
-
-/**
- * How far a house's gate stands above its own town.
- *
- * A day, and the same day for everybody, because what varies between houses is
- * the town and not the climb.
- */
-export const DAYS_FROM_THE_TOWN_TO_THE_GATE = 1;
-
-export interface TownBelowInput {
-    /** The seat this town sits under. Its region is the town's parent. */
-    seat: LocationRecord;
-    /** The province the seat hangs off, which is also the town's. */
-    regionId: string | null;
-    house: WhatTheTownIsBelow;
-    /** Loose keys of every place that already exists, for the name. */
-    taken?: ReadonlySet<string>;
-    presentDay: number;
-}
-
-/**
- * Grow the town at a house's foot.
- *
- * Pure: a record in, a record out, ready to push onto world state. Its qi is
- * the province's and not the compound's - the vein is inside the wall, which is
- * most of why the wall is there.
- */
-export function growTheTownBelow(input: TownBelowInput): LocationRecord {
-    const { house, seat } = input;
-    const name = theNameOfTheTownBelow(house, input.taken ?? new Set());
-    const heads = howManyLiveBelow(house);
-    const town = makeLocation({
-        id: footTownId(house.factionId),
-        name,
-        kind: 'settlement',
-        layer: seat.layer,
-        parentId: input.regionId ?? seat.parentId,
-        description:
-            `The town at the ${house.factionName}'s gate: everybody who wants something from `
-            + 'the house and is not on its roll, living within sight of a wall they do not go '
-            + 'through.',
-        // Ordinary ground. The gate is a day up the road and the vein is behind it.
-        ambient: ordinaryBandFor(TOWN_QI_DENSITY),
-        qiDensity: TOWN_QI_DENSITY,
-        // Anybody may stand here. That is the whole point of it.
-        thresholds: makeThresholds(0, 0, 0, 0),
-        hazards: [],
-        affinities: [],
-        environment: makeEnvironment({
-            spiritualDensity: 0.01,
-            danger: house.alignment === 'demonic' ? 0.3 : 0.15,
-            resources: ['food', 'lodging', 'trade'],
-            politicalControl: house.factionName,
-            specialRules: [`the ${house.factionName} is a day above it`],
-            historicalScars: []
-        }),
-        // Held in the sense the catalog means: cause trouble here and you deal
-        // with the house. It is not inside their wall.
-        controllingFactionId: house.factionId,
-        // A town is not a secret. Nobody has to be told a market exists.
-        discovered: true,
-        tags: [THE_TAG_A_FOOT_TOWN_CARRIES, 'sect_town', house.recruits ? 'recruits' : 'closed'],
-        data: {
-            factionId: house.factionId,
-            populationWeight: Math.max(1, Math.round(heads / 20)),
-            catalogRegionId: typeof seat.data.catalogRegionId === 'string'
-                ? seat.data.catalogRegionId
-                : ''
-        }
-    });
-    town.origin.fromDay = input.presentDay;
-    return town;
 }

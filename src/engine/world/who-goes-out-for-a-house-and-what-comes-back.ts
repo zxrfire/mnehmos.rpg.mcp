@@ -29,7 +29,8 @@ import {
 } from './a-beast-that-took-a-shape-is-somebody.js';
 import { makeFact, type HistoricalFact, type PendingFact } from './history.js';
 import { theProvinceAround } from './ground-holder.js';
-import { nextOpeningDay, type LocationRecord } from './locations.js';
+import { nextOpeningDay, populationWeightOf, type LocationRecord } from './locations.js';
+import { isBelowTheLid } from './layers.js';
 import { daysByConveyance, type Conveyance } from './what-a-conveyance-does-to-a-journey.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -839,6 +840,76 @@ export const WHERE_A_NEED_SENDS_YOU: Record<ReasonNeed, 'a_seat' | 'ground'> = {
     a_containment: 'ground',
     forbidden_ground: 'ground'
 };
+
+/**
+ * The houses one reason is about, by id.
+ *
+ * `whereASendingGoes` has asked for *seats of the houses this reason is about*
+ * since it was written, and every caller handed it every seat in the world - so
+ * a party sent to collect on a grant was received at a hall drawn at random and
+ * the subsidiary that owed the grant never saw anybody. The design owner, on
+ * where a posting actually goes: an elder travels to friendly houses in their
+ * own faction, a court's elder down and a lesser house's elder up.
+ *
+ * Nothing new decides which. `NEED_PREDICATES` already tests exactly these
+ * relations to make the reason available at all, and this is the same test read
+ * as the list it filtered on - so a house cannot be sent to visit somebody the
+ * reason was not open toward.
+ *
+ * The rung of whoever travels is what makes it a trip down or a trip up, and it
+ * is already in the key: a subsidiary is below, a parent is above, and an ally
+ * or a counterpart is neither.
+ *
+ * A column rather than a disjunction, for the reason {@link WHERE_A_NEED_SENDS_YOU}
+ * is one: a new key does not compile until it has said who it is about. Empty
+ * for every errand that ends on ground, which is what that table already says of
+ * the same keys.
+ */
+const WHO_A_NEED_IS_ABOUT:
+    Record<ReasonNeed, (house: HouseAsItStands) => readonly string[]> = {
+    nothing: () => [],
+    ground: () => [],
+    a_find: () => [],
+    a_containment: () => [],
+    forbidden_ground: () => [],
+    // A rival is a house and the errand still ends on ground between the two:
+    // you do not camp in the courtyard of the house you are at war with.
+    a_rival: () => [],
+    an_ally: house => Object.entries(house.standing)
+        .filter(([, regard]) => regard >= ALLIED_STANDING)
+        .map(([id]) => id),
+    a_subsidiary: house => getSubsidiariesOf(house.id).map(p => p.factionId),
+    a_parent: house => {
+        const parent = getParentage(house.id)?.parentFactionId ?? null;
+        return parent === null ? [] : [parent];
+    },
+    a_counterpart: house => house.sitsDownWith ?? []
+};
+
+export function whichHousesAReasonIsAbout(
+    needs: ReasonNeed,
+    house: HouseAsItStands
+): readonly string[] {
+    return WHO_A_NEED_IS_ABOUT[needs](house);
+}
+
+/**
+ * Ground a party can be sent to stand on, by id.
+ *
+ * The `elsewhere` contract {@link whereASendingGoes} states, as the filter it
+ * describes: not a hall, not above the lid, and somewhere with people on it. A
+ * region is a container and a party posted to one is inside the map rather than
+ * on it.
+ */
+export function groundAPartyCanBeSentTo(
+    locations: readonly LocationRecord[]
+): readonly string[] {
+    return locations
+        .filter(l => l.kind !== 'sect_seat'
+            && isBelowTheLid(l)
+            && populationWeightOf(l) > 0)
+        .map(l => l.id);
+}
 
 export function whereASendingGoes(input: {
     needs: ReasonNeed;

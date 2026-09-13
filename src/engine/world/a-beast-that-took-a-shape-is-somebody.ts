@@ -73,10 +73,24 @@ export function theSpeciesTheyMeant(wanted: string): Beast | null {
     // it does rather than for what it is, and its fire is `Foxfire`. Reading a
     // comment for it would not be reading the catalog, and adding an alias
     // field would be storing a second name beside the one already there.
+    //
+    // FROM A WORD BOUNDARY AND NOT FROM ANYWHERE IN THE STRING. A raw
+    // `includes` was right while the catalog was small and stopped being the
+    // moment it grew: `ape` matched `beast-paper-moth` as well as the White Ape
+    // of the Gorge, two matches came back, and the function answered null - so
+    // growing the catalog silently took a species away from anybody who typed
+    // its ordinary name. The collision is arbitrary and it gets likelier with
+    // every row.
+    //
+    // The START has to be a boundary and the end does not, because the fox is
+    // reached through `Foxfire` and the seam through `Seam-Held`. Somebody
+    // typing the front of a word means it; somebody typing three letters out of
+    // the middle of one does not.
+    const from = new RegExp(`\\b${asked.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}`);
     const near = BEASTS.filter(b =>
-        b.id.includes(asked)
-        || b.name.toLowerCase().includes(asked)
-        || b.ability.name.toLowerCase().includes(asked));
+        from.test(b.id)
+        || from.test(b.name.toLowerCase())
+        || from.test(b.ability.name.toLowerCase()));
     return near.length === 1 ? near[0] : null;
 }
 

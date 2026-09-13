@@ -3,7 +3,15 @@
  */
 
 import { getSect } from '../data/cultivation/index.js';
-import { writeOneObligation } from '../storage/repos/obligation.repo.js';
+import {
+    ledgerAbout,
+    writeOneObligation,
+    type ObligationDb
+} from '../storage/repos/obligation.repo.js';
+import {
+    theServiceYouWouldSpend,
+    whatWouldPutYouOnTheServiceRung
+} from '../engine/social-leverage/a-service-is-something-done.js';
 import { transmissionsBy } from '../data/cultivation/techniques.js';
 import {
     whatTheyWillTakeFor,
@@ -45,6 +53,7 @@ import {
     whatItWouldTake
 } from '../engine/social-leverage/what-somebody-would-take-for-a-thing-they-will-not-sell.js';
 import { createObligation, severityRank } from '../engine/social/grudges.js';
+import { whatWasPutAcrossTheTable } from './going-back-and-forth-over-a-price.js';
 
 /**
  * What one lift came away with.
@@ -1071,6 +1080,34 @@ ${unnamed}`;
             ));
         }
 
+        // ── AND WHAT IS ACROSS THE TABLE MAY BE A BODY ───────────────────
+        //
+        // *"I ask the fox for a tuft of her fur"* is the sentence this
+        // encounter was built for, and the one road that reached it was a
+        // haggle - so a player had to name a figure in order to be told that a
+        // figure is the wrong thing to name. The read is the one the haggle
+        // already makes, and it is made out of the world rather than out of
+        // the verb: a thing that speaks, standing on ground it lives on, and a
+        // piece of its own body asked for. Anything else falls through
+        // untouched.
+        //
+        // BEFORE `partyPutTo`, which asks whether the player has been
+        // introduced. Standing in front of a creature and speaking to it is
+        // not an introduction, and the knowledge gate would refuse the one
+        // counterparty that is visibly there.
+        //
+        // THE WORLD HAS TO BE IN HAND FOR THE GROUND TO BE READ AT ALL. Every
+        // other road to this encounter runs through the haggle, which loads it
+        // on the way in; without this the ground comes back empty, nothing
+        // lives here, and the ask falls through to the blank look - which is
+        // how it failed the first time it was wired.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const table = whatWasPutAcrossTheTable(rawInput);
+        const ofItself = this.aPieceOfSomethingThatCanRefuse(
+            run, cultivator, named, query, table.sentence, table.putDown, 'request', true
+        );
+        if (ofItself) return ofItself;
+
         const party = this.partyPutTo(cultivator, query, scope);
         if (!party) return this.nobodyByThatName(cultivator, query, scope, 'request');
 
@@ -2005,14 +2042,36 @@ ${done.lines.join(' ')}`;
             hasACashPrice: false,
             theyNeedSomethingDone: need?.goal != null
         });
+        //
+        // ── AND A SERVICE IS A THING DONE, NOT A THING SAID ──────────────
+        //
+        // This read used to label an offer that resolved to nothing in the
+        // pouch as `a service`, on the argument three hundred lines above that
+        // an oath, a service or a name is "backed by the person making them and
+        // is not carried". The first half of that is right and the conclusion
+        // was not: it meant a player who typed a phrase naming nothing they
+        // hold was standing on the second-highest rung of the ladder for free,
+        // and the rung whose whole definition is *something done* was reached
+        // by saying a sentence.
+        //
+        // So it is the ledger's answer now. `servicesYouHaveDoneFor` returns
+        // the terms this cultivator actually served out for this person and has
+        // not yet spent, which is the same shape and the same test the favour
+        // rung already uses one rung below it.
+        const doneForThem = theServiceYouWouldSpend(
+            ledgerAbout(this.db as unknown as ObligationDb, cultivator.id),
+            cultivator.id,
+            party.id
+        );
         const landed = whereTheOfferLanded(
             theyWillTake,
-            putDown === null ? 'stones' : offered ? 'goods' : 'a service'
+            doneForThem !== null ? 'a service' : offered ? 'goods' : 'stones'
         );
         structure.push(
             `They are on the ${theyWillTake} rung of what somebody will take; what was put `
             + `down reads as ${landed.offered}. Right kind of thing = `
-            + `${landed.theRightKindOfThing}.`
+            + `${landed.theRightKindOfThing}. `
+            + `Service done for ${party.id} and unspent: ${doneForThem?.id ?? 'none'}.`
         );
 
         // ASKING THE PRICE IS A QUESTION, NOT AN ATTEMPT
@@ -2022,6 +2081,12 @@ ${done.lines.join(' ')}`;
                 [
                     `You say what you are after and ask what it would take. ${answer.line}`,
                     landed.line,
+                    // AND THE ROUTE, WHERE THE RUNG IS THE ONE NOTHING COULD
+                    // WALK. A refusal that names the medium and not the road to
+                    // it leaves the player holding a fact they cannot act on.
+                    ...(theyWillTake === 'a service' && doneForThem === null
+                        ? [whatWouldPutYouOnTheServiceRung(party.name)]
+                        : []),
                     ...(need?.goal
                         ? [`What they are carrying of their own: ${need.goal.text}`]
                         : [])

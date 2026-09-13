@@ -394,7 +394,15 @@ const A_TELLING = [
     "I tell He Peiyi of his brother's death",
     'I tell him that I killed his brother',
     'I tell the elder that Cao Antao betrayed him',
-    'tell He Peiyi that Cao Antao murdered his brother'
+    'tell He Peiyi that Cao Antao murdered his brother',
+    // MOVED FROM `NOT_A_TELLING`, AND THE BEHAVIOUR MOVED WITH IT. This line
+    // was pinned to `interact` and was right to be: the verb carried news of a
+    // wrong and nothing else, so an account of oneself had nowhere to land and
+    // ordinary conversation was the honest answer. It is now the same act one
+    // subject over - words put to one person who then holds something - and the
+    // hearer ends up with a knowledge row saying who this cultivator said they
+    // were. See `an-account-of-yourself-may-not-be-so.test.ts`.
+    'I tell him I am from the Azure Dew Sect'
 ];
 
 /**
@@ -411,7 +419,10 @@ const NOT_A_TELLING: readonly (readonly [string, string])[] = [
     ['tell me about myself', 'status'],
     ['tell me about the houses near here', 'sect'],
     ['what can you tell me about the Hollow Court', 'investigate'],
-    ['I tell him I am from the Azure Dew Sect', 'interact'],
+    // "I tell him I am from the Azure Dew Sect" used to be here and is now in
+    // `A_TELLING`, which says why. This one stays: a bare offer of a name with
+    // no name in it carries no account, so there is nothing for a hearer to
+    // hold and ordinary conversation remains the honest answer.
     ['I tell the elder my name', 'interact'],
     ['I tell him about the road north', 'interact'],
     ['I tell him I took the north road', 'interact'],

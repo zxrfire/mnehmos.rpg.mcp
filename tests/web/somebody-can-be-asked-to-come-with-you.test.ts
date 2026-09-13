@@ -186,6 +186,38 @@ describe('what being asked along costs the person asked', () => {
         expect(costing.refusal!.prose).toContain('tribute run');
     });
 
+    /**
+     * `ActivityKind.mustering` says somebody at it is somebody a player can
+     * join, and no sentence reached one. The receiving half is this: whoever
+     * has said yes to them comes where they go, so a musterer is a party rather
+     * than a person.
+     *
+     * ARRANGED, because measured across pinned worlds every musterer the world
+     * generates has an EMPTY party - 11 to 14 of them per world, none with
+     * anybody on it, because the draw writes the activity with no `withIds` and
+     * the pairing pass skips musterers. The read is right and the world does
+     * not yet fill it in; `ActivityKind.mustering` carries the measurement and
+     * says what is missing.
+     */
+    it('says who else comes when the person asked is raising a party', () => {
+        const costing = whatItWouldCostThem({
+            kind: 'company',
+            asking: ASKER,
+            asked: ASKED,
+            where: {
+                outWith: null,
+                otherwiseAt: 'putting a party together, and Two have said yes',
+                bringsAlong: [{ id: 'two', name: 'Two' }, { id: 'three', name: 'Three' }]
+            },
+            forDays: A_SEASON_ON_THE_ROAD
+        });
+        expect(costing.refusal).toBeNull();
+        const said = costing.lines.join(' ');
+        expect(said).toContain('Two');
+        expect(said).toContain('Three');
+        expect(said).toContain('a party and not a person');
+    });
+
     it('says so rather than asking twice when they are already with you', () => {
         const costing = whatItWouldCostThem({
             kind: 'company',

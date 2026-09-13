@@ -187,6 +187,21 @@ export const A_BLOW_MEANT_TO_END_IT: HowTheBlowWasThrown = Object.freeze({
 });
 
 /**
+ * GOING OUT AFTER SOMETHING FOR WHAT COMES OFF IT.
+ *
+ * The bare form of a hunt, and it is a killing rather than a fight, because
+ * what the act is FOR is a body taken apart. Held as a constant beside the
+ * others so the hunt reads its default out of this catalog rather than typing
+ * one into a call, and so that a sentence which holds short of the kill is
+ * visibly a departure from a stated bare form rather than from nothing.
+ */
+export const A_HUNT_MEANT_TO_TAKE_THE_BODY: HowTheBlowWasThrown = Object.freeze({
+    with: 'in_hand',
+    at: 'unstated',
+    force: 'everything'
+});
+
+/**
  * TWO PEOPLE FINDING OUT WHERE THEY STAND.
  *
  * Bare hands, meant, nowhere in particular. A bout between people who both

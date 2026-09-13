@@ -55,11 +55,18 @@ import {
     hasACore,
     type GroundForBeasts
 } from '../engine/world/hunting-a-spirit-beast.js';
+import { isOnAVein, whatGroundThisIs } from '../engine/world/what-ground-a-place-is.js';
+import {
+    A_HUNT_MEANT_TO_TAKE_THE_BODY,
+    type HowTheBlowWasThrown
+} from '../engine/cultivation/how-a-blow-was-thrown.js';
 import {
     thePieceTheyAskedFor,
+    thePieceTheyNamed,
     whatItCouldPartWith
 } from '../engine/world/what-it-costs-to-give-away-a-piece-of-yourself.js';
 import { howTheAskForAPieceWent } from './asking-something-that-can-refuse-for-a-piece-of-it.js';
+import { shameTag } from '../engine/social/shame.js';
 // A beast with a core is somebody in particular, and gets a row the moment
 // somebody stands in front of it. Nothing here is beast-specific afterwards:
 // the row makes it present, and present is what every person-shaped verb reads.
@@ -234,6 +241,9 @@ import {
 import {
     manualsAStallCarries
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
+// Type-only in the other direction, so no cycle: that module takes a
+// `GameService` as a type and imports nothing from here at runtime.
+import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import {
     whatTheyWillTakeFor,
     whereTheOfferLanded,
@@ -241,9 +251,8 @@ import {
 } from '../engine/social-leverage/what-they-will-take-instead-of-money.js';
 import {
     howTheHaggleWent,
-    whatAHaggleSentenceIs,
-    whatIsHeldOut,
     whatTheHaggleIsOver,
+    whatWasPutAcrossTheTable,
     type WhatIsOnTheCounter,
     type WhatTheHaggleSaid,
     type WhatWasPutDown
@@ -366,7 +375,7 @@ import {
 // Somebody walking up the hill with the player's name, and the same rows read
 // from the other end by whoever holds the room complaints go to.
 import { handDownWhatTheRoomDecided } from './a-room-hands-down-what-it-decided.js';
-import { whatEachHouseHasGivenAway } from '../engine/world/a-house-bestows-a-thing-on-somebody-who-earned-it.js';
+import { whatThisHouseHandedOver } from '../engine/world/a-house-takes-back-what-it-handed-over.js';
 import {
     complaintsBroughtTo,
     reportWhatTheySaw,
@@ -465,6 +474,13 @@ import { askAround, factsForNews } from './asking-what-people-are-saying.js';
 // somebody, rather than a square repeating one in front of them. Same join,
 // same ledger, same rule that the account opens against whoever was named.
 import { whoTheClaimBlames } from './telling-a-wrong.js';
+import {
+    factsForAnAccountGiven,
+    recordAnAccountGiven,
+    whatAccountWasGiven,
+    whatHouseTheyClaimInstead,
+    whereTheAccountIsNotSo
+} from './an-account-of-yourself.js';
 import {
     couldPointAtIt,
     factsForTelling,
@@ -978,7 +994,8 @@ import {
     FLAG_LAST_ADDRESSED,
     FLAG_MASTER,
     FLAG_RATIONS_HELD,
-    FLAG_STEP_TAKEN
+    FLAG_STEP_TAKEN,
+    FLAG_YIELDING_TO_YOU
 } from './flag-keys.js';
 import { wholeWorkVolumes } from './manual-volumes.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
@@ -1015,6 +1032,11 @@ import {
 import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
 // The other half of being taught, which nothing in the engine could do.
 import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
+import { serviceVerbs } from './doing-somebody-a-service.js';
+import {
+    aServiceSpentOn,
+    theServiceYouWouldSpend
+} from '../engine/social-leverage/a-service-is-something-done.js';
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
 import { investigateVerb } from './investigate-verb.js';
@@ -1753,10 +1775,19 @@ export class GameService {
      * Not private: the verb files are writers too. A list the engine prints and
      * does not record here is a list no ordinal can be counted against.
      */
-    nameWhatTheyGot(name: string, stones?: number): void {
+    nameWhatTheyGot(name: string, stones?: number, from?: string | null): void {
         if (name.trim().length === 0) return;
         if (this.namedThisTurn.some(thing => thing.name === name)) return;
-        this.namedThisTurn.push({ name, ...(stones === undefined ? {} : { stones }) });
+        this.namedThisTurn.push({
+            name,
+            ...(stones === undefined ? {} : { stones }),
+            // WHO QUOTED IT, so the next turn of a haggle is with the same
+            // person. Without it the record kept the figure and dropped the
+            // mouth it came out of, and every turn after the first re-picked.
+            ...(from === undefined || from === null || from.trim().length === 0
+                ? {}
+                : { from })
+        });
     }
     /**
      * How many the listing this turn printed was a cut OF.
@@ -2256,7 +2287,7 @@ export class GameService {
         // pattern table reads it as `attack` with the intent that says nothing
         // is being thrown. Either road ends at `letThemGo`.
         const beaten = fightAnswer === null ? this.whoHasYieldedToYou(cultivator) : null;
-        const heldBack = beaten === null ? null : whatIsBeingHeldBack(trimmed);
+        const heldBack = beaten === null ? null : whatIsBeingHeldBack(trimmed, true);
 
         const standing = stillStands(this.crossroads, run.id, cultivator)
             ? this.crossroads
@@ -3706,10 +3737,18 @@ export class GameService {
                 );
 
             case 'oath':
-                return this.oath(
-                    run, cultivator, action.target, action.intent ?? DEFAULT_OATH_INTENT,
-                    action.topic, rawInput
-                );
+                // A WORD SERVED OUT IS THE ONE STEP OF THIS VERB THAT SPENDS
+                // DAYS, so it is the one that is awaited and the only one that
+                // needs the ambient reading. The other four are free reads and
+                // writes and stay where they are.
+                return action.intent === 'serve'
+                    ? await this.doSomebodyAService(
+                        run, cultivator, ambient, action.target, action.topic
+                    )
+                    : this.oath(
+                        run, cultivator, action.target, action.intent ?? DEFAULT_OATH_INTENT,
+                        action.topic, rawInput
+                    );
 
             case 'guard':
                 // 护法. Naming somebody spends the span and resolves THEIR crossing;
@@ -3848,7 +3887,7 @@ export class GameService {
                 return this.gather(run, cultivator, ambient, action.target);
 
             case 'hunt':
-                return this.hunt(run, cultivator, ambient, action.target);
+                return this.hunt(run, cultivator, ambient, action.target, action.thrown);
 
             case 'wait': {
                 // ── WAITING UNTIL A THING THE WORLD HAS A DATE FOR ────────
@@ -3898,6 +3937,20 @@ ${noticedWaiting}`;
 
             case 'status': {
                 const eligibility = canAttemptBreakthrough(asTheyStand);
+                // WHICH RUNG OF THE HOUSE, OFF THE ROLL RATHER THAN OFF THE
+                // MIRROR. The design owner: *"just have status include your
+                // house rank, if there is one."* The sheet already had a line
+                // for it and read `cultivator.sectRank`, which is a string
+                // mirrored from the membership row - so it says nothing at all
+                // where nothing set it, and says the old rung wherever the
+                // world has moved somebody. `whereYouStandOnYourHousesRoll`
+                // asks the world row first for the reason `rankIndexOf`
+                // documents. One line, not two: a second one here would be the
+                // sheet naming the rung twice and disagreeing with itself.
+                const onTheRoll = whereYouStandOnYourHousesRoll(this, cultivator);
+                const asTheyStandOnTheRoll = onTheRoll === null
+                    ? asTheyStand
+                    : { ...asTheyStand, sectId: onTheRoll.factionId, sectRank: onTheRoll.rungName };
                 // The ceiling belongs on the status read, not only in a
                 // digest forty lines long that a player sees after the decade
                 // is already spent. Asking "how am I doing" and being told
@@ -3905,7 +3958,8 @@ ${noticedWaiting}`;
                 // "nothing will ever accumulate" is a status screen that lies
                 // by omission.
                 const sheet = this.freeAction(run, 'status', factsForStatus(
-                    asTheyStand, ambient, eligibility.progressRequired, eligibility.eligible,
+                    asTheyStandOnTheRoll, ambient,
+                    eligibility.progressRequired, eligibility.eligible,
                     techniqueCeiling(
                         cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
                         // Or the sheet sends somebody to buy a book that is in
@@ -3942,6 +3996,12 @@ ${noticedWaiting}`;
                     sheet.facts.lines.push(alongside.line);
                     sheet.facts.prose = `${sheet.facts.prose}\n\n${alongside.line}`;
                     sheet.facts.structure.push(alongside.structure);
+                }
+                if (onTheRoll !== null) {
+                    sheet.facts.structure.push(
+                        `house roll: ${onTheRoll.factionId} rank index `
+                        + `${onTheRoll.rankIndex} of ${onTheRoll.rankCount}.`
+                    );
                 }
                 // AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE
                 const onProbation = probationOf(this.repos, cultivator, run);
@@ -5732,8 +5792,10 @@ ${noticed}`;
      *
      * No role is resolved into a roster row - a stall is not a person, and
      * asking the world for "the stallholder" is what returned nobody. The name
-     * comes off the offer that is standing here, which carries one, and where
-     * there is none the answer is the goods and the figure.
+     * comes off the offer that is standing here, which carries one, off the
+     * sentence where the player said it, or off the turn before where the scene
+     * already established somebody; and where there is none the answer is the
+     * goods and the figure.
      */
     private async haggleOverAPrice(
         run: Run,
@@ -5743,12 +5805,8 @@ ${noticed}`;
         rawInput: string
     ): Promise<Execution> {
         this.atHand = this.atHand ?? await this.loadWorld();
-        const sentence = whatAHaggleSentenceIs(rawInput);
+        const { sentence, putDown } = whatWasPutAcrossTheTable(rawInput);
         const named = ((topic ?? '').trim() || whatTheHaggleIsOver(rawInput) || '').trim();
-        const putDown = {
-            stones: stonesNamedIn(rawInput),
-            goods: sentence === 'offered_something_instead' ? whatIsHeldOut(rawInput) : null
-        };
 
         // WHOSE COUNTER, WHEN THE SENTENCE PICKED ONE OUT. A pronoun is not a
         // name and reaches nobody here on purpose: "I offer him twenty stones"
@@ -5764,10 +5822,36 @@ ${noticed}`;
         // something and the wrong one for who just quoted a figure.
         const across = (target ?? '').trim();
         const here = this.present(cultivator);
-        const facing = across.length < 2
-            ? null
-            : here.find(row => matchScore(across, row.name) > MATCH_THRESHOLD)
-                ?? this.somebodyAtHand(across, cultivator);
+        // ── AND WHO THE SCENE ALREADY PUT BEHIND THE COUNTER ─────────────
+        //
+        // The design owner: *"the stallholder should resolve from what happens
+        // before."* A haggle runs over several turns and only the first of them
+        // usually names anybody, so every turn after it searched the square
+        // again: a figure said where four people are selling could land in a
+        // different mouth than the one that quoted it, and a rate off a stall
+        // came back as "Whoever is holding it" on the turn after the screen had
+        // named somebody.
+        //
+        // Read out of the turn record rather than out of a second store of who
+        // we were just talking to. `ThingNamed.from` is who was offering the
+        // thing the last screen quoted and the market read has written it all
+        // along; this is the first reader of it inside the engine.
+        //
+        // ONLY WHERE THE SCREEN BEFORE ESTABLISHED ONE PERSON, which is the
+        // same rule the thing goes through two blocks down. A board read names
+        // eight things from eight sellers, and continuing with whichever of
+        // them the record happened to list first would be the re-pick this
+        // exists to end.
+        const whoTheSceneNamed = [...new Set((this.theTurnBefore?.named ?? [])
+            .map(thing => thing.from)
+            .filter((who): who is string => typeof who === 'string' && who.trim().length > 0))];
+        const stillTalkingTo = whoTheSceneNamed.length === 1 ? whoTheSceneNamed[0]! : null;
+        const facing = across.length >= 2
+            ? here.find(row => matchScore(across, row.name) > MATCH_THRESHOLD)
+                ?? this.somebodyAtHand(across, cultivator)
+            : stillTalkingTo === null
+                ? null
+                : here.find(row => matchScore(stillTalkingTo, row.name) > MATCH_THRESHOLD) ?? null;
         const standing = readWhatIsOnOfferHere(
             cultivator, this.atHand, this.alreadyHasACopyOf(cultivator)
         ).offers;
@@ -5875,7 +5959,7 @@ ${noticed}`;
                 );
                 return this.freeAction(run, 'interact', held);
             }
-            this.nameWhatTheyGot(offer.name, offer.askStones);
+            this.nameWhatTheyGot(offer.name, offer.askStones, offer.sellerName);
             const facts = factsForToolResult(went.headline, went.lines);
             facts.structure.push(went.structure);
             return this.freeAction(run, 'interact', facts);
@@ -5898,14 +5982,18 @@ ${noticed}`;
             const counter: WhatIsOnTheCounter = {
                 name: onTheStall.name,
                 askStones: Math.max(1, Math.ceil(cashToStones(localPrice(regionId, onTheStall.cash)))),
-                sellerName: null,
+                // WHOEVER THE SCENE PUT BEHIND THE STALL, and nobody where it
+                // put nobody. A stall is still not a person and no role is
+                // resolved into a roster row - this is the name the screen
+                // before printed, carried forward rather than asked for again.
+                sellerName: facing?.name ?? stillTalkingTo,
                 theRateIsTheRate: true,
                 whyItDoesNotMove: whyAQuotedPriceDoesNotMove(
                     onTheStall.name, 'at every counter that carries it'
                 )
             };
             const went = howTheHaggleWent(sentence, counter, putDown, null, cultivator.spiritStones);
-            this.nameWhatTheyGot(counter.name, counter.askStones);
+            this.nameWhatTheyGot(counter.name, counter.askStones, counter.sellerName);
             const facts = factsForToolResult(went.headline, went.lines);
             facts.structure.push(went.structure);
             return this.freeAction(run, 'interact', facts);
@@ -5933,14 +6021,33 @@ ${noticed}`;
      *
      * Null where nothing about the sentence was this, which is nearly every
      * haggle. The caller carries on to the stall.
+     *
+     * ── TWO ROADS REACH IT, AND NEITHER OF THEM IS A VERB ───────────────
+     *
+     * Not private, because `request` enters by the same door. What decides is
+     * WHO IS ACROSS THE TABLE AND WHAT WAS NAMED - a thing that speaks,
+     * standing on ground it lives on, and a piece of its own body - and both
+     * of those are read out of the world here. The verb the player reached for
+     * decides nothing, which is the rule `README.md` states about `intent`:
+     * *"I offer the fox thirty stones for a tuft of her fur"* is a haggle and
+     * *"I ask the fox for a tuft of her fur"* is a request, they are the same
+     * question put to the same creature, and they get the same answer.
      */
-    private aPieceOfSomethingThatCanRefuse(
+    aPieceOfSomethingThatCanRefuse(
         run: Run,
         cultivator: Cultivator,
         named: string,
         across: string,
         sentence: WhatTheHaggleSaid,
-        putDown: WhatWasPutDown
+        putDown: WhatWasPutDown,
+        /** The verb that got here, for the log. It changes no outcome. */
+        action: ActionName = 'interact',
+        /**
+         * Whether the sentence has to name the piece for this to be the ask.
+         * See the note over `piece` below: it is about how much a road has
+         * already settled, not about which verb it came in on.
+         */
+        thePieceMustBeNamed = false
     ): Execution | null {
         const speaking = beastsOnThisGround(this.beastGroundFor(cultivator))
             .filter(beast => beast.speaks);
@@ -5968,28 +6075,57 @@ ${noticed}`;
         const beast = reached.length === 1 ? reached[0] : null;
         if (!beast) return null;
 
-        const piece = thePieceTheyAskedFor(beast, named.length >= 2 ? named : null);
+        // WHAT WAS NAMED HAS TO BE A PIECE OF IT WHERE THE VERB SAYS NOTHING.
+        //
+        // A haggle has already said what it is about, so the cheapest piece is
+        // the honest reading of a sentence that named none. `request` has not:
+        // it carries every ask there is - to be taught, to be travelled with,
+        // to be told something - and a fallback there would answer all of them
+        // as a question about the creature's fur. So the road that arrives
+        // with a generic verb has to arrive with the thing named too.
+        const piece = thePieceMustBeNamed
+            ? thePieceTheyNamed(beast, named)
+            : thePieceTheyAskedFor(beast, named.length >= 2 ? named : null);
         if (!piece) return null;
+
+        // WHO IT IS, NOT WHAT IT IS. Everything at or above the core rung is
+        // solitary, so the thing holding this piece of ground IS the
+        // individual, and `idOfTheOneOnThisGround` is the id it already has
+        // wherever it has a row. Keying any of this on the species would let a
+        // kindness done to the one at this gorge be spent on the one at the
+        // next, and would put a shame on a whole kind.
+        const ground = this.worldPlaceOf(cultivator);
+        const whoItIs = ground ? idOfTheOneOnThisGround(beast.id, ground) : beast.id;
 
         // AN OPEN ACCOUNT THEY OWE YOU IS THE FAVOUR RUNG, and it is the only
         // thing a kindness buys. A favour is held BY whoever paid it, so the
         // row this looks for is the player's, about them.
-        const owed = ledgerAbout(this.db as unknown as ObligationDb, beast.id)
+        const held = ledgerAbout(this.db as unknown as ObligationDb, whoItIs);
+        const owed = held
             .find(row => row.status === 'open' && row.kind === 'favor'
-                && row.holderId === cultivator.id && row.subjectId === beast.id)
+                && row.holderId === cultivator.id && row.subjectId === whoItIs)
             ?? null;
+
+        // AND A TERM ALREADY SERVED IS THE RUNG ABOVE IT, which is the rung
+        // this counter is nearly always on. Read the same way and off the same
+        // ledger: a service is an oath row the player opened and then spent the
+        // days on, and `theServiceYouWouldSpend` returns the oldest one that
+        // has not yet bought anything.
+        const servedForThem = theServiceYouWouldSpend(held, cultivator.id, whoItIs);
 
         const today = Math.floor(run.elapsedDays);
         const went = howTheAskForAPieceWent({
             beast,
             piece,
+            partyId: whoItIs,
             sentence,
             putDown,
             theyOweYou: owed !== null,
+            youDidThemAService: servedForThem !== null,
             purse: cultivator.spiritStones,
             turn: run.turn,
             onDay: today,
-            seenBy: this.present(cultivator).map(person => person.id)
+            seenBy: this.present(cultivator).map(person => person.id) as readonly string[]
         });
 
         this.nameWhatTheyGot(beast.name);
@@ -5998,13 +6134,14 @@ ${noticed}`;
         const facts = factsForToolResult(went.headline, went.lines);
         facts.structure.push(...went.structure);
         facts.structure.push(
-            `${beast.id} stands on this ground (${beast.persistence}, ${beast.biome}) and `
+            `${whoItIs} (${beast.persistence}, ${beast.biome}) stands on this ground and `
             + `speaks. It could part with `
             + `${whatItCouldPartWith(beast).map(p => p.material.name).join(', ')}. `
-            + `Open favour owed to ${cultivator.id}: ${owed?.id ?? 'none'}.`
+            + `Open favour owed to ${cultivator.id}: ${owed?.id ?? 'none'}. `
+            + `Service served out for it and unspent: ${servedForThem?.id ?? 'none'}.`
         );
 
-        if (!went.granted) return this.freeAction(run, 'interact', facts);
+        if (!went.granted) return this.freeAction(run, action, facts);
 
         // ── WHAT IT COST THE GIVER, AS A REAL WOUND ──────────────────────
         //
@@ -6013,26 +6150,42 @@ ${noticed}`;
         // the creature: a changed beast has no row to carry an injury on yet.
         const hurt = createInjury(
             went.cost!.wound,
-            forStream(run.seed, 'gave_a_piece', beast.id, piece.material.id)
+            forStream(run.seed, 'gave_a_piece', whoItIs, piece.material.id)
         );
         const calls: ToolCallRecord[] = [{
             name: 'engine.whatGivingItCosts',
-            action: 'interact',
+            action,
             summary:
-                `${hurt.id}: ${hurt.severity} ${hurt.woundType} on ${beast.id}, `
+                `${hurt.id}: ${hurt.severity} ${hurt.woundType} on ${whoItIs}, `
                 + `cultivation ${hurt.cultivationPenalty}, breakthrough `
                 + `${hurt.breakthroughPenalty}. ${went.cost!.note} `
                 + 'Not persisted: a changed beast carries no row to hold an injury.',
             ok: true
         }];
+        // AND THE STANDING IT COST, WHERE THERE IS SOMEBODY TO CARRY IT.
+        // A shame produced by the world layer travels on the person's tags -
+        // `shame.ts` says so and `the-world-changing-on-its-own.ts` already
+        // writes one that way - so where the one standing here has a row, this
+        // is written rather than reported. Where it has none, nobody saw it
+        // because nobody was standing there to have a row about.
+        const carrying = went.cost!.shame && this.atHand
+            ? this.atHand.npcs.find(npc => npc.id === whoItIs) ?? null
+            : null;
+        if (carrying && !carrying.tags.includes(shameTag(went.cost!.shame!.cause))) {
+            carrying.tags.push(shameTag(went.cost!.shame!.cause));
+            this.theWorldMoved();
+        }
         if (went.cost!.shame) {
             calls.push({
                 name: 'engine.whatGivingItCosts.shame',
-                action: 'interact',
+                action,
                 summary:
-                    `${went.cost!.shame.severity} shame on ${beast.id} for `
+                    `${went.cost!.shame.severity} shame on ${whoItIs} for `
                     + `${went.cost!.shame.cause}, held by `
-                    + `${went.cost!.shame.heldBy?.length ?? 0}. Not persisted, same reason.`,
+                    + `${went.cost!.shame.heldBy?.length ?? 0}. `
+                    + (carrying
+                        ? `Written onto ${carrying.id}'s tags.`
+                        : 'Nothing standing here holds a row, so it is stated and not kept.'),
                 ok: true
             });
         }
@@ -6059,10 +6212,10 @@ ${noticed}`;
         addToPouch(this.db, cultivator.id, piece.material.id, 'herb', 1);
         calls.push({
             name: 'world.transferPossession',
-            action: 'interact',
+            action,
             summary:
                 `${record.id} (${piece.material.name}, ${piece.material.grade}, significance `
-                + `${record.significance}) minted off ${beast.id} and moved to ${cultivator.id} `
+                + `${record.significance}) minted off ${whoItIs} and moved to ${cultivator.id} `
                 + `as gifted on day ${today}. Tags: ${record.tags.join(', ')}.`,
             ok: true
         });
@@ -6078,18 +6231,38 @@ ${noticed}`;
                     note:
                         `Settled by ${beast.name} handing over ${piece.material.name} off its `
                         + 'own body.',
-                    byId: beast.id
+                    byId: whoItIs
                 })
             );
             calls.push({
                 name: 'social.settleObligation',
-                action: 'interact',
-                summary: `${owed.id} settled as repaid on day ${today} by ${beast.id}.`,
+                action,
+                summary: `${owed.id} settled as repaid on day ${today} by ${whoItIs}.`,
                 ok: true
             });
         }
 
-        const done = this.freeAction(run, 'interact', facts);
+        // AND SO IS A TERM. The same rule one rung up, and it cannot be said
+        // the same way: the row is already settled `oath_fulfilled`, because
+        // what closed it was the days being served. What is written is what it
+        // BOUGHT, so a service done stands until it buys something and then
+        // stops standing. See `aServiceSpentOn`.
+        if (servedForThem) {
+            writeOneObligation(
+                this.db as unknown as DatabaseHandle,
+                aServiceSpentOn(servedForThem, `${piece.material.id} off ${whoItIs}`)
+            );
+            calls.push({
+                name: 'social.aServiceSpentOn',
+                action,
+                summary:
+                    `${servedForThem.id} is spent: the term served for ${whoItIs} bought `
+                    + `${piece.material.name}. It stays fulfilled and it buys nothing else.`,
+                ok: true
+            });
+        }
+
+        const done = this.freeAction(run, action, facts);
         done.calls.push(...calls);
         return done;
     }
@@ -6287,6 +6460,38 @@ ${noticed}`;
                 'told',
                 `Answered a question at ${placeName(cultivator)}, and gave a name doing it.`)
             : false;
+
+        // ── AND SOMETIMES THE HOUSE THEY GIVE IS NOT THEIRS ──────────────
+        //
+        // Its OWN stream, so adding this channel shifts no draw in any world
+        // already seeded - the same rule `offerGroundSomebodyGoesTo` had to
+        // learn. The encounter row above is written either way and stands at
+        // `placed`; the account sits under it at the ceiling a fabricated
+        // source carries, so nothing about what the player can do with this
+        // person's name changes and nothing in the read says which they got.
+        if (answer.introduces) {
+            const claimed = whatHouseTheyClaimInstead({
+                rng: forStream(
+                    run.seed, 'web_account_given', Math.floor(run.elapsedDays), asked.id
+                ),
+                theirOwn: asked.sectName,
+                houses: (this.atHand?.factions ?? []).map(house => house.name)
+            });
+            if (claimed !== null) {
+                recordAnAccountGiven(this.knowledge, {
+                    tellerId: asked.id,
+                    hearerId: cultivator.id,
+                    nameForThem: asked.name,
+                    onDay: Math.floor(run.elapsedDays),
+                    account: { name: null, house: claimed, rung: null },
+                    // Known to be not so by construction: the draw excluded the
+                    // house they are actually on the roll of.
+                    notSo: ['house'],
+                    where: placeName(cultivator),
+                    hearerName: cultivator.name
+                });
+            }
+        }
 
         const learned = answer.teaches && subject
             ? this.noteEncounter(
@@ -7190,7 +7395,8 @@ ${noticed}`;
     }
 
     /**
-     * Telling somebody that a wrong was done to them, and putting a name on it.
+     * Telling somebody that a wrong was done to them, and putting a name on it -
+     * or telling them who you are, which may not be who you are.
      */
     private tellSomebody(
         run: Run,
@@ -7221,6 +7427,33 @@ ${noticed}`;
         if (hearer === null) {
             return this.nobodyByThatName(cultivator, query, scope, 'tell');
         }
+
+        // ── OR THE CLAIM IS ABOUT THE SPEAKER, AND MAY NOT BE SO ─────────
+        //
+        // Written before the wrong machinery runs and independently of it: a
+        // sentence can name a house and a killing at once, and which of the two
+        // this was is not a label anybody picked. What decides the row is the
+        // comparison against this cultivator's own name, roll and rung.
+        const account = whatAccountWasGiven(said);
+        const notSo = account === null
+            ? []
+            : whereTheAccountIsNotSo(account, {
+                name: cultivator.name,
+                house: this.sectNameFor(cultivator),
+                realmOrdinal: cultivator.realmOrdinal
+            });
+        const recorded = account === null
+            ? null
+            : recordAnAccountGiven(this.knowledge, {
+                tellerId: cultivator.id,
+                hearerId: hearer.id,
+                nameForThem: cultivator.name,
+                onDay: Math.floor(run.elapsedDays),
+                account,
+                notSo,
+                where: placeName(cultivator),
+                hearerName: hearer.name
+            });
 
         // AND WHO THEY ARE PUTTING IT ON
         const named = whoTheClaimBlames(said);
@@ -7263,12 +7496,22 @@ ${noticed}`;
             });
         }
 
-        const facts = factsForTelling({
-            landedOn,
-            hearer: hearer.name,
-            blamed: blamed?.name ?? named,
-            claim: said
-        });
+        // The account answers only where the wrong opened nothing. Both were
+        // written; which one the player is told about is decided by what
+        // actually happened in the world, not by which reader fired.
+        const facts = recorded !== null && landedOn.opens === null
+            ? factsForAnAccountGiven({
+                hearer: hearer.name,
+                recorded,
+                notSo,
+                claim: said
+            })
+            : factsForTelling({
+                landedOn,
+                hearer: hearer.name,
+                blamed: blamed?.name ?? named,
+                claim: said
+            });
         const execution = this.freeAction(run, 'tell', facts);
         // EXECUTED either way, and that is the ruling rather than an oversight.
         // The words were said and the person heard them; whether anything came
@@ -7277,6 +7520,19 @@ ${noticed}`;
         // "the game did not understand me", which is the whole defect this verb
         // was built to stop producing.
         execution.outcome = 'executed';
+        if (recorded !== null) {
+            calls.push({
+                name: 'knowledge.recordAnAccountGiven',
+                action: 'tell',
+                summary:
+                    `${hearer.name} holds "${recorded.statement}" about ${cultivator.name} as `
+                    + `${recorded.sourceKind}, and ${cultivator.name} holds having given it. `
+                    + (notSo.length === 0
+                        ? 'Every part of the account is so.'
+                        : `Not so: ${notSo.join(', ')}.`),
+                ok: true
+            });
+        }
         execution.calls = [{
             name: 'world.whatATellingLandsOn',
             action: 'tell',
@@ -8906,7 +9162,14 @@ ${line}`;
         run: Run,
         cultivator: Cultivator,
         ambient: AmbientQi,
-        target: string | undefined
+        target: string | undefined,
+        /**
+         * How the player said they went out, read by the same function every
+         * other blow is read by. A hunt with nothing said about it is a
+         * killing - that is what `A_HUNT_MEANT_TO_TAKE_THE_BODY` is - and a
+         * sentence that holds short of one is honoured.
+         */
+        thrown?: HowTheBlowWasThrown
     ): Promise<Execution> {
         const startDay = Math.floor(run.elapsedDays);
         const skip = simulateTimeSkip(cultivator, HUNTING_DAYS, {
@@ -9030,6 +9293,7 @@ ${line}`;
             );
         }
 
+        const swing = thrown ?? A_HUNT_MEANT_TO_TAKE_THE_BODY;
         const result = await handleResolve({
             action: 'resolve',
             cultivatorId: me.id,
@@ -9038,9 +9302,11 @@ ${line}`;
             // catalog carries, and inventing attributes for a beast would be a
             // second stat block in a repo that deleted the first.
             opponent: { name: met.name, realmOrdinal: met.ordinal },
-            // A beast fight is not a negotiation. Whatever the cultivator is
-            // carrying, thrown at everything they have.
-            thrown: { with: 'in_hand', at: 'unstated', force: 'everything' },
+            // WHAT THE PLAYER SAID THEY WENT OUT WITH. The bare hunt is a
+            // killing and is the constant; a sentence that holds short of one
+            // lowers it through the reader every other blow uses, and
+            // `finishOutcome` turns a beating into a `capture`.
+            thrown: swing,
             vector: 'body',
             edges: [],
             opponentEdges: [],
@@ -9072,23 +9338,51 @@ ${line}`;
             calls.push(...answered.calls);
         }
 
+        // ── BEATEN AND STILL BREATHING, WHICH IS A SITUATION AND NOT AN END ──
+        //
+        // The engine decides nothing about mercy here and must not: what it
+        // does is put the thing on the flag that means somebody is down in
+        // front of this cultivator, which is the same flag a person who kneels
+        // goes onto and is read by the same `whoHasYieldedToYou`. Everything
+        // the vocabulary already offers over a beaten person is then offered
+        // over this - letting it up, and making it turn out what it carries -
+        // and which of those happens is the player's sentence.
+        //
+        // A ROW IS THE CONDITION, because the flag names an id and only what
+        // has a core has one. Below the core there is nobody standing there to
+        // be let go.
+        const beatenAndAlive = !killed && body?.outcome === 'capture';
+        if (itsRow && beatenAndAlive) {
+            writeFlag(this.db, me.id, FLAG_YIELDING_TO_YOU, `${itsRow.id}:${run.turn}`);
+            lines.push(
+                `${met.name} is down and is not dead. It is in front of you and it is not `
+                + 'getting up on its own.'
+            );
+            calls.push({
+                name: 'engine.whoHasYieldedToYou',
+                action: 'hunt',
+                summary:
+                    `${itsRow.id} is on the yielding flag after a ${String(body?.outcome)} at `
+                    + `${here}. The swing was ${swing.force} with ${swing.with} at ${swing.at}, `
+                    + 'so the resolver could return a beating rather than a death. Letting it up '
+                    + 'and stripping it are both open, and neither has happened.',
+                ok: true
+            });
+        }
+
         const execution = this.huntResult(
             me, skip, ambient,
-            killed ? `${met.name} is down.` : `${met.name}, and it is still standing.`,
+            killed
+                ? `${met.name} is down.`
+                : beatenAndAlive
+                    ? `${met.name} is beaten and alive.`
+                    : `${met.name}, and it is still standing.`,
             lines, calls
         );
 
         // ── AND IF IT DIED, THE ROW ENDS THE WAY ANYBODY ENDS ────────────
         //
-        // `markDead`, and nothing written for beasts. What is deliberately NOT
-        // here is the other half: a hunt never decides that the player was
-        // merciful. `thrown.force: 'everything'` is what this verb throws, so
-        // the resolver returns `lethal` or `withdrawal` and never `capture` -
-        // measured, at six rungs across the band - and a branch reading "beaten
-        // and alive" off a hunt would be dead code that grades the player. The
-        // sparing is a sentence: the row makes it a party, `I spare it` answers
-        // the standing fight, and `whatSparingThemLeft` writes the favour the
-        // way it writes every other one.
+        // `markDead`, and nothing written for beasts.
         if (itsRow && killed) this.endTheOneWithARow(itsRow, me, here, today);
 
         return execution;
@@ -9472,14 +9766,14 @@ ${line}`;
             ? worldLocationFor(this.atHand, cultivator.location)
             : null;
         if (!record) return { sealed: false, onAVein: false };
+        // WHAT IS ACTUALLY UNDERFOOT. This was left off for as long as the
+        // field existed, so the glacier province and the grain province put up
+        // the same animals. `whatGroundThisIs` is the one reading.
+        const grounds = whatGroundThisIs(this.atHand!, record);
         return {
             sealed: record.sealed,
-            // Geology, not usability - `qiDensity` is what the vein under this
-            // place holds and `spiritualDensity` is what anybody can draw. A
-            // beast sits on the first, which is why a sealed pocket nobody can
-            // use is exactly the ground something has been growing on.
-            onAVein: record.qiDensity >= 60
-                || record.environment.resources.includes('qi')
+            onAVein: isOnAVein(this.atHand!, record, grounds),
+            grounds: grounds ?? undefined
         };
     }
 
@@ -12987,6 +13281,11 @@ ${fit.line}`;
                     houseId: held.sectId,
                     houseName: held.sectName,
                     onDay: Math.floor(run.elapsedDays),
+                    world: this.atHand,
+                    // The rung of whoever is handing it down, which is what a
+                    // seal is priced against.
+                    byOrdinal: cultivator.realmOrdinal,
+                    onTurn: run.turn,
                     brought: {
                         // It is in front of the room, so it was shown. The
                         // question `whatTheWitnessDoesAboutIt` answers was
@@ -12999,11 +13298,25 @@ ${fit.line}`;
                         theirsToPunish: true,
                         alignment: this.repos.sects.getById(held.sectId)?.alignment ?? null,
                         houseId: held.sectId,
+                        // ONE READER FOR BOTH ENDS OF IT. This used to ask
+                        // `whatEachHouseHasGivenAway`, which is what the world
+                        // bestowed AT SEEDING - true on the day and false the
+                        // moment the thing is sold, lost or already called
+                        // back, at which point the room hands down a sentence
+                        // with nothing behind it. The carrying out reads what
+                        // is in these hands now, so the precondition reads the
+                        // same thing.
                         theHouseGaveThemSomething: this.atHand !== null
-                            && whatEachHouseHasGivenAway(this.atHand)
-                                .some(given => given.toNpcId === chosen.subjectId)
+                            && whatThisHouseHandedOver({
+                                objects: this.atHand.objects,
+                                houseId: held.sectId,
+                                houseName: held.sectName,
+                                fromId: chosen.subjectId ?? '',
+                                houseIds: new Set(this.atHand.factions.map(house => house.id))
+                            }).length > 0
                     }
                 });
+                if (handed.theWorldMoved) this.theWorldMoved();
                 const line = `You uphold it. ${handed.line}`;
                 const facts = factsForToolResult('Upheld.', [line]);
                 facts.required = [line];
@@ -17516,7 +17829,7 @@ ${fit.line}`;
 }
 
 // THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
-export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, ServiceVerbs {}
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
 type CraftVerbs = typeof craftVerbs;
@@ -17533,4 +17846,5 @@ type DaoPartnerVerbs = typeof daoPartnerVerbs;
 type TakingVerbs = typeof takingVerbs;
 type GuardVerbs = typeof guardVerbs;
 type TeachingVerbs = typeof teachingVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs);
+type ServiceVerbs = typeof serviceVerbs;
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, serviceVerbs);

@@ -138,7 +138,13 @@ export const TIER_NAMES: Record<RegardBand, string> = {
     matched: 'Fair going',
     assured: 'Light going',
     beneath: 'Errand',
-    dismissed: 'Not posted'
+    // NOT 'Not posted', which it said while this band was genuinely off the
+    // wall. An elder reads the whole board now and may take a line far under
+    // their own rung, so the work IS posted and takeable - and the board
+    // printed the tier on every line, which had it telling a reader that the
+    // thing they were about to take was not posted. It is the slightest work
+    // a house has, which is what the name should say.
+    dismissed: 'Odd job'
 } as const;
 
 // What a party brings back that is not materials - a sighting, and the day the

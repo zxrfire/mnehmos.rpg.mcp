@@ -44,6 +44,9 @@ import {
     type WhatTheyWillTake
 } from '../engine/social-leverage/what-they-will-take-instead-of-money.js';
 import {
+    whatWouldPutYouOnTheServiceRung
+} from '../engine/social-leverage/a-service-is-something-done.js';
+import {
     theAskThisIs,
     whatAPieceIsPricedAt,
     whatGivingItCosts,
@@ -78,9 +81,28 @@ function theyNeedSomethingDone(beast: Beast): boolean {
     return beast.veinRelation === 'indifferent';
 }
 
+/**
+ * Which rung the one standing here is on for a piece of itself.
+ *
+ * TAKES THE INDIVIDUAL'S ID AND NOT THE SPECIES', because `openHandednessOf`
+ * is a per-person scalar and the thing holding this gorge is a person. Exported
+ * so a caller asking what would have worked asks the same question the answer
+ * was computed from, rather than a second one shaped like it.
+ */
+export function theRungTheyAreOn(partyId: string, beast: Beast): WhatTheyWillTake {
+    return whatTheyWillTakeFor(partyId, {
+        ask: theAskThisIs(),
+        // There is no board anywhere with a figure for a piece of somebody.
+        hasACashPrice: false,
+        theyNeedSomethingDone: theyNeedSomethingDone(beast)
+    });
+}
+
 export function howTheAskForAPieceWent(input: {
     beast: Beast;
     piece: APieceOfItself;
+    /** The one standing on this ground. Never the species id. */
+    partyId: string;
     sentence: WhatTheHaggleSaid;
     putDown: WhatWasPutDown;
     /**
@@ -88,6 +110,16 @@ export function howTheAskForAPieceWent(input: {
      * FAVOUR rung, and the only thing a kindness buys.
      */
     theyOweYou: boolean;
+    /**
+     * True where the player has served out a term for this one and has not yet
+     * spent it. The SERVICE rung, which is where this counter nearly always
+     * stands and which nothing could reach.
+     *
+     * A separate field from `theyOweYou` because the two are two rungs apart
+     * and are made of different things: a favour is an account they carry, and
+     * this is days that were spent.
+     */
+    youDidThemAService: boolean;
     purse: number;
     turn: number;
     onDay: number;
@@ -96,17 +128,16 @@ export function howTheAskForAPieceWent(input: {
 }): HowTheAskForAPieceWent {
     const { beast, piece } = input;
 
-    const wants = whatTheyWillTakeFor(beast.id, {
-        ask: theAskThisIs(),
-        // There is no board anywhere with a figure for a piece of somebody.
-        hasACashPrice: false,
-        theyNeedSomethingDone: theyNeedSomethingDone(beast)
-    });
-    // WHAT WAS PUT DOWN, IN THE LADDER'S OWN VOCABULARY. An account they owe
-    // outranks anything in the hand, which is why it is read first.
-    const offered: WhatTheyWillTake = input.theyOweYou
-        ? 'a favour'
-        : input.putDown.goods !== null ? 'goods' : 'stones';
+    const wants = theRungTheyAreOn(input.partyId, beast);
+    // WHAT WAS PUT DOWN, IN THE LADDER'S OWN VOCABULARY, HIGHEST RUNG FIRST.
+    // A term already served outranks an account they owe, which outranks
+    // anything in the hand - which is the ladder's own order and not a second
+    // opinion about it.
+    const offered: WhatTheyWillTake = input.youDidThemAService
+        ? 'a service'
+        : input.theyOweYou
+            ? 'a favour'
+            : input.putDown.goods !== null ? 'goods' : 'stones';
     const landed = whereTheOfferLanded(wants, offered);
 
     const went = howTheHaggleWent(
@@ -123,7 +154,7 @@ export function howTheAskForAPieceWent(input: {
     );
 
     const ladder =
-        `${beast.id} is on the ${wants} rung for a piece of itself; what was put down reads `
+        `${input.partyId} is on the ${wants} rung for a piece of itself; what was put down reads `
         + `as ${offered}. Right kind of thing = ${landed.theRightKindOfThing}. `
         + `${piece.material.name} is ${piece.inTheCatalog ? 'a catalog row' : 'minted on the '
             + 'spot - this species carries no material entry, which is the contract and not a gap'}.`;
@@ -149,7 +180,14 @@ export function howTheAskForAPieceWent(input: {
             granted: false,
             answer: went.answer,
             headline: went.headline,
-            lines: went.lines,
+            // THE RUNG AND THE ROAD TO IT. `landed.line` names the medium that
+            // would have worked and stops there, which was the whole of the
+            // gap: this one is on the service rung 93% of the time, so the
+            // commonest refusal in the game named a thing the player had no way
+            // of doing.
+            lines: wants === 'a service'
+                ? [...went.lines, whatWouldPutYouOnTheServiceRung(beast.name)]
+                : went.lines,
             structure: [went.structure, ladder],
             cost: null,
             wants,
@@ -165,12 +203,12 @@ export function howTheAskForAPieceWent(input: {
     const cost = whatGivingItCosts({
         beast,
         piece,
+        subjectId: input.partyId,
         turn: input.turn,
         onDay: input.onDay,
         seenBy: input.seenBy
     });
 
-    const years = `${cost.growsBackInYears} year${cost.growsBackInYears === 1 ? '' : 's'}`;
     return {
         granted: true,
         answer: 'yes',
@@ -179,9 +217,11 @@ export function howTheAskForAPieceWent(input: {
             `It takes ${piece.material.name} off its own body and holds it out. Nothing was cut `
             + `off it and nothing died: there was no such thing a moment ago, and now there is `
             + 'one.',
+            // THE YEARS ARE IN THE WOUND'S OWN SENTENCE, so what is added is
+            // only what the wound does not say: whether anything shortens it.
             `${cost.wound.description} ${cost.doesNotComeBack
                 ? 'Nothing in the world closes this one.'
-                : `${years} is what the body needs, and it is not shortened by anything.`}`,
+                : 'Nothing shortens that.'}`,
             cost.shame === null
                 ? 'Nobody else is standing here, and what it did costs it nothing in front of '
                   + 'anybody.'

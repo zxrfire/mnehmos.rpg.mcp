@@ -47,10 +47,9 @@ export interface GroundForBeasts {
      * What is underfoot, from `whatGroundThisIs`. Omitted means the whole map,
      * which is what every caller got before a location could answer.
      *
-     * A LIST. A province is several kinds of ground and the catalog is small -
-     * 19 beasts across 12 biomes - so narrowing a square to one biome leaves it
-     * with one or two species forever. See `what-ground-a-place-is.ts` for the
-     * measurement.
+     * A LIST. A province is several kinds of ground, so narrowing a square to
+     * one biome leaves it thin forever however large the catalog is. See
+     * `what-ground-a-place-is.ts` for the measurement.
      */
     grounds?: readonly HerbBiome[];
     /** Inside closed ground: a sealed ruin, an unopened chamber, a cut face. */

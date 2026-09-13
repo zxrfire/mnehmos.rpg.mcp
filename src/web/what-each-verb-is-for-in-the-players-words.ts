@@ -195,11 +195,18 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
     },
     oath: {
         takes: ['target', 'intent', 'topic'],
-        intents: ['read', 'swear', 'break', 'release'],
-        says: `a word given, carried or not kept, and a claim held or given up. "intent" is
-            "swear", "read", "break" or "release"; "target" is who it is given to or let off;
-            "topic" is what is being sworn, in the player's own words. Breaking one is
-            permanent and opens an account naming them, so never choose it for a question.
+        intents: ['read', 'swear', 'break', 'release', 'serve'],
+        says: `a word given, carried, served out or not kept, and a claim held or given up.
+            "intent" is "swear", "read", "break", "release" or "serve"; "target" is who it is
+            given to, let off or done for; "topic" is what is being sworn or undertaken, in the
+            player's own words. Breaking one is permanent and opens an account naming them, so
+            never choose it for a question.
+
+            "serve" is DOING SOMEBODY A SERVICE, which is a rung of the offer ladder and is not
+            a favour. A favour is an account somebody carries; a service is a stretch of days
+            spent on their business, and it is discharged by spending them rather than by being
+            owed. Said once it opens the term, said again to the same person it serves the term
+            out. "I do him a service", "I do a service for her", "I serve out my term" are this.
 
             "release" is the OTHER DIRECTION from the rest, and the distinction is whose claim
             it is. "break" is walking out of a word this cultivator gave and costs them; the
@@ -282,7 +289,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             gather, which digs up things that do not move, and from attack, which is a person.
             What comes back is a body worth something at a counter, which is the other half of
             where high-grade material in this world comes from - and what is out there can be
-            far above the person looking for it.`
+            far above the person looking for it. A hunt means the kill unless the sentence
+            says otherwise; one that says it is taking the thing alive is heard, and what it
+            leaves standing can then be let up or stripped like anybody else.`
     },
     eat: {
         takes: [],
@@ -601,8 +610,13 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             happened to his brother" and "I tell him that I killed his brother". Passes no time.
             Route it whether or not the claim is true - naming the wrong person, or a killing
             that never happened, is an ordinary thing to say and the engine is what answers for
-            it. NOT for "tell me about X", which is a question and belongs to investigate, and
-            NOT for a threat, which is about something that has not happened yet.`
+            it. ALSO FOR TELLING SOMEBODY WHO YOU ARE, which is the same act one subject over:
+            "I tell the gate guard that I am of the Cinnabar Crucible Sect", "I introduce myself
+            to the steward as a Core Formation cultivator", "I tell her my name is Shen Wuyi".
+            Route those the same way whether or not any of it is so - the engine holds what this
+            cultivator actually is and decides. A bare greeting with no name, house or rung in it
+            is interact, not this. NOT for "tell me about X", which is a question and belongs to
+            investigate, and NOT for a threat, which is about something that has not happened yet.`
     },
     request: {
         // "days" is read by the company kind alone, which is the only ask that

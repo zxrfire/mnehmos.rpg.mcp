@@ -271,6 +271,23 @@ const HARD =
     /\b(?:hard|hardest|violently|savagely|with force|as hard as)\b/i;
 
 /**
+ * A REAL BLOW THAT IS NOT MEANT TO FINISH ANYBODY.
+ *
+ * The half of the force scale the reader could not say. Everything between a
+ * shove and a killing was reachable only by saying nothing, so a sentence that
+ * stated the restraint out loud read WORSE than one that stated nothing: every
+ * phrasing here carries the word `kill`, `kills` or `to kill`, which
+ * {@link EVERYTHING_THEY_HAVE} matches, so *"I hunt the fox but I will not kill
+ * it"* scored `everything` - the negation inverted into its own opposite.
+ *
+ * `committed` and not `light`: taking something alive is not a gentler version
+ * of killing it, it is a real fight that stops. `finishOutcome` reads a beating
+ * as a `capture`, which is what a thing beaten and still breathing IS.
+ */
+const HELD_SHORT_OF_THE_KILL =
+    /\b(?:(?:do(?:es)?\s+not|don'?t|won'?t|will\s+not|rather\s+than|without|instead\s+of)\s+(?:kill\w*|slay\w*|finish\w*)|not\s+to\s+kill|alive|captures?|capturing|subdues?|knock\s+(?:him|her|them|it)\s+out|spares?\s+(?:him|her|them|it)|drive\s+(?:him|her|them|it)\s+off|non-?lethal)\b/i;
+
+/**
  * How much was behind it.
  *
  * Read last, because the instrument and the target can both raise it. Two rules
@@ -285,13 +302,24 @@ const HARD =
  * him"* means somebody is fighting - the old table defaulted the bare form to
  * its weakest reading and that is precisely how a killing thrust came back as
  * shooing somebody away.
+ *
+ * WHAT THE BARE FORM MEANS IS A PROPERTY OF THE VERB, not of this reader, which
+ * is why `whenTheSentenceIsSilent` is a parameter. *"I attack him"* is a real
+ * blow; *"I hunt a fox"* is a killing, because going out after something for
+ * what comes off its body is what hunting IS. One reader, two bare forms, and
+ * no second table of words.
  */
 export function howMuchWasBehindIt(
     input: string,
     held: WhatWasInTheHand,
-    aimedAt: WhereItWasAimed
+    aimedAt: WhereItWasAimed,
+    whenTheSentenceIsSilent: HowMuchWasBehindIt = 'committed'
 ): HowMuchWasBehindIt {
     if (BARELY_TOUCHING.test(input)) return 'a_poke';
+    // ABOVE THE KILLING WORDS, because every phrasing of restraint contains
+    // one. Below it, a sentence saying the killing will not happen is read as
+    // the killing.
+    if (HELD_SHORT_OF_THE_KILL.test(input)) return 'committed';
     if (RUN_THROUGH.test(input) || CUT_THEM_DOWN.test(input)
         || EVERYTHING_THEY_HAVE.test(input)) return 'everything';
     // NEITHER A STRANGLING NOR A BROKEN NECK IS A HALF-MEASURE. Nobody snaps a
@@ -308,7 +336,7 @@ export function howMuchWasBehindIt(
     // A shove, a slap, a grab. These describe their own force, and describing
     // one is the reason somebody chose the word over `hit`.
     if (held === 'open_hand') return 'light';
-    return 'committed';
+    return whenTheSentenceIsSilent;
 }
 
 /**
@@ -321,12 +349,16 @@ export function howMuchWasBehindIt(
  *
  * WHERE is read first because both of the others depend on it - see the header.
  */
-export function howTheySaidTheySwung(input: string): HowTheBlowWasThrown {
+export function howTheySaidTheySwung(
+    input: string,
+    /** What the verb means when the sentence says nothing. See {@link howMuchWasBehindIt}. */
+    whenTheSentenceIsSilent: HowMuchWasBehindIt = 'committed'
+): HowTheBlowWasThrown {
     const aimedAt = whereItWasAimed(input);
     const held = whatWasInTheHand(input, aimedAt);
     return {
         with: held,
         at: aimedAt,
-        force: howMuchWasBehindIt(input, held, aimedAt)
+        force: howMuchWasBehindIt(input, held, aimedAt, whenTheSentenceIsSilent)
     };
 }

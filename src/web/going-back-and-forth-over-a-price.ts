@@ -103,6 +103,29 @@ export function whatIsHeldOut(input: string): string | null {
 }
 
 /**
+ * The whole of what a sentence put across a table: which of the four it is,
+ * and what went with it.
+ *
+ * One function because the two are one reading, and because a second caller
+ * assembling them by hand is how the goods half comes to be read on one road
+ * and not on the other. `whatIsHeldOut` is consulted only where the sentence
+ * held something out, which is the precedence `whatAHaggleSentenceIs` already
+ * settled.
+ */
+export function whatWasPutAcrossTheTable(
+    input: string
+): { sentence: WhatTheHaggleSaid; putDown: WhatWasPutDown } {
+    const sentence = whatAHaggleSentenceIs(input);
+    return {
+        sentence,
+        putDown: {
+            stones: stonesNamedIn(input),
+            goods: sentence === 'offered_something_instead' ? whatIsHeldOut(input) : null
+        }
+    };
+}
+
+/**
  * The thing, the figure, and whoever is asking for it.
  */
 export interface WhatIsOnTheCounter {

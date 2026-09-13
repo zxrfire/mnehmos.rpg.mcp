@@ -131,7 +131,13 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'we swear an oath of brotherhood',
         'I swear a dao oath never to speak of this',
         'what have I sworn and to whom',
-        'I go back on the vow I made to him'
+        'I go back on the vow I made to him',
+        // AND THE ONE THAT IS WORK RATHER THAN A WORD. A service is the rung of
+        // the offer ladder above a favour and it carries no oath noun, so these
+        // reach the verb through their own branch rather than through `AN_OATH`.
+        'I do him a service',
+        'I do a service for her',
+        'I serve out my term'
     ],
     attack: [
         'I strike at him',
@@ -236,6 +242,14 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I assemble the frame of the wagon',
         'I spend three months building the boat',
         'I set up at the bench and work on the wagon'
+        // AND THE BENCH IS NOT HERE YET, deliberately. `craft` now has a second
+        // half - a bench that works material into one thing, reached by "I cut
+        // an earth-grade slip" and "I forge an earth-grade blade" - and the
+        // pattern table routes all of it. Exemplars for it belong here, and
+        // adding one changes `corpusFingerprint`, which means the committed
+        // vectors beside the model have to be rebuilt in the same commit
+        // (`npm run verbs:embed`) or the tier refuses to load at all. Left for
+        // whoever can run that.
     ],
     gather: [
         'I go out and pick herbs',
@@ -257,7 +271,11 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I want to bring down a beast',
         'I go hunting',
         'I set snares for whatever comes through',
-        'I want the hide and bones off a beast'
+        'I want the hide and bones off a beast',
+        // A hunt that stops short is still a hunt, and the phrasing has to be
+        // here or the only sentences anybody learns are the ones that kill.
+        'I hunt a spirit beast and take it alive',
+        'I go after a beast, but I do not kill it'
     ],
     eat: [
         'I eat something',
@@ -689,6 +707,11 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I inform him that his brother is dead',
         'I tell him that I killed his brother',
         'I name the killer to his brother',
+        // The other thing put to one person who then holds it: who you are.
+        // A house or a rung has to be in it - a bare greeting is `interact`.
+        'I tell the gate guard that I am of the Cinnabar Crucible Sect',
+        'I introduce myself to the steward as a Core Formation cultivator',
+        'I tell her my name is Shen Wuyi',
     ],
     request: [
         'I ask him to teach me',
@@ -702,7 +725,7 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I ask her for the name of whoever sent him',
         'I ask her to come with me',
         'I invite him to travel with me for a month',
-        'I want him to walk the road with me as far as the pass'
+        'I ask him to walk the road with me as far as the pass'
     ],
     guard: [
         'I stand guard while she crosses',
