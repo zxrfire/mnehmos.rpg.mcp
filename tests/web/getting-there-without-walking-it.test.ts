@@ -39,6 +39,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { makeGameInWorld, cultivatorRow } from './harness';
+import { placeRoadDays } from '../../src/data/cultivation/regions';
 import { parseIntent } from '../../src/web/actions';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import {
@@ -90,14 +91,23 @@ describe('the road is as long as the catalog says it is', () => {
         );
     }, 120_000);
 
-    it('still spends the short day where the catalog prices no road', async () => {
-        // Nothing anywhere prices a road between two settlements of one
-        // province, and a fabricated number would be a figure a player plans
-        // around. Inside a province the flat day stands, deliberately.
+    it('charges the legs inside a province too, once the catalog prices them', async () => {
+        // THIS ARM USED TO PIN THE OPPOSITE and was right at the time: the
+        // catalog stated two intra-province roads in the whole world, so a
+        // journey between two settlements of one province fell to the flat day,
+        // and a fabricated number would have been a figure a player plans
+        // around. The provinces are roaded now, and the ford to the temple
+        // ground is the ford's own road to the province town plus the province
+        // town's road up out of the gorge - a sum of stated legs, which is the
+        // one thing here that is not a fabrication.
+        const priced = placeRoadDays('Clear River Ford', 'Burnt Earth');
+        expect(priced, 'the catalog no longer prices this pair').not.toBeNull();
+        expect(priced!).toBeGreaterThan(1);
+
         const { game } = await standingAt('Clear River Ford', 'road-unpriced');
         const result = await game.act('I travel to Burnt Earth');
         const skip = result.toolCalls.find(call => call.name === 'engine.simulateTimeSkip');
-        expect(skip?.summary).toMatch(/\b1 day\b/i);
+        expect(skip?.summary).toMatch(new RegExp(`\\b${priced}\\b`));
     }, 120_000);
 });
 

@@ -11,25 +11,21 @@
  * NAMES. So the ground existed, the road to it existed, and the only string
  * that reached it was one no player would type.
  *
- * ── AND A REFUSAL HAD NOWHERE TO PUT ANYBODY ─────────────────────────────
+ * ── AND A REFUSAL HAD NOTHING TO SAY ─────────────────────────────────────
  *
- * The second half is the one that makes the first worth fixing. A house's gate
- * is a door somebody may be turned away from, and until `the-town-at-the-foot-
- * of-a-house.ts` there was no square to be turned away TO: the map went
- * province, then wall. A player refused at a gate would have been left standing
- * on the province road with the compound as a name again.
+ * The second half is what makes the first worth fixing. Reaching the ground was
+ * not the same as meeting a door: the seat is open at an entry threshold of
+ * zero, so the compound's own walls did their job three courts further in and
+ * nothing at all happened at the gate.
  *
- * So a house's name now resolves to the town at its foot, and the gate is a day
- * up the road from there. Arriving at the town says what the gate would say,
- * which is the whole of the standing rule: **not having the standing to go in
- * is not the same as seeing nothing.**
+ * So a house's name resolves to its seat, and arriving there is arriving at the
+ * gate with the market around it. What the gate says carries the market, the
+ * standing crowd outside it, and all three roads in - which is the standing
+ * rule: **not having the standing to go in is not the same as seeing
+ * nothing.**
  */
 
 import { getSect } from '../data/cultivation/sects.js';
-import {
-    footTownId,
-    theHouseAboveThisTown
-} from '../engine/world/the-town-at-the-foot-of-a-house.js';
 import {
     standingAtTheGateOf,
     whoseGateThisIs,
@@ -40,37 +36,26 @@ import { sectGroundId } from '../engine/world/seeding.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { ledgerAbout, type ObligationDb } from '../storage/repos/obligation.repo.js';
+import { whichWayItPoints } from '../engine/social/grudges.js';
 import type { Cultivator } from '../schema/cultivation.js';
 import { loosePlaceKey } from './knowledge.js';
 import type { GameService } from './turn-engine.js';
 
-/** A house, its ground and the town below it, once a name has reached one. */
+/** A house and the ground its gate stands on, once a name has reached one. */
 export interface AHouseYouCouldWalkTo {
     factionId: string;
     factionName: string;
-    /** The compound. Behind the gate. */
+    /** The seat: the gate, the forecourt, and the walls behind them. */
     seat: LocationRecord;
-    /** Outside the wall. Where anybody may stand. Null for a world with none. */
-    town: LocationRecord | null;
-    /**
-     * Whether the sentence said the HOUSE or said its ground.
-     *
-     * A player who says the house's name has named a body and not a place, and
-     * the road they want ends in the town. A player who says `<house> grounds`
-     * has named the compound, which is the second step and is theirs to take -
-     * routing that one to the town as well would be the engine deciding a
-     * player may not walk up to a door.
-     */
-    named: 'the house' | 'its ground';
 }
 
 /**
  * The house a typed name reaches, or null where it reaches none.
  *
  * Matched on the world's own faction rows rather than the sect catalog, because
- * the seat and the town are world rows and a world may hold houses the catalog
- * does not. `<house> grounds` matches too: a player who learned the seat's real
- * name should not be routed somewhere else for saying it.
+ * the seat is a world row and a world may hold houses the catalog does not.
+ * `<house> grounds` matches too, so the name the player was told and the name
+ * the world stores reach the same door.
  */
 export function theHouseThisNameReaches(
     world: WorldState,
@@ -90,16 +75,14 @@ export function theHouseThisNameReaches(
         return {
             factionId: faction.id,
             factionName: faction.name,
-            seat,
-            town: byId.get(footTownId(faction.id)) ?? null,
-            named: name === wanted ? 'the house' : 'its ground'
+            seat
         };
     }
     return null;
 }
 
-/** The house whose gate the player is standing outside, from a place name. */
-export function theHouseWhoseTownThisIs(
+/** The house whose gate this place is, from a place name. Null for anywhere else. */
+export function theHouseWhoseGateThisIs(
     world: WorldState,
     placeName: string | null | undefined
 ): AHouseYouCouldWalkTo | null {
@@ -115,9 +98,7 @@ export function theHouseWhoseTownThisIs(
         factionName: faction?.name ?? getSect(factionId)?.name ?? factionId,
         seat: byId.get(faction?.seatLocationId ?? sectGroundId(factionId))
             ?? byId.get(sectGroundId(factionId))
-            ?? here!,
-        town: byId.get(footTownId(factionId)) ?? null,
-        named: here?.kind === 'sect_seat' ? 'its ground' : 'the house'
+            ?? here!
     };
 }
 
@@ -132,8 +113,7 @@ export function whatTheGateOfThisHouseSays(
     game: GameService,
     cultivator: Cultivator,
     house: AHouseYouCouldWalkTo,
-    hostedBy: SomebodyOfTheHouse | null = null,
-    atTheGate: boolean = true
+    hostedBy: SomebodyOfTheHouse | null = null
 ): WhatTheGateSays {
     const catalog = getSect(house.factionId);
     const world = game.atHand;
@@ -165,8 +145,7 @@ export function whatTheGateOfThisHouseSays(
         admissionOrdinal: catalog?.admissionOrdinal ?? 0,
         standing,
         theirPeopleHere,
-        hostedBy,
-        atTheGate
+        hostedBy
     });
 }
 
@@ -177,7 +156,7 @@ export function whatTheGateOfThisHouseSays(
  * in the membership table. Both are asked, because `present` returns the two
  * mixed and neither is the authority for the other.
  */
-function rankIndexOf(game: GameService, personId: string, rankCount: number): number {
+export function rankIndexOf(game: GameService, personId: string, rankCount: number): number {
     const top = Math.max(0, rankCount - 1);
     // THE WORLD ROW FIRST, and it matters. A person exists in two stores and the
     // two rolls disagree: `repos.sects` is rebuilt from the catalog and a world
@@ -193,6 +172,57 @@ function rankIndexOf(game: GameService, personId: string, rankCount: number): nu
         return Math.min(membership.rankIndex, top);
     }
     return -1;
+}
+
+/** A rung held on a house's roll, in that house's own word for it. */
+export interface WhereYouStandOnARoll {
+    factionId: string;
+    factionName: string;
+    /** The house's own name for the rung. Never a generic ladder. */
+    rungName: string;
+    rankIndex: number;
+    rankCount: number;
+}
+
+/**
+ * The rung you hold on your own house's roll.
+ *
+ * `status` never said it. A player on a house's roll asking how they were doing
+ * was told their realm, their age, their purse and their load, and nothing at
+ * all about which rung of the house they held - which is the fact that decides
+ * what they may take off the board and who has to be asked for anything.
+ *
+ * THE RUNG IS {@link rankIndexOf}'s, not the membership row's, for the reason
+ * that function documents: the player exists in both stores, their mirror row
+ * in the world carries a rung of its own, and reading the membership table first
+ * reads people a rung or two low.
+ *
+ * THE NAME IS THE HOUSE'S OWN. `faction.ranks` is what that house calls its
+ * rungs; a generic ladder here would be a second one beside it, and the two
+ * would disagree the first time a house was seeded with names of its own.
+ *
+ * Null for somebody on no roll, which is a fact about them and not a gap.
+ */
+export function whereYouStandOnYourHousesRoll(
+    game: GameService,
+    cultivator: Cultivator
+): WhereYouStandOnARoll | null {
+    const membership = game.repos.sects.getMembership(cultivator.id);
+    if (!membership) return null;
+    const faction = game.atHand?.factions.find(row => row.id === membership.sectId) ?? null;
+    const catalog = getSect(membership.sectId);
+    const ranks = faction?.ranks ?? catalog?.ranks ?? [];
+    if (ranks.length === 0) return null;
+
+    const rankIndex = rankIndexOf(game, cultivator.id, ranks.length);
+    if (rankIndex < 0) return null;
+    return {
+        factionId: membership.sectId,
+        factionName: faction?.name ?? catalog?.name ?? membership.sectId,
+        rungName: ranks[rankIndex]!,
+        rankIndex,
+        rankCount: ranks.length
+    };
 }
 
 /**
@@ -215,23 +245,30 @@ export function whoWouldWalkYouIn(
     candidates: readonly SomebodyOfTheHouse[]
 ): SomebodyOfTheHouse | null {
     if (candidates.length === 0) return null;
-    const owed = new Set(
-        ledgerAbout(game.repos.db as unknown as ObligationDb, cultivator.id)
-            .filter(row =>
-                row.status === 'open'
-                && (row.kind === 'debt' || row.kind === 'favor')
-                && row.subjectId === cultivator.id)
-            .map(row => row.holderId)
-    );
-    return candidates.find(person => owed.has(person.id)) ?? null;
+    // ── WHICH WAY THE ROW POINTS IS NOT THE SAME FOR THE TWO KINDS ───────
+    //
+    // This read it off the columns - holder over here, subject over there -
+    // and a `debt` and a `favor` do not agree about which column is the ower.
+    // `whichWayItPoints` says so outright: a debt's HOLDER has to make it good
+    // and a favour's SUBJECT does. So the hand-rolled filter found hosts the
+    // player owed a favour TO, which is the opposite of the sentence two
+    // paragraphs up, and the guest road was offered by exactly the people with
+    // no reason to take a risk for you.
+    //
+    // Asking the one function rather than restating it is also why this cannot
+    // drift again: there is one answer in the repo about which way an
+    // obligation runs, and this is now a caller of it rather than a copy.
+    const owesYou = new Set<string>();
+    for (const row of ledgerAbout(game.repos.db as unknown as ObligationDb, cultivator.id)) {
+        if (row.status !== 'open') continue;
+        if (row.kind !== 'debt' && row.kind !== 'favor') continue;
+        const points = whichWayItPoints(row);
+        if (points.sense !== 'owes') continue;
+        if (points.owedId === cultivator.id && points.owerId !== null) {
+            owesYou.add(points.owerId);
+        }
+    }
+    return candidates.find(person => owesYou.has(person.id)) ?? null;
 }
 
-/**
- * What standing in the town below a house is worth saying.
- *
- * The trades and the standing crowd are derived on every read from the house's
- * catalog row, so nothing here can drift from the house it describes.
- */
-export function isTheTownBelowAHouse(location: LocationRecord | null | undefined): boolean {
-    return location != null && theHouseAboveThisTown(location) !== null;
-}
+
