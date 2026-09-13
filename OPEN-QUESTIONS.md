@@ -34,14 +34,19 @@ Six. Everything else below is work, not a question.
 
 ## Work, queued with what is needed to start
 
-**Reachability — things built that nothing routes to**
-- `I ask X for Y` does not reach the give-a-piece encounter; only haggle-shaped sentences do.
-- **The service rung is unwalkable — nothing records that you did somebody a service.** The one
-  changed beast reachable everywhere wants one 93% of the time. Widest gap of the night.
-
 **Wrong, and small**
-- `hunt` cannot spare — it throws `force: 'everything'`, so mercy is unreachable through the
-  one verb named for going out after something.
+- **A changed beast cannot name what it wants done.** `createNpc` gives a stood-up beast
+  `goals: []`, so a service asked for by one falls back to the player's own sentence for its
+  terms. The engine states no want there.
+- **`I ask the ape for a tuft of its fur` does not reach the encounter** — `I ask the White Ape
+  of the Gorge ...` does. The guard wants nearly the whole catalog name and is shared with the
+  haggle road, whose header argues for the strictness.
+- **`cultivator.sectRank` is a third copy of your rung**, a mirrored string, and it is still
+  what every reader but `status` asks.
+- **Nothing writes `knowledge_records.fact_id`** — it is NULL on every row anybody writes, so
+  "does this holder hold THIS event" is unanswerable and the telling gate uses a proxy.
+- `whereASendingGoes` falls back to `elsewhere` when a reason's houses have no seats, so a
+  tribute errand for a seatless subsidiary quietly becomes a ground errand.
 
 **Gaps worth knowing before designing around them**
 - **The map has no volcanic ground.** Three herbs grow on it and no province declares it, so
