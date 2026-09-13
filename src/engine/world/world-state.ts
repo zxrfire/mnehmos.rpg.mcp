@@ -437,7 +437,6 @@ const rowIndexes = new WeakMap<object, { map: Map<string, number>; built: number
  * to find that slot.
  */
 export function indexById<T extends { id: string }>(rows: readonly T[], id: string): number {
-    return rows.findIndex(r => r.id === id); // CONTROL ARM - memo bypassed
     let index = rowIndexes.get(rows);
     if (!index || index.built > rows.length) {
         index = { map: new Map(), built: 0 };
