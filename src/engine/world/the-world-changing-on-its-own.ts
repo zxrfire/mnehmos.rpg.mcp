@@ -5,6 +5,7 @@
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
 import { beastsOnThisGround, bandOf } from './hunting-a-spirit-beast.js';
+import { whatGroundThisIs } from './what-ground-a-place-is.js';
 import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
 import { rankName, triggersHeavenlyTribulation } from '../cultivation/realms.js';
@@ -31,7 +32,11 @@ import {
     type HistoricalFact
 } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
-import { whereASendingGoes } from './who-goes-out-for-a-house-and-what-comes-back.js';
+import {
+    groundAPartyCanBeSentTo,
+    whereASendingGoes,
+    whichHousesAReasonIsAbout
+} from './who-goes-out-for-a-house-and-what-comes-back.js';
 import {
     armItsOwn,
     howTheWarGoesFor,
@@ -45,6 +50,7 @@ import {
     applyLocationChange,
     forbidZone,
     nextClosingDay,
+    populationWeightOf,
     qiFraction,
     type LocationRecord
 } from './locations.js';
@@ -603,14 +609,6 @@ function birthplacesIn(state: WorldState, region: LocationRecord): LocationRecor
         l.thresholds.survival <= 0 &&
         populationWeightOf(l) > 0
     );
-}
-
-/**
- * How many people a place holds, relative to the others.
- */
-function populationWeightOf(location: LocationRecord): number {
-    const raw = Number(location.data.populationWeight ?? 1);
-    return Number.isFinite(raw) && raw >= 0 ? raw : 1;
 }
 
 /** Weighted draw over birthplaces. Seeded, so a world replays identically. */
@@ -1955,20 +1953,17 @@ function applySendings(state: WorldState, year: number, day: number): number {
             needs: reason.needs,
             fromLocationId: faction.seatLocationId,
             theFind: find?.locationId ?? null,
-            seatsInPlay: state.factions
-                .filter(f => f.id !== faction.id && f.dissolvedOnDay === null)
-                .map(f => f.seatLocationId)
+            // THE HOUSES THE REASON IS ABOUT, which is what this parameter has
+            // asked for since it was written and what no caller passed: every
+            // seat in the world went in, so the party sent to collect on a
+            // grant was received at a hall drawn at random and the subsidiary
+            // that owed it never saw anybody.
+            seatsInPlay: whichHousesAReasonIsAbout(reason.needs, house)
+                .map(id => state.factions.find(
+                    f => f.id === id && f.id !== faction.id && f.dissolvedOnDay === null
+                )?.seatLocationId ?? null)
                 .filter((id): id is string => id !== null),
-            // GROUND SOMEBODY CAN STAND ON, and not a hall. A region is a
-            // container - `populationWeightOf` is zero for one - and a party
-            // posted to one is inside the map rather than on it. Seats are
-            // excluded because the errands that go to a hall are the ones where
-            // a house receives you, and those read `seatsInPlay`.
-            elsewhere: state.locations
-                .filter(l => l.kind !== 'sect_seat'
-                    && isBelowTheLid(l)
-                    && populationWeightOf(l) > 0)
-                .map(l => l.id),
+            elsewhere: groundAPartyCanBeSentTo(state.locations),
             pick: count => rng.int(0, Math.max(0, count - 1))
         });
 
@@ -4060,10 +4055,16 @@ const TEMPLATES: Template[] = [
             if (!town) return null;
 
             // WHAT COULD BE STANDING THERE AT ALL, off the module that already
-            // decides it. Nothing new says what lives where.
+            // decides it. Nothing new says what lives where - including the
+            // ground, which `whatGroundThisIs` answers for the played hunt and
+            // has to answer identically here. A beast coming down on a town in
+            // the ice province and one coming down on a rice terrace were the
+            // same draw, and the player would have met the difference only by
+            // hunting for themselves.
             const could = beastsOnThisGround({
                 sealed: false,
-                onAVein: town.kind === 'vein'
+                onAVein: town.kind === 'vein',
+                grounds: whatGroundThisIs(state, town) ?? undefined
             });
             const beast = pick(rng, could.filter(b => bandOf(b) !== 'person'));
             if (!beast) return null;

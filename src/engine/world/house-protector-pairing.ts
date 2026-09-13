@@ -109,6 +109,14 @@ export interface ProtectorPairing {
  * drops every `sealed_only` entry, which is correct and is also the module's
  * sharpest limitation - see the note at the bottom of the file.
  */
+/**
+ * NO GROUND PASSED, DELIBERATELY. Every other caller of `beastsOnThisGround`
+ * narrows by what is underfoot where somebody is standing; this one is not
+ * standing anywhere. It asks which KINDS of creature take a chair over a house,
+ * for every house on the map at once, and a house in the ice province and a
+ * house in the grain province have to be able to draw from the same answer.
+ * Narrowing here would be answering a question nobody asked.
+ */
 export function thingsThatCouldStandOverAHouse(): CouldStandInAChair[] {
     return beastsOnThisGround({ onAVein: true, sealed: false })
         .filter(b =>
