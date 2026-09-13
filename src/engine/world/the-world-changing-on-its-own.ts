@@ -35,6 +35,7 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import {
     groundAPartyCanBeSentTo,
     whereASendingGoes,
+    groundTheseHousesHold,
     whichHousesAReasonIsAbout
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import {
@@ -48,13 +49,17 @@ import { recordCrossing } from './recording-what-a-crossing-did.js';
 import { recordPromotion } from './recording-where-somebody-stands-in-a-house.js';
 import {
     applyLocationChange,
+    aSealHereMeansAnUndrawnPocket,
     forbidZone,
+    isOpenOn,
     nextClosingDay,
+    nextOpeningDay,
     populationWeightOf,
     qiFraction,
+    windowStartOn,
     type LocationRecord
 } from './locations.js';
-import { whenTheScheduleNextOpens } from './convergence.js';
+import { WHAT_SHUTS_IT, whatShutsThisDoor } from './a-door-that-closes-is-not-a-door-nobody-opened.js';
 import { runCascade } from './cascade.js';
 import { ruinFromFallenSeat } from './provenance.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
@@ -1963,6 +1968,13 @@ function applySendings(state: WorldState, year: number, day: number): number {
                     f => f.id === id && f.id !== faction.id && f.dissolvedOnDay === null
                 )?.seatLocationId ?? null)
                 .filter((id): id is string => id !== null),
+            // AND WHERE THEY ARE WHEN THEY HAVE NO HALL. The line above drops a
+            // seatless house, so without this the errand fell through to ground
+            // drawn at random and stopped being the errand it was opened for.
+            groundNearThem: groundTheseHousesHold(
+                state.locations,
+                whichHousesAReasonIsAbout(reason.needs, house).filter(id => id !== faction.id)
+            ),
             elsewhere: groundAPartyCanBeSentTo(state.locations),
             pick: count => rng.int(0, Math.max(0, count - 1))
         });
@@ -2756,21 +2768,23 @@ function applyLastCrossing(
 
 // THE WORLD OPENS SOMETHING, AND NOBODY DID IT
 //
-// This pass ran for the whole life of the project and opened nothing. It read
-// `nextOpeningDay`, which answers null for anything sealed - right where
-// `sealed` means a door nobody has opened, wrong where it means the shut half
-// of a schedule, and on a cycled ruin the column means the second. Every seeded
-// ruin carrying a cycle is sealed, so the test was false for all of them, and
-// the `open_now` tag the opening adds is also the gate on the half that shuts
-// them: both halves were unreachable. Measured over twelve pinned worlds run
-// two hundred years each, the world opened or shut ZERO doors.
-// `whenTheScheduleNextOpens` sets the flag aside without restating the modulo.
+// The schedule decides and this pass announces. Both ends of a window are
+// arithmetic on the cycle, so no flag and no tag is consulted to find them, and
+// nothing has to go and re-shut a door by hand: a door on a season shuts itself
+// when the season turns.
 //
-// AND A WINDOW IS NOW SHORTER THAN THE PASS THAT RUNS IT. Windows run 7 to 90
-// days against a yearly pass, so a door can open and shut inside one call, and
-// the old shape returned after opening one - which would have left a week-long
-// window standing open for a year. The close is attempted in the same
-// iteration as the open it belongs to.
+// It used to read `nextOpeningDay`, which answered null for anything sealed -
+// and every seeded cycled ruin is sealed - so across twelve pinned worlds run
+// two hundred years each the world opened or shut ZERO doors. The `open_now`
+// tag the opening added was also the gate on the half that shut them, so both
+// halves were unreachable together and each was the other's excuse.
+//
+// AND A WINDOW IS SHORTER THAN THE PASS THAT RUNS IT. Windows run days against
+// a yearly pass, so a door can open and shut inside one call and a window can
+// straddle a year end. `windowStartOn` tells an opening from a door that was
+// already standing open when the year turned, and the closing half only shuts a
+// window this pass was present for the opening of - otherwise a run that begins
+// mid-window announces a closing nobody was told about.
 
 function applyConvergences(
     state: WorldState,
@@ -2784,12 +2798,25 @@ function applyConvergences(
 
     for (let i = 0; i < state.locations.length; i++) {
         const location = state.locations[i];
-        if (!location.cycle || !isBelowTheLid(location)) continue;
+        // A CYCLE IS NOT ALWAYS A DOOR. A hall carries one so that a house which
+        // hears petitions three days a month is expressible without a field for
+        // it, and those come round monthly - so a pass that announced every
+        // cycle would file a province-wide opportunity every time a reception
+        // room opened. `location.sealed` used to stand in for this and is no
+        // longer a bar; what is actually meant is closed GROUND, which the
+        // record already knows how to say.
+        if (!location.cycle
+            || !isBelowTheLid(location)
+            || !aSealHereMeansAnUndrawnPocket(location.kind)) continue;
 
-        const opensOn = whenTheScheduleNextOpens(location, Math.max(yearStart, fromDay));
-        const opened = opensOn !== null && opensOn <= Math.min(yearEnd, toDay);
+        const from = Math.max(yearStart, fromDay);
+        const until = Math.min(yearEnd, toDay);
 
-        if (opened && location.sealed) {
+        const opensOn = nextOpeningDay(location, from);
+        const opened = opensOn !== null && opensOn <= until
+            && windowStartOn(location, opensOn) === opensOn;
+
+        if (opened) {
             const day = withinSpan(opensOn!, fromDay, toDay);
             const years = Math.round(location.cycle.periodDays / DAYS_PER_YEAR);
             const changed = applyLocationChange(location, {
@@ -2801,11 +2828,13 @@ function applyConvergences(
                 // filed as one.
                 causeKnown: true,
                 witnessed: false,
+                // The column and the usable density are the world's record that
+                // the door moved, not a second answer about whether it is open:
+                // `isOpenOn` reads the schedule and ignores both.
                 patch: {
                     sealed: false,
                     discovered: true,
-                    environment: { spiritualDensity: qiFraction(location.qiDensity) },
-                    addTags: ['open_now']
+                    environment: { spiritualDensity: qiFraction(location.qiDensity) }
                 }
             });
             state.locations[i] = changed.location;
@@ -2842,20 +2871,25 @@ function applyConvergences(
         // Read off the record as it now stands, so a window that opened and ran
         // out inside this same span shuts inside it too.
         const standing = state.locations[i];
-        const closesOn = nextClosingDay(standing, Math.max(yearStart, fromDay));
-        if (!standing.sealed && standing.tags.includes('open_now')
-            && closesOn !== null && closesOn <= Math.min(yearEnd, toDay)) {
+        const closesOn = nextClosingDay(standing, from);
+        const windowOpenedOn = closesOn === null ? null : closesOn - standing.cycle!.openDays;
+        if (closesOn !== null && closesOn <= until
+            && windowOpenedOn !== null && windowOpenedOn >= fromDay) {
             const day = withinSpan(closesOn, fromDay, toDay);
+            const shuts = whatShutsThisDoor(standing);
             const changed = applyLocationChange(standing, {
                 onDay: day,
                 kind: 'sealed',
-                summary: `${standing.name} is shut again.`,
+                summary: shuts === null
+                    ? `${standing.name} is shut again.`
+                    : `${standing.name} is shut again. ${WHAT_SHUTS_IT[shuts]}`,
+                // Known, and it is nobody: the place closes itself. Filing it as
+                // unexplained would put a hand on it that nobody's on.
                 causeKnown: true,
                 witnessed: false,
                 patch: {
                     sealed: true,
-                    environment: { spiritualDensity: 0.05 },
-                    removeTags: ['open_now']
+                    environment: { spiritualDensity: 0.05 }
                 }
             });
             state.locations[i] = changed.location;
@@ -3380,13 +3414,22 @@ const TEMPLATES: Template[] = [
         kind: 'ruin_opened',
         weight: 8,
         apply(state, day, rng) {
-            // What is left to be opened
+            // WHAT IS LEFT TO BE OPENED, AND WHAT WAS NEVER ANYBODY'S TO OPEN.
+            // A door on a season can be walked through and emptied like any
+            // other ground, but only while it is standing open, and going
+            // through it does not take the seal off: the place shuts itself when
+            // the window ends. This pass used to take the flag off a cycled ruin
+            // for good, which left it reading shut-until-its-season with the
+            // column saying open and nothing in the world to reconcile them.
             const openable = state.locations.filter(l =>
                 isBelowTheLid(l) && !l.tags.includes('emptied') && l.discovered &&
-                ((l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined'))
+                (l.cycle !== null
+                    ? l.kind === 'ruin' && isOpenOn(l, day)
+                    : (l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined'))
             );
             const ruin = pick(rng, openable);
             if (!ruin) return null;
+            const throughADoorThatWasStandingOpen = ruin.cycle !== null;
             const opener = pick(rng, theWorldsPeople(state).filter(
                 n => n.status === 'alive' && isBelowTheLid(n) &&
                     n.cultivation.realmOrdinal >= Math.max(0, ruin.thresholds.survival - 2)
@@ -3394,18 +3437,24 @@ const TEMPLATES: Template[] = [
 
             const changed = applyLocationChange(ruin, {
                 onDay: day,
-                kind: 'unsealed',
-                summary: opener
-                    ? `${ruin.name} was opened by ${opener.name}.`
-                    : `${ruin.name} was found open. Nobody admits to it.`,
+                kind: throughADoorThatWasStandingOpen ? 'depleted' : 'unsealed',
+                summary: throughADoorThatWasStandingOpen
+                    ? opener
+                        ? `${ruin.name} stood open and ${opener.name} went through it.`
+                        : `${ruin.name} stood open and somebody went through it. Nobody admits to it.`
+                    : opener
+                        ? `${ruin.name} was opened by ${opener.name}.`
+                        : `${ruin.name} was found open. Nobody admits to it.`,
                 causeKnown: opener != null,
                 witnessed: false,
-                patch: {
-                    sealed: false,
-                    discovered: true,
-                    addTags: ['emptied'],
-                    environment: { spiritualDensity: qiFraction(ruin.qiDensity) }
-                }
+                patch: throughADoorThatWasStandingOpen
+                    ? { discovered: true, addTags: ['emptied'] }
+                    : {
+                        sealed: false,
+                        discovered: true,
+                        addTags: ['emptied'],
+                        environment: { spiritualDensity: qiFraction(ruin.qiDensity) }
+                    }
             });
             replaceLocation(state, changed.location);
 
@@ -3434,8 +3483,12 @@ const TEMPLATES: Template[] = [
                     'There is a new track up to the old compound, and somebody has been selling ' +
                     'things in the market town that nobody local knows how to make.',
                 consequences: {
-                    immediate: 'The seal is off.',
-                    physical: `${ruin.name} is open.`,
+                    immediate: throughADoorThatWasStandingOpen
+                        ? 'Somebody was inside before the window ran out.'
+                        : 'The seal is off.',
+                    physical: throughADoorThatWasStandingOpen
+                        ? `${ruin.name} has been gone through, and it shuts on its own schedule.`
+                        : `${ruin.name} is open.`,
                     opportunitiesClosed: ['Whatever was in there, for whoever comes next.'],
                     rumours: ['That most of it was already gone before they got in.'],
                     tenYearsLater: 'The site is picked over and the track has grown back.'

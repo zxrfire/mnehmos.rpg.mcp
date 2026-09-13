@@ -901,6 +901,29 @@ export function whichHousesAReasonIsAbout(
  * region is a container and a party posted to one is inside the map rather than
  * on it.
  */
+/**
+ * Ground these houses hold, for a party sent to a house that has no hall.
+ *
+ * `controllingFactionId` is the world's own statement of whose ground a place
+ * is - the field's own comment says null is not "nobody holds it" - so this is
+ * that read filtered to the houses in question. No second store and no guess:
+ * a house that holds nothing comes back empty and the sending says so.
+ */
+export function groundTheseHousesHold(
+    locations: readonly LocationRecord[],
+    houseIds: readonly string[]
+): readonly string[] {
+    if (houseIds.length === 0) return [];
+    const theirs = new Set(houseIds);
+    return locations
+        .filter(l => l.controllingFactionId !== null
+            && theirs.has(l.controllingFactionId)
+            && l.kind !== 'sect_seat'
+            && isBelowTheLid(l)
+            && populationWeightOf(l) > 0)
+        .map(l => l.id);
+}
+
 export function groundAPartyCanBeSentTo(
     locations: readonly LocationRecord[]
 ): readonly string[] {
@@ -919,6 +942,19 @@ export function whereASendingGoes(input: {
     seatsInPlay: readonly string[];
     /** Places that are neither this house's nor anybody's seat. */
     elsewhere: readonly string[];
+    /**
+     * Ground the houses this reason is about actually hold, for the seat
+     * errands where one of them has no hall.
+     *
+     * A HOUSE WITHOUT A SEAT IS STILL SOMEWHERE. Both callers map the reason's
+     * houses to `seatLocationId` and drop the nulls, so a seatless subsidiary
+     * vanished out of `seatsInPlay` and the errand fell through to `elsewhere`
+     * - which is ground picked at random anywhere in the world. A tribute
+     * errand quietly became a ground errand and the house that owed the tribute
+     * never saw anybody, which is the same defect `seatsInPlay` was just fixed
+     * for, one rung further down.
+     */
+    groundNearThem?: readonly string[];
     /**
      * The ground the house's find is on, when the reason is the find.
      *
@@ -945,10 +981,24 @@ export function whereASendingGoes(input: {
         ? notHome(input.seatsInPlay)
         : notHome(input.elsewhere);
 
-    // A house with a rival it cannot find the seat of still sends the party.
-    // Falling back to elsewhere rather than to home, because the one thing that
-    // is certainly wrong is a party posted to the hall it left.
-    const chosen = pool.length > 0 ? pool : notHome(input.elsewhere);
+    // ── AND A SEAT ERRAND DOES NOT FALL BACK ONTO THE WHOLE MAP ─────────
+    //
+    // The old fallback sent anything with an empty pool to `elsewhere`, and the
+    // note beside it argued the rival case - a house that cannot find its
+    // rival's seat still sends the party. But `a_rival` is a GROUND errand in
+    // the table above and never reads `seatsInPlay`, so that note described a
+    // path it could not take. What it actually caught was the four errands
+    // where a house RECEIVES you and one of them has no hall, and sending that
+    // party to a place drawn at random is not a worse address, it is a
+    // different errand.
+    //
+    // So: their ground if the caller knows any, and otherwise nothing. Null
+    // already means "they went out and the record does not say where", which is
+    // the honest answer and is a great deal better than a hall nobody meant.
+    const seatErrand = WHERE_A_NEED_SENDS_YOU[input.needs] === 'a_seat';
+    const chosen = pool.length > 0
+        ? pool
+        : notHome(seatErrand ? (input.groundNearThem ?? []) : input.elsewhere);
     if (chosen.length === 0) return null;
     return chosen[Math.min(chosen.length - 1, Math.max(0, input.pick(chosen.length)))] ?? null;
 }

@@ -202,6 +202,36 @@ describe('where a sending goes', () => {
         })).toBe('a-region');
     });
 
+    it('goes to a seatless house’s own ground rather than to ground at large', () => {
+        // THE ERRAND STOPS BEING THE ERRAND OTHERWISE. Both callers map the
+        // reason's houses to `seatLocationId` and drop the nulls, so a
+        // subsidiary with no hall left `seatsInPlay` empty - and the old
+        // fallback sent the party to ground picked at random anywhere in the
+        // world. A tribute errand quietly became a ground errand and the house
+        // that owed the tribute never saw anybody.
+        expect(whereASendingGoes({
+            needs: 'a_subsidiary',
+            fromLocationId: 'home',
+            seatsInPlay: [],
+            groundNearThem: ['their-valley'],
+            elsewhere: ['somewhere-else-entirely'],
+            pick: pickFirst
+        })).toBe('their-valley');
+    });
+
+    it('and says nowhere for a house it cannot find at all, rather than anywhere', () => {
+        // Null already means "they went out and the record does not say where",
+        // which is a great deal better than a hall nobody meant.
+        expect(whereASendingGoes({
+            needs: 'a_subsidiary',
+            fromLocationId: 'home',
+            seatsInPlay: [],
+            groundNearThem: [],
+            elsewhere: ['somewhere-else-entirely'],
+            pick: pickFirst
+        })).toBeNull();
+    });
+
     it('and says nowhere when there is nowhere', () => {
         expect(whereASendingGoes({
             needs: 'nothing',

@@ -49,6 +49,7 @@ import {
     whatStandingOnItGives,
     whatTheAirCarriesOfTheGround,
     whereASendingGoes,
+    groundTheseHousesHold,
     whereTheOpenGroundIs,
     whichHousesAReasonIsAbout,
     type AFindThisHouseHas,
@@ -934,6 +935,10 @@ function whereAPostingWouldSendThem(
             seatsInPlay: whichHousesAReasonIsAbout(reason.needs, standing.house)
                 .map(seatOf)
                 .filter((id): id is string => id !== null),
+            groundNearThem: groundTheseHousesHold(
+                world.locations,
+                whichHousesAReasonIsAbout(reason.needs, standing.house)
+            ),
             elsewhere,
             pick: count => forStream(standing.house.id, 'posting_destination', reason.id)
                 .int(0, Math.max(0, count - 1))
