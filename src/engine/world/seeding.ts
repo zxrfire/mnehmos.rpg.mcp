@@ -47,11 +47,6 @@ import { purchasedQiPerYear } from '../cultivation/buying-and-bartering-pills.js
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
 import { growCompound, type CompoundInput } from './architecture.js';
-import {
-    DAYS_FROM_THE_TOWN_TO_THE_GATE,
-    growTheTownBelow,
-    type WhatTheTownIsBelow
-} from './the-town-at-the-foot-of-a-house.js';
 import type { WorldCatalog, CatalogFaction, CatalogRegion } from './catalog.js';
 import {
     linkLocations,
@@ -745,57 +740,7 @@ function seedSectGround(
     });
     for (const room of compound.locations) state.locations.push(room);
 
-    // AND THE OUTSIDE OF IT. A compound with nothing outside it leaves everybody
-    // it will not admit standing nowhere: measured across three pinned worlds,
-    // 38 seated houses each and not one of them had a square a refused visitor
-    // could be refused TO. The town is derived from the house's own columns the
-    // way its rooms are, and it is where the gate's refusal becomes a place
-    // rather than a dead end.
-    const town = growTheTownBelow({
-        seat: ground,
-        regionId: region.id,
-        house: theTownReadingOfCatalogFaction(cf),
-        taken: new Set(state.locations.map(row => loosePlaceKeyOf(row.name))),
-        presentDay
-    });
-    state.locations.push(town);
-    // The province road ends in the town, and the climb to the gate starts
-    // there. The seat keeps its own road off the province as well: a member
-    // rides straight home and does not walk through the market to do it.
-    linkLocations(region, town, 'road', 2);
-    linkLocations(town, ground, 'road', DAYS_FROM_THE_TOWN_TO_THE_GATE);
-
     return ground;
-}
-
-/** `loosePlaceKey` without importing the web layer, for the name check only. */
-function loosePlaceKeyOf(name: string): string {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/^the-/, '');
-}
-
-/**
- * The town's reading of a house, off the world catalog row rather than the
- * sect catalog, so a hand-built world seeds a town too.
- */
-function theTownReadingOfCatalogFaction(cf: CatalogFaction): WhatTheTownIsBelow {
-    return {
-        factionId: cf.id,
-        factionName: cf.name,
-        alignment: cf.alignment,
-        ranks: cf.ranks,
-        admissionOrdinal: cf.admissionOrdinal,
-        powerOrdinal: cf.powerOrdinal,
-        recruits: cf.recruits,
-        // `reliableOrdinal` is zero for a house that stated no production, and
-        // `production` is the flattened self-sufficiency the mapper already
-        // computed - so the share is the first where it was stated and the
-        // second where it was not.
-        stillWorking: cf.reliableOrdinal > 0 && cf.powerOrdinal > 0
-            ? Math.max(0, Math.min(1, cf.reliableOrdinal / cf.powerOrdinal))
-            : cf.production,
-        formationIntegrity: cf.formationIntegrity,
-        specialities: cf.specialities
-    };
 }
 
 /**
