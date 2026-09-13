@@ -1,6 +1,6 @@
-# Open questions
+﻿# Open questions
 
-**Read the four items under WHAT STILL NEEDS YOU. Everything below that is history:**
+**Read the five items under WHAT STILL NEEDS YOU. Everything below that is history:**
 **either answered and built, or a decision of mine left visible so you can reverse it.**
 
 Started the night of 11-12 September and appended to through the 12th by nine agents, so
@@ -11,48 +11,79 @@ Anything headed with a date or "being built right now" has since landed.
 
 ## WHAT STILL NEEDS YOU
 
-All four are done, measured, and none of them was blocking anything already built. They
-are kept here with what landed and what is still open under each.
+All five are done or struck, measured, and none of them was blocking anything already
+built. They are kept here with what landed and what is still open under each.
 
-1. **DONE - a posting on the board no longer reprices money**, and the second reading was
-   the one that was right. `donate` read contribution off the MEDIAN SPAN of whatever was
-   posted to you, so three new sending reasons took 100 spirit stones from 71 contribution
-   to 107 against a first promotion of 100. The rule is untouched - buying is still
-   `DONATION_DISCOUNT` of the board's own rate - and the SPAN is now the ordinary errand,
-   `ORDINARY_DUTY_DAYS`, which is the span `dutyTermsFor` already measures every duty's
-   contribution against. So the rate is one number for every house and every rung, and a
-   duty reason added tomorrow cannot move it.
+1. **STRUCK - cash may not buy a rung at all.** Everything this item used to argue about
+   was the RATE at which spirit stones became contribution, and there is no longer a rate.
+   The design owner, shown that donating credits contribution and that contribution is what
+   buys a promotion: *"you can't buy a rung with cash you can bribe for it tho."*
 
-   Measured, three seeded worlds, 342 readers, both arms in one run
-   (`scripts/probe-what-a-donation-buys.ts`):
+   So `DONATION_DISCOUNT`, `contributionPerStoneDonated` and
+   `contributionPerStoneOnAnOrdinaryErrand` are gone, with the two tests and the probe that
+   measured them. `contributionPerStoneOverDays` survives because it has a caller that was
+   never about a rung: `passing-a-duty-down-to-somebody-else.ts` prices what an errand's pay
+   is worth as money to somebody hired to do it. Its closed form moved to that consumer's
+   own test.
 
-   |  | median span | 100 stones bought | against the promotion | bought a rung outright |
-   |---|---|---|---|---|
-   | bottom band | 30-90 (60) | 36-107 (71) | 0.36-1.07 | 31 of 114 |
-   | middle | 30-90 (90) | 36-107 (107) | 0.01-1.07 | 1 of 114 |
-   | top | 90 | 107 | 0.00-0.04 | 0 |
-   | **all three, after** | not read | **24** | **0.24 at the first rung** | **0** |
+   **`donate` survived the ruling and the credit did not**, which is the smallest honest
+   change. Establishing it took reading every consumer of `sect_members.contribution`: it is
+   displayed in four places, forfeited on leaving or being caught, and SPENT in exactly one -
+   `handlePromote`. A rung is the only thing contribution buys, so a money-to-contribution
+   rate was a money-to-rank rate with one step hidden in the middle. But paying money into a
+   house is a real act and was never the defect: it is the only caller of `putIntoTheHouse`,
+   the only thing in the game that writes `resources.spirit_stones` on a faction, and it
+   leaves a deed somebody can be reminded of later. Striking the verb would have removed all
+   of that and orphaned an export. The stones still move; the ledger of service does not.
+   `tests/web/a-rung-is-not-for-sale.test.ts`, red-checked by putting `addContribution` back.
 
-   The anchor was not only drifting with the catalog: at ONE rung it already came out 30,
-   60 or 90 days depending on the house, so the same hundred stones met three different
-   answers for no reason a player could see. What replaces it makes one statement that
-   holds everywhere - **buying a rung costs three times the money serving for it would
-   have paid you**, which is `DONATION_DISCOUNT` read as a sentence.
+   **The residual about the floor is gone with the rate.** The Hollow Court's 500-stone
+   floor buying a first rung was a fact about an exchange that no longer exists.
 
-   The third reading, a fixed span, is what landed; the first, that the median is a fact
-   about the house, is what was rejected, and the section below headed with the same
-   finding records why. Guarded by
-   `tests/engine/encounters/a-posting-does-not-reprice-a-donation.test.ts` and a played
-   assertion in `tests/web/paying-into-the-ledger.test.ts`, red-checked by putting the
-   median back.
+2. **The road that replaced it, and the one thing about it that is not reachable by
+   playing.** `bribe` is wired to advancement now, composed out of names that already
+   existed: `whoseCallItIs` over the mission hall decides whose call a rung is,
+   `whatTheyWillTakeFor` decides what that person will take, `whatYourOwnHouseOpensAboutYou`
+   opens the row the house holds about them, and the grudge for being passed over is held
+   against the person who CHOSE, which is the shape
+   `who-can-put-your-name-up-for-a-posting.ts` established. A new `RequestKind`,
+   `advancement`, is the whole of what is new, and its weight
+   (`against_their_interest`) is what makes money refuse on its own.
 
-   **One residual, and it is yours because it is a catalog number.** The FLOOR under a
-   donation is the house's own lowest stipend, which is per house and right. At one house
-   of 38 it is big enough that the smallest donation the house will accept buys a first
-   rung: The Hollow Court pays 500 a month at its bottom rank, and 500 stones is 119
-   contribution against a rung of 100. The fix is a stipend or a floor, not an anchor.
+   Measured, six pinned worlds (`scripts/probe-what-a-rung-costs.ts`): **5 of 6 starting
+   disciples could NAME the person whose call a rung is, and all five of those wanted `a
+   favour` rather than stones.** Nobody at the bottom is bought with money alone.
 
-2. **DONE - what `sealed` means on a ruin**, and it uncovered a dead mechanic under it.
+   **AND NOBODY AT THE BOTTOM CAN STAND IN FRONT OF THEM EITHER, which is yours.** Two
+   separate reasons, both older than this work and both routed here rather than
+   half-fixed:
+
+   - A house's own compound cannot be travelled to. `I travel to the <house>` on day 0
+     answers *"everybody has heard the name, nobody has been"* - the house has no place a
+     player can be directed to. `rosterFor` hands out the roll and nothing hands out a
+     door.
+   - `rosterFor` deals the roll out of `getMembersOf`, which is the CATALOG, and
+     `othersPresent` only knows world rows and stored cultivators. So the person whose
+     call it is can be named and cannot be addressed. `theOneIdAPersonIsKnownBy` is the
+     repo's existing answer to the id half and the wire uses it; the PLACE half has no
+     answer yet.
+
+   Both played tests therefore arrange the meeting rather than walking to it, and say so
+   in their headers. The mechanic itself is proved by playing; getting into the room is
+   not.
+
+   **AND THE PUNISHMENT HALF IS HALF-WIRED ON PURPOSE, which is also yours.** A bought rung
+   WRITES the rows - the house holds one about the person who gave it, tagged
+   `a_rung_that_was_given`, and the one passed over holds one against them - so it is
+   reportable and settleable by everything that already reads that ledger. What is NOT wired
+   is anybody bringing it: `whoSawIt` picks the witness for a false decree and
+   `reportWhatTheySaw` takes it to `whereAComplaintGoes`, and neither is called here. Wiring
+   it is four lines and one decision that is not an engineer's - **who sees a promotion**.
+   A decree is given in front of the rung it was given to; a rung is given in a room. If the
+   answer is the person passed over, they already hold their own row and reporting it is a
+   second act. That is why it stopped here rather than being guessed.
+
+3. **DONE - what `sealed` means on a ruin**, and it uncovered a dead mechanic under it.
    `howThisGroundIsShut` in
    `src/engine/world/a-door-that-closes-is-not-a-door-nobody-opened.ts` reads the record
    as open, shut until its season, or shut until somebody opens it, and names the day the
@@ -70,7 +101,7 @@ are kept here with what landed and what is still open under each.
    a house when a door is due and is exactly the information edge you described, has no
    caller anywhere.
 
-3. **DONE - monopoly**, as the act and the accounts it opens.
+4. **DONE - monopoly**, as the act and the accounts it opens.
    `shutAPublicRuin` in `src/engine/world/a-house-that-shuts-a-public-ruin.ts`.
    `controllingFactionId` on a ruin now means a house has shut something public, which is
    the meaning `whoTurnsYouAwayFrom` already reads as somebody standing at the door. Who
@@ -84,7 +115,7 @@ are kept here with what landed and what is still open under each.
    account it never acts on, because `whatTheHouseDoesAboutIt` answers for a house and a
    person, not for a house and a house.
 
-4. **DONE - a gathering can fold into itself**, and no kind is exempt from the ratchet
+5. **DONE - a gathering can fold into itself**, and no kind is exempt from the ratchet
    any more. `reserveFactSlot` in `history.ts` hands out the fact id and the row's place
    in the ledger WITHOUT the row, so the four passes get the id their ties carry and the
    row is appended once, with what actually happened in it. No restructure was needed:
@@ -129,13 +160,13 @@ single-use rule to matter. Measured on a seeded world, population 400:
 - **The WORLD is the problem.** Across 124 library rows and 36 live houses, only **6
   immortal and 2 chaos distinct arts sit on any shelf anywhere**. 30 of 36 houses hold no
   immortal road; 34 of 36 hold no chaos road.
-- **So the bottleneck is `TAUGHT`** — each house's `teaches` list — not the number of arts
+- **So the bottleneck is `TAUGHT`** â€” each house's `teaches` list â€” not the number of arts
   that exist. Your instinct was right about the symptom and wrong about the cause.
 
 **Your apex rule is already satisfied wherever it CAN be.** Of the three `APEX_INSTITUTIONS`
 only one is a house: `apex-azure-cloud`. It already holds exactly one immortal (Silk Drawing
 Scripture) and one chaos (Clear Terrace Ascension Canon). The Earth Vein Tower and The Long
-Cut have `factionId: null`, are in no faction row, and teach nothing — which
+Cut have `factionId: null`, are in no faction row, and teach nothing â€” which
 `seedSectLibraries` records as deliberate (*"two powers teach nothing, deliberately"*) and
 `governance-and-water-rights.ts` argues for at length.
 
@@ -144,7 +175,7 @@ stated design decision about what they ARE. Leave them as powers that teach noth
 make them houses?
 
 **And the bigger finding underneath it.** `sect-kiln-wardens` (Deeproot Court) sits at
-ceiling **44 — the highest in the world**, holds the strongest sealed ancestor, and
+ceiling **44 â€” the highest in the world**, holds the strongest sealed ancestor, and
 **teaches nothing at all**. Spreading immortal and chaos roads across the high houses is
 what would actually produce "multiple chosen like the novels", and it is a catalog edit
 plus the political half of who gets the one reading. Routed to the elder agent, since it is
@@ -733,6 +764,16 @@ over each companion's own `out_with_a_party` activity, and `move`, `ride` and `p
   house. `whatTheHouseWillPartWith` is where that would be asked.
 
 ### 20. Adding a posting repriced money, and that coupling is yours to rule on
+
+> **HISTORY, AND THE WHOLE SECTION IS MOOT.** Everything below argues about the RATE at
+> which spirit stones became contribution. That conversion is struck - see item 1 at the
+> top of this file - so there is no rate to anchor, no discount to state and no coupling to
+> guard. `DONATION_DISCOUNT`, `contributionPerStoneDonated` and
+> `contributionPerStoneOnAnOrdinaryErrand` no longer exist, nor do
+> `tests/web/paying-into-the-ledger.test.ts`,
+> `tests/engine/encounters/a-posting-does-not-reprice-a-donation.test.ts` or
+> `scripts/probe-what-a-donation-buys.ts`. Kept for the reasoning, which is still a good
+> worked example of a catalog quietly pricing an economy.
 
 BUILT: three occasions in `SENDING_REASONS` so an escort is not always an errand - a visit to
 another house, a friendly competition, and a walk to the edge of forbidden ground. Two new

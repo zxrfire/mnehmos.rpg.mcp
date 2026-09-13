@@ -129,6 +129,7 @@ const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     a_making: true,
     terms: true,
     a_trade: true,
+    advancement: true,
     nothing: true,
     unstated: true
 };
@@ -454,7 +455,8 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
             read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty"
-            to take something off the mission board, "donate" to pay into the ledger, "guest"
+            to take something off the mission board, "donate" to pay money into the house's
+            coffers, which buys no rung and no contribution, "guest"
             to sit in at a house that has not taken you, "leave" to resign, "summons" to ask
             what the house has asked of you, "accept" to answer it yes and go, "refuse" to
             answer it no and "ignore" to answer it not at all, and "siphon",
@@ -610,7 +612,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             taken on), introduction (be put in front of somebody), telling (be told something
             they know), a_thing (be given, lent or sold an object), terms (what would it take -
             the price asked before it is paid), a_trade (something put down for it that is not
-            money), nothing (ask for NOTHING - buy them a drink, sit with them, call on them, do
+            money), advancement (be raised a rung in your own house - it only moves if the person
+            asked is the one whose call it is, and money alone will not buy it), nothing (ask for
+            NOTHING - buy them a drink, sit with them, call on them, do
             them a small favour; costs a day and no stones, and it is the only thing that makes
             a stranger somebody who will do you a favour later); "topic" is what was named - the
             art, the person, the thing. This is the ONLY route to being taught by a person,

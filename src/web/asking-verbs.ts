@@ -1127,8 +1127,13 @@ ${unnamed}`;
             ? resolveTechnique(this.repos, named, cultivator.id)
             : null;
         let shape: RequestKind = kind;
-        if (kind === 'a_thing' || kind === 'telling') {
-            if (asArt) shape = 'teaching';
+        // A RUNG IS NOT A THING SOMEBODY IS HOLDING. Asking to be raised is an
+        // attempt to move the person whose call it is, and `interact` is what
+        // resolves those - the same door "bribe her to promote me" goes
+        // through, which is the point: what was asked for decides where it
+        // goes, and the word it was asked with decides nothing.
+        if (kind === 'a_thing' || kind === 'telling' || kind === 'advancement') {
+            if (asArt && kind !== 'advancement') shape = 'teaching';
             else {
                 return this.interact(
                     run, cultivator, ambient, query, 'negotiate',

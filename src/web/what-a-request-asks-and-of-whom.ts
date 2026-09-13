@@ -32,6 +32,17 @@ export type RequestKind =
      */
     | 'a_making'
     /**
+     * ASKING SOMEBODY TO RAISE YOU A RUNG YOU HAVE NOT EARNED.
+     *
+     * The road that is open now that cash may not buy a rung. It is a request
+     * like any other and reads the same out of "ask", "bribe" or "threaten" -
+     * what separates it is the weight, which is the heaviest a request carries
+     * short of a betrayal, and WHO it has to be put to. A rung is on the
+     * house's own ladder, so giving one away is against the interest of the
+     * body the giver sits in.
+     */
+    | 'advancement'
+    /**
      * ASKING WHAT IT WOULD TAKE, WHICH IS NOT ASKING FOR IT.
      */
     | 'terms'
@@ -73,6 +84,14 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         // is the grade asked for, and that is priced where grades are.
         case 'a_making':
             return 'a_real_favour';
+        // A rung off the house's own ladder, given to somebody who has not
+        // earned it. The weight is not a judgement: `PURSE_REACH` at
+        // `against_their_interest` is 0.2, which is exactly where
+        // `whatTheyWillTakeFor` stops accepting money - so this one choice is
+        // also the reason a bribe in stones alone does not buy a rung and the
+        // refusal has a rung of the ladder to name instead.
+        case 'advancement':
+            return 'against_their_interest';
     }
 }
 
@@ -588,6 +607,17 @@ export function namesAKindRatherThanAThing(phrase: string | undefined | null): b
 }
 
 /**
+ * Being raised a rung.
+ *
+ * Read AFTER discipleship and teaching, because "make me your disciple" and
+ * "raise me through the Iron Bell Manual" are both somebody asking for
+ * something else. Nothing here matches a bare "promote" with no object - a
+ * disciple promoting somebody ELSE is `sect/promote` and has its own door.
+ */
+const ASKING_TO_BE_RAISED =
+    /\b(?:promote me|my promotion|a promotion|raise me (?:a rung|up|to|one rung)|raise my (?:rank|rung|standing in)|move me up|advance me|elevate me|put me up for (?:the )?(?:rung|rank|promotion)|(?:my|the) next rung|a higher rung|make me an? (?:inner|core|true|senior|head) disciple)\b/i;
+
+/**
  * Being put in front of somebody.
  */
 const ASKING_FOR_AN_INTRODUCTION =
@@ -642,6 +672,7 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
     if (ASKING_TO_BE_TAUGHT.test(clause)) {
         return { kind: 'teaching', object: objectAfter(clause, AFTER_THE_TEACHING_VERB) };
     }
+    if (ASKING_TO_BE_RAISED.test(clause)) return { kind: 'advancement' };
     if (ASKING_FOR_AN_INTRODUCTION.test(clause)) {
         return {
             kind: 'introduction',

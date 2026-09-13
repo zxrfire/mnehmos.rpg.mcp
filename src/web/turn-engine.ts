@@ -476,8 +476,19 @@ import {
 // computed elsewhere; see the banner in each file for what it may and may not
 // say. Wired here because this is where the state they restate is already read.
 import {
-    type RequestKind
+    type RequestKind,
+    baseWeightOf,
+    requestPutToSomebody
 } from './what-a-request-asks-and-of-whom.js';
+// A person has two ids - the catalog's and the world row's - and a roll dealt
+// out of the catalog has to be compared against somebody standing in a square.
+import { theOneIdAPersonIsKnownBy } from '../engine/world/a-catalog-person-and-their-world-row.js';
+// A rung given rather than earned, which is the road that replaced buying one.
+import {
+    THE_ROOM_A_RUNG_IS_DECIDED_IN,
+    whatABoughtRungLeaves,
+    whoCouldRaiseYou
+} from '../engine/social-leverage/a-rung-nobody-earned.js';
 import {
     type RequestCosting
 } from './what-asking-this-person-for-this-would-cost-them.js';
@@ -639,13 +650,12 @@ import {
     // and reading only what the resolver decided; see `whatTheWrongedPartyDid`.
     type Wrong
 } from '../engine/social-leverage/index.js';
-// The board's own exchange rate, in closed form. See the function's comment.
+import { pitchedWellBeneath } from '../engine/encounters/duties.js';
+// The bar on the next rung, so a refusal can name what the board would have to
+// pay out. It is the only thing contribution is spent on anywhere.
 import {
-    contributionPerStoneDonated,
-    DONATION_DISCOUNT,
-    ORDINARY_DUTY_DAYS,
-    pitchedWellBeneath
-} from '../engine/encounters/duties.js';
+    requiredContributionForRank
+} from '../engine/cultivation/what-each-rung-of-a-house-ladder-requires.js';
 // The board's own word for a tier. `who-goes-out-for-a-house-and-what-comes-back.ts`
 // had zero references anywhere in `src/`, so a board printed no tier at all -
 // and the tier is the first thing a person reads off a notice.
@@ -5511,12 +5521,21 @@ ${noticed}`;
 
         // AN ATTEMPT TO MOVE SOMEBODY, ACTUALLY RESOLVED
         if (party.kind === 'cultivator' && party.party && ATTEMPT_INTENTS.has(intent)) {
+            // AND WHETHER WHAT WAS ASKED FOR WAS A RUNG. Read off the REQUEST
+            // and never off the intent - the moment a line here says
+            // `intent === 'bribe'` the design has failed, and a rung asked for
+            // politely has to reach the same place a rung asked for with money
+            // does. Nothing happens for any other ask.
+            //
+            // Chained rather than awaited because `interact` is deliberately
+            // not async: it returns a plain `Execution` on most paths and
+            // several callers depend on that.
             return this.pressSomebody(
                 run, cultivator, ambient, party, intent, leverage, rawInput, spoken,
                 // No demand, and the thing the sentence named. The parser puts
                 // it on `topic` for a theft and nothing else reads it here.
                 undefined, named
-            );
+            ).then(pressed => this.aRungWasAskedFor(run, cultivator, party, rawInput, pressed));
         }
 
         // ── A HOSTILE ACT AIMED AT A WHOLE HOUSE IS A DECLARATION ────────
@@ -12215,6 +12234,194 @@ ${fit.line}`;
     }
 
     /**
+     * Somebody was asked to raise the player a rung, and what came of it.
+     *
+     * THE ROAD THAT REPLACED BUYING ONE. `donate` used to turn spirit stones
+     * into contribution and contribution is the whole of what a promotion is
+     * gated on, so money bought rank with one step hidden in the middle. That
+     * is struck. This is the road that is open instead, and the difference is
+     * that it runs through a PERSON: somebody has to decide, that decision
+     * costs them, and a person who is passed over holds it against the one who
+     * chose.
+     *
+     * WHAT IT READS is the REQUEST, never the intent. "ask her to promote me",
+     * "bribe her to promote me" and "threaten her into promoting me" are one
+     * ask put three ways, and the resolver has already priced the difference
+     * between them by the time this runs. Every other ask falls straight
+     * through untouched.
+     */
+    private async aRungWasAskedFor(
+        run: Run,
+        cultivator: Cultivator,
+        party: ResolvedEntity,
+        rawInput: string,
+        pressed: Execution
+    ): Promise<Execution> {
+        if (requestPutToSomebody(rawInput)?.kind !== 'advancement') return pressed;
+
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) {
+            return this.nothingCameOfTheRung(
+                pressed,
+                `${party.name} has no ladder to move you up. You stand on nobody's roll, so `
+                + 'there is no rung between you and anything.',
+                'a-rung-nobody-earned: the asker is on no roll. Nothing to raise.'
+            );
+        }
+        if (held.rankIndex + 1 >= held.rankCount) {
+            return this.nothingCameOfTheRung(
+                pressed,
+                `${held.rankTitle} is the top of ${held.sectName}. There is nothing above it for `
+                + 'anybody to give you.',
+                `a-rung-nobody-earned: rank ${held.rankIndex} of ${held.rankCount}. At the top.`
+            );
+        }
+
+        const { roster, portfolios } = await this.theHouseAround(cultivator, held);
+        const roll = [
+            { id: cultivator.id, rankIndex: held.rankIndex },
+            ...roster.map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }))
+        ];
+        const call = whoCouldRaiseYou({
+            portfolios, roll, rankCount: held.rankCount, asking: cultivator.id
+        });
+        // A PERSON HAS TWO IDS AND THE ROLL HOLDS THE OTHER ONE. `rosterFor`
+        // deals the roll out of the CATALOG, and somebody standing in a square
+        // arrives as their world row - so comparing the two raw is a comparison
+        // that is false for the one person it most needs to be true for.
+        // `theOneIdAPersonIsKnownBy` is the repo's total answer to exactly this.
+        const whoWasPutTo = theOneIdAPersonIsKnownBy(party.id);
+
+        // ── AND A GATE PORTER CANNOT MOVE A RUNG ─────────────────────────
+        //
+        // The whole of what makes this a road rather than a cheat code. Money
+        // put in front of somebody who does not hold the room buys exactly
+        // what it is worth, which is a day and a person who now knows what you
+        // tried. The refusal names who it would have to be, because a refusal
+        // that hides the answer is an empty world.
+        if (call.holderId === null || whoWasPutTo !== call.holderId) {
+            const whose = call.holderId === null
+                ? null
+                : roster.find(person => person.id === call.holderId) ?? null;
+            return this.nothingCameOfTheRung(
+                pressed,
+                call.holderId === null
+                    ? `${held.sectName} posts its work nowhere and books it with nobody. There is `
+                      + 'no room here where a rung is decided, so there is nobody in this house '
+                      + 'who could give you one.'
+                    : `${party.name} does not decide this. A rung is bought with what the board `
+                      + `books against your name, and ${whose?.name ?? 'whoever holds that room'} `
+                      + 'is who holds that room. What you put in front of them was real money and '
+                      + 'they are not the door.',
+                `a-rung-nobody-earned: asked ${party.id}; the room is held by `
+                + `${call.holderId ?? 'nobody'}. ${call.line}`
+            );
+        }
+
+        const wants = whatTheyWillTakeFor(whoWasPutTo, {
+            ask: baseWeightOf('advancement'),
+            hasACashPrice: false,
+            theyNeedSomethingDone: false
+        });
+
+        if (pressed.outcome !== 'executed') {
+            // WHAT WOULD HAVE WORKED. `whereTheOfferLanded` reads the two rungs
+            // of the ladder and names the one that was wanted, and the offer is
+            // read as stones because that is what a purse in a sentence is.
+            const landed = whereTheOfferLanded(wants, 'stones');
+            return this.nothingCameOfTheRung(
+                pressed,
+                `The rung is ${party.name}'s to give and they did not give it. ${landed.line}`,
+                `a-rung-nobody-earned: ${party.id} holds the room and refused. `
+                + `whatTheyWillTakeFor=${wants}, offered=stones. ${call.line}`
+            );
+        }
+
+        // ── AND IT ACTUALLY MOVES ────────────────────────────────────────
+        const nextIndex = held.rankIndex + 1;
+        const toRank = held.ranks[nextIndex] ?? `rank ${nextIndex}`;
+        const onDay = Math.floor(run.elapsedDays);
+        // Whoever was standing on the rung it came off. The same read the false
+        // decree uses for a witness, and for the same reason: a drawn name
+        // makes it unlearnable that WHO was passed over mattered.
+        const passedOver = whoSawIt(roster, nextIndex, cultivator.id);
+
+        this.repos.sects.setRank(held.sectId, cultivator.id, nextIndex);
+
+        const left = whatABoughtRungLeaves({
+            houseId: held.sectId,
+            houseName: held.sectName,
+            giverId: whoWasPutTo,
+            raisedId: cultivator.id,
+            raisedName: cultivator.name,
+            toRankTitle: toRank,
+            doing: ifCaughtAtSomethingTheHousePunishes({
+                theirsToPunish: true,
+                alignment: getSect(held.sectId)?.alignment ?? null
+            }),
+            ...(passedOver ? { passedOverId: passedOver.id } : {}),
+            onDay,
+            knownTo: [held.sectId, whoWasPutTo, ...(passedOver ? [passedOver.id] : [])]
+        });
+
+        if (left.theGiverAnswersFor) {
+            writeOneObligation(
+                this.db as unknown as DatabaseHandle, createObligation(left.theGiverAnswersFor)
+            );
+        }
+        if (left.passedOver) {
+            writeOneObligation(this.db as unknown as DatabaseHandle, left.passedOver);
+        }
+
+        const said =
+            `You are ${toRank} of ${held.sectName} as of this morning, and the board has nothing `
+            + `against your name that says why. ${party.name} carries what they did`
+            + (passedOver
+                ? `, and ${passedOver.name}, who was standing on that rung waiting, carries it `
+                  + 'against them.'
+                : '.');
+        pressed.facts.lines.push(said);
+        pressed.facts.prose = `${pressed.facts.prose}\n\n${said}`;
+        pressed.facts.required = [...(pressed.facts.required ?? []), said];
+        pressed.facts.structure.push(
+            `a-rung-nobody-earned: setRank ${held.rankIndex} -> ${nextIndex} at ${held.sectId}, `
+            + `contribution untouched at ${held.contribution} against a bar of `
+            + `${requiredContributionForRank(nextIndex)}. ${left.line}`
+        );
+        pressed.calls.push({
+            name: 'social.whatABoughtRungLeaves',
+            action: 'interact',
+            summary:
+                `${party.name} holds ${THE_ROOM_A_RUNG_IS_DECIDED_IN} and gave the rung. `
+                + `${cultivator.name} is ${toRank} without the contribution for it. `
+                + `Rows opened: ${[
+                    left.theGiverAnswersFor ? 'the house about the giver' : null,
+                    left.passedOver ? 'the one passed over against the giver' : null
+                ].filter(Boolean).join(', ') || 'none'}.`,
+            ok: true
+        });
+        return pressed;
+    }
+
+    /**
+     * A rung that was asked for and did not move, said plainly.
+     *
+     * The attempt itself still happened - the days went, the money that landed
+     * landed, and they know what was put to them - so this only ever appends.
+     */
+    private nothingCameOfTheRung(
+        pressed: Execution,
+        line: string,
+        structure: string
+    ): Execution {
+        pressed.facts.lines.push(line);
+        pressed.facts.prose = `${pressed.facts.prose}\n\n${line}`;
+        pressed.facts.required = [...(pressed.facts.required ?? []), line];
+        pressed.facts.structure.push(structure);
+        return pressed;
+    }
+
+    /**
      * Who a taken mission is reported to, where the house has a mission hall.
      *
      * The hall's elder, or a disciple posted there. Null where the house has no
@@ -14156,7 +14363,20 @@ ${fit.line}`;
     }
 
     /**
-     * Paying into the house's ledger instead of serving it.
+     * Paying money into the house, which is not the same as serving it.
+     *
+     * ── CASH DOES NOT BUY A RUNG ─────────────────────────────────────────
+     *
+     * This credited `sect_members.contribution` at a discounted board rate, and
+     * contribution is the one and only thing `handlePromote` gates a rung on -
+     * so money bought rank with one step hidden in the middle. Struck by the
+     * design owner. The stones still move and the house still remembers who
+     * paid: what is gone is the line in the ledger of service.
+     *
+     * The verb stays because the ACT is real and is not the defect. It is the
+     * only thing in the game that pays into `resources.spirit_stones`, and what
+     * it leaves behind is a deed somebody can be reminded of - which is the
+     * road that IS open to a rung, through the person whose call it is.
      */
     private async donate(
         run: Run,
@@ -14176,36 +14396,18 @@ ${fit.line}`;
         }
 
         const floor = Math.max(1, this.repos.sects.stipendForRank(sect.id, 0));
-        // ── THE BOARD'S CONTENTS DO NOT PRICE MONEY ──────────────────────
-        //
-        // This read the MEDIAN SPAN of whatever was posted to this person.
-        // Measured across three seeded worlds, 342 readers: at one rung the
-        // median came out 30, 60 or 90 days depending on the house, so a
-        // hundred stones bought 36, 71 or 107 contribution against a first
-        // promotion of 100 - and 31 of 114 readers at the bottom band could
-        // buy their next rung outright with a hundred stones. Adding two
-        // `regional` sending reasons moved every board's median 60 to 90 and
-        // repriced the whole game, which nobody adding a duty reason could
-        // have known.
-        //
-        // The rule is unchanged: a stone buys `DONATION_DISCOUNT` of what the
-        // board would have paid for the same work. What it is read against is
-        // the ORDINARY ERRAND rather than today's notices - the unit of work
-        // the contribution line is already measured in.
-        const rate = contributionPerStoneDonated();
 
         if (amount === undefined) {
             return this.freeAction(run, 'sect', factsForToolResult(
-                `${sect.name} takes donations, at a price.`,
+                `${sect.name} will take your money and will not call it service.`,
                 [
                     `Nothing under ${floor} spirit stones is worth writing down - that is what the `
                     + 'house pays its least important member in a month, and a clerk is not going '
                     + 'to open the book for less.',
-                    `Above it, ${sect.name} credits about ${rate.toFixed(2)} contribution the `
-                    + `stone. The board pays better: an ordinary errand served out is worth `
-                    + `${(rate / DONATION_DISCOUNT).toFixed(2)} the stone and a long posting more `
-                    + 'again, because contribution is a record of service and buying it is not '
-                    + 'serving.',
+                    'Above it the stones go into the treasury and nothing at all is credited to '
+                    + 'your contribution. Contribution is the record of what you have done for '
+                    + 'this house, and the board is the only place it is earned.',
+                    'What money buys here is that somebody remembers it was you.',
                     `You are carrying ${cultivator.spiritStones}. Name a sum.`
                 ]
             ));
@@ -14230,10 +14432,8 @@ ${fit.line}`;
             ));
         }
 
-        const credited = Math.max(1, Math.round(offered * rate));
         const persist = this.db.transaction(() => {
             this.repos.cultivators.applyDeltas(cultivator.id, { spiritStones: -offered });
-            this.repos.sects.addContribution(sect.id, cultivator.id, credited);
             this.repos.runs.incrementTurn(run.id, 1);
         });
         persist();
@@ -14261,19 +14461,19 @@ ${fit.line}`;
 
         const after = this.repos.sects.getMembership(cultivator.id);
         const facts = factsForToolResult(
-            `${credited} contribution, bought.`,
+            `${offered} spirit stones into ${sect.name}'s coffers. The ledger does not move.`,
             [
-                `${offered} spirit stones into ${sect.name}'s coffers, credited as ${credited} `
-                + `contribution at ${rate.toFixed(2)} the stone. The ledger now reads `
-                + `${after?.contribution ?? credited}.`,
-                'It is worth less than the same money earned on the board, and everybody who '
-                + 'reads the ledger can see which of the two it was.'
+                `Your contribution stands where it stood, at ${after?.contribution ?? 0}. Nothing `
+                + 'you can pay will add to it - it is the record of what you have done for this '
+                + 'house, and money is not something you did.',
+                `${requiredContributionForRank(held.rankIndex + 1)} contribution is what the next `
+                + 'rung asks, and the board is where it comes from.',
+                'The money is not wasted. A house that has been paid into remembers who paid.'
             ]
         );
         facts.structure.push(
-            `donate: ${offered} stones -> ${credited} contribution at ${rate} `
-            + `(ordinary errand ${ORDINARY_DUTY_DAYS} days, discount ${DONATION_DISCOUNT}, `
-            + `floor ${floor}).`
+            `donate: ${offered} stones out of the purse, 0 contribution credited (floor ${floor}, `
+            + 'the house\'s lowest monthly stipend). No rate exists; cash does not buy a rung.'
         );
         facts.structure.push(paidIn === null
             ? 'No world row for this house, so the stones left the purse and reached no '
@@ -14285,10 +14485,9 @@ ${fit.line}`;
             name: 'engine.donate',
             action: 'sect',
             summary:
-                `${offered} stone(s) -> ${credited} contribution. Rate ${rate} the stone, derived `
-                + `from contributionPerStoneDonated(), the ordinary errand's own rate at `
-                + `${DONATION_DISCOUNT}. `
-                + `Floor ${floor} = stipend at rank 0.`,
+                `${offered} stone(s) into ${sect.name}'s treasury. Contribution credited: 0. `
+                + 'There is no money-to-contribution rate anywhere in the engine, so no sum '
+                + `buys a rung. Floor ${floor} = stipend at rank 0.`,
             ok: true
         }];
 
@@ -14304,7 +14503,8 @@ ${fit.line}`;
                 factionIds: [sect.id],
                 summary:
                     `${cultivator.name} paid ${offered} spirit stones into ${sect.name}'s `
-                    + `coffers, out of the ${purseBefore} they were carrying.`,
+                    + `coffers, out of the ${purseBefore} they were carrying. Nothing was `
+                    + 'credited to them for it.',
                 unattributed:
                     'A house has money it did not have, and nobody at the gate will say who '
                     + 'brought it.',
@@ -14317,8 +14517,8 @@ ${fit.line}`;
                         cost: purseBefore > 0 ? offered / purseBefore : 1,
                         onDay: Math.floor(run.elapsedDays),
                         description:
-                            `${offered} spirit stones into ${sect.name}'s coffers, credited as `
-                            + `${credited} contribution.`,
+                            `${offered} spirit stones into ${sect.name}'s coffers, against `
+                            + 'nothing.',
                         // A house takes money in front of the people who keep
                         // its books. This is not a secret gift, and the deed
                         // module weighs an unwitnessed kindness higher for a
@@ -14342,7 +14542,7 @@ ${fit.line}`;
                         ranked: true
                     }
                 },
-                data: { stones: offered, contribution: credited }
+                data: { stones: offered, contribution: 0 }
             })
             : null;
         if (gift) {

@@ -860,6 +860,18 @@ describe('every intent DECLARED is a door somebody can find', () => {
             'I ask my master to cut me a talisman',
             'I pay Elder Fang 400 stones to craft me a talisman'
         ],
+        // ASKING TO BE RAISED, which is the road that replaced buying a rung
+        // with cash. It arrives as a request whichever word it was asked with -
+        // nothing downstream may read that a bribe was meant - and the house's
+        // own step keeps every sentence that names no person, which is the
+        // other half of the same routing and is pinned in
+        // `a-rung-is-somebodys-to-give.test.ts`.
+        'request/advancement': [
+            'I ask Elder Fang to promote me',
+            'I bribe Elder Fang with 2000 stones to promote me',
+            'I beg Elder Fang to raise me a rung',
+            'I offer Elder Fang 500 spirit stones to promote me'
+        ],
         // ONE VERB, AT EVERY SEVERITY. These were four rows - drive_off,
         // subdue, kill, humiliate - and the split is what
         // `how-a-blow-was-thrown.ts` removed: *"just make attacks and drive

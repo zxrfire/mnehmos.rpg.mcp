@@ -4042,9 +4042,36 @@ function planIntent(input: string): PlannedAction {
 
     // Sect promotion and stipend, before anything that could read them as
     // asking a person a question or as going out to collect something.
+    //
+    // ── AND A RUNG PUT TO A PERSON IS PUT TO THAT PERSON ─────────────────
+    //
+    // `promote` was put in this slot specifically so that "ask for a
+    // promotion" would not read as asking somebody a question, and that was
+    // right while the house's own step was the only road to a rung. It is not
+    // any more: cash may not buy one, and what may is moving the person whose
+    // call it is. "I ask the sect to promote me" is still the house's step and
+    // still lands here; "I bribe Shu Wanping to promote me" is a request put
+    // to Shu Wanping, and WHO it is put to is the whole of what decides
+    // whether the rung moves. Measured before the yield: every phrasing naming
+    // a person was answered by `handlePromote` reciting the contribution bar,
+    // so the person in the sentence was never looked at.
+    //
+    // The same yield the theft row makes to a giving verb, and it falls
+    // THROUGH rather than returning an intent of its own - whichever attempt
+    // verb the sentence used is read by the interact table below, and nothing
+    // here decides that a bribe was meant.
     {
-        const unambiguous = SECT_INTENT_UNAMBIGUOUS.find(([, pattern]) => pattern.test(text));
-        if (unambiguous) return { action: 'sect', intent: unambiguous[0] };
+        const putToSomebody = requestPutToSomebody(text);
+        // `A_HOUSE_IS_NAMED` is the finished question and answers both halves -
+        // the catalog's own names and the type nouns that stand alone - so
+        // "the sect", "my hall" and "the Azure Dew Sect" all fail this and stay
+        // with the house's own step.
+        const aPersonRatherThanTheHouse = putToSomebody?.kind === 'advancement'
+            && !A_HOUSE_IS_NAMED.test(putToSomebody.person);
+        if (!aPersonRatherThanTheHouse) {
+            const unambiguous = SECT_INTENT_UNAMBIGUOUS.find(([, pattern]) => pattern.test(text));
+            if (unambiguous) return { action: 'sect', intent: unambiguous[0] };
+        }
     }
 
     // Sending the rung below, before `work` and `gather` - both of which used to

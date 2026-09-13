@@ -126,7 +126,12 @@ import { findDataWithNoVerb, findUnwired } from '../../scripts/find-unwired-expo
 // construction. Each is routed in OPEN-QUESTIONS.md with the act that would
 // call it. This number is meant to come DOWN when those land - do not raise
 // it again to make a red suite green without saying here what pushed it.
-const DEAD = 154;
+// 154 -> 150 AND 448 -> 447, MEASURED ON A QUIET TREE, when the cash-to-rank
+// path was struck. `DONATION_DISCOUNT`, `contributionPerStoneDonated` and
+// `contributionPerStoneOnAnOrdinaryErrand` went with the rule they priced, and
+// the road that replaced them is composed out of names that already existed
+// rather than out of new ones. Both numbers are meant to keep falling.
+const DEAD = 150;
 // Raised by one, for the same reason and under the same discipline as `DEAD`
 // above: one name from the same session is pinned by its own test and has no
 // caller in the game yet.
@@ -134,7 +139,7 @@ const DEAD = 154;
 // and not yet called by the game. Same discipline as `DEAD` above - this
 // number is meant to come DOWN, and nobody may raise it without saying here
 // what pushed it.
-const TEST_ONLY = 448;
+const TEST_ONLY = 447;
 
 describe('design does not go unwired', () => {
     const rows = findUnwired() as Array<{

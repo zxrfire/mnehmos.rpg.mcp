@@ -764,7 +764,12 @@ export async function handlePromote(args: z.infer<typeof PromoteSchema>): Promis
                 requiredContribution: needContribution,
                 currentOrdinal: cultivator.realmOrdinal,
                 currentContribution: membership.contribution,
-                hint: 'Contribution is earned through sect work and donations, not asserted.'
+                // A rung is not for sale. Money can be paid into a house and
+                // nothing at all is credited for it - the board is the only
+                // place contribution comes from. What money CAN reach is the
+                // person whose call the promotion is.
+                hint: 'Contribution is earned on the mission board. Nothing converts spirit '
+                    + 'stones into it.'
             }
         );
     }

@@ -195,45 +195,19 @@ export function contributionPerStoneOverDays(days: number): number {
 }
 
 /**
- * The board's own exchange rate at the span that belongs to the work rather
- * than to what is currently pinned up.
+ * ── AND IT PRICES WORK, NEVER MONEY ──────────────────────────────────────
  *
- * ── THE BOARD'S CONTENTS MUST NOT PRICE MONEY ────────────────────────────
+ * This rate exists so that a duty can be handed to somebody else for stones
+ * (`passing-a-duty-down-to-somebody-else.ts`): what the board would have paid
+ * for that work, as money. It is not a way in.
  *
- * `donate` took the MEDIAN SPAN of whatever was posted to the reader and priced
- * off that. The rule was defensible - you pay a discount on what the house
- * would have paid you for the work - and the anchor was not: a board's contents
- * move with the CATALOG, so adding two `regional` sending reasons moved the
- * median from 60 days to 90 and took a hundred stones from 71 contribution to
- * 107, against a first promotion that costs 100. Nobody adding a duty reason
- * had any way to know they were repricing every donation in the game.
- *
- * So the span is the ordinary errand: the unit of work the contribution line is
- * already measured in. Everything else in `dutyTermsFor` cancels - the base,
- * the pitch and the regard all divide out - so what is left is the one exchange
- * rate the board has, at the one span that belongs to the work rather than to
- * what is currently pinned up. A stone buys the same contribution at every rung
- * of every house, which is what makes the ratio to a promotion stable enough to
- * balance against.
+ * There is no rate at which spirit stones become contribution, and there must
+ * not be one. Contribution is the record of what somebody DID for a house, and
+ * a rung is bought with it - so a money-to-contribution rate is cash buying a
+ * rung with one step hidden in the middle. Somebody may still pay a house
+ * (`donate`); the stones reach the treasury and the ledger of service does not
+ * move.
  */
-export function contributionPerStoneOnAnOrdinaryErrand(): number {
-    return contributionPerStoneOverDays(ORDINARY_DUTY_DAYS);
-}
-
-/** What a donation is worth against the same money earned by serving. */
-export const DONATION_DISCOUNT = 1 / 3;
-
-/**
- * What one spirit stone buys in a house's ledger when it is paid in.
- *
- * The whole donation rule, in one place: the board's rate for the ordinary
- * errand, discounted, because a record of service bought is not service. It
- * takes no board and no house on purpose - see
- * {@link contributionPerStoneOnAnOrdinaryErrand}.
- */
-export function contributionPerStoneDonated(): number {
-    return contributionPerStoneOnAnOrdinaryErrand() * DONATION_DISCOUNT;
-}
 
 export interface DutyTerms {
     origin: DutyOrigin;

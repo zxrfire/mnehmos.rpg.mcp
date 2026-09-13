@@ -29,7 +29,10 @@ import {
     whoAnswersForItAfterwards,
     type ADutyBeingPassedOn
 } from '../../../src/engine/encounters/passing-a-duty-down-to-somebody-else';
-import { contributionPerStoneOverDays } from '../../../src/engine/encounters/duties';
+import {
+    contributionPerStoneOverDays,
+    CONTRIBUTION_BASE
+} from '../../../src/engine/encounters/duties';
 import { openHandednessOf } from '../../../src/engine/social-leverage/how-freely-somebody-parts-with-what-they-have';
 import { DISPOSITION_BANDS } from '../../../src/engine/social-leverage/how-freely-somebody-parts-with-what-they-have';
 
@@ -48,6 +51,33 @@ function somebodyWho(test: (openHanded: number) => boolean): string {
 
 const MIDDLING = somebodyWho(n => Math.abs(n) < DISPOSITION_BANDS.WORTH_SAYING);
 const COMFORTABLE = { id: MIDDLING, ordinal: 10, spiritStones: 5_000 };
+
+/**
+ * The closed form of the rate, kept here because this is its only consumer.
+ *
+ * It used to be pinned beside `donate`, which converted spirit stones into
+ * contribution at a discount off it. That conversion is struck - cash may not
+ * buy a rung - so the rate's whole remaining job is the one below: saying what
+ * an errand's pay is worth as money to somebody hired to do it.
+ */
+describe('the board own exchange rate', () => {
+    it('is days over twenty-eight, with everything else cancelled', () => {
+        for (const days of [1, 7, 20, 45, 90]) {
+            expect(contributionPerStoneOverDays(days)).toBeCloseTo(days / 28, 10);
+        }
+        // And it genuinely is what the two duty lines produce, for any base.
+        const days = 20;
+        const yieldScale = 1.7;
+        const contribution = CONTRIBUTION_BASE * yieldScale * (days / 20);
+        const paid = CONTRIBUTION_BASE * yieldScale * 1.4;
+        expect(contribution / paid).toBeCloseTo(contributionPerStoneOverDays(days), 10);
+    });
+
+    it('refuses a span of zero rather than dividing by it', () => {
+        expect(contributionPerStoneOverDays(0)).toBeGreaterThan(0);
+        expect(contributionPerStoneOverDays(Number.NaN)).toBeGreaterThan(0);
+    });
+});
 
 describe('a disciple can pay somebody else to do it', () => {
     it('prices the duty in one currency using the board own exchange rate', () => {
