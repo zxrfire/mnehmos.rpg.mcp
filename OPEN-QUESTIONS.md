@@ -40,21 +40,16 @@ Six. Everything else below is work, not a question.
   changed beast reachable everywhere wants one 93% of the time. Widest gap of the night.
 
 **Wrong, and small**
-- Where a posting goes: `aPostingAsAnOffer` takes a `placeName` nobody passes. An elder travels
-  to friendly sects in their own faction — a court elder down for the best seedlings, a lower
-  elder sending seedlings up.
-- `status` should name your house rank when you have one.
-- The stallholder should resolve from what happened before in the scene.
 - `hunt` cannot spare — it throws `force: 'everything'`, so mercy is unreachable through the
   one verb named for going out after something.
 
 **Gaps worth knowing before designing around them**
-- **The beast catalog is 19 species and it is now the binding constraint.** A place resolves to
-  a ground as of tonight, so provinces differ (1 → 15 distinct pools). But the Drowned Sea has
-  **1** beast, the Yellow Plain and Burial Sands **2** each, and some squares have none. The
-  ground work is only worth what the catalog can fill.
-- `volcanic` has 3 herbs and no province on the map is volcanic ground, so nothing can ever
-  draw them. Either the map wants a volcanic province or the rows want moving.
+- **The map has no volcanic ground.** Three herbs grow on it and no province declares it, so
+  nothing can ever draw them and no volcanic beast was written. Either somewhere is volcanic
+  or the rows want moving — inventing a volcano is lore, so it is yours.
+- **Nothing new was added at or above ordinal 29.** The changed-beast population is still 6,
+  pinned by `house-protector-pairing.test.ts`, and the sealed-only invariant wants those rows
+  strictly above the open-world ceiling. Growing the top is its own decision.
 - A sub-rank advance files nothing, so the widened witness pool covers realm crossings only.
 - **Nothing in the world acts on two accounts that disagree.** A lie about yourself is written
   now and `provenanceOf` makes the disagreement readable; no NPC reads it, so nobody is ever

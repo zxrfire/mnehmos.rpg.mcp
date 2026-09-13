@@ -85,7 +85,12 @@ describe('spirit beasts: the catalog', () => {
             expect(() => HerbBiomeSchema.parse(b.biome), b.id).not.toThrow();
             expect(getBeastsByBiome(b.biome).map(x => x.id)).toContain(b.id);
         }
-        expect(getBeastsByBiome('sky_island')).toEqual([]);
+        // An unpopulated biome answers with an empty list rather than
+        // undefined, which is what this line is for. It pointed at
+        // `sky_island` until the catalog grew one; `volcanic` is the honest
+        // replacement, because no province on the map declares volcanic ground
+        // and nothing can stand on it until one does.
+        expect(getBeastsByBiome('volcanic')).toEqual([]);
     });
 
     it('covers the range: ordinary animals through to something ancient', () => {
@@ -342,6 +347,47 @@ describe('the change, and why a talking beast is never the easy option', () => {
         // ruling, and the thing being claimed was never the words.
         expect(ESTIMATING_A_BEAST.tells.join(' ')).toContain(rankNameOfChange());
         expect(ESTIMATING_A_BEAST.standardError).toMatch(/rank low|survey/i);
+    });
+});
+
+/**
+ * The per-species tell, which is a ruling that would otherwise live only as
+ * prose in sixty rows.
+ *
+ * A beast that crosses at `BEAST_CHANGE_ORDINAL` takes a human shape, and the
+ * design owner's requirement is that WHAT KIND of thing it was still shows -
+ * a fox is seductive, a tortoise is blunt - because a changed beast that
+ * behaves like nothing in particular is a person carrying a species for no
+ * reason. The fox line had been removed once as an invention and was put back:
+ * it is a genre trope, not an embellishment.
+ *
+ * The two assertions that matter are the two failure modes. One is the field
+ * going stale as a copied line, which `distinct` catches. The other is worse
+ * and is the one `WHAT_GIVES_A_CHANGED_BEAST_AWAY` spends a page on: a manner
+ * turning into an anatomical tell. The body is correct and looking harder does
+ * not help, so a word about a tail or a pelt in this field has turned a
+ * description into evidence.
+ */
+describe('what shows of the species after the change', () => {
+    it('is authored on every row and is not one line copied out', () => {
+        for (const b of BEASTS) {
+            expect(b.changedManner.length, `${b.id} has no tell`).toBeGreaterThan(30);
+            expect(b.changedManner.length, `${b.id} is a paragraph`).toBeLessThan(320);
+        }
+        expect(new Set(BEASTS.map(b => b.changedManner)).size).toBe(BEASTS.length);
+    });
+
+    it('keeps the fox seductive and the tortoise blunt', () => {
+        expect(requireBeast('beast-nine-tailed-reader').changedManner).toMatch(/seductive/i);
+        expect(requireBeast('beast-millennial-tortoise').changedManner).toMatch(/blunt/i);
+    });
+
+    it('is manner, never anatomy, because the body is correct', () => {
+        const body = /\b(tails?|fur|pelts?|claws?|fangs?|snout|muzzle|whiskers?|paws?|scales?|hooves|feathers?)\b/i;
+        for (const b of BEASTS) {
+            expect(body.test(b.changedManner), `${b.id} reads the species off a body`).toBe(false);
+        }
+        expect(WHAT_GIVES_A_CHANGED_BEAST_AWAY.flavourNotEvidence).toMatch(/flavour rather than a clue/i);
     });
 });
 

@@ -485,6 +485,24 @@ export const BeastSchema = z.object({
     /** One line of flavour. If it needs two, it is not doing its job. */
     note: z.string().min(40),
     /**
+     * What one of these is like in company once it has crossed. Manner only.
+     *
+     * A fox is seductive, a tortoise is blunt, a weasel wheedles. The folk
+     * zoology this world's animals come out of gives every kind a temperament,
+     * and a changed beast that behaves like nothing in particular is a person
+     * carrying a species for no reason.
+     *
+     * NEVER ANATOMY AND NEVER EVIDENCE. The body is correct and looking harder
+     * does not help - `WHAT_GIVES_A_CHANGED_BEAST_AWAY` states that and this
+     * field does not reopen it. A manner proves nothing either: the province
+     * is full of blunt men, and what actually catches one is the missing
+     * reference for ordinary life, which is missing whatever the species.
+     *
+     * Authored on every row rather than on the six standing at the change,
+     * because it is a fact about the kind and any of them has the road open.
+     */
+    changedManner: z.string().min(30),
+    /**
      * The generic column. Absent everywhere here: `ordinal` is already what a
      * beast is pitched at, and it is the only measure of danger this catalog
      * carries, so the ordinary bands read it unaided.
@@ -784,7 +802,11 @@ export const WHAT_GIVES_A_CHANGED_BEAST_AWAY = {
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE CATALOG
-// Ordered by ordinal, which is the only ordering that means anything here.
+// Grouped by nature, and by ordinal inside a group - the only ordering that
+// means anything here. Each group runs its original rows in that order and
+// then the rows added to give every province a ladder, in that order again,
+// because the file is read by several people at once and a re-sort touching
+// every row is a merge conflict with nothing in it for a reader.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const BEASTS: readonly Beast[] = [
@@ -813,7 +835,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Nothing about it is hard. It is here because a district with nothing better than this is a district with a ceiling, and the culling ledger says so in numbers.',
         materialIds: ['mat-hare-pelt'],
-        note: 'Grey, fast, and faintly warm to hold. Two generations ago the district record was twice this size, and nobody has drawn the obvious conclusion out loud.'
+        note: 'Grey, fast, and faintly warm to hold. Two generations ago the district record was twice this size, and nobody has drawn the obvious conclusion out loud.',
+        changedManner: 'Agrees with whoever spoke last, leaves a room the moment a voice rises in it, and is three streets away before anybody has noticed it went.'
     },
     {
         id: 'beast-ironhide-boar',
@@ -836,7 +859,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It does not stop when hurt and it does not turn. A cultivator who has only fought people expects a fight to have a middle, and this one has a beginning and an end.',
         materialIds: ['mat-boar-hide', 'mat-boar-tusk'],
-        note: 'Roots up herb ground for the qi in the roots, which is why gatherers and cullers are frequently the same person.'
+        note: 'Roots up herb ground for the qi in the roots, which is why gatherers and cullers are frequently the same person.',
+        changedManner: 'Obstinate. Once it has said what it will do it does that and nothing adjacent to it, and a change of plan has to be argued from the beginning as though the first one had never happened.'
     },
     {
         id: 'beast-cave-drain-bat',
@@ -859,7 +883,251 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Individually beneath notice, and they take qi rather than blood. A cultivator fights them at full strength for two minutes and at nothing for the rest of it.',
         materialIds: ['mat-drain-bat-membrane'],
-        note: 'Roost wherever the rock is richest, so a colony is a survey result. Prospectors follow them and do not mention it at the assay house.'
+        note: 'Roost wherever the rock is richest, so a colony is a survey result. Prospectors follow them and do not mention it at the assay house.',
+        changedManner: 'Talks over people without noticing, and keeps talking while somebody else is talking, because a roost is nine hundred voices at once and silence is where it stops being able to tell where anything is.'
+    },
+    {
+        id: 'beast-blind-cave-fish',
+        name: 'Blind Cave Fish',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 1,
+        biome: 'cave',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 12,
+        speaks: false,
+        frequency: 150,
+        ability: {
+            name: 'Reads the Water',
+            kind: 'perception',
+            what:
+                'Knows the shape of a flooded chamber and everything moving in it from what the water does, and is not inconvenienced by the dark at all.'
+        },
+        hard: 'Nothing. It is in the catalog because a flooded gallery with nothing in it but these is a gallery nothing has drawn on, and a grant clerk prices a face off exactly that.',
+        materialIds: ['mat-cave-fish-oil'],
+        note: 'White and eyeless, in still water a long way in. Rendered by the jar into a lamp oil that burns without smoke, which is what makes deep carving possible at all.',
+        changedManner: 'Answers a beat late and correctly, having listened to the whole room rather than to the sentence, which reads as slowness until it turns out not to have been.'
+    },
+    {
+        id: 'beast-ringed-pheasant',
+        name: 'Ringed Pheasant',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 1,
+        biome: 'forest',
+        element: null,
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 5,
+        speaks: false,
+        frequency: 250,
+        ability: {
+            name: 'Standing Flush',
+            kind: 'movement',
+            what:
+                'Leaves the ground straight up out of cover with no run and no warning, and is above the canopy before anything below it has turned.'
+        },
+        hard: 'Nothing, and that is the entry. The district record has the cock birds at two catties heavier a century ago and the clerks have gone on weighing them without once writing the trend down.',
+        materialIds: ['mat-pheasant-tail'],
+        note: 'Snared by children and sold at the gate by the pair. The long tail feathers go to the opera troupes and are worth more than the bird.',
+        changedManner: 'Dresses above its station and will not be seen in the same coat twice, and takes an insult to the coat as an insult to the person in it.'
+    },
+    {
+        id: 'beast-night-cat',
+        name: 'Night Cat',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 3,
+        biome: 'deep_forest',
+        element: null,
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 145,
+        ability: {
+            name: 'Green Eye',
+            kind: 'perception',
+            what:
+                'Sees in what a person would call no light at all, and sees colour in it, which is why nothing it hunts has ever learned to hide by going still.'
+        },
+        hard: 'It is not hard and it is not worth the trip. Two of them a night was the old rate for a snare line and the current rate is two a week, on the same line, set by the same family.',
+        materialIds: ['mat-night-cat-pelt'],
+        note: 'Spotted, knee-high, and taken for the winter pelt. The trade is the only thing keeping four households in the deep valley in salt.',
+        changedManner: 'Comes and goes without announcing either, sits where it can see the door, and gives no sign at all of having been fond of anybody until it turns up the one time it matters.'
+    },
+    {
+        id: 'beast-reed-heron',
+        name: 'Reed Heron',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 4,
+        biome: 'marsh',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 2,
+        speaks: false,
+        frequency: 140,
+        ability: {
+            name: 'Held Still',
+            kind: 'concealment',
+            what:
+                'Holds a position without moving for as long as the wait takes, including the breathing, so that nothing watching the reeds resolves it as an animal at all.'
+        },
+        hard: 'It is not dangerous. It is protected in three districts by a plume tax nobody enforces, which means the only people taking them are the ones who cannot afford the fine.',
+        materialIds: ['mat-heron-plume'],
+        note: 'Drops the breeding plumes in one week of the year and the gatherers camp for it. A hat with four of them on says what the wearer earns without a word.',
+        changedManner: 'Waits out a conversation. Will let a silence run past the point anybody else can stand it, and then says the one sentence it came to say.'
+    },
+    {
+        id: 'beast-pine-marten',
+        name: 'Pine Marten',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 6,
+        biome: 'mountain',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 2,
+        speaks: false,
+        frequency: 115,
+        ability: {
+            name: 'Up the Bark',
+            kind: 'movement',
+            what:
+                'Goes up a trunk or a wall face as fast as it crosses level ground, and turns on it, so height is not a way out of a room it is in.'
+        },
+        hard: 'Nothing about the animal. The winter pelt is worth a month of ordinary work and the trap line runs through the sect boundary, which is where the trouble comes from.',
+        materialIds: ['mat-marten-pelt'],
+        note: 'Taken in the cold months on the high slopes. Two houses have a standing dispute over which of them the north line is on and neither will put it to a Dao house.',
+        changedManner: 'Cannot sit still and cannot be in a room without handling what is in it, and has usually pocketed something small before anybody has finished the greeting.'
+    },
+    {
+        id: 'beast-honey-bear',
+        name: 'Honey Bear',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 12,
+        biome: 'forest',
+        element: 'earth',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 50,
+        ability: {
+            name: 'Shoulder In',
+            kind: 'strength',
+            what:
+                'Puts its whole weight through one shoulder and keeps it there, so a door, a hive or a formation post comes apart at the fixing rather than at the face.'
+        },
+        hard: 'It does not want a fight and it does not leave one either, and it can take the first exchange off a Qi Condensation cultivator standing still. Most deaths are from the second decision, not the first.',
+        materialIds: ['mat-bear-gall'],
+        note: 'Raids the hives above the villages every autumn and the villages pay a culler rather than lose the crop. The gall is worth four times the rest of the animal.',
+        changedManner: 'Unhurried to the point of rudeness, eats first and talks after, and will simply not be moved once it has decided where it is sitting.'
+    },
+    {
+        id: 'beast-tusked-deer',
+        name: 'Tusked Deer',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 13,
+        biome: 'riverbank',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 4,
+        speaks: false,
+        frequency: 44,
+        ability: {
+            name: 'Wind-Wise',
+            kind: 'concealment',
+            what:
+                'Stays downwind of whatever is looking for it for as long as the search lasts, moving when the wind moves, which is why a line of beaters never finds one twice.'
+        },
+        hard: 'Nothing in a fight. It is hard to be within a hundred paces of on purpose, and every alchemist in the province wants the gland, so the price is set by how many days it takes rather than by any danger.',
+        materialIds: ['mat-deer-musk'],
+        note: 'Small, tusked rather than antlered, and the reason four riverbank villages keep dogs they cannot otherwise afford to feed.',
+        changedManner: 'Nervy in a crowd and steadier alone, keeps its back to a wall, and leaves a room the moment the conversation turns to where it lives.'
+    },
+    {
+        id: 'beast-rock-mole',
+        name: 'Rock Mole',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 14,
+        biome: 'cave',
+        element: 'earth',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 34,
+        ability: {
+            name: 'Reads the Face',
+            kind: 'perception',
+            what:
+                'Knows where a rock face is thin, where it is holding, and where the water behind it is, from the other side of the stone and without touching it.'
+        },
+        hard: 'It comes through a working face into an occupied gallery, which is a fight in the dark in a space nobody can swing in. The carvers lose two a year to them and price the grant accordingly.',
+        materialIds: ['mat-mole-claw'],
+        note: 'Every carver in the Silent Cliffs would rather follow one than a surveyor, and every grant ledger says a face is opened on the survey.',
+        changedManner: 'Blunt about what will not work and vague about everything else, and says the wall is bad without ever explaining how it knows.'
+    },
+    {
+        id: 'beast-cloud-crane',
+        name: 'Cloud Crane',
+        nature: 'ordinary',
+        // Takes nothing from anybody and is generally where somebody is about
+        // to need it seen. Righteous on the axis is not gentleness: it is that
+        // nobody who did not agree has ever paid it anything.
+        disposition: 'righteous',
+        ordinal: 15,
+        biome: 'high_peak',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 3,
+        speaks: false,
+        frequency: 30,
+        ability: {
+            name: 'Long Glide',
+            kind: 'movement',
+            what:
+                'Crosses a range on one column of rising air without a wingbeat, so distance costs it nothing and weather decides its route rather than its speed.'
+        },
+        hard: 'Nothing wants to fight one and one has never started anything. What is hard is reaching a nest site at all: they are on ledges above the last water, and two parties a decade go up for the feathers and come back short.',
+        materialIds: ['mat-crane-feather'],
+        note: 'Paired for life and dated by the households below them, some of which have been watching the same ledge for three generations.',
+        changedManner: 'Ceremonious. Will not be hurried through a greeting, treats a rushed one as a slight, and is visibly counting how long since anybody last asked after its house.'
+    },
+    {
+        id: 'beast-iron-eating-bear',
+        name: 'Iron-Eating Bear',
+        nature: 'ordinary',
+        disposition: 'neutral',
+        ordinal: 16,
+        biome: 'bamboo_sea',
+        element: 'metal',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 20,
+        ability: {
+            name: 'Iron Chew',
+            kind: 'strength',
+            what:
+                'Takes worked metal apart with its jaws and eats it, so a blade held against it is spent stock and a formation post is a meal that was left out.'
+        },
+        hard: 'It is not hunting anybody. It wants what the party brought, so a fight it did not start ends with the swords gone and the party four days from the nearest smith.',
+        materialIds: ['mat-iron-bear-tooth'],
+        note: 'Eats bamboo for eleven months and cooking pots for the twelfth. Villages in the bamboo bury the iron in that month and have done for longer than anyone can say why.',
+        changedManner: 'Asks for things outright, in company, without the approach anybody else would make first, and takes a refusal without any sign of having minded.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -886,7 +1154,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'They do not scatter when one falls, and they have learned which of a party is the alchemist. A pack that has hunted cultivators before is a different animal from one that has not.',
         materialIds: ['mat-wolf-sinew'],
-        note: 'The commonest paid work in the province and the commonest way a Qi Condensation cultivator dies at twenty-six.'
+        note: 'The commonest paid work in the province and the commonest way a Qi Condensation cultivator dies at twenty-six.',
+        changedManner: 'Works out who in a room is owed deference and gives it exactly, and will not conduct any business at all with somebody it has placed below itself.'
     },
     {
         id: 'beast-vein-deer',
@@ -909,7 +1178,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'They are not dangerous and they are not the problem. A herd of thirty on a vein draws it down like thirty disciples would, and a sect that culls them is doing arithmetic rather than pest control.',
         materialIds: ['mat-vein-deer-antler'],
-        note: 'Move to whichever holding is richest and are counted, every season, by people who will not say what they are counting.'
+        note: 'Move to whichever holding is richest and are counted, every season, by people who will not say what they are counting.',
+        changedManner: 'Knows which house is doing well this year and says so, and has moved on to the next one before the reason it gave has stopped being true.'
     },
     {
         id: 'beast-stone-ox',
@@ -932,7 +1202,323 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Nothing individually. Twenty of them moving in one direction is a landscape event, and the villages between are not a consideration to them.',
         materialIds: ['mat-ox-horn'],
-        note: 'Placid for decades and then, once, not. Silent Cliffs herds are half the size of the ones in the old Jade Gorge surveys and about as heavy, which nobody has explained.'
+        note: 'Placid for decades and then, once, not. Silent Cliffs herds are half the size of the ones in the old Jade Gorge surveys and about as heavy, which nobody has explained.',
+        changedManner: 'Literal. Answers the question that was asked and not the one that was meant, and does the thing it agreed to do exactly, including the part everybody assumed was a figure of speech.'
+    },
+    {
+        id: 'beast-grain-sparrow',
+        name: 'Grain Sparrow',
+        nature: 'herd',
+        // Takes from people who did not agree and cannot appeal, which is the
+        // definition and has nothing to do with how frightening it is. A
+        // demonic thing at ordinal 1 is the clearest statement the axis makes.
+        disposition: 'demonic',
+        ordinal: 1,
+        biome: 'farmland',
+        element: null,
+        persistence: 'thin_remnant',
+        veinRelation: 'follows',
+        groupSize: 300,
+        speaks: false,
+        frequency: 280,
+        ability: {
+            name: 'One Turn Ahead',
+            kind: 'perception',
+            what:
+                'The flock lifts before the person raising the pole has finished deciding to raise it, and comes down again the moment the decision is abandoned.'
+        },
+        hard: 'Nothing, unless the crop is the thing being defended. A district that loses a fifth of the grain every autumn has lost the argument about whether this is a beast problem or a tax problem.',
+        materialIds: ['mat-sparrow-down'],
+        note: 'Netted by the sackful at harvest and eaten by the household doing the netting. The sect tithe is assessed before the birds arrive, which is the whole of the complaint.',
+        changedManner: 'Cannot be alone. Attaches to whichever group is nearest within an hour of arriving, repeats its opinions, and has no opinion that did not come out of that group.'
+    },
+    {
+        id: 'beast-dune-jerboa',
+        name: 'Dune Jerboa',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 2,
+        biome: 'desert',
+        element: null,
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 20,
+        speaks: false,
+        frequency: 200,
+        ability: {
+            name: 'Standing Jump',
+            kind: 'movement',
+            what:
+                'Leaves the ground from stillness and lands going the other way, over and over, so nothing following a line of tracks is following anything.'
+        },
+        hard: 'Nothing, and the Burial Sands has little else at this rung. A culling contract written for these pays in salt because the district has no stones to pay in.',
+        materialIds: ['mat-jerboa-pelt'],
+        note: 'Dug out of the cool sand in daylight by children with sticks, which is the whole of the trade and most of the meat in three settlements.',
+        changedManner: 'Changes the subject twice in a sentence and moves seat mid-conversation, and is genuinely surprised that anybody found this difficult to follow.'
+    },
+    {
+        id: 'beast-ash-crow',
+        name: 'Ash Crow',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 2,
+        biome: 'battlefield',
+        element: null,
+        persistence: 'open_world',
+        veinRelation: 'follows',
+        groupSize: 60,
+        speaks: false,
+        frequency: 230,
+        ability: {
+            name: 'Early Arrival',
+            kind: 'perception',
+            what:
+                'Is already sitting on the right ground before the fighting starts, and moves to the next ground before the fighting there has been decided on either.'
+        },
+        hard: 'Nothing, and the birds are not the finding. A column that sees them settling on a ridge ahead is being told something by an animal that has been right about it for a hundred and forty years.',
+        materialIds: ['mat-crow-quill'],
+        note: 'Two pickers work the burn edge behind them for whatever the birds turn up, and pay the Six Li Patrol a share for being allowed to.',
+        changedManner: 'Tells people bad news before anybody has asked for it, accurately, and is confused by being disliked for it.'
+    },
+    {
+        id: 'beast-verge-magpie',
+        name: 'Verge Magpie',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 4,
+        biome: 'roadside',
+        element: null,
+        persistence: 'open_world',
+        veinRelation: 'follows',
+        groupSize: 12,
+        speaks: false,
+        frequency: 210,
+        ability: {
+            name: 'Carried Word',
+            kind: 'perception',
+            what:
+                'Gives back a sound it heard days ago and a long way off, exactly, including a voice, and does it without any idea of what it is repeating.'
+        },
+        hard: 'Nothing. What is hard is that a courier who says something at a post house has said it to whatever is on the roof, and one confession in the prefecture records was worked back to exactly that.',
+        materialIds: ['mat-magpie-tail'],
+        note: 'Follows carts for the spill and is counted lucky for it. Nobody has proposed removing them from the post road and nobody could.',
+        changedManner: 'Repeats what it heard elsewhere, to whoever is in front of it, without weighing whether either party wanted the other to know.'
+    },
+    {
+        id: 'beast-frost-marmot',
+        name: 'Frost Marmot',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 4,
+        biome: 'glacier',
+        element: 'ice',
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 25,
+        speaks: false,
+        frequency: 160,
+        ability: {
+            name: 'Winter Sleep',
+            kind: 'endurance',
+            what:
+                'Stops, entirely, for as long as the cold lasts, and starts again from exactly where it stopped with nothing owed for the interval.'
+        },
+        hard: 'Nothing. The old White Stair records have colonies on ledges that are bare ice now, and the Court has never published the comparison.',
+        materialIds: ['mat-marmot-fat'],
+        note: 'Dug out of the scree at the end of the cold and rendered for lamp fat and for the salve every ice-field household keeps by the door.',
+        changedManner: 'Goes quiet for a season at a time, returns without explaining the absence, and picks the conversation up at the sentence it left.'
+    },
+    {
+        id: 'beast-cliff-goat',
+        name: 'Cliff Goat',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 5,
+        biome: 'high_peak',
+        element: 'earth',
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 10,
+        speaks: false,
+        frequency: 120,
+        ability: {
+            name: 'Foot on Nothing',
+            kind: 'movement',
+            what:
+                'Stands and turns on rock too small to be called a ledge, at any angle, carrying weight, which is why a herd is above the last route and not on it.'
+        },
+        hard: 'Nothing about the animal. Everything about where it is standing, which is why the province prices a goat at four times a hare and nobody argues.',
+        materialIds: ['mat-cliff-goat-horn'],
+        note: 'The only meat above the tree line and the reason the high hamlets exist at all. Taken with a bow from below, because nothing goes up after one.',
+        changedManner: 'Contrary on principle, takes the other side of whatever was just said, and holds it long after being shown to be wrong about it.'
+    },
+    {
+        id: 'beast-paper-moth',
+        name: 'Paper Moth',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 6,
+        biome: 'ruins',
+        element: null,
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 150,
+        speaks: false,
+        frequency: 100,
+        ability: {
+            name: 'Lives On Ink',
+            kind: 'endurance',
+            what:
+                'Eats worked paper and the ink on it and needs nothing else, so a sealed room full of records is a full larder and a closed door is not an obstacle.'
+        },
+        hard: 'Nothing to fight. A house that loses a shelf to these has lost the copies and not the art, which is the difference between an expensive year and a transmission ending.',
+        materialIds: ['mat-moth-dust'],
+        note: 'The reason a copyist is a standing post rather than a task, and the reason an archive is cold, dry, and checked by somebody every month.',
+        changedManner: 'Quotes. Has whole passages by heart, deploys them instead of an answer, and gets visibly unmoored when asked what it thinks rather than what the page said.'
+    },
+    {
+        id: 'beast-spoil-rat',
+        name: 'Spoil Rat',
+        nature: 'herd',
+        disposition: 'demonic',
+        ordinal: 6,
+        biome: 'battlefield',
+        element: null,
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 200,
+        speaks: false,
+        frequency: 170,
+        ability: {
+            name: 'Nothing Wasted',
+            kind: 'endurance',
+            what:
+                'Lives on what nothing else will touch, including the parts of a field that have been picked over twice, and breeds on exactly that.'
+        },
+        hard: 'Individually nothing. Two hundred of them go through a grain store, a casualty tent or a picket line in a night, and the Iron Ridge ledger records the cost as spoilage every year without a second line.',
+        materialIds: ['mat-spoil-rat-pelt'],
+        note: 'Sold by weight to the glue-boilers at a rate that has not moved in a generation, and the boilers say the animals are smaller.',
+        changedManner: 'Keeps count of everything, including what it is owed and what it has lent, and produces the figure years later to the day.'
+    },
+    {
+        id: 'beast-stone-swift',
+        name: 'Stone Swift',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 6,
+        biome: 'sky_island',
+        element: null,
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 80,
+        speaks: false,
+        frequency: 70,
+        ability: {
+            name: 'Off the Underside',
+            kind: 'movement',
+            what:
+                'Lives in the air and on the underside of overhanging rock, and does not come to ground at all, so there is nowhere to wait for one.'
+        },
+        hard: 'Nothing, and everything about the nest. The colony is on the underside of the floating stone and the men who go for it go on the tether, which is inspected once a year by people who cannot repair it.',
+        materialIds: ['mat-swift-nest'],
+        note: 'The nests are built of the birds themselves and are worth more than the weight in silver at any pill hall in the province.',
+        changedManner: 'Will not sit down. Conducts the whole of its business standing, near a door, and leaves before the meal it was invited to arrives.'
+    },
+    {
+        id: 'beast-gate-carp',
+        name: 'Gate Carp',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 7,
+        biome: 'riverbank',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'follows',
+        groupSize: 40,
+        speaks: false,
+        frequency: 90,
+        ability: {
+            name: 'Against the Fall',
+            kind: 'movement',
+            what:
+                'Goes up water that is coming down, including a fall, and keeps going up it for as long as the water lasts.'
+        },
+        hard: 'Nothing. A run arriving at a mill race is a week of free food for a village and a week of nobody grinding anything, and the miller is never the one who gets to decide.',
+        materialIds: ['mat-carp-scale'],
+        note: 'Runs the falls in the fourth month. The story that one that finishes the climb becomes something else is told at every fall in the province and has never once been witnessed.',
+        changedManner: 'Will not let a thing go. Comes back to the same refused request a year later, then again, with no apparent memory of having been embarrassed the first time.'
+    },
+    {
+        id: 'beast-blood-sweat-horse',
+        name: 'Blood-Sweat Horse',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 9,
+        biome: 'desert',
+        element: 'fire',
+        persistence: 'thin_remnant',
+        veinRelation: 'follows',
+        groupSize: 14,
+        speaks: false,
+        frequency: 60,
+        ability: {
+            name: 'Never Blown',
+            kind: 'endurance',
+            what:
+                'Runs the whole day out at one pace and is fit to do it again in the morning, on water a mule would not finish the afternoon on.'
+        },
+        hard: 'Catching one. Nothing in the Burial Sands can run a band down, so they are taken at water or not at all, and a caught one is worth more than the party that caught it earns in a decade.',
+        materialIds: ['mat-red-sweat'],
+        note: 'Sweats red on the shoulder under work, which the caravan masters read as a grade and the alchemists buy by the flask.',
+        changedManner: 'Restless in a settlement and will not stay anywhere past a season, and treats an invitation to settle as a thing to be forgiven rather than refused.'
+    },
+    {
+        id: 'beast-mire-buffalo',
+        name: 'Mire Buffalo',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 15,
+        biome: 'marsh',
+        element: 'earth',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 12,
+        speaks: false,
+        frequency: 30,
+        ability: {
+            name: 'Keeps Its Feet',
+            kind: 'strength',
+            what:
+                'Stands and fights on ground that will not hold anything else, and takes the footing away from whatever came out to meet it there.'
+        },
+        hard: 'It has to be fought where it lives, which is where nobody else can stand, and a party that draws one onto firm ground has spent longer arranging that than the fight is worth.',
+        materialIds: ['mat-buffalo-horn'],
+        note: 'Herded rather than hunted by two marsh clans who will not say how, and sold on at the Drowned Sea ports as though it had been taken wild.',
+        changedManner: 'Says little, agrees to less, and once it has agreed cannot be talked out of it by anybody, including the person who talked it in.'
+    },
+    {
+        id: 'beast-gold-cicada',
+        name: 'Gold Cicada',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 15,
+        biome: 'spirit_vein',
+        element: 'metal',
+        persistence: 'vein_only',
+        veinRelation: 'drains',
+        groupSize: 40,
+        speaks: false,
+        frequency: 40,
+        ability: {
+            name: 'Left Shell',
+            kind: 'concealment',
+            what:
+                'Comes out of its own shell whole and leaves the shell standing where it was, so what anybody is holding, watching or has just struck is the part it had finished with.'
+        },
+        hard: 'Forty of them sit on a vein for seventeen years doing nothing and drawing the whole time, and a holding that cuts them out finds the ground still short until the brood underground comes up.',
+        materialIds: ['mat-cicada-shell'],
+        note: 'The shells are gathered off the trunks in one week of the year, whole and empty and still gripping the bark, and every pill hall in the province buys them.',
+        changedManner: 'Gives a name and a trade and both turn out later to have been left behind somewhere, intact, with nobody in them.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -960,7 +1546,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Its breath is poison and it lingers where the fight was. Winning is routine; leaving the ground afterwards is what the pills are for.',
         materialIds: ['mat-serpent-gland'],
-        note: 'Dens near roads rather than in deep marsh, because the roads are where people are.'
+        note: 'Dens near roads rather than in deep marsh, because the roads are where people are.',
+        changedManner: 'Devoted, to one person, out of all proportion to what passed between them, and the person is usually somebody who did it a small kindness a long time ago.'
     },
     {
         id: 'beast-core-taker',
@@ -983,7 +1570,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It hunts cultivators and only cultivators, waits for the second day of a seclusion, and takes the core and nothing else. Every mortal in the district is safe and knows it, which is why no village will help.',
         materialIds: ['mat-core-taker-jaw'],
-        note: 'Bodies are found unrobbed with the pouch still on the belt. Sects read that as a demonic cultivator for about a season, and then the fourth body arrives.'
+        note: 'Bodies are found unrobbed with the pouch still on the belt. Sects read that as a demonic cultivator for about a season, and then the fourth body arrives.',
+        changedManner: 'Asks what a person is carrying and what rung they are on, early, in an ordinary voice, and has no small talk to put it in.'
     },
     {
         id: 'beast-glacier-lynx',
@@ -1006,7 +1594,320 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It follows for days without closing and opens when the party is one member short of full strength. It is counting, and it is counting correctly.',
         materialIds: ['mat-lynx-pelt', 'mat-lynx-core'],
-        note: 'The only thing in the ice field that ever hurries, and it does so twice a year.'
+        note: 'The only thing in the ice field that ever hurries, and it does so twice a year.',
+        changedManner: 'Patient past the point of comfort. Lets a negotiation run for months, says nothing new in any of it, and closes on the day the other side is shortest of time.'
+    },
+    {
+        id: 'beast-bamboo-viper',
+        name: 'Green Bamboo Viper',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 4,
+        biome: 'bamboo_sea',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 150,
+        ability: {
+            name: 'Same Green',
+            kind: 'concealment',
+            what:
+                'Is the colour of the standing stem it is on, at any season, and does not move while anything is looking at the stem.'
+        },
+        hard: 'It is at hand height on a stem somebody is about to push aside. The bite is survivable and the four days after it are the part that ends the trip.',
+        materialIds: ['mat-bamboo-viper-fang'],
+        note: 'Cutters in the bamboo work in pairs and the second one carries the pills, which is a rule nobody in the trade has to be told twice.',
+        changedManner: 'Still and close. Stands nearer than anybody else in the room would, says nothing for long stretches, and is already answering before the question has finished.'
+    },
+    {
+        id: 'beast-yellow-weasel',
+        name: 'Yellow Weasel',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 9,
+        biome: 'farmland',
+        element: 'metal',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 85,
+        ability: {
+            name: 'Through the Gap',
+            kind: 'movement',
+            what:
+                'Goes through an opening smaller than its own head, at speed, carrying something, so no store, coop or strongbox is shut against it.'
+        },
+        hard: 'It takes the thing rather than the fight, and it takes the thing a party cannot go on without. A pouch of pills is gone before anybody has drawn, and it is the second night that is the problem.',
+        materialIds: ['mat-weasel-tail-hair'],
+        note: 'Every village has a household that leaves food out for them and will not be argued with about it, including by the household next door that lost the coop.',
+        changedManner: 'Wheedles. Asks for a small thing, gets it, asks for the next one on the strength of the first, and is halfway into the house before anybody has agreed to a visit.'
+    },
+    {
+        id: 'beast-trunk-hound',
+        name: 'Trunk Hound',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 10,
+        biome: 'deep_forest',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 62,
+        ability: {
+            name: 'Out of the Wood',
+            kind: 'concealment',
+            what:
+                'Lies inside a standing trunk with nothing showing and nothing to read on the qi of it, and comes out of the trunk rather than out of the undergrowth.'
+        },
+        hard: 'Nobody is watching the tree they are about to fell. Timber parties lose the axeman first, which is the member of a party nobody has armed.',
+        materialIds: ['mat-trunk-hound-hide'],
+        note: 'Black, tailless, and about the size of a dog. Four timber grants in the deep valley have been let and surrendered twice each in ten years.',
+        changedManner: 'Arrives where it was not expected, in the middle of something, and treats the interruption as though it had been invited to that exact moment.'
+    },
+    {
+        id: 'beast-black-eel',
+        name: 'Black Eel',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 12,
+        biome: 'lake_bottom',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 55,
+        ability: {
+            name: 'Cold Coil',
+            kind: 'strength',
+            what:
+                'Takes a hold and closes it slowly and does not let go, under water, where the other party is spending something it cannot replace.'
+        },
+        hard: 'It does not have to win. It has to hold on for as long as a person can hold a breath, and the arithmetic is finished before the fight is.',
+        materialIds: ['mat-black-eel-skin'],
+        note: 'Works the deep weed off the drop-offs. Net crews cut a line rather than bring one up and price the lost net into the season.',
+        changedManner: 'Does not raise its voice and does not let a thing drop, and is still on the same point an hour later in the same tone.'
+    },
+    {
+        id: 'beast-shrine-spider',
+        name: 'Shrine Spider',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 13,
+        biome: 'ruins',
+        element: null,
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 40,
+        ability: {
+            name: 'Between the Boards',
+            kind: 'concealment',
+            what:
+                'Lives in the gap under a floor or behind a wall panel and takes from underneath, so the room a party cleared is the room it is in.'
+        },
+        hard: 'It opens after a party has stopped, put the packs down and decided the building is empty. Two of the province refusals to shelter in a ruin overnight are written against this and name it.',
+        materialIds: ['mat-shrine-silk'],
+        note: 'The silk under the floor of a temple ruin is worth the trip on its own, which is why the buildings keep being entered.',
+        changedManner: 'Listens from the edge of a room, contributes nothing, and turns out afterwards to have had every detail and to have been waiting for the useful one.'
+    },
+    {
+        id: 'beast-cart-mantis',
+        name: 'Cart Mantis',
+        nature: 'ambush',
+        disposition: 'neutral',
+        ordinal: 14,
+        biome: 'roadside',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 34,
+        ability: {
+            name: 'Raised Arms',
+            kind: 'strength',
+            what:
+                'Puts both hooked arms up against whatever is coming and does not give ground to it, whatever the size of the thing or the number of them.'
+        },
+        hard: 'It does not run, so a party that opens on one has committed to finishing it, in the road, in front of whoever else is on the road that day.',
+        materialIds: ['mat-mantis-blade'],
+        note: 'Stands in the cart ruts at chest height with the arms up. Carters go around and the story of the one that did not is told at every post house on the route.',
+        changedManner: 'Will not back down from anything, in front of anybody, and cannot tell the difference between a fight worth having and a fight it has been handed.'
+    },
+    {
+        id: 'beast-crevasse-worm',
+        name: 'Crevasse Worm',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 16,
+        biome: 'glacier',
+        element: 'ice',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 24,
+        ability: {
+            name: 'Under the Blue',
+            kind: 'concealment',
+            what:
+                'Waits directly under clear ice, in plain sight and unrecognisable as anything but more ice, and comes up through it rather than around.'
+        },
+        hard: 'The ground opens where the party is standing, and it opens under whoever is roped in the middle. Recovering a body from a crevasse costs a day the party does not have at that altitude.',
+        materialIds: ['mat-crevasse-chitin'],
+        note: 'The White Stair guides walk the long way round three named fields and charge for the extra day without itemising it.',
+        changedManner: 'Says nothing for the length of an acquaintance and then says the one thing it has been waiting the whole time to say.'
+    },
+    {
+        id: 'beast-tomb-centipede',
+        name: 'Tomb Centipede',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 17,
+        biome: 'desert',
+        element: 'fire',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 20,
+        ability: {
+            name: 'Every Foot At Once',
+            kind: 'movement',
+            what:
+                'Crosses a wall, a ceiling or a shaft at the same speed as a floor, and turns a corner without slowing, so there is no direction it is not coming from.'
+        },
+        hard: 'It is in the shaft the party came down, between them and the surface, and it got there after they passed. Every account of one is written by somebody who went in with more people.',
+        materialIds: ['mat-centipede-segment', 'mat-centipede-core'],
+        note: 'Grave crews in the Burial Sands work with a second rope and a second way out, and the ones who do not are the ones who have not met one.',
+        changedManner: 'Takes offence at a slight nobody else registered and repays it exactly, years later, having said nothing about it in the meantime.'
+    },
+    {
+        id: 'beast-cloud-marked-leopard',
+        name: 'Cloud-Marked Leopard',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 18,
+        biome: 'bamboo_sea',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 15,
+        ability: {
+            name: 'Down the Stem',
+            kind: 'movement',
+            what:
+                'Comes down a standing stem head first at the speed of a fall and stops at the bottom of it, which is why nothing it takes has looked up.'
+        },
+        hard: 'The bamboo closes over a party at head height, so nobody sees the canopy and nobody can raise a weapon above the shoulder. It takes the rear of a line and the front does not hear it.',
+        materialIds: ['mat-leopard-pelt', 'mat-leopard-core'],
+        note: 'The pelt is the one bamboo-country good a Jade Gorge house will accept in place of stones, and the cutters price a season by whether one is working their block.',
+        changedManner: 'Elegant and unhurried in company and impossible to arrange anything with, because it will agree to a time and simply be somewhere else.'
+    },
+    {
+        id: 'beast-crying-salamander',
+        name: 'Crying Salamander',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 20,
+        biome: 'lake_bottom',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 12,
+        ability: {
+            name: 'Sounds Like a Child',
+            kind: 'concealment',
+            what:
+                'Makes a sound nothing can hear as an animal, from under the water, and keeps making it for as long as anybody is still coming toward it.'
+        },
+        hard: 'Nobody arrives at one ready. Everything that reaches it has come at a run, alone, and gone into the water on purpose, and the fight is under the water from the first moment.',
+        materialIds: ['mat-salamander-skin', 'mat-salamander-core'],
+        note: 'Lake villages teach children the sound before they teach them to swim, and two prefectures have standing orders that no boat goes out for it at night.',
+        changedManner: 'Asks for help before it asks for anything else, gets it, and turns out to have been in no difficulty at all.'
+    },
+    {
+        id: 'beast-ink-squid',
+        name: 'Ink Squid',
+        nature: 'ambush',
+        disposition: 'neutral',
+        ordinal: 20,
+        biome: 'abyss',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 9,
+        ability: {
+            name: 'Own Dark',
+            kind: 'concealment',
+            what:
+                'Puts out a dark that holds where it was put and does not thin, so the fight continues inside a volume nothing can perceive through, itself included.'
+        },
+        hard: 'It comes up out of water nothing has measured the bottom of, takes what is on the surface, and goes back down. There is no ground to hold and no way to follow it.',
+        materialIds: ['mat-squid-ink', 'mat-squid-core'],
+        note: 'The deep-water crossings are priced by the season rather than the distance, and the underwriters at the ports will not say what the difference is for.',
+        changedManner: 'Gives an account of itself that is complete, plausible and different every time, and does not appear to be keeping track of which one anybody got.'
+    },
+    {
+        id: 'beast-year-beast',
+        name: 'Year Beast',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 21,
+        biome: 'farmland',
+        element: 'fire',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 9,
+        ability: {
+            name: 'Through the Wall',
+            kind: 'strength',
+            what:
+                'Goes through a stock wall, a byre and a house front in one line without turning, and what it wanted is behind the third of them.'
+        },
+        hard: 'It comes once a year, to a settlement, at a date everybody knows, and a party that wants it has to stand in a village street and hold ground it cannot give away.',
+        materialIds: ['mat-year-beast-hide', 'mat-year-beast-core'],
+        note: 'Villages hang red and beat pans at the turn of the year across four provinces, including in districts that have not seen one in two hundred years and no longer say what it is for.',
+        changedManner: 'Turns up in the same place at the same time every year without being asked, expects to be fed, and is offended in a way that lasts if it is not.'
+    },
+    {
+        id: 'beast-sun-eater',
+        name: 'Sun-Eater',
+        nature: 'ambush',
+        disposition: 'demonic',
+        ordinal: 23,
+        biome: 'sky_island',
+        element: 'fire',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 5,
+        ability: {
+            name: 'Comes Down Burning',
+            kind: 'movement',
+            what:
+                'Arrives from above at the speed of a falling stone and burning, and arrives on the one place in the district it was aiming for.'
+        },
+        hard: 'It is not on the ground to be found. It chooses the ground and the hour, and the only warning is that the light goes wrong for as long as it takes to say so.',
+        materialIds: ['mat-sun-eater-hide', 'mat-sun-eater-core'],
+        note: 'The province records a darkening in the year books every few generations and the astronomers and the herders have never once agreed about what was written down.',
+        changedManner: 'Eats and drinks everything in front of it, immediately, and asks for the next thing while the table is still being cleared.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1034,7 +1935,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It holds the air over a ledge and does not come down. Nothing that flies crosses its sight line, which closes the fast route between two of the province towns for anyone who cannot fight at its height.',
         materialIds: ['mat-hawk-feather', 'mat-hawk-core'],
-        note: 'Nests on the one peak with a vein close to the surface, and has for longer than the sect below has held its charter.'
+        note: 'Nests on the one peak with a vein close to the surface, and has for longer than the sect below has held its charter.',
+        changedManner: 'Short with everybody and shorter under a roof, and conducts anything that matters outside, standing, in whatever weather is happening.'
     },
     {
         // THE CASE THE DISPOSITION AXIS EXISTS FOR, and the catalog had no
@@ -1068,7 +1970,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It will not leave the cairns and it will not open on anybody who is not digging, so a party that wants it has to start the fight themselves and then finish it against something standing on ground it has known for ninety years.',
         materialIds: ['mat-cairn-hound-tooth', 'mat-cairn-hound-core'],
-        note: 'Three hill districts date their grave rolls by which hound was walking, and none of the three has ever paid it anything or been asked to.'
+        note: 'Three hill districts date their grave rolls by which hound was walking, and none of the three has ever paid it anything or been asked to.',
+        changedManner: 'Loyal to a place rather than to a person, and will not be talked into leaving it even by somebody it likes and even when staying has stopped making sense.'
     },
     {
         // The world was already teaching an art named after this animal and
@@ -1099,7 +2002,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It holds a ridge and it closes the distance in one movement, so there is no exchange to manage and no second decision to make. Everybody who has seen one describes the same four marks, and the province has an art copied off them.',
         note: 'The one animal in the range that mortals and cultivators name identically, and the reason a metal-element art nobody can trace an author for is taught in four separate houses.',
-        materialIds: ['mat-tiger-fang', 'mat-tiger-pelt', 'mat-tiger-core']
+        materialIds: ['mat-tiger-fang', 'mat-tiger-pelt', 'mat-tiger-core'],
+        changedManner: 'Direct to the point of discourtesy and will not be crowded, and answers a threat the first time it is made rather than working out whether it was meant.'
     },
     {
         id: 'beast-earth-dragon',
@@ -1122,7 +2026,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It is inside the vein rather than on the ground above it, so it cannot be besieged, cannot be starved, and is drinking the thing that is being defended. Every month of delay is paid in the vein.',
         materialIds: ['mat-dragon-scale', 'mat-dragon-core'],
-        note: 'A holding whose measured output has fallen eleven percent in a year has either taken on disciples or acquired one of these, and the sect will announce whichever answer is less embarrassing.'
+        note: 'A holding whose measured output has fallen eleven percent in a year has either taken on disciples or acquired one of these, and the sect will announce whichever answer is less embarrassing.',
+        changedManner: 'Talks about ground - whose it is, what is under it, what was paid for it - and brings every other subject back to that inside two turns of a conversation.'
     },
     {
         // The beast road's own emblem. Every other entry is on it; this one
@@ -1154,7 +2059,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'Nothing it does is fast and nothing anybody does to it lands. It cannot be starved, cannot be drawn off the water, and outlasts any party that can afford to stay. Two expeditions have simply run out of provisions and gone home.',
         note: 'Sheds a plate about once a generation and the plates are dated by the households that own them, so the animal has a longer continuous record than the sect on the shore.',
-        materialIds: ['mat-tortoise-scute', 'mat-tortoise-plastron', 'mat-tortoise-core']
+        materialIds: ['mat-tortoise-scute', 'mat-tortoise-plastron', 'mat-tortoise-core'],
+        changedManner: 'Blunt. Says the thing in the fewest words it will go in, does not soften it, does not repeat it, and does not appear to know that it has been rude.'
     },
     {
         id: 'beast-abyss-leviathan',
@@ -1177,7 +2083,232 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It is four realms above anything a province can field, and the realm gap is not a hard fight but an evacuation order. What can be done about it is logistics, not combat.',
         materialIds: ['mat-leviathan-core'],
-        note: 'Surfaces from the rift about twice a century, is recorded, and goes back down. The recording is the entire response.'
+        note: 'Surfaces from the rift about twice a century, is recorded, and goes back down. The recording is the entire response.',
+        changedManner: 'Speaks at the pace of something that has never had a reason to hurry, finishes every sentence it starts, and does not register having been interrupted.'
+    },
+    {
+        id: 'beast-toll-lion',
+        name: 'Toll Lion',
+        nature: 'territorial',
+        disposition: 'neutral',
+        ordinal: 17,
+        biome: 'roadside',
+        element: 'metal',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 20,
+        ability: {
+            name: 'Takes It In',
+            kind: 'strength',
+            what:
+                'Swallows metal, stone and anything else put in front of it, and nothing that goes in comes back out of it in any form.'
+        },
+        hard: 'It holds a stretch of road rather than a place, so it cannot be gone around by anybody who has to arrive with a cart. What it wants is what the cart is carrying, and it does not distinguish between the tribute and the escort.',
+        materialIds: ['mat-toll-lion-mane', 'mat-toll-lion-core'],
+        note: 'The stone pairs at the ends of the province bridges were carved off these, and the carvers got the mouth right because the carvers had seen one.',
+        changedManner: 'Takes what is offered and gives nothing back, in a plain way that reads as poor manners rather than as theft, and is genuinely puzzled to be told so.'
+    },
+    {
+        id: 'beast-ridge-lizard',
+        name: 'Ridge Lizard',
+        nature: 'territorial',
+        // Nothing under the ridge it sits on has burned in a century and none
+        // of them has ever paid it anything or been asked to. That is the
+        // whole of what righteous means on this axis.
+        disposition: 'righteous',
+        ordinal: 18,
+        biome: 'ruins',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 14,
+        ability: {
+            name: 'Swallows Fire',
+            kind: 'breath',
+            what:
+                'Takes fire in and puts water out, in the quantity the fire was, so a burning roof stops burning and nothing decided to stop it.'
+        },
+        hard: 'It will not leave the ridge it has taken and it opens on nobody, so a party that wants it has to start the fight on a roof, over a building somebody lives under, in front of them.',
+        materialIds: ['mat-ridge-lizard-scale', 'mat-ridge-lizard-core'],
+        note: 'The tailless figures on the roof ridges are copied off it, and the four temple quarters that still have one have not lost a hall to fire in a hundred years.',
+        changedManner: 'Puts out an argument by stepping into the middle of it, says the flat thing that ends it, and has no interest at all in which side was right.'
+    },
+    {
+        id: 'beast-one-horn-ram',
+        name: 'One-Horn Ram',
+        nature: 'territorial',
+        disposition: 'righteous',
+        ordinal: 19,
+        biome: 'battlefield',
+        element: 'earth',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 12,
+        ability: {
+            name: 'First Blow',
+            kind: 'perception',
+            what:
+                'Reads which of two parties struck first off the ground they stood on and what was left there, hours or a century afterwards, and does not get it wrong.'
+        },
+        hard: 'It grazes an old field and opens on nobody who has not already opened on somebody there. A party that wants the core has to strike first in front of it and then fight something that has been standing on a burn edge for sixty years.',
+        materialIds: ['mat-ram-horn', 'mat-ram-core'],
+        note: 'Two district magistrates have taken a disputed killing out to a field with one on it and stood well back, and both records note only that the matter was settled.',
+        changedManner: 'States who started it, in company, at the moment everybody has agreed to leave that part alone.'
+    },
+    {
+        id: 'beast-hill-borer',
+        name: 'Hill-Borer',
+        nature: 'territorial',
+        disposition: 'neutral',
+        ordinal: 21,
+        biome: 'cave',
+        element: 'earth',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 10,
+        ability: {
+            name: 'Overlapped Plate',
+            kind: 'defence',
+            what:
+                'Wears plate that lies over plate in every direction, so nothing reaches between them at any angle, and it does not have to face what is hitting it.'
+        },
+        hard: 'It goes through a hill rather than along the galleries, so it cannot be cut off, trapped in a face or starved out, and a working it has taken an interest in is a working with a new opening every week.',
+        materialIds: ['mat-borer-scale', 'mat-borer-core'],
+        note: 'Sheds plates the length of a hand into its own runs. Every pill hall in the province buys them and every carver in the Silent Cliffs knows which runs to walk.',
+        changedManner: 'Shrugs off an insult and a compliment the same way, and cannot be got at by either, which most people read as not listening.'
+    },
+    {
+        id: 'beast-flood-serpent',
+        name: 'Flood Serpent',
+        nature: 'territorial',
+        disposition: 'demonic',
+        ordinal: 22,
+        biome: 'riverbank',
+        element: 'water',
+        persistence: 'open_world',
+        veinRelation: 'holds',
+        groupSize: 1,
+        speaks: false,
+        frequency: 8,
+        ability: {
+            name: 'Rising Water',
+            kind: 'breath',
+            what:
+                'Brings the water up over the bank it lies under and holds it there, so the ground a fight was arranged on is under the river before the fight begins.'
+        },
+        hard: 'It takes a reach of river and everything living on both banks pays for it, in a year that a village upstream reads as weather. The house that holds the district finds out when the tithe does not arrive.',
+        materialIds: ['mat-flood-serpent-hide', 'mat-flood-serpent-core'],
+        note: 'Three river villages make an offering at the deep bend and two of them will not say to what. The offering is grain and the grain goes.',
+        changedManner: 'Speaks softly and takes the whole of what was under discussion, and the other party leaves the table certain it was a fair meeting.'
+    },
+    {
+        id: 'beast-hoar-stag',
+        name: 'Hoar Stag',
+        nature: 'territorial',
+        disposition: 'righteous',
+        ordinal: 23,
+        biome: 'glacier',
+        element: 'ice',
+        persistence: 'open_world',
+        veinRelation: 'holds',
+        groupSize: 1,
+        speaks: false,
+        frequency: 7,
+        ability: {
+            name: 'Over the Crust',
+            kind: 'movement',
+            what:
+                'Crosses snow that will not carry anything else at any weight and any speed, so the ground it fights on is ground the other party is standing in.'
+        },
+        hard: 'It holds the one crossing of the upper ice and it has never once closed the route to anybody. A party that wants the core has to open on something that has been letting them pass for as long as any of them has been alive.',
+        materialIds: ['mat-hoar-antler', 'mat-hoar-stag-core'],
+        note: 'Drops the antlers at the top of the ice each year, where the guides find them and bring them down, and where nobody has ever had to fight anything for one.',
+        changedManner: 'Formal to strangers, refuses gifts, and settles a debt the same day it is incurred, which people mistake for coldness.'
+    },
+    {
+        id: 'beast-cloud-roc',
+        name: 'Cloud Roc',
+        nature: 'territorial',
+        disposition: 'neutral',
+        ordinal: 24,
+        biome: 'high_peak',
+        element: 'metal',
+        persistence: 'open_world',
+        veinRelation: 'holds',
+        groupSize: 1,
+        speaks: false,
+        frequency: 6,
+        ability: {
+            name: 'Single Stoop',
+            kind: 'movement',
+            what:
+                'Comes down the whole height of the sky in one movement and takes what it came for off the ground without landing.'
+        },
+        hard: 'It holds the air over a range rather than a ledge, so there is no ground to besiege and no route that is not under it. Anybody who fights one fights it at its own height or waits for it to come down, which it does once.',
+        materialIds: ['mat-roc-pinion', 'mat-roc-core'],
+        note: 'The flying routes over the White Stair are drawn around one bird and have been redrawn twice in living memory, both times after it moved.',
+        changedManner: 'Looks past whoever is speaking to it and answers the room, and cannot be made to attend to anything smaller than what it came for.'
+    },
+    {
+        id: 'beast-water-parting-rhino',
+        name: 'Water-Parting Rhino',
+        nature: 'territorial',
+        disposition: 'neutral',
+        ordinal: 25,
+        biome: 'deep_forest',
+        element: 'earth',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 5,
+        ability: {
+            name: 'The Line In the Horn',
+            kind: 'perception',
+            what:
+                'Perceives through standing water, fog and smoke as though none of them were there, and is never fighting the thing anybody thought it was fighting.'
+        },
+        hard: 'Nothing in the deep valley can put anything between it and them, which is the whole of what a party at Foundation has to work with. It does not pursue and it does not need to.',
+        materialIds: ['mat-rhino-horn', 'mat-rhino-core'],
+        note: 'The horn is the ingredient two of the province longevity formulas will not substitute for, and the price has been going one way for a century.',
+        changedManner: 'Says the thing everybody was talking around, once, and then will not be drawn on it again.'
+    },
+    {
+        // The Grave Hound's case, one whole realm up and with an immortal-grade
+        // core on it. Righteous, silent, and standing in an ordinary forest a
+        // Foundation party can walk into: the decision is not whether it can be
+        // taken but what taking it costs, and the catalog is supposed to make
+        // that sting.
+        id: 'beast-green-qilin',
+        name: 'Green Qilin',
+        nature: 'territorial',
+        disposition: 'righteous',
+        ordinal: 26,
+        biome: 'forest',
+        element: 'wood',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        speaks: false,
+        frequency: 3,
+        ability: {
+            name: 'Treads On Nothing',
+            kind: 'movement',
+            what:
+                'Puts its weight down without marking what it is standing on, over any distance and any ground, so nothing it has crossed can be tracked back or read.'
+        },
+        hard: 'It has never struck anything, which means a party gets the whole first exchange for free and then has to survive the second against something at Deity Transformation. Both parties of record got the first exchange.',
+        materialIds: ['mat-qilin-hair', 'mat-qilin-core'],
+        note: 'Eats nothing living and walks through standing crops without laying a stem down. Four households in the old wood have seen one and none of them reported it.',
+        changedManner: 'Will not be the first to take offence, or to raise a voice, or to reach for anything, and holds to that after it has stopped being wise.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1213,11 +2344,12 @@ export const BEASTS: readonly Beast[] = [
             name: 'Gorge Stride',
             kind: 'movement',
             what:
-                'Holds and crosses sheer rock as though it were level ground, which is most of why the gorge above the Jade Gorge is its and not anybody else’s.'
+                'Holds and crosses sheer rock as though it were level ground, which is most of why the gorge above the Jade Gorge is its and not anybody else\'s.'
         },
         hard: 'It will talk, and it is better at it than the disciples sent to do it. It knows what the gorge is worth, knows that nobody the sect can field is within three realms of it, and has never once opened first. The arrangement holds because it is the cheaper of the two things it could be doing.',
         materialIds: [],
-        note: 'Holds the gorge above the Jade Gorge, charges passage in salt and in news, and has kept every arrangement it has made for a hundred and forty years.'
+        note: 'Holds the gorge above the Jade Gorge, charges passage in salt and in news, and has kept every arrangement it has made for a hundred and forty years.',
+        changedManner: 'Mocking, and accurate about it. Gets the measure of a delegation in a sentence, says it out loud, and then keeps to the terms exactly as agreed.'
     },
     {
         id: 'beast-nine-tailed-reader',
@@ -1255,7 +2387,12 @@ export const BEASTS: readonly Beast[] = [
         // one - a fox with wrong hands is a fox that is bad at being a fox.
         // What gives one away is in WHAT_GIVES_A_CHANGED_BEAST_AWAY, it is
         // not about the body, and it is not this species' problem alone.
-        note: 'A nine-tailed fox in a plain human shape, worn perfectly, because seeming is the one thing a fox never had to learn. Sits in the temple ruin most evenings and is not, technically, trespassing.'
+        note: 'A nine-tailed fox in a plain human shape, worn perfectly, because seeming is the one thing a fox never had to learn. Sits in the temple ruin most evenings and is not, technically, trespassing.',
+        // THE GENRE TROPE, AND IT STAYS. An earlier pass removed it as though
+        // it were an invention: *"that's a genuine genre trope, you should
+        // keep it cuz it's part of asian fantasy."* It is a manner and not a
+        // body, which is the line every row on this field holds.
+        changedManner: 'Seductive, in the plain sense that agreeing with one is easier than not, and it does not stop being that when the business is a manual and a price.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1285,7 +2422,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It has been cultivating on an undrawn vein since before the order above it was founded, it has never been interrupted, and nobody alive has established whether the seal was cut to keep it in or to keep the vein for it.',
         materialIds: ['mat-ancient-core'],
-        note: 'The Ascetic Order lights nine of its forty-one nodes and has never applied to relight the four that sit over the lower chamber.'
+        note: 'The Ascetic Order lights nine of its forty-one nodes and has never applied to relight the four that sit over the lower chamber.',
+        changedManner: 'Speaks of the ground as its own and of everybody standing on it as a recent arrival, which is not a claim so much as a date.'
     },
     {
         // Stands at 30 to keep an invariant, not for taste: every
@@ -1314,7 +2452,8 @@ export const BEASTS: readonly Beast[] = [
         },
         hard: 'It is walled into a working face on the Silent Cliffs side, it is past the change, and it has been awake for some of the nine hundred years. Carvers who have cut near it report the dust hanging wrong and stop taking that grant.',
         materialIds: ['mat-sleeper-seam-core'],
-        note: 'Clearwater Ward has refused four applications to open the face and has not given a reason in writing, which is itself the longest entry in the grant ledger.'
+        note: 'Clearwater Ward has refused four applications to open the face and has not given a reason in writing, which is itself the longest entry in the grant ledger.',
+        changedManner: 'Asks who holds the district now, and then who held it before that, and works forward through nine hundred years of it before it will discuss anything else.'
     }
 ] as const;
 
@@ -1385,6 +2524,163 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         rarityWeight: 150,
         harvestOrdinal: 3,
         description: 'Swept off a roost floor by the sackful. Holds qi briefly and badly, which is exactly what a cheap talisman needs.'
+    },
+
+    {
+        id: 'mat-sparrow-down',
+        name: 'Sparrow Down',
+        grade: 'mortal',
+        sourceBeastId: 'beast-grain-sparrow',
+        taking: 'scavenge',
+        core: false,
+        value: 1,
+        rarityWeight: 400,
+        harvestOrdinal: 0,
+        description: 'Swept out of a netting shed by the basket and stuffed into winter coats. The cheapest thing in the catalog and the only one a child is paid for.'
+    },
+    {
+        id: 'mat-jerboa-pelt',
+        name: 'Dune Jerboa Pelt',
+        grade: 'mortal',
+        sourceBeastId: 'beast-dune-jerboa',
+        taking: 'kill',
+        core: false,
+        value: 2,
+        rarityWeight: 330,
+        harvestOrdinal: 2,
+        description: 'Sold in sewn squares of forty because one is the size of a palm. Paid for in salt at the Burial Sands, which has no stones to pay in.'
+    },
+    {
+        id: 'mat-spoil-rat-pelt',
+        name: 'Spoil Rat Pelt',
+        grade: 'mortal',
+        sourceBeastId: 'beast-spoil-rat',
+        taking: 'kill',
+        core: false,
+        value: 2,
+        rarityWeight: 280,
+        harvestOrdinal: 6,
+        description: 'Bought by weight by the glue-boilers at a rate that has not moved in a generation. The boilers say the animals are smaller and the clerk records the weight.'
+    },
+    {
+        id: 'mat-crow-quill',
+        name: 'Ash Crow Quill',
+        grade: 'mortal',
+        sourceBeastId: 'beast-ash-crow',
+        taking: 'shed',
+        core: false,
+        value: 3,
+        rarityWeight: 350,
+        harvestOrdinal: 0,
+        description: 'Picked up off a burn edge by the handful and cut into pens. Half the district paperwork in the Quiet Marches is written with one.'
+    },
+    {
+        id: 'mat-pheasant-tail',
+        name: 'Pheasant Tail Feather',
+        grade: 'mortal',
+        sourceBeastId: 'beast-ringed-pheasant',
+        taking: 'shed',
+        core: false,
+        value: 4,
+        rarityWeight: 320,
+        harvestOrdinal: 0,
+        description: 'Gathered off the forest floor in the moult and sold to the opera troupes, who pay more for the pair than the butcher pays for the bird.'
+    },
+    {
+        id: 'mat-cave-fish-oil',
+        name: 'Cave Fish Oil',
+        grade: 'mortal',
+        sourceBeastId: 'beast-blind-cave-fish',
+        taking: 'kill',
+        core: false,
+        value: 5,
+        rarityWeight: 300,
+        harvestOrdinal: 1,
+        description: 'Burns without smoke, which is the whole of why deep carving is possible. A face working nine hundred paces in gets through a jar a shift.'
+    },
+    {
+        id: 'mat-moth-dust',
+        name: 'Paper Moth Dust',
+        grade: 'mortal',
+        sourceBeastId: 'beast-paper-moth',
+        taking: 'scavenge',
+        core: false,
+        value: 5,
+        rarityWeight: 260,
+        harvestOrdinal: 2,
+        description: 'Swept off the floor of a ruined archive, and the ink of whatever was on the shelf is in it. Talisman makers buy it and say why only when pressed.'
+    },
+    {
+        id: 'mat-magpie-tail',
+        name: 'Magpie Tail Feather',
+        grade: 'mortal',
+        sourceBeastId: 'beast-verge-magpie',
+        taking: 'shed',
+        core: false,
+        value: 6,
+        rarityWeight: 300,
+        harvestOrdinal: 1,
+        description: 'Picked up along the post road and sold at the gate as a luck token. The post houses buy them back and nobody at either end calls it a trade.'
+    },
+    {
+        id: 'mat-night-cat-pelt',
+        name: 'Night Cat Pelt',
+        grade: 'mortal',
+        sourceBeastId: 'beast-night-cat',
+        taking: 'kill',
+        core: false,
+        value: 9,
+        rarityWeight: 250,
+        harvestOrdinal: 3,
+        description: 'The winter coat is worth three times the summer one, so the snare line runs from the eleventh month. Four households in the deep valley live on it.'
+    },
+    {
+        id: 'mat-marmot-fat',
+        name: 'Frost Marmot Fat',
+        grade: 'mortal',
+        sourceBeastId: 'beast-frost-marmot',
+        taking: 'kill',
+        core: false,
+        value: 11,
+        rarityWeight: 240,
+        harvestOrdinal: 4,
+        description: 'Rendered for lamp fat and for the salve kept by the door of every ice-field house. The Court buys the surplus and does not say what for.'
+    },
+    {
+        id: 'mat-carp-scale',
+        name: 'Gate Carp Scale',
+        grade: 'mortal',
+        sourceBeastId: 'beast-gate-carp',
+        taking: 'kill',
+        core: false,
+        value: 12,
+        rarityWeight: 180,
+        harvestOrdinal: 7,
+        description: 'Taken off the run at the falls in the fourth month and glued in overlapping courses onto cheap scale armour that turns one blow and then does not.'
+    },
+    {
+        id: 'mat-cliff-goat-horn',
+        name: 'Cliff Goat Horn',
+        grade: 'mortal',
+        sourceBeastId: 'beast-cliff-goat',
+        taking: 'kill',
+        core: false,
+        value: 16,
+        rarityWeight: 200,
+        harvestOrdinal: 5,
+        description: 'Cut into cups and bow nocks in the high hamlets. Priced at four times a hare, entirely for where the animal was standing when it was shot.'
+    },
+    {
+        id: 'mat-bamboo-viper-fang',
+        name: 'Bamboo Viper Fang',
+        grade: 'mortal',
+        sourceBeastId: 'beast-bamboo-viper',
+        taking: 'kill',
+        core: false,
+        value: 18,
+        rarityWeight: 170,
+        harvestOrdinal: 4,
+        description: 'Sold in pairs to the poison halls and in singles to cutters, who wear one and say it is for luck. The halls do not correct them.'
     },
 
     // ── earth: guarded ground, and the first real money ────────────────
@@ -1509,6 +2805,367 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         description: 'Holds cold the way emberleaf holds heat, and is worn by exactly the people who do not need it.'
     },
 
+    {
+        id: 'mat-heron-plume',
+        name: 'Reed Heron Plume',
+        grade: 'earth',
+        sourceBeastId: 'beast-reed-heron',
+        taking: 'shed',
+        core: false,
+        value: 60,
+        rarityWeight: 85,
+        harvestOrdinal: 2,
+        description: 'Dropped in one week of the year and gathered by people camped for it. A hat with four says what the wearer earns without a word being said.'
+    },
+    {
+        id: 'mat-marten-pelt',
+        name: 'Pine Marten Pelt',
+        grade: 'earth',
+        sourceBeastId: 'beast-pine-marten',
+        taking: 'kill',
+        core: false,
+        value: 70,
+        rarityWeight: 80,
+        harvestOrdinal: 6,
+        description: 'A month of ordinary work for one winter skin, which is why the trap line runs through the sect boundary and why the dispute over it is sixty years old.'
+    },
+    {
+        id: 'mat-weasel-tail-hair',
+        name: 'Weasel Tail-Hair',
+        grade: 'earth',
+        sourceBeastId: 'beast-yellow-weasel',
+        taking: 'kill',
+        core: false,
+        value: 95,
+        rarityWeight: 65,
+        harvestOrdinal: 9,
+        description: 'The best writing brush there is, so every copyist, clerk and talisman maker in the province is buying from somebody who has had to catch one.'
+    },
+    {
+        id: 'mat-trunk-hound-hide',
+        name: 'Trunk Hound Hide',
+        grade: 'earth',
+        sourceBeastId: 'beast-trunk-hound',
+        taking: 'kill',
+        core: false,
+        value: 120,
+        rarityWeight: 58,
+        harvestOrdinal: 10,
+        description: 'Black and without a seam anywhere a tail would have been. Timber grants in the deep valley are let cheaper where one has recently been taken.'
+    },
+    {
+        id: 'mat-black-eel-skin',
+        name: 'Black Eel Skin',
+        grade: 'earth',
+        sourceBeastId: 'beast-black-eel',
+        taking: 'kill',
+        core: false,
+        value: 140,
+        rarityWeight: 52,
+        harvestOrdinal: 12,
+        description: 'Wraps a hilt and does not slip wet, which is the only reason anybody goes down after one. Net crews cut the line instead and price it into the season.'
+    },
+    {
+        id: 'mat-red-sweat',
+        name: 'Red Sweat',
+        grade: 'earth',
+        sourceBeastId: 'beast-blood-sweat-horse',
+        taking: 'shed',
+        core: false,
+        value: 160,
+        rarityWeight: 60,
+        harvestOrdinal: 5,
+        description: 'Scraped off the shoulder of a working animal at a water stop and sold by the flask. The caravan masters read the colour as a grade and are usually right.'
+    },
+    {
+        id: 'mat-shrine-silk',
+        name: 'Shrine Silk',
+        grade: 'earth',
+        sourceBeastId: 'beast-shrine-spider',
+        taking: 'scavenge',
+        core: false,
+        value: 175,
+        rarityWeight: 47,
+        harvestOrdinal: 8,
+        description: 'Lifted in sheets from under a temple floor. Worth the trip on its own, which is why parties keep entering buildings a district has stopped entering.'
+    },
+    {
+        id: 'mat-mole-claw',
+        name: 'Rock Mole Claw',
+        grade: 'earth',
+        sourceBeastId: 'beast-rock-mole',
+        taking: 'kill',
+        core: false,
+        value: 200,
+        rarityWeight: 45,
+        harvestOrdinal: 14,
+        description: 'Set into a carver tool, it finds the grain of a face the way the animal did. Every grant ledger records the face as opened on the survey.'
+    },
+    {
+        id: 'mat-swift-nest',
+        name: 'Stone Swift Nest',
+        grade: 'earth',
+        sourceBeastId: 'beast-stone-swift',
+        taking: 'scavenge',
+        core: false,
+        value: 210,
+        rarityWeight: 55,
+        harvestOrdinal: 3,
+        description: 'Built out of the birds themselves and worth more than its weight in silver at any pill hall. Taken off the underside of a floating stone, on a tether.'
+    },
+    {
+        id: 'mat-bear-gall',
+        name: 'Honey Bear Gall',
+        grade: 'earth',
+        sourceBeastId: 'beast-honey-bear',
+        taking: 'kill',
+        core: false,
+        value: 220,
+        rarityWeight: 50,
+        harvestOrdinal: 12,
+        description: 'Worth four times the rest of the animal, which is why the village pays a culler and the culler leaves the carcass for the village.'
+    },
+    {
+        id: 'mat-mantis-blade',
+        name: 'Cart Mantis Blade',
+        grade: 'earth',
+        sourceBeastId: 'beast-cart-mantis',
+        taking: 'kill',
+        core: false,
+        value: 230,
+        rarityWeight: 44,
+        harvestOrdinal: 14,
+        description: 'Hafted as it comes off, and it holds an edge no smith can put back on it once it is gone. Post houses buy them and hang them where the story is told.'
+    },
+    {
+        id: 'mat-buffalo-horn',
+        name: 'Mire Buffalo Horn',
+        grade: 'earth',
+        sourceBeastId: 'beast-mire-buffalo',
+        taking: 'kill',
+        core: false,
+        value: 260,
+        rarityWeight: 42,
+        harvestOrdinal: 15,
+        description: 'Sold at the Drowned Sea ports as taken wild, by two marsh clans who herd them and will not say how.'
+    },
+    {
+        id: 'mat-squid-ink',
+        name: 'Deep Ink',
+        grade: 'earth',
+        sourceBeastId: 'beast-ink-squid',
+        taking: 'scavenge',
+        core: false,
+        value: 260,
+        rarityWeight: 36,
+        harvestOrdinal: 14,
+        description: 'Recovered off a deck or a hull after one has been and gone. A talisman drawn in it holds in water, and the only supply is somebody having been unlucky.'
+    },
+    {
+        id: 'mat-cicada-shell',
+        name: 'Gold Cicada Shell',
+        grade: 'earth',
+        sourceBeastId: 'beast-gold-cicada',
+        taking: 'shed',
+        core: false,
+        value: 290,
+        rarityWeight: 38,
+        harvestOrdinal: 8,
+        description: 'Whole, empty, and still gripping the bark. Gathered in one week of the year off the trunks on a vein, and bought by every pill hall in the province.'
+    },
+    {
+        id: 'mat-centipede-segment',
+        name: 'Tomb Centipede Segment',
+        grade: 'earth',
+        sourceBeastId: 'beast-tomb-centipede',
+        taking: 'scavenge',
+        core: false,
+        value: 300,
+        rarityWeight: 30,
+        harvestOrdinal: 12,
+        description: 'Found in a shaft after a moult, which is the only way most people ever see one. Ground for the poison halls, who pay more for the head segments.'
+    },
+    {
+        id: 'mat-iron-bear-tooth',
+        name: 'Iron-Eating Bear Tooth',
+        grade: 'earth',
+        sourceBeastId: 'beast-iron-eating-bear',
+        taking: 'kill',
+        core: false,
+        value: 300,
+        rarityWeight: 35,
+        harvestOrdinal: 16,
+        description: 'Takes an edge off a blade without chipping, so the refiners buy them in fours and the bamboo villages will not sell them at all.'
+    },
+    {
+        id: 'mat-crevasse-chitin',
+        name: 'Crevasse Worm Chitin',
+        grade: 'earth',
+        sourceBeastId: 'beast-crevasse-worm',
+        taking: 'kill',
+        core: false,
+        value: 310,
+        rarityWeight: 32,
+        harvestOrdinal: 16,
+        description: 'Cut in plates off a thing killed in a hole in the ice, which is where it has to be carried up from. The guides charge for the day either way.'
+    },
+    {
+        id: 'mat-toll-lion-mane',
+        name: 'Toll Lion Mane',
+        grade: 'earth',
+        sourceBeastId: 'beast-toll-lion',
+        taking: 'scavenge',
+        core: false,
+        value: 320,
+        rarityWeight: 28,
+        harvestOrdinal: 11,
+        description: 'Combed off the thorn at the roadside where one has passed. Sold as proof a stretch is worked, which is worth more to a carter than the hair is.'
+    },
+    {
+        id: 'mat-ram-horn',
+        name: 'One-Horn Ram Horn',
+        grade: 'earth',
+        sourceBeastId: 'beast-one-horn-ram',
+        taking: 'scavenge',
+        core: false,
+        value: 330,
+        rarityWeight: 27,
+        harvestOrdinal: 13,
+        description: 'Shed on an old field every few years and picked up by whoever is walking it. Two magistrates keep one on the desk and neither will explain the practice.'
+    },
+    {
+        id: 'mat-deer-musk',
+        name: 'Deer Musk',
+        grade: 'earth',
+        sourceBeastId: 'beast-tusked-deer',
+        taking: 'kill',
+        core: false,
+        value: 340,
+        rarityWeight: 40,
+        harvestOrdinal: 13,
+        description: 'Half the fixing agent in the province and the reason four riverbank villages keep dogs they cannot otherwise afford to feed.'
+    },
+    {
+        id: 'mat-ridge-lizard-scale',
+        name: 'Ridge Lizard Scale',
+        grade: 'earth',
+        sourceBeastId: 'beast-ridge-lizard',
+        taking: 'scavenge',
+        core: false,
+        value: 350,
+        rarityWeight: 26,
+        harvestOrdinal: 12,
+        description: 'Found in the gutters of a hall that has not burned in a century. The temple quarters that still have one on the ridge will not let them be gathered.'
+    },
+    {
+        id: 'mat-crane-feather',
+        name: 'Cloud Crane Feather',
+        grade: 'earth',
+        sourceBeastId: 'beast-cloud-crane',
+        taking: 'shed',
+        core: false,
+        value: 380,
+        rarityWeight: 30,
+        harvestOrdinal: 9,
+        description: 'Comes down off a ledge above the last water, so it is gathered by parties who went up for it and not by anybody who happened past.'
+    },
+    {
+        id: 'mat-borer-scale',
+        name: 'Hill-Borer Scale',
+        grade: 'earth',
+        sourceBeastId: 'beast-hill-borer',
+        taking: 'shed',
+        core: false,
+        value: 400,
+        rarityWeight: 24,
+        harvestOrdinal: 14,
+        description: 'The length of a hand and shed into its own runs, so the carvers who know which runs to walk are collecting off an animal they have never met.'
+    },
+    {
+        id: 'mat-leopard-pelt',
+        name: 'Cloud-Marked Leopard Pelt',
+        grade: 'earth',
+        sourceBeastId: 'beast-cloud-marked-leopard',
+        taking: 'kill',
+        core: false,
+        value: 430,
+        rarityWeight: 21,
+        harvestOrdinal: 18,
+        description: 'The one bamboo-country good a Jade Gorge house will take in place of stones, which is how the cutters pay a tithe in a year with no cash in it.'
+    },
+    {
+        id: 'mat-hoar-antler',
+        name: 'Hoar Stag Antler',
+        grade: 'earth',
+        sourceBeastId: 'beast-hoar-stag',
+        taking: 'shed',
+        core: false,
+        value: 460,
+        rarityWeight: 19,
+        harvestOrdinal: 15,
+        description: 'Dropped at the top of the ice each year and carried down by the guides. Nobody has ever had to fight anything for one and the price does not reflect it.'
+    },
+    {
+        id: 'mat-salamander-skin',
+        name: 'Crying Salamander Skin',
+        grade: 'earth',
+        sourceBeastId: 'beast-crying-salamander',
+        taking: 'kill',
+        core: false,
+        value: 470,
+        rarityWeight: 20,
+        harvestOrdinal: 20,
+        description: 'Bought whole by the drum makers and by two pill halls that want it for something else. Neither trade asks where a lake village got it.'
+    },
+    {
+        id: 'mat-year-beast-hide',
+        name: 'Year Beast Hide',
+        grade: 'earth',
+        sourceBeastId: 'beast-year-beast',
+        taking: 'kill',
+        core: false,
+        value: 480,
+        rarityWeight: 19,
+        harvestOrdinal: 21,
+        description: 'Takes fire badly and takes a blade worse. A village that has one nailed up over the gate has a date it no longer needs to keep.'
+    },
+    {
+        id: 'mat-sun-eater-hide',
+        name: 'Sun-Eater Hide',
+        grade: 'earth',
+        sourceBeastId: 'beast-sun-eater',
+        taking: 'kill',
+        core: false,
+        value: 490,
+        rarityWeight: 18,
+        harvestOrdinal: 23,
+        description: 'Comes off scorched through and worth less for it, and every buyer knows the damage is the animal rather than the killing.'
+    },
+    {
+        id: 'mat-flood-serpent-hide',
+        name: 'Flood Serpent Hide',
+        grade: 'earth',
+        sourceBeastId: 'beast-flood-serpent',
+        taking: 'kill',
+        core: false,
+        value: 490,
+        rarityWeight: 17,
+        harvestOrdinal: 22,
+        description: 'Sold by the length to the boatwrights, who sheathe a hull in it and charge twice. Three river villages would rather it had been left in the bend.'
+    },
+    {
+        id: 'mat-roc-pinion',
+        name: 'Cloud Roc Pinion',
+        grade: 'earth',
+        sourceBeastId: 'beast-cloud-roc',
+        taking: 'shed',
+        core: false,
+        value: 495,
+        rarityWeight: 16,
+        harvestOrdinal: 16,
+        description: 'The length of a man and found where the wind put it. The flying routes over the White Stair are drawn around the bird that dropped it.'
+    },
+
     // ── heaven: cores. Somebody else's centuries, portable ─────────────
     {
         id: 'mat-hawk-core',
@@ -1583,6 +3240,199 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         description: 'Sheared off inside the vein and washed out at the tap-head, which is how a holding finds out what it has. Nobody sells one without first being asked where it came from.'
     },
 
+    {
+        id: 'mat-centipede-core',
+        name: 'Tomb Centipede Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-tomb-centipede',
+        taking: 'kill',
+        core: true,
+        value: 1_500,
+        rarityWeight: 12,
+        harvestOrdinal: 17,
+        description: 'The cheapest core the Burial Sands produces and the one most often sold in a hurry, because the party that took it is usually short of a member.'
+    },
+    {
+        id: 'mat-toll-lion-core',
+        name: 'Toll Lion Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-toll-lion',
+        taking: 'kill',
+        core: true,
+        value: 1_600,
+        rarityWeight: 12,
+        harvestOrdinal: 17,
+        description: 'Comes out with a century of swallowed metal around it, and the assay houses shave the price for every piece the cutter failed to separate.'
+    },
+    {
+        id: 'mat-ridge-lizard-core',
+        name: 'Ridge Lizard Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-ridge-lizard',
+        taking: 'kill',
+        core: true,
+        value: 1_800,
+        rarityWeight: 11,
+        harvestOrdinal: 18,
+        description: 'Water-heavy, and the two recorded sales were both to houses that lost a hall to fire in the year they bought it.'
+    },
+    {
+        id: 'mat-leopard-core',
+        name: 'Cloud-Marked Leopard Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-cloud-marked-leopard',
+        taking: 'kill',
+        core: true,
+        value: 1_900,
+        rarityWeight: 11,
+        harvestOrdinal: 18,
+        description: 'The one core a bamboo-country party can realistically take, and the reason a cutting block with one working it is bid for rather than avoided.'
+    },
+    {
+        id: 'mat-ram-core',
+        name: 'One-Horn Ram Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-one-horn-ram',
+        taking: 'kill',
+        core: true,
+        value: 2_100,
+        rarityWeight: 10,
+        harvestOrdinal: 19,
+        description: 'Prices as any core at the rung does. What it took to get one onto a field where it could be killed is not a thing the assay houses ask about.'
+    },
+    {
+        id: 'mat-squid-core',
+        name: 'Ink Squid Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-ink-squid',
+        taking: 'kill',
+        core: true,
+        value: 2_500,
+        rarityWeight: 9,
+        harvestOrdinal: 20,
+        description: 'Every one on the market was taken on a deck rather than in the water. The port underwriters know the count and do not publish it.'
+    },
+    {
+        id: 'mat-salamander-core',
+        name: 'Crying Salamander Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-crying-salamander',
+        taking: 'kill',
+        core: true,
+        value: 2_600,
+        rarityWeight: 9,
+        harvestOrdinal: 20,
+        description: 'Two centuries of an animal lying under a lake calling, and a pill hall will spend it in one refinement on something for a cough.'
+    },
+    {
+        id: 'mat-rhino-horn',
+        name: 'Water-Parting Horn',
+        grade: 'heaven',
+        sourceBeastId: 'beast-water-parting-rhino',
+        taking: 'scavenge',
+        core: false,
+        value: 2_800,
+        rarityWeight: 8,
+        harvestOrdinal: 18,
+        description: 'The ingredient two province longevity formulas will not substitute for, and the price has gone one way for a century.'
+    },
+    {
+        id: 'mat-year-beast-core',
+        name: 'Year Beast Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-year-beast',
+        taking: 'kill',
+        core: true,
+        value: 3_000,
+        rarityWeight: 8,
+        harvestOrdinal: 21,
+        description: 'Taken in a village street on a known date, which is the only reason any exist. Every recorded sale was split between a party and a settlement.'
+    },
+    {
+        id: 'mat-borer-core',
+        name: 'Hill-Borer Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-hill-borer',
+        taking: 'kill',
+        core: true,
+        value: 3_100,
+        rarityWeight: 8,
+        harvestOrdinal: 21,
+        description: 'Earth-heavy and bid for by formation houses, who want it for a footing rather than for a pill and will say so at the auction.'
+    },
+    {
+        id: 'mat-qilin-hair',
+        name: 'Green Qilin Hair',
+        grade: 'heaven',
+        sourceBeastId: 'beast-green-qilin',
+        taking: 'shed',
+        core: false,
+        value: 3_400,
+        rarityWeight: 7,
+        harvestOrdinal: 20,
+        description: 'Caught on a thorn in the old wood and worth a year of a house. Four households have found one and none of the four reported where.'
+    },
+    {
+        id: 'mat-flood-serpent-core',
+        name: 'Flood Serpent Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-flood-serpent',
+        taking: 'kill',
+        core: true,
+        value: 3_500,
+        rarityWeight: 7,
+        harvestOrdinal: 22,
+        description: 'The village that stops making the offering at the bend is the village that has heard one of these was cut out, and they are usually right.'
+    },
+    {
+        id: 'mat-hoar-stag-core',
+        name: 'Hoar Stag Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-hoar-stag',
+        taking: 'kill',
+        core: true,
+        value: 3_600,
+        rarityWeight: 7,
+        harvestOrdinal: 23,
+        description: 'The guides know within a season when one has been taken, because the upper crossing closes and stays closed.'
+    },
+    {
+        id: 'mat-sun-eater-core',
+        name: 'Sun-Eater Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-sun-eater',
+        taking: 'kill',
+        core: true,
+        value: 3_800,
+        rarityWeight: 7,
+        harvestOrdinal: 23,
+        description: 'Fire-heavy and still warm a decade after. No party has ever gone out for one; every recorded core was taken where the thing came down.'
+    },
+    {
+        id: 'mat-roc-core',
+        name: 'Cloud Roc Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-cloud-roc',
+        taking: 'kill',
+        core: true,
+        value: 4_200,
+        rarityWeight: 6,
+        harvestOrdinal: 24,
+        description: 'Has to be fought for at its own height, so the buyers are also the only people who could have taken one, and the market is four houses deep.'
+    },
+    {
+        id: 'mat-rhino-core',
+        name: 'Water-Parting Rhino Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-water-parting-rhino',
+        taking: 'kill',
+        core: true,
+        value: 4_600,
+        rarityWeight: 6,
+        harvestOrdinal: 25,
+        description: 'The top of the heaven band and the last core anybody takes without a campaign. Sold with the horn or not at all, because the horn proves the core.'
+    },
+
     // ── immortal: the ones wars are fought over ────────────────────────
     {
         id: 'mat-dragon-core',
@@ -1619,6 +3469,19 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         rarityWeight: 2,
         harvestOrdinal: 38,
         description: 'No confirmed sale in the current records. The price is an estimate maintained by an auction house that has never had one and expects never to.'
+    },
+
+    {
+        id: 'mat-qilin-core',
+        name: 'Green Qilin Core',
+        grade: 'immortal',
+        sourceBeastId: 'beast-green-qilin',
+        taking: 'kill',
+        core: true,
+        value: 26_000,
+        rarityWeight: 3,
+        harvestOrdinal: 26,
+        description: 'Off an animal that has never struck anything, standing in a wood a Foundation party can walk into. Two recorded sales, and the auction house entered the species and left the rest of the line blank.'
     },
 
     // ── chaos: one of these is a plot, not a purchase ──────────────────

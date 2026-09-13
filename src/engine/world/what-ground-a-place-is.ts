@@ -17,8 +17,9 @@
  *
  * ── A LIST, BECAUSE THE CATALOGS ARE SMALL ───────────────────────────────
  *
- * 19 beasts across 12 biomes. Narrowing a province to one biome would leave
- * every square in it with one or two species and would do that permanently -
+ * 64 beasts across 18 of the 19 biomes, grown from 19 across 12 once this read
+ * existed and the pools could be measured. Narrowing a province to one biome
+ * would still leave every square in it thin, and would do that permanently -
  * which is a worse world than the undifferentiated one, not a better one. A
  * province is several kinds of ground; the author says which; and the draw is
  * the union.
@@ -57,6 +58,16 @@ const GROUND_A_KIND_IS: Partial<Record<LocationKind, readonly HerbBiome[]>> = Ob
     sealed_domain: ['abyss']
 });
 
+/**
+ * Density at which the ground under a place is a vein whatever else it says.
+ *
+ * Geology, not usability: `qiDensity` is what the vein under this place holds
+ * and `environment.spiritualDensity` is what anybody can draw, which is why a
+ * sealed pocket nobody can use is exactly the ground something has been growing
+ * on undisturbed.
+ */
+const VEIN_DENSITY = 60;
+
 /** How far up a parent chain to look before giving up. Guards a cycle, not depth. */
 const WALLS_WALKED_AT_MOST = 8;
 
@@ -90,4 +101,30 @@ export function whatGroundThisIs(
         here = here.parentId ? getLocation(world, here.parentId) : null;
     }
     return null;
+}
+
+/**
+ * Whether this place sits on a vein, which decides what `vein_only` can live here.
+ *
+ * TWO SOURCES AND THE AUTHORED ONE WINS. The density and the resource list are
+ * a proxy - good ones, and they are what every caller had - but a province file
+ * can say outright that a square is a vein head, and a statement beats a proxy.
+ * Dragonvein Rock is the measurement: it declares `spirit_vein`, its seeded row
+ * reports a density of 17, and every vein species is `vein_only`, so the one
+ * square in its province named for a vein was the only square in the world with
+ * nothing living on it at all.
+ *
+ * Here rather than in the turn engine because the test that guards it would
+ * otherwise have to restate the rule, and a rule stated twice is the thing this
+ * file exists to stop.
+ */
+export function isOnAVein(
+    world: WorldState,
+    place: LocationRecord | null,
+    grounds: readonly HerbBiome[] | null = whatGroundThisIs(world, place)
+): boolean {
+    if (!place) return false;
+    return place.qiDensity >= VEIN_DENSITY
+        || place.environment.resources.includes('qi')
+        || (grounds?.includes('spirit_vein') ?? false);
 }

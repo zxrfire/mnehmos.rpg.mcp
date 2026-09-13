@@ -20,6 +20,7 @@ import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { whatGroundThisIs } from '../../../src/engine/world/what-ground-a-place-is.js';
 import { beastsOnThisGround } from '../../../src/engine/world/hunting-a-spirit-beast.js';
+import { isOnAVein } from '../../../src/engine/world/what-ground-a-place-is.js';
 import { BEASTS } from '../../../src/data/cultivation/beasts.js';
 import { HERBS, findHerbsForOrdinal } from '../../../src/data/cultivation/herbs.js';
 
@@ -144,5 +145,33 @@ describe('and what grows on it is the ground too', () => {
         expect(home).toBeTruthy();
         expect(findHerbsForOrdinal(0, whatGroundThisIs(world, home!) ?? undefined).length)
             .toBeGreaterThan(0);
+    });
+});
+
+describe('and nowhere in the world has nothing living on it', () => {
+    it('reads a square that SAYS it is a vein as one, whatever its density', async () => {
+        // Density and the resource list are a proxy; a province file saying a
+        // square is a vein head is a statement. Dragonvein Rock declares
+        // `spirit_vein` and seeds at a density of 17.
+        const world = await seeded();
+        const declared = world.locations.filter(row =>
+            (whatGroundThisIs(world, row) ?? []).includes('spirit_vein'));
+        expect(declared.length).toBeGreaterThan(0);
+        for (const row of declared) {
+            expect([row.name, isOnAVein(world, row)]).toEqual([row.name, true]);
+        }
+    });
+
+    it('leaves no square with an empty pool', async () => {
+        // The measurement this arm exists for: before the catalog was grown and
+        // before a declared vein counted as one, ten squares in the seeded world
+        // had nothing that could be standing on them at all.
+        const world = await seeded();
+        const empty = world.locations.filter(row => beastsOnThisGround({
+            sealed: row.sealed,
+            onAVein: isOnAVein(world, row),
+            grounds: whatGroundThisIs(world, row) ?? undefined
+        }).length === 0);
+        expect(empty.map(row => `${row.name} (${row.kind})`)).toEqual([]);
     });
 });
