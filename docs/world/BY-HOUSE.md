@@ -245,7 +245,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-six-li-patrol` · its entry: [`sects.ts:1996`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 3 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2 · [`history.ts`](../../src/data/cultivation/history.ts) 2
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 8 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 3 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 2
   …and 9 more files.
 
 **Constants most about it:** `CALENDARS`, `THE_SENDING_PYRAMID`
