@@ -590,6 +590,16 @@ what-they-will-take-instead-of-money.ts the medium, not the figure: stones,
                                         refusal names the rung that would have
                                         worked, which is what lets a player
                                         change what they offer
+what-a-room-decides-about-one-of-its-own.ts
+                                        the middle of an arc whose ends both
+                                        exist: somebody weighs a report and
+                                        returns one of seven sentences, off
+                                        whether it can be shown, how bad it was
+                                        and what kind of house this is. No table
+                                        of offences - one ordered ladder, and
+                                        the alignment moves the index. An
+                                        intercession moves it one rung, and some
+                                        bodies no word reaches
 what-a-house-will-do-about-it.ts        the alignment split, entirely downstream
 when-somebody-works-out-what-you-did.ts the delayed discovery and its grudge
 going-further-than-an-agreed-bout-allowed.ts

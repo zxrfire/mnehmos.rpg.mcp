@@ -55,7 +55,7 @@ import {
     type WhatTheyStoodUpFor
 } from './nobody-is-invincible.js';
 import { settleNpcDeath } from './time.js';
-import type { FactionRecord, WorldState } from './world-state.js';
+import { getLocation, indexById, type FactionRecord, type WorldState } from './world-state.js';
 import { isRuined, isSomethingYouWouldSwing, ruin } from './possessions.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -488,7 +488,7 @@ function pointTiesAt(
     now: string
 ): void {
     for (const tie of ties) {
-        const at = state.npcs.findIndex(n => n.id === tie.fromId);
+        const at = indexById(state.npcs, tie.fromId);
         if (at < 0) continue;
         const holder = state.npcs[at];
         const which = holder.relationships.findIndex(r => r.targetId === tie.toId);
@@ -552,7 +552,7 @@ function regionOf(state: WorldState, locationId: string | null): string | null {
     const seen = new Set<string>();
     while (cursor && !seen.has(cursor)) {
         seen.add(cursor);
-        const location = state.locations.find(l => l.id === cursor);
+        const location = getLocation(state, cursor);
         if (!location) return null;
         if (location.kind === 'region' || location.parentId === null) return location.id;
         cursor = location.parentId;
@@ -895,7 +895,7 @@ function whoDidNotGetUp(
     const said: string[] = [];
     const [a, b] = fought;
     for (const person of fought) {
-        const at = state.npcs.findIndex(n => n.id === person.id);
+        const at = indexById(state.npcs, person.id);
         if (at < 0) continue;
         const standing = state.npcs[at]!;
         // A missing key is not a wound. The resolver only reports a bar it
@@ -994,7 +994,7 @@ function heldAgainstTheKiller(
  * Somebody decides they are not going to be this far behind for ever.
  */
 function openAmbition(state: WorldState, behind: NpcRecord, ahead: NpcRecord, day: number): void {
-    const at = state.npcs.findIndex(n => n.id === behind.id);
+    const at = indexById(state.npcs, behind.id);
     if (at < 0) return;
     if (state.npcs[at].goals.some(g => g.targetId === ahead.id && g.status === 'active')) return;
     state.npcs[at] = addGoal(state.npcs[at], {
@@ -1015,7 +1015,7 @@ function applyWounds(
     day: number
 ): void {
     if (wounds.length === 0) return;
-    const at = state.npcs.findIndex(n => n.id === npc.id);
+    const at = indexById(state.npcs, npc.id);
     if (at < 0) return;
     state.npcs[at] = carryingWounds(state.npcs[at], wounds, day);
     // A maiming taken at a gathering is a day in a life. Only the permanent
@@ -1098,7 +1098,7 @@ function runCompetition(
         const higher = Number(circle.host.resources.power_ordinal ?? 0)
             > Number(home?.resources.power_ordinal ?? 0);
         if (home && answersTo && higher) {
-            const at = state.npcs.findIndex(n => n.id === champion.id);
+            const at = indexById(state.npcs, champion.id);
             if (at >= 0) {
                 state.npcs[at] = {
                     ...state.npcs[at],
@@ -1372,7 +1372,7 @@ function reachableSite(
 }
 
 function replaceLocation(state: WorldState, next: LocationRecord): void {
-    const at = state.locations.findIndex(l => l.id === next.id);
+    const at = indexById(state.locations, next.id);
     if (at >= 0) state.locations[at] = next;
 }
 
@@ -1393,7 +1393,7 @@ function write(
     day: number,
     ties: GatheringTie[]
 ): void {
-    const at = state.npcs.findIndex(n => n.id === from.id);
+    const at = indexById(state.npcs, from.id);
     if (at < 0) return;
     const holder = state.npcs[at];
     const prev = relationshipWith(holder, to.id);

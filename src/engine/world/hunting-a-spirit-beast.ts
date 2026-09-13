@@ -397,6 +397,14 @@ export function whatComesOffTheBody(input: {
 
 /**
  * A tracked material as a real object with a real origin.
+ *
+ * `how` is the acquisition mode the object model has always carried, and it was
+ * pinned to `looted` only because there was one road to material off a beast.
+ * There are two: a thing past the change can be ASKED, and what it hands over
+ * was never taken off anything. The tags are untouched either way -
+ * `taken_from_something_that_spoke` and `data.spoke` are facts about the
+ * SOURCE, not about the road, and a second flag saying which road would be a
+ * fact kept twice.
  */
 export function objectForBeastMaterial(init: {
     id: string;
@@ -407,6 +415,8 @@ export function objectForBeastMaterial(init: {
     /** Where it was killed or gathered. Free text, goes in the provenance. */
     place: string;
     onDay: number;
+    /** How it changed hands. Defaults to the hunt's road. */
+    how?: 'looted' | 'gifted';
 }): ObjectRecord {
     const { material, beast } = init;
     const somebody = readsAsSomebody(beast);
@@ -441,20 +451,29 @@ export function objectForBeastMaterial(init: {
         }
     });
 
+    const how = init.how ?? 'looted';
+    const given = how === 'gifted';
     return transferPossession(blank, {
         onDay: init.onDay,
         toHolderId: init.takerId,
         toHolderName: init.takerName,
-        how: 'looted',
+        how,
         transfersOwnership: true,
-        source: `Taken off a ${beast.name} at ${rankName(beast.ordinal)}, at ${init.place}`,
-        note: somebody
-            ? `Cut from something that had a shape and a voice and could have been `
-              + `spoken to. It stood at ${rankName(beast.ordinal)}, which is the rung at `
-              + `which that becomes true, and whoever holds this is holding the `
-              + `${material.value} stones somebody else spent centuries becoming.`
-            : `Taken off an animal at ${rankName(beast.ordinal)}. Nothing about it could `
-              + `have answered.`
+        source: given
+            ? `Given by a ${beast.name} at ${rankName(beast.ordinal)}, at ${init.place}`
+            : `Taken off a ${beast.name} at ${rankName(beast.ordinal)}, at ${init.place}`,
+        note: given
+            ? `Pulled off itself and handed over by something that had a shape and a voice, `
+              + `at ${rankName(beast.ordinal)}. It hurt to do and it was done anyway, which `
+              + `is the whole difference between this and the ${material.value} stones the `
+              + `same thing is worth cut off a corpse.`
+            : somebody
+                ? `Cut from something that had a shape and a voice and could have been `
+                  + `spoken to. It stood at ${rankName(beast.ordinal)}, which is the rung at `
+                  + `which that becomes true, and whoever holds this is holding the `
+                  + `${material.value} stones somebody else spent centuries becoming.`
+                : `Taken off an animal at ${rankName(beast.ordinal)}. Nothing about it could `
+                  + `have answered.`
     });
 }
 

@@ -1067,14 +1067,20 @@ function projectPouch(db: ReturnType<typeof ensureCultivationDb>['db'], cultivat
                 whatIsKnown: pill ? whatTheRecordsSay(pill.grade, 2) : null
             };
         }
+        // THROUGH THE ONE RESOLVER, because `hunt` puts beast material in this
+        // same half of the pouch and `getHerb` has never heard of it. FOUND BY
+        // PLAYING: a player carrying a serpent gland was told they held "1 x
+        // mat-serpent-gland", which is the engine reading its own column aloud.
+        // `biome` stays the herb's, because only a growing thing has one.
+        const row = whatAnIngredientIs(entry.itemId);
         const herb = getHerb(entry.itemId);
         return {
             kind: 'herb' as const,
             id: entry.itemId,
-            name: herb?.name ?? entry.itemId,
-            grade: herb?.grade ?? null,
+            name: row?.name ?? entry.itemId,
+            grade: row?.grade ?? null,
             biome: herb?.biome ?? null,
-            value: herb?.value ?? null,
+            value: row?.value ?? null,
             quantity: entry.quantity
         };
     });

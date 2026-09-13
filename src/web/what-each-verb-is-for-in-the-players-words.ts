@@ -130,6 +130,7 @@ const EVERY_REQUEST_KIND: Record<RequestKind, true> = {
     terms: true,
     a_trade: true,
     advancement: true,
+    company: true,
     nothing: true,
     unstated: true
 };
@@ -604,7 +605,9 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             NOT for a threat, which is about something that has not happened yet.`
     },
     request: {
-        takes: ['target', 'intent', 'topic'],
+        // "days" is read by the company kind alone, which is the only ask that
+        // spends the days of the person being asked rather than the asker's.
+        takes: ['target', 'intent', 'topic', 'days'],
         intents: REQUEST_KINDS,
         says: `ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must
             not be routed there. "target" is who it is put to; "intent" is what kind of thing is
@@ -613,7 +616,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             they know), a_thing (be given, lent or sold an object), terms (what would it take -
             the price asked before it is paid), a_trade (something put down for it that is not
             money), advancement (be raised a rung in your own house - it only moves if the person
-            asked is the one whose call it is, and money alone will not buy it), nothing (ask for
+            asked is the one whose call it is, and money alone will not buy it), company (ask them
+            to come with you - "topic" is where the party is bound when the sentence said, and
+            "days" is how long they were asked for; they travel with the player until the term
+            runs out, and most people have no reason to follow a stranger), nothing (ask for
             NOTHING - buy them a drink, sit with them, call on them, do
             them a small favour; costs a day and no stones, and it is the only thing that makes
             a stranger somebody who will do you a favour later); "topic" is what was named - the

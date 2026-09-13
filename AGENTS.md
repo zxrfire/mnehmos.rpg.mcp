@@ -3279,6 +3279,31 @@ If it would change how somebody works anywhere in the repo, it goes here. When a
 grows a long worked example, that is usually the example asking to move down and leave a
 sentence behind.
 
+### OPEN-QUESTIONS.md holds open questions and nothing else
+
+**This one is for the coordinating agent, not for a subagent.** `OPEN-QUESTIONS.md` is the
+design owner's inbox. It is the file he opens to find what only he can decide, and every line
+in it that is not that costs him attention he came there to spend on something else.
+
+**So it carries open questions and nothing else.** Not what was built, not why, not the
+reasoning behind a ruling he already gave, not a record of what an agent measured. All of
+that belongs in the header of the module that carries it, in a test that pins it, or in git.
+It left that file at 970 lines once, most of it answered, and had to be cut back to 81.
+
+**Write each item so a one-line answer moves it.** Name the decision, say what it blocks or
+does not block, and give the smallest fact needed to choose - a measured number where there
+is one. If a reader would have to go and look something up before they could answer, put
+the thing they would look up in the item.
+
+**Delete an item the moment it is answered.** Not struck through, not marked DONE with the
+argument kept underneath - deleted. The ruling then lives where it is enforced. Git has the
+history and the coordinating agent has the context; the owner has said he will ask rather
+than read.
+
+**And say plainly what is merely in flight.** A short table of what agents are building
+right now is worth keeping, because it stops him ruling twice on the same thing - but it is
+a table, not a narrative.
+
 ### An example outlives the thing it was about. Delete it when it does
 
 **A worked example in this file is a claim about the repo, and the repo moves.** The rule it

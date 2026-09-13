@@ -68,7 +68,7 @@ import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { applyLocationChange, forbidZone, type LocationRecord } from './locations.js';
 import { createNpc, markDead, markMissing, setRealm, type NpcRecord } from './npc-state.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
-import type { FactionRecord, WorldState } from './world-state.js';
+import { indexById, type FactionRecord, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SHAPE
@@ -884,12 +884,12 @@ function draw(options: readonly WeighedOption[], rng: CultivationRNG): CascadeOp
 }
 
 function replaceNpc(state: WorldState, next: NpcRecord): void {
-    const at = state.npcs.findIndex(n => n.id === next.id);
+    const at = indexById(state.npcs, next.id);
     if (at >= 0) state.npcs[at] = next;
 }
 
 function replaceLocation(state: WorldState, next: LocationRecord): void {
-    const at = state.locations.findIndex(l => l.id === next.id);
+    const at = indexById(state.locations, next.id);
     if (at >= 0) state.locations[at] = next;
 }
 

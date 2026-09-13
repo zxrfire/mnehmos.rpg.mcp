@@ -104,6 +104,22 @@ const WHAT_AN_OUTSIDER_SAW: Readonly<Record<EventScale, string>> = Object.freeze
 });
 
 /**
+ * What an event at this rung is worth, by the realm the rung sits in.
+ *
+ * The one authority on how far a thing at a wall reaches, and it is exported
+ * because `recording-what-a-crossing-did.ts` was deriving the same answer from
+ * raw ordinal cutoffs of its own and getting a different one. Measured on this
+ * tree before the two were joined: the NPC path and the player path disagreed
+ * about the scale of a crossing in eight of the nine realms a crossing can land
+ * in, so the same wall struck by the player and by somebody in the next
+ * courtyard filed two different rows and the news layer spent two different
+ * distance budgets on them.
+ */
+export function whatArrivingInIsWorth(ordinal: number): WhatACrossingIsWorth {
+    return ARRIVING_IN[realmIndexOf(clampOrdinal(ordinal))] ?? ARRIVING_IN[0];
+}
+
+/**
  * What a crossing from one rung to another is worth as news.
  *
  * Null where the rung is inside a realm: a layer is a private matter and the
@@ -116,9 +132,8 @@ export function howFarACrossingCarries(
     const from = clampOrdinal(fromOrdinal);
     const to = clampOrdinal(toOrdinal);
     if (to <= from) return null;
-    const arrived = realmIndexOf(to);
-    if (arrived === realmIndexOf(from)) return null;
-    return ARRIVING_IN[arrived] ?? null;
+    if (realmIndexOf(to) === realmIndexOf(from)) return null;
+    return whatArrivingInIsWorth(to);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

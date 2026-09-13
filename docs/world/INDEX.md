@@ -740,7 +740,7 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 35 | 50 |
 | `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 40 | 163 |
 | `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 73 | 346 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 79 | 77 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 81 | 77 |
 
 <!-- END GENERATED: design-constants -->
 

@@ -53,6 +53,30 @@ const A_WAY_OUT =
 /** And a ring, which is folded space rather than worked material. */
 const A_RING = /\b(?:storage ring|storage ‑ring|ring|rings|pouch of holding)\b/i;
 
+/**
+ * The other nouns a pair of hands works material into.
+ *
+ * Deliberately the things a maker MAKES and not everything an artifact table
+ * holds. A manual is written, a pill is refined, a hull is built in a yard, and
+ * each of those already has its own verb and its own gate - so the words here
+ * are the ones left over, which is what somebody sits at a bench with.
+ */
+const A_WORKED_THING =
+    /\b(?:artifacts?|swords?|blades?|sabres?|sabers?|spears?|daggers?|knives|knife|axes?|bells?|mirrors?|cauldrons?|furnaces?|flags?|banners?|robes?|armou?rs?|shields?|needles?|rings? of\b)\b/i;
+
+/**
+ * Whether these words name a thing somebody could sit down and make.
+ *
+ * The backward read of {@link whatTheyWereAskedToMake}, which takes any sentence
+ * at all and hands back a mortal-grade something - correct for reading an ask
+ * that has already been routed, and useless for deciding whether a sentence is
+ * about making anything. A caller routing a bare verb needs the question asked
+ * the other way round, and this is it.
+ */
+export function aBenchCouldMakeThat(named: string): boolean {
+    return A_SLIP.test(named) || A_RING.test(named) || A_WORKED_THING.test(named);
+}
+
 export function whatTheyWereAskedToMake(named: string): WhatYouAskedThemToMake {
     const grade = gradeAskedFor(named);
     const slip: WhatIsInTheSlip | null = A_SLIP.test(named)

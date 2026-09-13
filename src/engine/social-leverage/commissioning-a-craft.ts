@@ -103,6 +103,9 @@ export interface WhatYouAskedThemToMake {
 // CAN THEY
 // ═════════════════════════════════════════════════════════════════════════
 
+/** Which side of the same three gates a refusal is being read out to. */
+export type WhoseHands = 'theirs' | 'yours';
+
 export interface WhetherTheirHandsCanDoIt {
     theyCan: boolean;
     /** The best grade this hand could work instead. Null for none at all. */
@@ -137,8 +140,20 @@ export function whetherTheirHandsCanDoIt(
      * caller that does not know what anybody is holding gets the rung answer
      * and no material answer, rather than a refusal it has no grounds for.
      */
-    materialsToHand?: readonly string[]
+    materialsToHand?: readonly string[],
+    /**
+     * Whose hands the refusals are about.
+     *
+     * The same three gates answer both directions - a commission asks about
+     * somebody else's hands, a player at a bench asks about their own - and the
+     * only thing that differs is the PERSON the sentences are in. A refusal
+     * saying "their hands" to the person whose hands they are is the engine
+     * talking about the player in the third person, and it is a reading defect
+     * rather than a cosmetic one: it sends them off to find somebody.
+     */
+    whoseHands: WhoseHands = 'theirs'
 ): WhetherTheirHandsCanDoIt {
+    const yours = whoseHands === 'yours';
     const insteadTheyCouldMake = highestGradeRefinableAt(makerOrdinal);
     if (!canRefineGrade(ask.grade, makerOrdinal)) {
         return {
@@ -163,9 +178,13 @@ export function whetherTheirHandsCanDoIt(
         return {
             theyCan: false,
             insteadTheyCouldMake,
-            why: 'They can work the materials, and what you are asking them to fold into the '
-                + 'paper is a road they cannot walk themselves. Nobody puts a way out in a slip '
-                + 'they could not take. A strike slip of the same grade is within their hands.',
+            why: yours
+                ? 'You can work the materials, and what you want folded into the paper is a road '
+                  + 'you cannot walk yourself. Nobody puts a way out in a slip they could not '
+                  + 'take. A strike slip of the same grade is within your hands.'
+                : 'They can work the materials, and what you are asking them to fold into the '
+                  + 'paper is a road they cannot walk themselves. Nobody puts a way out in a slip '
+                  + 'they could not take. A strike slip of the same grade is within their hands.',
             theBenchIsShortOf: []
         };
     }
@@ -179,7 +198,9 @@ export function whetherTheirHandsCanDoIt(
             return {
                 theyCan: false,
                 insteadTheyCouldMake,
-                why: whyTheBenchIsShort(ask.grade, materialsToHand),
+                why: whyTheBenchIsShort(
+                    ask.grade, materialsToHand, yours ? 'Your hands' : 'Their hands'
+                ),
                 theBenchIsShortOf: short
             };
         }

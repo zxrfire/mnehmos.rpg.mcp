@@ -42,12 +42,15 @@ import {
     priceJourney
 } from '../engine/world/what-a-conveyance-does-to-a-journey.js';
 import type { NpcRecord } from '../engine/world/npc-state.js';
+import { whatThatLooksLike } from '../engine/world/what-somebody-is-at-when-you-walk-up.js';
 import {
     namesOf,
     takeThemWithYou,
     theSlowestOfThem,
     theyComeWithYou,
+    whatThePartyIs,
     whoIsOnTheRoadWith,
+    whoTheyAreOutWith,
     whyAFoldLeavesThemStanding
 } from '../engine/world/who-is-on-the-road-with-you.js';
 import {
@@ -81,11 +84,35 @@ import {
 } from './meeting-your-own-house.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import { getSect } from '../data/cultivation/sects.js';
+import {
+    DAYS_FROM_THE_TOWN_TO_THE_GATE,
+    whatTheTownIsBelow,
+    whatTradesBelow,
+    whoWaitsBelow
+} from '../engine/world/the-town-at-the-foot-of-a-house.js';
+import {
+    theHouseThisNameReaches,
+    theHouseWhoseTownThisIs,
+    whatTheGateOfThisHouseSays,
+    whoWouldWalkYouIn
+} from './walking-up-to-a-house.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
 import type { Execution } from './turn-wire-shapes.js';
 import type { GameService } from './turn-engine.js';
+
+/**
+ * Somebody putting a party together, which the world sim writes and nothing
+ * played had ever reached.
+ */
+const MUSTERING = 'mustering';
+
+/** Names for a set of ids, so a line can say who rather than how many. */
+function theNamesOf(npcs: readonly NpcRecord[], ids: readonly string[]): string[] {
+    const wanted = new Set(ids);
+    return npcs.filter(row => wanted.has(row.id)).map(row => row.name);
+}
 
 /**
  * The house whose ground somebody has just walked onto, written down.
@@ -178,9 +205,18 @@ function theStructureYouWereTold(game: GameService, cultivator: Cultivator) {
 function whatArrivingIntroduces(
     game: GameService,
     cultivator: Cultivator
-): { perceived: Perception[]; structure: string[] } {
+): { perceived: Perception[]; structure: string[]; lines: string[] } {
     const perceived: Perception[] = [];
     const structure: string[] = [];
+    const lines: string[] = [];
+
+    // AND THE FOURTH: A GATE THAT IS HERE SAYS SO. Arriving below a house is
+    // arriving at a door, and a door nobody mentions is a wall.
+    const gate = whatIsAtTheGateHere(game, cultivator, cultivator.location ?? '');
+    if (gate) {
+        lines.push(...gate.lines);
+        structure.push(gate.structure);
+    }
 
     const told = theStructureYouWereTold(game, cultivator);
     if (told) perceived.push(told);
@@ -193,7 +229,56 @@ function whatArrivingIntroduces(
             + `${met.hiddenByHeight} withheld for height.`
         );
     }
-    return { perceived, structure };
+    return { perceived, structure, lines };
+}
+
+/**
+ * What standing outside a house's wall is like, and what the gate would say.
+ *
+ * Fires on arriving anywhere that is a house's gate town or its seat, whichever
+ * way the player named it - so walking to the town by its own name and asking
+ * for the house get the same answer, which is the rule about a read running
+ * both ways.
+ *
+ * NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING NOTHING. The town
+ * is said in full to everybody: what trades there, and who is permanently
+ * standing about on nobody's roll. The gate then says which of the three roads
+ * is open to this person and what would open the others.
+ */
+function whatIsAtTheGateHere(
+    game: GameService,
+    cultivator: Cultivator,
+    arrivedAt: string
+): { lines: string[]; structure: string } | null {
+    const world = game.atHand;
+    if (!world) return null;
+    const house = theHouseWhoseTownThisIs(world, arrivedAt);
+    if (!house) return null;
+
+    const reading = whatTheTownIsBelow(house.factionId);
+    const lines: string[] = [];
+    if (reading && loosePlaceKey(house.town?.name ?? '') === loosePlaceKey(arrivedAt)) {
+        lines.push(`${house.town!.name} is the town at the ${house.factionName}'s gate. The gate `
+            + `is ${howMany(DAYS_FROM_THE_TOWN_TO_THE_GATE, 'day')} up the road, at `
+            + `${house.seat.name}.`);
+        lines.push(`What trades here: ${whatTradesBelow(reading).map(t => t.name).join(', ')}.`);
+        lines.push(...whoWaitsBelow(reading));
+    }
+
+    const atTheGate = loosePlaceKey(house.seat.name) === loosePlaceKey(arrivedAt);
+    const gate = whatTheGateOfThisHouseSays(game, cultivator, house, null, atTheGate);
+    const host = gate.way === 'turned away'
+        ? whoWouldWalkYouIn(game, cultivator, gate.couldHost)
+        : null;
+    const said = host
+        ? whatTheGateOfThisHouseSays(game, cultivator, house, host, atTheGate)
+        : gate;
+    lines.push(...said.facts);
+    if (host) {
+        lines.push(`${host.name} owes you, and it is that and not your standing that is `
+            + 'walking you through.');
+    }
+    return { lines, structure: said.structure };
 }
 
 /** How many named places a refusal offers. A road question wants a few, not a gazetteer. */
@@ -293,7 +378,30 @@ export const travelVerbs = {
         target: string | undefined,
         intent: string
     ): Promise<Execution> {
-        const place = resolvePlace(destinationNamed(target));
+        const named = resolvePlace(destinationNamed(target));
+        // ── A HOUSE IS SOMEWHERE YOU CAN GO, AND WHERE YOU GO IS ITS TOWN ──
+        //
+        // Measured on three pinned worlds, day 0, 38 seated houses each: `I
+        // travel to <house>` reached 0 of 38. The seat is a world row called
+        // `<house> grounds` and `somewhereReal` matches on names, so the only
+        // string that reached a compound was one no player would type.
+        //
+        // Where the road ENDS is the standing question, and it is answered by
+        // the roll and nothing else: somebody of the house rides home, and
+        // everybody else arrives in the town at the foot of the gate. Who is
+        // on the gate and whether anybody would host is read when they get
+        // there, because who is standing at a gate is a fact about the gate and
+        // not about where the walk started.
+        const house = this.atHand && named
+            ? theHouseThisNameReaches(this.atHand, named.name)
+            : null;
+        const ownHouse = house !== null
+            && this.repos.sects.getMembership(cultivator.id)?.sectId === house.factionId;
+        const place = house && house.named === 'the house' && !ownHouse
+            ? resolvePlace((house.town ?? house.seat).name) ?? named
+            : house
+                ? resolvePlace(house.seat.name) ?? named
+                : named;
         if (!place) {
             return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'Nowhere in particular.',
@@ -500,6 +608,13 @@ export const travelVerbs = {
         const introduced = whatArrivingIntroduces(this, applied.cultivator);
         const perceived = introduced.perceived;
         facts.structure.push(...introduced.structure);
+        // A GATE IS REQUIRED, NOT OPTIONAL. What the door says is the whole of
+        // why the journey ended where it did, and a narrator that drops it has
+        // put the player somewhere with no account of why they are outside.
+        if (introduced.lines.length > 0) {
+            facts.lines.push(...introduced.lines);
+            facts.required = [...(facts.required ?? []), ...introduced.lines];
+        }
 
         // AND THE PEOPLE WHO CAME WITH YOU. A road has no capacity: everybody
         // walks, and a party on foot costs what one person costs.
@@ -750,7 +865,20 @@ export const travelVerbs = {
         target: string | undefined,
         action: ActionName
     ): { name: string } | Execution {
-        const place = resolvePlace(destinationNamed(target));
+        const named = resolvePlace(destinationNamed(target));
+        // A HOUSE IS A DESTINATION ON EVERY ROAD, not only on foot. The same
+        // redirect `move` makes: the roll decides whether the journey ends at
+        // the seat or in the town below its gate.
+        const house = this.atHand && named
+            ? theHouseThisNameReaches(this.atHand, named.name)
+            : null;
+        const ownHouse = house !== null
+            && this.repos.sects.getMembership(cultivator.id)?.sectId === house.factionId;
+        const place = house && house.named === 'the house' && !ownHouse
+            ? resolvePlace((house.town ?? house.seat).name) ?? named
+            : house
+                ? resolvePlace(house.seat.name) ?? named
+                : named;
         if (!place) {
             return refused('engine.resolvePlace', action, factsForRefusal(
                 'Nowhere in particular.',
@@ -842,6 +970,66 @@ export const travelVerbs = {
     ): readonly NpcRecord[] {
         if (!this.atHand) return [];
         return whoIsOnTheRoadWith(this.atHand.npcs, cultivator.id, Math.floor(run.elapsedDays));
+    },
+
+    /**
+     * The party, as a thing the engine can state.
+     *
+     * The same reading the travel verbs carry a party by, said rather than
+     * used. `null` when nobody is with them, which is what keeps it off a
+     * status read for the overwhelming majority of turns.
+     */
+    thePartyWithYou(
+        this: GameService,
+        cultivator: Cultivator,
+        run: Run
+    ): { line: string; structure: string } | null {
+        return whatThePartyIs(
+            this.whoIsWithYouOnTheRoad(cultivator, run), Math.floor(run.elapsedDays)
+        );
+    },
+
+    /**
+     * Whether this person is already out with a party, and what else they are at.
+     *
+     * The one read a request to come along has to make before it can be put.
+     * Both halves come off the SAME activity row the party reading uses, so
+     * "they are already with somebody" and "they are on the road with you"
+     * cannot disagree.
+     */
+    whereTheyAlreadyAre(
+        this: GameService,
+        personId: string,
+        today: number
+    ): {
+        outWith: { withIds: readonly string[]; untilDay: number | null; note: string } | null;
+        otherwiseAt: string | null;
+        bringsAlong: { id: string; name: string }[];
+    } {
+        const npcs = this.atHand?.npcs ?? [];
+        const npc = npcs.find(row => row.id === personId);
+        if (!npc) return { outWith: null, otherwiseAt: null, bringsAlong: [] };
+        const out = whoTheyAreOutWith(npc, today);
+        const doing = npc.activity;
+        return {
+            outWith: out,
+            otherwiseAt: out !== null || !doing
+                ? null
+                : whatThatLooksLike(doing, theNamesOf(npcs, doing.withIds)) || null,
+            // ── AND SOMEBODY RAISING A PARTY BRINGS IT ───────────────────
+            //
+            // `ActivityKind.mustering`'s own doc says somebody at this is
+            // somebody a player can join, and until now no sentence reached
+            // them at all. Who has already said yes is on their activity's
+            // `withIds` - `whatThatLooksLike` prints exactly that list as "and
+            // X have said yes" - so a person raising a party who agrees to walk
+            // your road is a party, and reading it is the whole of the work.
+            bringsAlong: out !== null || doing?.kind !== MUSTERING
+                ? []
+                : npcs
+                    .filter(row => doing.withIds.includes(row.id) && row.status === 'alive')
+                    .map(row => ({ id: row.id, name: row.name }))
+        };
     },
 
     /**
@@ -946,7 +1134,7 @@ export const travelVerbs = {
             heads
         });
 
-        const { skip, applied, world, perceived, structure: introducedBy } =
+        const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
             await this.arriveAfterSpending(
                 run, cultivator, journey.daysOneWay, arrivedAt
             );
@@ -988,10 +1176,12 @@ export const travelVerbs = {
         const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
         if (came) lines.push(came.line);
 
+        lines.push(...atTheGate);
         const facts = factsForToolResult(
             `${arrivedAt}, on ${chosen.conveyance.name.toLowerCase()}.`, lines
         );
         if (came) facts.required = [...(facts.required ?? []), came.line];
+        if (atTheGate.length > 0) facts.required = [...(facts.required ?? []), ...atTheGate];
         facts.structure.push(
             `priceJourney: ${chosen.conveyance.id} at power ${chosen.power ?? 'none'}, `
             + `${walkingDays} walking day(s) -> ${journey.daysOneWay}; `
@@ -1119,7 +1309,7 @@ export const travelVerbs = {
             ));
         }
 
-        const { skip, applied, world, perceived, structure: introducedBy } =
+        const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
             await this.arriveAfterSpending(
                 run, cultivator, cost.daysSpent, arrivedAt
             );
@@ -1136,7 +1326,9 @@ export const travelVerbs = {
             ...world.lines
         ];
 
+        lines.push(...atTheGate);
         const facts = factsForToolResult(`${arrivedAt}, in one step.`, lines);
+        if (atTheGate.length > 0) facts.required = [...(facts.required ?? []), ...atTheGate];
         facts.structure.push(
             `priceFold: fix ${fix}, range ${cost.rangeDays.toFixed(1)} day(s), `
             + `road ${walkingDays}, settling ${cost.settlingDays}, short by ${cost.landsShortBy}, `
@@ -1294,7 +1486,7 @@ export const travelVerbs = {
         const paid = this.repos.cultivators.getById(cultivator.id)!;
         const arrivedAt = this.theWorldsNameFor(route.toPlace);
 
-        const { skip, applied, world, perceived, structure: introducedBy } =
+        const { skip, applied, world, perceived, structure: introducedBy, lines: atTheGate } =
             await this.arriveAfterSpending(
                 run, paid, Math.max(1, quote.daysSpent), arrivedAt
             );
@@ -1326,8 +1518,10 @@ export const travelVerbs = {
         const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
         if (came) lines.push(came.line);
 
+        lines.push(...atTheGate);
         const facts = factsForToolResult(`${route.toPlace}, through the span.`, lines);
         if (came) facts.required = [...(facts.required ?? []), came.line];
+        if (atTheGate.length > 0) facts.required = [...(facts.required ?? []), ...atTheGate];
         facts.structure.push(
             `quotePassageAtACounter: ${route.id}, fare ${quote.fareCash} cash at ${rate} per `
             + `walked day for ${quote.heads} head(s), ${quote.settlingDays} settling day(s) at `

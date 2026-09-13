@@ -33,7 +33,7 @@ import {
     type NpcRecord,
     type RelationshipKind
 } from './npc-state.js';
-import type { WorldState } from './world-state.js';
+import { indexById, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RATES
@@ -502,7 +502,7 @@ function stepTies(
     for (const tie of absence.ties) {
         if (tie.settledOnDay !== null) continue;
 
-        const at = state.npcs.findIndex(npc => npc.id === tie.holderId);
+        const at = indexById(state.npcs, tie.holderId);
         const holder = at >= 0 ? state.npcs[at] : null;
 
         // ── They did not last the absence ────────────────────────────────
@@ -709,7 +709,7 @@ function openTheAccountItLeaves(
     opens.push(row);
 
     // And what it makes them do. `targetId` is null and that is the content.
-    const at = state.npcs.findIndex(npc => npc.id === tie.holderId);
+    const at = indexById(state.npcs, tie.holderId);
     if (at < 0) return;
     const search = theSearchItOpens(createObligation(row), {
         lost: `what happened to ${absence.absenteeName}`
@@ -737,7 +737,7 @@ function maybeNewHousehold(
     const rng = forStream(state.seed, 'absence.household', absence.absenteeId, tie.holderId, n);
     if (!rng.chance(NEW_HOUSEHOLD_CHANCE)) return;
 
-    const at = state.npcs.findIndex(npc => npc.id === tie.holderId);
+    const at = indexById(state.npcs, tie.holderId);
     if (at < 0) return;
     const holder = state.npcs[at];
 
@@ -755,7 +755,7 @@ function maybeNewHousehold(
     if (candidates.length === 0) return;
 
     const partner = rng.pick(candidates);
-    const partnerAt = state.npcs.findIndex(npc => npc.id === partner.id);
+    const partnerAt = indexById(state.npcs, partner.id);
 
     const fact = appendWorldFact(
         state,
@@ -922,7 +922,7 @@ function stepWriteOff(
     // becomes an elder does so through the ordinary machinery rather than
     // through a rule about the player. All this does is stop counting a member
     // the house has decided is gone.
-    const seat = state.npcs.findIndex(npc => npc.id === absence.absenteeId);
+    const seat = indexById(state.npcs, absence.absenteeId);
     if (seat >= 0 && state.npcs[seat].factionId) {
         const struck = state.npcs[seat];
         const strikeFact = appendWorldFact(

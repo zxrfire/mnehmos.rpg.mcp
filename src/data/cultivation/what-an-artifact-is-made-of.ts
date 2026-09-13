@@ -147,32 +147,91 @@ export interface ASlotNobodyFilled {
     wouldHaveDone: readonly WhatTheCauldronIsBeingHanded[];
 }
 
+/** A slot and the one unit of the haul that goes into it. */
+export interface ASlotSomethingFills {
+    slot: ASlot;
+    materialId: string;
+    /**
+     * WHICH UNIT, as an index into the haul that was handed in.
+     *
+     * The id alone is not enough to spend anything by. A haul is one entry per
+     * unit, so two Stone Ox Horns are two entries with one id, and they can sit
+     * in two different places - one in the asker's pouch, one on the maker's
+     * belt. A caller taking the materials off has to know which of the two went
+     * in, and an id would make it pick.
+     */
+    at: number;
+}
+
 /**
- * Which slots the haul does not reach.
+ * How this haul reads against this recipe: what fills each slot and what fills
+ * none.
  *
  * ONE MATERIAL FILLS ONE SLOT. Two of a kind is two of a kind, and a single
  * Stone Ox Horn is not both the body and the temper. The slots of both recipes
  * are disjoint by construction - no two share a grade and a source - and a test
  * holds them to it, because the moment two overlap this greedy pass has to
  * become a matching and would quietly start giving the wrong answer instead.
+ *
+ * ── ONE PASS, AND THE GATE AND THE SPEND ARE BOTH READS OF IT ────────────
+ *
+ * The gate ("is anything missing") and the spend ("what comes off the bench")
+ * are the same walk, and they used to be one walk and no walk: the gate existed
+ * and nothing ever took anything. Writing the spend as a second walk would be
+ * the second copy AGENTS.md names - two greedy passes that agree today and
+ * disagree the first time a slot's predicate moves, and disagreeing means
+ * refusing over a thing you took or taking a thing you refused over.
  */
-export function whatTheBenchIsShortOf(
+export function howTheBenchReadsAgainst(
     grade: TechniqueGrade,
     materialsToHand: readonly string[]
-): readonly ASlotNobodyFilled[] {
+): { filled: readonly ASlotSomethingFills[]; short: readonly ASlotNobodyFilled[] } {
     const recipe = whatItIsMadeOf(grade);
-    if (recipe === null) return [];
-    const unspent = materialsToHand.slice();
+    if (recipe === null) return { filled: [], short: [] };
+    const spent = new Set<number>();
+    const filled: ASlotSomethingFills[] = [];
     const short: ASlotNobodyFilled[] = [];
     for (const slot of recipe) {
-        const at = unspent.findIndex(id => fillsTheSlot(slot, id));
+        const at = materialsToHand.findIndex(
+            (id, i) => !spent.has(i) && fillsTheSlot(slot, id)
+        );
         if (at >= 0) {
-            unspent.splice(at, 1);
+            spent.add(at);
+            filled.push({ slot, materialId: materialsToHand[at], at });
             continue;
         }
         short.push({ slot, wouldHaveDone: whatWouldFill(slot) });
     }
-    return short;
+    return { filled, short };
+}
+
+/** Which slots the haul does not reach. */
+export function whatTheBenchIsShortOf(
+    grade: TechniqueGrade,
+    materialsToHand: readonly string[]
+): readonly ASlotNobodyFilled[] {
+    return howTheBenchReadsAgainst(grade, materialsToHand).short;
+}
+
+/**
+ * What the recipe TAKES, or null where it takes nothing because it cannot be
+ * finished.
+ *
+ * NULL AND AN EMPTY LIST ARE TWO ANSWERS, and a caller that treats them alike
+ * has written the bug this function is shaped against. Empty is a real spend:
+ * mortal grade is roadside work and asks for nothing, so it takes nothing and
+ * is made. Null is a bench that is short, and the whole of what it means is
+ * NOTHING COMES OFF THIS BENCH - not the two slots that were filled, not one of
+ * them. A craft that is refused after the materials were taken is the defect
+ * players are right to hate, and the only safe shape is one that cannot express
+ * a partial answer.
+ */
+export function whatTheRecipeSpends(
+    grade: TechniqueGrade,
+    materialsToHand: readonly string[]
+): readonly ASlotSomethingFills[] | null {
+    const read = howTheBenchReadsAgainst(grade, materialsToHand);
+    return read.short.length > 0 ? null : read.filled;
 }
 
 /** Whether this haul is a whole recipe. */
@@ -202,7 +261,17 @@ const HOW_MANY_SUBSTITUTES_A_REFUSAL_NAMES = 4;
  */
 export function whyTheBenchIsShort(
     grade: TechniqueGrade,
-    materialsToHand: readonly string[]
+    materialsToHand: readonly string[],
+    /**
+     * How the sentence names the hands.
+     *
+     * A commission speaks ABOUT somebody, and somebody at their own bench is
+     * being spoken TO. One sentence read out in the wrong person - "their hands
+     * can work earth grade", said to the person whose hands they are - reads as
+     * the engine talking about the player in the third person, which is exactly
+     * the seam this repo keeps finding.
+     */
+    whoseHands = 'Their hands'
 ): string | null {
     const short = whatTheBenchIsShortOf(grade, materialsToHand);
     if (short.length === 0) return null;
@@ -212,9 +281,12 @@ export function whyTheBenchIsShort(
         const substitutes = named.map(row => row.name).join(', ')
             + (rest > 0 ? `, or ${rest} more` : '');
         const route = named[0] === undefined ? '' : ` ${howYouWouldComeByIt(named[0])}.`;
-        return `${missing.slot.what}: nothing here is one. ${substitutes} would each do.${route}`;
+        // The slot's words are written to sit mid-sentence and this is the one
+        // place they open one.
+        const what = missing.slot.what.charAt(0).toUpperCase() + missing.slot.what.slice(1);
+        return `${what}: nothing here is one. ${substitutes} would each do.${route}`;
     });
-    return `Their hands can work ${grade} grade and the bench is short by `
+    return `${whoseHands} can work ${grade} grade and the bench is short by `
         + `${short.length} of ${whatItIsMadeOf(grade)?.length ?? 0}. ${lines.join(' ')}`;
 }
 

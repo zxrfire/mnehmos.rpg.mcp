@@ -25,6 +25,12 @@ export type ShameCause =
     /** Ran, and was seen to. */
     | 'fled_a_fight'
     /**
+     * Took a piece off their own body, in front of people, because somebody
+     * asked. Not a defeat and not a wrong done to them - they agreed, which is
+     * exactly what is remembered.
+     */
+    | 'gave_up_part_of_themselves'
+    /**
      * Something grave they did, that the people near them know about.
      */
     | 'known_for_a_grave_deed'

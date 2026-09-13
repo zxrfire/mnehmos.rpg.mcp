@@ -235,24 +235,40 @@ export interface AFindThisHouseHas {
  *
  * Built once over the ledger and handed round: the walk is per house per ruin
  * and the ledger of a long-lived world is long.
+ *
+ * THE ROLL FOR A PLACE IS GATHERED WHEN THE PLACE IS ASKED ABOUT. The rows are
+ * sited once - one push each - and who stood on a piece of ground is worked out
+ * the first time anybody asks about that ground, then kept for the rest of the
+ * pass. Every caller asks about a handful of places and the ledger is sited all
+ * over the world, so building every roll eagerly was building thousands that
+ * nothing would read. Measured with `--cpu-prof` on one seed at 1,200 years:
+ * 6.5ms per simulated year, the largest remaining term in the world advance,
+ * nearly all of it adding actors and witnesses to sets nobody queried.
  */
 export function whatStandingOnItGives(
     facts: readonly Pick<HistoricalFact, 'locationId' | 'actors' | 'witnessIds'>[]
 ): (holderId: string, locationId: string) => KnowingStage {
-    const wasThere = new Map<string, Set<string>>();
+    const sited = new Map<string, Pick<HistoricalFact, 'actors' | 'witnessIds'>[]>();
     for (const fact of facts) {
         if (fact.locationId === null) continue;
-        let here = wasThere.get(fact.locationId);
-        if (!here) {
-            here = new Set<string>();
-            wasThere.set(fact.locationId, here);
-        }
-        for (const actor of fact.actors) here.add(actor.id);
-        for (const id of fact.witnessIds) here.add(id);
+        const here = sited.get(fact.locationId);
+        if (here) here.push(fact); else sited.set(fact.locationId, [fact]);
     }
+    const wasThere = new Map<string, Set<string>>();
+    const rollFor = (locationId: string): Set<string> => {
+        let roll = wasThere.get(locationId);
+        if (roll) return roll;
+        roll = new Set<string>();
+        for (const fact of sited.get(locationId) ?? []) {
+            for (const actor of fact.actors) roll.add(actor.id);
+            for (const id of fact.witnessIds) roll.add(id);
+        }
+        wasThere.set(locationId, roll);
+        return roll;
+    };
     const beingThere = stageCeilingFor('witnessed');
     return (holderId, locationId) =>
-        wasThere.get(locationId)?.has(holderId) === true ? beingThere : 'unaware';
+        rollFor(locationId).has(holderId) ? beingThere : 'unaware';
 }
 
 /**
@@ -300,25 +316,34 @@ export const WENT_AND_DID_NOT = 'lost';
 export function whatAHousesOwnErrandsBringBack(
     facts: readonly Pick<HistoricalFact, 'locationId' | 'actors' | 'factionIds'>[]
 ): (factionId: string, locationId: string) => KnowingStage {
-    const reported = new Map<string, Set<string>>();
+    const sited = new Map<string, Pick<HistoricalFact, 'actors' | 'factionIds'>[]>();
     for (const fact of facts) {
         if (fact.locationId === null || fact.factionIds.length === 0) continue;
-        // Somebody came back. A party that did not is on the same row with
-        // every actor marked lost, and a house that lost everybody it sent was
-        // told nothing - which is the whole of why the outcome is on the roles.
-        if (!fact.actors.some(a => a.role === WENT_AND_CAME_BACK)) continue;
-        for (const houseId of fact.factionIds) {
-            let here = reported.get(houseId);
-            if (!here) {
-                here = new Set<string>();
-                reported.set(houseId, here);
-            }
-            here.add(fact.locationId);
-        }
+        const here = sited.get(fact.locationId);
+        if (here) here.push(fact); else sited.set(fact.locationId, [fact]);
     }
+    // Worked out per place, the first time the place is asked about, for the
+    // reason {@link whatStandingOnItGives} carries: the ledger is sited all
+    // over the world and a caller asks about a handful of pieces of ground.
+    const reported = new Map<string, Set<string>>();
+    const housesTold = (locationId: string): Set<string> => {
+        let told = reported.get(locationId);
+        if (told) return told;
+        told = new Set<string>();
+        for (const fact of sited.get(locationId) ?? []) {
+            // Somebody came back. A party that did not is on the same row with
+            // every actor marked lost, and a house that lost everybody it sent
+            // was told nothing - which is the whole of why the outcome is on
+            // the roles.
+            if (!fact.actors.some(a => a.role === WENT_AND_CAME_BACK)) continue;
+            for (const houseId of fact.factionIds) told.add(houseId);
+        }
+        reported.set(locationId, told);
+        return told;
+    };
     const beingTold = stageCeilingFor('told');
     return (factionId, locationId) =>
-        reported.get(factionId)?.has(locationId) === true ? beingTold : 'unaware';
+        housesTold(locationId).has(factionId) ? beingTold : 'unaware';
 }
 
 /**

@@ -699,7 +699,10 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I ask her to lend me her blade',
         'I ask the steward to introduce me to his master',
         'I ask him to trade me the pill for my herbs',
-        'I ask her for the name of whoever sent him'
+        'I ask her for the name of whoever sent him',
+        'I ask her to come with me',
+        'I invite him to travel with me for a month',
+        'I want him to walk the road with me as far as the pass'
     ],
     guard: [
         'I stand guard while she crosses',

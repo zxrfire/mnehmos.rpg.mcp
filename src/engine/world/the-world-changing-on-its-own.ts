@@ -45,10 +45,10 @@ import {
     applyLocationChange,
     forbidZone,
     nextClosingDay,
-    nextOpeningDay,
     qiFraction,
     type LocationRecord
 } from './locations.js';
+import { whenTheScheduleNextOpens } from './convergence.js';
 import { runCascade } from './cascade.js';
 import { ruinFromFallenSeat } from './provenance.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
@@ -205,6 +205,8 @@ import {
 } from './what-is-true-of-a-place-right-now.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import {
+    indexById,
+    getLocation,
     makeFaction,
     type FactionRecord,
     type ScheduledEffect,
@@ -561,7 +563,7 @@ function regionOf(state: WorldState, locationId: string | null): string | null {
     const seen = new Set<string>();
     while (cursor && !seen.has(cursor)) {
         seen.add(cursor);
-        const location = state.locations.find(l => l.id === cursor);
+        const location = getLocation(state, cursor);
         if (!location) return null;
         if (location.kind === 'region' || location.parentId === null) return location.id;
         cursor = location.parentId;
@@ -1523,7 +1525,7 @@ function applyResettlement(state: WorldState, year: number, day: number): number
         if (!rng.chance(0.04)) continue;
 
         const site = candidates[rng.int(0, candidates.length - 1)];
-        const at = state.locations.findIndex(l => l.id === site.id);
+        const at = indexById(state.locations, site.id);
         state.locations[at] = {
             ...site,
             kind: 'settlement',
@@ -2221,20 +2223,35 @@ function applyPostings(state: WorldState, year: number, day: number): number {
         && populationWeightOf(l) > 0);
     if (towns.length === 0) return 0;
 
+    // THE ROLLS, GATHERED ONCE. This was two `state.npcs.filter` sweeps per
+    // house, so a world with seventy houses and seven thousand people walked
+    // the population a hundred and forty times a year. Grouping first is the
+    // same answer: a person belongs to one house, so nothing this pass does to
+    // one house's roll can change another's, and within a house both readings
+    // are taken before anybody is moved. Measured with `--cpu-prof` on one
+    // seed at 1,200 years, the two sweeps were 3.9ms per simulated year, the
+    // largest remaining term in the advance.
+    const at = new Map<string, number>();
+    const rolls = new Map<string, NpcRecord[]>();
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i]!;
+        if (!at.has(npc.id)) at.set(npc.id, i);
+        if (npc.status !== 'alive' || npc.factionId === null) continue;
+        const roll = rolls.get(npc.factionId);
+        if (roll) roll.push(npc); else rolls.set(npc.factionId, [npc]);
+    }
+
     let posted = 0;
     for (const faction of liveFactions(state)) {
         const ranks = faction.ranks.length;
         if (ranks === 0) continue;
 
+        const roll = rolls.get(faction.id) ?? [];
         // WHO THE HOUSE CAN SPARE. Anybody already away is already spared, and
         // an elder holding a room is not - `whoIsInChargeOfWhat` deals the
         // rooms out and the people it did not reach are the ones with nothing
         // keeping them at the seat.
-        const members = state.npcs.filter(n =>
-            n.factionId === faction.id
-            && n.status === 'alive'
-            && n.activity === null
-            && isTheWorldsToMove(n));
+        const members = roll.filter(n => n.activity === null && isTheWorldsToMove(n));
         if (members.length === 0) continue;
 
         const rooms = whoIsInChargeOfWhat({
@@ -2254,17 +2271,16 @@ function applyPostings(state: WorldState, year: number, day: number): number {
         // The province the house is seated in, read off its seat's parent -
         // there is no region field on a house and inventing one would be a
         // second answer to a question the map already holds.
-        const seatRegion = state.locations
-            .find(l => l.id === faction.seatLocationId)?.parentId ?? null;
+        const seatRegion = faction.seatLocationId === null
+            ? null
+            : getLocation(state, faction.seatLocationId)?.parentId ?? null;
         const near = seatRegion === null
             ? []
             : towns.filter(t => t.parentId === seatRegion);
         const posts = (near.length > 0 ? near : towns)
             .slice(0, howManyPostsAHouseKeeps(Number(faction.resources.power_ordinal ?? 0)));
-        const held = new Set(state.npcs
-            .filter(n => n.factionId === faction.id
-                && n.status === 'alive'
-                && n.activity?.kind === 'stationed')
+        const held = new Set(roll
+            .filter(n => n.activity?.kind === 'stationed')
             .map(n => n.locationId));
         const empty = posts.filter(t => !held.has(t.id));
         if (empty.length === 0) continue;
@@ -2277,12 +2293,12 @@ function applyPostings(state: WorldState, year: number, day: number): number {
             const who = spare[i];
             const town = empty[i];
             if (who === undefined || town === undefined) continue;
-            const at = state.npcs.findIndex(n => n.id === who.id);
-            if (at < 0) continue;
+            const index = at.get(who.id);
+            if (index === undefined || state.npcs[index]?.id !== who.id) continue;
 
             const years = rng.int(Math.ceil(A_POSTING_RUNS_FOR_YEARS / 2), A_POSTING_RUNS_FOR_YEARS * 2);
-            state.npcs[at] = {
-                ...setLocation(state.npcs[at]!, town.id, day),
+            state.npcs[index] = {
+                ...setLocation(state.npcs[index]!, town.id, day),
                 activity: {
                     kind: 'stationed',
                     note: `Holding the ${houseName(faction.name)}'s interest at ${town.name}.`,
@@ -2744,6 +2760,22 @@ function applyLastCrossing(
 }
 
 // THE WORLD OPENS SOMETHING, AND NOBODY DID IT
+//
+// This pass ran for the whole life of the project and opened nothing. It read
+// `nextOpeningDay`, which answers null for anything sealed - right where
+// `sealed` means a door nobody has opened, wrong where it means the shut half
+// of a schedule, and on a cycled ruin the column means the second. Every seeded
+// ruin carrying a cycle is sealed, so the test was false for all of them, and
+// the `open_now` tag the opening adds is also the gate on the half that shuts
+// them: both halves were unreachable. Measured over twelve pinned worlds run
+// two hundred years each, the world opened or shut ZERO doors.
+// `whenTheScheduleNextOpens` sets the flag aside without restating the modulo.
+//
+// AND A WINDOW IS NOW SHORTER THAN THE PASS THAT RUNS IT. Windows run 7 to 90
+// days against a yearly pass, so a door can open and shut inside one call, and
+// the old shape returned after opening one - which would have left a week-long
+// window standing open for a year. The close is attempted in the same
+// iteration as the open it belongs to.
 
 function applyConvergences(
     state: WorldState,
@@ -2759,7 +2791,7 @@ function applyConvergences(
         const location = state.locations[i];
         if (!location.cycle || !isBelowTheLid(location)) continue;
 
-        const opensOn = nextOpeningDay(location, Math.max(yearStart, fromDay));
+        const opensOn = whenTheScheduleNextOpens(location, Math.max(yearStart, fromDay));
         const opened = opensOn !== null && opensOn <= Math.min(yearEnd, toDay);
 
         if (opened && location.sealed) {
@@ -2809,18 +2841,20 @@ function applyConvergences(
                         + 'explaining why they did not.'
                 }
             }, { locations: [location.id] }));
-            continue;
         }
 
         // And it shuts, which is the half that makes the opening mean anything.
-        const closesOn = nextClosingDay(location, Math.max(yearStart, fromDay));
-        if (!location.sealed && location.tags.includes('open_now')
+        // Read off the record as it now stands, so a window that opened and ran
+        // out inside this same span shuts inside it too.
+        const standing = state.locations[i];
+        const closesOn = nextClosingDay(standing, Math.max(yearStart, fromDay));
+        if (!standing.sealed && standing.tags.includes('open_now')
             && closesOn !== null && closesOn <= Math.min(yearEnd, toDay)) {
             const day = withinSpan(closesOn, fromDay, toDay);
-            const changed = applyLocationChange(location, {
+            const changed = applyLocationChange(standing, {
                 onDay: day,
                 kind: 'sealed',
-                summary: `${location.name} is shut again.`,
+                summary: `${standing.name} is shut again.`,
                 causeKnown: true,
                 witnessed: false,
                 patch: {
@@ -2836,17 +2870,17 @@ function applyConvergences(
                 kind: 'opportunity',
                 scale: 'local',
                 summary: changed.change.summary,
-                locationId: location.id,
+                locationId: standing.id,
                 locationChangeIds: [changed.change.id],
                 visibility: 'public',
                 magnitude: 0.4,
                 unattributed: 'The pass does not go anywhere any more.',
                 consequences: {
                     immediate: 'Anybody still inside is still inside.',
-                    opportunitiesClosed: [`${location.name}, for a very long time.`],
+                    opportunitiesClosed: [`${standing.name}, for a very long time.`],
                     tenYearsLater: 'A list of who went in and a shorter list of who came out.'
                 }
-            }, { locations: [location.id] }));
+            }, { locations: [standing.id] }));
         }
     }
     return out;
@@ -2912,12 +2946,12 @@ function veinsOf(state: WorldState, factionId: string): LocationRecord[] {
 }
 
 function replaceLocation(state: WorldState, next: LocationRecord): void {
-    const at = state.locations.findIndex(l => l.id === next.id);
+    const at = indexById(state.locations, next.id);
     if (at >= 0) state.locations[at] = next;
 }
 
 function replaceNpc(state: WorldState, next: NpcRecord): void {
-    const at = state.npcs.findIndex(n => n.id === next.id);
+    const at = indexById(state.npcs, next.id);
     if (at >= 0) state.npcs[at] = next;
 }
 
@@ -2935,7 +2969,7 @@ function openPersonalAccount(
     const aggrieved = pick(rng, membersOf(state, loserId));
     const taker = pick(rng, membersOf(state, winnerId));
     if (!aggrieved || !taker) return [];
-    const at = state.npcs.findIndex(n => n.id === aggrieved.id);
+    const at = indexById(state.npcs, aggrieved.id);
     if (at < 0) return [];
     state.npcs[at] = upsertRelationship(state.npcs[at], {
         targetId: taker.id,
@@ -3297,7 +3331,7 @@ const TEMPLATES: Template[] = [
                 ? state.factions.find(f => f.id === victim.factionId) ?? null : null;
 
             // The dead keep their account open. It is what the heir inherits.
-            const at = state.npcs.findIndex(n => n.id === victim.id);
+            const at = indexById(state.npcs, victim.id);
             if (at < 0) return null;
             state.npcs[at] = upsertRelationship(state.npcs[at], {
                 targetId: killer.id,
@@ -4067,7 +4101,7 @@ const TEMPLATES: Template[] = [
                 for (let i = 0; i < howMany; i++) {
                     const who = couldTake[i];
                     if (who === undefined) continue;
-                    const at = state.npcs.findIndex(n => n.id === who.id);
+                    const at = indexById(state.npcs, who.id);
                     if (at < 0) continue;
                     state.npcs[at] = markDead(state.npcs[at]!, day,
                         `Taken when ${beast.name} came down on ${town.name}.`);
@@ -4374,7 +4408,7 @@ const TEMPLATES: Template[] = [
             // The arrangement is real if ANY visit landed; the final outcome is
             // what the summary and the grudge are written from.
             const took = landed !== null;
-            const subjectAt = state.npcs.findIndex(n => n.id === subject.id);
+            const subjectAt = indexById(state.npcs, subject.id);
             if (subjectAt < 0) return null;
 
             const fact = emit(state, 'leverage_applied', day, {
@@ -4422,7 +4456,7 @@ const TEMPLATES: Template[] = [
                     note: `Came to an arrangement at ${subject.locationId ?? 'somewhere'}.`,
                     factIds: [fact.fact.id]
                 }, day);
-                const actorAt = state.npcs.findIndex(n => n.id === actor.id);
+                const actorAt = indexById(state.npcs, actor.id);
                 if (actorAt >= 0) {
                     state.npcs[actorAt] = upsertRelationship(state.npcs[actorAt], {
                         targetId: subject.id,
@@ -4524,7 +4558,7 @@ const TEMPLATES: Template[] = [
                 subjectFactionId: subject.factionId
             });
 
-            const at = state.npcs.findIndex(n => n.id === subject.id);
+            const at = indexById(state.npcs, subject.id);
             if (at < 0) return null;
             // The tie is rewritten rather than removed. `upsertRelationship`
             // keeps `sinceDay`, so an eleven-year attachment that turns hostile

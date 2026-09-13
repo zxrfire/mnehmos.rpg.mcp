@@ -47,12 +47,27 @@ import { BEASTS, getBeastMaterial, type Beast } from '../data/cultivation/beasts
 import {
     whatIsOnThisGround,
     whatComesOffTheBody,
+    beastsOnThisGround,
     objectForBeastMaterial,
     readsAsSomebody,
     readTheThing,
     bandOf,
+    hasACore,
     type GroundForBeasts
 } from '../engine/world/hunting-a-spirit-beast.js';
+import {
+    thePieceTheyAskedFor,
+    whatItCouldPartWith
+} from '../engine/world/what-it-costs-to-give-away-a-piece-of-yourself.js';
+import { howTheAskForAPieceWent } from './asking-something-that-can-refuse-for-a-piece-of-it.js';
+// A beast with a core is somebody in particular, and gets a row the moment
+// somebody stands in front of it. Nothing here is beast-specific afterwards:
+// the row makes it present, and present is what every person-shaped verb reads.
+import {
+    idOfTheOneOnThisGround,
+    standUpTheOneOnThisGround
+} from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
+import { markDead, type NpcRecord } from '../engine/world/npc-state.js';
 // Who answers for a beast that was killed. The whole module had no caller
 // anywhere in `src/`, and with it went the only live read of `disposition` -
 // the catalog sets righteous, neutral or demonic on every row and nothing in
@@ -78,6 +93,7 @@ import {
     localPrice, requireRegion, REGIONS
 } from '../data/cultivation/regions.js';
 import {
+    createInjury,
     treatWorstInjuries,
     untreatedInjuries,
     untreatedInjuryCount
@@ -228,7 +244,9 @@ import {
     whatAHaggleSentenceIs,
     whatIsHeldOut,
     whatTheHaggleIsOver,
-    type WhatIsOnTheCounter
+    type WhatIsOnTheCounter,
+    type WhatTheHaggleSaid,
+    type WhatWasPutDown
 } from './going-back-and-forth-over-a-price.js';
 import {
     FLAG_NAME_TAKEN,
@@ -347,6 +365,8 @@ import {
 } from '../engine/encounters/what-a-house-has-on-its-board.js';
 // Somebody walking up the hill with the player's name, and the same rows read
 // from the other end by whoever holds the room complaints go to.
+import { handDownWhatTheRoomDecided } from './a-room-hands-down-what-it-decided.js';
+import { whatEachHouseHasGivenAway } from '../engine/world/a-house-bestows-a-thing-on-somebody-who-earned-it.js';
 import {
     complaintsBroughtTo,
     reportWhatTheySaw,
@@ -3911,6 +3931,18 @@ ${noticedWaiting}`;
                     sheet.facts.lines.push(carrying);
                     sheet.facts.prose = `${sheet.facts.prose}\n\n${carrying}`;
                 }
+                // AND WHO IS WITH YOU. Kept where the pouch and the load are
+                // kept, because a party is a thing a player holds in the same
+                // sense: it is theirs, it runs out, and nothing else on the
+                // sheet says it. Off the reading, so there is no second answer
+                // to who is here - `look` finds the same people because they
+                // are standing in the same place.
+                const alongside = this.thePartyWithYou(cultivator, run);
+                if (alongside !== null) {
+                    sheet.facts.lines.push(alongside.line);
+                    sheet.facts.prose = `${sheet.facts.prose}\n\n${alongside.line}`;
+                    sheet.facts.structure.push(alongside.structure);
+                }
                 // AND A PROBATIONER IS NOT SOMEBODY WHO SERVES NO HOUSE
                 const onProbation = probationOf(this.repos, cultivator, run);
                 if (onProbation) {
@@ -4091,7 +4123,7 @@ ${noticedWaiting}`;
             case 'request':
                 return this.request(
                     run, cultivator, ambient, action.target, action.intent ?? 'a_thing',
-                    action.topic, action.leverage, rawInput
+                    action.topic, action.leverage, rawInput, action.days
                 );
 
             case 'destinations':
@@ -5775,6 +5807,24 @@ ${noticed}`;
             || candidates.length === 1
             || (quotedLastTurn.length === 1 && fromTheScreenBefore.length === 1);
 
+        // ── AND THE COUNTERPARTY MAY BE A BODY ───────────────────────────
+        //
+        // Nothing on a shelf, nobody quoting a rate: something past the change,
+        // standing on ground it lives on, being asked for a piece of itself.
+        // It is a haggle in every respect that matters - a figure, a medium, a
+        // refusal that names the rung - so it enters through this door and not
+        // a second one.
+        //
+        // BEFORE THE STANDING OFFERS, AND ONLY WHERE THE SENTENCE NAMED IT. A
+        // square with one thing on offer in it infers that thing from any
+        // haggling sentence at all, which answered a question about a party by
+        // quoting a stallholder's figure in its mouth. A named counterparty
+        // beats an inferred thing.
+        const ofItself = this.aPieceOfSomethingThatCanRefuse(
+            run, cultivator, named, across, sentence, putDown
+        );
+        if (ofItself) return ofItself;
+
         if (offer) {
             // ONE OPEN NEED, READ OFF THE PERSON RATHER THAN OFF THE THING.
             // A standing offer is a thing somebody has already decided to part
@@ -5865,6 +5915,183 @@ ${noticed}`;
         // rather than a question put back about who was meant. The board read
         // already names what is here, what it costs and who is holding it.
         return this.market(run, cultivator, named.length >= 2 ? named : undefined);
+    }
+
+    /**
+     * Asking a thing that can say no for a piece of its own body.
+     *
+     * The road `THREE_ROADS_TO_WHAT_A_PERSON_CARRIES` names and nothing walked:
+     * the heaven-grade version of a material comes off a source at or above the
+     * change, anything standing there has a shape and a voice, and a righteous
+     * house has no other way to it at all.
+     *
+     * WHO IS ACROSS THE TABLE IS READ OFF THE GROUND. A species that lives here
+     * is a party that can be put a question; one that does not is not, and
+     * saying so is what stops this from being a way to talk to anything in the
+     * catalog from anywhere. `beastsOnThisGround` is the hunt's own read and is
+     * not repeated.
+     *
+     * Null where nothing about the sentence was this, which is nearly every
+     * haggle. The caller carries on to the stall.
+     */
+    private aPieceOfSomethingThatCanRefuse(
+        run: Run,
+        cultivator: Cultivator,
+        named: string,
+        across: string,
+        sentence: WhatTheHaggleSaid,
+        putDown: WhatWasPutDown
+    ): Execution | null {
+        const speaking = beastsOnThisGround(this.beastGroundFor(cultivator))
+            .filter(beast => beast.speaks);
+        if (speaking.length === 0) return null;
+
+        // NAMED, AND NAMED HARD ENOUGH TO BE A NAME. One word off a catalog
+        // entry reaches a creature from any sentence at all - `earth`,
+        // `white` and `face` are each in somebody's name - and a haggle over
+        // an earth-grade pill is not a conversation with anybody. So it is
+        // the whole name, the whole ability, or two words of the name.
+        const namesIt = (text: string, beast: Beast): boolean => {
+            const low = text.trim().toLowerCase();
+            if (low.length < 3) return false;
+            if (low.includes(beast.name.toLowerCase())) return true;
+            if (low.includes(beast.ability.name.toLowerCase())) return true;
+            return beast.name.toLowerCase().split(/\s+/)
+                .filter(word => word.length >= 4)
+                .filter(word => low.includes(word))
+                .length >= 2;
+        };
+        const reached = speaking.filter(beast =>
+            namesIt(across, beast) || namesIt(named, beast));
+        // AMBIGUITY IS NOT A COUNTERPARTY. Two of them answering to the same
+        // sentence means the sentence named neither.
+        const beast = reached.length === 1 ? reached[0] : null;
+        if (!beast) return null;
+
+        const piece = thePieceTheyAskedFor(beast, named.length >= 2 ? named : null);
+        if (!piece) return null;
+
+        // AN OPEN ACCOUNT THEY OWE YOU IS THE FAVOUR RUNG, and it is the only
+        // thing a kindness buys. A favour is held BY whoever paid it, so the
+        // row this looks for is the player's, about them.
+        const owed = ledgerAbout(this.db as unknown as ObligationDb, beast.id)
+            .find(row => row.status === 'open' && row.kind === 'favor'
+                && row.holderId === cultivator.id && row.subjectId === beast.id)
+            ?? null;
+
+        const today = Math.floor(run.elapsedDays);
+        const went = howTheAskForAPieceWent({
+            beast,
+            piece,
+            sentence,
+            putDown,
+            theyOweYou: owed !== null,
+            purse: cultivator.spiritStones,
+            turn: run.turn,
+            onDay: today,
+            seenBy: this.present(cultivator).map(person => person.id)
+        });
+
+        this.nameWhatTheyGot(beast.name);
+        this.nameWhatTheyGot(piece.material.name, piece.material.value);
+
+        const facts = factsForToolResult(went.headline, went.lines);
+        facts.structure.push(...went.structure);
+        facts.structure.push(
+            `${beast.id} stands on this ground (${beast.persistence}, ${beast.biome}) and `
+            + `speaks. It could part with `
+            + `${whatItCouldPartWith(beast).map(p => p.material.name).join(', ')}. `
+            + `Open favour owed to ${cultivator.id}: ${owed?.id ?? 'none'}.`
+        );
+
+        if (!went.granted) return this.freeAction(run, 'interact', facts);
+
+        // ── WHAT IT COST THE GIVER, AS A REAL WOUND ──────────────────────
+        //
+        // Minted through the same call the ordinary injury path uses, so the
+        // penalties are the table's and not this file's. Nothing writes it onto
+        // the creature: a changed beast has no row to carry an injury on yet.
+        const hurt = createInjury(
+            went.cost!.wound,
+            forStream(run.seed, 'gave_a_piece', beast.id, piece.material.id)
+        );
+        const calls: ToolCallRecord[] = [{
+            name: 'engine.whatGivingItCosts',
+            action: 'interact',
+            summary:
+                `${hurt.id}: ${hurt.severity} ${hurt.woundType} on ${beast.id}, `
+                + `cultivation ${hurt.cultivationPenalty}, breakthrough `
+                + `${hurt.breakthroughPenalty}. ${went.cost!.note} `
+                + 'Not persisted: a changed beast carries no row to hold an injury.',
+            ok: true
+        }];
+        if (went.cost!.shame) {
+            calls.push({
+                name: 'engine.whatGivingItCosts.shame',
+                action: 'interact',
+                summary:
+                    `${went.cost!.shame.severity} shame on ${beast.id} for `
+                    + `${went.cost!.shame.cause}, held by `
+                    + `${went.cost!.shame.heldBy?.length ?? 0}. Not persisted, same reason.`,
+                ok: true
+            });
+        }
+
+        // ── AND THE MATERIAL IS IN SOMEBODY'S HANDS ──────────────────────
+        //
+        // The same object the hunt mints, down the same call, with the one
+        // field that differs: it was given. Nothing is drawn off the district's
+        // band, because nothing came out of the ground.
+        const record = objectForBeastMaterial({
+            id: `obj-${piece.material.id}-${cultivator.id}-${today}`,
+            material: piece.material,
+            beast,
+            takerId: cultivator.id,
+            takerName: cultivator.name,
+            place: placeName(cultivator),
+            onDay: today,
+            how: 'gifted'
+        });
+        if (this.atHand) {
+            this.atHand.objects.push(record);
+            this.theWorldMoved();
+        }
+        addToPouch(this.db, cultivator.id, piece.material.id, 'herb', 1);
+        calls.push({
+            name: 'world.transferPossession',
+            action: 'interact',
+            summary:
+                `${record.id} (${piece.material.name}, ${piece.material.grade}, significance `
+                + `${record.significance}) minted off ${beast.id} and moved to ${cultivator.id} `
+                + `as gifted on day ${today}. Tags: ${record.tags.join(', ')}.`,
+            ok: true
+        });
+
+        // THE ACCOUNT IS SPENT. A favour that bought something is a favour that
+        // is gone, and leaving it open would let one kindness buy a body twice.
+        if (owed) {
+            writeOneObligation(
+                this.db as unknown as DatabaseHandle,
+                settleObligation(owed, {
+                    resolution: 'repaid',
+                    onDay: today,
+                    note:
+                        `Settled by ${beast.name} handing over ${piece.material.name} off its `
+                        + 'own body.',
+                    byId: beast.id
+                })
+            );
+            calls.push({
+                name: 'social.settleObligation',
+                action: 'interact',
+                summary: `${owed.id} settled as repaid on day ${today} by ${beast.id}.`,
+                ok: true
+            });
+        }
+
+        const done = this.freeAction(run, 'interact', facts);
+        done.calls.push(...calls);
+        return done;
     }
 
     // ── logistics ────────────────────────────────────────────────────────
@@ -8779,6 +9006,15 @@ ${line}`;
             ok: true
         });
 
+        // ── AND IF IT HAS A CORE, IT IS SOMEBODY IN PARTICULAR ───────────
+        //
+        // The row is written on contact and never before: a world seeded with
+        // one for every species on every piece of ground is 761 rows at day 0
+        // against 610 living people, for things nobody has stood in front of.
+        // Below the core nothing is written at all - that is an amount on a
+        // piece of ground, and there is nobody there to owe anybody anything.
+        const itsRow = this.standUpWhatHasACore(met, me, today, calls);
+
         // ── SOMETHING THAT COULD HAVE ANSWERED YOU ───────────────────────
         //
         // Not a refusal of the killing - see the header. A refusal to do it on
@@ -8836,11 +9072,98 @@ ${line}`;
             calls.push(...answered.calls);
         }
 
-        return this.huntResult(
+        const execution = this.huntResult(
             me, skip, ambient,
             killed ? `${met.name} is down.` : `${met.name}, and it is still standing.`,
             lines, calls
         );
+
+        // ── AND IF IT DIED, THE ROW ENDS THE WAY ANYBODY ENDS ────────────
+        //
+        // `markDead`, and nothing written for beasts. What is deliberately NOT
+        // here is the other half: a hunt never decides that the player was
+        // merciful. `thrown.force: 'everything'` is what this verb throws, so
+        // the resolver returns `lethal` or `withdrawal` and never `capture` -
+        // measured, at six rungs across the band - and a branch reading "beaten
+        // and alive" off a hunt would be dead code that grades the player. The
+        // sparing is a sentence: the row makes it a party, `I spare it` answers
+        // the standing fight, and `whatSparingThemLeft` writes the favour the
+        // way it writes every other one.
+        if (itsRow && killed) this.endTheOneWithARow(itsRow, me, here, today);
+
+        return execution;
+    }
+
+    /**
+     * Give the one with a core a row, and put it where the player is standing.
+     *
+     * ONE ROW PER SPECIES PER PIECE OF GROUND, derived - every catalog entry at
+     * or above the core is solitary, so the thing holding this ledge IS the
+     * individual. Walking back onto the same ledge reaches the same row, which
+     * is what lets a favour written last year still be held by the thing that
+     * is standing there.
+     */
+    private standUpWhatHasACore(
+        beast: Beast,
+        cultivator: Cultivator,
+        today: number,
+        calls: ToolCallRecord[]
+    ): NpcRecord | null {
+        const world = this.atHand;
+        if (!world || !hasACore(beast)) return null;
+        const where = this.worldPlaceOf(cultivator);
+        if (!where) return null;
+
+        const id = idOfTheOneOnThisGround(beast.id, where);
+        const already = world.npcs.find(npc => npc.id === id);
+        if (already) {
+            calls.push({
+                name: 'world.standUpTheOneOnThisGround',
+                action: 'hunt',
+                summary:
+                    `${id} was already standing here, at ordinal `
+                    + `${already.cultivation.realmOrdinal} (the catalog places its kind at `
+                    + `${beast.ordinal}). Nothing written.`,
+                ok: true
+            });
+            return already.status === 'alive' ? already : null;
+        }
+
+        const row = standUpTheOneOnThisGround({
+            beast, locationId: where, seed: world.seed, onDay: Math.floor(world.currentDay)
+        });
+        world.npcs.push(row);
+        this.theWorldMoved();
+        calls.push({
+            name: 'world.standUpTheOneOnThisGround',
+            action: 'hunt',
+            summary:
+                `${row.id}: ${beast.name} at ordinal ${row.cultivation.realmOrdinal} now holds a `
+                + `row at ${where}, met on day ${today}. Written on contact, not seeded - `
+                + 'below the core nothing is written at all.',
+            ok: true
+        });
+        return row;
+    }
+
+    /**
+     * The one with a row is dead, and ends the way anybody ends.
+     */
+    private endTheOneWithARow(
+        row: NpcRecord,
+        cultivator: Cultivator,
+        here: string,
+        today: number
+    ): void {
+        const world = this.atHand;
+        if (!world) return;
+        const at = world.npcs.findIndex(npc => npc.id === row.id);
+        if (at < 0) return;
+        world.npcs[at] = markDead(
+            world.npcs[at]!, Math.floor(world.currentDay),
+            `Killed by ${cultivator.name} at ${here}, on day ${today}.`
+        );
+        this.theWorldMoved();
     }
 
     /**
@@ -11376,6 +11699,24 @@ ${opened.text}` : receipt,
             .filter((row): row is { entry: typeof row.entry; record: NonNullable<typeof row.record> } =>
                 row.record !== undefined);
 
+        // AND WHAT IS CARRIED AS A ROW RATHER THAN AS A STACK
+        //
+        // FOUND BY PLAYING a talisman cut at a bench. This read knew about
+        // counted stock, books, the yard and what was left in the ground, and
+        // nothing at all about the world's own object table - so a player
+        // holding a thing they had just made, or a heaven-grade horn off a
+        // kill, was answered *"Nothing in the pouch at all."* Three mint routes
+        // land a tracked row on somebody and none of them was visible here.
+        //
+        // `whatYouAreCarrying` is the existing read of the four places a
+        // player's things live, and it is asked rather than re-implemented. A
+        // thing that stands where it was made is not on anybody, which is what
+        // `never-carried` and the two never-held kinds say.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const carriedRows = this.whatYouAreCarrying(cultivator).rows.filter(row =>
+            row.kind !== 'formation' && row.kind !== 'territory'
+            && !row.tags.includes('never-carried'));
+
         // AND WHAT IS IN THE YARD
         const yard = countedConveyancesHeld(this.whatIsInTheirYard(cultivator));
 
@@ -11434,6 +11775,7 @@ ${opened.text}` : receipt,
             );
         }
         if (pills.length === 0 && herbs.length === 0 && carried.length === 0
+            && carriedRows.length === 0
             && books.length === 0 && yard.length === 0 && rations === 0) {
             // "Nothing at all" would be a lie with a cache in the ground, and
             // it is exactly the lie this read was ruled against: technically
@@ -11464,12 +11806,17 @@ ${opened.text}` : receipt,
                         + `${row.conveyance.range}`;
                 }).join(', ') + '. Say where you are going and that you are riding.');
             }
-            if (carried.length > 0) {
-                lines.push('Carrying: ' + carried.map(c =>
-                    `${c.record.name}${c.record.power !== null && c.record.power !== undefined
-                        ? ` (rated ${c.record.power}, ${rankName(c.record.power)})`
-                        : ''}`
-                ).join(', ') + '.');
+            if (carried.length > 0 || carriedRows.length > 0) {
+                lines.push('Carrying: ' + [
+                    ...carried.map(c =>
+                        `${c.record.name}${c.record.power !== null && c.record.power !== undefined
+                            ? ` (rated ${c.record.power}, ${rankName(c.record.power)})`
+                            : ''}`),
+                    ...carriedRows.map(row =>
+                        `${row.name}${row.power !== null
+                            ? ` (rated ${row.power}, ${rankName(row.power)})`
+                            : ''}`)
+                ].join(', ') + '.');
             }
             if (pills.length > 0) {
                 lines.push('Pills: ' + pills.map(p => `${p.quantity ?? 1} x ${p.name ?? 'unnamed'}`).join(', ') + '.');
@@ -12615,20 +12962,73 @@ ${fit.line}`;
                     `Unresolved subject "${wanted}" against ${open.length} open row(s).`
                 ));
             }
+            // ── UPHELD IS NOT THE END OF IT ──────────────────────────────
+            //
+            // Upholding used to close the row and cost the person it was about
+            // nothing at all - a verdict with no sentence behind it, which is
+            // the officeless-elder problem at the other end of the arc. The
+            // room now weighs it and hands one down.
+            if (verdict === 'upheld') {
+                const them = roster.find(person => person.id === chosen.subjectId);
+                const handed = handDownWhatTheRoomDecided({
+                    repos: this.repos,
+                    complaint: chosen,
+                    byId: cultivator.id,
+                    offenderId: chosen.subjectId ?? '',
+                    offenderName: nameOf(chosen.subjectId),
+                    // The record where there is one, the roster where there is
+                    // not. A fine is priced at their rung and the cultivators
+                    // table is the authority on that; the roster carries what
+                    // the house knows about somebody it has no row for.
+                    offenderOrdinal:
+                        this.repos.cultivators.getById(chosen.subjectId ?? '')?.realmOrdinal
+                        ?? them?.realmOrdinal
+                        ?? cultivator.realmOrdinal,
+                    houseId: held.sectId,
+                    houseName: held.sectName,
+                    onDay: Math.floor(run.elapsedDays),
+                    brought: {
+                        // It is in front of the room, so it was shown. The
+                        // question `whatTheWitnessDoesAboutIt` answers was
+                        // answered when the row was written.
+                        what: {
+                            does: 'reports',
+                            toId: cultivator.id,
+                            line: chosen.description
+                        },
+                        theirsToPunish: true,
+                        alignment: this.repos.sects.getById(held.sectId)?.alignment ?? null,
+                        houseId: held.sectId,
+                        theHouseGaveThemSomething: this.atHand !== null
+                            && whatEachHouseHasGivenAway(this.atHand)
+                                .some(given => given.toNpcId === chosen.subjectId)
+                    }
+                });
+                const line = `You uphold it. ${handed.line}`;
+                const facts = factsForToolResult('Upheld.', [line]);
+                facts.required = [line];
+                facts.structure.push(
+                    `a-room-hands-down-what-it-decided: ${chosen.id} -> `
+                    + `${handed.decided.sentence}, by ${cultivator.id}. `
+                    + `Before anybody spoke: ${handed.decided.beforeAnybodySpoke}; `
+                    + `word: ${handed.decided.word}. `
+                    + (handed.notCarriedOutHere === null
+                        ? `Carried out here: contribution -${handed.contributionTaken}, `
+                          + `stones -${handed.stonesTaken}, row ${handed.wrote?.id ?? 'none'}.`
+                        : `Routed to ${handed.notCarriedOutHere}.`)
+                );
+                return this.freeAction(run, 'sect', facts);
+            }
+
             const settled = settleAComplaint(this.repos, chosen, {
                 verdict,
                 byId: cultivator.id,
                 onDay: Math.floor(run.elapsedDays),
                 note: `Decided by ${cultivator.name}, who holds the room.`
             });
-            const line = verdict === 'upheld'
-                ? `You uphold it. ${nameOf(chosen.subjectId)} is answerable to `
-                  + `${held.sectName} for it, and the record says who decided that.`
-                : `You throw it out. ${nameOf(chosen.subjectId)} walks, the row closes as `
-                  + 'proven false, and your name is on that too.';
-            const facts = factsForToolResult(
-                verdict === 'upheld' ? 'Upheld.' : 'Dismissed.', [line]
-            );
+            const line = `You throw it out. ${nameOf(chosen.subjectId)} walks, the row closes as `
+                + 'proven false, and your name is on that too.';
+            const facts = factsForToolResult('Dismissed.', [line]);
             facts.required = [line];
             facts.structure.push(
                 `false-decree-reports.settleAComplaint: ${settled.id} -> `
@@ -14255,10 +14655,80 @@ ${fit.line}`;
         party: ResolvedEntity,
         kind: RequestKind,
         costing: RequestCosting,
-        meeting: { id: string; name: string; factionId: string | null; here: boolean } | null
+        meeting: { id: string; name: string; factionId: string | null; here: boolean } | null,
+        /** The term and the destination, for the one ask that has them. */
+        along: { forDays: number; bound: string | null } = { forDays: 0, bound: null }
     ): Promise<{ lines: string[]; calls: ToolCallRecord[] }> {
         const lines: string[] = [];
         const calls: ToolCallRecord[] = [];
+
+        // ── AND THEY ARE ON THE ROAD WITH YOU ────────────────────────────
+        //
+        // The same activity the escort duty writes and the same one the world
+        // sim writes for every party it sends, so `bringHomeWhoeverIsDue` ends
+        // this term as it ends theirs and `whoIsOnTheRoadWith` finds these
+        // people as it finds those. Nothing stores a roster; the term written
+        // here IS the party.
+        if (kind === 'company') {
+            const today = Math.floor(run.elapsedDays);
+            const until = today + Math.max(1, Math.trunc(along.forDays));
+            // AND WHOEVER HAD ALREADY SAID YES TO THEM. Read off the mustering
+            // activity by `whereTheyAlreadyAre` - the world puts a person
+            // raising a party in front of the player on purpose, and until this
+            // no sentence reached one.
+            const theirs = this.whereTheyAlreadyAre(party.id, today).bringsAlong;
+            const came = this.putThemOnTheRoadWithYou(
+                cultivator,
+                [{ id: party.id, name: party.name }, ...theirs],
+                {
+                    note: along.bound === null
+                        ? `On the road with ${cultivator.name}.`
+                        : `On the road with ${cultivator.name}, bound for ${along.bound}.`,
+                    onDay: today,
+                    untilDay: until
+                }
+            );
+            // A person the world holds no row for cannot be put on a road. The
+            // ask still landed and the world has nowhere to record it, which is
+            // a fact about the roster and not about the answer.
+            if (came.length === 0) {
+                lines.push(
+                    `${party.name} says yes and the world has no row to write it on. Nothing `
+                    + 'follows you out of here.'
+                );
+                calls.push({
+                    name: 'world.takeThemWithYou',
+                    action: 'request',
+                    summary:
+                        `${party.name} agreed to come and is not a body the world holds, so no `
+                        + 'activity could be written and no party exists.',
+                    ok: false
+                });
+                return { lines, calls };
+            }
+            lines.push(
+                `${came.length === 1 ? party.name : came.join(', ')} `
+                + `${came.length === 1 ? 'comes' : 'come'} with you until day ${until}`
+                + `${along.bound === null ? '' : `, bound for ${along.bound}`}`
+                + `. ${came.length === 1 ? 'They are' : 'They are'} where you are from here, and `
+                + 'on the day the term runs out they go back to where they set out from.'
+            );
+            calls.push({
+                name: 'world.takeThemWithYou',
+                action: 'request',
+                summary:
+                    `${came.length} out with ${cultivator.name} from day ${today} to day `
+                    + `${until} - ${came.join(', ')}`
+                    + `${theirs.length === 0
+                        ? ''
+                        : `, of whom ${theirs.length} were already on ${party.name}'s muster`}`
+                    + `. Written as their own out_with_a_party activity with `
+                    + `returnTo set to where they are standing now. Who is travelling with `
+                    + 'whom stays a reading over that row - no roster was written.',
+                ok: true
+            });
+            return { lines, calls };
+        }
 
         if (kind === 'teaching' && costing.techniqueId) {
             const art = getTechnique(costing.techniqueId);

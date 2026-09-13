@@ -94,6 +94,7 @@ import {
     shelfReach,
     whoseArt
 } from '../engine/world/manuals.js';
+import { A_SEASON_ON_THE_ROAD } from '../engine/world/who-is-on-the-road-with-you.js';
 import { carriesTo, getTechnique, teachersOf } from '../data/cultivation/techniques.js';
 import { getSect, getSectsTeaching } from '../data/cultivation/sects.js';
 import { rankName } from '../engine/cultivation/realms.js';
@@ -110,6 +111,12 @@ import type { RequestKind } from './what-a-request-asks-and-of-whom.js';
 
 /** The person doing the asking, as the sheet holds them. */
 export interface TheOneAsking {
+    /**
+     * Symmetric with {@link TheOneBeingAsked}, and read by the company ask
+     * alone: a party is keyed on the leader's id, so deciding whether somebody
+     * is already out with THIS cultivator needs it.
+     */
+    id: string;
     name: string;
     ordinal: number;
     /** Their own house, when they serve one. */
@@ -825,11 +832,181 @@ function costOfDiscipleship(asking: TheOneAsking, asked: TheOneBeingAsked): Requ
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// BEING ASKED ALONG
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the world already says this person is doing, for the one ask that needs
+ * it.
+ *
+ * READ OFF THEIR OWN ACTIVITY and never off a roster: `out_with_a_party` is
+ * where a party lives, `who-is-on-the-road-with-you.ts` states why, and asking
+ * somebody to come is the one request whose answer that row can settle outright.
+ * The caller reads the row because this module has no world handle.
+ */
+export interface WhereTheyAlreadyAre {
+    /**
+     * Whoever they are already out with, and until when. `null` when they are
+     * not out with anybody.
+     */
+    outWith: { withIds: readonly string[]; untilDay: number | null; note: string } | null;
+    /** Plain words for whatever else they are at, when the world holds any. */
+    otherwiseAt: string | null;
+    /**
+     * Whoever has already said yes to THEM, when they are raising a party.
+     *
+     * `ActivityKind.mustering` says outright that somebody at it is somebody a
+     * player can join, and its `withIds` is who has agreed so far. A person
+     * raising a party who agrees to walk your road does not leave that party
+     * behind, so this is the whole of what makes a musterer the cheapest party
+     * in the game to come by.
+     */
+    bringsAlong?: readonly { id: string; name: string }[];
+}
+
+/**
+ * Being asked to come along.
+ *
+ * ONE THING CAN REFUSE THIS BEFORE THE RESOLVER, and it is not a judgement: a
+ * body is in one party at a time. Everything else - whether a stranger has any
+ * reason to walk out of their own life for you - is the resolver's, priced off
+ * standing, what the two of them already are to each other, what they are owed,
+ * what they want, and what is on the table. There is no affinity number here
+ * and nothing new to tune.
+ */
+function costOfCompany(
+    asking: TheOneAsking,
+    asked: TheOneBeingAsked,
+    where: WhereTheyAlreadyAre,
+    bound: string | null,
+    forDays: number,
+    theyWant: string | null
+): RequestCosting {
+    const already = where.outWith;
+    if (already && already.withIds.includes(asking.id)) {
+        const until = already.untilDay;
+        return {
+            ask: 'a_real_favour',
+            lines: [],
+            structure: [
+                `${asked.name} is already out with this cultivator`
+                + `${until === null ? '' : ` until day ${until}`}, so there is nothing to agree to.`
+            ],
+            techniqueId: null,
+            refusal: {
+                headline: `${asked.name} is already with you.`,
+                prose:
+                    `They are on the road with you now and have been since you asked. `
+                    + `${until === null
+                        ? 'Nothing was said about when that ends.'
+                        : `The term runs to day ${until}.`} `
+                    + 'Asking again asks for a thing you are already holding. What changes it is '
+                    + 'the term running out, and then this sentence works again.',
+                structure:
+                    'Refused before the resolver, so no day was spent: their own activity already '
+                    + 'names this cultivator as who they are out with.'
+            },
+            askBack: null
+        };
+    }
+    if (already) {
+        const until = already.untilDay;
+        return {
+            ask: 'a_real_favour',
+            lines: [],
+            structure: [
+                `${asked.name} is out with somebody else's party`
+                + `${until === null ? ' on no stated term' : ` until day ${until}`}: ${already.note}`
+            ],
+            techniqueId: null,
+            refusal: {
+                headline: `${asked.name} is already out with somebody.`,
+                prose:
+                    `They are on somebody else's road and were on it before you arrived: `
+                    + `${already.note} `
+                    + `${until === null
+                        ? 'Nobody has said when they are due back.'
+                        : `They are due back on day ${until}.`} `
+                    + 'A body is in one party at a time. What would change it is that term ending, '
+                    + 'or whoever holds it letting them go.',
+                structure:
+                    'Refused before the resolver, so no day was spent: their own out_with_a_party '
+                    + 'activity names a different leader and the term has not run out.'
+            },
+            askBack: null
+        };
+    }
+
+    const lines = [
+        bound === null
+            ? `You are asking for ${forDays} day${forDays === 1 ? '' : 's'} of somebody else's `
+              + 'life, with no destination said. What it costs them is the road they were going '
+              + 'to be on instead.'
+            : `You are asking for ${forDays} day${forDays === 1 ? '' : 's'} of somebody else's `
+              + `life, as far as ${bound}. What it costs them is the road they were going to be `
+              + 'on instead.'
+    ];
+    if (where.otherwiseAt !== null) {
+        lines.push(`${asked.name} is ${where.otherwiseAt}, and would be leaving it.`);
+    }
+    const sameRoll = asked.factionId !== null && asked.factionId === asking.factionId;
+    lines.push(
+        sameRoll
+            ? `You are on the same roll, which means their days are already partly spoken for by `
+              + `the same house that speaks for yours, and a road walked together is a thing that `
+              + `house counts.`
+            : asked.factionId === null
+                ? `${asked.name} serves nobody, so nobody but ${asked.name} has a claim on where `
+                  + `they are next week.`
+                : `${asked.name} serves a house you do not, so the days you are asking for are `
+                  + `days that house has a claim on.`
+    );
+    const raising = where.bringsAlong ?? [];
+    if (raising.length > 0) {
+        lines.push(
+            `${raising.length} ${raising.length === 1 ? 'person has' : 'people have'} already said `
+            + `yes to ${asked.name}: ${raising.map(one => one.name).join(', ')}. They go where `
+            + `${asked.name} goes, so what is being asked for here is a party and not a person.`
+        );
+    }
+    lines.push(
+        theyWant === null
+            ? `${asked.name} has named no price for it. Somebody who has never dealt with you has `
+              + `no reason to be on your road, and that is the whole of what is between you.`
+            : `${asked.name} is already after something this cultivator could reach: ${theyWant}. `
+              + `That is what there is to trade with.`
+    );
+
+    return {
+        ask: 'a_real_favour',
+        lines,
+        structure: [
+            `Being asked along is ${theGapInWords(asked.ordinal, asking.ordinal)}, and it is `
+            + `priced as ${theAskInWords('a_real_favour')} - ${forDays} day`
+            + `${forDays === 1 ? '' : 's'} of the days of the person being asked, which is the `
+            + `only ask in the game that spends those rather than the asker's. `
+            + `${sameRoll ? 'Same roll.' : 'Not of the same house.'} `
+            + `${raising.length === 0
+                ? ''
+                : `${raising.length} already on their muster and coming with them. `}`
+            + `No roster is written `
+            + `anywhere: saying yes writes the term onto their own activity, which is where a `
+            + `party lives.`
+        ],
+        techniqueId: null,
+        refusal: null,
+        askBack: null
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // THE ONE ENTRY POINT
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface RequestToPrice {
-    kind: Extract<RequestKind, 'teaching' | 'introduction' | 'discipleship' | 'nothing'>;
+    kind: Extract<
+        RequestKind, 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company'
+    >;
     asking: TheOneAsking;
     asked: TheOneBeingAsked;
     /** The art, when one resolved. */
@@ -846,11 +1023,29 @@ export interface RequestToPrice {
      * question the engine asks can arrive with a price on it.
      */
     theyWant?: string | null;
+    /**
+     * Their own activity row, for the company ask. Absent means the caller has
+     * no world handle, which is read as nobody knowing of another party.
+     */
+    where?: WhereTheyAlreadyAre;
+    /** Where the party is bound, as the sentence said, when it said. */
+    bound?: string | null;
+    /** The term asked for, in days. */
+    forDays?: number;
 }
 
 export function whatItWouldCostThem(request: RequestToPrice): RequestCosting {
     const named = request.namedButUnresolved ?? '';
     switch (request.kind) {
+        case 'company':
+            return costOfCompany(
+                request.asking,
+                request.asked,
+                request.where ?? { outWith: null, otherwiseAt: null },
+                request.bound ?? null,
+                Math.max(1, Math.trunc(request.forDays ?? A_SEASON_ON_THE_ROAD)),
+                request.theyWant ?? null
+            );
         case 'teaching':
             return costOfTeaching(
                 request.asking, request.asked, request.techniqueId ?? null, named,

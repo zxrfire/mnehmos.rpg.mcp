@@ -17,6 +17,7 @@ import {
     crossingStillGiving,
     enrichedDensity
 } from './crossing-enrichment.js';
+import { scheduleForAnAncientSite } from './how-long-a-door-stays-shut.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 import {
     QI_DENSITY_DEFAULT,
@@ -1632,24 +1633,18 @@ function ruinProvenance(ruin: Ruin): Record<string, string | number | boolean | 
     };
 }
 
-/** Share of ancient sites that are reachable only when the convergence comes. */
-const CONVERGENT_SHARE = 0.4;
-/** Years between openings, at the short and long end. */
-const CONVERGENCE_PERIOD_YEARS = { min: 120, max: 600 };
-/** Days a window runs. Short, and short is the whole mechanic. */
-const CONVERGENCE_WINDOW_DAYS = { min: 20, max: 90 };
-
+/**
+ * The wait and the window, off the site's own record.
+ * `how-long-a-door-stays-shut.ts` holds the derivation and the reasons for it.
+ */
 function cycleForRuin(ruin: Ruin): OpeningCycle | null {
-    const rng = forStream('ruin-convergence', ruin.id);
-    if (!rng.chance(CONVERGENT_SHARE)) return null;
-    const periodDays = rng.int(CONVERGENCE_PERIOD_YEARS.min, CONVERGENCE_PERIOD_YEARS.max) * 365;
-    return {
-        periodDays,
-        openDays: rng.int(CONVERGENCE_WINDOW_DAYS.min, CONVERGENCE_WINDOW_DAYS.max),
-        // Phased off the day it was sealed, so the schedule is a property of
-        // the site's own history rather than of when the simulation started.
-        phaseDay: ruin.sealedYear * 365 + rng.int(0, periodDays - 1)
-    };
+    return scheduleForAnAncientSite({
+        id: ruin.id,
+        qiDensity: ruin.qiDensity,
+        dangerOrdinal: ruin.dangerOrdinal,
+        hoardCount: ruin.techniqueIds.length + ruin.treasureIds.length,
+        sealedYear: ruin.sealedYear
+    });
 }
 
 function ruinConvergence(ruin: Ruin): Record<string, string | number | boolean | null> {

@@ -108,7 +108,13 @@ export function whatYouCouldPassTo(
         holds: readonly string[];
         masteryOf: (techniqueId: string) => number | null;
     },
-    student: { name: string; ordinal: number; factionId: string | null; holds: readonly string[] }
+    student: {
+        id: string;
+        name: string;
+        ordinal: number;
+        factionId: string | null;
+        holds: readonly string[];
+    }
 ): { id: string; name: string; cap: number | null }[] {
     return whatTheyWouldTeachYou(
         {
@@ -119,6 +125,7 @@ export function whatYouCouldPassTo(
             holds: teacher.holds
         },
         {
+            id: student.id,
             name: student.name,
             ordinal: student.ordinal,
             factionId: student.factionId,
@@ -329,6 +336,7 @@ export const teachingVerbs = {
                 masteryOf
             },
             {
+                id: student.id,
                 name: student.name,
                 ordinal: student.cultivation.realmOrdinal,
                 factionId: student.factionId,
@@ -393,6 +401,7 @@ export const teachingVerbs = {
                             holds: held.map(row => row.id)
                         },
                         {
+                            id: student.id,
                             name: student.name,
                             ordinal: student.cultivation.realmOrdinal,
                             factionId: student.factionId,

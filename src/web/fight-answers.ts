@@ -231,9 +231,22 @@ const SOMEBODY_IS_LET_GO = [
         + "|your\\b|our\\b|me\\b|us\\b|that\\b|this\\b)[\\w'-]+(?: [\\w'-]+)? (?:go|live|be|up)"
 ].join('|');
 
-/** The bare stops, which are restraint only while something is happening. */
+/**
+ * The bare stops, which are restraint only while something is happening.
+ *
+ * `it` IS A PRONOUN FOR SOMEBODY HERE, and it has to be, because a beast with a
+ * core is now a row among the people and the only pronoun anybody uses for one
+ * is `it`. The half above cannot take it - outside a fight "I let it go" is
+ * dropping a subject, and `it` sits in that half's own stop list for exactly
+ * that reason - so it belongs here, where a standing fight has already settled
+ * what `it` refers to. Without this the mercy vocabulary could spare a person
+ * and could not spare the thing whose sparing is the whole point of tracking it.
+ */
 const THE_STOP_IS_BARE = [
     'spare(?:s|d)?\\s*$',
+    'spare(?:s|d)? it\\b',
+    'let(?:s|ting)? it (?:go|live|be)\\b',
+    'leave(?:s|ing)? it (?:alive|be|breathing|standing)\\b',
     'let(?:s|ting)? (?:him|her|them) off',
     'stop(?:s|ping)? short',
     'enough[.!]*\\s*$',

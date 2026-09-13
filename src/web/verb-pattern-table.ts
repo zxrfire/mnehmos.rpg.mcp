@@ -90,7 +90,8 @@ import {
     askingWhatSomebodyIsAfter,
     namesAKindRatherThanAThing,
     requestPutToSomebody,
-    whatIsBeingAskedToBeTold
+    whatIsBeingAskedToBeTold,
+    whereACompanyAskIsBound
 } from './what-a-request-asks-and-of-whom.js';
 import { whatAThreatPromises } from './what-a-threat-promises.js';
 // The board's own trade names, so any job the listing prints is a job a player
@@ -2348,6 +2349,40 @@ export const WHAT_A_YARD_MAKES =
 export const WHAT_IS_BEING_BUILT =
     /\b(?:build|builds|building|built|make|makes|making|made|craft|crafts|crafting|crafted|construct|constructs|constructing|assemble|assembles|assembling|finish|finishes|finishing|go back to|going back to|return to|work on|working on|abandon|abandons|abandoning|scrap|scraps|scrapping|break up|breaking up)\s+(?:up\s+|on\s+|with\s+|to\s+)?(?:a\s+|an\s+|the\s+|my\s+|his\s+|her\s+)?((?:spirit\s+|drawn\s+|shod\s+|named\s+|earth-?grade\s+|heaven-?grade\s+|mortal-?grade\s+)*(?:carriage|cart|wagon|waggon|coach|boat|ship|barge|skiff|hull|keel))\b/i;
 
+// THE BENCH
+//
+// The other craft, and the noun is what tells them apart: a yard builds hulls
+// and a bench works material into one thing at a time. Measured before this
+// existed, "I craft a talisman", "I cut a slip", "I make myself a talisman" and
+// "I forge an earth-grade sword" all parsed to `unclear`, while "I build a
+// carriage" reached the yard - so a whole mechanic, gate and mint and burn,
+// could not be reached by a sentence anybody would type.
+
+/**
+ * What is being made at a bench, with the grade words kept.
+ *
+ * The capture carries the grade and the kind because
+ * `whatTheyWereAskedToMake` reads both off it, so a phrase trimmed to the bare
+ * noun would send every ask to mortal grade.
+ *
+ * The verb has to sit immediately before the phrase, which is the guard that
+ * keeps this off sentences about a talisman that are not about making one -
+ * burning one, selling one, being handed one.
+ */
+export const WHAT_IS_BEING_MADE_AT_A_BENCH =
+    /\b(?:make|makes|making|made|craft|crafts|crafting|crafted|cut|cuts|cutting|forge|forges|forging|forged|inscribe|inscribes|inscribing|inscribed|scribe|scribes|work|works|working)\s+(?:me\s+|myself\s+|us\s+|up\s+|on\s+)?(?:a\s+|an\s+|the\s+|some\s+|my\s+)?((?:mortal-?\s?grade\s+|earth-?\s?grade\s+|heaven-?\s?grade\s+|immortal-?\s?grade\s+|earthly\s+|heavenly\s+|escape\s+|way-?out\s+|strike\s+|storage\s+)*(?:talismans?|slips?|charms?|seals?|artifacts?|swords?|blades?|sabres?|sabers?|spears?|daggers?|bells?|mirrors?|cauldrons?|furnaces?|banners?|rings?))\b/i;
+
+/**
+ * Putting the work to SOMEBODY ELSE, which is a commission and not a bench.
+ *
+ * The one sentence the bench rule would otherwise steal, because "ask him to
+ * cut me a talisman" contains "cut me a talisman" entire. Both roads exist and
+ * they are different roads: one asks whether your own hands can, the other asks
+ * whether theirs will.
+ */
+export const ASKING_SOMEBODY_ELSE_TO =
+    /\b(?:ask|asks|asked|asking|beg|begs|begged|begging|get|gets|got|getting|have|has|had|having|pay|pays|paid|paying|order|orders|ordered|commission|commissions|commissioned|persuade|persuades|persuaded|convince|convinces|convinced|request|requests|requested|tell|tells|told|bribe|bribes|bribed)\b[^.?!]{0,40}\bto\s+(?:make|craft|cut|forge|inscribe|scribe|fold|work)\b/i;
+
 /**
  * Asking what a yard makes, which is free and names no noun.
  */
@@ -4167,6 +4202,40 @@ function planIntent(input: string): PlannedAction {
         }
     }
 
+    // ── ASKED ALONG, SAID TO SOMEBODY'S FACE ─────────────────────────────
+    //
+    // The same gap the `give me` branch above was written for, on the verb the
+    // design owner asked for. `requestPutToSomebody` needs an asking verb and a
+    // name; the way anybody actually asks somebody to come is to turn to them
+    // and say it, with neither.
+    //
+    // NO TARGET, for the reason the branch above states: the person is whoever
+    // is being spoken to, and `somebodyAtHand` resolves that off the
+    // last-addressed flag and the nearest face. Naming one would be a guess.
+    //
+    // AHEAD of the request read below only in the sense that it catches what
+    // that read cannot; a sentence that names somebody falls through to it and
+    // keeps its target.
+    {
+        const alongside = input.trim();
+        const asksNobodyInParticular =
+            /^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)?(?:come(?:\s+along)?|travel|ride|walk|journey)\s+with\s+(?:me|us)\b/i.test(alongside)
+            || /^\s*(?:(?:will|would|can|could)\s+you\s+|please\s+)?(?:come along|join\s+(?:me|us)(?!\s+(?:for|at)\b))\b/i.test(alongside);
+        if (asksNobodyInParticular && !/\bfor sale\b/.test(text)) {
+            const days = parseDuration(text);
+            // The same reader the named form uses, so "come with me to the
+            // Salt Road" and "I ask her to come with me to the Salt Road" name
+            // the same place rather than two readers agreeing by luck.
+            const where = whereACompanyAskIsBound(alongside);
+            return {
+                action: 'request',
+                intent: 'company',
+                ...(where ? { topic: where } : {}),
+                ...(days ? { days } : {})
+            };
+        }
+    }
+
     {
         // PUTTING IT UP FOR SALE IS NOT ASKING ANYBODY FOR IT
         const asked = /\bfor sale\b/.test(text) ? null : requestPutToSomebody(input);
@@ -4174,11 +4243,17 @@ function planIntent(input: string): PlannedAction {
             const leverage = LEVERAGE_BEHIND_INTENT[
                 matchIntent(text, INTERACT_INTENT_PATTERNS) ?? ''
             ];
+            // A TERM ONLY MEANS SOMETHING WHERE ONE IS SERVED. Asking somebody
+            // along for a month is a different ask from asking them along; no
+            // other request kind spends the days of the person being asked, so
+            // no other kind has anything to do with the number.
+            const term = asked.kind === 'company' ? parseDuration(text) : null;
             return {
                 action: 'request',
                 target: asked.person,
                 intent: asked.kind,
                 ...(asked.object ? { topic: asked.object } : {}),
+                ...(term ? { days: term } : {}),
                 ...(leverage ? { leverage } : {})
             };
         }
@@ -4893,6 +4968,19 @@ function planIntent(input: string): PlannedAction {
     // build" is exactly the question somebody with an empty pouch asks.
     if (ASKING_WHAT_A_YARD_MAKES.test(text)) {
         return { action: 'craft' };
+    }
+
+    // THE BENCH
+    //
+    // Behind the yard, so a hull stays the yard's however it is phrased, and
+    // behind buying, so "I buy a talisman" is still a purchase. Ahead of the two
+    // alchemy rules for the reason `half-built-craft.ts` gives about the yard:
+    // the second of those fires on `make|craft` beside an alchemical noun, and
+    // a bench noun is not one, but the ordering is what keeps that true when
+    // somebody widens either list.
+    const atTheBench = WHAT_IS_BEING_MADE_AT_A_BENCH.exec(input);
+    if (atTheBench && !ASKING_SOMEBODY_ELSE_TO.test(text)) {
+        return { action: 'craft', target: atTheBench[1].trim().toLowerCase() };
     }
 
     // what can I make

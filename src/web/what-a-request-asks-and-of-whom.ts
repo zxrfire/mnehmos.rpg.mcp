@@ -3,7 +3,7 @@
  */
 
 import type { AskWeight } from '../engine/social-leverage/index.js';
-import { WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
+import { A_SPAN_AND_WHAT_FOLLOWS, WORD_NUMBER_ALTERNATION } from './sentence-parts.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // WHAT IS BEING ASKED FOR
@@ -42,6 +42,21 @@ export type RequestKind =
      * body the giver sits in.
      */
     | 'advancement'
+    /**
+     * ASKING SOMEBODY TO COME WITH YOU.
+     *
+     * The only way a party existed before this was a house ASSIGNING one. What
+     * it asks for is their days: a person who says yes is not on the road they
+     * had planned to be on, and that is the whole of what it costs them.
+     *
+     * NOT against their interest. A rung is off the house's own ladder and the
+     * giver ends up worse off; a companion ends up somewhere else, which is a
+     * cost and not a loss - and the difference is load-bearing, because
+     * `PURSE_REACH` at `a_real_favour` is 0.6 and money therefore reaches an
+     * escort while at 0.2 it stops reaching a rung. Hiring somebody to walk a
+     * road with you is ordinary in this genre; buying a rung is not.
+     */
+    | 'company'
     /**
      * ASKING WHAT IT WOULD TAKE, WHICH IS NOT ASKING FOR IT.
      */
@@ -83,6 +98,15 @@ export function baseWeightOf(kind: RequestKind): AskWeight {
         // others rather than at one of its own: what makes a commission heavy
         // is the grade asked for, and that is priced where grades are.
         case 'a_making':
+        // Their days. A person who comes with you is not where they were going
+        // to be, for as long as the term runs - which is `a_real_favour`'s own
+        // definition, "time, or money, or a word put in somewhere". The weight
+        // also settles two things nobody then has to write a rule for: money
+        // reaches it (`PURSE_REACH` 0.6, so an escort can be hired where a rung
+        // cannot be bought), and an open-handed person says yes more often
+        // (`DISPOSITION_REACH` is 1 at this rung and below 0.4 at every other),
+        // so who would come is a fact about people rather than about a table.
+        case 'company':
             return 'a_real_favour';
         // A rung off the house's own ladder, given to somebody who has not
         // earned it. The weight is not a judgement: `PURSE_REACH` at
@@ -129,6 +153,10 @@ const REQUEST_VERB = new RegExp(
     + '|beseech|beseeches|plead with|pleads with|pleading with|appeal to|appeals to'
     + '|prevail (?:up)?on|bribe|bribes|bribing|offer|offers|offering|pay|pays|paying'
     + '|persuade|persuades|persuading|petition (?!the )'
+    // The design owner's own word for the act this file's `company` kind was
+    // added for. It is an asking verb like every other one here and is not
+    // restricted to that kind - "I invite him to look at it" is still a request.
+    + '|invite|invites|inviting'
     + ')\\b\\s*',
     'i'
 );
@@ -618,6 +646,41 @@ const ASKING_TO_BE_RAISED =
     /\b(?:promote me|my promotion|a promotion|raise me (?:a rung|up|to|one rung)|raise my (?:rank|rung|standing in)|move me up|advance me|elevate me|put me up for (?:the )?(?:rung|rank|promotion)|(?:my|the) next rung|a higher rung|make me an? (?:inner|core|true|senior|head) disciple)\b/i;
 
 /**
+ * Being asked along.
+ *
+ * Read AFTER discipleship and teaching, because "take me on" and "come and
+ * teach me" are somebody asking for something else, and BEFORE the introduction
+ * read, whose `take me to meet` is a different sentence from `take me with you`.
+ *
+ * `join me` carries a lookahead because "join me for a drink" is the courtesy
+ * that asks for nothing and has its own reader two hundred lines up.
+ */
+export const ASKING_THEM_TO_COME =
+    /\b(?:come (?:with|along with) (?:me|us)|come along\b|travel(?:ling)? with (?:me|us)|ride with (?:me|us)|walk with (?:me|us)|go with (?:me|us)|journey with (?:me|us)|join (?:me|us)(?!\s+(?:for|at)\b)|accompany (?:me|us)|escort (?:me|us)|take me with (?:you|him|her|them)|on the road with (?:me|us)|at my side|(?:be|as) my (?:companion|escort|guard on the road))\b/i;
+
+/**
+ * Where the party would be bound, when the sentence says.
+ *
+ * The preposition is REQUIRED. Left optional it read "travel with me for a
+ * month" as a party bound for a place called `month`, because everything after
+ * the phrase was taken as a destination - so the span clause is stripped first
+ * and a destination is only a destination when it was pointed at.
+ */
+const WHERE_THEY_ARE_ASKED_TO_GO = new RegExp(
+    ASKING_THEM_TO_COME.source
+    + String.raw`\s+(?:as far as|out to|down to|up to|back to|over to|towards?|into|to)\s+(.{2,60})$`,
+    'i'
+);
+
+/** The destination a company ask named, or undefined when it named none. */
+export function whereACompanyAskIsBound(clause: string): string | undefined {
+    const hit = WHERE_THEY_ARE_ASKED_TO_GO.exec(
+        clause.replace(A_SPAN_AND_WHAT_FOLLOWS, '').replace(/[.!?]+\s*$/, '')
+    );
+    return hit ? cleanObject(hit[1] ?? '') : undefined;
+}
+
+/**
  * Being put in front of somebody.
  */
 const ASKING_FOR_AN_INTRODUCTION =
@@ -673,6 +736,9 @@ function classify(clause: string): { kind: RequestKind; object?: string } {
         return { kind: 'teaching', object: objectAfter(clause, AFTER_THE_TEACHING_VERB) };
     }
     if (ASKING_TO_BE_RAISED.test(clause)) return { kind: 'advancement' };
+    if (ASKING_THEM_TO_COME.test(clause)) {
+        return { kind: 'company', object: whereACompanyAskIsBound(clause) };
+    }
     if (ASKING_FOR_AN_INTRODUCTION.test(clause)) {
         return {
             kind: 'introduction',

@@ -28,7 +28,7 @@ import {
 } from './locations.js';
 import { upsertRelationship, type NpcRecord, type RelationshipKind } from './npc-state.js';
 import { wingsOf, type RuinWing } from './provenance.js';
-import type { WorldState } from './world-state.js';
+import { indexById, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE WINDOW
@@ -64,8 +64,11 @@ export interface Convergence {
  * `sealed` means a door nobody has ever opened and wrong where it means the
  * closed half of a cycle - and on a ruin the column carries both. Measured:
  * every seeded ruin with a cycle is sealed, so the cyclical half of the world
- * could not say when it was next due, and `applyConvergences` reads
- * `nextOpeningDay` on exactly those rows, gets null, and never opens one.
+ * could not say when it was next due, and `applyConvergences` read
+ * `nextOpeningDay` on exactly those rows, got null, and opened nothing for the
+ * life of the project - zero doors across twelve pinned worlds run two hundred
+ * years each. That pass now asks this instead, and opens 1.92 doors per century
+ * per world.
  *
  * The flag is set aside rather than the modulo restated, so this and
  * `isOpenOn` cannot come to different conclusions about a schedule.
@@ -467,7 +470,7 @@ export function attemptRescue(
         if (!rng.chance(pledge.chance)) continue;
 
         const note = `Came into ${input.location.name} for them before it shut.`;
-        const at = state.npcs.findIndex(n => n.id === input.subject.id);
+        const at = indexById(state.npcs, input.subject.id);
         if (at >= 0) {
             state.npcs[at] = upsertRelationship(state.npcs[at], {
                 targetId: pledge.rescuerId,

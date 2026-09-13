@@ -56,7 +56,7 @@ import {
 } from './npc-state.js';
 import { storeMemory } from './memory.js';
 import { makeObject, transferPossession, type ObjectRecord } from './possessions.js';
-import type { WorldState } from './world-state.js';
+import { indexById, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // RUNS INSIDE A WORLD
@@ -159,7 +159,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
     const goods: ObjectRecord[] = [];
     const rememberedBy: string[] = [];
 
-    const at = state.npcs.findIndex(n => n.id === input.npcId);
+    const at = indexById(state.npcs, input.npcId);
     if (at < 0) {
         return { state, grave: null, goods, heirs: [], goalsPassed: 0, facts, rememberedBy };
     }
@@ -323,7 +323,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
                 .filter(n => n.factionId === faction.id && n.status === 'alive' && n.id !== deceased.id)
                 .slice(0, 6);
             for (const survivor of survivors) {
-                const idx = state.npcs.findIndex(n => n.id === survivor.id);
+                const idx = indexById(state.npcs, survivor.id);
                 if (idx < 0) continue;
                 state.npcs[idx] = upsertRelationship(state.npcs[idx], {
                     targetId: deceased.id,
@@ -360,7 +360,7 @@ export function enshrineRun(state: WorldState, input: EnshrineInput): EnshrineRe
     let goalsPassed = 0;
 
     if (heirs.length > 0 && goals.length > 0) {
-        const heirAt = state.npcs.findIndex(n => n.id === heirs[0].id);
+        const heirAt = indexById(state.npcs, heirs[0].id);
         if (heirAt >= 0) {
             const before = state.npcs[heirAt].goals.length;
             state.npcs[heirAt] = inheritGoals(state.npcs[heirAt], goals, deceased.id, onDay);

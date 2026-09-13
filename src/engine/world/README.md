@@ -663,6 +663,32 @@ crossing happens inside one body; a tribulation crossing puts weather over a mou
 `weight` is how heavily the world takes it, and who it means something to is the realm-gap
 term `airtimeOf` already had. A rung inside a realm files nothing.
 
+**And there is one answer to it, not two.** `recording-what-a-crossing-did.ts` - the door
+the world's own advancement uses - carried ordinal cutoffs of its own (45, 34, 20) beside
+the realm table here, and the two disagreed in **7 of the 9 realms a crossing can land in**:
+a Nascent Soul crossing was `regional` down one door and `local` down the other, a Core
+Formation crossing `local` and `personal`. So the same wall filed a different row depending
+on whose attempt it was. `whatArrivingInIsWorth` is now the single authority and both doors
+read it. Measured with `scripts/probe-who-sees-a-crossing.ts`.
+
+### How far "there" reaches scales with the rung
+
+`how-far-a-seeing-reaches.ts`. A witness is somebody who was in the area, and the area is
+`scale`: how far the consequence physically reached is how far it could be seen from. The
+design owner, asked who witnesses a promotion: *"a tribulation transcendent, the whole
+region can see. for foundation establishment maybe not even your town can see."*
+
+`whoWasThere` drew every witness from the one `locationId`, so who could have seen a
+crossing did not move between the bottom of the ladder and going through the Lid. Measured
+in a 613-person world: Foundation Establishment 24 people, Grand Ascension 24, Tribulation
+Transcendence 24. After: 24, 122, 613.
+
+The STORED list stays bounded - see `BYSTANDERS_AT_MOST` - because a fact carrying four
+hundred ids is a fact the ledger pays for on every read of it. What widens is the pool it is
+drawn from, and `whoCouldHaveSeenIt` answers the unbounded question per observer, derived
+and stored nowhere. `personal` and `local` are the same area and differ in how much of it
+noticed.
+
 ### Coming out of a sitting finds what arrived, if anybody would deliver to you
 
 `whatWasDeliveredWhileTheyWereSitting` in `digest.ts` hands over the unheard half of a span
@@ -996,6 +1022,30 @@ Existence is multi-valued, and `missing` and `unknown` are correct answers rathe
 placeholders. The state set is defined in
 [`../cultivation/README.md`](../cultivation/README.md). Why NPCs must be protagonists of
 their own lives is in [`../../../docs/world/houses/people.md`](../../../docs/world/houses/people.md).
+
+### A beast with a core is one of these, and gets its row on contact
+
+The line is the core - `BEAST_CORE_ORDINAL`, which `hasACore` and `bandOf` already read,
+and which nothing may express a fourth time. Below it a beast is an amount on a piece of
+ground, exactly as a bowl of millet is. At it and above, it is an `NpcRecord` like anybody
+else's, built by
+[`a-beast-with-a-core-is-somebody-in-particular.ts`](a-beast-with-a-core-is-somebody-in-particular.ts),
+and once it is standing where the player is standing every person-shaped read reaches it
+with no beast code at all: it can be fought, wounded, spared, and it can hold and be held
+by an obligation.
+
+**The row is written when somebody meets it, and never seeded.** Measured on seed
+`cored-beast-measure`: giving every piece of ground every species that could survive on it
+is 761 rows at day 0 against 610 living people, and 96 of those people stand at the core
+rung or above - more rows than there are people, for things nobody has stood in front of,
+in the list the per-year pass walks. That figure is also not stable: it measured 913 forty
+minutes later, purely because another agent's location work added settlements. A store
+keyed on ground grows with whatever happens to the ground.
+
+What this buys is the crossing. `BEAST_CHANGE_ORDINAL` is the rung at which one takes a
+shape and a voice, and the id is a function of the species and the ground rather than of
+the rung, so **a favour written about the animal is still held by the person**. Nothing
+else was needed for that.
 
 ---
 
@@ -2032,6 +2082,56 @@ on a house somebody wrote by hand - so a founded house has none and never will, 
 catalog house's arts die with the last person who was granted them. Copying does not reach
 them: `canReproduce` defines mastery as standing at the manual's `cap` and an art has none.
 
+## A compound has an outside, and the gate between them is a door with three roads
+
+A seated house is three rows in `locations`, not one, and the contract is that all three
+are derived from the same catalog columns and none of them is authored per house:
+
+    <house> grounds   `seedSectGround`. The seat, the gate and the forecourt, with the
+                      whole interior of `architecture.ts` hanging off it. Entry threshold
+                      zero, because anybody may walk up to a door.
+    the precincts     `growCompound`. One wall per rung, calibrated. This is what is
+                      actually shut, and it was already shut before any of this.
+    the town below    `the-town-at-the-foot-of-a-house.ts`. A `settlement` tagged
+                      `foot_town`, linked to the province on one side and to the gate on
+                      the other, a day below it.
+
+**The town is the square a refusal happens in.** Before it, the map went province, then
+wall: a gate that turned somebody away would have left them standing on a road with the
+house as a name again. Its size and its trades read off `powerOrdinal`, `recruits`,
+`reliableOrdinal` against the peak, `formationIntegrity`, `specialities` and `alignment` -
+the same columns the rooms read, in the same shape. A house that recruits has petition
+scribes and root readers; a house whose arrays are dark is being stripped by a salvage
+yard; a demonic one has tables that ask nothing about where a thing came from.
+
+**Measured**, three pinned worlds, a starting player on day 0, 38 seated houses each:
+`I travel to <house>` reached **0 of 38** before and **38 of 38** after. The house's own
+name resolves to its town; `<house> grounds` resolves to the gate; somebody on the roll
+rides to the gate either way.
+
+`standing-at-the-gate-of-a-house.ts` answers the door, and it answers with all three
+roads rather than a boolean, because **not having the standing to go in is not the same
+as seeing nothing**:
+
+- **you belong** - a rung on that house's roll.
+- **you are a guest** - somebody of standing walked you in. Who may host is a rank
+  reading off `ELDER_RUNG_FLOOR`, which already carries the fact that *no house makes an
+  elder of its outer or inner disciples*, so the first rung above it is the conclave rung
+  under whichever name a house uses. An outer or inner disciple cannot host and can spend
+  a favour upward; that second step has no verb yet and the gate says so.
+- **you go around** - not wired, and **it does not need a new subsystem**. Three of the
+  four pieces already exist and are already reachable. `reachThrough` takes `enteredAt` -
+  somebody who arrived inside, having gone around the walls - and has since it was
+  written. `concealmentHolds` in `../cultivation/regard.ts` is the concealment reading: a
+  declared approach holds unless a witness stands at or above your own rung, which is
+  exactly the question the people on a gate ask, and
+  `../social/what-they-can-place-about-you.ts` already calls it. And
+  `what-a-house-does-when-it-catches-you.ts` is the consequence of failing.
+  `src/engine/perception/` and `src/engine/spatial/` are NOT where to look: both are
+  retained D&D substrate with no player path, perception has no concealment reading at
+  all, and spatial is grid A* waiting on the fold. What is missing is a verb that
+  declares the approach at a gate and spends the risk.
+
 ## Reading order
 
 ```text
@@ -2292,6 +2392,31 @@ go**, and it is legible before you go. What rank never buys back is the waning: 
 scaled by what is left of the window, so a late call fails on geometry however grand the
 person answering is.
 
+**`how-long-a-door-stays-shut.ts` - the wait and the window, off two different records.**
+Both were one uniform draw and neither said anything about the ground it belonged to: every
+world carried the same six schedules, 141 to 583 years, open 34 to 84 days. The wait is now
+read off **what is behind the door** - its qi band, stepped by the size of the hoard sealed
+in with it - and the window off **how fiercely it holds itself shut**, which is the rung its
+trials were calibrated for and nothing else. Keeping them apart is the point: reading both
+off one number is one axis wearing two names, and a rich pocket behind a mild seal has to
+be able to stand open a season. Measured over twelve pinned worlds, 72 scheduled sites:
+waits 60x10 120x36 600x26, windows 7d=32 14d=20 30d=9 60d=8 90d=3. **A cycle is the interval
+between openings, never a duration of openness.**
+
+**`being-at-a-door-on-the-day-it-opens.ts` - the arithmetic, done rather than asserted, and
+`readSchedule`'s first caller.** Two things eat a window and they are not the same thing:
+the ROAD, but only for a party that did not know the day and had to start when it heard,
+and the DEPTH, in and back out. A party whose deciders can read the schedule sets out to
+arrive and spends none of the window travelling, which at a seven-day window is the whole
+difference between a road and no road - **knowing when is itself a road**, and it is the
+information edge a house trades on. The other two are one fold spent differently: a senior
+who folds the party in is still standing there to cover the way back, and a way-out slip is
+ONE act, so burning it to arrive leaves nothing to leave with. Measured over twelve worlds:
+per site, 36.2% of the world's houses could walk in and back out inside the window, 1.8%
+needed a fold, 62.1% could not make it at all - and at the seven-day windows 0 to 8%. **A
+door is a local event.** Nothing here stores anything; depth is the same halving
+`expeditionBudget` does, applied to a window already part spent.
+
 **`ruin-mechanics.ts` - the test for anything added here.** *Does it change what the player
 knows, what they are, or what the rules of the place are - rather than how much damage
 they take?* If it is a number, it belongs in the encounter layer.
@@ -2322,9 +2447,12 @@ Two readings over columns that already existed. Neither stores anything.
   72 shut till a season, 63 shut till somebody opens them; 445 / 264 / 72 / 109 at two
   hundred years. **The schedule has to be read past the flag** -
   `whenTheScheduleNextOpens` in `convergence.ts` - because `nextOpeningDay` answers null
-  for anything sealed and every cycled ruin is sealed. `applyConvergences` reads that same
+  for anything sealed and every cycled ruin is sealed. `applyConvergences` read that same
   function and therefore opened **zero** doors across twelve worlds over two hundred years
-  each. That is recorded in `OPEN-QUESTIONS.md` and is not fixed.
+  each. **Fixed:** that pass now asks the schedule, and the same twelve worlds open and
+  shut 46 doors, 1.92 per century per world, at no measurable per-year cost (18.72 ms per
+  simulated year after, 20.18 before, on a shared box). The day-0 counts above predate the
+  cycle lengths being re-derived and no longer describe the schedules, only the rows.
 - **`a-house-that-shuts-a-public-ruin.ts`** - ground is public by agreement, so
   `controllingFactionId` on a ruin can only mean a house has shut it to everybody else.
   `whoTurnsYouAwayFrom` already reads that column as somebody at the door, which is the

@@ -136,7 +136,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`recognise`](#recognise) | `target` | nothing | yes | yes | - |
 | [`news`](#news) | - | nothing | yes | yes | - |
 | [`tell`](#tell) | `target` `topic` | varies | yes | - | - |
-| [`request`](#request) | `target` `intent` `topic` | time | yes | - | [11](#request) |
+| [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [12](#request) |
 | [`guard`](#guard) | `target` `days` | time | yes | - | - |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
@@ -584,13 +584,13 @@ Takes `target`, `topic`.
 
 ### `request`
 
-ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must not be routed there. "target" is who it is put to; "intent" is what kind of thing is being asked for - teaching (be taught an art, or handed its book), discipleship (be taken on), introduction (be put in front of somebody), telling (be told something they know), a_thing (be given, lent or sold an object), terms (what would it take - the price asked before it is paid), a_trade (something put down for it that is not money), advancement (be raised a rung in your own house - it only moves if the person asked is the one whose call it is, and money alone will not buy it), nothing (ask for NOTHING - buy them a drink, sit with them, call on them, do them a small favour; costs a day and no stones, and it is the only thing that makes a stranger somebody who will do you a favour later); "topic" is what was named - the art, the person, the thing. This is the ONLY route to being taught by a person, which the engine says repeatedly is one of the two ways past a manual's ceiling. It spends days and can spend the purse, so choose it only when the player is actually asking somebody for something rather than asking about them.
+ASK A NAMED PERSON FOR A NAMED THING, which is not the same as interact and must not be routed there. "target" is who it is put to; "intent" is what kind of thing is being asked for - teaching (be taught an art, or handed its book), discipleship (be taken on), introduction (be put in front of somebody), telling (be told something they know), a_thing (be given, lent or sold an object), terms (what would it take - the price asked before it is paid), a_trade (something put down for it that is not money), advancement (be raised a rung in your own house - it only moves if the person asked is the one whose call it is, and money alone will not buy it), company (ask them to come with you - "topic" is where the party is bound when the sentence said, and "days" is how long they were asked for; they travel with the player until the term runs out, and most people have no reason to follow a stranger), nothing (ask for NOTHING - buy them a drink, sit with them, call on them, do them a small favour; costs a day and no stones, and it is the only thing that makes a stranger somebody who will do you a favour later); "topic" is what was named - the art, the person, the thing. This is the ONLY route to being taught by a person, which the engine says repeatedly is one of the two ways past a manual's ceiling. It spends days and can spend the purse, so choose it only when the player is actually asking somebody for something rather than asking about them.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'request'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.request` · the deterministic parser reaches it · spends in-world time.
 
-Takes `target`, `intent`, `topic`.
+Takes `target`, `intent`, `topic`, `days`.
 
-Intents: `teaching`, `discipleship`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `nothing`, `unstated`.
+Intents: `teaching`, `discipleship`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `nothing`, `unstated`.
 
 ### `guard`
 

@@ -55,8 +55,11 @@ import { factsForRefusal, factsForToolResult } from './facts.js';
 import {
     landTheBuild,
     planTheBuild,
+    whichBillTheyMeant,
     type BuildPlan
 } from './half-built-craft.js';
+import { landTheMaking, planTheMaking } from './making-a-thing-at-your-own-bench.js';
+import { aBenchCouldMakeThat } from './what-somebody-was-asked-to-make.js';
 import type { GameService } from './turn-engine.js';
 import { refused } from './tool-result-prose.js';
 import type { Execution, ToolCallRecord } from './turn-wire-shapes.js';
@@ -105,6 +108,19 @@ export const craftVerbs = {
         rawInput = ''
     ): Promise<Execution> {
         const today = Math.floor(run.elapsedDays);
+        const said = (target ?? '').trim();
+
+        // ── A YARD OR A BENCH ────────────────────────────────────────────
+        //
+        // Two crafts and two material systems, and which one a sentence is for
+        // is decided by the NOUN rather than by the verb - "I build a carriage"
+        // and "I cut an earth-grade talisman" are both `craft`. The yard is
+        // asked first and its own matcher answers: a sentence it claims is the
+        // yard's, whatever else is in it, so nothing here can steal a hull.
+        if (whichBillTheyMeant(said) === null && aBenchCouldMakeThat(said)) {
+            return await this.atYourOwnBench(run, cultivator, said, today);
+        }
+
         const plan: BuildPlan = planTheBuild({
             db: this.db,
             cultivator,
@@ -236,5 +252,65 @@ export const craftVerbs = {
             outcome: 'executed',
             calls
         };
+    },
+
+    /**
+     * One sitting at a bench, which costs materials and no days.
+     *
+     * The world is loaded BEFORE the plan, because the bench is the player's
+     * pouch and the rows they are carrying together and a plan built without
+     * the rows would refuse somebody over a heaven-grade horn they are holding.
+     *
+     * `landTheMaking` is reached only on a `make` plan, so the refusal path
+     * cannot write and the making path cannot be rendered without the write.
+     */
+    async atYourOwnBench(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        said: string,
+        today: number
+    ): Promise<Execution> {
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const objects = this.atHand?.objects ?? [];
+
+        const plan = planTheMaking({ db: this.db, objects, cultivator, said });
+        if (plan.kind === 'refused') {
+            const answer = refused(
+                'engine.whetherTheirHandsCanDoIt',
+                'craft',
+                factsForRefusal(plan.headline, plan.lines.join(' '), plan.structure[0])
+            );
+            // The refusal names the slot, what would have filled it and how
+            // anybody comes by one, and all of that is in the lines. A route
+            // stated only in the first line is a route the player does not get.
+            answer.facts.lines = plan.lines.slice();
+            answer.facts.structure = plan.structure.slice();
+            return answer;
+        }
+
+        const made = landTheMaking({ db: this.db, objects, cultivator, plan, today });
+        // The world is marked moved only where something moved. A take that
+        // returns nothing has written nothing, which is what makes this safe.
+        if (made.minted) {
+            objects.push(made.minted);
+            this.theWorldMoved();
+        }
+
+        const facts = factsForToolResult(plan.headline, [...plan.lines, ...made.lines]);
+        facts.structure.push(...plan.structure, ...made.structure);
+        // WHAT THEY CANNOT PLAY WITHOUT. Materials came out of their hands and a
+        // thing went into them, and both are irreversible - the same rule the
+        // yard applies to the turn its slip cleared.
+        if (made.minted) facts.required = made.lines.slice();
+
+        const answer = this.freeAction(run, 'craft', facts);
+        answer.calls = made.calls.map(call => ({
+            name: call.name,
+            action: 'craft',
+            summary: call.summary,
+            ok: true
+        }));
+        return answer;
     }
 };

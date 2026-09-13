@@ -3268,6 +3268,8 @@ function whatWasAsked(kind: string, named: string): string {
         case 'teaching':
             return named.length >= 2 ? `to be taught ${named}` : 'to be taught';
         case 'discipleship': return 'to be taken on';
+        case 'company':
+            return named.length >= 2 ? `to come as far as ${named}` : 'to come along';
         case 'introduction':
             return named.length >= 2 ? `to be introduced to ${named}` : 'for an introduction';
         // Reads as a clause after the actor's name rather than after "asks",

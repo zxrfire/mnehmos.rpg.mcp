@@ -22,12 +22,21 @@
  *   72 at two hundred years. It was silent about the rest.
  *
  * And the pass that was supposed to be running them was not running at all.
- * `applyConvergences` reads `nextOpeningDay` on exactly the sealed rows, gets
- * null, and opens nothing; the `open_now` tag it would add is also the gate on
+ * `applyConvergences` read `nextOpeningDay` on exactly the sealed rows, got
+ * null, and opened nothing; the `open_now` tag it would add is also the gate on
  * the half that shuts them again, so both halves were unreachable. Across the
  * same twelve worlds over two hundred years each, the world opened or shut
- * **zero** doors on its own. That is a separate defect, in
- * `the-world-changing-on-its-own.ts`, and it is not fixed here.
+ * **zero** doors on its own.
+ *
+ * SINCE FIXED, in `the-world-changing-on-its-own.ts`: that pass now asks
+ * `whenTheScheduleNextOpens`, and the same twelve worlds open and shut 46
+ * doors - 1.92 per century per world. `the-world-opens-a-door-and-shuts-it-
+ * again.test.ts` holds that half. The day-0 counts above are from before the
+ * cycle lengths were re-derived off the ground's own worth
+ * (`how-long-a-door-stays-shut.ts`), so the schedules they describe no longer
+ * exist: the waits now read 60x10 120x36 600x26 and the windows 7d=32 14d=20
+ * 30d=9 60d=8 90d=3 over the same 72 rows. The ruin and cycle counts are
+ * unchanged. Nothing below asserted any of them.
  *
  * What is asserted below is the DISTINCTION and the day, never the counts: the
  * counts are a property of the seed and are recorded here as provenance.

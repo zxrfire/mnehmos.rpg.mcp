@@ -168,6 +168,7 @@ import {
     factsForSomebodyWithNoOpenBusiness,
     factsForWhatTheyAreAfter
 } from './what-somebody-is-after.js';
+import { A_SEASON_ON_THE_ROAD } from '../engine/world/who-is-on-the-road-with-you.js';
 import type { GameService } from './turn-engine.js';
 
 /**
@@ -193,6 +194,11 @@ function askWeightOf(text: string): AskWeight {
  */
 const REQUEST_KINDS: ReadonlySet<string> = new Set<RequestKind>([
     'teaching', 'discipleship', 'introduction', 'telling', 'a_thing', 'nothing',
+    // Their days, which is the only ask that spends the days of the person
+    // being asked. It goes down the ordinary request road - one costing, one
+    // roll, one record - and what it leaves behind is a term written onto their
+    // own activity rather than a roster.
+    'company',
     // Their hands for a season, which is not the same ask as a thing they are
     // already holding and does not end in the same place.
     'a_making',
@@ -1032,7 +1038,9 @@ ${unnamed}`;
         intent: string,
         topic: string | undefined,
         leverage: ApproachLeverage | undefined,
-        rawInput: string
+        rawInput: string,
+        /** The term, for the one kind that has one. See the `company` kind. */
+        days?: number
     ): Promise<Execution> {
         const scope = this.scopeFor(cultivator);
         const query = (target ?? '').trim();
@@ -1160,6 +1168,7 @@ ${unnamed}`;
         };
         const membership = this.repos.sects.getMembership(cultivator.id);
         const asking: TheOneAsking = {
+            id: cultivator.id,
             name: cultivator.name,
             ordinal: cultivator.realmOrdinal,
             factionId: cultivator.sectId ?? null,
@@ -1188,14 +1197,34 @@ ${unnamed}`;
         // it as the lever the player is already holding.
         const wanted = this.whatTheyWantOfYou(cultivator, party.id);
 
+        // THE TERM, WHICH IS A FACT ABOUT THE ASK AND NOT ABOUT THE ROLL. Read
+        // once here so the costing line, the refusal and the activity written
+        // on a yes all name the same number.
+        const term = shape === 'company'
+            ? Math.max(1, Math.trunc(days ?? A_SEASON_ON_THE_ROAD))
+            : 0;
+        // THE WORLD'S OWN NAME FOR IT, not the player's. `theWorldsNameFor`
+        // hands back what the sentence said where nothing matches, so an
+        // unrecognised destination still reads as the player wrote it.
+        const bound = shape === 'company' && named.length >= 2
+            ? this.theWorldsNameFor(named)
+            : null;
+
         const costing = whatItWouldCostThem({
-            kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing',
+            kind: shape as 'teaching' | 'introduction' | 'discipleship' | 'nothing' | 'company',
             asking,
             asked,
             techniqueId: asArt?.id ?? null,
             toMeet: meeting,
             namedButUnresolved: named,
-            theyWant: wanted?.goal.text ?? null
+            theyWant: wanted?.goal.text ?? null,
+            ...(shape === 'company'
+                ? {
+                    where: this.whereTheyAlreadyAre(party.id, Math.floor(run.elapsedDays)),
+                    bound,
+                    forDays: term
+                }
+                : {})
         });
 
         // THEY ASK BACK, WHICH IS NOT A REFUSAL, AND THE ANSWER HAS SOMEWHERE
@@ -1515,7 +1544,7 @@ ${alsoSaid.join(' ')}`;
         // ── AND THE THING ACTUALLY HAPPENS ───────────────────────────────
         if (result.outcome === 'taken' || result.outcome === 'turned') {
             const done = await this.whatTheyAgreedTo(
-                run, cultivator, party, shape, costing, meeting
+                run, cultivator, party, shape, costing, meeting, { forDays: term, bound }
             );
             facts.lines.push(...done.lines);
             facts.prose = `${facts.prose}

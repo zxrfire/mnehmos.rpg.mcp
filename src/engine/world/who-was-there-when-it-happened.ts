@@ -58,10 +58,12 @@
 import { forStream } from '../cultivation/rng.js';
 import {
     appendFact,
+    type EventScale,
     type HistoricalFact,
     type PendingFact,
     type ReservedFactSlot
 } from './history.js';
+import { everybodyInTheArea } from './how-far-a-seeing-reaches.js';
 import {
     foldOccurrenceInto,
     noteRowInsertedAt,
@@ -69,7 +71,7 @@ import {
     KEPT_ITS_OWN_ROW
 } from './a-fact-that-keeps-happening-is-one-row.js';
 import type { NpcRecord } from './npc-state.js';
-import type { WorldState } from './world-state.js';
+import { getNpc, type WorldState } from './world-state.js';
 
 /**
  * How many people the engine will name as having been present beyond the
@@ -93,6 +95,16 @@ export interface PresenceInput {
     visibility: HistoricalFact['visibility'];
     /** When set, bystanders are drawn only from these houses. */
     factionIds?: readonly string[];
+    /**
+     * How far the thing physically reached, which is how far it could be seen
+     * from - see `how-far-a-seeing-reaches.ts`.
+     *
+     * Defaults to `personal`, which is the one square it happened in and is what
+     * every caller got before this existed. A caller that knows its event put
+     * weather over a mountain says so, and the people who could have been
+     * looking at that mountain are the pool.
+     */
+    scale?: EventScale;
 }
 
 /**
@@ -109,7 +121,7 @@ export function whoWasThere(state: WorldState, input: PresenceInput): string[] {
     // because a witness list that does not resolve is the defect this file is
     // about, pointing the other way.
     for (const id of input.actorIds) {
-        if (state.npcs.some(n => n.id === id)) present.add(id);
+        if (getNpc(state, id) !== null) present.add(id);
     }
 
     if (input.visibility === 'secret' || input.locationId === null) {
@@ -119,17 +131,19 @@ export function whoWasThere(state: WorldState, input: PresenceInput): string[] {
     const houses = input.factionIds && input.factionIds.length > 0
         ? new Set(input.factionIds)
         : null;
-    const candidates = state.npcs.filter(n =>
-        n.status === 'alive' &&
-        n.locationId === input.locationId &&
+    // The AREA, not the square. `everybodyInTheArea` already excludes the dead
+    // and the unborn and returns the pool sorted by id, so the draw below does
+    // not inherit roster order.
+    const candidates = everybodyInTheArea(state, {
+        scale: input.scale ?? 'personal',
+        locationId: input.locationId,
+        day: input.day
+    }).filter(n =>
         !present.has(n.id) &&
-        n.identity.bornOnDay <= input.day &&
         (input.visibility !== 'faction' || !houses || houses.has(n.factionId ?? ''))
     );
     if (candidates.length === 0) return Array.from(present).sort();
 
-    // Sorted before drawing, so the draw does not inherit roster order.
-    candidates.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     const rng = forStream(state.seed, 'who-was-there', `${input.locationId}:${input.day}`);
     const take = Math.min(BYSTANDERS_AT_MOST, candidates.length);
     const chosen = new Set<number>();
@@ -176,7 +190,11 @@ export function appendWorldFact(
             locationId: opts.bystanders === false ? null : pending.locationId,
             actorIds: pending.actors.map(a => a.id),
             visibility: pending.visibility,
-            factionIds: pending.factionIds
+            factionIds: pending.factionIds,
+            // The row already says how far it reached. Asking the caller to say
+            // it a second time here is how the two answers would come to
+            // disagree, which is the defect this whole area has just had fixed.
+            scale: pending.scale
         });
     const occurrence: PendingFact = opts.recur === false
         ? { ...pending, witnessIds, data: { ...pending.data, [KEPT_ITS_OWN_ROW]: true } }

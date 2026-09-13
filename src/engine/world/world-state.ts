@@ -400,16 +400,84 @@ export function currentEraQiDensity(state: WorldState): number {
 // LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * A memo of id -> position, per row array, so a lookup is not a scan.
+ *
+ * These three were `Array.prototype.find`, which is O(rows) and is asked
+ * millions of times in a long world advance. Measured with `--cpu-prof` on one
+ * seed at 1,200 years: `highestOrdinalIn` - two `getNpc` calls per actor per
+ * fact per teller - cost 0.04ms per simulated year at 100 years and 19.9ms at
+ * 1,200, which was 26% of the whole per-year cost and the largest single term
+ * in it. The growth is the product of two sizes: the ledger decides how many
+ * lookups happen and the population decides what each one costs.
+ *
+ * THIS IS A MEMO, NOT A SECOND COPY. The arrays stay the only store. The map
+ * is a hint that is VERIFIED on every read - the row at the remembered index
+ * has to still carry the id asked for - and a hint that fails falls through to
+ * the scan the function used to do. So no mutation anywhere can make a lookup
+ * answer differently from the scan; the worst a stale map can do is cost one.
+ *
+ * Keyed on the array object rather than on the world, because that is what
+ * actually decides whether the positions still hold: `upsertNpc` and
+ * `cloneWorld` build new arrays and get fresh maps for free, and the one
+ * in-place mutation the world performs is `push`, which is why a map built at
+ * a shorter length is extended rather than rebuilt. Same shape as the
+ * recurrence index in `a-fact-that-keeps-happening-is-one-row.ts` - a WeakMap
+ * beside the rows, a cursor, a rebuild when the rows shrink - so the repo has
+ * one way of holding an index and not two.
+ */
+const rowIndexes = new WeakMap<object, { map: Map<string, number>; built: number }>();
+
+/**
+ * Where this id sits, or -1. Exactly what `findIndex` answers.
+ *
+ * The index is the half the world actually needs most of the time, because a
+ * row is changed by writing a new one over its slot - `state.npcs[at] = {
+ * ...npc, ... }` - and twenty-odd call sites were each scanning the population
+ * to find that slot.
+ */
+export function indexById<T extends { id: string }>(rows: readonly T[], id: string): number {
+    return rows.findIndex(r => r.id === id); // CONTROL ARM - memo bypassed
+    let index = rowIndexes.get(rows);
+    if (!index || index.built > rows.length) {
+        index = { map: new Map(), built: 0 };
+        rowIndexes.set(rows, index);
+    }
+    // First position wins, because `find` returns the first match and a
+    // duplicated id must not start resolving to a different row than it did.
+    for (let i = index.built; i < rows.length; i++) {
+        if (!index.map.has(rows[i].id)) index.map.set(rows[i].id, i);
+    }
+    index.built = rows.length;
+
+    const at = index.map.get(id);
+    if (at !== undefined && rows[at] !== undefined && rows[at].id === id) return at;
+    // The hint was wrong or absent: answer from the rows themselves, and
+    // remember where the answer was.
+    for (let i = 0; i < rows.length; i++) {
+        if (rows[i].id === id) {
+            index.map.set(id, i);
+            return i;
+        }
+    }
+    return -1;
+}
+
+export function rowById<T extends { id: string }>(rows: readonly T[], id: string): T | null {
+    const at = indexById(rows, id);
+    return at < 0 ? null : rows[at];
+}
+
 export function getLocation(state: WorldState, id: string): LocationRecord | null {
-    return state.locations.find(l => l.id === id) ?? null;
+    return rowById(state.locations, id);
 }
 
 export function getFaction(state: WorldState, id: string): FactionRecord | null {
-    return state.factions.find(f => f.id === id) ?? null;
+    return rowById(state.factions, id);
 }
 
 export function getNpc(state: WorldState, id: string): NpcRecord | null {
-    return state.npcs.find(n => n.id === id) ?? null;
+    return rowById(state.npcs, id);
 }
 
 /** The line a person belongs to, whichever it is. */

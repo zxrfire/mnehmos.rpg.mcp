@@ -35,7 +35,8 @@
  * summary is what is wrong.
  */
 
-import { FALSE_IMMORTAL_ORDINAL, rankName, realmForOrdinal } from '../cultivation/realms.js';
+import { rankName, realmForOrdinal } from '../cultivation/realms.js';
+import { whatArrivingInIsWorth } from './a-crossing-enters-the-world-as-news.js';
 import { getWoundType } from '../../data/cultivation/wounds.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { makeFact, type HistoricalFact } from './history.js';
@@ -171,22 +172,20 @@ export function recordCrossing(
         // for crossings gets crossings and not the attempts that failed.
         kind: died ? 'death' : succeeded ? 'realm_crossing' : 'breakthrough',
         // A crossing at the top of the ladder is felt further than one at the
-        // bottom. Read off the rung rather than chosen, like everything else.
+        // bottom, and HOW MUCH FURTHER IS NOT DECIDED HERE. This file used to
+        // carry its own cutoffs - 45, 34, 20 - beside a second derivation in
+        // `a-crossing-enters-the-world-as-news.ts` that reads the realm the rung
+        // sits in. Two answers to one question, and they disagreed in eight of
+        // the nine realms: this path called a Nascent Soul crossing `regional`
+        // where the other called it `local`, and a Core Formation crossing
+        // `local` where the other called it `personal`. So an NPC and the player
+        // going through the same wall filed rows the news layer spent different
+        // distance budgets on, and which answer you got depended on which door
+        // the attempt came through.
         //
-        // GOING THROUGH THE LID IS THE ONE THAT IS `world`, and it is the only
-        // event in this file that reaches the top of `SCALE_REACH`. It is not a
-        // thumb on the scale for a dramatic moment: `airtimeOf` weights a fact
-        // by scale and by how far above the teller the people in it stand, and
-        // at `continental` a crossing of the Lid could be out-talked by an
-        // ordinary regional deed with a high-ordinal house attached. Somebody
-        // leaving the world entirely is not a continental event.
-        //
-        // Read off `FALSE_IMMORTAL_ORDINAL` rather than the status field, so a
-        // half-completed crossing - over the Lid and not through it - carries
-        // the same reach. Both are somebody who left the ladder.
-        scale: ordinal >= FALSE_IMMORTAL_ORDINAL
-            ? 'world'
-            : ordinal >= 34 ? 'continental' : ordinal >= 20 ? 'regional' : 'local',
+        // Going through the Lid is still the one that is `world`, because the
+        // realm it lands in is Immortal and that is the row the table carries.
+        scale: whatArrivingInIsWorth(ordinal).scale,
         summary: describeCrossing(npc, result, day),
         actors: [{
             id: npc.id,

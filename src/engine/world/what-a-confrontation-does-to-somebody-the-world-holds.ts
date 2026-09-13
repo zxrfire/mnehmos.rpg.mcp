@@ -115,7 +115,7 @@ import { recordPermanentWounds } from './recording-the-day-a-wound-was-taken.js'
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { whoTheyLeave } from './who-is-left-when-somebody-dies.js';
-import type { WorldState } from './world-state.js';
+import { indexById, type WorldState } from './world-state.js';
 
 /**
  * The confrontation, as the resolver reported it, from the loser's side.
@@ -261,7 +261,7 @@ export function whatTheConfrontationDidToThem(
     state: WorldState,
     input: WhatTheFightDecided
 ): WhatItDidToThem {
-    const at = state.npcs.findIndex(n => n.id === input.npcId);
+    const at = indexById(state.npcs, input.npcId);
     if (at < 0) return NOTHING;
     // Somebody already dead, sealed or gone is not somebody a fight changes.
     // The resolver was handed a described body and had no way to know; the

@@ -15,6 +15,22 @@ const DURATION_UNITS: ReadonlyArray<[RegExp, number]> = [
 ];
 
 /**
+ * A span clause and everything after it, for a reader that wants the rest of
+ * the sentence without it.
+ *
+ * "come with me to the Salt Road for a month" names a destination and a term,
+ * and a reader after the destination has to stop before the term or it takes
+ * "month" for a place. Derived from {@link DURATION_UNITS} so a unit added to
+ * the table `parseDuration` reads cannot go missing from the one that strips it.
+ */
+export const A_SPAN_AND_WHAT_FOLLOWS = new RegExp(
+    String.raw`\s+(?:for|over)\s+[^,;.!?]*?(?:`
+    + DURATION_UNITS.map(([unit]) => unit.source.replace(/\\b/g, '')).join('|')
+    + String.raw`)\b.*$`,
+    'i'
+);
+
+/**
  * ── EVERY NUMBER WORD, BECAUSE A MISSING ONE IS SILENTLY ONE ─────────────
  *
  * This held nineteen entries and stopped at fifty, skipping eleven, thirteen,

@@ -42,6 +42,7 @@ import {
     type OpportunityWindow
 } from './opportunities.js';
 import {
+    indexById,
     cloneWorld,
     lineageOf,
     upsertNpc,
@@ -575,7 +576,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     const goals = legacyGoals(deceased);
     let inherited: NpcGoal[] = [];
     if (primary) {
-        const at = state.npcs.findIndex(n => n.id === primary.id);
+        const at = indexById(state.npcs, primary.id);
         if (at >= 0) {
             if (goals.length > 0) {
                 const before = state.npcs[at].goals.length;
@@ -692,7 +693,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
     // ground with them and are simply gone from circulation - which is the
     // honest answer and the reason a world can lose wealth at all.
     if (estate.taken !== null && estate.taker !== null) {
-        const at = state.npcs.findIndex(n => n.id === estate.taker!.id);
+        const at = indexById(state.npcs, estate.taker!.id);
         if (at >= 0) {
             state.npcs[at] = {
                 ...state.npcs[at],
@@ -702,7 +703,7 @@ export function settleNpcDeath(state: WorldState, deceased: NpcRecord, onDay: nu
         }
     }
     {
-        const at = state.npcs.findIndex(n => n.id === deceased.id);
+        const at = indexById(state.npcs, deceased.id);
         if (at >= 0) state.npcs[at] = { ...state.npcs[at], spiritStones: 0, updatedOnDay: onDay };
     }
 

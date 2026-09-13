@@ -27,7 +27,7 @@ const RUNGS_THAT_RUN_SOMETHING = 3;
  * No house makes an elder of its outer or inner disciples, whatever it calls
  * them, so the elder rung never sits below index 2.
  */
-const ELDER_RUNG_FLOOR = 2;
+export const ELDER_RUNG_FLOOR = 2;
 
 /** Whether this rung is an elder rung. The top rung is one too. */
 export function isElderRank(rankIndex: number, rankCount: number): boolean {

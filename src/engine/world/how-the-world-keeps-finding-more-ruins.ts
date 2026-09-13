@@ -22,7 +22,7 @@ import {
     type LocationRecord
 } from './locations.js';
 import { clampQiDensity } from './qi-scale.js';
-import type { WorldState } from './world-state.js';
+import { getLocation, type WorldState } from './world-state.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE DOCTRINE
@@ -124,7 +124,7 @@ function regionIdOf(state: WorldState, locationId: string | null): string | null
     const seen = new Set<string>();
     while (cursor && !seen.has(cursor)) {
         seen.add(cursor);
-        const location = state.locations.find(l => l.id === cursor);
+        const location = getLocation(state, cursor);
         if (!location) return null;
         if (location.kind === 'region' || location.parentId === null) return location.id;
         cursor = location.parentId;

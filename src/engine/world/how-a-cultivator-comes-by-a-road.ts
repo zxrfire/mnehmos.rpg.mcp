@@ -22,7 +22,7 @@ import {
     prospectingEffortIn
 } from './how-the-world-keeps-finding-more-ruins.js';
 import type { NpcRecord } from './npc-state.js';
-import type { WorldState } from './world-state.js';
+import { getLocation, indexById, type WorldState } from './world-state.js';
 import {
     whatAHouseAsksOf,
     type ShortOfTheTerms,
@@ -112,7 +112,7 @@ export function seedPlacesThatTeachADao(state: WorldState): LocationRecord[] {
     // to say so or `locationsControlledBy` disagrees with the location itself.
     for (const location of out) {
         if (!location.controllingFactionId) continue;
-        const at = state.factions.findIndex(f => f.id === location.controllingFactionId);
+        const at = indexById(state.factions, location.controllingFactionId);
         if (at < 0) continue;
         const faction = state.factions[at];
         if (faction.controlledLocationIds.includes(location.id)) continue;
@@ -132,13 +132,11 @@ function regionLocationFor(state: WorldState, catalogRegionId: string): Location
 
 /** Which province a location is in, walking up the parent chain. */
 export function regionCatalogIdOf(state: WorldState, locationId: string | null): string | null {
-    let current = locationId ? state.locations.find(l => l.id === locationId) ?? null : null;
+    let current = locationId ? getLocation(state, locationId) : null;
     for (let hops = 0; current && hops < 8; hops++) {
         const id = current.data.catalogRegionId;
         if (typeof id === 'string') return id;
-        current = current.parentId
-            ? state.locations.find(l => l.id === current!.parentId) ?? null
-            : null;
+        current = current.parentId ? getLocation(state, current.parentId) : null;
     }
     return null;
 }
@@ -617,9 +615,7 @@ export function applyRoadsComprehended(
         if (!domain) continue;
         if (!rng.chance(FOUND_GROUND_TEACHES_A_ROAD)) continue;
 
-        const region = location.parentId
-            ? state.locations.find(l => l.id === location.parentId) ?? null
-            : null;
+        const region = location.parentId ? getLocation(state, location.parentId) : null;
         if (!region) continue;
 
         state.locations[i] = {
