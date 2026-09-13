@@ -37,7 +37,7 @@ export type WhereItCouldBeSeenFrom =
     | 'where it happened'
     /** Everywhere in the province. The sky did it, and the province has one sky. */
     | 'the region it happened in'
-    /** Everywhere the world models. */
+    /** Everywhere the world models. Reserved for the one thing with no province. */
     | 'anywhere';
 
 /**
@@ -47,6 +47,25 @@ export type WhereItCouldBeSeenFrom =
  * one roof leaned in for a night, or the lamps guttered across the town. Both
  * happen in one place, and `whoWasThere` is where the difference in how many
  * people can be named lives.
+ *
+ * ── AND `continental` STOPS AT THE REGION, WHICH IS THE RULING ───────────
+ *
+ * The design owner drew the ceiling themselves - *"a tribulation transcendent,
+ * the whole region can see"* - and Tribulation Transcendence is the continental
+ * row in `ARRIVING_IN`. So the widest thing anybody named is a province, and the
+ * province is where a seeing stops. `scale` says how far the CONSEQUENCE went,
+ * which for a refusal in a hall is the whole continent and for the light over
+ * that hall is one sky.
+ *
+ * Measured, before it did: a `grudge_opened` between two apexes drew its
+ * bystanders from the entire living roster, so somebody nine realms below in
+ * another province was stored as having been present at a conversation - and
+ * every gossip read that starts *did you witness this* answered yes. Which is
+ * the mailing list this file's own header warns about, arriving through the
+ * pool rather than through the bound.
+ *
+ * `world` is the one thing above it and it keeps `anywhere`: the Immortal row is
+ * the Lid opening, which is the one event in the world that has no province.
  */
 export function howFarASeeingReaches(scale: EventScale): WhereItCouldBeSeenFrom {
     switch (scale) {
@@ -54,8 +73,8 @@ export function howFarASeeingReaches(scale: EventScale): WhereItCouldBeSeenFrom 
         case 'local':
             return 'where it happened';
         case 'regional':
-            return 'the region it happened in';
         case 'continental':
+            return 'the region it happened in';
         case 'world':
             return 'anywhere';
     }

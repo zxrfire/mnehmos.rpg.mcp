@@ -85,16 +85,18 @@ import {
 import { getMembersOf } from '../data/cultivation/members.js';
 import { getSect } from '../data/cultivation/sects.js';
 import {
-    DAYS_FROM_THE_TOWN_TO_THE_GATE,
+    howBigTheTownBelowIs,
+    howManyLiveBelow,
     whatTheTownIsBelow,
     whatTradesBelow,
     whoWaitsBelow
 } from '../engine/world/the-town-at-the-foot-of-a-house.js';
 import {
     theHouseThisNameReaches,
-    theHouseWhoseTownThisIs,
+    theHouseWhoseGateThisIs,
     whatTheGateOfThisHouseSays,
-    whoWouldWalkYouIn
+    whoWouldWalkYouIn,
+    type AHouseYouCouldWalkTo
 } from './walking-up-to-a-house.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
@@ -233,17 +235,16 @@ function whatArrivingIntroduces(
 }
 
 /**
- * What standing outside a house's wall is like, and what the gate would say.
+ * What standing at a house's gate is like, and which of the three roads is open.
  *
- * Fires on arriving anywhere that is a house's gate town or its seat, whichever
- * way the player named it - so walking to the town by its own name and asking
- * for the house get the same answer, which is the rule about a read running
- * both ways.
+ * Fires on arriving anywhere that is a house's seat, whichever way the player
+ * named it - so `<house>` and `<house> grounds` get the same answer, which is
+ * the rule about a read running both ways.
  *
- * NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING NOTHING. The town
- * is said in full to everybody: what trades there, and who is permanently
- * standing about on nobody's roll. The gate then says which of the three roads
- * is open to this person and what would open the others.
+ * NOT HAVING THE STANDING TO GO IN IS NOT THE SAME AS SEEING NOTHING. The
+ * market outside the wall is said in full to everybody: what trades there, and
+ * who is permanently standing about on nobody's roll. The gate then says which
+ * road is open to this person and what would open the others.
  */
 function whatIsAtTheGateHere(
     game: GameService,
@@ -252,33 +253,82 @@ function whatIsAtTheGateHere(
 ): { lines: string[]; structure: string } | null {
     const world = game.atHand;
     if (!world) return null;
-    const house = theHouseWhoseTownThisIs(world, arrivedAt);
+    const house = theHouseWhoseGateThisIs(world, arrivedAt);
     if (!house) return null;
 
-    const reading = whatTheTownIsBelow(house.factionId);
     const lines: string[] = [];
-    if (reading && loosePlaceKey(house.town?.name ?? '') === loosePlaceKey(arrivedAt)) {
-        lines.push(`${house.town!.name} is the town at the ${house.factionName}'s gate. The gate `
-            + `is ${howMany(DAYS_FROM_THE_TOWN_TO_THE_GATE, 'day')} up the road, at `
-            + `${house.seat.name}.`);
-        lines.push(`What trades here: ${whatTradesBelow(reading).map(t => t.name).join(', ')}.`);
+    const structure: string[] = [];
+    const reading = whatTheTownIsBelow(house.factionId);
+    if (reading) {
+        const trades = whatTradesBelow(reading);
+        lines.push(`Outside the wall there is a ${howBigTheTownBelowIs(reading)}, and it is here `
+            + `because the house is: ${trades.map(t => t.name).join(', ')}.`);
         lines.push(...whoWaitsBelow(reading));
+        structure.push(`whatTradesBelow(${house.factionId}): `
+            + `${trades.map(t => `${t.id} - ${t.what}`).join(' ')} `
+            + `(${howManyLiveBelow(reading)} heads derived). Read only, nothing spent.`);
     }
 
-    const atTheGate = loosePlaceKey(house.seat.name) === loosePlaceKey(arrivedAt);
-    const gate = whatTheGateOfThisHouseSays(game, cultivator, house, null, atTheGate);
+    lines.push(...whatYouAlreadyHoldAboutThem(game, cultivator, house));
+
+    const gate = whatTheGateOfThisHouseSays(game, cultivator, house);
     const host = gate.way === 'turned away'
         ? whoWouldWalkYouIn(game, cultivator, gate.couldHost)
         : null;
-    const said = host
-        ? whatTheGateOfThisHouseSays(game, cultivator, house, host, atTheGate)
-        : gate;
+    const said = host ? whatTheGateOfThisHouseSays(game, cultivator, house, host) : gate;
     lines.push(...said.facts);
     if (host) {
         lines.push(`${host.name} owes you, and it is that and not your standing that is `
             + 'walking you through.');
     }
-    return { lines, structure: said.structure };
+    return { lines, structure: [...structure, said.structure].join(' ') };
+}
+
+/**
+ * How many of the things you hold about a house get said back at its gate.
+ *
+ * Two, because a house you have been following turns up on several walls and
+ * the third notice is the same sentence with a different date on it.
+ */
+const MOST_HELD_SAID_BACK = 2;
+
+/**
+ * What this cultivator was already told about this house, said at its door.
+ *
+ * THE REASON THIS FUNCTION EXISTS IS THAT THE PLAYER CAME HERE FOR A REASON.
+ * A bill on a wall says the house is holding an intake at a ford in sixty-nine
+ * days; the player reads it, says the house's name, and arrives - and the scene
+ * used to describe the gate as though the name had come out of nowhere. The
+ * words are already stored, in the wording they were got in, by whatever wrote
+ * the row: `KnowledgeGate.provenanceOf` hands them back.
+ *
+ * Nothing is derived and nothing is checked against the world. This is what the
+ * cultivator holds, which is not the same as what is so - a bill may have been
+ * a lie when it was posted and the intake may have closed since - and the
+ * stance and the day are on the row for anything that wants to say so.
+ */
+function whatYouAlreadyHoldAboutThem(
+    game: GameService,
+    cultivator: Cultivator,
+    house: AHouseYouCouldWalkTo
+): string[] {
+    const held = game.knowledge.provenanceOf(cultivator.id, 'sect', house.factionId)
+        .filter(row => row.statement.trim().length > 0)
+        .sort((a, b) => b.acquiredOnDay - a.acquiredOnDay);
+    if (held.length === 0) return [];
+
+    const said = new Set<string>();
+    const lines: string[] = [];
+    for (const row of held) {
+        const statement = row.statement.trim();
+        if (said.has(statement)) continue;
+        said.add(statement);
+        lines.push(lines.length === 0
+            ? `This is the house you were told about, and what you were told is: ${statement}`
+            : `You were also told: ${statement}`);
+        if (lines.length >= MOST_HELD_SAID_BACK) break;
+    }
+    return lines;
 }
 
 /** How many named places a refusal offers. A road question wants a few, not a gazetteer. */
@@ -395,13 +445,7 @@ export const travelVerbs = {
         const house = this.atHand && named
             ? theHouseThisNameReaches(this.atHand, named.name)
             : null;
-        const ownHouse = house !== null
-            && this.repos.sects.getMembership(cultivator.id)?.sectId === house.factionId;
-        const place = house && house.named === 'the house' && !ownHouse
-            ? resolvePlace((house.town ?? house.seat).name) ?? named
-            : house
-                ? resolvePlace(house.seat.name) ?? named
-                : named;
+        const place = house ? resolvePlace(house.seat.name) ?? named : named;
         if (!place) {
             return refused('engine.resolvePlace', 'move', factsForRefusal(
                 'Nowhere in particular.',
@@ -872,13 +916,7 @@ export const travelVerbs = {
         const house = this.atHand && named
             ? theHouseThisNameReaches(this.atHand, named.name)
             : null;
-        const ownHouse = house !== null
-            && this.repos.sects.getMembership(cultivator.id)?.sectId === house.factionId;
-        const place = house && house.named === 'the house' && !ownHouse
-            ? resolvePlace((house.town ?? house.seat).name) ?? named
-            : house
-                ? resolvePlace(house.seat.name) ?? named
-                : named;
+        const place = house ? resolvePlace(house.seat.name) ?? named : named;
         if (!place) {
             return refused('engine.resolvePlace', action, factsForRefusal(
                 'Nowhere in particular.',
@@ -1018,12 +1056,17 @@ export const travelVerbs = {
                 : whatThatLooksLike(doing, theNamesOf(npcs, doing.withIds)) || null,
             // ── AND SOMEBODY RAISING A PARTY BRINGS IT ───────────────────
             //
-            // `ActivityKind.mustering`'s own doc says somebody at this is
-            // somebody a player can join, and until now no sentence reached
-            // them at all. Who has already said yes is on their activity's
-            // `withIds` - `whatThatLooksLike` prints exactly that list as "and
-            // X have said yes" - so a person raising a party who agrees to walk
-            // your road is a party, and reading it is the whole of the work.
+            // `ActivityKind.mustering` says somebody at this is somebody a
+            // player can join, and no sentence reached one. Who has already
+            // said yes is that activity's own `withIds`, which
+            // `whatThatLooksLike` already prints as "and X have said yes".
+            //
+            // MEASURED, AND EMPTY: 11 to 14 musterers per pinned world and not
+            // one of them has anybody on their party, because the draw writes
+            // the activity with no `withIds` and the pairing pass skips them.
+            // So this read is correct, costs nothing, and returns nothing until
+            // the world fills the party in. `ActivityKind.mustering` carries
+            // the measurement.
             bringsAlong: out !== null || doing?.kind !== MUSTERING
                 ? []
                 : npcs

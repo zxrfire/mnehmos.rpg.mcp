@@ -31,7 +31,7 @@ import { makeGameInWorld } from './harness';
 const A_HOUSE_ON_THE_WALL =
     /\b((?:[A-Z][A-Za-z-]*\s+){1,3}(?:Sect|Valley|Pavilion|Court|Order|Market|Caravan|Patrol|Wanderers|Temple))\b/;
 
-describe('a house you were told about is not a place you were told about', () => {
+describe('a house you were told about is a place you can walk to', () => {
     it('says what it told you, instead of saying it never told you', async () => {
         const { game } = await makeGameInWorld({
             seed: 'heard-of-them', worldSeed: 'heard-of-them', worldEnabled: true
@@ -59,10 +59,19 @@ describe('a house you were told about is not a place you were told about', () =>
 
         // THE CONTRADICTION IS GONE.
         expect(said).not.toMatch(/nothing this cultivator has heard of/i);
-        // It says it knows them.
-        // The scene says it in world terms; the record says the category.
-        expect(said).toMatch(/You have the name\. You do not have the road\./);
-        expect(said).toMatch(new RegExp(`${house}.{0,80}heard of and not a location`, 'is'));
+
+        // AND THE REFUSAL IT USED TO CHECK FOR IS GONE TOO, BECAUSE THE HOUSE
+        // IS A PLACE NOW. This file pinned "You have the name. You do not have
+        // the road." - the best answer available while a house had no ground a
+        // player could be directed to. A house's name now reaches its gate, so
+        // the honest outcome is arriving rather than a well-worded no, and
+        // asserting the refusal would be pinning the absence of the feature.
+        //
+        // What survives is the owner's actual requirement, which was never
+        // about the refusal: *"if its something you know it should mention.
+        // like, you've heard the abc sect is recruiting."* That is the last
+        // assertion in this block and it is the reason the file still exists.
+        expect(said).not.toMatch(/You do not have the road/);
         // AND THE SCENE DOES NOT EXPLAIN THE ENGINE'S OWN CATEGORIES. The
         // first cut said "a name you have been given and not a place you
         // have been given", which is the schema talking.
@@ -70,8 +79,8 @@ describe('a house you were told about is not a place you were told about', () =>
         // And it repeats what it actually told them, which is the whole point:
         // the intake is the thing they were asking about.
         expect(said).toMatch(/intake|recruit|will hear anybody/i);
-        // Nobody moved.
-        expect(went.state.run.elapsedDays).toBe(0);
+        // AND THEY WENT. The house resolves to its gate, so the road is real.
+        expect(went.state.run.elapsedDays).toBeGreaterThan(0);
     }, 300_000);
 
     /**
