@@ -3,6 +3,7 @@
  */
 
 import type { AmbientQi } from '../../../schema/cultivation.js';
+import type { HerbBiome } from '../herbs.js';
 import type {
     Region,
     RegionPlaceConnection
@@ -41,6 +42,8 @@ interface RegionIndices {
     byFaction: ReadonlyMap<string, string>;
     ambientByPlaceName: ReadonlyMap<string, AmbientQi>;
     regionIdByPlaceName: ReadonlyMap<string, string>;
+    /** Only the places that state their own. A province's list is on the region. */
+    groundsByPlaceName: ReadonlyMap<string, readonly HerbBiome[]>;
     /**
      * Every place road, filed under BOTH of its ends off one declared row.
      */
@@ -55,6 +58,7 @@ function indices(): RegionIndices {
     const byFaction = new Map<string, string>();
     const ambientByPlaceName = new Map<string, AmbientQi>();
     const regionIdByPlaceName = new Map<string, string>();
+    const groundsByPlaceName = new Map<string, readonly HerbBiome[]>();
     const placeRoadsFrom = new Map<string, Map<string, RegionPlaceConnection>>();
     const fileRoad = (from: string, road: RegionPlaceConnection): void => {
         const key = from.trim().toLowerCase();
@@ -73,6 +77,7 @@ function indices(): RegionIndices {
         for (const place of region.places) {
             ambientByPlaceName.set(place.name.toLowerCase(), place.ambient);
             regionIdByPlaceName.set(place.name.toLowerCase(), region.id);
+            if (place.grounds) groundsByPlaceName.set(place.name.toLowerCase(), place.grounds);
             for (const road of place.connections ?? []) {
                 // The declared direction, and the mirror of it.
                 fileRoad(place.name, road);
@@ -85,7 +90,9 @@ function indices(): RegionIndices {
         const key = region.name.toLowerCase();
         if (!regionIdByPlaceName.has(key)) regionIdByPlaceName.set(key, region.id);
     }
-    INDICES = { byId, byFaction, ambientByPlaceName, regionIdByPlaceName, placeRoadsFrom };
+    INDICES = {
+        byId, byFaction, ambientByPlaceName, regionIdByPlaceName, groundsByPlaceName, placeRoadsFrom
+    };
     return INDICES;
 }
 
@@ -103,13 +110,59 @@ export function placeRoadBetween(
 }
 
 /**
- * What that road costs on foot, in walking days, or null where none is stated.
+ * What getting there costs on foot, in walking days, or null where no chain of
+ * stated roads joins the two.
+ *
+ * ── WHY THIS IS A ROUTE AND NOT A LOOKUP ─────────────────────────────────
+ *
+ * It was `placeRoadBetween(...)?.travelDays`, and a pair with no row of its own
+ * fell through `daysOnTheRoadTo` to the flat day every unpriced journey costs.
+ * That was right while the catalog stated two roads in the whole world. Once
+ * the provinces were roaded it became a contradiction the player can see: the
+ * head of the White Stair pass is two days from the terraces and three more
+ * from the last inhabited band, and asking for the town above that band - which
+ * is further than either - came back as one day, because no row named that pair.
+ * So the long way cost five days and the direct way cost one.
+ *
+ * Summing stated legs is not the fabrication the flat-day rule guards against.
+ * The fabrication is the engine picking a number, and every number here was
+ * authored; the province files already reason this way out loud, where the
+ * Drowned Reach checks its own legs against the three weeks its gate station
+ * claims. A pair with no chain between them still returns null, which is what
+ * keeps `daysOnTheRoadTo` falling through to the province scale.
+ *
+ * Dijkstra rather than a hop count, because the legs are unequal - one day
+ * across an anchorage and eleven across the northern crossing - and because a
+ * cheap road through a third place is a real answer and not a shortcut.
  */
 export function placeRoadDays(
     fromPlaceName: string | null | undefined,
     toPlaceName: string | null | undefined
 ): number | null {
-    return placeRoadBetween(fromPlaceName, toPlaceName)?.travelDays ?? null;
+    if (!fromPlaceName || !toPlaceName) return null;
+    const from = fromPlaceName.trim().toLowerCase();
+    const to = toPlaceName.trim().toLowerCase();
+    if (from === to) return null;
+
+    const roads = indices().placeRoadsFrom;
+    if (!roads.has(from) || !roads.has(to)) return null;
+
+    const best = new Map<string, number>([[from, 0]]);
+    const settled = new Set<string>();
+    for (;;) {
+        let at: string | null = null;
+        let cost = Infinity;
+        for (const [place, days] of best) {
+            if (!settled.has(place) && days < cost) { at = place; cost = days; }
+        }
+        if (at === null) return null;
+        if (at === to) return cost;
+        settled.add(at);
+        for (const [next, road] of roads.get(at) ?? []) {
+            const through = cost + road.travelDays;
+            if (through < (best.get(next) ?? Infinity)) best.set(next, through);
+        }
+    }
 }
 
 /**
@@ -137,6 +190,19 @@ export function placesNextTo(
 export function regionIdOfPlace(placeName: string | null | undefined): string | undefined {
     if (!placeName) return undefined;
     return indices().regionIdByPlaceName.get(placeName.trim().toLowerCase());
+}
+
+/**
+ * What a named place says is underfoot, where it says anything.
+ *
+ * Undefined means the place is made of its province, which is the ordinary
+ * case and is not the same answer as an empty list.
+ */
+export function groundsDeclaredAt(
+    placeName: string | null | undefined
+): readonly HerbBiome[] | undefined {
+    if (!placeName) return undefined;
+    return indices().groundsByPlaceName.get(placeName.trim().toLowerCase());
 }
 
 export function declaredAmbientAt(placeName: string | null | undefined): AmbientQi | undefined {

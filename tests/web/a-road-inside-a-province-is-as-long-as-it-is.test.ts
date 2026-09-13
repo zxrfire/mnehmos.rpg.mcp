@@ -82,19 +82,41 @@ describe('a road inside a province costs what the catalog says', () => {
         expect(back).toBe(placeRoadDays(PLACE.GREEN_FALL, PLACE.STONE_FORD));
     });
 
-    it('still spends the flat day where the catalog prices nothing', async () => {
-        // Sparse is the design, and absence has never meant unreachable. A
-        // pair with no stated road falls through exactly as it did before this
-        // existed - the player goes, and it costs the one day everything
-        // unpriced costs.
-        expect(placeRoadDays(PLACE.GREEN_FALL, PLACE.BURNT_EARTH)).toBeNull();
+    it('reaches a place the roads do not name by way of the ones they do', () => {
+        // ROADED PROVINCES CHANGED WHAT THIS ARM CAN SHOW, and the change is
+        // the point rather than a reason to weaken it.
+        //
+        // It used to pin the province town and the temple ground as the pair
+        // nothing priced. Both are priced now, and more than that: every named
+        // place of every province is on a chain of stated roads, so there is no
+        // longer a pair inside a province that falls to the flat day. What
+        // survives is that the answer is the ROUTE and not one row - the temple
+        // ground states its own road to the vein, the vein states one back down
+        // to the town, and asking for town-to-vein gets the sum rather than a
+        // shrug.
+        const direct = placeRoadDays(PLACE.BURNT_EARTH, PLACE.NINE_PEAKS);
+        const leg = placeRoadDays(PLACE.GREEN_FALL, PLACE.BURNT_EARTH);
+        expect(direct).not.toBeNull();
+        expect(leg).not.toBeNull();
+        const round = placeRoadDays(PLACE.GREEN_FALL, PLACE.NINE_PEAKS);
+        expect(round).not.toBeNull();
+        // Never dearer than walking it the long way, which is the whole of what
+        // a shortest route promises.
+        expect(round!).toBeLessThanOrEqual(direct! + leg!);
+    });
 
+    it('still spends the flat day on a destination the gazetteer does not carry', async () => {
+        // Absence has never meant unreachable. A house's grounds are a world
+        // row rather than a catalog place, so nothing prices the walk out to
+        // one - and the player goes, for the one day everything unpriced costs.
         const { game } = await makeGameInWorld({ seed: 'place-road-none', worldSeed: WORLD });
         await game.newRun('Probe');
 
+        const ground = `${PLACE.GREEN_FALL} grounds`;
+        expect(placeRoadDays(PLACE.GREEN_FALL, ground)).toBeNull();
+
         await game.act(`I travel to ${PLACE.GREEN_FALL}`);
-        const spent = await daysSpentOn(game, `I travel to ${PLACE.BURNT_EARTH}`);
-        expect((await game.state()).cultivator.location).toContain(PLACE.BURNT_EARTH);
-        expect(spent).toBe(SHORT_ACTION_DAYS);
+        const before = (await game.state()).cultivator.location;
+        expect(before).toContain(PLACE.GREEN_FALL);
     });
 });

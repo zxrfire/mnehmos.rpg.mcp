@@ -170,10 +170,62 @@ export const THE_LOW_FALL: Region = {
                 }
             ]
         },
-        { name: PLACE.CLEAR_CREEK_VILLAGE, kind: 'village', ambient: 'thin', note: 'Rice on the gorge floor, a mill, and one road down to the province town.' },
-        { name: PLACE.BURNT_EARTH, kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Vermilion Seal Terrace.' },
-        { name: PLACE.NINE_PEAKS, kind: 'sect_town', ambient: 'dense', note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.' },
+        {
+            name: PLACE.CLEAR_CREEK_VILLAGE,
+            kind: 'village', ambient: 'thin', grounds: ['farmland', 'riverbank'], note: 'Rice on the gorge floor, a mill, and one road down to the province town.',
+            // THE GORGE IS THE ROAD.
+            //
+            // One watercourse, everything on it, and the province town at the bottom. The
+            // ford leg is priced further up this file for the reason stated there; these are
+            // the rest of the legs, and they are short because the province is.
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.GREEN_FALL,
+                    description:
+                        'The one road down off the gorge floor to the province town, which is the road the note on this village means when it says there is one.',
+                    travelDays: 1
+                }
+            ]
+        },
+        {
+            name: PLACE.BURNT_EARTH,
+            kind: 'sect_town', ambient: 'thin', note: 'Temple ground, no vein, and the treaty vault of the Vermilion Seal Terrace.',
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.GREEN_FALL,
+                    description:
+                        'Up out of the gorge to the temple ground and the treaty vault, two days of it, and walked by anybody with a document to lodge.',
+                    travelDays: 2
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.NINE_PEAKS,
+                    description:
+                        'Across the shoulder from the temple ground to the vein, which is the walk the two houses have been doing to each other for nine hundred years.',
+                    travelDays: 2
+                }
+            ]
+        },
+        {
+            name: PLACE.NINE_PEAKS,
+            kind: 'sect_town', ambient: 'dense', grounds: ['spirit_vein', 'mountain'], note: 'The deepest vein anyone has kept, and the Ascetic Order sitting on it.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.GREEN_FALL,
+                    description:
+                        'Up out of the province town to the deepest vein anybody has kept, three days of climb, and the reason the Ascetic Order is up there and not down here.',
+                    travelDays: 3
+                }
+            ]
+        },
     ],
+    // The settled province: fields, the roads between them, wooded slope above
+    // and the gorge cut through it. It is the only ground on the map that is
+    // ordinary, which is why it is the one everybody comes to.
+    grounds: ['forest', 'deep_forest', 'farmland', 'riverbank', 'mountain', 'bamboo_sea'],
     exports: [
         'refined pills and formulae, which the Silent Cliffs cannot make at all',
         'manuals to heaven grade, and living teachers for them',

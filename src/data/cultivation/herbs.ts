@@ -730,10 +730,30 @@ export function getHerbsByGrade(grade: TechniqueGrade): readonly Herb[] {
  * question for something that does not grow: the site is not hard to stand in,
  * it is not there.
  */
-export function findHerbsForOrdinal(ordinal: number, biome?: HerbBiome): Herb[] {
+export function findHerbsForOrdinal(ordinal: number, biome?: WhatIsUnderfoot): Herb[] {
     const cap = Math.max(0, Math.min(MAX_ORDINAL, Math.floor(ordinal)));
-    const pool = biome ? getHerbsByBiome(biome) : HERBS;
+    const pool = herbsOn(biome);
     return pool.filter(h => h.harvestOrdinal <= cap && !EXTINCT_HERB_IDS.has(h.id));
+}
+
+/**
+ * What is underfoot: one ground, several, or nothing said.
+ *
+ * SEVERAL IS THE ORDINARY CASE and a scalar was the defect. A province is
+ * forest and farmland and the river between them - see `Region.grounds` - so
+ * asking it to name one biome would have meant picking, and picking would have
+ * been the engine inventing a fact about a place the catalog describes fully.
+ * Nothing said still means the whole map.
+ */
+export type WhatIsUnderfoot = HerbBiome | readonly HerbBiome[] | undefined;
+
+/** The herbs of these grounds, deduplicated, in catalog order. */
+function herbsOn(where: WhatIsUnderfoot): readonly Herb[] {
+    if (where === undefined) return HERBS;
+    if (typeof where === 'string') return getHerbsByBiome(where);
+    if (where.length === 0) return HERBS;
+    const wanted = new Set<string>(where);
+    return HERBS.filter(h => wanted.has(h.biome));
 }
 
 /**
@@ -752,7 +772,7 @@ export function findHerbsForOrdinal(ordinal: number, biome?: HerbBiome): Herb[] 
  */
 export function findOfferedHerbs(
     asker: RegardAskerInput,
-    biome?: HerbBiome
+    biome?: WhatIsUnderfoot
 ): readonly Herb[] {
     const ordinal = typeof asker === 'number' ? asker : asker.ordinal;
     const reachable = findHerbsForOrdinal(ordinal, biome);
@@ -772,7 +792,7 @@ export function findOfferedHerbs(
 export function rollHerb(
     ordinal: RegardAskerInput,
     sample: number,
-    biome?: HerbBiome
+    biome?: WhatIsUnderfoot
 ): Herb | undefined {
     const pool = findOfferedHerbs(ordinal, biome);
     if (pool.length === 0) return undefined;
@@ -812,7 +832,7 @@ export interface ForageResult {
 export function forage(
     asker: RegardAskerInput,
     sample: number,
-    options: { biome?: HerbBiome; baseDays?: number } = {}
+    options: { biome?: WhatIsUnderfoot; baseDays?: number } = {}
 ): ForageResult {
     const herb = rollHerb(asker, sample, options.biome);
     if (!herb) return { herb: null, quantity: 0, days: options.baseDays ?? FORAGE_BASE_DAYS, regard: null };

@@ -119,10 +119,60 @@ export const THE_DROWNED_REACH: Region = {
         }
     ],
     places: [
-        { name: PLACE.SWEETSPRING_ISLE, kind: 'market_town', ambient: 'thin', note: 'The only island on the eastern passage with fresh water on it, which is the entire reason there is a town there and the entire reason four parties claim it.' },
-        { name: PLACE.BRONZE_BELL_CAPE, kind: 'waystation', ambient: 'thin', note: 'A headland with a bell on it. A hull that rings it has come through, and a hull that does not is counted, and the counting is the only record anybody keeps out here.' },
-        { name: PLACE.DRAGONVEIN_ROCK, kind: 'site', ambient: 'dense', note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
-        { name: PLACE.THE_BITTER_CROSSING, kind: 'site', ambient: 'thin', note: 'The stretch of the eastern passage with no landfall in it. Hulls carry their own water across and the ration is what the name is about; nobody finds it clever after the fourth day.' },
+        {
+            name: PLACE.SWEETSPRING_ISLE,
+            kind: 'market_town', ambient: 'thin', note: 'The only island on the eastern passage with fresh water on it, which is the entire reason there is a town there and the entire reason four parties claim it.',
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.BRONZE_BELL_CAPE,
+                    description:
+                        'In to the headland and the bell, three days, and the leg a hull rings the bell at the end of to say it came through.',
+                    travelDays: 3
+                },
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.DRAGONVEIN_ROCK,
+                    description:
+                        'Out to the rock on the vein head, two days, and timed to arrive at low water because there is nothing there at high.',
+                    travelDays: 2
+                }
+            ]
+        },
+        {
+            name: PLACE.BRONZE_BELL_CAPE,
+            kind: 'waystation', ambient: 'thin', note: 'A headland with a bell on it. A hull that rings it has come through, and a hull that does not is counted, and the counting is the only record anybody keeps out here.',
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.THE_BOUNDLESS,
+                    description:
+                        'The northern crossing: eleven days with no landfall, no bottom and nothing to steer by that is not overhead.',
+                    travelDays: 11
+                },
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.THE_SALT_FIELDS,
+                    description:
+                        'Along the western capes to the drying flats, four days in shoal water a hull can stand up in, which is the only comfortable leg in the province.',
+                    travelDays: 4
+                }
+            ]
+        },
+        { name: PLACE.DRAGONVEIN_ROCK, kind: 'site', ambient: 'dense', grounds: ['spirit_vein'], note: 'One rock stands on a vein head that breaks the surface at low water. It is the best ground in the province, it is about forty paces across, and everybody waters at it.' },
+        {
+            name: PLACE.THE_BITTER_CROSSING,
+            kind: 'site', ambient: 'thin', grounds: ['lake_bottom'], note: 'The stretch of the eastern passage with no landfall in it. Hulls carry their own water across and the ration is what the name is about; nobody finds it clever after the fourth day.',
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.THE_FAR_SHORE,
+                    description:
+                        'The rest of it: nine days across, carrying your own water, to a gate station that is one hour from the Jade Gorge when it is working.',
+                    travelDays: 9
+                }
+            ]
+        },
         { name: PLACE.THE_FAR_SHORE, kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Jade Gorge, when it opens, which is four days in nine and never in a storm.' },
         // ── the middle of the water, which was a gap in the map ────────
         //
@@ -134,11 +184,53 @@ export const THE_DROWNED_REACH: Region = {
         // was a number of days between two landfalls with a blank in the
         // middle. These four are that blank, and every one of them is
         // somewhere a hull is rather than somewhere a hull calls.
-        { name: PLACE.SILVER_ISLE, kind: 'city', ambient: 'thin', note: 'An island at the middle of the eastern passage with a deep anchorage, no vein and no patron, where every party in the world buys and sells because none of them owns it. The largest market outside the nine cities and the only one an apex has never had a seat at.' },
+        {
+            name: PLACE.SILVER_ISLE,
+            kind: 'city', ambient: 'thin', note: 'An island at the middle of the eastern passage with a deep anchorage, no vein and no patron, where every party in the world buys and sells because none of them owns it. The largest market outside the nine cities and the only one an apex has never had a seat at.',
+            // A PROVINCE WITH NO GROUND IN IT, PRICED IN SAILING DAYS.
+            //
+            // `kind` here is `road` throughout and that is not a lapse: the enum is the
+            // engine's `LinkKind`, which has no water in it, and a worked passage is what
+            // this province has instead of a road. Everything else about it reads the same.
+            //
+            // THE FIGURES CHAIN. The gate station is three weeks' sail out by the note on
+            // it, and the legs below add to exactly that - cape to Sweetspring three,
+            // Sweetspring to Silver four, Silver to the crossing five, the crossing to the
+            // far shore nine - so the province's own statement about itself and the sum of
+            // its roads are one number rather than two.
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.THE_WAITING_SAILS,
+                    description:
+                        'Out to the anchorage where forty hulls are lying on wind, water or a price, close enough that the city can see which of them have not moved.',
+                    travelDays: 1
+                },
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.SWEETSPRING_ISLE,
+                    description:
+                        'The eastern passage westward to the only fresh water on it, four days, and the leg every hull in the province has done more often than any other.',
+                    travelDays: 4
+                },
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.THE_BITTER_CROSSING,
+                    description:
+                        'East into the stretch with no landfall, five days to the near edge of it, and the last of them without a bottom a line will reach.',
+                    travelDays: 5
+                }
+            ]
+        },
         { name: PLACE.THE_WAITING_SAILS, kind: 'site', ambient: 'thin', note: 'The anchorage off Silver Island, where forty hulls lie waiting on wind, water or a price, close enough to hear each other\'s bells. A quarter of the port\'s business is done between hulls without anybody going ashore.' },
-        { name: PLACE.THE_BOUNDLESS, kind: 'site', ambient: 'thin', note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
-        { name: PLACE.THE_SALT_FIELDS, kind: 'site', ambient: 'thin', note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
+        { name: PLACE.THE_BOUNDLESS, kind: 'site', ambient: 'thin', grounds: ['lake_bottom', 'abyss'], note: 'Eleven days of the northern crossing with no landfall, no bottom a line will reach and nothing on the horizon in any direction. What everybody at sea means when they say they were out.' },
+        { name: PLACE.THE_SALT_FIELDS, kind: 'site', ambient: 'thin', grounds: ['marsh'], note: 'Shoal water on the western capes where the salt is raked off drying flats a hull can stand into, and where four claims overlap and none of them has ever been enforced for a season.' }
     ],
+    // Straits, islands and the ground under the water. Everything that lives
+    // here lives on a shore, in the shallows, or below both - and the province
+    // sells what comes off ground people used to walk on before the water
+    // arrived, which is the third of these.
+    grounds: ['marsh', 'riverbank', 'lake_bottom'],
     exports: [
         'passage, priced in stones per head per day, which is the only thing this province sells that anybody ashore actually wants',
         'salt, in quantity, which is why four straits are claimed at all and why the claims are worth writing down even though they are worth nothing else',

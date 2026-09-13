@@ -306,12 +306,68 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
     veinStatus:
         'Shallow, rich, unmapped and unsurveyable in any way that lasts. It is one vein rather than several, it runs the length of the wedge, and what varies is not the vein but the depth of the cover over it - which is why the ground is worth more than the Silent Cliffs and less than nothing to anybody who wants to own it.',
     places: [
-        { name: PLACE.WIND_MARKET, kind: 'market_town', ambient: 'thin', note: 'The one market, which assembles for about six weeks after the wind turns and disperses. Everything sold here is sold once and nothing bought here comes with a name attached.' },
-        { name: PLACE.SAND_WELL, kind: 'site', ambient: 'thin', note: 'Water under the sand, dug for and shared because there is no second one within four days. The only fixed point in the whole wedge and the only thing here nobody has ever fought over.' },
+        {
+            name: PLACE.WIND_MARKET,
+            kind: 'market_town', ambient: 'thin', note: 'The one market, which assembles for about six weeks after the wind turns and disperses. Everything sold here is sold once and nothing bought here comes with a name attached.',
+            // THE WELL IS THE MAP.
+            //
+            // Everything in this wedge is priced from the one fixed point, and the note on
+            // it gives the figure the rest are built from: no second water within four days.
+            // So four days is the unit here, and a leg longer than that is a leg somebody
+            // provisions for rather than walks.
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.SAND_WELL,
+                    description:
+                        'Four days of it, which is the figure everything else here is measured against, and the reason the market assembles where it does when the wind turns.',
+                    travelDays: 4
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.TUOS_WALL,
+                    description:
+                        'Out to the two hundred paces of wall still above the sand, six days, and nobody goes without a reason worth six days of water.',
+                    travelDays: 6
+                }
+            ]
+        },
+        {
+            name: PLACE.SAND_WELL,
+            kind: 'site', ambient: 'thin', note: 'Water under the sand, dug for and shared because there is no second one within four days. The only fixed point in the whole wedge and the only thing here nobody has ever fought over.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.LONG_VEIN,
+                    description:
+                        'Out to the show that has stayed open nineteen years, four days, which is the whole of why it can be held at all.',
+                    travelDays: 4
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.HALFWAY_GATE,
+                    description:
+                        'Five days to the station everybody provisions against as though it were half the distance, and it is about a third.',
+                    travelDays: 5
+                }
+            ]
+        },
         { name: PLACE.LONG_VEIN, kind: 'site', ambient: 'spirit_tide', note: 'A show that has been open nineteen years, which is longer than a grant runs, and is consequently the only ground here anybody has killed over more than once.' },
         { name: PLACE.THE_SHORT_ROAD, kind: 'site', ambient: 'thin', note: 'The direct line, named for the saving it promises against the gorge road. It saves eight days when it works and nobody has published how often it works.' },
         { name: PLACE.TUOS_WALL, kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
-        { name: PLACE.HALFWAY_GATE, kind: 'waystation', ambient: 'thin', note: 'The gate station, which is not midway and is about a third of the way, and which everybody provisions against as though it were half.' }
+        {
+            name: PLACE.HALFWAY_GATE,
+            kind: 'waystation', ambient: 'thin', note: 'The gate station, which is not midway and is about a third of the way, and which everybody provisions against as though it were half.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.THE_SHORT_ROAD,
+                    description:
+                        'Three days out to the direct line, which saves eight days when it works, and the station is where people decide whether to try it.',
+                    travelDays: 3
+                }
+            ]
+        }
     ],
     hazards: [
         'no water: four days between Sand Well and anything else, and the ordinary cause of death here is a sum somebody did before setting out',
@@ -466,6 +522,10 @@ function ungovernedGroundAsRegion(ground: UngovernedGround): Region {
                 doesHere: p.doesHere
             })),
         places: ground.places.map(p => ({ ...p })),
+        // Sand, what the sand is moving over, and the shows that open into it.
+        // The province's whole economy is things coming up out of the ground
+        // and going back under it, which is these three in order.
+        grounds: ['desert', 'ruins', 'cave'],
         exports: [
             'what comes out of a surfacing before it closes, sold once, at the finder\'s price, with no provenance that would survive being written down',
             'intact dead, which the cover keeps and gives back a decade later with their possessions still on them',

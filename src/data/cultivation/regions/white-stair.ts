@@ -191,11 +191,70 @@ export const THE_WHITE_STAIR: Region = {
         }
     ],
     places: [
-        { name: PLACE.COLD_PEAK, kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.' },
-        { name: PLACE.THE_LIVING_ICE, kind: 'site', ambient: 'spirit_tide', note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Living Ice and nobody says how much longer it will be living.' },
-        { name: PLACE.STONE_SHADOW, kind: 'site', ambient: 'thin', note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
-        { name: PLACE.DEEP_SNOW, kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.' },
-        { name: PLACE.FOUR_GRAVES, kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, carrying the four names the record gives for the men who kept it the winter it was cut. Three of them are in the wall and there were five.' },
+        {
+            name: PLACE.COLD_PEAK,
+            kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.THE_LIVING_ICE,
+                    description:
+                        'Up to the face and back inside a day if the weather holds, which is why the town is where it is and why it has moved four times.',
+                    travelDays: 1
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.STONE_SHADOW,
+                    description:
+                        'Around the shoulder to the ground under the floating stone, in weather the whole way, and walked once a year by the people who inspect the tether.',
+                    travelDays: 2
+                }
+            ]
+        },
+        { name: PLACE.THE_LIVING_ICE, kind: 'site', ambient: 'spirit_tide', grounds: ['glacier', 'spirit_vein'], note: 'Forty paces of live ice where the qi comes out as the ice goes. Everybody calls it the Living Ice and nobody says how much longer it will be living.' },
+        { name: PLACE.STONE_SHADOW, kind: 'site', ambient: 'thin', grounds: ['sky_island', 'high_peak'], note: 'The ground beneath the floating stone: permanently in shadow, permanently in weather, and where the tether is inspected once a year by people who cannot repair it.' },
+        {
+            name: PLACE.DEEP_SNOW,
+            kind: 'village', ambient: 'thin', note: 'The last band anybody still lives at, four retreats below the face, and emptying at about nine households a decade.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.ORCHID_TERRACE,
+                    description:
+                        'Five retreats of it, downhill, and the only stretch in the province where a cart has ever been used. Longer going up and nobody prices it that way.',
+                    travelDays: 3
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.COLD_PEAK,
+                    description:
+                        'Two bands of climb between the last place anybody lives and the town above it, which is the walk the nine households a decade are doing in the other direction.',
+                    travelDays: 2
+                }
+            ]
+        },
+        {
+            name: PLACE.FOUR_GRAVES,
+            kind: 'waystation', ambient: 'thin', note: 'The station at the head of the pass, carrying the four names the record gives for the men who kept it the winter it was cut. Three of them are in the wall and there were five.',
+            // THE PROVINCE IS A STAIRCASE AND NOTHING SAID SO.
+            //
+            // Every place in this file is named by its height - the head of the pass, four
+            // retreats below the face, nine retreats below it, a town that has moved uphill
+            // four times - and none of that reached the engine. `placeRoadDays` returned
+            // null for every pair, so `daysOnTheRoadTo` fell to its flat day and walking
+            // from the pass head to the working face cost what stepping across a market
+            // costs. The roads below are the heights the notes already state, priced as
+            // walking days in this weather, and declared on one end only.
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.ORCHID_TERRACE,
+                    description:
+                        'Down off the pass head to the first terraces, staked the whole way and walked by anybody who is leaving the province on foot.',
+                    travelDays: 2
+                }
+            ]
+        },
         {
             name: PLACE.ORCHID_TERRACE,
             kind: 'sect_town',
@@ -231,6 +290,10 @@ export const THE_WHITE_STAIR: Region = {
             note: 'A north-facing valley below the working face that the melt fog settles into and never leaves, with frost on the floor every night of the year and the only ground in the province anything grows on.'
         }
     ],
+    // Ice, and rock where the ice has gone. The inhabited bands are low on a
+    // face that is still moving, and everything above the last of them is the
+    // peak or the weather on it.
+    grounds: ['glacier', 'high_peak', 'mountain', 'cave'],
     exports: [
         'ice-cut stones, which assay high and shatter if they are cut warm, so the whole trade moves in winter or not at all',
         'the only complete ice curriculum in the world, which is not for sale and is the reason anybody crosses the pass',

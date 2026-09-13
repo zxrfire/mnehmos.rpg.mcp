@@ -138,10 +138,18 @@ describe('a place road is not a second distance', () => {
     });
 
     it('is sparse, and absence means unpriced rather than unreachable', () => {
-        // Most pairs have no row and should not. The reader says so by
+        // A pair with no chain of stated roads between them says so by
         // returning null, which `daysOnTheRoadTo` already documents as meaning
         // "unpriced", never "free" and never "you cannot go".
-        expect(placeRoadDays(PLACE.BURNT_EARTH, PLACE.NINE_PEAKS)).toBeNull();
+        //
+        // DERIVED AND NOT NAMED. This pinned two places of one province that
+        // happened to have no road, and then the province was roaded and the
+        // example stopped being one - which is the thing an example does to a
+        // test that names it. A road never crosses a province by construction
+        // (see the block above), so two provinces' places are the case that
+        // cannot stop being the case.
+        const [here, there] = REGIONS.slice(0, 2).map(r => r.places[0].name);
+        expect(placeRoadDays(here, there)).toBeNull();
         expect(placeRoadDays(PLACE.GREEN_FALL, 'somewhere that is not a place')).toBeNull();
         expect(placeRoadDays(null, PLACE.GREEN_FALL)).toBeNull();
 
@@ -181,8 +189,7 @@ describe('what is next to somewhere', () => {
         expect(placesNextTo(PLACE.STONE_FORD).map(p => p.name)).toContain(PLACE.GREEN_FALL);
     });
 
-    it('returns nothing for a place with no stated neighbour, and does not throw', () => {
-        expect(placesNextTo(PLACE.BURNT_EARTH)).toEqual([]);
+    it('returns nothing for a name the catalog does not carry, and does not throw', () => {
         expect(placesNextTo('not a place at all')).toEqual([]);
         expect(placesNextTo(null)).toEqual([]);
     });

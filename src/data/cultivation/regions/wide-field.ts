@@ -115,12 +115,73 @@ export const THE_WIDE_FIELD: Region = {
         }
     ],
     places: [
-        { name: PLACE.CLOUD_GATE, kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.' },
-        { name: PLACE.THREE_WALLS, kind: 'city', ambient: 'thin', note: 'Walled three times in two thousand years, each wall further out, all three still standing. A third of the city lives between walls nobody defends.' },
-        { name: PLACE.AUTUMN_GATE, kind: 'market_town', ambient: 'normal', note: 'Where the crop off the old ground is sold, and where nobody at the counter asks what the field grew before it grew this.' },
-        { name: PLACE.GRAIN_RAIN, kind: 'site', ambient: 'dense', note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
-        { name: PLACE.OLD_RIVER, kind: 'village', ambient: 'thin', note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
+        {
+            name: PLACE.CLOUD_GATE,
+            kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.',
+            // FLAT GROUND, GOOD ROADS, AND A GREAT DEAL OF IT.
+            //
+            // Nothing here is hard to walk and everything here is far. The province feeds
+            // three others, which is a statement about area, and the roads below price that
+            // area: four days between the two cities is the figure the lease calendar is
+            // built on. Declared on one end, read both ways.
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.THREE_WALLS,
+                    description:
+                        'The clock road between the two cities, posted with distances, carrying grain one way and leases the other, and the figure every hall in the province sets a renewal by.',
+                    travelDays: 4
+                },
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.AUTUMN_GATE,
+                    description:
+                        'Down to the market where the crop off the old ground is sold, in two easy days, and busy in one direction for six weeks a year.',
+                    travelDays: 2
+                },
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.OLD_RIVER,
+                    description:
+                        'Out to the village the river left, on a road that still runs to the old bank because nobody has rebuilt it to run anywhere else.',
+                    travelDays: 3
+                }
+            ]
+        },
+        {
+            name: PLACE.THREE_WALLS,
+            kind: 'city', ambient: 'thin', note: 'Walled three times in two thousand years, each wall further out, all three still standing. A third of the city lives between walls nobody defends.',
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.OLD_RIVER,
+                    description:
+                        'Along the dry course to the mills, which are still standing and still turning on a river that is four li away.',
+                    travelDays: 2
+                }
+            ]
+        },
+        {
+            name: PLACE.AUTUMN_GATE,
+            kind: 'market_town', ambient: 'normal', note: 'Where the crop off the old ground is sold, and where nobody at the counter asks what the field grew before it grew this.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.GRAIN_RAIN,
+                    description:
+                        'Out to the field that has been fruiting a hundred and forty years, close enough that the crop is carried in by hand and sold the same afternoon.',
+                    travelDays: 1
+                }
+            ]
+        },
+        { name: PLACE.GRAIN_RAIN, kind: 'site', ambient: 'dense', grounds: ['battlefield'], note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
+        { name: PLACE.OLD_RIVER, kind: 'village', ambient: 'thin', grounds: ['riverbank', 'farmland'], note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
     ],
+    // Grain in the quantity that feeds three provinces, the roads that carry
+    // it, and what is buried underneath. The dug goods and the hundred-and-
+    // forty-year herb rotation are the same fact: nothing has died here
+    // recently and a great deal died here once.
+    grounds: ['farmland', 'roadside', 'battlefield', 'ruins'],
     exports: [
         'assayed spirit stones and the rate they are assayed at, which is the only export in the world that arrives before the goods do',
         'battlefield herbs on a hundred-and-forty-year rotation, which will not fruit on ground nothing died on',

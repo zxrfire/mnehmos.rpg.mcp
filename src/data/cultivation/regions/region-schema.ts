@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { AmbientQiSchema } from '../../../schema/cultivation.js';
 import { MAX_ORDINAL } from '../../../engine/cultivation/realms.js';
 import { TraditionIdSchema } from '../traditions.js';
+import { HerbBiomeSchema } from '../herbs.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // SCHEMA
@@ -261,6 +262,15 @@ export const RegionPlaceSchema = z.object({
     ambient: AmbientQiSchema,
     note: z.string().min(20),
     /**
+     * What is underfoot HERE, where it is not what the province is.
+     *
+     * Replaces the province's list rather than adding to it, so a site that is
+     * one thing - forty paces of live ice, the ground under a floating stone -
+     * is that one thing and not that one thing plus the whole province. Absent
+     * means the place is made of the province, which is the ordinary case.
+     */
+    grounds: z.array(HerbBiomeSchema).min(1).optional(),
+    /**
      * Places next to this one, declared on one end only. Sparse: absence
      * means "no special adjacency", never "unreachable". See
      * {@link RegionPlaceConnectionSchema}.
@@ -329,6 +339,23 @@ export const RegionSchema = z.object({
     factionIds: z.array(z.string()),
     branches: z.array(RegionBranchSchema),
     places: z.array(RegionPlaceSchema),
+    /**
+     * What is underfoot across the province: the grounds a thing living here
+     * lives on.
+     *
+     * A LIST AND NOT A VALUE, which is the whole of the design. The beast and
+     * herb catalogs are keyed on one biome each and the catalogs are small;
+     * narrowing a province to a single ground leaves every square in it with
+     * one or two species and does that forever. A province is several kinds of
+     * ground, the author knows which, and nothing else in the world could work
+     * it out - `climate` is the string 'temperate' on every row the seeder
+     * writes, and a hazard is prose.
+     *
+     * The specific beats the general: a place may state its own grounds, and a
+     * location whose KIND already names one - a cave, a vein, a scar - is that,
+     * wherever it happens to sit. See `what-ground-a-place-is.ts`.
+     */
+    grounds: z.array(HerbBiomeSchema).min(2),
     exports: z.array(z.string()),
     imports: z.array(z.string()),
     priceMultiplier: z.number().min(0.1).max(10),

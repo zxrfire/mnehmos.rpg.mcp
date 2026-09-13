@@ -43,8 +43,16 @@ import {
  * What the caller knows about the ground somebody is standing on.
  */
 export interface GroundForBeasts {
-    /** Narrows the draw when the caller knows it. Omitted means the whole map. */
-    biome?: HerbBiome;
+    /**
+     * What is underfoot, from `whatGroundThisIs`. Omitted means the whole map,
+     * which is what every caller got before a location could answer.
+     *
+     * A LIST. A province is several kinds of ground and the catalog is small -
+     * 19 beasts across 12 biomes - so narrowing a square to one biome leaves it
+     * with one or two species forever. See `what-ground-a-place-is.ts` for the
+     * measurement.
+     */
+    grounds?: readonly HerbBiome[];
     /** Inside closed ground: a sealed ruin, an unopened chamber, a cut face. */
     sealed: boolean;
     /** The ground is a vein, or sits on one close enough to matter. */
@@ -56,7 +64,8 @@ export interface GroundForBeasts {
  */
 export function beastsOnThisGround(ground: GroundForBeasts): readonly Beast[] {
     return BEASTS.filter(beast => {
-        if (ground.biome && beast.biome !== ground.biome) return false;
+        if (ground.grounds && ground.grounds.length > 0
+            && !ground.grounds.includes(beast.biome)) return false;
         switch (beast.persistence) {
             case 'sealed_only':
                 return ground.sealed;

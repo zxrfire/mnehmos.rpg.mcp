@@ -201,12 +201,71 @@ export const THE_QUIET_MARCHES: Region = {
         }
     ],
     places: [
-        { name: PLACE.IRON_GATE, kind: 'market_town', ambient: 'thin', note: 'Clearwater Ward town: grant queue, assay house, temple, and a permanent dust plume.' },
-        { name: PLACE.GRAVE_MARKET, kind: 'village', ambient: 'thin', note: 'Fallen Grain Caravan\' sorting yard, where salvage is priced before it goes to Iron Ridge.' },
-        { name: PLACE.SIX_LI, kind: 'hamlet', ambient: 'thin', note: 'A shed, a survey, and the Wardens who repaint the stakes.' },
-        { name: PLACE.JADE_FACE, kind: 'site', ambient: 'dense', note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },
-        { name: PLACE.DEAD_STONE, kind: 'site', ambient: 'thin', note: 'The current burn edge. It has moved about nine hundred paces since the survey was drawn.' }
+        {
+            name: PLACE.IRON_GATE,
+            kind: 'market_town', ambient: 'thin', note: 'Clearwater Ward town: grant queue, assay house, temple, and a permanent dust plume.',
+            // THE BURN EDGE IS THE MAP HERE.
+            //
+            // The province is a town, a sorting yard, a survey and two workable faces, and
+            // what a distance means in it is how far a man carries salvage before anybody
+            // will price it. Priced as walking days on dust roads, declared on one end.
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.GRAVE_MARKET,
+                    description:
+                        'Cart road from the sorting yard up to the assay house, which is the road every piece of salvage in the province travels and the only one kept in repair.',
+                    travelDays: 1
+                },
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.JADE_FACE,
+                    description:
+                        'Out to the face the grant queue is a queue for, at forty stones a day and eleven ahead of you.',
+                    travelDays: 2
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.SIX_LI,
+                    description:
+                        'Out past the last grant to the shed, the survey and the stakes, with nothing on the way and nothing at the end of it but the Wardens.',
+                    travelDays: 3
+                }
+            ]
+        },
+        {
+            name: PLACE.GRAVE_MARKET,
+            kind: 'village', ambient: 'thin', note: 'Fallen Grain Caravan\' sorting yard, where salvage is priced before it goes to Iron Ridge.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.DEAD_STONE,
+                    description:
+                        'Out to the current burn edge, which is nine hundred paces further out than the survey says and moves again every year.',
+                    travelDays: 2
+                }
+            ]
+        },
+        {
+            name: PLACE.SIX_LI,
+            kind: 'hamlet', ambient: 'thin', note: 'A shed, a survey, and the Wardens who repaint the stakes.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.DEAD_STONE,
+                    description:
+                        'The stake line itself, walked by the Wardens with paint, and the shortest way to the edge from anywhere in the province.',
+                    travelDays: 1
+                }
+            ]
+        },
+        { name: PLACE.JADE_FACE, kind: 'site', ambient: 'dense', grounds: ['cave', 'mountain'], note: 'One of two workable faces. Grant access at forty stones a day, and a queue of eleven.' },
+        { name: PLACE.DEAD_STONE, kind: 'site', ambient: 'thin', grounds: ['battlefield'], note: 'The current burn edge. It has moved about nine hundred paces since the survey was drawn.' }
     ],
+    // Burnt ground and what is under it. The province's only real product is
+    // salvage out of sealed sites and herbs that will not fruit on healthy
+    // land, so the scar IS the ground here rather than a mark on it.
+    grounds: ['battlefield', 'ruins', 'marsh', 'cave'],
     exports: [
         'sealed-site salvage, the region\'s only real product',
         'scar-ground herbs that will not fruit on healthy land',
