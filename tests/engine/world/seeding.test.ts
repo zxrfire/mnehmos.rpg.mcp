@@ -83,7 +83,13 @@ describe('seeding: a world that is already running', () => {
         expect(azure.standing['court-third-sill']).toBeGreaterThan(0);
 
         const grove = state.factions.find(f => f.id === 'sect-ancient-bough-grove')!;
-        expect(grove.tags).toContain('deference');
+        // UNBACKED LIKE EVERY OTHER HOUSE THAT HOLDS FROM NOBODY, and the
+        // belief holding its ground carried as a fact of its own. The tag was
+        // `deference`, which was a governance value naming the reason rather
+        // than the backing; `the-world-changing-on-its-own.ts` reads the new
+        // one to decide whose zone can be tested.
+        expect(grove.tags).toContain('unbacked');
+        expect(grove.tags).toContain('holds_by_reputation');
         expect(grove.tags).toContain('closed');
     });
 

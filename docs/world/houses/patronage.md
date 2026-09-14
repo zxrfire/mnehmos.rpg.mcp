@@ -183,6 +183,13 @@ side, and on the other a single administration with a register and a schedule.
 Direct rule does not have to mean administration. It can mean **respect**, and this is the
 form that fits a sect people are glad to have nearby.
 
+**In the catalog this is not a way of being backed.** A house holding its ground this way
+holds it from nobody, so its governance is `unbacked` like every other house that holds
+from nobody, and the belief is `holdsByReputation` on its parentage plus a sentence in its
+own note. It was a governance value of its own for a while, which put a house that answers
+to nothing in a group beside the houses that answer to somebody, and printed it in the
+Standing Register as though somebody had granted it something.
+
 Such a sect rules directly only what it can comfortably walk: a valley, a mountain and its
 approaches, a few settlements. It takes **very few disciples** - only the exceptional, and
 often none for years at a stretch. It keeps no bureaucracy, no patrols, no register, no
@@ -218,3 +225,104 @@ everyone can feel.
 For the player this is the most pleasant institution in the world to live near and the
 hardest to join - and if they ever do join, they will be one of six people, all of whom
 are watched.
+
+## What a house actually eats off
+
+<!-- tier: 2 trigger="what a house lives on, or why a house with no vein is not poor" -->
+
+Four terms, and for two thirds of the catalog the first one is zero.
+
+| Term | Read from | What it is |
+|---|---|---|
+| Rock | `holdsVein` on the parentage record | What comes off a vein, scaled by the rung the house can field. The largest of the four |
+| A gate | `levy` on the parentage record | A fee at a gate, a toll at a ford, a cut of what crosses a weigh rail, a published assay everybody has to buy |
+| A town | `controllingFactionId` on the settlement | What the people of a town pay the house that governs them |
+| People | the roll | What the members bring in, scaled by the same rung |
+
+A vein and a levy are **not exclusive** and two houses hold both. A house holding
+neither is poor, and several are: *"Nothing whatsoever, which the league presents as
+philosophy"* is a house that has chosen this.
+
+**A rock gives more, per post against per vein.** The largest one place a house can
+collect at is worth 2,500 stones a year against the weakest vein in the catalog at
+3,043. A house with nine city gates does out-earn one vein, which is the point of
+having nine of them.
+
+The scale is anchored to two prices the mortal economy already publishes rather than
+chosen: `price-gate-registration` is 300 cash a head a year and is called *"the
+House's real income"*, and `price-port-rate` is a fortieth of what crosses the rail.
+One `a city gate` post is 333 registrations a year at the first rate, or a fortieth of
+forty thousand stones of cargo at the second. `WHAT_ONE_POST_TAKES_IN_A_YEAR` in
+`seeding.ts` is the one table, and `whatALevyBringsIn` the one function - the purse a
+house opens with and its income every year after both call it.
+
+**A levy is authored, never read off the prose.** `holds` is a required sentence on
+every record, which is exactly why `holdsVein` was once `Boolean(holds)` and read true
+for all thirty-eight. `levy.on` says what is charged and of whom, for a reader; nothing
+switches on it.
+
+### A house that administers a settlement
+
+A house that holds a town collects from the people in it, and the catalog has always
+said so - *"A valley, a mountain and four settlements administered directly"*, *"Driven
+ground across five provinces, held directly and administered face by face"*. For a long
+time the engine collected nothing from any of it, and the reason was not arithmetic:
+23 settlements existed with real relative populations (1 to 60, 537 in total) and not
+one recorded who administered it. `controllingFactionId` was null on all 23.
+
+Province membership could never have stood in for it - 21 of the 23 sit in a province
+shared by between 3 and 19 houses, and the other 2 sit on ungoverned ground - and
+assigning towns by proximity or by which house is strongest would have been inventing
+the answer, which is the defect `holdsVein` had.
+
+**The catalog had been answering it all along, in a table nothing read.** `PREFECTURES`
+carries a district's `places` as settlement names with `heldByFactionId` beside them,
+and documents `null` in place as a real answer rather than a gap. Between the register
+and the places' own notes - *"The Frostmirror's town"*, *"One gate station, at Halfway
+Gate"*, *"Nobody in the Yellow Plain holds ground"* - **14 of the 23 are settled by
+something written**, eight naming a holder and six naming nobody. Three more are a
+judgement and are recorded as one. **Six are left unheld because nothing anywhere
+says**, which is the right answer rather than a gap: a town nobody governs is ordinary
+here. Eleven towns end up held and twelve do not.
+
+**A basin is ground and a face district is work**, which is why only the first answers
+this. *"There is nothing in the air, so a holding is not ground, it is work. Every one
+of these is held by an office or by nobody"* - so the Clearwater Ward administering two
+faces from a counter at Iron Ridge does not make Iron Ridge the Ward's. The Silent
+Cliffs is administered directly and `DIRECT_RULE` settles who collects in one word:
+`noSkim`, nothing is taken by an intermediate tier.
+
+**A rock still gives more.** The largest single town is a city at 1,800 stones a year,
+against 2,500 for the largest single levy post and 4,239 for the weakest vein in the
+catalog. The scale is the same published price the levy is anchored to -
+`price-gate-registration` at 300 cash a head a year, called *"the House's real
+income"* - times a town's headcount, one point of `PLACE_POPULATION_WEIGHT` being ten
+people. `whatATownPaysItsHolder` in `locations.ts` is the one function, and the purse a
+house opens with and its income every year after both call it.
+
+**It is derived, where the levy is stored.** A charter does not change hands in the
+ordinary run of a century and ground does, twice over in the yearly economy - so a town
+figure written onto the faction at seeding would go on stating what the house held
+then. There is deliberately no such column: `whatTheTownsBringIn` reads the settlements,
+which is where the fact lives, so a house that loses a town stops collecting from it.
+
+**Nothing is counted twice.** Records whose `holds` sentence says they administer
+settlements of their own - the Myriad Course Hall and the Ancient Bough Grove - carry
+no `levy`, and still do. Several houses do hold both a town and a levy, and the two are
+different money: the Frostmirror sells cold off its glacier by the load and separately
+governs Cold Peak; the Orchid Court sells its crop over a pass it does not control and
+separately holds its terraces.
+
+**And a place can answer who collects at it.** `whoCollectsHere` in `ground-holder.ts`
+takes a location and returns the house, what the town pays, and - where nobody holds it
+- which of the four ways the question ran out. Before it, a house could say what it
+charges and no place could say who charges at it, so a verb at a city gate would have
+had to search twenty-one levying houses for one whose prose mentioned a gate.
+
+#### What is still not modelled
+
+The Ancient Bough Grove *"administers a valley, a mountain and four settlements"* and
+those four settlements are on no map: the Grove Basin's `places` is empty and no
+`RegionPlace` names them. So the house the catalog describes as the clearest case of
+direct administration in the province collects nothing, and the engine has no answer
+for it yet.

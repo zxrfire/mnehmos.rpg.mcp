@@ -117,6 +117,12 @@ export const THE_WIDE_FIELD: Region = {
     places: [
         {
             name: PLACE.CLOUD_GATE,
+            // "Nobody in the Yellow Plain holds ground" is the province's own
+            // sentence about itself, and this is that sentence as a field. The
+            // halls in these cities are LEASED - the Jade Register's register
+            // houses, the Lantern Hall's reading halls, the Severed's cutting
+            // houses - and a city that leases to a house is not held by one.
+            heldByFactionId: null,
             kind: 'city', ambient: 'normal', note: 'The largest of the nine, and the city the whole province sets its clocks by. Every hall in it is leased and the leases are public.',
             // FLAT GROUND, GOOD ROADS, AND A GREAT DEAL OF IT.
             //
@@ -150,6 +156,7 @@ export const THE_WIDE_FIELD: Region = {
         },
         {
             name: PLACE.THREE_WALLS,
+            heldByFactionId: null,
             kind: 'city', ambient: 'thin', note: 'Walled three times in two thousand years, each wall further out, all three still standing. A third of the city lives between walls nobody defends.',
             connections: [
                 {
@@ -163,6 +170,7 @@ export const THE_WIDE_FIELD: Region = {
         },
         {
             name: PLACE.AUTUMN_GATE,
+            heldByFactionId: null,
             kind: 'market_town', ambient: 'normal', note: 'Where the crop off the old ground is sold, and where nobody at the counter asks what the field grew before it grew this.',
             connections: [
                 {
@@ -175,7 +183,7 @@ export const THE_WIDE_FIELD: Region = {
             ]
         },
         { name: PLACE.GRAIN_RAIN, kind: 'site', ambient: 'dense', grounds: ['battlefield'], note: 'Twelve thousand died here in one afternoon a hundred and forty years ago, and the ground has been fruiting ever since. The name is what that season was called before it happened.' },
-        { name: PLACE.OLD_RIVER, kind: 'village', ambient: 'thin', grounds: ['riverbank', 'farmland'], note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
+        { name: PLACE.OLD_RIVER, heldByFactionId: null, kind: 'village', ambient: 'thin', grounds: ['riverbank', 'farmland'], note: 'A river village that was on the river until the river moved four li in one spring three hundred years ago. Nobody renamed it and the mills are still standing.' }
     ],
     // Grain in the quantity that feeds three provinces, the roads that carry
     // it, and what is buried underneath. The dug goods and the hundred-and-

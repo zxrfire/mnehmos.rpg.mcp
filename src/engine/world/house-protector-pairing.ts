@@ -61,13 +61,15 @@ export interface HouseOnItsGround {
      * the house standing on the ground a thing at this rung also wanted is the
      * strongest house, and no threshold has to be picked.
      *
-     * TWO OTHER GROUND FIELDS WERE TRIED AND BOTH ARE WRONG.
-     * `CatalogFaction.holdsVein` is `Boolean(parent.holds)` over a description
-     * string every faction carries, so it reads true for all thirty-five and
-     * separates nobody. A region's `qiDensity` is province-wide and puts the
-     * White Ape beside the Stone Marrow Hall, when its own entry says it
-     * holds the gorge above the Jade Gorge - which is the Pavilion's. Power
-     * lands on the catalog's stated answer; the other two do not.
+     * TWO OTHER GROUND FIELDS WERE TRIED AND NEITHER ANSWERS THIS QUESTION.
+     * `CatalogFaction.holdsVein` was `Boolean(parent.holds)` over a description
+     * string every faction carries, so it read true for all of them and
+     * separated nobody; it is authored now and does separate them, but what it
+     * says is whether there is a vein, not whose ground is worth standing on.
+     * A region's `qiDensity` is province-wide and puts the White Ape beside the
+     * Stone Marrow Hall, when its own entry says it holds the gorge above the
+     * Jade Gorge - which is the Pavilion's. Power lands on the catalog's stated
+     * answer; the other two do not.
      */
     powerOrdinal: number;
     /** From its manuals - `houseElementalCharacterOf`. Null where it has none. */

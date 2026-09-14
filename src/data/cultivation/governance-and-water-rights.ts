@@ -16,11 +16,24 @@
  *                 Silent Cliffs, and it is taut: five provinces on a posted
  *                 staff small enough to name.
  *
- *   deference     direct rule by respect. A small sect administers only what
- *                 it can comfortably walk and holds a far larger zone because
- *                 nobody is willing to find out what happens otherwise. The
- *                 claim is worth exactly as much as the last time it was
- *                 tested, and beliefs decay. This is the Ancient Bough Grove.
+ *   unbacked      holds from nobody and pays for that continuously. The
+ *                 reasons differ and each house states its own: too poor to be
+ *                 worth taking, too far, useful to everybody and aligned with
+ *                 nobody, offered a patron and refused. The Ancient Bough
+ *                 Grove's reason is a belief - it administers only what it can
+ *                 comfortably walk and holds a far larger zone because nobody
+ *                 is willing to find out what happens otherwise - and that is
+ *                 a reason for being unbacked rather than a way of being
+ *                 backed. It was a model of its own here, and the register
+ *                 printed it beside `unbacked` as though the Grove answered to
+ *                 something. The belief is still worth exactly what the last
+ *                 test was worth, and it is stated in the Grove's own note.
+ *
+ *   bloodline     a family that does a trade, holding no vein at all. Intake
+ *                 is kinship, the house's name is the family's name, and
+ *                 there is no grant to renew and no patron to lose. Seven
+ *                 houses. This was `outside`, which also swept up a sect that
+ *                 sells a service and has an ordinary admission day.
  *
  *   unassailable  holds the ground outright, answers to nobody, and pays
  *                 nothing to anyone. Not a lease, not a claim, and not a
@@ -109,18 +122,33 @@ export const HierarchyRelationSchema = z.enum([
     'administration', // an organ of a direct ruler: staff, not a vassal
     'contracted',     // works for a direct ruler under contract, not a lease
     'unaffiliated',   // holds nothing, tolerated, pays for it continuously
-    'outside'         // holds no vein by nature - the Dao houses sell services
+    'bloodline'       // a family, not a tenancy: intake is kinship and it holds no vein
 ]);
 export type HierarchyRelation = z.infer<typeof HierarchyRelationSchema>;
 
-/** The four governance models. Every faction is marked with exactly one. */
+/**
+ * How a body is backed. Every faction is marked with exactly one.
+ *
+ * TWO VALUES WENT, AND NEITHER WAS A WAY OF BEING BACKED.
+ *
+ * `deference` said a house holds from nobody because nobody has been willing
+ * to test it. That is unbacked - the reason it is unbacked, which belongs in
+ * its own note where the other unbacked houses keep theirs - and as a category
+ * of its own it sat beside `unbacked` in the register implying a body backed
+ * by something. One house carried it.
+ *
+ * `outside` said a house holds no vein by nature because what it sells is not
+ * ground. Eight rows carried it and only seven were the same kind of thing:
+ * the seven family houses, whose intake is kinship and whose name is the
+ * family's, are `bloodline`. The eighth was a sect with an admission day and a
+ * literacy test, which is an unbacked house that happens to sell a service.
+ */
 export const GovernanceModelSchema = z.enum([
     'federated',
     'administered',
-    'deference',
     'unassailable',
     'unbacked',
-    'outside'
+    'bloodline'
 ]);
 export type GovernanceModel = z.infer<typeof GovernanceModelSchema>;
 
@@ -289,6 +317,53 @@ export type Posting = z.infer<typeof PostingSchema>;
  * neutral vantage to narrate one from is the same reason there is no longer a
  * question to adjudicate.
  */
+/**
+ * How much passes ONE place a house collects at, in a year.
+ *
+ * The words rather than a number, because a number in a data file is a balance
+ * constant living in the prose layer. The engine turns the word into stones in
+ * exactly one place - `whatALevyBringsIn` in `seeding.ts` - and an author here
+ * only has to answer a question about the world: what goes past this post.
+ */
+export const LevyTrafficSchema = z.enum(['a trickle', 'a road', 'a city gate', 'a province']);
+export type LevyTraffic = z.infer<typeof LevyTrafficSchema>;
+
+/**
+ * WHAT A HOUSE LEVIES, which is how most of this catalog actually eats.
+ *
+ * A fee at a gate, a toll at a ford, a cut of what crosses a weigh rail, a
+ * price published for an assay that everybody has to use. Ordinary furniture of
+ * the genre, and the engine collected not one stone from any of it: the yearly
+ * economy knew how to extract from rock and nothing else, so a house holding
+ * nine city gates was modelled as destitute.
+ *
+ * `posts` and `traffic` are separate because the catalog's own sentences
+ * distinguish them - nine gate stations and one assay monopoly are both real
+ * and are not the same shape, and the same charter on a quiet road is worth
+ * less than on a busy one.
+ *
+ * `on` is for a reader and is never parsed. It says what is charged and of
+ * whom, so a levy can be read back as a sentence about a toll rather than as a
+ * prosperity score.
+ *
+ * WHAT THIS DOES NOT EXPRESS, and neither does anything else here. Three
+ * records hold a levy they PAY for: the Jade Register leases its register
+ * houses from the cities, the Severed rent their cutting houses, the Lantern
+ * Hall stands in nine cities it does not own. `terms.tributeStonesPerYear`
+ * carries an amount but its counterparty is a parent faction, and a city is
+ * not one - so what these three owe has nowhere to live. Do not solve it by
+ * widening tribute; a lease from a mortal city is a different relationship and
+ * wants its own answer.
+ */
+export const LevySchema = z.object({
+    /** What is charged and of whom. Read by people, never by code. */
+    on: z.string().min(20),
+    /** How many places it is collected at. One for a right held over a province. */
+    posts: z.number().int().min(1),
+    traffic: LevyTrafficSchema
+});
+export type Levy = z.infer<typeof LevySchema>;
+
 export const ParentageSchema = z.object({
     factionId: z.string(),
     governance: GovernanceModelSchema,
@@ -297,6 +372,33 @@ export const ParentageSchema = z.object({
     parentFactionId: z.string().nullable(),
     /** What they hold, and in whose gift it is. */
     holds: z.string().min(40),
+    /**
+     * Whether any of that is a spirit vein. Stated, because the sentence above
+     * cannot be read by code.
+     *
+     * `holds` is required prose on every record, so the world engine's
+     * `Boolean(parent.holds)` was true for all thirty-eight - and the prose it
+     * was standing in for says the opposite about two thirds of them
+     * ("chosen for having no vein under it", "no ground at all", "Nothing
+     * whatsoever"). A seeded world therefore had no house anywhere that did
+     * not sit on a vein, which is one of the few things houses here fight
+     * over. Parsing the sentence would be a second source of truth that goes
+     * stale the moment somebody writes a new one, so the fact is authored.
+     *
+     * Answer it from this record's own `holds`, and from the sect's
+     * description where that settles it: the Verdant Spring Valley sits "on
+     * ordinary ground with no vein worth the name", and that is the whole
+     * explanation for everything else about the house.
+     */
+    holdsVein: z.boolean(),
+    /**
+     * What it charges, and where. Null where it charges nothing.
+     *
+     * Not exclusive with `holdsVein`: a house may hold ground and a gate and
+     * earns from both. Several here hold neither and are poor for it, which is
+     * the correct answer rather than a gap to fill.
+     */
+    levy: LevySchema.nullable(),
     terms: GrantTermsSchema.nullable(),
     standing: z.enum(['good', 'strained', 'probationary', 'lapsed', 'not_applicable']),
     /** How aware this faction is of the apex above it. Most are not. */
@@ -311,6 +413,19 @@ export const ParentageSchema = z.object({
      * take a backer tomorrow if one were offered.
      */
     independenceStance: z.enum(['proud', 'would_take_a_backer', 'indifferent']).nullable(),
+    /**
+     * Unbacked only: the ground is held by what people believe would happen to
+     * whoever went and took it, and by nothing else.
+     *
+     * THE FACT THAT WAS A CATEGORY. This used to be `governance: 'deference'`,
+     * which put a house holding from nobody in a group of its own beside the
+     * other houses holding from nobody and read, in the register, as a way of
+     * being backed. It is a reason for being unbacked. As a field it is also
+     * readable: `the-world-changing-on-its-own.ts` tests one of these zones,
+     * and a belief is the only hold in the world that can vanish in a season
+     * without anybody crossing a line.
+     */
+    holdsByReputation: z.boolean().optional(),
     /**
      * Set on the walking half of the split posting, and on nothing else here.
      *
@@ -1659,6 +1774,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'apex',
         parentFactionId: null,
         holds: 'The four arterial veins the eleven surveyed ones branch from, the datum the province measures against without knowing whose it is, and a vault under the centre that nobody has ever been shown.',
+        holdsVein: true,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -1673,6 +1790,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'apex',
         parentFactionId: null,
         holds: 'Driven ground across five provinces, held directly and administered face by face, with no client sects, no leases and no vassals anywhere in the arrangement.',
+        holdsVein: true,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -1700,6 +1819,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'sect-azure-cloud-pavilion',
         holds: 'The lower gorge, inside the Pavilion\'s own grant rather than under one of its own, on terms that have never been written down because both parties are the same institution.',
+        holdsVein: true,
+        levy: null,
         terms: {
             tributeStonesPerYear: 0,
             inKind: [
@@ -1727,6 +1848,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'sect-azure-mist-court',
         holds: 'Four hill villages at the head of the gorge, where the vein runs shallow, held from the Mist rather than from the terraces - which is the only place in the Azure grant where anything is held at one remove.',
+        holdsVein: true,
+        levy: null,
         terms: {
             tributeStonesPerYear: 0,
             inKind: [
@@ -1753,6 +1876,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'apex',
         parentFactionId: null,
         holds: 'The gorge vein at Green Water City and the terraced peaks above it, outright, on no grant from anyone. The Pavilion was a Third Sill tenant for fifteen hundred years and stopped being one in the year Ru Anjing crossed.',
+        holdsVein: true,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -1768,6 +1893,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
         holds: 'The deepest vein in the province, held on the oldest continuous grant in the Jade Gorge.',
+        holdsVein: true,
+        levy: null,
         terms: {
             tributeStonesPerYear: 0,
             inKind: ['the entire vein output above a fixed local allowance, taken quarterly', 'maintenance of the workings, at the Order\'s own cost'],
@@ -1794,6 +1921,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'sect-nine-peaks-ascetic-order',
         holds: 'The spring valley, held from the Ascetic Order rather than from the Sill: a sub-grant, and a rung lower than the Hall lets on.',
+        holdsVein: false,
+        levy: {
+            on: 'Every patient who walks in, billed at the bedside and billed again by letter, including the ones who will never pay',
+            posts: 1,
+            traffic: 'a province'
+        },
         terms: {
             tributeStonesPerYear: 6_000,
             inKind: ['treatment of Order ascetics without charge, which is the term the Hall minds', 'a physician resident at Nine Peaks year-round'],
@@ -1814,6 +1947,18 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
         holds: 'The volcanic flank and the furnace, held on a grant that specifies the furnace rather than the ground.',
+        // POSSESSION, NOT THE INSTRUMENT, and do not correct this back to the
+        // grant. The clan is on the flank and works it; the document says the
+        // furnace only, two Cinder Elders have read it, and they have not told
+        // the rota. All three of those stay true. What this field answers is
+        // which one the world model treats as the fact on the ground, and it
+        // is the ground they are standing on.
+        holdsVein: true,
+        levy: {
+            on: 'Worked steel, sold off the flank at the price the rota sets, to half the armed men in the region',
+            posts: 1,
+            traffic: 'a city gate'
+        },
         terms: {
             tributeStonesPerYear: 12_000,
             inKind: ['a fixed quota of worked steel annually, collected without discussion of price'],
@@ -1834,6 +1979,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'sect-frostmirror-court',
         holds: 'The volcanic field furnace halls, and the refining hall with the Furnace Script on the wall.',
+        holdsVein: false,
+        levy: {
+            on: 'Refining brought to the counter, at a fixed price list nobody negotiates',
+            posts: 1,
+            traffic: 'a city gate'
+        },
         terms: {
             tributeStonesPerYear: 18_000,
             inKind: ['a standing supply of earth-grade medicine at cost, quantity unspecified and therefore unlimited'],
@@ -1874,6 +2025,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'The fog valley nine retreats below the working face and the terraces above it, outright, on no instrument of any kind - the only fixed band in a province where a holding is an elevation and every elevation moves.',
+        holdsVein: false,
+        levy: {
+            on: 'The only crop growing north of the pass, sold over a pass the Court does not control at a price it does not set',
+            posts: 1,
+            traffic: 'a road'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'named',
@@ -1889,6 +2046,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'court',
         parentFactionId: 'apex-earth-vein-tower',
         holds: 'The glacier and the cold vein under it, on a grant nobody else has ever applied for.',
+        holdsVein: true,
+        levy: {
+            on: 'Cold off the glacier, sold by the load to the furnace halls that cannot work without it',
+            posts: 1,
+            traffic: 'a city gate'
+        },
         terms: {
             tributeStonesPerYear: 3_000,
             inKind: ['a copy of every inscription recovered from the ice, sent onward unread by the Court'],
@@ -1909,6 +2072,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
         holds: 'The caldera and the vent vein, on a grant that the righteous sects of the province do not believe exists.',
+        holdsVein: true,
+        levy: null,
         terms: {
             tributeStonesPerYear: 55_000,
             inKind: ['nothing in kind; the Sill takes stones from this one and has never explained the preference'],
@@ -1929,6 +2094,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'court',
         parentFactionId: 'apex-earth-vein-tower',
         holds: 'The floating stone, and a vein the Ward can no longer reach the bottom of.',
+        holdsVein: true,
+        levy: null,
         terms: {
             tributeStonesPerYear: 30_000,
             inKind: ['inspection access to the tether once a decade, which the Court dreads and cannot refuse'],
@@ -1949,6 +2116,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'sect-storm-tyrant-court',
         holds: 'The sinkhole and the thin vein beneath the town, on the least valuable grant in the province.',
+        holdsVein: true,
+        levy: null,
         terms: {
             tributeStonesPerYear: 9_000,
             inKind: ['a list, annually, of everyone the righteous sects refused that year, which the Hall compiles anyway'],
@@ -1969,6 +2138,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
         holds: 'No vein at all: a charter to hold auctions in the province, which is a grant of a different kind and renewed on the same cycle.',
+        holdsVein: false,
+        levy: {
+            on: 'A cut of every lot that crosses the block, under a charter to hold the province\'s auctions',
+            posts: 1,
+            traffic: 'a province'
+        },
         terms: {
             tributeStonesPerYear: 22_000,
             inKind: ['a catalogue of every lot above a threshold value, sent onward before the auction rather than after it'],
@@ -1989,6 +2164,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'subsidiary',
         parentFactionId: 'court-third-sill',
         holds: 'The assay monopoly: the right to set and publish the exchange rate, granted rather than earned.',
+        holdsVein: false,
+        levy: {
+            on: 'An assay fee on anything anybody wants valued, under the monopoly on publishing the rate everything else is priced against',
+            posts: 1,
+            traffic: 'a province'
+        },
         terms: {
             tributeStonesPerYear: 0,
             inKind: ['the rate itself, set within a band the Stone Marrow Hall is given and has never published', 'refining capacity reserved for the Sill\'s own use, quantity unstated'],
@@ -2018,6 +2199,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         // right and the other three have been corrected to it.
         parentFactionId: 'apex-myriad-course-hall',
         holds: 'The datum: the root vein, held on nobody\'s behalf but the Survey\'s, and drawn on by nobody at all.',
+        holdsVein: true,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -2062,6 +2245,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'administration',
         parentFactionId: 'court-ninth-face',
         holds: 'Nothing of its own. It administers both workable faces on the Myriad Course Hall\'s behalf, from a counter, with a register.',
+        holdsVein: false,
+        levy: {
+            on: 'Grant days at the counter, bought with stones, by every carver in five provinces',
+            posts: 1,
+            traffic: 'a province'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -2076,6 +2265,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'contracted',
         parentFactionId: 'sect-clearwater-ward',
         holds: 'A salvage contract, renewed annually, on burn zones that are administered rather than leased.',
+        holdsVein: false,
+        levy: {
+            on: 'A salvage rate per load off the burn zones, renewed annually and paid by whoever administers them',
+            posts: 1,
+            traffic: 'a road'
+        },
         terms: {
             tributeStonesPerYear: 2_000,
             inKind: ['a share of every find above a threshold, assessed at the administration\'s valuation', 'crew rolls submitted quarterly, by name, including the dead'],
@@ -2096,6 +2291,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Nothing. Nine hundred painted stakes, a shed and a survey, none of which anybody has thought to grant.',
+        holdsVein: false,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
@@ -2134,6 +2331,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Forty acres of island with no vein under it, a quay, a weigh house and a cistern, none of it granted by anybody and none of it claimed beyond the shoal line.',
+        holdsVein: false,
+        levy: {
+            on: 'A cut of everything that crosses the weigh rail, taken at the quay before it reaches the shoal line',
+            posts: 1,
+            traffic: 'a city gate'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -2149,6 +2352,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'A shed and a stockyard a day past the last painted stake, and a route across ground where a route has to be rewalked every season to still exist.',
+        holdsVein: false,
+        levy: {
+            on: 'A night in the stockyard and a place in the next train out, charged to whoever is crossing',
+            posts: 1,
+            traffic: 'a trickle'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
@@ -2161,9 +2370,16 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
 
     'sect-ancient-bough-grove': {
         factionId: 'sect-ancient-bough-grove',
-        governance: 'deference',
+        // UNBACKED, AND THE DEFERENCE IS THE REASON RATHER THAN THE CATEGORY.
+        // This carried `deference`, which was the only row that ever did. It
+        // holds from nobody, like every other house in this block; what is
+        // particular about it is why nobody has taken the ground, and that is
+        // a sentence in the note where every other unbacked house keeps one.
+        governance: 'unbacked',
         relation: 'unaffiliated',
         holds: 'A valley, a mountain and four settlements administered directly, and a zone eleven days across held by nothing but a belief about what would happen.',
+        holdsVein: false,
+        levy: null,
         parentFactionId: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
@@ -2171,7 +2387,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         costOfIndependence: 'It cannot grow. Six disciples is the number at which every one of them is known by name across the province, and the deference is a belief about those six specific people rather than about an institution - so a seventh means a roster, a roster means administration, and administration means the belief stops being about anybody in particular.',
         unbackedReason: 'holding_something',
         independenceStance: 'proud',
-        note: 'Direct rule by respect. The Grove holds what it can comfortably walk and claims nothing beyond it, and the ground beyond it is nevertheless theirs because nobody has been willing to find out otherwise since the year 41 test. The Third Sill Court has never granted the valley to anyone, has never been asked to, and has left the file open.'
+        holdsByReputation: true,
+        note: 'It holds from nobody, by reputation: nothing is granted, nothing is paid, and the ground is theirs because of what the province believes would happen to whoever went and took it. The Grove holds what it can comfortably walk and claims nothing beyond it, and the ground beyond it is nevertheless theirs because nobody has been willing to find out otherwise since the year 41 test. The Third Sill Court has never granted the valley to anyone, has never been asked to, and has left the file open.'
     },
     // ── unaffiliated, and paying for it ───────────────────────────────
     'sect-sweptground-temple': {
@@ -2180,6 +2397,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Swept ground, chosen for having no vein under it, and therefore nothing anybody needs to grant.',
+        holdsVein: false,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'whisper',
@@ -2195,6 +2414,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Fords and traffic. No vein, no grant, and no relationship with anything above it.',
+        holdsVein: false,
+        levy: {
+            on: 'A crossing fee at every ford it watches, taken off the traffic and off nobody\'s grant',
+            posts: 4,
+            traffic: 'a city gate'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
@@ -2210,6 +2435,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Nothing whatsoever, which the league presents as philosophy.',
+        holdsVein: false,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
@@ -2228,6 +2455,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'A walled yard and the dry shelf under it, with no vein beneath either and no instrument over them.',
+        holdsVein: false,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
@@ -2243,6 +2472,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Battlefields on a rotation, none of them granted, all of them nominally somebody else\'s.',
+        holdsVein: false,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'unaware',
@@ -2258,6 +2489,12 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Rented cutting houses at the edge of six cities, and no ground at all.',
+        holdsVein: false,
+        levy: {
+            on: 'A price per cutting, taken at the edge of six cities from people who came a long way to be there',
+            posts: 6,
+            traffic: 'a road'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'named',
@@ -2273,6 +2510,8 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'The richest vein anyone has ever surveyed, and the four mountains standing on it. Not granted, not leased, not claimed - occupied, by people nothing in the world can make leave.',
+        holdsVein: true,
+        levy: null,
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'known',
@@ -2283,13 +2522,19 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         note: 'The Earth Vein Tower has written to the Court once. The letter was answered and the Ward has not discussed it, and the province has spent two hundred years deciding what that means. Both institutions know the thing nobody says aloud: the Survey administers the vein system, and the one vein it does not administer is the best one.'
     },
 
-    // ── outside the vein stack entirely: the Dao houses ───────────────
+    // ── the bloodline houses: a family before it is an institution ────
     'house-ninefold-karma': {
         factionId: 'house-ninefold-karma',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'bloodline',
+        relation: 'bloodline',
         parentFactionId: null,
         holds: 'No vein. A book hall and forty-one arbitration benches, none of which anybody grants.',
+        holdsVein: false,
+        levy: {
+            on: 'A term on every matter brought to a bench, priced as a debt and collected as one',
+            posts: 41,
+            traffic: 'a trickle'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'placed',
@@ -2301,10 +2546,16 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
     'house-flowing-light': {
         factionId: 'house-flowing-light',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'bloodline',
+        relation: 'bloodline',
         parentFactionId: null,
         holds: 'A hall with no walls on a bare hill nobody has ever wanted, and four standing chairs beside four thrones.',
+        holdsVein: false,
+        levy: {
+            on: 'A retainer from every throne and sect keeping a reader in the room',
+            posts: 11,
+            traffic: 'a road'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'whisper',
@@ -2316,10 +2567,16 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
     'house-vermilion-seal': {
         factionId: 'house-vermilion-seal',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'bloodline',
+        relation: 'bloodline',
         parentFactionId: null,
         holds: 'Oath halls and a treaty vault, which are buildings rather than ground.',
+        holdsVein: false,
+        levy: {
+            on: 'A fee to swear in the hall and a standing charge to keep the term in the vault',
+            posts: 1,
+            traffic: 'a province'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'named',
@@ -2331,10 +2588,16 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
     'house-still-blade': {
         factionId: 'house-still-blade',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'bloodline',
+        relation: 'bloodline',
         parentFactionId: null,
         holds: 'Four portable nodes, no address, no ground, and a policy of leaving nothing behind that could be surveyed.',
+        holdsVein: false,
+        levy: {
+            on: 'A price per connection removed, by age and load, taken at a node with no address',
+            posts: 4,
+            traffic: 'a city gate'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'whisper',
@@ -2346,10 +2609,16 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
     'house-jade-register': {
         factionId: 'house-jade-register',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'bloodline',
+        relation: 'bloodline',
         parentFactionId: null,
         holds: 'Register houses at nine city gates, leased from the cities.',
+        holdsVein: false,
+        levy: {
+            on: 'A registration taken at nine city gates from everybody who wants a name that will be recognised',
+            posts: 9,
+            traffic: 'a city gate'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'whisper',
@@ -2361,10 +2630,16 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
     'house-shrinking-earth': {
         factionId: 'house-shrinking-earth',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'bloodline',
+        relation: 'bloodline',
         parentFactionId: null,
         holds: 'Nine gate stations, on ground so worthless the question of granting it has never arisen.',
+        holdsVein: false,
+        levy: {
+            on: 'A fare per li of true distance, charged at nine gate stations to whoever wants the short way',
+            posts: 9,
+            traffic: 'a road'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'named',
@@ -2376,10 +2651,16 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
     },
     'house-immovable-mountain': {
         factionId: 'house-immovable-mountain',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'bloodline',
+        relation: 'bloodline',
         parentFactionId: null,
         holds: 'Eleven perimeters, the standard weights and the surface survey of record.',
+        holdsVein: false,
+        levy: {
+            on: 'A season of perimeter at whoever\'s cost, and a fee on every weight checked against the standard',
+            posts: 11,
+            traffic: 'a road'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'whisper',
@@ -2389,19 +2670,37 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         independenceStance: null,
         note: 'Immovable Mountain Temple has noticed that the datum stone every measurement in the province is taken from is itself a marker referring to a survey the house does not hold. It has never published this, three Wardens of the Survey know, and it is the closest any Jade Gorge institution has come to naming the thing above them.'
     },
+    // NOT A FAMILY HOUSE, AND IT WAS FILED AS ONE. It sat in this block on the
+    // strength of selling a service rather than holding ground, which the
+    // seven above also do - and there the resemblance stops. The Hall has an
+    // admission day, a literacy test and a written account of one loss, takes
+    // whoever clears them, and has no surname. It is an unbacked sect.
     'house-lantern-hall-placeholder': {
         factionId: 'sect-lantern-hall',
-        governance: 'outside',
-        relation: 'outside',
+        governance: 'unbacked',
+        relation: 'unaffiliated',
         parentFactionId: null,
         holds: 'Reading halls in nine cities and the stack rooms beneath them.',
+        holdsVein: false,
+        levy: {
+            on: 'A reading fee at nine halls, and a charge to have a name put on the wall',
+            posts: 9,
+            traffic: 'a trickle'
+        },
         terms: NO_TERMS,
         standing: 'not_applicable',
         awarenessOfApex: 'named',
         costOfIndependence:
             'Unwelcome in nine cities, dependent on leases it does not control, and holding nothing anybody wants except records several parties would prefer did not exist.',
-        unbackedReason: null,
-        independenceStance: null,
+        // Both fields were null while the row sat outside the vein stack,
+        // where no unbacked house's reason was asked for. As an unbacked house
+        // it owes the same two answers as the rest of them, and the catalog
+        // already contains both: what it holds is a set of records several
+        // parties would rather did not exist, which is a reason to leave it
+        // where it is rather than to own it, and nobody has offered it
+        // anything and it has asked nobody.
+        unbackedReason: 'holding_something',
+        independenceStance: 'indifferent',
         note: 'The Hall records crossings. Somebody above the province has been receiving copies of its crossing ledger for two hundred years, by an arrangement the Hall believes it initiated.'
     }
 };

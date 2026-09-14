@@ -112,8 +112,8 @@ that six people have been inside.
 | `formationIntegrity` | Whether the books are on shelves (`scripture_pavilion`) or behind a lock nobody can open (`archive`) |
 | `governance` | A house that answers to somebody has a room to be answered in |
 | `tributeStonesPerYear` | Something owed needs somewhere it is counted before it leaves |
-| `holdsVein` | A house on a vein has a chamber over it |
-| `production` | A house that can still make things has a workshop and a treasury |
+| `holdsVein` | A house on a vein has a chamber over it, an ore hall to work what comes off it, and a vault. Authored on the parentage record: this read `Boolean(holds)` over a required sentence, so every house in the world had all three |
+| `reliableOrdinal` | What rung the house turns out cuts its own stone, so it decides how square the masonry is. It replaced a 0..1 `production` that was 0.5 for all 38 houses, which made every compound `fitted` and gave none of them a workshop |
 | `specialities` | A physician house gets an infirmary; an alchemical one gets a furnace floor |
 | `sealedCeilingOrdinal` | A house with something asleep has somewhere to keep it |
 | `powerOrdinal`, `inherited` | How big the rooms are, against how many people are in them |
@@ -374,7 +374,7 @@ The columns that most change what comes out, in rough order of effect:
 3. `compound.formationNodesLit / Total` - how porous it is, and where
 4. `preferredRoots` - whether the buildings are elemental
 5. `compound.inherited` + `powerOrdinal` - whether it fits the people in it
-6. `governance`, `alignment`, `production` - the working rooms and the finish
+6. `governance`, `alignment`, `reliableOrdinal` - the working rooms and the finish
 
 ## Adding a room purpose
 

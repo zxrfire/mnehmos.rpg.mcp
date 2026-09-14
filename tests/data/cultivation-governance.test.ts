@@ -19,6 +19,7 @@ import { readFileSync } from 'node:fs';
 import {
     SECTS,
     SECT_ANCESTRY,
+    DAO_HOUSES,
     getSect,
     getSectAdmission,
     sectThreat,
@@ -27,8 +28,7 @@ import {
     HOLLOW_COURT_FOSTERAGE,
     FOSTERAGE_TERMS,
     fosterageTermsOf,
-    WITHDRAWN_POWERS,
-    SECT_ANCESTRY as ANCESTRY_FOR_CANDIDACY
+    WITHDRAWN_POWERS
 } from '../../src/data/cultivation/sects.js';
 import { REGIONS, getRegion } from '../../src/data/cultivation/regions.js';
 import {
@@ -152,12 +152,39 @@ describe('the pyramid', () => {
     });
 });
 
-describe('the four governance models', () => {
-    it('marks every faction with exactly one model, and all four are used', () => {
+describe('how a body is backed', () => {
+    // TWO OF THE OLD MODELS WERE NOT WAYS OF BEING BACKED, and the design
+    // owner's ruling removed both. `deference` marked one house that holds
+    // from nobody - which is `unbacked`, and the belief holding its ground is
+    // the REASON, now `holdsByReputation` and a sentence in its own note.
+    // `outside` marked eight rows on the strength of selling a service rather
+    // than holding ground, of which seven are families whose intake is kinship
+    // and one was a sect with an admission day and a literacy test.
+    it('marks every faction with exactly one model, and every model is used', () => {
         const models = new Set(Object.values(FACTION_PARENTAGE).map(p => p.governance));
-        for (const model of ['federated', 'administered', 'deference', 'unbacked'] as const) {
+        for (const model of ['federated', 'administered', 'unbacked', 'bloodline', 'unassailable'] as const) {
             expect(models.has(model), `no faction uses the ${model} model`).toBe(true);
         }
+        expect(models.has('deference' as never), 'deference is a reason, not a model').toBe(false);
+        expect(models.has('outside' as never), 'outside was a family house and a sect at once').toBe(false);
+    });
+
+    it('gives every bloodline house a family and every family house the mark', () => {
+        const bloodline = Object.values(FACTION_PARENTAGE).filter(p => p.governance === 'bloodline');
+        expect(bloodline.length).toBe(DAO_HOUSES.length);
+        for (const p of bloodline) {
+            const house = DAO_HOUSES.find(h => h.id === p.factionId);
+            expect(house, `${p.factionId} is marked bloodline and is not a family house`).toBeDefined();
+            expect(house!.houseSurname.length).toBeGreaterThan(0);
+            expect(p.relation).toBe('bloodline');
+            expect(p.parentFactionId).toBeNull();
+        }
+        // The one that used to sit in that block and is not a family: it takes
+        // applicants, tests them, and has no surname.
+        const hall = getParentage('sect-lantern-hall')!;
+        expect(hall.governance).toBe('unbacked');
+        expect(hall.relation).toBe('unaffiliated');
+        expect(getSect('sect-lantern-hall')!.recruits).toBe(true);
     });
 
     it('runs the two provinces on different models, visible at the border', () => {
@@ -204,7 +231,15 @@ describe('the four governance models', () => {
             expect(sect, `${d.factionId} is not in the catalog`).toBeDefined();
             expect(sect.alignment, 'deference suits a sect people are glad to have nearby')
                 .toBe('righteous');
-            expect(getParentage(d.factionId)!.governance).toBe('deference');
+            // UNBACKED, AND THE BELIEF IS THE REASON. This asserted
+            // `governance === 'deference'`, which filed a house holding from
+            // nobody under a model of its own; the hold is a field on the
+            // parentage now and the sentence is in the house's own note.
+            const p = getParentage(d.factionId)!;
+            expect(p.governance).toBe('unbacked');
+            expect(p.parentFactionId).toBeNull();
+            expect(p.holdsByReputation).toBe(true);
+            expect(p.note).toMatch(/by reputation/i);
             // Small, selective, and it cannot grow without changing kind.
             expect(d.disciples).toBeLessThanOrEqual(8);
             expect(d.selectivityIsLoadBearing.length).toBeGreaterThan(100);
@@ -615,7 +650,7 @@ describe('holding ground by being unanswerable', () => {
         expect(threat.withdrawn!.hasAppearedFor.length).toBeGreaterThan(0);
 
         // Everyone else at the top of the ladder is asleep under a mountain.
-        for (const [id, record] of Object.entries(SECT_ANCESTRY)) {
+        for (const id of Object.keys(SECT_ANCESTRY)) {
             if (id === HOLLOW_COURT) continue;
             const sect = getSect(id);
             if (!sect || sect.powerOrdinal < 41) continue;

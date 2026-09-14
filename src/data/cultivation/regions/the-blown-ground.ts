@@ -357,6 +357,11 @@ export const THE_BLOWN_GROUND: UngovernedGround = {
         { name: PLACE.TUOS_WALL, kind: 'site', ambient: 'thin', note: 'Where a house tried to stand still. About two hundred paces of it are above the sand and the rest is not, and nobody now living can name what it was called.' },
         {
             name: PLACE.HALFWAY_GATE,
+            // "One gate station, at Halfway Gate, on ground so worthless the
+            // question of granting it has never arisen." The province holds
+            // nothing and this is the one thing standing on it that somebody
+            // answers for.
+            heldByFactionId: 'house-shrinking-earth',
             kind: 'waystation', ambient: 'thin', note: 'The gate station, which is not midway and is about a third of the way, and which everybody provisions against as though it were half.',
             connections: [
                 {

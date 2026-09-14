@@ -17,21 +17,25 @@
  *
  * ── THE CHAIN, AND WHERE IT RUNS OUT ─────────────────────────────────────
  *
- * Measured on a seeded world: 944 locations, 879 of them carrying a holder -
- * every precinct, hall, vault, chamber, sect seat and vein. The 65 that do not
- * are the five regions, the eighteen settlements, and the wilds, ruins and
- * scars between them. **So a compound has a holder and a town does not**, which
- * is exactly the ground a player spends most of a run standing on.
+ * Measured on a seeded world when this file was written: 944 locations, 879 of
+ * them carrying a holder - every precinct, hall, vault, chamber, sect seat and
+ * vein - and not one of the settlements. **So a compound had a holder and a
+ * town did not**, which is exactly the ground a player spends most of a run on.
  *
- * That is not a hole to be filled by stamping a faction onto every town. The
- * catalog already answers it and has never been asked: `PREFECTURES` in
- * `data/cultivation/regions.ts` carries `seat` and `places` as `RegionPlace`
- * NAMES, and `heldByFactionId` with `null` documented in place as "a real
- * answer... ground the record carries with no name against it". Four of the
- * fifteen rows are null. Nothing in `src/` read that table before this file.
+ * That was never a hole to be filled by stamping a faction onto every town, and
+ * it is now filled by asking the catalog, which had been answering all along:
+ * `PREFECTURES` in `data/cultivation/regions.ts` carries `seat` and `places` as
+ * `RegionPlace` NAMES with `heldByFactionId` beside them, `null` documented in
+ * place as "a real answer... ground the record carries with no name against
+ * it". `catalog.ts` now joins that register onto each place and `seedRegions`
+ * stamps the column, so 11 of the 23 settlements carry a holder at seeding and
+ * 12 carry none on purpose. This file read the register first; the difference
+ * is that the world now holds the answer, which is what let the economy charge
+ * for it.
  *
- * So the chain is: the column, then the prefecture register, then the region's
- * own politics, and the three run out in different ways which are kept apart:
+ * The chain is unchanged: the column, then the prefecture register, then the
+ * region's own politics, and the three run out in different ways which are
+ * kept apart:
  *
  *   held                  somebody holds this and can be named
  *   no_holder_of_record   the register carries the ground with nobody's name
@@ -55,7 +59,7 @@
 import { PREFECTURES } from '../../data/cultivation/regions.js';
 import { getSect } from '../../data/cultivation/sects.js';
 import type { SectAlignment } from '../../schema/cultivation.js';
-import type { LocationRecord } from './locations.js';
+import { whatATownPaysItsHolder, type LocationRecord } from './locations.js';
 import { rowById } from './world-state.js';
 
 /** How the question was answered, and the three ways it can fail to be. */
@@ -126,10 +130,12 @@ function chainFrom(
  * The same chain `whoHoldsTheGround` walks, read in the other direction, and
  * the inverse question is the one somebody standing in a town actually asks:
  * that read answers *whose ground am I on* by looking UPWARD for a holder, and
- * a named settlement has none - the houses are nested INSIDE it. Measured on a
- * pinned world: 988 of 1063 location records carry a holder and 0 of the 12
- * places a player's `location` can be do, because the held ones are the
- * compounds, precincts and vaults sitting under those names.
+ * a settlement is where the chain used to stop: measured on a pinned world, 988
+ * of 1063 location records carried a holder and 0 of the 12 places a player's
+ * `location` can be did, because the held ones were the compounds, precincts
+ * and vaults sitting under those names. The settlements carry their own holder
+ * now where the catalog names one, and the twelve that do not are unheld ground
+ * rather than an unasked question.
  */
 export function sitsWithin(
     locations: readonly LocationRecord[],
@@ -318,5 +324,59 @@ export function whoHoldsTheGround(
         holderName: null,
         alignment: null,
         why: `Nothing on the record says who holds ${here.name}.`
+    };
+}
+
+/**
+ * Who collects here, and how much a year, for somebody standing in the town.
+ *
+ * THE READ THAT WAS ONLY EVER BUILT ONE WAY. A house could always answer what
+ * it charges - `levy.on` is a sentence on the parentage record - and no place
+ * could answer who charges AT IT. A verb at a city gate would have had to
+ * search twenty-one levying houses for one whose `on` sentence mentioned a
+ * gate, which is parsing prose, so the fee at a gate that this world charges in
+ * every other sentence it writes about itself was unreachable from the ground
+ * it is charged on.
+ *
+ * It answers for ground with no holder too, because a refusal that names the
+ * gate is content and an empty answer is not: `holding` says which of the four
+ * ways the question ran out, and `why` is the line to hand a narrator.
+ */
+export interface WhoCollectsHere {
+    placeId: string | null;
+    placeName: string | null;
+    holding: GroundHolding;
+    holderFactionId: string | null;
+    holderName: string | null;
+    /**
+     * What the people of this town pay the holder in a year, in stones. Zero
+     * for ground nobody holds and for ground that is not a town - a vein, a
+     * ruin, a compound - which pay their holder by other means.
+     */
+    stonesAYear: number;
+    why: string;
+}
+
+export function whoCollectsHere(
+    locations: readonly LocationRecord[],
+    locationId: string | null | undefined
+): WhoCollectsHere {
+    const ground = whoHoldsTheGround(locations, locationId);
+    const here = locationId ? rowById(locations, locationId) : null;
+    // Only the town itself pays, never an ancestor's town: `whoHoldsTheGround`
+    // walks up to find who holds a hall inside a compound inside a city, and
+    // charging the hall the city's tax would collect the same town twice.
+    const stonesAYear = here && ground.holderFactionId !== null
+        && ground.answeredAtId === here.id
+        ? whatATownPaysItsHolder(here)
+        : 0;
+    return {
+        placeId: ground.placeId,
+        placeName: ground.placeName,
+        holding: ground.holding,
+        holderFactionId: ground.holderFactionId,
+        holderName: ground.holderName,
+        stonesAYear,
+        why: ground.why
     };
 }

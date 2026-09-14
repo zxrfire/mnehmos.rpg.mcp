@@ -203,6 +203,15 @@ export const THE_QUIET_MARCHES: Region = {
     places: [
         {
             name: PLACE.IRON_GATE,
+            // THE PROVINCE IS ADMINISTERED DIRECTLY, WHICH IS THE ANSWER FOR
+            // EVERY TOWN IN IT. "There is no sect to join... a cultivator deals
+            // with the administration itself, at a counter", and the counter at
+            // Iron Ridge is the Clearwater Ward's, which holds "Nothing of its
+            // own" and administers two faces on the Hall's behalf. `DIRECT_RULE`
+            // settles who collects in one word - `noSkim`, nothing is taken by
+            // an intermediate tier - so the town is the Hall's and the counter's
+            // own income is the grant-day levy it is authored with.
+            heldByFactionId: 'sect-myriad-course-hall',
             kind: 'market_town', ambient: 'thin', note: 'Clearwater Ward town: grant queue, assay house, temple, and a permanent dust plume.',
             // THE BURN EDGE IS THE MAP HERE.
             //
@@ -235,6 +244,11 @@ export const THE_QUIET_MARCHES: Region = {
         },
         {
             name: PLACE.GRAVE_MARKET,
+            // The Caravan's sorting yard stands here and its holding is the
+            // salvage contract over the burn zones, "administered rather than
+            // leased". A contractor paid by the administration does not govern
+            // the village it works out of.
+            heldByFactionId: 'sect-myriad-course-hall',
             kind: 'village', ambient: 'thin', note: 'Fallen Grain Caravan\' sorting yard, where salvage is priced before it goes to Iron Ridge.',
             connections: [
                 {
@@ -248,6 +262,12 @@ export const THE_QUIET_MARCHES: Region = {
         },
         {
             name: PLACE.SIX_LI,
+            // "A district with no face has no holder, so the column is blank" -
+            // and the ground under it is ground "the Myriad Course Hall has
+            // never scheduled", repainted by six people nobody pays. The one
+            // place in an administered province the administration does not
+            // reach, which is why it is authored rather than left silent.
+            heldByFactionId: null,
             kind: 'hamlet', ambient: 'thin', note: 'A shed, a survey, and the Wardens who repaint the stakes.',
             connections: [
                 {

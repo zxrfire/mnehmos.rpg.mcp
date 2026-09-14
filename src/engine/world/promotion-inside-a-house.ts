@@ -73,6 +73,7 @@ import type { NpcRecord } from './npc-state.js';
 import type { FactionRecord } from './world-state.js';
 import type { WorldState } from './world-state.js';
 import { rankRealmBand } from '../../data/cultivation/members.js';
+import { whatItCanPutOnTheGround } from './seeding.js';
 
 /**
  * How many people a house will seat at each rank.
@@ -127,17 +128,19 @@ export function seatsAtRank(
 /**
  * How far a house is from having to ration its own ranks, 0..1.
  *
- * Self-sufficiency is the honest proxy and it is already computed: `production`
- * on the catalog faction is exactly "how much it can make for itself", and a
- * house that makes everything it needs is not choosing between two disciples
- * for one stipend. Squared, so that abundance has to be near-total before it
+ * What a house can put on the ground is the honest proxy, and a house whose own
+ * people can make what it needs is not choosing between two disciples for one
+ * stipend. Squared, so that abundance has to be near-total before it
  * meaningfully flattens a hierarchy - comfortable is not the same as limitless,
  * and only the very top of the world is limitless.
+ *
+ * This read `resources.production`, which was seeded at 0.5 for every house in
+ * the world, so `abundance` was 0.3 everywhere and no house's hierarchy was
+ * flatter than any other's - including the apexes this paragraph is about.
  */
 export function abundanceOf(house: FactionRecord): number {
-    const production = Number(house.resources.production ?? 0.5);
+    const base = whatItCanPutOnTheGround(Number(house.resources.reliable_ordinal ?? 0));
     const veins = Number(house.resources.veins ?? 0);
-    const base = Math.max(0, Math.min(1, production));
     return Math.min(1, base * base * (veins > 0 ? 1.2 : 0.8));
 }
 

@@ -39,7 +39,16 @@ import type { LinkKind } from './locations.js';
  * different worlds: a federated sect can lose its vein to a renewal it does not
  * control, an unbacked one can only lose it to somebody who comes and takes it.
  */
-export type GovernanceModel = 'federated' | 'administered' | 'deference' | 'unbacked';
+export type GovernanceModel = 'federated' | 'administered' | 'unbacked' | 'bloodline';
+
+/**
+ * How much goes past ONE place a house collects at. Mirrors `LevyTrafficSchema`
+ * in the governance catalog; declared here for the same reason
+ * `GovernanceModel` is, so the world layer does not import content.
+ */
+export type LevyTraffic = 'a trickle' | 'a road' | 'a city gate' | 'a province';
+
+const LEVY_TRAFFIC: readonly LevyTraffic[] = ['a trickle', 'a road', 'a city gate', 'a province'];
 
 export interface CatalogFaction {
     id: string;
@@ -58,19 +67,37 @@ export interface CatalogFaction {
     /** Symmetric across the catalog. */
     rivalIds: string[];
     governance: GovernanceModel;
+    /**
+     * Unbacked, and holding its ground on what people believe would happen to
+     * whoever went and took it. The only hold in the world that can go in a
+     * season without anybody crossing a line, which is why it is a field
+     * rather than a sentence: `the-world-changing-on-its-own.ts` tests it.
+     */
+    holdsByReputation: boolean;
     /** Who it answers to, when anyone. */
     parentFactionId: string | null;
-    /** Whether it holds a vein at all, and on what terms. */
+    /**
+     * Whether any of what it holds is a spirit vein. Stated on the parentage
+     * record, never read off the prose beside it.
+     *
+     * This was `Boolean(parent.holds)` over a required sentence, so it was true
+     * for 38 of 38 while the sentences said "chosen for having no vein under
+     * it", "no ground at all", "Nothing whatsoever". Everything downstream of
+     * it was already written to branch - `seedSectGround`'s formation hazard,
+     * `resources.veins`, the vein a house is given control of, the compound's
+     * vein chamber - and none of those branches had ever been taken.
+     */
     holdsVein: boolean;
+    /**
+     * What it charges and where, or null where it charges nobody.
+     *
+     * Not exclusive with `holdsVein`: several houses hold ground and a gate.
+     * `on` is carried across for a reader and is never switched on.
+     */
+    levy: { on: string; posts: number; traffic: LevyTraffic } | null;
     tributeStonesPerYear: number;
     /** Years between grant renewals. Zero when nothing is renewed. */
     renewalYears: number;
-    /**
-     * How much it can make for itself, 0..1. The production tier from the
-     * faction-character catalog, flattened. Decides how fast a treasury
-     * recovers from a bad decade and whether losing a vein is fatal.
-     */
-    production: number;
     /**
      * What it can still MAKE, as against what it happens to contain.
      *
@@ -173,6 +200,22 @@ export interface CatalogPlace {
      * the whole design of this field, and undefined is the sparsest it gets.
      */
     connections?: PlaceConnection[];
+    /**
+     * The house that administers this settlement, or null where nobody does.
+     *
+     * Joined here rather than authored here, the same way `mapFaction` joins
+     * parentage onto a sect: the prefecture register answers it for the two
+     * provinces that have prefectures, the place's own row answers it for the
+     * four that do not, and `seedRegions` stamps whichever answered onto
+     * `LocationRecord.controllingFactionId`.
+     *
+     * Null is an answer and undefined is not. Null means the catalog says
+     * nobody holds this - a basin the register carries with no name against it,
+     * a province that states nobody in it holds ground. Undefined means nothing
+     * has been written, which `whoHoldsTheGround` reports as `unrecorded` and
+     * nothing may read as a vacuum.
+     */
+    heldByFactionId?: string | null;
 }
 
 export interface PlaceConnection {
@@ -333,9 +376,16 @@ export async function loadCultivationCatalog(): Promise<WorldCatalog> {
         }));
     }
 
+    // The political layer. It is the authority on who administers a settlement
+    // wherever it carries one, and it has never been read by `src/` outside
+    // `ground-holder.ts` - which is why every town in a seeded world had a null
+    // holder while the catalog had been answering the question for two of the
+    // six provinces all along.
+    const register = ((regions as { PREFECTURES?: readonly RawPrefecture[] }).PREFECTURES ?? []);
+
     const mapped: CatalogRegion[] = [];
     for (const raw of (regions.REGIONS ?? []) as unknown as RawRegion[]) {
-        mapped.push(mapRegion(raw));
+        mapped.push(mapRegion(raw, register));
     }
 
     const techniqueIds = (((techniques as { TECHNIQUES?: { id: string }[] } | null)?.TECHNIQUES) ?? [])
@@ -362,16 +412,17 @@ interface RawSect {
 
 interface RawParentage {
     governance?: string;
+    holdsByReputation?: boolean;
     parentFactionId?: string | null;
     holds?: string | null;
+    holdsVein?: boolean;
+    levy?: { on?: string; posts?: number; traffic?: string } | null;
     terms?: { tributeStonesPerYear?: number; renewal?: string } | null;
 }
 
 interface RawCharacter {
+    /** `faction-character.ts`'s `ProductionTier`, and nothing else is authored. */
     production?: {
-        selfSufficiency?: number;
-        tier?: string;
-        /** The real shape, from `faction-character.ts`'s `ProductionTier`. */
         reliableOrdinal?: number;
         peakOrdinal?: number;
         peakCount?: number;
@@ -399,6 +450,7 @@ interface RawRegion {
         kind: string;
         ambient: AmbientQi;
         note: string;
+        heldByFactionId?: string | null;
         connections?: { otherPlaceName: string; kind: string; travelDays: number }[];
     }[];
     connections?: { otherRegionId: string; kind: string; travelDays: number }[];
@@ -432,11 +484,12 @@ function mapFaction(
         territory: raw.territory ?? '',
         rivalIds: (raw.rivals ?? []).slice(),
         governance: normaliseGovernance(parent?.governance),
+        holdsByReputation: parent?.holdsByReputation === true,
         parentFactionId: parent?.parentFactionId ?? null,
-        holdsVein: Boolean(parent?.holds),
+        holdsVein: parent?.holdsVein === true,
+        levy: levyOf(parent),
         tributeStonesPerYear: parent?.terms?.tributeStonesPerYear ?? 0,
         renewalYears: renewalYearsOf(parent?.terms?.renewal),
-        production: productionOf(character),
         ...productionOrdinalsOf(character),
         formationIntegrity: total > 0 ? Number((lit / total).toFixed(4)) : 1,
         sealedCeilingOrdinal,
@@ -454,7 +507,60 @@ function mapFaction(
     };
 }
 
-function mapRegion(raw: RawRegion): CatalogRegion {
+/**
+ * A prefecture row, as much of one as this join needs.
+ *
+ * Structural rather than imported, so `catalog.ts` keeps its one rule: the
+ * engine reads the content catalogs and never depends on their types.
+ */
+interface RawPrefecture {
+    kind: string;
+    seat: string;
+    places: readonly string[];
+    heldByFactionId: string | null;
+}
+
+/**
+ * Who administers a settlement, from whichever layer actually says.
+ *
+ * BASINS ONLY, AND ON `places` RATHER THAN `seat`. Both narrowings are the
+ * register's own distinctions rather than this function's.
+ *
+ * A basin is ground and a face district is WORK - "there is nothing in the air,
+ * so a holding is not ground, it is work. Every one of these is held by an
+ * office or by nobody", which is the banner over the Silent Cliffs rows. So
+ * holding a face district says who cuts the stone, not who governs the village
+ * beside it: the Fallen Grain Caravan holds a salvage contract over a worked-out
+ * face and the Clearwater Ward administers two faces "on the Myriad Course
+ * Hall's behalf", and `DIRECT_RULE` states in one word - `noSkim` - that nothing
+ * is taken by an intermediate tier. Reading either as a town's holder would put
+ * an income in a bureau's hands that the catalog says it does not have.
+ *
+ * And `places` are the settlements INSIDE a district while `seat` is the one it
+ * is RUN OUT OF, which the schema states and which are different facts: Iron
+ * Ridge is the seat of two face districts and is inside neither.
+ *
+ * Where a basin carries the place, its answer stands - `null` included, which is
+ * ground the register prints with nobody's name against it and is the catalog's
+ * own considered answer rather than a gap. Then the place's own row, for the
+ * four provinces that have no prefectures and for the province whose districts
+ * are work. Then undefined, which is nothing having been written.
+ */
+function whoAdministers(
+    place: { name: string; heldByFactionId?: string | null },
+    register: readonly RawPrefecture[]
+): string | null | undefined {
+    const wanted = place.name.trim().toLowerCase();
+    for (const prefecture of register) {
+        if (prefecture.kind !== 'basin') continue;
+        if (prefecture.places.some(p => p.trim().toLowerCase() === wanted)) {
+            return prefecture.heldByFactionId;
+        }
+    }
+    return place.heldByFactionId;
+}
+
+function mapRegion(raw: RawRegion, register: readonly RawPrefecture[]): CatalogRegion {
     const profile = raw.ambientProfile ?? {};
     return {
         id: raw.id,
@@ -473,6 +579,7 @@ function mapRegion(raw: RawRegion): CatalogRegion {
             kind: p.kind as CatalogPlace['kind'],
             ambient: p.ambient,
             note: p.note,
+            heldByFactionId: whoAdministers(p, register),
             connections: (p.connections ?? []).map(c => ({
                 otherPlaceName: c.otherPlaceName,
                 kind: c.kind as LinkKind,
@@ -515,7 +622,10 @@ function normaliseHazard(raw: string): string {
 }
 
 function normaliseGovernance(raw: string | undefined): GovernanceModel {
-    if (raw === 'federated' || raw === 'administered' || raw === 'deference' || raw === 'unbacked') {
+    // `unassailable` is deliberately not here: it is the hierarchy catalog's
+    // word for a body nothing can be sent against, and from the world's side
+    // that body holds from nobody like any other unbacked one.
+    if (raw === 'federated' || raw === 'administered' || raw === 'unbacked' || raw === 'bloodline') {
         return raw;
     }
     // A faction the hierarchy catalog says nothing about answers to nobody,
@@ -532,6 +642,22 @@ function normaliseAlignment(raw: string | undefined): CatalogFaction['alignment'
     return raw === 'righteous' || raw === 'demonic' ? raw : 'neutral';
 }
 
+/**
+ * A record charges nobody unless it says so, and says it in a readable shape.
+ *
+ * A half-stated levy is dropped rather than defaulted: a post count of zero or
+ * a traffic word this layer does not know is an authoring mistake, and giving
+ * it a fallback would hide the mistake behind an income.
+ */
+function levyOf(parent: RawParentage | undefined): CatalogFaction['levy'] {
+    const raw = parent?.levy;
+    if (!raw) return null;
+    const posts = Math.floor(Number(raw.posts ?? 0));
+    const traffic = LEVY_TRAFFIC.find(t => t === raw.traffic);
+    if (!Number.isFinite(posts) || posts < 1 || !traffic) return null;
+    return { on: String(raw.on ?? ''), posts, traffic };
+}
+
 /** First year figure in a renewal clause, or zero when nothing is renewed. */
 function renewalYearsOf(renewal: string | undefined): number {
     if (!renewal) return 0;
@@ -545,7 +671,22 @@ function renewalYearsOf(renewal: string | undefined): number {
 }
 
 /**
- * The three ordinals `productionOf` throws away.
+ * WHAT WENT WITH `productionOf`, AND WHY ITS CALLERS NOW READ ORDINALS.
+ *
+ * There was a `production: number`, 0..1, beside these. It looked for
+ * `character.production.selfSufficiency` or `character.production.tier`;
+ * neither is authored anywhere, so it returned its 0.5 fallback for all 38
+ * houses. Measured on the callers: no compound in the world had a workshop,
+ * every compound had a treasury, every compound was `'fitted'`, and the income
+ * factor `(0.5 + production)` was exactly 1.0 for every house every year.
+ *
+ * It was not one fact short of working. It was ONE WORD OVER TWO FACTS - what
+ * a house turns out in material, and what rung of cultivator it turns out -
+ * and only the second is authored. So the number is gone and each caller reads
+ * the fact it actually wanted: what a house can put on the ground reads
+ * `reliableOrdinal`, and what a house has raw material to work reads
+ * `holdsVein`. Nothing in `src/data/cultivation/` states a house's material
+ * output, and inventing a scalar for it would have restored the collision.
  *
  * A house may record its production as a bare tier string, in which case it has
  * said nothing about ordinals and zero is the honest answer - a caller reading
@@ -565,25 +706,6 @@ function productionOrdinalsOf(character: RawCharacter | undefined): {
     };
 }
 
-function productionOf(character: RawCharacter | undefined): number {
-    const p = character?.production;
-    if (typeof p === 'string') return tierToNumber(p);
-    if (p && typeof p === 'object') {
-        if (typeof p.selfSufficiency === 'number') return clamp01(p.selfSufficiency);
-        if (typeof p.tier === 'string') return tierToNumber(p.tier);
-    }
-    return 0.5;
-}
-
-function tierToNumber(tier: string): number {
-    const s = tier.toLowerCase();
-    if (s.includes('self') || s.includes('surplus') || s.includes('exports')) return 0.9;
-    if (s.includes('sufficient') || s.includes('adequate')) return 0.65;
-    if (s.includes('depend') || s.includes('import') || s.includes('deficit')) return 0.3;
-    if (s.includes('none') || s.includes('nothing')) return 0.1;
-    return 0.5;
-}
-
 function clampOrdinal(n: number): number {
     // `MAX_ORDINAL`, not a literal 44. The hard-coded bound silently truncated
     // every figure above the last mortal rung on its way into the world: a
@@ -595,7 +717,3 @@ function clampOrdinal(n: number): number {
     return Math.max(0, Math.min(MAX_ORDINAL, Math.floor(n)));
 }
 
-function clamp01(n: number): number {
-    if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.min(1, n));
-}

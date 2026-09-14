@@ -2,7 +2,7 @@
  * Architecture - the inside of a compound.
  */
 
-import { clampOrdinal } from '../cultivation/realms.js';
+import { FOUNDATION_ORDINAL, REALM_TIERS, clampOrdinal } from '../cultivation/realms.js';
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { isAtLeast, type KnowingStage } from '../social/discovery.js';
@@ -111,17 +111,38 @@ const ELEMENT_IDIOM: Record<string, Idiom> = {
     ice: 'buried'
 };
 
-const GOVERNANCE_IDIOM: Record<string, Idiom> = {
-    // A house that answers to somebody builds around the room it is answered
-    // in, so the whole compound is a ring facing one court.
-    deference: 'cloister',
-    // A house run from outside is laid out to be inspected: courts in a line.
-    administered: 'walled_court',
-    // A house holding a grant holds ground, and ground here is a slope.
-    federated: 'terraced',
-    // A house nobody backs built what it could where it could.
-    unbacked: 'walled_court'
-};
+/**
+ * The shape of a compound that its element does not decide.
+ *
+ * THIS WAS KEYED ON THE HOUSE'S GOVERNANCE AND IS NOT ANY MORE. The design
+ * owner: a building should not use the same flag as the sect, the sect has
+ * that flag as a whole, places ought to use something else. The proof that the
+ * coupling was wrong is that renaming a political vocabulary was about to
+ * change what a compound looked like - two facts that should never have been
+ * able to move together.
+ *
+ * The old reasoning was always about the building and only the key was about
+ * the politics, so the reasoning is kept and the key changed:
+ *
+ * - `cloister`, a covered ring around one court, went to a house that "builds
+ *   around the room it is answered in". The fact underneath is that nobody
+ *   arrives to join: there is no admission day, no queue and no outer gate to
+ *   hold one, so what the compound is built around is the single room where
+ *   whoever does come is received.
+ * - `walled_court` went to two of the four models and was already the
+ *   fallback. A gate, a yard behind it, a wall round the yard.
+ *
+ * `terraced` is not reachable from here any more and that is stated rather
+ * than hidden. It went to a house holding a grant, on the reasoning that it
+ * holds ground and the ground here is a slope - which is a fact about the
+ * GROUND, and nothing on this input says what the compound is standing on.
+ * It stays reachable through the element table, which is where a house's
+ * practice already decides its shape. A terrain fact on the seeded site is
+ * where the rest of it belongs, and the engine does not have one yet.
+ */
+function idiomOf(recruits: boolean): Idiom {
+    return recruits ? 'walled_court' : 'cloister';
+}
 
 /**
  * How elemental a house's buildings are, 0..1.
@@ -188,10 +209,25 @@ export function elementalIntensityOf(
     return { intensity: Math.max(0, Math.min(1, intensity)), element: intensity > 0 ? element : null };
 }
 
-/** What a house can still produce, as squareness of stonework. */
-function precisionOf(production: number): Precision {
-    if (production >= 0.75) return 'exact';
-    if (production >= 0.4) return 'fitted';
+/**
+ * The rung a realm opens at, so no bound on the ladder is restated here.
+ */
+function realmOpensAt(key: string): number {
+    return REALM_TIERS.find(t => t.key === key)?.ordinalStart ?? FOUNDATION_ORDINAL;
+}
+
+/**
+ * What a house can still produce, as squareness of stonework.
+ *
+ * Stone is cut by the people the house has, so the reading is the rung it
+ * reliably turns out. This took a 0..1 `production` that was 0.5 for every
+ * house in the world, which made every compound `'fitted'` and the field a
+ * constant. Measured on the catalog with the ordinal in: 8 exact, 26 fitted,
+ * 4 rough.
+ */
+function precisionOf(reliableOrdinal: number): Precision {
+    if (reliableOrdinal >= realmOpensAt('deity_transformation')) return 'exact';
+    if (reliableOrdinal >= FOUNDATION_ORDINAL) return 'fitted';
     return 'rough';
 }
 
@@ -202,10 +238,17 @@ function upkeepOf(formationIntegrity: number): Upkeep {
     return 'dark';
 }
 
-function ornamentOf(alignment: CatalogFaction['alignment'], governance: string): Ornament {
+function ornamentOf(alignment: CatalogFaction['alignment']): Ornament {
     if (alignment === 'demonic') return 'trophied';
     if (alignment === 'righteous') return 'ceremonial';
-    return governance === 'deference' ? 'warded' : 'plain';
+    // A NEUTRAL HOUSE SHOWS NOTHING, and the arm that has gone was already
+    // unreachable. It read `governance === 'deference' ? 'warded' : 'plain'`,
+    // and the one house in the catalog that carried `deference` is righteous,
+    // so it took the line above this one every time. Nothing in the world
+    // changes by removing it; what changes is that a building no longer reads
+    // how a sect is backed. `warded` stays in the vocabulary and is not
+    // currently produced.
+    return 'plain';
 }
 
 /**
@@ -220,8 +263,10 @@ function scaleOf(inherited: boolean, powerOrdinal: number, admissionOrdinal: num
 export interface StyleInput {
     factionId: string;
     alignment: CatalogFaction['alignment'];
-    governance: string;
-    production: number;
+    /** Whether anybody arrives to join, which decides what the place is built around. */
+    recruits: boolean;
+    /** The rung it reliably turns out, from `ProductionTier`. Cuts its stone. */
+    reliableOrdinal: number;
     formationIntegrity: number;
     inherited: boolean;
     powerOrdinal: number;
@@ -235,9 +280,9 @@ export interface StyleInput {
  */
 export function houseStyleOf(input: StyleInput): HouseStyle {
     const { intensity, element } = elementalIntensityOf(input.preferredRoots, input.teachesElements);
-    const precision = precisionOf(input.production);
+    const precision = precisionOf(input.reliableOrdinal);
     const upkeep = upkeepOf(input.formationIntegrity);
-    const ornament = ornamentOf(input.alignment, input.governance);
+    const ornament = ornamentOf(input.alignment);
     const scale = scaleOf(input.inherited, input.powerOrdinal, input.admissionOrdinal);
 
     // The element only reaches the IDIOM at the top of the range. A partially
@@ -245,8 +290,8 @@ export function houseStyleOf(input: StyleInput): HouseStyle {
     // an absolutist house's element decides the shape of the place.
     const elemental = element !== null && intensity >= ELEMENTAL_IDIOM_FLOOR;
     const idiom = elemental
-        ? ELEMENT_IDIOM[element] ?? GOVERNANCE_IDIOM[input.governance] ?? 'walled_court'
-        : GOVERNANCE_IDIOM[input.governance] ?? 'walled_court';
+        ? ELEMENT_IDIOM[element] ?? idiomOf(input.recruits)
+        : idiomOf(input.recruits);
 
     const plain = PLAIN_MATERIALS[precision];
     const materials = elemental
@@ -692,8 +737,8 @@ export interface CompoundInput {
     powerOrdinal: number;
     recruits: boolean;
     alignment: CatalogFaction['alignment'];
-    governance: string;
-    production: number;
+    /** The rung it reliably turns out, from `ProductionTier`. */
+    reliableOrdinal: number;
     formationIntegrity: number;
     formationNodesTotal: number;
     formationNodesLit: number;
@@ -877,8 +922,24 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
         out.push('alchemy_hall', 'furnace_room');
     }
     if (specialities.has('support') || specialities.has('defense')) out.push('infirmary');
-    if (input.production >= 0.6) out.push('workshop');
-    if (input.governance === 'deference' || input.governance === 'administered') out.push('audience_hall');
+    // A WORKSHOP IS WHERE ORE IS WORKED, which is what it yields two hundred
+    // lines down, so what puts one in a compound is having ground to take ore
+    // off. It read `production >= 0.6` against a number that was 0.5 for every
+    // house in the catalog, so no compound in the world had one.
+    //
+    // The house that makes things without holding ground already has its
+    // rooms: the alchemy hall and the furnace floor come off `specialities`
+    // above, which is why the Ashen Forge Clan keeps its furnace and does not
+    // get an ore hall it has no ore for.
+    if (input.holdsVein) out.push('workshop');
+    // A ROOM FOR PEOPLE WHO ARE NOT OF THE HOUSE, and it is now here because
+    // of who arrives rather than because of how the house is funded. It read
+    // `governance === 'deference' || governance === 'administered'`, which
+    // gave three houses a hall on the strength of a political word. What
+    // actually puts a receiving room in a compound: a house nobody joins deals
+    // with every visitor as an outsider, and a house that owes stones has
+    // somebody arrive each year to be shown the place and be paid.
+    if (!input.recruits || input.tributeStonesPerYear > 0) out.push('audience_hall');
     if (input.tributeStonesPerYear > 0) out.push('tribute_room');
     if (input.holdsVein) out.push('vein_chamber');
     // Somewhere to hold one of your own, and it takes both columns. A house
@@ -889,7 +950,14 @@ export function roomsFor(input: CompoundInput): RoomPurpose[] {
     // a second opinion about when a house's formations still work.
     if (input.recruits && input.formationIntegrity >= 0.35) out.push('punishment_hall');
     out.push('meditation_cell');
-    if (input.production >= 0.4 || input.powerOrdinal >= 25) out.push('treasury');
+    // What the house will not spend, so it needs something coming in worth not
+    // spending: ground of its own, a tribute arrangement it is a party to, or
+    // enough standing that things accumulate. The first arm read
+    // `production >= 0.4`, which was true of all 38 houses, so the other two
+    // decided nothing and every compound in the world had a vault.
+    if (input.holdsVein || input.tributeStonesPerYear > 0 || input.powerOrdinal >= 25) {
+        out.push('treasury');
+    }
     out.push('residence');
     return out;
 }

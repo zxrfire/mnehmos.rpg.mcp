@@ -449,8 +449,12 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         name: 'The Ashfall Basin',
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
-        seat: 'the furnace on the volcanic flank',
-        places: [],
+        seat: PLACE.THE_FLANK,
+        // `places` was empty because the flank was a basin with no ground on
+        // it: `THE_FLANK`, `THE_CALDERA` and `THE_VENT_VEIN` were written into
+        // the map afterwards and the register was never told. The settlement is
+        // the clan's own compound, which is what the seat has always said.
+        places: [PLACE.THE_FLANK],
         heldByFactionId: 'sect-ashen-forge-clan',
         delegatedFromId: 'court-third-sill',
         subHoldings: [

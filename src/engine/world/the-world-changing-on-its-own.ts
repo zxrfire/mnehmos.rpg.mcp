@@ -4,7 +4,7 @@
 
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { applyWhoOwnsThemNow } from './what-becomes-of-a-houses-things-when-the-house-ends.js';
-import { beastsOnThisGround, bandOf } from './hunting-a-spirit-beast.js';
+import { beastsOnThisGround, bandOf, whatComesOffTheBody } from './hunting-a-spirit-beast.js';
 import { whatGroundThisIs } from './what-ground-a-place-is.js';
 import { whoIsInChargeOfWhat, type APortfolio } from '../social-leverage/what-an-elder-is-in-charge-of.js';
 import { theRoomsThisHouseHas } from '../social-leverage/authority-for-an-order.js';
@@ -44,10 +44,14 @@ import {
     type HandedOut
 } from './what-a-house-opens-its-treasury-for.js';
 import { HALLS_DOWN } from './what-a-year-of-war-does-to-a-compound.js';
-import type { ObjectRecord } from './possessions.js';
+import { transferPossession, type ObjectRecord } from './possessions.js';
+import { theArtLeftInThisGround } from './a-legacy-has-a-name-on-it-and-a-treasury-has-stock.js';
 import { recordCrossing } from './recording-what-a-crossing-did.js';
 import { aCrossingEntersTheWorld } from './a-crossing-enters-the-world-as-news.js';
-import { theRungThisRowShouldBeAt } from './a-beast-climbs-by-sitting-where-it-is.js';
+import {
+    asItStandsNow,
+    theRungThisRowShouldBeAt
+} from './a-beast-climbs-by-sitting-where-it-is.js';
 import {
     theNameItTookAtTheChange,
     theSpeciesItIs
@@ -58,9 +62,11 @@ import {
     aSealHereMeansAnUndrawnPocket,
     forbidZone,
     isOpenOn,
+    LEFT_TO_BE_FOUND,
     nextClosingDay,
     nextOpeningDay,
     populationWeightOf,
+    whatATownPaysItsHolder,
     qiFraction,
     walkingDaysFrom,
     windowStartOn,
@@ -71,6 +77,10 @@ import {
     whoSendsWhenADoorOpens,
     type AHouseOnTheRoad
 } from './a-door-that-opens-is-a-race.js';
+import {
+    whatOneOfTheWorldsOwnPeopleKnows,
+    type WhatSomebodyKnowsOfIt
+} from './what-one-of-the-worlds-own-people-knows.js';
 import { runCascade } from './cascade.js';
 import { ruinFromFallenSeat } from './provenance.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
@@ -104,7 +114,7 @@ import {
 } from '../birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { applyRuinProspecting } from './how-the-world-keeps-finding-more-ruins.js';
 import { repairRetiredWoundKeys } from './recording-the-day-a-wound-was-taken.js';
-import { deriveOrdinal } from './seeding.js';
+import { deriveOrdinal, whatItCanPutOnTheGround } from './seeding.js';
 import {
     guideOrdinalFor,
     readyToStrike,
@@ -181,12 +191,21 @@ import {
     resolveSending,
     newsOfASending,
     isImpossibleTier,
+    lostChance,
+    notFinishedChance,
     partyOrdinal,
     tierFor,
     whoTheHouseCanSend,
     type Candidate,
     type HouseAsItStands
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
+import { regardFor } from '../cultivation/regard.js';
+import {
+    WHAT_A_MEAL_IS_WORTH,
+    aPieceOfABodyNobodyHasTaken,
+    theGroundHasABodyOnIt,
+    whatIsWorthARowOffABody
+} from './a-beast-that-climbs-also-fights-and-dies.js';
 import {
     CONVEYANCE_RECIPES,
     adjustCountedHolding,
@@ -1162,6 +1181,8 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         const moved = aBeastGoesOnSitting(state, at, day);
         if (moved !== null) {
             if (moved) advanced.push(state.npcs[at]);
+            // AND THE LID ON THAT CLIMB, WHICH IS THE ONE EVERYBODY HAS.
+            oneOfTheseFoughtOnItsOwnGround(state, at, year, day);
             continue;
         }
 
@@ -1324,6 +1345,188 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
  * the gap between those two states without taking anything away - the species
  * name stays reachable because it is derived from the row's tag.
  */
+/**
+ * What ends the climb, and it is not a ceiling.
+ *
+ * A tracked row goes up the ladder by sitting, with no cap anywhere, because
+ * the design owner ruled the lid is the one every NPC has: it fights, and it
+ * dies, and what follows from a death is what follows from anybody's.
+ *
+ * ── ON THE REVIEW THAT ALREADY WALKS THIS ROW, NOT ON THE EVENT TABLE ───
+ *
+ * The first cut was a `Template` with a weight. It was wrong for a measured
+ * reason rather than a stylistic one: rows exist only where somebody has
+ * hunted, so in a world nobody has been out in the template could never fire
+ * and still sat in the weighted draw, shifting the cursor for every other
+ * event. `driver.test.ts` went red on it - `vein_lost` stopped happening in a
+ * 120-year window on a seed where it always had. A world with no beast rows in
+ * it must draw exactly what it drew before, and the only way to promise that is
+ * to be somewhere the beast-less world never reaches.
+ *
+ * So it lives here, inside the branch `applyAdvancement` already takes for
+ * these rows, and it costs nothing at all when there are none.
+ *
+ * ── AND WHO WINS IS PRICED WHERE EVERY OTHER GAP IS ─────────────────────
+ *
+ * `regardFor` and the two chances a house's sending reads off it. One uniform
+ * draw nests the outcomes, because `lostChance` is the square of
+ * `notFinishedChance`. There is no beast branch in any of it.
+ *
+ * A house sending a party out after a core is deliberately NOT this: that
+ * errand has its own module and its own wiring, and a second one here would be
+ * the same decision made twice. What this is is the ordinary condition of a
+ * ledge - whoever else is standing on it.
+ */
+function oneOfTheseFoughtOnItsOwnGround(
+    state: WorldState,
+    at: number,
+    year: number,
+    day: number
+): void {
+    const it = state.npcs[at];
+    const species = theSpeciesItIs(it);
+    if (!it || !species || it.status !== 'alive' || it.locationId === null) return;
+
+    const itsRung = it.cultivation.realmOrdinal;
+    // Close enough that either of them could have won, which is the condition
+    // for a fight happening at all. `CASUAL_KILL_MAX_GAP` is this file's own
+    // figure for that, read in both directions.
+    const challengers = state.npcs.filter(n =>
+        n.status === 'alive' && n.id !== it.id && n.locationId === it.locationId
+        && isTheWorldsToMove(n)
+        && Math.abs(n.cultivation.realmOrdinal - itsRung) <= CASUAL_KILL_MAX_GAP);
+    if (challengers.length === 0) return;
+
+    const rng = forStream(state.seed, 'beast-fought', it.id, year);
+    if (!rng.chance(WHETHER_IT_COMES_TO_A_FIGHT)) return;
+    const challenger = challengers[rng.int(0, challengers.length - 1)];
+    if (!challenger) return;
+
+    const theirRung = challenger.cultivation.realmOrdinal;
+    const regard = regardFor(itsRung, theirRung);
+    const roll = rng.next();
+    const itLived = roll < notFinishedChance(regard);
+    const theyDied = roll < lostChance(regard);
+    if (itLived && !theyDied) return;
+
+    const place = getLocation(state, it.locationId);
+    const placeName = place?.name ?? it.locationId;
+    const winner = itLived ? it : challenger;
+    const deadAt = indexById(state.npcs, itLived ? challenger.id : it.id);
+    if (deadAt < 0) return;
+    const dead = state.npcs[deadAt]!;
+    const cause = `Killed by ${winner.name} at ${placeName}.`;
+
+    state.npcs[deadAt] = markDead(dead, day, cause);
+    settleNpcDeath(state, state.npcs[deadAt]!, day);
+
+    // A KILL IS A MEAL. Whichever of the two won, if what won is one of these
+    // it climbs for it - and that sticks without being stored twice, because
+    // the climb reading takes the higher of where a row stands and what sitting
+    // would have given it, and so never reads this rung back down.
+    const winnerAt = indexById(state.npcs, winner.id);
+    const ateIt = winnerAt >= 0 && theSpeciesItIs(state.npcs[winnerAt]!) !== null;
+    if (ateIt) {
+        state.npcs[winnerAt] = setRealm(
+            state.npcs[winnerAt]!,
+            state.npcs[winnerAt]!.cultivation.realmOrdinal + WHAT_A_MEAL_IS_WORTH,
+            day
+        );
+    }
+
+    // AND WHAT IS LEFT OF IT WHERE IT FELL. Nothing is left of one another of
+    // these ate. Where a person did it, what they could reach came off with
+    // them and what stood above them did not - `whatComesOffTheBody` is already
+    // the function that answers that, asked with the killer over the body.
+    const worthARow = whatIsWorthARowOffABody(species);
+    const left = !itLived && !ateIt
+        ? whatComesOffTheBody({
+            beast: asItStandsNow(species, itsRung),
+            takerOrdinal: theirRung,
+            killed: true
+        }).leftBehind
+            .map(b => b.material)
+            .filter(m => worthARow.some(w => w.id === m.id))
+        : [];
+
+    const fact = appendWorldFact(state, makeFact({
+        day,
+        kind: 'catastrophe',
+        scale: 'local',
+        summary: itLived
+            ? `${challenger.name} went at ${it.name} at ${placeName} and did not come back.`
+            : `${it.name} was killed at ${placeName} by ${challenger.name}.`,
+        actors: [
+            { id: winner.id, name: winner.name, role: 'killed them' },
+            { id: dead.id, name: dead.name, role: 'died' }
+        ],
+        locationId: it.locationId,
+        visibility: 'public',
+        magnitude: 0.3 + Math.min(0.4, Math.max(itsRung, theirRung) / 100),
+        data: {
+            unattributed:
+                'Something was fought over on the high ground, and only one of the two of '
+                + 'them walked off it.'
+        }
+    }));
+
+    for (const material of left) {
+        state.objects.push(aPieceOfABodyNobodyHasTaken({
+            npcId: dead.id,
+            material,
+            asItStands: asItStandsNow(species, itsRung),
+            itsName: dead.name,
+            locationId: it.locationId,
+            placeName,
+            onDay: day,
+            endedBy: cause
+        }));
+    }
+    if (left.length > 0) {
+        state.statuses.push(makeAreaStatus(theGroundHasABodyOnIt({
+            npcId: dead.id,
+            areaId: it.locationId,
+            itsName: dead.name,
+            ordinal: itsRung,
+            onDay: day,
+            cause,
+            factId: fact.id,
+            endedById: challenger.id,
+            causeKnownLocally: false
+        })));
+    }
+}
+
+/**
+ * Whether a review that finds somebody on this ledge comes to a fight.
+ *
+ * A row is reviewed every {@link ADVANCEMENT_REVIEW_YEARS}, so this is a fight
+ * about once a century on ground that has anybody on it who could try, and
+ * never at all on ground that has nobody. Stated as odds rather than simulated,
+ * which is the sanctioned method.
+ */
+export const WHETHER_IT_COMES_TO_A_FIGHT = 0.12;
+
+/**
+ * The same thing, asked of one row by id, for a caller outside the yearly pass.
+ *
+ * The hunt needs it: a row is reviewed once every `ADVANCEMENT_REVIEW_YEARS`,
+ * and somebody walking up to a ledge has to meet what is standing on it today
+ * rather than what the last review left. The climb is a reading, so asking
+ * costs the reading and nothing else - and asking through this rather than
+ * re-deriving means the crossing, the name it takes and the news of it all
+ * happen once, here, however the question arrived.
+ */
+export function bringABeastRowUpToWhereItShouldBe(
+    state: WorldState,
+    npcId: string,
+    day: number
+): boolean {
+    const at = indexById(state.npcs, npcId);
+    if (at < 0) return false;
+    return aBeastGoesOnSitting(state, at, day) === true;
+}
+
 function aBeastGoesOnSitting(state: WorldState, at: number, day: number): boolean | null {
     const npc = state.npcs[at];
     const species = theSpeciesItIs(npc);
@@ -2688,6 +2891,18 @@ export const A_STIPEND_PER_MEMBER_PER_YEAR = 45;
 export const WHAT_A_MEMBER_LIVES_ON = 0.8;
 
 function applyFactionEconomy(state: WorldState): void {
+    // One pass over the locations for the whole world rather than one per
+    // house: this runs every simulated year, and a filter per faction is
+    // thirty-eight walks of a thousand rows a year.
+    const townIncome = new Map<string, number>();
+    for (const location of state.locations) {
+        const holder = location.controllingFactionId;
+        if (!holder) continue;
+        const paid = whatATownPaysItsHolder(location);
+        if (paid <= 0) continue;
+        townIncome.set(holder, (townIncome.get(holder) ?? 0) + paid);
+    }
+
     for (const faction of state.factions) {
         if (faction.dissolvedOnDay !== null || !isBelowTheLid(faction)) continue;
         const roll: number[] = [];
@@ -2697,8 +2912,48 @@ function applyFactionEconomy(state: WorldState): void {
         }
         const members = roll.length;
         const veins = faction.resources.veins ?? 0;
-        const production = Number(faction.resources.production ?? 0.5);
-        const income = veins * 5_000 * (0.5 + production) + members * 30;
+        // ── WHAT A HOUSE WITH NO VEIN LIVES ON ──────────────────────────
+        //
+        // The vein term was the only one that varied, and it did not: every
+        // faction was seeded with one vein and a `production` of 0.5, so the
+        // whole of this line was `5_000 + members * 30` for every house in the
+        // world every year. With the catalog's own answer in, 26 of 38 houses
+        // hold no vein at all - they hold an auction charter, an assay
+        // monopoly, rented cutting houses, nine gate stations - and a flat 30
+        // a head does not cover a 45 a head payroll, so a world of traders
+        // would have quietly gone bankrupt.
+        //
+        // So the per-member term is what the members are worth, which is the
+        // same rung the ground term scales by. Nothing states what a house
+        // sells; what it can put in front of somebody is stated.
+        const share = whatItCanPutOnTheGround(Number(faction.resources.reliable_ordinal ?? 0));
+        // ── AND WHAT IT TAKES AT A GATE ─────────────────────────────────
+        //
+        // The third term, and for most of this catalog it is the only one that
+        // is not zero. A fee at a gate, a toll at a ford, a cut of what crosses
+        // a weigh rail, a published assay everybody has to buy: ordinary
+        // furniture of the genre, and this function collected not one stone
+        // from any of it, so a house holding nine city gates was modelled as
+        // destitute. Priced once at seeding by `whatALevyBringsIn`.
+        //
+        // Deliberately NOT scaled by `share`, unlike the two terms beside it.
+        // What passes a gate is what passes a gate.
+        const levy = Number(faction.resources.levy_per_year ?? 0);
+        // ── AND WHAT IT TAKES OFF THE TOWNS IT GOVERNS ──────────────────
+        //
+        // The fourth term, and the one the levy work left behind: a house that
+        // administers a city took from it exactly what a house that
+        // administers nothing takes. `controllingFactionId` was null on all
+        // twenty-three settlements and no house listed one among what it
+        // controlled, so there was nobody to collect.
+        //
+        // Recomputed here rather than read off `resources`, unlike the levy
+        // beside it, because ground changes hands inside a century - twice in
+        // this file - and a figure written at seeding would go on stating what
+        // the house held then.
+        const towns = townIncome.get(faction.id) ?? 0;
+        const income = veins * 5_000 * (0.5 + share)
+            + levy + towns + members * 30 * (1 + share);
         const payroll = members * A_STIPEND_PER_MEMBER_PER_YEAR;
         const upkeep = payroll + (faction.resources.tribute_owed_per_year ?? 0) * 0.1;
         const before = faction.resources.spirit_stones ?? 0;
@@ -2895,11 +3150,17 @@ function applyLastCrossing(
  * NEAREST SEAT FIRST, which is arrival order. Nothing here spends the ground:
  * a door on a season comes round, and the `emptied` tag belongs to ground
  * somebody opened for good. See `a-door-that-opens-is-a-race.ts`.
+ *
+ * AND WHETHER A HOUSE WAS ALREADY WALKING is its own people's reading, supplied
+ * here and derived nowhere else. `whatOneOfTheWorldsOwnPeopleKnows` is the one
+ * answer to what somebody has of a piece of ground, so the board a player reads
+ * and the date a house sets out on cannot come apart.
  */
 function theProvinceGoes(
     state: WorldState,
     door: LocationRecord,
-    day: number
+    day: number,
+    peopleKnow: WhatSomebodyKnowsOfIt
 ): readonly AHouseOnTheRoad[] {
     const roster = new Map<string, Candidate[]>();
     const at = new Map<string, number>();
@@ -2928,7 +3189,9 @@ function theProvinceGoes(
                 seatLocationId: f.seatLocationId,
                 roster: roster.get(f.id) ?? []
             })),
-        walkingDaysTo: id => reach.get(id)
+        walkingDaysTo: id => reach.get(id),
+        hasAnythingOfTheGround: personId =>
+            peopleKnow(personId, 'place', door.id) !== 'unaware'
     });
 
     for (const house of going) {
@@ -2989,6 +3252,12 @@ function applyConvergences(
     const yearStart = year * 365;
     const yearEnd = yearStart + 364;
 
+    // BUILT ONCE, AND ONLY IF A DOOR ACTUALLY OPENS. The reader indexes the
+    // whole ledger, which is long in an old world, and most years open nothing.
+    let peopleKnow: WhatSomebodyKnowsOfIt | null = null;
+    const whatPeopleKnow = (): WhatSomebodyKnowsOfIt =>
+        (peopleKnow ??= whatOneOfTheWorldsOwnPeopleKnows(state));
+
     for (let i = 0; i < state.locations.length; i++) {
         const location = state.locations[i];
         // A CYCLE IS NOT ALWAYS A DOOR. A hall carries one so that a house which
@@ -3036,7 +3305,7 @@ function applyConvergences(
             // A week is whoever is standing there; a season is a race. The
             // scaling is the window's own, through the read that already prices
             // a road against it - see `a-door-that-opens-is-a-race.ts`.
-            const going = theProvinceGoes(state, state.locations[i], day);
+            const going = theProvinceGoes(state, state.locations[i], day, whatPeopleKnow());
 
             out.push(emit(state, 'convergence_opened', day, {
                 day,
@@ -3051,7 +3320,8 @@ function applyConvergences(
                 data: {
                     openDays: location.cycle.openDays,
                     periodYears: years,
-                    housesOnTheRoad: going.length
+                    housesOnTheRoad: going.length,
+                    housesThatKnewTheDate: going.filter(h => h.knewTheDate).length
                 },
                 unattributed:
                     'The pass that has never gone anywhere goes somewhere this season. '
@@ -3625,33 +3895,81 @@ const TEMPLATES: Template[] = [
             // the window ends. This pass used to take the flag off a cycled ruin
             // for good, which left it reading shut-until-its-season with the
             // column saying open and nothing in the world to reconcile them.
+            //
+            // AND THE THIRD KIND, WHICH THIS PASS COULD NOT SEE AT ALL. Ground
+            // that never shut carries no cycle, is not sealed and is not
+            // `ruined`, so it fell through every arm of the test below and the
+            // world emptied 1 of 13 of them in 1800 years across nine pinned
+            // worlds - a category the simulation could not touch. A legacy
+            // waiting for a person is the design; a legacy nobody in the world
+            // is ever able to take is the pass being blind to it.
             const openable = state.locations.filter(l =>
                 isBelowTheLid(l) && !l.tags.includes('emptied') && l.discovered &&
                 (l.cycle !== null
                     ? l.kind === 'ruin' && isOpenOn(l, day)
-                    : (l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined'))
+                    : (l.kind === 'ruin' && l.sealed) || l.tags.includes('ruined')
+                        || l.tags.includes(LEFT_TO_BE_FOUND))
             );
             const ruin = pick(rng, openable);
             if (!ruin) return null;
             const throughADoorThatWasStandingOpen = ruin.cycle !== null;
-            const opener = pick(rng, theWorldsPeople(state).filter(
-                n => n.status === 'alive' && isBelowTheLid(n) &&
-                    n.cultivation.realmOrdinal >= Math.max(0, ruin.thresholds.survival - 2)
-            ));
+            const standingOpenAndAlwaysHas = ruin.tags.includes(LEFT_TO_BE_FOUND);
+            // THE TRIAL IS THE GATE, AND THE BAR IS MASTERY. `evaluateAccess`
+            // reads this ground on five levels and only the top one is being up
+            // to the whole of it: below survival is `lethal`, at survival is
+            // `surviving`, which is coming back out rather than coming out with
+            // anything. The formation is still running at the setting it was
+            // left at and `thresholds.mastery` IS that setting, so beating it is
+            // what taking the place means. The other two kinds keep the bar they
+            // had, because a door is what stops those and a door does not care
+            // how strong anybody is.
+            //
+            // AND THE CLAIMANT IS DRAWN BEFORE THEY ARE TESTED, which is the
+            // whole of the rate. `killing` above takes the same shape for the
+            // same reason. Drawing out of the people who already qualify makes
+            // the gate decide only whether the category is touchable at all, and
+            // it fires every time anybody in the world qualifies - measured, all
+            // seven never-shut grounds over four pinned worlds were gone inside
+            // 400 years, 25% of the category a century, which is the world
+            // clearing the shelf before the player reaches it. Drawing from
+            // everybody makes the rate the world's own distribution of strength:
+            // ground set at a rung waits for a world that produces that rung,
+            // and what turns up is usually somebody it would kill.
+            const living = theWorldsPeople(state)
+                .filter(n => n.status === 'alive' && isBelowTheLid(n));
+            const opener = standingOpenAndAlwaysHas
+                ? pick(rng, living)
+                : pick(rng, living.filter(n =>
+                    n.cultivation.realmOrdinal >= Math.max(0, ruin.thresholds.survival - 2)));
+            // Nothing shut it and nothing will. It stands there until somebody
+            // who is up to it walks in, and while nobody is, nothing happens to
+            // it - which is not the same as nobody having been.
+            if (standingOpenAndAlwaysHas
+                && (!opener || opener.cultivation.realmOrdinal < ruin.thresholds.mastery)) {
+                return null;
+            }
+
+            // Nothing was shut here, so there is no seal to take off and no gap
+            // between what the vein holds and what anybody can reach.
+            const nothingWasSealedHere =
+                throughADoorThatWasStandingOpen || standingOpenAndAlwaysHas;
 
             const changed = applyLocationChange(ruin, {
                 onDay: day,
-                kind: throughADoorThatWasStandingOpen ? 'depleted' : 'unsealed',
-                summary: throughADoorThatWasStandingOpen
-                    ? opener
-                        ? `${ruin.name} stood open and ${opener.name} went through it.`
-                        : `${ruin.name} stood open and somebody went through it. Nobody admits to it.`
-                    : opener
-                        ? `${ruin.name} was opened by ${opener.name}.`
-                        : `${ruin.name} was found open. Nobody admits to it.`,
+                kind: nothingWasSealedHere ? 'depleted' : 'unsealed',
+                summary: standingOpenAndAlwaysHas
+                    ? `${ruin.name} has stood open since it was built, and ${opener!.name} `
+                        + 'went in and came out.'
+                    : throughADoorThatWasStandingOpen
+                        ? opener
+                            ? `${ruin.name} stood open and ${opener.name} went through it.`
+                            : `${ruin.name} stood open and somebody went through it. Nobody admits to it.`
+                        : opener
+                            ? `${ruin.name} was opened by ${opener.name}.`
+                            : `${ruin.name} was found open. Nobody admits to it.`,
                 causeKnown: opener != null,
                 witnessed: false,
-                patch: throughADoorThatWasStandingOpen
+                patch: nothingWasSealedHere
                     ? { discovered: true, addTags: ['emptied'] }
                     : {
                         sealed: false,
@@ -3662,14 +3980,48 @@ const TEMPLATES: Template[] = [
             });
             replaceLocation(state, changed.location);
 
+            // WHAT A LEGACY HANDS OVER IS THE ART, and it is the art the
+            // catalog already holds for exactly this - `provenance: 'ruin'`,
+            // the set no living institution transmits. A treasury hands over
+            // what is standing in it instead, which is the ordinary object
+            // layer and not a second kind of prize. Ground that was sealed or
+            // on a season keeps the marker it has always carried.
+            const artInTheGround = standingOpenAndAlwaysHas
+                ? theArtLeftInThisGround(ruin)
+                : null;
             if (opener) {
                 replaceNpc(state, {
                     ...opener,
                     cultivation: {
                         ...opener.cultivation,
-                        techniqueIds: opener.cultivation.techniqueIds.concat(`recovered-${ruin.id}`)
+                        techniqueIds: opener.cultivation.techniqueIds
+                            .concat(artInTheGround ?? `recovered-${ruin.id}`)
                     }
                 });
+            }
+            // And the stock comes off the ground with them. Only on this
+            // branch, so the cost of the walk lands on the kind of ground that
+            // was just declared empty: a place tagged `emptied` with its goods
+            // still lying in it is the world saying two things at once.
+            if (standingOpenAndAlwaysHas && opener) {
+                for (let i = 0; i < state.objects.length; i++) {
+                    const object = state.objects[i];
+                    if (object.locationId !== ruin.id || object.possessorId !== null) continue;
+                    state.objects[i] = {
+                        ...transferPossession(object, {
+                            onDay: day,
+                            toHolderId: opener.id,
+                            toHolderName: opener.name,
+                            how: 'found',
+                            source: ruin.name,
+                            note: 'Carried out of ground that never shut.'
+                        }),
+                        // The same tag `applyRoadsComprehended` strips when a
+                        // house brings one out. Left on, the recovery pass
+                        // would take it out of a hole it is no longer in.
+                        tags: object.tags.filter(t => t !== 'unrecovered')
+                    };
+                }
             }
 
             return emit(state, 'ruin_opened', day, {
@@ -3687,11 +4039,18 @@ const TEMPLATES: Template[] = [
                     'There is a new track up to the old compound, and somebody has been selling ' +
                     'things in the market town that nobody local knows how to make.',
                 consequences: {
-                    immediate: throughADoorThatWasStandingOpen
-                        ? 'Somebody was inside before the window ran out.'
-                        : 'The seal is off.',
-                    physical: throughADoorThatWasStandingOpen
-                        ? `${ruin.name} has been gone through, and it shuts on its own schedule.`
+                    immediate: standingOpenAndAlwaysHas
+                        ? artInTheGround
+                            ? 'Somebody was up to the trial, and what was written down there is '
+                                + 'in one head now.'
+                            : 'Somebody was up to the trial, and what was in there came out with them.'
+                        : throughADoorThatWasStandingOpen
+                            ? 'Somebody was inside before the window ran out.'
+                            : 'The seal is off.',
+                    physical: nothingWasSealedHere
+                        ? throughADoorThatWasStandingOpen
+                            ? `${ruin.name} has been gone through, and it shuts on its own schedule.`
+                            : `${ruin.name} has been gone through. It still stands open.`
                         : `${ruin.name} is open.`,
                     opportunitiesClosed: ['Whatever was in there, for whoever comes next.'],
                     rumours: ['That most of it was already gone before they got in.'],
@@ -3816,7 +4175,10 @@ const TEMPLATES: Template[] = [
         kind: 'deference_tested',
         weight: 6,
         apply(state, day, rng) {
-            const deference = liveFactions(state).filter(f => f.tags.includes('deference'));
+            // The tag was `deference`, which was a governance value; it is
+            // `holds_by_reputation` now, which is the same fact stated as a
+            // property of the hold rather than as a way of being backed.
+            const deference = liveFactions(state).filter(f => f.tags.includes('holds_by_reputation'));
             const held = pick(rng, deference);
             if (!held) return null;
             const tester = pick(rng, liveFactions(state).filter(f => f.id !== held.id));
@@ -3992,6 +4354,11 @@ const TEMPLATES: Template[] = [
                 resources: {
                     spirit_stones: Math.round((parent.resources.spirit_stones ?? 0) * 0.2),
                     veins: 0,
+                    // A house a day old turns out nobody, so what it can put on
+                    // the ground is the person who walked out with the roll.
+                    // Left unset this reads zero, and a house with no vein and
+                    // a zero here cannot cover its own payroll.
+                    reliable_ordinal: founder.cultivation.realmOrdinal,
                     power_ordinal: founder.cultivation.realmOrdinal
                 },
                 description: `Split from the ${houseName(parent.name)}.`,

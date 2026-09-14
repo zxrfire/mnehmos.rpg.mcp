@@ -48,8 +48,7 @@ function broadHouse(over: Partial<CompoundInput> = {}): CompoundInput {
         powerOrdinal: 27,
         recruits: true,
         alignment: 'neutral',
-        governance: 'unbacked',
-        production: 0.5,
+        reliableOrdinal: 20,
         formationIntegrity: 0.5,
         formationNodesTotal: 20,
         formationNodesLit: 10,
@@ -243,9 +242,26 @@ describe('roomsFor - the shape is read off columns, never off a faction id', () 
         expect(dark).not.toContain('scripture_pavilion');
     });
 
-    it('gives a house that answers to somebody a room to be answered in', () => {
-        expect(roomsFor(broadHouse({ governance: 'deference' }))).toContain('audience_hall');
-        expect(roomsFor(broadHouse({ governance: 'unbacked' }))).not.toContain('audience_hall');
+    // A BUILDING MUST NOT READ HOW A SECT IS BACKED. This asked for an
+    // audience hall on `governance: 'deference'` against `'unbacked'`, which
+    // is a political vocabulary deciding what rooms a compound has - so
+    // renaming that vocabulary was about to demolish a hall. The design owner:
+    // it should not use the same flag for a building as for a sect, the sect
+    // has that flag as a whole, places ought to use something else.
+    //
+    // The rule the room actually encodes: a receiving room is for people who
+    // are not of the house. A house nobody joins meets everybody as a visitor,
+    // and a house that owes stones has somebody arrive each year to collect.
+    it('gives a room for outsiders to the houses that receive outsiders', () => {
+        expect(roomsFor(broadHouse({ recruits: false }))).toContain('audience_hall');
+        expect(roomsFor(broadHouse({ tributeStonesPerYear: 400 }))).toContain('audience_hall');
+        expect(roomsFor(broadHouse({ recruits: true, tributeStonesPerYear: 0 })))
+            .not.toContain('audience_hall');
+    });
+
+    it('shapes a compound around whether anybody arrives at it', () => {
+        expect(houseStyleOf(broadHouse({ recruits: false })).idiom).toBe('cloister');
+        expect(houseStyleOf(broadHouse({ recruits: true })).idiom).toBe('walled_court');
     });
 
     it('gives a house on a vein a room over it', () => {
@@ -256,8 +272,8 @@ describe('roomsFor - the shape is read off columns, never off a faction id', () 
     it('produces different compounds for different columns', () => {
         const a = roomsFor(broadHouse()).sort().join();
         const b = roomsFor(broadHouse({
-            recruits: false, governance: 'deference', holdsVein: true,
-            tributeStonesPerYear: 400, specialities: ['support'], production: 0.9
+            recruits: false, holdsVein: true,
+            tributeStonesPerYear: 400, specialities: ['support'], reliableOrdinal: 29
         })).sort().join();
         expect(a).not.toBe(b);
     });
@@ -407,10 +423,10 @@ describe('survivingTags and attributionField', () => {
     it('names a single-root builder from an ancient ruin and cannot name an ordinary one', () => {
         const narrow = houseStyleOf(narrowHouse());
         // A field of ordinary houses, all differing in facets that do not last.
-        const ordinary = [0.2, 0.5, 0.8].flatMap(production =>
+        const ordinary = [8, 20, 29].flatMap(reliableOrdinal =>
             (['righteous', 'neutral', 'demonic'] as const).map(alignment =>
                 houseStyleOf(broadHouse({
-                    factionId: `house-${alignment}-${production}`, production, alignment
+                    factionId: `house-${alignment}-${reliableOrdinal}`, reliableOrdinal, alignment
                 }))));
         const all = [narrow, ...ordinary];
 
@@ -479,7 +495,7 @@ describe('nothing in the lore is bespoke', () => {
         const a = growCompound(seat('a'), broadHouse({ factionId: 'x', factionName: 'X' }), opts);
         const b = growCompound(seat('b'), narrowHouse({
             factionId: 'y', factionName: 'Y', ranks: ['Adept', 'Master'],
-            recruits: false, governance: 'deference', production: 0.9
+            recruits: false, reliableOrdinal: 29
         }), opts);
         expect(a.precincts.length).not.toBe(b.precincts.length);
         expect(a.style.tags).not.toEqual(b.style.tags);

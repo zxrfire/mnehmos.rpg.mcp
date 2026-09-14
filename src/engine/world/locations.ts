@@ -1241,6 +1241,80 @@ export function populationWeightOf(location: LocationRecord): number {
     return Number.isFinite(raw) && raw >= 0 ? raw : 1;
 }
 
+/**
+ * What one point of population weight is, in people who pay.
+ *
+ * `PLACE_POPULATION_WEIGHT` is a RELATIVE headcount - it was written to weight
+ * births - so it needs a scale before it can be charged against. Ten puts a
+ * hamlet at thirty people, a village at a hundred, a market town at two hundred
+ * and eighty and a city at six hundred, which is the size of town this setting
+ * describes and keeps the whole modelled world at about five thousand four
+ * hundred mortals across twenty-three settlements.
+ */
+const PEOPLE_PER_POPULATION_WEIGHT = 10;
+
+/**
+ * What one person pays the house that governs them, in spirit stones a year.
+ *
+ * `price-gate-registration` is 300 cash a head a year, compulsory in nine
+ * cities, and its own note calls it "the House's real income". `CASH_PER_STONE`
+ * is 100. So three stones a head a year is a published price of this world
+ * charged for the same thing - being a person a house has on its books - rather
+ * than a figure chosen to make the sums come out.
+ */
+const WHAT_A_HEAD_PAYS_IN_A_YEAR = 3;
+
+/**
+ * What the people of a town pay the house that governs it, in stones a year.
+ *
+ * THE OTHER HALF OF THE LEVY, and the half that was blocked. `whatALevyBringsIn`
+ * prices what a house takes at a gate, a ford or a counter; this prices what it
+ * takes from the people living under it, and nothing could ask for it because
+ * `controllingFactionId` was null on all twenty-three settlements and no house
+ * listed one among what it controlled. So a house that administers a province
+ * outright collected from it exactly what a house that administers nothing
+ * collects.
+ *
+ * A ROCK STILL GIVES MORE, which is the ordering the rest of the economy is
+ * built on. Measured on a seeded catalog: the weakest vein is 4,239 a year, the
+ * largest single levy post 2,500, and the largest town a city at 1,800. A house
+ * eats better off one vein than off the biggest city in the world, and the
+ * houses that eat off towns do it by holding several.
+ *
+ * Not scaled by what the house can put on the ground, for the same reason the
+ * levy is not: how many people live in a town is not a fact about the house
+ * standing over it.
+ */
+export function whatATownPaysItsHolder(location: LocationRecord): number {
+    if (location.kind !== 'settlement') return 0;
+    return Math.round(
+        populationWeightOf(location) * PEOPLE_PER_POPULATION_WEIGHT * WHAT_A_HEAD_PAYS_IN_A_YEAR
+    );
+}
+
+/**
+ * What every town a house governs pays it in a year.
+ *
+ * DERIVED, NEVER STORED, and that is the difference between this and
+ * `levy_per_year`. A levy is priced once at seeding because a charter does not
+ * change hands in the ordinary run of a century; ground does - the yearly
+ * economy transfers `controllingFactionId` when a house takes a place off
+ * another one and when a house dissolves - so a figure written onto the
+ * faction's resources at seeding would say what the house held two hundred
+ * years ago and nothing would fail.
+ */
+export function whatTheTownsBringIn(
+    locations: readonly LocationRecord[],
+    factionId: string
+): number {
+    let total = 0;
+    for (const location of locations) {
+        if (location.controllingFactionId !== factionId) continue;
+        total += whatATownPaysItsHolder(location);
+    }
+    return total;
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // CYCLES
 // Closed-form. Asking about a day three centuries out costs the same as asking
@@ -1616,6 +1690,19 @@ function groundACrossingLifted(
             // `INSIGHT_AMBIENT_CHANCE` reads, and a record whose declared band
             // disagreed with its own vein would answer two ways.
             ambient: ordinaryBandFor(now),
+            // ── AND WHAT ANYBODY CAN DRAW OF IT ──────────────────────────
+            //
+            // The loan moved `qiDensity` and left `spiritualDensity` where it
+            // was, which is the second copy of one fact AGENTS.md names: a
+            // ruin measured 0.72 usable against a vein reading 0.83. The two
+            // numbers are still two questions - geology against what somebody
+            // standing here can reach - and this applies the rule
+            // `locationFromRuin` already states rather than mirroring one onto
+            // the other. Open ground is `qiFraction` of its own vein, so a
+            // richer vein is richer to draw on. A SEALED pocket is untouched,
+            // because a loan into something nobody can get into is still
+            // nobody's, and that gap is the whole economy of exploration.
+            ...(ruinGround.sealed ? {} : { environment: { spiritualDensity: qiFraction(now) } }),
             addTags: ['crossing_ground'],
             data: {
                 crossingId: crossing.id,

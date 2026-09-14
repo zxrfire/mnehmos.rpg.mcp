@@ -275,7 +275,26 @@ export const RegionPlaceSchema = z.object({
      * means "no special adjacency", never "unreachable". See
      * {@link RegionPlaceConnectionSchema}.
      */
-    connections: z.array(RegionPlaceConnectionSchema).optional()
+    connections: z.array(RegionPlaceConnectionSchema).optional(),
+    /**
+     * Who administers this settlement, where no prefecture register carries it.
+     *
+     * THE REGISTER IS THE AUTHORITY WHEREVER IT SPEAKS. `Prefecture.places` and
+     * `Prefecture.seat` already answer this for the Jade Gorge and the Silent
+     * Cliffs, and `whoHoldsTheGround` reads them; four provinces have no
+     * prefectures at all, because there is nothing under them to subdivide.
+     * This field is for those, and for nothing else -
+     * `every-town-has-one-answer.test.ts` fails a place that declares a holder
+     * inside a district that already names one, so the fact stays in one place.
+     *
+     * `null` and absent are different answers and the difference is the whole
+     * reason the field is nullable. `null` is authored: the province or the
+     * place says in so many words that nobody holds it - "Nobody in the Yellow
+     * Plain holds ground", an island four parties claim and none owns. Absent
+     * is nothing having been written, which a reader must not turn into a
+     * vacuum.
+     */
+    heldByFactionId: z.string().nullable().optional()
 });
 export type RegionPlace = z.infer<typeof RegionPlaceSchema>;
 

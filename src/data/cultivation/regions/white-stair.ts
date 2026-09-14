@@ -193,6 +193,10 @@ export const THE_WHITE_STAIR: Region = {
     places: [
         {
             name: PLACE.COLD_PEAK,
+            // The note says whose town it is. The White Stair has no prefecture
+            // register - no court, no grant book, three institutions and
+            // nothing else - so the place is where the fact can live.
+            heldByFactionId: 'sect-frostmirror-court',
             kind: 'sect_town', ambient: 'dense', note: 'The Frostmirror\'s town, moved uphill four times in four hundred years and carrying its name with it each time. Nothing in it is more than a century old.',
             connections: [
                 {
@@ -257,6 +261,7 @@ export const THE_WHITE_STAIR: Region = {
         },
         {
             name: PLACE.ORCHID_TERRACE,
+            heldByFactionId: 'sect-orchid-court',
             kind: 'sect_town',
             ambient: 'normal',
             note: 'Terraces cut into rock nine retreats below the face, and the Orchid Court living on them, holding the one band in the province that has stopped moving.',

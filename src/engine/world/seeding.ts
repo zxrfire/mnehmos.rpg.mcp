@@ -47,7 +47,7 @@ import { purchasedQiPerYear } from '../cultivation/buying-and-bartering-pills.js
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
 import { growCompound, type CompoundInput } from './architecture.js';
-import type { WorldCatalog, CatalogFaction, CatalogRegion } from './catalog.js';
+import type { WorldCatalog, CatalogFaction, CatalogRegion, LevyTraffic } from './catalog.js';
 import {
     linkLocations,
     makeAffinity,
@@ -59,6 +59,7 @@ import {
     clampQiDensity,
     qiFraction,
     settleTheSeededPastIntoProvinces,
+    whatTheTownsBringIn,
     type LocationRecord
 } from './locations.js';
 import { addGoal, createNpc, setRealm, upsertRelationship, type NpcRecord } from './npc-state.js';
@@ -71,6 +72,7 @@ import { seedArtifacts } from './artifact-placement.js';
 import { seedComprehensionMaterials } from './single-use-dao-comprehension-materials.js';
 import { seedPlacesThatTeachADao } from './how-a-cultivator-comes-by-a-road.js';
 import { seedPillStock } from './where-the-pills-actually-are.js';
+import { seedWhatSealedPocketsStillGrow } from './what-a-sealed-pocket-still-grows.js';
 import { seedHouseWards } from './the-ward-a-house-raised-over-its-own-ground.js';
 import { seedTreasuries } from './what-a-house-keeps-in-its-treasury.js';
 import {
@@ -289,6 +291,15 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // in a document. Two shapes, one threshold - see
     // `where-the-pills-actually-are.ts`.
     state.objects.push(...seedPillStock(state));
+    // And the raw stuff the top of that ladder is made of, which is on this
+    // side and is sealed. The immortal and chaos formulas name materials no
+    // house in the world can stock and no forage below the Lid reaches, so the
+    // bill was unfillable for want of a place to go and get it rather than by
+    // any rule. Seeded AFTER the dao grounds so the sealed pockets they mint
+    // are in the pass, and after the medicine so every stream above this line
+    // draws exactly what it drew before. See
+    // `what-a-sealed-pocket-still-grows.ts`.
+    state.objects.push(...seedWhatSealedPocketsStillGrow(state));
     // What each house has standing over its own compound. Raised by whoever the
     // house could field out of whatever warding it teaches, so it is the LOWER
     // of the art and the builder and not a property of the house - see
@@ -512,6 +523,14 @@ function seedRegions(
                     politicalControl: politicalControlOf(region),
                     historicalScars: []
                 }),
+                // WHO ADMINISTERS THE TOWN, which was null on every settlement
+                // in the world while the catalog had been answering it for two
+                // provinces since the political layer was written. `catalog.ts`
+                // joins the prefecture register and the place's own row; this
+                // stamps whichever answered. Null is both "the register names
+                // nobody" and "nothing says", and `whoHoldsTheGround` is what
+                // tells those two apart - the column cannot.
+                controllingFactionId: place.heldByFactionId ?? null,
                 tags: ['place', place.kind],
                 data: {
                     catalogRegionId: region.id,
@@ -744,6 +763,71 @@ function seedSectGround(
 }
 
 /**
+ * What a house can put on the ground, as a share of the ladder, 0..1.
+ *
+ * The one derivation the old `production` scalar was standing in for, and the
+ * only one the catalog actually authors: `ProductionTier.reliableOrdinal` is
+ * the rung a house turns out from its own intake, and everything material here
+ * is done by people at a rung. Everything that wanted "how much can this house
+ * make for itself" reads it; nothing states a house's material output, so
+ * nothing pretends to.
+ *
+ * Named and shared because two places scale money by it - the purse a house is
+ * seeded with, and what it takes off its ground each year - and a second copy
+ * of the arithmetic would drift.
+ */
+export function whatItCanPutOnTheGround(reliableOrdinal: number): number {
+    if (!Number.isFinite(reliableOrdinal)) return 0;
+    return Math.max(0, Math.min(1, reliableOrdinal / MAX_ORDINAL));
+}
+
+/**
+ * What one place a house collects at takes in a year, in spirit stones.
+ *
+ * THE SCALE IS ANCHORED TO TWO PRICES THE REPO ALREADY AUTHORS, not invented.
+ *
+ *   `price-gate-registration`  300 cash a year a head, "compulsory in nine
+ *                              cities, and the House's real income" - three
+ *                              stones a head a year.
+ *   `price-port-rate`          a fortieth of what crosses the rail, "light
+ *                              because the traffic is where the profit is and
+ *                              squeezing the traffic moves it".
+ *
+ * So `a city gate` at 1,000 stones is 333 people a year paying the Jade
+ * Register's own published rate, or a fortieth of forty thousand stones of
+ * cargo over a weigh rail. Both read as an ordinary year at one post, which is
+ * what makes these numbers checkable rather than chosen.
+ *
+ * A ROCK GIVES MORE, AND THE ORDERING IS PER POST AGAINST PER VEIN. The vein
+ * term is 5,000 stones scaled by what the house can field, so the biggest one
+ * post can be is half of the smallest vein. A house with nine city gates does
+ * out-earn one vein, which is the point: it has nine of them.
+ *
+ * And a levy does NOT scale by what a house can put on the ground, which every
+ * other term here does. What goes past a gate is what goes past a gate; the
+ * rung decides whether the house can hold the gate at all, not how many people
+ * walk through it. Scaling it would have made this a recoloured copy of the
+ * vein term rather than a second way to eat.
+ */
+export const WHAT_ONE_POST_TAKES_IN_A_YEAR: Readonly<Record<LevyTraffic, number>> = {
+    'a trickle': 120,
+    'a road': 400,
+    'a city gate': 1_000,
+    'a province': 2_500
+};
+
+/**
+ * What a house's levy brings in per year, in spirit stones.
+ *
+ * One copy, called by the purse a house is seeded with and by the yearly
+ * economy, so the two cannot drift.
+ */
+export function whatALevyBringsIn(levy: CatalogFaction['levy']): number {
+    if (!levy) return 0;
+    return Math.round(levy.posts * WHAT_ONE_POST_TAKES_IN_A_YEAR[levy.traffic]);
+}
+
+/**
  * The generator's flat input, read straight off the catalog row.
  */
 function compoundInputFor(cf: CatalogFaction): CompoundInput {
@@ -755,8 +839,7 @@ function compoundInputFor(cf: CatalogFaction): CompoundInput {
         powerOrdinal: cf.powerOrdinal,
         recruits: cf.recruits,
         alignment: cf.alignment,
-        governance: cf.governance,
-        production: cf.production,
+        reliableOrdinal: cf.reliableOrdinal,
         formationIntegrity: cf.formationIntegrity,
         formationNodesTotal: cf.formationNodesTotal ?? 0,
         formationNodesLit: cf.formationNodesLit ?? 0,
@@ -795,16 +878,37 @@ function seedFactions(
         // was already in `LocationKind`; nothing here is a new category.
         const seat = region ? seedSectGround(state, cf, region, apexPowerOrdinal, presentDay) : null;
 
-        // A year of upkeep, scaled by what it can produce and what it owes.
+        // A year of upkeep, scaled by what it can put on the ground and what it
+        // owes. The middle factor was `(0.5 + cf.production)` against a number
+        // that was 0.5 for every house in the catalog, so it was exactly 1.0
+        // everywhere and the treasury was a function of power alone.
+        // A house that eats off a gate rather than off rock opens with a purse
+        // too, and it opened with none: before the levy existed the only house
+        // with nothing in this expression was a house with no ground, which
+        // described two thirds of the catalog.
+        //
+        // And the towns it governs, which is the other half of the same fix:
+        // the levy priced what a house takes at a gate and nothing priced what
+        // it takes from the people living under it, so a house administering a
+        // province outright opened with the purse of a house administering
+        // nothing. Stamped onto the settlements by `seedRegions` above, so this
+        // reads the world rather than the catalog.
+        const townsHere = whatTheTownsBringIn(state.locations, cf.id);
         const baseTreasury = Math.round(
-            (2_000 + cf.powerOrdinal * 900) * (0.5 + cf.production) -
+            (2_000 + cf.powerOrdinal * 900) * (0.5 + whatItCanPutOnTheGround(cf.reliableOrdinal)) +
+            whatALevyBringsIn(cf.levy) + townsHere -
             cf.tributeStonesPerYear * 0.08
         );
 
         const faction = makeFaction({
             id: cf.id,
             name: cf.name,
-            kind: cf.governance === 'deference' ? 'court' : 'sect',
+            // A body that administers ground it was never granted is a court
+            // in the world's vocabulary rather than a school, and the one in
+            // the catalog administers a valley, a mountain and four
+            // settlements. This read `governance === 'deference'`, which was
+            // the same body named by how it is backed.
+            kind: cf.holdsByReputation ? 'court' : 'sect',
             alignment: cf.alignment,
             seatLocationId: seat?.id ?? null,
             controlledLocationIds: seat ? [seat.id] : [],
@@ -814,10 +918,23 @@ function seedFactions(
                 spirit_stones: Math.max(200, baseTreasury + rng.int(-400, 1200)),
                 veins: cf.holdsVein ? 1 : 0,
                 tribute_owed_per_year: cf.tributeStonesPerYear,
-                // Read back by the yearly economy and by admissions. Kept on
-                // the record rather than looked up, so the world stays
+                // Read back by the yearly economy and by promotion. Kept on the
+                // record rather than looked up, so the world stays
                 // self-contained once the catalog is out of the picture.
-                production: cf.production,
+                //
+                // This was `production`, a 0..1 that was 0.5 on every house
+                // ever seeded. The ordinal is the fact the catalog states.
+                reliable_ordinal: cf.reliableOrdinal,
+                // What its gates, fords and counters take in a year. Computed
+                // once, here, by the same function the purse above used, so the
+                // yearly economy reads a figure rather than repeating a table.
+                levy_per_year: whatALevyBringsIn(cf.levy),
+                // AND NO COLUMN FOR WHAT THE TOWNS PAY, deliberately. A charter
+                // does not change hands in the ordinary run of a century and
+                // ground does - twice over in the yearly economy - so a figure
+                // written here would go on stating what the house held at
+                // seeding and nothing would fail. `whatTheTownsBringIn` reads
+                // the locations, which are where the fact actually lives.
                 admission_ordinal: cf.admissionOrdinal,
                 // What it fields every day, which `cascade.ts` compares against
                 // whoever came for it.
@@ -827,7 +944,15 @@ function seedFactions(
             },
             description: cf.description,
             foundedOnDay: presentDay - years(rng.int(60, 900)),
-            tags: [cf.governance, cf.recruits ? 'recruits' : 'closed']
+            // The governance word, and separately the fact that used to be one
+            // of them. `deference` was a governance value and is now a
+            // property of the hold: the tag says what is true of the ground
+            // rather than what group the house was filed under.
+            tags: [
+                cf.governance,
+                cf.recruits ? 'recruits' : 'closed',
+                ...(cf.holdsByReputation ? ['holds_by_reputation'] : [])
+            ]
         });
 
         // Rivalries are symmetric in the catalog, so recording one side is
@@ -848,6 +973,16 @@ function seedFactions(
             }
         }
         if (seat) seat.controllingFactionId = cf.id;
+
+        // And the towns. Stamped on the place rows by `seedRegions`, collected
+        // onto the house here, so `controlledLocationIds` and the column agree
+        // by construction rather than by two passes writing the same fact.
+        for (const location of state.locations) {
+            if (location.kind !== 'settlement') continue;
+            if (location.controllingFactionId !== cf.id) continue;
+            faction.controlledLocationIds.push(location.id);
+        }
+
 
         state.factions.push(faction);
         out.push(faction);

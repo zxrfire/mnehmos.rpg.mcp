@@ -173,7 +173,7 @@ export const THE_DROWNED_REACH: Region = {
                 }
             ]
         },
-        { name: PLACE.THE_FAR_SHORE, kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Jade Gorge, when it opens, which is four days in nine and never in a storm.' },
+        { name: PLACE.THE_FAR_SHORE, heldByFactionId: 'house-shrinking-earth', kind: 'waystation', ambient: 'thin', note: 'A gate station on a shore three weeks\' sail out and one hour from the Jade Gorge, when it opens, which is four days in nine and never in a storm.' },
         // ── the middle of the water, which was a gap in the map ────────
         //
         // The province was written as coasts and the water between them
@@ -186,6 +186,12 @@ export const THE_DROWNED_REACH: Region = {
         // somewhere a hull is rather than somewhere a hull calls.
         {
             name: PLACE.SILVER_ISLE,
+            // "None of them holds a strait - one because it holds forty acres of
+            // island instead and would be worth nothing if it held any more."
+            // The forty acres are this island. No patron owns it and the
+            // market on it does, which is the arrangement the province turns
+            // on rather than a contradiction of `no_authority`.
+            heldByFactionId: 'sect-silver-island-market',
             kind: 'city', ambient: 'thin', note: 'An island at the middle of the eastern passage with a deep anchorage, no vein and no patron, where every party in the world buys and sells because none of them owns it. The largest market outside the nine cities and the only one an apex has never had a seat at.',
             // A PROVINCE WITH NO GROUND IN IT, PRICED IN SAILING DAYS.
             //
