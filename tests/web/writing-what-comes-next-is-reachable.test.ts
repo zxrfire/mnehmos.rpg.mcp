@@ -31,11 +31,14 @@
  * Foundation Establishment, whose realm grants 200 years: the curve prices that
  * at 19 years against 7 water arts standing at or above it.
  *
- * A cultivation manual with NO road and no element - the block-printed primer
- * among them - cannot be extended by anybody at all, because `daoMatches` has
- * nothing to match. That is a property of seventeen catalog rows rather than of
- * this verb, and it is written down in the report rather than worked around
- * here.
+ * `lesser-qi-gathering-manual` is the block-printed primer a run opens holding.
+ * It names no road and no element, opens at 0 and stops at 13, so the same
+ * cultivator stands at its cap too - and until `asksNothingOfTheRoad` existed,
+ * every derivation attempt against it refused `wrong_dao` whatever road the
+ * reader had walked, because `daoMatches` had nothing to compare against. That
+ * was 17 of 157 catalog rows, permanently unextendable by anybody. A road the
+ * art does not name is not the wrong road; the art asks for none, and runs off
+ * whatever qi the reader has.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -52,6 +55,8 @@ import type { InsightDegree } from '../../src/schema/cultivation';
 const MANUAL = 'moonlit-well-absorption-art';
 /** It describes a crossing nobody gets to attempt twice, and says so. */
 const CANNOT_BE_EXTENDED = 'chaos-origin-scripture';
+/** No road, no element. The primer a run opens holding; opens at 0, stops at 13. */
+const ON_NO_ROAD = 'lesser-qi-gathering-manual';
 
 const SAYING_IT = 'I write the next stage of the manual myself';
 
@@ -256,6 +261,69 @@ describe('a cultivator writes what comes next', () => {
         await game.cultivate(600).catch(() => undefined);
         expect(game.state().cultivator.cultivationProgress).toBeGreaterThan(before);
     }, 300_000);
+});
+
+describe('a manual on no road in particular is extended by whatever road you have', () => {
+    it('writes the primer\'s next stage on a road the book never names', async () => {
+        // THE FAILURE THIS COVERS. `daoMatches` compares a comprehension against
+        // the roads an art names, the element it is written in, and - for a
+        // forbidden art - existence. The primer carries none of the three, so
+        // the predicate refused everybody and the gate said `wrong_dao`: a road
+        // the reader had walked was reported as the wrong road for a book that
+        // makes no claim about roads at all. 17 of 157 rows were in that state.
+        //
+        // The road here is FIRE against a book about nothing, which is the same
+        // arrangement the `wrong_dao` test below uses against a water book. One
+        // fixture, two answers, and the difference is the book.
+        const { game, repos, db, cultivatorId } = await standingAtTheCap(
+            'derive-no-road', { manual: ON_NO_ROAD, road: 'fire' }
+        );
+
+        expect(stagesWrittenSince(repos, ON_NO_ROAD)).toBe(0);
+        const before = game.state().run.elapsedDays;
+
+        // Said first and on its own, because this is the defect: the loop below
+        // would otherwise report sixty fruitless sittings and name nothing.
+        const first = await game.act(SAYING_IT);
+        expect(engineCalls(first).find(c => c.name === 'engine.writeNextStage')?.summary ?? '')
+            .not.toMatch(/wrong_dao/);
+
+        const { turns, last } = await writeItToTheEnd(game);
+        expect(turns, 'the manuscript never finished').toBeLessThan(60);
+
+        // It is not free. The general case is a gate that does not bite, not a
+        // price that stopped being charged.
+        expect(last.state.run.elapsedDays - before).toBeGreaterThan(10 * 365);
+
+        expect(stagesWrittenSince(repos, ON_NO_ROAD)).toBe(1);
+        expect(stagesHeldBy(repos, cultivatorId, ON_NO_ROAD)).toBe(1);
+        const known = db
+            .prepare('SELECT known_techniques FROM cultivators WHERE id = ?')
+            .get(cultivatorId) as { known_techniques: string };
+        expect(JSON.parse(known.known_techniques)).toEqual([ON_NO_ROAD]);
+
+        const call = engineCalls(last as never).find(c => c.name === 'engine.writeNextStage');
+        expect(call?.ok).toBe(true);
+        expect(call?.summary).toMatch(/cap 13 -> 14/);
+    }, 300_000);
+
+    it('never reaches wrong_dao, and the free read agrees with the act', async () => {
+        const { game } = await standingAtTheCap(
+            'derive-no-road-read', { manual: ON_NO_ROAD, road: 'fire' }
+        );
+
+        const read = await game.act('how do I get further');
+        const option = engineCalls(read).find(c => c.name === 'encounters.extensionOption');
+        expect(option?.summary).not.toMatch(/wrong_dao/);
+        expect(read.state.run.elapsedDays).toBe(0);
+
+        // And the act says the same thing the read did, which is the property
+        // the `extensionOption` wiring exists for.
+        const act = await game.act(SAYING_IT);
+        const call = engineCalls(act).find(c => c.name === 'engine.writeNextStage');
+        expect(call?.summary ?? '').not.toMatch(/wrong_dao/);
+        expect(act.state.run.elapsedDays).toBeGreaterThan(0);
+    }, 120_000);
 });
 
 describe('and a refusal says what would change it', () => {

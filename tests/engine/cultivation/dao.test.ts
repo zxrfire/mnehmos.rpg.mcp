@@ -21,13 +21,16 @@ import {
     LEANING_DEGREE,
     NARROWING_PENALTY,
     affinityFor,
+    asksNothingOfTheRoad,
     daoGate,
     daoMatches,
     daoName,
     daoOf,
     isRecognition,
     narrowingWeight,
-    pickNarrowed
+    pickNarrowed,
+    roadPermits,
+    wieldingWeight
 } from '../../../src/engine/cultivation/dao.js';
 import {
     bottleneckSubstitution,
@@ -171,6 +174,71 @@ describe('it gates the highest arts', () => {
         const refused = daoGate(swordDao, { grade: 'chaos', subjects: ['formation'] });
         expect(refused.detail).not.toMatch(/formation/i);
         expect(JSON.stringify(refused)).not.toMatch(/should|suited|instead|try/i);
+    });
+});
+
+/**
+ * An art about nothing in particular is GENERAL, not impossible.
+ *
+ * THE DEFECT. `daoMatches` compares a comprehension against the roads an art
+ * names, the element it is written in, and - for a forbidden art - existence.
+ * An art carrying none of the three gives it nothing to compare, so it returned
+ * false for every cultivator who has ever lived and every gate reading it
+ * refused `wrong_dao` forever. Measured off the live catalog: 17 of 157 rows
+ * name neither a road nor an element, and `lesser-qi-gathering-manual` - the
+ * block-printed primer a run opens holding - is one of them.
+ *
+ * THE RULING, from the design owner. No road means generic xianxia rather than
+ * sword or flame or ice, *"like having no element just says you can use this
+ * with any element"*, and the reason is that the art runs off the practitioner:
+ * *"it works off of your qi ... but regardless, its still qi, right?"* The
+ * element belongs to the cultivator, not to the book.
+ *
+ * WHY TWO PREDICATES AND NOT ONE. Making no demand and being a perfect fit are
+ * different facts. The gates ask whether the art demands a road; the combat
+ * term asks whether the comprehension is ABOUT what the art is about. Folding
+ * them together would hand every cultivator the on-road multiplier on all 17
+ * rows for understanding nothing in particular, which is a balance change
+ * nobody asked for.
+ */
+describe('an art on no road in particular asks for none', () => {
+    const swordDao = daoOf([
+        insight('weapon', 'sword', 5, 'a'),
+        insight('weapon', 'spear', 2, 'b')
+    ]);
+    /** A road, and one no catalog row is about. */
+    const general = { grade: 'chaos' as const, subjects: [], element: null, category: 'cultivation' };
+
+    it('reads nothing as a demand where the art states nothing', () => {
+        expect(asksNothingOfTheRoad(general)).toBe(true);
+        expect(asksNothingOfTheRoad({ grade: 'chaos', subjects: ['sword'] })).toBe(false);
+        expect(asksNothingOfTheRoad({ grade: 'chaos', element: 'water' })).toBe(false);
+        // Forbidden arts are about existence, which IS a claim - the
+        // comprehensions that open them are the universal ones and the rest are
+        // refused, exactly as before.
+        expect(asksNothingOfTheRoad({ grade: 'chaos', category: 'forbidden' })).toBe(false);
+        expect(daoGate(swordDao, { grade: 'chaos', category: 'forbidden' }).permitted).toBe(false);
+    });
+
+    it('opens to any road at all, and still asks for the standing', () => {
+        expect(roadPermits(swordDao, general)).toBe(true);
+        expect(daoGate(swordDao, general).permitted).toBe(true);
+        // The grade bar is untouched. What went was the second refusal on top
+        // of it, not the first.
+        const noRoad = daoGate(daoOf([]), general);
+        expect(noRoad.permitted).toBe(false);
+        expect(noRoad.reason).toBe('no_matching_dao');
+    });
+
+    it('sharpens nobody, because there is nothing for a road to be about', () => {
+        // The half that must NOT move. A general art is not on the sword road;
+        // it makes no demand of it and gets no bonus from it.
+        expect(daoMatches(swordDao, general)).toBe(false);
+        expect(wieldingWeight(swordDao, general)).toBe(1);
+        // And an art that IS on the road still pays, so this is not the term
+        // going inert.
+        expect(wieldingWeight(swordDao, { grade: 'chaos', subjects: ['sword'] }))
+            .toBeGreaterThan(1);
     });
 });
 

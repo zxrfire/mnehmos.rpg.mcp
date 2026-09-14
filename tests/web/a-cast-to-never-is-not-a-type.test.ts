@@ -40,14 +40,24 @@
  * ── WHY (3) IS THE WORST OF THEM ─────────────────────────────────────────
  *
  * That verb answers "how do I carry this manual further", about a manual the
- * cultivator ALREADY PRACTISES. With the road dropped, a cultivator a century
- * into the sword road, asking after their own sword manual, is refused
- * `wrong_dao`:
+ * cultivator ALREADY PRACTISES. With the road dropped, the gate cannot tell
+ * that the book in their hands is a sword book, and it answers the wrong
+ * question about everybody who asks.
  *
- *     ... is a road, and it is not [the manual]'s. The art is written in a
- *     language this cultivator has spent their life not learning.
+ * WHAT THAT LOOKED LIKE WHEN THIS FILE WAS WRITTEN, and why the assertion
+ * below has moved. A dropped road used to read as a road nobody walks, so the
+ * sword cultivator asking after their own sword manual was refused `wrong_dao`
+ * - *"the art is written in a language this cultivator has spent their life not
+ * learning"*, about the book in their hands. That refusal is gone, and
+ * correctly: an art that names no road, no element and no forbidden subject
+ * states no requirement, so it refuses nobody. Seventeen catalog rows are
+ * genuinely in that state, the primer everybody starts with among them, and
+ * `asksNothingOfTheRoad` is the rule.
  *
- * About the book in their hands.
+ * So the dropped field no longer insults the reader. It does something quieter
+ * and just as wrong: it turns a sword canon into a book about nothing, and a
+ * cultivator on a road that is NOT the sword road walks straight into it. That
+ * is the consequence pinned below, and it goes red on the same mistake.
  *
  * ── AND THE RULE THIS LEAVES ─────────────────────────────────────────────
  *
@@ -97,6 +107,14 @@ const A_SWORD_CULTIVATOR = {
     name: 'the sword'
 } as const;
 
+/** And one who has walked a road the manual is not on, to prove the gate bites. */
+const A_FLAME_CULTIVATOR = {
+    standing: 'deep',
+    subject: 'flame',
+    domain: 'craft',
+    name: 'flame'
+} as const;
+
 describe('the road an art is on survives the trip to the gate', () => {
     /**
      * THE ENGINE WAS ALWAYS RIGHT. Stated first so the failure below cannot be
@@ -108,20 +126,28 @@ describe('the road an art is on survives the trip to the gate', () => {
         expect(verdict.reason).toBeNull();
     });
 
-    /**
-     * AND WITH THE ROAD DROPPED IT IS THE SENTENCE THE PLAYER GOT. This is the
-     * defect reproduced at the layer it was introduced at, so that a future
-     * caller that drops `subjects` again fails against a named consequence
-     * rather than against a schema.
-     */
-    it('refuses that same book once its roads are dropped', () => {
-        const verdict = manualGate(
-            A_SWORD_CULTIVATOR as never,
-            { ...A_SWORD_MANUAL, subjects: [] } as never
-        );
+    /** With the roads on the row, the gate refuses somebody else's road. */
+    it('refuses a sword manual to a cultivator on another road', () => {
+        const verdict = manualGate(A_FLAME_CULTIVATOR as never, A_SWORD_MANUAL as never);
         expect(verdict.permitted).toBe(false);
         expect(verdict.reason).toBe('wrong_dao');
         expect(verdict.detail).toContain('spent their life not learning');
+    });
+
+    /**
+     * AND WITH THE ROADS DROPPED THE GATE STOPS EXISTING. This is the defect
+     * reproduced at the layer it was introduced at, so that a future caller
+     * dropping `subjects` fails against a named consequence rather than against
+     * a schema: a sword canon with its roads stripped is a book that states no
+     * requirement, and a book that states no requirement lets everybody in.
+     */
+    it('admits that same other road once the manual\'s roads are dropped', () => {
+        const verdict = manualGate(
+            A_FLAME_CULTIVATOR as never,
+            { ...A_SWORD_MANUAL, subjects: [] } as never
+        );
+        expect(verdict.permitted).toBe(true);
+        expect(verdict.reason).toBeNull();
     });
 
     /**

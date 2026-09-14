@@ -10,9 +10,10 @@
 
 import { MAX_ORDINAL, rankName, realmForOrdinal } from './realms.js';
 import {
-    daoMatches,
+    asksNothingOfTheRoad,
     daoName,
     GRADE_REQUIREMENT,
+    roadPermits,
     type DaoAssessment,
     type DaoStanding,
     type GatedTechnique
@@ -562,7 +563,7 @@ export function manualGate(dao: DaoAssessment, manual: GatedManual): ManualGateR
         };
     }
 
-    if (!daoMatches(dao, manual)) {
+    if (!roadPermits(dao, manual)) {
         return {
             permitted: false,
             reason: 'wrong_dao',
@@ -580,7 +581,10 @@ export function manualGate(dao: DaoAssessment, manual: GatedManual): ManualGateR
         reason: null,
         requirement,
         heldStanding: dao.standing,
-        detail: `${dao.name ?? `a leaning toward ${dao.subject}`} opens ${title}` +
+        detail: (asksNothingOfTheRoad(manual)
+            ? `${title} is written on no road in particular and asks for none. It works off ` +
+              'whatever qi the reader has, and this cultivator has walked far enough to hold it'
+            : `${dao.name ?? `a leaning toward ${dao.subject}`} opens ${title}`) +
             `${requirement.from === 'span' || requirement.from === 'both'
                 ? `, which ${reachClause(requirement)}`
                 : ''}.`
@@ -711,7 +715,7 @@ export function canExtend(
         };
     }
 
-    if (!daoMatches(dao, manual)) {
+    if (!roadPermits(dao, manual)) {
         return {
             ...base,
             permitted: false,
@@ -727,10 +731,14 @@ export function canExtend(
         ...base,
         permitted: true,
         reason: null,
-        detail:
-            `${dao.name ?? `a leaning toward ${dao.subject}`} is ${title}'s own road, walked ` +
-            'far enough that the pages are no longer where the method lives. What comes ' +
-            'after it can be written rather than found.'
+        detail: asksNothingOfTheRoad(manual)
+            ? `${title} is written on no road in particular, so there is no road of its own ` +
+              `to have walked. What it teaches is how to move qi, and ${dao.name ?? `a leaning toward ${dao.subject}`} ` +
+              'has been walked far enough to say where a method goes next. What comes after ' +
+              'it can be written rather than found.'
+            : `${dao.name ?? `a leaning toward ${dao.subject}`} is ${title}'s own road, walked ` +
+              'far enough that the pages are no longer where the method lives. What comes ' +
+              'after it can be written rather than found.'
     };
 }
 

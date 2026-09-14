@@ -198,7 +198,7 @@ export function daoGate(dao: DaoAssessment, technique: GatedTechnique): DaoGateR
         };
     }
 
-    if (!daoMatches(dao, technique)) {
+    if (!roadPermits(dao, technique)) {
         return {
             permitted: false,
             reason: 'wrong_dao',
@@ -215,8 +215,51 @@ export function daoGate(dao: DaoAssessment, technique: GatedTechnique): DaoGateR
         reason: null,
         requiredStanding: required,
         heldStanding: dao.standing,
-        detail: `${dao.name ?? `a leaning toward ${dao.subject}`} opens this art.`
+        detail: asksNothingOfTheRoad(technique)
+            ? 'The art is about nothing in particular and asks nothing of the road. ' +
+              'It works off whatever qi the reader has, and this cultivator has walked ' +
+              'far enough to hold it.'
+            : `${dao.name ?? `a leaning toward ${dao.subject}`} opens this art.`
     };
+}
+
+/**
+ * Whether the art makes any claim about the road at all.
+ *
+ * {@link daoMatches} compares a comprehension against three things: the roads
+ * the art names, the element it is written in, and - for a forbidden art -
+ * existence itself. An art carrying none of the three gives that predicate
+ * nothing to compare against, so it refuses every cultivator who has ever
+ * lived. That is not a hard art. It is a GENERAL one: it makes no claim about
+ * the road, it runs off the practitioner's own qi, and everybody's qi is qi.
+ * The element belongs to the cultivator rather than to the book.
+ *
+ * Measured off the live catalog: 17 of 157 rows name neither a road nor an
+ * element, the block-printed primer everybody starts with among them, and every
+ * derivation attempt against one refused `wrong_dao` forever.
+ *
+ * The element axis has always read this way. `assessFit` answers a null element
+ * with *it asks for no particular element* and a match, so an elementless art
+ * admits every root. This is that sentence on the road axis.
+ */
+export function asksNothingOfTheRoad(technique: GatedTechnique): boolean {
+    return (technique.subjects ?? []).length === 0
+        && (technique.element ?? null) === null
+        && technique.category !== 'forbidden';
+}
+
+/**
+ * Whether a cultivator's road is a bar to this art.
+ *
+ * The LEARNING question, and deliberately not {@link daoMatches}. Making no
+ * demand and being a perfect fit are two different facts: a general art refuses
+ * nobody, and it sharpens nobody either. So every GATE reads this and
+ * {@link wieldingWeight} keeps reading the match - sharing one predicate would
+ * pay every cultivator the on-road multiplier for understanding nothing in
+ * particular, which is a balance change nobody asked for.
+ */
+export function roadPermits(dao: DaoAssessment, technique: GatedTechnique): boolean {
+    return asksNothingOfTheRoad(technique) || daoMatches(dao, technique);
 }
 
 /** Whether a road and an art are about the same thing. */
@@ -263,9 +306,13 @@ export const WIELDING_FACTOR: Record<DaoStanding, number> = {
 /**
  * What the road already walked is worth to an art wielded on it.
  *
- * The same match `daoGate` gates LEARNING on, read for how well the art is
- * USED. One predicate, two readers: an art your road does not open is an art
- * your road does not sharpen either.
+ * `daoMatches` and not `roadPermits`, and the split is load-bearing. The gates
+ * ask whether the art makes a DEMAND of the road; this asks whether the
+ * comprehension is ABOUT the thing the art is about. An art on no road in
+ * particular demands nothing, so it refuses nobody - and it gives a
+ * comprehension nothing to be about, so it sharpens nobody. Reading
+ * `roadPermits` here would hand every cultivator the on-road multiplier on
+ * every general art in the catalog.
  */
 export function wieldingWeight(
     dao: DaoAssessment,
