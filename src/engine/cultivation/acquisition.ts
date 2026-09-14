@@ -8,7 +8,7 @@
  * succession of books is a fact about realm geometry.
  */
 
-import { MAX_ORDINAL, rankName } from './realms.js';
+import { MAX_ORDINAL, rankName, realmForOrdinal } from './realms.js';
 import {
     daoMatches,
     daoName,
@@ -752,17 +752,82 @@ export function canExtend(
 // one door money cannot open. A found book might be for somebody else; a
 // written one cannot be.
 //
-// AND IT MUST NOT BECOME A HOLE-CLOSER. The same discipline
-// `NO_SURVIVING_COPY_TECHNIQUE_IDS` is held to applies: the `derivable` set in
-// the catalog is opt-in and deliberately tiny. Derivation is the prodigy's
-// road, not the way missing content gets papered over. If that set ever grows
-// to cover the choke points, the corridor has been abolished rather than
-// opened.
+// AND IT MUST NOT BECOME A HOLE-CLOSER. What used to keep it from being one was
+// a `derivable` allowlist in the catalog, deliberately tiny. That went when
+// extending became something a CULTIVATOR does rather than a property a catalog
+// author sets, and what holds the line now is the price: the curve below, keyed
+// to the rung the stage is written for, and `no_precedent`, which shuts the door
+// completely where nobody has ever stood. A price is the better instrument,
+// because an allowlist is satisfied by a catalog with nothing at the choke
+// points at all - which is how the curve went inert without anybody noticing.
+
+// WHAT A RUNG OF NEW METHOD COSTS
+//
+// It was a flat twelve years at every height, and that had gone inert. Measured
+// off the live catalog: `precedentAt` counts arts written for the target rung or
+// above, and under the one-kind-of-art ruling that count is the whole catalog -
+// 157 rows reach ordinal 13, 44 reach 33, 23 reach 45. `PRECEDENT_WELL_WALKED`
+// is 8, so thinness was ZERO at every rung up to 45 and the whole curve charged
+// its floor everywhere below the summit.
+//
+// The ruling that reshaped it: techniques get harder as you climb, and you also
+// have more time. Both halves are already authored - `realmForOrdinal(n)
+// .lifespanYears` runs 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 100000,
+// 300000 up the ladder - so the price is worked out as a SHARE OF THE LIFE THE
+// TARGET RUNG GRANTS rather than as a count of years. Twelve flat years were 12%
+// of a mortal's whole life at the bottom and 0.12% of a Body Integration
+// cultivator's at the top, which is the ruling exactly inverted.
 
 /**
- * Years of work a derived rung costs.
+ * The share of a rung's granted lifespan one stage of new method costs.
+ *
+ * 0.12: twelve years of a mortal's hundred, which is what the flat figure was
+ * and what the bottom of the ladder still pays.
  */
-export const DERIVATION_YEARS_PER_RUNG = 12;
+export const DERIVATION_LIFE_SHARE = 0.12;
+
+/**
+ * The lifespan a rung grants, as this curve prices against.
+ *
+ * The REALM's headline figure, never the per-rung override. A True Immortal's
+ * span is not a number that means anything (see `rungLifespanYears`), and a
+ * number that means nothing cannot price anything - so ordinal 46 is priced off
+ * the False Immortal's 300,000 like the rung below it.
+ */
+function lifeAtRung(ordinal: number): number {
+    return realmForOrdinal(ordinal).lifespanYears;
+}
+
+/**
+ * Years the work costs before the ground is counted.
+ *
+ * THE GEOMETRIC MEAN OF THE TWO HONEST ANSWERS, and it is a mean because
+ * neither answer alone survives the ladder. A flat price says a rung of new
+ * method is the same work at every height, which is the defect above. A fixed
+ * share of the rung's life says writing one stage at Tribulation Transcendence
+ * is twelve thousand years of work - longer than the time-skip chunker will
+ * resolve in one pass, and a price nothing in the game can spend.
+ *
+ * Halfway between them in log terms is `DERIVATION_LIFE_SHARE * sqrt(mortal *
+ * here)`: the years grow 55-fold from the bottom of the ladder to the top while
+ * the share of a life they cost falls from 12% to 0.22%. That falling share is
+ * deliberate and is the second half of the ruling - above the mortal realms a
+ * life stops being what is scarce, and the ground does. `no_precedent` is where
+ * the ground closes the door outright, and it is a refusal rather than a price.
+ */
+export function derivationBaseYears(targetOrdinal: number): number {
+    const mortal = DERIVATION_LIFE_SHARE * lifeAtRung(0);
+    const here = DERIVATION_LIFE_SHARE * lifeAtRung(clampOrdinal(targetOrdinal));
+    return Math.sqrt(mortal * here);
+}
+
+/**
+ * What deriving costs at the bottom of the ladder, on well-walked ground.
+ *
+ * The floor of the curve, derived rather than authored: nothing above Qi
+ * Condensation is ever cheaper than this.
+ */
+export const DERIVATION_FLOOR_YEARS = Math.round(derivationBaseYears(0));
 
 // NEW GROUND
 //
@@ -805,11 +870,17 @@ export interface Precedent {
 /**
  * How many arts in the world are written for the target rung or above.
  *
- * PASS CULTIVATION MANUALS, NOT EVERY ART. The catalog is mostly dao arts, which
- * have no cap and would dilute the count past meaning. Measured: counting
- * everything leaves 13 arts standing at ordinal 44 and the curve inert across the
- * whole ladder; counting manuals leaves 2, which is the scarcity the corridor
- * actually describes.
+ * PASS WHAT IS ON THIS MANUAL'S OWN ROAD, NOT EVERY ART. The old note here said
+ * "cultivation manuals, not every art", and that distinction is gone - there is
+ * one kind of art now and every row carries a cap, so "every manual" IS the
+ * whole catalog and the count never falls below `PRECEDENT_WELL_WALKED` until
+ * the summit. Measured: 157 rows reach ordinal 13, 44 reach 33, 23 reach 45.
+ *
+ * The road is the cut that survived the ruling, and it is the one the word
+ * actually means: deriving is composing against what has been written ON THIS
+ * ROAD, and a sword form is not precedent for a pill. Measured the same way,
+ * over the median road: 15 at ordinal 13, 5 at 33, 2 at 45, 1 at 46. That is
+ * live at every height and it thins where the corridor says it should.
  */
     artsAtOrAbove: number;
 }
@@ -833,8 +904,16 @@ export const PRECEDENT_WELL_WALKED = 8;
 
 /**
  * How much thin ground multiplies the work, at its very thinnest.
+ *
+ * Was 4, and came down when the base started growing with the rung. It was 4
+ * because it was carrying the whole of "harder as you climb" on its own against
+ * a flat base; the rung carries that now, and what is left for this term to
+ * measure is how thin the road is HERE - a house that lost its library, a road
+ * nobody has written much of. At its thinnest it doubles the work. Two
+ * multiplicative answers to one question is how a price at the top reached
+ * three thousand years.
  */
-export const DERIVATION_THINNESS_COST = 4;
+export const DERIVATION_THINNESS_COST = 1;
 
 /**
  * How much of the work is the ground being new, 0..1.
@@ -848,11 +927,28 @@ export function thinnessAt(precedent: Precedent): number {
     return 1 - held / PRECEDENT_WELL_WALKED;
 }
 
-/** What deriving at this height costs in years. */
-export function derivationYears(precedent: Precedent): number {
+/**
+ * What deriving at this height costs in years.
+ *
+ * `targetOrdinal` is the rung the new stage would carry a reader TO, which is
+ * also the rung whose granted lifespan the work is priced against.
+ */
+export function derivationYears(precedent: Precedent, targetOrdinal: number): number {
     return Math.round(
-        DERIVATION_YEARS_PER_RUNG * (1 + DERIVATION_THINNESS_COST * thinnessAt(precedent))
+        derivationBaseYears(targetOrdinal)
+        * (1 + DERIVATION_THINNESS_COST * thinnessAt(precedent))
     );
+}
+
+/**
+ * What the price is as a share of the life the target rung grants.
+ *
+ * The number the curve is calibrated on, so anything reporting the price can
+ * say what it actually costs somebody standing there rather than a bare count
+ * of years that means something different at every height.
+ */
+export function derivationShareOfALife(precedent: Precedent, targetOrdinal: number): number {
+    return derivationYears(precedent, targetOrdinal) / lifeAtRung(clampOrdinal(targetOrdinal));
 }
 
 /**
@@ -962,8 +1058,9 @@ export function writeNextStage(request: DerivationRequest): DerivationResult {
     // that grew by accretion.
     const opacity = round2(rng.float(0.35, 0.7));
 
-    const years = derivationYears(request.precedent);
+    const years = derivationYears(request.precedent, newCap);
     const thinness = thinnessAt(request.precedent);
+    const share = derivationShareOfALife(request.precedent, newCap);
     const sourceTitle = source.name ?? source.id;
 
     const stage: Stage = {
@@ -985,12 +1082,12 @@ export function writeNextStage(request: DerivationRequest): DerivationResult {
             `stopped at ${rankName(sourceCap)}. ${road} does not stop there, and this ` +
             'cultivator has walked it far enough to write stage ' +
             `${number}: the manual now carries to ${rankName(newCap)}, and no further until ` +
-            `somebody writes stage ${number + 1}. ${years} years of work` +
+            `somebody writes stage ${number + 1}. ${years} years of work, which is ` +
+            `${asShare(share)} of the ${lifeAtRung(newCap)} years ${rankName(newCap)} grants` +
             `${thinness > 0
-                ? `, most of it because almost nothing stands at this height to write from - ` +
-                  `${request.precedent.artsAtOrAbove} ` +
-                  `${request.precedent.artsAtOrAbove === 1 ? 'manual' : 'manuals'} in the ` +
-                  'whole world reach it, and the next stage will be worse'
+                ? `. ${request.precedent.artsAtOrAbove} ` +
+                  `${request.precedent.artsAtOrAbove === 1 ? 'art' : 'arts'} on this road ` +
+                  'reach that height, which is what the work above the base is'
                 : ', on a road well enough walked that the precedent is there to build on'}` +
             '. It is theirs by construction - nobody had to have written it for them, ' +
             'because they wrote it. And it can be taught, or copied out: a stage somebody ' +
@@ -1006,4 +1103,18 @@ function clampOrdinal(ordinal: number): number {
 
 function round2(n: number): number {
     return Math.round(n * 100) / 100;
+}
+
+/**
+ * A share of a life, written the way somebody would say it.
+ *
+ * Two significant figures rather than a rounded percentage, because the share
+ * runs from 12% at the bottom of the ladder to a fifth of one percent at the
+ * top and `0%` is not what a 657-year project costs.
+ */
+export function asShare(fraction: number): string {
+    const pct = Math.max(0, fraction) * 100;
+    if (pct >= 10) return `${Math.round(pct)}%`;
+    if (pct >= 1) return `${pct.toFixed(1)}%`;
+    return `${pct.toFixed(2)}%`;
 }

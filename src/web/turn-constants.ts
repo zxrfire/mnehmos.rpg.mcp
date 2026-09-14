@@ -88,6 +88,17 @@ export const TREATMENT_FOCUS = 0.1;
 export const RAISING_FOCUS = 0.1;
 
 /**
+ * How much of a stretch spent writing a method's continuation is also spent
+ * cultivating.
+ *
+ * Not zero and not a sealed retreat. Somebody deriving is sitting with a road
+ * they have already made their own, so the years are not empty - but the work
+ * is the writing, and if it cultivated at the rate of a cave the price this
+ * whole corridor is priced in would be no price at all.
+ */
+export const WRITING_FOCUS = 0.25;
+
+/**
  * Spending a word rather than a purse, in the words a player says it in.
  *
  * The credit side of the obligation ledger has never had anywhere to go. This

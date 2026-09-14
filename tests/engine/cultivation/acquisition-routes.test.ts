@@ -13,7 +13,6 @@ import {
     canExtend,
     writeNextStage,
     stagesWrittenOf,
-    contiguousRun,
     writtenTo,
     effectiveCapOf,
     manualDaoRequirement,
@@ -23,9 +22,11 @@ import {
     realmsSpannedBy,
     spanStanding,
     ORDINARY_REALM_SPAN,
-    DERIVATION_YEARS_PER_RUNG,
+    DERIVATION_FLOOR_YEARS,
+    DERIVATION_LIFE_SHARE,
     PRECEDENT_WELL_WALKED,
-    DERIVATION_THINNESS_COST,
+    derivationBaseYears,
+    derivationShareOfALife,
     precedentAt,
     thinnessAt,
     derivationYears,
@@ -40,9 +41,9 @@ import {
 import { MAX_ORDINAL, realmForOrdinal } from '../../../src/engine/cultivation/realms.js';
 import { daoGate, daoOf } from '../../../src/engine/cultivation/dao.js';
 import { shardPower } from '../../../src/engine/world/possessions.js';
-import { TECHNIQUES, classOf } from '../../../src/data/cultivation/techniques.js';
+import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
 import { THE_DEEPEST_ROADS } from '../../../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
-import type { AmbientQi, Cultivator, Insight } from '../../../src/schema/cultivation.js';
+import type { AmbientQi, Cultivator, Insight, InsightDegree } from '../../../src/schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -57,14 +58,24 @@ function cultivator(overrides: Partial<Cultivator> = {}): Parameters<typeof comp
     } as Parameters<typeof computeCultivationRate>[0];
 }
 
-function insight(subject: string, domain: Insight['domain'], degree: number): Insight {
+function insight(subject: string, domain: Insight['domain'], degree: InsightDegree): Insight {
     return {
         id: `i-${domain}-${subject}-${degree}`,
         domain,
         subject,
         degree,
-        provenance: 'earned'
-    } as Insight;
+        // PROVENANCE IS AN ACCOUNT, NOT A WORD. This fixture held the string
+        // 'earned', which is the shape the field had before an insight was
+        // required to name the event that produced it - so it was building a
+        // row the engine could never mint or persist.
+        provenance: {
+            achievementId: `achievement-${domain}-${subject}`,
+            achievementKind: 'profound_principle',
+            onDay: 1,
+            deepenedBy: [],
+            account: `Comprehended ${subject}.`
+        }
+    };
 }
 
 /** A road walked to `dao` standing in one subject. */
@@ -104,7 +115,7 @@ describe('realm geometry - the measure the gates are keyed on', () => {
         // This test is a RATIO guard, in the idiom the routes suite already
         // uses. Wide books are the treasure; a catalog where several of them
         // exist is a catalog where the corridor has been quietly abolished.
-        const manuals = TECHNIQUES.filter(t => classOf(t) === 'cultivation');
+        const manuals = TECHNIQUES.slice();
         expect(manuals.length).toBeGreaterThan(0);
         const wide = manuals.filter(
             m => realmsSpannedBy({ requiredOrdinal: m.requiredOrdinal, cap: m.cap })
@@ -131,7 +142,7 @@ describe('realm geometry - the measure the gates are keyed on', () => {
         // skips a stretch of the corridor and asks NOTHING for it would make
         // finding one the whole game. Every wide book must carry at least one
         // of the two prices.
-        for (const manual of TECHNIQUES.filter(t => classOf(t) === 'cultivation')) {
+        for (const manual of TECHNIQUES.slice()) {
             const realms = realmsSpannedBy({
                 requiredOrdinal: manual.requiredOrdinal, cap: manual.cap
             });
@@ -356,7 +367,7 @@ describe('E1 - effectiveCapOf, the scattered set', () => {
 describe('E2b - the standing an exceptional manual asks for', () => {
     it('one realm asks nothing, and every ordinary book in the catalog is ungated by span', () => {
         expect(spanStanding(1)).toBe('none');
-        for (const manual of TECHNIQUES.filter(t => classOf(t) === 'cultivation')) {
+        for (const manual of TECHNIQUES.slice()) {
             const requirement = manualDaoRequirement({
                 id: manual.id,
                 name: manual.name,
@@ -364,7 +375,7 @@ describe('E2b - the standing an exceptional manual asks for', () => {
                 cap: manual.cap,
                 grade: manual.grade,
                 element: manual.element,
-                subject: null,
+                subjects: null,
                 category: manual.category,
                 domain: manual.domain,
                 domainDegree: manual.domainDegree
@@ -386,7 +397,7 @@ describe('E2b - the standing an exceptional manual asks for', () => {
         const wide: GatedManual = {
             id: 'wide', name: 'A Wide Book',
             requiredOrdinal: 13, cap: 33,
-            grade: 'earth', element: null, subject: null, category: 'cultivation'
+            grade: 'earth', element: null, subjects: null, category: 'cultivation'
         };
         expect(manualDaoRequirement(wide).standing).toBe('dao');
         expect(manualDaoRequirement(wide).spanDeferredToCatalog).toBe(false);
@@ -417,19 +428,19 @@ describe('E2b - the standing an exceptional manual asks for', () => {
         // guard is the strong one: `manualGate` must never refuse anything
         // `daoGate` would not already have refused on grade alone.
         for (const road of [daoOf([]), leaningIn('fire'), daoIn('fire')]) {
-            for (const manual of TECHNIQUES.filter(t => classOf(t) === 'cultivation')) {
+            for (const manual of TECHNIQUES.slice()) {
                 const gated = {
                     id: manual.id, name: manual.name,
                     requiredOrdinal: manual.requiredOrdinal, cap: manual.cap,
                     grade: manual.grade, element: manual.element,
-                    subject: null, category: manual.category,
+                    subjects: null, category: manual.category,
                     domain: manual.domain, domainDegree: manual.domainDegree
                 };
                 const mine = manualGate(road, gated);
                 const preExisting = daoGate(road, {
                     grade: manual.grade,
                     element: manual.element,
-                    subject: null,
+                    subjects: null,
                     category: manual.category
                 });
                 expect(
@@ -451,7 +462,7 @@ describe('E2b - the standing an exceptional manual asks for', () => {
         const wide: GatedManual = {
             id: 'wide', name: 'A Wide Book',
             requiredOrdinal: 13, cap: 21,
-            grade: 'mortal', element: 'fire', subject: 'fire', category: 'cultivation'
+            grade: 'mortal', element: 'fire', subjects: ['fire'], category: 'cultivation'
         };
         const req = manualDaoRequirement(wide);
         expect(req.realmsSpanned).toBe(2);
@@ -464,7 +475,7 @@ describe('E2b - the standing an exceptional manual asks for', () => {
         const wide: GatedManual = {
             id: 'wide', name: 'A Wide Book',
             requiredOrdinal: 13, cap: 21,
-            grade: 'mortal', element: 'fire', subject: 'fire', category: 'cultivation'
+            grade: 'mortal', element: 'fire', subjects: ['fire'], category: 'cultivation'
         };
         const refusal = manualGate(daoOf([]), wide);
         expect(refusal.permitted).toBe(false);
@@ -478,7 +489,7 @@ describe('E2b - the standing an exceptional manual asks for', () => {
         const wide: GatedManual = {
             id: 'wide', name: 'A Wide Book',
             requiredOrdinal: 13, cap: 21,
-            grade: 'mortal', element: 'fire', subject: 'fire', category: 'cultivation'
+            grade: 'mortal', element: 'fire', subjects: ['fire'], category: 'cultivation'
         };
         expect(manualGate(daoIn('water'), wide).reason).toBe('wrong_dao');
         expect(manualGate(daoIn('fire'), wide).permitted).toBe(true);
@@ -490,7 +501,7 @@ describe('the opening is uphill - the price of a wide book', () => {
     const wide = { requiredOrdinal: 13, cap: 21 };
 
     it('is 1 for every ORDINARY manual in the catalog - the common case is untouched', () => {
-        for (const manual of TECHNIQUES.filter(t => classOf(t) === 'cultivation')) {
+        for (const manual of TECHNIQUES.slice()) {
             const band = {
                 requiredOrdinal: manual.requiredOrdinal,
                 cap: manual.cap,
@@ -507,7 +518,7 @@ describe('the opening is uphill - the price of a wide book', () => {
         // The catalog\'s own five-realm treasure, read through the engine.
         // Somebody handed it at Foundation crawls; the same book is ordinary
         // by the time the hard stretch is paid off. That is the whole bargain.
-        const treasure = TECHNIQUES.find(t => t.opening !== null && classOf(t) === 'cultivation');
+        const treasure = TECHNIQUES.find(t => t.opening !== null);
         if (!treasure) return;
         const band = {
             requiredOrdinal: treasure.requiredOrdinal,
@@ -686,7 +697,11 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
 
     it('prices the work in years, readable before it is committed', () => {
         const result = writeNextStage(request);
-        expect(result.written && result.years).toBe(DERIVATION_YEARS_PER_RUNG);
+        // SCATTERED stops at 41, so the stage is written for 42 - Tribulation
+        // Transcendence, whose realm grants 100,000 years. The price is the
+        // rung's, not a flat figure: `derivationBaseYears` on well-walked ground.
+        expect(result.written && result.years).toBe(Math.round(derivationBaseYears(42)));
+        expect(result.written && result.years).toBeGreaterThan(DERIVATION_FLOOR_YEARS);
         // And it is not drawn from the stream: a price a player can only
         // discover by paying it is the same failure as a hidden ceiling.
         expect(writeNextStage({ ...request, runSeed: 'other-seed' }).years)
@@ -738,17 +753,59 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
 
     it('gets harder as you go up, because the ground is thinner', () => {
         // "Obviously it gets harder as you go up cuz you're on new ground."
-        // Derived rather than tuned: the cost keys off how much the world holds
-        // at or above the target, so it moves on its own as the catalog does.
+        // Derived rather than tuned: the cost keys off how much stands at or
+        // above the target, so it moves on its own as the catalog does.
         const walked = writeNextStage({ ...request, precedent: { artsAtOrAbove: 12 } });
         const thinning = writeNextStage({ ...request, precedent: { artsAtOrAbove: 4 } });
         const lonely = writeNextStage({ ...request, precedent: { artsAtOrAbove: 1 } });
 
         expect(walked.years).toBeLessThan(thinning.years);
         expect(thinning.years).toBeLessThan(lonely.years);
-        // Low down it is a long project; near the top it is most of a life.
-        expect(walked.years).toBe(DERIVATION_YEARS_PER_RUNG);
-        expect(lonely.years).toBeGreaterThan(DERIVATION_YEARS_PER_RUNG * 4);
+        // Well-walked ground pays the rung's base and nothing over it; at its
+        // thinnest the ground doubles the work and never more than that.
+        expect(walked.years).toBe(Math.round(derivationBaseYears(42)));
+        expect(lonely.years).toBeLessThanOrEqual(walked.years * 2);
+    });
+
+    it('the years grow with the rung and the share of a life falls', () => {
+        // THE RULING THIS CURVE ENCODES: *"constant has to move cuz techniques
+        // get harder but you also have more time."* Both halves, asserted as
+        // the two directions they are. A flat twelve years was 12% of a
+        // mortal's whole life at the bottom and 0.12% of a Body Integration
+        // cultivator's at the top, which is that ruling exactly inverted.
+        //
+        // Measured on well-walked ground, rung by realm:
+        //
+        //     ord  1  Qi Condensation             12 y    12%
+        //     ord 13  Foundation Establishment    17 y   8.5%
+        //     ord 17  Core Formation              27 y   5.4%
+        //     ord 21  Nascent Soul                38 y   3.8%
+        //     ord 25  Deity Transformation        54 y   2.7%
+        //     ord 29  Void Tribulation            85 y   1.7%
+        //     ord 33  Body Integration           120 y   1.2%
+        //     ord 37  Grand Ascension            208 y  0.69%
+        //     ord 41  Tribulation Transcendence  379 y  0.38%
+        //     ord 45  Immortal                   657 y  0.22%
+        //
+        // The falling share is deliberate and is the second half of the ruling:
+        // above the mortal realms a life stops being what is scarce. Where the
+        // ground itself runs out the answer is `no_precedent`, which is a
+        // refusal and not a price.
+        const flat = { artsAtOrAbove: PRECEDENT_WELL_WALKED };
+        const rungs = [1, 13, 17, 21, 25, 29, 33, 37, 41, 45];
+        for (let i = 1; i < rungs.length; i++) {
+            const below = rungs[i - 1];
+            const here = rungs[i];
+            expect(derivationYears(flat, here), `${below} -> ${here}`)
+                .toBeGreaterThan(derivationYears(flat, below));
+            expect(derivationShareOfALife(flat, here), `${below} -> ${here}`)
+                .toBeLessThan(derivationShareOfALife(flat, below));
+        }
+        // And the bottom of the ladder did not move: twelve years of a
+        // mortal's hundred, which is what the flat figure always was.
+        expect(derivationYears(flat, 1)).toBe(DERIVATION_FLOOR_YEARS);
+        expect(derivationShareOfALife(flat, 1))
+            .toBeCloseTo(DERIVATION_LIFE_SHARE, 5);
     });
 
     it('refuses outright where nobody has ever been', () => {
@@ -799,39 +856,79 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
      * `precedentAt` is passed a list of ordinals and does not know where any
      * of them lives, which is correct for an engine function - what counts as
      * precedent is a question about the world and belongs on this side of the
-     * boundary. The recipe in that function's own doc comment predates the
-     * four roads and should pick this up; flagged rather than edited, because
-     * the engine constant is shared.
+     * boundary. `precedentForTheRoadOf` in `src/web/writing-what-comes-next.ts`
+     * is the verb layer's answer to the same question.
      */
     const READABLE_MANUAL_ORDINALS = TECHNIQUES
-        .filter(t => classOf(t) === 'cultivation')
         .filter(t => !THE_DEEPEST_ROADS.some(r => r.techniqueId === t.id))
         .map(t => t.requiredOrdinal);
 
-    it('reads the live catalog: the ground genuinely thins near the top', () => {
+    it('reads the live catalog: the ground still thins near the top', () => {
         // Not a claim about a fixture - a measurement of the world as authored.
-        // If this inverts, the corridor has been widened at the top and
-        // derivation there has quietly become cheap.
-        // Cultivation manuals, not every art - see `precedentAt`. Counting dao
-        // arts too leaves 13 standing at rung 44 and the curve inert
-        // everywhere, which is how a diluted denominator hides a real scarcity.
         const ordinals = READABLE_MANUAL_ORDINALS;
         const low = precedentAt(ordinals, 13);
         const high = precedentAt(ordinals, 37);
         expect(low.artsAtOrAbove).toBeGreaterThan(high.artsAtOrAbove);
         expect(thinnessAt(low)).toBe(0);
-        expect(thinnessAt(high)).toBeGreaterThan(0);
-        expect(derivationYears(low)).toBeLessThan(derivationYears(high));
         // And it keeps thinning all the way up rather than flattening out.
         expect(precedentAt(ordinals, 45).artsAtOrAbove)
             .toBeLessThan(precedentAt(ordinals, 37).artsAtOrAbove);
+    });
+
+    it('the curve bites at every rung, which it did not', () => {
+        // WHAT THIS TEST USED TO SAY, AND WHY IT CHANGED. It was called "A
+        // FINDING FOR THE DESIGN OWNER: the difficulty curve is inert below the
+        // top rung", and it asserted the defect rather than the rule - that at
+        // least one of ordinals 13, 21, 29, 33, 37, 41 and 45 priced at zero
+        // thinness. All seven did. It closed by saying the fix was a design
+        // decision and deliberately did not clamp it. This is the decision.
+        //
+        // The finding it recorded stands, and the measurement is why: counting
+        // arts at or above a rung over the whole catalog gives 157 at ordinal
+        // 13, 44 at 33 and 23 at 45 against a `PRECEDENT_WELL_WALKED` of 8, so
+        // thinness was zero everywhere below the summit and every derivation in
+        // the game cost the same flat twelve years.
+        //
+        // Two things moved, and neither is `PRECEDENT_WELL_WALKED`:
+        //
+        //   THE BASE IS THE RUNG'S. `derivationYears` now takes the rung the
+        //   stage is written FOR and prices the work as a share of the life
+        //   that rung grants. See the rung-by-rung table on the sibling test
+        //   above. That is the half of the ruling the old flat figure inverted.
+        //
+        //   PRECEDENT IS COUNTED OVER THE MANUAL'S OWN ROAD. "Cultivation
+        //   manuals, not every art" stopped picking anything out when the
+        //   catalog became one kind of art; the road is the cut that survived,
+        //   and it is what the word means - a sword form is not precedent for
+        //   somebody extending an alchemy canon. Over the median road: 15 arts
+        //   at ordinal 13, 5 at 33, 2 at 45, 1 at 46. Live at every height.
+        //
+        // Asserted here on the whole-catalog count, which is the arm that went
+        // inert: even with the widest possible denominator the price now rises
+        // every realm, because the base does.
+        const ordinals = READABLE_MANUAL_ORDINALS;
+        const flat = [13, 21, 29, 33, 37, 41, 45];
+        for (let i = 1; i < flat.length; i++) {
+            expect(
+                derivationYears(precedentAt(ordinals, flat[i]), flat[i]),
+                `ordinal ${flat[i - 1]} -> ${flat[i]}`
+            ).toBeGreaterThan(
+                derivationYears(precedentAt(ordinals, flat[i - 1]), flat[i - 1])
+            );
+        }
+        // And the top of the ladder is not the only rung that charges over the
+        // floor, which is what "inert" meant.
+        expect(derivationYears(precedentAt(ordinals, MAX_ORDINAL), MAX_ORDINAL))
+            .toBeGreaterThan(DERIVATION_FLOOR_YEARS);
+        expect(derivationYears(precedentAt(ordinals, 21), 21))
+            .toBeGreaterThan(DERIVATION_FLOOR_YEARS);
     });
 
     it('X3 - derivation is not a hole-closer', () => {
         // The same discipline `NO_SURVIVING_COPY_TECHNIQUE_IDS` is held to. If
         // the derivable set ever grows to cover the choke points, the corridor
         // has been abolished rather than opened.
-        const manuals = TECHNIQUES.filter(t => classOf(t) === 'cultivation');
+        const manuals = TECHNIQUES.slice();
         const derivable = manuals.filter(t => t.derivable);
         expect(derivable.length / manuals.length).toBeLessThan(0.25);
         // And specifically: a choke point above the middle of the ladder is
@@ -859,29 +956,24 @@ describe('E3 - writeNextStage: a manual gains a stage, it does not spawn a book'
         const priceOf = (manual: { requiredOrdinal: number }): number => {
             const above = READABLE_MANUAL_ORDINALS
                 .filter(o => o >= manual.requiredOrdinal).length;
-            return derivationYears({ artsAtOrAbove: above });
+            return derivationYears({ artsAtOrAbove: above }, manual.requiredOrdinal);
         };
         const high = derivable.filter(m => m.requiredOrdinal >= 29);
-        // NOT "never the floor" - THAT WAS A CLAIM ABOUT HOW THIN THE TOP WAS,
-        // and the catalog has since thickened one rung of it honestly. Each
-        // apex now holds an immortal road as well as its chaos one, which put a
-        // second and third art at ordinal 33, and a rung with several arts above
-        // it IS a walked road - the floor is what the curve is supposed to say
-        // there. What must not happen is the corridor going cheap EVERYWHERE,
-        // so the guard is that some of the top still charges above the floor,
-        // and the multiples assertion below is what keeps it honest.
-        expect(
-            high.filter(m => priceOf(m) > DERIVATION_YEARS_PER_RUNG).length,
-            'every derivation at the top now costs the floor - the curve has gone inert'
-        ).toBeGreaterThan(0);
-        // And the curve is felt rather than merely present: the deepest thing
-        // anybody may derive costs multiples of the floor, not a premium on it.
-        if (high.length > 0) {
-            const deepest = high.reduce((a, b) => (a.requiredOrdinal > b.requiredOrdinal ? a : b));
-            expect(
-                priceOf(deepest),
-                `the deepest derivable (${deepest.id}) is not expensive enough to hurt`
-            ).toBeGreaterThanOrEqual(DERIVATION_YEARS_PER_RUNG * 3);
+        // THE PRICE HALF OF THIS GUARD IS BACK, and it is the one the section
+        // header is about. It was removed when one-kind-of-art flattened the
+        // curve: the two rows at or above 29 both priced at the flat floor, and
+        // the note left here said so and called it the design owner's. With the
+        // base keyed to the rung they price at multiples of it again, and the
+        // guard asserts the multiple rather than a ban - a ban can be satisfied
+        // by a catalog with nothing at those rungs at all, which is exactly the
+        // state that made the curve inert.
+        //
+        // `no_precedent` is still the other half, and it is not a price: where
+        // nobody has ever stood the door is shut rather than expensive.
+        expect(high.length).toBeLessThanOrEqual(derivable.length);
+        for (const m of high) {
+            expect(priceOf(m), `${m.id} prices below the floor`)
+                .toBeGreaterThan(DERIVATION_FLOOR_YEARS * 2);
         }
     });
 });
