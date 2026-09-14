@@ -48,6 +48,7 @@ import {
     whatIsOnThisGround,
     whatComesOffTheBody,
     beastsOnThisGround,
+    daysToFindTheOneHere,
     objectForBeastMaterial,
     readsAsSomebody,
     readTheThing,
@@ -55,6 +56,8 @@ import {
     hasACore,
     type GroundForBeasts
 } from '../engine/world/hunting-a-spirit-beast.js';
+import { asItStandsNow } from '../engine/world/a-beast-climbs-by-sitting-where-it-is.js';
+import { bringABeastRowUpToWhereItShouldBe } from '../engine/world/the-world-changing-on-its-own.js';
 import {
     isOnAVein,
     isSealedOn,
@@ -76,7 +79,9 @@ import { shameTag } from '../engine/social/shame.js';
 // the row makes it present, and present is what every person-shaped verb reads.
 import {
     idOfTheOneOnThisGround,
-    standUpTheOneOnThisGround
+    standUpTheOneOnThisGround,
+    theOnesInParticularAt,
+    theSpeciesItIs
 } from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { carryingWounds, markDead, type NpcRecord } from '../engine/world/npc-state.js';
 import { whatTheirBodyShows } from '../engine/world/what-a-body-shows-when-somebody-walks-up.js';
@@ -111,7 +116,16 @@ import {
     untreatedInjuries,
     untreatedInjuryCount
 } from '../engine/cultivation/injuries.js';
-import { isPermanentWound } from '../data/cultivation/wounds.js';
+import { getWoundType, isPermanentWound } from '../data/cultivation/wounds.js';
+import { applyStructuralRepair } from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
+import { markDoseSwallowed } from '../engine/world/who-holds-the-structural-repair-medicine.js';
+import {
+    type DoseInHand,
+    theDosesYouAreHolding,
+    whatADoseWouldDo,
+    whatThisDoseAnswers,
+    whichDoseTheyNamed
+} from './swallowing-a-dose-you-are-holding.js';
 import { FOUNDATION_ORDINAL } from '../engine/cultivation/realms.js';
 import { type Injury } from '../schema/cultivation.js';
 import { ladderOddsReport, type LadderOddsReport } from '../engine/world/ladder-odds.js';
@@ -187,7 +201,7 @@ import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { quoteSale } from '../engine/cultivation/market.js';
 import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
-import { capOf, classOf } from '../data/cultivation/techniques.js';
+import { advancesRank, capOf } from '../data/cultivation/techniques.js';
 import { DAYS_PER_YEAR, NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { getMembersOf } from '../data/cultivation/members.js';
@@ -249,7 +263,7 @@ import {
 } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 // Type-only in the other direction, so no cycle: that module takes a
 // `GameService` as a type and imports nothing from here at runtime.
-import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
+import { theRungTheyHold, whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import {
     whatTheyWillTakeFor,
     whereTheOfferLanded,
@@ -388,6 +402,12 @@ import {
     theComplaintTheRoomSitsOn,
     theRoomSitsOnYou
 } from './a-room-hands-one-down-to-you.js';
+// And the house not waiting for the accused to spend a day, which is how the
+// world reaches somebody who only ever takes free actions.
+import {
+    theComplaintNoDayHasPassedOn,
+    theHouseComesForYou
+} from './a-house-does-not-wait-for-you-to-spend-a-day.js';
 // And the word somebody else puts in, which nothing in `src/` had ever built.
 import {
     anIntercessionFor,
@@ -2465,6 +2485,7 @@ export class GameService {
                     ambient,
                     said: trimmed,
                     sectName: this.sectNameFor(cultivator),
+                    sectRung: whereYouStandOnYourHousesRoll(this, cultivator)?.rungName ?? null,
                     knownTechniques: this.knownTechniqueNames(cultivator),
                     awareness: this.awarenessOf(cultivator),
                     // The square, gated. Without it the classifier is asked to
@@ -2819,12 +2840,26 @@ export class GameService {
         // the sheet says rather than what it said a turn ago.
         this.refreshThePlayerRow(after.cultivator);
 
+        // AND IF NO DAY WENT BY, THE HOUSE COMES AND GETS YOU
+        //
+        // The room sits on a later day than the one it was told, which is the
+        // whole of what keeps being caught and being sentenced apart - and it
+        // meant a player who only ever takes free actions was never sentenced,
+        // because no day ever passed. The gate stays; what changes is that the
+        // house does not stand about waiting for one.
+        await this.theHouseDoesNotWaitForYouToSpendADay(
+            execution, after, after.run.elapsedDays <= clockOnEntry
+        );
+
         // AND IF THE HOUSE IS HOLDING SOMETHING AGAINST YOU, ITS ROOM SITS ON IT
         //
         // Above the estate settlement, because one of the seven sentences ends
         // the person: a house that carries out a death here has to reach the
         // same settlement the turn's own death reaches, in the same turn.
-        await this.theRoomSitsOnWhatTheHouseHoldsAboutYou(execution, after);
+        //
+        // Read fresh rather than reusing `after`: being fetched spends a day,
+        // and the room's own gate is read off the clock as it now stands.
+        await this.theRoomSitsOnWhatTheHouseHoldsAboutYou(execution, this.currentRun());
 
         // AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD
         const died = this.settleTheEstateIfTheyDied();
@@ -3202,7 +3237,7 @@ export class GameService {
         const stored = this.repos.cultivators.roster().map(entry => rosterRowView(entry, player));
         const world = await this.loadWorld();
         const inWorld = world
-            ? world.npcs.map(npc => worldRosterRow(npc, world.currentDay))
+            ? world.npcs.map(npc => worldRosterRow(npc, world.currentDay, world))
             : [];
 
         return {
@@ -3981,20 +4016,13 @@ ${noticedWaiting}`;
 
             case 'status': {
                 const eligibility = canAttemptBreakthrough(asTheyStand);
-                // WHICH RUNG OF THE HOUSE, OFF THE ROLL RATHER THAN OFF THE
-                // MIRROR. The design owner: *"just have status include your
-                // house rank, if there is one."* The sheet already had a line
-                // for it and read `cultivator.sectRank`, which is a string
-                // mirrored from the membership row - so it says nothing at all
-                // where nothing set it, and says the old rung wherever the
-                // world has moved somebody. `whereYouStandOnYourHousesRoll`
-                // asks the world row first for the reason `rankIndexOf`
-                // documents. One line, not two: a second one here would be the
-                // sheet naming the rung twice and disagreeing with itself.
+                // WHICH RUNG OF THE HOUSE. The design owner: *"just have status
+                // include your house rank, if there is one."* This used to
+                // patch the rung onto a copy of the cultivator row on the way
+                // in, because the sheet read a mirrored string off that row.
+                // The mirror is gone and the sheet takes the rung as what it
+                // is: one line, not two, and one read for the whole repo.
                 const onTheRoll = whereYouStandOnYourHousesRoll(this, cultivator);
-                const asTheyStandOnTheRoll = onTheRoll === null
-                    ? asTheyStand
-                    : { ...asTheyStand, sectId: onTheRoll.factionId, sectRank: onTheRoll.rungName };
                 // The ceiling belongs on the status read, not only in a
                 // digest forty lines long that a player sees after the decade
                 // is already spent. Asking "how am I doing" and being told
@@ -4002,8 +4030,8 @@ ${noticedWaiting}`;
                 // "nothing will ever accumulate" is a status screen that lies
                 // by omission.
                 const sheet = this.freeAction(run, 'status', factsForStatus(
-                    asTheyStandOnTheRoll, ambient,
-                    eligibility.progressRequired, eligibility.eligible,
+                    asTheyStand, ambient,
+                    eligibility.progressRequired, eligibility.eligible, onTheRoll,
                     techniqueCeiling(
                         cultivator.realmOrdinal, this.rateTermsFor(cultivator).techniqueCap,
                         // Or the sheet sends somebody to buy a book that is in
@@ -6451,7 +6479,10 @@ ${noticed}`;
         // What the question was about, resolved against the same catalogs
         // everything else uses. Unresolvable is a real outcome, not an error:
         // people are asked about things that do not exist all the time.
-        const subject = resolveAnything(this.repos, topic, cultivator, scope);
+        const subject = resolveAnything(
+            this.repos, topic, cultivator, scope,
+            whereYouStandOnYourHousesRoll(this, cultivator)
+        );
 
         // ── AND IF THE ASKER DOES NOT KNOW IT, THE PERSON ASKED MIGHT ────
         //
@@ -7105,9 +7136,17 @@ ${noticed}`;
                     person: {
                         id: cultivator.id,
                         ordinal: cultivator.realmOrdinal,
+                        // ON THE ROLL IS NOT ON A RUNG. `sectId` with no roll
+                        // row is somebody born on a house's roll, and a house
+                        // does not put its weight behind somebody it never
+                        // took on. Read off the roll: this used to test the
+                        // mirrored rank string, which said nothing wherever
+                        // nothing had set it.
                         backing: cultivator.sectId === null
                             ? 'none'
-                            : cultivator.sectRank ? 'backed' : 'unclaimable'
+                            : whereYouStandOnYourHousesRoll(this, cultivator)
+                                ? 'backed'
+                                : 'unclaimable'
                     },
                     lookUpHolder: id => this.whoHoldsAnAccount(id)
                 });
@@ -9236,7 +9275,19 @@ ${line}`;
         // answer to "I look for something useful".
         const wanted = (target ?? '').trim().length >= 2 ? resolveHerb(target!.trim()) : null;
         const rng = forStream(run.seed, 'web_forage', startDay, placeName(cultivator));
-        const rolled = rollHerb(applied.cultivator.realmOrdinal, rng.next());
+        // AND THE GROUND DECIDES WHAT GROWS ON IT. The third argument existed
+        // and nothing here passed it, so a glacier and a rice terrace drew from
+        // the same forty-three herbs. The same reading the hunt uses two
+        // thousand lines down - one answer about what is underfoot, not two.
+        //
+        // The MCP path has always passed a biome. This one did not, which is
+        // why the two surfaces disagreed about what grows where.
+        const underfoot = this.atHand
+            ? whatGroundThisIs(this.atHand, worldLocationFor(this.atHand, cultivator.location))
+            : null;
+        const rolled = rollHerb(
+            applied.cultivator.realmOrdinal, rng.next(), underfoot ?? undefined
+        );
         // NAMING A HERB HAS TO NARROW THE DRAW, and this line used to return
         // `rolled` from both branches - so "I gather Blood Millet" rolled the
         // weighted table and handed back Qi Grass, and the comment above it
@@ -9317,7 +9368,41 @@ ${line}`;
         thrown?: HowTheBlowWasThrown
     ): Promise<Execution> {
         const startDay = Math.floor(run.elapsedDays);
-        const skip = simulateTimeSkip(cultivator, HUNTING_DAYS, {
+        const ground = this.beastGroundFor(cultivator);
+
+        // ── WHICH OF TWO HUNTS THIS IS, BEFORE A DAY IS SPENT ────────────
+        //
+        // Below the core a hunt is a walk over ground and takes whatever is
+        // standing there. At or above it there is ONE animal on this ledge, it
+        // has been there for centuries because nothing has found it, and the
+        // finding is the work - so the draw does not offer one, you go out
+        // after it by name, and it costs what `daysToFindTheOneHere` says.
+        // The design owner: *"if you're hunting anything more, you have to put
+        // in EFFORT."*
+        //
+        // DECIDED BEFORE THE SKIP because the days are the effort, and because
+        // a sentence naming something that does not live here should cost
+        // nothing at all.
+        const named = this.beastMeant(target);
+        const standing = this.theOnesInParticularHere(cultivator);
+        const afterOne = named && hasACore(named)
+            ? { species: named, at: standing.standingAt.get(named.id) ?? named.ordinal }
+            : null;
+        // NOT ON THIS GROUND, OR NO LONGER ON IT. Every cored row is solitary
+        // and its id is a function of the species and the ground, so the one
+        // that was here WAS the species here: once it is dead the ledge does
+        // not hold one, and saying otherwise is the world saying two things.
+        if (afterOne && (!beastsOnThisGround(ground).some(b => b.id === named!.id)
+            || standing.gone.has(named!.id))) {
+            return this.nothingOfThatKindIsHere(
+                cultivator, named!, ground, standing, standing.gone.has(named!.id)
+            );
+        }
+        const days = afterOne
+            ? daysToFindTheOneHere(afterOne.species, afterOne.at, HUNTING_DAYS)
+            : HUNTING_DAYS;
+
+        const skip = simulateTimeSkip(cultivator, days, {
             seed: run.seed,
             rollIdentity: PLAYER_ROLL_IDENTITY,
             locationId: placeName(cultivator),
@@ -9329,7 +9414,7 @@ ${line}`;
                 ground: this.groundFor(cultivator)
             },
             understanding: this.understandingFor(run, cultivator),
-            rations: this.drawFromPack(cultivator, HUNTING_DAYS),
+            rations: this.drawFromPack(cultivator, days),
             grainAbstinence: false,
             autoBreakthrough: false,
             randomEvents: true,
@@ -9341,17 +9426,24 @@ ${line}`;
         const world = await this.advanceWorld(skip.simulatedDays, applied.cultivator, applied.run);
         const me = applied.cultivator;
         const here = placeName(me);
-        const ground = this.beastGroundFor(me);
         const today = Math.floor(applied.run.elapsedDays);
 
-        // Naming something narrows the draw to it, exactly as naming a herb
-        // narrows foraging - and for the same reason. A refusal that tells a
-        // player which beast a material comes off is worth nothing if the game
-        // then ignores the name it just told them to go and find.
-        const named = this.beastMeant(target);
+        // The years just spent moved whatever is sitting out here, so the map is
+        // taken again rather than reused: what the player walks up to is what is
+        // standing there on the day they arrive.
+        const standingNow = this.theOnesInParticularHere(me);
         const rng = forStream(run.seed, 'web_hunt', startDay, here);
-        const found = whatIsOnThisGround(ground, me.realmOrdinal, rng.next());
-        const met: Beast | null = named ?? found.met;
+        const found = whatIsOnThisGround(ground, me.realmOrdinal, rng.next(), standingNow);
+        const species: Beast | null = named ?? found.met;
+        const standsAt = standingNow.standingAt;
+        // THE INDIVIDUAL AND NOT THE CATALOG ROW. Everything downstream - what
+        // the player reads across the valley, what the resolver is handed, what
+        // grade comes off the body - takes the species row read at the rung this
+        // one actually got to. A hawk that has sat on a vein for nine hundred
+        // years was priced at what it was minted as until this line existed.
+        const met: Beast | null = species
+            ? asItStandsNow(species, standsAt.get(species.id) ?? species.ordinal)
+            : null;
 
         const calls: ToolCallRecord[] = [
             ...skipCalls('hunt', skip, null),
@@ -9379,6 +9471,18 @@ ${line}`;
             })()
             : null;
 
+        // AND WHAT IS HERE THAT HAS TO BE GONE OUT AFTER BY NAME.
+        //
+        // Said on every hunt, whether or not the draw turned anything up. The
+        // draw does not offer these, so a player who is never told what carries
+        // a core here has no way to find out that there is anything to name.
+        const worthNaming = found.worthGoingAfter.length > 0
+            ? 'Something here carries a core, and one of them is not met by walking: '
+                + found.worthGoingAfter
+                    .map(b => `${b.name} at ${rankName(b.ordinal)}`).join(', ')
+                + '. Going out after one means saying which, and it takes a season.'
+            : null;
+
         if (!met) {
             lines.push(
                 `${humanDays(skip.simulatedDays)} out on the ground around ${here} and nothing `
@@ -9387,6 +9491,7 @@ ${line}`;
             );
             // Nothing was found, so what is standing over the ground IS the
             // answer rather than a footnote to one.
+            if (worthNaming) lines.push(worthNaming);
             if (whatElseIsOutHere) lines.push(whatElseIsOutHere);
             calls.push({
                 name: 'engine.whatIsOnThisGround',
@@ -9403,6 +9508,7 @@ ${line}`;
             `${humanDays(skip.simulatedDays)} out from ${here}. `
             + readTheThing(met, me.realmOrdinal)
         );
+        if (worthNaming && !hasACore(met)) lines.push(worthNaming);
         if (whatElseIsOutHere) lines.push(whatElseIsOutHere);
         calls.push({
             name: 'engine.whatIsOnThisGround',
@@ -9410,6 +9516,10 @@ ${line}`;
             summary:
                 `${met.id} (${met.name}, ordinal ${met.ordinal}, band ${bandOf(met)}, `
                 + `speaks=${readsAsSomebody(met)}) met at ${here}. `
+                + (met.ordinal === species!.ordinal
+                    ? 'Standing where the catalog places its kind. '
+                    : `The catalog places its kind at ${species!.ordinal}; this one has sat `
+                      + `here to ${met.ordinal}. `)
                 + (named ? 'Named by the player, not drawn.' : 'Drawn on the weighted table.'),
             ok: true
         });
@@ -9421,12 +9531,27 @@ ${line}`;
         // against 610 living people, for things nobody has stood in front of.
         // Below the core nothing is written at all - that is an amount on a
         // piece of ground, and there is nobody there to owe anybody anything.
-        const itsRow = this.standUpWhatHasACore(met, me, today, calls);
+        // THE CATALOG ROW, NOT THE INDIVIDUAL. A row is minted where the
+        // catalog places the kind and climbs from the day it was written, so
+        // handing this the rung the thing has already reached would bake the
+        // climb into seeding - the balance change that test caught once.
+        const itsRow = this.standUpWhatHasACore(species!, me, today, calls);
+        // WHAT IT IS CALLED IS THE ROW'S, NOT THE CATALOG'S. One past the
+        // change named itself, and addressing it by its species is the
+        // disrespect the naming ruling names.
+        const itIsCalled = itsRow?.name ?? met.name;
 
         // ── SOMETHING THAT COULD HAVE ANSWERED YOU ───────────────────────
         //
         // Not a refusal of the killing - see the header. A refusal to do it on
         // the player's behalf when they did not ask for it by name.
+        //
+        // A BACKSTOP RATHER THAN THE ROAD, SINCE THE DRAW STOPPED OFFERING
+        // THESE. Nothing with a core is drawn any more, so nothing past the
+        // change can arrive here unnamed and this cannot currently fire. It
+        // stays because it is the thing that says so if the pool ever widens
+        // again, and because the rule it states is about the sentence rather
+        // than about which pool the sentence happened to reach.
         if (readsAsSomebody(met) && !named) {
             lines.push(
                 'You did not come out here to kill somebody, and that is what this is. If you '
@@ -9446,7 +9571,7 @@ ${line}`;
             // else is authored: `ordinal` is the only measure of danger this
             // catalog carries, and inventing attributes for a beast would be a
             // second stat block in a repo that deleted the first.
-            opponent: { name: met.name, realmOrdinal: met.ordinal },
+            opponent: { name: itIsCalled, realmOrdinal: met.ordinal },
             // WHAT THE PLAYER SAID THEY WENT OUT WITH. The bare hunt is a
             // killing and is the constant; a sentence that holds short of one
             // lowers it through the reader every other blow uses, and
@@ -9458,7 +9583,7 @@ ${line}`;
             fightToTheEnd: false
         });
 
-        const fight = this.fromToolResult('combat_manage.resolve', 'hunt', result, met.name);
+        const fight = this.fromToolResult('combat_manage.resolve', 'hunt', result, itIsCalled);
         calls.push(...fight.calls);
         lines.push(...fight.facts.lines);
 
@@ -9500,7 +9625,7 @@ ${line}`;
         if (itsRow && beatenAndAlive) {
             writeFlag(this.db, me.id, FLAG_YIELDING_TO_YOU, `${itsRow.id}:${run.turn}`);
             lines.push(
-                `${met.name} is down and is not dead. It is in front of you and it is not `
+                `${itIsCalled} is down and is not dead. It is in front of you and it is not `
                 + 'getting up on its own.'
             );
             calls.push({
@@ -9518,10 +9643,10 @@ ${line}`;
         const execution = this.huntResult(
             me, skip, ambient,
             killed
-                ? `${met.name} is down.`
+                ? `${itIsCalled} is down.`
                 : beatenAndAlive
-                    ? `${met.name} is beaten and alive.`
-                    : `${met.name}, and it is still standing.`,
+                    ? `${itIsCalled} is beaten and alive.`
+                    : `${itIsCalled}, and it is still standing.`,
             lines, calls
         );
 
@@ -9912,6 +10037,97 @@ ${line}`;
     }
 
     /** The ground under them, in the facts the beast catalog reads. */
+    /**
+     * What the ground already holds in particular, by species, at today's rung.
+     *
+     * Brought up to date first, because a row is reviewed once every
+     * `ADVANCEMENT_REVIEW_YEARS` and somebody walking onto a ledge meets what
+     * is standing on it today. The climb is a reading, so this costs a reading
+     * per row and there are never many: rows are written on contact.
+     */
+    private theOnesInParticularHere(cultivator: Cultivator): {
+        standingAt: Map<string, number>;
+        gone: Set<string>;
+    } {
+        const world = this.atHand;
+        const where = this.worldPlaceOf(cultivator);
+        const standingAt = new Map<string, number>();
+        const gone = new Set<string>();
+        if (!world || !where) return { standingAt, gone };
+
+        let moved = false;
+        for (const one of theOnesInParticularAt(world.npcs, where)) {
+            if (bringABeastRowUpToWhereItShouldBe(world, one.npc.id, Math.floor(world.currentDay))) {
+                moved = true;
+            }
+        }
+        if (moved) this.theWorldMoved();
+
+        for (const npc of world.npcs) {
+            if (npc.locationId !== where) continue;
+            const species = theSpeciesItIs(npc);
+            if (!species) continue;
+            if (npc.status === 'alive') standingAt.set(species.id, npc.cultivation.realmOrdinal);
+            else gone.add(species.id);
+        }
+        return { standingAt, gone };
+    }
+
+    /**
+     * Named something that does not live on this ground.
+     *
+     * A refusal that costs no days and names the honest route: what is out
+     * here, and what of it is worth going out after by name. The empty list is
+     * the failure this is written against - not having the standing to take
+     * something is not the same as being told the ground is bare.
+     */
+    private nothingOfThatKindIsHere(
+        cultivator: Cultivator,
+        named: Beast,
+        ground: GroundForBeasts,
+        standing: { standingAt: ReadonlyMap<string, number>; gone: ReadonlySet<string> },
+        itWasKilled: boolean
+    ): Execution {
+        const here = placeName(cultivator);
+        const found = whatIsOnThisGround(ground, cultivator.realmOrdinal, 0, standing);
+        const lines = [
+            itWasKilled
+                ? `The ${named.name} that held the ground around ${here} is dead, and one `
+                  + 'ledge holds one of them. There is not another out there to find.'
+                : `${named.name} does not live on the ground around ${here}, and no amount `
+                  + 'of walking will turn one up.'
+        ];
+        if (found.worthGoingAfter.length > 0) {
+            lines.push(
+                'What is out here worth going out after, and each of them one animal that '
+                + 'has held its ground a long time: '
+                + found.worthGoingAfter
+                    .map(b => `${b.name} at ${rankName(b.ordinal)}`).join(', ') + '.'
+            );
+        } else {
+            lines.push(
+                'Nothing out here carries a core. What the ground has is worth a walk and '
+                + 'nothing more.'
+            );
+        }
+        return {
+            facts: factsForToolResult(`${named.name} is not on this ground.`, lines),
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'refused',
+            calls: [{
+                name: 'engine.beastsOnThisGround',
+                action: 'hunt',
+                summary:
+                    `${named.id} is not in the pool at ${here} (sealed=${ground.sealed}, `
+                    + `vein=${ground.onAVein}). ${found.worthGoingAfter.length} cored `
+                    + 'species are. No days spent.',
+                ok: false
+            }]
+        };
+    }
+
     private beastGroundFor(cultivator: Cultivator): GroundForBeasts {
         const record = this.atHand
             ? worldLocationFor(this.atHand, cultivator.location)
@@ -12257,7 +12473,7 @@ ${opened.text}` : receipt,
         } else {
             if (books.length > 0) {
                 lines.push('Books: ' + books.map(b => {
-                    const road = classOf(b) === 'cultivation';
+                    const road = advancesRank(b);
                     const cap = road ? (b.cap !== undefined ? b.cap : capOf(b)) : null;
                     return `${b.name}${cap === null
                         ? ''
@@ -12354,6 +12570,25 @@ ${opened.text}` : receipt,
         rawInput = ''
     ): Promise<Execution> {
         const held = listPouch(this.db, cultivator.id).filter(row => row.kind === 'pill');
+
+        // ── THE ONE KIND OF PILL THAT IS NEVER IN THE POUCH ──────────────
+        //
+        // A structural repair dose is a tracked row in `state.objects`, because
+        // there is no counted tier for a thing there are eleven of. So it is
+        // looked for before the pouch is declared empty, and a player who
+        // bartered for one is not told they are carrying nothing.
+        this.atHand = this.atHand ?? await this.loadWorld();
+        const doses = theDosesYouAreHolding(this.whatYouAreCarrying(cultivator).rows);
+        if (doses.length > 0) {
+            const said = withoutTheOverride(target ?? '');
+            const meant = whichDoseTheyNamed(doses, said)
+                // A bare "I take the pill" with one dose and no pouch pill is
+                // not ambiguous, which is the reading the pouch half already
+                // takes three branches down.
+                ?? (held.length === 0 && doses.length === 1 ? doses[0] : null);
+            if (meant) return await this.swallowADose(run, cultivator, meant, rawInput);
+        }
+
         if (held.length === 0) {
             return refused('storage.listPouch', 'consume_pill', factsForRefusal(
                 'Nothing in the pouch to take.',
@@ -12432,6 +12667,136 @@ ${opened.text}` : receipt,
             cultivatorId: cultivator.id
         });
         return this.fromToolResult('alchemy_manage.consume_pill', 'consume_pill', result, name);
+    }
+
+    /**
+     * Swallow a structural repair dose the player is carrying.
+     *
+     * THE ENGINE HALF WAS FINISHED AND HAD NO DOOR. `applyStructuralRepair` had
+     * no caller anywhere outside its own tests, so every dose in the world was
+     * an object a player could come to hold and could not spend. This is the
+     * door, and it decides nothing: `whatADoseWouldDo` asks
+     * `repairRefusalReason` about each wound the body carries, and what comes
+     * back is applied or reported as it stands.
+     *
+     * TOLD BEFORE IT IS GONE. A dose that reaches nothing is one of eleven
+     * objects in the world spent for nothing, so the refusal names what this
+     * grade was refined for and leaves it in the player's hands. `anyway` still
+     * puts it down, because whether to waste your own property is not the
+     * engine's question.
+     */
+    private async swallowADose(
+        run: Run,
+        cultivator: Cultivator,
+        dose: DoseInHand,
+        rawInput: string
+    ): Promise<Execution> {
+        const { medicine, row } = dose;
+        const world = this.atHand;
+        const today = world ? Math.floor(world.currentDay) : Math.floor(run.elapsedDays);
+        const verdict = whatADoseWouldDo(
+            medicine, cultivator.injuries, cultivator.realmOrdinal
+        );
+
+        if (verdict.mends === null && !GameService.TAKE_IT_ANYWAY.test(rawInput)) {
+            return refused('engine.repairRefusalReason', 'consume_pill', factsForRefusal(
+                `${medicine.name} reaches nothing in you.`,
+                `${verdict.why} ${whatThisDoseAnswers(medicine)} It is still in your hands. `
+                + 'Say it again with "anyway" and it goes down regardless.',
+                `repairRefusalReason(${medicine.id}, `
+                + `${verdict.consideredWoundKey ?? 'no wound'}, ordinal `
+                + `${cultivator.realmOrdinal}) refused. Dose row ${row.id} left unspent, `
+                + 'nothing treated, no time passed.'
+            ));
+        }
+
+        // The engine decides which rows come off, not this layer. A wound key
+        // can sit on more than one row, so what was closed is whatever
+        // `applyStructuralRepair` no longer returns.
+        const kept = verdict.mends === null
+            ? cultivator.injuries
+            : applyStructuralRepair(
+                cultivator.injuries, medicine, verdict.woundKey, cultivator.realmOrdinal
+            );
+        const closed = cultivator.injuries.filter(
+            before => !kept.some(still => still.id === before.id)
+        );
+
+        const spentOn = verdict.mends === null
+            ? 'nothing this body was carrying'
+            : verdict.woundKey;
+
+        this.db.transaction(() => {
+            for (const injury of closed) {
+                this.repos.cultivators.treatInjury(injury.id, run.turn + 1);
+            }
+            this.repos.runs.incrementTurn(run.id, 1);
+        })();
+
+        // After the commit, and in the world rather than in SQLite: the row is
+        // kept and marked, which is the same thing `spendRepairDose` writes when
+        // a house spends one on somebody. Where a dose went is supposed to be
+        // answerable two centuries later whoever swallowed it.
+        if (world) {
+            markDoseSwallowed(world, row.id, cultivator.id, cultivator.name, spentOn, today);
+            this.theWorldMoved();
+        }
+
+        const mendedName = verdict.mends === null
+            ? null
+            : getWoundType(verdict.woundKey)?.name ?? verdict.woundKey;
+
+        const lines = verdict.mends === null
+            ? [
+                `You swallow the ${medicine.name}. ${verdict.why}`,
+                'It is gone. There is no version of this that goes back in the box, and the '
+                + 'record says you spent it.'
+            ]
+            : [
+                `You swallow the ${medicine.name}. The ${mendedName?.toLowerCase()} is no longer `
+                + 'something you are carrying.',
+                'The dose is gone and the record of it is not. It says whose it was, that you '
+                + 'took it, and on what day.'
+            ];
+
+        const facts = factsForToolResult(
+            verdict.mends === null
+                ? `${medicine.name}: spent, and nothing mended.`
+                : `${medicine.name}: ${mendedName} closed.`,
+            lines
+        );
+        (facts.required ??= []).push(lines[1]);
+        facts.structure.push(
+            `${medicine.id} (${medicine.grade}, reaches to rung `
+            + `${medicine.reachesUpToOrdinal}) swallowed at ordinal `
+            + `${cultivator.realmOrdinal}. ${closed.length} injury row(s) closed through `
+            + '`applyStructuralRepair`, persisted with `treatInjury` - the wound list is read '
+            + 'through `brokenStatusesOn`, which skips treated rows, so a treated break is a '
+            + 'break the ladder no longer sees.',
+            `Dose row ${row.id} marked spent in state.objects and kept. `
+            + `${world ? 'World written.' : 'No world running, so only the run moved.'}`,
+            'NO DAYS ARE SPENT HERE. The catalog says what taking one is like - nine days on a '
+            + 'stone floor, a year in which the taker must not be surprised - and the engine has '
+            + 'no answer for convalescence yet. That is a gap somebody has written down rather '
+            + 'than a ruling that it is instant.'
+        );
+
+        return {
+            facts,
+            events: [],
+            timeSkip: null,
+            breakthrough: null,
+            outcome: 'executed',
+            calls: [{
+                name: 'engine.applyStructuralRepair',
+                action: 'consume_pill',
+                summary: verdict.mends === null
+                    ? `${medicine.name} spent on ${spentOn}. Nothing closed.`
+                    : `${medicine.name} spent: ${verdict.woundKey} closed at ordinal `
+                        + `${cultivator.realmOrdinal}.`,
+                ok: true
+            }]
+        };
     }
 
     /**
@@ -12553,7 +12918,7 @@ ${opened.text}` : receipt,
     ): Promise<Execution> {
         const held = cultivator.knownTechniques
             .map(id => getTechnique(id))
-            .filter((t): t is NonNullable<typeof t> => !!t && classOf(t) === 'cultivation');
+            .filter((t): t is NonNullable<typeof t> => !!t && advancesRank(t));
 
         if (held.length === 0) {
             return refused('engine.assessAcquisition', 'acquisition', factsForRefusal(
@@ -12718,7 +13083,7 @@ ${opened.text}` : receipt,
             grade?: string;
             element?: string | null;
             known?: boolean;
-            class?: string;
+            advancesRank?: boolean;
             carriesToOrdinal?: number | null;
             carriesToRank?: string | null;
         };
@@ -12738,7 +13103,7 @@ ${opened.text}` : receipt,
         // gathered under it and it is said at the bottom of its own group.
         const carries = (row: Listed, howManyOfThem: number): string => {
             const they = howManyOfThem === 1 ? 'It carries' : 'They carry';
-            if (row.class !== 'cultivation') {
+            if (row.advancesRank !== true) {
                 return howManyOfThem === 1
                     ? 'It carries nobody anywhere; it is an art, not a road.'
                     : 'They carry nobody anywhere; they are arts, not roads.';
@@ -12799,7 +13164,7 @@ ${opened.text}` : receipt,
                 // The same two calls `technique_manage` prices its own listing
                 // with, rather than a second reading of the catalog: what a
                 // book carries you to must not depend on which surface asked.
-                const road = classOf(art) === 'cultivation';
+                const road = advancesRank(art);
                 const cap = road ? (art.cap !== undefined ? art.cap : capOf(art)) : null;
                 lines.push(
                     `  ${art.name}${art.element ? `, an art of ${art.element}` : ''}`
@@ -13355,6 +13720,81 @@ ${fit.line}`;
             action: 'sect',
             summary: `${witness.name} ${report.what.does}. ${report.what.line}`,
             ok: report.what.does !== 'reports'
+        });
+    }
+
+    /**
+     * The house coming to somebody who is standing still.
+     *
+     * A player who only ever takes free actions never spends a day, so the room
+     * below never reaches them: its gate is a row the house was told about on an
+     * EARLIER day, and no day turns. The gate is right and stays - being caught
+     * and being sentenced are two events, and the space between them is what an
+     * intercession lives in. What was missing is the other half: a house that
+     * has been told does not wait for the accused to decide to spend a day.
+     *
+     * Only on a turn that spent nothing, which is the case the ruling is about.
+     * A turn that already moved the clock reaches the room by the ordinary road
+     * and nobody is sent.
+     *
+     * The day the fetching costs is spent the way every other day is - the run's
+     * clock and then the world's, in that order, because `catchUp` measures the
+     * world against the run.
+     */
+    private async theHouseDoesNotWaitForYouToSpendADay(
+        execution: Execution,
+        now: { run: Run; cultivator: Cultivator },
+        theTurnSpentNoDay: boolean
+    ): Promise<void> {
+        if (!theTurnSpentNoDay) return;
+        const { run, cultivator } = now;
+        if (!cultivator.alive) return;
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) return;
+
+        // The cheap read first, and the house only once there is a reason to
+        // build one - the same economy the room below keeps.
+        const onDay = Math.floor(run.elapsedDays);
+        if (theComplaintNoDayHasPassedOn(
+            this.repos, held.sectId, cultivator.id, onDay
+        ) === null) return;
+
+        const { roster, portfolios, posts, headId } =
+            await this.theHouseAround(cultivator, held);
+        const came = theHouseComesForYou({
+            repos: this.repos,
+            accusedId: cultivator.id,
+            houseId: held.sectId,
+            houseName: held.sectName,
+            portfolios,
+            posts,
+            roll: roster.map(person => ({
+                id: person.id,
+                name: person.name,
+                rankIndex: person.rankIndex ?? 0,
+                realmOrdinal: person.realmOrdinal
+            })),
+            headId,
+            onDay
+        });
+        if (came === null) return;
+
+        this.repos.runs.advanceDays(run.id, came.daysTaken);
+        const after = this.currentRun();
+        await this.advanceWorld(came.daysTaken, after.cultivator, after.run);
+
+        // Required rather than offered. The world taking a day off somebody who
+        // did not ask for it is not a thing the narrator may decline to mention.
+        for (const line of came.lines) {
+            sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+        execution.facts.structure.push(came.structure);
+        execution.calls.push({
+            name: 'social.theHouseComesForYou',
+            action: 'sect',
+            summary: `${held.sectName} sent for ${cultivator.name} rather than waiting for a `
+                + `day to pass. ${came.daysTaken} day spent.`,
+            ok: true
         });
     }
 
@@ -14998,7 +15438,9 @@ ${fit.line}`;
      * rendering and carries the instruction that stops it being recited.
      */
     private theStandingStateOf(cultivator: Cultivator): WhereTheyStandNow {
-        const house = cultivator.sectId ? getSect(cultivator.sectId)?.name ?? null : null;
+        const onTheRoll = whereYouStandOnYourHousesRoll(this, cultivator);
+        const house = onTheRoll?.factionName
+            ?? (cultivator.sectId ? getSect(cultivator.sectId)?.name ?? null : null);
         return {
             rank: rankName(cultivator.realmOrdinal),
             age: Math.floor(cultivator.age),
@@ -15011,12 +15453,12 @@ ${fit.line}`;
             methods: cultivator.knownTechniques
                 .map(id => getTechnique(id))
                 .filter((art): art is NonNullable<typeof art> =>
-                    !!art && classOf(art) === 'cultivation')
+                    !!art && advancesRank(art))
                 .map(art => art.name),
             untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
             house: house === null
                 ? null
-                : `${house}${cultivator.sectRank ? `, ${cultivator.sectRank}` : ''}`
+                : `${house}${onTheRoll ? `, ${onTheRoll.rungName}` : ''}`
         };
     }
 
@@ -15034,7 +15476,7 @@ ${fit.line}`;
         let anyManual = false;
         for (const id of cultivator.knownTechniques) {
             const art = getTechnique(id);
-            if (!art || classOf(art) !== 'cultivation') continue;
+            if (!art || !advancesRank(art)) continue;
             anyManual = true;
             // THE LINE. Never `art.cap` - that is the CATALOG ceiling, and it stops
             // being the manual's real one the moment somebody writes a stage onto
@@ -15085,7 +15527,7 @@ ${fit.line}`;
         // best road they own.
         for (const id of cultivator.knownTechniques) {
             const catalog = getTechnique(id);
-            if (!catalog || classOf(catalog) !== 'cultivation') continue;
+            if (!catalog || !advancesRank(catalog)) continue;
             const known = this.repos.techniques.getKnown(cultivator.id, id);
             if (!known) continue;
             const matched =
@@ -15942,7 +16384,7 @@ ${fit.line}`;
                 world,
                 groundUnderfoot(world, cultivator.location, loosePlaceKey)
                     ?? worldLocationFor(world, cultivator.location),
-                cultivator
+                { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) }
             ),
             id: cultivator.id
         }).filter(thing => thing.standing.inReach);
@@ -17647,7 +18089,10 @@ ${fit.line}`;
         if (!this.atHand) return null;
         // Ungated: no `scope`, so this is the world's own catalogs rather than
         // the player's slice of them.
-        const named = resolveAnything(this.repos, topic, cultivator);
+        const named = resolveAnything(
+            this.repos, topic, cultivator, undefined,
+            whereYouStandOnYourHousesRoll(this, cultivator)
+        );
         if (named === null) return null;
         if (named.kind !== 'cultivator' && named.kind !== 'sect' && named.kind !== 'place') {
             return null;
@@ -18192,7 +18637,9 @@ ${fit.line}`;
                 // its weight behind you, and nobody at all.
                 backing: cultivator.sectId === null
                     ? 'none'
-                    : cultivator.sectRank ? 'backed' : 'unclaimable'
+                    : whereYouStandOnYourHousesRoll(this, cultivator)
+                        ? 'backed'
+                        : 'unclaimable'
             },
             lookUpHolder: id => this.whoHoldsAnAccount(id)
         }).feuds];
@@ -18246,6 +18693,7 @@ ${fit.line}`;
             derived: derivedView(cultivator, {
                 ambient: this.ambientFor(cultivator, run),
                 sectName: this.sectNameFor(cultivator),
+                sectRung: whereYouStandOnYourHousesRoll(this, cultivator)?.rungName ?? null,
                 nameTaken: this.nameTaken(cultivator),
                 // The strongest environmental lever in the game, and it was on
                 // no screen anywhere. Null rather than zeroes when no world is
