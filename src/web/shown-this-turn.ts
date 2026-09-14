@@ -101,6 +101,11 @@ export function recordPerception(
             sourceNote: perceived.note,
             stage,
             confidence: perceived.confidence,
+            // THE ROW IT CAME OFF, where the saying was about an event. This
+            // was a literal NULL in the gate's own INSERT until now, so every
+            // claim in the table said it descended from nothing - and a rumour
+            // has carried `Rumour.factId` since it was written.
+            factId: name.factId ?? null,
             statement:
                 name.statement
                 ?? `${name.name} is a name that got said. What it is remains unknown.`

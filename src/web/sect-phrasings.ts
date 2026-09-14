@@ -75,7 +75,13 @@ export type SectIntent =
      * What the house is holding against its own, read and decided by whoever holds
      * the room complaints go to.
      */
-    | 'complaints';
+    | 'complaints'
+    /**
+     * Speaking for somebody the house is holding something against, to whoever
+     * decides it. The other end of `complaints`: one is deciding a case and this
+     * is asking somebody else to decide it differently.
+     */
+    | 'plead';
 
 /**
  * Which sect verb a sentence is asking for.
@@ -259,6 +265,27 @@ export const COMPLAINT_VERDICTS: ReadonlyArray<[string, RegExp]> = [
     ['dismissed', /\b(?:dismiss\w*|throw (?:it|this|them) out|throws out|let (?:him|her|them) go|clear\w*|acquit\w*|no case|drop (?:it|the))\b/],
     ['upheld', /\b(?:uphold\w*|upheld|find (?:him|her|them) guilty|guilty|punish\w*|make (?:an )?example|it stands|confirm\w*)\b/]
 ];
+
+/**
+ * Speaking for somebody in front of the room.
+ *
+ * `for` and `on behalf of` carry the whole of it: the sentence names a person
+ * who is not the speaker and asks the room to go easier on them. Kept off the
+ * bare words "ask" and "beg", which belong to every petition in the game, so
+ * this fires on the shape rather than on the register.
+ */
+/**
+ * Asking a third party to speak, which is a request and not a plea.
+ *
+ * `I want him to`, `ask her to`, `get the elder to`, `have somebody` - a verb of
+ * wanting, a person who is not the speaker, and only then the pleading.
+ */
+export const SOMEBODY_ELSE_WOULD_SPEAK =
+    /\b(?:want|ask|asking|get|have|need|tell|persuade|beg)\s+(?:\w+\s+){0,3}?to\s+(?:speak|plead|vouch|intercede|put in a word|say a word|stand)\b/i;
+
+export const SPEAKING_FOR_SOMEBODY = new RegExp(
+    String.raw`\b(?:(?:speak|speaks|speaking|plead|pleads|pleading|vouch|vouches|vouching|intercede|intercedes|interceding|put in a word|say a word|stand)\s+(?:up\s+)?(?:for|on behalf of)|ask (?:them|him|her|the elder|the hall)? ?to (?:go easy on|show (?:mercy|leniency) to|let \w+ off|spare)|beg (?:for )?(?:mercy|leniency|clemency) for)\b`
+);
 
 /** Asking who runs what, which is the sentence before the one that claims it. */
 /**
@@ -556,6 +583,40 @@ export const SECT_CURRICULUM_SIDE: ReadonlyArray<[string, RegExp]> = [
  * else entirely.
  */
 export function leadershipIntent(text: string, input: string): PlannedAction | null {
+    // ── SPEAKING FOR SOMEBODY ELSE ───────────────────────────────────────
+    //
+    // Ahead of the verdict read. A plea is not a verdict - one is a person
+    // without the room asking somebody who has it to change their mind, and the
+    // other is the person with the room making it up - and the two sets of words
+    // overlap: `let ... off` and `drop` are both in `COMPLAINT_VERDICTS`. Only
+    // the ones this pattern already claims are affected today, so the ordering
+    // is a guard on the next phrasing somebody adds rather than a live fix.
+    // ── AND ASKING SOMEBODY ELSE TO DO IT IS NOT DOING IT ────────────────
+    //
+    // `put in a word for` is the plea, and it is also half of "I want him to put
+    // in a word for me" - which is a REQUEST put to a person, not a word this
+    // cultivator is speaking in a room. The corpus caught it: that exemplar is
+    // authored under `request` and started arriving at `sect`.
+    //
+    // The tell is a second party between the wanting and the speaking. It is
+    // read here rather than written into `SPEAKING_FOR_SOMEBODY`, because the
+    // pattern's job is to recognise the act and this is a question about who is
+    // performing it.
+    if (SPEAKING_FOR_SOMEBODY.test(text) && !SOMEBODY_ELSE_WOULD_SPEAK.test(text)) {
+        // `namedAfter` stops at the prepositions its other callers need and "in
+        // front of" is not among them, so "I speak for Wen Shu in front of the
+        // punishment elder" carried the room into the name. Trimmed here rather
+        // than in the shared reader, whose exact stop list every other
+        // leadership verb is built against.
+        const who = namedAfter(input, 'for|on behalf of|easy on|mercy to|leniency to')
+            ?.replace(/\s+\b(?:in front of|before)\b.*$/i, '').trim();
+        return {
+            action: 'sect',
+            intent: 'plead',
+            ...(who && who.length >= 2 ? { target: who } : {})
+        };
+    }
+
     // WHAT HAS BEEN BROUGHT TO YOU, AND DECIDING IT
     const verdict = matchIntent(text, COMPLAINT_VERDICTS);
     // `charge` is deliberately NOT a complaint noun. "who is in charge here" is a

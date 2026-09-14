@@ -164,7 +164,42 @@ export function beingAtADoorOnTheDayItOpens(input: GettingToADoor): StandingAtTh
     const schedule = readSchedule(input.location, input.party, input.day);
     const crossingDays = Math.max(0, Math.ceil(input.crossingDays));
     const depthWanted = Math.max(0, input.depthWanted);
-    const windowDays = convergence.cyclical ? convergence.windowDays : 0;
+
+    // GROUND WITH NO DOOR IS NOT GROUND WITH A WINDOW OF ZERO. A tomb and a
+    // legacy left standing open have no season and no seal, so every figure
+    // this module prices is about something that is not there: run them anyway
+    // and a road comes back refused for a window of nought that shuts on the
+    // way. Nothing closes, so every road works and the depth is whatever
+    // somebody is willing to walk - and what stops them is the trial inside,
+    // which is `evaluateAccess`'s question and not this one's.
+    if (!convergence.cyclical) {
+        const openGround: ARoadToTheDoor = {
+            daysToTheDoor: crossingDays,
+            windowSpentGettingThere: 0,
+            windowLeft: 0,
+            wayOutCovered: 0,
+            depthItBuys: depthWanted,
+            works: true,
+            refusal: null
+        };
+        return {
+            locationId: input.location.id,
+            name: input.location.name,
+            opensOnDay: input.day,
+            windowDays: 0,
+            waitYears: 0,
+            settingOutInAdvance: true,
+            whatTheyCannotRead: null,
+            crossingDays,
+            depthWanted,
+            onFoot: openGround,
+            behindASenior: input.escortOrdinal == null ? null : { ...openGround },
+            onASlip: input.slipCutAtOrdinal == null ? null : { ...openGround },
+            reason: 'Nothing about this place closes. What is in the way is inside it.'
+        };
+    }
+
+    const windowDays = convergence.windowDays;
 
     // A schedule nobody can read is a schedule nobody can be early for.
     const settingOutInAdvance = convergence.cyclical

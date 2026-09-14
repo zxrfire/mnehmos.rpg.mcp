@@ -46,6 +46,12 @@ import {
 import { HALLS_DOWN } from './what-a-year-of-war-does-to-a-compound.js';
 import type { ObjectRecord } from './possessions.js';
 import { recordCrossing } from './recording-what-a-crossing-did.js';
+import { aCrossingEntersTheWorld } from './a-crossing-enters-the-world-as-news.js';
+import { theRungThisRowShouldBeAt } from './a-beast-climbs-by-sitting-where-it-is.js';
+import {
+    theNameItTookAtTheChange,
+    theSpeciesItIs
+} from './a-beast-with-a-core-is-somebody-in-particular.js';
 import { recordPromotion } from './recording-where-somebody-stands-in-a-house.js';
 import {
     applyLocationChange,
@@ -56,10 +62,15 @@ import {
     nextOpeningDay,
     populationWeightOf,
     qiFraction,
+    walkingDaysFrom,
     windowStartOn,
     type LocationRecord
 } from './locations.js';
 import { WHAT_SHUTS_IT, whatShutsThisDoor } from './a-door-that-closes-is-not-a-door-nobody-opened.js';
+import {
+    whoSendsWhenADoorOpens,
+    type AHouseOnTheRoad
+} from './a-door-that-opens-is-a-race.js';
 import { runCascade } from './cascade.js';
 import { ruinFromFallenSeat } from './provenance.js';
 import { claimOpportunity, nextWindow, years } from './opportunities.js';
@@ -1138,6 +1149,22 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
     for (const at of due) {
         const npc = state.npcs[at];
 
+        // ── A BEAST CLIMBS BY SITTING, AND THAT IS CHEAPER THAN THIS PASS ──
+        //
+        // Taken before anything below it, because everything below it is the
+        // human road and a beast is on none of it: no book, no teacher, no
+        // house ground, no province ceiling. `applyAdvancement` was computing
+        // four of those for a beast row and then refusing it at a ceiling of
+        // 20, so nothing the world held at 24 could ever move. One call
+        // replaces all of it - see `a-beast-climbs-by-sitting-where-it-is.ts`,
+        // which is a reading rather than a sweep and costs the same at year
+        // one and at year five thousand.
+        const moved = aBeastGoesOnSitting(state, at, day);
+        if (moved !== null) {
+            if (moved) advanced.push(state.npcs[at]);
+            continue;
+        }
+
         const regionTag = npc.tags.find(t => t.startsWith('region:'))?.slice(7);
         const region = state.locations.find(
             l => l.kind === 'region' && isBelowTheLid(l) &&
@@ -1273,6 +1300,67 @@ function applyAdvancement(state: WorldState, year: number, day: number): NpcReco
         if (strike.result.outcome === 'success') advanced.push(state.npcs[at]);
     }
     return advanced;
+}
+
+/**
+ * What another twelve years on the same ground did to the thing on it.
+ *
+ * Returns null for anybody who is not one of these, which is how the caller
+ * tells a beast row from a person without asking twice.
+ *
+ * ── THE CLIMB IS READ, THE CROSSING IS AN EVENT ─────────────────────────
+ *
+ * The rung is a function of the species, the ground and the world's age, so
+ * nothing accumulates and a row revisited after eight hundred years is what
+ * eight hundred years made rather than what sixty-six reviews added up to. What
+ * the pass is for is the CROSSING: something that takes a human shape is news a
+ * province hears, and it reaches the world's record through
+ * `aCrossingEntersTheWorld` - the same door a cultivator's crossing goes
+ * through, which is `recording-what-a-crossing-did.ts`'s own rule that nothing
+ * branches on how a crossing was reached.
+ *
+ * AND IT TAKES A NAME AT THE CHANGE. A row minted below the change carries its
+ * species name, and one past it named itself. `theNameItTookAtTheChange` closes
+ * the gap between those two states without taking anything away - the species
+ * name stays reachable because it is derived from the row's tag.
+ */
+function aBeastGoesOnSitting(state: WorldState, at: number, day: number): boolean | null {
+    const npc = state.npcs[at];
+    const species = theSpeciesItIs(npc);
+    if (species === null) return null;
+
+    const here = npc.locationId === null
+        ? undefined
+        : state.locations.find(l => l.id === npc.locationId);
+    const was = npc.cultivation.realmOrdinal;
+    const now = theRungThisRowShouldBeAt({
+        beast: species,
+        locationId: npc.locationId ?? species.id,
+        worldSeed: state.seed,
+        onAVein: here ? here.qiDensity >= 60 : false,
+        bornOnDay: npc.identity.bornOnDay,
+        day,
+        standingAt: was
+    });
+    if (now <= was) return false;
+
+    state.npcs[at] = setRealm(state.npcs[at], now, day);
+    const named = theNameItTookAtTheChange(
+        state.npcs[at],
+        state.seed,
+        new Set(state.npcs.map(n => n.name))
+    );
+    if (named !== null) {
+        state.npcs[at] = { ...state.npcs[at], name: named, updatedOnDay: day };
+    }
+    aCrossingEntersTheWorld(state, {
+        who: { id: npc.id, name: state.npcs[at].name, role: 'crossed' },
+        fromOrdinal: was,
+        toOrdinal: now,
+        day: Math.floor(day),
+        locationId: npc.locationId
+    });
+    return true;
 }
 
 /**
@@ -1736,8 +1824,16 @@ function applyRecruitment(state: WorldState, year: number, day: number): number 
         // at a gate, through `sects`, and a world pass that quietly enrolled
         // them would be the engine taking the decision - the exact shape the
         // agency rule forbids.
+        // AND NOT A BEAST. This pass reads a rung and a province and nothing
+        // else, so the moment a beast row could climb into an admission band it
+        // started being enrolled: measured on seed `beast-advance`, a White
+        // Tiger that reached Nascent Soul was taken onto the Storm Tyrant
+        // Court's roll at rank 3 and then killed by the `elder_died` pass,
+        // which only looks at people with a house and a rank. The row's own
+        // file already states the rule - it takes no orders and holds no purse,
+        // and a house that has an arrangement with one did not buy it.
         if (npc.status === 'alive' && isBelowTheLid(npc) && npc.factionId === null
-            && isTheWorldsToMove(npc)) free.push(i);
+            && isTheWorldsToMove(npc) && theSpeciesItIs(npc) === null) free.push(i);
     }
     if (free.length === 0) return 0;
 
@@ -1873,7 +1969,7 @@ function applySendings(state: WorldState, year: number, day: number): number {
             }
         })
     );
-    const openGround = whereTheOpenGroundIs(state.locations);
+    const openGround = whereTheOpenGroundIs(state.locations, state.currentDay);
 
     let sent = 0;
     for (const faction of state.factions) {
@@ -2786,6 +2882,103 @@ function applyLastCrossing(
 // window this pass was present for the opening of - otherwise a run that begins
 // mid-window announces a closing nobody was told about.
 
+/**
+ * A door stands open and the houses that can reach it send people.
+ *
+ * WHO GOES IS NOT DECIDED HERE. `whoSendsWhenADoorOpens` is the reading, and it
+ * is the same reading the player's own door gets - which is what keeps the
+ * window, rather than a rate, in charge of whether this is a private find or a
+ * scramble. This half is the world moving: parties stand at the door until the
+ * term is up, and what happens to them is `resolveSending` on the reason the
+ * house opened, exactly as for every other errand.
+ *
+ * NEAREST SEAT FIRST, which is arrival order. Nothing here spends the ground:
+ * a door on a season comes round, and the `emptied` tag belongs to ground
+ * somebody opened for good. See `a-door-that-opens-is-a-race.ts`.
+ */
+function theProvinceGoes(
+    state: WorldState,
+    door: LocationRecord,
+    day: number
+): readonly AHouseOnTheRoad[] {
+    const roster = new Map<string, Candidate[]>();
+    const at = new Map<string, number>();
+    for (let i = 0; i < state.npcs.length; i++) {
+        const npc = state.npcs[i];
+        at.set(npc.id, i);
+        if (npc.status !== 'alive' || !npc.factionId) continue;
+        // The player's mirror row is never spent by the world. Walking their
+        // character to a door they did not set out for is the engine taking a
+        // decision that is theirs.
+        if (!isTheWorldsToMove(npc)) continue;
+        const on = roster.get(npc.factionId);
+        const who = { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal };
+        if (on) on.push(who); else roster.set(npc.factionId, [who]);
+    }
+
+    const reach = walkingDaysFrom(state.locations, door.id);
+    const going = whoSendsWhenADoorOpens({
+        door,
+        onDay: day,
+        houses: state.factions
+            .filter(f => f.dissolvedOnDay === null && isBelowTheLid(f))
+            .map(f => ({
+                id: f.id,
+                name: f.name,
+                seatLocationId: f.seatLocationId,
+                roster: roster.get(f.id) ?? []
+            })),
+        walkingDaysTo: id => reach.get(id)
+    });
+
+    for (const house of going) {
+        const rng = forStream(state.seed, 'a-door-opens', door.id, house.houseId, String(day));
+        const sending = resolveSending({
+            posting: house.posting,
+            party: house.party,
+            departsOnDay: day,
+            rng,
+            location: door
+        });
+
+        const partyIds = house.party.map(p => p.id);
+        for (const member of house.party) {
+            const index = at.get(member.id);
+            const row = index === undefined ? undefined : state.npcs[index];
+            if (index === undefined || row === undefined || !isTheWorldsToMove(row)) continue;
+            state.npcs[index] = {
+                ...setLocation(row, door.id, day),
+                activity: {
+                    kind: 'out_with_a_party',
+                    note: `At ${door.name} for the ${houseName(house.houseName)} `
+                        + 'while it stands open.',
+                    withIds: partyIds.filter(id => id !== member.id),
+                    sinceDay: day,
+                    untilDay: sending.returnsOnDay,
+                    returnTo: row.locationId
+                }
+            };
+        }
+        for (const missing of sending.lost) {
+            const index = at.get(missing.id);
+            if (index === undefined) continue;
+            state.npcs[index] = markMissing(
+                state.npcs[index],
+                sending.returnsOnDay,
+                `Went into ${door.name} for ${house.houseName} while it stood open `
+                + 'and did not come back.'
+            );
+        }
+
+        const news = newsOfASending(sending, { onDay: sending.returnsOnDay });
+        if (sending.outcome !== 'finished' || news.magnitude >= WORTH_REPEATING) {
+            appendWorldFact(state, news);
+        }
+    }
+
+    return going;
+}
+
 function applyConvergences(
     state: WorldState,
     year: number,
@@ -2839,6 +3032,12 @@ function applyConvergences(
             });
             state.locations[i] = changed.location;
 
+            // AND THE PROVINCE GOES, OR DOES NOT, AND THE WINDOW DECIDES WHICH.
+            // A week is whoever is standing there; a season is a race. The
+            // scaling is the window's own, through the read that already prices
+            // a road against it - see `a-door-that-opens-is-a-race.ts`.
+            const going = theProvinceGoes(state, state.locations[i], day);
+
             out.push(emit(state, 'convergence_opened', day, {
                 day,
                 kind: 'opportunity',
@@ -2846,17 +3045,22 @@ function applyConvergences(
                 summary: changed.change.summary,
                 locationId: location.id,
                 locationChangeIds: [changed.change.id],
+                factionIds: going.map(h => h.houseId),
                 visibility: 'public',
                 magnitude: 0.7,
                 data: {
                     openDays: location.cycle.openDays,
-                    periodYears: years
+                    periodYears: years,
+                    housesOnTheRoad: going.length
                 },
                 unattributed:
                     'The pass that has never gone anywhere goes somewhere this season. '
                     + 'Nobody arranged it and nobody local can say how long it lasts.',
                 consequences: {
-                    immediate: 'It is open, and whoever left it is not coming.',
+                    immediate: going.length === 0
+                        ? 'It is open, and whoever left it is not coming.'
+                        : `${going.length} house${going.length === 1 ? '' : 's'} `
+                            + 'put people on the road for it.',
                     physical: `${location.name} is reachable.`,
                     opportunitiesOpened: [
                         `${location.cycle.openDays} days inside ${location.name}.`

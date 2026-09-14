@@ -1502,6 +1502,19 @@ export interface SomebodyInTheSquare {
      * a roster with a character note against every line is a briefing.
      */
     like: string | null;
+    /**
+     * What their body shows, or null - which is nearly everybody.
+     *
+     * NOT the wound. The presentation the catalog authors for it, which is
+     * written as manner rather than as diagnosis, because what a stranger gets
+     * is somebody favouring one side rather than a name for what is torn. See
+     * `what-a-body-shows-when-somebody-walks-up.ts` for why that distinction is
+     * the whole of this field.
+     *
+     * One wound and not the list, for the same reason `like` is one thing: a
+     * person read out as four conditions is a medical note.
+     */
+    carrying?: string | null;
 }
 
 export interface Company {
@@ -1721,6 +1734,17 @@ function describeCompany(
             // the game with room to say what they are like as well as what they
             // are at - and most people have nothing here, which is the point.
             if (met.like !== null) sentences.push(`${met.name} ${met.like}.`);
+            // AND WHAT THEIR BODY SAYS, in the same slot and on the same
+            // discipline: the person the ground handed over, and nobody else.
+            //
+            // Labelled rather than folded into a sentence about them, because
+            // what the catalog authors is what somebody WITH this wound is like
+            // to meet - a generic manner, not a clause about this person - and
+            // splicing a name onto the front of it would make the engine the
+            // author of a sentence it did not write. See
+            // `what-a-body-shows-when-somebody-walks-up.ts` for why what
+            // arrives here is the manner and never the wound.
+            if (met.carrying) sentences.push(`What shows on ${met.name}: ${met.carrying}`);
             // ── AND WHAT THEY CAN BE HEARD ON ────────────────────────────
             //
             // MEASURED, with a model narrating: twelve played turns and not one

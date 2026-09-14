@@ -1,7 +1,38 @@
 /**
  * A beast past `BEAST_CHANGE_ORDINAL`, standing among people.
  *
- * TWO AXES, AND THEY ARE INDEPENDENT. What somebody KNOWS and how somebody
+ * ── WHO IS SOMEBODY IS THE RUNG, AND THIS FILE USED TO SAY OTHERWISE ────
+ *
+ * A ruling, and it replaced a documented rule that was argued here at length.
+ * The design owner, asked whether a species authored `speaks: false` keeps its
+ * silence after crossing 29: *"species can't be categorized as speaks false.
+ * under 29 = speaks false."*
+ *
+ * What that overturned: `speaks` was a column on every row, this file read it
+ * and never the ordinal, and the reasoning it carried was that the column was a
+ * floor rather than an iff - that the catalog deliberately held things above 29
+ * with nothing to negotiate with, and that they were its worst entries for
+ * exactly that reason. That is no longer the world. The column is gone from the
+ * schema and from all 64 rows, speech derives from the rung alone, and three
+ * species that were authored mute above the change now answer.
+ *
+ * It is written down rather than quietly replaced because a reader who finds
+ * the old argument persuasive will re-derive it, and the old argument is
+ * genuinely persuasive. It was still overruled.
+ *
+ * ── AND WHAT IT IS CALLED IS NOT ITS SPECIES ────────────────────────────
+ *
+ * The same ruling from the other side, on a finding that *I ask the ape for a
+ * tuft of its fur* reached nobody: *"they give themselves a name, so you
+ * wouldn't ask the ape, you'd ask for their name. calling them an ape in human
+ * form is disrespectful."* So crossing 29 is the moment a catalog row stops
+ * being how anybody refers to this person. `standUpTheOneOnThisGround` in
+ * `a-beast-with-a-core-is-somebody-in-particular.ts` rolls the name; the
+ * species stays a fact about what they are and never a form of address.
+ *
+ * ── TWO AXES, AND THEY ARE INDEPENDENT ──────────────────────────────────
+ *
+ * What somebody KNOWS and how somebody
  * DEALS are different questions, they come out of different machinery, and a
  * blunt thing that cannot name a house and a careful thing that cannot name a
  * house are two entirely different scenes. Neither axis is new here:
@@ -52,7 +83,12 @@
  * are characterisation and are not ours.**
  */
 
-import { BEAST_CHANGE_ORDINAL, BEASTS, type Beast } from '../../data/cultivation/beasts.js';
+import {
+    BEAST_CHANGE_ORDINAL,
+    BEASTS,
+    anythingAtThisRungSpeaks,
+    type Beast
+} from '../../data/cultivation/beasts.js';
 import { highestStage, type KnowingStage } from '../social/discovery.js';
 import {
     whoDecidesIn,
@@ -97,21 +133,16 @@ export function theSpeciesTheyMeant(wanted: string): Beast | null {
 /**
  * Why this species cannot be stood up as a person, or null when it can.
  *
- * READS `speaks` AND NEVER THE ORDINAL, which is the schema's own instruction:
- * the field is a floor and not an iff, and the catalog carries things well
- * above the change that say nothing at all. They are the worst entries in it
- * precisely because there is nothing to negotiate with, and turning one into a
- * conversational partner because its number is high enough would delete that.
+ * READS THE RUNG, AND THERE IS NOTHING ELSE TO READ. This used to read an
+ * authored `speaks` column and argue at length that the column was a floor
+ * rather than an iff - that the catalog deliberately carried things above 29
+ * with nothing to negotiate with. The design owner overruled it: *"species
+ * can't be categorized as speaks false. under 29 = speaks false."* The column
+ * is gone from the schema and from all 64 rows, so there is exactly one
+ * refusal left and it is the one below the change.
  */
 export function whyThisOneIsNotSomebody(beast: Beast): string | null {
-    if (beast.speaks) return null;
-    if (beast.ordinal >= BEAST_CHANGE_ORDINAL) {
-        return `${beast.name} stands at ordinal ${beast.ordinal}, above the change at `
-            + `${BEAST_CHANGE_ORDINAL}, and does not speak. The rung is a floor and not the `
-            + 'question: this one has no shape to take and nothing to say, and standing it '
-            + 'up as somebody to talk to would be inventing a party the catalog says is not '
-            + 'there.';
-    }
+    if (anythingAtThisRungSpeaks(beast.ordinal)) return null;
     return `${beast.name} stands at ordinal ${beast.ordinal}, below the change at `
         + `${BEAST_CHANGE_ORDINAL}. It is an animal. It has no human shape and no voice, and `
         + 'ADMIN reaches past what a cultivator has heard of - never past what the world holds.';
@@ -119,7 +150,7 @@ export function whyThisOneIsNotSomebody(beast: Beast): string | null {
 
 /** Every species that can be stood up in a room, for a refusal that helps. */
 export function theOnesThatCanBeStoodUp(): readonly Beast[] {
-    return BEASTS.filter(b => b.speaks);
+    return BEASTS.filter(b => anythingAtThisRungSpeaks(b.ordinal));
 }
 
 // ─────────────────────────────────────────────────────────────────────────

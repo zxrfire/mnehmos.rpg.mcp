@@ -40,7 +40,9 @@ import {
 } from '../engine/world/being-at-a-door-on-the-day-it-opens.js';
 import {
     howThisGroundIsShut,
-    SPENT
+    whatShutsThisDoor,
+    SPENT,
+    WHAT_SHUTS_IT
 } from '../engine/world/a-door-that-closes-is-not-a-door-nobody-opened.js';
 import { isUnburnt } from '../engine/world/a-talisman-is-one-act-somebody-already-paid-for.js';
 import type { CapabilityActor } from '../engine/world/capability.js';
@@ -121,6 +123,37 @@ export interface StandingAtThisRuin {
     crossingDays: number;
     escort: SomebodyWhoCouldFoldYouIn | null;
     slip: ObjectRecord | null;
+    /**
+     * Houses with people standing here. {@link housesWithPeopleStandingHere}.
+     *
+     * A door that opens on a long window is a race - the world puts parties on
+     * the road for one the day it opens - and three houses camped at the same
+     * mouth is the most important thing about the place that season. Read off
+     * who is actually in the square rather than off anybody's plan, so it says
+     * nothing the eye cannot reach: a house's people are marked as its people.
+     */
+    housesStandingHere?: readonly string[];
+}
+
+/**
+ * Which houses have somebody in this square, by name.
+ */
+export function housesWithPeopleStandingHere(
+    game: GameService,
+    cultivator: Cultivator
+): readonly string[] {
+    const seen = new Set<string>();
+    for (const row of game.present(cultivator)) {
+        if (!row.alive || row.sectName === null) continue;
+        seen.add(row.sectName);
+    }
+    return [...seen].sort();
+}
+
+/** "A", "A and B", "A, B and C". */
+function listed(names: readonly string[]): string {
+    if (names.length <= 1) return names[0] ?? '';
+    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
 /** Years where it is years, days where it is less than one. */
@@ -138,11 +171,26 @@ export function whatTheDoorOfThisRuinSays(input: StandingAtThisRuin): WhatTheDoo
     const shut = howThisGroundIsShut(site, day);
     const lines: string[] = [];
     const structure: string[] = [];
+    const houses = input.housesStandingHere ?? [];
+    const whoElseIsHere = (): void => {
+        if (houses.length === 0) return;
+        lines.push(houses.length === 1
+            ? `${listed(houses)} has people standing here.`
+            : `${listed(houses)} all have people standing here.`);
+    };
 
     if (!site.cycle) {
         if (shut.howItIsShut === 'shut_until_somebody_opens_it') {
             lines.push(`${site.name} is shut, and nothing opens it but somebody opening it.`);
+        } else {
+            // GROUND THAT NEVER SHUT, and the line has to say that the door is
+            // not what is stopping anybody - otherwise a player reads the
+            // silence as "walk in". What stops them is inside, and the bars are
+            // `evaluateAccess`'s to state rather than this module's.
+            lines.push(`${site.name} stands open. Nothing closes it and nothing ever did.`);
+            lines.push('Whatever is in the way is inside it.');
         }
+        whoElseIsHere();
         structure.push(
             `howThisGroundIsShut(${site.id}) on day ${day}: ${shut.howItIsShut}, `
             + `no schedule, spent=${shut.spent}.`
@@ -165,6 +213,16 @@ export function whatTheDoorOfThisRuinSays(input: StandingAtThisRuin): WhatTheDoo
     lines.push(shut.howItIsShut === 'open'
         ? `${site.name} is standing open.`
         : `${site.name} is shut.`);
+
+    // WHAT SHUTS IT, which is not the same reading as WHEN. A formation still
+    // standing on the ground is visible to anybody in front of it and a place
+    // that comes and goes with a season is what the province calls it; the day
+    // it is next due takes records nobody here keeps, and stays behind
+    // `readSchedule` below.
+    const shuts = whatShutsThisDoor(site);
+    if (shuts !== null) lines.push(WHAT_SHUTS_IT[shuts]);
+
+    whoElseIsHere();
 
     if (reading.settingOutInAdvance) {
         lines.push(`It stands open ${reading.windowDays} days at a time, `
@@ -255,6 +313,7 @@ export function whatTheDoorHereSays(
         party: capabilityActorFor(cultivator),
         crossingDays,
         escort: whoHereCouldFoldYouIn(game, cultivator),
-        slip: theWayOutTheyCarry(world, cultivator.id)
+        slip: theWayOutTheyCarry(world, cultivator.id),
+        housesStandingHere: housesWithPeopleStandingHere(game, cultivator)
     });
 }

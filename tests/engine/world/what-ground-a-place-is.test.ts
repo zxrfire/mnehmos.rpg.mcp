@@ -20,7 +20,7 @@ import { loadCultivationCatalog } from '../../../src/engine/world/catalog.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { whatGroundThisIs } from '../../../src/engine/world/what-ground-a-place-is.js';
 import { beastsOnThisGround } from '../../../src/engine/world/hunting-a-spirit-beast.js';
-import { isOnAVein } from '../../../src/engine/world/what-ground-a-place-is.js';
+import { isOnAVein, isSealedOn } from '../../../src/engine/world/what-ground-a-place-is.js';
 import { BEASTS } from '../../../src/data/cultivation/beasts.js';
 import { HERBS, findHerbsForOrdinal } from '../../../src/data/cultivation/herbs.js';
 
@@ -173,5 +173,32 @@ describe('and nowhere in the world has nothing living on it', () => {
             grounds: whatGroundThisIs(world, row) ?? undefined
         }).length === 0);
         expect(empty.map(row => `${row.name} (${row.kind})`)).toEqual([]);
+    });
+});
+
+describe('closed ground is closed today, not last year', () => {
+    it('reads a door on a season off the schedule and not off the column', async () => {
+        // `sealed` is the world's RECORD that a door moved and is refreshed at
+        // a year boundary, so on ground with a cycle it can be a year out of
+        // date. Two callers drew a beast pool straight off it, which is the
+        // pool behind a door that shut months ago.
+        const world = await seeded();
+        const cycled = world.locations.filter(row => row.cycle !== null);
+        expect(cycled.length, 'the pinned world has no ground on a season').toBeGreaterThan(0);
+
+        for (const row of cycled) {
+            const open = row.cycle!.phaseDay;
+            const shut = row.cycle!.phaseDay + row.cycle!.openDays;
+            expect([row.name, isSealedOn(row, open)]).toEqual([row.name, false]);
+            expect([row.name, isSealedOn(row, shut)]).toEqual([row.name, true]);
+        }
+    });
+
+    it('falls back to the column for a caller with no day, which is what it had', async () => {
+        const world = await seeded();
+        for (const row of world.locations.slice(0, 40)) {
+            expect([row.name, isSealedOn(row, null)]).toEqual([row.name, row.sealed]);
+            expect([row.name, isSealedOn(row)]).toEqual([row.name, row.sealed]);
+        }
     });
 });

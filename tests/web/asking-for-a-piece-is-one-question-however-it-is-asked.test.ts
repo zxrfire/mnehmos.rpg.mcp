@@ -53,7 +53,10 @@ import { resetCultivationWorlds } from '../../src/server/state/cultivation-world
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { createObligation } from '../../src/engine/social/grudges';
 import { parseIntent } from '../../src/web/verb-pattern-table';
-import { beastsOnThisGround } from '../../src/engine/world/hunting-a-spirit-beast';
+import {
+    beastsOnThisGround,
+    readsAsSomebody
+} from '../../src/engine/world/hunting-a-spirit-beast';
 import { whatGroundThisIs } from '../../src/engine/world/what-ground-a-place-is';
 import { thePieceTheyAskedFor } from '../../src/engine/world/what-it-costs-to-give-away-a-piece-of-yourself';
 import { idOfTheOneOnThisGround } from '../../src/engine/world/a-beast-with-a-core-is-somebody-in-particular';
@@ -84,7 +87,7 @@ async function standingInFrontOfSomethingThatSpeaks(seed: string) {
                 sealed: place.sealed,
                 onAVein: true,
                 grounds: whatGroundThisIs(world, place) ?? undefined
-            }).filter(one => one.speaks)
+            }).filter(readsAsSomebody)
         }))
         .flatMap(({ place, on }) => on.map(one => ({
             place,

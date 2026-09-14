@@ -460,7 +460,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             // And saying NOTHING to it, which is a third answer and not a
             // softer second one: refusing spends standing today, ignoring
             // spends nothing until the due day goes and then lands as a lapse.
-            'ignore'
+            'ignore',
+            // What the house is holding against its own, and the two ends of
+            // it: deciding a case, and standing up for somebody in one.
+            'complaints', 'plead'
         ],
         says: `anything to do with a house: getting into one, and everything a member or an
             officer of one can do. "intent" is the step - "join" to be taken in, "standing" to
@@ -469,7 +472,10 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             coffers, which buys no rung and no contribution, "guest"
             to sit in at a house that has not taken you, "leave" to resign, "summons" to ask
             what the house has asked of you, "accept" to answer it yes and go, "refuse" to
-            answer it no and "ignore" to answer it not at all, and "siphon",
+            answer it no and "ignore" to answer it not at all, "complaints" to read what the
+            house is holding against its own and decide one where the room is theirs, "plead"
+            to speak for somebody it is holding something against - "target" names them - and
+            "siphon",
             "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above
             a disciple buy. Default to the read - "standing" - unless the player plainly asked
             for a step, because joining is a life's worth of allegiance and cannot be unsaid.`
@@ -617,6 +623,19 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             cultivator actually is and decides. A bare greeting with no name, house or rung in it
             is interact, not this. NOT for "tell me about X", which is a question and belongs to
             investigate, and NOT for a threat, which is about something that has not happened yet.`
+    },
+    challenge: {
+        takes: ['target'],
+        says: `SAY TO SOMEBODY'S FACE THAT WHAT THEY TOLD YOU ABOUT THEMSELVES IS NOT TRUE.
+            "target" is who is being called on it, and they have to be standing here. Use it
+            for "I tell him he is not of the Verdant Spring Valley", "I call her a liar about
+            her rank", "that is not your house", "I say he made that name up". Passes no time
+            and costs no stones. It needs an account they actually gave you - somebody who has
+            only ever told you their name has said nothing that can be challenged. If you have
+            nothing to put against what they said, they are simply being called a liar in front
+            of whoever is here, and they will hold that. NOT for accusing somebody of a deed -
+            "I tell him he killed my brother" is tell. NOT for a threat, and NOT for an insult
+            about anything other than their own account of who they are, which is interact.`
     },
     request: {
         // "days" is read by the company kind alone, which is the only ask that

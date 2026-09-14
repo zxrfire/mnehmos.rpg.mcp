@@ -531,7 +531,18 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'what has the house called me in for',
         'I skim from the sect treasury',
         'I pay into the house ledger',
-        'can I sit in at their house without joining'
+        'can I sit in at their house without joining',
+        'what has been brought before me',
+        'I speak for him in front of the punishment elder',
+        'I plead for her',
+        // FIVE AND NOT TWO. `request` carries "I want him to put in a word for
+        // me", which is asking a person to do the pleading and is a request by
+        // every reading - and with two exemplars here the nearest thing in the
+        // corpus to it was "I plead for her", so the model sent it to this verb
+        // and the table's own guard never got a say. What tells them apart is
+        // who is doing the speaking, so these say so.
+        'I vouch for him to the hall',
+        'I stand up for her before the room'
     ],
     site: [
         'what ruins are there around here',
@@ -713,10 +724,29 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I introduce myself to the steward as a Core Formation cultivator',
         'I tell her my name is Shen Wuyi',
     ],
+    // Calling somebody on their OWN account of themselves. Every exemplar names
+    // a person AND the thing they claimed to be - a sentence with only one of
+    // those halves is `tell` (a deed put on somebody) or `interact` (an insult
+    // about anything else).
+    challenge: [
+        'I tell him he is not of that sect',
+        'I call her a liar about her rank',
+        'you are not of that sect at all',
+        'I say he made that name up',
+        'I put it to her that she never was a disciple there',
+        'I tell him his story does not hold'
+    ],
     request: [
         'I ask him to teach me',
         'I beg her to take me as a disciple',
         'I ask him for the manual',
+        // BOTH, AND THE SECOND ONE IS THE HARD CASE. "put in a word for" is
+        // word for word what pleading for somebody is called, and `sect/plead`
+        // owns that act - but asking a PERSON to do it is a request, which is
+        // what this verb is. What separates them is a second party standing
+        // between the wanting and the speaking, and `SOMEBODY_ELSE_WOULD_SPEAK`
+        // in `sect-phrasings.ts` reads exactly that.
+        'I want him to carry a message to his master for me',
         'I want him to put in a word for me',
         'I ask her to let me into the house',
         'I ask her to lend me her blade',

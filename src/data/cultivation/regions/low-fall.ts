@@ -221,11 +221,78 @@ export const THE_LOW_FALL: Region = {
                 }
             ]
         },
+        // ── THE ASHFALL BASIN, WHICH EXISTED EVERYWHERE BUT ON THE MAP ───
+        //
+        // `prefecture-ashfall` is a fully authored holding - the Ashen Forge
+        // Clan on the flank, the Nine Abyss Flame Sect on the caldera and the
+        // vent vein "on a grant the righteous sects of the province do not
+        // believe exists", the Cinnabar Crucible Sect in the field furnace
+        // halls - and its `places[]` was empty, so a basin with three houses
+        // quarrelling over it was ground nobody could walk to. `volcanic` was
+        // the one biome in either catalog with rows on it and nowhere in the
+        // world to grow.
+        //
+        // Three places and not one, because the prefecture already names three
+        // distinct holdings and a single row would have made a second answer to
+        // who holds what. The vent vein is a vein and says so; the caldera is
+        // the ground the grant is disputed over; the flank is where people
+        // live.
+        {
+            name: PLACE.THE_FLANK,
+            kind: 'sect_town', ambient: 'normal', grounds: ['volcanic'],
+            note: 'The Ashen Forge compound, cut into the flank around a furnace that was there before the clan was. Everybody in it takes a turn at the rota, including the children and the chief.',
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.GREEN_FALL,
+                    description:
+                        'The arms road down to the province town, which carried a contract for two hundred years and now carries what the clan can sell without one.',
+                    travelDays: 3
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.THE_CALDERA,
+                    description:
+                        'Up the flank to the rim, in falling grit the whole way, and walked by nobody who does not have business with the people holding the top of it.',
+                    travelDays: 2
+                }
+            ]
+        },
+        {
+            name: PLACE.THE_CALDERA,
+            kind: 'site', ambient: 'dense', grounds: ['volcanic'],
+            note: 'The rim and what is inside it, held by the Nine Abyss Flame Sect on a grant the righteous houses of the province do not believe exists. Nobody has produced the document and nobody has removed them.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.THE_VENT_VEIN,
+                    description:
+                        'Down inside the rim to the vent, which is a day of it and the only way in that does not cross the field furnace halls.',
+                    travelDays: 1
+                }
+            ]
+        },
+        {
+            name: PLACE.THE_VENT_VEIN,
+            // `site` and not `vein`: a place row carries the seven settlement
+            // kinds plus `site`, and the seeder maps `site` to `wilds`. The
+            // ground says it is a vein, which is the authored statement
+            // `isOnAVein` reads over the density proxy - so the row is a vein
+            // for every purpose that asks without a kind having to say so.
+            kind: 'site', ambient: 'spirit_tide', grounds: ['volcanic', 'spirit_vein'],
+            note: 'The vein the vent opens onto, which runs hot and is the reason the grant is worth not producing. What grows on it grows nowhere else in the world.',
+            connections: []
+        },
     ],
     // The settled province: fields, the roads between them, wooded slope above
     // and the gorge cut through it. It is the only ground on the map that is
     // ordinary, which is why it is the one everybody comes to.
     grounds: ['forest', 'deep_forest', 'farmland', 'riverbank', 'mountain', 'bamboo_sea'],
+    // `volcanic` is NOT on this list and the omission is the design. The
+    // Ashfall Basin is one corner of one province, not a thing the whole Jade
+    // Gorge is made of, so it is stated on the three places that are it. A
+    // province ground list is what a square falls back to; the basin does not
+    // need a fallback because it says what it is.
     exports: [
         'refined pills and formulae, which the Silent Cliffs cannot make at all',
         'manuals to heaven grade, and living teachers for them',

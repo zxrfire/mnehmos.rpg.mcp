@@ -62,10 +62,34 @@ export type HolderKind = 'character' | 'public';
  *
  * Here rather than in `web/knowledge.ts`, where it was, because the engine
  * reading that answers this question for a world NPC cannot import from `web/`
- * and a second spelling of a four-member union is a second source of truth.
+ * and a second spelling of the union is a second source of truth.
  * `web/knowledge.ts` re-exports it, so every existing importer is unchanged.
+ *
+ * ── `thing` IS A GATE AFFORDANCE, NOT A WIDENING OF THE TRUTH LAYER ──────
+ *
+ * The claim *this medicine exists* never needed a member here and it never
+ * needed anything else either. `claimKey` above is a free-form string and the
+ * repo already writes claims that are about none of these kinds -
+ * `placement:<childId>` in `spending-a-word-to-place-a-child.ts`, the
+ * understanding templates in `understanding.ts` - so storage, stance, source,
+ * confidence, supersession, `truthAbout` and `disagreementsAbout` have carried
+ * it the whole time.
+ *
+ * What was narrow is one thing: `KnowledgeGate` only ever writes
+ * `existenceClaimKey(kind, id)`, so its five typed reads - `isAwareOf`,
+ * `stageOf`, `canPointAt`, `provenanceOf`, `awareness` - are keyed on this
+ * union. A claim about a catalog thing could be written, and could not be asked
+ * for through the same door as the rest. One member is the smallest way to put
+ * it on that door; the alternative was a second writer and a second reader
+ * beside machinery that already works, which is this repo's signature defect.
+ *
+ * `thing` AND NOT `pill`, because the question is the same one for a technique,
+ * an artifact or a material, and none of them wants a kind of its own. What is
+ * pill-shaped today is the rung lookup in
+ * `who-has-heard-of-a-thing-past-the-counter.ts`, which is where another
+ * catalog joins.
  */
-export type KnownEntityKind = 'cultivator' | 'sect' | 'place' | 'event';
+export type KnownEntityKind = 'cultivator' | 'sect' | 'place' | 'event' | 'thing';
 
 /**
  * Where the claim came from. `fabricated` is a first-class source: flagging a

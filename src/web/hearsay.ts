@@ -98,6 +98,14 @@ export interface SpeakableName {
     stage?: KnowingStage;
     /** What the holder ends up holding, when the default sentence will not do. */
     statement?: string;
+    /**
+     * The ledger row this name was said IN, where the saying was about an event.
+     *
+     * Per name rather than per hearing, because one sentence can put two people
+     * in one event and a hearing can carry names from several. Absent for a
+     * name that merely got said, which is most of them.
+     */
+    factId?: string | null;
 }
 
 export interface Hearing {

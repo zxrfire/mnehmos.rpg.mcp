@@ -66,6 +66,7 @@ export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
     'recipe-undying-flesh',
     'recipe-clear-mind-of-the-hollow-sky',
     'recipe-severed-meridian-restoration',
+    'recipe-limb-rebirth',
     'recipe-condensed-century',
     'recipe-void-refinement-guiding',
     'recipe-thousand-year-cypress',
@@ -524,6 +525,20 @@ const RECIPE_DATA: readonly Recipe[] = [
             { itemId: 'herb-millennium-blood-ganoderma', quantity: 1 }
         ],
         baseSuccessRate: 0.24,
+        requiredOrdinal: 31
+    },
+    {
+        // Its sibling above restores a route. This one grows back the body the
+        // route ran through, which is the harder half and the lower rate.
+        id: 'recipe-limb-rebirth',
+        name: 'Limb Rebirth Pill Formula',
+        producesPillId: 'pill-limb-rebirth',
+        ingredients: [
+            { itemId: 'herb-soulreturn-dew', quantity: 2 },
+            { itemId: 'herb-nine-leaf-soul-grass', quantity: 6 },
+            { itemId: 'herb-millennium-blood-ganoderma', quantity: 1 }
+        ],
+        baseSuccessRate: 0.18,
         requiredOrdinal: 31
     },
     {

@@ -126,6 +126,12 @@ import { findDataWithNoVerb, findUnwired } from '../../scripts/find-unwired-expo
 // construction. Each is routed in OPEN-QUESTIONS.md with the act that would
 // call it. This number is meant to come DOWN when those land - do not raise
 // it again to make a red suite green without saying here what pushed it.
+// `anAnnouncementEntersTheWorld` HAS LANDED: a house seizing back what it
+// bestowed reads the sentence out, in `a-room-hands-down-what-it-decided.ts`.
+// The ceiling is left where it is rather than lowered by one, because a
+// figure off this shared tree is somebody else's unfinished work as much as
+// it is this change - the next person measuring on a quiet tree should take
+// the one this bought.
 // 154 -> 150 AND 448 -> 447, MEASURED ON A QUIET TREE, when the cash-to-rank
 // path was struck. `DONATION_DISCOUNT`, `contributionPerStoneDonated` and
 // `contributionPerStoneOnAnOrdinaryErrand` went with the rule they priced, and

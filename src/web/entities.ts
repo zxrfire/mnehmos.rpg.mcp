@@ -15,6 +15,7 @@ import {
 import { isAtLeast } from '../engine/social/discovery.js';
 import { SPIRIT_ROOTS } from '../engine/cultivation/spirit-roots.js';
 import { rankName } from '../engine/cultivation/realms.js';
+import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { describeStanding, theRung } from './facts.js';
 import type { ObligationDb } from '../storage/repos/obligation.repo.js';
 import { whatTheWorldHoldsAbout } from './personal-record.js';
@@ -835,7 +836,14 @@ export function resolvePill(query: string): ResolvedEntity | null {
             `${articleCapitalised(match.grade)} ${match.grade}-grade pill. What it does is `
             + `${match.effect.replace(/_/g, ' ')}, `
             + `at potency ${match.potency} against toxicity ${match.toxicity}. Valued at `
-            + `${match.value} spirit stones.`
+            + `${match.value} spirit stones.`,
+            // THE RUNG IT IS PITCHED AT, AND IT IS LOAD-BEARING RATHER THAN
+            // INSPECTOR COLOUR. `withinStratum` in `asked.ts` reads a subject's
+            // ordinal out of these lines, and a pill had none - so `ordinal ===
+            // null` meant "within everybody's working knowledge" and any
+            // villager in any square could be asked about an immortal-grade
+            // medicine and answer at length.
+            `It is pitched at ordinal ${pillBandOrdinal(match.grade)}.`
         ]
     };
 }

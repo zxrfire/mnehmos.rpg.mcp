@@ -94,9 +94,39 @@ export const WOUND_TYPES: readonly WoundType[] = [
         severities: ['serious', 'crippling'],
         permanent: true,
         treatment:
-            'Nothing. A parted channel is the one meridian injury the pharmacopoeia has never had an answer for, and every physician in the two provinces will say so in the same words.',
+            'One medicine, and knowing that is not the same as being able to get it. A dispensary physician names it, says it is beyond their means in those words, and refuses the case; the Verdant Spring Valley, which is as high as the art goes in either province, names it and refuses the case as well. Nothing here is short of skill. It is refined from dew that condenses where somebody very strong died very badly, it is not sold for stones, and the bodies holding any are the three with somebody above the Lid still answering them.',
         presentation:
             'Somebody strong who cannot do one specific thing any more, is entirely matter-of-fact about which thing, and has rebuilt their whole art around the absence. Frequently more dangerous than they were before, in a narrower way.'
+    },
+    // ── Physical, flesh. The channel family above is about routes; this pair
+    // is about the body the routes run through, and the two questions it
+    // answers are different ones: whether a covering comes back, and whether a
+    // part does. A covering does, slowly. A part does not, at any rung.
+    {
+        key: 'stripped-flesh',
+        nature: 'physical',
+        name: 'Stripped flesh',
+        description:
+            'A covering was pulled off a living body - fur, feathers, a scute, a plate. What is under it is open, and the covering comes back on the body\'s own schedule, which is counted in years rather than in days.',
+        severities: ['minor', 'serious', 'crippling'],
+        permanent: false,
+        treatment:
+            'Ordinary care closes what is open underneath. Nothing hurries the covering itself, so a creature asked for a tuft of its own fur is being asked for the years it takes to put back.',
+        presentation:
+            'A bare patch on a body that is otherwise whole, which its owner neither hides nor discusses. They favour that side for a season and then stop, and the patch is still bare a decade later.'
+    },
+    {
+        key: 'severed-flesh',
+        nature: 'physical',
+        name: 'Severed flesh',
+        description:
+            'A part of the body was taken out of it: an arm, an eye, a fang, the marrow of a bone. Flesh is not a channel and does not find its own route back. The body closes over the place and goes on without what was there.',
+        severities: ['serious', 'crippling'],
+        permanent: true,
+        treatment:
+            'A Limb Rebirth Pill, immortal grade, which is the only thing in either province that grows a part back. Nobody sells one for stones. A foundation-repairing pill is for a structure that did not set at a wall and does nothing here - it is a different medicine for a different injury, and every physician says so before refusing to take the case.',
+        presentation:
+            'Somebody short a piece of themselves, at whatever rung, who has had long enough to stop noticing and is exactly as capable as they were at everything they rebuilt around it. New acquaintances ask once.'
     },
     // 'A ruined dantian' stood here and has been retired. THIS SETTING SAYS
     // CORE, and once the borrowed word goes the row had no subject left: it

@@ -219,8 +219,14 @@ export function howTheAskForAPieceWent(input: {
             + 'one.',
             // THE YEARS ARE IN THE WOUND'S OWN SENTENCE, so what is added is
             // only what the wound does not say: whether anything shortens it.
+            //
+            // It used to read "nothing in the world closes this one", which was
+            // true while the only permanent row this could mint was a parted
+            // meridian. A part of a body is answered by one medicine, so the
+            // line states what the BODY does and leaves the pharmacopoeia to
+            // the wound row, which names it.
             `${cost.wound.description} ${cost.doesNotComeBack
-                ? 'Nothing in the world closes this one.'
+                ? 'Only medicine grows a part back.'
                 : 'Nothing shortens that.'}`,
             cost.shame === null
                 ? 'Nobody else is standing here, and what it did costs it nothing in front of '

@@ -55,7 +55,11 @@ import {
     hasACore,
     type GroundForBeasts
 } from '../engine/world/hunting-a-spirit-beast.js';
-import { isOnAVein, whatGroundThisIs } from '../engine/world/what-ground-a-place-is.js';
+import {
+    isOnAVein,
+    isSealedOn,
+    whatGroundThisIs
+} from '../engine/world/what-ground-a-place-is.js';
 import {
     A_HUNT_MEANT_TO_TAKE_THE_BODY,
     type HowTheBlowWasThrown
@@ -74,7 +78,9 @@ import {
     idOfTheOneOnThisGround,
     standUpTheOneOnThisGround
 } from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
-import { markDead, type NpcRecord } from '../engine/world/npc-state.js';
+import { carryingWounds, markDead, type NpcRecord } from '../engine/world/npc-state.js';
+import { whatTheirBodyShows } from '../engine/world/what-a-body-shows-when-somebody-walks-up.js';
+import { recordPermanentWounds } from '../engine/world/recording-the-day-a-wound-was-taken.js';
 // Who answers for a beast that was killed. The whole module had no caller
 // anywhere in `src/`, and with it went the only live read of `disposition` -
 // the catalog sets righteous, neutral or demonic on every row and nothing in
@@ -365,6 +371,7 @@ import {
     THE_ROOM_COMPLAINTS_GO_TO
 } from '../engine/social-leverage/reporting-what-you-saw.js';
 import {
+    type APost,
     type Remit,
     whoStaffsWhat,
     whoTakesAReportAt
@@ -375,6 +382,19 @@ import {
 // Somebody walking up the hill with the player's name, and the same rows read
 // from the other end by whoever holds the room complaints go to.
 import { handDownWhatTheRoomDecided } from './a-room-hands-down-what-it-decided.js';
+// And the same room sitting on the player, which is the half that made the rest
+// of it gameplay rather than scenery.
+import {
+    theComplaintTheRoomSitsOn,
+    theRoomSitsOnYou
+} from './a-room-hands-one-down-to-you.js';
+// And the word somebody else puts in, which nothing in `src/` had ever built.
+import {
+    anIntercessionFor,
+    whyTheWordIsNotTheirsToSay
+} from '../engine/social-leverage/somebody-speaks-for-the-accused.js';
+import { whoseCallItIs } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
+import { whatStandsBetween, whereAComplaintGoes } from '../engine/social-leverage/reporting-what-you-saw.js';
 import { whatThisHouseHandedOver } from '../engine/world/a-house-takes-back-what-it-handed-over.js';
 import {
     complaintsBroughtTo,
@@ -449,7 +469,7 @@ import {
     cashRefusalReason,
     pillCashPrice
 } from '../engine/cultivation/buying-and-bartering-pills.js';
-import { askedAbout } from './asked.js';
+import { askedAbout, whetherTheyHoldIt } from './asked.js';
 import {
     selfFactFromTopic,
     whatTheySayAboutThemselves
@@ -481,6 +501,17 @@ import {
     whatHouseTheyClaimInstead,
     whereTheAccountIsNotSo
 } from './an-account-of-yourself.js';
+// The world's half of a challenge: a hearer who already holds something of you
+// that what you are saying now cannot be squared with. The player's half is
+// `challenging-an-account.ts`, and both run the read below.
+import {
+    howTheGainsayingReads,
+    theAccountsAmong,
+    whatIsHeldAgainstThisAccount,
+    whatTheHearerSaysBack,
+    whatTheyCaught
+} from './two-accounts-of-one-person.js';
+import { challengeVerb } from './challenging-an-account.js';
 import {
     couldPointAtIt,
     factsForTelling,
@@ -603,7 +634,8 @@ import {
 // at the step that mattered.
 import {
     whatWouldCloseThisWound,
-    whatToSayAboutTheCure
+    whatToSayAboutTheCure,
+    type WhoIsAsking
 } from './what-would-close-this-wound.js';
 // The strongest environmental lever in the game, stated in the one place the
 // rate itself reads. See the file header for the measurement that forced it.
@@ -1099,7 +1131,9 @@ import {
 } from '../engine/social/how-they-took-what-you-said.js';
 import { costsTheAskerNothing } from './asking-is-not-doing.js';
 import {
-    realmIndexOf
+    realmIndexOf,
+    severityOfTheWrong,
+    shapeOf
 } from '../engine/social-leverage/what-somebody-does-about-being-wronged.js';
 import {
     whatCanBeReachedFromHere,
@@ -1241,7 +1275,9 @@ function whatThisPurchaseWillNotReach(
     regionId: string,
     /** What the ground adds to medicine here, so the receipt names the price
      * the counter beside it would actually ask. */
-    groundMultiplier: number
+    groundMultiplier: number,
+    /** Who is reading the receipt. A cure is named only as far as they hold it. */
+    asking: WhoIsAsking
 ): { lines: string[]; structure: string[] } {
     const none = { lines: [], structure: [] };
     const bought = getPill(pillId);
@@ -1262,7 +1298,8 @@ function whatThisPurchaseWillNotReach(
         .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
         .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
     const cure = whatWouldCloseThisWound(
-        beyond, cultivator.realmOrdinal, cultivator.spiritStones, regionId, groundMultiplier);
+        beyond, cultivator.realmOrdinal, cultivator.spiritStones, regionId, groundMultiplier,
+        asking);
     const reached = mendable.length - beyond.length;
 
     // Said in whichever of the two shapes is TRUE. A pill that closes two of
@@ -2782,6 +2819,13 @@ export class GameService {
         // the sheet says rather than what it said a turn ago.
         this.refreshThePlayerRow(after.cultivator);
 
+        // AND IF THE HOUSE IS HOLDING SOMETHING AGAINST YOU, ITS ROOM SITS ON IT
+        //
+        // Above the estate settlement, because one of the seven sentences ends
+        // the person: a house that carries out a death here has to reach the
+        // same settlement the turn's own death reaches, in the same turn.
+        await this.theRoomSitsOnWhatTheHouseHoldsAboutYou(execution, after);
+
         // AND IF THIS TURN KILLED THEM, THE WORLD IS TOLD
         const died = this.settleTheEstateIfTheyDied();
         if (died) {
@@ -4059,6 +4103,12 @@ ${noticedWaiting}`;
             // Carrying the news the other way. `news` is the player finding out;
             // this is the player being the person somebody else finds out from,
             // through the same join and into the same ledger.
+            // The player's half of a challenge. `tell` writes an account into
+            // somebody's head and the world's people gainsay one there; this is
+            // the same read from the other end, put to a face.
+            case 'challenge':
+                return this.challenge(run, cultivator, action.target);
+
             case 'tell': {
                 // The telling is read against the world's own history, so the
                 // world has to be in hand. Loaded the way `roads` loads it.
@@ -6050,7 +6100,7 @@ ${noticed}`;
         thePieceMustBeNamed = false
     ): Execution | null {
         const speaking = beastsOnThisGround(this.beastGroundFor(cultivator))
-            .filter(beast => beast.speaks);
+            .filter(readsAsSomebody);
         if (speaking.length === 0) return null;
 
         // NAMED, AND NAMED HARD ENOUGH TO BE A NAME. One word off a catalog
@@ -6146,12 +6196,33 @@ ${noticed}`;
         // ── WHAT IT COST THE GIVER, AS A REAL WOUND ──────────────────────
         //
         // Minted through the same call the ordinary injury path uses, so the
-        // penalties are the table's and not this file's. Nothing writes it onto
-        // the creature: a changed beast has no row to carry an injury on yet.
+        // penalties are the table's and not this file's.
         const hurt = createInjury(
             went.cost!.wound,
             forStream(run.seed, 'gave_a_piece', whoItIs, piece.material.id)
         );
+        // AND IT LANDS ON THE ONE WHO PAID IT.
+        //
+        // This was minted, summarised and dropped, on the reasoning that a
+        // changed beast has no row to carry an injury - which the shame below
+        // disproves twelve lines later by finding one.
+        // `a-beast-with-a-core-is-somebody-in-particular.ts` stands the thing up
+        // as an `NpcRecord` before any of this runs, so the row was always
+        // there, and a maiming somebody agreed to was the one cost of the whole
+        // exchange that reached nothing. Through `carryingWounds`, which is the
+        // world's one write path for an injury and the only thing that keeps the
+        // count honest against the list.
+        const at = this.atHand
+            ? this.atHand.npcs.findIndex(npc => npc.id === whoItIs)
+            : -1;
+        if (this.atHand && at >= 0) {
+            this.atHand.npcs[at] = carryingWounds(this.atHand.npcs[at], [hurt], today);
+            // A parted channel is a day in a life and gets its row in the
+            // ledger, the same as every other permanent wound in this world.
+            recordPermanentWounds(this.atHand, this.atHand.npcs[at], [hurt], today);
+            this.theWorldMoved();
+        }
+        const carrying = this.atHand && at >= 0 ? this.atHand.npcs[at] : null;
         const calls: ToolCallRecord[] = [{
             name: 'engine.whatGivingItCosts',
             action,
@@ -6159,7 +6230,10 @@ ${noticed}`;
                 `${hurt.id}: ${hurt.severity} ${hurt.woundType} on ${whoItIs}, `
                 + `cultivation ${hurt.cultivationPenalty}, breakthrough `
                 + `${hurt.breakthroughPenalty}. ${went.cost!.note} `
-                + 'Not persisted: a changed beast carries no row to hold an injury.',
+                + (carrying
+                    ? `Written onto ${carrying.id}: ${carrying.cultivation.injuries.length} `
+                      + `wound(s), ${carrying.cultivation.untreatedInjuries} untreated.`
+                    : 'Nothing standing here holds a row, so it is stated and not kept.'),
             ok: true
         }];
         // AND THE STANDING IT COST, WHERE THERE IS SOMEBODY TO CARRY IT.
@@ -6168,11 +6242,12 @@ ${noticed}`;
         // writes one that way - so where the one standing here has a row, this
         // is written rather than reported. Where it has none, nobody saw it
         // because nobody was standing there to have a row about.
-        const carrying = went.cost!.shame && this.atHand
-            ? this.atHand.npcs.find(npc => npc.id === whoItIs) ?? null
-            : null;
-        if (carrying && !carrying.tags.includes(shameTag(went.cost!.shame!.cause))) {
-            carrying.tags.push(shameTag(went.cost!.shame!.cause));
+        if (
+            carrying
+            && went.cost!.shame
+            && !carrying.tags.includes(shameTag(went.cost!.shame.cause))
+        ) {
+            carrying.tags.push(shameTag(went.cost!.shame.cause));
             this.theWorldMoved();
         }
         if (went.cost!.shame) {
@@ -6433,9 +6508,7 @@ ${noticed}`;
             subject,
             rawTopic: topic,
             aboutThemselves,
-            holdsIt: subject !== null
-                && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
-                && this.knowledge.isAwareOf(asked.id, subject.kind, subject.id),
+            holdsIt: whetherTheyHoldIt(this.knowledge, asked.id, subject),
             priorDealings: this.dealingsWith(cultivator, asked.id),
             // What comes out when nothing about the question does. `asked.ts`
             // decides whether they get to use it.
@@ -6702,6 +6775,11 @@ ${noticed}`;
                     run, cultivator, target,
                     topic === 'upheld' || topic === 'dismissed' ? topic : null
                 );
+
+            // And the same rows from the third end: not the person reported on
+            // and not the person deciding, but somebody standing up for them.
+            case 'plead':
+                return this.speakForSomebodyInFrontOfTheRoom(run, cultivator, target);
 
             case 'siphon': {
                 // The pace rides in on the plan's topic and the span on its
@@ -7442,6 +7520,24 @@ ${noticed}`;
                 house: this.sectNameFor(cultivator),
                 realmOrdinal: cultivator.realmOrdinal
             });
+        // ── AND THE HEARER MAY ALREADY HOLD SOMETHING ELSE OF YOU ────────
+        //
+        // Read BEFORE the row is written, or the account being given now is in
+        // the set it is being compared against. This is the world's half of a
+        // challenge and it is the same read the player's half runs, from the
+        // other end: `two-accounts-of-one-person.ts`. It costs one indexed
+        // lookup at a scene that is already happening - a pass comparing
+        // everybody's claims against everybody else's is what it is written to
+        // avoid, and nothing here runs on the world advance.
+        const gainsaid = account === null ? [] : whatIsHeldAgainstThisAccount(
+            theAccountsAmong(
+                this.knowledge.provenanceOf(hearer.id, 'cultivator', cultivator.id),
+                hearer.id,
+                hearer.name
+            ),
+            account
+        );
+
         const recorded = account === null
             ? null
             : recordAnAccountGiven(this.knowledge, {
@@ -7512,6 +7608,55 @@ ${noticed}`;
                 blamed: blamed?.name ?? named,
                 claim: said
             });
+
+        // ── THEY SAY SO, AND BEING CAUGHT COSTS THE ONE WHO LIED ─────────
+        //
+        // What reaches the player is that this person has something else of
+        // them and what it says. It does not say who is right, because the
+        // hearer does not know: they may be the one holding the false account,
+        // and `whatTheyCaught` is what keeps the world's own answer out of the
+        // sentence unless the world actually has one.
+        const caught = whatTheyCaught(gainsaid, notSo);
+        if (gainsaid.length > 0) {
+            const gainsaying = whatTheHearerSaysBack(hearer.name, gainsaid[0]);
+            facts.lines.push(gainsaying);
+            facts.prose = `${facts.prose}\n\n${gainsaying}`;
+            facts.structure.push(howTheGainsayingReads(hearer.name, gainsaid[0], caught));
+        }
+        if (caught.length > 0) {
+            // The ordinary door: `what-somebody-does-about-being-wronged.ts`
+            // owns the cause and the weight of being lied to, and no figure is
+            // re-argued here. There is no reputation number in this path.
+            const heldAgainst = createObligation({
+                kind: 'grudge',
+                holderId: hearer.id,
+                subjectId: cultivator.id,
+                cause: shapeOf('deceived').cause,
+                severity: severityOfTheWrong('deceived'),
+                onDay: Math.floor(run.elapsedDays),
+                description:
+                    `${cultivator.name} gave ${hearer.name} an account of themselves that was `
+                    + `not so at ${placeName(cultivator)}, and ${hearer.name} was already `
+                    + 'holding something that could not be squared with it. Not so: '
+                    + `${caught.join(', ')}.`,
+                participants: this.present(cultivator).map(row => row.id),
+                tags: ['account_challenged'],
+                fromBelief: false
+            });
+            writeOneObligation(this.db as unknown as DatabaseHandle, heldAgainst);
+            calls.push({
+                name: 'social.createObligation',
+                action: 'tell',
+                summary:
+                    `${hearer.name} now holds a ${heldAgainst.severity} grudge `
+                    + `(${heldAgainst.cause}) about ${cultivator.name}, opened on day `
+                    + `${heldAgainst.incurredOnDay}. They were holding an account that could `
+                    + 'not be squared with what was said, and the parts it landed on '
+                    + `(${caught.join(', ')}) are parts the world holds as untrue.`,
+                ok: true
+            });
+        }
+
         const execution = this.freeAction(run, 'tell', facts);
         // EXECUTED either way, and that is the ruling rather than an oversight.
         // The words were said and the person heard them; whether anything came
@@ -9264,7 +9409,7 @@ ${line}`;
             action: 'hunt',
             summary:
                 `${met.id} (${met.name}, ordinal ${met.ordinal}, band ${bandOf(met)}, `
-                + `speaks=${met.speaks}) met at ${here}. `
+                + `speaks=${readsAsSomebody(met)}) met at ${here}. `
                 + (named ? 'Named by the player, not drawn.' : 'Drawn on the weighted table.'),
             ok: true
         });
@@ -9424,7 +9569,13 @@ ${line}`;
         }
 
         const row = standUpTheOneOnThisGround({
-            beast, locationId: where, seed: world.seed, onDay: Math.floor(world.currentDay)
+            beast,
+            locationId: where,
+            seed: world.seed,
+            onDay: Math.floor(world.currentDay),
+            // One past the change names itself, and a name two people share
+            // breaks every read the player makes by name.
+            takenNames: new Set(world.npcs.map(npc => npc.name))
         });
         world.npcs.push(row);
         this.theWorldMoved();
@@ -9433,8 +9584,8 @@ ${line}`;
             action: 'hunt',
             summary:
                 `${row.id}: ${beast.name} at ordinal ${row.cultivation.realmOrdinal} now holds a `
-                + `row at ${where}, met on day ${today}. Written on contact, not seeded - `
-                + 'below the core nothing is written at all.',
+                + `row at ${where} as ${row.name}, met on day ${today}. Written on contact, not `
+                + 'seeded - below the core nothing is written at all.',
             ok: true
         });
         return row;
@@ -9771,7 +9922,11 @@ ${line}`;
         // the same animals. `whatGroundThisIs` is the one reading.
         const grounds = whatGroundThisIs(this.atHand!, record);
         return {
-            sealed: record.sealed,
+            // THE SCHEDULE AND NOT THE COLUMN. `sealed` is refreshed at a year
+            // boundary, so on ground with a season it can be a year stale, and
+            // the pool a hunt draws from would be the one behind a door that
+            // shut months ago.
+            sealed: isSealedOn(record, this.atHand?.currentDay ?? null),
             onAVein: isOnAVein(this.atHand!, record, grounds),
             grounds: grounds ?? undefined
         };
@@ -10179,9 +10334,21 @@ ${opened.text}` : receipt,
             const needed = outOfReach
                 .map(injury => medicineNeededFor(injury.severity, cultivator.realmOrdinal))
                 .sort((a, b) => medicineRank(b) - medicineRank(a))[0];
-            // AND IT NAMES THE THING THAT WOULD WORK.
+            // AND IT NAMES THE THING THAT WOULD WORK - for the wounds a
+            // medicine reaches. `outOfReach` rather than `hurt`, because this
+            // read names the cure for the WORST wound on the list and a
+            // permanent one is always untreated and always sorts to the top:
+            // handed the whole list, the refusal quoted a treat-injury pill for
+            // a maiming no grade of it can close.
             const cure = whatWouldCloseThisWound(
-                hurt, cultivator.realmOrdinal, cultivator.spiritStones, regionId, groundHere);
+                outOfReach, cultivator.realmOrdinal, cultivator.spiritStones, regionId, groundHere,
+                // A village physician is not a source for what is refined above
+                // the Lid, and neither is the refusal they give.
+                {
+                    gate: this.knowledge,
+                    holderId: cultivator.id,
+                    realmOrdinal: cultivator.realmOrdinal
+                });
             return refused('engine.medicineNeededFor', 'treat', factsForRefusal(
                 'Past what a physician can do.',
                 `They look at what you are carrying and put their hands in their sleeves. `
@@ -10200,9 +10367,12 @@ ${opened.text}` : receipt,
                 + (cure ? `\n\n${whatToSayAboutTheCure(cure)}` : ''),
                 `${outOfReach.length} untreated wound(s) beyond mortal grade at ordinal `
                 + `${cultivator.realmOrdinal}; highest requirement ${needed}. `
-                + (cure
+                + (cure && cure.heardOf
                     ? `Cure named: ${cure.name}, ${cure.stones ?? 'not sold for stones'}. `
-                    : '')
+                    : cure
+                        ? 'A cure exists and was withheld: this cultivator has never heard of '
+                          + 'it. '
+                        : '')
                 + 'Nothing bought, nothing spent, no time passed.'
             ));
         }
@@ -10784,7 +10954,13 @@ ${opened.text}` : receipt,
         })();
 
         // THE ALMANAC IS NOT THE LEDGER
-        const shortfall = whatThisPurchaseWillNotReach(cultivator, pill.id, regionId, groundHere);
+        const shortfall = whatThisPurchaseWillNotReach(
+            cultivator, pill.id, regionId, groundHere,
+            {
+                gate: this.knowledge,
+                holderId: cultivator.id,
+                realmOrdinal: cultivator.realmOrdinal
+            });
 
         const facts = factsForToolResult(`${pill.name}, bought.`, [
             `One ${pill.name}, ${cash} cash${quotedBy(price.unit)}, which is ${stones} spirit `
@@ -12852,6 +13028,7 @@ ${fit.line}`;
     private async theHouseAround(cultivator: Cultivator, held: HousePosition): Promise<{
         roster: ContactPerson[];
         portfolios: APortfolio[];
+        posts: APost[];
         headId: string | null;
     }> {
         const world = this.atHand ?? await this.loadWorld();
@@ -12869,9 +13046,10 @@ ${fit.line}`;
             roll,
             rankCount: held.rankCount
         });
+        const posts = whoStaffsWhat({ portfolios, roll, rankCount: held.rankCount });
         const top = Math.max(0, held.rankCount - 1);
         const headId = roll.find(person => person.rankIndex >= top)?.id ?? null;
-        return { roster, portfolios, headId };
+        return { roster, portfolios, posts, headId };
     }
 
     /**
@@ -13080,12 +13258,7 @@ ${fit.line}`;
     } | null> {
         const held = positionIn(this.repos, cultivator.id);
         if (!held) return null;
-        const { roster, portfolios } = await this.theHouseAround(cultivator, held);
-        const roll = [
-            { id: cultivator.id, rankIndex: held.rankIndex },
-            ...roster.map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }))
-        ];
-        const posts = whoStaffsWhat({ portfolios, roll, rankCount: held.rankCount });
+        const { roster, portfolios, posts } = await this.theHouseAround(cultivator, held);
         const taker = whoTakesAReportAt({ purpose: THE_ROOM_WORK_IS_POSTED_IN, portfolios, posts });
         if (taker === null) return null;
 
@@ -13186,6 +13359,284 @@ ${fit.line}`;
     }
 
     /**
+     * The same room, sitting on the player.
+     *
+     * THE HALF THAT MADE THE ARC GAMEPLAY. Every verb that opens an
+     * `AGAINST_THEIR_OWN` row about the player wrote it and nothing ever read it
+     * back at them, so a house could hold a theft or a forged decree against its
+     * own member forever and the member paid nothing. `theRoomSitsOnYou` weighs
+     * one and carries it out through the same instruments the world half uses.
+     *
+     * Run at the end of the turn rather than at the point the row is opened,
+     * because a room sits on a day after the day it is told - which is the day
+     * gate in that module, and the window an intercession lives in.
+     *
+     * It costs a membership read on a turn with nothing outstanding, and the
+     * house around the player is built only once there is a row to sit on.
+     */
+    private async theRoomSitsOnWhatTheHouseHoldsAboutYou(
+        execution: Execution,
+        now: { run: Run; cultivator: Cultivator }
+    ): Promise<void> {
+        const { run, cultivator } = now;
+        if (!cultivator.alive) return;
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) return;
+        // The cheap read first, and the house only once there is something to
+        // sit on: `theHouseAround` deals the roll, the portfolios and the posts,
+        // and doing that on every turn of every run to find nothing is work the
+        // ordinary turn should not pay for.
+        if (theComplaintTheRoomSitsOn(
+            this.repos, held.sectId, cultivator.id, Math.floor(run.elapsedDays)
+        ) === null) return;
+
+        const { roster, portfolios, posts, headId } =
+            await this.theHouseAround(cultivator, held);
+        const here = this.atHand?.locations.find(
+            place => place.name === placeName(cultivator)
+        ) ?? null;
+
+        const sat = theRoomSitsOnYou({
+            repos: this.repos,
+            offender: cultivator,
+            houseId: held.sectId,
+            houseName: held.sectName,
+            alignment: this.repos.sects.getById(held.sectId)?.alignment ?? null,
+            portfolios,
+            posts,
+            roll: roster.map(person => ({
+                id: person.id,
+                name: person.name,
+                rankIndex: person.rankIndex ?? 0,
+                realmOrdinal: person.realmOrdinal
+            })),
+            rankCount: held.rankCount,
+            headId,
+            world: this.atHand,
+            onDay: Math.floor(run.elapsedDays),
+            onTurn: run.turn,
+            // Where they are standing, which the world row does not hold for
+            // somebody being played. `placeName` is the play layer's one answer
+            // and the id beside it is whichever world row wears that name.
+            at: { id: here?.id ?? null, name: placeName(cultivator) }
+        });
+        if (sat === null) return;
+
+        if (sat.handed?.theWorldMoved) this.theWorldMoved();
+        // Required rather than offered. A sentence carried out on the player is
+        // the kind of thing the narrator may not decline to mention.
+        for (const line of sat.lines) {
+            sayThisWhateverTheNarratorDoes(execution.facts, line);
+        }
+        execution.facts.structure.push(sat.structure);
+        execution.calls.push({
+            name: 'social.theRoomSitsOnYou',
+            action: 'sect',
+            summary: sat.handed === null
+                ? `${held.sectName} holds ${sat.complaint.severity} against ${cultivator.name} `
+                  + 'and has nobody who can decide it.'
+                : `${held.sectName} handed down ${sat.handed.decided.sentence} to `
+                  + `${cultivator.name}.`,
+            ok: sat.handed !== null
+        });
+    }
+
+    /**
+     * Standing up for somebody the house is holding something against.
+     *
+     * THE THIRD END OF THE SAME ROWS, and the one nothing ever reached.
+     * `whatTheRoomDecides` has moved a sentence a rung down for an intercession
+     * since it was written and no caller anywhere in `src/` ever built one, so
+     * nobody had pleaded for anybody. The standing ruling is that somebody with
+     * influence speaking up can help a case, up to and including a rebuke and
+     * nothing.
+     *
+     * WHAT IT COSTS IS THE OFFER LADDER'S, not a second currency.
+     * `whatSpeakingForSomebodyWouldTake` reads the rung the person holding the
+     * room is on for an ask that runs against their own body's interest, which
+     * is where money stops reaching - so a purse put in front of an elder does
+     * not buy leniency, and the refusal names the rung that would.
+     *
+     * AND SPEAKING BRINGS THE CASE FORWARD. The room weighs it while you are
+     * standing there, whether or not the word lands - a plea is a request to
+     * decide, and a request to decide gets decided. That is what speaking costs,
+     * and the line says so.
+     */
+    private async speakForSomebodyInFrontOfTheRoom(
+        run: Run,
+        cultivator: Cultivator,
+        target: string | undefined
+    ): Promise<Execution> {
+        const held = positionIn(this.repos, cultivator.id);
+        if (!held) {
+            return this.freeAction(run, 'sect', factsForRefusal(
+                'There is no room here you could speak in.',
+                'A word for somebody is put to the person who decides their case, and that is '
+                + 'a room inside a house. You are on nobody\'s roll.',
+                `No membership for ${cultivator.id}.`
+            ));
+        }
+
+        const { roster, portfolios, posts, headId } =
+            await this.theHouseAround(cultivator, held);
+        const onDay = Math.floor(run.elapsedDays);
+        const nameOf = (id: string | null): string =>
+            id === cultivator.id
+                ? cultivator.name
+                : roster.find(person => person.id === id)?.name ?? 'somebody on the roll';
+
+        // The player's own row is NOT filtered out here. Who may speak is one
+        // rule and it lives in `whyTheWordIsNotTheirsToSay`; filtering as well
+        // would be a second copy of it, and the copy would answer with a blank
+        // look where the rule answers with a reason.
+        const open = complaintsBroughtTo(this.repos, held.sectId)
+            .filter(row => row.subjectId !== null);
+        const wanted = (target ?? '').trim();
+
+        // ── WHOSE CASE, AND THE READ WHEN NOBODY WAS NAMED ───────────────
+        const chosenRow = (wanted.length < 3
+            ? undefined
+            : open.find(row => matchScore(wanted, nameOf(row.subjectId)) > MATCH_THRESHOLD))
+            ?? (open.length === 1 ? open[0] : undefined);
+        if (!chosenRow) {
+            return this.freeAction(run, 'sect', factsForToolResult(
+                open.length === 0 ? 'Nobody to speak for.' : `${open.length} standing.`,
+                [
+                    open.length === 0
+                        ? `${held.sectName} is holding nothing against anybody you could speak `
+                          + 'for.'
+                        : `${held.sectName} is holding these against its own, and a word can be `
+                          + `put in for any of them: ${open
+                              .map(row => nameOf(row.subjectId)).join(', ')}.`
+                ]
+            ));
+        }
+
+        const accusedId = chosenRow.subjectId!;
+        const room = whoseCallItIs({
+            purpose: THE_ROOM_COMPLAINTS_GO_TO,
+            portfolios,
+            roll: [
+                { id: cultivator.id, rankIndex: held.rankIndex },
+                ...roster.map(person => ({ id: person.id, rankIndex: person.rankIndex ?? 0 }))
+            ],
+            rankCount: held.rankCount,
+            asking: cultivator.id
+        });
+        const why = whyTheWordIsNotTheirsToSay({
+            speakerId: cultivator.id, accusedId, room
+        });
+        if (why !== null) {
+            return refused('social.anIntercessionFor', 'sect', factsForRefusal(
+                why === 'the room is already theirs'
+                    ? 'You are the one who decides it.'
+                    : 'That one is about you.',
+                why === 'the room is already theirs'
+                    ? 'A word put in is a request to somebody else. What you hold is the room, '
+                      + 'and what you would be asking is for yourself to change your own mind. '
+                      + 'Uphold it or throw it out.'
+                    : 'Speaking for yourself is a defence. The room hears a word from somebody '
+                      + 'who is not the person it is about, and nothing else counts as one.',
+                `whyTheWordIsNotTheirsToSay: ${why}. speaker=${cultivator.id}, `
+                + `accused=${accusedId}.`
+            ));
+        }
+
+        const decidedById = whereAComplaintGoes({ portfolios, aboutId: accusedId, headId });
+        if (decidedById === null) {
+            return refused('social.whereAComplaintGoes', 'sect', factsForRefusal(
+                'There is nobody to say it to.',
+                `${held.sectName} has nobody who can decide ${nameOf(accusedId)}'s case - the `
+                + 'room that hears it is theirs, or there is no room. A word has to be put to '
+                + 'somebody.',
+                `whereAComplaintGoes about ${accusedId} returned nobody.`
+            ));
+        }
+
+        // A room sits on a day after the day it was told, which is the window
+        // this word exists in - and the reason a case brought this morning
+        // cannot be spoken to this afternoon.
+        const complaint = theComplaintTheRoomSitsOn(
+            this.repos, held.sectId, accusedId, onDay
+        );
+        if (complaint === null) {
+            return refused('social.theComplaintTheRoomSitsOn', 'sect', factsForRefusal(
+                'The room has not sat on it yet.',
+                `${held.sectName} was told about ${nameOf(accusedId)} today. The room hears a `
+                + 'thing and then sits on it, and until it does there is no decision for a word '
+                + 'to reach.',
+                `${chosenRow.id} incurred on day ${chosenRow.incurredOnDay}; today is ${onDay}.`
+            ));
+        }
+
+        // WHAT IS BEING PUT UP, IN THE LADDER'S OWN VOCABULARY, HIGHEST RUNG
+        // FIRST. An open account the decider owes the player outranks anything
+        // in a purse, and a purse in a sentence reads as stones - the same
+        // reading `a-rung-nobody-earned` gives an offer put to an elder.
+        const owed = whatStandsBetween(
+            ledgerAbout(this.db as never, cultivator.id), decidedById, cultivator.id
+        ).theyOweYou;
+        const intercession = anIntercessionFor(room, owed > 0 ? 'a favour' : 'stones');
+        const landed = whereTheOfferLanded(intercession.wants, intercession.offered);
+
+        const handed = handDownWhatTheRoomDecided({
+            repos: this.repos,
+            complaint,
+            byId: decidedById,
+            byName: nameOf(decidedById),
+            portfolios,
+            posts,
+            offenderId: accusedId,
+            offenderName: nameOf(accusedId),
+            offenderOrdinal:
+                this.repos.cultivators.getById(accusedId)?.realmOrdinal
+                ?? roster.find(person => person.id === accusedId)?.realmOrdinal
+                ?? cultivator.realmOrdinal,
+            houseId: held.sectId,
+            houseName: held.sectName,
+            onDay,
+            onTurn: run.turn,
+            world: this.atHand,
+            byOrdinal: roster.find(person => person.id === decidedById)?.realmOrdinal
+                ?? cultivator.realmOrdinal,
+            brought: {
+                what: { does: 'reports', toId: decidedById, line: complaint.description },
+                theirsToPunish: true,
+                alignment: this.repos.sects.getById(held.sectId)?.alignment ?? null,
+                houseId: held.sectId,
+                theHouseGaveThemSomething: this.atHand !== null
+                    && whatThisHouseHandedOver({
+                        objects: this.atHand.objects,
+                        houseId: held.sectId,
+                        houseName: held.sectName,
+                        fromId: accusedId,
+                        houseIds: new Set(this.atHand.factions.map(house => house.id))
+                    }).length > 0,
+                intercession
+            }
+        });
+        if (handed.theWorldMoved) this.theWorldMoved();
+
+        const said = `You speak for ${nameOf(accusedId)} to ${nameOf(decidedById)}, and the room `
+            + `weighs it while you stand there. ${landed.line} ${handed.line}`;
+        const facts = factsForToolResult(
+            handed.decided.word === 'it moved one rung'
+                ? 'Your word moved it.'
+                : 'Your word did not move it.',
+            [said]
+        );
+        facts.required = [said];
+        facts.structure.push(
+            `a-room-hands-down-what-it-decided: ${complaint.id} -> `
+            + `${handed.decided.sentence}, decided by ${decidedById} on a word from `
+            + `${cultivator.id}. Before anybody spoke: ${handed.decided.beforeAnybodySpoke}; `
+            + `word: ${handed.decided.word}; offered ${intercession.offered}, `
+            + `wanted ${intercession.wants}.`
+        );
+        return this.freeAction(run, 'sect', facts);
+    }
+
+    /**
      * What has been brought to you about the house's own people.
      */
     private async complaintsBrought(
@@ -13204,7 +13655,7 @@ ${fit.line}`;
             ));
         }
 
-        const { roster, portfolios } = await this.theHouseAround(cultivator, held);
+        const { roster, portfolios, posts } = await this.theHouseAround(cultivator, held);
         const mine = whatTheyHold(portfolios, cultivator.id);
         if (!mine.includes(THE_ROOM_COMPLAINTS_GO_TO)) {
             const holder = whoAnswersAbout(portfolios, THE_ROOM_COMPLAINTS_GO_TO);
@@ -13268,6 +13719,11 @@ ${fit.line}`;
                     repos: this.repos,
                     complaint: chosen,
                     byId: cultivator.id,
+                    byName: cultivator.name,
+                    // Who the house can send to carry it out, off the same deal
+                    // that put this room in your hands.
+                    portfolios,
+                    posts,
                     offenderId: chosen.subjectId ?? '',
                     offenderName: nameOf(chosen.subjectId),
                     // The record where there is one, the roster where there is
@@ -13329,6 +13785,12 @@ ${fit.line}`;
                         ? `Carried out here: contribution -${handed.contributionTaken}, `
                           + `stones -${handed.stonesTaken}, row ${handed.wrote?.id ?? 'none'}.`
                         : `Routed to ${handed.notCarriedOutHere}.`)
+                    + (handed.whoWent === null
+                        ? ''
+                        : ` Carried out by ${handed.whoWent.who} `
+                          + `(${handed.whoWent.partyIds.length}) at `
+                          + `${handed.wherePlace ?? 'nowhere the world holds'}; `
+                          + `read out: ${handed.readOut}.`)
                 );
                 return this.freeAction(run, 'sect', facts);
             }
@@ -16736,6 +17198,13 @@ ${fit.line}`;
                     // depending on which table the caller happened to reach -
                     // the exact thing deriving instead of storing is for.
                     like: row === null ? null : theOneThingWorthSayingAbout(row),
+                    // AND WHAT THEIR BODY SAYS, which until now was a count
+                    // nobody printed. A one-armed elder and a man with a bruise
+                    // both read out as one untreated injury and nothing else.
+                    // Only from the world row: the roster row carries no wounds,
+                    // so deriving it from one would make the same person read
+                    // differently depending on which table the caller reached.
+                    carrying: row === null ? null : whatTheirBodyShows(row),
                     // WHO ELSE STANDING HERE THEY ARE ANYTHING TO.
                     //
                     // Filled after the loop, because a tie is only worth
@@ -17631,8 +18100,16 @@ ${fit.line}`;
         sourceKind: 'witnessed' | 'told' | 'read',
         note: string
     ): boolean {
-        const kind = entity.kind;
-        if (kind !== 'cultivator' && kind !== 'sect' && kind !== 'place') return false;
+        // A CATALOG THING ENTERS BY THE SAME DOOR. `EntityKind` calls it a pill
+        // and `KnownEntityKind` calls it a thing, because the resolver names
+        // which catalog and the gate names which kind of claim - and this is
+        // the one place the two vocabularies meet. Without the mapping, being
+        // told a medicine exists by somebody who knew wrote nothing, and the
+        // player woke up the next turn having never been told.
+        const kind = entity.kind === 'pill' ? 'thing' : entity.kind;
+        if (kind !== 'cultivator' && kind !== 'sect' && kind !== 'place' && kind !== 'thing') {
+            return false;
+        }
         // WHO "HER" MEANS ON THE NEXT TURN. Every verb that resolves a person
         // passes through here, which is what makes this the one place the
         // referent can be kept without eight call sites remembering to. See
@@ -17829,7 +18306,8 @@ ${fit.line}`;
 }
 
 // THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
-export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, ServiceVerbs {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, ServiceVerbs, ChallengeVerb {}
+type ChallengeVerb = typeof challengeVerb;
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
 type CraftVerbs = typeof craftVerbs;
@@ -17847,4 +18325,4 @@ type TakingVerbs = typeof takingVerbs;
 type GuardVerbs = typeof guardVerbs;
 type TeachingVerbs = typeof teachingVerbs;
 type ServiceVerbs = typeof serviceVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, serviceVerbs);
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, serviceVerbs, challengeVerb);

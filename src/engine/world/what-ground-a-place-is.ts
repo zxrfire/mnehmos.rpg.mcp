@@ -34,7 +34,7 @@
 
 import type { HerbBiome } from '../../data/cultivation/herbs.js';
 import { getRegion, groundsDeclaredAt } from '../../data/cultivation/regions/the-map.js';
-import type { LocationKind, LocationRecord } from './locations.js';
+import { isOpenOn, type LocationKind, type LocationRecord } from './locations.js';
 import { getLocation, type WorldState } from './world-state.js';
 
 /**
@@ -127,4 +127,23 @@ export function isOnAVein(
     return place.qiDensity >= VEIN_DENSITY
         || place.environment.resources.includes('qi')
         || (grounds?.includes('spirit_vein') ?? false);
+}
+
+/**
+ * Whether this place is closed ground TODAY, which decides what `sealed_only`
+ * can be standing in it.
+ *
+ * `place.sealed` is the world's RECORD that a door moved and is refreshed at a
+ * year boundary, so on a place with a season it can be a year out of date -
+ * and the schedule is the authority (`isOpenOn` ignores the column wherever a
+ * cycle exists). Two callers were reading the column straight and drawing a
+ * beast pool off a door that had shut or opened months ago.
+ *
+ * `onDay` omitted falls back to the column, which is the honest answer for a
+ * caller that genuinely has no day: it is what they had before, and a place
+ * with no cycle has no other answer anyway.
+ */
+export function isSealedOn(place: LocationRecord, onDay?: number | null): boolean {
+    if (onDay === undefined || onDay === null) return place.sealed;
+    return !isOpenOn(place, Math.floor(onDay));
 }

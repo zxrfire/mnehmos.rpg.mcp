@@ -61,9 +61,11 @@
  *   > who forget that are the ones who open with a sword.
  *
  * Reaching 29 is a MEGA RARE event and the catalog is built to keep it one.
- * Three entries speak. Every one is a named individual with a frequency of
- * six or less, and two hold ground no province can take. A fourth talking
- * beast is a bigger change than it looks: see the guard in
+ * SPEECH IS THE RUNG AND NOTHING ELSE, so the set that speaks is exactly the
+ * set standing at 29 or above - there is no column, and a species cannot be
+ * authored mute above the change. Six entries qualify. Every one is a named
+ * individual with a frequency of six or less, and three stand behind a seal
+ * where nothing reaches them. A seventh is a bigger change than it looks: see the guard in
  * `tests/data/cultivation-beasts.test.ts` that prices this as a share of the
  * draw rather than as a count.
  *
@@ -86,12 +88,14 @@
  *              voice.                    people, holding what any cultivator
  *              holds - a rung, a house or none, wants, relationships, a name.
  *
- * The third band is why this catalog carries only three entries at 29 and
- * gives none of them materials: a thing that can answer you is not stock, and
- * the question of what anybody would do with its body is the ordinary one the
- * world asks about every cultivator - is this person worth more to you alive
- * or as material - answered by house alignment and by what they are worth,
- * not by anything written about beasts.
+ * The third band is why this catalog carries only six entries at 29 and gives
+ * the two it files as `intelligent` no materials: nobody has taken one of
+ * those, so there is no grade and no price. The other four keep the figure the
+ * catalog already put on them, and that is deliberate - the question of what
+ * anybody would do with the body of a thing that can answer you is the
+ * ordinary one the world asks about every cultivator - is this person worth
+ * more to you alive or as material - answered by house alignment and by what
+ * they are worth, not by anything written about beasts.
  *
  * THEY LIVE WHERE THE QI IS
  * -------------------------
@@ -188,6 +192,28 @@ export const BEAST_CORE_ORDINAL = 17;
  * header.
  */
 export const BEAST_CHANGE_ORDINAL = 29;
+
+/**
+ * Whether something standing at this rung speaks.
+ *
+ * THE RUNG IS THE WHOLE ANSWER. This replaced an authored `speaks` column on
+ * every row, which the design owner overruled: *"species can't be categorized
+ * as speaks false. under 29 = speaks false."* There is no species exception and
+ * there cannot be one, so a catalog that could once carry a mute thing above
+ * the change now cannot express the idea at all.
+ *
+ * The column and this function could not both stand. A stored flag beside a
+ * derivation of the same fact is the drift this repo pays for most often, and
+ * the ruling says which of the two survives.
+ *
+ * Takes an ordinal rather than a `Beast`, because the question is asked of
+ * individuals as often as of species: a row's ordinal is where the catalog
+ * places its KIND, and the one standing in front of somebody may have climbed
+ * past it.
+ */
+export function anythingAtThisRungSpeaks(ordinal: number): boolean {
+    return ordinal >= BEAST_CHANGE_ORDINAL;
+}
 /**
  * Why a house sends a party out over BEASTS, which is two of its reasons and
  * not all of them.
@@ -463,17 +489,6 @@ export const BeastSchema = z.object({
     veinRelation: VeinRelationSchema,
     /** Typical number encountered together. One means solitary. */
     groupSize: z.number().int().min(1),
-    /**
-     * Has made the change and can be spoken to. Never true below
-     * `BEAST_CHANGE_ORDINAL`.
-     *
-     * A FLOOR, NOT AN IFF, and the distinction is load-bearing. Plenty of
-     * things stand above the change and say nothing: the catalog carries two,
-     * and they are the worst entries in it precisely because there is nothing
-     * to negotiate with. Anything asking "is this somebody" must read this
-     * field and never the ordinal.
-     */
-    speaks: z.boolean(),
     /** Draw weight when something is met. Larger is commoner. */
     frequency: z.number().int().min(1),
     /** What it can do because of what it is. Required: every species has one. */
@@ -825,7 +840,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 6,
-        speaks: false,
         frequency: 300,
         ability: {
             name: 'Bolt',
@@ -849,7 +863,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 140,
         ability: {
             name: 'Ironhide',
@@ -873,7 +886,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'follows',
         groupSize: 400,
-        speaks: false,
         frequency: 120,
         ability: {
             name: 'Qi Draw',
@@ -897,7 +909,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 12,
-        speaks: false,
         frequency: 150,
         ability: {
             name: 'Reads the Water',
@@ -921,7 +932,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 5,
-        speaks: false,
         frequency: 250,
         ability: {
             name: 'Standing Flush',
@@ -945,7 +955,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 145,
         ability: {
             name: 'Green Eye',
@@ -969,7 +978,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 2,
-        speaks: false,
         frequency: 140,
         ability: {
             name: 'Held Still',
@@ -993,7 +1001,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 2,
-        speaks: false,
         frequency: 115,
         ability: {
             name: 'Up the Bark',
@@ -1017,7 +1024,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 50,
         ability: {
             name: 'Shoulder In',
@@ -1041,7 +1047,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 4,
-        speaks: false,
         frequency: 44,
         ability: {
             name: 'Wind-Wise',
@@ -1065,7 +1070,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 34,
         ability: {
             name: 'Reads the Face',
@@ -1092,7 +1096,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 3,
-        speaks: false,
         frequency: 30,
         ability: {
             name: 'Long Glide',
@@ -1116,7 +1119,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 20,
         ability: {
             name: 'Iron Chew',
@@ -1128,6 +1130,39 @@ export const BEASTS: readonly Beast[] = [
         materialIds: ['mat-iron-bear-tooth'],
         note: 'Eats bamboo for eleven months and cooking pots for the twelfth. Villages in the bamboo bury the iron in that month and have done for longer than anyone can say why.',
         changedManner: 'Asks for things outright, in company, without the approach anybody else would make first, and takes a refusal without any sign of having minded.'
+    },
+
+    {
+        // ── THE ASHFALL BASIN, WHICH HAD NOTHING ON IT UNTIL NOW ──────
+        // `prefecture-ashfall` was authored with the political layer and
+        // its `places[]` stayed empty, so `volcanic` was a biome in the
+        // herb vocabulary that no square in the world declared. The map
+        // has three volcanic rows now and this catalog has four kinds
+        // standing on them, spread from a rat a beginner can take to
+        // something that holds the seam under all three.
+        id: 'beast-ember-crane',
+        name: 'Ember Crane',
+        nature: 'ordinary',
+        // It has never taken anything from anybody and the villages under
+        // the flank have had two hundred years of free warning off it.
+        disposition: 'righteous',
+        ordinal: 6,
+        biome: 'volcanic',
+        element: 'fire',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        frequency: 60,
+        ability: {
+            name: 'Sees the Fire Coming',
+            kind: 'perception',
+            what:
+                'Knows which ground is going to burn about a day before it does, and is standing somewhere else well before it happens.'
+        },
+        hard: 'It is gone before a party arrives and it is gone because it knew they were coming, so taking one is the problem of arriving unannounced on ground that announces everybody. Nobody has managed it twice on the same flank.',
+        materialIds: ['mat-ember-crane-plume'],
+        note: 'The settlements under the flank move their stock when one goes up, and the two that stopped doing it lost a season each to the fall before they started again.',
+        changedManner: 'Leaves early, every time, and says on the way out exactly why - which is taken for rudeness right up until the reason arrives.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1144,7 +1179,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'follows',
         groupSize: 9,
-        speaks: false,
         frequency: 200,
         ability: {
             name: 'Pack Sense',
@@ -1168,7 +1202,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'vein_only',
         veinRelation: 'drains',
         groupSize: 30,
-        speaks: false,
         frequency: 70,
         ability: {
             name: 'Vein Sense',
@@ -1192,7 +1225,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'follows',
         groupSize: 20,
-        speaks: false,
         frequency: 55,
         ability: {
             name: 'Immovable',
@@ -1219,7 +1251,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'follows',
         groupSize: 300,
-        speaks: false,
         frequency: 280,
         ability: {
             name: 'One Turn Ahead',
@@ -1243,7 +1274,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 20,
-        speaks: false,
         frequency: 200,
         ability: {
             name: 'Standing Jump',
@@ -1267,7 +1297,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'follows',
         groupSize: 60,
-        speaks: false,
         frequency: 230,
         ability: {
             name: 'Early Arrival',
@@ -1291,7 +1320,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'follows',
         groupSize: 12,
-        speaks: false,
         frequency: 210,
         ability: {
             name: 'Carried Word',
@@ -1315,7 +1343,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 25,
-        speaks: false,
         frequency: 160,
         ability: {
             name: 'Winter Sleep',
@@ -1339,7 +1366,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 10,
-        speaks: false,
         frequency: 120,
         ability: {
             name: 'Foot on Nothing',
@@ -1363,7 +1389,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 150,
-        speaks: false,
         frequency: 100,
         ability: {
             name: 'Lives On Ink',
@@ -1387,7 +1412,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'indifferent',
         groupSize: 200,
-        speaks: false,
         frequency: 170,
         ability: {
             name: 'Nothing Wasted',
@@ -1411,7 +1435,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 80,
-        speaks: false,
         frequency: 70,
         ability: {
             name: 'Off the Underside',
@@ -1435,7 +1458,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'follows',
         groupSize: 40,
-        speaks: false,
         frequency: 90,
         ability: {
             name: 'Against the Fall',
@@ -1459,7 +1481,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'thin_remnant',
         veinRelation: 'follows',
         groupSize: 14,
-        speaks: false,
         frequency: 60,
         ability: {
             name: 'Never Blown',
@@ -1483,7 +1504,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 12,
-        speaks: false,
         frequency: 30,
         ability: {
             name: 'Keeps Its Feet',
@@ -1507,7 +1527,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'vein_only',
         veinRelation: 'drains',
         groupSize: 40,
-        speaks: false,
         frequency: 40,
         ability: {
             name: 'Left Shell',
@@ -1519,6 +1538,30 @@ export const BEASTS: readonly Beast[] = [
         materialIds: ['mat-cicada-shell'],
         note: 'The shells are gathered off the trunks in one week of the year, whole and empty and still gripping the bark, and every pill hall in the province buys them.',
         changedManner: 'Gives a name and a trade and both turn out later to have been left behind somewhere, intact, with nobody in them.'
+    },
+
+    {
+        id: 'beast-cinder-rat',
+        name: 'Cinder Rat',
+        nature: 'herd',
+        disposition: 'neutral',
+        ordinal: 2,
+        biome: 'volcanic',
+        element: 'fire',
+        persistence: 'open_world',
+        veinRelation: 'indifferent',
+        groupSize: 30,
+        frequency: 130,
+        ability: {
+            name: 'Unburnt',
+            kind: 'endurance',
+            what:
+                'Beds in cinder still hot enough to fire a pot and takes nothing from it, so there is no part of a burning flank it cannot cross and wait on.'
+        },
+        hard: 'Nothing a party can do to it is worse than where it already lives, so it goes back into the hot cinder and waits them out. What ends an infestation is the cinder cooling, which is a matter for the mountain rather than for anybody holding a sword.',
+        materialIds: ['mat-cinder-rat-fleece'],
+        note: 'The fleece is woven into a cloth that is laundered by being put in the fire, and the Ashen Forge Clan has hung its gate with the same four panels for two hundred years.',
+        changedManner: 'Will not be the only one in a room if it can be helped, defers to whoever else is there from habit, and agrees with anything said loudly before working out whether it does.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1536,7 +1579,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 60,
         ability: {
             name: 'Venom Breath',
@@ -1560,7 +1602,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 30,
         ability: {
             name: 'Silence',
@@ -1584,7 +1625,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 18,
         ability: {
             name: 'Cold Hunt',
@@ -1608,7 +1648,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 150,
         ability: {
             name: 'Same Green',
@@ -1632,7 +1671,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 85,
         ability: {
             name: 'Through the Gap',
@@ -1656,7 +1694,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 62,
         ability: {
             name: 'Out of the Wood',
@@ -1680,7 +1717,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 55,
         ability: {
             name: 'Cold Coil',
@@ -1704,7 +1740,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 40,
         ability: {
             name: 'Between the Boards',
@@ -1728,7 +1763,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 34,
         ability: {
             name: 'Raised Arms',
@@ -1752,7 +1786,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 24,
         ability: {
             name: 'Under the Blue',
@@ -1776,7 +1809,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 20,
         ability: {
             name: 'Every Foot At Once',
@@ -1800,7 +1832,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 15,
         ability: {
             name: 'Down the Stem',
@@ -1824,7 +1855,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 12,
         ability: {
             name: 'Sounds Like a Child',
@@ -1848,7 +1878,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 9,
         ability: {
             name: 'Own Dark',
@@ -1872,7 +1901,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 9,
         ability: {
             name: 'Through the Wall',
@@ -1896,7 +1924,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 5,
         ability: {
             name: 'Comes Down Burning',
@@ -1908,6 +1935,32 @@ export const BEASTS: readonly Beast[] = [
         materialIds: ['mat-sun-eater-hide', 'mat-sun-eater-core'],
         note: 'The province records a darkening in the year books every few generations and the astronomers and the herders have never once agreed about what was written down.',
         changedManner: 'Eats and drinks everything in front of it, immediately, and asks for the next thing while the table is still being cleared.'
+    },
+
+    {
+        id: 'beast-sulphur-toad',
+        name: 'Sulphur Toad',
+        nature: 'ambush',
+        // It sits where people have to walk and takes from whoever comes
+        // past. Nobody it has ever taken from agreed to it or could appeal.
+        disposition: 'demonic',
+        ordinal: 9,
+        biome: 'volcanic',
+        element: 'earth',
+        persistence: 'thin_remnant',
+        veinRelation: 'indifferent',
+        groupSize: 1,
+        frequency: 45,
+        ability: {
+            name: 'Yellow Breath',
+            kind: 'breath',
+            what:
+                'Puts out a gout of the same air the vents put out, about as far as a person can throw a stone, and nothing inside it can go on breathing.'
+        },
+        hard: 'It sits in a vent mouth where the air is already bad, so a party is short of breath before anything has happened to them. The old surveys record them at twice the present size, which is the only concession the ground has made to anybody.',
+        materialIds: ['mat-sulphur-toad-gland'],
+        note: 'The Ashen Forge gate ledger counts them by the season, and the count has not been over forty in three generations.',
+        changedManner: 'Says the unpleasant thing first and on purpose, then watches to see who in the room flinched before deciding which of them to deal with.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -1925,7 +1978,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'vein_only',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: false,
         frequency: 22,
         ability: {
             name: 'Storm Wing',
@@ -1960,7 +2012,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 14,
         ability: {
             name: 'Ground Memory',
@@ -1992,7 +2043,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: false,
         frequency: 16,
         ability: {
             name: 'Rending Leap',
@@ -2016,7 +2066,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'vein_only',
         veinRelation: 'drains',
         groupSize: 1,
-        speaks: false,
         frequency: 8,
         ability: {
             name: 'Stonewade',
@@ -2038,10 +2087,11 @@ export const BEASTS: readonly Beast[] = [
         id: 'beast-millennial-tortoise',
         name: 'Millennial Tortoise',
         nature: 'territorial',
-        // Righteous, above the change, and silent. A thousand years of taking
-        // nothing from anybody, carrying a core worth thirty thousand stones,
-        // standing at a rung where killing it is killing a person. Every part
-        // of the design's sharpest case is already in this one row.
+        // Righteous, above the change, and therefore able to answer. A thousand
+        // years of taking nothing from anybody, carrying a core worth thirty
+        // thousand stones, standing at a rung where killing it is killing a
+        // person - and a person who can be asked instead. Every part of the
+        // design's sharpest case is already in this one row.
         disposition: 'righteous',
         ordinal: 31,
         biome: 'lake_bottom',
@@ -2049,7 +2099,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'vein_only',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: false,
         frequency: 4,
         ability: {
             name: 'Shellbound',
@@ -2073,7 +2122,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'sealed_only',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: false,
         frequency: 2,
         ability: {
             name: 'Pressure',
@@ -2097,7 +2145,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 20,
         ability: {
             name: 'Takes It In',
@@ -2124,7 +2171,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 14,
         ability: {
             name: 'Swallows Fire',
@@ -2148,7 +2194,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 12,
         ability: {
             name: 'First Blow',
@@ -2172,7 +2217,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 10,
         ability: {
             name: 'Overlapped Plate',
@@ -2196,7 +2240,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: false,
         frequency: 8,
         ability: {
             name: 'Rising Water',
@@ -2220,7 +2263,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: false,
         frequency: 7,
         ability: {
             name: 'Over the Crust',
@@ -2244,7 +2286,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: false,
         frequency: 6,
         ability: {
             name: 'Single Stoop',
@@ -2268,7 +2309,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 5,
         ability: {
             name: 'The Line In the Horn',
@@ -2297,7 +2337,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: false,
         frequency: 3,
         ability: {
             name: 'Treads On Nothing',
@@ -2311,18 +2350,45 @@ export const BEASTS: readonly Beast[] = [
         changedManner: 'Will not be the first to take offence, or to raise a voice, or to reach for anything, and holds to that after it has stopped being wise.'
     },
 
+    {
+        id: 'beast-firevein-serpent',
+        name: 'Firevein Serpent',
+        nature: 'territorial',
+        disposition: 'neutral',
+        ordinal: 24,
+        biome: 'volcanic',
+        element: 'fire',
+        persistence: 'open_world',
+        veinRelation: 'holds',
+        groupSize: 1,
+        frequency: 6,
+        ability: {
+            // NOT `Seam`-ANYTHING, and the collision is why. An ability name is
+            // part of what a species is called - `theSpeciesTheyMeant` reads it
+            // so that `fox` reaches the Reader - and the Sleeper in the Cut
+            // Face is `Seam-Held`. A second seam made `seam` ambiguous and the
+            // reader answers null on an ambiguity, which silently took a
+            // species away from anybody who typed its ordinary name.
+            name: 'Runs the Hot Rock',
+            kind: 'movement',
+            what:
+                'Travels a seam of molten rock the way anything else travels a road, and comes up wherever that rock comes up.'
+        },
+        hard: 'What it holds is not a place but everywhere one seam of hot rock goes, so a party that has driven it off the rim meets it again at the vent and again at the flank, and it has not been moved off its own ground once.',
+        materialIds: ['mat-firevein-serpent-hide', 'mat-firevein-serpent-core'],
+        note: 'The Ashen Forge Clan has never applied to clear it, and the caldera grant the Nine Abyss Flame Sect is said to hold does not mention it either.',
+        changedManner: 'Arrives without being sent for, at whatever moment it decides the conversation concerns it, and does not accept that it was not already part of it.'
+    },
+
     // ═══════════════════════════════════════════════════════════════════
     // INTELLIGENT - past the change, and therefore a party rather than a
     // problem. Cheaper to negotiate with, and it knows that too.
     //
-    // ── A DEAD END WORTH SIGNPOSTING ─────────────────────────────────
-    // If the change ever moves again, do not repair these two by setting
-    // `speaks: false`. Neither is a beast that happens to talk. The White
-    // Ape's entire entry is a hundred and forty years of kept
-    // arrangements, and the Reader is named for what it does with
-    // manuals - a mute Reader is a row contradicting its own name, and
-    // that reads as a bug six months later rather than as a decision.
-    // Move the entry, or raise the question. Do not silence it.
+    // A GROUPING AND NOT A PERMISSION. Speech is the rung and nothing else -
+    // `anythingAtThisRungSpeaks` - so every entry below this heading that
+    // stands at or past the change speaks too, `ancient` and `territorial`
+    // ones included. What `nature: intelligent` still says is what sort of
+    // problem the species is before its rung is read.
     // ═══════════════════════════════════════════════════════════════════
     {
         id: 'beast-white-ape-of-the-gorge',
@@ -2338,7 +2404,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'vein_only',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: true,
         frequency: 6,
         ability: {
             name: 'Gorge Stride',
@@ -2365,7 +2430,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'open_world',
         veinRelation: 'indifferent',
         groupSize: 1,
-        speaks: true,
         frequency: 3,
         ability: {
             name: 'Foxfire',
@@ -2412,7 +2476,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'sealed_only',
         veinRelation: 'drains',
         groupSize: 1,
-        speaks: false,
         frequency: 1,
         ability: {
             name: 'Drinking the Vein',
@@ -2442,7 +2505,6 @@ export const BEASTS: readonly Beast[] = [
         persistence: 'sealed_only',
         veinRelation: 'holds',
         groupSize: 1,
-        speaks: true,
         frequency: 1,
         ability: {
             name: 'Seam-Held',
@@ -2681,6 +2743,43 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         rarityWeight: 170,
         harvestOrdinal: 4,
         description: 'Sold in pairs to the poison halls and in singles to cutters, who wear one and say it is for luck. The halls do not correct them.'
+    },
+
+    {
+        id: 'mat-cinder-rat-fleece',
+        name: 'Cinder Rat Fleece',
+        grade: 'mortal',
+        sourceBeastId: 'beast-cinder-rat',
+        taking: 'shed',
+        core: false,
+        value: 12,
+        rarityWeight: 300,
+        harvestOrdinal: 0,
+        description: 'Combed out of the hot cinder they bed in rather than taken off anything, and cleaned by being put back in the fire, which is most of what the cloth is bought for.'
+    },
+    {
+        id: 'mat-ember-crane-plume',
+        name: 'Ember Crane Plume',
+        grade: 'mortal',
+        sourceBeastId: 'beast-ember-crane',
+        taking: 'shed',
+        core: false,
+        value: 9,
+        rarityWeight: 240,
+        harvestOrdinal: 2,
+        description: 'Found on the rim after a burn and sold at the flank gate to people who want a day of warning and will settle for a token of one.'
+    },
+    {
+        id: 'mat-sulphur-toad-gland',
+        name: 'Sulphur Toad Gland',
+        grade: 'mortal',
+        sourceBeastId: 'beast-sulphur-toad',
+        taking: 'kill',
+        core: false,
+        value: 26,
+        rarityWeight: 160,
+        harvestOrdinal: 9,
+        description: 'Bought by the smelting halls, who use a measure of it to sour a batch on purpose, and by two apothecaries who will not say what for.'
     },
 
     // ── earth: guarded ground, and the first real money ────────────────
@@ -3166,6 +3265,19 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         description: 'The length of a man and found where the wind put it. The flying routes over the White Stair are drawn around the bird that dropped it.'
     },
 
+    {
+        id: 'mat-firevein-serpent-hide',
+        name: 'Firevein Serpent Hide',
+        grade: 'earth',
+        sourceBeastId: 'beast-firevein-serpent',
+        taking: 'shed',
+        core: false,
+        value: 300,
+        rarityWeight: 40,
+        harvestOrdinal: 18,
+        description: 'Comes off whole and is found lying along a seam mouth a few times a century. Two of the four known panels are in the same clan hall and neither has been priced.'
+    },
+
     // ── heaven: cores. Somebody else's centuries, portable ─────────────
     {
         id: 'mat-hawk-core',
@@ -3431,6 +3543,19 @@ export const BEAST_MATERIALS: readonly BeastMaterial[] = [
         rarityWeight: 6,
         harvestOrdinal: 25,
         description: 'The top of the heaven band and the last core anybody takes without a campaign. Sold with the horn or not at all, because the horn proves the core.'
+    },
+
+    {
+        id: 'mat-firevein-serpent-core',
+        name: 'Firevein Serpent Core',
+        grade: 'heaven',
+        sourceBeastId: 'beast-firevein-serpent',
+        taking: 'kill',
+        core: true,
+        value: 4_000,
+        rarityWeight: 6,
+        harvestOrdinal: 24,
+        description: 'Has to be taken where the seam runs, which is ground nobody can stand on for long, so the two recorded takings were both done by parties that lost people doing it.'
     },
 
     // ── immortal: the ones wars are fought over ────────────────────────
@@ -3734,22 +3859,22 @@ export function materialsOf(beastId: string): BeastMaterial[] {
  * The condensed cultivation of a beast past the change, when the catalog
  * carries the material at all.
  *
- * Nothing below `BEAST_CORE_ORDINAL` has a core to take. Above it, the ones
- * anybody could actually negotiate with carry no material entry, which is not
- * an oversight: nobody has taken one, so there is no grade, no price and no
+ * Nothing below `BEAST_CORE_ORDINAL` has a core to take. Above it, the two
+ * species the catalog files as `intelligent` carry no material entry, which is
+ * not an oversight: nobody has taken one, so there is no grade, no price and no
  * assay standard, and a party proposing to establish one is proposing a
  * specific and well-understood kind of afternoon.
  *
- * ONE CHANGED BEAST IS PRICED ANYWAY, and it is left that way deliberately.
- * The Sleeper in the Cut Face speaks and carries a figure, which reads as a
- * contradiction and is the thesis: a person's body can be worth money, and
- * what anybody does about that is the ordinary question this world asks about
- * every cultivator alive - is this person worth more to you alive, or as
- * material. Tidying it away would make "a changed beast is a person" mean "a
- * changed beast is exempt", and nothing in this world is exempt. What keeps
- * it from being farmed is what keeps everything from being farmed: it is
- * behind a seal, its frequency is 1, and cutting it wants a realm almost
- * nobody reaches.
+ * CHANGED BEASTS ARE PRICED ANYWAY - four of the six, since speech became the
+ * rung - and it is left that way deliberately. A thing that speaks and carries
+ * a figure reads as a contradiction and is the thesis: a person's body can be
+ * worth money, and what anybody does about that is the ordinary question this
+ * world asks about every cultivator alive - is this person worth more to you
+ * alive, or as material. Tidying it away would make "a changed beast is a
+ * person" mean "a changed beast is exempt", and nothing in this world is
+ * exempt. What keeps them from being farmed is what keeps everything from
+ * being farmed: three of the four are behind a seal, every one of them draws
+ * at frequency 4 or less, and cutting one wants a realm almost nobody reaches.
  */
 export function coreOf(beastId: string): BeastMaterial | undefined {
     return materialsOf(beastId).find(m => m.core);
@@ -3825,9 +3950,9 @@ export function sealedOnlyBeasts(): Beast[] {
     return BEASTS.filter(b => b.persistence === 'sealed_only');
 }
 
-/** Everything that can be talked to. Never anything below the change. */
+/** Everything that can be talked to, which is everything at or past the change. */
 export function negotiableBeasts(): Beast[] {
-    return BEASTS.filter(b => b.speaks);
+    return BEASTS.filter(b => anythingAtThisRungSpeaks(b.ordinal));
 }
 
 /**

@@ -105,7 +105,7 @@ import { copiesHeldBy } from '../server/consolidated/technique-manage.js';
 import { theRollLands } from '../server/consolidated/forcing-an-attempt-to-land.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ActionName } from './actions.js';
-import { askedAbout } from './asked.js';
+import { askedAbout, whetherTheyHoldIt } from './asked.js';
 import {
     type DatabaseHandle,
     openLedgerBetween,
@@ -317,9 +317,7 @@ export const askingVerbs = {
                     houseName: who.sectName,
                     rankName: who.sectRank
                 }),
-            holdsIt: subject !== null
-                && (subject.kind === 'cultivator' || subject.kind === 'sect' || subject.kind === 'place')
-                && this.knowledge.isAwareOf(who.id, subject.kind, subject.id),
+            holdsIt: whetherTheyHoldIt(this.knowledge, who.id, subject),
             priorDealings: this.dealingsWith(cultivator, who.id)
         });
 

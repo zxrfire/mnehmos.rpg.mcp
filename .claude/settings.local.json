@@ -43,7 +43,17 @@
       "Bash(xxd:*)",
       "Bash(git status:*)",
       "Bash(npx vitest *)",
-      "Bash(grep -a \"×\\\\|✓ tests\\\\|Tests  \\\\|FAIL\\\\|AssertionError\" \"C:\\\\Users\\\\hi\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--intellij-projects-mnehmos-rpg-mcp\\\\cb7237b3-d97b-472f-9777-5cee0fa5a317\\\\scratchpad/../../tool-results/bj4zo3q2i.txt\" 2>/dev/null | head -40 || grep -a \"×\\\\|Tests  \" \"C:\\\\Users\\\\hi\\\\.claude\\\\projects\\\\D--intellij-projects-mnehmos-rpg-mcp\\\\cb7237b3-d97b-472f-9777-5cee0fa5a317\\\\tool-results\\\\bj4zo3q2i.txt\" | head -40)"
+      "Bash(grep -a \"×\\\\|✓ tests\\\\|Tests  \\\\|FAIL\\\\|AssertionError\" \"C:\\\\Users\\\\hi\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--intellij-projects-mnehmos-rpg-mcp\\\\cb7237b3-d97b-472f-9777-5cee0fa5a317\\\\scratchpad/../../tool-results/bj4zo3q2i.txt\" 2>/dev/null | head -40 || grep -a \"×\\\\|Tests  \" \"C:\\\\Users\\\\hi\\\\.claude\\\\projects\\\\D--intellij-projects-mnehmos-rpg-mcp\\\\cb7237b3-d97b-472f-9777-5cee0fa5a317\\\\tool-results\\\\bj4zo3q2i.txt\" | head -40)",
+      "Bash(xargs -P 12 '-I{}' sh -c ' *)",
+      "Bash(curl -sfL --max-time 25 \"https://onlineonly.christies.com/s/arts-asia-online/a/320043\" -o probe.html -w \"HTTP %{http_code} size %{size_download}\\\\n\")",
+      "Bash(grep -o 'LotImages[^\"]\\\\{0,90\\\\}' probe.html)",
+      "Bash(grep -o '113:{prov:.\\\\{0,900\\\\}' \"C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html\")",
+      "Bash(grep -o '84:{prov:.\\\\{0,1200\\\\}' \"C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html\")",
+      "Bash(sed -i 's/   77:\\\\[ 350,\"zero bids, architectural\"\\\\],/   77:[ 400,\"a real pair — seen\"],/' C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
+      "Bash(sed -i 's/unless it says otherwise, the image was read at catalogue-thumbnail scale/every lot on this sheet has now been examined at full resolution \\(1800px\\) unless the line says otherwise/' C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
+      "Bash(python - C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
+      "Bash(grep -o '\\\\[31, \"Qianlong[^]]\\\\{0,40\\\\}' C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
+      "mcp__claude-in-chrome__navigate"
     ]
   }
 }

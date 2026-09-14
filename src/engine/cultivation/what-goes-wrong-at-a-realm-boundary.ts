@@ -470,6 +470,39 @@ export const CROSSING_OUTCOMES: readonly CrossingOutcome[] = [
         })
     },
 
+    // The body itself, and THE ONE RUINOUS ROW THAT CARRIES WEIGHT AT THE
+    // FIRST WALL.
+    //
+    // Every permanent row above is absent from `the_setting_of_the_foundation`,
+    // so a Qi Condensation cultivator could fail a crossing as badly as the
+    // stream allowed and never come away with anything that does not close.
+    // The ruling is that a permanent wound happens at any band. A channel
+    // parted is a high-wall signature and stays one; what goes wrong low down
+    // is cruder - the body comes apart under the attempt and a piece of it is
+    // gone. It is answered by exactly one medicine and by nothing else, which
+    // is what makes it survivable rather than a second death.
+    //
+    // Weighted small at the bottom and rising, for the reason
+    // `cultivation_left_incomplete` is excluded from the first wall entirely:
+    // the low ladder is where every run starts and it is not where the game
+    // should be at its most brutal. Small is not zero.
+    {
+        key: 'body_maimed',
+        summary: 'The body came apart under the attempt and a part of it is gone.',
+        weights: {
+            the_setting_of_the_foundation: 3,
+            the_condensation: 3,
+            the_birthing: 4,
+            the_merging: 5,
+            the_emptiness: 6,
+            the_joining: 7,
+            the_ascent: 8
+        },
+        apply: (_s, rng, ctx) => ({
+            injuries: [wound(ctx, rng, 'severed-flesh', rng.next() < 0.6 ? 'serious' : 'crippling')]
+        })
+    },
+
     // The mind. The birthing and the emptiness are where it goes.
     {
         key: 'heart_demon',

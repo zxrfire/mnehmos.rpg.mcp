@@ -333,9 +333,10 @@ Three rules the catalog enforces, because they are world facts rather than flavo
   a beast condenses a core and can say nothing about it, which is the whole reason it can be
   hunted for one. `BEAST_CHANGE_ORDINAL` is 29, Void Tribulation: it takes a shape and a
   voice and is thereafter somebody. Anything offering terms has that floor under it, so it
-  is never the cheap option - and it is a rare enough event that three entries in the
-  catalog qualify. Read `speaks` and never the ordinal: the constant is a floor beneath
-  which nothing may talk, not a promise that everything above it does.
+  is never the cheap option - and it is a rare enough event that six entries in the catalog
+  qualify. **The rung is the whole of it.** A `speaks` column used to sit beside the ordinal
+  and the design owner removed it: a species cannot be authored mute above the change, so
+  `anythingAtThisRungSpeaks` is the one derivation and nothing stores a second answer.
 - **They live where the qi is**, so the richest ground is contested before any sect arrives
   and a beast on a vein is a competing draw on it - the same arithmetic as `enc-valley-overdrawn`.
 - **The Late Age applies to them.** Drawn-down ground has small, sparse populations and bad

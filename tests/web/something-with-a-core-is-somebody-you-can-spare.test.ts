@@ -81,9 +81,13 @@ describe('something with a core is somebody you can spare', () => {
         expect(now.species.id).toBe('beast-thunder-hawk');
         expect(now.band).toBe('tracked');
         // Below the change it is an animal, and the row does not pretend
-        // otherwise. What it is NOT is a count.
+        // otherwise. What it is NOT is a count. `speaks` was a second field
+        // beside this one until speech became the rung, and crossing is now
+        // the whole of the answer.
         expect(now.crossed).toBe(false);
-        expect(now.speaks).toBe(false);
+        // An animal is called what its kind is called. A name of its own is
+        // what the crossing buys.
+        expect(rows[0].name).toBe(now.species.name);
         expect(rows[0].locationId).not.toBeNull();
     });
 

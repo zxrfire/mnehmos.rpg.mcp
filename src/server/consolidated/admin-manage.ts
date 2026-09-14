@@ -1277,9 +1277,9 @@ export async function handleSpawnEncounter(
             return guidingError('not_somebody', why, {
                 asked: args.species,
                 nearest: theOnesThatCanBeStoodUp().map(b => b.name),
-                hint: 'Reading the ordinal instead of `speaks` is the mistake this refusal '
-                    + 'exists to stop. Use spawn_encounter without a species for an ordinary '
-                    + 'person at any rung.'
+                hint: 'Speech is the rung: below the change there is no shape and no voice to '
+                    + 'stand up. Use spawn_encounter without a species for an ordinary person '
+                    + 'at any rung.'
             });
         }
     }

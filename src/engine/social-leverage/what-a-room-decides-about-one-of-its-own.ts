@@ -119,6 +119,12 @@ export const SENTENCES_IN_ORDER: readonly Sentence[] = Object.freeze([
  * Names rather than does, for the five this file does not run itself. A sentence
  * with nothing behind it is a verdict the world never applies, and writing down
  * where each lands is what stops the next person inventing a second one.
+ *
+ * WHO GOES is a separate question with one answer, and it is written here rather
+ * than four times below: `somebody-is-sent-to-carry-it-out.ts` names the party
+ * for the four that are carried out on a person - what the house gave taken
+ * back, the seal, the crippling, the death. The fine and the rebuke move inside
+ * the house's own books, and nobody is sent for them.
  */
 export const WHO_CARRIES_IT_OUT: Readonly<Record<Sentence, string>> = Object.freeze({
     'no case': 'nothing is written',

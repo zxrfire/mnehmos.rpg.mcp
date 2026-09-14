@@ -1,12 +1,13 @@
 /**
  * What something that speaks can hand over, and what handing it over costs it.
  *
- * A beast past the change holds no STOCK, and the catalog says so in the only
- * place it could: `materialIds: []` on every open-world entry that speaks.
- * `coreOf` states the reason - nobody has taken one, so there is no grade, no
- * price and no assay standard. So asking one for its material is not a
- * purchase. There is nothing on a shelf. There is a creature that can pull a
- * piece off itself, which MINTS the material in the moment.
+ * A beast past the change holds no STOCK. Where the catalog carries no rows for
+ * one - `materialIds: []` on the entries nobody has ever taken - `coreOf`
+ * states the reason: no grade, no price and no assay standard. So asking one
+ * for its material is not a purchase. There is nothing on a shelf. There is a
+ * creature that can pull a piece off itself, which MINTS the material in the
+ * moment. Where the catalog does carry rows, the same thing is still true of
+ * the ones that need it dead, and what is left is read rather than minted.
  *
  * Three things follow, and none of them is new machinery:
  *
@@ -23,6 +24,42 @@
  *                  whether it is coming back out of ground or out of a body,
  *                  and the creature's own span is what makes 150 years an
  *                  inconvenience to one thing and most of a life to another.
+ *
+ * ── WHAT COMES BACK AND WHAT DOES NOT ARE TWO QUESTIONS ─────────────────
+ *
+ * This module answered them with one number and got both half right. A share
+ * of the giver's span decided severity AND permanence, so a piece was
+ * permanent only where the regrowth ladder was long enough to eat a quarter of
+ * a lifespan - which is the immortal grade and nothing else. Nothing below the
+ * top band could be maimed by this at all, and the ruling is that a wound is
+ * permanent at any realm.
+ *
+ * So permanence is read off the PART:
+ *
+ *   a covering    fur, feathers, a scute, a plate. The body is already in the
+ *                 business of making another, and `REGROWTH_YEARS_BY_GRADE`
+ *                 counts how long that takes. Slow, painful, never given
+ *                 lightly, and it does come back. Wound: `stripped-flesh`.
+ *   a part        a limb, an eye, a fang, marrow, a gland. Nothing the body
+ *                 does puts one back, at any rung, so there is no number of
+ *                 years to state and the share arithmetic does not run.
+ *                 Wound: `severed-flesh`, `permanent: true`.
+ *
+ * The two thresholds below survive as the dial for the first kind ONLY.
+ *
+ * And the wounds used to be `torn-meridians` and `severed-meridian` - the
+ * channel family, borrowed because it was the only permanent physical row in
+ * the catalog. A pulled tuft of fur is not a channel injury. The flesh family
+ * is authored in `wounds.ts` now and this reads it.
+ *
+ * ── THE MEDICINE IS NOT THE ONE THAT MENDS A BROKEN CULTIVATOR ──────────
+ *
+ * `structural-repair-medicine.ts` mends a structure that did not SET at a
+ * realm wall - a foundation, a core, an infant soul - and `repairRefusalReason`
+ * refuses anything that is not one of those in as many words. It is a different
+ * medicine for a different injury and it does nothing for missing flesh. What
+ * answers `severed-flesh` is the Limb Rebirth Pill, immortal grade and past
+ * the cash line, which the wound row names.
  *
  * ── WHAT IT COULD PART WITH IS READ, NEVER AUTHORED ─────────────────────
  *
@@ -46,7 +83,8 @@ import {
     BEAST_MATERIALS,
     materialsOf,
     type Beast,
-    type BeastMaterial
+    type BeastMaterial,
+    type MaterialTaking
 } from '../../data/cultivation/beasts.js';
 import { INJURY_SEVERITY_ORDER, type CreateInjuryParams } from '../cultivation/injuries.js';
 import { isPermanentWound } from '../../data/cultivation/wounds.js';
@@ -67,14 +105,45 @@ import type { AskWeight } from '../social-leverage/an-attempt-to-move-somebody.j
  * stuff. Not `element`, which the schema forbids branching on and which says
  * what a thing is made of rather than which piece of it does the work.
  */
-const WHERE_AN_ABILITY_LIVES: Record<Beast['ability']['kind'], string> = {
-    defence: 'Plate',
-    movement: 'Sinew',
-    breath: 'Gland',
-    perception: 'Eye',
-    endurance: 'Marrow',
-    concealment: 'Pelt',
-    strength: 'Fang'
+const WHERE_AN_ABILITY_LIVES: Record<Beast['ability']['kind'], APartAnAbilityLivesIn> = {
+    // The two outer coverings, and the only two rows here a body makes another
+    // of. These are the tuft of fur and the tortoise's shell: given slowly,
+    // painfully and never lightly, and given BACK by the body eventually.
+    defence: { part: 'Plate', theBodyPutsItBack: true },
+    concealment: { part: 'Pelt', theBodyPutsItBack: true },
+    // Interior. Taking one out is taking a piece out of the body, and nothing
+    // the body does replaces it at any rung on the ladder.
+    movement: { part: 'Sinew', theBodyPutsItBack: false },
+    breath: { part: 'Gland', theBodyPutsItBack: false },
+    perception: { part: 'Eye', theBodyPutsItBack: false },
+    endurance: { part: 'Marrow', theBodyPutsItBack: false },
+    strength: { part: 'Fang', theBodyPutsItBack: false }
+};
+
+interface APartAnAbilityLivesIn {
+    /** The noun, which becomes half the minted material's name. */
+    part: string;
+    /** Whether the body makes another. See the banner: it is not a band. */
+    theBodyPutsItBack: boolean;
+}
+
+/**
+ * Whether a body puts back a CATALOGUED part, keyed on how that part comes off.
+ *
+ * A row the catalog calls `shed` is a moulted or cast thing by definition, and
+ * a `scavenge` row is found rather than taken off anything living, so both are
+ * things a body is already making another of. `kill` needs a corpse and is
+ * filtered out before this is asked.
+ *
+ * A MINTED piece is stamped `shed` because a living thing pulled it out itself,
+ * which is what that column records - so its answer is the parts table's above
+ * and not this one. One field may not carry both questions: see the banner, and
+ * see the `sealed` row in AGENTS.md for what it costs when one does.
+ */
+const A_BODY_MAKES_ANOTHER: Readonly<Record<MaterialTaking, boolean>> = {
+    shed: true,
+    scavenge: true,
+    kill: false
 };
 
 /**
@@ -103,6 +172,15 @@ export interface APieceOfItself {
      * than a gap.
      */
     inTheCatalog: boolean;
+    /**
+     * Whether the body makes another one of these.
+     *
+     * The answer to "does it come back at all", which is a different question
+     * from "how long does it take", and the whole reason a wound taken here can
+     * be permanent at Qi Condensation. Read off the catalog for a catalog row
+     * and off the parts table for a minted one.
+     */
+    theBodyPutsItBack: boolean;
 }
 
 /**
@@ -115,7 +193,7 @@ export interface APieceOfItself {
  */
 function mintedPieceOf(beast: Beast): BeastMaterial {
     const grade = gradeOfWhatItYielded(beast.ordinal);
-    const part = WHERE_AN_ABILITY_LIVES[beast.ability.kind];
+    const { part } = WHERE_AN_ABILITY_LIVES[beast.ability.kind];
     return {
         id: `mat-given-${beast.id}-${part.toLowerCase()}`,
         name: `${beast.ability.name} ${part}`,
@@ -147,9 +225,17 @@ export function whatItCouldPartWith(beast: Beast): readonly APieceOfItself[] {
         .filter(m => !m.core && m.taking !== 'kill')
         .sort((a, b) => a.value - b.value);
     if (offALivingBody.length > 0) {
-        return offALivingBody.map(material => ({ material, inTheCatalog: true }));
+        return offALivingBody.map(material => ({
+            material,
+            inTheCatalog: true,
+            theBodyPutsItBack: A_BODY_MAKES_ANOTHER[material.taking]
+        }));
     }
-    return [{ material: mintedPieceOf(beast), inTheCatalog: false }];
+    return [{
+        material: mintedPieceOf(beast),
+        inTheCatalog: false,
+        theBodyPutsItBack: WHERE_AN_ABILITY_LIVES[beast.ability.kind].theBodyPutsItBack
+    }];
 }
 
 /**
@@ -189,26 +275,40 @@ export function thePieceTheyAskedFor(
 /**
  * The two thresholds, as a share of the span the giver has left to spend.
  *
- * Measured off the catalog and the ladder rather than picked: at ordinal 29 a
- * span is 5,000 years and a heaven-grade piece is 150 of them - three percent,
- * which is a real wound and not a maiming. An earth-grade shed piece off
- * something at 24 is 12 years of 1,000, which is the band a creature would
- * actually agree to. An immortal-grade piece is 3,000 years against a 5,000
- * year span, and nothing that lives comes back from that inside its own life.
+ * THEY GRADE A COVERING THAT COMES BACK, AND NOTHING ELSE. They used to decide
+ * permanence as well - above a quarter of a span the wound was permanent - and
+ * that made permanence a fact about the giver's rung, because a mortal-grade
+ * piece is one year against a hundred wherever it is standing and an immortal
+ * one is three thousand against five. Nothing below the top band could be
+ * maimed by this. A wound is permanent at any realm; see the banner.
  *
- * The same piece therefore costs a stronger creature less, which is correct:
- * how long a thing takes to come back is a fact about the material, and what
- * that length MEANS is a fact about who is waiting.
+ * Measured off the catalog and the ladder rather than picked: at ordinal 29 a
+ * span is 5,000 years and a heaven-grade covering is 150 of them - three
+ * percent, a real wound and not a maiming. An earth-grade shed piece off
+ * something at 24 is 12 years of 1,000, which is the band a creature would
+ * actually agree to.
+ *
+ * The same covering therefore costs a longer-lived creature less, which is
+ * correct: how long a thing takes to come back is a fact about the material,
+ * and what that length MEANS is a fact about who is waiting.
  */
-const A_PIECE_IS_A_SCRATCH_BELOW = 0.02;
-const A_PIECE_IS_A_MAIMING_ABOVE = 0.25;
+const A_COVERING_IS_A_SCRATCH_BELOW = 0.02;
+const A_COVERING_IS_CRIPPLING_ABOVE = 0.25;
 
 /** What the giver is left with, stated in the machinery that already says it. */
 export interface WhatGivingItCost {
-    /** Years before the body has it again. Off the one regrowth ladder. */
-    growsBackInYears: number;
-    /** That length against the span the giver has to spend it out of. */
-    shareOfTheirSpan: number;
+    /**
+     * Years before the body has it again, off the one regrowth ladder - or
+     * null where it never does. Null is the answer callers must not soften: a
+     * very large number of years is still a number somebody could wait out,
+     * and this is not that.
+     */
+    growsBackInYears: number | null;
+    /**
+     * That length against the span the giver has to spend it out of, or null
+     * where there is no length to weigh.
+     */
+    shareOfTheirSpan: number | null;
     /** The wound, ready for `createInjury`. Not written anywhere by this module. */
     wound: CreateInjuryParams;
     /**
@@ -227,16 +327,15 @@ export interface WhatGivingItCost {
 }
 
 /**
- * A wound that heals and a wound that does not, and nothing between them.
+ * The flesh family, and which of the two this act produced.
  *
- * `torn-meridians` is what the engine has always produced for a body opened
- * along a channel and it is treatable; `severed-meridian` is the maiming band,
- * is `permanent: true`, and its own description is exactly this act read from
- * the other end - a route parted rather than torn, and what it fed fed by
- * nothing afterwards.
+ * These were `torn-meridians` and `severed-meridian` - the CHANNEL family,
+ * borrowed because it held the only permanent physical row the catalog had. A
+ * tuft of fur pulled out is not a channel injury and an arm taken off is not a
+ * parted meridian. `wounds.ts` authors the flesh pair now and this reads it.
  */
-const HEALS = 'torn-meridians';
-const DOES_NOT = 'severed-meridian';
+const A_COVERING_COMES_BACK = 'stripped-flesh';
+const A_PART_DOES_NOT = 'severed-flesh';
 
 export function whatGivingItCosts(input: {
     beast: Beast;
@@ -253,15 +352,21 @@ export function whatGivingItCosts(input: {
     seenBy: readonly string[];
 }): WhatGivingItCost {
     const { beast, piece } = input;
-    const growsBackInYears = REGROWTH_YEARS_BY_GRADE[piece.material.grade];
     const span = Math.max(1, lifespanForOrdinal(beast.ordinal));
-    const share = growsBackInYears / span;
+    const growsBackInYears = piece.theBodyPutsItBack
+        ? REGROWTH_YEARS_BY_GRADE[piece.material.grade]
+        : null;
+    const share = growsBackInYears === null ? null : growsBackInYears / span;
 
-    const severity: InjurySeverity =
-        share < A_PIECE_IS_A_SCRATCH_BELOW ? 'minor'
-            : share < A_PIECE_IS_A_MAIMING_ABOVE ? 'serious'
+    // A PART THAT IS GONE IS A MAIMING AT EVERY RUNG. There is no length of
+    // time to weigh against a span, so the arithmetic below has nothing to say
+    // about one and does not run. What decides is which part came off.
+    const severity: InjurySeverity = share === null
+        ? 'crippling'
+        : share < A_COVERING_IS_A_SCRATCH_BELOW ? 'minor'
+            : share < A_COVERING_IS_CRIPPLING_ABOVE ? 'serious'
                 : 'crippling';
-    const woundType = severity === 'crippling' ? DOES_NOT : HEALS;
+    const woundType = piece.theBodyPutsItBack ? A_COVERING_COMES_BACK : A_PART_DOES_NOT;
 
     const wound: CreateInjuryParams = {
         severity,
@@ -273,8 +378,11 @@ export function whatGivingItCosts(input: {
         woundType,
         description:
             `${beast.name} pulled ${piece.material.name} out of itself. `
-            + `${growsBackInYears} year${growsBackInYears === 1 ? '' : 's'} before the body has `
-            + `it again, against the ${span} it has to spend.`
+            + (growsBackInYears === null
+                ? 'It does not come back. The body has the '
+                  + `${span} years its rung grants without it.`
+                : `${growsBackInYears} year${growsBackInYears === 1 ? '' : 's'} before the body `
+                  + `has it again, against the ${span} it has to spend.`)
     };
 
     // ONE RUNG ON THE OTHER LADDER. The two scales have different lengths and
@@ -304,8 +412,11 @@ export function whatGivingItCosts(input: {
         note:
             `${piece.material.name} (${piece.material.grade}, `
             + `${piece.inTheCatalog ? 'catalog row' : 'minted'}) off ${input.subjectId} at ordinal `
-            + `${beast.ordinal}: ${growsBackInYears}y regrowth / ${span}y span = `
-            + `${(share * 100).toFixed(1)}% -> ${severity}, ${woundType}, permanent=`
+            + `${beast.ordinal}: `
+            + (share === null || growsBackInYears === null
+                ? `the body makes no other, ${span}y span`
+                : `${growsBackInYears}y regrowth / ${span}y span = ${(share * 100).toFixed(1)}%`)
+            + ` -> ${severity}, ${woundType}, permanent=`
             + `${isPermanentWound(woundType)}. Seen by ${input.seenBy.length}.`
     };
 }

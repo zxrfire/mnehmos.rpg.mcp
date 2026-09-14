@@ -59,14 +59,21 @@
 
 import {
     BEASTS,
-    BEAST_CHANGE_ORDINAL,
+    anythingAtThisRungSpeaks,
     type Beast
 } from '../../data/cultivation/beasts.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
-import { clampOrdinal, lifespanForOrdinal } from '../cultivation/realms.js';
-import { abilityAt, bandOf, hasACore, readsAsSomebody } from './hunting-a-spirit-beast.js';
-import { createNpc, setRealm, type NpcRecord } from './npc-state.js';
+import { clampOrdinal } from '../cultivation/realms.js';
+import { abilityAt, bandOf, hasACore } from './hunting-a-spirit-beast.js';
+import { addGoal, createNpc, setRealm, type NpcRecord } from './npc-state.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
+import {
+    asItStandsNow,
+    whatItSpentGettingHere
+} from './a-beast-climbs-by-sitting-where-it-is.js';
+import { whatThisOneHasAlwaysWanted } from './what-a-beast-has-always-wanted.js';
+import { personName } from './history.js';
+import { forStream } from '../cultivation/rng.js';
 
 /**
  * What marks a row as one of these, and the only place that fact lives.
@@ -126,31 +133,14 @@ export interface StandingUpABeast {
     /** Absolute day it was met. */
     onDay: number;
     layer?: LayerKey;
-}
-
-/**
- * How long it spent getting to this rung.
- *
- * DERIVED RATHER THAN CHOSEN, because its whole method is time: it sat on the
- * best ground it could hold and did not die. What that cost is a whole life at
- * the band below - the lifespan of the highest rung that gets strictly less
- * than this one does - so a beast is as old as the band it outlasted.
- *
- * THE BAND AND NOT THE RUNG, and the difference is load-bearing. The ladder's
- * lifespans come in steps: 17 through 20 all get five hundred years, so
- * "a life at the rung below" hands a Glacier Lynx at 19 exactly the five
- * hundred it is allowed and it arrives already dead. Reading down to where the
- * number actually changes leaves every one of them old and still standing,
- * which is what the catalog's own notes describe - longer on the mountain than
- * the compound under it, and still there.
- */
-function whatItSpentGettingHere(ordinal: number): number {
-    const allowed = lifespanForOrdinal(ordinal);
-    for (let rung = ordinal - 1; rung >= 0; rung--) {
-        const below = lifespanForOrdinal(rung);
-        if (below < allowed) return below;
-    }
-    return 0;
+    /**
+     * Names already spoken for in this world, for the one that names itself.
+     * Passed through to `createNpc` unchanged, and for its reason: the
+     * knowledge table is keyed by id while everything the player reads is keyed
+     * by name, so two people sharing one breaks the rule that a name you were
+     * told is a name you have.
+     */
+    takenNames?: ReadonlySet<string>;
 }
 
 /**
@@ -159,6 +149,63 @@ function whatItSpentGettingHere(ordinal: number): number {
  * WHAT IT IS MADE OF IS AUTHORED, so the row's specialties come off the
  * species' element rather than off a rolled spirit root. Read as a value and
  * never branched on, which is what `Beast.element` is for.
+ *
+ * AND WHAT IT IS CALLED DEPENDS ON WHETHER IT HAS CROSSED. Below the change the
+ * species name is the honest label: it is an animal, and "a Thunder Hawk" is
+ * what anybody standing there would say. At or above it, it named itself, and
+ * the name is rolled from the same table every person in this world is named
+ * from - `personName` through `createNpc`, avoiding `takenNames`. The design
+ * owner, on a player who could reach one only by typing its species:
+ * *"calling them an ape in human form is disrespectful."* So the species is a
+ * fact about what somebody is and is never how they are addressed, and nothing
+ * needed adding to the catalog: a name belongs to an individual and the row
+ * already exists.
+ *
+ * AND IT IS MINTED AT THE CATALOG'S RUNG, WHICH IS A DECISION. The individual
+ * on this ledge climbs after this, in world time - see
+ * `a-beast-climbs-by-sitting-where-it-is.ts` - and the clock it climbs on
+ * starts the day the row is written, not the day the world opened. Measured on
+ * the first cut, which used the world's calendar age instead: a world opens at
+ * year 1,000, so every beast in it was minted at what a thousand years does,
+ * and `something-with-a-core-is-somebody-you-can-spare.test.ts` went red - a
+ * Thunder Hawk placed at 17 came up somewhere in the twenties and a rung-22
+ * player could no longer beat it. That is not the world running. It is a
+ * balance change baked into seeding.
+ *
+ * The cost of the decision, stated plainly rather than hidden: a species on
+ * ground nobody has ever walked does not climb, because nothing is tracking it
+ * to climb. That follows from this file's own measured ruling that a row is
+ * written on contact, and it is the same trade - what the ground holds before
+ * anybody meets it is what `whatIsOnThisGround` says it holds.
+ *
+ * ── THE RENAMING GAP, AND WHY IT IS NOT ONE ─────────────────────────────
+ *
+ * It used to be written here that a beast met at 17 and spared, which later
+ * climbs past 29, keeps the species name it was given, because renaming it
+ * would break the rule that a name you were told is a name you have. That was
+ * stated as an absence with no answer. It has one, and it costs nothing:
+ *
+ * A NAME IS NOT TAKEN AWAY, A SECOND ONE IS ADDED. {@link theNameItTookAtTheChange}
+ * rolls the person's name at the crossing and {@link theNamesThisOneAnswersTo}
+ * returns both - the species name first, because that is the one the player was
+ * told and the one their knowledge rows carry. Nothing is stored for it: the
+ * species name is a function of the `beast:` tag the row already has, so the
+ * two names cannot drift and no write can forget one.
+ *
+ * That is also the honest fiction. Somebody who knew the thing on that ledge as
+ * a Thunder Hawk for forty years does not stop knowing it as one because it now
+ * has a name, and the design owner's objection to a player reaching one by its
+ * species - *"calling them an ape in human form is disrespectful"* - is about
+ * how somebody is ADDRESSED, which is the row's `name` and is now the person's.
+ *
+ * WHAT IS STILL OPEN, AND IT IS WIRING RATHER THAN DESIGN. `resolveCultivator`
+ * scores a typed word against `row.name` alone, and its candidates come off
+ * `repos.cultivators.roster()` and `KnowledgeScope.present`, neither of which
+ * carries the tag the species is derived from. So a player who types the old
+ * name at a renamed row does not reach it YET. Closing it means threading the
+ * row's tags to the resolver and having `best` score every name a row answers
+ * to, which is a change in `entities.ts` rather than here. Written down as a
+ * gap, not licensed as one.
  */
 export function standUpTheOneOnThisGround(input: StandingUpABeast): NpcRecord {
     const { beast, locationId, seed, onDay } = input;
@@ -167,7 +214,8 @@ export function standUpTheOneOnThisGround(input: StandingUpABeast): NpcRecord {
 
     const npc = createNpc(seed, {
         id: idOfTheOneOnThisGround(beast.id, locationId),
-        name: beast.name,
+        name: anythingAtThisRungSpeaks(ordinal) ? undefined : beast.name,
+        takenNames: input.takenNames,
         bornOnDay: onDay - spentGettingHere * DAYS_PER_YEAR,
         onDay,
         locationId,
@@ -188,37 +236,80 @@ export function standUpTheOneOnThisGround(input: StandingUpABeast): NpcRecord {
 
     // The rung it is standing on was reached a long time ago, so the settling
     // clock does not read as somebody who crossed this year.
-    return setRealm(npc, ordinal, onDay - spentGettingHere * DAYS_PER_YEAR);
+    const placed = setRealm(npc, ordinal, onDay - spentGettingHere * DAYS_PER_YEAR);
+
+    // WHAT IT WANTS IS WRITTEN AT THE CORE, NOT AT THE CHANGE. The want is a
+    // fact about the animal, so the row carries it from the day the row exists
+    // and the crossing does not touch it - see
+    // `what-a-beast-has-always-wanted.ts`. Opened on the day it spent getting
+    // here rather than today, because it has wanted this for as long as it has
+    // been what it is, and `howLongTheyHaveWantedIt` reads that day out.
+    return addGoal(
+        placed,
+        whatThisOneHasAlwaysWanted({ beast, locationId }),
+        onDay - spentGettingHere * DAYS_PER_YEAR
+    );
 }
 
 /**
- * Whether this individual has made the change.
+ * The name a row takes when the world moves it past the change.
+ *
+ * Rolled from the table every person in this world is named from, on the same
+ * stream `createNpc` uses, so a name minted here and a name minted at stand-up
+ * are the same kind of name and neither is a beast name.
+ *
+ * Returns null where nothing should change: one already past the change named
+ * itself when it was met, and one still below it has no name to take.
+ */
+export function theNameItTookAtTheChange(
+    npc: NpcRecord,
+    seed: string,
+    takenNames?: ReadonlySet<string>
+): string | null {
+    if (!itHasCrossed(npc)) return null;
+    if (theSpeciesItIs(npc) === null) return null;
+    // The species name is what a row below the change is called. Anything else
+    // is a name it already rolled, and rolling a second would be the rename
+    // this file refuses.
+    if (npc.name !== theSpeciesItIs(npc)?.name) return null;
+    return personName(forStream(seed, 'npc-name', npc.id), takenNames);
+}
+
+/**
+ * Every name this row answers to, most particular first.
+ *
+ * DERIVED, WHICH IS WHAT MAKES THE CROSSING SAFE. A player who was told
+ * `Thunder Hawk` holds a knowledge row saying `Thunder Hawk`, and that row
+ * keeps reaching this individual after it takes a person's name, because the
+ * species name is a function of the tag rather than of the `name` column.
+ * Nothing is stored, so nothing can drift and no write can forget.
+ *
+ * An ordinary person and a beast below the change both come back with one name,
+ * which is the same answer they gave before this existed.
+ */
+export function theNamesThisOneAnswersTo(npc: Pick<NpcRecord, 'name' | 'tags'>): string[] {
+    const species = theSpeciesItIs(npc);
+    if (species === null || species.name === npc.name) return [npc.name];
+    return [species.name, npc.name];
+}
+
+/**
+ * Whether this individual has made the change, and therefore speaks.
  *
  * ITS OWN ORDINAL AND NOT THE SPECIES', which is the only reason this function
  * exists: the catalog row says where that kind is usually found, and the point
  * of a row is that this one can have gone further.
+ *
+ * THERE USED TO BE A SECOND FUNCTION HERE. `itSpeaksNow` asked the catalog row
+ * first and only fell through to the crossing when the species sat below it,
+ * because a species could be authored mute above the change. The design owner
+ * overruled that - *"species can't be categorized as speaks false. under 29 =
+ * speaks false."* - and with the column gone the two functions became one
+ * expression under two names, which is the drift AGENTS.md forbids. Crossing is
+ * the speech. There is one predicate.
  */
 export function itHasCrossed(npc: Pick<NpcRecord, 'cultivation'>): boolean {
-    return npc.cultivation.realmOrdinal >= BEAST_CHANGE_ORDINAL;
-}
-
-/**
- * Whether this one can be spoken to.
- *
- * TWO CASES, AND THE CATALOG DECIDES WHICH. `speaks` is a floor and not an iff:
- * two entries stand above the change and say nothing, and they are the worst
- * things in the catalog precisely because there is nothing to negotiate with.
- * That authorship is a ruling about a species that has ALREADY crossed, so
- * where the catalog row itself sits at or above the change, its answer stands.
- * Where the row sits below it, the catalog has said nothing about what this
- * kind is like afterwards, and the crossing is what confers the shape and the
- * voice.
- */
-export function itSpeaksNow(npc: Pick<NpcRecord, 'tags' | 'cultivation'>): boolean {
-    const species = theSpeciesItIs(npc);
-    if (!species) return false;
-    if (species.ordinal >= BEAST_CHANGE_ORDINAL) return readsAsSomebody(species);
-    return itHasCrossed(npc);
+    return anythingAtThisRungSpeaks(npc.cultivation.realmOrdinal);
 }
 
 /**
@@ -229,8 +320,8 @@ export interface WhatItIsNow {
     ordinal: number;
     /** `counted`, `tracked` or `person`, read off THIS one's rung. */
     band: ReturnType<typeof bandOf>;
+    /** Past the change, which is the same fact as speaking. */
     crossed: boolean;
-    speaks: boolean;
     /** How far its species ability has come at the rung it is actually at. */
     ability: ReturnType<typeof abilityAt>;
     /** How many rungs it has moved since the catalog placed its kind. */
@@ -245,13 +336,12 @@ export function whatItIsNow(npc: NpcRecord): WhatItIsNow | null {
     // rather than of the catalog's. `bandOf` and `abilityAt` take a `Beast`, so
     // the species row is handed over with the rung this individual is on - the
     // same row, read at where it actually got to.
-    const asItStands: Beast = { ...species, ordinal };
+    const asItStands = asItStandsNow(species, ordinal);
     return {
         species,
         ordinal,
         band: bandOf(asItStands),
         crossed: itHasCrossed(npc),
-        speaks: itSpeaksNow(npc),
         ability: abilityAt(asItStands),
         rungsClimbed: ordinal - species.ordinal
     };

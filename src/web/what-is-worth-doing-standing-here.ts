@@ -150,6 +150,16 @@ export interface StandingHere {
      */
     carriesAWoundNothingCloses: boolean;
     /**
+     * The one medicine in the world that answers a permanent wound this body is
+     * carrying, by name, or null where there is none - which is the answer for
+     * nearly all of them and is the whole content of the line above.
+     *
+     * Optional because a permanent wound with an answer is new and the field is
+     * absent from every fixture written before it. Absent reads as null, which
+     * is the old behaviour exactly.
+     */
+    theOneMedicineThatWouldReachIt?: string | null;
+    /**
      * Whether what is torn is the body or the mind, counted apart.
      *
      * `woundNature` splits them and nothing asked it. They are different
@@ -633,19 +643,40 @@ export function whatIsWorthDoingStandingHere(here: StandingHere): Affordance[] {
         // other branch above is. `treatableWounds` and `woundsPastMortalCare`
         // both filter permanents out, so somebody carrying a ruined dantian and
         // nothing else was told there was nothing wrong with them - the worst
-        // silence in the read, on the one fact money does not answer.
+        // silence in the read.
+        //
+        // And ONE of them has an answer now. The line used to say the world has
+        // no medicine for it, full stop, which held while every permanent row
+        // was authored as untreatable. Flesh a body cannot grow back is not:
+        // one immortal-grade pill reaches it and nothing else does, and saying
+        // there is nothing to be done is the same silence said backwards.
+        //
+        // AND THE NULL BRANCH NO LONGER SPEAKS FOR THE WORLD. It said *the
+        // world has no medicine for it*, which was true while the only way to
+        // arrive here with nothing named was a wound nothing answers.
+        // `theOneMedicineThatWouldReachIt` is now withheld from somebody who
+        // has never heard of the medicine, so the same null also means "there
+        // is one and nobody has told you" - and the two have to be
+        // indistinguishable from where the player stands, or the absence of a
+        // name is itself the hint. So the sentence says what is true of them
+        // either way: nothing they can reach, and the reach is the claim.
         if (here.carriesAWoundNothingCloses) {
+            const medicine = here.theOneMedicineThatWouldReachIt ?? null;
             add({
                 id: 'the-wound-that-stays',
                 say: 'what would close this',
                 routesTo: 'look',
                 urgency: 'open',
-                because:
-                    'Something in there does not close. Not expensively, not with a better '
-                    + 'physician, and not with time - the world has no medicine for it and the '
+                because: medicine !== null
+                    ? `Something in there does not close on its own, and no physician and no `
+                      + `amount of time reaches it. One thing does: a ${medicine}. Nobody sells `
+                      + 'one for stones, so what would buy it is whatever the holder will take '
+                      + 'instead.'
+                    : 'Something in there does not close. Not expensively, not with a better '
+                    + 'physician, and not with time - nothing you can reach answers it, and the '
                     + 'rest of the road is walked carrying it.',
                 whatItIsAbout: 'you',
-                namesSomething: false,
+                namesSomething: medicine !== null,
                 canHurtYou: false
             });
         }

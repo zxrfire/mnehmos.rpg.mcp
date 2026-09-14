@@ -265,6 +265,73 @@ export function theAccountAsAStatement(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// AND THE SAME READ BACKWARDS
+// ─────────────────────────────────────────────────────────────────────────
+
+/** The teller's own row wraps the hearer's statement. Stripped before reading. */
+const AN_ACCOUNT_GIVEN_TO = /^An account given to .+?:\s*(.+)$/;
+
+/** `<who> is <clauses>.` - the one shape {@link theAccountAsAStatement} writes. */
+const A_STATEMENT_OF_SOMEBODY = /^(.+?)\s+is\s+(.+?)\.?$/;
+
+const THE_NAME_AND_NOTHING_ELSE = /^the name they gave for themselves$/i;
+
+/**
+ * The account inside a statement this module wrote, or null for a statement it
+ * did not write.
+ *
+ * Here rather than beside the reader so the two cannot drift: a change to
+ * {@link theAccountAsAStatement} that this does not follow turns every held
+ * account into a row nothing can compare. What makes the backward read worth
+ * having at all is that a row is all anybody holds - the account that was
+ * given is gone, and the statement is what is left of it.
+ */
+export function theAccountInAStatement(statement: string): AnAccountOfThemselves | null {
+    const inner = AN_ACCOUNT_GIVEN_TO.exec(statement.trim())?.[1] ?? statement.trim();
+    const said = A_STATEMENT_OF_SOMEBODY.exec(inner);
+    if (said === null) return null;
+
+    const name = said[1].trim();
+    const clauses = said[2].trim();
+    if (name.length === 0) return null;
+    if (THE_NAME_AND_NOTHING_ELSE.test(clauses)) return { name, house: null, rung: null };
+
+    let house: string | null = null;
+    for (const clause of clauses.split(',')) {
+        const of = /^\s*of the\s+(.+?)\s*$/i.exec(clause);
+        if (of) house = of[1];
+    }
+    const rung = theRungClaimed(clauses);
+    if (house === null && rung === null) return null;
+    return { name, house, rung };
+}
+
+/**
+ * Which parts two accounts of one person say different things about.
+ *
+ * NOT {@link whereTheAccountIsNotSo}, and the difference is the whole of what
+ * makes this one safe to put in front of a character: that one compares a claim
+ * against the world's own row and knows which is true, this one compares two
+ * claims and knows only that they cannot both be. A part either side is silent
+ * about is not a disagreement - somebody who gave no house has not contradicted
+ * a house.
+ */
+export function whereTwoAccountsDisagree(
+    a: AnAccountOfThemselves,
+    b: AnAccountOfThemselves
+): PartOfAnAccount[] {
+    const apart: PartOfAnAccount[] = [];
+    if (a.name !== null && b.name !== null && plainly(a.name) !== plainly(b.name)) {
+        apart.push('name');
+    }
+    if (a.house !== null && b.house !== null && plainly(a.house) !== plainly(b.house)) {
+        apart.push('house');
+    }
+    if (a.rung !== null && b.rung !== null && a.rung !== b.rung) apart.push('rung');
+    return apart;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // WRITING IT DOWN, BOTH WAYS
 // ─────────────────────────────────────────────────────────────────────────
 

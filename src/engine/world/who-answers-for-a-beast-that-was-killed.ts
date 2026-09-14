@@ -274,8 +274,8 @@ export const WHY_NOTHING_PAST_THE_CHANGE_IS_HANDLED_HERE = {
         + 'person, and the world should treat it exactly as it treats killing any other '
         + 'person at that rung. Nothing about it should be written twice.',
     whatIsMissing:
-        'A changed beast has no row among the people. The catalog carries three that speak '
-        + 'and the world seeds none of them, so a killing finds no house, no kin and no '
+        'A changed beast has no row among the people. The catalog carries six at or past '
+        + 'the change and the world seeds none of them, so a killing finds no house, no kin and no '
         + 'roster to open an account with. The ordinary path would work; there is nobody '
         + 'standing in it.',
     doNotPatchItHere:

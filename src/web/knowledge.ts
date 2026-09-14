@@ -68,6 +68,12 @@ export function existenceClaimKey(kind: KnownEntityKind, id: string): string {
 }
 
 export interface AwarenessInput {
+    /**
+     * The ledger row this claim descends from, where the claim is about an
+     * event. Absent for a claim about something merely existing, which is most
+     * of them.
+     */
+    factId?: string | null;
     holderId: string;
     kind: KnownEntityKind;
     /** Row id, catalog id, or place name. */
@@ -174,7 +180,7 @@ export class KnowledgeGate {
                 source_kind, source_from_holder_id, source_via_record_id, source_note,
                 acquired_on_day, confidence, tags, superseded
             ) VALUES (
-                @id, @holderId, @holderKind, @claimKey, NULL, @stance, @statement, @detail,
+                @id, @holderId, @holderKind, @claimKey, @factId, @stance, @statement, @detail,
                 @sourceKind, @fromHolderId, NULL, @sourceNote,
                 @acquiredOnDay, @confidence, @tags, 0
             )
@@ -325,6 +331,21 @@ export class KnowledgeGate {
         const record = recordKnowledge({
             holderId: input.holderId,
             claimKey: existenceClaimKey(input.kind, input.id),
+            // ── AND THE LEDGER ROW IT CAME OFF, WHERE THERE IS ONE ──────
+            //
+            // `fact_id` was the literal `NULL` in the VALUES clause - not a
+            // parameter nobody passed, a constant - so every row the gate has
+            // ever written says this claim descends from nothing. Two things
+            // that already exist went dark because of it: `isGroundless` reads
+            // `factId === null` as "there is no event under this", which was
+            // true of every row in the table, and `recordAccuracy` can only
+            // compare a claim against the truth it names.
+            //
+            // Null is still the ordinary answer and is not a failure. Most
+            // claims are about EXISTENCE - that a house is there, that a person
+            // has a name - and nothing happened for them to descend from. What
+            // this restores is the minority that are about an event.
+            factId: input.factId ?? null,
             stance,
             statement: input.statement ?? `${input.name} exists.`,
             onDay: Math.max(0, Math.floor(input.onDay)),
@@ -349,6 +370,7 @@ export class KnowledgeGate {
             stance: record.stance,
             statement: record.statement,
             detail: JSON.stringify(record.detail),
+            factId: record.factId ?? null,
             sourceKind: record.source.kind,
             fromHolderId: record.source.fromHolderId ?? null,
             sourceNote: record.source.note ?? '',

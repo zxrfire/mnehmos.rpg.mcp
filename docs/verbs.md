@@ -74,7 +74,7 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**58 verbs.** 17 of them take nothing from the player,
+**59 verbs.** 17 of them take nothing from the player,
 27 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
@@ -121,7 +121,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`wait`](#wait) | `days` `target` | time | yes | - | - |
 | [`work`](#work) | `days` `target` | time | yes | - | - |
 | [`market`](#market) | - | nothing | yes | yes | - |
-| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [18](#sect) |
+| [`sect`](#sect) | `intent` `target` `topic` | varies | yes | - | [20](#sect) |
 | [`site`](#site) | `target` `intent` | time | yes | - | [4](#site) |
 | [`legacy`](#legacy) | `intent` `target` `days` | time | yes | - | [5](#legacy) |
 | [`petition`](#petition) | `target` `intent` `topic` | nothing | yes | yes | [3](#petition) |
@@ -137,6 +137,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`news`](#news) | - | nothing | yes | yes | - |
 | [`tell`](#tell) | `target` `topic` | varies | yes | - | - |
 | [`request`](#request) | `target` `intent` `topic` `days` | time | yes | - | [12](#request) |
+| [`challenge`](#challenge) | `target` | varies | yes | - | - |
 | [`guard`](#guard) | `target` `days` | time | yes | - | - |
 | [`propose`](#propose) | `target` `intent` `topic` | varies | yes | - | [2](#propose) |
 | [`decline`](#decline) | `target` `intent` | varies | yes | - | [2](#decline) |
@@ -450,13 +451,13 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 
 ### `sect`
 
-anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no and "ignore" to answer it not at all, and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
+anything to do with a house: getting into one, and everything a member or an officer of one can do. "intent" is the step - "join" to be taken in, "standing" to read where they stand, "stipend" to draw one, "promote" to ask for a rung, "duty" to take something off the mission board, "donate" to pay money into the house's coffers, which buys no rung and no contribution, "guest" to sit in at a house that has not taken you, "leave" to resign, "summons" to ask what the house has asked of you, "accept" to answer it yes and go, "refuse" to answer it no and "ignore" to answer it not at all, "complaints" to read what the house is holding against its own and decide one where the room is theirs, "plead" to speak for somebody it is holding something against - "target" names them - and "siphon", "order", "recruit", "admission", "curriculum" and "expel" for what the rungs above a disciple buy. Default to the read - "standing" - unless the player plainly asked for a step, because joining is a life's worth of allegiance and cannot be unsaid.
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'sect'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.sect` · the deterministic parser reaches it.
 
 Takes `intent`, `target`, `topic`.
 
-Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`.
+Intents: `leave`, `promote`, `stipend`, `standing`, `join`, `siphon`, `order`, `recruit`, `admission`, `curriculum`, `expel`, `duty`, `donate`, `guest`, `summons`, `refuse`, `accept`, `ignore`, `complaints`, `plead`.
 
 ### `site`
 
@@ -591,6 +592,14 @@ Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case
 Takes `target`, `intent`, `topic`, `days`.
 
 Intents: `teaching`, `discipleship`, `introduction`, `telling`, `a_thing`, `a_making`, `terms`, `a_trade`, `advancement`, `company`, `nothing`, `unstated`.
+
+### `challenge`
+
+SAY TO SOMEBODY'S FACE THAT WHAT THEY TOLD YOU ABOUT THEMSELVES IS NOT TRUE. "target" is who is being called on it, and they have to be standing here. Use it for "I tell him he is not of the Verdant Spring Valley", "I call her a liar about her rank", "that is not your house", "I say he made that name up". Passes no time and costs no stones. It needs an account they actually gave you - somebody who has only ever told you their name has said nothing that can be challenged. If you have nothing to put against what they said, they are simply being called a liar in front of whoever is here, and they will hold that. NOT for accusing somebody of a deed - "I tell him he killed my brother" is tell. NOT for a threat, and NOT for an insult about anything other than their own account of who they are, which is interact.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'challenge'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
+
+Takes `target`.
 
 ### `guard`
 

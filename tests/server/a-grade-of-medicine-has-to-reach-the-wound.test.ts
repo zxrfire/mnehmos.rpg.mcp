@@ -117,18 +117,31 @@ describe('a mortal pill against a wound above it', () => {
         expect(held.pills.some((p: any) => p.id === CLEAR_MERIDIAN)).toBe(false);
     });
 
-    it('names the medicine that would have worked, and its terms', async () => {
+    it('names the GRADE that would have worked, and not the medicine', async () => {
+        // THIS USED TO ASSERT THE NAME AND THAT IS NOW THE LEAK. A novice who
+        // swallows the wrong pill learns which TIER would have answered - which
+        // is a diagnosis and is what makes the ladder legible - and does not
+        // learn what the thing is called. The design owner: *"sometimes those
+        // pills are top tier and the people at the bottom genuinely don't
+        // know"*, and the whole point of the arc is that being told is a thing
+        // that happens to you later, from somebody far enough up.
+        //
+        // What a refusal still owes is its cause, and it pays it in full:
+        // which grade, and why nothing within reach answers.
         const id = await aWoundedNovice('crippling');
         const result = await alchemy({ action: 'consume_pill', pillId: CLEAR_MERIDIAN, cultivatorId: id });
         const said = String(result.applied);
         // Not "nothing to treat", which reads as "you had no wounds" to
         // somebody visibly carrying one.
         expect(said).not.toMatch(/^Nothing to treat/);
-        expect(said).toContain(getPill(MERIDIAN_REBIRTH)!.name);
+        expect(said).not.toContain(getPill(MERIDIAN_REBIRTH)!.name);
         expect(said).toMatch(/heaven/i);
-        // And why it cannot simply be bought, which is the other half of a
-        // refusal that names its cause.
-        expect(said).toMatch(/favour owed|not bought|Nobody sells/i);
+        // And no wink. Being withheld a name must not read as being told there
+        // is one.
+        expect(said).not.toMatch(/medicine exists|there is one|somewhere out there/i);
+        // Why nothing here answers, which is the other half of a refusal that
+        // names its cause.
+        expect(said).toMatch(/no counter here sells|no physician in reach|nothing you can reach/i);
     });
 
     it('lets the heaven-grade medicine close it, so the ladder is a ladder', async () => {

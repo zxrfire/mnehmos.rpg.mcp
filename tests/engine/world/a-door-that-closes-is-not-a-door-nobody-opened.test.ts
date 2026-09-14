@@ -28,10 +28,13 @@
  * same twelve worlds over two hundred years each, the world opened or shut
  * **zero** doors on its own.
  *
- * SINCE FIXED, in `the-world-changing-on-its-own.ts`: that pass now asks
- * `whenTheScheduleNextOpens`, and the same twelve worlds open and shut 46
- * doors - 1.92 per century per world. `the-world-opens-a-door-and-shuts-it-
- * again.test.ts` holds that half. The day-0 counts above are from before the
+ * SINCE FIXED, and then ruled on: a ruin on a cycle shuts itself when its
+ * window ends, so the schedule is the fact and the column is a reading of it.
+ * `nextOpeningDay` ignores `sealed` wherever a cycle exists, and the same
+ * twelve worlds open and shut 46 doors - 1.92 per century per world.
+ * `a-ruin-on-a-cycle-shuts-itself.test.ts` holds the authority and
+ * `the-world-opens-a-door-and-shuts-it-again.test.ts` the pass. The day-0
+ * counts above are from before the
  * cycle lengths were re-derived off the ground's own worth
  * (`how-long-a-door-stays-shut.ts`), so the schedules they describe no longer
  * exist: the waits now read 60x10 120x36 600x26 and the windows 7d=32 14d=20

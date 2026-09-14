@@ -60,7 +60,10 @@ import { resetCultivationWorlds } from '../../src/server/state/cultivation-world
 import { writeOneObligation } from '../../src/storage/repos/obligation.repo';
 import { createObligation } from '../../src/engine/social/grudges';
 import { BEASTS, type Beast } from '../../src/data/cultivation/beasts';
-import { beastsOnThisGround } from '../../src/engine/world/hunting-a-spirit-beast';
+import {
+    beastsOnThisGround,
+    readsAsSomebody
+} from '../../src/engine/world/hunting-a-spirit-beast';
 import { whatGroundThisIs } from '../../src/engine/world/what-ground-a-place-is';
 import { thePieceTheyAskedFor } from '../../src/engine/world/what-it-costs-to-give-away-a-piece-of-yourself';
 import { REGROWTH_YEARS_BY_GRADE } from '../../src/engine/world/what-a-place-still-has-in-the-ground';
@@ -107,7 +110,7 @@ async function standingInFrontOfSomethingThatSpeaks(seed: string) {
                 sealed: place.sealed,
                 onAVein: true,
                 grounds: whatGroundThisIs(world, place) ?? undefined
-            }).filter(one => one.speaks);
+            }).filter(readsAsSomebody);
             const found = speaking
                 .map(one => ({ one, id: idOfTheOneOnThisGround(one.id, place.id) }))
                 .find(row => theRungTheyAreOn(row.id, row.one) === 'a favour');
@@ -164,6 +167,17 @@ describe('a thing that speaks holds no stock and can still be asked', () => {
      * The years come off the regrowth ladder rather than being typed here,
      * because that ladder is shared with what a district's ground takes to
      * come back and moving it has to move this.
+     *
+     * ── IT NOW HAS TWO ARMS, BECAUSE THE COST HAS TWO SHAPES ─────────────
+     *
+     * This asserted the years unconditionally, which was right while every
+     * piece came back on the ladder. The ruling is that fur and a shell come
+     * back and a limb does not, at any rung - so a piece the body cannot make
+     * another of has no number of years and saying one would be the falsehood
+     * this test exists to prevent, said the other way round. What the
+     * assertion protects is unchanged: the figure is still read off the SHARED
+     * ladder rather than back out of the function under test, so a cost
+     * collapsed to the mildest band still fails here.
      */
     it('grants to an open account, and says what pulling it out cost', async () => {
         const { game, db, cultivatorId, beast, partyId } =
@@ -189,8 +203,15 @@ describe('a thing that speaks holds no stock and can still be asked', () => {
         // the cost had been collapsed to the mildest band.
         const years = REGROWTH_YEARS_BY_GRADE[piece.material.grade];
         expect(said, 'nothing was handed over').toContain(piece.material.name);
-        expect(said, 'the years it stays gone were not said')
-            .toContain(`${years} year`);
+        if (piece.theBodyPutsItBack) {
+            expect(said, 'the years it stays gone were not said')
+                .toContain(`${years} year`);
+        } else {
+            expect(said, 'a part the body cannot remake was given a number of years')
+                .not.toContain(`${years} year`);
+            expect(said, 'the sentence never says the part stays gone')
+                .toContain('does not come back');
+        }
 
         // AND IT IS REALLY IN THEIR HANDS. A sentence saying so is not the
         // thing changing hands, which is the failure this half exists against.
@@ -216,7 +237,7 @@ describe('a thing that speaks holds no stock and can still be asked', () => {
      * exists for one row rather than for the kind.
      */
     it('has something to give for every speaking entry in the catalog', () => {
-        for (const beast of BEASTS.filter(one => one.speaks)) {
+        for (const beast of BEASTS.filter(readsAsSomebody)) {
             const piece = thePieceTheyAskedFor(beast, null);
             expect(piece, `${beast.id} could part with nothing at all`).not.toBeNull();
             expect(piece!.material.value, `${beast.id} has a piece worth nothing`)

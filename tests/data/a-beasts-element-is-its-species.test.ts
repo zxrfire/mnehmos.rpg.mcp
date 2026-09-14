@@ -64,7 +64,7 @@ describe('the file no longer says a beast has no sect', () => {
         // The header is prose, so this asserts the ruling rather than wording:
         // nothing in the catalog may claim a beast cannot have a house.
         const beast = BEASTS.find(b => b.id === 'beast-white-ape-of-the-gorge')!;
-        expect(beast.speaks).toBe(true);
+        expect(beast.ordinal).toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);
         expect(beast.disposition).toBe('righteous');
     });
 });

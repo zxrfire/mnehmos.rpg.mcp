@@ -32,16 +32,34 @@ function ruinsIn(game: { atHand?: { locations: readonly { kind: string }[] } | n
 }
 
 describe('a fresh world has one piece of closed ground already open', () => {
-    it('opens exactly one, and leaves the rest to the discovery pass', async () => {
+    it('opens one, and leaves the rest to the discovery pass or to never shutting', async () => {
+        // EXACTLY ONE WAS RIGHT UNTIL GROUND EXISTED THAT NEVER SHUTS. The
+        // world has three states now, not two: a season, shut until somebody
+        // opens it, and never shut at all - an inheritance ground or a tomb,
+        // which stands open because whoever built it meant it to be found and
+        // whose gate is inside rather than at the door. About 15% of ruins.
+        //
+        // So what this arm is for survives and the number does not: the SEEDER
+        // opens one, and everything else standing open at creation stands open
+        // because it was never closed. Asserted that way round, because a
+        // seeder that opened three would be the defect and is still caught.
         const { game } = await makeGameInWorld({ seed: 'aim', worldSeed: 'world-aim-1' });
         await game.newRun('Aimer');
         const ruins = ruinsIn(game as never) as readonly {
             name: string; sealed: boolean; discovered: boolean;
+            environment: { historicalScars: readonly string[] };
             thresholds: { entry: number; survival: number };
         }[];
         expect(ruins.length).toBeGreaterThan(1);
         const open = ruins.filter(r => !r.sealed && r.discovered);
-        expect(open, 'exactly one ruin open at world creation').toHaveLength(1);
+        expect(open.length, 'nothing is open at world creation').toBeGreaterThan(0);
+        // A legacy carries its own scar - `left for whoever could take it`
+        // against `sealed from the inside` - which is the row saying it was
+        // never closed rather than that somebody opened it.
+        const wasOpened = open.filter(r =>
+            !r.environment.historicalScars.includes('left for whoever could take it'));
+        expect(wasOpened, 'the seeder opened more than one piece of closed ground')
+            .toHaveLength(1);
     });
 
     /**

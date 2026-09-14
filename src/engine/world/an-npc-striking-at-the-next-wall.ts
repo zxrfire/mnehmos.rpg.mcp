@@ -33,6 +33,7 @@ import {
     type RoadWithinReach
 } from '../cultivation/what-a-road-in-reach-costs-to-walk.js';
 import { clearBrokenStatus } from '../cultivation/what-goes-wrong-at-a-realm-boundary.js';
+import { theSealStillHolds } from '../cultivation/a-qi-seal-is-put-on-a-person.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import {
     bodyStandingOn,
@@ -155,6 +156,24 @@ export function readyToStrike(
     };
     // Above the Lid nothing is priced in qi and there is no wall to strike at.
     if (required === null) return notReady;
+
+    // SOMEBODY UNDER A SEAL IS NOT CLIMBING. Through `theSealStillHolds`, which
+    // is the player's own answer to whether one is on, rather than a second
+    // reading of the dates: a seal caps what they may hold at a tenth and leaves
+    // them standing on the exhaustion line, so the pool a crossing needs is not
+    // reachable from inside one. It is `settled: false`, not true - the day it
+    // lifts they pick up where they were, which is the difference between a lid
+    // and a wound.
+    //
+    // One null check on a record that carries null for almost everybody, and
+    // the term runs out by comparison rather than by anybody visiting the row.
+    // The pass costs what it cost.
+    if (theSealStillHolds(npc.cultivation.seal, day)) {
+        return {
+            yearsNeeded: Infinity, yearsAccumulated: 0, yearsStood: 0,
+            ready: false, settled: false
+        };
+    }
 
     const rate = computeCultivationRate(
         {

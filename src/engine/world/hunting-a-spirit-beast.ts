@@ -5,8 +5,8 @@
 
 import {
     BEASTS,
-    BEAST_CHANGE_ORDINAL,
     BEAST_CORE_ORDINAL,
+    anythingAtThisRungSpeaks,
     materialsOf,
     type Beast,
     type BeastAbility,
@@ -141,16 +141,26 @@ export function whatIsOnThisGround(
 export type BeastBand = 'counted' | 'tracked' | 'person';
 
 export function bandOf(beast: Beast): BeastBand {
-    if (beast.ordinal >= BEAST_CHANGE_ORDINAL) return 'person';
+    if (anythingAtThisRungSpeaks(beast.ordinal)) return 'person';
     if (beast.ordinal >= BEAST_CORE_ORDINAL) return 'tracked';
     return 'counted';
 }
 
 /**
  * Whether this is somebody rather than something.
+ *
+ * THE RUNG, AND THERE IS NO SECOND INPUT. This read an authored `speaks`
+ * column until the design owner overruled it: *"species can't be categorized as
+ * speaks false. under 29 = speaks false."* The column is gone from the schema
+ * and from all 64 rows, so a species cannot be written mute above the change
+ * and this cannot disagree with anything.
+ *
+ * `bandOf` above answers the same boundary as one of three values, and this
+ * answers it as the yes-or-no most callers want. Both go through
+ * `anythingAtThisRungSpeaks`, which is where the boundary lives.
  */
 export function readsAsSomebody(beast: Beast): boolean {
-    return beast.speaks;
+    return anythingAtThisRungSpeaks(beast.ordinal);
 }
 
 /** Whether a beast is at or past the rung where a core can exist at all. */

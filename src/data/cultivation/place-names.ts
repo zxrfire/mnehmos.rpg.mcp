@@ -45,6 +45,18 @@ export const PLACE = {
     CLEAR_CREEK_VILLAGE: 'Clear Creek Village',
     BURNT_EARTH: 'Burnt Earth',
     NINE_PEAKS: 'Nine Peaks',
+    // ── THE VOLCANO WAS WRITTEN AND NEVER PUT ANYWHERE ──────────────────
+    //
+    // `prefecture-ashfall` has existed since the political layer was written: a
+    // basin held by the Ashen Forge Clan whose seat is "the furnace on the
+    // volcanic flank", with the caldera and the vent vein sub-held by the Nine
+    // Abyss Flame Sect and the field furnace halls by the Cinnabar Crucible
+    // Sect. Its `places: []` was empty, so none of it was ever ground anybody
+    // could stand on - and `volcanic` was the one biome in the world with herbs
+    // growing on it and nowhere for them to grow.
+    THE_FLANK: 'The Furnace Flank',
+    THE_CALDERA: 'The Caldera',
+    THE_VENT_VEIN: 'The Vent Vein',
 
     // ─── The Silent Cliffs ───────────────────────────────────────────────
     IRON_GATE: 'Iron Ridge',

@@ -345,6 +345,11 @@ export function migrateWorld(db: Database.Database): void {
       -- column predates the world having a body and reads as whole.
       hp INTEGER NOT NULL DEFAULT -1,
       body_on_day INTEGER NOT NULL DEFAULT 0,
+      -- A seal somebody laid on them, as JSON, or NULL for almost everybody.
+      -- The same shape the cultivators table's qi_seal holds, so being sealed
+      -- reads the same whichever store the person is in. It expires by the day
+      -- inside it rather than by anybody clearing the column.
+      qi_seal TEXT,
 
       location_id TEXT,
       -- Which side of the Lid this person is on. Stored rather than derived
@@ -1049,6 +1054,14 @@ function addWorldColumns(db: Database.Database): void {
     if (!columnsOf('world_npcs').includes('physique')) {
         console.error('[Migration] Adding physique column to world_npcs table');
         db.exec('ALTER TABLE world_npcs ADD COLUMN physique TEXT;');
+    }
+
+    // NULL for every row in a saved world, and it is the correct reading:
+    // until this column there was nothing in the world state a house could
+    // seal, so nobody in one is carrying a seal.
+    if (!columnsOf('world_npcs').includes('qi_seal')) {
+        console.error('[Migration] Adding qi_seal column to world_npcs table');
+        db.exec('ALTER TABLE world_npcs ADD COLUMN qi_seal TEXT;');
     }
 
     if (!columnsOf('world_npcs').includes('bloodline_species')) {

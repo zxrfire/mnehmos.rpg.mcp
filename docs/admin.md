@@ -788,12 +788,14 @@ Everything else stands, and the game says so unprompted - after granting every h
 Admission bars, trial requirements, whether anybody will talk to you, what a favour costs -
 all untouched. A player who knows the name of an apex still cannot walk in.
 
-**Places and houses only, and the omission is the point.** `KnownEntityKind` has four members
+**Places and houses only, and the omission is the point.** `KnownEntityKind` has five members
 and this takes two. `event` is left out and must stay out: an event is a thing that *happened*,
 so a knowledge record of one is a claim about history, and *"give me knowledge that I killed
 him"* is an outcome wearing an awareness gate as a costume. A place and a house are standing
 there whether or not anybody has heard of them - which is exactly what makes naming them a
-gate and not a truth.
+gate and not a truth. `thing` - a medicine, and eventually an art or an artifact - is left out
+for a different reason and could be added: it passes the test a place and a house pass, and
+nothing has yet wanted an operator line for it. `cultivator` is the same case.
 
 **Written as ordinary knowledge rows**, through `learnIfNew` at the stage the discovery
 system already uses for being told something. There is deliberately **no admin-knows-

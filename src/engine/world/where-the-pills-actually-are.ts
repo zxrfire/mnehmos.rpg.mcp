@@ -49,6 +49,9 @@ import { whyNotSold } from './single-use-dao-comprehension-materials.js';
 import { forStream } from '../cultivation/rng.js';
 import { PILLS } from '../../data/cultivation/pills.js';
 import { pillStorageModel, pillTradeTier } from '../cultivation/buying-and-bartering-pills.js';
+import {
+    WORKING_KNOWLEDGE_MARGIN
+} from '../cultivation/who-has-heard-of-a-thing-past-the-counter.js';
 import { isSettledOnUse } from '../cultivation/grade-spread.js';
 import { pillBandOrdinal } from '../cultivation/breakthrough.js';
 import type { Pill } from '../../schema/cultivation.js';
@@ -56,6 +59,22 @@ import type { Pill } from '../../schema/cultivation.js';
 /** Where a house's count of ordinary medicine is kept. One key, one number. */
 export function pillStockKey(pillId: string): string {
     return `pill_stock:${pillId}`;
+}
+
+/**
+ * The height a house works at.
+ *
+ * `reliable_ordinal` is what it can actually field and `power_ordinal` is what
+ * it is weighed at; the first where there is one, because a house's reach is
+ * what it can put in a room rather than what its best name is worth. Named
+ * because two unrelated readings want it - what a house can have got hold of,
+ * and what its seniors can be expected to have heard of - and a second spelling
+ * of it would let those two disagree.
+ */
+export function theHeightAHouseWorksAt(
+    house: { resources: Record<string, number> }
+): number {
+    return Number(house.resources.reliable_ordinal ?? house.resources.power_ordinal ?? 0);
 }
 
 /**
@@ -107,7 +126,7 @@ export function seedPillStock(state: WorldState): ObjectRecord[] {
     const out: ObjectRecord[] = [];
 
     for (const house of houses) {
-        const reach = Number(house.resources.reliable_ordinal ?? house.resources.power_ordinal ?? 0);
+        const reach = theHeightAHouseWorksAt(house);
 
         for (const pill of PILLS) {
             if (pillStorageModel(pill) === 'count') {
@@ -120,8 +139,14 @@ export function seedPillStock(state: WorldState): ObjectRecord[] {
 
             // A row, or nothing. A house holds one of these only if it is
             // working near the height the thing is for.
+            //
+            // The margin is `WORKING_KNOWLEDGE_MARGIN` and was an 8 typed here.
+            // It is the same quantity in both places - how far above your own
+            // standing the things you deal in reach - and having it once is
+            // what lets `whoWouldHaveHeardOfIt` say that a house holding one of
+            // these is a house whose seniors can name it.
             const band = pillBandOrdinal(pill.grade);
-            if (reach + 8 < band) continue;
+            if (reach + WORKING_KNOWLEDGE_MARGIN < band) continue;
             if (!rng.chance(0.18)) continue;
 
             out.push(makeObject({

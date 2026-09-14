@@ -14,6 +14,7 @@ import {
 } from '../data/cultivation/regions.js';
 import { getSectsTeaching } from '../data/cultivation/sects.js';
 import { capOf, carriesTo, classOf } from '../data/cultivation/techniques.js';
+import { pillThatMends } from '../data/cultivation/pills.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
@@ -107,7 +108,10 @@ import { readAdmission } from '../data/cultivation/inheritance-trials.js';
 import { canHurtYou } from './action-set.js';
 import { parseIntent } from './actions.js';
 import { theFightStillStands } from './fight-answers.js';
-import { whatWouldCloseThisWound } from './what-would-close-this-wound.js';
+import {
+    aMedicineThisHolderCouldName,
+    whatWouldCloseThisWound
+} from './what-would-close-this-wound.js';
 import {
     LEAVES_THE_GROUND,
     type Sighting,
@@ -948,7 +952,14 @@ export const situatedReads = {
             woundsPastMortalCare: mendable.filter(injury =>
                 !medicineReaches('mortal', injury.severity, cultivator.realmOrdinal)).length,
             cure: whatWouldCloseThisWound(
-                hurt,
+                // MENDABLE, NOT EVERY UNTREATED WOUND. This read picks the
+                // worst one by severity and names the medicine for it, and a
+                // permanent wound is always untreated and always at the top of
+                // that sort - so passing the whole list had the panel quote a
+                // treat-injury pill for a maiming the graded ladder cannot
+                // touch at any grade. The permanent half has its own line, and
+                // it names its own medicine or says there is none.
+                mendable,
                 cultivator.realmOrdinal,
                 cultivator.spiritStones,
                 // The province they are standing in, so the panel quotes the
@@ -956,7 +967,14 @@ export const situatedReads = {
                 standingOf(cultivator).regionId,
                 // And what is TRUE of that ground today, which is the other
                 // half of what `buy` charges.
-                this.groundPriceMultiplier(cultivator, 'medicine')
+                this.groundPriceMultiplier(cultivator, 'medicine'),
+                // AND WHO IS BEING TOLD. Without this the panel handed a
+                // villager the terms of an immortal-grade medicine.
+                {
+                    gate: this.knowledge,
+                    holderId: cultivator.id,
+                    realmOrdinal: cultivator.realmOrdinal
+                }
             ),
             // -- AND WHOEVER IS ON THEIR KNEES IN FRONT OF THEM -----------
             //
@@ -970,6 +988,31 @@ export const situatedReads = {
             // `StandingHere` for what each is for and what its absence cost.
             bodyHasStoppedCoping: isCrippledByInjuries(cultivator),
             carriesAWoundNothingCloses: hasPermanentWound(cultivator.injuries),
+            // And the one of those that has an answer, named - TO SOMEBODY WHO
+            // HAS HEARD OF IT. Read off the catalog rather than decided here: a
+            // pill says which wounds it mends and the wound row says what would
+            // answer it, and this is the forward direction of that one fact.
+            //
+            // It was unconditional, and that is the line the maiming trope
+            // actually broke on. Somebody at the bottom of the ladder, the day
+            // they lost an arm, was told by name that a Limb Rebirth Pill grows
+            // one back. Nobody refuses a verdict they were never given, so the
+            // whole shape - told nothing can be done, refusing it, being told
+            // otherwise by somebody far enough up - had no first move.
+            theOneMedicineThatWouldReachIt: (() => {
+                const medicine = cultivator.injuries
+                    .filter(injury => !injury.treated)
+                    .map(injury => pillThatMends(injury.woundType))
+                    .find(pill => pill !== null) ?? null;
+                if (medicine === null) return null;
+                return aMedicineThisHolderCouldName(medicine, {
+                    gate: this.knowledge,
+                    holderId: cultivator.id,
+                    realmOrdinal: cultivator.realmOrdinal
+                })
+                    ? medicine.name
+                    : null;
+            })(),
             woundsOfTheBody: woundsOfNature(hurt, 'physical').length,
             woundsOfTheMind: woundsOfNature(hurt, 'mental').length,
             practisesAMethod: road.state !== 'no_method',

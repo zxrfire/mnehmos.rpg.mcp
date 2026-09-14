@@ -13,14 +13,14 @@ Read alongside [`items.md`](../things/items.md), which prices the medicine, and
 
 | Section | The scene it answers |
 |---|---|
-| [Two families of wound](#two-families-of-wound) | Deciding what a new injury should cost |
+| [Three families of wound](#three-families-of-wound) | Deciding what a new injury should cost |
 | [A torn meridian does not kill you](#a-torn-meridian-does-not-kill-you) | Somebody is carrying untreated damage |
 | [What it costs, and what it cannot touch](#what-it-costs-and-what-it-cannot-touch) | A wounded cultivator fights, cultivates or thinks |
 | [Severity](#severity) | Grading a wound, and what each grade means |
 
 ---
 
-## Two families of wound
+## Three families of wound
 
 <!-- tier: 2 trigger="a wound is created or graded" -->
 
@@ -56,9 +56,20 @@ walls, five of which form no core at all, so it could not take the core's name, 
 minted on the FAILURE side, so it must not close a road. A saved row carrying the old key
 still reads correctly - see `RETIRED_WOUND_KEYS` in `data/cultivation/wounds.ts`.
 
-The useful shorthand is **body against cultivation**. A channel wound is damage to the flesh
-qi moves through. A foundation or a core is damage to the cultivation itself. Both are injuries;
-only the second one takes something the ladder already gave you.
+**The wounds of the flesh** - `stripped-flesh`, `severed-flesh` - are the third family, and
+they were missing for a long time. The channel family is damage to the route qi moves along;
+this is damage to the body itself, and it answers a question the other two never ask: does the
+body make another one? A covering does - fur, feathers, a scute, a plate - on the regrowth
+ladder and no faster, which is why a creature asked for a tuft of its own fur is being asked
+for years. A part does not. An arm, an eye, a fang, the marrow of a bone: nothing the body does
+puts one back, at any rung on the ladder. **That is the one permanent wound in the catalog with
+a medicine**, and it is a Limb Rebirth Pill, immortal grade, past the cash line and made in
+almost no quantity. Every other permanent row says in its own `treatment` that nothing answers
+it, and means it.
+
+The useful shorthand is **body against cultivation**. A channel wound and a flesh wound are
+both damage to the body. A foundation or a core is damage to the cultivation itself. Both are
+injuries; only the second kind takes something the ladder already gave you.
 
 **The two must never be treated as one scale with a bigger number at the end.** A crippling
 torn meridian is still a channel wound and is still survivable; a cracked core is categorically

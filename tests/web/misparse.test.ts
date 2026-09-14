@@ -289,7 +289,22 @@ describe('the fallback is inert', () => {
              * over, and a sentence the parser did not understand names nothing
              * that resolves. A shrug breaks no swords.
              */
-            'destroy'
+            'destroy',
+            /**
+             * `tell` read from the other end. Saying to somebody's face that
+             * their account of themselves does not stand spends no day and
+             * nothing can fail, and it opens a record in one name or the other
+             * - theirs when the world holds the account as untrue, the
+             * player's when it does not.
+             *
+             * Structurally protected the same way, and by a second gate on top
+             * of it: the sentence has to name a person who is actually
+             * standing here, AND that person has to have given this cultivator
+             * an account of themselves at some point. A shrug names nobody,
+             * and a stranger who has said nothing about who they are cannot be
+             * challenged at all.
+             */
+            'challenge'
         ];
         for (const name of ACTION_NAMES) {
             const timed = TIME_CONSUMING_ACTIONS.includes(name);
@@ -536,7 +551,12 @@ describe('every verb is reachable from plain English', () => {
         // The giving half of being taught. The phrasing carries the word
         // `teach` and is about somebody else taking the art rather than the
         // speaker, which is the whole of what keeps it off the teacher read.
-        teach: 'I teach her what I know'
+        teach: 'I teach her what I know',
+        // `tell` from the other end. The phrasing carries the word `tell` and
+        // is a denial of the HEARER's own account, which is what keeps it off
+        // both tellings - one puts a deed on a third person, the other is an
+        // account of the speaker.
+        challenge: 'I tell him he is not of that sect'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

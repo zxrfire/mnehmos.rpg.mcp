@@ -27,6 +27,9 @@ import {
     getBranchesOf
 } from '../data/cultivation/index.js';
 import { AUCTION_VENUES } from '../data/cultivation/rogues.js';
+import {
+    WORKING_KNOWLEDGE_MARGIN
+} from '../engine/cultivation/who-has-heard-of-a-thing-past-the-counter.js';
 import type { KnownEntityKind } from './knowledge.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -38,8 +41,14 @@ import type { KnownEntityKind } from './knowledge.js';
 
 /**
  * How far above their own standing a person's working knowledge reaches.
+ *
+ * MOVED DOWN AGAIN, for the same reason it moved here from hearsay.ts. Two
+ * things below the `web/` line read it now - the rule that says who has heard
+ * of a thing pitched above them, and `seedPillStock`, which was carrying the
+ * same 8 as a literal - and neither can import from here. Re-exported so every
+ * caller on this side, hearsay.ts included, is unchanged.
  */
-export const WORKING_KNOWLEDGE_MARGIN = 8;
+export { WORKING_KNOWLEDGE_MARGIN };
 
 /**
  * Power at which a faction becomes common currency regardless of who is speaking.

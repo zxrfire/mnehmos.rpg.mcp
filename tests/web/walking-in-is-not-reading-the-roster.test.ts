@@ -102,6 +102,45 @@ describe('walking into a square', () => {
         expect(prose).toMatch(/The others are here too/);
     });
 
+    /**
+     * A ONE-ARMED ELDER AND A MAN WITH A BRUISE READ OUT IDENTICALLY.
+     *
+     * `NpcRecord` has carried wounds since the world started fighting, and the
+     * only thing that ever put one in front of a player was the COUNT, which
+     * puts somebody at `mending`. Every row in `wounds.ts` carries a
+     * `presentation` - what somebody with it is LIKE to meet - authored with
+     * the wound and read by nothing in `src/` until this landed.
+     *
+     * In the walked-in slot only, beside `like`, and for the same reason: this
+     * is the person the ground chose to hand over, and the census is a roster.
+     */
+    it('says what shows on the person it hands you, and only them', () => {
+        const square = squareOf([
+            somebody({
+                name: 'Yan Shuling', playsToTheRoom: 0.8,
+                carrying: 'favouring one side, and slow to draw on their own qi'
+            }),
+            somebody({
+                name: 'Cen Qingzhi', playsToTheRoom: 0.1,
+                carrying: 'a half-second between deciding and moving'
+            })
+        ]);
+        const prose = factsForLook(standingIn('Azure Cloud Pavilion', 6), AMBIENT, square).prose;
+
+        expect(prose).toContain('What shows on Yan Shuling:');
+        expect(prose).toContain('favouring one side');
+        // Not the other one. A square where every body is read out is a ward
+        // round, which is the same objection `chewing` and `like` already
+        // answer by handing over exactly one.
+        expect(prose).not.toContain('half-second');
+    });
+
+    it('says nothing about a body with nothing to say, which is nearly everybody', () => {
+        const square = squareOf([somebody({ name: 'Yan Shuling', playsToTheRoom: 0.8 })]);
+        const prose = factsForLook(standingIn('Azure Cloud Pavilion', 6), AMBIENT, square).prose;
+        expect(prose).not.toContain('What shows on');
+    });
+
     it('gives the same square up in full when you actually ask', () => {
         const square = squareOf([
             somebody({ name: 'Yan Shuling', playsToTheRoom: 0.8 }),

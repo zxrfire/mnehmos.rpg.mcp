@@ -40,6 +40,7 @@ import {
 } from '../engine/encounters/how-an-ask-reaches-somebody.js';
 import { thereIsNoDoorAt } from '../data/cultivation/a-favour-skips-the-admission-bar.js';
 import { whoCouldNominateInto } from '../engine/social-leverage/who-can-put-your-name-up-for-a-posting.js';
+import { isSealedOn } from '../engine/world/what-ground-a-place-is.js';
 import {
     aFindThisHouseCouldSendFor,
     forbiddenGroundInTheProvinceOf,
@@ -232,7 +233,9 @@ export function placeFor(world: WorldState | null, cultivator: Cultivator): Enco
         qiDensity: record.qiDensity,
         hazards: record.hazards,
         controllingFactionId: record.controllingFactionId,
-        sealed: record.sealed,
+        // The schedule, not the column: `sealed` is refreshed at a year
+        // boundary and on ground with a season it can be a year stale.
+        sealed: isSealedOn(record, world?.currentDay ?? null),
         company: {
             heads: npcsAt(world!, record.id).length + 1,
             settledShare: settledShareOf(record.kind)

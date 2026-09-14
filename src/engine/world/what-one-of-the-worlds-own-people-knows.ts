@@ -62,6 +62,10 @@ import {
     whatTheAirCarriesOfTheGround
 } from './who-goes-out-for-a-house-and-what-comes-back.js';
 import { worldIdForCatalogPerson } from './a-catalog-person-and-their-world-row.js';
+import {
+    whoWouldHaveHeardOfIt
+} from '../cultivation/who-has-heard-of-a-thing-past-the-counter.js';
+import { theHeightAHouseWorksAt } from './where-the-pills-actually-are.js';
 
 /**
  * What a named holder stands at on one named thing.
@@ -151,6 +155,8 @@ export function whatOneOfTheWorldsOwnPeopleKnows(state: WorldState): WhatSomebod
                 return ofAPerson(holder, id, rowFor, byPerson, presentAt, saidWhereTheyStand);
             case 'event':
                 return ofAnEvent(holder, id, ledger, presentAt, saidWhereTheyStand);
+            case 'thing':
+                return ofAThing(state, holder, id);
             default:
                 return 'unaware';
         }
@@ -287,6 +293,34 @@ function ofAPerson(
         }
     }
     return stage;
+}
+
+/**
+ * A thing out of a catalog.
+ *
+ * Two numbers, both already stored: the rung this person stands at, and the
+ * height the house on whose roll they stand works at. `whoWouldHaveHeardOfIt`
+ * holds the rule; nothing here decides anything, and no list anywhere says who
+ * knows about what.
+ *
+ * This is why an NPC's answer can be their own awareness. `askedAbout` reads
+ * `isAwareOf(who.id, ...)` and the gate composes this under `highestStage` with
+ * whatever rows that person holds - so being told something writes a row that
+ * wins, and having heard nothing is the absence of one.
+ */
+function ofAThing(state: WorldState, holder: NpcRecord, thingId: string): KnowingStage {
+    const house = holder.factionId ? getFaction(state, holder.factionId) : null;
+    return whoWouldHaveHeardOfIt({
+        thingId,
+        ordinal: holder.cultivation.realmOrdinal,
+        house: house === null
+            ? null
+            : {
+                reach: theHeightAHouseWorksAt(house),
+                rankIndex: holder.factionRankIndex,
+                rankCount: house.ranks.length
+            }
+    });
 }
 
 /** One fact. Either you were there for it, or it reached you, or it did not. */

@@ -3,6 +3,7 @@
  */
 
 import type { Pill, PillEffect, TechniqueGrade } from '../../schema/cultivation.js';
+import { currentWoundKey } from './wounds.js';
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import type { Band } from './techniques.js';
 
@@ -11,6 +12,7 @@ export const POTENCY_UNITS: Record<PillEffect, string> = {
     heal_hp: 'hp',
     restore_qi: 'qi',
     treat_injury: 'injuries treated',
+    mends_what_will_not_close: 'what does not close, closed',
     boost_breakthrough: 'flat probability',
     advance_progress: 'cultivation progress (qi-units)',
     extend_lifespan: 'years',
@@ -518,10 +520,26 @@ export const PILLS: readonly Pill[] = [
         id: 'pill-severed-meridian-restoration',
         name: 'Severed Meridian Restoration Pill',
         grade: 'immortal',
-        effect: 'treat_injury',
-        potency: 5,
+        // ── THE ROW SAID ONE THING AND THE RESOLVER DID ANOTHER ─────────
+        //
+        // It was `treat_injury`, which is graded by severity and skips
+        // permanent wounds on purpose - so a pill named for a severed meridian
+        // could not touch one, at any grade, ever. The description was not the
+        // thing that was wrong: "reverses damage that every lesser medicine
+        // calls permanent" is exactly the shape of the fiction, and the wound
+        // row's own "every physician in the two provinces will say so in the
+        // same words" is a claim by physicians rather than a fact about the
+        // world. Impossible here means impossible for anybody you will meet.
+        //
+        // So the mechanism moved to match, on the same effect the Limb Rebirth
+        // Pill uses: one named wound, one medicine, and it is immortal grade
+        // and past the cash line, which is what makes the permanence mean
+        // something in between.
+        effect: 'mends_what_will_not_close',
+        potency: 1,
         toxicity: 10.0,
         value: 42_000,
+        mends: ['severed-meridian'],
         description:
             'Reverses damage that every lesser medicine calls permanent, using soulreturn dew that condenses only where someone very strong died very badly. The supply chain is exactly as grim as it sounds.'
     },
@@ -546,6 +564,42 @@ export const PILLS: readonly Pill[] = [
         value: 60_000,
         description:
             'Twenty-five points at the boundary into Void Tribulation. Fewer than a hundred are believed to exist, and their owners are all known to each other.'
+    },
+    {
+        // THE ONLY THING IN EITHER PROVINCE THAT GROWS A PART BACK.
+        //
+        // It is not the medicine that mends a cultivator who broke at a wall:
+        // that is `structural-repair-medicine.ts`, it answers a structure that
+        // did not SET, and `repairRefusalReason` turns away anything else in as
+        // many words. A body short an arm has a structure that set perfectly
+        // well.
+        //
+        // Past the cash line by its grade, which is where an expensive thing
+        // belongs in this world - no counter quotes one, and `cashRefusalReason`
+        // is the sentence, which names the verb that does reach it.
+        id: 'pill-limb-rebirth',
+        name: 'Limb Rebirth Pill',
+        grade: 'immortal',
+        effect: 'mends_what_will_not_close',
+        potency: 1,
+        toxicity: 14.0,
+        // ── UNDER THE CHEAPEST ADVANCEMENT PILL OF ITS GRADE ─────────────
+        //
+        // It was 72,000, which put it over the Condensed Century Pill at
+        // 55,000 and broke the one rule `economy.md` states outright about
+        // this catalog: buying advancement always costs more than buying
+        // survival. Growing an arm back is survival, however dear it is, and
+        // the rule is not a tuning constant.
+        //
+        // Nothing about "expensive" moves: the cash line is drawn on GRADE, so
+        // an immortal pill is past it at any figure, `pillCashPrice` is null
+        // and a counter still quotes nothing. This is the dearest thing in the
+        // world that is not buying somebody a rung, which is exactly where it
+        // should sit.
+        value: 49_000,
+        mends: ['severed-flesh'],
+        description:
+            'Grows back a part of a body that the body has no way of growing back: an arm, an eye, a fang, the marrow of a bone. It takes a season, the taker is awake for it, and what comes back is the part they had rather than a better one. Refined from nine-leaf soul grass carried through a full turn of the cauldron, which is the step that fails.'
     },
     {
         id: 'pill-thousand-year-cypress',
@@ -614,8 +668,13 @@ export const PILLS: readonly Pill[] = [
         potency: 9,
         toxicity: 25.0,
         value: 480_000,
+        // NOT what does not close, and the sentence used to say otherwise.
+        // `treat_injury` is graded and skips permanent wounds, and the two
+        // medicines that answer one each answer exactly one named wound - which
+        // is what keeps a missing arm from being a thing money solves. This is
+        // the best general medicine in the world and that is a different claim.
         description:
-            'Treats every injury a body is carrying, including the ones it has stopped registering. Two are known to have been refined; one was used, and its user is still walking.'
+            'Treats every injury a body is carrying that anything can be done for, including the ones it has stopped registering. What does not close it does not close. Two are known to have been refined; one was used, and its user is still walking.'
     },
     {
         id: 'pill-millennium-condensation',
@@ -711,6 +770,30 @@ export function findCheapestPillFor(effect: PillEffect, atLeast: number): Pill |
     let best: Pill | undefined;
     for (const p of getPillsByEffect(effect)) {
         if (p.potency < atLeast) continue;
+        if (!best || p.value < best.value) best = p;
+    }
+    return best;
+}
+
+/**
+ * The cheapest pill that names this wound key, or null where nothing does.
+ *
+ * NULL IS THE ANSWER FOR NEARLY EVERY PERMANENT WOUND AND CALLERS MUST NOT
+ * SOFTEN IT. A parted meridian, a rooted heart demon and a burnt span each have
+ * an authored `treatment` that says nothing answers them, and they mean it. The
+ * flesh a body cannot grow back is the one that has a medicine, and a read that
+ * tells somebody the world has no answer for it is telling them a falsehood
+ * about the only thing they can still do.
+ *
+ * The key is resolved through `currentWoundKey` first, so a row saved under a
+ * retired key still reaches the pill made for it.
+ */
+export function pillThatMends(woundKey: string | null | undefined): Pill | null {
+    const key = currentWoundKey(woundKey);
+    if (key === null) return null;
+    let best: Pill | null = null;
+    for (const p of PILLS) {
+        if (!p.mends?.includes(key)) continue;
         if (!best || p.value < best.value) best = p;
     }
     return best;

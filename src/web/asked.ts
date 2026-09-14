@@ -5,6 +5,7 @@
 import type { Cultivator } from '../schema/cultivation.js';
 import type { RosterEntry } from '../storage/repos/cultivator.repo.js';
 import type { ResolvedEntity } from './entities.js';
+import type { KnowledgeGate } from './knowledge.js';
 import { rankName } from '../engine/cultivation/realms.js';
 import { WORKING_KNOWLEDGE_MARGIN } from './hearsay.js';
 import type {
@@ -16,6 +17,38 @@ import type { WhatIsOnTheirMind } from '../engine/world/what-somebody-here-is-ch
  * How far the answer got. Named for what the player sees, not for the rule.
  */
 export type Reach = 'answers' | 'partial' | 'guesses' | 'deflects' | 'blank';
+
+/**
+ * Whether the person being asked holds a record of what was asked about.
+ *
+ * `AskedInput.holdsIt`, built in one place because it was built twice - once in
+ * `askAround` and once in `demandOf` - and the two had to agree or a demand
+ * would be refused at limit one for a reason the polite ask two lines away did
+ * not have. Both listed the three kinds that had a gate read, so a question
+ * about anything else was decided entirely by `withinStratum`.
+ *
+ * A pill is asked for as `thing`: that is the gate's word for a claim about
+ * something out of a catalog, and `resolvePill`'s `kind` is the resolver's word
+ * for which catalog it came from. Naming them apart is what lets an elder who
+ * has heard of a medicine answer about it while the carter beside them cannot.
+ */
+export function whetherTheyHoldIt(
+    gate: Pick<KnowledgeGate, 'isAwareOf'>,
+    askedId: string,
+    subject: ResolvedEntity | null
+): boolean {
+    if (subject === null) return false;
+    switch (subject.kind) {
+        case 'cultivator':
+        case 'sect':
+        case 'place':
+            return gate.isAwareOf(askedId, subject.kind, subject.id);
+        case 'pill':
+            return gate.isAwareOf(askedId, 'thing', subject.id);
+        default:
+            return false;
+    }
+}
 
 export interface AskedInput {
     asker: Cultivator;

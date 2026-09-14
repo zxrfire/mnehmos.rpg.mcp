@@ -53,6 +53,33 @@
  * cash line, the honest answer is its name plus `cashRefusalReason` - told what
  * would mend you and why you cannot have it yet, which is the sentence `buy`
  * already gives.
+ *
+ * ── AND IT SAYS ONLY AS MUCH AS THE PERSON ASKING ACTUALLY HOLDS ──────────
+ *
+ * This file had no holder and no knowledge gate, so it told everybody the same
+ * thing: a Qi Condensation cultivator standing in a village, carrying a
+ * crippling tear, was handed the name, the grade and the barter terms of a
+ * medicine refined above the Lid. Nobody in the game was ever told "nothing can
+ * be done" while that was the honest answer from where they stand - which is
+ * the whole of the shape the design owner asked for, where a verdict is refused
+ * and somebody far enough up eventually names the thing.
+ *
+ * WHAT IS TRUE DID NOT MOVE. The wound rows still state the state of the art,
+ * the catalog still holds the medicine, the houses still hold their doses, and
+ * `whatSomebodyWouldGoAndGet` still finds the same pill. What changed is that
+ * {@link TheCure} carries whether this holder has heard of it, and
+ * {@link whatToSayAboutTheCure} has an honest sentence for each answer.
+ *
+ * ONE RULE, ASKED IN ONE PLACE: {@link aMedicineThisHolderCouldName}. A thing
+ * on open sale needs no telling; anything past the cash line does, and the gate
+ * is the only thing that says whether it happened.
+ *
+ * AND THE GATE CAN ONLY EVER BITE ON A BARTER-TIER MEDICINE, which is the
+ * invariant that holds the blast radius down. `whatSomebodyWouldGoAndGet` sorts
+ * cash before barter, so a barter pill is named only where nothing cheaper
+ * reached the wound at all - and a barter pill's `stones` is null by
+ * construction, so no caller composing a sentence out of `cure.name` and
+ * `cure.stones` can be handed a name it must not say.
  */
 
 import { PILLS } from '../data/cultivation/pills.js';
@@ -64,6 +91,12 @@ import {
     medicineReaches
 } from '../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
 import { cashRefusalReason } from '../engine/cultivation/buying-and-bartering-pills.js';
+import {
+    aThingOnOpenSale,
+    whoWouldHaveHeardOfIt
+} from '../engine/cultivation/who-has-heard-of-a-thing-past-the-counter.js';
+import { canName } from '../engine/social/discovery.js';
+import type { KnowledgeGate } from './knowledge.js';
 import type { Injury, Pill, TechniqueGrade } from '../schema/cultivation.js';
 
 /** What would close a wound, as much of it as the world will say. */
@@ -114,6 +147,52 @@ export interface TheCure {
     physicianNeeds: TechniqueGrade;
     /** Whether a mortal physician reaches it. False is why the counter refuses. */
     physicianReaches: boolean;
+    /**
+     * Whether the cultivator this was read for has ever heard the medicine
+     * exists.
+     *
+     * True with no holder supplied, which is what keeps every engine-side
+     * reading and every probe answering what it answered: a caller that names
+     * nobody is asking what is true rather than what somebody holds.
+     */
+    heardOf: boolean;
+}
+
+/** Who the reading is for. Absent where the caller is asking after the truth. */
+export interface WhoIsAsking {
+    gate: KnowledgeGate;
+    holderId: string;
+    /** Their own rung, which is the half of the rule the gate cannot reach. */
+    realmOrdinal: number;
+}
+
+/**
+ * Whether this medicine may be named to this holder.
+ *
+ * THE ONE PLACE THAT DECIDES IT, and every surface that names a medicine asks
+ * here: the physician's refusal, the situation panel, the alchemy receipt and
+ * the line about a wound nothing closes. Four sentences, one answer, so the
+ * game cannot tell somebody there is nothing to be done and name the thing two
+ * lines later.
+ */
+export function aMedicineThisHolderCouldName(
+    pill: Pill,
+    asking: WhoIsAsking | undefined
+): boolean {
+    if (aThingOnOpenSale(pill)) return true;
+    if (!asking) return true;
+    // The derivation first and the rows second, and both go through the same
+    // two readers everybody else uses. The rung is asked here rather than at
+    // the gate because the played cultivator has no world row for the gate's
+    // own reading to find - see `whoWouldHaveHeardOfIt`.
+    if (canName(whoWouldHaveHeardOfIt({
+        thingId: pill.id,
+        ordinal: asking.realmOrdinal,
+        house: null
+    }))) {
+        return true;
+    }
+    return asking.gate.isAwareOf(asking.holderId, 'thing', pill.id);
 }
 
 /**
@@ -207,7 +286,12 @@ export function whatWouldCloseThisWound(
      * has healers being paid too much, `buy` charges it, and a quote that did
      * not would be the same lie `regionId` was added to end.
      */
-    groundMultiplier = 1
+    groundMultiplier = 1,
+    /**
+     * Who is being told. Omitted by a caller asking what is TRUE rather than
+     * what somebody holds - every played surface passes one.
+     */
+    asking?: WhoIsAsking
 ): TheCure | null {
     if (untreated.length === 0) return null;
 
@@ -237,7 +321,8 @@ export function whatWouldCloseThisWound(
         // pill path enforces the identical rule. Kept because a refusal still
         // has to state what it is refusing on.
         physicianNeeds: medicineNeededFor(worst.severity, realmOrdinal),
-        physicianReaches: medicineReaches('mortal', worst.severity, realmOrdinal)
+        physicianReaches: medicineReaches('mortal', worst.severity, realmOrdinal),
+        heardOf: aMedicineThisHolderCouldName(pill, asking)
     };
 }
 
@@ -252,6 +337,20 @@ export function whatWouldCloseThisWound(
  */
 export function whatToSayAboutTheCure(cure: TheCure): string {
     const wound = `a ${cure.forSeverity} tear`;
+    // ── AND WHERE THEY HAVE NEVER HEARD OF IT, IT IS NOT NAMED ───────────
+    //
+    // Not a hedge and not a hint. The sentence says what is true from where
+    // they are standing - nothing they can reach closes it - and says which
+    // door would change that, which is the third of the three things
+    // `AGENTS.md` requires of a refusal. A medicine nobody has mentioned to
+    // them cannot be alluded to here, because an allusion is the engine
+    // winking: the verdict has to be survivable as a verdict, or refusing it
+    // is not something the player chose to do.
+    if (!cure.heardOf) {
+        return `Nothing you can reach closes ${wound}. No physician in reach will take the `
+            + 'case and no counter here sells anything that would. Whether anything closes it '
+            + 'at all is a question for somebody who works far higher up than anybody here.';
+    }
     if (cure.notForSale !== null) {
         return `What closes ${wound} is a ${cure.name}, ${cure.grade} grade. ${cure.notForSale}`;
     }

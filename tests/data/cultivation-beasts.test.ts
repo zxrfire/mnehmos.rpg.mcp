@@ -19,7 +19,12 @@
 import { describe, it, expect } from 'vitest';
 
 import { MAX_ORDINAL, rankName, realmForOrdinal } from '../../src/engine/cultivation/realms.js';
-import { HERB_VALUE_BANDS, HERB_RARITY_CEILING, HerbBiomeSchema } from '../../src/data/cultivation/herbs.js';
+import {
+    HERB_VALUE_BANDS,
+    HERB_RARITY_CEILING,
+    HerbBiomeSchema,
+    type HerbBiome
+} from '../../src/data/cultivation/herbs.js';
 import { getEncounter, ENCOUNTERS, ruinWeightShare } from '../../src/data/cultivation/encounters.js';
 import { REGIONS } from '../../src/data/cultivation/regions.js';
 import { getCultivationCatalogCounts } from '../../src/data/cultivation/index.js';
@@ -53,6 +58,7 @@ import {
     veinContenders,
     sealedOnlyBeasts,
     negotiableBeasts,
+    anythingAtThisRungSpeaks,
     getBeastsByDisposition,
     rollBeast
 } from '../../src/data/cultivation/beasts.js';
@@ -85,12 +91,20 @@ describe('spirit beasts: the catalog', () => {
             expect(() => HerbBiomeSchema.parse(b.biome), b.id).not.toThrow();
             expect(getBeastsByBiome(b.biome).map(x => x.id)).toContain(b.id);
         }
-        // An unpopulated biome answers with an empty list rather than
-        // undefined, which is what this line is for. It pointed at
-        // `sky_island` until the catalog grew one; `volcanic` is the honest
-        // replacement, because no province on the map declares volcanic ground
-        // and nothing can stand on it until one does.
-        expect(getBeastsByBiome('volcanic')).toEqual([]);
+        // EVERY BIOME IN THE VOCABULARY IS OCCUPIED NOW, AND THE POINTER HAS
+        // RUN OUT OF PLACES TO POINT. This line named `sky_island` until the
+        // catalog grew one, then `volcanic`, because no province declared
+        // volcanic ground - the Ashfall basin was authored in the political
+        // layer with an empty `places[]`. The map has three volcanic squares
+        // now and four kinds standing on them, so what is asserted is the
+        // property that was wanted all along: ground a player can stand on
+        // always has something on it, and an unoccupied key still answers with
+        // a list rather than undefined.
+        for (const biome of HerbBiomeSchema.options) {
+            expect(getBeastsByBiome(biome).length, `nothing lives on ${biome}`)
+                .toBeGreaterThan(0);
+        }
+        expect(getBeastsByBiome('nowhere-at-all' as HerbBiome)).toEqual([]);
     });
 
     it('covers the range: ordinary animals through to something ancient', () => {
@@ -208,9 +222,17 @@ describe('an amount below the line, an individual above it', () => {
             if (b.materialIds.length === 0) continue;
             expect(core, `${b.id} is tracked, yields materials, and has no core`).toBeDefined();
         }
-        // And the two things anybody could actually negotiate with yield
-        // nothing at all, which is what keeps the line from being a price list.
-        for (const b of negotiableBeasts().filter(x => x.persistence !== 'sealed_only')) {
+        // And the two the catalog files as `intelligent` yield nothing at all,
+        // which is what keeps the line from being a price list.
+        //
+        // ASKED OF `nature` AND NO LONGER OF WHO SPEAKS. It used to read the
+        // negotiable set minus the sealed ones, which was the same two rows
+        // while speech was an authored column. Speech is now the rung, so that
+        // set picked up a Millennial Tortoise standing on an open vein with
+        // three material rows on it - and those rows are correct. `coreOf`
+        // states why: a changed beast carrying a figure is the thesis, not an
+        // oversight. What has never been assayed is what nobody has taken.
+        for (const b of BEASTS.filter(x => x.nature === 'intelligent')) {
             expect(b.materialIds, `${b.id} speaks and is stock`).toEqual([]);
         }
     });
@@ -265,14 +287,22 @@ describe('one ladder: danger is an ordinal, not a stat block', () => {
 });
 
 describe('the change, and why a talking beast is never the easy option', () => {
-    it('puts a Void Tribulation floor under anything that speaks', () => {
+    it('makes Void Tribulation the whole of who speaks, and not a floor under a column', () => {
+        // THE RULING THAT REPLACED THE COLUMN. `speaks` was authored on all 64
+        // rows and this arm checked only that no row contradicted the floor.
+        // The design owner: *"species can't be categorized as speaks false.
+        // under 29 = speaks false."* So the field is gone and the set that
+        // speaks is the set at or above the change, exactly - which is a
+        // stronger claim than the old one and is what is asserted here.
         expect(BEAST_CHANGE_ORDINAL).toBe(29);
         expect(rankName(BEAST_CHANGE_ORDINAL)).toMatch(/Void Tribulation/);
         for (const b of BEASTS) {
-            if (b.speaks) {
-                expect(b.ordinal, `${b.id} speaks below the change`).toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);
-            }
+            expect(Object.keys(b), `${b.id} still stores a speaks column`).not.toContain('speaks');
+            expect(anythingAtThisRungSpeaks(b.ordinal), b.id)
+                .toBe(b.ordinal >= BEAST_CHANGE_ORDINAL);
         }
+        expect(negotiableBeasts().map(b => b.id).sort())
+            .toEqual(BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL).map(b => b.id).sort());
         expect(negotiableBeasts().length, 'nothing can be negotiated with').toBeGreaterThanOrEqual(1);
     });
 
@@ -281,7 +311,7 @@ describe('the change, and why a talking beast is never the easy option', () => {
         // the catalog and on the draw weight, not on a count - a count goes
         // stale the moment anybody adds a row, and the claim was never about
         // how many entries there are. It is about how often anybody meets one.
-        const speakers = BEASTS.filter(b => b.speaks);
+        const speakers = negotiableBeasts();
         expect(speakers.length / BEASTS.length, 'talking beasts are a tier, not an event')
             .toBeLessThan(0.25);
         // Every one of them is a named individual rather than a population.
@@ -307,20 +337,39 @@ describe('the change, and why a talking beast is never the easy option', () => {
             .toBeGreaterThanOrEqual(3);
         // And everything in it is an animal. That is what the window IS.
         for (const b of inTheGap) {
-            expect(b.speaks, `${b.id} talks inside the hunting window`).toBe(false);
+            expect(anythingAtThisRungSpeaks(b.ordinal), `${b.id} talks inside the hunting window`)
+                .toBe(false);
         }
         expect(inTheGap.some(b => coreOf(b.id) !== undefined),
             'nothing in the window carries a core to take').toBe(true);
     });
 
-    it('has things above the change that do not speak, which is worse', () => {
-        const silentAndHigh = BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL && !b.speaks);
-        expect(silentAndHigh.length).toBeGreaterThanOrEqual(2);
+    it('leaves nothing above the change silent, which is what the ruling settled', () => {
+        // THIS ARM USED TO ASSERT THE OPPOSITE. It required at least two rows
+        // above 29 with `speaks: false`, on the reasoning that a thing with
+        // nothing to negotiate with is the catalog's worst entry. The design
+        // owner overruled it - *"species can't be categorized as speaks false.
+        // under 29 = speaks false."* - so the set that used to be required to
+        // be non-empty must now be empty, and a row cannot express the old
+        // state at all.
+        const silentAndHigh = BEASTS.filter(b =>
+            b.ordinal >= BEAST_CHANGE_ORDINAL && !anythingAtThisRungSpeaks(b.ordinal));
+        expect(silentAndHigh).toEqual([]);
+        // Three rows changed meaning under it and are named, because their
+        // prose was written for a thing that said nothing: the Millennial
+        // Tortoise at 31, the Abyssal Leviathan at 38 and the Thing Under Nine
+        // Peaks at 33 all answer now.
+        for (const id of [
+            'beast-millennial-tortoise', 'beast-abyss-leviathan', 'beast-thing-under-nine-peaks'
+        ]) {
+            expect(anythingAtThisRungSpeaks(requireBeast(id).ordinal), id).toBe(true);
+        }
     });
 
     it('marks the intelligent ones as parties rather than problems', () => {
         for (const b of getBeastsByNature('intelligent')) {
-            expect(b.speaks, `${b.id} is intelligent and mute`).toBe(true);
+            expect(anythingAtThisRungSpeaks(b.ordinal), `${b.id} is intelligent and mute`)
+                .toBe(true);
             // Nobody has taken one, so there is no material and no price.
             expect(b.materialIds, `${b.id} has been priced`).toEqual([]);
             expect(coreOf(b.id)).toBeUndefined();
@@ -756,7 +805,7 @@ describe('what gives a changed beast away', () => {
 
     it('leaves the fox wearing the shape perfectly, because seeming is its gift', () => {
         const fox = requireBeast('beast-nine-tailed-reader');
-        expect(fox.speaks).toBe(true);
+        expect(anythingAtThisRungSpeaks(fox.ordinal)).toBe(true);
         expect(fox.note).toMatch(/fox/i);
         expect(fox.note).toMatch(/perfectly|seeming/i);
     });

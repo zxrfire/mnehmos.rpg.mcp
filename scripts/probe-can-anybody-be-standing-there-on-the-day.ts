@@ -1,26 +1,33 @@
 /**
  * A door opens for a week. Can anybody be standing at it?
  *
- * The arithmetic the whole convergence design rests on, done rather than
- * asserted. For every ancient site on a schedule, in every pinned world:
+ * For every ancient site on a schedule, in every pinned world:
  *
  *   the wait        years between openings.
  *   the window      days it stands open.
- *   the crossing    walking days from the nearest house seated in its own
- *                   province, over `travelDays` on the location links. Dijkstra
- *                   over the real graph, not a straight line.
- *   what is left    window minus crossing, and then minus the walk back out,
- *                   which is what `expeditionBudget` actually spends.
+ *   the crossing    walking days from each house seated anywhere, over
+ *                   `travelDays` on the location links. Dijkstra over the real
+ *                   graph, not a straight line.
  *
- * Then the three verdicts a player would feel:
+ * ── THE BAR IS ASKED OF THE ENGINE, NOT RESTATED HERE ────────────────────
  *
- *   WALKABLE        a party on foot arrives with window left and gets back out.
- *   NEEDS A ROAD    the crossing eats the window. Somebody at Void Tribulation
- *                   folds them in, or a junior burns a way-out talisman.
- *   NOBODY          the crossing is longer than the window however it is done.
+ * The first cut of this probe scored `crossingDays * 2 < windowDays` - walk
+ * there AND back inside the window - and reported 62.1% of houses unable to
+ * reach a door. That is not what an expedition costs and it is not what the
+ * engine charges. `beingAtADoorOnTheDayItOpens` already splits the two cases:
  *
- * The point is the SPREAD. An average over these hides exactly the cases the
- * two roads exist for.
+ *   knows the date    sets out to ARRIVE. The road comes out of the years
+ *                     before the window, not out of the window, and what the
+ *                     window has to cover is the depth in and back out.
+ *   hears it is open  starts late, so the whole crossing comes out of the
+ *                     window and what is left buys half its own length in depth.
+ *
+ * Scoring everybody as the second was measuring the world as if nobody could
+ * read a calendar, and the gap between the two arms is the whole information
+ * edge a house trades on. So the verdicts below are `onFoot.works`,
+ * `behindASenior.works` and `onASlip.works` off the engine function itself,
+ * asked twice with the same rows and two parties who differ in nothing but
+ * whether they can read the schedule.
  *
  *   npx esbuild scripts/probe-can-anybody-be-standing-there-on-the-day.ts \
  *       --bundle --platform=node --format=esm --external:better-sqlite3 \
@@ -29,58 +36,27 @@
 
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { whereTheOpenGroundIs } from '../src/engine/world/who-goes-out-for-a-house-and-what-comes-back.js';
+import { beingAtADoorOnTheDayItOpens } from '../src/engine/world/being-at-a-door-on-the-day-it-opens.js';
+import { SCHEDULE_READ_ORDINAL } from '../src/engine/world/convergence.js';
+import type { CapabilityActor } from '../src/engine/world/capability.js';
 import {
     FOLD_FLOOR_ORDINAL,
     foldRangeInWalkingDays
 } from '../src/engine/world/how-far-somebody-can-fold-space-and-what-it-costs.js';
 import { isBelowTheLid } from '../src/engine/world/layers.js';
-import type { LocationRecord } from '../src/engine/world/locations.js';
+import { walkingDaysFrom, type LocationRecord } from '../src/engine/world/locations.js';
+import { wingsOf } from '../src/engine/world/provenance.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
 const YEAR = 365;
 
 function line(s = ''): void { process.stdout.write(s + '\n'); }
 
-/** Walking days from one place to every place reachable from it. */
-function walkingDaysFrom(
-    locations: readonly LocationRecord[],
-    startId: string
-): Map<string, number> {
-    const byId = new Map(locations.map(l => [l.id, l]));
-    const best = new Map<string, number>([[startId, 0]]);
-    // Small graphs. A sorted frontier costs less than a heap here and the
-    // measurement is not on the hot path.
-    const frontier: { id: string; days: number }[] = [{ id: startId, days: 0 }];
-    while (frontier.length > 0) {
-        frontier.sort((a, b) => a.days - b.days);
-        const here = frontier.shift()!;
-        if ((best.get(here.id) ?? Infinity) < here.days) continue;
-        const node = byId.get(here.id);
-        if (!node) continue;
-        for (const link of node.links) {
-            if (!link.open) continue;
-            const days = here.days + Math.max(1, link.travelDays);
-            if (days < (best.get(link.toLocationId) ?? Infinity)) {
-                best.set(link.toLocationId, days);
-                frontier.push({ id: link.toLocationId, days });
-            }
-        }
-        // A place inside another is a walk of nothing: a ruin hangs off its
-        // parent rather than off a road, and treating the containment as
-        // impassable reports half the world unreachable.
-        if (node.parentId !== null && !best.has(node.parentId)) {
-            best.set(node.parentId, here.days);
-            frontier.push({ id: node.parentId, days: here.days });
-        }
-        for (const child of locations) {
-            if (child.parentId === node.id && !best.has(child.id)) {
-                best.set(child.id, here.days);
-                frontier.push({ id: child.id, days: here.days });
-            }
-        }
-    }
-    return best;
+/** Shares of the world's houses, per site, under one arm. */
+interface Verdicts {
+    walk: number;
+    fold: number;
+    none: number;
 }
 
 interface Row {
@@ -88,28 +64,83 @@ interface Row {
     name: string;
     waitYears: number;
     windowDays: number;
-    /** Walking days from the nearest house seat anywhere in the world. */
+    /** How far in the deepest wing is. What "the end of it" costs. */
+    depthDays: number;
     nearestSeatDays: number | null;
-    /** Walking days from the median house seat. What a house picked at random faces. */
     medianSeatDays: number | null;
-    /** Walking days from the farthest house seat that can reach it at all. */
     farthestSeatDays: number | null;
-    /** Share of the world's houses that could WALK somebody in inside the window. */
-    shareWhoCanWalkIt: number;
-    /**
-     * Share that could not walk it but are inside the reach of a fold at the
-     * rung folding starts. Escort, or a way-out slip cut by a hand at that rung.
-     */
-    shareWhoNeedAFold: number;
-    /** Share nobody gets there from, on foot or on one fold. */
-    shareNobodyMakes: number;
+    knowsTheDate: Verdicts;
+    hearsItIsOpen: Verdicts;
+}
+
+/**
+ * Two parties who differ in nothing but whether they can read the schedule.
+ *
+ * A key drops the requirement to nothing and a rung meets it outright, so the
+ * arm that knows the date is given both and the arm that does not is given
+ * neither. `readSchedule` is the only thing in the priced reading that looks at
+ * the party at all.
+ */
+function partyThatKnowsTheDate(site: LocationRecord): CapabilityActor {
+    const key = site.data.scheduleKey == null ? null : String(site.data.scheduleKey);
+    return {
+        id: 'knows-the-date',
+        realmOrdinal: SCHEDULE_READ_ORDINAL,
+        knowledgeIds: key === null ? [] : [key]
+    };
+}
+
+const PARTY_THAT_HEARS_IT_IS_OPEN: CapabilityActor = {
+    id: 'hears-it-is-open',
+    realmOrdinal: 0
+};
+
+function verdictsFor(
+    site: LocationRecord,
+    day: number,
+    crossings: readonly number[],
+    depthWanted: number,
+    party: CapabilityActor
+): Verdicts {
+    let walk = 0;
+    let fold = 0;
+    for (const crossingDays of crossings) {
+        const reading = beingAtADoorOnTheDayItOpens({
+            location: site,
+            day,
+            party,
+            crossingDays,
+            depthWanted,
+            // The two roads the design owner named, both at the rung folding
+            // starts, which is the cheapest either of them can be bought at.
+            escortOrdinal: FOLD_FLOOR_ORDINAL,
+            slipCutAtOrdinal: FOLD_FLOOR_ORDINAL
+        });
+        if (reading.onFoot.works) walk++;
+        else if (reading.behindASenior?.works || reading.onASlip?.works) fold++;
+    }
+    return { walk, fold, none: crossings.length - walk - fold };
+}
+
+/**
+ * Ruins with no door at all: tombs and legacies, standing open and always have.
+ *
+ * Counted apart and never priced. Everything this probe measures is about a
+ * window, and these have none - running them through it would report a wait of
+ * nothing and a window of nought, which is a false answer rather than a missing
+ * one. What stops somebody at one is the trial inside, which is
+ * `evaluateAccess`'s question.
+ */
+function groundWithNoDoor(state: WorldState): number {
+    return state.locations.filter(l =>
+        l.kind === 'ruin' && l.cycle === null && !l.sealed).length;
 }
 
 function rowsFor(state: WorldState, seed: string): Row[] {
     const seats = state.factions
         .filter(f => f.dissolvedOnDay === null && isBelowTheLid(f) && f.seatLocationId !== null)
         .map(f => f.seatLocationId as string);
-    const foldAtTheFloor = foldRangeInWalkingDays(FOLD_FLOOR_ORDINAL);
+    const day = Math.floor(state.currentDay);
 
     const out: Row[] = [];
     for (const site of state.locations) {
@@ -123,26 +154,27 @@ function rowsFor(state: WorldState, seed: string): Row[] {
             .sort((a, b) => a - b);
         const windowDays = site.cycle.openDays;
         const waitYears = Math.round(site.cycle.periodDays / YEAR);
+        const depthDays = wingsOf(site).reduce((deep, wing) => Math.max(deep, wing.depthDays), 0);
+        const unreachable = seats.length - days.length;
+        const none = { walk: 0, fold: 0, none: seats.length };
         if (days.length === 0) {
             out.push({
-                seed, name: site.name, waitYears, windowDays,
+                seed, name: site.name, waitYears, windowDays, depthDays,
                 nearestSeatDays: null, medianSeatDays: null, farthestSeatDays: null,
-                shareWhoCanWalkIt: 0, shareWhoNeedAFold: 0, shareNobodyMakes: 1
+                knowsTheDate: none, hearsItIsOpen: none
             });
             continue;
         }
-        // Out AND back inside the window is what an expedition actually costs,
-        // which is why the bar is half the window rather than all of it.
-        const walkable = days.filter(d => d * 2 < windowDays).length;
-        const foldable = days.filter(d => d * 2 >= windowDays && d <= foldAtTheFloor).length;
+        const add = (v: Verdicts): Verdicts => ({ ...v, none: v.none + unreachable });
         out.push({
-            seed, name: site.name, waitYears, windowDays,
+            seed, name: site.name, waitYears, windowDays, depthDays,
             nearestSeatDays: days[0],
             medianSeatDays: days[Math.floor(days.length / 2)],
             farthestSeatDays: days[days.length - 1],
-            shareWhoCanWalkIt: walkable / seats.length,
-            shareWhoNeedAFold: foldable / seats.length,
-            shareNobodyMakes: (seats.length - walkable - foldable) / seats.length
+            knowsTheDate: add(verdictsFor(site, day, days, depthDays, partyThatKnowsTheDate(site))),
+            hearsItIsOpen: add(
+                verdictsFor(site, day, days, depthDays, PARTY_THAT_HEARS_IT_IS_OPEN)
+            )
         });
     }
     return out;
@@ -171,25 +203,39 @@ async function main(): Promise<void> {
 
     const all: Row[] = [];
     let firstRoads = '';
+    let seatCount = 0;
+    let ruins = 0;
+    let noDoor = 0;
     for (const seed of seeds) {
         const state = seedWorld({ seed, catalog, presentYear: 1000, population: 250 }).state;
-        if (firstRoads === '') firstRoads = roadReport(state);
+        ruins += state.locations.filter(l => l.kind === 'ruin').length;
+        noDoor += groundWithNoDoor(state);
+        if (firstRoads === '') {
+            firstRoads = roadReport(state);
+            seatCount = state.factions.filter(f =>
+                f.dissolvedOnDay === null && isBelowTheLid(f) && f.seatLocationId !== null).length;
+        }
         all.push(...rowsFor(state, seed));
     }
 
-    line(`THE MAP ITSELF: ${firstRoads}`);
+    line(`THE MAP ITSELF: ${firstRoads}, house seats ${seatCount}`);
     line();
     line('EVERY SCHEDULED SITE, ONE WORLD (the ruin roll is catalog-fixed; the rest repeat it)');
-    line('  wait  window  nearest  median  farthest   walk%  fold%  none%  site');
+    line('  wait  window  depth  nearest  median  farthest   knows the date      hears it is open');
+    line('                                                   walk  fold  none    walk  fold  none');
     for (const r of all.filter(r => r.seed === seeds[0])) {
+        const share = (v: Verdicts, of: number): string =>
+            `${(v.walk / of * 100).toFixed(0).padStart(5)}%`
+            + `${(v.fold / of * 100).toFixed(0).padStart(5)}%`
+            + `${(v.none / of * 100).toFixed(0).padStart(5)}%`;
+        const of = r.knowsTheDate.walk + r.knowsTheDate.fold + r.knowsTheDate.none;
         line(`  ${String(r.waitYears).padStart(4)}y `
             + `${String(r.windowDays).padStart(6)}d `
+            + `${String(r.depthDays).padStart(5)}d `
             + `${String(r.nearestSeatDays ?? '-').padStart(7)}d `
             + `${String(r.medianSeatDays ?? '-').padStart(6)}d `
-            + `${String(r.farthestSeatDays ?? '-').padStart(8)}d `
-            + `${(r.shareWhoCanWalkIt * 100).toFixed(0).padStart(6)}%`
-            + `${(r.shareWhoNeedAFold * 100).toFixed(0).padStart(6)}%`
-            + `${(r.shareNobodyMakes * 100).toFixed(0).padStart(6)}%  ${r.name}`);
+            + `${String(r.farthestSeatDays ?? '-').padStart(8)}d  `
+            + `${share(r.knowsTheDate, of)}   ${share(r.hearsItIsOpen, of)}  ${r.name}`);
     }
     line();
 
@@ -200,19 +246,31 @@ async function main(): Promise<void> {
     };
     const mean = (of: (r: Row) => number): string =>
         (all.reduce((s, r) => s + of(r), 0) / all.length * 100).toFixed(1) + '%';
+    const arm = (pick: (r: Row) => Verdicts): string => {
+        const total = (r: Row): number => {
+            const v = pick(r);
+            return v.walk + v.fold + v.none;
+        };
+        return `walk in and out ${mean(r => pick(r).walk / total(r))}`
+            + `, need a fold ${mean(r => pick(r).fold / total(r))}`
+            + `, nobody makes it ${mean(r => pick(r).none / total(r))}`;
+    };
 
     line(`POOLED over ${seeds.length} worlds, ${all.length} scheduled sites`);
     line(`  wait   ${tally(r => `${r.waitYears}y`)}`);
     line(`  window ${tally(r => `${r.windowDays}d`)}`);
+    line(`  depth  ${tally(r => `${r.depthDays}d`)}`);
     const near = all.map(r => r.nearestSeatDays).filter((d): d is number => d !== null)
         .sort((a, b) => a - b);
     const far = all.map(r => r.farthestSeatDays).filter((d): d is number => d !== null)
         .sort((a, b) => a - b);
     line(`  nearest seat(walking days):  min ${near[0]} median ${near[Math.floor(near.length / 2)]} max ${near[near.length - 1]}`);
     line(`  farthest seat(walking days): min ${far[0]} median ${far[Math.floor(far.length / 2)]} max ${far[far.length - 1]}`);
-    line(`  of the world's houses, per site: walk in and out ${mean(r => r.shareWhoCanWalkIt)}`
-        + `, need a fold ${mean(r => r.shareWhoNeedAFold)}`
-        + `, nobody makes it ${mean(r => r.shareNobodyMakes)}`);
+    line(`  of the world's houses, per site, KNOWING THE DATE: ${arm(r => r.knowsTheDate)}`);
+    line(`  of the world's houses, per site, HEARING IT IS OPEN: ${arm(r => r.hearsItIsOpen)}`);
+    line(`  ruins ${ruins}, of them scheduled ${all.length} and standing open with no `
+        + `door at all ${noDoor} - those have no window and are not a reachability `
+        + 'question at all; what stops anybody at one is the trial inside.');
     line(`  a fold at the floor (${FOLD_FLOOR_ORDINAL}) covers `
         + `${foldRangeInWalkingDays(FOLD_FLOOR_ORDINAL)} walking days; `
         + `at 40 it covers ${foldRangeInWalkingDays(40).toFixed(0)}`);

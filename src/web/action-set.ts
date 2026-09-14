@@ -194,6 +194,14 @@ export const ACTION_NAMES = [
      */
     'request',
     /**
+     * Saying to somebody's face that their account of themselves does not
+     * stand. The other end of `tell`, and the player's half of a read the
+     * world's own people now make at every telling: two holders, one subject,
+     * two statements that cannot both be, and either side may be the one who
+     * notices.
+     */
+    'challenge',
+    /**
      * 护法: standing over somebody else's crossing while they cannot defend it.
      */
     'guard',
@@ -474,6 +482,12 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
      * a watch is kept in the same room as the crossing.
      */
     'guard',
+    /**
+     * WHOSE ACCOUNT is being gainsaid. Resolved off who is standing in the
+     * square, for `tell`'s reason: it is said to their face, and a challenge
+     * nobody is there to hear is not a challenge.
+     */
+    'challenge',
     /**
      * WHO IS BEING TAUGHT, resolved off who is standing in the square for the
      * same reason a watch is: months at somebody's elbow happen in the same
@@ -835,6 +849,12 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      * act in the game.
      */
     guard: ['a_span_of_days', 'the_crossing'],
+    /**
+     * Words, said to somebody standing in front of you. What it can cost is a
+     * person who now holds something about you, which arrives later through
+     * their own decision - the same reading `tell` and `oath` carry.
+     */
+    challenge: [],
     propose: ['a_span_of_days'],
     decline: ['a_span_of_days'],
     /**

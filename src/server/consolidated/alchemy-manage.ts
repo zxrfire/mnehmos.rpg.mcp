@@ -24,7 +24,8 @@ import {
     rollInjurySeverity,
     treatWorstInjury
 } from '../../engine/cultivation/index.js';
-import { isPermanentWound } from '../../data/cultivation/wounds.js';
+import { INJURY_SEVERITY_ORDER } from '../../engine/cultivation/injuries.js';
+import { currentWoundKey, getWoundType, isPermanentWound } from '../../data/cultivation/wounds.js';
 import {
     medicineNeededFor,
     medicineRank,
@@ -40,8 +41,10 @@ import {
 // the surface where it used to contradict itself in the resolver.
 import {
     whatWouldCloseThisWound,
-    whatToSayAboutTheCure
+    whatToSayAboutTheCure,
+    type WhoIsAsking
 } from '../../web/what-would-close-this-wound.js';
+import { KnowledgeGate } from '../../web/knowledge.js';
 import {
     getPill,
     lifespanRefusalReason,
@@ -549,7 +552,12 @@ export async function handleConsumePill(
         // Read here because the resolver is sync and has to stay that way. The
         // only use of it is naming what would close a wound this pill did not,
         // and that sentence quotes a counter, so it has to quote THIS counter.
-        await whatThisGroundAddsToAPrice(run, cultivator, 'medicine')
+        await whatThisGroundAddsToAPrice(run, cultivator, 'medicine'),
+        {
+            gate: new KnowledgeGate(repos.db),
+            holderId: cultivator.id,
+            realmOrdinal: cultivator.realmOrdinal
+        }
     );
 
     // ── Toxicity: the medicine keeps its own ledger. ──
@@ -827,7 +835,9 @@ function resolvePillEffect(
     /** How many breakthrough pills this life has already had. Read, never written. */
     priorPillsTaken: number,
     /** What the ground here adds to medicine, for the cure this pill did not reach. */
-    groundMultiplier: number
+    groundMultiplier: number,
+    /** Who is reading the receipt, so a cure is named only as far as they hold it. */
+    asking: WhoIsAsking
 ): PillApplication {
     const base: PillApplication = {
         summary: '',
@@ -924,7 +934,10 @@ function resolvePillEffect(
                     standingOf(cultivator).regionId,
                     // What the province is LIKE, and then what is TRUE of the
                     // ground today. `buy` charges both.
-                    groundMultiplier)
+                    groundMultiplier,
+                    // And who is being told, so a receipt does not name a
+                    // medicine the person reading it has never heard of.
+                    asking)
                 : null;
 
             let summary: string;
@@ -953,6 +966,56 @@ function resolvePillEffect(
                 treatedInjuryIds: treated.map(t => t.id),
                 treatedInjuries: treated,
                 summary
+            };
+        }
+        // THE ONE EFFECT THAT REACHES A WOUND NOTHING ELSE CLOSES.
+        //
+        // NAMED FOR WHAT IT DOES AND NOT FOR ONE BODY PART. It was
+        // `regrow_flesh` when the first medicine of this kind was written, and
+        // the second one is a parted channel rather than a limb - the same
+        // mechanism exactly, which is the point: one effect keyed on `mends`,
+        // and the pair of rows says which wound each answers.
+        //
+        // It does it by NAME and never by severity. `treat_injury` above is
+        // graded - how bad the tear is, against the body carrying it - and it
+        // skips permanent wounds on purpose, because a medicine that reached
+        // them on a severity band would reach a severed meridian and a rooted
+        // heart demon along with a missing arm, and the catalog says plainly
+        // that nothing answers either of those. So this case matches
+        // `pill.mends` and nothing else: the wound row and the pill row have to
+        // agree before anything happens.
+        case 'mends_what_will_not_close': {
+            const mends = new Set(pill.mends ?? []);
+            const count = Math.max(1, Math.round(pill.potency));
+            const reached = cultivator.injuries
+                .filter(injury => !injury.treated)
+                .filter(injury => mends.has(currentWoundKey(injury.woundType) ?? ''))
+                // Worst first, and oldest where they tie, which is the triage
+                // `treatWorstInjury` already does for the graded path.
+                .sort((a, b) =>
+                    INJURY_SEVERITY_ORDER.indexOf(b.severity) - INJURY_SEVERITY_ORDER.indexOf(a.severity)
+                    || a.sustainedOnTurn - b.sustainedOnTurn)
+                .slice(0, count);
+
+            if (reached.length === 0) {
+                return {
+                    ...base,
+                    summary:
+                        `Nothing here for it to answer. ${pill.name} reaches `
+                        + `${[...mends].map(key => getWoundType(key)?.name ?? key).join(', ')} `
+                        + 'and nothing else. The pill is gone and it did nothing.'
+                };
+            }
+            return {
+                ...base,
+                treatedInjuryIds: reached.map(injury => injury.id),
+                treatedInjuries: reached.map(injury => ({ ...injury, treated: true })),
+                summary:
+                    `${reached.length} thing${reached.length === 1 ? '' : 's'} nothing closes, `
+                    + `closed: ${reached.map(injury =>
+                        `${injury.severity} ${getWoundType(injury.woundType)?.name.toLowerCase()
+                            ?? injury.woundType}`).join(', ')}. `
+                    + 'A season of it, and the body has back what it had lost.'
             };
         }
         case 'cleanse_deviation': {

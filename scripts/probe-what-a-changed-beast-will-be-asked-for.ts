@@ -18,7 +18,10 @@
 
 import { makeGameInWorld } from '../tests/web/harness.js';
 import { resetCultivationWorlds } from '../src/server/state/cultivation-world.js';
-import { beastsOnThisGround } from '../src/engine/world/hunting-a-spirit-beast.js';
+import {
+    beastsOnThisGround,
+    readsAsSomebody
+} from '../src/engine/world/hunting-a-spirit-beast.js';
 import { idOfTheOneOnThisGround } from '../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { theRungTheyAreOn } from '../src/web/asking-something-that-can-refuse-for-a-piece-of-it.js';
 import {
@@ -33,7 +36,7 @@ const SEEDS = process.argv.slice(2).length > 0
 
 async function main(): Promise<void> {
     console.log('WHAT EACH SPEAKING ENTRY WOULD PART WITH, AND WHAT IT WANTS FOR IT');
-    for (const beast of BEASTS.filter(one => one.speaks)) {
+    for (const beast of BEASTS.filter(readsAsSomebody)) {
         const pieces = whatItCouldPartWith(beast);
         for (const piece of pieces) {
             const cost = whatGivingItCosts({
@@ -42,7 +45,8 @@ async function main(): Promise<void> {
             console.log(
                 `  ${beast.id.padEnd(34)} ${piece.material.name.padEnd(22)} `
                 + `${piece.material.grade.padEnd(9)} ${String(piece.material.value).padStart(6)}st  `
-                + `${cost.growsBackInYears}y/${cost.wound.severity}`
+                + `${cost.growsBackInYears === null ? 'never' : `${cost.growsBackInYears}y`}`
+                + `/${cost.wound.severity}`
                 + `${cost.doesNotComeBack ? '/permanent' : ''} `
                 + `shame=${cost.shame?.severity ?? 'none'} `
                 + `${piece.inTheCatalog ? '(catalog)' : '(minted)'}`
@@ -66,7 +70,7 @@ async function main(): Promise<void> {
                 sealed: place.sealed,
                 onAVein: place.qiDensity >= 60 || place.environment.resources.includes('qi')
             };
-            const speaking = beastsOnThisGround(ground).filter(one => one.speaks);
+            const speaking = beastsOnThisGround(ground).filter(readsAsSomebody);
             reach.set(speaking.length, (reach.get(speaking.length) ?? 0) + 1);
             for (const one of speaking) {
                 byBeast.set(one.id, (byBeast.get(one.id) ?? 0) + 1);

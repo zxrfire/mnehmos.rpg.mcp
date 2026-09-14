@@ -610,6 +610,28 @@ what-a-room-decides-about-one-of-its-own.ts
                                         the alignment moves the index. An
                                         intercession moves it one rung, and some
                                         bodies no word reaches
+somebody-is-sent-to-carry-it-out.ts     who the house sends once the room has
+                                        decided, off the punishment hall's own
+                                        holder and staff. Two readings send the
+                                        elder in person and neither can keep him
+                                        home: what was done, at
+                                        `THE_ELDER_GOES_IN_PERSON_AT` and above,
+                                        and what the errand is, from
+                                        `THE_ELDER_GOES_IN_PERSON_FOR` up the
+                                        sentence ladder - the rung where a
+                                        sentence stops being carried out on what
+                                        somebody holds and starts being carried
+                                        out on the person. The posted disciples
+                                        go alone below both, and a house short at
+                                        one rung sends the other
+somebody-speaks-for-the-accused.ts      the word somebody with standing puts in
+                                        for the accused, priced off the offer
+                                        ladder at `against_their_interest` -
+                                        which is where money stops reaching, so
+                                        a purse buys no leniency and the refusal
+                                        names the rung that would. The accused
+                                        and the holder of the room are the two
+                                        whose word is not an intercession
 what-a-house-will-do-about-it.ts        the alignment split, entirely downstream
 when-somebody-works-out-what-you-did.ts the delayed discovery and its grudge
 going-further-than-an-agreed-bout-allowed.ts

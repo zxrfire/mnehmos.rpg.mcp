@@ -29,7 +29,12 @@ import {
 } from './a-beast-that-took-a-shape-is-somebody.js';
 import { makeFact, type HistoricalFact, type PendingFact } from './history.js';
 import { theProvinceAround } from './ground-holder.js';
-import { nextOpeningDay, populationWeightOf, type LocationRecord } from './locations.js';
+import {
+    isOpenOn,
+    nextOpeningDay,
+    populationWeightOf,
+    type LocationRecord
+} from './locations.js';
 import { isBelowTheLid } from './layers.js';
 import { daysByConveyance, type Conveyance } from './what-a-conveyance-does-to-a-journey.js';
 
@@ -152,7 +157,13 @@ export interface WhereTheOpenGroundIs {
 }
 
 export function whereTheOpenGroundIs(
-    locations: readonly LocationRecord[]
+    locations: readonly LocationRecord[],
+    /**
+     * The day being asked about. Omitted falls back to the column, which is
+     * the honest answer for a caller that has no day and is what every caller
+     * got before the schedule became the authority.
+     */
+    onDay?: number | null
 ): WhereTheOpenGroundIs {
     const province = new Map<string, string | null>();
     const provinceOf = (locationId: string | null): string | null => {
@@ -171,12 +182,24 @@ export function whereTheOpenGroundIs(
         // still knows where it is, and being unable to walk in is not the same
         // fact as not having found it. A filter on `controllingFactionId` here
         // was tried and reverted for exactly that.
-        // `sealed` carries two states on a ruin - a door nobody has opened yet,
-        // and one on an `OpeningCycle` that shuts again between seasons - and
-        // both mean nobody gets in now, which is all this needs.
-        // `a-door-that-closes-is-not-a-door-nobody-opened.ts` tells them apart
-        // for anything that wants to WAIT for one.
-        if (ground.kind !== 'ruin' || ground.sealed) continue;
+        // ── THE SCHEDULE, WHERE THERE IS ONE ────────────────────────────
+        //
+        // This read `ground.sealed` and argued that the column covers both
+        // states a ruin can be shut in - a door nobody has opened, and one on a
+        // season - because both mean nobody gets in now. That was true while
+        // the column was the authority. It is not any more: the cycle decides,
+        // and `sealed` is the world's RECORD that a door moved, refreshed at a
+        // year boundary. So a ruin standing open today could carry a stale
+        // `true` for up to a year and a shut one a stale `false` - and this
+        // reading is what decides where a house sends a party, so the cost of
+        // being wrong is somebody walking to a door that is not there.
+        //
+        // `isOpenOn` is the one answer and falls back to the column itself for
+        // ground with no cycle, so nothing about the unscheduled case changes.
+        const standingOpen = onDay === undefined || onDay === null
+            ? !ground.sealed
+            : isOpenOn(ground, Math.floor(onDay));
+        if (ground.kind !== 'ruin' || !standingOpen) continue;
         const where = provinceOf(ground.id);
         if (where === null) continue;
         const bucket = byProvince.get(where);
@@ -529,7 +552,13 @@ export interface Posting {
  */
 export function postingFor(input: {
     reason: SendingReason;
-    house: HouseAsItStands;
+    /**
+     * Only the two columns a posting carries. Narrowed from the whole house
+     * because it was always only these: a caller with a house that is not
+     * standing in front of a board - a door that just opened, say - should not
+     * have to invent a standing table and a find to write one down.
+     */
+    house: Pick<HouseAsItStands, 'id' | 'name'>;
     pitchOrdinal: number;
     locationId?: string | null;
     /** What they went on. Null or absent is walking, which changes nothing. */

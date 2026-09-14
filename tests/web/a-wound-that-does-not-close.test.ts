@@ -47,6 +47,7 @@ import {
 } from '../../src/engine/cultivation/injuries';
 import { isBleedingOut } from '../../src/engine/cultivation/survival';
 import { WOUND_TYPES, isPermanentWound } from '../../src/data/cultivation/wounds';
+import { pillThatMends } from '../../src/data/cultivation/pills';
 import { linesFor, whatIsWorthDoingStandingHere } from '../../src/web/what-is-worth-doing-standing-here';
 
 /** A wound the world has no medicine for, off the catalog rather than invented. */
@@ -159,11 +160,45 @@ describe('the read', () => {
      * THE SILENCE, CLOSED. Both wound counts are zero here - which is what the
      * read actually computes for somebody whose only injury is permanent - and
      * the answer must still say something.
+     *
+     * ── AND IT NO LONGER SPEAKS FOR THE WORLD ────────────────────────────
+     *
+     * This asserted `no medicine for it`, which was right while the only way to
+     * arrive here with nothing named was a wound nothing in the world answers.
+     * `theOneMedicineThatWouldReachIt` is now withheld from a holder who has
+     * never heard of the medicine, so the same null carries a second meaning -
+     * there is one, and nobody has told you - and the two have to read
+     * identically or the absence of a name is itself the hint. What is asserted
+     * instead is the claim that is true of both: nothing THEY CAN REACH answers
+     * it. The rule being protected has not moved: somebody carrying a wound
+     * nothing closes must be told so rather than told nothing.
      */
     it('says so when the only wound is one nothing closes', () => {
         const said = linesFor(standing({ carriesAWoundNothingCloses: true })).join(' ');
         expect(said).toMatch(/does not close/i);
-        expect(said).toMatch(/no medicine for it/i);
+        expect(said).toMatch(/nothing you can reach/i);
+        expect(said, 'a verdict that speaks for the world tells the player to stop looking')
+            .not.toMatch(/no medicine for it/i);
+    });
+
+    /**
+     * AND THE ONE THAT DOES HAVE AN ANSWER IS NOT TOLD IT HAS NONE.
+     *
+     * `severed-flesh` - a part of a body taken out of it - is permanent at any
+     * rung and is the one permanent row in the catalog with a medicine. Saying
+     * the world has no medicine for it is the same silence this describe block
+     * exists to close, said backwards: the player is told to stop looking on
+     * the one occasion looking would work.
+     */
+    it('names the medicine where the wound that stays has one', () => {
+        const medicine = pillThatMends('severed-flesh')!;
+        const said = linesFor(standing({
+            carriesAWoundNothingCloses: true,
+            theOneMedicineThatWouldReachIt: medicine.name
+        })).join(' ');
+        expect(said).toContain(medicine.name);
+        expect(said, 'told there is no medicine for the one wound that has one')
+            .not.toMatch(/nothing you can reach/i);
     });
 
     /** And says nothing about it when there is nothing to say. */

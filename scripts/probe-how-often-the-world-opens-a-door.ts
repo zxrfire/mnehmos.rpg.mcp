@@ -22,7 +22,6 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { applyPressure } from '../src/engine/world/pressure.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { howThisGroundIsShut } from '../src/engine/world/a-door-that-closes-is-not-a-door-nobody-opened.js';
-import { whenTheScheduleNextOpens } from '../src/engine/world/convergence.js';
 import { nextOpeningDay } from '../src/engine/world/locations.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
@@ -60,21 +59,20 @@ function doorCounts(state: WorldState, label: string): void {
     }
     const opened = doorFacts(state, 'convergence_opened');
     const closed = doorFacts(state, 'convergence_closed');
-    // THE CONTROL ARM, IN THIS PROCESS, ON THIS WORLD. The pass used to ask
-    // `nextOpeningDay`, which returns null for anything sealed; every cycled
-    // ruin is sealed. Counting both expressions over the same rows is a
-    // line-by-line identity check rather than a second tree, and it is the only
-    // honest way to state the before-number now that the pass has moved.
-    let oldCouldName = 0, newCanName = 0;
+    // `nextOpeningDay` used to answer null for anything sealed, and every cycled
+    // ruin is sealed, so the pass that asked it opened nothing. The schedule is
+    // now the authority and the column is a reading of it, so there is one
+    // expression again rather than two; this counts how many cycled rows it can
+    // name a day for, which was 3 of 72 and should be all of them.
+    let canName = 0;
     for (const r of ruins) {
         if (!r.cycle) continue;
-        if (nextOpeningDay(r, day) !== null) oldCouldName++;
-        if (whenTheScheduleNextOpens(r, day) !== null) newCanName++;
+        if (nextOpeningDay(r, day) !== null) canName++;
     }
     line(`  ${label}: ruins ${ruins.length} cycled ${cycled} open ${open} `
         + `season ${season} somebody ${somebody} spent ${spent} `
         + `| opened ${opened} closed ${closed}`
-        + ` | schedule readable old ${oldCouldName}/${cycled} new ${newCanName}/${cycled}`);
+        + ` | schedule readable ${canName}/${cycled}`);
     if (periods.length > 0) {
         const tally = new Map<number, number>();
         for (const p of periods) tally.set(p, (tally.get(p) ?? 0) + 1);

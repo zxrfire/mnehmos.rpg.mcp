@@ -1388,7 +1388,18 @@ export const PillEffectSchema = z.enum([
      * separate fact - see `a-body-under-somebody-elses-hand.ts` - so swallowing
      * one alone leaves somebody emptied and belonging to no one.
      */
-    'hollow_the_soul'
+    'hollow_the_soul',
+    /**
+     * Grows back a part of the body the body cannot grow back itself.
+     *
+     * Separate from `treat_injury` because that effect may never touch a
+     * permanent wound - `treatWorstInjury` skips them, and it has to, or every
+     * cheap meridian pill on a shelf would start closing severed channels and
+     * heart demons. This is the one effect that reaches a wound `wounds.ts`
+     * marks permanent, and it reaches exactly the ones its pill names in
+     * `mends`.
+     */
+    'mends_what_will_not_close'
 ]);
 export type PillEffect = z.infer<typeof PillEffectSchema>;
 
@@ -1404,6 +1415,18 @@ export const PillSchema = z.object({
     /** Base market value in spirit stones. */
     value: z.number().int().min(0).default(1),
     description: z.string().default(''),
+    /**
+     * Wound keys from `data/cultivation/wounds.ts` this pill is the NAMED
+     * answer for, for the effects that answer a particular wound rather than a
+     * severity band. `treat_injury` carries none and must not: it is graded
+     * against how bad a wound is and against the body carrying it, which is a
+     * different question and is already answered by
+     * `what-grade-of-medicine-a-wound-needs.ts`.
+     *
+     * Same column and same meaning as `StructuralRepairMedicine.mends`, so a
+     * reader who knows one knows the other.
+     */
+    mends: z.array(z.string().min(3)).optional(),
     /**
      * The generic column. A pill carries no rung column of its own, so this is
      * where its gate lives when one matters. Absent means it is met as `matched`

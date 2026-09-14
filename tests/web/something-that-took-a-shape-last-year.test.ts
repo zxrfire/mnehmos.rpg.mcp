@@ -31,10 +31,11 @@ import {
     whatThisHouseKnowsOf,
     whatTheyDoAboutANameTheyDoNotHave,
     whatTheyHaveARecordFor,
+    theOnesThatCanBeStoodUp,
     whyThisOneIsNotSomebody,
     worksOnThePersonRatherThanTheTerms
 } from '../../src/engine/world/a-beast-that-took-a-shape-is-somebody';
-import { BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts';
+import { BEASTS, BEAST_CHANGE_ORDINAL } from '../../src/data/cultivation/beasts';
 
 async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
     const before = process.env.ADMIN_MODE;
@@ -47,15 +48,27 @@ async function withAdmin<T>(fn: () => Promise<T>): Promise<T> {
     }
 }
 
-describe('what makes somebody somebody is `speaks`, never the rung', () => {
-    it('refuses the things above the change that say nothing', () => {
-        // The floor-not-iff rule from the schema, which exists because the
-        // catalog's worst entries stand above 29 and have nothing to negotiate
-        // with. Reading the ordinal instead would turn one into a conversation.
+describe('what makes somebody somebody is the rung, and nothing else', () => {
+    /**
+     * THIS BLOCK USED TO ASSERT THE OPPOSITE, AND IT WAS NAMED FOR IT.
+     *
+     * Its first arm - *"refuses the things above the change that say
+     * nothing"* - took `thing-under-nine-peaks`, at 33, and required
+     * `whyThisOneIsNotSomebody` to refuse it with "does not speak". That was
+     * the schema's floor-not-iff rule: `speaks` was a column, a species could
+     * be authored mute above the change, and the catalog's worst entries were
+     * said to be exactly those.
+     *
+     * The design owner overruled it: *"species can't be categorized as speaks
+     * false. under 29 = speaks false."* The column is gone from the schema and
+     * from all 64 rows, so the arm below asserts the new truth about the same
+     * species - it answers now - rather than being deleted.
+     */
+    it('stands up the things above the change that used to be refused', () => {
         const sealed = theSpeciesTheyMeant('thing-under-nine-peaks');
         expect(sealed).not.toBeNull();
         expect(sealed!.ordinal).toBeGreaterThan(BEAST_CHANGE_ORDINAL);
-        expect(whyThisOneIsNotSomebody(sealed!)).toMatch(/does not speak/);
+        expect(whyThisOneIsNotSomebody(sealed!)).toBeNull();
     });
 
     it('refuses an animal, and says which line it is under', () => {
@@ -63,12 +76,20 @@ describe('what makes somebody somebody is `speaks`, never the rung', () => {
         expect(whyThisOneIsNotSomebody(hawk!)).toMatch(/It is an animal/);
     });
 
-    it('lets the three that took a shape through', () => {
+    it('lets every species at or past the change through, not a chosen three', () => {
         for (const one of ['fox', 'ape', 'seam']) {
             const found = theSpeciesTheyMeant(one);
             expect(found, one).not.toBeNull();
             expect(whyThisOneIsNotSomebody(found!), one).toBeNull();
         }
+        // And the set is the whole band rather than a list: if a row is added
+        // at 29 it can be stood up without anybody authoring permission.
+        for (const one of theOnesThatCanBeStoodUp()) {
+            expect(one.ordinal, one.id).toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);
+            expect(whyThisOneIsNotSomebody(one), one.id).toBeNull();
+        }
+        expect(BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL).length)
+            .toBe(theOnesThatCanBeStoodUp().length);
     });
 
     it('reads a short name from the front of a word and not out of the middle', () => {
@@ -237,11 +258,16 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
     }, 60_000);
 
     it('refuses a species that never took a shape, and names the ones that did', async () => {
+        // THE SPECIES IN THIS ARM CHANGED WITH THE RULING. It used to ask for
+        // a Millennial Tortoise, which stood above the change and was authored
+        // mute, and expected "does not speak". The tortoise answers now, so
+        // what is refused here is an animal - the only refusal left - and the
+        // line it is under is the change itself.
         await withAdmin(async () => {
             const { game } = makeGame({ adminMode: true, seed: 'took-a-shape-2' });
             await game.newRun('Shen Yuan');
-            const refused = await game.act('ADMIN spawn_encounter species=millennial-tortoise');
-            expect(refused.narration).toMatch(/does not speak/);
+            const refused = await game.act('ADMIN spawn_encounter species=thunder-hawk');
+            expect(refused.narration).toMatch(/It is an animal/);
             expect(refused.narration).toMatch(/The Reader at Burnt Earth/);
         }, 60_000);
     }, 60_000);

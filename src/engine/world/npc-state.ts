@@ -29,6 +29,10 @@ import {
 import type { Bloodline } from './hunting-a-spirit-beast.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { untreatedInjuryCount } from '../cultivation/injuries.js';
+import {
+    theSealStillHolds,
+    type AQiSeal
+} from '../cultivation/a-qi-seal-is-put-on-a-person.js';
 import { HP_RECOVERY_FRACTION_PER_DAY, type Injury } from '../../schema/cultivation.js';
 import { personName } from './history.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
@@ -427,6 +431,23 @@ export interface NpcCultivation {
      * The day `hp` was last true. Mending runs forward from here on read.
      */
     bodyOnDay: number;
+    /**
+     * A seal somebody laid on them, or null for almost everybody.
+     *
+     * THE SAME SHAPE `Cultivator.qiSeal` CARRIES, read by the same functions -
+     * `theSealStillHolds`, `whatThisPersonMayHold`, `whatThisPersonCanDrawFrom`
+     * - so being sealed is one question with one answer whichever of the two
+     * stores holds the person. Without it a house could seal one of its own
+     * only where a run happened to be played through them, and the sentencing
+     * room reported honestly that it could not touch anybody else.
+     *
+     * Stored because it goes on, runs, and comes off, and is a function of
+     * nothing else on the row. It costs the world advance nothing: it expires
+     * by comparing `liftsOnDay` against the day being asked about, so nothing
+     * ever sweeps the roster to retire one and a dead person's seal never
+     * changes on its own.
+     */
+    seal: AQiSeal | null;
     /** Technique ids they can actually use. */
     techniqueIds: string[];
     /** Tags for environmental compatibility: 'fire', 'poison', 'soul', 'sword'. */
@@ -639,6 +660,7 @@ export function createNpc(seed: string, opts: CreateNpcOptions): NpcRecord {
         // number chosen here.
         hp: maxHpForOrdinal(attributes.might, ordinal),
         bodyOnDay: opts.onDay,
+        seal: null,
         techniqueIds: [],
         specialties: root.elements.slice(),
         lifespanEndsOnDay: opts.bornOnDay
@@ -846,6 +868,51 @@ export function woundsCarriedBy(npc: NpcRecord): Injury[] {
             woundType: null
         }))
     ];
+}
+
+// THE LID
+
+/**
+ * Put a seal on them.
+ *
+ * Takes the seal already decided by `whatLayingASealTakes` rather than deciding
+ * one, for the reason `carryingWounds` takes rows rather than rolling them: the
+ * act is somebody else's and this is where it comes to rest.
+ */
+export function sealLaidOn(npc: NpcRecord, seal: AQiSeal, onDay: number): NpcRecord {
+    return {
+        ...npc,
+        cultivation: { ...npc.cultivation, seal },
+        updatedOnDay: onDay
+    };
+}
+
+/**
+ * Take one off.
+ *
+ * The row is cleared rather than dated, because a lifted seal is not a fact
+ * about the person any more - what they were held for is in the ledger, which is
+ * where a history belongs. A seal that ran its term needs none of this:
+ * {@link theSealOn} reads it as gone on the day it lifts.
+ */
+export function sealLifted(npc: NpcRecord, onDay: number): NpcRecord {
+    if (npc.cultivation.seal === null) return npc;
+    return {
+        ...npc,
+        cultivation: { ...npc.cultivation, seal: null },
+        updatedOnDay: onDay
+    };
+}
+
+/**
+ * The seal actually holding them on a given day, or null.
+ *
+ * The read every caller wants, and the reason nothing sweeps: a term that ran
+ * out is null here from the day it ran out, without anybody having visited the
+ * row to retire it.
+ */
+export function theSealOn(npc: NpcRecord, onDay: number): AQiSeal | null {
+    return theSealStillHolds(npc.cultivation.seal, onDay) ? npc.cultivation.seal : null;
 }
 
 export interface GoalInput {

@@ -45,6 +45,7 @@ import {
 } from '../../src/storage/repos/obligation.repo';
 import { howTheAskForAPieceWent } from '../../src/web/asking-something-that-can-refuse-for-a-piece-of-it';
 import { BEASTS } from '../../src/data/cultivation/beasts';
+import { readsAsSomebody } from '../../src/engine/world/hunting-a-spirit-beast';
 import { whatItCouldPartWith } from '../../src/engine/world/what-it-costs-to-give-away-a-piece-of-yourself';
 
 // ── THE ROAD ─────────────────────────────────────────────────────────────
@@ -238,7 +239,8 @@ describe('the one that wants a service can see that one was done', () => {
      * the catalog's business and a test naming one would go red the next time
      * somebody edits a row.
      */
-    const speaking = BEASTS.filter(b => b.speaks && b.veinRelation === 'indifferent');
+    const speaking = BEASTS.filter(b =>
+        readsAsSomebody(b) && b.veinRelation === 'indifferent');
 
     it('there is something in the world that wants one', () => {
         expect(speaking.length).toBeGreaterThan(0);

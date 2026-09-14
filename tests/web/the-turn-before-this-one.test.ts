@@ -37,14 +37,39 @@ import {
 } from '../../src/web/last-turn-memory.js';
 
 /**
- * The world is pinned as well as the run, and the two prices below are read off
- * it rather than assumed. In this world the copyist's stall at the opening
- * square lists the Lesser Qi-Gathering Manual at 8 spirit stones and the
- * Five-Breath Circulation Scripture at 13, which is what makes "the cheaper
- * one" a question with an answer.
+ * The world is pinned as well as the run, and the two prices are read off it
+ * rather than assumed - which is what the header always claimed and the code
+ * did not do. It named a figure: the Lesser Qi-Gathering Manual at 8 stones and
+ * the Five-Breath Circulation Scripture at 13. Both moved, because what a stall
+ * charges is the province times what is TRUE of the ground today, and the world
+ * now has more happening in it. The NAMES are the fixture; the numbers are the
+ * world's, and are parsed back out of the board the turn before.
+ *
+ * AND THE QUESTION HAS TO NAME TWO THINGS. It asked `what is for sale here`,
+ * which reached two manuals when the catalog was smaller and now reaches
+ * forty-three rows of provisions and materials - and "the cheaper one" is not a
+ * question with an answer over forty-three things. Asking for the manuals is
+ * the same situation the test was always describing.
  */
 const WORLD = 'backref-world';
-const THE_CHEAPER = { name: 'Lesser Qi-Gathering Manual', stones: 8 };
+const THE_CHEAPER_NAME = 'Lesser Qi-Gathering Manual';
+const THE_DEARER_NAME = 'Five-Breath Circulation Scripture';
+const WHAT_IS_ON_THE_STALL = 'what manuals are for sale here';
+
+/**
+ * What the board just quoted for one named thing, in stones.
+ *
+ * A CEILING AND NOT THE BILL. A stall does not always charge what it lists: a
+ * seller who needs the stones more than the goods sells under the quote and
+ * says so out loud - *"The price is what somebody who has to sell today asks."*
+ * So the figure here is what tells the two books apart, which is all this file
+ * is about.
+ */
+function quotedFor(narration: string | null | undefined, name: string): number {
+    const found = new RegExp(`${name}, (\\d+) spirit stones`).exec(narration ?? '');
+    if (!found) throw new Error(`the board did not quote ${name}: ${narration ?? ''}`);
+    return Number(found[1]);
+}
 
 async function opening(seed: string) {
     const harness = await makeGameInWorld({ worldSeed: WORLD, seed });
@@ -172,18 +197,25 @@ describe('the thing the last turn named', () => {
      */
     it('resolves "the cheaper one" with no model in the room', async () => {
         const { game } = await opening('cheaper-deterministic');
-        const board = await game.act('what is for sale here');
+        const board = await game.act(WHAT_IS_ON_THE_STALL);
         const before = board.state.cultivator.spiritStones;
+        const cheaper = quotedFor(board.narration, THE_CHEAPER_NAME);
+        const dearer = quotedFor(board.narration, THE_DEARER_NAME);
 
         const bought = await game.act('I buy the cheaper one');
 
-        // The state, not the prose: the purse moved by the cheaper of the two
-        // prices the board had just quoted, and the cheaper book is on the
-        // sheet.
-        expect(bought.state.cultivator.spiritStones).toBe(before - THE_CHEAPER.stones);
-        expect(bought.narration).toContain(THE_CHEAPER.name);
+        // The state, not the prose: the purse moved, by no more than the
+        // cheaper of the two quotes, and therefore not by the dearer book -
+        // which is the whole of what "the cheaper one" had to decide. Pinned as
+        // a ceiling rather than an equality because a stall under pressure
+        // sells under its own quote and says so.
+        const spent = before - bought.state.cultivator.spiritStones;
+        expect(spent).toBeGreaterThan(0);
+        expect(spent).toBeLessThanOrEqual(cheaper);
+        expect(cheaper).toBeLessThan(dearer);
+        expect(bought.narration).toContain(THE_CHEAPER_NAME);
         const row = bought.toolCalls.find(call => call.name === 'engine.lastTurn');
-        expect(row?.summary).toContain(THE_CHEAPER.name);
+        expect(row?.summary).toContain(THE_CHEAPER_NAME);
     }, 180000);
 
     /**
@@ -209,17 +241,21 @@ describe('the thing the last turn named', () => {
             narrator: new ProviderNarrator(provider, { model: 'test-model', timeoutMs: 5000 })
         });
         await game.newRun('Probe');
-        const board = await game.act('what is for sale here');
+        const board = await game.act(WHAT_IS_ON_THE_STALL);
         const before = board.state.cultivator.spiritStones;
-
         const bought = await game.act(
             'The cheaper one leaves me something to eat with. I will take that one.'
         );
 
         // "that one" alone decides nothing between two manuals. What decides it
         // is sitting in the player's own sentence one clause earlier.
-        expect(bought.state.cultivator.spiritStones).toBe(before - THE_CHEAPER.stones);
-        expect(bought.narration).toContain(THE_CHEAPER.name);
+        //
+        // NO PRICE IS READ HERE, and it cannot be: the narration on this arm is
+        // the scripted provider's, so the board's own words never reach it. The
+        // subject of this arm is the READER, and the price is pinned by the
+        // deterministic arm above against the same world and the same run seed.
+        expect(before - bought.state.cultivator.spiritStones).toBeGreaterThan(0);
+        expect(bought.narration).toContain(THE_CHEAPER_NAME);
     }, 180000);
 
     /**

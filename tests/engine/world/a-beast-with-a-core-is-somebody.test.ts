@@ -37,10 +37,23 @@
  * does. If that ever fails, the saved fox stops arriving.
  *
  * RED-CHECKED. Returning `null` from `standUpTheOneOnThisGround` for a cored
- * beast fails the row assertions; having `itSpeaksNow` read the species'
- * `speaks` unconditionally fails the crossing; re-deriving the id off the
- * individual's current ordinal fails the survival assertion, which is exactly
- * the way the trope would break in practice.
+ * beast fails the row assertions; re-deriving the id off the individual's
+ * current ordinal fails the survival assertion, which is exactly the way the
+ * trope would break in practice.
+ *
+ * ── AND SPEECH STOPPED BEING A SECOND QUESTION ───────────────────────────
+ *
+ * `itSpeaksNow` used to sit beside `itHasCrossed` and differ from it: the
+ * catalog could author a species mute above the change, so the species row was
+ * consulted first and the individual's crossing only answered for a kind
+ * written below it. The design owner removed that - *"species can't be
+ * categorized as speaks false. under 29 = speaks false."* - and the two
+ * functions collapsed into one, which is why only `itHasCrossed` is imported
+ * here now. Crossing IS the speech.
+ *
+ * The same ruling gives the crossed one a name of its own: below the change the
+ * row carries the species name, and at or above it a person-name is rolled,
+ * because *"calling them an ape in human form is disrespectful."*
  */
 
 import { describe, expect, it } from 'vitest';
@@ -54,7 +67,6 @@ import {
     idOfTheOneOnThisGround,
     isOneOfTheBeasts,
     itHasCrossed,
-    itSpeaksNow,
     standUpTheOneOnThisGround,
     theSpeciesItIs,
     whatItIsNow,
@@ -104,7 +116,9 @@ describe('a beast with a core is somebody in particular', () => {
         for (const beast of cored) {
             const row = standUp(beast);
             expect(row.id, beast.id).toBe(idOfTheOneOnThisGround(beast.id, GROUND));
-            expect(row.name).toBe(beast.name);
+            // The name is the species' only while it is still an animal - what
+            // is called what is its own arm below.
+            expect(row.name.length, beast.id).toBeGreaterThan(0);
             expect(row.locationId).toBe(GROUND);
             expect(row.status).toBe('alive');
             expect(row.cultivation.realmOrdinal).toBe(beast.ordinal);
@@ -150,12 +164,10 @@ describe('a beast with a core is somebody in particular', () => {
         for (const beast of canStillCross) {
             const before = standUp(beast);
             expect(itHasCrossed(before), beast.id).toBe(false);
-            expect(itSpeaksNow(before), beast.id).toBe(false);
             expect(whatItIsNow(before)?.band).toBe('tracked');
 
             const after = setRealm(before, BEAST_CHANGE_ORDINAL, DAY);
             expect(itHasCrossed(after), beast.id).toBe(true);
-            expect(itSpeaksNow(after), beast.id).toBe(true);
 
             const now = whatItIsNow(after)!;
             expect(now.band).toBe('person');
@@ -166,19 +178,48 @@ describe('a beast with a core is somebody in particular', () => {
         }
     });
 
-    it('leaves silent what the catalog placed above the change and left silent', () => {
-        // `speaks` is a floor and not an iff: the catalog carries entries well
-        // above the change that say nothing, and they are the worst things in
-        // it precisely because there is nothing to negotiate with. That
-        // authorship is a ruling about a kind that has already crossed, so it
-        // stands, and a rung cannot overrule it.
-        const silentAbove = BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL && !b.speaks);
-        expect(silentAbove.length).toBeGreaterThan(0);
-        for (const beast of silentAbove) {
+    it('gives the ones the catalog placed above the change a voice and a name', () => {
+        // THIS ARM ASSERTED THE OPPOSITE. It required that a species authored
+        // above the change with `speaks: false` stay silent no matter what rung
+        // its individual stood on, on the reasoning that the authorship was a
+        // ruling about a kind that had already crossed. The design owner
+        // overruled it, the column is gone, and what stands above the change
+        // now answers.
+        const above = BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL);
+        expect(above.length).toBeGreaterThan(0);
+        for (const beast of above) {
             const row = standUp(beast);
             expect(itHasCrossed(row), beast.id).toBe(true);
-            expect(itSpeaksNow(row), beast.id).toBe(false);
+            // AND IT IS NOT CALLED BY ITS SPECIES. Something that stood up gave
+            // itself a name, and addressing one by the catalog row is the
+            // disrespect the ruling names. The name is read out of the row
+            // rather than pinned, because any name the world prints is one the
+            // world had to mint.
+            expect(row.name, beast.id).not.toBe(beast.name);
+            expect(row.name.length, beast.id).toBeGreaterThan(0);
         }
+        // Below the change it is an animal, and the species name is what
+        // anybody standing there would say.
+        for (const beast of canStillCross) {
+            expect(standUp(beast).name, beast.id).toBe(beast.name);
+        }
+    });
+
+    it('gives two on different ground two different names', () => {
+        // `takenNames` is what keeps a rolled name unique, and the reason is
+        // not cosmetic: the knowledge table is keyed by id while everything the
+        // player reads is keyed by name.
+        const crossed = BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL);
+        expect(crossed.length).toBeGreaterThan(1);
+        const first = standUp(crossed[0]!);
+        const second = standUpTheOneOnThisGround({
+            beast: crossed[1]!,
+            locationId: 'loc-other-ledge',
+            seed: SEED,
+            onDay: DAY,
+            takenNames: new Set([first.name])
+        });
+        expect(second.name).not.toBe(first.name);
     });
 
     it('keeps the favour it holds about you when it stops being an animal', () => {
@@ -198,7 +239,7 @@ describe('a beast with a core is somebody in particular', () => {
 
         const crossed = setRealm(spared, BEAST_CHANGE_ORDINAL, DAY + 3_650);
         expect(crossed.id).toBe(spared.id);
-        expect(itSpeaksNow(crossed)).toBe(true);
+        expect(itHasCrossed(crossed)).toBe(true);
 
         const held = ledger.heldBy(crossed.id);
         expect(held).toHaveLength(1);

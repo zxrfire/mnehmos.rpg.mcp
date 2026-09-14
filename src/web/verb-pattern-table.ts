@@ -81,6 +81,7 @@ import { asksWhatYouAreCarrying } from './inventory-phrasings.js';
 import { whatIsBeingTold } from './telling-a-wrong.js';
 // And the third half of it: telling somebody who YOU are.
 import { whatIsBeingGivenAsAnAccount } from './an-account-of-yourself.js';
+import { whoseAccountIsBeingChallenged } from './two-accounts-of-one-person.js';
 // Who a player named as sitting an art with them. The match's own vocabulary,
 // because the words are the match's - see that file's own section header.
 import { whoIsSittingWithThem } from './match-phrasings.js';
@@ -4565,6 +4566,28 @@ function planIntent(input: string): PlannedAction {
             // actually being put to them.
             target: extractSubject(input, /work as|hire (?:myself )?(?:out )?as|take work as|job as/)
                 ?? theKindOfWorkNamed(text)
+        };
+    }
+
+    // ── SAYING THEIR ACCOUNT OF THEMSELVES DOES NOT STAND ────────────────
+    //
+    // ABOVE the asking branch and above both tellings, and it has to be above
+    // all three. Measured: "I put it to Duan Shutao that he never was a
+    // disciple there" reached `interact` with the whole denial swallowed into
+    // the target, because `put it to` is one of the asking branch's own words;
+    // "I tell him he is not of that sect" is a telling by every word in it.
+    // What makes a sentence this one instead is that what is being denied is
+    // the hearer's own account of who they are, and
+    // `whoseAccountIsBeingChallenged` requires a pronoun where a telling puts
+    // a name or an `I`, so neither telling can be taken from here.
+    const gainsaid = whoseAccountIsBeingChallenged(input);
+    if (gainsaid) {
+        // No target where the sentence named nobody - "that is not your house"
+        // is said to the one person standing there, and which person that is
+        // belongs to the square rather than to the words.
+        return {
+            action: 'challenge',
+            ...(gainsaid.person === null ? {} : { target: gainsaid.person })
         };
     }
 

@@ -118,19 +118,47 @@ describe('the outcome registry carries new outcomes without touching boundaries'
     });
 
     it('escalates upward rather than making the low ladder brutal', () => {
-        // The ruinous rows carry weight at the high walls and little or none at
+        // The ruinous rows carry weight at the high walls and little of it at
         // the first one. Measured as the share of the table that is permanent.
+        //
+        // IT IS NOW ASKED OF THE WOUND RATHER THAN OF A LIST OF KEYS, and the
+        // list is why: it named five rows and there were nine, because
+        // `cultivation_scattered`, `memory_taken` and `fixed_premise` all mint
+        // permanent wounds and were never added to it. A hand-kept copy of a
+        // fact the table already carries drifts the moment somebody adds a row,
+        // which is exactly what happened when `body_maimed` was added.
         const ruinousShare = (trial: Parameters<typeof outcomesForTrial>[0]) => {
             const rows = outcomesForTrial(trial);
             const total = rows.reduce((s, r) => s + r.weight, 0);
+            const subject = { realmOrdinal: 32, injuries: [], foundationQuality: 'stable' as const, age: 3000 };
             const ruinous = rows
-                .filter(r => ['maimed', 'mad', 'half_mad', 'span_burnt', 'cultivation_left_incomplete'].includes(r.outcome.key))
+                .filter(r => r.outcome.apply(subject, rng(), { turn: 1 }).injuries
+                    .some(injury => isPermanentWound(injury.woundType)))
                 .reduce((s, r) => s + r.weight, 0);
             return ruinous / total;
         };
         expect(ruinousShare('the_setting_of_the_foundation'))
             .toBeLessThan(ruinousShare('the_emptiness'));
         expect(ruinousShare('the_emptiness')).toBeLessThan(ruinousShare('the_ascent'));
+    });
+
+    it('can leave a permanent wound at the first wall as well as the last', () => {
+        // THE RULING: a wound can be permanent at any realm. Before this, every
+        // row that minted one was absent from `the_setting_of_the_foundation`,
+        // so a Qi Condensation cultivator could fail the first crossing as
+        // badly as the stream allowed and never come away with anything that
+        // does not close. Read off the table rather than pinned to a key: what
+        // matters is that the bottom of the ladder has such a row at all.
+        const subject = { realmOrdinal: 12, injuries: [], foundationQuality: 'stable' as const, age: 60 };
+        const permanentAt = (trial: Parameters<typeof outcomesForTrial>[0]) =>
+            outcomesForTrial(trial)
+                .filter(r => r.outcome.apply(subject, rng(), { turn: 1 }).injuries
+                    .some(injury => isPermanentWound(injury.woundType)));
+        expect(permanentAt('the_setting_of_the_foundation').length).toBeGreaterThan(0);
+        // And it stays the gentler wall: fewer such rows than the top of the
+        // ladder carries, which is the escalation the test above measures.
+        expect(permanentAt('the_setting_of_the_foundation').length)
+            .toBeLessThan(permanentAt('the_ascent').length);
     });
 
     it('returns deltas and never mutates the subject it is handed', () => {

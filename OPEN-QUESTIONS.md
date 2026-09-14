@@ -8,37 +8,46 @@ Ask me for any of it rather than reading for it here.
 
 ## Decisions only you can make
 
-None. Every open question was answered; what is below is work with your ruling
-attached to it.
+Three, and all three are consequences of work that landed rather than things left undone.
+
+1. **Should a hunt offer the beast that is actually standing there?** A beast climbs over world
+   time now — a reading off species, ground and years sat, 9.9µs and nothing on the advance.
+   The hunt does not know: `whatIsOnThisGround` filters on the **catalog** ordinal, so a hawk
+   that has sat on a vein for nine hundred years is still offered and priced at what it was
+   minted as. Wiring it changes encounter balance everywhere at once, which is why nobody did
+   it without asking.
+2. **Should the world be able to take a legacy?** Ground that never shuts is 15.3% of ruins and
+   the world has emptied **0 of 10** across 1,800 years, because the gate is a trial and the
+   world does not model sitting one. Either that is right — a legacy waits for a person — or
+   the world wants a way to consume them.
+3. **Is there a lid on the climb?** At a 5,000-year horizon a hawk found at 17 reads as 35 and a
+   dragon at 26 as 37. The catalog holds a 38 so it is in range, and nothing caps it.
 
 ---
 
-## Work, queued with the ruling that decides it
+## Work, queued
 
-**In flight** — permanent wounds and the medicine; `speaks` becomes the rung; a ruin shuts
-itself; an NPC body carries what happens to it; a seizure is a sentence somebody enforces.
-
-**Ruled, not yet built**
-- **A changed beast wants something.** `createNpc` gives a stood-up beast `goals: []`, so a
-  service asked for by one has no terms of its own. *"The engine ought to give them a goal.
-  maybe they wanna rob, maybe they wanna raise orphans, idk."*
-- **Beasts reach the change on their own.** The top does not have to grow, but a beast should
-  climb to 29 over world time rather than being authored there.
-- **A sub-rank advance files nothing**, so the widened witness pool covers realm crossings
-  only. Agreed: it should file.
-- **Somebody caught in a lie gets challenged.** A fabricated account of yourself is written and
-  `provenanceOf` makes the disagreement readable; nothing reads it. *"NPCs should challenge
-  this. you can too, two days."*
-- **The map wants fixing.** 62% of houses cannot reach an open ruin door inside its window and
-  1.8% need a fold — a property of house seats against the link graph. *"okay wtf? fix the map
-  then."*
-- **Somewhere is volcanic.** Three herbs grow on ground no province has. *"Invent a volcano.
-  maybe have a fire sect around it."*
+**Wrong, and known**
+- **731 type errors in `tests/`.** `tsconfig.json` excludes it and vitest strips types, so a
+  test file is checked by neither command anybody runs. It has now hidden two things: one live
+  bug earlier, and — measured this session — that deleting a member of `KnownEntityKind` turns
+  no test red. 226 argument-type, 96 unused, 93 unknown-property, 76 possibly-null,
+  concentrated in about a dozen files.
 - `cultivator.sectRank` is a third copy of your rung, a mirrored string, and it is still what
   every reader but `status` asks.
-- Nothing writes `knowledge_records.fact_id` — NULL on every row anybody writes, so "does this
-  holder hold THIS event" is unanswerable and the telling gate uses a proxy.
-- `whereASendingGoes` falls back to `elsewhere` when a reason's houses have no seats, so a
-  tribute errand for a seatless subsidiary quietly becomes a ground errand.
-- 521 type errors in `tests/`: `tsconfig.json` excludes it and vitest strips types, so a test
-  file is checked by neither command anybody runs. Has already hidden one live bug.
+- A sub-rank advance files nothing, so the widened witness pool covers realm crossings only.
+- **A renamed beast does not answer to its old name.** `theNamesThisOneAnswersTo` returns both,
+  but `resolveCultivator` scores against `row.name` alone and its candidates carry no tags.
+- **Nothing stores a house's knowledge of a door's schedule**, so houses race on the "hears it
+  is open" arm rather than the "knows the date" one. That gap is currently the player's edge.
+- `whatWouldCloseThisWound` considers only `treat_injury` pills, so the two medicines that
+  answer a permanent wound reach the player down a different line.
+- A crossing that enriches a ruin's vein moves `qiDensity` and leaves
+  `environment.spiritualDensity` where it was — a genuine second copy, predating this session.
+
+**Gaps worth knowing before designing around them**
+- A player who only ever takes free actions is never sentenced, because no day passes.
+- `whatThisPurchaseWillNotReach` and `alchemy-manage` build a `KnowledgeGate` with no world
+  supplier, so if either is ever asked about an NPC it answers off stored rows only.
+- Ground nobody has ever walked does not climb, because nothing tracks it. That follows from
+  the measured "minted on contact, never seeded" ruling.

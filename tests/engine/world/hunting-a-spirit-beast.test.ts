@@ -127,17 +127,18 @@ describe('the three bands', () => {
         }
     });
 
-    it('reads speech off the field and never off the ordinal', () => {
-        // The floor is real, but so is the set of things above it that say
-        // nothing - and those are the worst entries in the catalog.
+    it('reads speech off the ordinal, which is now the whole of it', () => {
+        // THIS ARM SAID THE OPPOSITE AND WAS RIGHT AT THE TIME. It required a
+        // non-empty set of things above the change that said nothing, with the
+        // failure message *"nothing high is silent, so the field is
+        // redundant"* - which turned out to be the finding rather than the
+        // guard. The design owner removed the field: *"species can't be
+        // categorized as speaks false. under 29 = speaks false."*
         for (const b of BEASTS) {
-            if (readsAsSomebody(b)) {
-                expect(b.ordinal).toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);
-            }
+            expect(readsAsSomebody(b), b.id).toBe(b.ordinal >= BEAST_CHANGE_ORDINAL);
         }
-        const silentAndHigh = BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL && !readsAsSomebody(b));
-        expect(silentAndHigh.length, 'nothing high is silent, so the field is redundant')
-            .toBeGreaterThan(0);
+        expect(BEASTS.filter(b => b.ordinal >= BEAST_CHANGE_ORDINAL && !readsAsSomebody(b)))
+            .toEqual([]);
     });
 });
 
@@ -178,25 +179,37 @@ describe('what comes off the body', () => {
         }
     });
 
-    it('does price the body of one changed beast, which is the general rule showing', () => {
-        // The Sleeper in the Cut Face speaks AND carries a core with a figure
-        // on it. That looks like a contradiction and is the thesis: a person's
-        // body can be worth money, and what anybody does about that is the
-        // ordinary question the world asks about every cultivator - is this
-        // person worth more to you alive, or as material.
+    it('does price the bodies of changed beasts, which is the general rule showing', () => {
+        // A thing that speaks AND carries a core with a figure on it looks like
+        // a contradiction and is the thesis: a person's body can be worth
+        // money, and what anybody does about that is the ordinary question the
+        // world asks about every cultivator - is this person worth more to you
+        // alive, or as material.
         //
         // It is left standing rather than tidied away, because tidying it
         // would make "a changed beast is a person" mean "a changed beast is
-        // exempt", and no rule in this world works that way. What stops it
-        // being farmable is what stops everything: it is behind a seal, its
-        // frequency is 1, and taking it needs a realm almost nobody reaches.
+        // exempt", and no rule in this world works that way.
+        //
+        // WAS ONE ROW, IS NOW FOUR. Speech used to be an authored column and
+        // the Sleeper in the Cut Face was the only priced speaker; the design
+        // owner made speech the rung, so the Millennial Tortoise, the Abyssal
+        // Leviathan and the Thing Under Nine Peaks joined it with the material
+        // rows they already had. The count is not the point and never was -
+        // what keeps these from being farmable is pinned instead, and that is
+        // a property each one has to carry on its own.
         const priced = BEASTS.filter(b => readsAsSomebody(b)
             && whatComesOffTheBody({ beast: b, takerOrdinal: 46, killed: true }).taken.length > 0);
-        expect(priced.length, 'a changed beast being priced is the case to preserve').toBe(1);
+        expect(priced.length, 'a changed beast being priced is the case to preserve')
+            .toBeGreaterThanOrEqual(1);
         for (const b of priced) {
             expect(bandOf(b)).toBe('person');
-            expect(b.persistence, `${b.id} is priced and reachable`).toBe('sealed_only');
-            expect(b.frequency, `${b.id} is priced and a common draw`).toBeLessThanOrEqual(2);
+            // Rare to meet and steep to cut. A seal is one way of being out of
+            // reach and four realms of water is another, so what is asserted
+            // is the draw rather than the persistence that used to stand in
+            // for it.
+            expect(b.frequency, `${b.id} is priced and a common draw`).toBeLessThanOrEqual(4);
+            expect(b.ordinal, `${b.id} is priced and cheap to reach`)
+                .toBeGreaterThanOrEqual(BEAST_CHANGE_ORDINAL);
         }
     });
 });

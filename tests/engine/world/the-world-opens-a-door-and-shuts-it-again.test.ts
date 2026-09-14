@@ -2,12 +2,19 @@
  * The pass that opens doors had never opened one.
  *
  * `applyConvergences` has existed for the life of the project. It asked
- * `nextOpeningDay`, which returns null for anything `sealed` - correct where
+ * `nextOpeningDay`, which returned null for anything `sealed` - correct where
  * `sealed` means a door nobody has ever opened, wrong where it means the shut
  * half of a schedule, and on a cycled ruin the column means the second. Every
  * seeded ruin carrying a cycle is sealed, so the test was false for all of
  * them. The `open_now` tag the opening adds is also the gate on the half that
  * shuts them, so both halves were unreachable together.
+ *
+ * SINCE RULED ON: a ruin on a cycle shuts itself when its window ends, so the
+ * schedule is the fact and `sealed` is a reading of it. `isOpenOn` and
+ * `nextOpeningDay` ignore the column wherever a cycle exists, which collapsed
+ * `whenTheScheduleNextOpens` - the workaround that set the flag aside - into
+ * `nextOpeningDay` itself, and left this pass with no flag and no tag to
+ * consult: both ends of a window are arithmetic on the cycle.
  *
  * MEASURED over twelve pinned worlds run two hundred years each, both arms in
  * one process (`scripts/probe-how-often-the-world-opens-a-door.ts`):
@@ -38,8 +45,7 @@ import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import { applyPressure } from '../../../src/engine/world/pressure.js';
-import { nextOpeningDay } from '../../../src/engine/world/locations.js';
-import { whenTheScheduleNextOpens } from '../../../src/engine/world/convergence.js';
+import { isOpenOn, nextOpeningDay } from '../../../src/engine/world/locations.js';
 import type { WorldState } from '../../../src/engine/world/world-state.js';
 import type { PressureEvent } from '../../../src/engine/world/the-world-changing-on-its-own.js';
 
@@ -103,18 +109,38 @@ describe('the world opens a door and shuts it again', () => {
     });
 
     it('names the day a shut schedule is next due, where the old read could not', () => {
-        // The identity check behind the before-number. Both expressions over
-        // the same rows in one process, which is what makes "zero" a
-        // measurement rather than a second tree.
+        // The whole of the before-number: the expression the pass asked answered
+        // null for every one of these rows, because every one of them carries
+        // the column as well as the cycle.
         const state = world('doors-readable');
         const day = Math.floor(state.currentDay);
         const cycled = state.locations.filter(l => l.cycle && l.kind === 'ruin');
 
         expect(cycled.length).toBeGreaterThan(0);
+        expect(cycled.some(site => site.sealed)).toBe(true);
         for (const site of cycled) {
-            if (!site.sealed) continue;
-            expect(nextOpeningDay(site, day)).toBeNull();
-            expect(whenTheScheduleNextOpens(site, day)).not.toBeNull();
+            expect(nextOpeningDay(site, day)).not.toBeNull();
+        }
+    });
+
+    it('lets the schedule outvote the column, on the same row, both ways', () => {
+        // THE TWO-ANSWERS DEFECT, stated as the property that replaced it. The
+        // column cannot decide anything about a door on a season: what decides
+        // is the day against the cycle, so flipping `sealed` on a row moves
+        // nothing at all.
+        const state = world('doors-authority');
+        const site = state.locations.find(l => l.cycle && l.kind === 'ruin');
+        expect(site).toBeDefined();
+
+        const cycle = site!.cycle!;
+        const insideAWindow = cycle.phaseDay + cycle.periodDays;
+        const outsideOne = insideAWindow + cycle.openDays;
+
+        for (const sealed of [true, false]) {
+            const row = { ...site!, sealed };
+            expect(isOpenOn(row, insideAWindow)).toBe(true);
+            expect(isOpenOn(row, outsideOne)).toBe(false);
+            expect(nextOpeningDay(row, outsideOne)).toBe(insideAWindow + cycle.periodDays);
         }
     });
 });

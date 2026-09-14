@@ -37,6 +37,7 @@ import {
 } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { isAbilityTier } from '../../engine/world/hunting-a-spirit-beast.js';
 import type { Injury } from '../../schema/cultivation.js';
+import type { AQiSeal } from '../../engine/cultivation/a-qi-seal-is-put-on-a-person.js';
 
 /**
  * Persistence for the world layer. Named `world-state.repo.ts` because
@@ -221,7 +222,7 @@ export class WorldStateRepository {
                 occupation, titles, aliases, description,
                 realm_ordinal, spirit_root, attributes, foundation, untreated_injuries,
                 wounds, technique_ids, specialties, lifespan_ends_on_day, last_advanced_on_day,
-                accumulating_since_day, hp, body_on_day,
+                accumulating_since_day, hp, body_on_day, qi_seal,
                 location_id, layer, faction_id, faction_rank_index, spirit_stones,
                 status, body_id, soul_state, identity_continuity, died_on_day, end_note,
                 last_confirmed_on_day, updated_on_day, next_goal_seq, tags,
@@ -232,7 +233,7 @@ export class WorldStateRepository {
                 @occupation, @titles, @aliases, @description,
                 @realmOrdinal, @spiritRoot, @attributes, @foundation, @untreatedInjuries,
                 @wounds, @techniqueIds, @specialties, @lifespanEndsOnDay, @lastAdvancedOnDay,
-                @accumulatingSinceDay, @hp, @bodyOnDay,
+                @accumulatingSinceDay, @hp, @bodyOnDay, @qiSeal,
                 @locationId, @layer, @factionId, @factionRankIndex, @spiritStones,
                 @status, @bodyId, @soulState, @identityContinuity, @diedOnDay, @endNote,
                 @lastConfirmedOnDay, @updatedOnDay, @nextGoalSeq, @tags,
@@ -907,6 +908,9 @@ export class WorldStateRepository {
                 accumulatingSinceDay: npc.cultivation.accumulatingSinceDay,
                 hp: npc.cultivation.hp,
                 bodyOnDay: npc.cultivation.bodyOnDay,
+                qiSeal: npc.cultivation.seal === null
+                    ? null
+                    : JSON.stringify(npc.cultivation.seal),
                 locationId: npc.locationId,
                 layer: npc.layer,
                 factionId: npc.factionId,
@@ -1312,6 +1316,24 @@ function parseWounds(json: string | null | undefined): Injury[] {
     }
 }
 
+/**
+ * The seal off a row, or null.
+ *
+ * Unreadable JSON loads as no seal rather than throwing, for the reason
+ * `parseWounds` gives about its own column: a world that will not open is worse
+ * than a world that has forgotten one thing, and a seal is the half of a
+ * sentence the ledger records separately in any case.
+ */
+function parseSeal(json: string | null | undefined): AQiSeal | null {
+    if (!json) return null;
+    try {
+        const parsed = JSON.parse(json) as AQiSeal;
+        return parsed && typeof parsed.sinceDay === 'number' ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
 function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
     const out = new Map<string, T[]>();
     for (const row of rows) {
@@ -1513,7 +1535,8 @@ function rowToNpc(row: NpcRow, goals: NpcGoal[], relationships: NpcRelationship[
                     Number(JSON.parse(row.attributes)?.might ?? 1),
                     row.realm_ordinal
                 ),
-            bodyOnDay: row.body_on_day || row.last_advanced_on_day
+            bodyOnDay: row.body_on_day || row.last_advanced_on_day,
+            seal: parseSeal(row.qi_seal)
         },
         locationId: row.location_id,
         layer: toLayerKey(row.layer),
@@ -2053,6 +2076,7 @@ interface NpcRow {
     accumulating_since_day: number;
     hp: number;
     body_on_day: number;
+    qi_seal: string | null;
     location_id: string | null;
     layer: string;
     faction_id: string | null;

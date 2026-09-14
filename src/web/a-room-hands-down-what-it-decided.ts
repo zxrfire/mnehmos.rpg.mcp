@@ -28,14 +28,73 @@
  *
  * ── AND THE HEAVY ONES TAKE WHAT THE STORE ACTUALLY HOLDS ────────────────
  *
- * The same floor, one tier up. A recall moves a world object row, a seal writes
- * `qiSeal`, a crippling writes an injury and a death ends both records the
- * person has. Where the store holds nothing to act on - no world is running, the
- * house has nothing out with them, there is no cultivator row, they stand at the
- * bottom realm and have built no structure to break - NOTHING IS WRITTEN and the
- * report says which of those it was. A sentence reported as carried out that
- * moved no state is the defect this whole file exists to close, and it does not
- * get to reappear in the heavy half.
+ * The same floor, one tier up. A recall moves a world object row, a seal goes on
+ * the person, a crippling writes an injury, and a death ends them and hands what
+ * they had to the house. Where the store holds nothing to act on - no world is
+ * running, the house has nothing out with them, nothing holds a record of them,
+ * they stand at the bottom realm and have built no structure to break - NOTHING
+ * IS WRITTEN and the report says which of those it was. A sentence reported as
+ * carried out that moved no state is the defect this whole file exists to close,
+ * and it does not get to reappear in the heavy half.
+ *
+ * ── AND "A RECORD" MEANS EITHER OF THE TWO ───────────────────────────────
+ *
+ * A person exists in `cultivators` and in `WorldState`, and for a long time only
+ * the death branch knew it. The seal and the crippling both asked
+ * `cultivators.getById` and refused anybody it did not answer for - so a house
+ * could seal or cripple only somebody a run was being played through, which the
+ * room never sentences, and every real offender was told there was no record to
+ * carry it. Both now write whichever store holds them, and both where both do.
+ * `NpcRecord.cultivation.seal` is the world's half of the first and
+ * `carryingWounds` the world's half of the second.
+ *
+ * ── AND SOMEBODY GOES AND DOES IT ────────────────────────────────────────
+ *
+ * The object changed hands with no hand in it. `whoIsSentToCarryItOut` names the
+ * party off the punishment hall's own holder and staff, and the party arrives
+ * where the person is.
+ *
+ * FOUR SENTENCES HAVE SOMEBODY SENT, AND THE OTHER TWO ARGUE FOR THEMSELVES.
+ * The seizure was the only one for a while, and the seal, the crippling and the
+ * death moved state with nobody there - the same defect, one branch over. All
+ * four now go through the one function. The fine and the rebuke do not, and that
+ * is not an omission: a fine is contribution and stones moving in the house's
+ * own books and a rebuke is a row in its ledger, and neither needs the person to
+ * be anywhere for it to happen. Everything carried out on a person has somebody
+ * standing there; everything carried out in a ledger does not.
+ *
+ * And a seizure is read out afterwards: `a-house-holds-its-own.ts` has always
+ * said that taking back what a house GAVE *"is a seizure, which is a thing
+ * houses do and is not a thing they can do quietly"*, and a loan called in is
+ * not that act and gets no notice.
+ *
+ * ── AND IT REACHES THE ONE BEING PLAYED ──────────────────────────────────
+ *
+ * It could not. The offender was always somebody the world holds a row for and
+ * where it happened was that row's place - and the played cultivator's row holds
+ * `locationId: null` for as long as they are played, because presence belongs to
+ * the play layer. A party had nowhere to come to and a notice had nowhere to be
+ * read out.
+ *
+ * `offenderAt` is that field. Passing it means the caller owns where the person
+ * stands: nothing here moves a row it was told about, and `heldAt` names the
+ * room a seal puts somebody in so the caller can put them there.
+ * `a-room-hands-one-down-to-you.ts` is that caller.
+ *
+ * ── AND THE HEAVY ONES ARE READ OUT ──────────────────────────────────────
+ *
+ * The seizure was announced and nothing else was, so a house could seal, cripple
+ * or end one of its own and the world held only the hole.
+ * `taking-people-is-not-a-quiet-thing.ts` is built on the gap between the two
+ * records: sentences can be read end to end and holes can be counted, and
+ * whether those two accounts reconcile is the question somebody playing gets to
+ * ask. A house that never reads one out makes it unaskable.
+ *
+ * So the three that take a person out of the world are read out - the seal, the
+ * crippling, the end - and the two that leave nobody missing are not. A fine and
+ * a rebuke move money and a record inside one house; reading those to a province
+ * is a house reciting its own bookkeeping. The notice carries the name and the
+ * sentence and never the cause, which is the shape the seizure already uses.
  */
 
 import {
@@ -52,6 +111,7 @@ import {
 } from '../engine/social/grudges.js';
 import {
     whatTheRoomDecides,
+    type Sentence,
     type TheSentence,
     type WhatWasBrought
 } from '../engine/social-leverage/what-a-room-decides-about-one-of-its-own.js';
@@ -67,9 +127,30 @@ import {
     type TheFooting
 } from '../engine/world/a-house-takes-back-what-it-handed-over.js';
 import { whatLayingASealTakes } from '../engine/social/what-laying-a-qi-seal-takes.js';
-import { markDead, setLocation } from '../engine/world/npc-state.js';
+import {
+    carryingWounds,
+    isActing,
+    markDead,
+    sealLaidOn,
+    setLocation,
+    theSealOn
+} from '../engine/world/npc-state.js';
+import { createInjury } from '../engine/cultivation/injuries.js';
+import { forStream } from '../engine/cultivation/rng.js';
+import { maxQiForOrdinal } from '../engine/cultivation/realms.js';
+import { recordPermanentWounds } from '../engine/world/recording-the-day-a-wound-was-taken.js';
+import { whatAnEndingLeavesToTheHouse } from '../engine/world/a-house-that-ends-one-of-its-own-keeps-what-they-had.js';
+import { putIntoTheHouse } from '../engine/world/a-house-holds-its-own.js';
 import { purposeOf } from '../engine/world/architecture.js';
 import { THE_ROOM_COMPLAINTS_GO_TO } from '../engine/social-leverage/reporting-what-you-saw.js';
+import {
+    whoIsSentToCarryItOut,
+    type SomebodyWasSent
+} from '../engine/social-leverage/somebody-is-sent-to-carry-it-out.js';
+import type { APortfolio } from '../engine/social-leverage/what-an-elder-is-in-charge-of.js';
+import type { APost } from '../engine/social-leverage/who-works-in-an-elders-hall.js';
+import { anAnnouncementEntersTheWorld } from '../engine/world/taking-people-is-not-a-quiet-thing.js';
+import type { LocationRecord } from '../engine/world/locations.js';
 import { getNpc, upsertNpc, upsertObject, type WorldState } from '../engine/world/world-state.js';
 import { settleAComplaint } from './false-decree-reports.js';
 import type { CultivationRepos } from '../server/consolidated/cultivation-support.js';
@@ -95,6 +176,16 @@ export interface WhatWentBack {
     footing: TheFooting;
 }
 
+/** What an execution left in the house's hands. */
+export interface WhatTheHouseKept {
+    /** Ids of the rows that moved. The rows themselves are in the world. */
+    objectIds: string[];
+    /** Their names, for a report that does not have to go back to the world. */
+    names: string[];
+    /** Stones taken off the person's own row and put into the house's purse. */
+    stones: number;
+}
+
 export interface WhatWasHandedDown {
     decided: TheSentence;
     /** The complaint, settled. Null where the room decided there was no case. */
@@ -115,6 +206,30 @@ export interface WhatWasHandedDown {
     woundKey: string | null;
     /** True where the person's records were ended. */
     ended: boolean;
+    /**
+     * What the house took off them for good, where it ended one of its own.
+     *
+     * Empty for every other sentence, and for an execution that found them
+     * holding nothing - which is the commoner answer, because most people are.
+     */
+    keptByTheHouse: WhatTheHouseKept | null;
+    /**
+     * Who the house sent. Null only for the sentences nobody is sent for - a
+     * house with nobody to send answers here rather than by being absent.
+     */
+    whoWent: SomebodyWasSent | null;
+    /** Where they found them. Null where the world holds no place for them. */
+    wherePlace: string | null;
+    /**
+     * The room a seal puts them in, for a caller who owns where they stand.
+     *
+     * Named rather than moved when `offenderAt` was passed: presence is the play
+     * layer's for the one being played, and a second write of it here is the
+     * second copy of a fact that AGENTS.md is about.
+     */
+    heldAt: { id: string; name: string } | null;
+    /** True where the house read the sentence out. A seizure is not done quietly. */
+    readOut: boolean;
     /** True where a world row moved, so the caller owes a world commit. */
     theWorldMoved: boolean;
     /**
@@ -130,6 +245,16 @@ export interface HandDownInput {
     complaint: ObligationRecord;
     /** Who is settling it - the holder of the room, or the head. */
     byId: string;
+    /** Their name, for the actor on the notice the house gives. */
+    byName?: string;
+    /**
+     * The house's rooms and who holds them, and who is posted to each. Both are
+     * derived reads (`whoIsInChargeOfWhat`, `whoStaffsWhat`) and are passed
+     * rather than rebuilt here. Omitted means the house has nobody to send, and
+     * the report says so rather than the thing moving by itself.
+     */
+    portfolios?: readonly APortfolio[];
+    posts?: readonly APost[];
     offenderId: string;
     offenderName: string;
     offenderOrdinal: number;
@@ -151,6 +276,15 @@ export interface HandDownInput {
     byOrdinal?: number;
     /** The run's turn, for the two records that are kept in turns. */
     onTurn?: number;
+    /**
+     * Where the offender is standing, for an offender whose world row stands
+     * nowhere. See the banner: the played cultivator's row is `locationId: null`
+     * by design, so a party has nowhere to come to unless the caller says.
+     *
+     * Passing it hands presence back to the caller. Nothing here moves a row it
+     * was told about, and `heldAt` names where a seal would put them instead.
+     */
+    offenderAt?: { id?: string | null; name?: string | null };
 }
 
 /**
@@ -169,6 +303,19 @@ export function whatAFineComesTo(ordinal: number, severity: Severity): { contrib
     };
 }
 
+/**
+ * The room this house hears complaints in, where the world has built one.
+ *
+ * Two branches want it - the seal puts somebody in it, the notice is read out
+ * from it - and a second `find` with the same two predicates is how the two
+ * would come to disagree about which room that is.
+ */
+function theRoomThisHouseHearsIn(world: WorldState, houseId: string): LocationRecord | null {
+    return world.locations.find(place =>
+        place.data?.factionId === houseId
+        && purposeOf(place) === THE_ROOM_COMPLAINTS_GO_TO) ?? null;
+}
+
 /** Nothing moved on any of the axes. Each branch overrides what it actually did. */
 const NOTHING_MOVED = {
     contributionTaken: 0,
@@ -178,6 +325,11 @@ const NOTHING_MOVED = {
     sealed: false,
     woundKey: null,
     ended: false,
+    keptByTheHouse: null,
+    whoWent: null,
+    wherePlace: null,
+    heldAt: null,
+    readOut: false,
     theWorldMoved: false,
     notCarriedOutHere: null
 } as const;
@@ -241,6 +393,102 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
         notCarriedOutHere: why,
         line: `${decided.line} ${said}`
     });
+
+    /**
+     * Where the offender is standing.
+     *
+     * The world row first, and what the caller said where the row stands
+     * nowhere. Both branches that need a place read this one, so a sentence
+     * handed to the played cultivator and a sentence handed to anybody else
+     * arrive at the same answer by the same route.
+     */
+    const whereTheyStand = (world: WorldState | null): {
+        id: string | null; name: string | null; theWorldKnows: boolean;
+    } => {
+        const them = world === null ? null : getNpc(world, input.offenderId);
+        const theWorldKnows = (them?.locationId ?? null) !== null;
+        const id = them?.locationId ?? input.offenderAt?.id ?? null;
+        return {
+            id,
+            theWorldKnows,
+            name: (id === null || world === null
+                ? null
+                : world.locations.find(place => place.id === id)?.name ?? null)
+                ?? input.offenderAt?.name ?? null
+        };
+    };
+
+    /**
+     * The house says the name and the sentence, and never why.
+     *
+     * From the room complaints go to where the house has built one, and from
+     * wherever the person is where it has not - a house with no hall still has
+     * a mouth.
+     */
+    const readItOut = (
+        world: WorldState,
+        sentenceInWords: string,
+        at: { id: string | null; name: string | null }
+    ): void => {
+        const hall = theRoomThisHouseHearsIn(world, input.houseId);
+        anAnnouncementEntersTheWorld(world, {
+            day: input.onDay,
+            names: [input.offenderName],
+            readOutBy: {
+                id: input.byId,
+                name: input.byName ?? input.houseName,
+                role: 'read it out'
+            },
+            summary:
+                `${input.houseName} read out what the room decided about `
+                + `${input.offenderName}: ${sentenceInWords}`,
+            locationId: hall?.id ?? at.id,
+            place: hall?.name ?? at.name,
+            factionIds: [input.houseId]
+        });
+    };
+
+    /**
+     * The party the house sends, and its arrival where the person is standing.
+     *
+     * ONE ANSWER TO WHO COMES. The party's own rows are what move, so an
+     * arrival is a world row rather than a clause in a report, and the
+     * offender's row is never touched here - for the one being played, where
+     * they stand is the caller's and `whereTheyStand` has already been told.
+     *
+     * A house with nobody over the room and nobody in it is reported as having
+     * sent nobody, and the sentence still happens. The room decided it; being
+     * short of hands is a fact about the house rather than a veto on what its
+     * room settled, and it is the same answer the seizure has always given.
+     */
+    const somebodyGoes = (
+        world: WorldState | null,
+        sentence: Sentence,
+        at: { id: string | null; name: string | null }
+    ): SomebodyWasSent => {
+        const sent = whoIsSentToCarryItOut({
+            severity: input.complaint.severity,
+            sentence,
+            portfolios: input.portfolios ?? [],
+            posts: input.posts ?? []
+        });
+        if (world === null || at.id === null) return sent;
+        for (const id of sent.partyIds) {
+            const goer = getNpc(world, id);
+            if (goer === null || goer.locationId === at.id) continue;
+            Object.assign(world, upsertNpc(world, setLocation(goer, at.id, input.onDay)));
+        }
+        return sent;
+    };
+
+    /** That they arrived, for the mechanical line. Empty where nobody did. */
+    const theyCameLine = (
+        sent: SomebodyWasSent,
+        at: { id: string | null; name: string | null }
+    ): string =>
+        sent.partyIds.length > 0 && at.id !== null && at.name !== null
+            ? ` They come to ${input.offenderName} at ${at.name}.`
+            : '';
 
     // ── A REBUKE IS A ROW AND NOTHING ELSE ───────────────────────────────
     //
@@ -350,6 +598,14 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             );
         }
 
+        // ── SOMEBODY GOES AND TAKES IT ───────────────────────────────────
+        //
+        // They travel to the person rather than the thing arriving: a sentence
+        // carried out on somebody who is somewhere else is the silent state
+        // change this leg closes.
+        const at = whereTheyStand(world);
+        const sent = somebodyGoes(world, decided.sentence, at);
+
         const note = `Taken back by ${input.houseName} on the room's word. `
             + whatTheFootingMeans(take.footing);
         Object.assign(world, upsertObject(world, takeItBack(take, {
@@ -359,9 +615,23 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             note
         })));
 
+        // A seizure is read out and a loan called in is not. The house spent the
+        // thing and is taking it back anyway, and that act is the one
+        // `a-house-holds-its-own.ts` says cannot be done quietly; a loan ending
+        // moved no register and is nobody else's business.
+        const readOut = take.footing === 'seized';
+        if (readOut) {
+            readItOut(
+                world,
+                `${take.object.name}, which the house gave them, is taken back.`,
+                at
+            );
+        }
+
         const wrote = discharged(receipt(
             WHAT_THE_HOUSE_GAVE_IS_BACK,
-            `${input.houseName} took ${take.object.name} back off ${input.offenderName}. ${note}`,
+            `${input.houseName} took ${take.object.name} back off ${input.offenderName}. ${note} `
+            + sent.line,
             whatTheFootingMeans(take.footing)
         ));
         writeOneObligation(db, wrote);
@@ -371,9 +641,18 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             tookBack: {
                 objectId: take.object.id, name: take.object.name, footing: take.footing
             },
+            whoWent: sent,
+            wherePlace: at.name,
+            readOut,
             theWorldMoved: true,
-            line: `${decided.line} ${take.object.name} goes back to ${input.houseName}. `
+            line: `${decided.line} ${sent.line}`
+                + theyCameLine(sent, at)
+                + ` ${take.object.name} goes back to ${input.houseName}. `
                 + whatTheFootingMeans(take.footing)
+                + (readOut
+                    ? ` ${input.houseName} reads the sentence out. The name and the sentence `
+                      + 'are said; what they did is not.'
+                    : '')
         };
     }
 
@@ -392,8 +671,17 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
                 + 'cannot be read, and none goes on.'
             );
         }
+        // WHICHEVER STORE HOLDS THEM, which is what the death branch below has
+        // always done and this one did not. Sealing needed a `cultivators` row,
+        // so a house could seal only somebody a run was being played through -
+        // and the room sentences its own members, who are almost never that.
+        // Everybody else was refused here and told, honestly and wrongly, that
+        // there was no record to carry it.
+        const world = input.world ?? null;
         const them = input.repos.cultivators.getById(input.offenderId);
-        if (them === null) {
+        const npc = world === null ? null : getNpc(world, input.offenderId);
+        const standing = (them !== null && them.alive) || (npc !== null && isActing(npc.status));
+        if (!standing) {
             return routed(
                 decided.carriedOutBy,
                 `There is no record for ${input.offenderName} to carry a seal, and none goes on.`
@@ -404,10 +692,19 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             sealerOrdinal: input.byOrdinal,
             sealerId: input.byId,
             subjectOrdinal: input.offenderOrdinal,
-            subjectIsThere: them.alive,
-            subjectAlreadySealed: them.qiSeal !== null,
+            subjectIsThere: standing,
+            subjectAlreadySealed:
+                (them?.qiSeal ?? null) !== null
+                || (npc !== null && theSealOn(npc, input.onDay) !== null),
             onDay: input.onDay,
-            subjectMaxQi: them.maxQi,
+            // The ceiling, off whichever record is there. The world stores no
+            // pool - `maxQiForOrdinal` derives it the way `maxBodyOf` derives
+            // the body - so this is that derivation and never a second figure
+            // kept beside the rung.
+            subjectMaxQi: them?.maxQi ?? maxQiForOrdinal(
+                npc!.cultivation.attributes.insight,
+                npc!.cultivation.realmOrdinal
+            ),
             forDays: null,
             note: `Held by ${input.houseName}. ${input.complaint.description}`
         });
@@ -415,26 +712,50 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             return routed(decided.carriedOutBy, laid.line);
         }
 
-        input.repos.cultivators.update(input.offenderId, {
-            qiSeal: laid.seal,
-            // The lid goes on at once. A seal that let the surplus leak away
-            // over months would be asking them to stop rather than stopping
-            // them, which is the distinction `whatLayingASealTakes` draws.
-            qi: Math.min(them.qi, laid.poolCutTo ?? them.qi)
-        });
+        if (them !== null && them.alive) {
+            input.repos.cultivators.update(input.offenderId, {
+                qiSeal: laid.seal,
+                // The lid goes on at once. A seal that let the surplus leak away
+                // over months would be asking them to stop rather than stopping
+                // them, which is the distinction `whatLayingASealTakes` draws.
+                qi: Math.min(them.qi, laid.poolCutTo ?? them.qi)
+            });
+        }
 
-        const world = input.world ?? null;
-        const hall = world === null ? null : world.locations.find(place =>
-            place.data?.factionId === input.houseId
-            && purposeOf(place) === THE_ROOM_COMPLAINTS_GO_TO);
-        const npc = world === null ? null : getNpc(world, input.offenderId);
-        if (world !== null && npc !== null && hall !== undefined && hall !== null) {
-            Object.assign(world, upsertNpc(world, setLocation(npc, hall.id, input.onDay)));
+        // ── AND SOMEBODY COMES FOR THEM ──────────────────────────────────
+        //
+        // Read where they are standing BEFORE the hall takes them, because the
+        // party comes to the person and the person is put in the hall after,
+        // and reading it the other way round has them arriving at the cell.
+        const at = whereTheyStand(world);
+        const sent = somebodyGoes(world, decided.sentence, at);
+
+        const hall = world === null ? null : theRoomThisHouseHearsIn(world, input.houseId);
+        // The seal and the hall in ONE write. A second `upsertNpc` would be
+        // built off a record read before the first and would put the unsealed
+        // row straight back.
+        //
+        // And the move is skipped where the caller owns where they stand. A seal
+        // is the sentence and the hall is where they are put, and for the one
+        // being played the second half is the play layer's - `heldAt` hands it
+        // back rather than this writing a place onto a row that holds none.
+        const sealWentOn = world !== null && npc !== null && isActing(npc.status);
+        const theirsToMove = input.offenderAt === undefined;
+        if (world !== null && npc !== null && sealWentOn) {
+            const held = sealLaidOn(npc, laid.seal!, input.onDay);
+            Object.assign(world, upsertNpc(
+                world,
+                hall && theirsToMove ? setLocation(held, hall.id, input.onDay) : held
+            ));
+        }
+        if (world !== null) {
+            readItOut(world, `they are sealed and held by ${input.houseName}.`, at);
         }
 
         const wrote = discharged(receipt(
             SEALED_AND_HELD,
-            `${input.houseName} sealed ${input.offenderName} and holds them. ${laid.line}`,
+            `${input.houseName} sealed ${input.offenderName} and holds them. ${laid.line} `
+            + sent.line,
             laid.seal?.liftsOnDay === null
                 ? 'No day was put on it. Nothing lifts it but the hand that laid it.'
                 : null
@@ -445,11 +766,15 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             ...NOTHING_MOVED, decided, settled, wrote,
             sealed: true,
             sealedUntilDay: laid.seal?.liftsOnDay ?? null,
-            theWorldMoved: hall !== undefined && hall !== null && npc !== null,
-            line: `${decided.line} ${input.offenderName} is sealed`
-                + (hall === undefined || hall === null
-                    ? ' and held. '
-                    : ` and put in ${hall.name}. `)
+            heldAt: hall === null ? null : { id: hall.id, name: hall.name },
+            whoWent: sent,
+            wherePlace: at.name,
+            readOut: world !== null,
+            theWorldMoved: world !== null,
+            line: `${decided.line} ${sent.line}`
+                + theyCameLine(sent, at)
+                + ` ${input.offenderName} is sealed`
+                + (hall === null ? ' and held. ' : ` and put in ${hall.name}. `)
                 + laid.line
         };
     }
@@ -469,8 +794,14 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
                 + 'is taken.'
             );
         }
+        // THE SAME TWO STORES. This wrote only the `cultivators` table, so a
+        // house could cripple only somebody a run was being played through, and
+        // the world's own people walked out of the room whole - which is the
+        // half of the sentence anybody else would ever have seen.
+        const world = input.world ?? null;
         const them = input.repos.cultivators.getById(input.offenderId);
-        if (them === null || !them.alive) {
+        const npc = world === null ? null : getNpc(world, input.offenderId);
+        if ((them === null || !them.alive) && (npc === null || !isActing(npc.status))) {
             return routed(
                 decided.carriedOutBy,
                 `There is no living record for ${input.offenderName} to carry the wound, and `
@@ -478,25 +809,69 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             );
         }
 
-        input.repos.cultivators.addInjury(input.offenderId, {
-            severity: 'crippling',
-            source: 'other',
-            description:
-                `What ${input.offenderName} climbed was taken off them by ${input.houseName}, `
-                + 'on the room\'s word, and it does not come back.',
-            sustainedOnTurn: Math.max(0, Math.round(input.onTurn ?? 0)),
-            woundType: woundKey
-        });
+        // Somebody comes and does it, the same way and off the same two rooms
+        // the seizure reads. Nothing about this one is carried out at a
+        // distance.
+        const at = whereTheyStand(world);
+        const sent = somebodyGoes(world, decided.sentence, at);
+
+        const said =
+            `What ${input.offenderName} climbed was taken off them by ${input.houseName}, `
+            + 'on the room\'s word, and it does not come back.';
+        if (them !== null && them.alive) {
+            input.repos.cultivators.addInjury(input.offenderId, {
+                severity: 'crippling',
+                source: 'other',
+                description: said,
+                sustainedOnTurn: Math.max(0, Math.round(input.onTurn ?? 0)),
+                woundType: woundKey
+            });
+        }
+        let theWorldMoved = false;
+        if (world !== null && npc !== null && isActing(npc.status)) {
+            // Minted through the call every other wound in the game is minted
+            // through, so the penalties are the table's rather than this file's,
+            // and laid on through `carryingWounds`, which is the world's one
+            // write path for an injury and the only thing that keeps the count
+            // honest against the list.
+            const wound = createInjury(
+                {
+                    severity: 'crippling',
+                    source: 'other',
+                    description: said,
+                    turn: Math.max(0, Math.round(input.onTurn ?? 0)),
+                    woundType: woundKey
+                },
+                forStream(world.seed, 'a-room-takes-what-was-built', npc.id, input.onDay)
+            );
+            Object.assign(world, upsertNpc(world, carryingWounds(npc, [wound], input.onDay)));
+            const after = getNpc(world, input.offenderId);
+            // And its day in the ledger, the way every other permanent wound in
+            // this world gets one. The receipt below is what the HOUSE holds;
+            // this is what happened to the person.
+            if (after) recordPermanentWounds(world, after, [wound], input.onDay);
+            theWorldMoved = true;
+        }
+        if (world !== null) {
+            readItOut(world, `what they climbed is taken off them by ${input.houseName}.`, at);
+            theWorldMoved = true;
+        }
 
         const wrote = discharged(receipt(
             THE_CAPABILITY_WAS_TAKEN,
-            `${input.houseName} took what ${input.offenderName} had built. Wound: ${woundKey}.`
+            `${input.houseName} took what ${input.offenderName} had built. Wound: ${woundKey}. `
+            + sent.line
         ));
         writeOneObligation(db, wrote);
 
         return {
-            ...NOTHING_MOVED, decided, settled, wrote, woundKey,
-            line: `${decided.line} What ${input.offenderName} climbed is taken off them, and it `
+            ...NOTHING_MOVED, decided, settled, wrote, woundKey, theWorldMoved,
+            whoWent: sent,
+            wherePlace: at.name,
+            readOut: world !== null,
+            line: `${decided.line} ${sent.line}`
+                + theyCameLine(sent, at)
+                + ` What ${input.offenderName} climbed is taken off them, and it `
                 + 'does not come back.'
         };
     }
@@ -518,6 +893,12 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
             );
         }
 
+        // Read while they are still standing somewhere. Afterwards the row is a
+        // corpse and where it fell is somebody else's subject. The party goes
+        // before anything is done to them, for the same reason.
+        const at = whereTheyStand(world);
+        const sent = somebodyGoes(world, decided.sentence, at);
+
         const endNote = `${input.houseName} carried out the room's sentence on `
             + `${input.offenderName}.`;
         if (them !== null && them.alive) {
@@ -528,18 +909,98 @@ export function handDownWhatTheRoomDecided(input: HandDownInput): WhatWasHandedD
                 endNote
             );
         }
+        // ── AND WHAT THEY HAD GOES TO THE HOUSE ──────────────────────
+        //
+        // The design owner: *"the artifacts go to the sect treasury."* Before
+        // this the things stayed on the corpse - an executed member's sword sat
+        // in the register under their own dead name forever, because the estate
+        // path takes a `Cultivator` and reads a pouch, and the person a room
+        // sentences is almost always somebody the world holds and no run was
+        // ever played through.
+        //
+        // Read BEFORE `markDead`, because the rows are keyed on the possessor
+        // and a corpse is still the possessor until something moves them. What
+        // does the moving is `transferPossession` with `confiscated` on the
+        // chain, which is the same link `takeItBack` writes for the lighter
+        // sentence above.
+        let keptByTheHouse: WhatTheHouseKept | null = null;
         if (world !== null && npc !== null && npc.status === 'alive') {
-            Object.assign(world, upsertNpc(world, markDead(npc, input.onDay, endNote)));
+            const kept = whatAnEndingLeavesToTheHouse({
+                objects: world.objects,
+                stones: npc.spiritStones,
+                offenderId: npc.id,
+                houseId: input.houseId,
+                houseName: input.houseName,
+                onDay: input.onDay,
+                note: `Taken by ${input.houseName} when it carried out the room's sentence on `
+                    + `${input.offenderName}.`
+            });
+            for (const object of kept.objects) {
+                Object.assign(world, upsertObject(world, object));
+            }
+            const house = world.factions.find(row => row.id === input.houseId) ?? null;
+            if (house !== null && kept.stones > 0) {
+                // The one purse, through the one function that moves it, so a
+                // house that has just executed somebody can pay its people with
+                // what it took.
+                house.resources.spirit_stones = putIntoTheHouse(
+                    Number(house.resources.spirit_stones ?? 0),
+                    kept.stones,
+                    'indemnity'
+                ).after;
+            }
+            keptByTheHouse = {
+                objectIds: kept.objects.map(object => object.id),
+                names: kept.objects.map(object => object.name),
+                stones: house === null ? 0 : kept.stones
+            };
+            Object.assign(world, upsertNpc(world, {
+                ...markDead(npc, input.onDay, endNote),
+                // Emptied only once the stones are somewhere else, which is the
+                // rule `estate-settlement.ts` states for the played path: a
+                // corpse emptied into nothing is worse than one never emptied.
+                spiritStones: house === null ? npc.spiritStones : 0
+            }));
         }
 
-        const wrote = discharged(receipt(THE_HOUSE_ENDED_THEM, endNote));
+        // THE ONE THE RULING NAMES IN SO MANY WORDS: a house announces that
+        // somebody has been caught and sentenced to death. The name and the
+        // sentence; what they did is not in it.
+        if (world !== null) {
+            readItOut(world, `they are put to death by ${input.houseName}.`, at);
+        }
+
+        const wrote = discharged(receipt(
+            THE_HOUSE_ENDED_THEM,
+            `${endNote} ${sent.line}`
+            + (keptByTheHouse === null || keptByTheHouse.objectIds.length === 0
+                ? ''
+                : ` ${input.houseName} keeps what they were carrying: `
+                  + `${keptByTheHouse.names.join(', ')}.`)
+        ));
         writeOneObligation(db, wrote);
 
         return {
             ...NOTHING_MOVED, decided, settled, wrote,
             ended: true,
-            theWorldMoved: world !== null && npc !== null && npc.status === 'alive',
-            line: `${decided.line} ${endNote}`
+            keptByTheHouse,
+            whoWent: sent,
+            wherePlace: at.name,
+            readOut: world !== null,
+            theWorldMoved: world !== null,
+            line: `${decided.line} ${sent.line}`
+                + theyCameLine(sent, at)
+                + ` ${endNote}`
+                + (keptByTheHouse === null
+                    || (keptByTheHouse.objectIds.length === 0 && keptByTheHouse.stones === 0)
+                    ? ''
+                    : ` What ${input.offenderName} was carrying goes to ${input.houseName}: `
+                      + [
+                          ...keptByTheHouse.names,
+                          ...(keptByTheHouse.stones > 0
+                              ? [`${keptByTheHouse.stones} spirit stones`]
+                              : [])
+                      ].join(', ') + '.')
         };
     }
 

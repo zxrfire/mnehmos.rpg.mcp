@@ -306,7 +306,13 @@ function toHearing(told: TellingHeard): Hearing {
         id: named.id,
         name: named.name,
         stage: 'whisper' as const,
-        statement: told.rumour.text
+        statement: told.rumour.text,
+        // WHAT THE TALK IS ABOUT, and it is a rumour's own first field: "the
+        // ledger row this descends from, or null when nothing in the world
+        // happened as described". Null on an invented one is therefore not a
+        // gap - it is the fabrication saying so, which is what `isGroundless`
+        // reads.
+        factId: told.rumour.factId
     }));
 
     return {

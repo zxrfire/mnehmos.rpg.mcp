@@ -168,20 +168,27 @@ describe('the narrow gate: a practice that says its own name', () => {
         const { db, game } = makeGame({ seed: 'practice-open' });
         const { cultivator } = await game.newRun('Villager');
         const gate = new KnowledgeGate(db);
-        const shut = [...PRACTICES.values()].find(observed => observed.namesFaction)!;
+        // A HOUSE THIS ONE HAS NOT HEARD OF, and picked that way rather than
+        // taken first. It used to take the first practice that names a house at
+        // all, which only worked while the opening never happened to know that
+        // house - and what a fresh cultivator starts holding is not fixed. The
+        // arm above already picks its subject this way, for the same reason.
+        const shut = [...PRACTICES.values()].find(observed =>
+            observed.namesFaction && !gate.isAwareOf(cultivator.id, 'sect', observed.factionId));
+        expect(shut, 'no unheard-of house left to open the gate with').toBeDefined();
 
-        expect(mayObserve(shut, gate, cultivator.id)).toBe(false);
+        expect(mayObserve(shut!, gate, cultivator.id)).toBe(false);
         gate.learn({
             holderId: cultivator.id,
             kind: 'sect',
-            id: shut.factionId,
-            name: getSect(shut.factionId)!.name,
+            id: shut!.factionId,
+            name: getSect(shut!.factionId)!.name,
             onDay: 0,
             sourceKind: 'told',
             sourceNote: 'Somebody said it.'
         });
         // Knowing what to call these people changes what you are able to notice.
-        expect(mayObserve(shut, gate, cultivator.id)).toBe(true);
+        expect(mayObserve(shut!, gate, cultivator.id)).toBe(true);
     });
 });
 

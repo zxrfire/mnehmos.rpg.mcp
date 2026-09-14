@@ -576,6 +576,17 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I inform the elder that his disciple is dead',
         'I tell her what happened to her master',
         'I tell him that I killed his brother'
+    ],
+    // The same word read from the other end. Every one of these denies the
+    // HEARER's own account of who they are, which is what keeps them off both
+    // tellings above: one puts a deed on a third person, the other is an
+    // account of the speaker. `whoseAccountIsBeingChallenged` requires a
+    // pronoun where those two put a name or an `I`.
+    challenge: [
+        'I tell him he is not of that sect',
+        'I call her a liar about her rank',
+        'I put it to Duan Shutao that he never was a disciple there',
+        'I tell him his story does not hold'
     ]
 };
 
@@ -919,6 +930,24 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // Being called in by your own house, and not going. Both are dispatched
         // on and both had a pattern before either had a phrasing here, which is
         // exactly the gap this file exists to catch.
+        // THE ROOM, FROM BOTH SIDES OF IT. Both intents were dispatched on
+        // before either had a phrasing here - the judgement arc shipped the
+        // patterns and the handlers in the same pass and this table was the
+        // thing left behind, which is exactly the gap this file catches.
+        'sect/complaints': [
+            'what complaints are open against my house',
+            'what has been brought before me',
+            'who has been reported'
+        ],
+        // Speaking for somebody in front of the room that is about to sentence
+        // them. It is not a purse: the word is priced at the weight where
+        // `PURSE_REACH` stops taking money, so what it costs is standing.
+        'sect/plead': [
+            'I speak for Wen Shu',
+            'I plead for him',
+            'I put in a word for her',
+            'I beg mercy for Wen Shu'
+        ],
         'sect/summons': [
             'what have I been called in for',
             'what does the sect want of me',
@@ -1130,7 +1159,19 @@ describe('every verb is priced as well as reachable', () => {
         // What makes it safe here is structural, as with `give`: it needs a
         // named thing that resolves against what this person is actually
         // holding. A misread sentence resolves nothing and is refused.
-        'destroy'
+        'destroy',
+        // And `tell` read from the other end, which is `give`'s case a fourth
+        // time. It spends no day and nothing can fail, and it opens a
+        // permanent record in one name or the other that only that holder can
+        // close - theirs when the world holds their account as untrue, the
+        // player's when it does not.
+        //
+        // Two structural gates rather than one: the sentence has to name
+        // somebody standing here, and that person has to have given this
+        // cultivator an account of themselves. A misread sentence supplies
+        // neither, and a stranger who has said nothing about who they are
+        // cannot be challenged at all.
+        'challenge'
     ];
 
     it('puts every verb on a list, or names it as priced at execution', () => {
@@ -1174,7 +1215,13 @@ describe('every verb is priced as well as reachable', () => {
         // it safe on this list is the same structural gate `give` has - it
         // needs a named thing that resolves against what the person is holding,
         // and a misread sentence resolves nothing.
-        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(14);
+        //
+        // 14 -> 15 for `challenge`, which is `give` a fourth time: no day,
+        // nothing that can fail, and a permanent record opened in somebody's
+        // name that only they can close. What makes it safe here is two
+        // structural gates rather than one - a person standing in the square
+        // who can be named, and an account they have actually given.
+        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(15);
         expect(new Set(PRICED_AT_EXECUTION).size).toBe(PRICED_AT_EXECUTION.length);
     });
 

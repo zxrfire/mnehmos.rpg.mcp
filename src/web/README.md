@@ -480,6 +480,35 @@ above is `what-grade-of-medicine-a-wound-needs.ts`. Who may *refine* a grade is
 `who-can-refine-a-grade-of-medicine.ts`, answered by the alchemist's own realm,
 and nothing in this directory should ever read one as the other.
 
+**And what a wound needs is not what the person asking has heard of.** This read
+had no holder for as long as it existed, so a Qi Condensation cultivator in a
+village was handed the name, the grade and the barter terms of a medicine
+refined above the Lid - and nobody in the game was ever honestly told that
+nothing they could reach would close it. The shape the design owner asked for is
+the ordinary one: a verdict given by somebody who did not know, refused, and
+overturned much later by somebody far enough up.
+
+So `whatWouldCloseThisWound` takes a `WhoIsAsking` and `TheCure` carries
+`heardOf`. `aMedicineThisHolderCouldName` is the one rule and every surface that
+names a medicine asks it - the physician's refusal, the panel, the alchemy
+receipt, and the line about a wound nothing closes. Two halves:
+
+- **a thing on open sale has no claim to hold.** Anybody standing in a market has
+  been shown it, which is what `resolvePrice` already says about the board;
+- **anything past the cash line has to have been heard of**, and `KnowledgeGate`
+  is the only thing that answers whether it was. Who holds it for one of the
+  world's own people is derived in
+  `engine/cultivation/who-has-heard-of-a-thing-past-the-counter.ts` from two
+  numbers the world already stores - the rung they stand at, and the height the
+  house on their roll works at - and composed by the gate under `highestStage`,
+  so a row written by being told wins over any derivation. Nothing authors a
+  list of who knows what.
+
+The claim itself needed nothing new: `claimKey` is free-form and the truth layer
+has always carried it. What was added is one member on `KnownEntityKind` -
+`thing` - so a claim about a catalog row goes through the same five gate reads
+as a house or a place instead of growing a writer and a reader of its own.
+
 ### A clause the turn did not run is named, never dropped
 
 The rule above has a hole the shape of a sentence with two verbs in it. Found by
@@ -991,6 +1020,46 @@ verb. Three things about it are load-bearing:
 The world's own people do it at a seeded rate on the one path where somebody
 gives their name, which is answering a question. A rate rather than a pass:
 nothing models why this person is travelling under another house's name.
+
+### And an account can be gainsaid, from either end
+
+The bullet above was half true. Two holders, one subject and two statements that
+do not match is the shape of a catch, and NOBODY IN THE WORLD EVER MADE THE
+COMPARISON - the row sat in the hearer's head with `fabricated` on it and the
+only reader was an operator. The design owner's ruling was that a challenge runs
+BOTH WAYS, which is the same word already ruling that an account is written at
+both ends.
+
+[`two-accounts-of-one-person.ts`](two-accounts-of-one-person.ts) is the read, and
+both directions run it:
+
+- **The world's people gainsay one put to them.** At the telling, before the row
+  is written, in `GameService.tellSomebody`. One indexed lookup at a scene that
+  is already happening; nothing sweeps a roster and nothing runs on the world
+  advance.
+- **The player gainsays one put to them.** [`challenging-an-account.ts`](challenging-an-account.ts),
+  the `challenge` verb. Said to a face, so it spends no days - and it is not
+  free, because what it can cost is a person who now holds something about you.
+
+Three things are load-bearing:
+
+- **The comparison is over the PARTS, not the statement.** `disagreementsAbout`
+  groups held claims by exact statement, and a holder's rows about one person
+  include the bare existence row beside an account - two strings that differ
+  without disagreeing. So an account is read back out of the statement it was
+  written into (`theAccountInAStatement`, beside the writer so the two move
+  together) and the parts are compared. A part either side is silent about is
+  not a disagreement.
+- **Being caught needs both halves.** The world has to hold the account as
+  untrue AND the person gainsaying has to land on the same part.
+  `whatTheyCaught` is the one place those two meet, and it is what keeps the
+  engine's own answer out of the sentence when the engine has no business
+  supplying one.
+- **A challenge can be wrong, and then it faces the other way.** Somebody
+  holding a false account gainsays exactly as loudly. A player who calls
+  somebody a liar with nothing behind it has done a thing to them, and the
+  ledger records it as one - through `what-somebody-does-about-being-wronged.ts`
+  like every other wrong, with no reputation number anywhere in either path.
 
 ### The sheet reports what the cultivator can perceive, not what the engine knows
 
@@ -2313,6 +2382,8 @@ what would work are different useful things.
 - [`standing.ts`](standing.ts) - who is entitled to commit a house, and what the refusal says
 - [`pending-summons.ts`](pending-summons.ts) - the ask a house has left standing, and what saying no to it costs before you say it
 - [`house-property-theft.ts`](house-property-theft.ts) - taking a thing your own house owns, and why possession moves while ownership does not
+- [`a-room-hands-down-what-it-decided.ts`](a-room-hands-down-what-it-decided.ts) - the seven sentences carried out, each through the instrument that already does that job, who the house sends for the four carried out on a person, and which of them it reads out in public
+- [`a-room-hands-one-down-to-you.ts`](a-room-hands-one-down-to-you.ts) - the same room sitting on the one being played: the day gate, who decides it over your head, and who on the roll owes you enough to speak
 - [`object-theft.ts`](object-theft.ts) - taking one named thing off somebody who is not your own house, and why a moored craft was out of reach of every possession query in the engine
 - [`craft-verbs.ts`](craft-verbs.ts) - the joint between the player's sentence and the bill of materials, and where a launched craft becomes a row
 - [`making-a-thing-at-your-own-bench.ts`](making-a-thing-at-your-own-bench.ts) - the other half of `craft`: the artifact recipe, your own hands, and the thing that comes off it

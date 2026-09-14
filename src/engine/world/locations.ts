@@ -17,7 +17,10 @@ import {
     crossingStillGiving,
     enrichedDensity
 } from './crossing-enrichment.js';
-import { scheduleForAnAncientSite } from './how-long-a-door-stays-shut.js';
+import {
+    howThisGroundIsKept,
+    scheduleForAnAncientSite
+} from './how-long-a-door-stays-shut.js';
 import { DEFAULT_LAYER, type LayerKey } from './layers.js';
 import {
     QI_DENSITY_DEFAULT,
@@ -986,7 +989,13 @@ export function evaluateAccess(location: LocationRecord, query: AccessQuery): Ac
     const keyed =
         location.data.keyId == null || (query.keyIds ?? []).includes(String(location.data.keyId));
     const cycleOpen = query.onDay === undefined ? true : isOpenOn(location, query.onDay);
-    const closed = (location.sealed && !keyed) || !cycleOpen;
+    // On cycled ground the schedule is the whole of whether the door is shut.
+    // It shuts itself when the window ends, so the `sealed` column is a reading
+    // of the schedule and asking both would be asking the same question twice
+    // and taking the older answer.
+    const closed = location.cycle !== null
+        ? !cycleOpen
+        : (location.sealed && !keyed) || !cycleOpen;
 
     // AN ENTRY BAR IS A PERSON, AND A RUIN HAS NOBODY LEFT IN IT
     const gate = whoTurnsYouAwayFrom(location);
@@ -1087,7 +1096,10 @@ function describeAccess(
 ): string {
     const who = rankName(ordinal);
     if (closed) {
-        return location.sealed
+        // A door on a season is not a door somebody sealed. It shut itself when
+        // its window ended, and the seal sentence would send a player looking
+        // for a way through one.
+        return location.cycle === null && location.sealed
             ? `${location.name} is sealed. Power is not the obstacle; the seal is.`
             : `${location.name} is shut. It is not open on this day.`;
     }
@@ -1233,12 +1245,20 @@ export function populationWeightOf(location: LocationRecord): number {
 // CYCLES
 // Closed-form. Asking about a day three centuries out costs the same as asking
 // about tomorrow, which is what makes a decades-long seclusion cheap.
+//
+// THE SCHEDULE IS THE FACT AND `sealed` IS A READING OF IT. A place on a cycle
+// shuts itself when its window ends - the formation closes, the season turns -
+// so nothing anybody does opens one for good and nothing has to go and re-shut
+// it by hand. The two columns used to be two answers: every seeded cycled ruin
+// carries `sealed`, so a flag set once outvoted a schedule that runs forever,
+// and a pass that unsealed one left it reading "shut until its season" with the
+// flag saying open and nothing in the world to reconcile them. The column is
+// ignored here wherever a cycle exists, which is what makes it a reading.
 // ─────────────────────────────────────────────────────────────────────────
 
 export function isOpenOn(location: LocationRecord, absoluteDay: number): boolean {
-    if (location.sealed) return false;
     const cycle = location.cycle;
-    if (!cycle) return true;
+    if (!cycle) return !location.sealed;
     if (cycle.periodDays <= 0 || cycle.openDays <= 0) return false;
     if (absoluteDay < cycle.phaseDay) return false;
     return (absoluteDay - cycle.phaseDay) % cycle.periodDays < cycle.openDays;
@@ -1247,12 +1267,24 @@ export function isOpenOn(location: LocationRecord, absoluteDay: number): boolean
 /** First day at or after `fromDay` on which the place stands open. */
 export function nextOpeningDay(location: LocationRecord, fromDay: number): number | null {
     const cycle = location.cycle;
-    if (location.sealed) return null;
-    if (!cycle) return fromDay;
+    if (!cycle) return location.sealed ? null : fromDay;
     if (cycle.periodDays <= 0 || cycle.openDays <= 0) return null;
     if (fromDay <= cycle.phaseDay) return cycle.phaseDay;
     const offset = (fromDay - cycle.phaseDay) % cycle.periodDays;
     return offset < cycle.openDays ? fromDay : fromDay + (cycle.periodDays - offset);
+}
+
+/**
+ * The day the window `nextOpeningDay` answered with actually began.
+ *
+ * A window that straddles a year boundary is one window, and a pass that runs a
+ * calendar at a time has to be able to tell an opening from a door that was
+ * already standing open when the year turned.
+ */
+export function windowStartOn(location: LocationRecord, openDay: number): number | null {
+    const cycle = location.cycle;
+    if (!cycle || cycle.periodDays <= 0) return null;
+    return openDay - ((openDay - cycle.phaseDay) % cycle.periodDays);
 }
 
 /** Day the current or next opening ends. Null when it never closes. */
@@ -1281,7 +1313,7 @@ export function openingsBetween(
 ): OpeningWindow[] {
     const out: OpeningWindow[] = [];
     const cycle = location.cycle;
-    if (!cycle || location.sealed || cycle.periodDays <= 0 || cycle.openDays <= 0) return out;
+    if (!cycle || cycle.periodDays <= 0 || cycle.openDays <= 0) return out;
     let cursor = fromDay;
     while (out.length < limit) {
         const opens = nextOpeningDay(location, cursor);
@@ -1319,6 +1351,55 @@ export function travelOptions(
         }
         return { link, usable: true, reason: '' };
     });
+}
+
+/**
+ * Walking days from one place to everywhere the roads reach.
+ *
+ * ONE ANSWER TO HOW FAR, because there were two: the reachability probe walked
+ * this graph itself and anything else that wanted a distance would have had to
+ * write a third. Dijkstra over the open links, and containment costs nothing - a
+ * ruin hangs off its province rather than off a road, and treating that as
+ * impassable reports half the world unreachable.
+ *
+ * The graph is small and the answer is every destination at once, so a caller
+ * with many places to price asks once from the one place they all share.
+ */
+export function walkingDaysFrom(
+    locations: readonly LocationRecord[],
+    startId: string
+): Map<string, number> {
+    const byId = new Map(locations.map(l => [l.id, l]));
+    const childrenOf = new Map<string, string[]>();
+    for (const l of locations) {
+        if (l.parentId === null) continue;
+        const kin = childrenOf.get(l.parentId);
+        if (kin) kin.push(l.id); else childrenOf.set(l.parentId, [l.id]);
+    }
+
+    const best = new Map<string, number>([[startId, 0]]);
+    // A sorted frontier costs less than a heap at this size, and nothing here
+    // is on the turn path.
+    const frontier: { id: string; days: number }[] = [{ id: startId, days: 0 }];
+    while (frontier.length > 0) {
+        frontier.sort((a, b) => a.days - b.days);
+        const here = frontier.shift()!;
+        if ((best.get(here.id) ?? Infinity) < here.days) continue;
+        const node = byId.get(here.id);
+        if (!node) continue;
+        const step = (toId: string, days: number): void => {
+            if (days >= (best.get(toId) ?? Infinity)) return;
+            best.set(toId, days);
+            frontier.push({ id: toId, days });
+        };
+        for (const link of node.links) {
+            if (!link.open) continue;
+            step(link.toLocationId, here.days + Math.max(1, link.travelDays));
+        }
+        if (node.parentId !== null) step(node.parentId, here.days);
+        for (const child of childrenOf.get(node.id) ?? []) step(child, here.days);
+    }
+    return best;
 }
 
 /** Symmetric link. A road that only exists in one direction is a bug. */
@@ -1546,9 +1627,24 @@ function groundACrossingLifted(
     return location;
 }
 
+/** The tag on ground that was never shut, because it was built to be reached. */
+export const LEFT_TO_BE_FOUND = 'left_to_be_found';
+
 export function locationFromRuin(ruin: Ruin): LocationRecord {
     const sealedDay = ruin.sealedYear * 365;
     const danger = clampOrdinal(ruin.dangerOrdinal);
+    const standing = whoIsRecordedAsHavingBuiltIt(ruin);
+    const kept = howThisGroundIsKept({
+        id: ruin.id,
+        hoardCount: ruin.techniqueIds.length + ruin.treasureIds.length,
+        leftByName: A_NAME_IS_STILL_ON_IT.includes(standing)
+    });
+    // A LEGACY IS NOT A SEAL. Nothing was closed here: the qi is reachable, the
+    // pocket is being drawn on, and what stops somebody is the trial and the
+    // thresholds below rather than a door. So the seal, the hazard that names
+    // one, and the gap between what the vein holds and what anybody can reach
+    // all come off - and everything that makes the place lethal stays.
+    const leftOpen = kept === 'never_shut';
 
     // It began as somebody's compound: ordinary, open, and not dangerous.
     const base = makeLocation({
@@ -1566,11 +1662,14 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
     // Then it was sealed from the inside, and stopped being any of that.
     const { location } = applyLocationChange(base, {
         onDay: sealedDay,
-        kind: 'sealed',
-        summary:
-            `${ruin.name} was sealed. The formations are still drawing on a vein ` +
-            `nobody is tapping, and the trials inside were calibrated for ` +
-            `${rankName(danger)} disciples of a sect that no longer exists.`,
+        kind: leftOpen ? 'exposed' : 'sealed',
+        summary: leftOpen
+            ? `${ruin.name} was left standing open. The formations inside are still `
+                + `running at the setting they were left at, and the trials were `
+                + `calibrated for ${rankName(danger)}. Nothing closes it.`
+            : `${ruin.name} was sealed. The formations are still drawing on a vein `
+                + `nobody is tapping, and the trials inside were calibrated for `
+                + `${rankName(danger)} disciples of a sect that no longer exists.`,
         causeFactId: ruin.originFactId,
         // The seal is obvious; the reason for it went with the people who set it.
         causeKnown: false,
@@ -1586,7 +1685,9 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
                 operational: Math.max(0, danger - 2),
                 mastery: danger
             },
-            addHazards: ['formation', 'sealed_qi', 'guardian'],
+            addHazards: leftOpen
+                ? ['formation', 'guardian']
+                : ['formation', 'sealed_qi', 'guardian'],
             addAffinities: [
                 makeAffinity('formation', 1.35, 3, 'The array still answers to someone who can read it.')
             ],
@@ -1594,29 +1695,33 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
                 // What the pocket holds, versus what anyone can reach. Until
                 // the seal is broken those are different numbers, and that gap
                 // is the whole economy of exploration.
-                spiritualDensity: ruin.opened ? qiFraction(ruin.qiDensity) : 0.05,
+                spiritualDensity: ruin.opened || leftOpen ? qiFraction(ruin.qiDensity) : 0.05,
                 danger: 0.8,
                 resources: ['qi', 'manuals', 'formation_nodes'],
                 climate: 'sunless',
                 politicalControl: 'whoever gets in',
                 specialRules: ['guardian formations still run'],
                 knownSecrets: [],
-                historicalScars: ['sealed from the inside']
+                historicalScars: [leftOpen ? 'left for whoever could take it' : 'sealed from the inside']
             },
-            sealed: !ruin.opened,
-            discovered: ruin.opened,
-            addTags: ['ruin', 'late_age'],
+            sealed: leftOpen ? false : !ruin.opened,
+            // A place built to be found is a place somebody was meant to find,
+            // and the world has had the whole Late Age to do it.
+            discovered: ruin.opened || leftOpen,
+            addTags: leftOpen
+                ? ['ruin', 'late_age', LEFT_TO_BE_FOUND]
+                : ['ruin', 'late_age'],
             data: {
                 sealedYear: ruin.sealedYear,
                 formerFactionId: ruin.formerFactionId,
                 techniqueCount: ruin.techniqueIds.length,
                 treasureCount: ruin.treasureIds.length,
-                ...ruinProvenance(ruin),
-                ...ruinConvergence(ruin)
+                ...ruinProvenance(ruin, standing),
+                ...ruinConvergence(ruin, kept === 'a_season')
             }
         }
     });
-    return { ...location, cycle: cycleForRuin(ruin) };
+    return { ...location, cycle: kept === 'a_season' ? cycleForRuin(ruin) : null };
 }
 
 // NOT EVERY RUIN IS ANONYMOUS, AND NOT EVERY ONE IS REACHABLE
@@ -1624,13 +1729,34 @@ export function locationFromRuin(ruin: Ruin): LocationRecord {
 /** Shares of the ruin population at each provenance standing. */
 const PROVENANCE_MIX = { documented: 12, attributed: 28, rumoured: 30, anonymous: 30 };
 
-function ruinProvenance(ruin: Ruin): Record<string, string | number | boolean | null> {
-    const rng = forStream('ruin-provenance', ruin.id);
+type ProvenanceStanding = keyof typeof PROVENANCE_MIX;
+
+/**
+ * The two standings at which the world can still say whose ground this was -
+ * documented in somebody's records, or attributed by the province that lives
+ * beside it. A rumour is a story about it and anonymous is nobody.
+ */
+const A_NAME_IS_STILL_ON_IT: readonly ProvenanceStanding[] = ['documented', 'attributed'];
+
+/**
+ * How well the world remembers who built this.
+ *
+ * Asked on its own because two readings need it and a second draw would be a
+ * second answer: the provenance a scholar can read, and whether the place is
+ * somebody's bequest at all. {@link howThisGroundIsKept} takes the second.
+ */
+function whoIsRecordedAsHavingBuiltIt(ruin: Ruin): ProvenanceStanding {
     // A site whose builder the world never recorded cannot be documented
     // however the draw lands, because there is nothing to have recorded.
-    const standing = ruin.formerFactionId === null
+    return ruin.formerFactionId === null
         ? 'anonymous'
-        : rng.weighted(PROVENANCE_MIX);
+        : forStream('ruin-provenance', ruin.id).weighted(PROVENANCE_MIX) as ProvenanceStanding;
+}
+
+function ruinProvenance(
+    ruin: Ruin,
+    standing: ProvenanceStanding
+): Record<string, string | number | boolean | null> {
     const bar = { documented: 0, attributed: 6, rumoured: 14, anonymous: MAX_ORDINAL }[standing];
 
     return {
@@ -1655,13 +1781,16 @@ function cycleForRuin(ruin: Ruin): OpeningCycle | null {
         qiDensity: ruin.qiDensity,
         dangerOrdinal: ruin.dangerOrdinal,
         hoardCount: ruin.techniqueIds.length + ruin.treasureIds.length,
-        sealedYear: ruin.sealedYear
+        sealedYear: ruin.sealedYear,
+        leftByName: A_NAME_IS_STILL_ON_IT.includes(whoIsRecordedAsHavingBuiltIt(ruin))
     });
 }
 
-function ruinConvergence(ruin: Ruin): Record<string, string | number | boolean | null> {
-    const cycle = cycleForRuin(ruin);
-    if (!cycle) return {};
+function ruinConvergence(
+    ruin: Ruin,
+    onASeason: boolean
+): Record<string, string | number | boolean | null> {
+    if (!onASeason || cycleForRuin(ruin) === null) return {};
     return {
         // Working out when a site is next due takes records going back further
         // than anybody keeps them, so it is its own reading with its own key.

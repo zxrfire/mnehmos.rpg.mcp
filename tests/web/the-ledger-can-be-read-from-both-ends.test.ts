@@ -143,10 +143,17 @@ describe('asking what the ledger holds', () => {
         expect(after).toContain(whoTookIt![1]);
 
         // AND NARROWED TO ONE PARTY, which is the same read with a filter.
-        // Wen Shuyi is not who took it, so the honest answer is that nothing
-        // stands between them - the filter working, not the read failing.
-        const between = said(await game.act('what stands between me and Wen Shuyi'));
-        expect(between).toMatch(/Nothing stands between you and Wen Shuyi/);
+        //
+        // ASKED ABOUT SOMEBODY WHO WAS NEVER IN IT, and that is the change.
+        // This used to ask about Wen Shuyi on the reasoning that they were not
+        // who took it - which was true only because the threat happened to land
+        // on some other body standing there. It lands on the person actually in
+        // front of you now, which is right, and it made the filter arm assert
+        // an accident. A second spawn cannot be who took it, whoever the threat
+        // reaches.
+        await game.act('ADMIN spawn_encounter ordinal=8 name=Mo Lanzhi');
+        const between = said(await game.act('what stands between me and Mo Lanzhi'));
+        expect(between).toMatch(/Nothing stands between you and Mo Lanzhi/);
     }, 120000);
 });
 

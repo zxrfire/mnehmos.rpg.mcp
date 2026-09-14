@@ -12,14 +12,17 @@ import {
     type RuinOrigin,
     type RuinScale
 } from '../../data/cultivation/inheritance-trials.js';
+import { SCHEDULE_READ_ORDINAL } from './convergence.js';
 import { wardConditionOf, wardIntegrityOf } from './how-far-gone-a-formation-is.js';
+import { scheduleForAnAncientSite } from './how-long-a-door-stays-shut.js';
 import { isBelowTheLid } from './layers.js';
 import {
     makeEnvironment,
     makeThresholds,
     makeAffinity,
     makeLocation,
-    type LocationRecord
+    type LocationRecord,
+    type OpeningCycle
 } from './locations.js';
 import { clampQiDensity } from './qi-scale.js';
 import { getLocation, type WorldState } from './world-state.js';
@@ -582,6 +585,52 @@ export interface ProspectingResult {
 export const FOUND_BY_PROSPECTING_TAG = 'found-by-prospecting';
 
 /**
+ * The schedule a piece of found ground runs on, or null for most of it.
+ *
+ * A ruin shuts itself when its window ends. That is a fact about ground, not
+ * about which table the row came from - and until this, only catalog rows got a
+ * cycle (`locationFromRuin` -> `cycleForRuin`), so every door in the world that
+ * ever opened was a door somebody had authored and everything the world
+ * uncovered at runtime was shut until somebody went and opened it. Same
+ * derivation, same share, off the same columns the ground already carries.
+ *
+ * `hoardCount` is zero because nothing recorded one, and a hoard nobody wrote
+ * down does not buy the six-century wait. The year anchors the phase, which is
+ * then drawn uniformly across the whole period on top of it - so where a row
+ * carries only an approximate date, what the anchor costs is nothing.
+ */
+function scheduleForFoundGround(input: {
+    id: string;
+    qiDensity: number;
+    dangerOrdinal: number;
+    sealedInYear: number;
+}): OpeningCycle | null {
+    return scheduleForAnAncientSite({
+        id: input.id,
+        qiDensity: input.qiDensity,
+        dangerOrdinal: input.dangerOrdinal,
+        hoardCount: 0,
+        sealedYear: input.sealedInYear
+    });
+}
+
+/**
+ * What reading this site's schedule takes, where it has one.
+ *
+ * The same gate `locationFromRuin` puts on a catalog ruin: a door that comes and
+ * goes is visible from the ground in front of it, and working out WHEN it is
+ * next due takes records going back further than anybody local keeps.
+ */
+function whatReadingTheScheduleTakes(
+    id: string,
+    cycle: OpeningCycle | null
+): Record<string, string | number> {
+    return cycle === null
+        ? {}
+        : { scheduleKey: `cycles:${id}`, scheduleReadOrdinal: SCHEDULE_READ_ORDINAL };
+}
+
+/**
  * A year of the world looking for what the Late Age left.
  */
 export function applyRuinProspecting(
@@ -673,6 +722,12 @@ export function applyRuinProspecting(
                 const vaultOrdinal = clampOrdinal(Math.max(seat.thresholds.mastery, 20));
                 const vaultId = `${seat.id}-vault`;
                 if (!state.locations.some(l => l.id === vaultId)) {
+                    const vaultCycle = scheduleForFoundGround({
+                        id: vaultId,
+                        qiDensity: clampQiDensity(seat.qiDensity + 15),
+                        dangerOrdinal: vaultOrdinal,
+                        sealedInYear: Math.floor((seat.origin.fromDay ?? 0) / 365)
+                    });
                     const vault = makeLocation({
                         id: vaultId,
                         // From the UNDERLYING PLACE, never from whatever the
@@ -698,6 +753,7 @@ export function applyRuinProspecting(
                             politicalControl: 'whoever gets in'
                         }),
                         sealed: true,
+                        cycle: vaultCycle,
                         // NOT found. The mountain is found; the vault is the
                         // thing the mountain has instead of a bottom, and it
                         // becomes findable when its own formation thins.
@@ -716,6 +772,7 @@ export function applyRuinProspecting(
                             intentStanding: 'never_addressed',
                             setByOrdinal: vaultOrdinal,
                             depthBand: depthBandReachableBy(vaultOrdinal),
+                            ...whatReadingTheScheduleTakes(vaultId, vaultCycle),
                             // The clean root, so no later pass has to recover
                             // one by unwrapping.
                             baseName: baseNameOf(seat)
@@ -799,6 +856,12 @@ export function applyRuinProspecting(
         if (state.locations.some(l => l.id === id)) continue;
 
         const density = clampQiDensity(region.qiDensity + 10 + band * 8);
+        // Nothing recorded when this was shut - the row says only that it has
+        // been under the province since the Late Age - so the phase is the draw
+        // on its own, which is what it would have been anyway.
+        const cycle = scheduleForFoundGround({
+            id, qiDensity: density, dangerOrdinal: floor, sealedInYear: 0
+        });
         const found = makeLocation({
             id,
             name,
@@ -835,8 +898,10 @@ export function applyRuinProspecting(
             }),
             sealed: true,
             sealedOnDay: null,
+            cycle,
             // Found. That is the whole of what this pass does: the ruin was
-            // always here and is now on somebody's map.
+            // always here and is now on somebody's map. Finding is not opening,
+            // and on a site with a cycle nothing opens it but its own season.
             discovered: true,
             discoveredOnDay: day,
             tags: ['ruin', 'late_age', FOUND_BY_PROSPECTING_TAG, `ruin-character:${character}`],
@@ -846,6 +911,7 @@ export function applyRuinProspecting(
                 floorOrdinal: floor,
                 ceilingOrdinal: access.admits === 'nobody_above_the_line' ? access.ceilingOrdinal : null,
                 depthBand: band,
+                ...whatReadingTheScheduleTakes(id, cycle),
                 foundInYear: year
             }
         });
@@ -1057,8 +1123,16 @@ function mintGroundLeftByTheDead(
             ? `What ${one.occupantName} Left Behind the Second Door`
             : `${one.occupantName}'s Seat, With Nobody In It`;
 
+    const id = `loc-closed-${one.occupantId}`;
+    const density = clampQiDensity(region.qiDensity + 6 + band * 6);
+    // The year the door shut is the year the occupant stopped, which this row
+    // does know.
+    const cycle = scheduleForFoundGround({
+        id, qiDensity: density, dangerOrdinal: floor, sealedInYear: year - one.yearsSince
+    });
+
     const location = makeLocation({
-        id: `loc-closed-${one.occupantId}`,
+        id,
         name,
         kind: 'ruin',
         parentId: region.id,
@@ -1067,7 +1141,7 @@ function mintGroundLeftByTheDead(
             ? `${name}. Somebody who could see the end coming put what they had in order and shut the door on it.`
             : `${name}. A door that was shut from the inside and never opened again, with everything still where it was.`,
         ambient: region.ambient,
-        qiDensity: clampQiDensity(region.qiDensity + 6 + band * 6),
+        qiDensity: density,
         thresholds: makeThresholds(
             Math.max(0, floor - 4), floor, clampOrdinal(floor + 2), clampOrdinal(floor + 4)
         ),
@@ -1080,6 +1154,7 @@ function mintGroundLeftByTheDead(
             politicalControl: 'whoever gets in'
         }),
         sealed: true,
+        cycle,
         discovered: true,
         discoveredOnDay: day,
         tags: [
@@ -1102,6 +1177,7 @@ function mintGroundLeftByTheDead(
             floorOrdinal: access.floorOrdinal,
             ceilingOrdinal: access.admits === 'nobody_above_the_line' ? access.ceilingOrdinal : null,
             depthBand: band,
+            ...whatReadingTheScheduleTakes(id, cycle),
             foundInYear: year
         }
     });

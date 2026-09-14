@@ -1047,6 +1047,63 @@ shape and a voice, and the id is a function of the species and the ground rather
 the rung, so **a favour written about the animal is still held by the person**. Nothing
 else was needed for that.
 
+**Speech is the rung and nothing else.** `beasts.ts` carried a `speaks` column beside the
+ordinal and the design owner removed it: a species cannot be authored mute above the
+change, so `anythingAtThisRungSpeaks` is the one derivation and `readsAsSomebody` is the
+only wrapper over it. Three species that were written silent above 29 now answer.
+
+**And the name is not the species.** A row stood up below the change carries the species
+name, because it is an animal. At or above it the row carries a person-name rolled the way
+everybody else's is, because something that has crossed named itself - addressing one by
+its catalog row is the disrespect the ruling names. A row that crosses LATER takes its name
+then, and nothing is taken away: `theNamesThisOneAnswersTo` returns the species name first
+and the person's name second, the species half derived from the `beast:` tag rather than
+stored, so the name anybody was told keeps reaching the individual and no write can forget
+it.
+
+### It climbs to the change by sitting there, and that is a reading
+
+[`a-beast-climbs-by-sitting-where-it-is.ts`](a-beast-climbs-by-sitting-where-it-is.ts). The
+catalog's ordinal is where a KIND is usually found; the individual on this ledge has been
+there since somebody last established where it was, and time on ground is a beast's whole
+method. So the rung is a FUNCTION of the species, the ground and the years sat - stored
+nowhere, never accumulated, and read when somebody asks.
+
+**The years come off the ladder, not off a new constant.** `whatItSpentGettingHere` already
+priced the method at a life in the band below; running it forward is the climb, with the
+jump into each band spread across the rungs that lead to it. So 1,125 years of sitting takes
+something found at 24 past the change, and 1,800 takes something found at 17.
+
+**Half of them never move, and that is the other half of the ruling.** *"The top doesn't
+have to grow"* is a constraint in the opposite direction, so the variation is one seeded
+draw per individual rather than a per-year roll. Measured over all 27 cored species on 200
+pieces of ground, seed `beast-climb-probe`: 50% never move; at 400 years 37% have gained a
+rung and none authored below the change has crossed; at 800 years 114 pairs have stood up,
+at 2,000 years 1,094, at 5,000 years 2,117 of 5,400.
+
+**It did not make the advance dearer.** The beast branch in `applyAdvancement` REPLACES the
+human one - a beast has no book, no teacher, no house ground and no province ceiling, and
+the pass was computing four of those and then refusing it at a ceiling of 20. One reading is
+9.9us; 200 simulated years cost 26.5ms/year with no beast rows standing in the world, 22.8
+with 25 and 21.9 with 100. Nothing sweeps ground nobody has met, which follows from the row
+being written on contact.
+
+**The clock starts at the row.** Anchoring it on the world's calendar age instead mints
+every beast at what a thousand years does, because a world opens at year 1,000 - which is a
+balance change baked into seeding rather than the world running, and it was caught by a
+played test going red.
+
+### What one wants, it wanted before it could say so
+
+[`what-a-beast-has-always-wanted.ts`](what-a-beast-has-always-wanted.ts). A row gets one
+`NpcGoal` at the core, twelve rungs below the change, and the crossing does not touch it.
+The ruling: *"maybe a beast likes raising small animals and that's what they do as a
+person"*, and *"there's no reason the goals suddenly shift"*. The human form is a new set of
+MEANS, not a new set of ends, so a want is a fact about the animal and is derived from the
+species row - `nature` says what its life consists of and therefore what it is after,
+`veinRelation` how far it has got, `disposition` whose claim is in the way. No roll, no
+`beast.id`, and no table of human occupations.
+
 ---
 
 ## Time is a mechanic, not a calendar
@@ -1672,6 +1729,32 @@ The record now carries `hp` and `bodyOnDay`, and **it is not a second body model
   the anchor. There is no sweep over the roster and there must not be one: it is a fraction
   of the pool per day and nothing about it is stochastic, so a pass would spend per-person
   time every simulated year computing what two multiplications answer.
+
+**And the world has a lid, for the same reason it has a body.** `qiSeal` was a column on
+the `cultivators` table and nothing else, so a house could seal only somebody a run was
+being played through - which is nobody a punishment hall ever brings in. The sentence
+existed, `whatLayingASealTakes` priced it, and `a-room-hands-down-what-it-decided.ts`
+reported honestly at runtime that there was no record to carry it.
+
+`NpcCultivation.seal` is the world's half, and it is the SAME `AQiSeal` the player carries,
+read by the same `theSealStillHolds` / `whatThisPersonMayHold` / `whatThisPersonCanDrawFrom`
+- so being sealed is one question with one answer whichever store holds the person. Written
+by `sealLaidOn`, taken off by `sealLifted`, and read through `theSealOn`, which answers null
+from the day the term runs out.
+
+**Nothing expires a seal, which is the whole of its cost model.** A term lifts by comparing
+the day against `liftsOnDay` at the moment somebody asks, so no pass walks the roster
+retiring them, and a dead person's seal - like a dead person's body - never changes on its
+own. `readyToStrike` refuses somebody under one with `settled: false`, because a seal is a
+lid and not a wound: the day it lifts they are exactly where they were.
+
+**And a body can be looked at.** Every row in `data/cultivation/wounds.ts` carries a
+`presentation` - what somebody with that wound is LIKE to meet - and until
+`what-a-body-shows-when-somebody-walks-up.ts` nothing in `src/` read it. The only thing that
+ever put a wound in front of a player was the COUNT, which puts somebody at `mending`, so a
+one-armed elder and a man with a bruise read out identically. What goes to a scene is the
+presentation and never the wound's name, its severity or its treatment: those are the
+record, and the record is not on anybody's face.
 
 **It is charged, and it is worth close to nothing in aggregate - which is a fact about how
 the world climbs rather than about the price.** The toll prices SPEED: striking repeatedly
@@ -2325,6 +2408,16 @@ what-a-sea-crossing-costs.ts
                  commit point, a season that closes it, a duration that is a
                  distribution, water as the binding constraint, and a chest
                  that is the only ground there is
+what-a-body-shows-when-somebody-walks-up.ts
+                 the one wound that decides how somebody reads, and the
+                 catalog's own `presentation` for it. Manner and never
+                 diagnosis: the name, the severity and the treatment are the
+                 record, and the record is not on anybody's face
+a-house-that-ends-one-of-its-own-keeps-what-they-had.ts
+                 what an execution leaves in the house's hands. Narrower than
+                 `a-house-takes-back-what-it-handed-over.ts`, which is scoped to
+                 what the house lent or bestowed, and a death sentence is not.
+                 A third party's thing moves without its title moving
 ```
 
 ### A sea crossing is a different kind of link, and the engine still cannot read it
@@ -2403,16 +2496,22 @@ go**, and it is legible before you go. What rank never buys back is the waning: 
 scaled by what is left of the window, so a late call fails on geometry however grand the
 person answering is.
 
-**`how-long-a-door-stays-shut.ts` - the wait and the window, off two different records.**
+**`how-long-a-door-stays-shut.ts` - the wait, and the window the wait buys.**
 Both were one uniform draw and neither said anything about the ground it belonged to: every
-world carried the same six schedules, 141 to 583 years, open 34 to 84 days. The wait is now
+world carried the same six schedules, 141 to 583 years, open 34 to 84 days. The wait is
 read off **what is behind the door** - its qi band, stepped by the size of the hoard sealed
-in with it - and the window off **how fiercely it holds itself shut**, which is the rung its
-trials were calibrated for and nothing else. Keeping them apart is the point: reading both
-off one number is one axis wearing two names, and a rich pocket behind a mild seal has to
-be able to stand open a season. Measured over twelve pinned worlds, 72 scheduled sites:
-waits 60x10 120x36 600x26, windows 7d=32 14d=20 30d=9 60d=8 90d=3. **A cycle is the interval
-between openings, never a duration of openness.**
+in with it. The window is **the wait's own band**, with the rung the trials were calibrated
+for picking a place inside it. **A cycle is the interval between openings, never a duration
+of openness.**
+
+The window was read off danger ALONE and descended 90/60/30/14/7, kept deliberately apart
+from the wait so that one axis did not wear two names - and crossed with the wait it built
+the one door nobody can use: the richest, fiercest site waited six centuries and stood open
+**seven days**, which was also the mode at 32 of 72 sites. The week the design owner named
+was said of a SIXTY year cycle and named as the fastest-to-close case rather than the
+exemplar. A door that comes round once in six centuries is a date the province has known
+for generations. So the two tables are now one, a week is the floor of the shortest wait,
+and no longer wait ever buys a shorter window than a shorter one.
 
 **`being-at-a-door-on-the-day-it-opens.ts` - the arithmetic, done rather than asserted, and
 `readSchedule`'s first caller.** Two things eat a window and they are not the same thing:
@@ -2422,10 +2521,28 @@ arrive and spends none of the window travelling, which at a seven-day window is 
 difference between a road and no road - **knowing when is itself a road**, and it is the
 information edge a house trades on. The other two are one fold spent differently: a senior
 who folds the party in is still standing there to cover the way back, and a way-out slip is
-ONE act, so burning it to arrive leaves nothing to leave with. Measured over twelve worlds:
-per site, 36.2% of the world's houses could walk in and back out inside the window, 1.8%
-needed a fold, 62.1% could not make it at all - and at the seven-day windows 0 to 8%. **A
-door is a local event.** Nothing here stores anything; depth is the same halving
+ONE act, so burning it to arrive leaves nothing to leave with. Measured over twelve worlds,
+72 sites, every seat priced through this function against the deepest wing:
+
+| | walk in and out | need a fold | nobody makes it |
+|---|---|---|---|
+| old window, knows the date | 30.0% | 5.0% | 65.0% |
+| old window, hears it is open | 23.2% | 6.3% | 70.6% |
+| new window, knows the date | **75.0%** | 8.3% | 16.7% |
+| new window, hears it is open | 43.9% | 17.8% | 38.2% |
+
+The older figure of 36.2 / 1.8 / 62.1 was the probe's own, not the map's: it scored
+`crossing * 2 < window`, charging a round trip of the ROAD against the window and no depth
+at all, so it was wrong in both directions at once. **The map is not the defect** - the
+farthest house seat is 28 walking days and knowing the date takes the road out of the
+window entirely. **A door is a local event** only for the party that had to be told.
+
+**And this is the dial the world's own senders run on.** `a-door-that-opens-is-a-race.ts`
+asks this same read once per house seat on the day a door opens, so the WINDOW decides
+whether a door is a private find or a scramble and no second threshold exists. Measured
+over six worlds run three hundred years, houses sent per opening out of 38 seats:
+7d 0.00, 10d 0.00, 14d 0.00, 18d 8.62, 21d 13.36, 30d 14.06, 40d 32.14, 60d 29.88.
+Nothing here stores anything; depth is the same halving
 `expeditionBudget` does, applied to a window already part spent. **Routed by
 `src/web/walking-up-to-a-door-that-closes.ts`**, from the travel arrival and from standing
 outside found ground; the wait and the window are said only where `readSchedule` holds,
@@ -2459,14 +2576,46 @@ Two readings over columns that already existed. Neither stores anything.
   `howThisGroundIsShut` tells them apart on the cycle and names the day the next door
   opens. Measured over twelve pinned worlds: 144 ruins at day 0, 72 with a cycle, 9 open,
   72 shut till a season, 63 shut till somebody opens them; 445 / 264 / 72 / 109 at two
-  hundred years. **The schedule has to be read past the flag** -
-  `whenTheScheduleNextOpens` in `convergence.ts` - because `nextOpeningDay` answers null
-  for anything sealed and every cycled ruin is sealed. `applyConvergences` read that same
-  function and therefore opened **zero** doors across twelve worlds over two hundred years
-  each. **Fixed:** that pass now asks the schedule, and the same twelve worlds open and
-  shut 46 doors, 1.92 per century per world, at no measurable per-year cost (18.72 ms per
+  hundred years. `applyConvergences` asked `nextOpeningDay`, which answered null for
+  anything sealed, and every cycled ruin is sealed - so it opened **zero** doors across
+  twelve worlds over two hundred years each. **Fixed:** 46 doors open and shut over the
+  same worlds, 1.92 per century per world, at no measurable per-year cost (18.72 ms per
   simulated year after, 20.18 before, on a shared box). The day-0 counts above predate the
   cycle lengths being re-derived and no longer describe the schedules, only the rows.
+
+  **And the two columns were two answers.** *A ruin on a cycle shuts itself when its
+  window ends* - the formation closes, the season turns, the stars come out of line - so
+  **the schedule is the stored fact and `sealed` is a reading of it**. `isOpenOn` and
+  `nextOpeningDay` ignore the column wherever a cycle exists, which collapsed the
+  `whenTheScheduleNextOpens` workaround into `nextOpeningDay` and left `applyConvergences`
+  with no flag and no `open_now` tag to consult: both ends of a window are arithmetic on
+  the cycle. Measured with the old shape in place, three worlds over three hundred years:
+  the `ruin_opened` pass went through 13 of 14, 9 of 9 and 13 of 15 cycled ruins, and two
+  to four per world came out permanently unsealed at full usable qi (1.00, 0.93, 0.80
+  against the 0.05 a shut pocket offers) against a schedule that said shut. That pass may
+  now go through one only while it is standing open, and takes nothing off the seal.
+  **Ground the world uncovers at runtime is put on a schedule too** - only catalog `Ruin`
+  rows had one before, so every door that ever opened was authored. And a cycle is not
+  always a door: a hall carries one for a house that hears petitions three days a month,
+  so the convergence pass is bounded by `aSealHereMeansAnUndrawnPocket`.
+
+  **THREE KINDS OF ANCIENT GROUND, and only one of them has a door.**
+  `howThisGroundIsKept` is the one answer: a season, shut until somebody opens it, or
+  **never shut** - a tomb or a legacy, built to be reached rather than sealed against the
+  world. Derived rather than drawn: a hoard behind it and a name still on it. Over twelve
+  worlds, 144 seeded ruins: 41.7% a season, 43.1% shut until somebody opens them, 15.3%
+  never shut, one to three per world. **Never shutting is not easy** - the gate is inside,
+  and it is the gate every ruin already had: the thresholds, the formation still running at
+  the setting it was left at, and whatever was left walking around. What comes OFF such a
+  row is the seal, the `sealed_qi` hazard and the gap between what the vein holds and what
+  anybody can reach. A reachability figure is meaningless for one and the probe counts them
+  apart rather than pricing a window of nought.
+
+  **What the world consumes**, measured over six worlds run three hundred years:
+  the finite reserve - ground shut until somebody opens it - goes at 56.1%, replenished by
+  prospecting. A door on a season goes at **1.1%**: it is not spent by the parties that
+  walk through one window of it, so it comes round and it is a race again. A legacy is
+  never taken by the world at all, because the world does not model sitting a trial.
 - **`a-house-that-shuts-a-public-ruin.ts`** - ground is public by agreement, so
   `controllingFactionId` on a ruin can only mean a house has shut it to everybody else.
   `whoTurnsYouAwayFrom` already reads that column as somebody at the door, which is the
