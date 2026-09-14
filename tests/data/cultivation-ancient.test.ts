@@ -99,7 +99,6 @@ import {
     TECHNIQUES,
     getTechnique
 } from '../../src/data/cultivation/techniques.js';
-import { addressOf } from '../../src/schema/cultivation.js';
 import { SITES } from '../../src/data/cultivation/inheritance-trials.js';
 import { FALSE_IMMORTAL_ORDINAL, MAX_ORDINAL } from '../../src/engine/cultivation/realms.js';
 
@@ -478,17 +477,24 @@ describe('the ancient tier', () => {
         }
     });
 
-    it('THE QUADRANT THAT WAS EMPTY: an ancient road you practise, not one you use', () => {
-        // All six ancient arts were `class: 'dao'`, so the era axis rendered as
-        // a fact about combat. An ancient cultivation road is the other half
-        // and arguably the more interesting one: a dao art changes what you can
-        // do in a fight, and a road changes what kind of cultivator you become.
-        const roads = ancientTechniques().filter(t => t.class === 'cultivation');
-        expect(roads.length, 'the ancient cultivation quadrant is empty').toBeGreaterThan(0);
-        for (const t of roads) {
-            // The invariant, not a preference: what you practise to rank up
-            // never escalates in kind, at any rung, for ever.
-            expect(addressOf(t), `${t.id} escalates`).toBe('body');
+    it('an ancient art is paid for, and is never a strict upgrade', () => {
+        // WHAT THIS USED TO BE. "THE QUADRANT THAT WAS EMPTY: an ancient road
+        // you practise, not one you use" - all six ancient arts were
+        // `class: 'dao'`, so the era axis rendered as a fact about combat, and
+        // filling the other half of the grid was the point of the test.
+        //
+        // There is no grid. Every technique carries its practitioner up a few
+        // rungs and every technique also has whatever fighting style it has, so
+        // ancient has one axis and not two. The assertion that went with the
+        // quadrant - that anything you practise to rank up addresses your own
+        // body - went with it: it covered six rows and would now cover the whole
+        // ancient set, including a sealing field that lands on a place.
+        //
+        // What was never about the quadrant is the pair below, and it is the
+        // guard the era axis actually needs: ancient is DIFFERENT, not better.
+        const ancient = ancientTechniques();
+        expect(ancient.length, 'the ancient set is empty').toBeGreaterThan(0);
+        for (const t of ancient) {
             const record = ANCIENT_ARTS.find(a => a.techniqueId === t.id)!;
             expect(record.costToTheUser.length, `${t.id} costs nothing`).toBeGreaterThan(40);
             expect(record.whenTheModernArtWins.length, `${t.id} is a strict upgrade`)

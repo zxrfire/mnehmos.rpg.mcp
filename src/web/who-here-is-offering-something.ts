@@ -297,8 +297,13 @@ function rowsForOffers(
             + `${howMany(offer.askStones, 'spirit stone')}. `
             + reach.trimEnd()
             + (house
-                ? ` It is the ${house.name}'s, and they are not one of theirs - somebody will `
-                  + 'want to know where you got it.'
+                // THE HOUSE OPENS THE CLAUSE, not `It is`. The ban in
+                // `the-engine-does-not-close-on-the-weather` is on the dummy
+                // opener, and the house is the thing this sentence is about
+                // anyway - naming it first says the same fact and says it
+                // harder.
+                ? ` The ${house.name} owns that copy and they are not one of theirs - somebody `
+                  + 'will want to know where you got it.'
                 : '')
         ).trimEnd());
     }

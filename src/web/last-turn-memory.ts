@@ -815,6 +815,22 @@ export function resolvingAgainstTheLastTurn(
                 // let the reference RESOLVE when there is something to resolve
                 // it against.
                 //
+                // ── EXCEPT WHERE THE PHRASE STILL NAMES A KIND ───────────
+                //
+                // The reasoning above holds for a phrase that carries no
+                // content of its own - "that one", "the cheaper one", "the
+                // second one" - which is silence the moment it fails to bind.
+                // It does not hold for `A_THING_BY_ITS_KIND`: "the intake"
+                // names a KIND OF THING, and a verb that knows about intakes
+                // can answer it off the world even when the turn before this
+                // one cannot.
+                //
+                // Measured: two recruiting notices posted at Wind Turn and
+                // `I wait until the intake`. Dropping the field turned an
+                // ambiguity the wait verb answers by NAMING BOTH HOUSES AND
+                // BOTH DATES into a bare wait of one day - a refusal that
+                // spends nothing became a day spent on nothing.
+                if (A_THING_BY_ITS_KIND.test(value!.trim())) continue;
                 // And the player is told, by the line `unsettled` carries.
                 if (record.named.length > 1 && !unsettled.includes(value!)) unsettled.push(value!);
                 changed = { ...changed };

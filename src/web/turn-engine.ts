@@ -201,7 +201,7 @@ import { canPointAt, type KnowingStage } from '../engine/social/discovery.js';
 import { monthsToCopy } from '../engine/world/what-a-copy-of-a-manual-costs-at-a-stall.js';
 import { quoteSale } from '../engine/cultivation/market.js';
 import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
-import { advancesRank, capOf } from '../data/cultivation/techniques.js';
+import { capOf } from '../data/cultivation/techniques.js';
 import { DAYS_PER_YEAR, NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
 import { getMembersOf } from '../data/cultivation/members.js';
@@ -699,7 +699,7 @@ import {
     WHY_THEY_ARE_SELLING,
     type AnOfferStandingHere
 } from '../engine/world/what-somebody-standing-here-would-part-with.js';
-import { assessAcquisition, type AcquisitionRoute } from '../engine/encounters/index.js';
+import { assessAcquisition, extensionOption, type AcquisitionRoute } from '../engine/encounters/index.js';
 import {
     theReasonBehind,
     whichPostingTheyMeant
@@ -1084,6 +1084,8 @@ import {
 import { guardVerbs, GUARD_IS_A_QUESTION } from './standing-guard.js';
 // The other half of being taught, which nothing in the engine could do.
 import { teachingVerbs, whoHereCouldSayWhoseItWas } from './teaching-somebody-what-you-hold.js';
+// The route `acquisition` has always offered and nothing could walk.
+import { derivationVerbs, precedentForTheRoadOf } from './writing-what-comes-next.js';
 import { serviceVerbs } from './doing-somebody-a-service.js';
 import {
     aServiceSpentOn,
@@ -2589,8 +2591,23 @@ export class GameService {
                 }
                 : null;
 
-        const theTurnsPlan: PlanWithSteps = aimedAgain
-            ?? (resolved && resolved.resolutions.length > 0 ? resolved.plan : plan);
+        // AND A DROP IS A CHANGE TOO, which is the resolver's own ruling and
+        // was not read here. `resolvingAgainstTheLastTurn` takes a reference
+        // nobody could settle OFF the field - a phrase nobody can bind is
+        // closer to silence than to a name, so the verb answers with its own
+        // listing - and it returns the plan untouched when it changed nothing.
+        // Gating on `resolutions` threw every drop away and handed the verb the
+        // literal words.
+        //
+        // Measured: a stall listing eight books with three of them at eighteen
+        // stones, and `I buy the cheaper one`. "The cheaper one" of three
+        // things that cost the same is not a phrase with an answer, so the
+        // resolver dropped it - and the player was told *"Not something anybody
+        // here sells"* over a board they were reading, followed by millet, an
+        // inn and a ferry crossing. With the drop kept, `buy` reaches its own
+        // no-target branch and prints the stall back with the prices on it,
+        // which is the answer to "which one".
+        const theTurnsPlan: PlanWithSteps = aimedAgain ?? resolved?.plan ?? plan;
 
         // WHO WAS STANDING HERE BEFORE ANY OF IT
         const squareBefore = this.present(cultivator);
@@ -4243,6 +4260,11 @@ ${noticedWaiting}`;
                     return this.guidance(run, cultivator, ambient);
                 }
                 return this.acquisition(run, cultivator, action.target);
+
+            // The third of the routes that verb prices, and the only one that
+            // is a thing the player does rather than a thing they look for.
+            case 'derive':
+                return this.writeWhatComesNext(run, cultivator, ambient, action.target);
 
             // ── the three questions a stuck player asks ──
             //
@@ -9327,7 +9349,18 @@ ${line}`;
                           + 'ground has none of that grade left. Nothing taken.'
                         : found
                             ? `${found.name} grows here but wants ${found.harvestOrdinal} ordinal to take safely. Left where it was.`
-                            : 'The catalog offered nothing within reach at this realm.',
+                            // THE CATALOG IS NOT EMPTY; THIS GROUND IS.
+                            //
+                            // That sentence was true while the draw ignored
+                            // what was underfoot and became a lie the moment it
+                            // stopped. On the squares that are barren by design
+                            // - a vein head, open water - the player was told
+                            // the world had nothing, rather than that this
+                            // ground gives somebody at their height nothing,
+                            // and it named neither the place nor the height.
+                            : underfoot === null
+                                ? `Nothing here is within reach at ordinal ${applied.cultivator.realmOrdinal}, and this place says nothing about what it is made of. Nothing taken.`
+                                : `${placeName(cultivator)} is ${underfoot.join(', ')}, and ground like that puts nothing up for somebody at ordinal ${applied.cultivator.realmOrdinal}. Nothing taken.`,
                 ok: true
             }
         ];
@@ -12473,8 +12506,7 @@ ${opened.text}` : receipt,
         } else {
             if (books.length > 0) {
                 lines.push('Books: ' + books.map(b => {
-                    const road = advancesRank(b);
-                    const cap = road ? (b.cap !== undefined ? b.cap : capOf(b)) : null;
+                    const cap = b.cap !== undefined ? b.cap : capOf(b);
                     return `${b.name}${cap === null
                         ? ''
                         : `, which carries as far as ${rankName(cap)}`}`;
@@ -12918,14 +12950,14 @@ ${opened.text}` : receipt,
     ): Promise<Execution> {
         const held = cultivator.knownTechniques
             .map(id => getTechnique(id))
-            .filter((t): t is NonNullable<typeof t> => !!t && advancesRank(t));
+            .filter((t): t is NonNullable<typeof t> => !!t);
 
         if (held.length === 0) {
             return refused('engine.assessAcquisition', 'acquisition', factsForRefusal(
                 'There is no book to carry further.',
                 'Every one of these routes is about a method you already practise. Without one '
                 + 'the question is not how to go further, it is how to begin.',
-                `No cultivation-class manual known by ${cultivator.id}. Nothing assessed.`
+                `No art known by ${cultivator.id}. Nothing assessed.`
             ));
         }
 
@@ -13009,19 +13041,59 @@ ${opened.text}` : receipt,
             })
         }));
 
+        // WHETHER THE THIRD ROUTE IS ACTUALLY OPEN, which this read was
+        // answering generically. `assessAcquisition` never branches on
+        // `derived` - it is a label to that function - so a cultivator with a
+        // leaning and no Dao was told writing the continuation was open to
+        // them, and the verb that does it then refused. Two answers about one
+        // act, and the cheap one was wrong. `extensionOption` is the read-side
+        // twin of the gate the verb runs, so they cannot disagree.
+        const rungItWouldWriteFor = Math.min(
+            MAX_ORDINAL, (reach.writtenTo ?? reach.cap ?? MAX_ORDINAL) + 1
+        );
+        const writing = extensionOption(
+            dao,
+            {
+                id: manual.id,
+                name: manual.name,
+                requiredOrdinal: manual.requiredOrdinal,
+                cap: manual.cap ?? capOf(manual),
+                volumes: manual.volumes ?? null,
+                grade: manual.grade,
+                element: manual.element ?? null,
+                subjects: manual.subjects ?? null,
+                category: manual.category,
+                notDerivableReason: manual.notDerivableReason ?? null
+            },
+            precedentForTheRoadOf(manual, rungItWouldWriteFor)
+        );
+
         // SAY EACH SENTENCE ONCE
         const shared = assessed[0].report.lines
             .filter(line => assessed.every(({ report }) => report.lines.includes(line)));
         for (const line of shared) if (!lines.includes(line)) lines.push(line);
 
-        for (const { how, report } of assessed) {
+        for (const { how, route, report } of assessed) {
             const own = report.lines.filter(line => !shared.includes(line));
+            const open = route === 'derived' ? writing.permitted : report.usable;
             lines.push(
-                `${how}: ${report.usable ? 'open.' : 'not open.'}`
-                + (own.length > 0 ? ` ${own[0]}` : '')
+                `${how}: ${open ? 'open.' : 'not open.'}`
+                + (route === 'derived'
+                    ? ` ${writing.detail}`
+                    : own.length > 0 ? ` ${own[0]}` : '')
             );
-            for (const line of own.slice(1)) lines.push(`  ${line}`);
+            if (route !== 'derived') for (const line of own.slice(1)) lines.push(`  ${line}`);
         }
+        calls.push({
+            name: 'encounters.extensionOption',
+            action: 'acquisition',
+            summary:
+                `derived: permitted=${writing.permitted}`
+                + (writing.reason ? `, refused on ${writing.reason}` : '')
+                + `, standing ${writing.heldStanding} against ${writing.requiredStanding} at `
+                + `${rankName(rungItWouldWriteFor)}.`,
+            ok: writing.permitted
+        });
 
         for (const { route, report } of assessed) {
             calls.push({
@@ -13083,7 +13155,6 @@ ${opened.text}` : receipt,
             grade?: string;
             element?: string | null;
             known?: boolean;
-            advancesRank?: boolean;
             carriesToOrdinal?: number | null;
             carriesToRank?: string | null;
         };
@@ -13097,17 +13168,11 @@ ${opened.text}` : receipt,
         // WHERE IT STOPS, SAID BEFORE THE DECADE IS SPENT - AND SAID ONCE.
         //
         // This was a clause on every row, and a root that takes up twenty arts
-        // got "It carries nobody anywhere; it is an art, not a road." thirteen
-        // times in one answer, the same eleven words under each name. It is a
-        // fact about a KIND of thing, not about the row, so the rows are
-        // gathered under it and it is said at the bottom of its own group.
+        // got the same eleven words under each name. It is a fact about a rung
+        // rather than about a row, so the rows are gathered under it and it is
+        // said at the bottom of its own group.
         const carries = (row: Listed, howManyOfThem: number): string => {
             const they = howManyOfThem === 1 ? 'It carries' : 'They carry';
-            if (row.advancesRank !== true) {
-                return howManyOfThem === 1
-                    ? 'It carries nobody anywhere; it is an art, not a road.'
-                    : 'They carry nobody anywhere; they are arts, not roads.';
-            }
             return row.carriesToRank
                 ? `${they} a cultivator as far as ${row.carriesToRank} and no further.`
                 : `${they} a cultivator the whole way.`;
@@ -13164,24 +13229,21 @@ ${opened.text}` : receipt,
                 // The same two calls `technique_manage` prices its own listing
                 // with, rather than a second reading of the catalog: what a
                 // book carries you to must not depend on which surface asked.
-                const road = advancesRank(art);
-                const cap = road ? (art.cap !== undefined ? art.cap : capOf(art)) : null;
+                const cap = art.cap !== undefined ? art.cap : capOf(art);
                 lines.push(
                     `  ${art.name}${art.element ? `, an art of ${art.element}` : ''}`
                     + `${art.grade ? ` (${art.grade} grade)` : ''}.`
-                    + (!road
-                        ? ' It carries nobody anywhere; it is an art, not a road.'
-                        : cap === null
-                            ? ' It carries a cultivator the whole way.'
-                            : cap <= cultivator.realmOrdinal
-                                // The fact a player most needs and is least
-                                // likely to find out any other way: at or past
-                                // the cap, progress is zero rather than slow.
-                                ? ` It stops at ${rankName(cap)}, which is where you stand. `
-                                  + 'Sitting with it accumulates nothing from here, and no amount '
-                                  + 'of years changes that - what does is another book, or '
-                                  + 'somebody willing to teach you.'
-                                : ` It carries a cultivator as far as ${rankName(cap)} and no further.`)
+                    + (cap === null
+                        ? ' It carries a cultivator the whole way.'
+                        : cap <= cultivator.realmOrdinal
+                            // The fact a player most needs and is least likely
+                            // to find out any other way: at or past the cap,
+                            // progress is zero rather than slow.
+                            ? ` It stops at ${rankName(cap)}, which is where you stand. `
+                              + 'Sitting with it accumulates nothing from here, and no amount '
+                              + 'of years changes that - what does is another book, or '
+                              + 'somebody willing to teach you.'
+                            : ` It carries a cultivator as far as ${rankName(cap)} and no further.`)
                 );
             }
         } else {
@@ -15452,8 +15514,7 @@ ${fit.line}`;
             // `rateTermsFor`'s and restating it here would be a second copy.
             methods: cultivator.knownTechniques
                 .map(id => getTechnique(id))
-                .filter((art): art is NonNullable<typeof art> =>
-                    !!art && advancesRank(art))
+                .filter((art): art is NonNullable<typeof art> => !!art)
                 .map(art => art.name),
             untreatedInjuries: untreatedInjuryCount(cultivator.injuries),
             house: house === null
@@ -15476,7 +15537,7 @@ ${fit.line}`;
         let anyManual = false;
         for (const id of cultivator.knownTechniques) {
             const art = getTechnique(id);
-            if (!art || !advancesRank(art)) continue;
+            if (!art) continue;
             anyManual = true;
             // THE LINE. Never `art.cap` - that is the CATALOG ceiling, and it stops
             // being the manual's real one the moment somebody writes a stage onto
@@ -15527,7 +15588,7 @@ ${fit.line}`;
         // best road they own.
         for (const id of cultivator.knownTechniques) {
             const catalog = getTechnique(id);
-            if (!catalog || !advancesRank(catalog)) continue;
+            if (!catalog) continue;
             const known = this.repos.techniques.getKnown(cultivator.id, id);
             if (!known) continue;
             const matched =
@@ -18754,7 +18815,7 @@ ${fit.line}`;
 }
 
 // THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
-export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, ServiceVerbs, ChallengeVerb {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, DerivationVerbs, ServiceVerbs, ChallengeVerb {}
 type ChallengeVerb = typeof challengeVerb;
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
@@ -18772,5 +18833,6 @@ type DaoPartnerVerbs = typeof daoPartnerVerbs;
 type TakingVerbs = typeof takingVerbs;
 type GuardVerbs = typeof guardVerbs;
 type TeachingVerbs = typeof teachingVerbs;
+type DerivationVerbs = typeof derivationVerbs;
 type ServiceVerbs = typeof serviceVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, serviceVerbs, challengeVerb);
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, derivationVerbs, serviceVerbs, challengeVerb);

@@ -30,12 +30,35 @@ function faction(init: Partial<CatalogFaction> & Pick<CatalogFaction, 'id' | 'na
         territory: '',
         rivalIds: [],
         governance: 'unbacked',
+        holdsByReputation: false,
         parentFactionId: null,
         holdsVein: false,
+        // A fixture house levies nothing, stated rather than left off. `levy`
+        // is nullable and not optional on purpose - a house that charges
+        // nobody is a fact about it, and `undefined` would have been the
+        // fixture forgetting to say.
+        levy: null,
         tributeStonesPerYear: 0,
         renewalYears: 0,
-        production: 0.5,
+        // Everything from here down was absent, and the seeder read it as
+        // undefined. Each value below is what the engine already fell back to
+        // for the missing field, so the fixture now states what it was getting:
+        // the catalog's own answer for a house with no production record is
+        // zero on all three ordinals ("zero is the honest answer - unstated
+        // rather than produces nobody"), `architecture.ts` gates the sealed
+        // ceiling on `> 0`, and `seeding.ts` already coalesced the rest.
+        reliableOrdinal: 0,
+        peakOrdinal: 0,
+        yearsSinceLastPeak: 0,
         formationIntegrity: 0.4,
+        sealedCeilingOrdinal: 0,
+        preferredRoots: [],
+        teachesElements: [],
+        teachesRoads: [],
+        specialities: [],
+        compoundInherited: false,
+        formationNodesTotal: 0,
+        formationNodesLit: 0,
         description: '',
         ...init
     };
@@ -76,7 +99,7 @@ export function fixtureCatalog(): WorldCatalog {
                 holdsVein: true,
                 tributeStonesPerYear: 40_000,
                 renewalYears: 12,
-                production: 0.6,
+                reliableOrdinal: 17,
                 rivalIds: ['sect-crimson-abyss'],
                 territory: 'region-low-fall'
             }),
@@ -88,7 +111,7 @@ export function fixtureCatalog(): WorldCatalog {
                 admissionOrdinal: 6,
                 governance: 'unbacked',
                 holdsVein: false,
-                production: 0.3,
+                reliableOrdinal: 13,
                 rivalIds: ['sect-azure-cloud'],
                 territory: 'region-low-fall'
             }),
@@ -97,21 +120,21 @@ export function fixtureCatalog(): WorldCatalog {
                 name: 'Ancient Bough Grove',
                 powerOrdinal: 25,
                 admissionOrdinal: 8,
-                governance: 'deference',
+                governance: 'unbacked',
+                holdsByReputation: true,
                 holdsVein: true,
-                production: 0.8,
+                reliableOrdinal: 21,
                 recruits: false,
                 territory: 'region-low-fall'
             }),
             faction({
                 id: 'sect-clearwater-ward',
                 name: 'Clearwater Ward',
-                kind: undefined as never,
                 powerOrdinal: 17,
                 admissionOrdinal: 2,
                 governance: 'administered',
                 holdsVein: true,
-                production: 0.7,
+                reliableOrdinal: 15,
                 territory: 'region-scarwater'
             }),
             faction({
@@ -121,7 +144,7 @@ export function fixtureCatalog(): WorldCatalog {
                 admissionOrdinal: 0,
                 governance: 'unbacked',
                 holdsVein: false,
-                production: 0.2,
+                reliableOrdinal: 8,
                 territory: 'region-scarwater'
             }),
             faction({
@@ -131,7 +154,7 @@ export function fixtureCatalog(): WorldCatalog {
                 admissionOrdinal: 21,
                 governance: 'administered',
                 holdsVein: true,
-                production: 0.95,
+                reliableOrdinal: 29,
                 recruits: false,
                 territory: 'region-highstair'
             })

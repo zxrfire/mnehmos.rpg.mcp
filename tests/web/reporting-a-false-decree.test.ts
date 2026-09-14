@@ -50,6 +50,29 @@ const PEER = {
 };
 
 /** Make one member of the house resent the player, on the ordinary table. */
+/**
+ * EVERYBODY ON THE RUNG, BECAUSE THE FIXTURE DOES NOT PICK THE WITNESS.
+ *
+ * These tests wrote one resentment, onto the first catalog member of the
+ * ordered rung, and then relied on `whoSawIt` choosing that same person off the
+ * SEEDED roster. It did, for as long as the world seeded the same way - and the
+ * world has moved underneath it twice tonight (who holds a vein, who governs a
+ * town, what a house can afford), which reseats who is standing where. When the
+ * witness stopped being that person the house was never told, and the file
+ * failed three assertions down instead of at its own premise.
+ *
+ * Resenting the whole rung makes the fixture true whoever the engine picks,
+ * which is what it was always trying to say: somebody down there has a reason
+ * to walk up the hill.
+ */
+function theWholeRungResentsYou(
+    harness: any,
+    playerId: string,
+    rung: readonly { id: string }[]
+) {
+    for (const person of rung) theyResentYou(harness, playerId, person.id);
+}
+
 function theyResentYou(harness: any, playerId: string, otherId: string) {
     harness.db.prepare(`INSERT OR REPLACE INTO relationships
         (id, from_character_id, to_character_id, type, label, strength, significance,
@@ -67,9 +90,32 @@ async function forgerAt(rankIndex: number, seed: string) {
     return { harness, id: cultivator.id };
 }
 
+/**
+ * THE HOUSE'S OWN ROWS, AND NOT ANY ROW THAT MENTIONS THE HOUSE.
+ *
+ * `isYourOwnHouseHoldingIt` reads a tag and nothing else, which is right for
+ * what it is asked elsewhere and is not a test of who holds the row. So this
+ * filter matched the resentment row the fixture writes between two people, and
+ * the assertion that failed was `holderId` three lines after the length check
+ * passed on somebody else's grudge. The holder is read here so a wrong row
+ * cannot be counted as a right one.
+ *
+ * AND THE STATUS IS NOT PART OF THE QUESTION ANY MORE. This asked for `open`,
+ * which was the same thing as "the house was told" for as long as being caught
+ * and being sentenced were always two turns apart. They are not: the design
+ * owner ruled that the world may interrupt somebody who only takes free
+ * actions, so `theHouseComesForYou` fetches the accused and the room sits the
+ * moment the day of being fetched is paid. Played, this file's decree now ends
+ * with the house holding a row it has ALREADY answered - questioned about the
+ * source, thirty stones taken - and a filter on `open` found nothing at all.
+ *
+ * What this file is about is who the house opens a row against and what it is
+ * tagged, so that is what it reads. Whether the row is still outstanding is a
+ * different question and is asked directly where it matters, below.
+ */
 function houseRows(harness: any) {
     return ledgerAbout(harness.db as never, LOCAL_SECT.id)
-        .filter(row => row.status === 'open' && isYourOwnHouseHoldingIt(row));
+        .filter(row => row.holderId === LOCAL_SECT.id && isYourOwnHouseHoldingIt(row));
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -140,7 +186,7 @@ describe('played, as the forger', () => {
         const { harness, id } = await forgerAt(1, 'report-told');
         const onTheRung = getMembersOf(LOCAL_SECT.id).filter(m => m.rankIndex === 0);
         expect(onTheRung.length, 'a named witness on the ordered rung').toBeGreaterThan(0);
-        theyResentYou(harness, id, onTheRung[0].id);
+        theWholeRungResentsYou(harness, id, onTheRung);
 
         expect(houseRows(harness)).toHaveLength(0);
         const said = (await harness.game.act(
@@ -153,6 +199,12 @@ describe('played, as the forger', () => {
         expect(rows[0].holderId).toBe(LOCAL_SECT.id);
         expect(rows[0].subjectId).toBe(id);
         expect(rows[0].tags).toContain(REPORTED_BY_A_WITNESS);
+        // AND THE HOUSE DID NOT STAND ABOUT. The same turn that opened the row
+        // fetched the accused and sat on it, which is the ruling that the world
+        // may interrupt somebody who only takes free actions. Asserted so that
+        // a house going back to waiting is a failure here rather than a silent
+        // change of pace.
+        expect(rows[0].status).toBe('settled');
     }, 300_000);
 
     it('is not reported by somebody with nothing against him, and it is still remembered',
@@ -176,7 +228,7 @@ describe('played, as the forger', () => {
     it('opens nothing at all when the order was a legitimate one', async () => {
         const { harness, id } = await forgerAt(1, 'report-clean');
         const onTheRung = getMembersOf(LOCAL_SECT.id).filter(m => m.rankIndex === 0);
-        if (onTheRung[0]) theyResentYou(harness, id, onTheRung[0].id);
+        theWholeRungResentsYou(harness, id, onTheRung);
 
         // A personal order claims nothing, so there is nothing to have been
         // false about it however much the witness dislikes them.
@@ -208,28 +260,114 @@ describe('played, as the room it goes to', () => {
         expect(said.toLowerCase()).toContain('the room, not the rank');
     }, 300_000);
 
-    it('shows a member their own row and will not let them close it', async () => {
+    /**
+     * THE ROW HAS TO STILL BE OUTSTANDING, AND A PLAYED DECREE NO LONGER
+     * LEAVES ONE.
+     *
+     * This played the decree and then read the room, which worked while the
+     * house waited for another day before sentencing. It does not wait any
+     * more, so by the time the player holds the room their own row has already
+     * been answered and there is nothing brought to anybody - the assertion
+     * that failed was `Nothing is outstanding`.
+     *
+     * The claim here is not about how a row is opened; it is that holding the
+     * punishment hall is not a way of closing your own record. So the row is
+     * written through the same handler the sibling test below uses for an NPC
+     * offender, aimed at the player, and the reading is what is played.
+     */
+    it('will not let a member close the row the house holds about them', async () => {
         const { harness, id } = await forgerAt(1, 'report-self');
-        const onTheRung = getMembersOf(LOCAL_SECT.id).filter(m => m.rankIndex === 0);
-        theyResentYou(harness, id, onTheRung[0].id);
-        await harness.game.act('By order of the Sect, the disciples are to gather herbs');
-        expect(houseRows(harness)).toHaveLength(1);
+        const roster = getMembersOf(LOCAL_SECT.id);
+        const witness = roster.find(m => m.rankIndex === 0) ?? roster[0];
 
+        // THE ROW IS OPENED BEFORE THE PLAYER HOLDS THE ROOM, because a
+        // complaint about the person who holds the room has nowhere to go -
+        // that is the routing rule this file pins three tests up, and opening
+        // it the other way round produced no row at all. So somebody else
+        // holds the hall when it is brought, and the player is promoted into
+        // it afterwards: which is exactly the situation the claim is about.
+        reportWhatTheySaw({
+            repos: harness.repos,
+            offenderId: id,
+            offenderName: 'Wen Shu',
+            offenderOrdinal: 21,
+            houseId: LOCAL_SECT.id,
+            houseName: LOCAL_SECT.name,
+            alignment: 'neutral',
+            portfolios: [{ purpose: 'punishment_hall', holderId: witness.id, depth: 3 }],
+            headId: null,
+            witness: {
+                id: witness.id, name: witness.name, rankIndex: 0, realmOrdinal: 8,
+                role: 'rival', standing: { type: 'rival', strength: -0.5, times: 1 }
+            },
+            onDay: 0,
+            what: 'Wen Shu gave an order in the house\'s name.'
+        });
+        expect(complaintsBroughtTo(harness.repos, LOCAL_SECT.id)).toHaveLength(1);
         harness.repos.sects.setRank(LOCAL_SECT.id, id, LOCAL_SECT.ranks.length - 2);
 
-        const listed = (await harness.game.act('what has been brought to me')).narration ?? '';
-        // Shown, because a player must be able to see what the house holds
-        // about them...
-        expect(listed).toContain('Wen Shu');
-        expect(listed.toLowerCase()).toContain('not yours to decide');
-
-        // ...and not decidable, because holding the room is not a way of
-        // closing your own record. The same rule `whereAComplaintGoes` applies
-        // at the routing end, applied at the deciding end.
+        // Not decidable, because holding the room is not a way of closing your
+        // own record. The same rule `whereAComplaintGoes` applies at the
+        // routing end, applied at the deciding end.
         const tried = (await harness.game.act('I dismiss the complaint against Wen Shu'))
             .narration ?? '';
         expect(tried.toLowerCase()).toContain('over your head');
-        expect(houseRows(harness)).toHaveLength(1);
+        // THE ROW IS STILL THE HOUSE'S, which is the claim. Whether it is still
+        // outstanding is not: the house comes for the accused now rather than
+        // waiting, so on the same turn the attempt was refused the room may
+        // already have sat on it. What may never happen is the member making
+        // their own record go away, and the row is read here by holder rather
+        // than by status so that a settled row cannot be mistaken for one the
+        // attempt succeeded in erasing.
+        const mine = houseRows(harness);
+        expect(mine).toHaveLength(1);
+        expect(mine[0].holderId).toBe(LOCAL_SECT.id);
+        expect(mine[0].subjectId).toBe(id);
+    }, 300_000);
+
+    /**
+     * THE OTHER HALF, AND IT NEEDS ITS OWN ROW.
+     *
+     * These two claims used to be one test, because a row sat open across as
+     * many turns as nobody spent deciding it. The house does not wait any more
+     * - it fetches the accused and the room sits the moment the day of being
+     * fetched is paid - so the row this test reads has been answered by the
+     * time a second act resolves, and the listing came back *Nothing is
+     * outstanding*.
+     *
+     * Neither claim was weakened to fit that. They are asserted against one
+     * fresh row each, on the turn that row is live.
+     */
+    it('shows a member the row the house holds about them', async () => {
+        const { harness, id } = await forgerAt(1, 'report-self-listed');
+        const roster = getMembersOf(LOCAL_SECT.id);
+        const witness = roster.find(m => m.rankIndex === 0) ?? roster[0];
+
+        reportWhatTheySaw({
+            repos: harness.repos,
+            offenderId: id,
+            offenderName: 'Wen Shu',
+            offenderOrdinal: 21,
+            houseId: LOCAL_SECT.id,
+            houseName: LOCAL_SECT.name,
+            alignment: 'neutral',
+            portfolios: [{ purpose: 'punishment_hall', holderId: witness.id, depth: 3 }],
+            headId: null,
+            witness: {
+                id: witness.id, name: witness.name, rankIndex: 0, realmOrdinal: 8,
+                role: 'rival', standing: { type: 'rival', strength: -0.5, times: 1 }
+            },
+            onDay: 0,
+            what: 'Wen Shu gave an order in the house\'s name.'
+        });
+        harness.repos.sects.setRank(LOCAL_SECT.id, id, LOCAL_SECT.ranks.length - 2);
+
+        // Shown, because a player must be able to see what the house holds
+        // about them - and marked as not theirs to settle on the same line, so
+        // the sheet never offers a door the next turn refuses.
+        const listed = (await harness.game.act('what has been brought to me')).narration ?? '';
+        expect(listed).toContain('Wen Shu');
+        expect(listed.toLowerCase()).toContain('not yours to decide');
     }, 300_000);
 
     it('decides one that is about somebody else', async () => {

@@ -50,6 +50,22 @@ import {
  * forty-three rows of provisions and materials - and "the cheaper one" is not a
  * question with an answer over forty-three things. Asking for the manuals is
  * the same situation the test was always describing.
+ *
+ * ── AND THEN "THE CHEAPER ONE" STOPPED HAVING AN ANSWER HERE EITHER ──────
+ *
+ * Every technique now carries its practitioner up a few rungs, so the stall
+ * carries eight books where it carried two, and THREE OF THEM ARE PRICED THE
+ * SAME. "The cheaper one" of three things that cost eighteen stones is not a
+ * phrase with a referent, and `whichOfTheNamedThings` has always refused to
+ * invent one - that refusal is the older half of this same feature, written
+ * after a blind playtest handed somebody a book they could not open.
+ *
+ * So the pointer this file plays is an ORDINAL, which the same resolver reads
+ * off the same listing in the order it was printed, and which does have an
+ * answer on a board with ties in it. The comparative is still pinned, below,
+ * as the case where the right answer is to put the listing back rather than to
+ * choose - and that arm is why the tie is an improvement to the file and not a
+ * workaround in it.
  */
 const WORLD = 'backref-world';
 const THE_CHEAPER_NAME = 'Lesser Qi-Gathering Manual';
@@ -93,7 +109,11 @@ async function readyToSit(seed: string) {
     // gitignored by design - and a played test that only passes on a machine
     // where somebody has run `npm run verbs:embed` is measuring the checkout.
     await harness.game.act('what is for sale here');
-    await harness.game.act('I buy the cheaper one');
+    // BY NAME, because this is scaffolding and not the subject. The pointer is
+    // played for real below; here all that is wanted is a cultivator holding a
+    // road, and a pointer that stops resolving would silently turn every
+    // seclusion assertion in this file into a test of the manual gate.
+    await harness.game.act(`I buy the ${THE_CHEAPER_NAME}`);
     await harness.game.act('I read the Lesser Qi-Gathering Manual');
     return harness;
 }
@@ -195,14 +215,16 @@ describe('the thing the last turn named', () => {
      * here at all, and "the cheaper one" still resolves - because the vocabulary
      * is closed and the list is one list the engine itself printed.
      */
-    it('resolves "the cheaper one" with no model in the room', async () => {
+    it('resolves a pointer off the listing with no model in the room', async () => {
         const { game } = await opening('cheaper-deterministic');
         const board = await game.act(WHAT_IS_ON_THE_STALL);
         const before = board.state.cultivator.spiritStones;
         const cheaper = quotedFor(board.narration, THE_CHEAPER_NAME);
         const dearer = quotedFor(board.narration, THE_DEARER_NAME);
 
-        const bought = await game.act('I buy the cheaper one');
+        // The second line of the board the engine just printed, which is what
+        // an ordinal counts against.
+        const bought = await game.act('I buy the second one');
 
         // The state, not the prose: the purse moved, by no more than the
         // cheaper of the two quotes, and therefore not by the dearer book -
@@ -226,7 +248,15 @@ describe('the thing the last turn named', () => {
     it('resolves a demonstrative the reader handed straight back', async () => {
         const provider = new ScriptedProvider({
             plans: [
-                JSON.stringify({ action: 'market' }),
+                // THE SAME LISTING THE OTHER ARM READS. This scripted `market`
+                // and the deterministic tier's stall read are two different
+                // boards - one prices the provisions catalog, the other the
+                // books beside the cooking pots - so the "control arm" was
+                // comparing two squares and only agreed while one manual
+                // happened to be the cheapest thing in the province. The stall
+                // read is `buy` with no target, which is what the deterministic
+                // tier resolves that question to.
+                JSON.stringify({ action: 'buy' }),
                 JSON.stringify({ action: 'buy', target: 'that one' })
             ],
             narrations: ['The moment passes.']
@@ -244,11 +274,11 @@ describe('the thing the last turn named', () => {
         const board = await game.act(WHAT_IS_ON_THE_STALL);
         const before = board.state.cultivator.spiritStones;
         const bought = await game.act(
-            'The cheaper one leaves me something to eat with. I will take that one.'
+            'The second one leaves me something to eat with. I will take that one.'
         );
 
-        // "that one" alone decides nothing between two manuals. What decides it
-        // is sitting in the player's own sentence one clause earlier.
+        // "that one" alone decides nothing between eight manuals. What decides
+        // it is sitting in the player's own sentence one clause earlier.
         //
         // NO PRICE IS READ HERE, and it cannot be: the narration on this arm is
         // the scripted provider's, so the board's own words never reach it. The
@@ -256,6 +286,46 @@ describe('the thing the last turn named', () => {
         // deterministic arm above against the same world and the same run seed.
         expect(before - bought.state.cultivator.spiritStones).toBeGreaterThan(0);
         expect(bought.narration).toContain(THE_CHEAPER_NAME);
+    }, 180000);
+
+    /**
+     * AND THE OTHER HALF OF THE SAME RULE.
+     *
+     * A comparative over a tie has no referent, and the engine may not pick
+     * one - that is the ruling `whichOfTheNamedThings` has held since a blind
+     * playtest walked somebody off with a book five rungs above them. What was
+     * missing was the answer: `resolvingAgainstTheLastTurn` takes an unbindable
+     * reference OFF the field so the verb falls back to its own listing, and
+     * `turn-engine` threw that away by reading the resolver's `resolutions`
+     * instead of its plan. So the player got *"Not something anybody here
+     * sells"*, followed by millet, an inn and a ferry crossing, over a board
+     * they were reading.
+     *
+     * Nothing is spent and the board comes back, which is the answer to "which
+     * one" that a stall can actually give.
+     */
+    it('puts the listing back when a comparative cannot settle', async () => {
+        const { game } = await opening('cheaper-tied');
+        const board = await game.act(WHAT_IS_ON_THE_STALL);
+        const before = board.state.cultivator.spiritStones;
+
+        // The premise of the arm, asserted rather than assumed: the cheapest
+        // price on this board is shared. If the stall ever stops having a tie
+        // this test is measuring nothing and should say so here.
+        const quotes = [...(board.narration ?? '').matchAll(/, (\d+) spirit stones/g)]
+            .map(m => Number(m[1]));
+        expect(quotes.length).toBeGreaterThan(2);
+        const cheapest = Math.min(...quotes);
+        expect(quotes.filter(q => q === cheapest).length,
+            'the board no longer ties at its cheapest price').toBeGreaterThan(1);
+
+        const asked = await game.act('I buy the cheaper one');
+
+        expect(asked.state.cultivator.spiritStones).toBe(before);
+        expect(asked.narration).not.toContain('Not something anybody here sells');
+        // The board, back, with the prices that made the phrase ambiguous.
+        expect(asked.narration).toContain(THE_CHEAPER_NAME);
+        expect(asked.narration).toContain('spirit stones');
     }, 180000);
 
     /**

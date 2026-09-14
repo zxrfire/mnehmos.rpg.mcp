@@ -61,8 +61,11 @@ for (const f of catalog.factions) {
     styles.set(f.id, houseStyleOf({
         factionId: f.id,
         alignment: f.alignment,
-        governance: f.governance,
-        production: f.production,
+        // `recruits`, not `governance`. The shape asks whether anybody arrives
+        // to join - which is what a compound is built around - and never asked
+        // how the house holds its ground.
+        recruits: f.recruits,
+        reliableOrdinal: f.reliableOrdinal,
         formationIntegrity: f.formationIntegrity,
         inherited: f.compoundInherited,
         powerOrdinal: f.powerOrdinal,

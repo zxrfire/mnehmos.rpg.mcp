@@ -284,16 +284,20 @@ export function whyThisOneWouldGo(
  */
 export const WHY_THEY_ARE_SELLING: Readonly<Record<WhyTheyWouldPartWithIt, string>> =
     Object.freeze({
+        // LEADING WITH THE SUBJECT, NOT WITH `It is`. Both of these opened on a
+        // dummy subject, which is the construction `the-engine-does-not-close-
+        // on-the-weather` bans: the engine states the fact and the narrator
+        // decides how a sentence starts. Same facts, said directly.
         not_theirs_to_be_seen_with:
-            'It is not theirs and they are not of the house it belongs to, which anybody who '
-            + 'knows it can see at a glance. They are not asking much and they are not going to '
-            + 'say where it came from.',
+            'They did not come by it honestly and they are not of the house it belongs to, '
+            + 'which anybody who knows it can see at a glance. They are not asking much and '
+            + 'they are not going to say where it came from.',
         they_need_stones:
             'They need the stones more than they need it, and they are not pretending otherwise. '
             + 'The price is what somebody who has to sell today asks.',
         it_is_beyond_them:
-            'It is pitched above where they are standing, so it is worth nothing to them and '
-            + 'they know it is worth something to somebody. They are in no hurry about it.',
+            'They cannot use a thing pitched this far above where they are standing, and they '
+            + 'know it is worth something to somebody who can. They are in no hurry about it.',
         they_have_outgrown_it:
             'They have climbed past where it stops being any use, so it does nothing for them '
             + 'and they would rather have the stones. Nothing is pressing them either way.'
