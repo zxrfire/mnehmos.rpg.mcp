@@ -120,19 +120,25 @@ describe('and what grows on it is the ground too', () => {
         expect(sets.size).toBeGreaterThan(1);
     });
 
-    it('leaves every province something a Qi Condensation cultivator can pick', async () => {
+    it('leaves every province something a beginner can pick', async () => {
         // The narrowing is only worth having if it does not close a province.
         //
-        // NOT AT ORDINAL ZERO, AND THE WHITE STAIR IS WHY. Its lowest reachable
-        // herb sits at 1, which is the province agreeing with its own hazard
-        // note - cold that kills a Foundation Establishment cultivator in an
-        // afternoon does not leave a beginner picking flowers. What must hold
-        // is that anybody who has finished the bottom realm can work anywhere,
-        // and that is the assertion.
+        // THIS ASKED AT ORDINAL 12 AND THE REASON IT GAVE WAS WRONG. It read
+        // the White Stair's lowest reachable herb sitting at 1 as the province
+        // agreeing with its own hazard note, and it was not that: the catalog
+        // simply had nothing on cold, high, burnt, ruined or desert ground at
+        // the bottom of the ladder, which is content missing rather than a
+        // statement being made. Measured on this world, 155 of 1,149 places -
+        // four White Stair villages among them - offered an ordinal-0
+        // cultivator nothing, and the honest test is the one that was passing
+        // over it. The beginner rows landed and the bar moved to 0.
+        //
+        // `tests/data/a-ground-a-beginner-stands-on-is-not-bare.test.ts` holds
+        // the rest of it, including which grounds are deliberately barren.
         const world = await seeded();
         for (const region of world.locations.filter(row => row.kind === 'region')) {
             const reachable = findHerbsForOrdinal(
-                12, whatGroundThisIs(world, region) ?? undefined
+                0, whatGroundThisIs(world, region) ?? undefined
             );
             expect([region.name, reachable.length > 0]).toEqual([region.name, true]);
         }

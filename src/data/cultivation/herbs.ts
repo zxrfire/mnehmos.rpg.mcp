@@ -178,6 +178,110 @@ export const HERBS: readonly Herb[] = [
         description:
             'Pale, fleshy, and faintly cold to the touch. Eaten raw it fills the belly for a day; refined properly it does rather better than that.'
     },
+    // ── WHERE A BEGINNER FINDS NOTHING, AND WHERE THAT IS THE POINT ──
+    //
+    // Measured on a seeded world: 155 of 1,149 places offered a cultivator at
+    // ordinal 0 nothing at all - four White Stair villages, both Burial Sands
+    // towns, every room of three sect seats, every scar and every ruin. A run
+    // opening in Deep Snow Village could gather for seven days, be told the
+    // catalog had nothing within reach, and be told that for the rest of its
+    // life, because nothing on cold or high ground opened below Core
+    // Formation. `desert` had no row at any rung at all.
+    //
+    // These are humble and priced beside the roadside on purpose: hard ground
+    // does not make a weed dear. What is still barren at this rung is the
+    // other half of the statement and is meant to stay barren - abyss,
+    // sky_island and spirit_vein are not ground a beginner stands on,
+    // lake_bottom and deep_forest are gone into rather than stood on, and a
+    // bamboo sea is worth entering at the rung its one row sits at.
+    {
+        id: 'herb-kneeling-grass',
+        name: 'Kneeling Grass',
+        grade: 'mortal',
+        biome: 'high_peak',
+        rarityWeight: 340,
+        value: 3,
+        harvestOrdinal: 0,
+        description:
+            'Never stands upright; above the tree line the wind does not permit it. Herders\' children pull it by the sackful for a coin a sack.'
+    },
+    {
+        id: 'herb-tilecap-fern',
+        name: 'Tilecap Fern',
+        grade: 'mortal',
+        biome: 'ruins',
+        rarityWeight: 320,
+        value: 3,
+        harvestOrdinal: 0,
+        description:
+            'Roots in the seam between fallen roof tiles and asks for nothing else. Every abandoned courtyard has a stand of it and nobody planted any of them.'
+    },
+    {
+        id: 'herb-spear-thistle',
+        name: 'Spear Thistle',
+        grade: 'mortal',
+        biome: 'battlefield',
+        rarityWeight: 290,
+        value: 4,
+        harvestOrdinal: 0,
+        description:
+            'Comes up shoulder-high and in ranks wherever ground was turned over and then left alone. Cattle will not touch it and alchemists will, which has settled the argument in most villages.'
+    },
+    {
+        id: 'herb-black-soil-scallion',
+        name: 'Black Soil Scallion',
+        grade: 'mortal',
+        biome: 'volcanic',
+        rarityWeight: 280,
+        value: 5,
+        harvestOrdinal: 0,
+        description:
+            'The first green back on burnt ground, usually inside a season. The villages under the fire mountains eat it as food and sell the rest at food prices.'
+    },
+    {
+        id: 'herb-meltwater-cress',
+        name: 'Meltwater Cress',
+        grade: 'mortal',
+        biome: 'glacier',
+        rarityWeight: 270,
+        value: 5,
+        harvestOrdinal: 0,
+        description:
+            'Comes up in the grey water at the foot of the ice for the three weeks a year it runs. Nobody climbs for this one; the ice above it is what kills people.'
+    },
+    {
+        id: 'herb-stone-ginger',
+        name: 'Stone Ginger',
+        grade: 'mortal',
+        biome: 'mountain',
+        rarityWeight: 250,
+        value: 6,
+        harvestOrdinal: 0,
+        description:
+            'Dug out of scree with a bent knife, and it bites the tongue raw. Carters chew it on cold roads and the alchemists take whatever the road did not.'
+    },
+    {
+        id: 'herb-dripstone-ear',
+        name: 'Dripstone Ear',
+        grade: 'mortal',
+        biome: 'cave',
+        rarityWeight: 240,
+        value: 7,
+        harvestOrdinal: 0,
+        description:
+            'A pale ear of fungus on wet stone, always within sight of the entrance and never further in. What grows deeper is worth more and is a different kind of problem.'
+    },
+    {
+        id: 'herb-sand-cistanche',
+        name: 'Sand Cistanche',
+        grade: 'mortal',
+        biome: 'desert',
+        rarityWeight: 170,
+        value: 9,
+        harvestOrdinal: 0,
+        description:
+            'Grows entirely underground on the root of a thorn bush and gives itself away by a hand\'s breadth of dry stalk. The digging is the whole of the work, and caravans do it while the camels are drinking.'
+    },
     {
         id: 'herb-iron-thread-moss',
         name: 'Iron Thread Moss',
@@ -291,6 +395,17 @@ export const HERBS: readonly Herb[] = [
         harvestOrdinal: 14,
         description:
             'The pith of a bamboo stalk that has turned green-white through age. One stalk in ten thousand has it, and the sea is very large.'
+    },
+    {
+        id: 'herb-long-thirst-gourd',
+        name: 'Long Thirst Gourd',
+        grade: 'earth',
+        biome: 'desert',
+        rarityWeight: 70,
+        value: 110,
+        harvestOrdinal: 15,
+        description:
+            'One vine, one fruit, and everything the vine has goes into it. The water inside keeps for years, so a caravan that finds one does not sell it and does not mention it either.'
     },
     {
         id: 'herb-moonwell-lotus',
