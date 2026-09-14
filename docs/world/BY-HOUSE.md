@@ -125,8 +125,8 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-cinnabar-crucible-sect` · its entry: [`sects.ts:1161`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 3
-  …and 13 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`sects.ts`](../../src/data/cultivation/sects.ts) 6 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`history.ts`](../../src/data/cultivation/history.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 4 · [`rogues.ts`](../../src/data/cultivation/rogues.ts) 4 · [`cultivators-the-road-finished.ts`](../../src/data/cultivation/cultivators-the-road-finished.ts) 3 · [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) 3
+  …and 14 more files.
 
 **Constants most about it:** `DEALERS`, `FAVOUR_STANCES`, `HOUSE_ARTISANS`, `IMMORTAL_ITEMS`, `PLACES_THAT_TEACH_A_DAO`, `SEA_CARGO`, and 2 more
 
@@ -134,7 +134,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-ashen-forge-clan` · its entry: [`sects.ts:1203`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 3 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 7 · [`members.ts`](../../src/data/cultivation/members.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 3 · [`beasts.ts`](../../src/data/cultivation/beasts.ts) 2 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 2 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 2
   …and 8 more files.
 
 **Constants most about it:** `ARCHIVE_COPIES`, `HOUSE_ARTISANS`, `PLACE`
@@ -202,8 +202,8 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-crimson-abyss-fortress` · its entry: [`sects.ts:1663`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
-  …and 7 more files.
+**Read:** [`members.ts`](../../src/data/cultivation/members.ts) 9 · [`sects.ts`](../../src/data/cultivation/sects.ts) 9 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 5 · [`the-blown-ground.ts`](../../src/data/cultivation/regions/the-blown-ground.ts) 4 · [`low-fall.ts`](../../src/data/cultivation/regions/low-fall.ts) 3 · [`demonic-sects-and-what-they-are-willing-to-do.ts`](../../src/data/cultivation/demonic-sects-and-what-they-are-willing-to-do.ts) 2 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 2
+  …and 8 more files.
 
 ### Bone Lantern Cult
 
@@ -228,7 +228,7 @@ session somebody wrote down design that was already in the catalog.
 `sect-storm-tyrant-court` · its entry: [`sects.ts:1845`](../../src/data/cultivation/sects.ts)
 
 **Read:** [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 14 · [`sects.ts`](../../src/data/cultivation/sects.ts) 12 · [`members.ts`](../../src/data/cultivation/members.ts) 7 · [`rumours-and-what-they-get-wrong.ts`](../../src/data/cultivation/rumours-and-what-they-get-wrong.ts) 7 · [`faction-character.ts`](../../src/data/cultivation/faction-character.ts) 4 · [`faction-relationships.ts`](../../src/data/cultivation/faction-relationships.ts) 4 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 4
-  …and 16 more files.
+  …and 17 more files.
 
 **Constants most about it:** `RECEIPT_HISTORIES`, `ARTERIALS`, `COURTS`, `MEDICINE_HOLDINGS`, `ORIGIN_ACCOUNTS`, `REGISTERS_COUNT_WHAT_THEY_CAN_SEE`, and 1 more
 

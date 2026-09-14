@@ -50,6 +50,25 @@ export type LevyTraffic = 'a trickle' | 'a road' | 'a city gate' | 'a province';
 
 const LEVY_TRAFFIC: readonly LevyTraffic[] = ['a trickle', 'a road', 'a city gate', 'a province'];
 
+/**
+ * How much rock, as against whether there is any. Mirrors `VeinWorthSchema`.
+ *
+ * Declared here for the same reason `LevyTraffic` is: the world layer states
+ * the shapes it consumes and never imports content.
+ */
+export type VeinWorth = 'a thin seam' | 'a working vein' | 'an arterial' | 'a vein system';
+
+const VEIN_WORTH: readonly VeinWorth[] = ['a thin seam', 'a working vein', 'an arterial', 'a vein system'];
+
+/** The dearest thing a house can finish. Mirrors `TradeGradeSchema`. */
+export type TradeGrade = 'mortal' | 'earth' | 'heaven';
+
+/** How much of the house the trade is. Mirrors `TradeDevotionSchema`. */
+export type TradeDevotion = 'a sideline' | 'a hall' | 'the house';
+
+const TRADE_GRADE: readonly TradeGrade[] = ['mortal', 'earth', 'heaven'];
+const TRADE_DEVOTION: readonly TradeDevotion[] = ['a sideline', 'a hall', 'the house'];
+
 export interface CatalogFaction {
     id: string;
     name: string;
@@ -89,12 +108,29 @@ export interface CatalogFaction {
      */
     holdsVein: boolean;
     /**
+     * HOW MUCH rock, or null where none. Derives `holdsVein` above.
+     *
+     * The boolean was the next bug after `Boolean(parent.holds)`: yes or no
+     * gave every holder one identical vein, so the house on "the least valuable
+     * grant in the province" drew exactly what the house on "the richest vein
+     * anyone has ever surveyed" drew, and out-earned the court above it.
+     */
+    veinWorth: VeinWorth | null;
+    /**
      * What it charges and where, or null where it charges nobody.
      *
      * Not exclusive with `holdsVein`: several houses hold ground and a gate.
      * `on` is carried across for a reader and is never switched on.
      */
     levy: { on: string; posts: number; traffic: LevyTraffic } | null;
+    /**
+     * What it MAKES, and how much of the house that is.
+     *
+     * The third fact the content stated and the world could not read, after
+     * `holdsVein` and the levy. `makes` is carried for a reader and is never
+     * parsed; `seeding.ts` prices the two words and nothing else.
+     */
+    trade: { makes: string; grade: TradeGrade; devotion: TradeDevotion } | null;
     tributeStonesPerYear: number;
     /** Years between grant renewals. Zero when nothing is renewed. */
     renewalYears: number;
@@ -415,8 +451,9 @@ interface RawParentage {
     holdsByReputation?: boolean;
     parentFactionId?: string | null;
     holds?: string | null;
-    holdsVein?: boolean;
+    veinWorth?: string | null;
     levy?: { on?: string; posts?: number; traffic?: string } | null;
+    trade?: { makes?: string; grade?: string; devotion?: string } | null;
     terms?: { tributeStonesPerYear?: number; renewal?: string } | null;
 }
 
@@ -486,8 +523,10 @@ function mapFaction(
         governance: normaliseGovernance(parent?.governance),
         holdsByReputation: parent?.holdsByReputation === true,
         parentFactionId: parent?.parentFactionId ?? null,
-        holdsVein: parent?.holdsVein === true,
+        holdsVein: veinWorthOf(parent) !== null,
+        veinWorth: veinWorthOf(parent),
         levy: levyOf(parent),
+        trade: tradeOf(parent),
         tributeStonesPerYear: parent?.terms?.tributeStonesPerYear ?? 0,
         renewalYears: renewalYearsOf(parent?.terms?.renewal),
         ...productionOrdinalsOf(character),
@@ -656,6 +695,33 @@ function levyOf(parent: RawParentage | undefined): CatalogFaction['levy'] {
     const traffic = LEVY_TRAFFIC.find(t => t === raw.traffic);
     if (!Number.isFinite(posts) || posts < 1 || !traffic) return null;
     return { on: String(raw.on ?? ''), posts, traffic };
+}
+
+/**
+ * How much rock, or null where none is stated.
+ *
+ * A word this layer does not know is read as no vein rather than defaulted to
+ * one, for the same reason a half-stated levy is dropped: a fallback would hide
+ * an authoring mistake behind an income.
+ */
+function veinWorthOf(parent: RawParentage | undefined): VeinWorth | null {
+    return VEIN_WORTH.find(w => w === parent?.veinWorth) ?? null;
+}
+
+/**
+ * What a house makes, or null where the catalog says nothing.
+ *
+ * Both words have to land. A trade with a grade this layer does not know is a
+ * trade nobody can price, and pricing it at the floor would say a house makes
+ * trinkets when what the row actually contains is a typo.
+ */
+function tradeOf(parent: RawParentage | undefined): CatalogFaction['trade'] {
+    const raw = parent?.trade;
+    if (!raw) return null;
+    const grade = TRADE_GRADE.find(g => g === raw.grade);
+    const devotion = TRADE_DEVOTION.find(d => d === raw.devotion);
+    if (!grade || !devotion) return null;
+    return { makes: String(raw.makes ?? ''), grade, devotion };
 }
 
 /** First year figure in a renewal clause, or zero when nothing is renewed. */

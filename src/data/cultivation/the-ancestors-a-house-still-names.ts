@@ -604,7 +604,7 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             {
                 name: 'The First Sovereign, called the Mirror',
                 fate: 'dormant',
-                realmOrdinal: 42,
+                realmOrdinal: 44,
                 yearsAgo: 2_000,
                 afterCrossing: null,
                 rememberedFor: 'Dug the curriculum out of the glacier, taught it to nine people, and then lay down in the hall she had cleared.'
@@ -633,7 +633,31 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
             name: 'The Mirror',
             restingPlace: 'The cold hall itself, at the centre of the ice field, under a floor nobody sweeps.',
             dormantYears: 2_000,
-            realmOrdinal: 42,
+            /**
+             * FORTY-FOUR, AND THE ARRANGEMENT AT THE TOP OF THE WORLD RESTS ON
+             * IT.
+             *
+             * `the-top-of-the-world.ts` says outright that the strongest sealed
+             * ancestor in the region sits at forty-four, and that *"the house
+             * holding it is a federated court under the Earth Vein Tower -
+             * whose own head stands at forty-three"*: the Survey's most useful
+             * client holds the one weapon in the world that could kill the
+             * Survey's head without help, and nothing enforces which direction
+             * it points.
+             *
+             * The data had that forty-four on the Kiln Wardens, who are neither
+             * federated, nor a court, nor anybody's client - they are a guard
+             * posting, and their First Warden is at his post rather than in
+             * reserve. So the number sat on a house the paragraph does not
+             * describe, and the sentence was true of nobody.
+             *
+             * The Frostmirror Court is the house that paragraph is about: a
+             * federated court under the Tower, on the glacier and the cold vein,
+             * on a grant nobody else has ever applied for. It already held the
+             * strongest remaining ceiling in the region. It holds the stated
+             * one now.
+             */
+            realmOrdinal: 44,
             sealGrade: 'masterwork',
             sealReason: 'final_breath',
             wakeCondition: 'The library is entered by force. Not theft, not trespass - force.',
@@ -902,24 +926,46 @@ export const SECT_ANCESTRY: Record<string, AncestralRecords> = {
     'sect-kiln-wardens': {
         ancestors: [
             { name: 'The First Keeper of the Kiln', fate: 'lost', realmOrdinal: null, yearsAgo: 4_000, afterCrossing: null, rememberedFor: 'Nothing the Wardens will state. Outside accounts do not agree on whether there was one.' },
-            { name: 'The First Warden', fate: 'dormant', realmOrdinal: 44, yearsAgo: 3_100, afterCrossing: null, rememberedFor: 'Took the position at the world-heart and has not left it, which is why the watches are shaped the way they are and why every node the Wardens hold is lit. The Wardens state this in numbers when asked and have never elaborated.' }
+            { name: 'The First Warden', fate: 'dormant', realmOrdinal: 37, yearsAgo: 3_100, afterCrossing: null, rememberedFor: 'Head of the house the Kiln and the Deeproot were before either was a posting. Took the position at the world-heart and has not left it, which is why the watches are shaped the way they are and why every node the Wardens hold is lit. The Wardens state this in numbers when asked and have never elaborated.' }
         ],
         claimsLivingAncestor: false,
         claimIsTrue: false,
         recency: 'none',
-        dormant: {
-            name: 'The First Warden',
-            restingPlace: 'At the world-heart, in the position the Wardens still stand their watches around, which is why the watches are shaped the way they are.',
-            dormantYears: 3_100,
-            realmOrdinal: 44,
-            sealGrade: 'masterwork',
-            sealReason: 'protector',
-            wakeCondition:
-                'The fire is found to have gone out, or to be going out. Nothing else, and the Wardens have never described what either would look like to somebody who was not one of them.',
-            wakeCost:
-                'Unstated. The Wardens do not explain themselves and have never been pressed on this by anybody in a position to insist.',
-            publiclyKnown: false
-        },
+        /**
+         * NO `dormant` BLOCK, AND THE FIRST WARDEN IS THE REASON.
+         *
+         * `dormant` is read by `sectThreat` as `sealedCeilingOrdinal` - what a
+         * house could field ONCE, spent permanently on waking - and on that
+         * reading the Wardens came out the strongest institution in the world,
+         * above both ancient apexes, on the strength of five people and a body
+         * at 44 asleep under them.
+         *
+         * The mistake is in the word rather than in the arithmetic. The First
+         * Warden is not in reserve. He took the position at the world-heart and
+         * has not left it; the wake condition is that the fire has gone out,
+         * which is the world ending rather than a card this house can play. He
+         * cannot be fielded against a rival, cannot be spent to win a vein, and
+         * is not a thing the Wardens have - he is the thing the Wardens ARE
+         * standing their watches around.
+         *
+         * So `dormant` was carrying two facts: an ancestor asleep who could be
+         * woken FOR the house, and an ancestor who is at his post forever. Only
+         * the first is a ceiling. The ancestor stays in `ancestors` above,
+         * because he is why every node they hold is lit and that is authored
+         * content; what goes is the claim that they can spend him.
+         *
+         * The design owner: *"remember the kiln wardens aren't really a sect,
+         * its like a guard posting"*, and *"so its just a dude on permanent
+         * guard duty"*. A posting does not have a reserve.
+         *
+         * AND HE WAS NOT ONE RUNG BELOW IMMORTAL. He stood at 44 - the top of
+         * Tribulation Transcendence - for a body that has been standing a watch
+         * for thirty-one centuries and is the founding head of what the Kiln
+         * and the Deeproot were before either was a posting. He is 37 now, the
+         * first rung of Grand Ascension: one realm above what the posting
+         * fields today, which is what a founder who never left should read as.
+         */
+        dormant: null,
         partingGift: null,
         lastOffering: null,
         discoverableTraces: [

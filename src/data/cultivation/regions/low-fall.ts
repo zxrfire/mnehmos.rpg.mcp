@@ -283,6 +283,94 @@ export const THE_LOW_FALL: Region = {
             note: 'The vein the vent opens onto, which runs hot and is the reason the grant is worth not producing. What grows on it grows nowhere else in the world.',
             connections: []
         },
+        // ── THE GROVE BASIN, WHICH THE REGISTER COULD ONLY DESCRIBE ──────
+        //
+        // `prefecture-grove-verge` says the Grove holds "a valley, a mountain
+        // and four settlements, on no grant and on nobody's book", and its
+        // `places` was empty, so the four were a clause and nothing else.
+        // Measured on seed `settlement-probe`: the Grove took 175 stones a
+        // year, last of thirty-eight houses, while being one of exactly two in
+        // the world that administer settlements with no levy and no
+        // intermediate tier - the arrangement the town term was built for.
+        //
+        // What they are follows from what the house is. It has never
+        // registered anything and has never been asked to, so nothing here has
+        // a deed, a boundary or a fixed name; a holding is what a family has
+        // been on and a name is what is standing in the place. None of them is
+        // a market town, because a market wants a register and a toll and the
+        // Grove keeps neither.
+        //
+        // The hermitage is not among them. It is the valley itself, seeded as
+        // the house's own ground, and the prefecture's `seat` stays prose for
+        // that reason.
+        {
+            name: PLACE.PLUM_VILLAGE,
+            kind: 'village', ambient: 'normal', grounds: ['deep_forest', 'farmland'],
+            note: 'At the mouth of the valley, under the first of the old trees. Nothing here can be proved by a document and nothing ever has been; what the village has instead is four hundred years of plums, and everybody knows which family put in which row.',
+            connections: [
+                {
+                    kind: 'road',
+                    otherPlaceName: PLACE.GREEN_FALL,
+                    description:
+                        'Four days from the province town to the mouth of the valley, and the only road into the basin. It was cut from the town end and stops where the old trees start, because nobody at the far end of it ever asked for more.',
+                    travelDays: 4
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.TWO_STREAMS,
+                    description:
+                        'Up the skirt of the mountain to the terraces, a day of it, and the walk anybody in the basin does without thinking about it.',
+                    travelDays: 1
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.SMOKE_RIDGE,
+                    description:
+                        'Round the north side to the coppice, a day, and the way the charcoal comes down to meet the road.',
+                    travelDays: 1
+                },
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.PINE_SPRING,
+                    description:
+                        'Straight up out of the valley to where the broadleaf stops and the pines start, a hard day, and walked twice a year by most people and never by some.',
+                    travelDays: 1
+                }
+            ]
+        },
+        {
+            name: PLACE.TWO_STREAMS,
+            kind: 'village', ambient: 'thin', grounds: ['farmland', 'riverbank'],
+            note: 'Terraces cut where the mountain\'s two streams met. One of them has not run in a hundred years and the name has not changed, because there is nothing here that a name is written on.',
+            connections: [
+                {
+                    kind: 'path',
+                    otherPlaceName: PLACE.PINE_SPRING,
+                    description:
+                        'Up the stream that still runs, to the head of it, which is a day and is how the terraces know the year the water will come late.',
+                    travelDays: 1
+                }
+            ]
+        },
+        {
+            name: PLACE.SMOKE_RIDGE,
+            // The ridge is young worked wood, not the valley. The Grove's old
+            // trees have never been cut, and a coppice is the reason that is a
+            // choice rather than a shortage.
+            kind: 'village', ambient: 'thin', grounds: ['forest'],
+            note: 'Coppice on the north ridge, cut on a rotation nobody wrote down, burnt to charcoal and sold out of the basin. The smoke stands over the ridge most of the year and is how the rest of the province learned there was anything in here worth having.',
+            connections: []
+        },
+        {
+            name: PLACE.PINE_SPRING,
+            // The world's only `hamlet`, and the kind had been in the schema
+            // and in `PLACE_POPULATION_WEIGHT` with nothing standing in it -
+            // `cultivators-the-road-finished.ts` already places people in
+            // hamlets that did not exist on the map.
+            kind: 'hamlet', ambient: 'thin', grounds: ['mountain', 'forest'],
+            note: 'Three families where the pines start, on a spring that does not freeze, which is the whole reason anybody winters that high. Nobody has asked them for anything in any generation anyone can name, and they would not know who to hand it to.',
+            connections: []
+        }
     ],
     // The settled province: fields, the roads between them, wooded slope above
     // and the gorge cut through it. It is the only ground on the map that is
@@ -578,7 +666,16 @@ export const LOW_FALL_PREFECTURES: readonly Prefecture[] = [
         provinceId: LOW_FALL_PROVINCE_ID,
         kind: 'basin',
         seat: 'the valley of old trees',
-        places: [],
+        // The four the `onPaper` line has always named. The seat is not among
+        // them: the hermitage is the valley itself, which is the house's own
+        // ground rather than a settlement, and `seat` is prose here for the
+        // same reason it is prose in five other rows.
+        places: [
+            PLACE.PLUM_VILLAGE,
+            PLACE.TWO_STREAMS,
+            PLACE.SMOKE_RIDGE,
+            PLACE.PINE_SPRING
+        ],
         heldByFactionId: 'sect-ancient-bough-grove',
         delegatedFromId: null,
         subHoldings: [],

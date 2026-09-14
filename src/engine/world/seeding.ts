@@ -47,7 +47,9 @@ import { purchasedQiPerYear } from '../cultivation/buying-and-bartering-pills.js
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import type { InnateAttributes, SpiritRootKey } from '../cultivation/spirit-roots.js';
 import { growCompound, type CompoundInput } from './architecture.js';
-import type { WorldCatalog, CatalogFaction, CatalogRegion, LevyTraffic } from './catalog.js';
+import type {
+    WorldCatalog, CatalogFaction, CatalogRegion, LevyTraffic, VeinWorth, TradeGrade, TradeDevotion
+} from './catalog.js';
 import {
     linkLocations,
     makeAffinity,
@@ -798,10 +800,13 @@ export function whatItCanPutOnTheGround(reliableOrdinal: number): number {
  * cargo over a weigh rail. Both read as an ordinary year at one post, which is
  * what makes these numbers checkable rather than chosen.
  *
- * A ROCK GIVES MORE, AND THE ORDERING IS PER POST AGAINST PER VEIN. The vein
- * term is 5,000 stones scaled by what the house can field, so the biggest one
- * post can be is half of the smallest vein. A house with nine city gates does
- * out-earn one vein, which is the point: it has nine of them.
+ * A ROCK GIVES MORE, AND THE ORDERING IS PER POST AGAINST PER ORDINARY VEIN.
+ * The vein term is 5,000 stones scaled by what the house can field, so the
+ * biggest one post can be is half of the smallest ordinary vein. A house with
+ * nine city gates does out-earn one vein, which is the point: it has nine of
+ * them. The qualifier arrived with `HOW_MANY_ORDINARY_VEINS`: a thin seam is a
+ * fifth of a working vein by authored intent, and a toll over a whole province
+ * out-earning the least valuable grant in that province is correct.
  *
  * And a levy does NOT scale by what a house can put on the ground, which every
  * other term here does. What goes past a gate is what goes past a gate; the
@@ -825,6 +830,126 @@ export const WHAT_ONE_POST_TAKES_IN_A_YEAR: Readonly<Record<LevyTraffic, number>
 export function whatALevyBringsIn(levy: CatalogFaction['levy']): number {
     if (!levy) return 0;
     return Math.round(levy.posts * WHAT_ONE_POST_TAKES_IN_A_YEAR[levy.traffic]);
+}
+
+/**
+ * How many ordinary veins' worth of rock each authored worth is.
+ *
+ * `resources.veins` has always been a COUNT and the yearly economy has always
+ * multiplied by it; what was missing is that the catalog could only say yes or
+ * no, so every holder in the world was seeded with exactly one and the whole
+ * term was a constant. A working vein is 1 because 5,000 a year is the figure
+ * that was written for an ordinary one, and everything else is stated against
+ * it: a thin seam is the least valuable grant in a province, an arterial is
+ * what a court administers on an apex's behalf, and a vein system is what an
+ * apex holds entire and grants reaches out of.
+ *
+ * Nothing downstream had to change. A vein lost in a war still costs one, and a
+ * house whose whole holding was a thin seam loses it and has nothing.
+ */
+export const HOW_MANY_ORDINARY_VEINS: Readonly<Record<VeinWorth, number>> = {
+    'a thin seam': 0.4,
+    'a working vein': 1,
+    'an arterial': 3,
+    'a vein system': 8
+};
+
+/** Veins' worth of rock a house holds. Zero where it holds none. */
+export function howMuchRockItHolds(veinWorth: CatalogFaction['veinWorth']): number {
+    return veinWorth ? HOW_MANY_ORDINARY_VEINS[veinWorth] : 0;
+}
+
+/**
+ * WHAT A YEAR OF THE TRADE IS WORTH, by the dearest thing the house finishes.
+ *
+ * THE FEE, NOT THE MERCHANDISE. The customer brings the materials or buys them
+ * at the counter, so what a house sells is the work and the skill - which is a
+ * thing this repo already prices. `OCCUPATIONS` pays a cultivator by the month
+ * against the rung the work needs: a bellows hand at the bottom of the ladder
+ * is 600 cash a month, a formation hand at 8 is 1,500, and the pill convoy
+ * escort at 23 - the one job in the catalog written about this trade - is
+ * 20,000, which is 2,400 stones a year for ONE pair of hands.
+ *
+ * So a hall of hands at heaven-grade work is a multiple of that escort, and
+ * 9,000 is a little under four of him. The check that makes it checkable rather
+ * than chosen: the Cinnabar Crucible Sect pays that escort 2,400 a year to move
+ * four shipments, and against a modelled income of 1,000 it was spending more
+ * than twice everything it had on guards for goods nothing priced.
+ *
+ * The steps are roughly four apiece, not the ten that separates
+ * `PILL_VALUE_BANDS`, and the difference is volume: a counter sells mortal-grade
+ * medicine daily and the Hall's heaven-grade batches fail and go out four times
+ * a year. Price per piece rises by ten; pieces finished fall by about three.
+ *
+ * AND THE ROCK ORDERING DOES NOT APPLY HERE. "A rock gives more" was settled
+ * about tolls and gates against veins. A house shipping finished heaven-grade
+ * medicine out-earns a working vein and the genre agrees; what it does not
+ * out-earn is an arterial, and no trade anywhere reaches a vein system.
+ */
+export const WHAT_A_YEAR_OF_THE_TRADE_IS_WORTH: Readonly<Record<TradeGrade, number>> = {
+    mortal: 600,
+    earth: 2_400,
+    heaven: 9_000
+};
+
+/**
+ * How much of a house the trade is. The specialisation axis, and the reason
+ * this is not a flag.
+ *
+ * Most houses here can make something - a temple cuts its own formation nodes,
+ * a sword yard forges its own blades - so a boolean would have said one house
+ * makes things and thirty-seven make nothing, which is the levy's own old
+ * defect rebuilt. What separates a specialist is that every rung of its ladder
+ * is a title in the trade, from Bellows Hand to Hall Grandmaster.
+ */
+export const HOW_MUCH_OF_A_HOUSE_THE_TRADE_IS: Readonly<Record<TradeDevotion, number>> = {
+    'a sideline': 0.15,
+    'a hall': 0.4,
+    'the house': 1
+};
+
+/**
+ * What a house's trade brings in per year, in spirit stones.
+ *
+ * One copy, for the same reason `whatALevyBringsIn` is one copy: the purse a
+ * house is seeded with and the yearly economy both read it.
+ *
+ * Deliberately NOT scaled by what the house can put on the ground, like the
+ * levy and the towns beside it. The rung is already in `grade` - it is what
+ * decides whether the house can finish the dear thing at all - and scaling it
+ * again would charge the same fact twice.
+ */
+export function whatItsTradeBringsIn(trade: CatalogFaction['trade']): number {
+    if (!trade) return 0;
+    return Math.round(
+        WHAT_A_YEAR_OF_THE_TRADE_IS_WORTH[trade.grade] * HOW_MUCH_OF_A_HOUSE_THE_TRADE_IS[trade.devotion]
+    );
+}
+
+/**
+ * What a house takes off what it HOLDS in a year: rock, gates, towns, benches.
+ *
+ * The four terms of the yearly economy that come from the holding, and
+ * deliberately not the per-member one beside them. A roll is not a holding: it
+ * grows and shrinks with who is alive this decade, and the pyramid - the claim
+ * that the body you answer to is richer than you - is a claim about the grant,
+ * not about how many people happen to be standing in the compound.
+ *
+ * One copy, so the seeded purse, the yearly economy and the test that walks
+ * every parentage edge cannot each grow their own arithmetic. Before this the
+ * only way to ask the question was to retype four terms, and the first thing
+ * that retyped them left the towns out.
+ */
+export function whatItsHoldingsBringIn(
+    cf: Pick<CatalogFaction, 'id' | 'veinWorth' | 'levy' | 'trade' | 'reliableOrdinal'>,
+    locations: readonly LocationRecord[]
+): number {
+    return Math.round(
+        howMuchRockItHolds(cf.veinWorth) * 5_000 * (0.5 + whatItCanPutOnTheGround(cf.reliableOrdinal))
+        + whatALevyBringsIn(cf.levy)
+        + whatTheTownsBringIn(locations, cf.id)
+        + whatItsTradeBringsIn(cf.trade)
+    );
 }
 
 /**
@@ -896,7 +1021,7 @@ function seedFactions(
         const townsHere = whatTheTownsBringIn(state.locations, cf.id);
         const baseTreasury = Math.round(
             (2_000 + cf.powerOrdinal * 900) * (0.5 + whatItCanPutOnTheGround(cf.reliableOrdinal)) +
-            whatALevyBringsIn(cf.levy) + townsHere -
+            whatALevyBringsIn(cf.levy) + townsHere + whatItsTradeBringsIn(cf.trade) -
             cf.tributeStonesPerYear * 0.08
         );
 
@@ -916,7 +1041,7 @@ function seedFactions(
             standing: {},
             resources: {
                 spirit_stones: Math.max(200, baseTreasury + rng.int(-400, 1200)),
-                veins: cf.holdsVein ? 1 : 0,
+                veins: howMuchRockItHolds(cf.veinWorth),
                 tribute_owed_per_year: cf.tributeStonesPerYear,
                 // Read back by the yearly economy and by promotion. Kept on the
                 // record rather than looked up, so the world stays
@@ -929,6 +1054,11 @@ function seedFactions(
                 // once, here, by the same function the purse above used, so the
                 // yearly economy reads a figure rather than repeating a table.
                 levy_per_year: whatALevyBringsIn(cf.levy),
+                // And what its benches turn out. Stored beside the levy and for
+                // the same reason: what a house makes does not change in the
+                // ordinary run of a century, and the yearly economy then reads
+                // one figure rather than repeating two tables.
+                trade_per_year: whatItsTradeBringsIn(cf.trade),
                 // AND NO COLUMN FOR WHAT THE TOWNS PAY, deliberately. A charter
                 // does not change hands in the ordinary run of a century and
                 // ground does - twice over in the yearly economy - so a figure

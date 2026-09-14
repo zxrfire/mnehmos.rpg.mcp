@@ -105,9 +105,23 @@ describe('a house holds a vein or it does not, and the catalog says which', () =
 
         for (const cf of holders) {
             const faction = state.factions.find(f => f.id === cf.id)!;
-            expect(Number(faction.resources.veins ?? 0), cf.id).toBe(1);
+            // MORE THAN NONE, not exactly one. This asserted 1, which was true
+            // of every holder in the world for the same reason the old
+            // `holdsVein` boolean was true of every house: the catalog could
+            // only say whether there was rock, so the column was a constant
+            // wearing a count. `veinWorth` says how much, and the apexes hold a
+            // vein system where a sub-holder holds a thin seam.
+            expect(Number(faction.resources.veins ?? 0), cf.id).toBeGreaterThan(0);
             expect(roomsFor(compoundInputFor(cf)), cf.id).toContain('vein_chamber');
         }
+    });
+
+    it('does not give every holder in the world the same rock', () => {
+        // The defect the count was hiding, and the reason the assertion above
+        // had to move: one flat vein apiece made the house on "the least
+        // valuable grant in the province" as rich off ground as an apex.
+        const worths = new Set(catalog.factions.filter(f => f.holdsVein).map(f => f.veinWorth));
+        expect(worths.size).toBeGreaterThan(1);
     });
 });
 
@@ -143,9 +157,14 @@ describe('a house eats off a gate as well as off rock', () => {
         expect(catalog.factions.some(f => !f.holdsVein && f.levy !== null)).toBe(true);
     });
 
-    it('never lets one post out-earn one vein', () => {
+    it('never lets one post out-earn one ordinary vein', () => {
         // The ruling this pins: a rock gives more. Per post against per vein -
         // a house with nine gates beating one vein is the point of having nine.
+        //
+        // AN ORDINARY ONE. `veinWorth` grades rock now, and a thin seam is a
+        // fifth of a working vein by authored intent, so a toll over a whole
+        // province does out-earn the least valuable grant in that province.
+        // The expression below is one vein at this house's rung and always was.
         const weakestVein = Math.min(...catalog.factions
             .filter(f => f.holdsVein)
             .map(f => 5_000 * (0.5 + whatItCanPutOnTheGround(f.reliableOrdinal))));

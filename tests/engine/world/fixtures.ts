@@ -32,7 +32,13 @@ function faction(init: Partial<CatalogFaction> & Pick<CatalogFaction, 'id' | 'na
         governance: 'unbacked',
         holdsByReputation: false,
         parentFactionId: null,
-        holdsVein: false,
+        // A fixture house holds no rock and makes nothing it sells, both stated
+        // rather than left off. `holdsVein` is DERIVED below and is not a field
+        // a fixture sets: it is `veinWorth` read coarsely, and two copies of
+        // one fact in a fixture is how a fixture comes to disagree with the
+        // catalog it stands in for.
+        veinWorth: null,
+        trade: null,
         // A fixture house levies nothing, stated rather than left off. `levy`
         // is nullable and not optional on purpose - a house that charges
         // nobody is a fact about it, and `undefined` would have been the
@@ -60,7 +66,8 @@ function faction(init: Partial<CatalogFaction> & Pick<CatalogFaction, 'id' | 'na
         formationNodesTotal: 0,
         formationNodesLit: 0,
         description: '',
-        ...init
+        ...init,
+        holdsVein: (init.veinWorth ?? null) !== null
     };
 }
 
@@ -96,7 +103,7 @@ export function fixtureCatalog(): WorldCatalog {
                 admissionOrdinal: 4,
                 governance: 'federated',
                 parentFactionId: 'court-third-sill',
-                holdsVein: true,
+                veinWorth: 'a working vein',
                 tributeStonesPerYear: 40_000,
                 renewalYears: 12,
                 reliableOrdinal: 17,
@@ -110,7 +117,6 @@ export function fixtureCatalog(): WorldCatalog {
                 powerOrdinal: 20,
                 admissionOrdinal: 6,
                 governance: 'unbacked',
-                holdsVein: false,
                 reliableOrdinal: 13,
                 rivalIds: ['sect-azure-cloud'],
                 territory: 'region-low-fall'
@@ -122,7 +128,7 @@ export function fixtureCatalog(): WorldCatalog {
                 admissionOrdinal: 8,
                 governance: 'unbacked',
                 holdsByReputation: true,
-                holdsVein: true,
+                veinWorth: 'a working vein',
                 reliableOrdinal: 21,
                 recruits: false,
                 territory: 'region-low-fall'
@@ -133,7 +139,7 @@ export function fixtureCatalog(): WorldCatalog {
                 powerOrdinal: 17,
                 admissionOrdinal: 2,
                 governance: 'administered',
-                holdsVein: true,
+                veinWorth: 'a working vein',
                 reliableOrdinal: 15,
                 territory: 'region-scarwater'
             }),
@@ -143,7 +149,6 @@ export function fixtureCatalog(): WorldCatalog {
                 powerOrdinal: 14,
                 admissionOrdinal: 0,
                 governance: 'unbacked',
-                holdsVein: false,
                 reliableOrdinal: 8,
                 territory: 'region-scarwater'
             }),
@@ -153,7 +158,7 @@ export function fixtureCatalog(): WorldCatalog {
                 powerOrdinal: 33,
                 admissionOrdinal: 21,
                 governance: 'administered',
-                holdsVein: true,
+                veinWorth: 'a working vein',
                 reliableOrdinal: 29,
                 recruits: false,
                 territory: 'region-highstair'

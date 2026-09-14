@@ -230,23 +230,45 @@ are watched.
 
 <!-- tier: 2 trigger="what a house lives on, or why a house with no vein is not poor" -->
 
-Four terms, and for two thirds of the catalog the first one is zero.
+Five terms, and for two thirds of the catalog the first one is zero.
 
 | Term | Read from | What it is |
 |---|---|---|
-| Rock | `holdsVein` on the parentage record | What comes off a vein, scaled by the rung the house can field. The largest of the four |
+| Rock | `veinWorth` on the parentage record | What comes off a vein, scaled by the rung the house can field. The largest of the five |
 | A gate | `levy` on the parentage record | A fee at a gate, a toll at a ford, a cut of what crosses a weigh rail, a published assay everybody has to buy |
 | A town | `controllingFactionId` on the settlement | What the people of a town pay the house that governs them |
+| A bench | `trade` on the parentage record | What the house MAKES, priced as the fee for the work rather than as the goods |
 | People | the roll | What the members bring in, scaled by the same rung |
 
 A vein and a levy are **not exclusive** and two houses hold both. A house holding
 neither is poor, and several are: *"Nothing whatsoever, which the league presents as
 philosophy"* is a house that has chosen this.
 
-**A rock gives more, per post against per vein.** The largest one place a house can
-collect at is worth 2,500 stones a year against the weakest vein in the catalog at
-3,043. A house with nine city gates does out-earn one vein, which is the point of
-having nine of them.
+**A rock gives more, per post against per ordinary vein.** The largest one place a
+house can collect at is worth 2,500 stones a year against an ordinary vein at four
+thousand and up. A house with nine city gates does out-earn one vein, which is the
+point of having nine of them.
+
+**How much rock, not whether.** `veinWorth` was `holdsVein: boolean`, and yes-or-no
+gave every holder in the world one identical vein - so the Crimson Abyss Fortress, on
+*"the thin vein beneath the town, on the least valuable grant in the province"*, drew
+what an apex draws off a vein system and out-earned the court that granted it. The
+four words are `a thin seam`, `a working vein`, `an arterial` and `a vein system`, each
+read off the record's own `holds` sentence, and `HOW_MANY_ORDINARY_VEINS` in
+`seeding.ts` is the one place a word becomes stones. A toll over a whole province does
+out-earn the least valuable grant in that province, which is what the word is for.
+
+**And what a house makes.** The third fact the catalog stated and nothing could read,
+after `holdsVein` and the levy. The Cinnabar Crucible Sect moves finished heaven-grade
+medicine four times a year and pays `job-convoy-escort` 2,400 stones a year to guard
+it, against a modelled income of 1,000 - it was spending more than twice everything it
+had on guards for goods the world did not price. `trade` is two words: `grade`, the
+dearest thing the house can finish, and `devotion`, how much of the house the trade is.
+It is **not a flag**, deliberately: most houses here can make something, and what
+separates a specialist is that every rung of its ladder from Bellows Hand to Hall
+Grandmaster is a furnace title. What is priced is **the fee, not the merchandise** -
+the customer brings the materials or buys them at the counter, so what the house sells
+is the work, which `OCCUPATIONS` already prices by the rung it needs.
 
 The scale is anchored to two prices the mortal economy already publishes rather than
 chosen: `price-gate-registration` is 300 cash a head a year and is called *"the
@@ -259,7 +281,26 @@ house opens with and its income every year after both call it.
 **A levy is authored, never read off the prose.** `holds` is a required sentence on
 every record, which is exactly why `holdsVein` was once `Boolean(holds)` and read true
 for all thirty-eight. `levy.on` says what is charged and of whom, for a reader; nothing
-switches on it.
+switches on it, and `trade.makes` is the same shape for the same reason.
+
+### The body you answer to is richer than you
+
+Three claims, on two axes, and they are not one claim.
+
+- **Income, globally:** no sect out-earns any apex, related or not.
+- **Income, per edge:** whatever a body is, the house it answers to is **strictly**
+  richer. Follow `parentFactionId` up - `theBodyItAnswersTo` resolves the court and
+  apex ids that are not factions - and each step up increases.
+- **Income, deliberately not forbidden:** a sect may out-earn a court it has nothing to
+  do with, and specifically a court on hard times. A court may be poorer than SOME
+  sect; never poorer than ITS OWN sect.
+
+And a fourth thing that is not income at all: **a starving camel is bigger than a
+horse.** A court whose vein is failing still has the vault, the compound, the books and
+people standing at rungs an ordinary sect cannot reach. The Cinnabar Crucible Sect
+takes twice what the Storm Tyrant Court takes and stands nine rungs below it.
+`the-body-you-answer-to-is-richer-than-you.test.ts` walks every holding edge and pins
+all four, including the one that must stay possible.
 
 ### A house that administers a settlement
 
@@ -319,10 +360,18 @@ takes a location and returns the house, what the town pays, and - where nobody h
 charges and no place could say who charges at it, so a verb at a city gate would have
 had to search twenty-one levying houses for one whose prose mentioned a gate.
 
-#### What is still not modelled
+#### And the settlements that were only a sentence
 
 The Ancient Bough Grove *"administers a valley, a mountain and four settlements"* and
-those four settlements are on no map: the Grove Basin's `places` is empty and no
-`RegionPlace` names them. So the house the catalog describes as the clearest case of
-direct administration in the province collects nothing, and the engine has no answer
-for it yet.
+those four settlements were on no map: the Grove Basin's `places` was empty and no
+`RegionPlace` named them, so the house the catalog describes as the clearest case of
+direct administration in the province collected nothing at all. It came last of
+thirty-eight houses at 175 stones a year.
+
+They are on the map now - Plum Village, Two Streams, Smoke Ridge and the hamlet at Pine
+Spring, three villages and a hamlet inside a day's walk of the valley - and the Grove
+takes 990 a year off them, which puts it thirty-first. That is the shape the ordering
+wants: a house with no vein and no levy that administers a wooded basin directly eats
+better than a wandering order and nothing like as well as anybody sitting on rock. Its
+four settlements together are still worth less than the weakest single vein anybody
+holds.

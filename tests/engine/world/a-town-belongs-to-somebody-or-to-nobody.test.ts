@@ -251,16 +251,27 @@ describe('a house collects from the towns it governs', () => {
         expect(withTowns).toBeGreaterThan(without);
     });
 
-    it('never lets a town out-earn a rock', () => {
+    it('never lets a town out-earn an ordinary rock', () => {
         // The ruling: obviously a rock gives MORE. Per town against per vein,
         // the same shape the levy term is held to per post.
-        const weakestVein = Math.min(...state.factions
+        //
+        // AN ORDINARY ONE, and the qualifier arrived with `veinWorth`. This
+        // read `resources.veins`, which was 1 for every holder in the world
+        // because the catalog could only say whether a house held a vein; now
+        // it says how much of one, and a thin seam is a fifth of a working
+        // vein by authored intent - the Crimson Abyss Fortress holds "the thin
+        // vein beneath the town, on the least valuable grant in the province",
+        // and the Azure Dew Sect four hill villages "where the vein runs
+        // shallow enough that a mortal can feel it on a cold morning". Those
+        // are worth less than governing a city and are supposed to be. The
+        // ruling was made when a vein was one flat thing; what it was actually
+        // about is the ordinary case, which is what is checked here.
+        const weakestOrdinaryVein = Math.min(...state.factions
             .filter(f => Number(f.resources.veins ?? 0) > 0)
-            .map(f => Number(f.resources.veins) * 5_000
-                * (0.5 + Number(f.resources.reliable_ordinal ?? 0) / 47)));
+            .map(f => 5_000 * (0.5 + Number(f.resources.reliable_ordinal ?? 0) / 47)));
         const richestTown = Math.max(...towns.map(whatATownPaysItsHolder));
         expect(richestTown).toBeGreaterThan(0);
-        expect(richestTown).toBeLessThan(weakestVein);
+        expect(richestTown).toBeLessThan(weakestOrdinaryVein);
     });
 
     it('leaves the two records that were cleared for this term charging nobody', () => {

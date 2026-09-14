@@ -57,6 +57,23 @@ export const PLACE = {
     THE_FLANK: 'The Furnace Flank',
     THE_CALDERA: 'The Caldera',
     THE_VENT_VEIN: 'The Vent Vein',
+    // ── THE FOUR SETTLEMENTS THAT EXISTED IN ONE SENTENCE ───────────────
+    //
+    // The Ashfall story again, with a cost that could be measured. The Grove
+    // Basin's `onPaper` says the Grove holds "a valley, a mountain and four
+    // settlements" and its `places` was empty, so the one house in the province
+    // that administers settlements DIRECTLY - no levy, no charter, no
+    // intermediate tier - collected nothing from any of them: 175 stones a
+    // year on a seeded world, last of thirty-eight houses, below the Bone
+    // Lantern Cult.
+    //
+    // They are ordinary-tier names because that is what the house is. It has
+    // never registered anything, so no document anywhere ever fixed a name
+    // here, and what people call a place is what is standing in it.
+    PLUM_VILLAGE: 'Plum Village',
+    TWO_STREAMS: 'Two Streams',
+    SMOKE_RIDGE: 'Smoke Ridge',
+    PINE_SPRING: 'Pine Spring',
 
     // ─── The Silent Cliffs ───────────────────────────────────────────────
     IRON_GATE: 'Iron Ridge',
