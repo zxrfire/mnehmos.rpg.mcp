@@ -36,9 +36,6 @@ import {
 } from '../../../src/engine/world/a-house-knows-its-own-by-a-plate-and-a-token.js';
 import { BEAST_MATERIALS } from '../../../src/data/cultivation/beasts.js';
 import { roomAuthorityOf } from '../../../src/engine/world/architecture.js';
-import { portfoliosIn } from '../../../src/engine/social-leverage/authority-for-an-order.js';
-import { whoAnswersAbout } from '../../../src/engine/social-leverage/what-an-elder-is-in-charge-of.js';
-import { getSect } from '../../../src/data/cultivation/sects.js';
 
 describe('what a house issues', () => {
     it('gives every disciple a token to carry and a plate on a wall', async () => {

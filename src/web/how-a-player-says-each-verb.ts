@@ -414,6 +414,19 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'what are my options for getting a method',
         'is being taught the only way to a better art'
     ],
+    // The act, where `acquisition` is the comparison. Every exemplar here has
+    // the speaker DOING the writing, and not one of them asks what the options
+    // are - that sentence belongs next door and costs nothing, where this one
+    // costs decades.
+    derive: [
+        'I write the next stage of the manual myself',
+        'I work out what comes after this method on my own',
+        'I set out to write the continuation of my art',
+        'I spend however long it takes putting down what comes next',
+        'nobody has written past this so I will',
+        'I extend the canon myself',
+        'I compose the stage the book is missing'
+    ],
     ceiling: [
         'how far will this method carry me',
         'is there a limit to what I know',

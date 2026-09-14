@@ -36,12 +36,16 @@
  *      wait out.
  *   4. The wound is the flesh family out of `wounds.ts`, not the channel
  *      family it used to borrow.
- *   5. There is one medicine for it, it is craftable, it is past the cash
- *      line, and it reaches nothing else the catalog authored as untreatable.
+ *   5. What answers it is structural repair medicine, by RANK, out of reach in
+ *      the way this world expresses out of reach - and nothing on the graded
+ *      treat-injury ladder ever reaches a permanent wound. This claim used to
+ *      read "there is one medicine for it, it is craftable, and it names this
+ *      wound", which was a bespoke pill written on a premise the design owner
+ *      has since overruled. See the block's own header.
  *
  * Red-checked: flipping `theBodyPutsItBack` to true for every part fails (1)
  * and (3); putting the share thresholds back in charge of permanence fails
- * (1); dropping `mends` off the pill fails (5).
+ * (1); making `repairRefusalReason` demand a named `mends` again fails (5).
  */
 
 import { describe, it, expect } from 'vitest';
@@ -53,9 +57,14 @@ import {
 } from '../../../src/engine/world/what-it-costs-to-give-away-a-piece-of-yourself';
 import { REGROWTH_YEARS_BY_GRADE } from '../../../src/engine/world/what-a-place-still-has-in-the-ground';
 import { isPermanentWound, WOUND_TYPES } from '../../../src/data/cultivation/wounds';
-import { pillThatMends } from '../../../src/data/cultivation/pills';
-import { RECIPES } from '../../../src/data/cultivation/recipes';
-import { pillCashPrice, cashRefusalReason } from '../../../src/engine/cultivation/buying-and-bartering-pills';
+import { PILLS } from '../../../src/data/cultivation/pills';
+import {
+    anIndividualCouldPay,
+    cheapestMedicineFor,
+    NOTHING_REPAIRS_ABOVE_ORDINAL,
+    repairWeightInStones,
+    theRungsThatRepairAPermanentInjury
+} from '../../../src/engine/cultivation/what-structural-repair-medicine-can-reach';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms';
 
 /** Every rung the ladder runs, sampled at its three heights and its ends. */
@@ -145,61 +154,61 @@ describe('a covering comes back, and the span still says what that costs', () =>
     });
 });
 
-describe('the medicine, and the wounds it must not reach', () => {
-    const MEDICINE = pillThatMends('severed-flesh');
+/**
+ * WHAT ANSWERS IT, AND THE PREMISE THAT WAS OVERTURNED UNDER THIS BLOCK.
+ *
+ * This block used to pin a bespoke pill - one medicine that NAMED `severed-
+ * flesh` and reached nothing else - written because `repairRefusalReason` said
+ * in as many words that structural repair medicine mends a structure that did
+ * not set at a realm wall and refuses everything else. The design owner
+ * overruled that premise rather than the reading of it: **a dose repairs every
+ * permanent injury at its rank.** So the pill went, and what a maiming is
+ * answered by is the road every permanent injury is answered by.
+ *
+ * What survives from the old block is the claim worth keeping: a part that is
+ * gone is not handed to the graded treat-injury ladder, and the thing that does
+ * answer it is out of reach in the way this world expresses out of reach.
+ */
+describe('what answers a part that is gone', () => {
+    const AT = 10;
+    const MEDICINE = cheapestMedicineFor('severed-flesh', AT);
 
-    it('exists, and is the only thing that names this wound', () => {
-        expect(MEDICINE, 'nothing in the catalog grows a part back').not.toBeNull();
-        expect(MEDICINE!.effect, 'a permanent wound was handed to the graded treat-injury ladder')
-            .toBe('mends_what_will_not_close');
+    it('is structural repair medicine, at the rung the body is standing on', () => {
+        expect(MEDICINE, 'nothing in the world answers a maiming').not.toBeNull();
+        // Rank and not the named break: this wound is on no rung's `mends`
+        // list, and that is the whole of what the ruling changed.
+        expect(MEDICINE!.mends).not.toContain('severed-flesh');
+        expect(AT).toBeLessThanOrEqual(MEDICINE!.reachesUpToOrdinal);
+        // And a bigger body wants a bigger dose.
+        const higher = cheapestMedicineFor('severed-flesh', MEDICINE!.reachesUpToOrdinal + 1);
+        expect(higher?.id, 'the same dose answered a body past its reach').not.toBe(MEDICINE!.id);
     });
 
-    it('is expensive in the way this world expresses expensive', () => {
-        // Past the cash line, which is the counted/tracked line and the
-        // barter line at once. A counter names no figure and says why.
-        expect(pillCashPrice(MEDICINE!), 'a counter quoted a price for it').toBeNull();
-        expect(cashRefusalReason(MEDICINE!), 'no sentence for a counter that will not quote')
-            .not.toBeNull();
+    it('is out of reach in the way this world expresses out of reach', () => {
+        // Counted in single digits, held by named bodies, and worth more than
+        // everything the patient will ever accumulate.
+        expect(repairWeightInStones(MEDICINE!)).toBeGreaterThan(0);
+        expect(anIndividualCouldPay(MEDICINE!, AT),
+            'a maiming is answered by something an individual could save up for').toBe(false);
     });
 
-    it('is craftable, so the supply is not a fixed and falling count', () => {
-        const recipe = RECIPES.find(r => r.producesPillId === MEDICINE!.id);
-        expect(recipe, 'the only medicine for a maiming has no formula').toBeTruthy();
-        expect(recipe!.ingredients.length).toBeGreaterThan(0);
-    });
-
-    it('answers a permanent wound only where a medicine is NAMED for that wound', () => {
-        // THE GUARD, AND WHY IT MOVED BY ONE.
-        //
-        // A rooted heart demon and a burnt span say in their own rows that
-        // nothing answers them, and they mean it: a medicine that quietly
-        // reached one would be rewriting a ruling nobody asked about. That
-        // still holds and is the assertion below.
-        //
-        // A parted meridian is the exception, and it was the catalog's
-        // exception before it was anybody's decision: `pill-severed-meridian-
-        // restoration` has existed at immortal grade saying it "reverses damage
-        // that every lesser medicine calls permanent", while being a
-        // `treat_injury` row, which is graded by severity and skips permanent
-        // wounds - so a pill named for a severed meridian could never touch
-        // one. The row and the resolver disagreed and the row was not the part
-        // that was wrong. The wound's own "nothing" is what physicians say, and
-        // physicians are not the world.
-        //
-        // What keeps this from being a slope: the medicine has to NAME the
-        // wound. Nothing reaches a permanent wound on a severity band, ever.
-        const answered = WOUND_TYPES
-            .filter(w => w.permanent)
-            .filter(w => pillThatMends(w.key) !== null)
-            .map(w => w.key)
-            .sort();
-        expect(answered).toEqual(['severed-flesh', 'severed-meridian']);
-
-        // And every one of them is answered by a row that says which wound it
-        // is for, rather than by the graded ladder.
-        for (const key of answered) {
-            expect([key, pillThatMends(key)!.effect])
-                .toEqual([key, 'mends_what_will_not_close']);
+    it('leaves nothing on the graded treat-injury ladder claiming to reach a permanent wound', () => {
+        // THE GUARD. The graded line is severity against the body carrying it
+        // and it must never reach a permanent injury, or a medicine for a
+        // missing arm reaches a rooted heart demon on the same band. Rank is
+        // the axis for what does not close; severity is the axis for what does.
+        for (const pill of PILLS) {
+            if (pill.effect !== 'treat_injury') continue;
+            expect(pill.mends ?? [], `${pill.id} names a wound on the graded ladder`).toEqual([]);
         }
+    });
+
+    it('has one rung above the rank ladder, and it does not let the taker choose', () => {
+        const anyRank = theRungsThatRepairAPermanentInjury()
+            .filter(rung => rung.reachesUpToOrdinal === null);
+        expect(anyRank.length, 'the chaos rung is missing or doubled').toBe(1);
+        expect(anyRank[0]!.choosesTheWound).toBe(false);
+        expect(cheapestMedicineFor('severed-flesh', NOTHING_REPAIRS_ABOVE_ORDINAL + 1),
+            'the rank ladder reached past its own ceiling').toBeNull();
     });
 });

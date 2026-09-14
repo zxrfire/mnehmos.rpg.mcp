@@ -75,7 +75,7 @@ const isLocal = (id: string) => LOCAL_SECTS.some(sect => sect.id === id);
  * now. Guessing produced a test that named the Azure Cloud Pavilion at a
  * cultivator who had never heard of it.
  */
-function aHouseTheyKnow(gate: { awareness: (id: string, kind: string) => { name: string }[] }, holderId: string) {
+function aHouseTheyKnow(gate: KnowledgeGate, holderId: string) {
     const known = gate.awareness(holderId, 'sect');
     expect(known.length, 'the cultivator was told about no house at all').toBeGreaterThan(0);
     return SECTS.find(sect => sect.name === known[0].name)!;
@@ -294,12 +294,12 @@ describe('being in the room counts', () => {
             INSERT INTO cultivators (
                 id, run_id, name, kind, spirit_root, attributes, realm_ordinal,
                 cultivation_progress, hp, max_hp, qi, max_qi, satiety, starvation_turns,
-                age, years_at_current_realm, spirit_stones, sect_id, sect_rank, location,
+                age, years_at_current_realm, spirit_stones, sect_id, location,
                 feuds, known_techniques, alive, death_cause, died_on_turn, created_at, updated_at
             ) VALUES (
                 'npc-stranger', NULL, @name, 'npc', 'single_water',
                 '{"might":2,"insight":2,"fortune":1,"charm":2}', 8,
-                0, 60, 60, 30, 30, 100, 0, 40, 2, 200, NULL, NULL, @where,
+                0, 60, 60, 30, 30, 100, 0, 40, 2, 200, NULL, @where,
                 '[]', '[]', 1, NULL, NULL, @now, @now
             )
         `).run({ name, where, now });
@@ -407,7 +407,12 @@ describe('the prompt never carries the answer key', () => {
 
     it('gives the narrator an explicit whitelist and nothing beyond it', () => {
         const message = composeNarrationUser(
-            { headline: 'A road.', lines: [`The road out of ${HOME_PLACE} is closed.`], prose: '' },
+            {
+                headline: 'A road.',
+                lines: [`The road out of ${HOME_PLACE} is closed.`],
+                structure: [],
+                prose: ''
+            },
             {
                 place: HOME_PLACE,
                 ambient: 'thin',
@@ -434,7 +439,7 @@ describe('the prompt never carries the answer key', () => {
 
     it('says so plainly when the cultivator has heard of nothing', () => {
         const message = composeNarrationUser(
-            { headline: 'x', lines: ['y'], prose: '' },
+            { headline: 'x', lines: ['y'], structure: [], prose: '' },
             { place: 'Nowhere', ambient: 'thin', awareness: [] }
         );
         expect(message).toMatch(/heard of nobody and nowhere/);
@@ -715,12 +720,12 @@ describe('a permitted lookup does not leak the names inside it', () => {
             INSERT INTO cultivators (
                 id, run_id, name, kind, spirit_root, attributes, realm_ordinal,
                 cultivation_progress, hp, max_hp, qi, max_qi, satiety, starvation_turns,
-                age, years_at_current_realm, spirit_stones, sect_id, sect_rank, location,
+                age, years_at_current_realm, spirit_stones, sect_id, location,
                 feuds, known_techniques, alive, death_cause, died_on_turn, created_at, updated_at
             ) VALUES (
                 'npc-envoy', NULL, 'The Envoy', 'npc', 'single_metal',
                 '{"might":3,"insight":3,"fortune":2,"charm":3}', 22,
-                0, 200, 200, 90, 90, 100, 0, 300, 4, 9000, @sect, 'Elder', @where,
+                0, 200, 200, 90, 90, 100, 0, 300, 4, 9000, @sect, @where,
                 '[]', '[]', 1, NULL, NULL, @now, @now
             )
         `).run({ sect: otherSect.id, now, where: HOME_PLACE });

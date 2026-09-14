@@ -67,8 +67,12 @@ const CARRIES = {
     relationOf: { 'the-dead': 'sibling' }
 };
 
-/** An account the brother is already carrying about `f7`. */
-function heldRecord(subjectId: string): ObligationRecord {
+/**
+ * An account the brother is already carrying about `f7`. The subject is
+ * nullable because `NO_NAME_ON_IT` is exactly that null, and an account with
+ * nobody's name on it is the case this file is about.
+ */
+function heldRecord(subjectId: string | null): ObligationRecord {
     return createObligation({
         kind: 'grudge',
         holderId: 'brother',
@@ -300,7 +304,11 @@ describe('and a name can arrive later', () => {
         expect(out.opens!.id).toBe(held.id);
         expect(out.opens!.subjectId).toBe('killer');
         expect(out.opens!.tags).not.toContain(NO_NAME_TAG);
-        expect(out.opens!.tags.some(t => t.startsWith('name-attached:'))).toBe(true);
+        // `ObligationInput.tags` is optional, so the row has to carry some
+        // before the claim about what is in them means anything.
+        const tags = out.opens!.tags;
+        expect(tags).toBeDefined();
+        expect(tags!.some(t => t.startsWith('name-attached:'))).toBe(true);
     });
 
     it('does not move the day the account opened', () => {

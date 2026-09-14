@@ -16,13 +16,14 @@
  */
 
 import { makeGame } from '../tests/web/harness.js';
-import { SECTS, DAO_HOUSES, getSect, intakeRouteOf, sectThreat } from '../src/data/cultivation/sects.js';
+import { SECTS, DAO_HOUSES, intakeRouteOf, sectThreat } from '../src/data/cultivation/sects.js';
 import { APEX_INSTITUTIONS, COURTS } from '../src/data/cultivation/hierarchy.js';
 import { TECHNIQUES } from '../src/data/cultivation/techniques.js';
 import {
     rankName, REALM_TIERS, FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL
 } from '../src/engine/cultivation/realms.js';
 import { resolveMelee, type SideMemberInput } from '../src/engine/cultivation/combat.js';
+import { A_BLOW_MEANT_TO_END_IT } from '../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { forStream } from '../src/engine/cultivation/rng.js';
 import { artifactsOwnedBy } from '../src/data/cultivation/artifacts.js';
 import { FACTION_PARENTAGE, idsForFaction } from '../src/data/cultivation/hierarchy.js';
@@ -123,7 +124,7 @@ async function everyDoor(): Promise<void> {
             await (low as any).newRun('Beggar');
             stand(lowRepos, low, Math.max(0, bar - 3));
             hearOf(low, sect.id, sect.name);
-            const below = await say(low, `I apply to the ${sect.name}`);
+            await say(low, `I apply to the ${sect.name}`);
             const letIn = cur(low).sectId !== null && cur(low).sectId !== undefined;
             if (letIn) {
                 note('doors', 'broken',
@@ -565,10 +566,10 @@ function clash(a: SideMemberInput[], b: SideMemberInput[], seedKey: string, seed
     for (let i = 0; i < seeds; i++) {
         const r = resolveMelee(
             [
-                { id: 'a', name: 'a', members: a, intent: { goal: 'kill' } },
-                { id: 'b', name: 'b', members: b, intent: { goal: 'kill' } }
+                { id: 'a', name: 'a', members: a, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 'b', name: 'b', members: b, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('cataclysm', seedKey, i), ambient: AMBIENT, turn: i, intent: { goal: 'kill' } }
+            { rng: forStream('cataclysm', seedKey, i), ambient: AMBIENT, turn: i, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (r.winningSideId === 'a') wins++;
     }

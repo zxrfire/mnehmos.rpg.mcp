@@ -71,7 +71,9 @@ describe('a house is somewhere you can walk to', () => {
     it('lands a stranger at the gate and says what would open it', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-stranger', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Stranger');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
         const found = aSeatedHouse(world);
         expect(found, 'this world seeded no house with a seat').not.toBeNull();
         const { faction, seat } = found!;
@@ -109,7 +111,9 @@ describe('a house is somewhere you can walk to', () => {
     it('does not stop somebody of the house', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-member', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Disciple');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
         const { faction, seat } = aSeatedHouse(world)!;
 
         // Arranged fast, which `AGENTS.md` permits: what is being measured is
@@ -130,7 +134,9 @@ describe('a house is somewhere you can walk to', () => {
     it('walks somebody in behind a host who owes them, and not behind anybody else', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'gate-guest', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Guest');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
         const { faction, seat } = aSeatedHouse(world)!;
 
         // WHO MAY HOST IS A RANK READING. Asked of the same function the gate
@@ -187,7 +193,7 @@ describe('a house is somewhere you can walk to', () => {
 
         // ── AND THE ROAD ITSELF. A host who owes you brings you in.
         writeOneObligation(repos.db as any, createDebt({
-            holderId: host.id,
+            holderId: host!.id,
             subjectId: cultivator.id,
             cause: 'saved_life',
             severity: 'serious',

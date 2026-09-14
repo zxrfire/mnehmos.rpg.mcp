@@ -49,6 +49,9 @@ function thing(over: Partial<AThingInSomebodysHands> = {}): AThingInSomebodysHan
         listStones: 8,
         awkwardToHold: 0,
         whoWouldWantAWord: null,
+        // Required, and it was absent: every thing this fixture built read as
+        // undefined, which the module treats exactly as `false`.
+        copyable: false,
         ...over
     };
 }

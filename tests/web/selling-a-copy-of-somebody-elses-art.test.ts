@@ -65,7 +65,7 @@ import { canPointAt } from '../../src/engine/social/discovery';
 import { whatTheirReferenceAffords } from '../../src/engine/world/recognising-whose-art-you-just-watched';
 import { whatThisPersonWouldPartWith } from '../../src/engine/world/what-somebody-standing-here-would-part-with';
 import { SECTS } from '../../src/data/cultivation/sects';
-import { TECHNIQUES, getTechnique } from '../../src/data/cultivation/techniques';
+import { TECHNIQUES, stopsSomewhere } from '../../src/data/cultivation/techniques';
 import { makeGameInWorld, engineCalls } from './harness';
 
 /** The Azure Cloud Pavilion's own sword. One house teaches it. */
@@ -79,9 +79,16 @@ const THE_SWORD = 'void-piercing-sword-domain';
 describe('whose an art is, and whether a stall stocks it, are different questions', () => {
     it('a house signature is somebody\'s even though a stall would never carry it', () => {
         expect(housesTeaching(THE_SWORD)).toBe(1);
-        // The old line, kept visible: this is exactly the answer that made
-        // twelve signature arts sellable by anybody.
-        expect(isCommonlyHeld(THE_SWORD)).toBe(true);
+        // THE DEFECT THIS RECORDED, AND WHAT CLOSED IT. `isCommonlyHeld` opens
+        // `if (t.cap == null) return true`, and while only cultivation manuals
+        // carried a cap that first line answered "anybody's" for every fighting
+        // art in the catalog - which is what made twelve signature arts
+        // sellable by anybody. Every art carries a cap since the two kinds of
+        // technique collapsed into one, so the Pavilion's sword falls through
+        // to the real test and comes back scarce. The two predicates now agree,
+        // and the point of the file - that they answer DIFFERENT questions -
+        // stands on the test below rather than on this disagreement.
+        expect(isCommonlyHeld(THE_SWORD)).toBe(false);
         expect(noHouseCanCallItTheirs(THE_SWORD)).toBe(false);
         expect(whoseArt(THE_SWORD)).toEqual([PAVILION]);
     });
@@ -122,8 +129,7 @@ describe('whose an art is, and whether a stall stocks it, are different question
      * exists so an unbacked nobody can own a road.
      */
     it('leaves market stock exactly where it was', () => {
-        const primer = (TECHNIQUES as readonly { id: string; class?: string; cap?: number | null }[])
-            .find(t => t.class === 'cultivation' && t.cap != null && Number(t.cap) <= 13);
+        const primer = TECHNIQUES.find(t => stopsSomewhere(t) && Number(t.cap) <= 13);
         expect(primer).toBeTruthy();
         expect(isCommonlyHeld(primer!.id)).toBe(true);
     });
@@ -153,8 +159,7 @@ describe('copying takes having mastered it, which is a fact about the holder', (
     });
 
     it('leaves a gathering primer copyable by everybody holding one', () => {
-        const primer = (TECHNIQUES as readonly { id: string; class?: string; cap?: number | null }[])
-            .find(t => t.class === 'cultivation' && t.cap != null && Number(t.cap) <= 13)!;
+        const primer = TECHNIQUES.find(t => stopsSomewhere(t) && Number(t.cap) <= 13)!;
         expect(couldWriteOutACopy({ realmOrdinal: 0 }, primer.id)).toBe(true);
     });
 

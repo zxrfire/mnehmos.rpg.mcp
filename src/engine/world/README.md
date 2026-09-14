@@ -1081,12 +1081,85 @@ pieces of ground, seed `beast-climb-probe`: 50% never move; at 400 years 37% hav
 rung and none authored below the change has crossed; at 800 years 114 pairs have stood up,
 at 2,000 years 1,094, at 5,000 years 2,117 of 5,400.
 
+### And the hunt reaches that individual, not the catalog row
+
+`whatIsOnThisGround` filtered on the CATALOG ordinal, so none of the climb reached the
+player: a hawk minted at 17 that had sat on a vein for nine centuries was still offered as
+a rung-17 encounter, fought at 17, and its core priced at what 17 yields. The hunt now
+takes what the world holds in particular on this ground and reads every species row at the
+rung its individual actually stands on.
+
+**The core is the line, and the two sides of it are different hunts.** Below it the draw is
+what it was - whatever is standing there, which is the right answer and a cheap one. At or
+above it the draw does not offer one at all: there is ONE of them on this ledge, `groupSize`
+is 1 on every cored row, and the id is a function of the species and the ground. So it has
+to be gone out after by name, it is reachable only where `beastsOnThisGround` says it
+lives, and once its row is dead that ledge does not hold another.
+
+**The effort is days.** `daysToFindTheOneHere` is six times an ordinary hunt, plus half
+again for every rung the individual has climbed past where the catalog puts its kind, times
+what `ability.kind` does for not being found - `concealment` doubles it. A bare hunt is ten
+days; going out after the thing on the ledge is a season, and the season is spent in
+`simulateTimeSkip` like any other, with the rations and the random events that implies.
+Nothing new says what a species is like: the effort reads the one column the catalog
+already authors.
+
+**And a refusal costs nothing and names the route.** Naming something that does not live
+here is answered before a day is spent, with what does live here that carries a core, by
+name and rung. Every hunt says that list whether or not the draw turned anything up,
+because a player never told what is here has no way to learn there is anything to name.
+
+### It fights, and it dies, and that is the only lid on the climb
+
+Asked whether to cap a climb that reads 35 at a five-thousand-year horizon, the design
+owner ruled against a cap: the lid is the one every NPC has. `oneOfTheseFoughtOnItsOwnGround`
+runs inside the branch `applyAdvancement` already takes for these rows, on the twelve-year
+review, against whoever is standing on the same ledge within `CASUAL_KILL_MAX_GAP`.
+
+**It is not a template on the pressure table, and that was measured rather than argued.**
+The first cut was one. A row exists only where somebody has hunted, so in a world nobody
+has been out in the template could never fire - and still sat in the weighted draw, moving
+the cursor for every other event. `driver.test.ts` went red on it: `vein_lost` stopped
+happening in a 120-year window on a seed where it always had. A world with no beast rows in
+it has to draw exactly what it drew before, and the only way to promise that is to live
+where such a world never goes.
+
+Who wins is not decided in beast code. `regardFor` prices the gap and `notFinishedChance`
+and `lostChance` read it, which are the same two functions a house's sending uses; one
+uniform draw nests the two outcomes, because `lostChance` is the square of the other.
+A house sending a party out after a core is deliberately NOT this - that errand has its own
+module, and a second one here would be the same decision made twice.
+
+**What a death leaves.** `a-beast-that-climbs-also-fights-and-dies.ts`. A beast's pouch is
+empty by construction, so what it leaves is itself: what the killer could not reach stays on
+the body as object rows with `possessorId: null, ownerId: null, locationId` set, which is
+exactly the triple `whatIsStandingFreeAt` already looks for, so a core on the ground is
+reachable by the taking verb with no new read anywhere. Only the tracked half gets a row -
+pelts and sinew are an amount, and an amount in open country is what scavengers are. An
+`AreaStatus` says a body is lying there and lifts itself after 90 days on its own
+`reviewOnDay`; nothing sweeps it.
+
+**And a kill is a meal.** What ate one climbs a rung for it, and that sticks without being
+stored twice: `theRungThisRowShouldBeAt` takes the higher of where a row already stands and
+what sitting would have given it, so a rung reached by eating is never read back down.
+
+**Measured on seed `beast-climb-probe`, 200 simulated years:** of 25 standing in the world
+5 were dead (20%), of 100 standing 16 were dead (16%), and the deepest survivor was still
+at 38. So roughly one in six a couple of centuries, which is a lid rather than a cull -
+half of them are gone in something under a millennium, and the ones on ground nobody stands
+on are never touched at all, because the roll needs somebody on the same ledge.
+
 **It did not make the advance dearer.** The beast branch in `applyAdvancement` REPLACES the
 human one - a beast has no book, no teacher, no house ground and no province ceiling, and
 the pass was computing four of those and then refusing it at a ceiling of 20. One reading is
 9.9us; 200 simulated years cost 26.5ms/year with no beast rows standing in the world, 22.8
 with 25 and 21.9 with 100. Nothing sweeps ground nobody has met, which follows from the row
 being written on contact.
+
+Re-measured after mortality went in, on a shared machine, so only the SHAPE is comparable:
+9.3us a reading, and 31.7ms/year with no beast rows, 38.0 with 25 and 30.9 with 100. The
+spread across the three is noise rather than a trend, which is the claim - more of them
+standing in the world is not dearer.
 
 **The clock starts at the row.** Anchoring it on the world's calendar age instead mints
 every beast at what a thousand years does, because a world opens at year 1,000 - which is a
@@ -2393,6 +2466,12 @@ what-one-of-the-worlds-own-people-knows.ts
                  the gate's optional second reader: where a world NPC stands on
                  one house, place, person or fact, read off the world and stored
                  nowhere
+where-somebody-stands-on-a-houses-roll.ts
+                 the one read of a rung. Two stores - the roll for a cultivator
+                 the database holds, `factionRankIndex` for somebody the world
+                 holds - the world row asked first, and the house's own word for
+                 the rung. A mirrored string on the cultivator row was a third
+                 copy and is gone
 the-ties-an-ordinary-life-produces.ts
                  households, teaching lines, shared service and being passed
                  over - the supply of people who would notice you were gone
@@ -2542,6 +2621,19 @@ asks this same read once per house seat on the day a door opens, so the WINDOW d
 whether a door is a private find or a scramble and no second threshold exists. Measured
 over six worlds run three hundred years, houses sent per opening out of 38 seats:
 7d 0.00, 10d 0.00, 14d 0.00, 18d 8.62, 21d 13.36, 30d 14.06, 40d 32.14, 60d 29.88.
+
+**Which of the two arms a house gets is its own people's, and is a reading.**
+`a-house-knows-a-date-because-somebody-in-it-does.ts`. A house holds no schedule and must
+not - an institution has no awareness record, the people in it do - so the answer is
+derived from the roll: somebody who can read the schedule (`readSchedule`, the same bar
+the player's own door goes through) AND who has something of that ground (the `place` arm
+of `whatOneOfTheWorldsOwnPeopleKnows`). Both halves, because being able to work out when a
+place is next due is not the same as having heard of the place. Measured on one pinned
+world, house against scheduled site: at seeding 190 of 190 pairs hold somebody who can
+read a schedule and **0** hold somebody who also has the ground; after 150 years of the
+world running errands, 374 of 429 and **81** - 18.9%. So the early arm is earned by
+history rather than handed out, and 15% of the sendings the world makes are houses that
+were already walking. A caller that supplies no such reading gets the late arm unchanged.
 Nothing here stores anything; depth is the same halving
 `expeditionBudget` does, applied to a window already part spent. **Routed by
 `src/web/walking-up-to-a-door-that-closes.ts`**, from the travel arrival and from standing
@@ -2614,8 +2706,32 @@ Two readings over columns that already existed. Neither stores anything.
   **What the world consumes**, measured over six worlds run three hundred years:
   the finite reserve - ground shut until somebody opens it - goes at 56.1%, replenished by
   prospecting. A door on a season goes at **1.1%**: it is not spent by the parties that
-  walk through one window of it, so it comes round and it is a race again. A legacy is
-  never taken by the world at all, because the world does not model sitting a trial.
+  walk through one window of it, so it comes round and it is a race again.
+
+  **And ground that never shut was untouchable by construction.** `ruin_opened` tested a
+  cycle, then `sealed`, then the `ruined` tag, and a never-shut site is none of those, so
+  it fell through every arm: 1 of 13 emptied over nine pinned worlds run 1,800 years, and
+  that one was minted by prospecting afterwards. The tag is now in the pool and the
+  claimant is gated on `thresholds.mastery` - below it the same row reads `surviving`,
+  which is coming back out rather than coming out with anything. Over four pinned worlds,
+  7 never-shut grounds: **0 of 7 at fifty years, 4 of 7 at a hundred, 7 of 7 at two
+  hundred.** Nothing goes before the world produces somebody up to the ground, and then it
+  goes quickly - because the `openable` pool at day 0 is one or two locations and all of it
+  is never-shut ground, a never-shut site being `discovered` by construction while a sealed
+  ruin is not until prospecting finds it. That share per century is a design judgement and
+  the lever is the pass's weight against a near-empty pool, not the gate.
+- **`a-legacy-has-a-name-on-it-and-a-treasury-has-stock.ts`** - which of the two a piece of
+  never-shut ground is, and what comes off it. Derived off `provenanceStanding`, which
+  `ruinProvenance` already writes: `documented` is a written record of who built it, which
+  is a name on the thing and therefore a bequest; `attributed` is the province saying whose
+  compound that was, which is a name on the ground and stock inside it. A legacy hands over
+  a technique with `provenance: 'ruin'` - the set no living institution transmits, where an
+  authored trial's `prize.techniqueIds` already comes from - at the deepest rung the ground
+  was calibrated for, because somebody left their own art and their own art sits at their
+  own rung. A treasury hands over the objects standing in it. The other candidate rule, the
+  hoard's own composition, was measured and dropped: every never-shut ground in nine worlds
+  came back with at least as many manuals as objects, so it sorts thirteen places into
+  thirteen and none.
 - **`a-house-that-shuts-a-public-ruin.ts`** - ground is public by agreement, so
   `controllingFactionId` on a ruin can only mean a house has shut it to everybody else.
   `whoTurnsYouAwayFrom` already reads that column as somebody at the door, which is the
@@ -2623,6 +2739,44 @@ Two readings over columns that already existed. Neither stores anything.
   in, one `ObligationRecord` each, severity off what the province has left and what the
   ground was worth. Measured at day 0: available on 41 of 456 house-and-open-ruin pairs,
   a median of 18 accounts each. A monopoly is meant to be rare and expensive.
+
+### And what is behind the door is the top of the craft ladder
+
+**`what-a-sealed-pocket-still-grows.ts`** - the materials the immortal and chaos formulas
+name exist on this side and are sealed. The ruling: getting into a pocket and back out
+carrying something is the road to the top of the craft ladder, a finished dose in
+circulation came from above because that road is hard rather than closed, and the gate is
+the door and the material behind it - never a flag that forbids the attempt.
+
+Measured before it existed: **not one unit of immortal- or chaos-grade material was
+standing anywhere in a seeded world.** `whatTheHouseKeepsToWorkWith` skips any grade whose
+`refiningOrdinalFor` is above the best furnace a house could keep and both top grades sit
+at the True Immortal rung, and no forage below the Lid reaches harvest ordinals of 29 to
+41. The formulas named a bill nothing in the world could supply.
+
+Nothing new decides where a stand is. A pocket holds one where `worthBehindTheDoor` is at
+its top step - spirit-tide qi and a hoard sealed in with it, which is the same reading that
+sets a six-hundred-year cycle - and the row is the triple `whatIsStandingFreeAt` already
+looks for, so whoever gets in picks it up through the taking verb with no new read
+anywhere. **Two other readings were tried and both seeded nothing**, which is why they are
+written down rather than reachable for again: `harvestOrdinal` against `thresholds.survival`
+is nought in every world (the deepest survival bar on sealed ground is 28 and the immortal
+band opens at 29), and joined with the biome it is zero stands in six worlds, because a
+ruin's ground is `ruins` whose two rows at this height ask 33 and 37.
+
+Over twelve pinned worlds
+([`probe-what-is-standing-in-the-sealed-ground.ts`](../../../scripts/probe-what-is-standing-in-the-sealed-ground.ts)):
+9.7 undrawn pockets a world, 1.8 worth six centuries, **2.1 units seeded**, and 3 of the 12
+worlds hold enough for any one formula at all. A pocket holds at most two of one thing, so
+no pocket ever fills a chaos formula - every one of those names two different things at
+this height - and a full pocket fills one of the four immortal formulas that name one thing
+twice. The refinement then fails four times in five.
+
+Two absences, stated rather than hidden. **The world's own people never bring these out**:
+the `unrecovered` drain wants the `single-use` tag and the `emptied` sweep only walks ground
+that never shut, so the stock a world opens with is the stock it has. And **nothing regrows**
+- `REGROWTH_YEARS_BY_GRADE` already says 3,000 years for an immortal band and 30,000 for a
+chaos one. Closing either costs a per-year pass, which is why neither is closed here.
 
 ### The measurement, and what it is
 

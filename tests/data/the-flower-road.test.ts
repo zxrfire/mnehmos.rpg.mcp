@@ -38,7 +38,11 @@ import { domainForSubject } from '../../src/engine/cultivation/understanding.js'
 
 const COURT = 'sect-orchid-court';
 const court = SECTS.find(s => s.id === COURT)!;
-const canons = FLOWER_ARTS.filter(t => t.class === 'cultivation');
+// The five books the Court climbs on, by their own category. This filtered on a
+// predicate that split the catalog into arts you practise and arts you use;
+// every art carries somebody now, so the five are picked out by what they ARE
+// rather than by what they do.
+const canons = FLOWER_ARTS.filter(t => t.category === 'cultivation');
 
 describe('the flower road is built the way the sword road is', () => {
     it('names its subject on the row rather than being inferred from an element', () => {
@@ -106,7 +110,7 @@ describe('the road stops below the house that teaches it', () => {
         // upward, some book the Court teaches must always continue.
         const shelf = court.teaches
             .map(id => getTechnique(id)!)
-            .filter(t => t.class === 'cultivation');
+            .slice();
         for (let ordinal = court.admissionOrdinal; ordinal < 33; ordinal++) {
             const continues = shelf.some(
                 t => t.requiredOrdinal <= ordinal && (t.cap ?? 0) > ordinal
@@ -179,7 +183,9 @@ describe('the road is somebody\'s, and reachable', () => {
         // you climb on is not ABOUT anything the way a technique is, so most
         // canons carry no road and should not. The five flower canons are the
         // exception and name one explicitly, which is what makes them a road
-        // rather than five books that happen to be wood.
+        // rather than five books that happen to be wood. Unchanged by every art
+        // carrying somebody: `subjects` is what an art is ABOUT, and that was
+        // never the axis the retired predicate read.
         for (const t of TECHNIQUES.filter(x => x.category !== 'cultivation')) {
             expect(t.subjects.length, t.id).toBeGreaterThan(0);
         }

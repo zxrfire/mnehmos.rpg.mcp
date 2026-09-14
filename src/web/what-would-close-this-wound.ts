@@ -82,7 +82,11 @@
  * `cure.stones` can be handed a name it must not say.
  */
 
-import { PILLS } from '../data/cultivation/pills.js';
+import { PILLS, getPillsByEffect } from '../data/cultivation/pills.js';
+import { currentWoundKey, getWoundType, isPermanentWound } from '../data/cultivation/wounds.js';
+import type {
+    StructuralRepairMedicine
+} from '../data/cultivation/structural-repair-medicine.js';
 import { cashToStones, PRICES } from '../data/cultivation/mortal-world.js';
 import { localPrice } from '../data/cultivation/regions.js';
 import {
@@ -91,6 +95,11 @@ import {
     medicineReaches
 } from '../engine/cultivation/what-grade-of-medicine-a-wound-needs.js';
 import { cashRefusalReason } from '../engine/cultivation/buying-and-bartering-pills.js';
+import {
+    cheapestMedicineFor,
+    repairWeightInStones,
+    cashRefusalReason as repairCashRefusalReason
+} from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
 import {
     aThingOnOpenSale,
     whoWouldHaveHeardOfIt
@@ -143,6 +152,15 @@ export interface TheCure {
     affordable: boolean;
     /** The severity that set the requirement, so the sentence can say which wound. */
     forSeverity: Injury['severity'];
+    /**
+     * The catalog's own name for that wound, where it has one.
+     *
+     * Null for an ordinary tear, which is what the severity alone describes.
+     * It exists because the sentence used to say "a crippling tear" whatever it
+     * was talking about, and once a permanent wound can reach this read that is
+     * a maiming being called a tear.
+     */
+    forWound: string | null;
     /** What a mortal physician would have to be, to close that one. */
     physicianNeeds: TechniqueGrade;
     /** Whether a mortal physician reaches it. False is why the counter refuses. */
@@ -176,10 +194,15 @@ export interface WhoIsAsking {
  * lines later.
  */
 export function aMedicineThisHolderCouldName(
-    pill: Pill,
+    /**
+     * Either catalog's row. A structural repair medicine is never on a counter,
+     * so only a pill is asked the open-sale question - which is the whole of
+     * what the two shapes differ by here.
+     */
+    pill: Pill | StructuralRepairMedicine,
     asking: WhoIsAsking | undefined
 ): boolean {
-    if (aThingOnOpenSale(pill)) return true;
+    if ('effect' in pill && aThingOnOpenSale(pill)) return true;
     if (!asking) return true;
     // The derivation first and the rows second, and both go through the same
     // two readers everybody else uses. The rung is asked here rather than at
@@ -198,30 +221,104 @@ export function aMedicineThisHolderCouldName(
 /**
  * The medicine somebody would actually go and get for THIS wound on THIS body.
  *
- * `treat_injury` is a five-rung ladder - 60, 380, 4,000, 36,000, 400,000 - and
- * the cheapest rung of it no longer answers every wound, so the filter is
- * `medicineReaches` and not merely the effect. Everything below the wound's
- * requirement is dropped before anything is sorted, because a cheaper name is
- * worse than no name when the cheaper thing will be refused at the point of
- * use.
+ * ── TWO ROADS, AND THE WOUND SAYS WHICH ONE IT IS ON ─────────────────────
  *
- * Among what reaches, cash before barter and then cheapest first: a player who
- * can walk to a counter should be sent to the counter. The barter tiers stay in
- * the list and sort last so that a wound whose only answer is past money still
- * produces a NAME and a reason rather than silence.
+ * This read considered `treat_injury` alone, so a permanent injury reached the
+ * player down a line of its own and the two ends of "what would close this"
+ * disagreed about what medicine exists. They do not now: one function, asked per
+ * wound, answering out of whichever road the WOUND is on. Which road is the
+ * wound's own property rather than a choice made here.
+ *
+ *   MENDS ON ITS OWN     the graded treat-injury ladder, by severity against
+ *                        the body carrying it.
+ *   DOES NOT            structural repair medicine, by RANK - and past the top
+ *                        of that ladder, the chaos rung, which reaches any rank
+ *                        and does not let you choose which wound it closes.
+ *
+ * The second road is the design owner's ruling and it overturned a pill written
+ * against the opposite premise. The rank ladder is `cheapestMedicineFor`, whose
+ * grades reach to 16, 20, 28 and 40; above 40 nothing on it reaches, and the
+ * chaos rung is the only thing that does. So it is asked LAST rather than
+ * cheapest-first: a dose you can point at a particular injury is worth more
+ * than a dose that picks one for you, whatever either costs.
+ *
+ * On the graded road: everything below the wound's requirement is dropped
+ * before anything is sorted, because a cheaper name is worse than no name when
+ * the cheaper thing will be refused at the point of use. Among what reaches,
+ * cash before barter and then cheapest first - a player who can walk to a
+ * counter should be sent to the counter, and the barter tiers stay in the list
+ * and sort last so a wound whose only answer is past money still produces a
+ * NAME and a reason rather than silence.
  */
 function whatSomebodyWouldGoAndGet(
-    severity: Injury['severity'],
+    injury: Pick<Injury, 'severity' | 'woundType'>,
     realmOrdinal: number
-): Pill | null {
+): TheThingThatWouldDoIt | null {
+    if (isPermanentWound(injury.woundType)) {
+        const byRank = cheapestMedicineFor(currentWoundKey(injury.woundType), realmOrdinal);
+        if (byRank) return { kind: 'repair', medicine: byRank };
+        const drawn = theOneThatReachesAnyRank();
+        return drawn ? { kind: 'pill', pill: drawn } : null;
+    }
     const candidates = [...PILLS]
         .filter(pill => pill.effect === 'treat_injury')
-        .filter(pill => medicineReaches(pill.grade, severity, realmOrdinal))
+        .filter(pill => medicineReaches(pill.grade, injury.severity, realmOrdinal))
         .sort((a, b) =>
             Number(cashRefusalReason(a) !== null) - Number(cashRefusalReason(b) !== null)
             || medicineRank(a.grade) - medicineRank(b.grade)
             || a.value - b.value);
-    return candidates[0] ?? null;
+    return candidates[0] ? { kind: 'pill', pill: candidates[0] } : null;
+}
+
+/** Either road's answer, normalised at the one place that has to report both. */
+type TheThingThatWouldDoIt =
+    | { kind: 'pill'; pill: Pill }
+    | { kind: 'repair'; medicine: StructuralRepairMedicine };
+
+/**
+ * The chaos rung: the one thing that repairs a permanent injury at any rank.
+ *
+ * Read off the effect rather than named, so the catalog stays the authority on
+ * which row it is. There is exactly one and `a-medicine-made-for-nothing-in-
+ * particular.test.ts` is the ratchet on that.
+ */
+function theOneThatReachesAnyRank(): Pill | null {
+    return getPillsByEffect('mends_what_will_not_close')[0] ?? null;
+}
+
+/** What either road's answer is called, at what grade, and on what terms. */
+function howItIsGot(
+    answer: TheThingThatWouldDoIt,
+    regionId: string,
+    groundMultiplier: number
+): { id: string; name: string; grade: TechniqueGrade; stones: number | null; notForSale: string | null } {
+    if (answer.kind === 'pill') {
+        const notForSale = cashRefusalReason(answer.pill);
+        return {
+            id: answer.pill.id,
+            name: answer.pill.name,
+            grade: answer.pill.grade,
+            stones: notForSale === null ? boardPrice(answer.pill, regionId, groundMultiplier) : null,
+            notForSale
+        };
+    }
+    // NEVER A PRICE, WHATEVER THE TERMS SAY. A repair medicine reaches no board
+    // anywhere, so quoting a figure would send somebody to a counter that has
+    // never held one - the contradiction `boardPrice` exists to prevent. Where
+    // the terms are a private sale the sentence says so and says what it weighs,
+    // because "there is no price" and "the price is between two houses" are
+    // different answers and only one of them is true here.
+    const medicine = answer.medicine;
+    return {
+        id: medicine.id,
+        name: medicine.name,
+        grade: medicine.grade,
+        stones: null,
+        notForSale: repairCashRefusalReason(medicine)
+            ?? `No counter has ever held one. It moves between houses, privately, at about `
+               + `${repairWeightInStones(medicine).toLocaleString('en-US')} spirit stones, and the `
+               + 'houses that can pay that are a list somebody could write down.'
+    };
 }
 
 /**
@@ -297,32 +394,46 @@ export function whatWouldCloseThisWound(
 
     // The worst one names the sentence, because it is the one that will still
     // be there after everything else has been dealt with - and, at the top of
-    // the severity range, the one a physician will refuse.
-    const worst = [...untreated].sort((a, b) =>
-        medicineRank(medicineNeededFor(b.severity, realmOrdinal))
-        - medicineRank(medicineNeededFor(a.severity, realmOrdinal)))[0];
+    // the range, the one a physician will refuse.
+    //
+    // WORST OF THE ONES SOMETHING ANSWERS, and the qualifier is load-bearing
+    // now that a permanent wound can be on the list. A rooted heart demon and a
+    // burnt span are answered by nothing at all and they sort above everything;
+    // picked as the worst they would return null and take the cure for the
+    // tear beside them down with them. What the world has no answer for is a
+    // fact the reads state separately, and it is not this read going quiet.
+    const answered = untreated
+        .map(injury => ({ injury, answer: whatSomebodyWouldGoAndGet(injury, realmOrdinal) }))
+        .filter((row): row is { injury: Injury; answer: TheThingThatWouldDoIt } =>
+            row.answer !== null)
+        .map(row => ({ ...row, got: howItIsGot(row.answer, regionId, groundMultiplier) }))
+        .sort((a, b) => medicineRank(b.got.grade) - medicineRank(a.got.grade));
+    if (answered.length === 0) return null;
 
-    const pill = whatSomebodyWouldGoAndGet(worst.severity, realmOrdinal);
-    if (!pill) return null;
-
-    const notForSale = cashRefusalReason(pill);
-    const stones = notForSale === null ? boardPrice(pill, regionId, groundMultiplier) : null;
+    const { injury: worst, answer, got } = answered[0]!;
+    const stones = got.stones;
 
     return {
-        name: pill.name,
-        grade: pill.grade,
+        name: got.name,
+        grade: got.grade,
         stones,
-        notForSale,
+        notForSale: got.notForSale,
         affordable: stones !== null && spiritStones >= stones,
         forSeverity: worst.severity,
+        forWound: getWoundType(worst.woundType)?.name ?? null,
         // What the physician path requires. It used to be the OTHER half of the
         // sentence, in the sense of an apology - the counter says no while the
         // pill says yes - and now it is the same half said twice, because the
         // pill path enforces the identical rule. Kept because a refusal still
         // has to state what it is refusing on.
         physicianNeeds: medicineNeededFor(worst.severity, realmOrdinal),
-        physicianReaches: medicineReaches('mortal', worst.severity, realmOrdinal),
-        heardOf: aMedicineThisHolderCouldName(pill, asking)
+        // A permanent wound is off the graded ladder entirely - no grade of
+        // physician reaches one, at any rung - so the severity read is not
+        // asked about it.
+        physicianReaches: !isPermanentWound(worst.woundType)
+            && medicineReaches('mortal', worst.severity, realmOrdinal),
+        heardOf: aMedicineThisHolderCouldName(
+            answer.kind === 'pill' ? answer.pill : answer.medicine, asking)
     };
 }
 
@@ -336,7 +447,12 @@ export function whatWouldCloseThisWound(
  * it names the thing that would work.
  */
 export function whatToSayAboutTheCure(cure: TheCure): string {
-    const wound = `a ${cure.forSeverity} tear`;
+    // The catalog's word for it where the wound has one, because the severity
+    // alone describes a tear and several of the things that reach this read are
+    // not tears. The rows carry their own article where they want one.
+    const wound = cure.forWound !== null
+        ? cure.forWound.toLowerCase()
+        : `a ${cure.forSeverity} tear`;
     // ── AND WHERE THEY HAVE NEVER HEARD OF IT, IT IS NOT NAMED ───────────
     //
     // Not a hedge and not a hint. The sentence says what is true from where

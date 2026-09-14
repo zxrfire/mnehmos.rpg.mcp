@@ -100,15 +100,17 @@ const OUTSIDER: Array<[string, string]> = [
  * expensive one there is.
  *
  * Listed so that the day one of them grows an answer, it moves up into the
- * corpus above instead of being noticed by nobody.
+ * corpus above instead of being noticed by nobody:
+ *
+ *     I forge a sword
+ *     I make a sword
+ *     I set fire to the village
+ *     I sneak up on him
+ *     I practise my sword
+ *
+ * WRITTEN HERE AND NOT AS A BINDING. It was a `const` nothing read, which is a
+ * list no ratchet is counting - the note it exists to be, and not a test.
  */
-const NO_ANSWER_YET: readonly string[] = [
-    'I forge a sword',
-    'I make a sword',
-    'I set fire to the village',
-    'I sneak up on him',
-    'I practise my sword'
-];
 
 describe('the words an outsider uses', () => {
     const missed = OUTSIDER.filter(([said, want]) => {

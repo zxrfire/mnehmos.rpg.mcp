@@ -240,7 +240,7 @@ describe('a Shrinking Earth Pavilion counter', () => {
         const after = cultivatorRow(db, cultivatorId);
 
         expect(after.location).toMatch(/iron ridge/i);
-        expect(after.spirit_stones).toBeLessThan(before.spirit_stones);
+        expect(Number(after.spirit_stones)).toBeLessThan(Number(before.spirit_stones));
         const quote = result.toolCalls.find(call => call.name === 'engine.quotePassageAtACounter');
         expect(quote?.ok).toBe(true);
     }, 180_000);

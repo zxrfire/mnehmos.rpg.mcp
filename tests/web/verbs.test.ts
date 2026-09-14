@@ -15,6 +15,7 @@ import { makeGame, planned, engineCalls } from './harness';
 import { addToPouch, listPouch } from '../../src/server/consolidated/cultivation-support';
 import { HERBS } from '../../src/data/cultivation/herbs';
 import { quoteSale, BUYER_MARGIN } from '../../src/engine/cultivation/market';
+import { ACTIONS_PER_FULL_SATIETY } from '../../src/engine/cultivation/survival';
 
 /** A cheap herb that exists in the catalog, for putting in a pouch. */
 const HERB = HERBS.reduce((best, herb) => (herb.value < best.value ? herb : best));
@@ -163,7 +164,13 @@ describe('work, which is how somebody with no stones eats', () => {
         // The measured defect: a year of work ran fifty days, because a full
         // belly is fifty days long and nobody was buying food. Anything past
         // one belly is the fix working.
-        expect(game.state().run.elapsedDays).toBeGreaterThan(100);
+        //
+        // IT USED TO ASSERT `> 100` AND THAT WAS A COINCIDENCE. The span ends
+        // at the first arrival that interrupts it, so the day count is a draw:
+        // this seed gives 270 and `work-paid` gives 90 out of the same engine.
+        // A hundred is not a rule anything states. One belly is, and it is the
+        // number the defect was made of.
+        expect(game.state().run.elapsedDays).toBeGreaterThan(ACTIONS_PER_FULL_SATIETY);
     });
 
     it('leaves the worker better off than they started', async () => {
@@ -171,11 +178,48 @@ describe('work, which is how somebody with no stones eats', () => {
         const { cultivator } = await game.newRun('Lin Que');
         const before = cultivator.spiritStones;
         await game.act('I work as a porter for a year.');
-        const after = game.state().cultivator;
+        const state = game.state();
         // Alive and richer. A year of labour that leaves somebody poorer than
         // a month of it is the thing that made players permanently broke.
-        if (after.status === 'active') {
-            expect(after.spiritStones).toBeGreaterThan(before);
+        //
+        // THE STATUS IS ON THE RUN AND NOT ON THE BODY. This read
+        // `state().cultivator.status`, a field a cultivator has never carried,
+        // so the guard was false on every run and the assertion inside it had
+        // never once been evaluated. It was found when `tests/` was typechecked
+        // for the first time, and the first time it ran it went red.
+        //
+        // ── WHAT IT CAUGHT ──────────────────────────────────────────────
+        //
+        // Measured by PLAYING the sentence below on five seeds, each from a
+        // fresh run holding 30 stones. Board and purse, before then after:
+        //
+        //   work-paid   90 days   wage  7   board 16 -> 2    21 -> 35
+        //   p1         135 days   wage 10   board 16 -> 4    24 -> 36
+        //   p3         135 days   wage 10   board 16 -> 4    24 -> 36
+        //   p2         240 days   wage 19   board 16 -> 8    33 -> 41
+        //   work-seed  270 days   wage 21   board 16 -> 10   35 -> 41
+        //
+        // The board was 16 in every row and the wage was not, and that is the
+        // whole defect. `handleWork` runs the span through the seclusion pass,
+        // which takes its provisions up front because a cave has none - so a
+        // year of work bought a year of dry rations on day one, an arrival cut
+        // the span at ninety days, one ration was opened and the other seven
+        // were thrown away. The wage was prorated to the days worked and the
+        // board was prorated to nothing.
+        //
+        // The rate was never wrong: a porter earns 2.3 stones a month against
+        // about 1 stone a month of food actually eaten.
+        //
+        // A YEAR IS STILL NOT A YEAR, and that part is deliberate. The span
+        // stops at the first arrival that interrupts - see
+        // `interruptedByAnArrival` - which is the turn being handed back. It
+        // varies by seed, which is why the sibling test above no longer pins a
+        // day count that happened to be drawn.
+        //
+        // Do not make this green by lowering the bar or by reinstating the
+        // broken guard. It is measuring what it was written to measure.
+        if (state.run.status === 'active') {
+            expect(state.cultivator.spiritStones).toBeGreaterThan(before);
         }
     });
 });

@@ -20,8 +20,8 @@ import {
 import { mayHoldAFit, assessFit, type Seeker } from '../../../src/engine/encounters/suitability.js';
 import { daoOf } from '../../../src/engine/cultivation/dao.js';
 import { ENCOUNTERS } from '../../../src/data/cultivation/encounters.js';
-import { TECHNIQUES, classOf } from '../../../src/data/cultivation/techniques.js';
-import type { Insight } from '../../../src/schema/cultivation.js';
+import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
+import type { Insight, InsightDegree } from '../../../src/schema/cultivation.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -48,8 +48,23 @@ const waterSeeker: Seeker = {
     insights: {}
 };
 
-function insight(subject: string, domain: Insight['domain'], degree: number): Insight {
-    return { id: `${domain}-${subject}-${degree}`, domain, subject, degree, provenance: 'earned' } as Insight;
+function insight(subject: string, domain: Insight['domain'], degree: InsightDegree): Insight {
+    return {
+        id: `${domain}-${subject}-${degree}`,
+        domain,
+        subject,
+        degree,
+        // PROVENANCE IS AN ACCOUNT, NOT A WORD. This held the string 'earned',
+        // which is the shape the field had before an insight was required to
+        // name the event that produced it.
+        provenance: {
+            achievementId: `achievement-${domain}-${subject}`,
+            achievementKind: 'profound_principle',
+            onDay: 1,
+            deepenedBy: [],
+            account: `Comprehended ${subject}.`
+        }
+    };
 }
 
 const FIRE_DAO = daoOf([insight('fire', 'element', 4), insight('heat', 'element', 2)]);
@@ -81,7 +96,7 @@ describe('E6 - one Find builder', () => {
         // disagree about what a manual demands. A derived book is not a catalog
         // row and must still go through the same door.
         const fromCatalog = findFromManual(FIRE_MANUAL);
-        const asDerived = findFromManual({ ...FIRE_MANUAL, notExtendableReason: null, opening: null });
+        const asDerived = findFromManual({ ...FIRE_MANUAL, notDerivableReason: null, opening: null });
         expect(asDerived).toEqual(fromCatalog);
     });
 
@@ -369,7 +384,7 @@ describe('derivation offered through the same funnel', () => {
     it('is available to somebody with no resources at all', () => {
         // The point of route 7: this is the one door money cannot open, and the
         // corollary is that being penniless does not close it.
-        const derivable = TECHNIQUES.find(t => t.derivable && classOf(t) === 'cultivation');
+        const derivable = TECHNIQUES.find(t => t.derivable);
         expect(derivable).toBeDefined();
         const check = extensionOption(
             daoOf([insight('water', 'element', 4), insight('tides', 'element', 2)]),
@@ -377,7 +392,8 @@ describe('derivation offered through the same funnel', () => {
                 id: derivable!.id, name: derivable!.name,
                 requiredOrdinal: derivable!.requiredOrdinal, cap: derivable!.cap,
                 grade: derivable!.grade, element: derivable!.element,
-                subject: derivable!.element, category: derivable!.category,
+                subjects: derivable!.element === null ? null : [derivable!.element],
+                category: derivable!.category,
                 derivable: derivable!.derivable
             }
         );

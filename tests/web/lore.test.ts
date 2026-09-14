@@ -86,12 +86,12 @@ function placePerson(
         INSERT INTO cultivators (
             id, run_id, name, kind, spirit_root, attributes, realm_ordinal,
             cultivation_progress, hp, max_hp, qi, max_qi, satiety, starvation_turns,
-            age, years_at_current_realm, spirit_stones, sect_id, sect_rank, location,
+            age, years_at_current_realm, spirit_stones, sect_id, location,
             feuds, known_techniques, alive, death_cause, died_on_turn, created_at, updated_at
         ) VALUES (
             @id, NULL, @name, 'npc', 'single_water',
             '{"might":2,"insight":2,"fortune":1,"charm":2}', @ordinal,
-            0, 60, 60, 30, 30, 100, 0, 40, 2, 200, @sectId, @sectRank, @where,
+            0, 60, 60, 30, 30, 100, 0, 40, 2, 200, @sectId, @where,
             '[]', '[]', 1, NULL, NULL, @now, @now
         )
     `).run({
@@ -100,9 +100,18 @@ function placePerson(
         ordinal,
         where: opts.where ?? playerPlace(db),
         sectId: opts.sectId ?? null,
-        sectRank: opts.sectRank ?? null,
         now
     });
+    // THE RUNG GOES ON THE ROLL, because that is where a rung lives. It used
+    // to be a string on the cultivator row, and every reader that wants a rung
+    // now asks `whereSomebodyStandsOnAHousesRoll`, which reads the roll and the
+    // world row and nothing else.
+    if (opts.sectId && opts.sectRank) {
+        db.prepare(`
+            INSERT INTO sect_members (sect_id, cultivator_id, rank_index, rank_title)
+            VALUES (@sectId, @id, 0, @sectRank)
+        `).run({ sectId: opts.sectId, id, sectRank: opts.sectRank });
+    }
 }
 
 /** Every catalog that produced at least one row of the given predicate. */
@@ -208,7 +217,10 @@ describe('the stratum gate', () => {
     it('keeps a carter out of what is above him', () => {
         const held = new Set(mentionableFor(carter).map(entry => entry.catalog));
         // He has never needed these words and is not being cagey about them.
-        expect(held.has('apex')).toBe(false);
+        //
+        // There was a fourth line here asking for 'apex', which is a governance
+        // tier and has never been a lore catalog - so it asserted that a set of
+        // catalogs does not hold something that is not one.
         expect(held.has('lid-theories')).toBe(false);
         expect(held.has('immortal-channels')).toBe(false);
         expect(held.has('immortal-items')).toBe(false);

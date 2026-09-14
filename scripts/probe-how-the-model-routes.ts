@@ -112,7 +112,7 @@ async function routed(provider: OllamaProvider, said: string): Promise<string> {
 }
 
 async function main(): Promise<void> {
-    const provider = new OllamaProvider({ baseUrl: BASE_URL, model: MODEL });
+    const provider = new OllamaProvider({ baseUrl: BASE_URL });
     const rows: { said: string; got: string; ok: boolean }[] = [];
 
     for (const row of EXPECTED) {

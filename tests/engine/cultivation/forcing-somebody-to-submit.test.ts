@@ -247,15 +247,21 @@ describe('opening a fight from concealment', () => {
         expect(fingerprint(open)).toBe(fingerprint(absent));
     });
 
-    it('holds byte-identity across every goal and several seeds', () => {
+    it('holds byte-identity across every swing and several seeds', () => {
+        // This used to sweep the old `goal` axis - kill, subdue, drive_off,
+        // humiliate - which no longer exists. What it was ever for is the
+        // breadth: the field has to cost nothing on EVERY intent, not on the
+        // one the previous test happened to pick. The axis that carries that
+        // now is the swing, so it sweeps the two ends of it.
+        const swings: readonly HowTheBlowWasThrown[] = [AN_ORDINARY_SWING, A_BLOW_MEANT_TO_END_IT];
         for (const seed of ['s1', 's2', 's3', 's4', 's5']) {
-            for (const goal of ['kill', 'subdue', 'drive_off', 'humiliate'] as const) {
+            for (const thrown of swings) {
                 const absent = resolveConfrontation(
-                    body(9, 'a'), body(10, 'b'), ctx({ intent: { goal } }, seed)
+                    body(9, 'a'), body(10, 'b'), ctx({ intent: { thrown } }, seed)
                 );
                 const open = resolveConfrontation(
                     body(9, 'a'), body(10, 'b'),
-                    ctx({ intent: { goal, opening: 'open' } }, seed)
+                    ctx({ intent: { thrown, opening: 'open' } }, seed)
                 );
                 expect(fingerprint(open)).toBe(fingerprint(absent));
             }

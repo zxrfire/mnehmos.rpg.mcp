@@ -36,7 +36,7 @@ import { ARTIFACTS } from '../../../src/data/cultivation/artifacts.js';
 import { PILLS } from '../../../src/data/cultivation/pills.js';
 import { HERBS } from '../../../src/data/cultivation/herbs.js';
 import { STRUCTURAL_REPAIR_MEDICINES } from '../../../src/data/cultivation/structural-repair-medicine.js';
-import { TECHNIQUES } from '../../../src/data/cultivation/techniques.js';
+import { TECHNIQUES, stopsSomewhere } from '../../../src/data/cultivation/techniques.js';
 import { PRICES } from '../../../src/data/cultivation/mortal-world.js';
 import {
     pillCashPrice,
@@ -150,8 +150,7 @@ describe('a thing is cash-priced exactly where it is counted', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('a book is counted where nobody owns it', () => {
-    const manuals = (TECHNIQUES as readonly { id: string; class?: string; cap?: number | null }[])
-        .filter(t => t.class === 'cultivation' && t.cap != null);
+    const manuals = TECHNIQUES.filter(t => stopsSomewhere(t));
 
     it('has manuals to talk about', () => {
         expect(manuals.length).toBeGreaterThan(10);

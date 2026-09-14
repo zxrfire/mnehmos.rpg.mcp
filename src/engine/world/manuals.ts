@@ -8,7 +8,7 @@ import { makeObject, type ObjectRecord, type ObjectSignificance } from './posses
 import { forStream, type CultivationRNG } from '../cultivation/rng.js';
 import { conflictsWithRoot, getSpiritRoot } from '../cultivation/spirit-roots.js';
 import { REALM_TIERS, realmForOrdinal } from '../cultivation/realms.js';
-import { getTechnique, TECHNIQUES } from '../../data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere, TECHNIQUES } from '../../data/cultivation/techniques.js';
 import {
     ifCaughtAtSomethingTheHousePunishes,
     type IfCaught
@@ -27,13 +27,16 @@ const TAUGHT: ReadonlyMap<string, readonly string[]> = new Map(
 
 /**
  * What somebody with no house can plausibly have got hold of.
+ *
+ * The three filters below are the whole of it, and they were always the whole of
+ * it: cheap grade, not out of a ruin or a grave, opens low. A fourth once sat in
+ * front of them excluding anything that raised a rank, and it stopped meaning
+ * anything when every art started raising one. Dropping it is what lets a
+ * wanderer hold a stall primer, which is exactly what the wandering league in
+ * the catalog is described as selling.
  */
 const COMMON_ARTS: readonly { id: string; requiredOrdinal: number; element: string | null }[] =
-    (TECHNIQUES as readonly {
-        id: string; class?: string; cap?: number | null; grade?: string;
-        requiredOrdinal?: number; element?: string | null; provenance?: string;
-    }[])
-        .filter(t => !(t.class === 'cultivation' && t.cap != null))
+    TECHNIQUES
         .filter(t => t.grade === 'mortal' || t.grade === 'earth')
         .filter(t => t.provenance !== 'ruin' && t.provenance !== 'grave')
         .filter(t => Number(t.requiredOrdinal ?? 0) <= 21)
@@ -43,7 +46,7 @@ const COMMON_ARTS: readonly { id: string; requiredOrdinal: number; element: stri
             element: t.element ?? null
         }));
 
-/** A manual the world can actually hand somebody: a road, not a fighting art. */
+/** A book the world can actually hand somebody, with the rung it stops at. */
 export interface Manual {
     id: string;
     name: string;
@@ -59,12 +62,10 @@ export interface Manual {
 export function manualsOf(factionId: string): Manual[] {
     const out: Manual[] = [];
     for (const id of TAUGHT.get(factionId) ?? []) {
-        const t = getTechnique(id) as
-            | { id: string; name: string; class?: string; cap?: number | null;
-                requiredOrdinal?: number; element?: string | null }
-            | undefined;
-        // A fighting art carries nobody anywhere. Only a road has a `cap`.
-        if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+        const t = getTechnique(id);
+        // Eight arts in the catalog state no rung they stop at, and a shelf is
+        // a list of numbers. Those are not shelf stock.
+        if (t === undefined || t.cap == null) continue;
         out.push({
             id: t.id, name: t.name, cap: Number(t.cap),
             requiredOrdinal: Number(t.requiredOrdinal ?? 0), element: t.element ?? null
@@ -114,11 +115,8 @@ function shelvesOf(state: WorldState): Map<string, Manual[]> {
         const seen = new Set(out.map(m => m.id));
         for (const techniqueId of held.get(faction.id) ?? []) {
             if (seen.has(techniqueId)) continue;
-            const t = getTechnique(techniqueId) as
-                | { id: string; name: string; class?: string; cap?: number | null;
-                    requiredOrdinal?: number; element?: string | null }
-                | undefined;
-            if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+            const t = getTechnique(techniqueId);
+            if (t === undefined || t.cap == null) continue;
             seen.add(t.id);
             out.push({
                 id: t.id, name: t.name, cap: Number(t.cap),
@@ -188,8 +186,8 @@ export function significanceOfManual(techniqueId: string, cap: number): ObjectSi
  * Ordinary market stock: cheap enough and numerous enough that a stall has one.
  */
 export function isCommonlyHeld(techniqueId: string): boolean {
-    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
-    if (!t || t.class !== 'cultivation' || t.cap == null) return true;
+    const t = getTechnique(techniqueId);
+    if (t === undefined || t.cap == null) return true;
     if (Number(t.cap) <= COMMON_MANUAL_CAP) return true;
     return housesTeaching(techniqueId) >= COMMON_HOUSE_COUNT;
 }
@@ -310,11 +308,15 @@ export function newlyEntitled(state: WorldState, npc: NpcRecord): string[] {
     }
 
     // Unbacked: only what a stall would have, and only if they have nothing
-    // better already. Somebody already holding a road does not buy a primer.
-    if (manualCeilingOf(npc) > 0) return [];
-    // AND ONLY IF IT WOULD ACTUALLY CARRY THEM.
+    // better already. Somebody already holding a book does not buy a primer.
+    //
+    // This was `manualCeilingOf(npc) > 0`, which read as "they hold a road at
+    // all" back when a fighting art set no ceiling. Every art sets one now, so
+    // that test would refuse every wanderer in the world a book forever. What it
+    // was for survives as a comparison: buy what reaches past what you hold.
+    const ceiling = manualCeilingOf(npc);
     const stock = commonManuals()
-        .filter(m => m.cap > ordinal
+        .filter(m => m.cap > Math.max(ordinal, ceiling)
             && m.requiredOrdinal <= ordinal
             && suitsRoot(npc.cultivation.spiritRoot, m.element)
             && !held.has(m.id));
@@ -410,8 +412,7 @@ export function librariesCarriedOutBy(
     const copies = new Map<string, number>();
     for (const npc of carriers) {
         for (const id of new Set(npc.cultivation.techniqueIds)) {
-            const t = getTechnique(id) as { class?: string; cap?: number | null } | undefined;
-            if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+            if (!stopsSomewhere(getTechnique(id))) continue;
             copies.set(id, (copies.get(id) ?? 0) + 1);
         }
     }
@@ -499,22 +500,9 @@ export function chosenCount(topCopies: number, memberCount: number): number {
  * A book nobody here can copy is a treasure, not a resource.
  */
 export function isTreasureTo(members: readonly NpcRecord[], techniqueId: string): boolean {
-    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
-    if (!t || t.class !== 'cultivation' || t.cap == null) return false;
+    const t = getTechnique(techniqueId);
+    if (t === undefined || t.cap == null) return false;
     return !members.some(m => m.status === 'alive' && m.cultivation.realmOrdinal >= Number(t.cap));
-}
-
-/** The fighting arts on a house's shelf: everything `teaches` that is not a road. */
-function artsOf(factionId: string): { id: string; requiredOrdinal: number; element: string | null }[] {
-    const out: { id: string; requiredOrdinal: number; element: string | null }[] = [];
-    for (const id of TAUGHT.get(factionId) ?? []) {
-        const t = getTechnique(id) as
-            | { id: string; class?: string; cap?: number | null; requiredOrdinal?: number; element?: string | null }
-            | undefined;
-        if (!t || (t.class === 'cultivation' && t.cap != null)) continue;
-        out.push({ id: t.id, requiredOrdinal: Number(t.requiredOrdinal ?? 0), element: t.element ?? null });
-    }
-    return out.sort((a, b) => a.requiredOrdinal - b.requiredOrdinal || a.id.localeCompare(b.id));
 }
 
 /**
@@ -531,11 +519,8 @@ export function artsKnownAt(ordinal: number): number {
 export function roadThatCarriedThemHere(npc: NpcRecord): Manual | null {
     const ordinal = npc.cultivation.realmOrdinal;
     const held = new Set(npc.cultivation.techniqueIds);
-    const open = (TECHNIQUES as readonly {
-        id: string; name: string; class?: string; cap?: number | null;
-        requiredOrdinal?: number; element?: string | null;
-    }[])
-        .filter(t => t.class === 'cultivation' && t.cap != null)
+    const open = TECHNIQUES
+        .filter(t => stopsSomewhere(t))
         .filter(t => Number(t.cap) >= ordinal)
         .filter(t => Number(t.requiredOrdinal ?? 0) <= ordinal)
         .filter(t => suitsRoot(npc.cultivation.spiritRoot, t.element ?? null))
@@ -576,8 +561,7 @@ export function grantBooksToMembers(state: WorldState): BookGrant[] {
     const grants: BookGrant[] = [];
     for (const [factionId, members] of byFaction) {
         const shelf = manualsOf(factionId);
-        const arts = artsOf(factionId);
-        if (shelf.length === 0 && arts.length === 0) continue;
+        if (shelf.length === 0) continue;
         const faction = state.factions.find(f => f.id === factionId);
         const rankCount = Math.max(1, faction?.ranks.length ?? 1);
         const topCopies = shelf.length > 0
@@ -613,13 +597,17 @@ export function grantBooksToMembers(state: WorldState): BookGrant[] {
                 ? fromShelf
                 : [roadThatCarriedThemHere(npc) ?? fromShelf[0]].filter((m): m is Manual => m != null);
 
-            // Arts as well as a road, because a hundred years in a house that
-            // teaches does not leave somebody knowing nothing. Only what their
-            // height has already opened, only what will not fight their root,
-            // and taken from the top down so a senior is not carrying the
-            // beginner's list.
-            const open = arts
-                .filter(a => a.requiredOrdinal <= npc.cultivation.realmOrdinal && suitsRoot(root, a.element));
+            // More than one book, because a hundred years in a house that
+            // teaches does not leave somebody knowing nothing. Taken from the
+            // top down so a senior is not carrying the beginner's list.
+            //
+            // ONE SHELF, NOT TWO. This drew from a second list - everything the
+            // house taught that did not raise a rank - and that list stopped
+            // existing when every art started raising one. Drawing the rest
+            // from `within` instead keeps BOTH gates on every book a member
+            // holds: the house still rations by rank, which a second unrationed
+            // list was quietly not doing.
+            const open = within.filter(m => !books.some(b => b.id === m.id));
             const artIds = open
                 .slice(Math.max(0, open.length - artsKnownAt(npc.cultivation.realmOrdinal)))
                 .map(a => a.id);
@@ -638,9 +626,14 @@ export function grantBooksToMembers(state: WorldState): BookGrant[] {
     // have is whatever a person with no house can get hold of - the cheap,
     // portable, widely-copied end of the world's shelf, which is exactly what the
     // wandering league in the catalog is described as selling - so they are drawn
-    // from the common pool rather than from anybody's library, and they get no road
-    // at all. That last part is the point: no house, no ceiling raised, and
-    // `escapes.ts` is the whole of their remaining career.
+    // from the common pool rather than from anybody's library.
+    //
+    // This used to read "they get no road at all", and the ceiling that went with
+    // it was zero. That is no longer the shape of the thing: every art carries
+    // somebody, so a wanderer's ceiling is whatever the cheapest end of the world
+    // reaches. It is LOW rather than absent, and it is low by the pool's own three
+    // filters rather than by a rule about who they are - which is the better
+    // version of the same fact. `escapes.ts` is still most of their career.
     for (const npc of state.npcs) {
         if (npc.status !== 'alive' || npc.factionId) continue;
         const want = artsKnownAt(npc.cultivation.realmOrdinal);
@@ -757,8 +750,8 @@ export function ifCaughtPractising(
 export function manualCeilingOf(npc: NpcRecord): number {
     let cap = 0;
     for (const id of npc.cultivation.techniqueIds) {
-        const t = getTechnique(id) as { class?: string; cap?: number | null } | undefined;
-        if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+        const t = getTechnique(id);
+        if (t === undefined || t.cap == null) continue;
         cap = Math.max(cap, Number(t.cap));
     }
     return cap;
@@ -849,11 +842,8 @@ export function mightFindARoad(
  */
 export function roadTheyFound(npc: NpcRecord, ceiling: number, rng: CultivationRNG): string | null {
     const held = new Set(npc.cultivation.techniqueIds);
-    const open = (TECHNIQUES as readonly {
-        id: string; class?: string; cap?: number | null;
-        requiredOrdinal?: number; element?: string | null;
-    }[])
-        .filter(t => t.class === 'cultivation' && t.cap != null)
+    const open = TECHNIQUES
+        .filter(t => stopsSomewhere(t))
         .filter(t => Number(t.cap) > ceiling)
         .filter(t => Number(t.requiredOrdinal ?? 0) <= npc.cultivation.realmOrdinal)
         .filter(t => suitsRoot(npc.cultivation.spiritRoot, t.element ?? null))
@@ -883,14 +873,21 @@ export interface HolderOfAnArt {
 }
 
 /**
- * The rung at which somebody counts as having mastered a fighting art, for a record
+ * The rung at which somebody counts as having mastered an art, for a record
  * that carries no mastery figure.
+ *
+ * The fallback is what the whole catalog outside the cultivation category used
+ * to take, and it was never a second rule: `cap` is `realmEnd + 1` and the realm
+ * tiers are contiguous, so "the start of the next tier up" and "the cap" name
+ * the same rung. Collapsing the two kinds of art made that visible. What is
+ * left below the first branch is the eight rows that stop nowhere, and there
+ * the fallback clamps at the top tier - which is the right answer, because
+ * nobody who cannot already stand there can open one.
  */
 export function masteryBarFor(techniqueId: string): number | null {
-    const t = getTechnique(techniqueId) as
-        { class?: string; cap?: number | null; requiredOrdinal?: number } | undefined;
+    const t = getTechnique(techniqueId);
     if (!t) return null;
-    if (t.class === 'cultivation' && t.cap != null) return Number(t.cap);
+    if (t.cap != null) return Number(t.cap);
     const opens = Number(t.requiredOrdinal ?? 0);
     const at = REALM_TIERS.findIndex(tier => tier.key === realmForOrdinal(opens).key);
     if (at < 0) return null;
@@ -898,13 +895,18 @@ export function masteryBarFor(techniqueId: string): number | null {
 }
 
 export function couldWriteOutACopy(holder: HolderOfAnArt, techniqueId: string): boolean {
-    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
+    const t = getTechnique(techniqueId);
     if (!t) return false;
-    const isARoad = t.class === 'cultivation' && t.cap != null;
-    if (isARoad && isCommonlyHeld(techniqueId)) return true;
+    // A book on every stall is a book anybody can write out. What makes a copy
+    // hard to come by is scarcity, not the penmanship.
+    if (stopsSomewhere(t) && isCommonlyHeld(techniqueId)) return true;
     const bar = masteryBarFor(techniqueId);
     if (bar === null) return false;
-    if (!isARoad && holder.masteryOfIt != null) return holder.masteryOfIt >= FULLY_MASTERED;
+    // The rule `HolderOfAnArt.masteryOfIt` already states: the figure where the
+    // caller holds a row that says, and the ordinal INSTEAD where it does not.
+    // A clause in front of this applied it only to arts that did not raise a
+    // rank, which contradicted that doc and has no meaning now.
+    if (holder.masteryOfIt != null) return holder.masteryOfIt >= FULLY_MASTERED;
     return holder.realmOrdinal >= bar;
 }
 
@@ -913,8 +915,7 @@ export function couldWriteOutACopy(holder: HolderOfAnArt, techniqueId: string): 
  */
 export function canReproduce(npc: NpcRecord, techniqueId: string): boolean {
     if (!npc.cultivation.techniqueIds.includes(techniqueId)) return false;
-    const t = getTechnique(techniqueId) as { class?: string; cap?: number | null } | undefined;
-    if (!t || t.class !== 'cultivation' || t.cap == null) return false;
+    if (!stopsSomewhere(getTechnique(techniqueId))) return false;
     return couldWriteOutACopy({ realmOrdinal: npc.cultivation.realmOrdinal }, techniqueId);
 }
 

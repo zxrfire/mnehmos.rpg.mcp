@@ -216,9 +216,10 @@ describe('played: a boat changes hands', () => {
         expect(known, 'the pinned world opened with nobody the player could name').toBeDefined();
 
         const world = await game.loadWorld();
+        expect(world, 'the run opened without a world').toBeTruthy();
         const here = game.state().cultivator.location ?? '';
         const boat = aSpiritBoatOwnedBy(known!.id, known!.name, here);
-        world.objects.push(boat);
+        world!.objects.push(boat);
 
         return { db, game, cultivator, known: known!, boat };
     }
@@ -229,7 +230,9 @@ describe('played: a boat changes hands', () => {
 
         await game.act(`ADMIN interact I steal the spirit boat from ${known.name}`);
 
-        const after = (await game.loadWorld()).objects.find(row => row.id === boat.id)!;
+        const reloaded = await game.loadWorld();
+        expect(reloaded, 'the world went away between turns').toBeTruthy();
+        const after = reloaded!.objects.find(row => row.id === boat.id)!;
         expect(after.possessorId).toBe(cultivator.id);
         // OWNERSHIP DOES NOT MOVE. `items.md`: a thief who becomes an owner by
         // the act of theft erases the only thread anybody could have followed.
@@ -268,7 +271,9 @@ describe('played: a boat changes hands', () => {
 
         await game.act(`ADMIN interact I steal from ${known.name}`);
 
-        const after = (await game.loadWorld()).objects.find(row => row.id === boat.id)!;
+        const reloaded = await game.loadWorld();
+        expect(reloaded, 'the world went away between turns').toBeTruthy();
+        const after = reloaded!.objects.find(row => row.id === boat.id)!;
         // Naming nothing takes what is on them. The boat is not on them, and
         // the object half must not fire on a sentence that did not ask for it.
         expect(after.possessorId).toBeNull();

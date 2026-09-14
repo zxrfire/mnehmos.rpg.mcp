@@ -168,7 +168,11 @@ describe('GET /api/state', () => {
             'lifespanRemaining', 'lifespanYears', 'nameTaken', 'nextBoundaryRank', 'nextRankName',
             'physiqueSpeed', 'progressFraction',
             'progressRequired', 'rankName', 'realmName', 'scarBreakthroughModifier',
-            'scarTempering', 'sectName',
+            // `sectRung` is the rung on the house's roll, DERIVED server-side
+            // through the one read. The sheet used to print a string mirrored
+            // onto the cultivator row, which is why this is on `derived` and
+            // not on `cultivator`.
+            'scarTempering', 'sectName', 'sectRung',
             // `standingHere` is what is live for this cultivator right now,
             // most pressing first. On the wire because the interface offered
             // three buttons over a verb space a player could not find any other

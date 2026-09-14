@@ -142,7 +142,7 @@ describe('the engine stops and does not answer', () => {
 
 describe('going costs the remainder, and nothing else', () => {
     it('spends no day and says what was forfeited', async () => {
-        const { game, fork, dayItStopped } = await sitUntilSomebodyComes(A_ROAD_OUT);
+        const { game, dayItStopped } = await sitUntilSomebodyComes(A_ROAD_OUT);
 
         const out = await game.act('I get up and go');
 
@@ -208,7 +208,12 @@ describe('staying spends the rest of the sitting', () => {
         // resumption bought them again, staying would cost a second purse for
         // days that were already paid for - a price the player never agreed to,
         // and one that would quietly make going the correct answer every time.
-        expect(fork.rationsLeft === undefined || fork.daysRemaining > 0).toBe(true);
+        // The precondition, and only the half the wire carries: `rationsLeft`
+        // is on the engine's own `SeclusionCrossroads` and is NOT on the
+        // `CrossroadsView` the client and this test read, so the leftovers
+        // cannot be checked from here. What can be is that there is a
+        // remainder left to re-provision at all.
+        expect(fork.daysRemaining).toBeGreaterThan(0);
 
         await game.act('I sit back down');
         const spentOnFood = stonesThen - game.state().cultivator.spiritStones;

@@ -17,7 +17,7 @@ import { deviationRisk, rollDeviation, resolveDeviation } from '../src/engine/cu
 import { assessPower, assessGap, resolveExchange, combatPowerForOrdinal } from '../src/engine/cultivation/combat.js';
 import { evaluateToll, isTolled, boundariesCrossed } from '../src/engine/cultivation/toll.js';
 import { discoverableInsights, formInsight, recordAchievement, understandingEffects } from '../src/engine/cultivation/understanding.js';
-import { SITES, outsideViewOf, enterSite, gatesOf, sitesWithGateKind } from '../src/data/cultivation/inheritance-trials.js';
+import { SITES, outsideViewOf, enterSite, sitesWithGateKind } from '../src/data/cultivation/inheritance-trials.js';
 import { TECHNIQUES, opacityOf, learningCostMultiplier, transmissionModeOf } from '../src/data/cultivation/techniques.js';
 import { makeCultivator, makeInjuries } from '../tests/engine/cultivation/fixtures.js';
 import { makeGame } from '../tests/web/harness.js';
@@ -299,7 +299,10 @@ async function trialsAndGraves() {
                     && (art.grade === 'mortal' || art.grade === 'earth' || art.grade === 'heaven');
             }));
 
-        if (!target) {
+        // The `kind` test is repeated so the rest of the block reads a trial's
+        // interior rather than the union's. `find` does not carry a narrowing
+        // done inside its predicate out to the result.
+        if (!target || target.kind !== 'trial') {
             note('trials', 'friction',
                 'No nameable trial holds an art a claimant could actually be built for, so the take could '
                 + 'not be measured end to end.');

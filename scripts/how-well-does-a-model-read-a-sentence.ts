@@ -32,7 +32,6 @@ import { PRESSING_SOMEBODY } from '../src/web/actions.js';
 import { SENTENCES, type Said } from './sentences-a-player-would-actually-type.js';
 
 const model = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : 'gemma4:31b';
-const full = process.argv.includes('--full');
 const why = process.argv.includes('--why');
 const trace = process.argv.includes('--trace');
 const traceFile = `intent-trace-${model.replace(/[^a-z0-9]/gi, '-')}.txt`;

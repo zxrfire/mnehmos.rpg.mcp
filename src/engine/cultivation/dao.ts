@@ -234,7 +234,49 @@ export function daoMatches(dao: DaoAssessment, technique: GatedTechnique): boole
     return false;
 }
 
-// 2. IT NARROWS AS IT DEEPENS
+// 2. IT MAKES THE ART WORK
+//
+// A cultivation technique requires dao, most of the time. `daoGate` above is
+// that rule at its hardest: the top two grades cannot be opened at all without
+// the standing. Below those grades it said nothing, so an art thrown by
+// somebody with no comprehension of what it is about landed exactly as hard as
+// the same art thrown by somebody who has spent forty years on that road. The
+// form was there and the thing the form is for was not, and the engine could
+// not tell the difference.
+//
+// Read by the technique line of `assessPower`. Sized against `EDGE_VALUES` in
+// the same file: walking the art's own road is worth a little less than good
+// ground (terrain, x1.3 - a leaning is x1.15 and a Dao x1.35), and nothing like
+// what a rung is worth (x4 a realm). Comprehension decides which of two
+// cultivators at a height wins. It does not lift anybody past a height.
+//
+// A cultivator with no standing, or one whose road is not this art's road,
+// takes exactly 1. The absence is not a penalty - it is the art working as
+// written and no better, which is what flashy and hollow means here.
+
+export const WIELDING_FACTOR: Record<DaoStanding, number> = {
+    none: 1,
+    leaning: 1.15,
+    dao: 1.35
+};
+
+/**
+ * What the road already walked is worth to an art wielded on it.
+ *
+ * The same match `daoGate` gates LEARNING on, read for how well the art is
+ * USED. One predicate, two readers: an art your road does not open is an art
+ * your road does not sharpen either.
+ */
+export function wieldingWeight(
+    dao: DaoAssessment,
+    technique: GatedTechnique | null | undefined
+): number {
+    if (!technique) return 1;
+    if (!daoMatches(dao, technique)) return 1;
+    return WIELDING_FACTOR[dao.standing];
+}
+
+// 3. IT NARROWS AS IT DEEPENS
 //
 // Not forbidden, increasingly foreign. What you comprehend deeply, you
 // comprehend at the cost of comprehending otherwise - so a cultivator far

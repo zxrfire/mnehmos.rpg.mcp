@@ -309,11 +309,19 @@ is frequently the opposite.
 seriously tried - so this rung has no canon, it is one man's, and it ends with him.
 
 **And here is the honest limitation, which must be stated in the fiction rather than
-patched:** what he holds are dao arts at ordinal 45, not cultivation manuals. Under
-`classOf`, a dao art has `cap === null` because it is not a manual at all. **This route
-raises no rank ceiling.** What it buys is understanding, and understanding is what opens
-route 7. Anybody who sells this as a way past a cap is selling the wrong thing, and the
-refusal text should say which thing it actually is.
+patched:** what he holds opens at ordinal 45, which is inside the last realm band on the
+ladder. There is no boundary above it for a cap to sit one rung past, so `cap === null` -
+and nobody who cannot already stand at 45 can open one of these in the first place.
+**This route raises no rank ceiling, because at that height there is no ceiling left to
+raise.** What it buys is understanding, and understanding is what opens route 7. Anybody
+who sells this as a way past a cap is selling the wrong thing, and the refusal text should
+say which thing it actually is.
+
+This paragraph used to reach the same conclusion by a route that no longer exists: the arts
+were fighting arts, a predicate said fighting arts raise no rank, and `cap` was null because
+of that. Every technique carries its practitioner up a few rungs now. The conclusion held
+anyway, and it is worth knowing it held for a reason about the LADDER rather than about a
+kind of art.
 
 **Implemented by.** `false-immortals.ts`, `allDaoCarvings`, `ABOVE_THE_LID_TRANSMISSION`,
 `daoGate`, `understandingEffects`.

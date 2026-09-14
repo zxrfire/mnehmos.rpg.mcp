@@ -116,8 +116,9 @@ function theOccasion(deps: any, senior: any, membership: any, reasonId: string) 
 /** Arrange the ask and say yes to it. Only the summons ROLL is bypassed. */
 async function takeIt(harness: any, reasonId: string) {
     const { game, repos, senior, deps, membership } = harness;
-    const candidate = theOccasion(deps, senior, membership, reasonId);
-    expect(candidate, `the house never offers ${reasonId}`).not.toBeNull();
+    const offered = theOccasion(deps, senior, membership, reasonId);
+    expect(offered, `the house never offers ${reasonId}`).not.toBeNull();
+    const candidate = offered!;
 
     const duty = dutyFromOffer(candidate, membership, 0);
     const takingOut = whoASeniorIsAskedToTakeOut({

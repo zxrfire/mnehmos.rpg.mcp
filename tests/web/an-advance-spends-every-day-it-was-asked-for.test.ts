@@ -50,7 +50,7 @@ import { MAX_ORDINAL, lifespanForOrdinal } from '../../src/engine/cultivation/re
 import { stillNeedsToEat } from '../../src/engine/cultivation/survival.js';
 import { stagnationYearsForOrdinal } from '../../src/schema/cultivation.js';
 import { DEVIATION_CHECK_DAYS, simulateTimeSkip } from '../../src/engine/cultivation/time-skip.js';
-import type { CultivatorState } from '../../src/schema/cultivation.js';
+import type { Cultivator } from '../../src/schema/cultivation.js';
 
 const WORLDS = ['a-world-that-has-lived', 'war-1', 'pyr-a', 'pyr-c'];
 
@@ -140,7 +140,7 @@ describe('an advance spends every day it was asked for', () => {
         // Both arms in one command, same body, same seed, same span: the only
         // thing that differs is whether the time is spent drawing qi. A guard
         // with only the idle arm in it would certify a dead subsystem.
-        const body: CultivatorState = {
+        const body: Cultivator = {
             id: 'rate-test-body',
             name: 'Arm',
             age: 30,
@@ -159,12 +159,16 @@ describe('an advance spends every day it was asked for', () => {
             spiritStones: 0,
             yearsAtCurrentRealm: 0,
             attributes: { might: 1, insight: 1, fortune: 1, resolve: 1 }
-        } as unknown as CultivatorState;
+        } as unknown as Cultivator;
 
         const span = 20 * DAYS_PER_YEAR;
         const ctx = {
             seed: 'both-arms',
-            ambientQi: 'normal' as const,
+            // Somewhere in particular, because the ambient a span is lived in
+            // is drawn off the place. This used to say `ambientQi: 'normal'`,
+            // which `TimeSkipContext` has never had a field for: the span was
+            // lived at no location at all, and the setting did nothing.
+            locationId: 'a-plain-room',
             startDay: 0,
             randomEvents: false,
             autoBreakthrough: false,

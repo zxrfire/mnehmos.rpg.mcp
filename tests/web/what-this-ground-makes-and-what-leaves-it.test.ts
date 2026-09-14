@@ -205,7 +205,7 @@ describe('played', () => {
         const said = await game.act('what is made here');
         const after = repos.cultivators.getById(cultivator.id)!;
 
-        const heard = said.error ?? said.narration ?? '';
+        const heard = said.narration;
         // Either the province answers, or it is open road and says so.
         expect(heard).toMatch(/makes|province|nothing here goes by water|No province owns/i);
         expect(after.spiritStones).toBe(before.spiritStones);
@@ -228,7 +228,7 @@ describe('played', () => {
         repos.cultivators.update(cultivator.id, { location: coastal!.places[0]!.name });
 
         const said = await game.act('what crosses the water');
-        const heard = said.error ?? said.narration ?? '';
+        const heard = said.narration;
         expect(heard).toMatch(/on the water/i);
         expect(heard).toMatch(/carries it/i);
     }, 200_000);

@@ -122,7 +122,7 @@ async function aSeizure(seed: string, how: 'awarded' | 'lent') {
 
     world.objects.push(transferPossession(
         makeObject({
-            id: 'the-thing', name: 'a plain iron blade', kind: 'weapon',
+            id: 'the-thing', name: 'a plain iron blade', kind: 'artifact',
             significance: 'significant', power: 12, ownerId: HOUSE.id, ownerName: HOUSE.name
         }),
         {

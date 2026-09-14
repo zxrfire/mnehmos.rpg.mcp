@@ -31,7 +31,7 @@ const after = advanceWorldYears(state, 300).state as any;
 const alive = (after.npcs as any[]).filter(n => n.status === 'alive');
 
 const roadsHeldBy = (n: any): string[] => (n.cultivation.techniqueIds as string[])
-    .filter(id => { const t = getTechnique(id); return !!t && t.class === 'cultivation'; });
+    .filter(id => { const t = getTechnique(id); return !!t; });
 
 console.log('HOW MANY CULTIVATION ROADS A PERSON HOLDS, BY BAND');
 console.log('band     n    mean roads held   hold exactly 1   hold 0');

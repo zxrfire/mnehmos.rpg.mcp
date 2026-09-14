@@ -112,7 +112,10 @@ describe('it reaches the player, not just the inspector', () => {
             Math.round(years * 365.25),
             {
                 seed: 'no-method-guard',
-                ambient: 'normal',
+                // `ambient` left the context when the qi of a place became a
+                // fact about the place: it is derived from the seed and the
+                // location now, so the band was being named here and ignored.
+                locationId: 'nowhere',
                 randomEvents: false,
                 grainAbstinence: true,
                 options: techniqueCap === undefined ? {} : { techniqueCap }

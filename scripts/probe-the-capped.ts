@@ -33,8 +33,8 @@ const inHouse = above12.filter(n => n.factionId).length;
 console.log(`  of those, in a house: ${inHouse}   unbacked: ${above12.length - inHouse}`);
 
 // What the world's shelves could offer them if anything could reach past a shelf.
-const { TECHNIQUES } = await import('../src/data/cultivation/techniques.js');
-const roads = (TECHNIQUES as any[]).filter(t => t.class === 'cultivation' && t.cap != null);
+const { TECHNIQUES, stopsSomewhere } = await import('../src/data/cultivation/techniques.js');
+const roads = TECHNIQUES.filter(t => stopsSomewhere(t));
 console.log(`\n  cultivation manuals in the catalog: ${roads.length}`);
 for (const lo of [21, 29, 37, 41]) {
     console.log(`    capping above ${lo}: ${roads.filter(t => Number(t.cap) > lo).length}`);

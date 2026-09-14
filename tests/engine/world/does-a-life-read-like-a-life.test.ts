@@ -33,7 +33,9 @@ let cached: WorldState | null = null;
 function advanced(): WorldState {
     if (cached) return cached;
     const seeded = seedWorld({ seed: 'a-life', catalog: fixtureCatalog(), presentYear: 1000, population: 300 });
-    cached = advanceWorldYears(seeded.state, 400, { pressure: { eventsPerYear: 2 } }).state;
+    // `PressureOptions` takes `intensity` and `maxEvents` and has never taken
+    // an `eventsPerYear`. This asked for one and got the world's own rate.
+    cached = advanceWorldYears(seeded.state, 400).state;
     return cached;
 }
 

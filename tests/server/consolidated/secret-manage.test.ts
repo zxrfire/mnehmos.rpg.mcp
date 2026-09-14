@@ -1,19 +1,16 @@
 import { handleSecretManage, SecretManageTool } from '../../../src/server/consolidated/secret-manage.js';
 import { getDb, closeDb } from '../../../src/storage/index.js';
 import { WorldRepository } from '../../../src/storage/repos/world.repo.js';
-import { SecretRepository } from '../../../src/storage/repos/secret.repo.js';
 import { randomUUID } from 'crypto';
 
 describe('secret_manage consolidated tool', () => {
     let worldId: string;
     let db: ReturnType<typeof getDb>;
-    let secretRepo: SecretRepository;
 
     beforeEach(() => {
         closeDb();
         db = getDb(':memory:');
         const worldRepo = new WorldRepository(db);
-        secretRepo = new SecretRepository(db);
 
         // Create a test world
         worldId = randomUUID();
@@ -24,13 +21,12 @@ describe('secret_manage consolidated tool', () => {
             seed: '12345',
             width: 100,
             height: 100,
-            tileData: '{}',
             createdAt: now,
             updatedAt: now
         });
     });
 
-    const ctx = { worldId: '', partyId: '', encounterContext: null };
+    const ctx = { sessionId: 'test-session' };
 
     describe('tool definition', () => {
         it('should have correct name and description', () => {
@@ -369,7 +365,6 @@ describe('secret_manage consolidated tool', () => {
                 seed: '99999',
                 width: 100,
                 height: 100,
-                tileData: '{}',
                 createdAt: now,
                 updatedAt: now
             });

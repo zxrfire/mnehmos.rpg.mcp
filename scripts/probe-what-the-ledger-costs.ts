@@ -42,7 +42,9 @@ async function main(): Promise<void> {
     for (const seed of SEEDS) {
         const seeded = seedWorld({ seed, catalog });
         const started = Date.now();
-        const state = advanceWorldYears(seeded.state, YEARS, { pressure: { eventsPerYear: 1.2 } }).state;
+        // `pressure` carried an `eventsPerYear` that PressureOptions never had, so
+        // every run this probe has published was at the default event rate.
+        const state = advanceWorldYears(seeded.state, YEARS).state;
         const ms = Date.now() - started;
         totalMs += ms;
 

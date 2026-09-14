@@ -135,7 +135,11 @@ describe('the artifact catalog', () => {
 
         const shape = (row: string): string[] =>
             (row.match(/<td class="([a-z]+)"/g) ?? []).map(m => m.replace(/<td class="|"/g, ''));
-        expect(shape(rows[0])).toEqual(shape(rows[rows.length - 1]));
+        const firstRow = rows[0];
+        const lastRow = rows[rows.length - 1];
+        expect(firstRow, 'the artifact table printed no rows').toBeTruthy();
+        expect(lastRow, 'the artifact table printed no rows').toBeTruthy();
+        expect(shape(firstRow!)).toEqual(shape(lastRow!));
     });
 
     it('reads the making ceiling off the catalog instead of asserting one', () => {
@@ -1035,6 +1039,146 @@ describe('two bodies that used to be one posting', () => {
         expect(flat).toContain(rootSill!.name);
         // And they answer to different apexes, which is the whole of it.
         expect(FACTION_PARENTAGE[rootSill!.id].parentFactionId).not.toBe(kiln!.apexId);
+    });
+});
+
+describe('what a contention says about the ladder', () => {
+    /**
+     * NOTHING, MOSTLY, AND THE SHEET USED TO SAY "LEVEL".
+     *
+     * A contention is derived: two bodies with a hand on one object - one art
+     * on two teach lists, one patron, one event both were party to - are
+     * contending whether or not anybody wrote a relationship between them.
+     * Every derived row was stamped `alongside`, on the argument that a
+     * contention says nothing about the ladder. That is a reason to say
+     * nothing. `alongside` renders as "stands level with", which is a positive
+     * claim of equal standing, and the design owner read this line off the
+     * sheet:
+     *
+     *   Clear River Alliance stands level with Earth Vein Tower.
+     *
+     * The Alliance is an unbacked house holding fords; the Tower administers
+     * the vein system and answers to nobody. The ruling: no unbacked sects
+     * stand level with an apex.
+     *
+     * Three things put a pair in order and they are all read out of the tables
+     * that draw the org chart, so a derived row can never disagree with it: a
+     * grant anywhere up the chain, an apex (which has nobody above it by
+     * construction), and one roof over both. Measured on the catalog as it
+     * stands: 318 derived rows, of which 28 are placed by an apex, 16 by a
+     * shared parent, and 274 by nothing at all.
+     */
+    const derived = reg.dossiers.flatMap(d =>
+        d.relationships.filter(r => r.since === null).map(r => ({ from: d, r })));
+
+    it('has derived rows to talk about', () => {
+        expect(derived.length).toBeGreaterThan(50);
+    });
+
+    it('never prints an unbacked house as the peer of an institution above the map', () => {
+        const apexIds = new Set(APEX_INSTITUTIONS.flatMap(a => idsForFaction(a.id)));
+        for (const { from, r } of derived) {
+            const theirs = idsForFaction(r.otherId).some(id => apexIds.has(id));
+            const mine = idsForFaction(from.id).some(id => apexIds.has(id));
+            if (theirs === mine) continue;
+            expect(r.stance, `${from.name} against ${r.otherName}`).not.toBe('alongside');
+            expect(r.stance).toBe(theirs ? 'above' : 'below');
+        }
+    });
+
+    it('says nothing rather than level where nothing places the two of them', () => {
+        const unplaced = derived.filter(x => x.r.stance === 'unplaced');
+        expect(unplaced.length, 'every derived pair is placed, which cannot be right')
+            .toBeGreaterThan(derived.length / 2);
+        for (const { from, r } of unplaced) {
+            // Neither holds from the other anywhere up the chain, and they are
+            // not under one roof. If any of those were true the row would be
+            // placed, and this assertion is what stops `unplaced` becoming the
+            // new flat default.
+            const mine = FACTION_PARENTAGE[from.id]?.parentFactionId ?? null;
+            const theirs = FACTION_PARENTAGE[r.otherId]?.parentFactionId ?? null;
+            expect(mine === null || theirs === null || mine !== theirs,
+                `${from.name} and ${r.otherName} are under one roof and read as unplaced`).toBe(true);
+        }
+    });
+
+    it('calls two bodies level only where the world puts them under one roof', () => {
+        const level = derived.filter(x => x.r.stance === 'alongside');
+        expect(level.length).toBeGreaterThan(0);
+        for (const { from, r } of level) {
+            const mine = FACTION_PARENTAGE[from.id]?.parentFactionId ?? null;
+            const theirs = FACTION_PARENTAGE[r.otherId]?.parentFactionId ?? null;
+            const bothApex = idsForFaction(from.id).some(id => getApexInstitution(id))
+                && idsForFaction(r.otherId).some(id => getApexInstitution(id));
+            expect(bothApex || (mine !== null && mine === theirs),
+                `${from.name} is level with ${r.otherName} on no authority`).toBe(true);
+        }
+    });
+
+    it('renders the fourth answer as words rather than as a blank', () => {
+        expect(flat).toContain('not placed against it');
+        expect(flat).toMatch(/Nothing places .+ above or below /);
+    });
+
+    /**
+     * THE SAME DEFECT ONE COLUMN OVER, ruled on beside the first.
+     *
+     * Every derived row was also stamped `warmth: 'distant'`, which the sheet
+     * glosses as "no ill will and no contact; nobody maintains this one". That
+     * is a specific claim about how two houses conduct themselves and it says
+     * somebody looked; the absence of a record says only that nobody wrote one
+     * down. Measured on the catalog as it stands: 451 rows on the sheet, 132
+     * authored and 319 derived. All 319 derived rows carried distant/distant
+     * and now carry `unrecorded`; the 9 authored rows that say distant from
+     * this end say it because somebody wrote it, and are untouched.
+     *
+     * `unrecorded` is not a seventh temperature. It is off the scale, it takes
+     * no colour, and nothing that counts the ends of the scale counts it.
+     */
+    it('says nobody wrote a conduct down rather than inventing a cool one', () => {
+        for (const { r } of derived) {
+            expect(r.warmth).toBe('unrecorded');
+            expect(r.theirWarmth).toBe('unrecorded');
+        }
+        expect(flat).toContain('Nothing is recorded of what either of them does about the other.');
+    });
+
+    it('leaves a house that is genuinely distant distant', () => {
+        const authored = reg.dossiers.flatMap(d =>
+            d.relationships.filter(r => r.since !== null));
+        const stillDistant = authored.filter(r => r.warmth === 'distant');
+        expect(stillDistant.length, 'the authored distant rows were swept up too')
+            .toBeGreaterThan(0);
+        for (const r of authored) {
+            expect(r.warmth, 'an authored row has somebody\'s word for it and cannot be unrecorded')
+                .not.toBe('unrecorded');
+        }
+    });
+
+    it('keeps the unwritten rows off the warmth scale entirely', () => {
+        // THE DANGEROUS HALF OF WIDENING A VOCABULARY: anything that ORDERS
+        // warmth silently gives a new member a position on a scale it does not
+        // belong on. `warmthRank` was `Math.max(0, indexOf(w))` - a clamp put
+        // there to keep the arithmetic safe - so a word the scale did not
+        // contain scored 0, the index of `warm`, and every row nobody wrote
+        // would have been counted as a house glad of the other and willing to
+        // spend on it unasked.
+        //
+        // Asserted through the page, because that is where it would be seen.
+        // "Close to" is the warm end and the warm end is one row in the whole
+        // world, so the sheet prints exactly one figure and it is 1. Restore
+        // the clamp and this goes to three figures on most entries.
+        const closeCounts = [...flat.matchAll(/close to (\d+)/g)].map(m => Number(m[1]));
+        expect(closeCounts.length, 'nothing on the page counts the warm end any more')
+            .toBeGreaterThan(0);
+        const warmRows = reg.dossiers.flatMap(d => d.relationships).filter(r => r.warmth === 'warm');
+        for (const n of closeCounts) expect(n).toBeLessThanOrEqual(warmRows.length);
+        const html = renderRegisterHtml(reg as never, {} as never);
+        // No colour RULE may be added for it - a tinted absence reads as a
+        // temperature, which is the whole thing being fixed. Matched as a rule
+        // rather than as a substring, because the stylesheet carries a comment
+        // naming the selector to say why it is not there.
+        expect(html).not.toMatch(/\.warm-unrecorded\s*\{/);
     });
 });
 

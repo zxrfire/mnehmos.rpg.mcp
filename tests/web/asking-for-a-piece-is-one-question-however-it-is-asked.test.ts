@@ -116,7 +116,11 @@ function theyOweYou(db: unknown, holderId: string, subjectId: string): void {
         kind: 'favor',
         holderId,
         subjectId,
-        cause: 'debt_unpaid',
+        // `other` and not a named one: the catalog lists no cause for a
+        // kindness of this shape, and nothing on this path branches on the
+        // cause. It used to say `debt_unpaid`, which is not a cause this
+        // engine has ever had.
+        cause: 'other',
         severity: 'serious',
         onDay: 0,
         description: 'Did it a kindness it could not do for itself.'

@@ -1629,7 +1629,7 @@ function renderSheet() {
         <dt>Sect</dt><dd>${d.sectName
           ? d.sectName
           : (c.sectId ? 'Affiliated (name unknown to this client)' : 'Unaffiliated')}</dd>
-        <dt>Rank</dt><dd>${c.sectRank ? String(c.sectRank) : '-'}</dd>
+        <dt>Rank</dt><dd>${d.sectRung ? String(d.sectRung) : '-'}</dd>
       </dl>
     </section>
 

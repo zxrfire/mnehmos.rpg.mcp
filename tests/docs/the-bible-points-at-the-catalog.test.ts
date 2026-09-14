@@ -56,7 +56,9 @@ describe('the bible points at the catalog', () => {
         // discusses the Protector at length and only passes because it now
         // names false-immortals.ts.
         const rows = surveyBible();
-        const immortals = rows.find(r => r.file === 'climbing/immortals.md');
+        // `surveyBible` comes from a `.mjs` with no declarations, so its rows
+        // arrive as `any`; the predicate names what it reads off one.
+        const immortals = rows.find((r: { file: string }) => r.file === 'climbing/immortals.md');
         expect(immortals, 'climbing/immortals.md is not being surveyed').toBeTruthy();
         expect(immortals!.points).toContain('false-immortals.ts');
     });

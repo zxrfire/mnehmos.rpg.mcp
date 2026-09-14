@@ -18,7 +18,6 @@
 import { makeGame } from '../tests/web/harness.js';
 import {
     FALSE_IMMORTAL_ORDINAL,
-    LAST_CROSSING_ORDINAL,
     TRUE_IMMORTAL_ORDINAL,
     lifespanForOrdinal,
     progressRequiredForOrdinal,
@@ -35,10 +34,8 @@ import { formInsight, recordAchievement } from '../src/engine/cultivation/unders
 import type { Insight } from '../src/schema/cultivation.js';
 import { makeCultivator } from '../tests/engine/cultivation/fixtures.js';
 import { getSect } from '../src/data/cultivation/sects.js';
-import { getHoldingsOf } from '../src/data/cultivation/immortal-items.js';
+import { getHoldingsOf, getImmortalItem } from '../src/data/cultivation/immortal-items.js';
 import {
-    handleLeave,
-    handlePromote,
     requiredContributionForRank,
     requiredOrdinalForRank
 } from '../src/server/consolidated/sect-manage.js';
@@ -381,7 +378,15 @@ async function disciple(): Promise<void> {
     await play(game, 'I ask the sect for a promotion', 'leader');
     const holdings = getHoldingsOf(sect.id);
     line(`  what the house owns: ${holdings.length} immortal object(s)`);
-    for (const h of holdings.slice(0, 4)) line(`    - ${h.name} (${h.grade})`);
+    // A holding names an item and counts it by grade; the name and the grades
+    // live on the item. Reading `h.name` and `h.grade` printed "undefined
+    // (undefined)" for every row.
+    for (const h of holdings.slice(0, 4)) {
+        const item = getImmortalItem(h.itemId);
+        if (!item) { line(`    - ${h.itemId}, which is not in the catalog`); continue; }
+        line(`    - ${item.name} (${h.byGrade.higher} higher, ${h.byGrade.middle} middle, `
+            + `${h.byGrade.lower} lower)`);
+    }
     await play(game, 'I look over the sect', 'leader');
 
     // ── does the rank actually DO anything, or is it a title and a stipend? ──

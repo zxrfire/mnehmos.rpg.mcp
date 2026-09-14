@@ -64,26 +64,34 @@ import {
 import {
     WORKING_KNOWLEDGE_MARGIN,
     aThingOnOpenSale,
+    theHeightAThingIsPitchedAt,
     whoWouldHaveHeardOfIt
 } from '../../src/engine/cultivation/who-has-heard-of-a-thing-past-the-counter';
 import {
     whatOneOfTheWorldsOwnPeopleKnows
 } from '../../src/engine/world/what-one-of-the-worlds-own-people-knows';
 import { makeLocation } from '../../src/engine/world/locations';
-import { pillBandOrdinal } from '../../src/engine/cultivation/breakthrough';
-import { PILLS, pillThatMends } from '../../src/data/cultivation/pills';
+import { PILLS } from '../../src/data/cultivation/pills';
+import {
+    RepairTermsSchema
+} from '../../src/data/cultivation/structural-repair-medicine';
+import {
+    cheapestMedicineFor
+} from '../../src/engine/cultivation/what-structural-repair-medicine-can-reach';
 import { medicineNeededFor } from '../../src/engine/cultivation/what-grade-of-medicine-a-wound-needs';
 import { HOME_REGION_ID } from '../../src/data/cultivation/regions';
 import type { Injury } from '../../src/schema/cultivation';
 import type { WorldState } from '../../src/engine/world/world-state';
 
 /**
- * The medicine for a maiming, off the catalog rather than named here. A wound
- * key and the pill that mends it are one fact and this test does not restate
- * it - if the catalog moves the medicine, this follows it.
+ * The medicine for a maiming, off the catalog rather than named here - and off
+ * the OTHER catalog since the design owner ruled that structural repair
+ * medicine answers every permanent injury by rank. What is being gated has not
+ * changed: a thing past the counter, pitched at a height, that somebody at the
+ * bottom of the ladder has no way of having heard of.
  */
-const THE_MEDICINE = pillThatMends('severed-flesh')!;
-const THE_BAND = pillBandOrdinal(THE_MEDICINE.grade);
+const THE_MEDICINE = cheapestMedicineFor('severed-flesh', 0)!;
+const THE_BAND = theHeightAThingIsPitchedAt(THE_MEDICINE.id)!;
 
 /** Something a counter sells, for the contrast. Found, never written down. */
 const ON_THE_COUNTER = PILLS.find(pill =>
@@ -121,7 +129,13 @@ describe('who has heard of a thing past the counter', () => {
     });
 
     it('does not reach somebody standing further below it than their knowledge runs', () => {
-        expect(aThingOnOpenSale(THE_MEDICINE)).toBe(false);
+        // `aThingOnOpenSale` asked whether a counter sells it, and it takes a
+        // pill. The repair family answers that question in its own vocabulary
+        // and the answer is never yes: `RepairTerms` has no open-sale member,
+        // so there is no term a row could carry that would put one on a shelf.
+        expect(RepairTermsSchema.options).toEqual(
+            expect.arrayContaining(['private_sale', 'court_auction_only', 'favour_or_singular_thing']));
+        expect(RepairTermsSchema.options.length).toBe(3);
         expect(whoWouldHaveHeardOfIt({
             thingId: THE_MEDICINE.id,
             ordinal: THE_BAND - WORKING_KNOWLEDGE_MARGIN - 1,

@@ -210,7 +210,7 @@ export function othersPresent(
     const place = worldLocationFor(world, cultivator.location);
     if (!place) return oneCrowd(stored, []);
 
-    const inWorld = npcsAt(world, place.id).map(npc => worldRosterRow(npc, world.currentDay));
+    const inWorld = npcsAt(world, place.id).map(npc => worldRosterRow(npc, world.currentDay, world));
     return oneCrowd(stored, inWorld);
 }
 

@@ -1122,7 +1122,10 @@ describe('a conditional is not a commitment', () => {
         const after = await game.state();
 
         expect(sectOf(db, cultivator.id), 'a conditional put somebody on the rolls').toBeNull();
-        expect(after.cultivator!.sectRank).toBeNull();
+        // The rung is read off the roll now, and the sheet carries it as
+        // `derived.sectRung`. There is no rank on the cultivator row to
+        // check, which is the stronger form of this assertion.
+        expect(after.derived!.sectRung).toBeNull();
         expect(after.run!.elapsedDays).toBe(before.run!.elapsedDays);
     }, 120_000);
 
@@ -1211,7 +1214,7 @@ describe('a conditional is not a commitment', () => {
         const after = await game.state();
 
         expect(sectOf(db, cultivator.id), 'the commitment did not enrol').not.toBeNull();
-        expect(after.cultivator!.sectRank).toBe(promised);
+        expect(after.derived!.sectRung).toBe(promised);
     }, 120_000);
 
     /**

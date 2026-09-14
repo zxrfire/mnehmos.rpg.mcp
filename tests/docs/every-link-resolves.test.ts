@@ -12,6 +12,9 @@ describe('the docs link to each other', () => {
     it('has no broken relative links', () => {
         const { broken, checked } = brokenLinks();
         expect(checked).toBeGreaterThan(1000);
-        expect(broken.map(b => `${b.from} -> ${b.to}`)).toEqual([]);
+        // The script is a `.mjs` with no declarations, so what it returns is
+        // `any` until the build typechecks it. Naming the shape here at least
+        // keeps this call honest about what it reads off each entry.
+        expect(broken.map((b: { from: string; to: string }) => `${b.from} -> ${b.to}`)).toEqual([]);
     });
 });

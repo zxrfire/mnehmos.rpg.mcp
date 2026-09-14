@@ -81,7 +81,7 @@ export {
     POTENCY_UNITS,
     MINOR_HEALING_PILL_ID,
     GRAIN_ABSTINENCE_PILL_ID,
-    PERPETUAL_GRAIN_ABSTINENCE_DAYS,
+    GRAIN_ABSTINENCE_DAYS,
     getPill,
     requirePill,
     getPillsByEffect,
@@ -473,13 +473,21 @@ export function findTechniquesForRoot(
  * books it teaches, and the faction catalog's claim about what it can produce
  * is either supported by that number or it is not.
  *
- * Null means it teaches no cultivation manual at all. For a closed house
- * (`recruits: false`) that is correct and complete: the Hollow Court reads
- * `reliableOrdinal: 0` while sitting at power ordinal 40, and its own note
- * says why - "produces nobody, by construction: it takes no disciples". Zero
- * there is a statement about INTAKE, not about the quality of anything it
- * could teach. For a house that DOES recruit, null is a content gap: it takes
- * disciples and hands them nothing to practise.
+ * Null means it teaches nothing at all. For a closed house (`recruits: false`)
+ * that is correct and complete: the Hollow Court reads `reliableOrdinal: 0`
+ * while sitting at power ordinal 40, and its own note says why - "produces
+ * nobody, by construction: it takes no disciples". Zero there is a statement
+ * about INTAKE, not about the quality of anything it could teach. For a house
+ * that DOES recruit, null is a content gap: it takes disciples and hands them
+ * nothing to practise.
+ *
+ * Every book on the shelf counts, because every art carries somebody. Measured
+ * when the gate came off: 15 of 38 houses' ceilings rose - nine by four rungs,
+ * four by eight, and two by sixteen, those last being the houses that taught one
+ * cheap primer and a deep bench of fighting arts. That is the consequence of the
+ * ruling rather than a bug in it - a
+ * house's combat catalog was always something it could carry a disciple with,
+ * and the old predicate was refusing to count it.
  */
 export function houseTeachingCeiling(sectId: string): number | null {
     const sect = getSect(sectId);
@@ -491,8 +499,8 @@ export function houseTeachingCeiling(sectId: string): number | null {
     let ceiling: number | null = null;
     for (const id of taught) {
         const technique = getTechnique(id);
-        if (!technique || technique.class !== 'cultivation') continue;
-        // An uncapped manual carries somebody the whole way. No house teaches
+        if (!technique) continue;
+        // An uncapped art carries somebody the whole way. No house teaches
         // one - they are all ruin or grave - but if that ever changed, the
         // ceiling is the top of the ladder rather than a missing number.
         const cap = technique.cap ?? MAX_ORDINAL;

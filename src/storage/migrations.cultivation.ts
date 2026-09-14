@@ -74,8 +74,18 @@ export function migrateCultivation(db: Database.Database): void {
 
       -- Wealth and standing.
       spirit_stones INTEGER NOT NULL DEFAULT 30,
+      -- The house, and only the house. A sect_rank string used to sit beside
+      -- it, mirrored off sect_members by the sect repository, and it was a
+      -- second copy of a rung that the roll and the world row already held
+      -- between them: it said nothing where nothing set the mirror and said the
+      -- joining rung wherever the world had moved somebody. The one read is
+      -- where-somebody-stands-on-a-houses-roll.ts. An older database still
+      -- carries the column; nothing writes it and nothing reads it.
+      --
+      -- sect_id stays, and is NOT the same fact: somebody born on a house's
+      -- roll has one with no sect_members row at all, which is this world's
+      -- "on the roll, at no rung".
       sect_id TEXT,
-      sect_rank TEXT,
       location TEXT,                                 -- free-text place name; geography here is narrative
       feuds TEXT NOT NULL DEFAULT '[]',              -- JSON array of ids/names holding a grudge
       known_techniques TEXT NOT NULL DEFAULT '[]',   -- JSON array, denormalised mirror of cultivator_techniques
@@ -303,8 +313,7 @@ export function migrateCultivation(db: Database.Database): void {
 
     -- ── SECT MEMBERSHIP ──────────────────────────────────────────────────
     -- rank_index is the authority (it indexes into sects.ranks and
-    -- sects.stipend); rank_title is denormalised for display and for the
-    -- cultivators.sect_rank mirror.
+    -- sects.stipend); rank_title is denormalised for display.
     CREATE TABLE IF NOT EXISTS sect_members (
       sect_id TEXT NOT NULL,
       cultivator_id TEXT NOT NULL,

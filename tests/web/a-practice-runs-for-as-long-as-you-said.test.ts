@@ -51,6 +51,14 @@ async function holdingAnArt(seed: string): Promise<Playing> {
     const made = await makeGameInWorld({ seed, worldSeed: WORLD }) as unknown as { game: Playing };
     const { game } = made;
     await game.newRun('Lin Yue');
+    // BUY IT FIRST, BECAUSE THE STALL NOW CARRIES IT. When the two kinds of
+    // technique collapsed into one, every art gained a cap, and a cheap art
+    // with a cap that four or more houses teach is stall stock by the market
+    // module's own definition. Eight books are, six of them fighting arts, and
+    // `learn` answers a copyless player with a price rather than a yes. The
+    // route is played rather than arranged: `buy` is what a player types, and
+    // the refusal names the stall and the figure.
+    await game.act(`i buy a copy of ${ART}`);
     const held = await game.act(`i learn ${ART}`);
     expect(held.narration ?? '', 'the art was taken up').toMatch(/held now/i);
     return game;

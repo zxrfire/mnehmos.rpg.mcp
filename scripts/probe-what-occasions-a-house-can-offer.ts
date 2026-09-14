@@ -26,6 +26,7 @@ import {
     aFindThisHouseCouldSendFor,
     forbiddenGroundInTheProvinceOf,
     whatStandingOnItGives,
+    whatAHousesOwnErrandsBringBack,
     whereTheOpenGroundIs,
     type WhereTheOpenGroundIs,
     reasonsOpenTo,
@@ -82,7 +83,8 @@ function houseAsItStands(
     state: WorldState,
     faction: FactionRecord,
     openGround: WhereTheOpenGroundIs,
-    standingOnIt: (holderId: string, locationId: string) => KnowingStage
+    standingOnIt: (holderId: string, locationId: string) => KnowingStage,
+    cameBack: (factionId: string, locationId: string) => KnowingStage
 ): HouseAsItStands {
     return {
         id: faction.id,
@@ -91,12 +93,14 @@ function houseAsItStands(
         standing: faction.standing,
         hasAFind: aFindThisHouseCouldSendFor({
             ground: openGround,
+            houseId: faction.id,
             seatLocationId: faction.seatLocationId,
             roll: state.npcs
                 .filter(npc => npc.factionId === faction.id && npc.status === 'alive')
                 .map(npc => ({ id: npc.id, rankIndex: npc.factionRankIndex })),
             rankCount: faction.ranks.length,
-            stageFor: standingOnIt
+            stageFor: standingOnIt,
+            errands: cameBack
         }) !== null,
         sitsDownWith: circleCandidatesFor(state, faction).map(f => f.id),
         standsNearForbiddenGround:
@@ -120,6 +124,7 @@ function readOneWorld(state: WorldState): WorldReading {
     // Both built once for the whole walk. The reading is per house per ruin,
     // and each half of it walks something long.
     const standingOnIt = whatStandingOnItGives(state.history.facts);
+    const cameBack = whatAHousesOwnErrandsBringBack(state.history.facts);
     const openGround = whereTheOpenGroundIs(state.locations);
     const roll = new Map<string, { id: string; name: string; rankIndex: number; realmOrdinal: number }[]>();
     for (const npc of state.npcs) {
@@ -148,7 +153,7 @@ function readOneWorld(state: WorldState): WorldReading {
         if (roster.length < 2) continue;
         houses++;
 
-        const house = houseAsItStands(state, faction, openGround, standingOnIt);
+        const house = houseAsItStands(state, faction, openGround, standingOnIt, cameBack);
         if ((house.sitsDownWith?.length ?? 0) > 0) housesWithACircle++;
         if (Object.values(faction.standing).some(v => v >= ALLIED_STANDING)) housesWithAnAlly++;
         if (Object.values(faction.standing).some(v => v <= RIVAL_STANDING)) housesWithARival++;

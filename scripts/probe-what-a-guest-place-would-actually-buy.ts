@@ -16,7 +16,7 @@
  * Run: node --loader ts-node/esm scripts/probe-what-a-guest-place-would-actually-buy.ts
  */
 import { SECTS } from '../src/data/cultivation/sects.js';
-import { getTechnique, classOf, capOf } from '../src/data/cultivation/techniques.js';
+import { getTechnique, capOf } from '../src/data/cultivation/techniques.js';
 import { isCommonlyHeld, COMMON_MANUAL_CAP, manualsOf } from '../src/engine/world/manuals.js';
 import { getProductionTier } from '../src/data/cultivation/faction-character.js';
 
@@ -31,7 +31,7 @@ for (const s of SECTS as any[]) {
         const common = isCommonlyHeld(id);
         const writtenTo = t.cap ?? capOf(t);
         const belowStall =
-            classOf(t) === 'cultivation' && writtenTo != null && writtenTo <= COMMON_MANUAL_CAP;
+            writtenTo != null && writtenTo <= COMMON_MANUAL_CAP;
         // Outside the house, with no purchased copy and no provenance.
         const blocked = !common || belowStall;
         (blocked ? gated : free).push(

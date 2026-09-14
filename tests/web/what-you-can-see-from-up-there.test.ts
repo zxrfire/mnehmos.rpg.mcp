@@ -60,7 +60,11 @@ describe('the floor is where the world already puts flight', () => {
      */
     it('adds no capability grant anywhere', async () => {
         const capability = await import('../../src/engine/world/capability.js');
-        const grants = JSON.stringify(capability.CLASS_GRANTS ?? {});
+        // `CLASS_GRANTS` is module-private. Asked of the exported reader at the
+        // top of the ladder instead, which is cumulative and so is the whole
+        // table. This used to read `capability.CLASS_GRANTS ?? {}`, which was
+        // always `{}` - the three lines below asserted nothing at all.
+        const grants = JSON.stringify(capability.grantsAvailableAt(MAX_ORDINAL));
         expect(grants).not.toContain('fl');
         expect(grants).not.toContain('sight');
         expect(grants).not.toContain('horizon');

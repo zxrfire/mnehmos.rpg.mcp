@@ -76,7 +76,9 @@ describe('who is on the road with somebody', () => {
 
     it('does not carry the dead', () => {
         const party = aPartyOfTwo(10).map((row, at) =>
-            at === 0 ? { ...row, status: 'dead' as const } : row
+            // `dead` is not a status the world has. `physically_dead` is, and
+            // the filter this pins reads anything that is not `alive`.
+            at === 0 ? { ...row, status: 'physically_dead' as const } : row
         );
         const read = whoIsOnTheRoadWith(party, LEADER, 1);
         expect(read).toHaveLength(1);

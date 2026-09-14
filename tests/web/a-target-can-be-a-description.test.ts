@@ -45,15 +45,30 @@ function person(over: Partial<SomebodyDescribable> & { id: string }): SomebodyDe
     };
 }
 
+/**
+ * Everything `whoTheDescriptionFits` needs that is not the question itself.
+ *
+ * Taken off the function rather than written out, so a world fixture here is
+ * the shape the engine takes and the literal `NO_WORLD` below does not narrow
+ * the tests that vary one field of it.
+ */
+type TheWorldLookedAtFrom = Omit<
+    Parameters<typeof whoTheDescriptionFits>[0], 'description' | 'candidates'
+>;
+
 /** Nobody stands anywhere in particular and nothing is tied to anything. */
-const NO_WORLD = {
+const NO_WORLD: TheWorldLookedAtFrom = {
     observer: { ordinal: 10, sectId: null, rankIndex: null },
     alignmentOf: () => null,
     rankIndexOf: () => null,
     tiesTo: () => []
 };
 
-const fits = (query: string, candidates: readonly SomebodyDescribable[], world = NO_WORLD) => {
+const fits = (
+    query: string,
+    candidates: readonly SomebodyDescribable[],
+    world: TheWorldLookedAtFrom = NO_WORLD
+) => {
     const description = theDescriptionThisIs(query);
     expect(description, `"${query}" was not read as a description`).not.toBeNull();
     return whoTheDescriptionFits({ description: description!, candidates, ...world })

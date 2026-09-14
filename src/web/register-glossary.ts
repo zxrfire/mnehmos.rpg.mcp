@@ -270,9 +270,10 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
         group: 'Governance',
         intro:
             'The answer to one question: who, if anybody, granted this faction the ground it is standing '
-            + 'on. These six are not degrees of one thing and they do not sit on a scale - two of them '
-            + 'describe holding from somebody, three describe holding from nobody for three completely '
-            + 'different reasons, and one is not in the pyramid at all.',
+            + 'on. These are not degrees of one thing and they do not sit on a scale - two describe '
+            + 'holding from somebody, two describe holding from nobody for two completely different '
+            + 'reasons, and one is not in the pyramid at all. Why a house holds from nobody is a separate '
+            + 'question from how it is backed, and it is answered on each house\'s own entry.',
         entries: [
             {
                 term: 'Federated',
@@ -291,12 +292,15 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                     + 'ruler means being processed.'
             },
             {
-                term: 'Deference',
+                term: 'Held by reputation',
                 meaning:
-                    'Holds from nobody, by reputation. A small faction administers only what it can '
-                    + 'comfortably walk and holds a far larger zone because nobody is willing to find out '
-                    + 'what happens otherwise. The claim is worth what it was worth the last time it was '
-                    + 'tested, and beliefs decay.'
+                    'Not a way of being backed but a reason for not being: one of the unbacked houses '
+                    + 'administers only what it can comfortably walk and holds a far larger zone because '
+                    + 'nobody is willing to find out what happens otherwise. The claim is worth what it '
+                    + 'was worth the last time it was tested, and beliefs decay. It is the only hold in '
+                    + 'the world that can go in a season with nobody crossing a line. This was a '
+                    + 'governance model of its own, which printed a house that answers to nothing beside '
+                    + 'the houses that answer to somebody.'
             },
             {
                 term: 'Unassailable',
@@ -313,10 +317,14 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                     + 'usually that reason is that it has not been worth the trouble yet.'
             },
             {
-                term: 'Outside',
+                term: 'Bloodline house',
                 meaning:
-                    'Holds no vein by nature rather than by failure. The Dao houses sell services instead. '
-                    + 'They are not in the pyramid, which is why they cannot be evicted from it.'
+                    'A family that does a trade, holding no vein by nature rather than by failure. Intake '
+                    + 'is kinship, the house carries the family name, and there is no grant anybody above '
+                    + 'could decline to renew - which is why they are not in the pyramid and cannot be '
+                    + 'evicted from it. Seven houses. This was called "outside", which also caught a sect '
+                    + 'that sells a service and has an ordinary admission day, and printed a family and an '
+                    + 'adoption door onto it.'
             }
         ]
     },
@@ -369,7 +377,9 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
             + 'observe: what a body actually does about another body, not what it would say about them. '
             + 'The facts of a tie - who is above whom, what it is, what it is about - are stored once and '
             + 'shared, so only the warmth can be asymmetric, and where it is, that asymmetry is the most '
-            + 'useful thing on the row.',
+            + 'useful thing on the row. Six of these words are a scale. The seventh is not on it and says '
+            + 'so: most rows here are derived from two bodies holding one object rather than from '
+            + 'anything either of them wrote, and a row nobody wrote has no conduct to report.',
         entries: [
             {
                 term: 'Warm',
@@ -405,11 +415,40 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                 meaning: 'Acted against, or would be if the cost ever fell.'
             },
             {
+                // THE SAME DEFECT AS THE LEVEL DEFAULT, ONE COLUMN OVER, and
+                // it went the same way. Most rows on this sheet are derived
+                // from two bodies holding one object rather than from anything
+                // either of them wrote, and every one of them was stamped
+                // `distant` - "no ill will and no contact; nobody maintains
+                // this one". That is a specific claim about how two houses
+                // behave and it says somebody looked. Nobody had.
+                term: 'Unrecorded',
+                meaning:
+                    'Not a seventh word on the scale above and not the coolest of the six: it is what '
+                    + 'a row says when nobody wrote one. The catalog holds no conduct for this pair in '
+                    + 'either direction, and the row exists because both of them have a hand on the same '
+                    + 'object. It takes no colour for that reason - an absence that was tinted would be '
+                    + 'read as a temperature. Houses that are genuinely distant, with a record saying so, '
+                    + 'still read distant.'
+            },
+            {
                 term: 'Above / beside / under',
                 meaning:
                     'Where the other body stands, read out of the same tables that draw the org chart, so '
                     + 'a relationship can never disagree with the pyramid. Never a claim about strength: '
-                    + 'the highest acting body in the world stands beside three apexes and under nobody.'
+                    + 'the highest acting body in the world stands beside three apexes and under nobody. '
+                    + 'Three things put a pair in order and nothing else does - a grant anywhere up the '
+                    + 'chain, an apex, which has nobody above it by construction, and one roof over both.'
+            },
+            {
+                term: 'Not placed against it',
+                meaning:
+                    'The fourth answer, and it is the absence of the other three rather than a rung '
+                    + 'between them. Two bodies with a hand on the same object are contending; that says '
+                    + 'nothing about the ladder, and most such pairs on this sheet are in no order at '
+                    + 'all. Every one of them used to print as level, which is a claim of equal standing '
+                    + 'made out of a shared claim on one thing - so an unbacked river house stood level '
+                    + 'with the body that administers the vein system.'
             },
             {
                 term: 'From',
@@ -663,11 +702,21 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
                     + 'line at its word.'
             },
             {
-                term: 'Ord',
+                // THIS ENTRY SAID THE OPPOSITE OF WHAT THE ENGINE DOES. It read
+                // "the rung the art was written for - not a bar a reader has to
+                // clear", while `requiredOrdinal` is exactly a bar: a teacher
+                // refuses a student under it and a manual above the reader does
+                // not open. The design owner went looking for the minimum rung
+                // to learn an art, was looking straight at the column, and was
+                // being told by the sheet that it was not that.
+                term: 'Learn at',
                 meaning:
-                    'On this table only, the rung the art was written for - not a bar a reader has to '
-                    + 'clear. Nothing stops anybody practising an art above them, and several here are '
-                    + 'written for rungs nobody alive stands on.'
+                    'The lowest rung an art can be taken up from, and the engine holds it: a teacher '
+                    + 'standing over somebody below it refuses, and a manual above the reader\'s rung '
+                    + 'does not open. Holding the paper is a separate question - a copy can be bought, '
+                    + 'looted or inherited at any rung, and several arts here sit in houses with nobody '
+                    + 'who can use them. Not a ceiling: how far an art carries somebody is its cap, and '
+                    + 'how far a house can carry them is the teachable end on that house\'s own entry.'
             },
             {
                 term: 'Reach',

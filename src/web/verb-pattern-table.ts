@@ -1031,6 +1031,58 @@ export const ACQUISITION_PATTERN = new RegExp([
 
 export const ACQUISITION_SUBJECT_VERBS = /further with|with|past|beyond|of/;
 
+/**
+ * Writing the continuation rather than asking what the routes are.
+ *
+ * The act next door to {@link ACQUISITION_PATTERN}'s question, and the two are
+ * told apart by who is doing the work: every line here has the speaker writing.
+ * Asked ahead of acquisition so "I write what comes next myself" is not answered
+ * with a comparison of three routes, and ahead of the mortal economy for the
+ * reason acquisition is - `work out` reaches the employment branch, so "I work
+ * out what comes after this method" bought a season of hauling.
+ */
+export const WRITING_THE_CONTINUATION = new RegExp([
+    // The writing verbs, and what is being written.
+    /\b(?:write|writes|writing|wrote|put(?:ting)? down|set(?:ting)? down|compose|composes|composing|author|authoring)\b[^.?!]{0,40}\b(?:next stage|the stage|continuation|what comes (?:next|after)|the rest of (?:it|the (?:manual|method|art|book|canon|scripture)))\b/,
+    // Carrying it further yourself, where the object is a book and not a sense -
+    // `extend` alone belongs to reaching out with the qi.
+    /\b(?:extend|extends|extending)\s+(?:the|my|this|that)\s+(?:manual|method|art|book|canon|scripture|technique|form)\b/,
+    /\b(?:carry|carries|carrying|take|takes|taking)\b[^.?!]{0,30}\b(?:manual|method|art|book|canon|scripture)\b[^.?!]{0,24}\b(?:further myself|further on my own|past where it (?:stops|ends))\b/,
+    // Saying it as a claim about the world rather than about a verb.
+    /\bnobody has (?:ever )?written\b[^.?!]{0,40}\b(?:so i will|i will|myself)\b/,
+    /\bwork(?:s|ing)? out\b[^.?!]{0,40}\bwhat comes (?:next|after)\b/
+].map(r => r.source).join('|'));
+
+/** Where a sentence about writing one stops and names the book. */
+export const DERIVATION_SUBJECT_VERBS = /continuation of|stage of|next stage of|after|of|onto/;
+
+/** What the sentence leaves on the end of a book's name when it has one. */
+const WROTE_IT_ALONE_TAIL = /\b(?:myself|by myself|on my own|alone|for myself|in the end)\s*$/i;
+
+/**
+ * The words that name the CATEGORY rather than a book.
+ *
+ * "the next stage of the manual" names no manual. Handing that through as a
+ * target makes the handler search what this cultivator practises for something
+ * called `manual`, find nothing, and refuse a sentence that was perfectly
+ * clear - so a generic noun is read as "the one that has stopped carrying me",
+ * which is what the verb does with no target at all.
+ */
+const NAMES_NO_PARTICULAR_BOOK =
+    /^(?:manual|manuals|method|methods|art|arts|book|books|canon|canons|scripture|scriptures|technique|techniques|form|forms|stage|stages|continuation|it|this|that|one)$/i;
+
+/** The book being carried further, when the sentence actually named one. */
+export function theBookBeingCarriedFurther(input: string): string | undefined {
+    const named = extractSubject(input, DERIVATION_SUBJECT_VERBS);
+    if (named === undefined) return undefined;
+    const cleaned = named
+        .replace(WROTE_IT_ALONE_TAIL, '')
+        .replace(/^(?:the|my|this|that|a|an)\s+/i, '')
+        .trim();
+    if (cleaned.length < 3) return undefined;
+    return NAMES_NO_PARTICULAR_BOOK.test(cleaned) ? undefined : cleaned;
+}
+
 // THE THREE QUESTIONS A STUCK PLAYER ASKS
 
 /**
@@ -3961,7 +4013,15 @@ function planIntent(input: string): PlannedAction {
     // Above the attack branch because none of that branch's verbs is `use`, so
     // the sentence would fall past it. See {@link anArtAimedAtSomebody}.
     const aimed = anArtAimedAtSomebody(input);
-    if (aimed !== null && !AIMED_AT_THE_LADDER.test(text)) {
+    // AND NOT A SENTENCE ABOUT WRITING ONE. `work` is one of this branch's
+    // verbs and `method` is one of the art nouns it strips, so "I work out what
+    // comes after this method on my own" parsed as an art named "out what comes
+    // after this" put on somebody called "my own" - measured, and it is the
+    // categorical-gap rule pointing the wrong way: a swing nobody made. Guarded
+    // the same way `AIMED_AT_THE_LADDER` beside it is.
+    if (aimed !== null
+        && !AIMED_AT_THE_LADDER.test(text)
+        && !WRITING_THE_CONTINUATION.test(text)) {
         return { action: 'attack', target: aimed.at, withArt: aimed.art };
     }
 
@@ -4516,6 +4576,16 @@ function planIntent(input: string): PlannedAction {
     // ONE COMMAND, THREE COSTS. Ahead of the learning branch, because "how do I
     // get further with this manual" is not a request to learn a new one, and
     // ahead of the mortal-economy work rule, which takes "work out".
+    // ── and writing it yourself, which is the act rather than the question ──
+    //
+    // Ahead of acquisition: a player who says they are writing the continuation
+    // has already compared the routes and chosen one, and answering them with
+    // the comparison is the engine declining to hear them.
+    if (WRITING_THE_CONTINUATION.test(text)) {
+        const book = theBookBeingCarriedFurther(input);
+        return { action: 'derive', ...(book ? { target: book } : {}) };
+    }
+
     if (ACQUISITION_PATTERN.test(text)) {
         return {
             action: 'acquisition',

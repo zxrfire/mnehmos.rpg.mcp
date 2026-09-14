@@ -27,6 +27,7 @@
  */
 
 import { resolveMelee, type SideMemberInput } from '../src/engine/cultivation/combat.js';
+import { A_BLOW_MEANT_TO_END_IT } from '../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { forStream } from '../src/engine/cultivation/rng.js';
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
@@ -128,10 +129,10 @@ function winRate(attackers: SideMemberInput[], defs: SideMemberInput[]): number 
     for (let seed = 0; seed < SEEDS; seed++) {
         const r = resolveMelee(
             [
-                { id: 'plot', name: 'the plot', members: attackers, intent: { goal: 'kill' } },
-                { id: 'house', name: 'the house', members: defs, intent: { goal: 'kill' } }
+                { id: 'plot', name: 'the plot', members: attackers, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 'house', name: 'the house', members: defs, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('standoff-drift', seed), ambient: 'normal', turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('standoff-drift', String(seed)), ambient: 'normal', turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         // A stalemate is NOT a loss for the defender and is not a win for the
         // plot. Counting `winningSideId !== 'plot'` would be the same error

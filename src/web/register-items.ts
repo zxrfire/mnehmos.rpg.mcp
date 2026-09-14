@@ -32,6 +32,42 @@ import {
     ordinaryGradeCeiling,
     NOTHING_REPAIRS_ABOVE_ORDINAL
 } from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
+import {
+    BEASTS,
+    BEAST_MATERIALS,
+    BEAST_TIDES,
+    BEAST_CORE_ORDINAL,
+    BEAST_CHANGE_ORDINAL,
+    getBeast
+} from '../data/cultivation/beasts.js';
+import {
+    bandOf,
+    howAMaterialIsStored,
+    significanceOf as significanceOfBeastMaterial
+} from '../engine/world/hunting-a-spirit-beast.js';
+import {
+    CONVEYANCES,
+    CONVEYANCE_RECIPES,
+    TRACKED_CRAFT,
+    conveyancesNobodyBuilds,
+    craftAgeInYears,
+    kindOfCraft
+} from '../data/cultivation/what-a-house-moves-its-people-on.js';
+import {
+    REACH_IN_WALKING_DAYS,
+    walkingDaysPerDay
+} from '../engine/world/what-a-conveyance-does-to-a-journey.js';
+import {
+    coresRequired,
+    requiredOrdinalForRecipe,
+    totalComponentsRequired
+} from '../engine/world/building-a-conveyance-out-of-what-a-hunt-brings-back.js';
+import {
+    WHAT_AN_ARTIFACT_IS_MADE_OF,
+    whatWouldFill,
+    type Recipe
+} from '../data/cultivation/what-an-artifact-is-made-of.js';
+import { REGIONS } from '../data/cultivation/regions.js';
 import { MATERIAL_BANDS } from '../engine/world/single-use-dao-comprehension-materials.js';
 import { whatAnArtCanRaiseTo } from '../engine/world/a-formation-stands-at-the-lower-of-the-art-and-the-builder.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
@@ -78,6 +114,7 @@ export type ItemGroup =
     | 'pills'
     | 'repair medicine'
     | 'spirit herbs'
+    | 'beast materials'
     | 'comprehension materials';
 
 /**
@@ -164,8 +201,13 @@ type KindFacts = Omit<RegisterItemKind, 'kind' | 'catalogued'> & { catalogued: (
 const KINDS: Record<ObjectKind, KindFacts> = {
     artifact: {
         what: 'A thing that changes what you can survive. The only kind rated on the ladder people stand on.',
-        source: 'data/cultivation/artifacts.ts, and the two objects in immortal-items.ts',
-        catalogued: () => ARTIFACTS.length + IMMORTAL_ITEMS.length,
+        // THE TRACKED CRAFT ARE FILED HERE AND WERE NOT COUNTED HERE. A hull is
+        // an `artifact` row with a conveyance kind in its data, made by the same
+        // `makeObject` factory and rated on the same ladder - so a count that
+        // left them out was reporting a smaller world than the catalogs hold.
+        source: 'data/cultivation/artifacts.ts, the two objects in immortal-items.ts, '
+            + 'and the named craft in what-a-house-moves-its-people-on.ts',
+        catalogued: () => ARTIFACTS.length + IMMORTAL_ITEMS.length + TRACKED_CRAFT.length,
         // Both, and the exceptions are the three rows at the bottom of the
         // table whose own descriptions say several hundred exist. Those are
         // KINDS rather than objects, they carry `mundane`, and the seeder does
@@ -197,13 +239,18 @@ const KINDS: Record<ObjectKind, KindFacts> = {
         whoHolds: 'A house shelf as a number, a house vault as a row, or a body that swallowed it.'
     },
     material: {
-        what: 'Ingredients, and the comprehension pieces that are gone the moment they are understood.',
-        source: 'data/cultivation/herbs.ts, lost-ages.ts, and engine/world/single-use-dao-comprehension-materials.ts',
-        catalogued: () => HERBS.length + MATERIAL_BANDS.length,
+        what: 'Ingredients, grown and taken off a body, and the comprehension pieces that are gone the moment they are understood.',
+        // The beast table was missing from this count for as long as this row
+        // existed, which is the half of the ingredient layer somebody has to
+        // kill something for. A cauldron takes both through one resolver and
+        // does not ask which table a row came out of.
+        source: 'data/cultivation/herbs.ts, the material table in beasts.ts, lost-ages.ts, '
+            + 'and engine/world/single-use-dao-comprehension-materials.ts',
+        catalogued: () => HERBS.length + BEAST_MATERIALS.length + MATERIAL_BANDS.length,
         keptAs: ['counted', 'tracked'],
-        gradeAxis: 'the five grades for herbs; the rung it carries to for a comprehension piece',
+        gradeAxis: 'the five grades for a herb or a beast material; the rung it carries to for a comprehension piece',
         ratedInPower: false,
-        provenance: 'Picked where it grows, dug out of a place an older age left, or made above the Lid and sent down.',
+        provenance: 'Picked where it grows, cut off something that had to be killed first, dug out of a place an older age left, or made above the Lid and sent down.',
         whoHolds: 'A forager, an alchemist, a house that cannot use it and will not sell it, or a ruin nobody has reached.'
     },
     currency: {
@@ -421,6 +468,54 @@ function herbRows(): RegisterItemRow[] {
 }
 
 /**
+ * How a material came off, in the words the difference is worth saying in.
+ *
+ * A kill and a scavenge reach the same row and are not the same act: one is a
+ * thing somebody did to the animal and the other is what was left after
+ * something else did. The bottom of the beast trade is the second and the third.
+ */
+const HOW_IT_CAME_OFF: Record<string, string> = {
+    kill: 'the body has to be taken first',
+    shed: 'shed, and picked up off the ground',
+    scavenge: 'off a body something else finished'
+};
+
+/**
+ * Every beast material, on the same columns as the herbs.
+ *
+ * The two catalogs are the same shape on purpose - grade, value, draw weight,
+ * and a `harvestOrdinal` meaning the rung below which getting it kills you - so
+ * they are printed on one set of columns and an alchemist comparing a core
+ * against a root is reading one table's arithmetic twice rather than two.
+ */
+function beastMaterialRows(): RegisterItemRow[] {
+    return BEAST_MATERIALS.map(m => {
+        const source = getBeast(m.sourceBeastId);
+        return {
+            kind: 'material' as const,
+            group: 'beast materials' as const,
+            id: m.id,
+            name: m.name,
+            grade: GRADE_WORD(m.grade),
+            pitchedAt: m.harvestOrdinal,
+            pitchNote: 'the rung below which taking this off the body is not survivable',
+            // Read off the engine rather than off `core`. Both are decided by
+            // the grade, and a second rule here would be the copy that drifts.
+            significance: significanceOfBeastMaterial(m),
+            keptAs: howAMaterialIsStored(m) as KeptAs,
+            price: m.value,
+            priceNote: '',
+            provenance: `${source?.name ?? m.sourceBeastId}; ${HOW_IT_CAME_OFF[m.taking] ?? m.taking}`,
+            // The same index word the herb rows carry, off the same field, and
+            // for the same reason: the catalog's own sentence is one file away
+            // and ninety-one of them would be a wall.
+            detail: (m.core ? 'a core, condensed cultivation - ' : '')
+                + (m.rarityWeight >= 100 ? 'common' : m.rarityWeight >= 25 ? 'uncommon' : m.rarityWeight >= 6 ? 'rare' : 'all but unobtainable')
+        };
+    });
+}
+
+/**
  * The two objects that came down, on the same columns as the pills.
  */
 function immortalRows(): RegisterItemRow[] {
@@ -509,6 +604,7 @@ export function buildItemsRegister(): RegisterItems {
         ...immortalRows(),
         ...repairRows(),
         ...herbRows(),
+        ...beastMaterialRows(),
         ...materialRows()
     ];
     const kinds: RegisterItemKind[] = KIND_ORDER.map(kind => {
@@ -677,6 +773,230 @@ function extinctionRecord(): string {
   ${blocks}`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE THREE LISTINGS THE SHEET NEVER CARRIED
+//
+// Beast materials, what a house moves its people on, and what an artifact is
+// made of. All three catalogs were authored, wired and invisible: the register
+// named no export of any of them, so a reader browsing the sheet could not find
+// out that the world has spirit boats in it, or that a core is an ingredient.
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * A table on the sheet's own columns, with any column that says one thing on
+ * every row lifted out above it.
+ *
+ * The same construction `itemTable` uses, factored out because three more
+ * tables wanted it. It carries no opinion about its columns - widths and cell
+ * classes travel with the column rather than with its position, because a
+ * hoisted column takes its slot out of every row.
+ */
+function gridTable(
+    caption: string,
+    heads: readonly string[],
+    width: readonly string[],
+    cls: readonly string[],
+    cells: readonly string[][]
+): string {
+    if (!cells.length) return '';
+    const hoist = hoistConstantColumns(heads, cells);
+    return `<div class="scroll"><table class="itemtbl">
+  <caption>${esc(caption)}</caption>
+  <colgroup>${hoist.kept.map(i => `<col style="width:${width[i]}">`).join('')}</colgroup>
+  <thead><tr>${hoist.heads.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+  <tbody>${hoist.rows.map(r => `<tr>${r.map((cell, i) =>
+        `<td class="${cls[hoist.kept[i]]}">${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+</table></div>
+${hoistedLine(hoist.hoisted, cells.length)}`;
+}
+
+const words = (value: string): string => value.replace(/_/g, ' ');
+
+/**
+ * The cheapest grade a core exists at anywhere, read off the catalog.
+ *
+ * The conveyance bills carry a heaven-grade core inside an earth-grade carriage
+ * and the file beside them explains it by this fact. Computed rather than
+ * retyped, so the claim cannot outlive the catalog it is about.
+ */
+const LOWEST_CORE_GRADE: string =
+    TIERS.find(g => BEAST_MATERIALS.some(m => m.core && m.grade === g)) ?? 'no grade at all';
+
+const rung = (ordinal: number): string =>
+    `${ordinal} <span class="dim">${esc(rankName(ordinal))}</span>`;
+
+/** What the Late Age has left of a species, in the words the reader wants. */
+const WHERE_IT_IS_LEFT: Record<string, string> = {
+    open_world: 'ordinary ground, and duller than the old records say',
+    thin_remnant: 'drawn-down ground, small and sparse on it',
+    vein_only: 'only where the ground is still rich, so always somebody\'s problem',
+    sealed_only: 'only inside places nothing has drawn on'
+};
+
+/** What it does to a vein, which is the half of it that is political. */
+const WHAT_IT_DOES_TO_A_VEIN: Record<string, string> = {
+    indifferent: '',
+    follows: 'follows the richest ground and arrives in numbers',
+    holds: 'holds one vein and will not be moved off it',
+    drains: 'draws the vein down while it is there'
+};
+
+/** How much the world bothers to remember about one. */
+const HOW_ONE_IS_HELD: Record<string, string> = {
+    counted: 'counted',
+    tracked: 'tracked',
+    person: 'somebody'
+};
+
+/**
+ * Every species, on the columns that say what kind of problem it is.
+ *
+ * Not `hard` and not `note`, both of which are a sentence per row and would
+ * stand this table two hundred rows tall. What is here is the index: the rung,
+ * which is the only measure of danger the catalog carries, and the four fields
+ * that decide whether somebody can go and find one.
+ */
+function beastTable(): string {
+    const cells = BEASTS.map(b => [
+        `${esc(b.name)}<span class="dim"> ${esc(words(b.nature))} &middot; ${esc(b.ability.name)}</span>`,
+        rung(b.ordinal),
+        `<span class="chip${bandOf(b) === 'counted' ? '' : ' pin'}">${HOW_ONE_IS_HELD[bandOf(b)]}</span>`,
+        esc(words(b.biome)),
+        b.element === null ? '<span class="dim">nothing in particular</span>' : esc(b.element),
+        b.groupSize === 1 ? '<span class="dim">alone</span>' : `${b.groupSize}`,
+        esc([WHERE_IT_IS_LEFT[b.persistence] ?? b.persistence, WHAT_IT_DOES_TO_A_VEIN[b.veinRelation]]
+            .filter(Boolean).join('; '))
+    ]);
+    return gridTable(
+        `Spirit beasts - ${BEASTS.length} species, on the same ladder as everybody else`,
+        ['Species', 'Rung', 'Held as', 'Ground', 'Made of', 'Together', 'Where it is still found'],
+        ['23%', '13%', '9%', '13%', '8%', '7%', '27%'],
+        ['nm', 'n', 'm', 'm', 'm', 'n', 'q'],
+        cells
+    );
+}
+
+/** A region id resolved to what it is called. Falls back to the id, visibly. */
+const regionNameOf = (id: string): string => REGIONS.find(r => r.id === id)?.name ?? id;
+
+/**
+ * The tides, which are the reason several species are somewhere they were not.
+ */
+function tideBlocks(): string {
+    const beastName = (id: string): string => getBeast(id)?.name ?? id;
+    return BEAST_TIDES.map(t => `<div class="objblk">
+    <h3>${esc(t.name)} <span class="objmeta">${esc(regionNameOf(t.regionId))} &middot; ordinal ${t.minOrdinal} to ${t.maxOrdinal} &middot; ${t.beastIds.length} species &middot; ${t.causeKnownLocally ? 'the cause is known locally' : 'the cause is not known locally'}</span></h3>
+    <p class="objcount">${t.driverBeastId === null
+        ? 'Nothing is at the back of it, so there is nothing to kill'
+        : `At the back of it: ${esc(beastName(t.driverBeastId))}`} &middot; ${esc(t.beastIds.map(beastName).join(', '))}</p>
+    <p>${esc(t.cause)}</p>
+    <ul class="spendlist">${t.precursors.map(p => `<li>${esc(p)}</li>`).join('')}</ul>
+    <p>${esc(t.whoAbsorbsIt)} ${esc(t.aftermath)}</p>
+  </div>`).join('');
+}
+
+/** The rungs a house moves its people on, and what each one is for. */
+function conveyanceTable(): string {
+    const cells = CONVEYANCES.map(c => [
+        `${esc(c.name)}<span class="dim">${c.drawnByBeast ? ' a beast in the traces' : ''}</span>`,
+        c.grade === null ? '<span class="dim">made of nothing</span>' : esc(c.grade),
+        c.range === 'crossing'
+            ? 'anywhere there is a way'
+            : `${esc(c.range)} <span class="dim">to ${REACH_IN_WALKING_DAYS[c.range]} walking days</span>`,
+        `${c.heads}`,
+        `<span class="chip${c.holding === 'tracked' ? ' pin' : ''}">${esc(c.holding)}</span>`,
+        esc([
+            `${walkingDaysPerDay(c)} walking day${walkingDaysPerDay(c) === 1 ? '' : 's'} a day`,
+            c.crossesGroundThatCannotBeWalked ? 'crosses water and dead ground' : 'needs ground under it',
+            c.seenComing ? 'read at the gate before anybody speaks' : 'arrives unremarked'
+        ].join('; '))
+    ]);
+    return gridTable(
+        `What a house moves its people on - ${CONVEYANCES.length} rungs, on foot at the bottom`,
+        ['What it is', 'Grade', 'What it is for', 'Heads', 'Held as', 'What it does'],
+        ['22%', '10%', '19%', '7%', '10%', '32%'],
+        ['nm', 'm', 'q', 'n', 'm', 'q'],
+        cells
+    );
+}
+
+/**
+ * The bills of materials, as blocks rather than as a table.
+ *
+ * A bill is a list and a table row is not, and the numbers a reader wants -
+ * pieces, cores, work days - are already in the heading, so nothing here is
+ * said twice.
+ */
+function conveyanceRecipeBlocks(): string {
+    return CONVEYANCE_RECIPES.map(r => `<div class="objblk">
+    <h3>${esc(r.name)} <span class="objmeta">${esc(r.grade)} grade &middot; ${totalComponentsRequired(r)} pieces, ${coresRequired(r)} of them cores &middot; ${stones(r.workDays)} work days for one pair of hands &middot; ${Math.round(r.baseSuccessRate * 100)}% at ordinal ${requiredOrdinalForRecipe(r)}</span></h3>
+    <ul class="spendlist">${r.components.map(c =>
+        `<li><strong>${c.count}</strong> ${esc(c.grade)} grade - ${esc(c.wants)}${c.mustBeCore ? ' <span class="chip">a core, and nothing else will do</span>' : ''}</li>`).join('')}</ul>
+  </div>`).join('');
+}
+
+/**
+ * The two worked recipes, and how many things fill each slot.
+ *
+ * The count is the point. A slot is a predicate rather than a list of ids, so
+ * what fills it is resolved against the two ingredient catalogs at the moment
+ * the question is asked - and a recipe whose slots each had one answer would be
+ * a recipe nobody finishes.
+ */
+function artifactRecipeBlocks(): string {
+    return (Object.entries(WHAT_AN_ARTIFACT_IS_MADE_OF) as [string, Recipe][])
+        .map(([grade, recipe]) => `<div class="objblk">
+    <h3>${esc(grade)} grade <span class="objmeta">${recipe.length} slots, and one thing fills one slot</span></h3>
+    <ul class="spendlist">${recipe.map(slot => {
+        const fills = whatWouldFill(slot);
+        const cheapest = fills[0];
+        return `<li>${esc(slot.what)} - <strong>${fills.length}</strong> things fill it`
+            + (cheapest === undefined
+                ? ''
+                : `, cheapest ${esc(cheapest.name)} at ${stones(cheapest.value)} stone${cheapest.value === 1 ? '' : 's'}`)
+            + '</li>';
+    }).join('')}</ul>
+  </div>`).join('');
+}
+
+/**
+ * The named craft, on the Ledger rather than here.
+ *
+ * Every row names an owner, a mooring and an age, which is the ledger's
+ * question exactly - what a conveyance IS belongs on the Objects tab with the
+ * rest of the almanac. Exported so that adding it to the sheet is one call.
+ */
+export function renderTrackedCraftSection(): string {
+    const mooring = (row: { data: Record<string, unknown> }): string =>
+        typeof row.data.mooredAt === 'string' ? row.data.mooredAt : '';
+    const cells = TRACKED_CRAFT.map(c => [
+        `${esc(c.name)}<span class="dim"> ${esc(c.significance)}</span>`,
+        `${c.power}`,
+        esc(kindOfCraft(c)?.name ?? 'unknown kind'),
+        c.ownerId === null
+            ? '<span class="chip">nobody</span>'
+            : esc(c.ownerName),
+        esc(mooring(c)),
+        `${craftAgeInYears(c)} <span class="dim">years</span>`
+    ]);
+    const unowned = TRACKED_CRAFT.filter(c => c.ownerId === null).length;
+    return `
+<section>
+  <div class="sh"><h2>The craft that are objects</h2><span class="r">${TRACKED_CRAFT.length} rows &middot; ${new Set(TRACKED_CRAFT.map(c => c.ownerId).filter(Boolean)).size} houses</span></div>
+  <p class="note"><strong>Everything else that moves a party is an amount; these are rows.</strong> A house has four shod carriages and could not say which of them went anywhere last spring. It can say where each of these is, who built it, and what it cost, and the rating in the second column is the ladder every other object on this tab is rated on.</p>
+  ${gridTable(
+        `Named craft - ${TRACKED_CRAFT.length}, ${TRACKED_CRAFT.filter(c => kindOfCraft(c)?.id === 'conv-spirit-boat').length} of them hulls`,
+        ['Craft', 'Rated', 'What it is', 'Whose it is', 'Where it sits', 'Built'],
+        ['20%', '8%', '15%', '19%', '28%', '10%'],
+        ['nm', 'n', 'm', 'q', 'q', 'n'],
+        cells
+    )}
+  ${unowned === 0
+        ? ''
+        : `<p class="note"><strong>${unowned} of them has no owner and no holder.</strong> That is a hole in the chain rather than a kind of ownership: somebody built it and somebody owned it, and the record carries neither. The four layers - owner, possessor, location, provenance - are kept apart so that a gap in one of them can be stated instead of guessed at.</p>`}
+</section>`;
+}
+
 /**
  * The pane, as HTML. Splice into the sheet inside a `div.pane`; it depends on
  * nothing else on the page.
@@ -760,9 +1080,39 @@ export function renderItemsSection(): string {
   <p class="note"><strong>What mends a cultivator who crossed and arrived broken.</strong> Nothing refined below the Lid reaches a break above ordinal ${repairCeilings().madeBelowTheLid}, and nothing at all reaches above ordinal ${repairCeilings().anythingAtAll} - the crossing into the last realm is your own effort, and medicine is barred at it by rule. Who is holding a dose, and what has been spent on whom, is on the Items tab.</p>
   ${itemTable(`Structural repair medicine - ${rowsOf('repair medicine').length}, for a cultivator who crossed and arrived broken`, rowsOf('repair medicine'))}
   ${itemTable(`Comprehension materials - ${rowsOf('comprehension materials').length} bands, spent by being understood`, rowsOf('comprehension materials'))}
-  ${itemTable(`Spirit herbs - ${rowsOf('spirit herbs').length}, the ingredient layer under all of it, ${LOST_MATERIALS.length} of them extinct`, rowsOf('spirit herbs'))}
+  ${itemTable(`Spirit herbs - ${rowsOf('spirit herbs').length}, the half of the ingredient layer that grows, ${LOST_MATERIALS.length} of them extinct`, rowsOf('spirit herbs'))}
   ${extinctionRecord()}
+  <p class="note"><strong>The other half of the ingredient layer has to be killed first.</strong> A beast material carries the same columns a herb carries - the five grades, a value in stones, a draw weight, and a rung below which getting it is not survivable - and one resolver hands both to a cauldron without asking which table the row came out of. What differs is not the arithmetic, it is that somebody has to be standing where a herb grows and somebody has to deal with the animal.</p>
+  <p class="note"><strong>A core is the one row that is not a part of an animal.</strong> It is condensed cultivation, which is why nothing below ordinal ${BEAST_CORE_ORDINAL} has one and why the cheapest core in the world is ${LOWEST_CORE_GRADE} grade. ${rowsOf('beast materials').filter(x => x.detail.startsWith('a core')).length} of the ${rowsOf('beast materials').length} rows below are cores. What a species is, and what has to be done to reach one, is under the table.</p>
+  ${itemTable(`Beast materials - ${rowsOf('beast materials').length}, off ${new Set(BEAST_MATERIALS.map(m => m.sourceBeastId)).size} of the ${BEASTS.length} species`, rowsOf('beast materials'))}
   <p class="note"><strong>A pill is only ever as obtainable as its rarest ingredient</strong>, which is where the real cost of the alchemy system lives. ${RECIPES.length} recipes turn the herbs above into the pills above; ${RECIPES.filter(x => x.provenance === 'recovered').length} of them exist only because somebody opened something that was sealed, and no recipe may name a herb this catalog does not hold.</p>
   <p class="note">Nothing on this side is rated above ${OBJECT_CEILING_BELOW_THE_LID} whatever kind it is, because an object rated at a rung lets whoever holds it strike at that rung. A manual is paper and is under no such rule, which is the one exception and the reason the arts have a sheet of their own. ${STRUCTURAL_REPAIR_HOLDINGS.length} opening holdings of repair medicine are recorded against named houses; who is holding what is on the Items tab, and what each house holds altogether is the Holdings tab.</p>
+</section>
+
+<section>
+  <div class="sh"><h2>What a beast material comes off</h2><span class="r">${BEASTS.length} species &middot; ${BEAST_TIDES.length} tides</span></div>
+  <p class="note"><strong>A beast is on the same ladder as everybody else, with everything human taken off it.</strong> No manual, no teacher, no medicine, no crossing ceremony: progress is time multiplied by the density of the air. It is slower per year than a cultivator on the same ground and it never stops, which is why the oldest things in the world are not people.</p>
+  <p class="note"><strong>Two rungs decide what a species is to a hunter, and they are twelve apart.</strong> At ordinal ${BEAST_CORE_ORDINAL} a beast condenses a core and can say nothing about it. At ordinal ${BEAST_CHANGE_ORDINAL} it takes a shape and a voice and is thereafter a party who can decline. The <em>held as</em> column is that boundary: counted below the core, tracked between, and somebody above.</p>
+  <p class="note"><strong>The species column is not the rung.</strong> A rung gives what it gives everybody. What is in the name beside each species is the other axis - a tortoise's defence, a fox's fire - which no amount of cultivation confers on a human and which nothing can teach, buy or take off a shelf.</p>
+  ${beastTable()}
+  <p class="note"><strong>A tide is a symptom with a cause, and the cause is always a change to the ground or to a seal.</strong> Killing the front of one does not address it. ${BEAST_TIDES.filter(t => t.driverBeastId === null).length} of the ${BEAST_TIDES.length} below have nothing at the back of them to kill at all, which is the worse kind.</p>
+  ${tideBlocks()}
+</section>
+
+<section>
+  <div class="sh"><h2>What a house moves its people on</h2><span class="r">${CONVEYANCES.length} rungs &middot; ${CONVEYANCE_RECIPES.length} of them buildable</span></div>
+  <p class="note"><strong>Arriving is a statement before anybody speaks, and the table is not a ladder.</strong> A named carriage is heaven grade and reaches a district; a hull is heaven grade and crosses water. What a house owns says what it can reach and what it is willing to be seen reaching for, and the two are different questions.</p>
+  ${conveyanceTable()}
+  <p class="note"><strong>${conveyancesNobodyBuilds().length} of the ${CONVEYANCES.length} have no bill of materials.</strong> Walking is made of nothing, flight on one's own blade is an art rather than property, and a broken beast is a hunt rather than a build. Everything else below is made out of what a hunt brings back, which is what joins this table to the beast materials above.</p>
+  <p class="note"><strong>A core in the frame is the line a house cannot buy its way past.</strong> Nothing below ordinal ${BEAST_CORE_ORDINAL} carries one, so the cheapest core obtainable anywhere is ${LOWEST_CORE_GRADE} grade and every craft with one in it is paying that price whatever else it is made of.</p>
+  ${conveyanceRecipeBlocks()}
+</section>
+
+<section>
+  <div class="sh"><h2>What an artifact is made of</h2><span class="r">${Object.keys(WHAT_AN_ARTIFACT_IS_MADE_OF).length} worked grades</span></div>
+  <p class="note"><strong>A slot says what kind of thing fills it and never names a row.</strong> What would do is resolved against the herbs and the beast materials at the moment the question is asked, so a row regraded, renamed or added arrives in every recipe that should have it. A list of ids would be a second copy of both catalogs.</p>
+  <p class="note"><strong>Mortal grade asks for nothing and the last two grades have no recipe at all.</strong> Roadside work would refuse nobody, and nothing below the Lid makes an immortal or a chaos-grade thing, so the question never reaches a bench. What is left is the two grades below.</p>
+  <p class="note"><strong>Heaven grade asks for one heaven-grade thing rather than three, and the slot takes a grown thing as readily as a taken one.</strong> Heaven-grade material comes off something standing at ordinal ${BEAST_CHANGE_ORDINAL} or above, which has a shape and a voice, so a recipe demanding three of them would route every heaven-grade artifact in the world through that act.</p>
+  ${artifactRecipeBlocks()}
 </section>`;
 }

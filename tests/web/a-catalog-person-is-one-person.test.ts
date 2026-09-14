@@ -39,7 +39,7 @@ import {
 } from '../../src/engine/world/a-catalog-person-and-their-world-row';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { castFor } from '../../src/web/encounters';
-import { offerHearing, othersPresent, recordHearing } from '../../src/web/hearsay';
+import { othersPresent } from '../../src/web/hearsay';
 import { makeGameInWorld, makeDb } from './harness';
 
 const WORLD_SEED = 'probe-told-then-met';
@@ -165,7 +165,7 @@ describe('a name you were told is a name you have when they are standing there',
             worldSeed: WORLD_SEED,
             seed: 'told-then-met'
         });
-        const { cultivator, run } = await game.newRun('Ke Yan');
+        const { cultivator } = await game.newRun('Ke Yan');
         const world = (await game.loadWorld())!;
 
         // A house's own ground, because that is where the catalog's people

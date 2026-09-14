@@ -36,11 +36,12 @@ import {
 } from '../../../src/engine/world/crossing-enrichment.js';
 import { stageCeilingFor, stageRank } from '../../../src/engine/social/discovery.js';
 import { seedPriorAges } from '../../../src/engine/world/history.js';
-import { locationsFromPriorAges } from '../../../src/engine/world/locations.js';
+import { locationFromRuin, locationsFromPriorAges } from '../../../src/engine/world/locations.js';
 import {
     QI_DENSITY_MAX,
     clampQiDensity,
-    ordinaryBandFor
+    ordinaryBandFor,
+    qiFraction
 } from '../../../src/engine/world/qi-scale.js';
 import { INSIGHT_AMBIENT_CHANCE } from '../../../src/engine/cultivation/understanding.js';
 
@@ -256,6 +257,53 @@ describe('the ground, at the point somebody would notice', () => {
             }
         }
         expect(checked).toBeGreaterThan(0);
+    });
+
+    /**
+     * THE LOAN MOVED ONE NUMBER AND NOT THE OTHER, AND THAT WAS A SECOND COPY.
+     *
+     * Measured while writing this: a ruin's `environment.spiritualDensity` read
+     * 0.72 while its own `qiDensity` had been lifted to a `qiFraction` of 0.83.
+     * `qiFraction` is stated in `qi-scale.ts` as the ONLY conversion between
+     * geology and what anybody can draw, and the enrichment was not going
+     * through it - so the vein came up and nothing anybody could do on that
+     * ground came up with it.
+     *
+     * WHAT IS NOT ASSERTED IS THAT THE TWO ARE ONE NUMBER. They are two
+     * questions and they stay two: `locationFromRuin` sets a sealed pocket to a
+     * usable 0.05 against a vein of whatever it holds, and that gap is the whole
+     * economy of exploration. What is asserted is that the loan applies the rule
+     * that already exists - open ground is `qiFraction` of its own vein, and a
+     * sealed pocket is untouched, because a loan into something nobody can get
+     * into is still nobody's.
+     */
+    it('lifts what anybody can draw along with the vein, where the ground is open', () => {
+        let open = 0;
+        let sealed = 0;
+        for (const seed of SEEDS) {
+            const prior = priorAgesFor(seed);
+            const locations = locationsFromPriorAges(prior);
+            for (const crossing of prior.crossings) {
+                if (!crossingStillGiving(PRESENT_YEAR - crossing.year)) continue;
+                const ground = locations.find(l => l.id === `loc-${crossing.groundRuinId}`)!;
+                const ruin = prior.ruins.find(r => r.id === crossing.groundRuinId)!;
+                if (ground.sealed) {
+                    // Untouched: the same figure the ruin was built with.
+                    expect(ground.environment.spiritualDensity)
+                        .toBe(locationFromRuin(ruin).environment.spiritualDensity);
+                    sealed++;
+                } else {
+                    expect(ground.environment.spiritualDensity)
+                        .toBeCloseTo(qiFraction(ground.qiDensity), 10);
+                    expect(ground.environment.spiritualDensity)
+                        .toBeGreaterThan(qiFraction(ruin.qiDensity));
+                    open++;
+                }
+            }
+        }
+        // Pooled over eight worlds. If neither arm is ever reached the sample
+        // has stopped containing the case and that is the finding.
+        expect(open + sealed, 'no world in the sample had a live crossing').toBeGreaterThan(0);
     });
 
     it('does not make the world rich: most crossings are spent', () => {

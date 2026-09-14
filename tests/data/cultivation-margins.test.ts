@@ -41,8 +41,10 @@ import {
     fallenInRegion,
     fallenWorkingAs,
     dangerousFallen,
-    monthsOfWorkToAfford
+    monthsOfWorkToAfford,
+    type Fallen
 } from '../../src/data/cultivation/fallen.js';
+
 import {
     ROGUE_TRADES,
     RogueTradeSchema,
@@ -75,6 +77,23 @@ import {
     unbackedMonthlyFor,
     monthsToAffordOnTheRoad
 } from '../../src/data/cultivation/rogues.js';
+
+/**
+ * One catalog row, in the shape `isTheSamePerson` declares it takes.
+ *
+ * `Fallen.identityContinuity` is nullable and `Cultivator.identityContinuity`
+ * is not: the catalog writes null for somebody who never left themselves,
+ * where a live cultivator row carries the schema's default of 1. The engine
+ * already collapses both to 1 (`?? 1` inside `isTheSamePerson`), so handing it
+ * `undefined` for the catalog's null moves no answer - it only stops this file
+ * claiming the two types are the same when they differ on exactly this field.
+ */
+function asTheEngineReadsThem(f: Fallen) {
+    return {
+        existenceState: f.existenceState,
+        identityContinuity: f.identityContinuity ?? undefined
+    };
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -232,14 +251,14 @@ describe('the fallen', () => {
         const remnants = FALLEN.filter(f => f.existenceState === 'remnant');
         expect(remnants.length, 'no remnant anywhere').toBeGreaterThan(0);
         for (const r of remnants) {
-            expect(isTheSamePerson(r), `${r.id} is being treated as the person`).toBe(false);
+            expect(isTheSamePerson(asTheEngineReadsThem(r)), `${r.id} is being treated as the person`).toBe(false);
             expect(r.company, 'a remnant is not company').toBe('not_company');
         }
         // Somebody who came back changed is still themselves to the engine.
         const changed = FALLEN.filter(
             f => f.identityContinuity !== null && f.existenceState !== 'remnant');
         expect(changed.length).toBeGreaterThan(0);
-        for (const c of changed) expect(isTheSamePerson(c), c.id).toBe(true);
+        for (const c of changed) expect(isTheSamePerson(asTheEngineReadsThem(c)), c.id).toBe(true);
     });
 
     it('leaves the unnameable damage unexplained', () => {

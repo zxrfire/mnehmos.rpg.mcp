@@ -7,7 +7,9 @@ import { handleInventoryManage, InventoryManageTool } from '../../../src/server/
 import { handleItemManage } from '../../../src/server/consolidated/item-manage.js';
 import { getDb } from '../../../src/storage/index.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
+import { CharacterSchema } from '../../../src/schema/character.js';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
 
 // Force test mode
 process.env.NODE_ENV = 'test';
@@ -42,21 +44,24 @@ describe('inventory_manage consolidated tool', () => {
         // Create a test character
         const charRepo = new CharacterRepository(db);
         testCharId = randomUUID();
-        charRepo.create({
+        // CharacterRepository.create takes a parsed Character - every
+        // defaulted field filled in. Building the fixture through the schema
+        // is what supplies them, and it rejects a bad field here rather than
+        // silently dropping it on the way to the row.
+        charRepo.create(CharacterSchema.parse({
             id: testCharId,
             name: 'Test Hero',
-            class: 'fighter',
+            characterClass: 'fighter',
             level: 1,
             race: 'human',
             hp: 10,
             maxHp: 10,
-             ac: 10,
-             stats: { str: 14, dex: 12, con: 13, int: 10, wis: 11, cha: 10 },
-             currency: { gold: 5, silver: 0, copper: 0 },
-             speed: 30,
+            ac: 10,
+            stats: { str: 14, dex: 12, con: 13, int: 10, wis: 11, cha: 10 },
+            currency: { gold: 5, silver: 0, copper: 0 },
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
-        });
+        } satisfies z.input<typeof CharacterSchema>));
 
         // Create a test item
         const itemResult = await handleItemManage({
@@ -215,20 +220,19 @@ describe('inventory_manage consolidated tool', () => {
             const db = getDb(':memory:');
             const charRepo = new CharacterRepository(db);
             secondCharId = randomUUID();
-            charRepo.create({
+            charRepo.create(CharacterSchema.parse({
                 id: secondCharId,
                 name: 'Second Hero',
-                class: 'rogue',
+                characterClass: 'rogue',
                 level: 1,
                 race: 'elf',
                 hp: 8,
                 maxHp: 8,
                 ac: 12,
                 stats: { str: 10, dex: 16, con: 10, int: 12, wis: 10, cha: 14 },
-                speed: 30,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
-            });
+            } satisfies z.input<typeof CharacterSchema>));
 
             // Give first character an item
             await handleInventoryManage({

@@ -465,10 +465,12 @@ function main(): void {
         techniqueMastery: 0.6,
         technique: {
             id: 't', name: 'road', category: 'cultivation', grade: 'heaven', element: null,
-            requiredOrdinal: 21, qiCost: 60, damage: null, subject: null, mastery: 0.6,
-            description: '', cooldown: 0, class: 'cultivation', cap: 25, quality: q,
+            requiredOrdinal: 21, qiCost: 60, damage: null, subjects: [], mastery: 0.6,
+            description: '', cooldown: 0, cap: 25, quality: q,
             rootGrades: [], domain: null, domainDegree: 1, volumes: null, derivable: false,
-            opening: null
+            opening: null,
+            // The two the schema defaults: one practitioner, on their own qi.
+            requiresPeople: 1, runsOn: 'self'
         }
     }, { ambient: 'normal' }).total;
     const baseM = priced(MEDIOCRE, 'sound');

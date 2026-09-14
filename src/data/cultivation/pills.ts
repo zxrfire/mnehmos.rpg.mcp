@@ -3,7 +3,6 @@
  */
 
 import type { Pill, PillEffect, TechniqueGrade } from '../../schema/cultivation.js';
-import { currentWoundKey } from './wounds.js';
 import { REALM_TIERS } from '../../engine/cultivation/realms.js';
 import type { Band } from './techniques.js';
 
@@ -33,7 +32,23 @@ export const PILL_VALUE_BANDS: Record<TechniqueGrade, Band> = {
     mortal: { min: 5, max: 99 },
     earth: { min: 100, max: 999 },
     heaven: { min: 1_000, max: 9_999 },
-    immortal: { min: 10_000, max: 99_999 },
+    // ── THE PEERS SHARE A CEILING TOO, AND THE COMMENT ABOVE SAID WHY ───
+    //
+    // Immortal topped out at 99,999 while chaos ran to a million, and the
+    // reconciliation in `cultivation-content.test.ts` already stated the
+    // reason for the gap: *"what carries the dearest of them past the immortal
+    // ceiling is scarcity, which is not a power claim."* Scarcity is not a
+    // property of chaos. It is a property of a thing there are four of, and the
+    // Immortal Longevity Pill - whose only ingredient stopped growing
+    // everywhere at once - is the clearest instance in the catalog. Its grade
+    // moved to immortal on the design owner's ruling and the ceiling was the
+    // only thing standing in the way of a correct grade.
+    //
+    // So the two windows are now identical, which is what "peers" already
+    // meant on the floor. The ladder of POWER is unchanged and still strictly
+    // rising: heaven tops out below immortal's floor, and the peer pair is the
+    // one place two grades share a window because they share a rung.
+    immortal: { min: 10_000, max: 1_000_000 },
     chaos: { min: 10_000, max: 1_000_000 }
 } as const;
 
@@ -50,6 +65,19 @@ export const PILL_TOXICITY_CEILING: Record<TechniqueGrade, number> = {
 
 /**
  * The effects that buy ADVANCEMENT rather than survival.
+ *
+ * ── WHY `grain_abstinence` IS ONE OF THEM ───────────────────────────────
+ *
+ * It used to be argued from the ten-year heaven-grade pill: what it bought was
+ * years to cultivate in, the same as a lifespan pill at a shorter horizon.
+ * That row no longer exists, so the argument is restated from the one that
+ * does rather than left to be re-derived from a pill nobody can look at.
+ *
+ * The design owner: **"stopping hunger is advancement cuz u stop having to
+ * hunt for food."** What is bought is not the meals. It is the time that would
+ * have gone on feeding yourself - the foraging, the walking back down for
+ * rice, the interruptions - and that time goes into cultivating instead. A
+ * pill that ends an errand is advancement however short the span it covers.
  */
 export const ADVANCEMENT_EFFECTS: ReadonlySet<PillEffect> = new Set<PillEffect>([
     'boost_breakthrough',
@@ -81,7 +109,48 @@ export const MODERN_REFINEMENT = {
 } as const;
 
 /**
- * Pills no living alchemist can produce, with the reason each.
+ * ═══════════════════════════════════════════════════════════════════════
+ * WHAT STOPS SOMEBODY MAKING AN IMMORTAL OR CHAOS PILL IS THE MATERIALS
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * The ruling, written down here because this is where the next reader will
+ * look for it and re-derive it otherwise.
+ *
+ * A finished dose above heaven grade is, in circulation, almost always
+ * something that came down. That is a statement about how HARD the road is and
+ * never about what is possible. The design owner: **the materials for those
+ * formulas exist on this side too, sealed in pocket realms** - so somebody who
+ * gets into one and back out with what is in it can refine the pill.
+ *
+ * So there is no grade gate on refining and there must not be one. The
+ * fourteen immortal and chaos formulas are readable, learnable and attemptable:
+ * *"people maybe have the recipes for some of them, they just don't have the
+ * materials."* What refuses an attempt is `handleRefine`'s ingredient check,
+ * which already names what is short, where it grows and what it would take -
+ * and that is the honest refusal, because it is the true one.
+ *
+ * This is the same rule one rung up from where the crafting ladder already
+ * uses it: a heaven-grade artifact wants heaven-grade materials, and the Root
+ * Cauldron's whole point is skipping the hunt for them. Scarcity of materials
+ * is how this world gates the top of a craft ladder, and it is a content loop
+ * rather than a wall - it joins up with sealed ruins, doors on long seasons,
+ * and the race when a window opens.
+ *
+ * ── AND THE ONE THING THAT IS GENUINELY IMPOSSIBLE IS ALREADY A MATERIAL ─
+ *
+ * This set is NOT the rule above, and it is down to one member because the
+ * rule enforces itself. `pill-immortal-longevity` has a complete, readable
+ * formula whose first ingredient is `herb-thousand-autumn-chrysanthemum`, and
+ * that herb is in `EXTINCT_HERB_IDS`: filtered out of `FORAGEABLE_HERBS`, in
+ * no world, in no pocket realm, gone everywhere at once. Nobody below the Lid
+ * can make one and nobody above it can either, and that is expressed where the
+ * design owner wants it expressed - in the material, not in a flag.
+ *
+ * What this set is still for is a DIFFERENT fact that happened to share it: a
+ * pill made before modern refinement existed is not bound by what modern
+ * refinement can do, so {@link lifespanYearsFor} does not put it under the
+ * Nascent Soul ceiling. Membership means "this predates the ceiling", and
+ * adding a row here because it is expensive or rare would be the mistake.
  */
 export const NOT_REFINABLE_BELOW_THE_LID_PILL_IDS: ReadonlySet<string> = new Set([
     'pill-immortal-longevity'
@@ -124,22 +193,42 @@ export const HOLLOWING_PILL_ID = 'pill-hollowing';
 
 export const MINOR_HEALING_PILL_ID = 'pill-minor-healing';
 
-/** The hunger problem's real solution, and a genuine mid-game objective. */
-export const GRAIN_ABSTINENCE_PILL_ID = 'pill-grain-abstinence';
-
 /**
- * The one a poor cultivator can actually buy.
+ * ── THE ONE ABSTINENCE PILL, AND WHY THERE IS ONLY ONE ──────────────────
+ *
+ * There were three - mortal, heaven and immortal - and the ladder read as a
+ * mid-game objective: ten years without a meal at heaven grade for 9,000
+ * stones, and an effectively permanent one at immortal for 90,000.
+ *
+ * THE ENGINE HAD ALREADY MADE THE TOP TWO WORTHLESS AND NOBODY HAD LOOKED.
+ * `SATIETY_BURN_BY_REALM` tapers what a day of hunger costs - 1 at Qi
+ * Condensation, 1/24 at Foundation Establishment, 1/120 at Core Formation,
+ * 1/600 at Nascent Soul - and then it is **0 from Deity Transformation up**,
+ * with `stillNeedsToEat` as the predicate. Set against `pillBandOrdinal`, which
+ * says what rung each grade is pitched at:
+ *
+ *   mortal    Foundation Establishment   1/24 of a mortal's hunger
+ *   heaven    Nascent Soul               1/600. Ten years buys almost nothing
+ *   immortal  Void Tribulation           ZERO. It buys literally nothing
+ *
+ * So the immortal pill sold, for 90,000 spirit stones, a thing the engine
+ * already grants free at that rung, and the heaven pill sold a rounding error.
+ * The design owner, independently and from the fiction: *"the abstinence pills
+ * are useless. mortal grade at minimum cuz high ranking cultivators don't need
+ * it"*, then *"also i mean maximum"*, then *"def not heaven grade"*.
+ *
+ * WHAT SURVIVES IS THE ONE NARROW USE. *"The abstinence pill lets low ranking
+ * cultivators not need supplies. That's it, it's not very useful."* That is a
+ * logistics answer rather than a saving: somebody at Qi Condensation walking
+ * between provinces does not have to carry or find food for a year. It is worth
+ * something exactly where hunger still binds, which is the bottom, and nothing
+ * anywhere else - which is why a ceiling of mortal is the shape rather than a
+ * taste.
  */
-export const MORTAL_GRAIN_ABSTINENCE_PILL_ID = 'pill-hollow-reed-fasting';
+export const GRAIN_ABSTINENCE_PILL_ID = 'pill-hollow-reed-fasting';
 
-/** Days granted by the mortal-grade pill. One year, and then it is over. */
-export const MORTAL_GRAIN_ABSTINENCE_DAYS = 365;
-
-/**
- * Days of grain abstinence granted by the immortal-grade pill. Long enough
- * relative to any realistic run that the engine may treat it as permanent.
- */
-export const PERPETUAL_GRAIN_ABSTINENCE_DAYS = 36_500;
+/** Days it grants. One year, and then it is over. */
+export const GRAIN_ABSTINENCE_DAYS = 365;
 
 export const PILLS: readonly Pill[] = [
     // ═══════════════════════════════════════════════════════════════════
@@ -281,19 +370,32 @@ export const PILLS: readonly Pill[] = [
             'Five more years, bought with thousand-day root. Mortals ruin families for these. Cultivators past Foundation Establishment consider them a rounding error.'
     },
     {
-        // THE BOTTOM RUNG OF THE ABSTINENCE LADDER, and it was missing.
-        id: MORTAL_GRAIN_ABSTINENCE_PILL_ID,
+        // THE WHOLE OF THE ABSTINENCE LINE. It was the bottom rung of three.
+        id: GRAIN_ABSTINENCE_PILL_ID,
         name: 'Hollow Reed Fasting Pill',
         grade: 'mortal',
         effect: 'grain_abstinence',
-        potency: MORTAL_GRAIN_ABSTINENCE_DAYS,
-        // The dearest and the hardest on the body of any mortal pill, which is
-        // what the advancement rule requires of it and also simply what it is:
-        // a crude version of a heaven-grade art, and the body notices.
+        potency: GRAIN_ABSTINENCE_DAYS,
+        // Still the dearest and hardest on the body of any mortal pill, which
+        // is what the advancement rule requires of it and also what it is: a
+        // crude version of an art, and the body notices.
         toxicity: 0.7,
+        // ── THE TOP OF THE MORTAL BAND, AND THAT IS A RULE RATHER THAN A
+        //    LEFTOVER ────────────────────────────────────────────────────
+        //
+        // Ninety is dear against the economy a beginner is in - a run opens
+        // with 30 stones, a year of portering nets about 12 after board, and a
+        // first manual runs 8 to 23 - and the gap is deliberate rather than an
+        // oversight. `grain_abstinence` is ADVANCEMENT, and two rules follow:
+        // advancement costs more than survival inside a grade, and this sits at
+        // the top of its own. The mortal survival tier tops out at 60.
+        //
+        // So it is a thing a beginner saves for rather than picks up, which is
+        // the correct shape for what it actually buys: not the meals, but the
+        // time that would have gone on finding them.
         value: 90,
         description:
-            'A year without eating, compressed into something a village alchemist can actually make. It works, it is unpleasant for the first month, and it has to be taken again next year. Everybody who has spent a decade in a cave has a drawer of the empty jars.'
+            'A year without eating, compressed into something a village alchemist can actually make. It works, it is unpleasant for the first month, and it has to be taken again next year. What it is really for is the road: somebody who does not have to stop for food does not have to stop.'
     },
 
     // ═══════════════════════════════════════════════════════════════════
@@ -468,17 +570,11 @@ export const PILLS: readonly Pill[] = [
         description:
             'A century, distilled from the glacial heart flower. Bought almost exclusively by cultivators who have run out of realm and are running out of time.'
     },
-    {
-        id: GRAIN_ABSTINENCE_PILL_ID,
-        name: 'Grain Abstinence Pill',
-        grade: 'heaven',
-        effect: 'grain_abstinence',
-        potency: 3_650,
-        toxicity: 1.0,
-        value: 9_000,
-        description:
-            'Ten years without a single meal. The body stops asking, the mouth stops mattering, and the cultivator stops carrying food, stops needing towns, and stops being interruptible. Every cultivator who has ever had to walk back down a mountain for rice knows exactly what this pill is worth, which is why it costs what it costs.'
-    },
+    // A heaven-grade `Grain Abstinence Pill` stood here at 9,000 stones for ten
+    // years without a meal. Heaven grade is pitched at Nascent Soul, where the
+    // engine already charges 1/600 of a mortal's hunger, so it sold a rounding
+    // error at the price of a house's stock. See the note on
+    // `GRAIN_ABSTINENCE_PILL_ID`.
 
     // ═══════════════════════════════════════════════════════════════════
     // IMMORTAL - Void Tribulation and Body Integration
@@ -517,31 +613,26 @@ export const PILLS: readonly Pill[] = [
             'Empties the mind of the deviation and, for some days afterwards, of most other things. Practitioners are attended during the recovery by someone they trust absolutely.'
     },
     {
-        id: 'pill-severed-meridian-restoration',
-        name: 'Severed Meridian Restoration Pill',
+        id: 'pill-returning-spring',
+        name: 'Returning Spring Pill',
         grade: 'immortal',
-        // ── THE ROW SAID ONE THING AND THE RESOLVER DID ANOTHER ─────────
-        //
-        // It was `treat_injury`, which is graded by severity and skips
-        // permanent wounds on purpose - so a pill named for a severed meridian
-        // could not touch one, at any grade, ever. The description was not the
-        // thing that was wrong: "reverses damage that every lesser medicine
-        // calls permanent" is exactly the shape of the fiction, and the wound
-        // row's own "every physician in the two provinces will say so in the
-        // same words" is a claim by physicians rather than a fact about the
-        // world. Impossible here means impossible for anybody you will meet.
-        //
-        // So the mechanism moved to match, on the same effect the Limb Rebirth
-        // Pill uses: one named wound, one medicine, and it is immortal grade
-        // and past the cash line, which is what makes the permanence mean
-        // something in between.
-        effect: 'mends_what_will_not_close',
+        // THE IMMORTAL RUNG OF THE ORDINARY LADDER, AND IT WENT MISSING FOR AN
+        // HOUR. It was briefly `mends_what_will_not_close` and named for a
+        // parted channel, on the reading that a permanent wound had no answer
+        // and needed one written. The design owner overruled that: permanent
+        // injuries are the structural repair medicine's job, by rank. With the
+        // reason gone the row comes back to what it has always been - what
+        // closes an ordinary tear on a body too big for anything cheaper - and
+        // the ladder has its top rung again. What did not come back is the
+        // name: `Severed Meridian Restoration Pill` is a diagnosis with a price
+        // on it, and a thing sold in this world is named for what it gives
+        // back.
+        effect: 'treat_injury',
         potency: 1,
         toxicity: 10.0,
         value: 42_000,
-        mends: ['severed-meridian'],
         description:
-            'Reverses damage that every lesser medicine calls permanent, using soulreturn dew that condenses only where someone very strong died very badly. The supply chain is exactly as grim as it sounds.'
+            'Closes damage nothing cheaper will hold on a body this size, using soulreturn dew that condenses only where someone very strong died very badly. The supply chain is exactly as grim as it sounds.'
     },
     {
         id: 'pill-condensed-century',
@@ -565,42 +656,15 @@ export const PILLS: readonly Pill[] = [
         description:
             'Twenty-five points at the boundary into Void Tribulation. Fewer than a hundred are believed to exist, and their owners are all known to each other.'
     },
-    {
-        // THE ONLY THING IN EITHER PROVINCE THAT GROWS A PART BACK.
-        //
-        // It is not the medicine that mends a cultivator who broke at a wall:
-        // that is `structural-repair-medicine.ts`, it answers a structure that
-        // did not SET, and `repairRefusalReason` turns away anything else in as
-        // many words. A body short an arm has a structure that set perfectly
-        // well.
-        //
-        // Past the cash line by its grade, which is where an expensive thing
-        // belongs in this world - no counter quotes one, and `cashRefusalReason`
-        // is the sentence, which names the verb that does reach it.
-        id: 'pill-limb-rebirth',
-        name: 'Limb Rebirth Pill',
-        grade: 'immortal',
-        effect: 'mends_what_will_not_close',
-        potency: 1,
-        toxicity: 14.0,
-        // ── UNDER THE CHEAPEST ADVANCEMENT PILL OF ITS GRADE ─────────────
-        //
-        // It was 72,000, which put it over the Condensed Century Pill at
-        // 55,000 and broke the one rule `economy.md` states outright about
-        // this catalog: buying advancement always costs more than buying
-        // survival. Growing an arm back is survival, however dear it is, and
-        // the rule is not a tuning constant.
-        //
-        // Nothing about "expensive" moves: the cash line is drawn on GRADE, so
-        // an immortal pill is past it at any figure, `pillCashPrice` is null
-        // and a counter still quotes nothing. This is the dearest thing in the
-        // world that is not buying somebody a rung, which is exactly where it
-        // should sit.
-        value: 49_000,
-        mends: ['severed-flesh'],
-        description:
-            'Grows back a part of a body that the body has no way of growing back: an arm, an eye, a fang, the marrow of a bone. It takes a season, the taker is awake for it, and what comes back is the part they had rather than a better one. Refined from nine-leaf soul grass carried through a full turn of the cauldron, which is the step that fails.'
-    },
+    // A `pill-limb-rebirth` stood here for an hour and has been withdrawn. It
+    // was written on the reading that `structural-repair-medicine.ts` answers a
+    // structure that did not SET and nothing else, so a body short an arm had
+    // no medicine anywhere and one had to be invented. The design owner
+    // overruled the premise: the repair medicine answers every permanent injury
+    // at its rank, and a second module doing what the first already did is the
+    // defect rather than the fix. Nothing was lost with the row - what grows a
+    // part back is a Second Pour, a Core-Knitting, a Soul-Seating or an Unbroken
+    // Pattern Pill, whichever reaches the rung the body is standing on.
     {
         id: 'pill-thousand-year-cypress',
         name: 'Thousand-Year Cypress Pill',
@@ -612,17 +676,11 @@ export const PILLS: readonly Pill[] = [
         description:
             'Three hundred years, taken from a tree that will not miss them and paid for by someone who will. The toxicity is the tree\'s opinion of the transaction, and three hundred is the end of the line: no living alchemist has ever set a refinement that held longer, and none has ever made one hold in a body past Nascent Soul.'
     },
-    {
-        id: 'pill-perpetual-grain-abstinence',
-        name: 'Perpetual Grain Abstinence Pill',
-        grade: 'immortal',
-        effect: 'grain_abstinence',
-        potency: PERPETUAL_GRAIN_ABSTINENCE_DAYS,
-        toxicity: 4.0,
-        value: 90_000,
-        description:
-            'The full form of the art: hunger does not return, on any horizon a mortal-born cultivator will meet. Refined from the jade pool spring lotus, which means the price includes killing a spring.'
-    },
+    // A `Perpetual Grain Abstinence Pill` stood here at 90,000 stones. Immortal
+    // grade is pitched at Void Tribulation, where `SATIETY_BURN_BY_REALM` is
+    // already 0 - so it charged ninety thousand spirit stones for a thing the
+    // engine grants free at that rung, and had done since the table was
+    // written. See the note on `GRAIN_ABSTINENCE_PILL_ID`.
 
     // ═══════════════════════════════════════════════════════════════════
     // CHAOS - Grand Ascension and the tribulation
@@ -661,20 +719,34 @@ export const PILLS: readonly Pill[] = [
             'Reverses a deviation that has already rewritten who the cultivator is. The person who wakes afterwards agrees, mostly, that they are the same person.'
     },
     {
-        id: 'pill-heaven-mending',
-        name: 'Heaven-Mending Pill',
+        id: 'pill-sky-mending',
+        name: 'Sky-Mending Pill',
         grade: 'chaos',
-        effect: 'treat_injury',
+        // ── NO `mends`, AND THAT IS THE ROW SAYING SOMETHING ─────────────
+        //
+        // Nobody made it for anything. It is chaos grade, and chaos is the only
+        // grade in `GRADE_SPREAD` whose effect is drawn when it is USED rather
+        // than settled when it was made - so it closes ONE of whatever the body
+        // is carrying that nothing closes, and which one is a draw. That is the
+        // rung the design owner kept when the rest of this line was withdrawn:
+        // *"KEEP THE CHAOS ONE WHICH REPAIRS A RANDOM ONE AT ANY RANK."*
+        //
+        // ── AND IT WAS THE HEAVEN-MENDING PILL UNTIL AN HOUR AGO ────────
+        //
+        // A NAME MUST NOT COLLIDE WITH THE VOCABULARY OF THE COLUMN BESIDE IT.
+        // Every row here carries `grade: mortal | earth | heaven | immortal |
+        // chaos`, and a register or a market board is a list somebody scans - so
+        // a chaos row whose name begins with "Heaven" reads as a heaven-grade
+        // row before anybody gets to the grade column. The design owner:
+        // *"heaven mending makes me think heaven grade."* The grade words are
+        // load-bearing here, which makes this the same rule as the type-noun
+        // rule in AGENTS.md rather than a preference about sound.
+        effect: 'mends_what_will_not_close',
         potency: 9,
         toxicity: 25.0,
         value: 480_000,
-        // NOT what does not close, and the sentence used to say otherwise.
-        // `treat_injury` is graded and skips permanent wounds, and the two
-        // medicines that answer one each answer exactly one named wound - which
-        // is what keeps a missing arm from being a thing money solves. This is
-        // the best general medicine in the world and that is a different claim.
         description:
-            'Treats every injury a body is carrying that anything can be done for, including the ones it has stopped registering. What does not close it does not close. Two are known to have been refined; one was used, and its user is still walking.'
+            'Closes one of the things about a body that nothing closes. Which one is not up to the taker and is not announced beforehand - somebody carrying a single such injury is therefore certain of it, and somebody carrying four is not, which is the whole of what people mean when they say the Sky-Mending Pill is wasted on the badly hurt. Two are known to have been refined; one was used, and its user is still walking.'
     },
     {
         id: 'pill-millennium-condensation',
@@ -702,7 +774,21 @@ export const PILLS: readonly Pill[] = [
         // THE RUIN MEDICINE, and it was always this row.
         id: 'pill-immortal-longevity',
         name: 'Immortal Longevity Pill',
-        grade: 'chaos',
+        // ── IMMORTAL, AND IT SAID CHAOS WHILE ITS NAME SAID OTHERWISE ───
+        //
+        // The same collision the Sky-Mending rename was about, pointing the
+        // other way: a row whose NAME carries a grade word its `grade` column
+        // disagreed with. Here the name was the correct half. The design owner:
+        // *"up this one to immortal not chaos."*
+        //
+        // AND THAT MAKES IT DETERMINISTIC, WHICH IS A BEHAVIOUR CHANGE AND IS
+        // STATED RATHER THAN DISCOVERED. Chaos is the only grade in
+        // `GRADE_SPREAD` with more than one outcome, drawn at the moment of
+        // use; immortal is `AS_MADE`. So this stops being a lottery: you take
+        // it, you get the thousand years. For a lifespan medicine that is the
+        // right shape - the whole of what somebody is buying is a number of
+        // years, and a number of years drawn from a hat is a different product.
+        grade: 'immortal',
         effect: 'extend_lifespan',
         potency: 1_000,
         toxicity: 0,
@@ -775,26 +861,10 @@ export function findCheapestPillFor(effect: PillEffect, atLeast: number): Pill |
     return best;
 }
 
-/**
- * The cheapest pill that names this wound key, or null where nothing does.
- *
- * NULL IS THE ANSWER FOR NEARLY EVERY PERMANENT WOUND AND CALLERS MUST NOT
- * SOFTEN IT. A parted meridian, a rooted heart demon and a burnt span each have
- * an authored `treatment` that says nothing answers them, and they mean it. The
- * flesh a body cannot grow back is the one that has a medicine, and a read that
- * tells somebody the world has no answer for it is telling them a falsehood
- * about the only thing they can still do.
- *
- * The key is resolved through `currentWoundKey` first, so a row saved under a
- * retired key still reaches the pill made for it.
- */
-export function pillThatMends(woundKey: string | null | undefined): Pill | null {
-    const key = currentWoundKey(woundKey);
-    if (key === null) return null;
-    let best: Pill | null = null;
-    for (const p of PILLS) {
-        if (!p.mends?.includes(key)) continue;
-        if (!best || p.value < best.value) best = p;
-    }
-    return best;
-}
+// A `pillThatMends(woundKey)` stood here and is gone with the rows it read.
+// It answered "which pill NAMES this permanent wound", which was the whole of
+// how a permanent injury was found for an hour. The design owner ruled that
+// structural repair medicine answers one by RANK, so no pill names a wound any
+// more and the lookup had nothing left to find. What replaced it is
+// `cheapestMedicineFor` in `what-structural-repair-medicine-can-reach.ts`,
+// which asks the rung rather than the name.

@@ -120,8 +120,10 @@ describe('mercy is a decision with a price on it', () => {
 
         // ── THEY ARE ALIVE, WHICH IS THE ENTIRE RISK ─────────────────────
         const after = await game.loadWorld();
-        const survivor = after.npcs.find((n: any) => n.id === them!.id);
-        expect(survivor.status).toBe('alive');
+        expect(after, 'the world went away over the fight').toBeTruthy();
+        const survivor = after!.npcs.find((n: any) => n.id === them!.id);
+        expect(survivor, 'the one who was spared is not in the world').toBeTruthy();
+        expect(survivor!.status).toBe('alive');
 
         // ── AND BOTH SIDES OF THE ACCOUNT ARE OPEN ───────────────────────
         //

@@ -102,6 +102,14 @@ export const ACTION_NAMES = [
      */
     'acquisition',
     /**
+     * WRITING WHAT COMES NEXT YOURSELF, which `acquisition` has always offered as
+     * a route and nothing could do. The engine's `writeNextStage` had no caller
+     * anywhere, so the game named the prodigy's road and had no verb that walked
+     * it. The one door money cannot open: the price is decades and a comprehension
+     * nothing buys.
+     */
+    'derive',
+    /**
      * ── THE THREE QUESTIONS A DRIVEN PLAYER ASKS AND COULD NOT ────────────
      */
     /**
@@ -372,6 +380,12 @@ export const TIME_CONSUMING_ACTIONS: readonly ActionName[] = [
      * can therefore kill.
      */
     'guard',
+    /**
+     * The longest span any verb in the set spends: twelve years at the bottom of
+     * the ladder and over a thousand at the top, through the same skip a
+     * seclusion runs through. A misparse that reaches this costs a life.
+     */
+    'derive',
 ] as const;
 
 /**
@@ -449,6 +463,11 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     // The manual being asked about, by name. Resolved against what this
     // cultivator HOLDS: the question is how THEIR book goes further.
     'acquisition',
+    // The manual being CARRIED further, by name, resolved against what this
+    // cultivator practises - by the same picker `acquisition` uses, so the read
+    // and the act cannot land on two different books. A name they do not
+    // practise is refused with what they do.
+    'derive',
     // The art, by name. Resolved against the whole catalog and then put to
     // `handleLearn`, which owns every gate - so naming one out of reach is
     // refused with the measured reason rather than dropped here.
@@ -791,6 +810,13 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      */
     teach: ['a_span_of_days'],
     acquisition: [],
+    /**
+     * Decades through `GameService.shortSkip`, and the longest span any verb in
+     * the set spends. The food clock, the encounter window and the world tick all
+     * run over it, and a cultivator who does not survive it does not finish the
+     * stage.
+     */
+    derive: ['a_span_of_days'],
     ceiling: [],
     teacher: [],
     destinations: [],

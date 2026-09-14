@@ -67,10 +67,20 @@ const BASELINE = 23;
  * wall should derive it.
  */
 
+/**
+ * One duplicated passage, as `find-duplicated-prose.mjs` reports it. The script
+ * is a `.mjs` with no declarations, so what it returns arrives here as `any`;
+ * naming the shape at each use keeps these calls honest about what they read.
+ */
+interface DuplicatedPassage {
+    text: string;
+    files: string[];
+}
+
 describe('duplicated prose', () => {
     it('does not increase', () => {
         const dupes = findDuplicates();
-        const where = dupes.slice(0, 5).map(d => `\n  ${d.files.join(' <-> ')}\n    "${d.text.slice(0, 90)}..."`);
+        const where = dupes.slice(0, 5).map((d: DuplicatedPassage) => `\n  ${d.files.join(' <-> ')}\n    "${d.text.slice(0, 90)}..."`);
         expect(
             dupes.length,
             `Duplicated passages rose above ${BASELINE}. Delete one copy and link to the other.${where.join('')}`
@@ -81,7 +91,7 @@ describe('duplicated prose', () => {
         // A guard on the guard: if the scan stops reaching the catalog, the
         // ratchet would pass by finding nothing at all.
         const dupes = findDuplicates();
-        const scanned = new Set(dupes.flatMap(d => d.files));
+        const scanned = new Set<string>(dupes.flatMap((d: DuplicatedPassage) => d.files));
         expect([...scanned].some(f => f.startsWith('src/data/cultivation/'))).toBe(true);
     });
 });

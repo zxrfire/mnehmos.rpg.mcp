@@ -61,11 +61,12 @@ This is what keeps an unbacked nobody from being locked out of cultivation entir
 puts a real decision in front of a poor one early: the stones exist, and they can go on a
 book or on food.
 
-**A fighting art is copied by whoever mastered it, and by nobody else.** The rule is the
-same one and only the reading of *the end* changes: a road is taken to its end by standing
-where it leaves you, and an art has no such rung, so what answers is how well the person
-holds it. The design owner's sentence, and it is what makes the whole of the section below
-self-limiting:
+**A deep art is copied by whoever mastered it, and by nobody else.** One rule, read two
+ways depending on what anybody has measured about the holder: where a mastery figure
+exists - a player, a named teacher - it answers, and full mastery is what it takes. Where
+none does, and that is every person the world holds, standing at the rung the book stops at
+answers instead. The design owner's sentence, and it is what makes the whole of the section
+below self-limiting:
 
 > *How would you be able to copy these signature arts? You'd have to master it, which would
 > mean you are at sect leader or higher.*

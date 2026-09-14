@@ -29,6 +29,15 @@
  * asked twice with the same rows and two parties who differ in nothing but
  * whether they can read the schedule.
  *
+ * ── AND A THIRD ARM, WHICH IS THE ONE THE WORLD ACTUALLY GETS ────────────
+ *
+ * The two above are the bounds. Neither says where a real house falls between
+ * them, and nothing could ask until `whoInTheHouseKnowsWhenItOpens` existed: the
+ * house's reading is somebody on its roll who can read the schedule AND has
+ * something of that ground, so the arm is measured off the seeded roll and the
+ * seeded ledger rather than off a party invented here. Before that read existed
+ * every house in the world sat on the `hears it is open` arm by construction.
+ *
  *   npx esbuild scripts/probe-can-anybody-be-standing-there-on-the-day.ts \
  *       --bundle --platform=node --format=esm --external:better-sqlite3 \
  *       --outfile=probe.mjs && node probe.mjs
@@ -38,6 +47,12 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { beingAtADoorOnTheDayItOpens } from '../src/engine/world/being-at-a-door-on-the-day-it-opens.js';
 import { SCHEDULE_READ_ORDINAL } from '../src/engine/world/convergence.js';
+import {
+    whoInTheHouseKnowsWhenItOpens
+} from '../src/engine/world/a-house-knows-a-date-because-somebody-in-it-does.js';
+import {
+    whatOneOfTheWorldsOwnPeopleKnows
+} from '../src/engine/world/what-one-of-the-worlds-own-people-knows.js';
 import type { CapabilityActor } from '../src/engine/world/capability.js';
 import {
     FOLD_FLOOR_ORDINAL,
@@ -71,6 +86,10 @@ interface Row {
     farthestSeatDays: number | null;
     knowsTheDate: Verdicts;
     hearsItIsOpen: Verdicts;
+    /** The houses as their own people actually stand. */
+    asTheHousesAre: Verdicts;
+    /** Of those houses, how many hold somebody who can say the date. */
+    housesWithAReader: number;
 }
 
 /**
@@ -137,10 +156,20 @@ function groundWithNoDoor(state: WorldState): number {
 }
 
 function rowsFor(state: WorldState, seed: string): Row[] {
-    const seats = state.factions
-        .filter(f => f.dissolvedOnDay === null && isBelowTheLid(f) && f.seatLocationId !== null)
-        .map(f => f.seatLocationId as string);
+    const houses = state.factions
+        .filter(f => f.dissolvedOnDay === null && isBelowTheLid(f) && f.seatLocationId !== null);
+    const seats = houses.map(f => f.seatLocationId as string);
     const day = Math.floor(state.currentDay);
+
+    // The roll each house actually has, which is what the third arm is read off.
+    const roll = new Map<string, { id: string; name: string; ordinal: number }[]>();
+    for (const npc of state.npcs) {
+        if (npc.status !== 'alive' || !npc.factionId) continue;
+        const theirs = roll.get(npc.factionId);
+        const who = { id: npc.id, name: npc.name, ordinal: npc.cultivation.realmOrdinal };
+        if (theirs) theirs.push(who); else roll.set(npc.factionId, [who]);
+    }
+    const peopleKnow = whatOneOfTheWorldsOwnPeopleKnows(state);
 
     const out: Row[] = [];
     for (const site of state.locations) {
@@ -157,11 +186,39 @@ function rowsFor(state: WorldState, seed: string): Row[] {
         const depthDays = wingsOf(site).reduce((deep, wing) => Math.max(deep, wing.depthDays), 0);
         const unreachable = seats.length - days.length;
         const none = { walk: 0, fold: 0, none: seats.length };
+
+        // ── THE THIRD ARM, HOUSE BY HOUSE ────────────────────────────────
+        let asTheHousesAre: Verdicts = { walk: 0, fold: 0, none: 0 };
+        let housesWithAReader = 0;
+        for (const house of houses) {
+            const crossingDays = reach.get(house.seatLocationId as string);
+            if (crossingDays === undefined) {
+                asTheHousesAre = { ...asTheHousesAre, none: asTheHousesAre.none + 1 };
+                continue;
+            }
+            const holds = whoInTheHouseKnowsWhenItOpens({
+                door: site,
+                onDay: day,
+                houseId: house.id,
+                roster: roll.get(house.id) ?? [],
+                hasAnythingOfTheGround: personId =>
+                    peopleKnow(personId, 'place', site.id) !== 'unaware'
+            });
+            if (holds.known) housesWithAReader++;
+            const one = verdictsFor(site, day, [crossingDays], depthDays, holds.party);
+            asTheHousesAre = {
+                walk: asTheHousesAre.walk + one.walk,
+                fold: asTheHousesAre.fold + one.fold,
+                none: asTheHousesAre.none + one.none
+            };
+        }
+
         if (days.length === 0) {
             out.push({
                 seed, name: site.name, waitYears, windowDays, depthDays,
                 nearestSeatDays: null, medianSeatDays: null, farthestSeatDays: null,
-                knowsTheDate: none, hearsItIsOpen: none
+                knowsTheDate: none, hearsItIsOpen: none,
+                asTheHousesAre, housesWithAReader
             });
             continue;
         }
@@ -174,7 +231,9 @@ function rowsFor(state: WorldState, seed: string): Row[] {
             knowsTheDate: add(verdictsFor(site, day, days, depthDays, partyThatKnowsTheDate(site))),
             hearsItIsOpen: add(
                 verdictsFor(site, day, days, depthDays, PARTY_THAT_HEARS_IT_IS_OPEN)
-            )
+            ),
+            asTheHousesAre,
+            housesWithAReader
         });
     }
     return out;
@@ -268,6 +327,18 @@ async function main(): Promise<void> {
     line(`  farthest seat(walking days): min ${far[0]} median ${far[Math.floor(far.length / 2)]} max ${far[far.length - 1]}`);
     line(`  of the world's houses, per site, KNOWING THE DATE: ${arm(r => r.knowsTheDate)}`);
     line(`  of the world's houses, per site, HEARING IT IS OPEN: ${arm(r => r.hearsItIsOpen)}`);
+    line(`  of the world's houses, per site, AS THEY ACTUALLY STAND: `
+        + `${arm(r => r.asTheHousesAre)}`);
+    const withAReader = all.reduce((n, r) => n + r.housesWithAReader, 0);
+    const housesPerSite = all.reduce((n, r) =>
+        n + r.asTheHousesAre.walk + r.asTheHousesAre.fold + r.asTheHousesAre.none, 0);
+    line(`  and ${(withAReader / Math.max(1, housesPerSite) * 100).toFixed(1)}% of those hold `
+        + 'somebody who can read the schedule AND has something of that ground.');
+    line('  AT SEEDING THAT IS ZERO AND THE THIRD ARM IS THE LATE ONE, which is the finding');
+    line('  rather than a flat reading: every house in the world holds somebody at the rung,');
+    line('  and nobody in any of them has anything of a scheduled site yet. The early arm is');
+    line('  bought by history - measured on one world, 0 of 190 house/site pairs at seeding');
+    line('  against 81 of 429 after 150 years of the world running its own errands.');
     line(`  ruins ${ruins}, of them scheduled ${all.length} and standing open with no `
         + `door at all ${noDoor} - those have no window and are not a reachability `
         + 'question at all; what stops anybody at one is the trial inside.');

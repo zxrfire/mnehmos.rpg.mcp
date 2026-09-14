@@ -108,6 +108,36 @@ export function isOneOfTheBeasts(npc: Pick<NpcRecord, 'tags'>): boolean {
     return theSpeciesItIs(npc) !== null;
 }
 
+/** One of these, with its species read at the rung it actually stands on. */
+export interface TheOneOnThisGround {
+    npc: NpcRecord;
+    /** The catalog row: where its KIND is usually found. */
+    species: Beast;
+    /** The same row read at this one's rung, for every read that takes a `Beast`. */
+    asItStands: Beast;
+}
+
+/**
+ * The ones with rows of their own standing on this piece of ground.
+ *
+ * The hunt and the world sim both need it and neither may filter on the catalog
+ * ordinal: a row is what the ground actually holds, and the whole point of a row
+ * is that it has moved since the catalog placed its kind.
+ */
+export function theOnesInParticularAt(
+    npcs: readonly NpcRecord[],
+    locationId: string
+): TheOneOnThisGround[] {
+    const out: TheOneOnThisGround[] = [];
+    for (const npc of npcs) {
+        if (npc.status !== 'alive' || npc.locationId !== locationId) continue;
+        const species = theSpeciesItIs(npc);
+        if (species === null) continue;
+        out.push({ npc, species, asItStands: asItStandsNow(species, npc.cultivation.realmOrdinal) });
+    }
+    return out;
+}
+
 /**
  * Why this one gets no row, or null when it gets one.
  *
@@ -198,14 +228,11 @@ export interface StandingUpABeast {
  * species - *"calling them an ape in human form is disrespectful"* - is about
  * how somebody is ADDRESSED, which is the row's `name` and is now the person's.
  *
- * WHAT IS STILL OPEN, AND IT IS WIRING RATHER THAN DESIGN. `resolveCultivator`
- * scores a typed word against `row.name` alone, and its candidates come off
- * `repos.cultivators.roster()` and `KnowledgeScope.present`, neither of which
- * carries the tag the species is derived from. So a player who types the old
- * name at a renamed row does not reach it YET. Closing it means threading the
- * row's tags to the resolver and having `best` score every name a row answers
- * to, which is a change in `entities.ts` rather than here. Written down as a
- * gap, not licensed as one.
+ * AND TYPING THE OLD NAME REACHES IT. `resolveCultivator` scored against
+ * `row.name` alone while its candidates carried no tags, so the old name
+ * reached nobody; `RosterEntry` now carries the row's tags and `best` scores
+ * every name a row answers to, preferring the one it is addressed by. The
+ * design owner: *"it might answer to its old name but it prefers this one."*
  */
 export function standUpTheOneOnThisGround(input: StandingUpABeast): NpcRecord {
     const { beast, locationId, seed, onDay } = input;

@@ -33,6 +33,7 @@ import {
 } from './entities.js';
 import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
 import { whatIsWrongWithThisGround } from './ground-status-lines.js';
+import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import { factsForInvestigation, factsForLook, factsForRefusal, placeName } from './facts.js';
 import { refused, structureCalls } from './tool-result-prose.js';
 import type { Execution } from './turn-wire-shapes.js';
@@ -214,7 +215,10 @@ export const investigateVerb = {
             // turns in a row, all four successful, nothing anywhere saying the
             // ground was drawing down.
             ?? this.groundAtHand(query, cultivator)
-            ?? resolveAnything(this.repos, query, cultivator, scope)
+            ?? resolveAnything(
+                this.repos, query, cultivator, scope,
+                whereYouStandOnYourHousesRoll(this, cultivator)
+            )
             // ── AND A FACE POINTED AT RATHER THAN NAMED ──────────────────
             //
             // `somebodyAtHand` is the repo's ONE resolver for a person a

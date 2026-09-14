@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SECTS, getSect } from '../../../src/data/cultivation/sects.js';
-import { getTechnique, classOf } from '../../../src/data/cultivation/techniques.js';
+import { getTechnique } from '../../../src/data/cultivation/techniques.js';
 import { WORKING_ROAD_CAP } from '../../../src/engine/world/manuals.js';
 import {
     WHAT_A_GUEST_PLACE_IS_NOT,
@@ -38,25 +38,39 @@ describe('which houses take guests at all', () => {
         expect(TAKING.length).toBeLessThan(SECTS.length / 1.5);
     });
 
-    it('refuses the houses with nothing behind the door, by name and for the stated reason', () => {
-        // Jade Register Hall is the case the rule exists for: a dao house,
-        // an eight-hundred-year library, and a working shelf that stops at the
-        // intake primer. It has nothing to hold back, so opening any of it
+    it('refuses a body with nothing at all behind the door', () => {
+        // THE NAMED CASE THAT MOVED, AND WHY. This read
+        // "refuses the houses with nothing behind the door" and named Jade
+        // Register Hall: a dao house, an eight-hundred-year library, and a
+        // working shelf that stopped at the intake primer, so opening any of it
         // would be opening all of it.
-        expect(takesGuests('house-jade-register')).toBe(false);
-        expect(shelfTopOf('house-jade-register')).toBeLessThanOrEqual(WORKING_ROAD_CAP);
-
-        // And a body that teaches nothing at all cannot be holding anything
-        // back either.
+        //
+        // Its shelf stopped there only because a retired predicate counted one
+        // kind of book. Every art carries somebody now, and the Hall's
+        // shelfTop went 13 -> 29 - the largest jump of any house in the world,
+        // alongside Lantern Hall's, and it comes entirely from a catalog of
+        // arts it was always teaching. It has something to hold back, and it
+        // takes guests. That is the ruling working, not a regression.
+        //
+        // What survives is the floor: a body that teaches NOTHING cannot be
+        // holding anything back, and no reading of the catalog can change that.
         expect(shelfTopOf('sect-kiln-wardens')).toBeNull();
         expect(takesGuests('sect-kiln-wardens')).toBe(false);
+
+        // And the rule is still derived from depth rather than declared: the
+        // Hall opened its door because a number moved, and nobody edited it.
+        expect(shelfTopOf('house-jade-register')).toBeGreaterThan(WORKING_ROAD_CAP);
+        expect(takesGuests('house-jade-register')).toBe(true);
     });
 
-    it('takes most of the dao houses, which is the point of them existing', () => {
+    it('takes the dao houses, which is the point of them existing', () => {
+        // All seven, where it was six. The seventh is Jade Register Hall - see
+        // above. The claim that matters is that they are not a minority of
+        // themselves; a dao house that shows a guest nothing has no reason to
+        // exist in the world.
         const houses = SECTS.filter(s => s.id.startsWith('house-'));
         const taking = houses.filter(s => takesGuests(s.id));
         expect(taking.length).toBeGreaterThan(houses.length / 2);
-        expect(taking.length).toBeLessThan(houses.length);
     });
 });
 
@@ -120,7 +134,7 @@ describe('a nobody with no house and no name', () => {
         const withARoad = places.filter(p =>
             p.opens.some(o => {
                 const t = getTechnique(o.techniqueId);
-                return t !== undefined && classOf(t) === 'cultivation';
+                return t !== undefined;
             })
         );
         expect(withARoad.length).toBeGreaterThan(0);

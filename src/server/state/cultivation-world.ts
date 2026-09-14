@@ -7,6 +7,8 @@ import type Database from 'better-sqlite3';
 import { getDb } from '../../storage/index.js';
 import { readWorldRevision } from './world-revision.js';
 import { SectRepository } from '../../storage/repos/sect.repo.js';
+import { whereSomebodyStandsOnAHousesRoll }
+    from '../../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import {
     advanceWorldForPlay,
     loadCultivationCatalog,
@@ -485,7 +487,7 @@ export async function advanceWorldForCultivator(
         access: accessForCultivator(cultivator),
         observer: observerFor(cultivator, handle),
         stopOnInterrupt: false,
-        digest: { limit: options.limit ?? 12, factionRankIndex: rankIndexOf(cultivator) }
+        digest: { limit: options.limit ?? 12, factionRankIndex: rungOf(cultivator, handle.state) }
     });
 
     // A tick, not a checkpoint: the append path skips the chronicle and memory
@@ -515,20 +517,27 @@ export function observerFor(cultivator: Cultivator, handle: WorldHandle): Observ
 /**
  * What rung this cultivator stands on in their house.
  *
- * READ OFF THE MEMBERSHIP, which is where it lives. This used to be
- * `typeof cultivator.sectRank === 'number' ? cultivator.sectRank : 0`, and
- * `sectRank` is `z.string().nullable()` - so the test was false for every
- * cultivator who has ever existed and the answer was 0, always.
- *
  * `sectThreshold` in `digest.ts` reads it to decide what a person is told: an
  * elder is told the awkward things and an outer disciple hears the notices. So
- * a Sect Head's world digest has been identical to an outer disciple's for the
- * whole life of every run, and nothing looked wrong - it just quietly said less
- * to the people the world should have been telling most.
+ * a Sect Head's world digest was identical to an outer disciple's for the whole
+ * life of every run when this asked a field that did not hold a rung at all,
+ * and nothing looked wrong - it just quietly said less to the people the world
+ * should have been telling most.
+ *
+ * It is now the repo's one read rather than a second one: the world is at hand
+ * here, so the world row is asked first, as it is everywhere else.
+ *
+ * ZERO, not -1, for somebody on no roll. `sectThreshold` takes a rung and a
+ * person outside every house hears what the bottom rung hears; -1 would be a
+ * magnitude below the scale and would silence them entirely.
  */
-function rankIndexOf(cultivator: Cultivator): number {
-    const membership = new SectRepository(getDb()).getMembership(cultivator.id);
-    return membership?.rankIndex ?? 0;
+function rungOf(cultivator: Cultivator, world: WorldState): number {
+    const rolls = {
+        world,
+        rollRowFor: (id: string) => new SectRepository(getDb()).getMembership(id)
+    };
+    const house = whereSomebodyStandsOnAHousesRoll(rolls, cultivator.id);
+    return Math.max(0, house?.rankIndex ?? 0);
 }
 
 /**

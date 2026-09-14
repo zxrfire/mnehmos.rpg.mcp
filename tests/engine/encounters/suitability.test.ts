@@ -25,7 +25,6 @@ import {
 import { requireEncounter } from '../../../src/data/cultivation/encounters.js';
 
 const fireRoot: Seeker = { ordinal: 12, elements: ['fire'], rootGrade: 'single', insights: { sword: 2 } };
-const waterRoot: Seeker = { ordinal: 12, elements: ['water'], rootGrade: 'dual' };
 
 const fireManual: Find = {
     id: 'm1', name: 'A fire method', kind: 'manual', gradeOrdinal: 13, elements: ['fire']

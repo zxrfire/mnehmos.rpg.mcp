@@ -7,7 +7,6 @@
  * ends up holding, and that a closed run stays closed.
  */
 
-import { randomUUID } from 'crypto';
 import {
     CultivationManageTool,
     handleCultivationManage
@@ -552,7 +551,10 @@ describe('cultivation MCP tool surface', () => {
             const cultivatorId = created.cultivator.id;
 
             const available = await technique({ action: 'list_available' });
-            await technique({ action: 'learn', techniqueId: available.compatible[0].id });
+            await technique({
+                action: 'learn', techniqueId: available.compatible[0].id,
+                provenance: 'taught_by_a_person'
+            });
 
             const relationshipId = seedBond('npc-brother', 'Shen Kuo', cultivatorId);
             const memoryId = seedMemory(cultivatorId, 'mother', 'Her mother\'s name was Yun Qing.');
@@ -636,9 +638,12 @@ describe('cultivation MCP tool surface', () => {
         const tookSomething = (result: any) => result.toll?.outcome === 'taken';
 
         it('charges the toll at a realm boundary and records it in the ledger', async () => {
-            const crossing = await crossABoundary('toll-seed', async cultivatorId => {
+            const crossing = await crossABoundary('toll-seed', async () => {
                 const available = await technique({ action: 'list_available' });
-                await technique({ action: 'learn', techniqueId: available.compatible[0].id });
+                await technique({
+                    action: 'learn', techniqueId: available.compatible[0].id,
+                    provenance: 'taught_by_a_person'
+                });
             });
             expect(crossing).not.toBeNull();
             const { created, result } = crossing!;
@@ -660,9 +665,14 @@ describe('cultivation MCP tool surface', () => {
                 .get(created.cultivator.id) as { foundation_quality: string };
             expect(row.foundation_quality).toBe(result.foundationEstablished);
 
-            // A foundation is laid once and never re-laid.
+            // A foundation is laid once and never re-laid. The quality asked
+            // for is never reached: `establishFoundation` returns null on the
+            // first line that sees a foundation already there. It used to ask
+            // for 'flawless', which has not been a foundation quality since the
+            // grades were renamed, and nothing noticed because the call returns
+            // before the value is parsed.
             expect(new CultivatorRepository(db)
-                .establishFoundation(created.cultivator.id, 'flawless')).toBeNull();
+                .establishFoundation(created.cultivator.id, 'exceptional')).toBeNull();
 
             const after = await cultivation({ action: 'status' });
             expect(after.foundation).toBe(result.foundationEstablished);
@@ -670,11 +680,13 @@ describe('cultivation MCP tool surface', () => {
         });
 
         it('really removes a taken technique', async () => {
-            const crossing = await crossABoundary('toll-tech', async cultivatorId => {
+            const crossing = await crossABoundary('toll-tech', async () => {
                 // Arts only: no bonds and no memories, so a take must be an art.
                 const available = await technique({ action: 'list_available' });
                 for (const art of available.compatible.slice(0, 3)) {
-                    await technique({ action: 'learn', techniqueId: art.id });
+                    await technique({
+                        action: 'learn', techniqueId: art.id, provenance: 'taught_by_a_person'
+                    });
                 }
             }, { attempts: 150, until: tookSomething });
             expect(crossing).not.toBeNull();
@@ -780,7 +792,9 @@ describe('cultivation MCP tool surface', () => {
 
             const available = await technique({ action: 'list_available' });
             const artId = available.compatible[0].id;
-            await technique({ action: 'learn', techniqueId: artId });
+            await technique({
+                action: 'learn', techniqueId: artId, provenance: 'taught_by_a_person'
+            });
             const relationshipId = seedBond('npc-brother', 'Shen Kuo', cultivatorId);
             const memoryId = seedMemory(cultivatorId, 'mother', 'Her mother was named Yun Qing.');
 
@@ -833,7 +847,10 @@ describe('cultivation MCP tool surface', () => {
                 process.env.ADMIN_MODE = 'true';
                 const created = await newRun(`toll-audit-${i}`, `Auditee ${i}`);
                 const available = await technique({ action: 'list_available' });
-                await technique({ action: 'learn', techniqueId: available.compatible[0].id });
+                await technique({
+                    action: 'learn', techniqueId: available.compatible[0].id,
+                    provenance: 'taught_by_a_person'
+                });
                 seedBond('npc-brother', 'Shen Kuo', created.cultivator.id);
                 seedMemory(created.cultivator.id, 'mother', 'Her mother was named Yun Qing.');
 
@@ -1020,7 +1037,17 @@ describe('cultivation MCP tool surface', () => {
 
             const available = await technique({ action: 'list_available' });
             const art = available.compatible[0];
-            const learned = await technique({ action: 'learn', techniqueId: art.id });
+            // WHY `provenance` IS HERE NOW. The stall line used to reach only
+            // cultivation manuals; every art carries a cap since the two kinds
+            // of technique collapsed into one, so the cheap end of the catalog
+            // is stall stock - eight books, six of them fighting arts - and
+            // `learn` with no copy and no provenance is refused with a price
+            // rather than a no. Saying how it was come by is the arrange step.
+            // `a-guest-is-taught-the-shallow-end.test.ts` covers the refusal
+            // itself.
+            const learned = await technique({
+                action: 'learn', techniqueId: art.id, provenance: 'taught_by_a_person'
+            });
             expect(learned.learned).toBe(true);
             expect(learned.technique.mastery).toBe(0);
 
@@ -1047,7 +1074,9 @@ describe('cultivation MCP tool surface', () => {
             expect(available.conflicting.length).toBeGreaterThan(0);
 
             const art = available.conflicting[0];
-            const learned = await technique({ action: 'learn', techniqueId: art.id });
+            const learned = await technique({
+                action: 'learn', techniqueId: art.id, provenance: 'taught_by_a_person'
+            });
             expect(learned.elementConflict).toBe(true);
             expect(learned.deviation).not.toBeNull();
             expect(learned.deviation.risk).toBeGreaterThan(0);
@@ -1062,7 +1091,9 @@ describe('cultivation MCP tool surface', () => {
             await newRun();
             const available = await technique({ action: 'list_available' });
             const art = available.compatible[0];
-            await technique({ action: 'learn', techniqueId: art.id });
+            await technique({
+                action: 'learn', techniqueId: art.id, provenance: 'taught_by_a_person'
+            });
             const forgotten = await technique({ action: 'forget', techniqueId: art.id });
             expect(forgotten.forgotten).toBe(true);
             expect(forgotten.knownTechniques).not.toContain(art.id);

@@ -77,7 +77,10 @@ describe('a heaven-grade thing ending is something people know about', () => {
     it('reaches somebody who was not there, through the market and nothing else', async () => {
         const harness = await makeGameInWorld({ seed: 'boat-news', worldSeed: WORLD });
         const { cultivator } = await harness.game.newRun('Wright');
-        const world = await harness.game.loadWorld();
+        const loaded = await harness.game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
+        expect(cultivator.location, 'the run opened with nobody standing anywhere').toBeTruthy();
         const recipe = getConveyanceRecipe('build-spirit-boat')!;
         world.objects.push(mintCraft(recipe, {
             id: 'obj-craft-loud-boat',
@@ -88,12 +91,14 @@ describe('a heaven-grade thing ending is something people know about', () => {
             wrightName: cultivator.name,
             bestHandOrdinal: 30,
             onDay: Math.floor(world.currentDay),
-            mooredAt: cultivator.location
+            mooredAt: cultivator.location!
         })!);
 
         await harness.game.act('I smash the spirit boat');
 
-        const after = await harness.game.loadWorld();
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
+        const after = reloaded!;
         const written = after.history.facts.filter(
             fact => fact.data?.brokeObjectId === 'obj-craft-loud-boat'
         );
@@ -112,7 +117,10 @@ describe('a heaven-grade thing ending is something people know about', () => {
     it('leaves a row the news can be checked against', async () => {
         const harness = await makeGameInWorld({ seed: 'boat-row', worldSeed: WORLD });
         const { cultivator } = await harness.game.newRun('Wright');
-        const world = await harness.game.loadWorld();
+        const loaded = await harness.game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
+        expect(cultivator.location, 'the run opened with nobody standing anywhere').toBeTruthy();
         const recipe = getConveyanceRecipe('build-spirit-boat')!;
         world.objects.push(mintCraft(recipe, {
             id: 'obj-craft-checked-boat',
@@ -123,12 +131,14 @@ describe('a heaven-grade thing ending is something people know about', () => {
             wrightName: cultivator.name,
             bestHandOrdinal: 30,
             onDay: Math.floor(world.currentDay),
-            mooredAt: cultivator.location
+            mooredAt: cultivator.location!
         })!);
 
         await harness.game.act('I smash the spirit boat');
 
-        const after = await harness.game.loadWorld();
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
+        const after = reloaded!;
         const row = after.objects.find(object => object.id === 'obj-craft-checked-boat')!;
         expect(isRuined(row)).toBe(true);
         // THE FIELD NOBODY SUPPLIED. The last provenance entry now carries the
@@ -149,7 +159,9 @@ describe('a cheap thing ending is still talk, and it is small talk', () => {
 
         await harness.game.act(`I smash the ${ITS_NAME}`);
 
-        const after = await harness.game.loadWorld();
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
+        const after = reloaded!;
         const written = after.history.facts.filter(
             fact => fact.data?.brokeItemId === A_PILL_YOU_CAN_REFINE
         );
@@ -188,7 +200,9 @@ describe('a cheap thing ending is still talk, and it is small talk', () => {
 
         await harness.game.act(`I smash the ${ITS_NAME}`);
 
-        const after = await harness.game.loadWorld();
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
+        const after = reloaded!;
         const written = after.history.facts.find(
             fact => fact.data?.brokeItemId === A_PILL_YOU_CAN_REFINE
         )!;
@@ -203,13 +217,16 @@ describe('a cheap thing ending is still talk, and it is small talk', () => {
         const harness = await makeGameInWorld({ seed: 'pill-row', worldSeed: WORLD });
         const { cultivator } = await harness.game.newRun('Breaker');
         addToPouch(harness.db, cultivator.id, A_PILL_YOU_CAN_REFINE, 'pill', 1);
-        const before = (await harness.game.loadWorld()).objects.length;
+        const opened = await harness.game.loadWorld();
+        expect(opened, 'the run opened without a world').toBeTruthy();
+        const before = opened!.objects.length;
 
         await harness.game.act(`I smash the ${ITS_NAME}`);
 
-        const after = await harness.game.loadWorld();
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
         // Counted, not tracked: a pill is an amount, and an amount that went
         // down by one is not a thing with a history.
-        expect(after.objects).toHaveLength(before);
+        expect(reloaded!.objects).toHaveLength(before);
     });
 });

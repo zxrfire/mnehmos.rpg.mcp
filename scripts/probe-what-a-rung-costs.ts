@@ -26,6 +26,7 @@ import { makeGameInWorld } from '../tests/web/harness.js';
 import { KnowledgeGate } from '../src/web/knowledge.js';
 import { positionIn } from '../src/web/standing.js';
 import { portfoliosIn } from '../src/engine/social-leverage/authority-for-an-order.js';
+import type { WorldState } from '../src/engine/world/world-state.js';
 import { rosterFor } from '../src/web/encounters.js';
 import {
     THE_ROOM_A_RUNG_IS_DECIDED_IN,
@@ -78,7 +79,7 @@ async function oneWorld(seed: string): Promise<Row> {
     const svc = game as unknown as {
         repos: Parameters<typeof positionIn>[0];
         knowledge: unknown;
-        loadWorld(): Promise<unknown>;
+        loadWorld(): Promise<WorldState | null>;
     };
     const world = await svc.loadWorld();
     const roster = rosterFor(
@@ -92,7 +93,7 @@ async function oneWorld(seed: string): Promise<Row> {
         ...roster.map(p => ({ id: p.id, rankIndex: p.rankIndex ?? 0 }))
     ];
     const portfolios = portfoliosIn({
-        locations: (world as { locations?: unknown[] })?.locations ?? [],
+        locations: world?.locations ?? [],
         sectId: held.sectId,
         roll,
         rankCount: held.rankCount

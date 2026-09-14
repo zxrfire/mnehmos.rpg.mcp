@@ -215,7 +215,9 @@ describe('and it can arrive wrong', () => {
         const { cultivator } = await game.newRun('Prober');
         await game.act('I look around');
         const world = (await game.loadWorld())!;
-        const run = (await game.state()).run!;
+        // The stored row rather than the wire view of it: `askAround` takes a
+        // `Run`, and `state().run` has had the seed cut out of it.
+        const { run } = game.currentRun();
 
         const doer = world.npcs.find(n => n.status === 'alive' && n.id !== cultivator.id)!;
         const deed = somethingDoneToThemBehindTheirBack(

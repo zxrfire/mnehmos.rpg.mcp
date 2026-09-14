@@ -53,7 +53,10 @@
       "Bash(sed -i 's/unless it says otherwise, the image was read at catalogue-thumbnail scale/every lot on this sheet has now been examined at full resolution \\(1800px\\) unless the line says otherwise/' C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
       "Bash(python - C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
       "Bash(grep -o '\\\\[31, \"Qianlong[^]]\\\\{0,40\\\\}' C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
-      "mcp__claude-in-chrome__navigate"
+      "mcp__claude-in-chrome__navigate",
+      "Bash(grep -o '\\\\[90, \"Longquan[^]]\\\\{0,30\\\\}' C:/Users/hi/AppData/Local/Temp/claude/D--intellij-projects-mnehmos-rpg-mcp/8cfd0d79-590f-4bbb-9b27-a80db381a5df/scratchpad/bid-sheet.html)",
+      "PowerShell($ProgressPreference='SilentlyContinue'; try { $r = Invoke-WebRequest -Uri 'https://www.bonhams.com/auction/32642/lot/1533/x/' -UseBasicParsing -TimeoutSec 30 -Headers @{'User-Agent'='Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\)'}; \"STATUS $\\($r.StatusCode\\) LEN $\\($r.Content.Length\\)\"; if\\($r.Content -match \"HARE'S FUR\"\\){\"MATCH\"}else{\"no match\"} } catch { \"ERR: $\\($_.Exception.Message\\)\" })",
+      "WebFetch(domain:www.ebay.ca)"
     ]
   }
 }

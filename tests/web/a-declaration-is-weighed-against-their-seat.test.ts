@@ -56,7 +56,7 @@ const THE_WEAKEST = BY_REACH[BY_REACH.length - 1]!;
  * The rank gate is real and is not what this file measures: a disciple cannot
  * commit their house to anything, and `housePosture` says so first.
  */
-async function theHeadOf(seed: string, houseId: string, houseName: string) {
+async function theHeadOf(seed: string, houseId: string) {
     const harness = await makeGameInWorld({
         seed, worldSeed: `world-${seed}`, adminMode: true
     });
@@ -65,7 +65,7 @@ async function theHeadOf(seed: string, houseId: string, houseName: string) {
     const house = SECTS.find(s => s.id === houseId)!;
     harness.repos.sects.addMember(houseId, cultivator.id, house.ranks.length - 1);
     harness.repos.cultivators.update(cultivator.id, {
-        realmOrdinal: 44, sectId: houseId, sectName: houseName
+        realmOrdinal: 44, sectId: houseId
     });
     return harness;
 }
@@ -84,7 +84,7 @@ async function declareOn(harness: Awaited<ReturnType<typeof theHeadOf>>, targetI
 describe('declaring on somebody you could actually level', () => {
     it('says the compound comes down, and they ask what it would take', async () => {
         const harness = await theHeadOf(
-            'war-can-level', THE_STRONGEST.sect.id, THE_STRONGEST.sect.name
+            'war-can-level', THE_STRONGEST.sect.id
         );
         const answer = await declareOn(harness, THE_WEAKEST.sect.id);
         const heard = said(answer);
@@ -104,7 +104,7 @@ describe('declaring on somebody you could actually level', () => {
      */
     it('says nothing lands, declaring the other way round', async () => {
         const harness = await theHeadOf(
-            'war-cannot-reach', THE_WEAKEST.sect.id, THE_WEAKEST.sect.name
+            'war-cannot-reach', THE_WEAKEST.sect.id
         );
         const answer = await declareOn(harness, THE_STRONGEST.sect.id);
         const heard = said(answer);
@@ -126,7 +126,7 @@ describe('what the reading is made of', () => {
      */
     it('puts the ward, the masonry and the verdict on the mechanical channel', async () => {
         const harness = await theHeadOf(
-            'war-structure', THE_STRONGEST.sect.id, THE_STRONGEST.sect.name
+            'war-structure', THE_STRONGEST.sect.id
         );
         const answer = await declareOn(harness, THE_WEAKEST.sect.id);
         const structure = ((answer as { toolCalls?: { name: string; summary: string }[] })

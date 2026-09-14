@@ -50,7 +50,11 @@ describe('the overheard channel does not name the people in the square', () => {
             worldSeed: WORLD_SEED,
             seed: 'overheard-present'
         });
-        const { cultivator, run } = await game.newRun('Ke Yan');
+        const { cultivator, run: opened } = await game.newRun('Ke Yan');
+        // The STORED run, not the view of it. `offerHearing` draws off the
+        // run's own seed and `RunView` does not carry one, so handing it the
+        // view sweeps 400 occasions off an undefined seed.
+        const run = repos.runs.getById(opened.id)!;
         const world = (await game.loadWorld())!;
 
         // A house's own ground, because that is where the hazard lives: a
@@ -110,7 +114,11 @@ describe('the overheard channel does not name the people in the square', () => {
             worldSeed: WORLD_SEED,
             seed: 'overheard-still-works'
         });
-        const { cultivator, run } = await game.newRun('Ke Yan');
+        const { cultivator, run: opened } = await game.newRun('Ke Yan');
+        // The STORED run, not the view of it. `offerHearing` draws off the
+        // run's own seed and `RunView` does not carry one, so handing it the
+        // view sweeps 400 occasions off an undefined seed.
+        const run = repos.runs.getById(opened.id)!;
         const world = (await game.loadWorld())!;
         const spot = crowds(world)[0];
 

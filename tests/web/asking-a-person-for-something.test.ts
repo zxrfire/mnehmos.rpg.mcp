@@ -333,13 +333,13 @@ describe('a request reaches the person, played', () => {
      * with the same charm behind it and are not the same attempt.
      */
     it('prices a common art and a house road differently', () => {
-        const roads = TECHNIQUES.filter(t => t.class === 'cultivation');
+        const roads = TECHNIQUES.slice();
         const commonRoad = roads.find(t => isCommonlyHeld(t.id) && whoseArt(t.id).length > 0)?.id;
         const owned = roads.find(t => !isCommonlyHeld(t.id) && whoseArt(t.id).length > 0)?.id;
         expect(commonRoad, 'the catalog holds no commonly-held road on a shelf').toBeDefined();
         expect(owned, 'the catalog holds no house-owned road').toBeDefined();
 
-        const asking = { name: 'Nobody', ordinal: 0, factionId: null, holds: [] };
+        const asking = { id: 'nobody', name: 'Nobody', ordinal: 0, factionId: null, holds: [] };
         const theirHouse = whoseArt(owned!)[0] ?? null;
         const common = whatItWouldCostThem({
             kind: 'teaching',

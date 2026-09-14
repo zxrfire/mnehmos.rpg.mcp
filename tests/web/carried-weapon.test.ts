@@ -97,7 +97,12 @@ describe('what the player carries reaches the fight', () => {
             const swinging = assessPower(self, { ambient: 'normal' });
 
             const exchange = resolveExchange(swinging, wall, 100, {
-                rng: forStream('carried-broken', 'exchange', 'sabre')
+                rng: forStream('carried-broken', 'exchange', 'sabre'),
+                // The same air both readings above were taken in, and a turn
+                // for anything this leaves to be stamped with. Both are
+                // required and neither was supplied.
+                ambient: 'normal',
+                turn: 1
             });
             expect(exchange.weapon).not.toBeNull();
             expect(exchange.weapon!.objectId).toBe('artifact-notched-sabre');
@@ -107,7 +112,8 @@ describe('what the player carries reaches the fight', () => {
 
     it('does not touch the world register, because carrying is not owning', async () => {
         await withAdmin(async () => {
-            const harness = await armed('carried-ownership', 'artifact-the-severed-ledger-blade');
+            // The arming is the arrangement; nothing here reads the harness back.
+            await armed('carried-ownership', 'artifact-the-severed-ledger-blade');
             const world = await activeWorld();
             const row = world.state.objects.find(o => o.id === 'artifact-the-severed-ledger-blade');
             expect(row).toBeDefined();

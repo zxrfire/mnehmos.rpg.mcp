@@ -59,7 +59,7 @@ const POOL = [
 function atTheLid(overrides = {}) {
     return makeCultivator({
         realmOrdinal: LAST_CROSSING_ORDINAL,
-        cultivationProgress: progressRequiredForOrdinal(LAST_CROSSING_ORDINAL),
+        cultivationProgress: progressRequiredForOrdinal(LAST_CROSSING_ORDINAL)!,
         name: 'Ye Qingshan',
         ...overrides
     });
@@ -120,7 +120,7 @@ describe('the shape of the ladder above Grand Ascension', () => {
             const there = attemptBreakthrough(
                 makeCultivator({
                     realmOrdinal: lower,
-                    cultivationProgress: progressRequiredForOrdinal(lower)
+                    cultivationProgress: progressRequiredForOrdinal(lower)!
                 }),
                 { rng: forStream('odds', 'breakthrough', lower), ambient: 'normal', turn: 1 }
             ).finalChance;

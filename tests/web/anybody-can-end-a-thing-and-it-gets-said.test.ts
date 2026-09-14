@@ -52,7 +52,9 @@ function theTallestPersonAlive(world: WorldState) {
 async function aWorld() {
     const harness = await makeGameInWorld({ seed: 'anybody', worldSeed: WORLD });
     await harness.game.newRun('Bystander');
-    return await harness.game.loadWorld();
+    const world = await harness.game.loadWorld();
+    expect(world).toBeTruthy();
+    return world!;
 }
 
 describe('an NPC ending a thing is the same event as a player ending one', () => {

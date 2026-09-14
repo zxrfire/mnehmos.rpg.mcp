@@ -424,6 +424,16 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'what would it take to go past this',
         'how does my manual go further'
     ],
+    // The third of those three costs, done rather than compared. Every line
+    // here has the speaker writing, which is the whole of what tells it apart
+    // from the question next door - and the question keeps its own sentences,
+    // which is asserted directly under `acquisition` above.
+    derive: [
+        'I write the next stage myself',
+        'I work out what comes next on my own',
+        'I extend the manual myself',
+        'nobody has written past this so I will'
+    ],
     consume_pill: [
         'I swallow a healing pill',
         'I take a Lesser Healing Pill',

@@ -843,8 +843,20 @@ describe('the mortal world', () => {
             .toBe(stonesToCash(getPill('pill-qi-gathering')!.value));
         expect(getPrice('price-clear-meridian-pill')!.cash)
             .toBe(stonesToCash(getPill('pill-clear-meridian')!.value));
-        expect(getPill(GRAIN_ABSTINENCE_PILL_ID)!.value * CASH_PER_STONE)
-            .toBeGreaterThan(getPrice('price-farmland-mu')!.cash * 50);
+        // ── THE ABSTINENCE PILL IS PRICED AGAINST THE FOOD IT REPLACES ──
+        //
+        // This asserted it cost more than fifty mu of farmland, which was true
+        // of the heaven-grade pill that used to carry this id and is the shape
+        // of an enormous purchase. That pill is gone: the line now caps at
+        // mortal, because the engine already charges almost nothing for hunger
+        // at the rungs the dearer grades were pitched at. What is left is a
+        // convenience for somebody at the bottom, so it is reconciled against
+        // the thing it actually substitutes for.
+        const abstinence = getPill(GRAIN_ABSTINENCE_PILL_ID)!.value * CASH_PER_STONE;
+        expect(abstinence, 'a year of not eating priced under a single month of rations')
+            .toBeGreaterThan(getPrice('price-month-rations')!.cash);
+        expect(abstinence, 'a convenience should not cost what land costs')
+            .toBeLessThan(getPrice('price-farmland-mu')!.cash * 50);
     });
 
     it('gives a poor cultivator something to do between breakthroughs', () => {

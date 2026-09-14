@@ -38,6 +38,7 @@ import {
     type UnfinishedFight
 } from '../../../src/engine/cultivation/unfinished-fight.js';
 import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
+import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { REALM_TIERS } from '../../../src/engine/cultivation/realms.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -89,7 +90,7 @@ function open(
         seed,
         aggressor: side(player),
         defender: side(them),
-        intent: { goal: 'drive_off' },
+        intent: { thrown: AN_ORDINARY_SWING },
         playerId: player.id,
         ground,
         turn: 1,
@@ -214,7 +215,7 @@ describe('the same physics both ways', () => {
         // which is what "one copy of the physics" means operationally.
         const a = combatant({ id: 'a', name: 'A' });
         const b = combatant({ id: 'b', name: 'B' });
-        const ctx = { ambient: NEUTRAL as const };
+        const ctx = { ambient: NEUTRAL };
         const run = (seed: string) => {
             const hp = { a: 100, b: 100 };
             const injuries = { a: [], b: [] };
@@ -236,7 +237,7 @@ describe('the same physics both ways', () => {
         // engine already had. There is no player-only ending.
         const settled = resolveConfrontation(
             combatant({ id: 'a' }), combatant({ id: 'b', name: 'B' }),
-            { rng: new CultivationRNG('v'), ambient: NEUTRAL, turn: 1, intent: { goal: 'drive_off' } }
+            { rng: new CultivationRNG('v'), ambient: NEUTRAL, turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         let fight: UnfinishedFight | null = open(
             combatant({ id: 'p', name: 'Player' }),
@@ -271,7 +272,7 @@ describe('the same physics both ways', () => {
 // ═════════════════════════════════════════════════════════════════════════
 
 describe('what a round is spent on', () => {
-    const ctx = { ambient: NEUTRAL as const };
+    const ctx = { ambient: NEUTRAL };
 
     function oneRound(mineAct: 'strike' | 'guard' | 'press', seed = 'p') {
         const a = combatant({ id: 'a', name: 'A' });
@@ -492,7 +493,7 @@ describe('backing off', () => {
 // ═════════════════════════════════════════════════════════════════════════
 
 describe('calling for help', () => {
-    const ctx = { ambient: NEUTRAL as const };
+    const ctx = { ambient: NEUTRAL };
     const attacker = assessPower(combatant({ id: 'q', realmOrdinal: 10 }), ctx);
     const priceAt = (ordinal: number) => assessPower(combatant({ realmOrdinal: ordinal }), ctx);
 
@@ -658,7 +659,7 @@ describe('the same seed is the same fight', () => {
                 seed: 'one-seed',
                 aggressor: side(combatant({ id: 'p', name: 'Player' })),
                 defender: side(combatant({ id: 'q', name: 'Other' })),
-                intent: { goal: 'drive_off' },
+                intent: { thrown: AN_ORDINARY_SWING },
                 playerId: 'p',
                 ground: GROUND,
                 turn: 1,

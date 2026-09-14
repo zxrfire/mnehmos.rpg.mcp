@@ -6,7 +6,7 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { BROKEN_STATUSES } from '../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
-import { getTechnique } from '../src/data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere } from '../src/data/cultivation/techniques.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
 const BANDS: [string, number, number][] = [
@@ -45,8 +45,8 @@ function report(tag: string, state: WorldState, seeded: Set<string>, ms: number,
     const arts = new Set<string>();
     for (const n of alive) {
         for (const id of n.cultivation.techniqueIds) {
-            const t = getTechnique(id) as { class?: string; cap?: number | null } | undefined;
-            if (t && t.class === 'cultivation' && t.cap != null) roads.add(id); else arts.add(id);
+            const t = getTechnique(id);
+            if (stopsSomewhere(t)) roads.add(id); else arts.add(id);
         }
     }
 

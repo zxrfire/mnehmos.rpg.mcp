@@ -3,26 +3,27 @@
  *
  * The design owner: *"just have status include your house rank, if there is
  * one."* The sheet had a line for it - "On the roll of Azure Dew Sect, ranked
- * Outer Disciple" - and the rung in it came from `cultivator.sectRank`, which
- * is a STRING MIRRORED onto the cultivator row by `sect.repo.ts` whenever the
- * membership row is written. Two consequences, both silent:
+ * Outer Disciple" - and the rung in it came from `cultivator.sectRank`, a
+ * STRING MIRRORED onto the cultivator row by `sect.repo.ts`. Two consequences,
+ * both silent:
  *
  *   nothing set the mirror    the line degrades to "On the roll of X." and the
  *                             player is on a roll at no rung anybody can name
  *   the world moved them      the mirror still says the rung they joined at
  *
- * So the rung is read off the roll now, through `rankIndexOf`, which asks the
- * world row before the membership table for the reason that function records:
- * a person exists in two stores, and asking the membership table first read a
- * conclave disciple back as an outer one. ONE line still, not two - a second
- * sentence naming the rung would be the sheet disagreeing with itself.
+ * THE MIRROR IS NOW GONE, and with it the column. A rung has two stores - the
+ * roll for a cultivator the database holds, the world row for somebody the
+ * world holds - and `whereSomebodyStandsOnAHousesRoll` is the one read of the
+ * pair. The world row is asked FIRST, for the reason that function records:
+ * asking the roll first read a conclave disciple back as an outer one.
  *
- * The name is the house's own (`faction.ranks`). A generic ladder printed here
- * would be a second one beside it, and they would part company the first time a
- * house was seeded with words of its own.
+ * ONE line still, not two - a second sentence naming the rung would be the
+ * sheet disagreeing with itself. The name is the house's own (`faction.ranks`);
+ * a generic ladder printed here would be a second one beside it, and the two
+ * would part company the first time a house was seeded with words of its own.
  *
- * RED-CHECKED. Handing `factsForStatus` the cultivator row unchanged fails the
- * second case; reading `getMembership(...).rankIndex` in place of `rankIndexOf`
+ * RED-CHECKED. Passing `null` for the rung into `factsForStatus` fails the
+ * second case; reading `getMembership(...).rankIndex` in place of the one read
  * fails the third.
  */
 
@@ -60,15 +61,17 @@ describe('status says which rung of the house you hold', () => {
         ).not.toHaveLength(0);
     }, 180_000);
 
-    it('names it off the roll when nothing mirrored it onto the cultivator', async () => {
-        // The commonest shape of the defect: on a roll, at a rung, with the
-        // mirrored string empty. The sheet used to say the house and stop.
+    it('names it off the roll, with nothing on the cultivator row to name it', async () => {
+        // The commonest shape of the defect was: on a roll, at a rung, with the
+        // mirrored string empty, and the sheet said the house and stopped.
+        // There is no string to empty any more - the column is gone - so this
+        // now asserts the whole of what is left: the roll alone reaches the
+        // sheet.
         const h = await ofTheHouse('status-mirror-empty', 2);
         const ladder = theLadderOf(h);
-        h.db.prepare('UPDATE cultivators SET sect_rank = NULL WHERE id = ?').run(h.cultivatorId);
 
         const said = (await h.game.act('status')).narration;
-        expect(said, 'the rung was lost with the mirrored string').toContain(ladder[2]!);
+        expect(said, 'the rung did not reach the sheet off the roll').toContain(ladder[2]!);
     }, 180_000);
 
     it('reads the rung the world holds, not the one the membership row is low on', () => {

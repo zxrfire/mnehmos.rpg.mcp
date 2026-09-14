@@ -313,7 +313,6 @@ describe('what a place still has in the ground', () => {
             // The two numbers side by side, because the gap between them is
             // the finding. A pouch does not move a district; a district's
             // people do.
-            const place = ordinaryGround();
             const onePass = 1;
             const aVillage = pressureOverDays({
                 workers: 20, kind: 'herb', grade: 'mortal', days: DAYS_PER_YEAR

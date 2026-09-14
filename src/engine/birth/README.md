@@ -103,9 +103,12 @@ membership rather than rank:
 | `null` | An apex member's child, a retainer's child | Nothing. They stand at the same gate as somebody who walked up the mountain |
 
 **Being on a roll is not being on a rung**, and the state already existed:
-`Cultivator.sectId` with a null `sectRank` and no `sect_members` row, which
-`entities.ts` has always printed as "at no rank in it". Nothing new is stored
-anywhere. `RaisedInside.stillToClear` carries the house's floors from
+`Cultivator.sectId` with no `sect_members` row, which `entities.ts` has always
+printed as "at no rank in it". It used to be said by a null `sectRank` beside
+the house; that string was a mirror of the roll and is gone, so the absence of a
+roll row is now the whole of what says it -
+`where-somebody-stands-on-a-houses-roll.ts` returns null for exactly this
+person. Nothing new is stored anywhere. `RaisedInside.stillToClear` carries the house's floors from
 `the-three-floors-a-house-admits-at.ts` untouched, and a test asserts it equals
 what that file says rather than anything shorter.
 

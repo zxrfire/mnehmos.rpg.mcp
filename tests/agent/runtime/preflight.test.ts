@@ -18,6 +18,10 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
         timeoutMs: 25000,
         consecutiveFailures: 0,
         circuitState: 'closed',
+        // Required, and nullable rather than optional: an agent either has an
+        // override on its competency or explicitly has none. The fixture was
+        // omitting it, which is a third state the schema does not have.
+        competencyOverride: null,
         createdAt: FIXED_TIMESTAMP,
         updatedAt: FIXED_TIMESTAMP,
         ...overrides

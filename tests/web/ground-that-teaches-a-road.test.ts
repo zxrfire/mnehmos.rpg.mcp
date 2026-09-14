@@ -401,7 +401,7 @@ describe('somebody who goes there can point at it', () => {
         // And the player half agrees, given the same standing.
         const here = state.locations.find(l => l.id === 'loc-town-marches')!;
         const player = howAPlayerStands(state, here, {
-            realmOrdinal: FORD.fromOrdinal, sectId: null, sectRank: null
+            realmOrdinal: FORD.fromOrdinal, sectId: null, onTheRollAt: -1
         });
         const seen = groundThatTeachesARoad(state, player)
             .filter(row => row.standing.inReach)

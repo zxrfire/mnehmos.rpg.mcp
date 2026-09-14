@@ -17,14 +17,14 @@
  */
 import { SECTS } from '../src/data/cultivation/sects.js';
 import { FACTION_CHARACTER } from '../src/data/cultivation/faction-character.js';
-import { getTechnique } from '../src/data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere } from '../src/data/cultivation/techniques.js';
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { suitsRoot } from '../src/engine/world/manuals.js';
 
 const roadsOf = (teaches: readonly string[]) =>
     teaches.map(id => getTechnique(id)).filter((t): t is any =>
-        !!t && t.class === 'cultivation' && t.cap != null);
+        !!t && stopsSomewhere(t));
 
 console.log('CATALOG VIEW - the shelf against what the house has produced');
 console.log('deepest  peak  power  short by  house');

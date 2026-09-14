@@ -141,14 +141,18 @@ export class SectRepository {
             WHERE sect_id = @sectId AND cultivator_id = @cultivatorId
         `);
 
-        // cultivators.sect_id / sect_rank mirror the membership row so the
-        // cultivator's own record answers "who do you answer to" without a join.
+        // cultivators.sect_id mirrors the membership row so the cultivator's
+        // own record answers "whose roll are you on" without a join. The RUNG
+        // is not mirrored and must not be: this row is written back from stale
+        // snapshots all day, and a rung that travelled with the house was a
+        // third copy of what `sect_members.rank_index` and the world row
+        // already hold. See `where-somebody-stands-on-a-houses-roll.ts`.
         this.mirrorOnCultivatorStmt = db.prepare(`
-            UPDATE cultivators SET sect_id = @sectId, sect_rank = @sectRank, updated_at = datetime('now')
+            UPDATE cultivators SET sect_id = @sectId, updated_at = datetime('now')
             WHERE id = @cultivatorId
         `);
         this.clearOnCultivatorStmt = db.prepare(`
-            UPDATE cultivators SET sect_id = NULL, sect_rank = NULL, updated_at = datetime('now')
+            UPDATE cultivators SET sect_id = NULL, updated_at = datetime('now')
             WHERE id = ?
         `);
     }
@@ -203,7 +207,7 @@ export class SectRepository {
                 this.removeMemberStmt.run(existing.sectId, cultivatorId);
             }
             this.addMemberStmt.run({ sectId, cultivatorId, rankIndex: index, rankTitle: title });
-            this.mirrorOnCultivatorStmt.run({ sectId, sectRank: title, cultivatorId });
+            this.mirrorOnCultivatorStmt.run({ sectId, cultivatorId });
         });
         enrol();
 
@@ -270,7 +274,7 @@ export class SectRepository {
         const promote = this.db.transaction(() => {
             const changed = this.setRankStmt.run({ sectId, cultivatorId, rankIndex: index, rankTitle: title }).changes;
             if (changed > 0) {
-                this.mirrorOnCultivatorStmt.run({ sectId, sectRank: title, cultivatorId });
+                this.mirrorOnCultivatorStmt.run({ sectId, cultivatorId });
             }
             return changed;
         });

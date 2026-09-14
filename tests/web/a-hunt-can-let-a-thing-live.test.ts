@@ -53,7 +53,9 @@ import { parseIntent } from '../../src/web/verb-pattern-table';
 import { howTheySaidTheySwung } from '../../src/web/how-they-said-they-swung';
 import { theWorstItCouldDo } from '../../src/engine/cultivation/how-a-blow-was-thrown';
 import { BEASTS } from '../../src/data/cultivation/beasts';
-import { hasACore } from '../../src/engine/world/hunting-a-spirit-beast';
+import { beastsOnThisGround, hasACore } from '../../src/engine/world/hunting-a-spirit-beast';
+import { isOnAVein, isSealedOn, whatGroundThisIs }
+    from '../../src/engine/world/what-ground-a-place-is';
 import { idOfTheOneOnThisGround } from '../../src/engine/world/a-beast-with-a-core-is-somebody-in-particular';
 import { MAX_ORDINAL } from '../../src/engine/cultivation/realms';
 
@@ -113,11 +115,35 @@ describe('a hunt can leave something beaten and alive, and it can be let up', ()
         const { cultivator } = await game.newRun('Lin Baoqing');
 
         const world = (await game.loadWorld())!;
-        // Ground rich enough for one of these to have been sitting on it. The
-        // hunt narrows to a named species, so what the ground would otherwise
-        // have offered does not decide the test.
-        const place = world.locations.find(one => one.qiDensity >= 60);
-        expect(place, 'the pinned world has no ground rich enough to hold one').toBeDefined();
+        // THE DEEPEST ONE THIS WORLD COULD ACTUALLY BE STANDING ON, asked of
+        // the same function the hunt asks. A cored beast is one animal on one
+        // ledge - counted, with a place - so naming it reaches it where it
+        // lives and is refused where it does not, and a fixture that stands
+        // the player on any rich ground is arranging a situation the game
+        // cannot produce.
+        //
+        // WORTH WRITING DOWN: the catalog's deepest cored species is on NO
+        // ground this world generates, so nothing in a played run can reach it
+        // at all. That is a finding about the catalog against the map rather
+        // than about the hunt, and it is not fixed here.
+        let place: (typeof world.locations)[number] | undefined;
+        let itsSpecies: typeof theOneWithACore | undefined;
+        for (const one of world.locations) {
+            const grounds = whatGroundThisIs(world, one);
+            const could = beastsOnThisGround({
+                sealed: isSealedOn(one, world.currentDay),
+                onAVein: isOnAVein(world, one, grounds),
+                grounds: grounds ?? undefined
+            }).filter(hasACore);
+            for (const beast of could) {
+                if (!itsSpecies || beast.ordinal > itsSpecies.ordinal) {
+                    itsSpecies = beast;
+                    place = one;
+                }
+            }
+        }
+        expect(place, 'the pinned world has no ground one of these could hold').toBeDefined();
+        expect(itsSpecies, 'no cored species can stand anywhere in this world').toBeDefined();
 
         // ARRANGED FAST, at the top of the ladder, because what is being
         // measured is the ENDING of a fight and not whether it can be won.
@@ -128,14 +154,14 @@ describe('a hunt can leave something beaten and alive, and it can be let up', ()
         ).run(place!.name, MAX_ORDINAL, cultivator.id);
 
         const hunted = read(await game.act(
-            `I hunt the ${theOneWithACore.name} and take it alive`
+            `I hunt the ${itsSpecies!.name} and take it alive`
         ));
         expect(hunted, 'the hunt did not reach the one that was named')
-            .toContain(theOneWithACore.name);
+            .toContain(itsSpecies!.name);
         // The engine's own statement that the thing is dead, which is what a
         // hunt told to stop short must not be able to produce.
         expect(hunted, 'a hunt told to stop short still came back with a body')
-            .not.toContain(`${theOneWithACore.name} is down.`);
+            .not.toContain(`${itsSpecies!.name} is down.`);
 
         // AND THE SENTENCE ANYBODY WOULD TYPE NEXT. `it` is the only pronoun
         // people use for one of these, and it used to reach nothing at all
@@ -155,7 +181,7 @@ describe('a hunt can leave something beaten and alive, and it can be let up', ()
             .prepare(
                 "SELECT status, kind FROM obligations WHERE holder_id = ? AND subject_id = ?"
             )
-            .all(cultivator.id, idOfTheOneOnThisGround(theOneWithACore.id, place!.id)) as
+            .all(cultivator.id, idOfTheOneOnThisGround(itsSpecies!.id, place!.id)) as
             Array<{ status: string; kind: string }>;
         expect(
             owed.some(row => row.kind === 'favor' && row.status === 'open'),

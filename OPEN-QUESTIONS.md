@@ -33,20 +33,14 @@ Three, and all three are consequences of work that landed rather than things lef
   bug earlier, and — measured this session — that deleting a member of `KnownEntityKind` turns
   no test red. 226 argument-type, 96 unused, 93 unknown-property, 76 possibly-null,
   concentrated in about a dozen files.
-- `cultivator.sectRank` is a third copy of your rung, a mirrored string, and it is still what
-  every reader but `status` asks.
-- A sub-rank advance files nothing, so the widened witness pool covers realm crossings only.
 - **A renamed beast does not answer to its old name.** `theNamesThisOneAnswersTo` returns both,
   but `resolveCultivator` scores against `row.name` alone and its candidates carry no tags.
-- **Nothing stores a house's knowledge of a door's schedule**, so houses race on the "hears it
-  is open" arm rather than the "knows the date" one. That gap is currently the player's edge.
 - `whatWouldCloseThisWound` considers only `treat_injury` pills, so the two medicines that
   answer a permanent wound reach the player down a different line.
 - A crossing that enriches a ruin's vein moves `qiDensity` and leaves
   `environment.spiritualDensity` where it was — a genuine second copy, predating this session.
 
 **Gaps worth knowing before designing around them**
-- A player who only ever takes free actions is never sentenced, because no day passes.
 - `whatThisPurchaseWillNotReach` and `alchemy-manage` build a `KnowledgeGate` with no world
   supplier, so if either is ever asked about an NPC it answers off stored rows only.
 - Ground nobody has ever walked does not climb, because nothing tracks it. That follows from

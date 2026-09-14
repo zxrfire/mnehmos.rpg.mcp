@@ -29,6 +29,7 @@ import { pillBandOrdinal } from '../../../src/engine/cultivation/breakthrough.js
 import { MAX_ORDINAL, OBJECT_CEILING_BELOW_THE_LID } from '../../../src/engine/cultivation/realms.js';
 import { makeObject, ruin, isRuined, shardPower } from '../../../src/engine/world/possessions.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
 const makeRNG = (seed: number | string) => forStream(String(seed), 'weapon-test');
 
@@ -40,14 +41,14 @@ function body(ordinal: number, extra: Partial<CombatantInput> = {}): CombatantIn
         name: `Somebody at ${ordinal}`,
         realmOrdinal: ordinal,
         spiritRoot: 'single_fire',
-        attributes: { might: 2, insight: 2, resolve: 2, fortune: 2 },
+        attributes: { might: 2, insight: 2, fortune: 2, charm: 2 },
         injuries: [],
         hp: 100,
         maxHp: 100,
         qi: 100,
         maxQi: 100,
         ...extra
-    } as CombatantInput;
+    };
 }
 
 function exposureOf(weaponPower: number, targetOrdinal: number, extra: Partial<CombatantInput> = {}) {
@@ -76,7 +77,7 @@ describe('realm is the gate on unmaking, and it is absolute', () => {
         // The best body in the world, whole, veteran and armed, standing at a
         // rung under the object. There is no probability here to improve.
         const e = exposureOf(46, 30, {
-            attributes: { might: 3, insight: 4, resolve: 3, fortune: 3 },
+            attributes: { might: 3, insight: 4, fortune: 3, charm: 3 },
             battlesSurvived: 40,
             artifactGrade: 5
         });
@@ -182,12 +183,12 @@ describe('the odds are one subtraction on the ladder', () => {
 describe('inside what a realm reaches, ability decides', () => {
     it('two cultivators at the same rung are not equally likely to break the same blade', () => {
         const hurt = exposureOf(18, 21, {
-            attributes: { might: 1, insight: 1, resolve: 1, fortune: 1 },
+            attributes: { might: 1, insight: 1, fortune: 1, charm: 1 },
             hp: 30,
             qi: 5
         });
         const whole = exposureOf(18, 21, {
-            attributes: { might: 3, insight: 4, resolve: 3, fortune: 3 },
+            attributes: { might: 3, insight: 4, fortune: 3, charm: 3 },
             battlesSurvived: 40,
             artifactGrade: 5
         });
@@ -347,7 +348,7 @@ describe('through the resolver a player actually reaches', () => {
         const result = resolveConfrontation(
             body(29, { weapon: { id: 'artifact-notched-sabre', name: 'A Notched Sabre', power: 4 } }),
             body(30),
-            { rng: makeRNG(7), ambient: 'normal', turn: 1, intent: { goal: 'drive_off' } }
+            { rng: makeRNG(7), ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         expect(result.brokenObjects.length).toBeGreaterThan(0);
         const [gone] = result.brokenObjects;
@@ -361,7 +362,7 @@ describe('through the resolver a player actually reaches', () => {
         const result = resolveConfrontation(
             body(29, { weapon: { id: 'artifact-a-good-blade', name: 'A Good Blade', power: 29 } }),
             body(30),
-            { rng: makeRNG(7), ambient: 'normal', turn: 1, intent: { goal: 'drive_off' } }
+            { rng: makeRNG(7), ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         expect(result.brokenObjects).toHaveLength(0);
         // And it was worth something while it was there.
@@ -378,7 +379,7 @@ describe('through the resolver a player actually reaches', () => {
         const result = resolveConfrontation(
             body(29, { weapon: { id: 'artifact-notched-sabre', name: 'A Notched Sabre', power: 4 } }),
             body(30),
-            { rng: makeRNG(11), ambient: 'normal', turn: 1, intent: { goal: 'drive_off' } }
+            { rng: makeRNG(11), ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         expect(result.brokenObjects.length).toBeGreaterThan(0);
         // The aggressor is re-priced without it, so their line reads as bare.
@@ -394,7 +395,7 @@ describe('through the resolver a player actually reaches', () => {
         const result = resolveConfrontation(
             body(18, { weapon: { id: 'artifact-a-fair-blade', name: 'A Fair Blade', power: 18 } }),
             body(29),
-            { rng: makeRNG(3), ambient: 'normal', turn: 1, intent: { goal: 'kill' } }
+            { rng: makeRNG(3), ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         expect(result.outcome).toBe('no_contest');
         expect(result.brokenObjects).toHaveLength(1);
@@ -405,7 +406,7 @@ describe('through the resolver a player actually reaches', () => {
         const result = resolveConfrontation(
             body(18),
             body(29),
-            { rng: makeRNG(3), ambient: 'normal', turn: 1, intent: { goal: 'kill' } }
+            { rng: makeRNG(3), ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING } }
         );
         expect(result.brokenObjects).toHaveLength(0);
         for (const x of result.exchanges) expect(x.result.weapon).toBeNull();

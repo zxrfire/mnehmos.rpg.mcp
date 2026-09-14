@@ -25,9 +25,12 @@
  */
 
 import { makeGameInWorld } from './harness';
+import type { LocationRecord } from '../../src/engine/world/locations';
 
 /** Where the seeded stock lives, whatever the world called them this time. */
-function ruinsIn(game: { atHand?: { locations: readonly { kind: string }[] } | null }) {
+function ruinsIn(
+    game: { atHand?: { locations: readonly LocationRecord[] } | null }
+): readonly LocationRecord[] {
     return (game.atHand?.locations ?? []).filter(l => l.kind === 'ruin');
 }
 
@@ -45,11 +48,7 @@ describe('a fresh world has one piece of closed ground already open', () => {
         // seeder that opened three would be the defect and is still caught.
         const { game } = await makeGameInWorld({ seed: 'aim', worldSeed: 'world-aim-1' });
         await game.newRun('Aimer');
-        const ruins = ruinsIn(game as never) as readonly {
-            name: string; sealed: boolean; discovered: boolean;
-            environment: { historicalScars: readonly string[] };
-            thresholds: { entry: number; survival: number };
-        }[];
+        const ruins = ruinsIn(game);
         expect(ruins.length).toBeGreaterThan(1);
         const open = ruins.filter(r => !r.sealed && r.discovered);
         expect(open.length, 'nothing is open at world creation').toBeGreaterThan(0);
@@ -74,8 +73,7 @@ describe('a fresh world has one piece of closed ground already open', () => {
         await game.newRun('Aimer');
 
         const acted = await game.act('what ruins are there around here');
-        const open = (ruinsIn(game as never) as readonly { name: string; sealed: boolean }[])
-            .find(r => !r.sealed)!;
+        const open = ruinsIn(game).find(r => !r.sealed)!;
 
         const said = `${acted.narration ?? ''}`;
         expect(said, 'the one open ruin is not named on turn one').toContain(open.name);
@@ -90,9 +88,7 @@ describe('a fresh world has one piece of closed ground already open', () => {
     it('is out of reach of the body that can name it', async () => {
         const { game } = await makeGameInWorld({ seed: 'aim', worldSeed: 'world-aim-1' });
         await game.newRun('Aimer');
-        const open = (ruinsIn(game as never) as readonly {
-            sealed: boolean; thresholds: { entry: number; survival: number };
-        }[]).find(r => !r.sealed)!;
+        const open = ruinsIn(game).find(r => !r.sealed)!;
 
         // Nothing forbids the entry. The seal is off and nobody is left to
         // refuse anybody, so the entry bar is not what stops them.

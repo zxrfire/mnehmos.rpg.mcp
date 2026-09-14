@@ -13,18 +13,19 @@
  * setting does not, the setting is what is wrong.
  */
 
-import { resolveMelee, type SideInput, type SideMemberInput } from '../src/engine/cultivation/combat.js';
+import { resolveMelee, type SideMember } from '../src/engine/cultivation/combat.js';
+import { A_BLOW_MEANT_TO_END_IT } from '../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { forStream } from '../src/engine/cultivation/rng.js';
 import { ARTIFACTS, artifactsOwnedBy } from '../src/data/cultivation/artifacts.js';
 import { APEX_INSTITUTIONS, COURTS, FACTION_PARENTAGE, idsForFaction } from '../src/data/cultivation/hierarchy.js';
 import { sectThreat, sectsWithASealedCeiling, SECTS } from '../src/data/cultivation/sects.js';
-import type { AmbientQi } from '../src/engine/cultivation/ambient.js';
+import type { AmbientQi } from '../src/schema/cultivation.js';
 
 const SEEDS = 300;
 
 const AMBIENT: AmbientQi = 'normal';
 
-function body(id: string, name: string, ordinal: number, artifactOrdinal?: number): SideMemberInput {
+function body(id: string, name: string, ordinal: number, artifactOrdinal?: number): SideMember {
     return {
         combatant: {
             id,
@@ -55,17 +56,17 @@ function body(id: string, name: string, ordinal: number, artifactOrdinal?: numbe
  * resolver - no clock, no staging, no special case.
  */
 function run(
-    attackerMembers: readonly SideMemberInput[],
-    defenderMembers: readonly SideMemberInput[]
+    attackerMembers: readonly SideMember[],
+    defenderMembers: readonly SideMember[]
 ): number {
     let attackerWins = 0;
     for (let seed = 0; seed < SEEDS; seed++) {
         const result = resolveMelee(
             [
-                { id: 'plot', name: 'the plot', members: attackerMembers, intent: { goal: 'kill' } },
-                { id: 'survey', name: survey.name, members: defenderMembers, intent: { goal: 'kill' } }
+                { id: 'plot', name: 'the plot', members: attackerMembers, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 'survey', name: survey.name, members: defenderMembers, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('conspiracy', 'assault', seed), ambient: AMBIENT, turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('conspiracy', 'assault', seed), ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (result.winningSideId === 'plot') attackerWins++;
     }
@@ -125,7 +126,7 @@ const lamp = ARTIFACTS.find(a => a.id === 'sent-datum-lamp')!;
 const surveyCourts = COURTS.filter(c => c.apexId === survey.id);
 
 /** The head, on the object, in his own house. */
-const HEAD: SideMemberInput[] = [
+const HEAD: SideMember[] = [
     body('head', 'the seated one', survey.powerOrdinal, lamp.power ?? undefined)
 ];
 
@@ -144,10 +145,10 @@ const HEAD: SideMemberInput[] = [
  *    question the house comes, and it comes with its strongest member whether
  *    or not it has anything asleep under a mountain.
  */
-function reinforcementsFor(apexId: string, suborned: readonly string[]): SideMemberInput[] {
+function reinforcementsFor(apexId: string, suborned: readonly string[]): SideMember[] {
     const houseIds = idsForFaction(apexId);
 
-    const arriving: SideMemberInput[] = COURTS
+    const arriving: SideMember[] = COURTS
         .filter(c => houseIds.includes(c.apexId) && !suborned.includes(c.id))
         .map(c => body(c.id, c.name, c.powerOrdinal));
 
@@ -182,7 +183,7 @@ function reinforcementsFor(apexId: string, suborned: readonly string[]): SideMem
 
 interface Case {
     label: string;
-    attackers: SideMemberInput[];
+    attackers: SideMember[];
     /** Faction ids the plot already owns, which therefore do not turn up. */
     suborned: string[];
     note: string;
@@ -295,12 +296,12 @@ for (const c of cases) {
  * time - one head per house - and the assumption was wrong about the Azure
  * Cloud Pavilion in a way that decided every measurement in this file.
  */
-function fullHouse(apexId: string): SideMemberInput[] {
+function fullHouse(apexId: string): SideMember[] {
     const apex = APEX_INSTITUTIONS.find(a => a.id === apexId)!;
     const objects = artifactsOwnedBy(apex.id);
     const atTheTop = Math.max(1, apex.lastRealm.count);
 
-    const people: SideMemberInput[] = [];
+    const people: SideMember[] = [];
     for (let i = 0; i < atTheTop; i++) {
         // The pinned one carries the object. Anybody else is a person at the
         // last realm with nothing in their hands, which is still enormous.
@@ -325,7 +326,7 @@ function fullHouse(apexId: string): SideMemberInput[] {
 }
 
 /** Just the head, on its object. The war before anybody calls anybody. */
-function headOnly(apexId: string): SideMemberInput[] {
+function headOnly(apexId: string): SideMember[] {
     const apex = APEX_INSTITUTIONS.find(a => a.id === apexId)!;
     const object = artifactsOwnedBy(apex.id)[0];
     return [body(`${apex.id}-head`, apex.name, apex.powerOrdinal, object?.power ?? undefined)];
@@ -370,12 +371,12 @@ function war(attackerId: string, defenderId: string, shape: WarShape): number {
     for (let seed = 0; seed < SEEDS; seed++) {
         const result = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: attackers, intent: { goal: 'kill' } },
-                { id: 'b', name: defenderId, members: defenders, intent: { goal: 'kill' } }
+                { id: 'a', name: attackerId, members: attackers, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 'b', name: defenderId, members: defenders, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
             {
                 rng: forStream('apexwar', attackerId + defenderId + shape, seed),
-                ambient: AMBIENT, turn: seed, intent: { goal: 'kill' }
+                ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT }
             }
         );
         if (result.winningSideId === 'a') wins++;
@@ -420,10 +421,10 @@ function thenTheThirdHouse(attackerId: string, victimId: string, thirdId: string
     for (let seed = 0; seed < SEEDS; seed++) {
         const first = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: fullHouse(attackerId), intent: { goal: 'kill' } },
-                { id: 'v', name: victimId, members: fullHouse(victimId), intent: { goal: 'kill' } }
+                { id: 'a', name: attackerId, members: fullHouse(attackerId), intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 'v', name: victimId, members: fullHouse(victimId), intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('threekingdoms', attackerId + victimId, seed), ambient: AMBIENT, turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('threekingdoms', attackerId + victimId, seed), ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (first.winningSideId !== 'a') continue;
         tookTheVictim++;
@@ -436,10 +437,10 @@ function thenTheThirdHouse(attackerId: string, victimId: string, thirdId: string
 
         const second = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: survivors, intent: { goal: 'kill' } },
-                { id: 't', name: thirdId, members: fullHouse(thirdId), intent: { goal: 'kill' } }
+                { id: 'a', name: attackerId, members: survivors, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 't', name: thirdId, members: fullHouse(thirdId), intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('threekingdoms', attackerId + thirdId + 'after', seed), ambient: AMBIENT, turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('threekingdoms', attackerId + thirdId + 'after', seed), ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (second.winningSideId === 'a') survivedTheThird++;
     }
@@ -505,11 +506,11 @@ function twoAgainstOne(allyA: string, allyB: string, targetId: string): {
                     id: 'allies',
                     name: 'the alliance',
                     members: [...fullHouse(allyA), ...fullHouse(allyB)],
-                    intent: { goal: 'kill' }
+                    intent: { thrown: A_BLOW_MEANT_TO_END_IT }
                 },
-                { id: 'target', name: targetId, members: fullHouse(targetId), intent: { goal: 'kill' } }
+                { id: 'target', name: targetId, members: fullHouse(targetId), intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('alliance', allyA + allyB + targetId, seed), ambient: AMBIENT, turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('alliance', allyA + allyB + targetId, seed), ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (first.winningSideId !== 'allies') continue;
         won++;
@@ -527,10 +528,10 @@ function twoAgainstOne(allyA: string, allyB: string, targetId: string): {
 
         const second = resolveMelee(
             [
-                { id: 'a', name: allyA, members: headOf(allyA, hpA), intent: { goal: 'kill' } },
-                { id: 'b', name: allyB, members: headOf(allyB, hpB), intent: { goal: 'kill' } }
+                { id: 'a', name: allyA, members: headOf(allyA, hpA), intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 'b', name: allyB, members: headOf(allyB, hpB), intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('alliance', allyA + allyB + 'after', seed), ambient: AMBIENT, turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('alliance', allyA + allyB + 'after', seed), ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (second.winningSideId === 'a') aThenTakesB++;
         else if (second.winningSideId === 'b') bThenTakesA++;
@@ -569,7 +570,7 @@ for (const target of APEX_INSTITUTIONS) {
 interface Perturbation {
     label: string;
     /** Extra bodies this house fields. */
-    extra: (apexId: string) => SideMemberInput[];
+    extra: (apexId: string) => SideMember[];
     appliesTo: string | null;
 }
 
@@ -578,7 +579,7 @@ function worthIt(
     attackerId: string,
     targetId: string,
     thirdId: string,
-    extraFor: (id: string) => SideMemberInput[]
+    extraFor: (id: string) => SideMember[]
 ): number {
     let clean = 0;
 
@@ -586,15 +587,15 @@ function worthIt(
         const attackers = [...fullHouse(attackerId), ...extraFor(attackerId)];
         const first = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: attackers, intent: { goal: 'kill' } },
+                { id: 'a', name: attackerId, members: attackers, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
                 {
                     id: 'v',
                     name: targetId,
                     members: [...fullHouse(targetId), ...extraFor(targetId)],
-                    intent: { goal: 'kill' }
+                    intent: { thrown: A_BLOW_MEANT_TO_END_IT }
                 }
             ],
-            { rng: forStream('worth', attackerId + targetId, seed), ambient: AMBIENT, turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('worth', attackerId + targetId, seed), ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (first.winningSideId !== 'a') continue;
 
@@ -605,15 +606,15 @@ function worthIt(
 
         const second = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: survivors, intent: { goal: 'kill' } },
+                { id: 'a', name: attackerId, members: survivors, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
                 {
                     id: 't',
                     name: thirdId,
                     members: [...fullHouse(thirdId), ...extraFor(thirdId)],
-                    intent: { goal: 'kill' }
+                    intent: { thrown: A_BLOW_MEANT_TO_END_IT }
                 }
             ],
-            { rng: forStream('worth', attackerId + thirdId + 'after', seed), ambient: AMBIENT, turn: seed, intent: { goal: 'kill' } }
+            { rng: forStream('worth', attackerId + thirdId + 'after', seed), ambient: AMBIENT, turn: seed, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         // Not losing is enough: the third house does not have to be beaten,
         // only survived. An apex that keeps its conquest and its head has won.

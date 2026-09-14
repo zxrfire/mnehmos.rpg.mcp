@@ -37,6 +37,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import type Database from 'better-sqlite3';
 
 import { makeGameInWorld, engineCalls } from './harness';
 import { parseIntent } from '../../src/web/verb-pattern-table.js';
@@ -123,7 +124,7 @@ async function somebodyWithSomethingToLose() {
     return { db, game, world: world!, mark: mark!, playerId: cultivator.id };
 }
 
-const purseOf = (db: { prepare: (q: string) => { get: (...a: unknown[]) => unknown } }, id: string) =>
+const purseOf = (db: Database.Database, id: string) =>
     (db.prepare('SELECT spirit_stones AS s FROM cultivators WHERE id = ?').get(id) as { s: number }).s;
 
 describe('the sentence the strip offers reaches hand_over', () => {

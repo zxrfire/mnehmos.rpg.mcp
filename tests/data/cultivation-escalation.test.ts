@@ -20,12 +20,14 @@ import {
     THE_WORD_AT_THE_TOP,
     WHAT_A_DECREE_CANNOT_SAY,
     addressCeilingForOrdinal,
-    addressIsLegal,
-    addressOf,
     addressRank,
-    defaultAddressFor,
     type TechniqueAddress
 } from '../../src/schema/cultivation.js';
+import {
+    addressIsLegal,
+    addressOf,
+    defaultAddressFor
+} from '../../src/data/cultivation/techniques.js';
 import {
     FALSE_IMMORTAL_ORDINAL,
     LAST_CROSSING_ORDINAL,
@@ -119,7 +121,9 @@ describe('the address ladder', () => {
         const word = getTechnique('continuance-decree');
         expect(word?.requiredOrdinal).toBe(LAST_CROSSING_ORDINAL);
         expect(word?.damage).toBeNull();
-        expect(word?.class).toBe('dao');
+        // It argues. It does not roll, and the rung it opens at is the whole of
+        // what makes it the petition rung.
+        expect(word?.reach ?? 'single').toBe('single');
     });
 });
 
@@ -163,22 +167,27 @@ describe('a decree is not a larger settled art', () => {
 // COMPOSITION WITH THE TWO AXES THAT ALREADY EXIST
 // ─────────────────────────────────────────────────────────────────────────
 
-describe('the ladder composes with class and era rather than replacing them', () => {
+describe('the ladder composes with what an art does and what era it is from', () => {
     it('every art in the catalog declares a legal address for its rung', () => {
         const illegal = TECHNIQUES.filter(t => !addressIsLegal(t));
         expect(illegal.map(t => t.id)).toEqual([]);
     });
 
-    it('a cultivation manual addresses the practitioner at every rung, for ever', () => {
-        // Not a default - an invariant. What you practise to rank up never
-        // escalates in kind; only what you use does. The catalog already said
-        // this in the note on the Unwritten Span Scripture, which sits at
-        // the very top of the ladder and still lands on one person.
-        for (const t of TECHNIQUES) {
-            if (t.class !== 'cultivation') continue;
-            expect(addressOf(t), `${t.id}`).toBe('body');
-        }
-        expect(addressOf(getTechnique('unwritten-span-scripture')!)).toBe('body');
+    it('an art that lands on one person addresses a body however high it opens', () => {
+        // WHAT THIS USED TO ASSERT, AND WHY IT IS GONE. It read "a cultivation
+        // manual addresses the practitioner at every rung, for ever" and looped
+        // over `advancesRank`, on the reasoning that what you practise to rank
+        // up never escalates in kind. The ruling that collapsed the two kinds of
+        // art made that loop cover the whole catalog, so as written it would
+        // have demanded 'body' of a hundred and eleven attack arts.
+        //
+        // The half of it that was never about advancement survives: the Unwritten
+        // Span Scripture sits at the very top of the ladder, where the address
+        // ceiling permits a decree, and still lands on one person. Reaching a
+        // rung does not oblige an art to use it.
+        const top = getTechnique('unwritten-span-scripture')!;
+        expect(top.requiredOrdinal).toBeGreaterThanOrEqual(ADDRESS_ORDINAL_FLOORS.place);
+        expect(addressOf(top)).toBe('body');
     });
 
     it('an ancient art never buys a higher address than its rung allows', () => {
@@ -350,14 +359,26 @@ describe('the ladder composes with class and era rather than replacing them', ()
         expect(reached.has('place')).toBe(true);
     });
 
-    it('defaultAddressFor reads reach and class and nothing else', () => {
-        expect(defaultAddressFor({ class: 'cultivation', reach: 'field' })).toBe('body');
-        expect(defaultAddressFor({ class: 'dao', reach: undefined })).toBe('body');
+    it('defaultAddressFor reads reach, and nothing else', () => {
+        // THE CLAUSE THIS IS HERE TO KEEP OUT. Two axes have tried to get in
+        // front of `reach` and both are gone: a stored `class` field, and after
+        // it a derived `advancesRank`. The second one mattered more, because
+        // removing it was the dangerous half of collapsing the two kinds of art -
+        // it returned 'body' unconditionally for anything that raised a rank, so
+        // making every art raise one would have self-targeted all 111 attack
+        // arts in the catalog with a change that typechecks perfectly.
+        //
+        // The first two assertions are the ratchet: a category that used to
+        // force 'body' now reads its reach like everything else.
+        const fight = { id: 'x', category: 'attack' } as const;
+        const road = { id: 'y', category: 'cultivation' } as const;
+        expect(defaultAddressFor({ ...road, reach: 'field' })).toBe('place');
+        expect(defaultAddressFor({ ...fight, reach: undefined })).toBe('body');
         // A wide swing is a headcount, not a subject. Three bodies is three
         // bodies - see the note on `defaultAddressFor`, which the two
         // mortal-grade `several` arts settled.
-        expect(defaultAddressFor({ class: 'dao', reach: 'several' })).toBe('body');
-        expect(defaultAddressFor({ class: 'dao', reach: 'field' })).toBe('place');
+        expect(defaultAddressFor({ ...fight, reach: 'several' })).toBe('body');
+        expect(defaultAddressFor({ ...fight, reach: 'field' })).toBe('place');
     });
 
     it('a wide swing at a low rung does not claim a rung it has no business at', () => {

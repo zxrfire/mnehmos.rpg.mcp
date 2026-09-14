@@ -50,9 +50,10 @@ import { makeGame } from '../tests/web/harness.js';
 import { SECTS } from '../src/data/cultivation/sects.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 import {
-    resolveConfrontation, combatPowerForOrdinal, assessPower,
+    resolveConfrontation, assessPower,
     type CombatantInput, type ConfrontationContext
 } from '../src/engine/cultivation/combat.js';
+import { A_BLOW_MEANT_TO_END_IT } from '../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { forStream } from '../src/engine/cultivation/rng.js';
 import type { ImmortalStatus } from '../src/schema/cultivation.js';
 
@@ -179,7 +180,7 @@ function fight(ordinal: number, status: ImmortalStatus, against: number) {
         rng: forStream('scaling-harness', 'confrontation', ordinal, status),
         ambient: 'normal',
         turn: 1,
-        intent: { goal: 'kill', willWithdraw: true }
+        intent: { thrown: A_BLOW_MEANT_TO_END_IT, willWithdraw: true }
     };
     return resolveConfrontation(
         combatant('me', 'You', ordinal, status),
@@ -380,7 +381,7 @@ const PROBES: Probe[] = [
     {
         say: 'I apply to the Azure Dew Sect',
         why: 'a door whose bar should be beneath a Nascent Soul cultivator',
-        read: (before, after, said) => ({
+        read: (_before, after, said) => ({
             joined: after.sectId ? 'yes' : 'no',
             rank: String(after.sectRank ?? '-'),
             said: said.slice(0, 34).replace(/\s+/g, ' ')

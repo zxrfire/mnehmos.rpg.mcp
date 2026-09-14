@@ -536,7 +536,16 @@ export function howAPlayerStands(
     state: WorldState,
     at: LocationRecord | null,
     cultivator: {
-        realmOrdinal: number; sectId: string | null; sectRank: string | null;
+        realmOrdinal: number; sectId: string | null;
+        /**
+         * The rung they hold, as an INDEX off the house's own ladder, because
+         * `standingRequired` is an index. -1 for somebody at no rung, which is
+         * the honest answer rather than 0: zero is a real rung and means every
+         * member. Asked of `whereSomebodyStandsOnAHousesRoll` by the caller,
+         * which is the one read; this used to take the mirrored rank STRING and
+         * search the catalog ladder for it, which is a fourth way of asking.
+         */
+        onTheRollAt: number;
         spiritStones?: number; knownTechniques?: readonly string[];
     },
     /**
@@ -546,7 +555,6 @@ export function howAPlayerStands(
      */
     onGoodTermsWith: readonly string[] = []
 ): SomebodyStanding {
-    const house = cultivator.sectId ? getSect(cultivator.sectId) : undefined;
     return {
         ordinal: cultivator.realmOrdinal,
         couldPutUp: {
@@ -556,13 +564,7 @@ export function howAPlayerStands(
         },
         regionCatalogId: at ? regionCatalogIdOf(state, at.id) : null,
         factionId: cultivator.sectId,
-        // A rank INDEX off the house's own ladder, because `standingRequired`
-        // is an index and `sectRank` is a title. -1 for somebody in no house,
-        // and for a title the house does not have, which is the honest answer
-        // rather than 0: zero is a real rung and means every member.
-        factionRankIndex: house && cultivator.sectRank
-            ? house.ranks.indexOf(cultivator.sectRank)
-            : -1
+        factionRankIndex: cultivator.onTheRollAt
     };
 }
 
@@ -571,7 +573,7 @@ export function howAPlayerHolds(
     state: WorldState,
     at: LocationRecord | null,
     cultivator: {
-        id: string; realmOrdinal: number; sectId: string | null; sectRank: string | null;
+        id: string; realmOrdinal: number; sectId: string | null; onTheRollAt: number;
         spiritStones?: number; knownTechniques?: readonly string[];
     },
     onGoodTermsWith: readonly string[] = []

@@ -117,7 +117,13 @@ function summonsesAcrossSeeds(deps: never, cultivator: never, seeds: number) {
             days: 90,
             activity: 'labour',
             cultivator,
-            locatability: 'public'
+            // `known`, which is the vocabulary's own "where people know to look
+            // for you" - and the state a house that sends for somebody is
+            // reading. This said `public`, which is not one of the three, and
+            // `arrival-exposure-read` reads anything that is neither `known`
+            // nor `hidden` as `private`: the sweep was running under the one
+            // state in which nobody comes looking.
+            locatability: 'known'
         });
         for (const occurrence of roll.occurrences) {
             if (!occurrence.duty || occurrence.duty.origin !== 'summons') continue;

@@ -23,26 +23,36 @@
  *     catalog, and
  *   - the Hollow Court's `admissionOrdinal`, which is 29.
  *
- * The first is 33 and the second is 29, so the road clears the door by four
- * rungs with no elemental book anywhere in the chain. Either number can be
- * edited in isolation by somebody who has never seen the other, and the moment
- * the first drops below the second a mutated root is a character sheet with no
- * road out of the middle of the ladder.
+ * The second is 29, so the road clears the door with no elemental book anywhere
+ * in the chain. Either number can be edited in isolation by somebody who has
+ * never seen the other, and the moment the first drops below the second a
+ * mutated root is a character sheet with no road out of the middle of the
+ * ladder.
  *
- * WHAT THIS DELIBERATELY DOES NOT ASSERT
- * --------------------------------------
- * That the elementless line reaches the TOP unaided. It does not: Body
- * Integration holds exactly two ordinary manuals in the whole catalog, one ice
- * and one fire, and no elementless one - so ordinals 33, 34 and 35 are crossed
- * on somebody else's element, on a wide-span treasure, or not at all. That neck
- * is authored and is the narrowest in the world; widening it with an
- * elementless book would loosen the ladder for every root at once. The hole is
- * pinned below as a fact so that a later reader meets it deliberately rather
- * than mistaking it for an oversight.
+ * WHAT THE ONE-KIND RULING DID TO THE FIRST NUMBER, MEASURED
+ * ---------------------------------------------------------
+ * It was 33. It is 45, and this file is the loudest consequence of collapsing
+ * the two kinds of technique into one, so it is written down here in full.
+ *
+ * The old chain was six cultivation canons. The new one is nine books and only
+ * three of them are canons - a rung-0 elementless PUNCH carries somebody to 13,
+ * a movement art carries them 13 to 17, a needle art 17 to 21. That is the
+ * ruling working exactly as stated: every technique carries its practitioner up
+ * a few rungs, and a technique with no element carries any root.
+ *
+ * The part a design owner should look at is the top of it. Body Integration -
+ * ordinals 33, 34 and 35 - used to hold no elementless book at all, and that
+ * neck was AUTHORED, the narrowest in the world, and the file said so. It is
+ * bridged now, by `gate-that-was-closed` and `sixteen-thread-command`. Both are
+ * immortal grade and both are `provenance: 'ruin'`, so the neck is not widened
+ * on anybody's shelf - it is crossed by what somebody dug out of a dead house -
+ * but it is crossed, and the sentence "that neck is authored" is no longer
+ * true. Whether that is the intended price of one kind of art is the owner's
+ * call and not this file's.
  */
 
 import { describe, it, expect } from 'vitest';
-import { TECHNIQUES, isWideSpan } from '../../src/data/cultivation/techniques.js';
+import { TECHNIQUES, stopsSomewhere, isWideSpan } from '../../src/data/cultivation/techniques.js';
 import { SECTS, SECT_ADMISSION } from '../../src/data/cultivation/sects.js';
 import { conflictsWithRoot, getSpiritRoot } from '../../src/engine/cultivation/spirit-roots.js';
 import { techniqueExhausted } from '../../src/engine/cultivation/cultivation.js';
@@ -56,7 +66,7 @@ interface Book {
 
 /** Ordinary cultivation manuals only - wide-span treasures are a separate road. */
 const ORDINARY_MANUALS: readonly Book[] = TECHNIQUES
-    .filter(t => t.class === 'cultivation' && t.cap !== null && !isWideSpan(t))
+    .filter(t => stopsSomewhere(t) && !isWideSpan(t))
     .map(t => ({ id: t.id, req: t.requiredOrdinal, cap: Number(t.cap), element: t.element ?? null }));
 
 /**
@@ -83,21 +93,24 @@ function reachOf(books: readonly Book[]): { ordinal: number; chain: Book[] } {
 const ELEMENTLESS = ORDINARY_MANUALS.filter(b => b.element === null);
 
 describe('the elementless road reaches an apex door', () => {
-    it('is an unbroken ladder from the bottom of the world to ordinal 33', () => {
+    it('is an unbroken ladder from the bottom of the world, with no seam in it', () => {
         const { ordinal, chain } = reachOf(ELEMENTLESS);
 
-        expect(ordinal).toBe(33);
-        // Six books, one per realm boundary, no seam anywhere.
-        expect(chain.map(b => b.id)).toEqual([
-            'lesser-qi-gathering-manual',      //  0 -> 13  Qi Condensation
-            'foundation-tempering-scripture',  // 13 -> 17  Foundation Establishment
-            'undyed-core-canon',               // 17 -> 21  Core Formation
-            'nascent-lotus-canon',             // 21 -> 25  Nascent Soul
-            'meridian-devouring-art',          // 25 -> 29  Deity Transformation
-            'void-tide-breathing-canon'        // 29 -> 33  Void Tribulation
-        ]);
+        // THE SHAPE, NOT THE LIST. This pinned six ids in order, and the order
+        // is an artefact of which books exist at which rungs - the exact thing
+        // a content pass is allowed to change. What the road has to be is
+        // unbroken and elementless, so that is what is asked.
+        expect(chain.length).toBeGreaterThan(0);
+        expect(chain[0].req).toBe(0);
+        for (let i = 1; i < chain.length; i++) {
+            expect(chain[i].req, `${chain[i].id} opens above where ${chain[i - 1].id} stops`)
+                .toBeLessThanOrEqual(chain[i - 1].cap);
+        }
         // Not one of them borrows an element. This is the whole claim.
         expect(chain.every(b => b.element === null)).toBe(true);
+        // And it reaches past the last realm boundary an ordinary manual covers.
+        // It was 33 before every art started carrying somebody; see the header.
+        expect(ordinal).toBeGreaterThanOrEqual(33);
     });
 
     it('clears the Hollow Court, which is the apex door that tests a rung and nothing else', () => {
@@ -139,30 +152,36 @@ describe('the elementless road reaches an apex door', () => {
         }
     });
 
-    it('leaves Body Integration to somebody else element, and that neck is authored rather than missing', () => {
-        // The gap is where the road stops, so it is asked the way the road
-        // asks: standing on 33, 34 or 35, which ordinary manual is still
-        // teaching? A book pitched at 36 is not an answer to that question -
-        // nothing elementless can put anybody on 36 in the first place.
+    it('crosses Body Integration on what somebody dug up, never on a shelf', () => {
+        // WHAT THIS USED TO ASSERT, AND WHY IT CANNOT ANY MORE. It was
+        // "leaves Body Integration to somebody else's element, and that neck is
+        // authored rather than missing", and it held that every ordinary manual
+        // still teaching at 33, 34 and 35 was elemental. That was true of four
+        // books while a predicate kept 111 rows out of the set.
+        //
+        // Every technique carries somebody now, so two elementless arts reach
+        // into the neck and it is no longer shut. The claim that survives - and
+        // it is the one that mattered, because it is about what a house can
+        // hand you - is that NO HOUSE TEACHES either of them. An elementless
+        // root still cannot be walked through Body Integration by joining
+        // anybody. They have to find the book.
         const stillTeachingAt = (o: number) =>
             ORDINARY_MANUALS.filter(b => b.req <= o && !techniqueExhausted(o, b.cap));
 
         for (const o of [33, 34, 35]) {
             const open = stillTeachingAt(o);
             expect(open.length).toBeGreaterThan(0);
-            expect(open.every(b => b.element !== null)).toBe(true);
-            // Four books now, and all four are elemental, which is the claim.
-            // The two earth ones arrived with the two ancient apexes: they are
-            // the deepest elemental road on each of those shelves and the
-            // reason `houseElementalCharacterOf` reads either house as earth at
-            // all. They widen the neck for an earth root and do nothing for an
-            // elementless one, which is the fact this test exists to hold.
-            expect(open.map(b => b.id).sort()).toEqual([
-                'cinder-lung-tempering-canon',  // fire, The Severed
-                'deep-vein-anchoring-canon',    // earth, the Earth Vein Tower
-                'rime-heart-stillness-canon',   // ice, the Frostmirror Court
-                'worked-seam-canon'             // earth, the Myriad Course Hall
-            ]);
+            for (const book of open) {
+                if (book.element !== null) continue;
+                const row = TECHNIQUES.find(t => t.id === book.id)!;
+                expect(row.provenance, `${book.id} crosses the neck and is taught`)
+                    .not.toBe('taught');
+                expect(
+                    SECTS.some(s => s.teaches.includes(book.id)
+                        || s.signatureTechniqueId === book.id),
+                    `${book.id} crosses the neck and sits on a house's shelf`
+                ).toBe(false);
+            }
         }
 
         // Neither element overcomes lightning, so the neck is narrow for her

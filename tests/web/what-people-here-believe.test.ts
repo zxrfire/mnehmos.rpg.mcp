@@ -86,6 +86,10 @@ function aQuietSquare(): WorldState {
 function villager(id: string, ordinal: number): RosterEntry {
     return {
         id, name: `Villager ${id}`, kind: 'npc', spiritRoot: 'single_water',
+        // Carried on the row and branched on by nothing here. Stated rather
+        // than left off, because a roster row without them is not one the
+        // repository ever hands out.
+        sex: 'female', physique: null,
         realmOrdinal: ordinal, location: 'Six Li', sectId: null, sectName: null,
         sectRank: null, age: 40, alive: true, existenceState: 'alive',
         soulState: 'intact', identityContinuity: 1, deathCause: null,
@@ -95,8 +99,10 @@ function villager(id: string, ordinal: number): RosterEntry {
 
 async function player(): Promise<{ cultivator: Cultivator; run: Run }> {
     const { game } = makeGame({ seed: 'believe-test' });
-    const { cultivator } = await game.newRun('Listener');
-    return { cultivator, run: game.state().run as Run };
+    await game.newRun('Listener');
+    // The stored row rather than the wire view of it: `state().run` has had
+    // the seed cut out of it, and what is wanted here is a `Run`.
+    return game.currentRun();
 }
 
 describe('the catalog is worth reaching', () => {

@@ -147,12 +147,35 @@ describe('the door', () => {
 });
 
 describe('over the catalog as it stands', () => {
-    it('leaves most of the world open, which is what the shelves say', () => {
-        const stances = everyHouse().map(h => h.character.stance);
-        // Eleven houses teach nothing elemental at all and several more teach
-        // one bottom-rung art. A world where most houses gated on root would be
-        // the derivation reading too hard, and it would show up here first.
-        expect(stances.filter(s => s === 'open').length).toBeGreaterThan(stances.length / 2);
+    it('never lets the derivation refuse anybody it was not already refusing', () => {
+        // WHAT THIS USED TO ASSERT, AND THE NUMBER THAT MOVED. It read "leaves
+        // most of the world open" and held that more than half the houses had
+        // stance `open`. That was measured while only cultivation manuals
+        // carried a `cap`, so `houseElementalCharacterOf` - which reads
+        // `cap > door` - could not see a house's elemental fighting arts at all.
+        //
+        // Every art carries a cap now. Measured over the 38 houses: open fell
+        // to 11 and prefers rose to 25. The concern the old assertion was
+        // written against was "a world where most houses gated on root", and
+        // that has NOT happened: `requires` is still exactly two, and
+        // `rootAtTheDoor` turns every other stance into `weighted`, which is a
+        // weighting and not a door. The sibling test below names the two.
+        //
+        // So the claim is stated as the thing it was protecting. A house that
+        // reads as elemental now weighs a root; nobody is newly refused.
+        const houses = everyHouse();
+        expect(houses.filter(h => h.character.stance === 'requires').length)
+            .toBeLessThanOrEqual(2);
+        for (const house of houses) {
+            if (house.character.stance === 'requires') continue;
+            for (const root of SPIRIT_ROOTS) {
+                expect(rootAtTheDoor(house.character, root), house.id).not.toBe('refused');
+            }
+        }
+        // And the derivation still finds houses with no element of their own,
+        // which is what keeps it a reading of a shelf rather than a formula
+        // that always fires.
+        expect(houses.filter(h => h.character.stance === 'open').length).toBeGreaterThan(0);
     });
 
     it('gates exactly the two houses whose own admission line says it', () => {

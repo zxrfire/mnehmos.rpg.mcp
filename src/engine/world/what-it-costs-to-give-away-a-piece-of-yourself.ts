@@ -52,14 +52,16 @@
  * the catalog. A pulled tuft of fur is not a channel injury. The flesh family
  * is authored in `wounds.ts` now and this reads it.
  *
- * ── THE MEDICINE IS NOT THE ONE THAT MENDS A BROKEN CULTIVATOR ──────────
+ * ── THE MEDICINE IS THE ONE THAT MENDS A BROKEN CULTIVATOR ──────────────
  *
- * `structural-repair-medicine.ts` mends a structure that did not SET at a
- * realm wall - a foundation, a core, an infant soul - and `repairRefusalReason`
- * refuses anything that is not one of those in as many words. It is a different
- * medicine for a different injury and it does nothing for missing flesh. What
- * answers `severed-flesh` is the Limb Rebirth Pill, immortal grade and past
- * the cash line, which the wound row names.
+ * It was written here that it is not, on the reading that
+ * `structural-repair-medicine.ts` answers a structure that did not SET at a
+ * realm wall and refuses everything else in as many words - which is what
+ * `repairRefusalReason` used to say. The design owner overruled it: a dose
+ * repairs every permanent injury at its rank, and missing flesh is one. So
+ * `severed-flesh` is answered by whichever rung reaches the body carrying it,
+ * and above the rank ladder by the chaos rung, which reaches any rank and
+ * chooses the wound itself.
  *
  * ── WHAT IT COULD PART WITH IS READ, NEVER AUTHORED ─────────────────────
  *

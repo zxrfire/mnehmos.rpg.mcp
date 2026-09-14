@@ -67,11 +67,18 @@ import {
 } from '../../../src/engine/encounters/what-a-house-has-on-its-board.js';
 import { whatAHouseWouldSendYouOn } from '../../../src/engine/encounters/duties.js';
 
+/**
+ * `standing` is a map of other-house id to standing, not a scalar. It was
+ * written here as `0.5`, which `Object.values` reads as nothing at all, so this
+ * house has never had an ally or a rival for the purpose of these tests. Left
+ * empty rather than populated: the assertions below are about the channel an
+ * ask arrives by, and none of them turn on who the house is on terms with.
+ */
 const HOUSE = {
     id: 'house',
     name: 'Azure Cloud Pavilion',
     holdsGround: true,
-    standing: 0.5,
+    standing: {},
     hasAFind: true
 };
 

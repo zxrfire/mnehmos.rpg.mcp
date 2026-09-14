@@ -335,6 +335,10 @@ function derived() {
     daysChannelsOpen: Math.max(0, Math.round(c.bleedingTurns || 0)),
     injuryRatePenalty: Math.min(0.9, Number((0.25 * untreated).toFixed(4))),
     sectName: (SECTS.find(x => x.id === c.sectId) || {}).name || null,
+    // The rung, which the real derivedView resolves off the roll. This mock
+    // holds no roll, so it carries the rung on its own cultivator - which is
+    // fine for a mock and is exactly the shape the engine no longer has.
+    sectRung: c.sectRank || null,
     foundationQuality: c.foundationQuality || 'none',
     nameTaken: !!c.nameTaken,
     // Mirrored from the cultivator so the client can read it from either.

@@ -340,7 +340,7 @@ describe('grade spread: being under the pitch weights the detonation, and only t
             let blast = 0;
             const runs = 3000;
             for (let i = 0; i < runs; i++) {
-                if (drawGradeOutcome('chaos', forStream('gap', i), rungsUnder).key === 'it_goes_off') {
+                if (drawGradeOutcome('chaos', forStream('gap', String(i)), rungsUnder).key === 'it_goes_off') {
                     blast++;
                 }
             }
@@ -359,7 +359,7 @@ describe('grade spread: being under the pitch weights the detonation, and only t
         // a rule that says "you may not".
         const seen = new Set<string>();
         for (let i = 0; i < 4000; i++) {
-            seen.add(drawGradeOutcome('chaos', forStream('nobody', i), pitch).key);
+            seen.add(drawGradeOutcome('chaos', forStream('nobody', String(i)), pitch).key);
         }
         for (const row of GRADE_SPREAD.chaos) {
             expect(seen.has(row.key), `${row.key} unreachable to somebody under the pitch`).toBe(true);
@@ -367,7 +367,7 @@ describe('grade spread: being under the pitch weights the detonation, and only t
     });
 
     it('cannot move a reliable grade, whose spread has nothing to weight', () => {
-        expect(drawGradeOutcome('immortal', forStream('x', 1), 29).key).toBe('as_promised');
+        expect(drawGradeOutcome('immortal', forStream('x', '1'), 29).key).toBe('as_promised');
     });
 });
 
@@ -407,7 +407,7 @@ describe('grade spread: what the records say', () => {
     });
 
     it('reports NO denominator, because the set of outcomes is open', () => {
-        const record = whatTheRecordsSay('chaos', 3) as Record<string, unknown>;
+        const record = whatTheRecordsSay('chaos', 3);
         // "4 of 12 known" would be a lie the data cannot support - the owner's
         // ruling is that these are non-exhaustive examples, so there is no
         // total to divide by. Anything rendering this must not invent one.
@@ -463,7 +463,7 @@ describe('grade spread: the residue obeys the ladder, not the object', () => {
     const pitch = pillBandOrdinal('chaos');
     const at = (ordinal: number) =>
         whatItDoesToTheSheet(row, { ...SHEET, realmOrdinal: ordinal }, { sourceOrdinal: pitch },
-            forStream('residue', ordinal));
+            forStream('residue', String(ordinal)));
 
     it('keeps a rung for somebody with somewhere left to go', () => {
         expect(at(5).overdraw!.residueRungs).toBeGreaterThan(0);

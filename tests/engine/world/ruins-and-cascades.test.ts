@@ -169,7 +169,7 @@ describe('cascade - parties under pressure choosing until the world is different
             const result = runCascade(state, {
                 strickenId: 'f-victim', aggressorId: 'f-aggressor',
                 day: 3650, causeFactId: null, severity: 1
-            }, forStream('sweep', seed));
+            }, forStream('sweep', String(seed)));
             if (!result.steps.some(s => s.chosen === 'expend')) continue;
             found = true;
 
@@ -203,7 +203,7 @@ describe('cascade - parties under pressure choosing until the world is different
             const result = runCascade(state, {
                 strickenId: 'f-victim', aggressorId: 'f-aggressor',
                 day: 3650, causeFactId: null, severity: 1
-            }, forStream('sweep', seed));
+            }, forStream('sweep', String(seed)));
             if (!result.steps.some(s => s.chosen === 'expend')) continue;
             checked = true;
 
@@ -240,7 +240,7 @@ describe('cascade - parties under pressure choosing until the world is different
             const result = runCascade(state, {
                 strickenId: 'f-victim', aggressorId: null,
                 day: 3650, causeFactId: null, severity: 1
-            }, forStream('noauthor', seed));
+            }, forStream('noauthor', String(seed)));
             for (const step of result.steps) {
                 if (step.partyKind === 'woken') sawWoken = true;
                 expect(step.chosen).not.toBe('expend');
@@ -381,7 +381,7 @@ describe('rescue - a relationship as a survival asset', () => {
             const subject = state.npcs.find(n => n.id === 'npc-inside')!;
             const result = attemptRescue(state, {
                 subject, location: pavilion, depthDays: 2, day: 2
-            }, forStream('r', seed));
+            }, forStream('r', String(seed)));
             if (!result.came) continue;
             sawRescue = true;
             const after = state.npcs.find(n => n.id === 'npc-inside')!;
@@ -683,10 +683,10 @@ describe('ruin mechanics - a map records rooms and never the edges', () => {
         for (let seed = 0; seed < 60; seed++) {
             blindDays += navigate(site, {
                 fromChamberId: from, toChamberId: to, map: noMap()
-            }, forStream('nav', seed)).days;
+            }, forStream('nav', String(seed))).days;
             mappedDays += navigate(site, {
                 fromChamberId: from, toChamberId: to, map: completeMap(site, 'bought')
-            }, forStream('nav', seed)).days;
+            }, forStream('nav', String(seed))).days;
         }
         // A map helps. It does not solve the place: the wandering is the edges,
         // and nobody can record those.

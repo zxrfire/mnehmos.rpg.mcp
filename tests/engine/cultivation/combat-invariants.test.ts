@@ -64,6 +64,7 @@ import {
     type ConfrontationResult
 } from '../../../src/engine/cultivation/combat.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { MAX_ORDINAL } from '../../../src/engine/cultivation/realms.js';
 import {
     assessGap,
@@ -104,7 +105,7 @@ function fight(selfOrdinal: number, otherOrdinal: number, seed = 'invariants'): 
             vector: 'body',
             attackerEdges: [],
             defenderEdges: [],
-            intent: { goal: 'drive_off' }
+            intent: { thrown: AN_ORDINARY_SWING }
         }
     );
 }
@@ -182,7 +183,7 @@ describe('the gap reads the same from both ends', () => {
     const price = (ordinal: number, artifactOrdinal?: number) =>
         assessPower(
             { ...combatant(ordinal, `o${ordinal}`), ...(artifactOrdinal === undefined ? {} : { artifactOrdinal }) },
-            {}
+            { ambient: 'normal' }
         );
 
     it('calls a two-realm gap a fight nobody is having, looking DOWN', () => {

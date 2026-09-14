@@ -233,7 +233,7 @@ describe('a sentence reaches somebody the world holds', () => {
     }, 300_000);
 
     it('takes nothing off somebody who was carrying nothing, and says so', async () => {
-        const { harness, world, byId, them, at } =
+        const { harness, world, byId, at } =
             await aRoomAndSomebodyTheWorldHolds('reach-death-empty');
         world.npcs[at] = { ...world.npcs[at], spiritStones: 0 };
 

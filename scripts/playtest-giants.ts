@@ -20,6 +20,7 @@
  */
 
 import { resolveMelee, type SideMemberInput, type CombatantInput } from '../src/engine/cultivation/combat.js';
+import { A_BLOW_MEANT_TO_END_IT } from '../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { forStream } from '../src/engine/cultivation/rng.js';
 import { APEX_INSTITUTIONS, COURTS } from '../src/data/cultivation/hierarchy.js';
 import { SECTS, sectThreat } from '../src/data/cultivation/sects.js';
@@ -27,7 +28,7 @@ import { artifactsOwnedBy } from '../src/data/cultivation/artifacts.js';
 import { TECHNIQUES } from '../src/data/cultivation/techniques.js';
 import type { Technique } from '../src/schema/cultivation.js';
 import {
-    rankName, FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL
+    FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL
 } from '../src/engine/cultivation/realms.js';
 
 const SEEDS = 200;
@@ -102,10 +103,10 @@ function fight(left: SideMemberInput[], right: SideMemberInput[], key: string): 
     for (let i = 0; i < SEEDS; i++) {
         const result = resolveMelee(
             [
-                { id: 'a', name: 'a', members: left, intent: { goal: 'kill' } },
-                { id: 'b', name: 'b', members: right, intent: { goal: 'kill' } }
+                { id: 'a', name: 'a', members: left, intent: { thrown: A_BLOW_MEANT_TO_END_IT } },
+                { id: 'b', name: 'b', members: right, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
             ],
-            { rng: forStream('giants', key, i), ambient: 'normal', turn: i, intent: { goal: 'kill' } }
+            { rng: forStream('giants', key, i), ambient: 'normal', turn: i, intent: { thrown: A_BLOW_MEANT_TO_END_IT } }
         );
         if (result.winningSideId === 'a') a++;
         else if (result.winningSideId === 'b') b++;

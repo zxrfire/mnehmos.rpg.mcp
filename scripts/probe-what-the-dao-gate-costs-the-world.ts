@@ -139,11 +139,12 @@ for (const seed of SEEDS) {
             realmOrdinal: ordinal,
             cultivationProgress: required,
             spiritRoot: npc.cultivation.spiritRoot,
-            attributes: npc.cultivation.attributes,
             injuries: woundsCarriedBy(npc),
             alive: true
         });
-        const key = check.eligible ? 'ELIGIBLE' : check.reason;
+        // `reason` is null exactly when eligible. The third case is unreachable
+        // and is named rather than assumed away.
+        const key = check.eligible ? 'ELIGIBLE' : check.reason ?? 'ineligible, no reason given';
         reasons.set(key, (reasons.get(key) ?? 0) + 1);
     }
 }

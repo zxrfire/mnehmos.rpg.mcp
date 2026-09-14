@@ -357,9 +357,9 @@ describe('what has been done to them', () => {
     it('stops counting a record the world has settled', () => {
         const open = favourOwedBy('elder-a', 'grave', 'ev-4');
         const answered = settleObligation(open, {
-            kind: 'repaid',
+            resolution: 'repaid',
             onDay: 40,
-            description: 'It was repaid, and the world stopped holding it.'
+            note: 'It was repaid, and the world stopped holding it.'
         });
         const after = whatTheyCarryAbout({
             deciderId: 'elder-a',

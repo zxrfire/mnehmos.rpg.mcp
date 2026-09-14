@@ -29,7 +29,7 @@ for (const seed of ['alive-audit', 'rogues-c']) {
     console.log(`\n${seed}: ${high.length} unbacked above 29`);
     for (const n of high) {
         const age = Math.round((state.currentDay - n.identity.bornOnDay) / 365);
-        console.log('  ' + String(n.identity.name ?? n.id).padEnd(22)
+        console.log('  ' + n.name.padEnd(22)
             + `ord ${String(n.cultivation.realmOrdinal).padStart(2)}`
             + `  age ${String(age).padStart(6)}`
             + `  ${seededIds.has(n.id) ? 'present at seeding' : 'born during the run'}`

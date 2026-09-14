@@ -60,21 +60,18 @@ export const RECOVERED_RECIPE_IDS: ReadonlySet<string> = new Set([
     'recipe-condensed-decade',
     'recipe-nascent-soul-guiding',
     'recipe-century-lotus',
-    'recipe-grain-abstinence',
     // immortal - every one
     'recipe-void-source-return',
     'recipe-undying-flesh',
     'recipe-clear-mind-of-the-hollow-sky',
-    'recipe-severed-meridian-restoration',
-    'recipe-limb-rebirth',
+    'recipe-returning-spring',
     'recipe-condensed-century',
     'recipe-void-refinement-guiding',
     'recipe-thousand-year-cypress',
-    'recipe-perpetual-grain-abstinence',
     // chaos - every one, and most are partial transcriptions at that
     'recipe-kalpa-surviving',
     'recipe-primordial-qi-source',
-    'recipe-heaven-mending',
+    'recipe-sky-mending',
     'recipe-soul-returning-clarity',
     'recipe-millennium-condensation',
     'recipe-tribulation-guiding',
@@ -460,22 +457,10 @@ const RECIPE_DATA: readonly Recipe[] = [
         baseSuccessRate: 0.36,
         requiredOrdinal: 27
     },
-    {
-        // The hardest heaven-grade refinement in the catalog, deliberately.
-        // The pill that ends the hunger problem should be the last thing an
-        // alchemist of this tier learns to make, not the first.
-        id: 'recipe-grain-abstinence',
-        name: 'Grain Abstinence Pill Formula',
-        producesPillId: 'pill-grain-abstinence',
-        ingredients: [
-            { itemId: 'herb-millennium-blood-ganoderma', quantity: 1 },
-            { itemId: 'herb-purple-cloud-fruit', quantity: 5 },
-            { itemId: 'herb-nine-leaf-soul-grass', quantity: 1 },
-            { itemId: 'herb-clearwater-lotus-seed', quantity: 10 }
-        ],
-        baseSuccessRate: 0.35,
-        requiredOrdinal: 28
-    },
+    // The formula for a heaven-grade abstinence pill stood here. The pill is
+    // gone - hunger costs 1/600 of a mortal's at the rung that grade is pitched
+    // at, so it sold nothing - and a formula for a pill nobody makes is not a
+    // want with a shape, it is a dangling id.
 
     // ═══════════════════════════════════════════════════════════════════
     // IMMORTAL - four failures for every success, at reagent prices that
@@ -516,29 +501,15 @@ const RECIPE_DATA: readonly Recipe[] = [
         requiredOrdinal: 31
     },
     {
-        id: 'recipe-severed-meridian-restoration',
-        name: 'Severed Meridian Restoration Pill Formula',
-        producesPillId: 'pill-severed-meridian-restoration',
+        id: 'recipe-returning-spring',
+        name: 'Returning Spring Pill Formula',
+        producesPillId: 'pill-returning-spring',
         ingredients: [
             { itemId: 'herb-soulreturn-dew', quantity: 2 },
             { itemId: 'herb-nine-leaf-soul-grass', quantity: 5 },
             { itemId: 'herb-millennium-blood-ganoderma', quantity: 1 }
         ],
         baseSuccessRate: 0.24,
-        requiredOrdinal: 31
-    },
-    {
-        // Its sibling above restores a route. This one grows back the body the
-        // route ran through, which is the harder half and the lower rate.
-        id: 'recipe-limb-rebirth',
-        name: 'Limb Rebirth Pill Formula',
-        producesPillId: 'pill-limb-rebirth',
-        ingredients: [
-            { itemId: 'herb-soulreturn-dew', quantity: 2 },
-            { itemId: 'herb-nine-leaf-soul-grass', quantity: 6 },
-            { itemId: 'herb-millennium-blood-ganoderma', quantity: 1 }
-        ],
-        baseSuccessRate: 0.18,
         requiredOrdinal: 31
     },
     {
@@ -577,19 +548,9 @@ const RECIPE_DATA: readonly Recipe[] = [
         baseSuccessRate: 0.19,
         requiredOrdinal: 34
     },
-    {
-        id: 'recipe-perpetual-grain-abstinence',
-        name: 'Perpetual Grain Abstinence Pill Formula',
-        producesPillId: 'pill-perpetual-grain-abstinence',
-        ingredients: [
-            { itemId: 'herb-jade-pool-spring-lotus', quantity: 8 },
-            { itemId: 'herb-nine-transformation-fungus', quantity: 1 },
-            { itemId: 'herb-millennium-blood-ganoderma', quantity: 3 },
-            { itemId: 'herb-purple-cloud-fruit', quantity: 10 }
-        ],
-        baseSuccessRate: 0.18,
-        requiredOrdinal: 35
-    },
+    // The formula for the immortal-grade one stood here, and went with the pill
+    // it made. At the rung immortal grade is pitched at, hunger already costs
+    // nothing at all.
 
     // ═══════════════════════════════════════════════════════════════════
     // CHAOS - nine attempts in ten destroy reagents nobody can replace
@@ -618,9 +579,9 @@ const RECIPE_DATA: readonly Recipe[] = [
         requiredOrdinal: 39
     },
     {
-        id: 'recipe-heaven-mending',
-        name: 'Heaven-Mending Pill Formula',
-        producesPillId: 'pill-heaven-mending',
+        id: 'recipe-sky-mending',
+        name: 'Sky-Mending Pill Formula',
+        producesPillId: 'pill-sky-mending',
         ingredients: [
             { itemId: 'herb-origin-qi-crystal-lotus', quantity: 2 },
             { itemId: 'herb-kalpa-surviving-branch', quantity: 1 },

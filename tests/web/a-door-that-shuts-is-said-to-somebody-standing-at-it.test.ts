@@ -114,11 +114,12 @@ describe('a door that shuts is said to somebody standing at it', () => {
     it('says what the door is doing when somebody walks onto a cycled ruin', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'door-arrival', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Walker');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
 
         // ASKED OF THE WORLD, never named. Which ruins carry a schedule is the
         // catalog's business and moves.
-        const site = world.locations.find(
+        const site = loaded!.locations.find(
             (row: any) => row.kind === 'ruin' && row.cycle
         );
         expect(site, 'this world seeded no ruin on a schedule').toBeTruthy();

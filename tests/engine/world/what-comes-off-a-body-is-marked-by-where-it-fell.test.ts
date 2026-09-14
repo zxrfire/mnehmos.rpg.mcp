@@ -133,6 +133,10 @@ describe('the danger of a place is the whole of the weighting', () => {
         const record = makeLocation({
             id: 'loc-abyss',
             name: 'the Sunken Kiln',
+            // `makeLocation` requires a kind; this one was building a record
+            // without one. Nothing here reads it - the danger figure is what
+            // the claim is about.
+            kind: 'ruin',
             environment: makeEnvironment({ danger: 0.8 })
         });
         expect(whereTheyFell(record)).toEqual(A_BAD_PLACE);

@@ -32,7 +32,9 @@ function bed() {
     return makeLocation({
         id: 'loc-a-bed',
         name: 'a bed',
-        kind: 'site',
+        // `site` is the place catalog's word, not a `LocationKind`. Open
+        // ground with something growing on it is `wilds`.
+        kind: 'wilds',
         description: 'ground with something growing on it',
         qiDensity: 60
     });

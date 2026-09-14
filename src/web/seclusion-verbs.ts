@@ -920,15 +920,16 @@ export const seclusionVerbs = {
                 compatible?: {
                     name?: string;
                     known?: boolean;
-                    class?: string;
                     carriesToOrdinal?: number | null;
                 }[];
             }).compatible ?? [];
 
+            // `carriesToOrdinal` is non-null only for a book that raises a
+            // rank, so asking how far it reaches already asks whether it is a
+            // road. The kind was being checked twice.
             const reaching = compatible
                 .filter(row =>
                     row.known !== true
-                    && row.class === 'cultivation'
                     && typeof row.name === 'string'
                     && (row.carriesToOrdinal ?? -1) > cultivator.realmOrdinal)
                 .sort((a, b) => (b.carriesToOrdinal ?? 0) - (a.carriesToOrdinal ?? 0));

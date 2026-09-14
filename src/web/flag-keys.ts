@@ -65,3 +65,20 @@ export const FLAG_MASTER = 'master_who_took_them_on';
  * whatever wants to know how long ago.
  */
 export const FLAG_YIELDING_TO_YOU = 'yielding_to_you';
+
+/**
+ * Days already put into the next stage of one manual, keyed by which manual.
+ *
+ * `derivation_days:<manualId>`. A stage is a whole unit of method or it is
+ * notes, so the work is finished or it is not - but it does not have to be done
+ * in one sitting, and it could not be: `daysActuallySpent` cuts every stretch at
+ * its first encounter, and the shortest derivation in the game is nineteen
+ * years. Measured on a played run: the first attempt lived 450 days of 6,935,
+ * so an all-or-nothing stretch made the verb unreachable in practice.
+ *
+ * So the years accumulate here and the stage is written when they are all in,
+ * which is also what the fiction wants - a cultivator goes back to a manuscript
+ * for decades. Cleared the moment the stage lands.
+ */
+export const derivationDaysKey = (manualId: string): string =>
+    `derivation_days:${manualId}`;

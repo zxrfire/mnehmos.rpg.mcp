@@ -331,7 +331,7 @@ describe('the crossing punishes more than it rewards', () => {
                     attributes: PERFECT.attributes,
                     foundationQuality: 'exceptional'
                 }),
-                { rng: forStream('one-shot', i), ambient: 'thin', turn: 1, toll: { candidates: [] } }
+                { rng: forStream('one-shot', String(i)), ambient: 'thin', turn: 1, toll: { candidates: [] } }
             );
             if (r.outcome === 'success' || r.outcome === 'false_immortal') continue;
             sawFailure = true;
@@ -507,7 +507,11 @@ function makeScars(n: number): Injury[] {
         sustainedOnTurn: i,
         treated: false,
         cultivationPenalty: 0.2,
-        breakthroughPenalty: 0.1
+        breakthroughPenalty: 0.1,
+        // Required on `Injury` and absent here, so this fixture was building a
+        // row the engine could not have minted. Null is what an untyped wound
+        // carries, and is what the scar arithmetic reads today.
+        woundType: null
     }));
 }
 

@@ -4,18 +4,13 @@ import Database from 'better-sqlite3';
 import { migrate } from '../../../src/storage/migrations.js';
 import { migrateWorld } from '../../../src/storage/migrations.world.js';
 import {
-    addItem,
     createWorld,
     currentYear,
     dateOf,
     getNpc,
     lineageOf,
-    makeFaction,
-    npcsAt,
     pendingEffects,
-    removeItem,
     schedule,
-    upsertFaction,
     upsertLineage,
     upsertNpc,
 } from '../../../src/engine/world/world-state.js';
@@ -433,7 +428,13 @@ describe('time: advancing the clock', () => {
         const split = advanceYears(advanceYears(world, 10).state, 20).state;
 
         expect(split.currentDay).toBe(single.currentDay);
-        expect(JSON.stringify(split.actors)).toBe(JSON.stringify(single.actors));
+        // THIS USED TO READ `split.actors` AND PROVED NOTHING. The actor tier
+        // was deleted in `dc7fb2ce refactor(world): delete the actor tier
+        // nothing could populate`, so both sides were `JSON.stringify(undefined)`
+        // and the people half of decomposability went unchecked from that commit
+        // until the tests were first typechecked. `npcs` is where the world's
+        // people actually live, and it is what the claim was always about.
+        expect(JSON.stringify(split.npcs)).toBe(JSON.stringify(single.npcs));
         expect(split.history.facts.map(f => f.summary)).toEqual(single.history.facts.map(f => f.summary));
     });
 

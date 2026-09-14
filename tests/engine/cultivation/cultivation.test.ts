@@ -183,7 +183,7 @@ describe('accrueProgress', () => {
 
 describe('breakthrough eligibility arithmetic', () => {
     it('reports eligible exactly at the required progress', () => {
-        const required = progressRequiredForOrdinal(0);
+        const required = progressRequiredForOrdinal(0)!;
         expect(
             isBreakthroughEligible(makeCultivator({ cultivationProgress: required - 0.001 }))
         ).toBe(false);
@@ -193,7 +193,7 @@ describe('breakthrough eligibility arithmetic', () => {
     });
 
     it('reports the remaining progress and fraction', () => {
-        const required = progressRequiredForOrdinal(0);
+        const required = progressRequiredForOrdinal(0)!;
         const half = makeCultivator({ cultivationProgress: required / 2 });
         expect(progressRemaining(half)).toBeCloseTo(required / 2, 10);
         expect(progressFraction(half)).toBeCloseTo(0.5, 10);
@@ -207,7 +207,7 @@ describe('breakthrough eligibility arithmetic', () => {
     });
 
     it('returns zero days when already eligible', () => {
-        const ready = makeCultivator({ cultivationProgress: progressRequiredForOrdinal(0) });
+        const ready = makeCultivator({ cultivationProgress: progressRequiredForOrdinal(0)! });
         expect(daysToNextBreakthrough(ready, 1.5)).toBe(0);
     });
 });
@@ -220,7 +220,9 @@ describe('balance shape', () => {
         ambient: AmbientQi = 'normal'
     ): number {
         const rate = computeCultivationRate(makeCultivator({ spiritRoot: root }), ambient).perDay;
-        return progressRequiredForOrdinal(ordinal) / rate / DAYS_PER_YEAR;
+        // Every rung this is asked about is inside Qi Condensation, so the
+        // ladder has a figure for it.
+        return progressRequiredForOrdinal(ordinal)! / rate / DAYS_PER_YEAR;
     }
 
     function yearsToClearQiCondensation(root: SpiritRootKey, ambient: AmbientQi = 'normal'): number {
@@ -257,9 +259,9 @@ describe('balance shape', () => {
 
     it('makes the Foundation boundary the single most expensive step of the realm', () => {
         expect(isRealmBoundary(12)).toBe(true);
-        const boundaryCost = progressRequiredForOrdinal(12);
+        const boundaryCost = progressRequiredForOrdinal(12)!;
         for (let ordinal = 0; ordinal < 12; ordinal++) {
-            expect(boundaryCost).toBeGreaterThan(progressRequiredForOrdinal(ordinal));
+            expect(boundaryCost).toBeGreaterThan(progressRequiredForOrdinal(ordinal)!);
         }
     });
 });

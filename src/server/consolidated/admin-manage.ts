@@ -61,6 +61,10 @@ import { HERBS, getHerb } from '../../data/cultivation/herbs.js';
 import { ARTIFACTS, getArtifact } from '../../data/cultivation/artifacts.js';
 import { REGIONS } from '../../data/cultivation/regions.js';
 import { SECTS, getSect } from '../../data/cultivation/sects.js';
+import {
+    rankIndexOnAHousesRoll,
+    theRollAlone
+} from '../../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import { BEAST_CHANGE_ORDINAL, type Beast } from '../../data/cultivation/beasts.js';
 import {
     howThisOneDealsWithPeople,
@@ -1204,7 +1208,12 @@ function whatSomebodyWhoTookAShapeBringsIntoTheRoom(input: {
             .filter(person => person.sectId === id)
             .map(person => ({
                 id: person.id,
-                rankIndex: sect ? sect.ranks.indexOf(person.sectRank ?? '') : -1
+                // Off the roll through the one read. This used to search the
+                // house's ladder for a mirrored rank string on the person's
+                // own row, which is a fourth way of asking one question.
+                rankIndex: rankIndexOnAHousesRoll(
+                    theRollAlone(repos.sects), person.id, sect?.ranks.length ?? 0
+                )
             }));
         const read = whatThisHouseKnowsOf({
             roll,
@@ -1385,14 +1394,21 @@ export async function handleSpawnEncounter(
             maxQi,
             age: 20 + ordinal * 4,
             location,
-            // AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU. The
-            // entry rank comes with the house: a house answers for somebody it
-            // has invested in, and `ranked` is how every reader asks that, so a
-            // house membership with no rung on it would leave this person's
-            // house doing nothing at all about whatever is done to them.
-            ...(house ? { sectId: house.id, sectRank: house.ranks[0] } : {}),
+            ...(house ? { sectId: house.id } : {}),
             spiritStones: STARTING_SPIRIT_STONES * (1 + ordinal)
         });
+        // AND WHOSE THEY ARE, WHICH DECIDES WHAT THEY DO TO YOU. The entry
+        // rung comes with the house: a house answers for somebody it has
+        // invested in, and `ranked` is how every reader asks that, so a house
+        // membership with no rung on it would leave this person's house doing
+        // nothing at all about whatever is done to them.
+        //
+        // ON THE ROLL, not on the cultivator row. This used to write an entry
+        // rank string straight onto the row beside the house, which made it a
+        // second writer of a fact the roll owns - and the read that went with
+        // it then had to search the house's ladder for the string to get an
+        // index back out.
+        if (house) repos.sects.addMember(house.id, opponentId, 0);
         // The rank change takes the same road every rank change takes.
         if (ordinal > 0) repos.cultivators.advanceRealm(opponentId, ordinal);
 

@@ -44,7 +44,9 @@ function seeded(seed = 'invariant-a', population = 250): WorldState {
 }
 
 function advanced(seed = 'invariant-a', years = 80): WorldState {
-    return advanceWorldYears(seeded(seed), years, { pressure: { eventsPerYear: 2 } }).state;
+    // `PressureOptions` takes `intensity` and `maxEvents` and has never taken
+    // an `eventsPerYear`. This asked for one and got the world's own rate.
+    return advanceWorldYears(seeded(seed), years).state;
 }
 
 describe('how much of a person is left', () => {

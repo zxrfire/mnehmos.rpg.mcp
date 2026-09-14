@@ -47,7 +47,6 @@
 
 import {
     computeCultivationRate,
-    crowdingMultiplier,
     groundExhausted,
     openingPenalty,
     realmsSpannedBy,
@@ -56,8 +55,6 @@ import {
 import {
     computeBreakthroughOdds,
     overflowBonus,
-    lifespanPressure,
-    pillMultiplier,
     pillToleranceDecay,
     MAX_PILL_BONUS
 } from '../src/engine/cultivation/breakthrough.js';
@@ -67,7 +64,6 @@ import {
     bestReadable,
     MANUAL_QUALITY_ORDER
 } from '../src/engine/cultivation/manual-quality.js';
-import { scarTempering, aggregateInjuryPenalties } from '../src/engine/cultivation/injuries.js';
 import {
     progressRequiredForOrdinal,
     lifespanForOrdinal,
@@ -75,22 +71,17 @@ import {
     realmForOrdinal,
     MAX_ORDINAL
 } from '../src/engine/cultivation/realms.js';
-import { stagnationYearsForOrdinal, INJURY_WEIGHTS, type Injury, type ManualQuality, type SpiritRootKey, type AmbientQi, type InnateAttributes, type FoundationQuality } from '../src/schema/cultivation.js';
+import { stagnationYearsForOrdinal, INJURY_WEIGHTS, type Injury, type InsightDegree, type ManualQuality, type SpiritRootKey, type AmbientQi, type InnateAttributes, type FoundationQuality } from '../src/schema/cultivation.js';
 import {
     earningsPerYear,
     netEarningsPerYear,
-    breakthroughPillPrice,
     injuryTreatmentPrice,
-    STONES_PER_YEAR_OF_SECLUSION,
-    affordablePillPotency
+    STONES_PER_YEAR_OF_SECLUSION
 } from '../src/engine/cultivation/origin.js';
-import {
-    purchasedQiPerYear,
-    stonesPerQiUnitAt
-} from '../src/engine/cultivation/buying-and-bartering-pills.js';
+import { purchasedQiPerYear } from '../src/engine/cultivation/buying-and-bartering-pills.js';
 import { regardFor } from '../src/engine/cultivation/regard.js';
-import { ambientRateMultiplier, BAND_DENSITY_CENTRE } from '../src/engine/cultivation/ambient.js';
-import { TECHNIQUES, classOf, isWideSpan } from '../src/data/cultivation/techniques.js';
+import { BAND_DENSITY_CENTRE } from '../src/engine/cultivation/ambient.js';
+import { TECHNIQUES, isWideSpan } from '../src/data/cultivation/techniques.js';
 import {
     commissionBoard,
     dutyTermsFor,
@@ -244,7 +235,10 @@ const scarSet = (count: number, treated: boolean, tag = 't'): Injury[] =>
         sustainedOnTurn: i,
         treated,
         cultivationPenalty: INJURY_WEIGHTS.serious.cultivationPenalty,
-        breakthroughPenalty: INJURY_WEIGHTS.serious.breakthroughPenalty
+        breakthroughPenalty: INJURY_WEIGHTS.serious.breakthroughPenalty,
+        // An ordinary wound of its severity, which is what the schema defaults
+        // a row with no authored wound behind it to.
+        woundType: null
     }));
 
 console.log('DOMINANT-STRATEGY SWEEP');
@@ -374,11 +368,11 @@ report({
 
 head('2. MANUAL SELECTION  -  is the best book on the shelf always the right book?');
 
-interface Reader { label: string; insight: number; foundation: FoundationQuality; deepest: number }
+interface Reader { label: string; insight: number; foundation: FoundationQuality; deepest: 0 | InsightDegree }
 
 const READERS: readonly Reader[] = ATTRIBUTE_SETS.flatMap(as =>
     FOUNDATIONS.flatMap(f =>
-        [0, 2, 4].map(deepest => ({
+        ([0, 2, 4] as const).map(deepest => ({
             label: `ins ${as.a.insight}/${f}/seen ${deepest}`,
             insight: as.a.insight,
             foundation: f,
@@ -392,15 +386,19 @@ function readerFor(r: Reader) {
         spiritRoot: 'single_fire' as SpiritRootKey,
         attributes: { might: 2, insight: r.insight, fortune: 1, charm: 2 },
         foundationQuality: r.foundation,
-        insights: r.deepest > 0
+        insights: r.deepest !== 0
             ? [{
                 id: 'i1',
                 domain: 'element' as const,
                 subject: 'fire',
                 degree: r.deepest,
-                openedBy: 'a1',
-                comprehendedOnTurn: 0,
-                note: ''
+                provenance: {
+                    achievementId: 'a1',
+                    achievementKind: 'profound_principle' as const,
+                    onDay: 0,
+                    deepenedBy: [],
+                    account: 'comprehended for this sweep'
+                }
               }]
             : []
     };
@@ -456,7 +454,7 @@ head('3. MANUAL SWITCHING  -  does the opening penalty ever fire?');
 // ladder reports a ten-realm span for a sword form. That is the "absent field
 // reads as zero" trap wearing a different hat, and this probe walked into it
 // once before this line existed.
-const MANUALS = TECHNIQUES.filter(t => classOf(t) === 'cultivation' && t.cap !== null)
+const MANUALS = TECHNIQUES.filter(t => t.cap !== null)
     .map(t => ({ id: t.id, required: t.requiredOrdinal, cap: t.cap as number, wide: isWideSpan(t) }));
 
 const spanCounts = new Map<number, number>();

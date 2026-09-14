@@ -8,8 +8,27 @@
  * of mortal splints for fourteen spirit stones and was fully healed.
  *
  * The ladder was already written and nothing consulted it: `pills.ts` grades the
- * treat-injury line 60 -> 420 -> 5,200 -> 42,000 -> 480,000 cash. This file adds
- * no content and invents no threshold; it reads the catalog and returns the grade.
+ * treat-injury line one row per grade, rising. This file adds no content and
+ * invents no threshold; it reads the catalog and returns the grade.
+ *
+ * ── FOUR RUNGS OF REQUIREMENT, NOT FIVE, AND THE HEADER USED TO SAY FIVE ─
+ *
+ * It listed the five catalog figures as if they were five rungs of demand. They
+ * are not: `GRADE_POWER` ties immortal and chaos at the same rank and
+ * `PILL_GRADE_REALM` pitches both at Void Tribulation, so `realmFloor` never
+ * returns chaos - the strict comparison below keeps the earlier of two peers.
+ * Immortal is the top of what this ladder ever ASKS for, and a chaos-grade
+ * medicine reaches a wound because it is immortal's peer rather than because it
+ * is a rung above it.
+ *
+ * That mattered the night two agents each moved a top row of the treat-injury
+ * line onto another effect. Between them they took immortal and chaos off it,
+ * `medicineNeededFor` went on demanding immortal, and every body at Void
+ * Tribulation or above had no answer to a MINOR tear.
+ * `what-is-worth-doing.test.ts` is the ratchet - it walks every severity at
+ * nine rungs and requires a named cure at each - and the figures are
+ * deliberately not restated here, because the last set of figures written into
+ * this header is what went stale.
  */
 
 import { pillBandOrdinal } from './breakthrough.js';

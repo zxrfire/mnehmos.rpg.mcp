@@ -143,8 +143,11 @@ describe('a hand held back from somebody who is beaten', () => {
         const at = await somebodyOnTheirKnees();
         expect(at.noted).toBeTruthy();
 
+        // The STORED run, not the view of it: `affordancesFor` takes a `Run`,
+        // and `state().run` is the wire shape, which carries no seed.
+        const stored = at.repos.runs.getById(at.game.state().run.id)!;
         const strip = at.game.affordancesFor(
-            at.game.state().cultivator, at.game.state().run
+            at.game.state().cultivator, stored
         ) as readonly { id: string; say: string }[];
         const letThemUp = strip.find(one => one.id === 'let_them_go');
 

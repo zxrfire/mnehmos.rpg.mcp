@@ -22,7 +22,6 @@ for (const s of SECTS as any[]) {
     for (const id of taught) {
         const t: any = getTechnique(id);
         if (!t) continue;
-        if (t.class !== 'cultivation') continue;
         manuals++;
         const c = Number(t.cap ?? 0);
         if (c > cap) { cap = c; best = t.name ?? id; }

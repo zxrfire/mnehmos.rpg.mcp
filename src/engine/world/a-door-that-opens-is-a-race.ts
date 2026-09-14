@@ -21,12 +21,17 @@
  * Measured over twelve pinned worlds, every house seat priced against every
  * scheduled site (`probe-can-anybody-be-standing-there-on-the-day.ts`): a party
  * that hears the door is open and starts then reaches 43.9% of them, against
- * 75.0% for one that knew the date and was already walking. This pass asks the
- * FIRST of those, because the fact that opens a door is public and the day it
- * fires is the day the news gets out. A house that could read the schedule and
- * was standing there before it opened is not modelled - nothing gives a house
- * knowledge of a cycle - and that is the player's edge rather than a gap being
- * hidden.
+ * 75.0% for one that knew the date and was already walking.
+ *
+ * ── WHICH OF THOSE A HOUSE GETS IS ASKED OF ITS PEOPLE ───────────────────
+ *
+ * This pass used to ask the first of them for everybody, because nothing
+ * anywhere held a house's reading of a cycle. A house holds no such thing and
+ * must not: `a-house-knows-a-date-because-somebody-in-it-does.ts` derives it
+ * from the roll instead - somebody who can read the schedule AND has something
+ * of that ground - and the party handed to the priced reading is that person's
+ * rung. A caller that supplies no such reading gets the old arm unchanged, which
+ * is the honest answer for a house nobody can speak for.
  *
  * ── A HOUSE SENDS PEOPLE WHO WALK ────────────────────────────────────────
  *
@@ -59,6 +64,10 @@
  */
 
 import { SENDING_REASONS } from '../../data/cultivation/why-a-house-puts-a-party-on-the-road.js';
+import {
+    whoInTheHouseKnowsWhenItOpens,
+    type HasAnythingOfTheGround
+} from './a-house-knows-a-date-because-somebody-in-it-does.js';
 import { convergenceOf } from './convergence.js';
 import { beingAtADoorOnTheDayItOpens } from './being-at-a-door-on-the-day-it-opens.js';
 import type { LocationRecord } from './locations.js';
@@ -87,6 +96,10 @@ export interface AHouseOnTheRoad {
     crossingDays: number;
     party: readonly Candidate[];
     posting: Posting;
+    /** They set out to arrive rather than hearing it was open and starting. */
+    knewTheDate: boolean;
+    /** Whose reading of the schedule the house walked on. Null when nobody's. */
+    readerId: string | null;
 }
 
 /**
@@ -112,6 +125,13 @@ export function whoSendsWhenADoorOpens(input: {
     houses: readonly AHouseThatCouldGo[];
     /** Walking days from the door to a place. `walkingDaysFrom` over the links. */
     walkingDaysTo: (locationId: string) => number | undefined;
+    /**
+     * Whether one of the world's own people has anything of this ground.
+     *
+     * Omitted, and nobody in any house can be early: the arm this pass asked for
+     * the whole time it had nothing to ask the other with.
+     */
+    hasAnythingOfTheGround?: HasAnythingOfTheGround;
 }): readonly AHouseOnTheRoad[] {
     const convergence = convergenceOf(input.door, input.onDay);
     if (!convergence.cyclical || !convergence.open) return [];
@@ -125,14 +145,23 @@ export function whoSendsWhenADoorOpens(input: {
         const crossingDays = input.walkingDaysTo(house.seatLocationId);
         if (crossingDays === undefined) continue;
 
+        const holdsTheDate = input.hasAnythingOfTheGround === undefined
+            ? null
+            : whoInTheHouseKnowsWhenItOpens({
+                door: input.door,
+                onDay: input.onDay,
+                houseId: house.id,
+                roster: house.roster,
+                hasAnythingOfTheGround: input.hasAnythingOfTheGround
+            });
+
         const reading = beingAtADoorOnTheDayItOpens({
             location: input.door,
             day: input.onDay,
-            // A house that heard the door is open. See the header: nothing in
-            // the world holds a house's reading of a cycle, so the arm this
-            // pass can honestly ask for is the one that starts when the news
-            // does.
-            party: { id: house.id, realmOrdinal: 0 },
+            // WHAT THE HOUSE SETS OUT ON, which is what one of its people can
+            // say. `readSchedule` is the only thing the priced reading asks of
+            // the party, and this is the rung it asks.
+            party: holdsTheDate?.party ?? { id: house.id, realmOrdinal: 0 },
             crossingDays,
             depthWanted
         });
@@ -164,7 +193,9 @@ export function whoSendsWhenADoorOpens(input: {
             houseName: house.name,
             crossingDays,
             party,
-            posting
+            posting,
+            knewTheDate: reading.settingOutInAdvance,
+            readerId: holdsTheDate?.readerId ?? null
         });
     }
 

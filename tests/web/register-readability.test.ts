@@ -270,10 +270,37 @@ describe('the register is consistent with itself', () => {
         expect(html).toContain('rel rel--below');
         expect(html).toContain('reldir above');
         expect(html).toContain('reldir below');
+        // FOUR ANSWERS, AND THE FOURTH IS THE ABSENCE OF ONE. A derived
+        // contention says two bodies have a hand on the same thing and nothing
+        // about the ladder; every one of them used to be stamped `alongside`,
+        // which is a positive claim of equal standing, and the sheet printed
+        // an unbacked river house as the peer of the body that administers the
+        // vein system. Where nothing places a pair, the row says so.
         for (const d of reg.dossiers) {
             for (const rel of d.relationships) {
-                expect(['above', 'below', 'alongside']).toContain(rel.stance);
+                expect(['above', 'below', 'alongside', 'unplaced']).toContain(rel.stance);
             }
+        }
+    });
+
+    it('never prints a name and its direction badge as one word', () => {
+        const html = renderRegisterHtml(reg as never, {} as never);
+        // `.relwho` and `.reldir` are both inline and the badge has padding
+        // and no margin, so with nothing between them the sheet read
+        // "Clear River Alliancelevel" everywhere it was copied out, read
+        // aloud, or seen without the stylesheet. A printed separator, not a
+        // gap: the gap does not survive any of those three.
+        // Asserted the way a reader meets it rather than as markup: inline tags
+        // removed with nothing put in their place, which is what a copy, a
+        // screen reader and a stylesheet that did not load all produce.
+        const flattened = html
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<\/?(?:p|div|li|h1|h2|h3|h4|h5|dt|dd|details|summary|table|tr|td|th|ul|ol|section)\b[^>]*>/gi, '\n')
+            .replace(/<[^>]+>/g, '');
+        for (const badge of ['level with it', 'stands over it', 'answers to it', 'not placed against it']) {
+            expect(flattened, `a name ran into the ${badge} badge`)
+                .not.toMatch(new RegExp(`[a-z)]${badge}`));
         }
     });
 });

@@ -32,6 +32,7 @@ import { manualCeilingOf } from '../src/engine/world/manuals.js';
 import { assessPromotions } from '../src/engine/world/promotion-inside-a-house.js';
 import { MAX_ORDINAL } from '../src/engine/cultivation/realms.js';
 import type { AmbientQi } from '../src/schema/cultivation.js';
+import type { NpcRecord } from '../src/engine/world/npc-state.js';
 
 const line = (s = '') => console.log(s);
 const rule = (t: string) => { line(); line('═'.repeat(94)); line('  ' + t); line('═'.repeat(94)); };

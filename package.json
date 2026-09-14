@@ -20,6 +20,8 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "build": "tsc",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck:all": "tsc --noEmit -p tsconfig.all.json",
     "start": "node dist/server/index.js",
     "web": "node dist/web/server.js",
     "dev:web": "npm run build && node dist/web/server.js",

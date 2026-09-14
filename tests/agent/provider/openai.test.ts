@@ -11,7 +11,10 @@ function mockFetch(opts: {
     headers?: Record<string, string>;
 }): { fn: typeof fetch; lastRequest: { url?: string; init?: RequestInit } } {
     const captured: { url?: string; init?: RequestInit } = {};
-    const fn: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    // Parameters are left to `typeof fetch`, as in the sibling provider tests:
+    // the global `fetch` here is node's, whose first parameter is not the DOM's
+    // `RequestInfo`, and naming that type was a leftover from a DOM lib.
+    const fn: typeof fetch = async (input, init) => {
         captured.url = typeof input === 'string' ? input : input.toString();
         captured.init = init;
         return new Response(opts.body, {

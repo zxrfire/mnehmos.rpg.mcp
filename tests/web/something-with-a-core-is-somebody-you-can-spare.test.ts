@@ -30,6 +30,15 @@
  *
  * The arrangement uses ADMIN because a fixture forty played turns deep goes
  * flaky, and the whole chain after it is played.
+ *
+ * ── AND THE GROUND IS NOW PART OF THE ARRANGEMENT ────────────────────────
+ *
+ * This fixture used to type `I hunt a Thunder Hawk` anywhere and get one,
+ * because naming a species bypassed the ground entirely. That was the hole the
+ * location ruling closed: a cored beast is ONE animal on ONE ledge, counted
+ * with a place, so the hunt reaches it where it lives and refuses the name
+ * where it does not. The fixture therefore asks the world for a high peak on a
+ * vein and stands the player on it. Nothing about what is asserted below moved.
  */
 
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
@@ -42,6 +51,8 @@ import {
     whatItIsNow
 } from '../../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 import { whichWayItPoints } from '../../src/engine/social/grudges.js';
+import { isOnAVein, whatGroundThisIs } from '../../src/engine/world/what-ground-a-place-is.js';
+import type { WorldState } from '../../src/engine/world/world-state.js';
 
 /**
  * PINNED, AND THE PAIR IS THE ARRANGEMENT. The run seed fixes the fight and the
@@ -56,12 +67,33 @@ let admin: string | undefined;
 beforeAll(() => { admin = process.env.ADMIN_MODE; process.env.ADMIN_MODE = 'true'; });
 afterAll(() => { if (admin === undefined) delete process.env.ADMIN_MODE; else process.env.ADMIN_MODE = admin; });
 
+/**
+ * The ground a Thunder Hawk can actually be standing on.
+ *
+ * ARRANGED, AND IT HAS TO BE. Going out after one in particular reaches it only
+ * where it lives - a cored row is one animal on one ledge, and the hunt refuses
+ * a name the ground cannot hold rather than conjuring one. The species is
+ * `high_peak` and `vein_only`, so the fixture asks the world for a place that
+ * answers both rather than hard-coding a name a reseed would move.
+ */
+async function aPeakWithAVeinUnderIt(): Promise<string> {
+    const handle = await activeWorld() as unknown as { state?: WorldState };
+    const state = (handle.state ?? handle) as WorldState;
+    const found = state.locations.find(place =>
+        !place.sealed
+        && (whatGroundThisIs(state, place) ?? []).includes('high_peak')
+        && isOnAVein(state, place, whatGroundThisIs(state, place)));
+    if (!found) throw new Error('this world has no high peak on a vein to stand a hawk on');
+    return found.name;
+}
+
 async function huntOne() {
     const harness = await makeGameInWorld({ seed: WORLD, worldSeed: `${WORLD}-world`, adminMode: true });
     await harness.game.newRun('Hawk Keeper');
     // High enough to reach a Core Formation beast at all, low enough that
     // taking it is not a foregone conclusion. Arranged, not played.
     await harness.game.act('ADMIN set my realm to 22');
+    await harness.game.act(`ADMIN set_location location=${await aPeakWithAVeinUnderIt()}`);
     const hunted = await harness.game.act('I hunt a Thunder Hawk');
     return { ...harness, hunted };
 }
@@ -143,6 +175,7 @@ describe('something with a core is somebody you can spare', () => {
         await harness.game.newRun('Hawk Taker');
         // Far enough above it that the resolver finishes it where it stands.
         await harness.game.act('ADMIN set my realm to 30');
+        await harness.game.act(`ADMIN set_location location=${await aPeakWithAVeinUnderIt()}`);
         await harness.game.act('I hunt a Thunder Hawk');
 
         const rows = await beastRows() as any[];

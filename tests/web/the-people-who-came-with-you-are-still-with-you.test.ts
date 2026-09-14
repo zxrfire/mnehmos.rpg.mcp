@@ -118,7 +118,7 @@ describe('the people who came with you', () => {
         }
 
         // AND THE ENGINE SAID SO, in the channel a narrator cannot drop.
-        const said = JSON.stringify(turn.facts ?? turn);
+        const said = JSON.stringify(turn);
         for (const name of names) expect(said, `${name} was not mentioned`).toContain(name);
     }, 300_000);
 
@@ -143,7 +143,7 @@ describe('the people who came with you', () => {
 
         // A REFUSAL THAT NAMES THE ROUTE. The standing rule in AGENTS.md: not
         // being able to do a thing is not the same as being told nothing.
-        const said = JSON.stringify(turn.facts ?? turn).toLowerCase();
+        const said = JSON.stringify(turn).toLowerCase();
         expect(said).toContain('passenger');
         expect(said).toMatch(/road|span|put them on/);
     }, 300_000);
@@ -195,7 +195,7 @@ describe('the people who came with you', () => {
         });
 
         const turn = await game.act('I accept');
-        const said = JSON.stringify(turn.facts ?? turn);
+        const said = JSON.stringify(turn);
         for (const member of takingOut) {
             expect(said, `${member.name} was never named`).toContain(member.name);
         }

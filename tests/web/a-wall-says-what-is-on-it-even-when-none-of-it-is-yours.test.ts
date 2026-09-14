@@ -83,7 +83,9 @@ async function standingWhereAHouseIsSeated(seed: string, ordinal: number) {
         seed, worldSeed: A_WORLD, worldEnabled: true
     });
     const { cultivator } = await game.newRun('Passerby');
-    const world = await game.loadWorld();
+    const loaded = await game.loadWorld();
+    expect(loaded, 'the run opened without a world').toBeTruthy();
+    const world = loaded!;
 
     const holder = world.factions.find(f =>
         f.dissolvedOnDay === null

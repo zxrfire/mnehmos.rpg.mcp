@@ -6,12 +6,10 @@ import {
     formatValidationError,
     buildActionDescription
 } from '../../src/utils/action-router.js';
-import { isGuidingError } from '../../src/utils/fuzzy-enum.js';
 
 describe('action-router utilities', () => {
     describe('createActionRouter', () => {
         const ACTIONS = ['create', 'get', 'delete'] as const;
-        type TestAction = typeof ACTIONS[number];
 
         const definitions = {
             create: {

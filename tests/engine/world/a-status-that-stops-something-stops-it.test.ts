@@ -74,6 +74,10 @@ const aStatusThatStops = (what: string, over: Record<string, unknown> = {}) => [
         id: `status-${what}`,
         areaId: 'region-here',
         kind: 'famine',
+        // `statement` and `cause` are required and were absent, so every
+        // status this fixture built carried undefined in both.
+        statement: 'The harvest failed and the province is short.',
+        cause: { what: 'the harvest failed', decidedById: null, factId: null },
         beganOnDay: DAY - 10,
         reviewOnDay: DAY + 100,
         stops: [what],
@@ -150,6 +154,8 @@ describe('the price half and the stop half agree', () => {
                 id: 'status-famine',
                 areaId: 'region-here',
                 kind: 'famine',
+                statement: 'The harvest failed and the province is short.',
+                cause: { what: 'the harvest failed', decidedById: null, factId: null },
                 beganOnDay: DAY - 10,
                 reviewOnDay: DAY + 100,
                 stops: [STOPS_FOOD],

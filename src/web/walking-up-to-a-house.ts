@@ -33,6 +33,12 @@ import {
     type WhatTheGateSays
 } from '../engine/world/standing-at-the-gate-of-a-house.js';
 import { sectGroundId } from '../engine/world/seeding.js';
+import {
+    rankIndexOnAHousesRoll,
+    whereSomebodyStandsOnAHousesRoll,
+    type TheRollsToRead,
+    type WhereTheyStandOnARoll
+} from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { WorldState } from '../engine/world/world-state.js';
 import { ledgerAbout, type ObligationDb } from '../storage/repos/obligation.repo.js';
@@ -120,9 +126,9 @@ export function whatTheGateOfThisHouseSays(
     const faction = world?.factions.find(row => row.id === house.factionId) ?? null;
     const ranks = faction?.ranks ?? catalog?.ranks ?? [];
 
-    const membership = game.repos.sects.getMembership(cultivator.id);
-    const standing = membership && membership.sectId === house.factionId
-        ? membership.rankIndex
+    const onTheRoll = whereSomebodyStandsOnAHousesRoll(theRollsOf(game), cultivator.id);
+    const standing = onTheRoll && onTheRoll.factionId === house.factionId
+        ? onTheRoll.rankIndex
         : null;
 
     // WHOSE PEOPLE ARE OUT HERE, and they are read off the same roster every
@@ -150,38 +156,36 @@ export function whatTheGateOfThisHouseSays(
 }
 
 /**
- * Where somebody sits on a house's ladder, or -1 where nothing says.
+ * The two stores, wired to a game handle.
  *
- * A world NPC carries the rung on its own row; a stored cultivator carries it
- * in the membership table. Both are asked, because `present` returns the two
- * mixed and neither is the authority for the other.
+ * The rung itself is not decided here and has not been since the mirror on the
+ * cultivator row was removed: `where-somebody-stands-on-a-houses-roll.ts` is
+ * the one answer in the repo, and this is the adapter that hands it the world
+ * and the roll. A caller with no `GameService` builds its own.
  */
-export function rankIndexOf(game: GameService, personId: string, rankCount: number): number {
-    const top = Math.max(0, rankCount - 1);
-    // THE WORLD ROW FIRST, and it matters. A person exists in two stores and the
-    // two rolls disagree: `repos.sects` is rebuilt from the catalog and a world
-    // NPC standing in a compound carries its rung on its own row. Asking the
-    // membership table first read the house's own people a rung or two low, so
-    // a conclave disciple came back as an outer one and could not host.
-    const npc = game.atHand?.npcs.find(row => row.id === personId) ?? null;
-    if (npc && typeof npc.factionRankIndex === 'number' && npc.factionRankIndex >= 0) {
-        return Math.min(npc.factionRankIndex, top);
-    }
-    const membership = game.repos.sects.getMembership(personId);
-    if (membership && typeof membership.rankIndex === 'number') {
-        return Math.min(membership.rankIndex, top);
-    }
-    return -1;
+export function theRollsOf(game: GameService): TheRollsToRead {
+    return {
+        world: game.atHand ?? null,
+        rollRowFor: id => game.repos.sects.getMembership(id)
+    };
 }
 
-/** A rung held on a house's roll, in that house's own word for it. */
-export interface WhereYouStandOnARoll {
-    factionId: string;
-    factionName: string;
-    /** The house's own name for the rung. Never a generic ladder. */
-    rungName: string;
-    rankIndex: number;
-    rankCount: number;
+/** Where somebody sits on a house's ladder, or -1 where nothing says. */
+export function rankIndexOf(game: GameService, personId: string, rankCount: number): number {
+    return rankIndexOnAHousesRoll(theRollsOf(game), personId, rankCount);
+}
+
+export type WhereYouStandOnARoll = WhereTheyStandOnARoll;
+
+/**
+ * The rung this cultivator holds, as an index, or -1 at none.
+ *
+ * For the callers that want the number and not the word. It is a wrapper and
+ * not a second read: every one of them used to work the index out for itself
+ * from the mirrored rank string by searching the catalog ladder for it.
+ */
+export function theRungTheyHold(game: GameService, cultivator: Cultivator): number {
+    return whereYouStandOnYourHousesRoll(game, cultivator)?.rankIndex ?? -1;
 }
 
 /**
@@ -192,37 +196,13 @@ export interface WhereYouStandOnARoll {
  * all about which rung of the house they held - which is the fact that decides
  * what they may take off the board and who has to be asked for anything.
  *
- * THE RUNG IS {@link rankIndexOf}'s, not the membership row's, for the reason
- * that function documents: the player exists in both stores, their mirror row
- * in the world carries a rung of its own, and reading the membership table first
- * reads people a rung or two low.
- *
- * THE NAME IS THE HOUSE'S OWN. `faction.ranks` is what that house calls its
- * rungs; a generic ladder here would be a second one beside it, and the two
- * would disagree the first time a house was seeded with names of its own.
- *
  * Null for somebody on no roll, which is a fact about them and not a gap.
  */
 export function whereYouStandOnYourHousesRoll(
     game: GameService,
     cultivator: Cultivator
 ): WhereYouStandOnARoll | null {
-    const membership = game.repos.sects.getMembership(cultivator.id);
-    if (!membership) return null;
-    const faction = game.atHand?.factions.find(row => row.id === membership.sectId) ?? null;
-    const catalog = getSect(membership.sectId);
-    const ranks = faction?.ranks ?? catalog?.ranks ?? [];
-    if (ranks.length === 0) return null;
-
-    const rankIndex = rankIndexOf(game, cultivator.id, ranks.length);
-    if (rankIndex < 0) return null;
-    return {
-        factionId: membership.sectId,
-        factionName: faction?.name ?? catalog?.name ?? membership.sectId,
-        rungName: ranks[rankIndex]!,
-        rankIndex,
-        rankCount: ranks.length
-    };
+    return whereSomebodyStandsOnAHousesRoll(theRollsOf(game), cultivator.id);
 }
 
 /**

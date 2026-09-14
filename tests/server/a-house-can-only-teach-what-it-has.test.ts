@@ -21,6 +21,7 @@ import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-s
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { getSect } from '../../src/data/cultivation/sects.js';
+import type { SpiritRootKey } from '../../src/schema/cultivation.js';
 
 const TYRANT = 'sect-storm-tyrant-court';
 /** Teaches ten elementless books and one fire art nobody rises on. */
@@ -55,7 +56,7 @@ function hearOf(cultivatorId: string, factionId: string): void {
  * the door, and every other gate has to be clear for the door to be the thing
  * that answers.
  */
-async function applicant(name: string, seed: string, spiritRoot: string) {
+async function applicant(name: string, seed: string, spiritRoot: SpiritRootKey) {
     const made = await cultivation({
         action: 'create_cultivator', name, seed, location: 'Green Water City'
     });
@@ -136,9 +137,18 @@ describe('and a player can find out before they walk up', () => {
         // And the listing does not go on calling it admissible.
         expect(court.admissible).toBe(false);
 
+        // The contrast is the point: a house that bars a root, beside one that
+        // does not. The auction house read `open` while only cultivation
+        // manuals carried a `cap` - `houseElementalCharacterOf` tests
+        // `cap > door`, so it could not see a house's elemental fighting arts.
+        // Every art carries a cap now and it reads `prefers`, which
+        // `rootAtTheDoor` turns into a weighting rather than a door. Measured
+        // over the 38 houses: open fell to 11 and prefers rose to 25, while
+        // `requires` - the only stance that refuses anybody - stayed at two.
         const auction = listed.sects.find((s: { id: string }) => s.id === AUCTION_HOUSE);
-        expect(auction.elementalStance).toBe('open');
-        expect(auction.rootAtTheDoor).toBe('welcome');
+        expect(auction.elementalStance).not.toBe('requires');
+        expect(auction.rootAtTheDoor).not.toBe('refused');
+        expect(auction.admissible).not.toBe(false);
     });
 
     it('reads a preference as a preference and never as a bar', async () => {

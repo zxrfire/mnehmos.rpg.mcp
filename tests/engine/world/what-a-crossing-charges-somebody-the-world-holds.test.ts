@@ -163,7 +163,11 @@ describe('what a crossing could take from somebody the world holds', () => {
                 takings++;
                 // The whole point. A crossing cannot take what the person did
                 // not have, and before this it could not take anything at all.
-                expect(offered.has(taken.id), `took ${taken.id}, which was never offered`).toBe(true);
+                // `TollTaken.id` is null for a taken name, which is not a row
+                // anybody stores and so could never have been offered. Prove
+                // there is a row id before asking whether it was on the list.
+                expect(taken.id, `a ${taken.kind} was taken with no row id`).not.toBeNull();
+                expect(offered.has(taken.id!), `took ${taken.id}, which was never offered`).toBe(true);
             }
         }
 

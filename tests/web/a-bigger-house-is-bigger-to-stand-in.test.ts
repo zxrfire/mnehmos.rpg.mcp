@@ -68,7 +68,9 @@ describe('a bigger house is bigger to stand in', () => {
     it('gives a visitor more to pull on than a smaller one does', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'built-here', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Visitor');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
 
         // ASK THE ENGINE WHICH HOUSE IS BIGGEST rather than naming one. A name
         // here would pin the catalog and the seed, and both move.
@@ -146,7 +148,9 @@ describe('a bigger house is bigger to stand in', () => {
         // there, and it does not report a miss.
         const { game, repos } = await makeGameInWorld({ seed: 'built-here-bare', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Visitor');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
 
         const bare = world.locations.find(row =>
             row.kind === 'settlement'
@@ -173,7 +177,9 @@ describe('a bigger house is bigger to stand in', () => {
         // them nine days' walk away.
         const { game, repos } = await makeGameInWorld({ seed: 'built-here-wide', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Visitor');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
 
         const seat = world.locations.find(row => row.kind === 'sect_seat' && row.parentId !== null)!;
         const province = world.locations.find(row => row.id === seat.parentId)!;
@@ -198,7 +204,9 @@ describe('a bigger house is bigger to stand in', () => {
         // hook for opening it.
         const { game, repos } = await makeGameInWorld({ seed: 'built-here-gate', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Visitor');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
 
         const seat = world.locations
             .filter(row => row.kind === 'sect_seat')
@@ -233,7 +241,9 @@ describe('a bigger house is bigger to stand in', () => {
         // other's absence being a bug.
         const { game, repos } = await makeGameInWorld({ seed: 'built-here-rank', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Visitor');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
 
         const outsider = { rankIndex: -1, rankCount: 1, yearsInHouse: 0, member: false };
         const seat = world.locations
@@ -279,7 +289,9 @@ describe('a bigger house is bigger to stand in', () => {
     it('and looking at what is built costs nothing and spends no day', async () => {
         const { game, repos } = await makeGameInWorld({ seed: 'built-here-free', worldSeed: WORLD });
         const { cultivator } = await game.newRun('Visitor');
-        const world = await game.loadWorld();
+        const loaded = await game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
         const seat = world.locations.find(row =>
             row.kind === 'sect_seat'
             && world.locations.some(other => other.parentId === row.id))!;

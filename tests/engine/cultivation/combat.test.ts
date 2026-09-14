@@ -48,8 +48,7 @@ import type { Technique, TechniqueReach } from '../../../src/schema/cultivation.
 import { makeInjuries } from './fixtures.js';
 import {
     A_BLOW_MEANT_TO_END_IT,
-    AN_ORDINARY_SWING,
-    type HowTheBlowWasThrown
+    AN_ORDINARY_SWING
 } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -86,6 +85,20 @@ function art(overrides: Partial<Technique> = {}): Technique {
         mastery: 0.5,
         description: '',
         cooldown: 0,
+        // The rest of `Technique`, at the schema's own defaults. The fixture
+        // stopped at `cooldown` and so was building a partial row that the
+        // catalog would never hand the engine.
+        subjects: [],
+        requiresPeople: 1,
+        runsOn: 'self',
+        cap: null,
+        quality: 'sound',
+        rootGrades: [],
+        domain: null,
+        domainDegree: 1,
+        volumes: null,
+        derivable: false,
+        opening: null,
         ...overrides
     };
 }

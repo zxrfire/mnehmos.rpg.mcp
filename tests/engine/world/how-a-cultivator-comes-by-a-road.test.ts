@@ -53,7 +53,7 @@ import { makeObject } from '../../../src/engine/world/possessions.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { makeFaction, createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import { createNpc, type NpcRecord } from '../../../src/engine/world/npc-state.js';
-import { InsightDomainSchema } from '../../../src/schema/cultivation.js';
+import { InsightDomainSchema, type InsightDomain } from '../../../src/schema/cultivation.js';
 import {
     ROADS_BESIDES_YOUR_OWN,
     daoRequirementCurve,
@@ -92,7 +92,9 @@ describe('the places that teach a dao', () => {
         // Specialisation is an advantage, never ownership. If a house held the
         // only door to a domain, that house could close a road to the world,
         // and the Dao houses are held to exactly this rule already.
-        const unheld = new Set(
+        // Held open at `InsightDomain`: the places teach a narrower set than
+        // the domains that exist, and what is asked of it below is every road.
+        const unheld = new Set<InsightDomain>(
             PLACES_THAT_TEACH_A_DAO.filter(p => p.access !== 'held').map(p => p.domain)
         );
         for (const domain of ROADS_BESIDES_YOUR_OWN) {

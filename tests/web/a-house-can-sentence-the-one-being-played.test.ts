@@ -242,7 +242,7 @@ describe('a house can sentence the one being played', () => {
     }, 300_000);
 
     it('is reached by playing a turn with a row standing', async () => {
-        const { harness, cultivator, complaint } = await aPlayerInFrontOfTheRoom('sentenced-played');
+        const { harness, complaint } = await aPlayerInFrontOfTheRoom('sentenced-played');
         complaint('slight');
 
         // Days through the game's own seclusion path, so the two clocks stay

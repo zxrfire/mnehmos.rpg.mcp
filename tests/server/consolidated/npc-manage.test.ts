@@ -7,8 +7,10 @@
 import { handleNpcManage, NpcManageTool } from '../../../src/server/consolidated/npc-manage.js';
 import { getDb, closeDb } from '../../../src/storage/index.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
+import { CharacterSchema } from '../../../src/schema/character.js';
 import { WorldRepository } from '../../../src/storage/repos/world.repo.js';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
 
 process.env.NODE_ENV = 'test';
 
@@ -49,7 +51,6 @@ describe('npc_manage consolidated tool', () => {
             seed: '12345',
             width: 100,
             height: 100,
-            tileData: '{}',
             createdAt: now,
             updatedAt: now
         });
@@ -57,38 +58,41 @@ describe('npc_manage consolidated tool', () => {
         // Create test character (PC)
         const characterRepo = new CharacterRepository(db);
         testCharacterId = randomUUID();
-        characterRepo.create({
+        // CharacterRepository.create takes a parsed Character - every
+        // defaulted field filled in. Building the fixture through the schema
+        // is what supplies them, and it rejects a bad field here rather than
+        // silently dropping it on the way to the row. A character row carries
+        // no world of its own, so there is no worldId to set on one.
+        characterRepo.create(CharacterSchema.parse({
             id: testCharacterId,
             name: 'Test Hero',
-            class: 'Fighter',
+            characterClass: 'Fighter',
             level: 5,
             race: 'Human',
             stats: { str: 16, dex: 14, con: 15, int: 10, wis: 12, cha: 8 },
             hp: 45,
             maxHp: 45,
             ac: 18,
-            worldId: testWorldId,
             createdAt: now,
             updatedAt: now
-        });
+        } satisfies z.input<typeof CharacterSchema>));
 
         // Create test NPC
         testNpcId = randomUUID();
-        characterRepo.create({
+        characterRepo.create(CharacterSchema.parse({
             id: testNpcId,
             name: 'Village Elder',
-            class: 'Commoner',
+            characterClass: 'Commoner',
             level: 1,
             race: 'Human',
             stats: { str: 8, dex: 10, con: 10, int: 14, wis: 16, cha: 12 },
             hp: 10,
             maxHp: 10,
             ac: 10,
-            worldId: testWorldId,
             characterType: 'npc',
             createdAt: now,
             updatedAt: now
-        });
+        } satisfies z.input<typeof CharacterSchema>));
     });
 
     describe('Tool Definition', () => {

@@ -3,7 +3,6 @@ import { initDB } from '../../../src/storage/db';
 import { migrate } from '../../../src/storage/migrations';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo';
 import { AgentRepository } from '../../../src/storage/repos/agent.repo';
-import { ConcentrationRepository } from '../../../src/storage/repos/concentration.repo';
 import { InventoryRepository } from '../../../src/storage/repos/inventory.repo';
 import { NpcMemoryRepository } from '../../../src/storage/repos/npc-memory.repo';
 import { composePrompt, ComposeDeps } from '../../../src/agent/prompt/compose';
@@ -48,7 +47,6 @@ describe('composePrompt', () => {
         deps = {
             agentRepo: new AgentRepository(db),
             characterRepo: new CharacterRepository(db),
-            concentrationRepo: new ConcentrationRepository(db),
             inventoryRepo: new InventoryRepository(db),
             npcMemoryRepo: new NpcMemoryRepository(db)
         };

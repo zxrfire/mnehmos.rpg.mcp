@@ -25,6 +25,7 @@ import { isPermanentWound } from '../../data/cultivation/wounds.js';
 import { blocksAdvancement, brokenStatusOf } from './what-goes-wrong-at-a-realm-boundary.js';
 import { foundationEffect, foundationOf } from './foundation.js';
 import { understandingEffects, type RelevanceContext } from './understanding.js';
+import { daoOf, wieldingWeight } from './dao.js';
 import { getSpiritRoot } from './spirit-roots.js';
 import { readManual } from './manual-quality.js';
 import { ambientBreakthroughMod } from './ambient.js';
@@ -446,10 +447,18 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
     // that is under 1 for a book you did not understand. Time you spent on the
     // wrong canon is lost; strength you never had was never yours to lose.
     const reading = readManual(technique, combatant, ctx.relevance);
+    // AND WHETHER THEY UNDERSTAND WHAT THE ART IS ABOUT. A cultivation
+    // technique requires dao; the road this cultivator turns out to have been
+    // walking either opens this art or it does not, and the same match
+    // `daoGate` gates learning on is what decides whether the art lands as
+    // written or merely as performed. `wieldingWeight` returns 1 for anybody
+    // with no standing, which is nearly everybody.
+    const road = daoOf(combatant.insights ?? []);
+    const wielding = wieldingWeight(road, technique);
     const techniqueRaw = technique === null
         ? 0.85
         : (0.6 + 0.6 * mastery) * (matched ? root.matchedTechniqueBonus : 1)
-            * reading.powerMultiplier;
+            * reading.powerMultiplier * wielding;
     factors.push({
         source: 'technique',
         factor: clampFactor(techniqueRaw, MAX_TECHNIQUE_FACTOR),
@@ -458,6 +467,7 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
             : `${technique.name} at ${(mastery * 100).toFixed(0)}% mastery`
                 + `${matched ? ', element matched to the root' : ''}`
                 + `${reading.powerMultiplier === 1 ? '' : `; ${reading.label.toLowerCase()}`}`
+                + `${wielding === 1 ? '' : `; ${road.name ?? `a leaning toward ${road.subject}`} opens it`}`
     });
 
     // ARTIFACTS

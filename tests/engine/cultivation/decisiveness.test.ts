@@ -79,6 +79,7 @@ import {
     type CombatantInput
 } from '../../../src/engine/cultivation/combat.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
 function body(ordinal: number, id: string, artifactOrdinal?: number): CombatantInput {
     const hp = Math.max(10, 20 + ordinal * 12);
@@ -98,7 +99,7 @@ function aggressorWinRate(a: CombatantInput, b: CombatantInput, n = 400): number
         const result = resolveConfrontation(a, b, {
             rng: forStream(`sweep-${s}`, 'combat_resolve', 1, a.id, b.id),
             ambient: 'normal', turn: 1, vector: 'body',
-            attackerEdges: [], defenderEdges: [], intent: { goal: 'drive_off' }
+            attackerEdges: [], defenderEdges: [], intent: { thrown: AN_ORDINARY_SWING }
         });
         if (result.winnerId === a.id) wins++;
     }
@@ -112,16 +113,21 @@ describe('the ends of the curve, which must not move', () => {
 
     it('makes two realms not a fight at all', () => {
         // `helpless` fires before an exchange is rolled.
-        const result = resolveConfrontation(body(21, 'a'), body(29, 'b'), {
+        const aggressor = body(21, 'a');
+        const result = resolveConfrontation(aggressor, body(29, 'b'), {
             rng: forStream('x', 'combat_resolve', 1, 'a', 'b'),
             ambient: 'normal', turn: 1, vector: 'body',
-            attackerEdges: [], defenderEdges: [], intent: { goal: 'drive_off' }
+            attackerEdges: [], defenderEdges: [], intent: { thrown: AN_ORDINARY_SWING }
         });
         // Two realms is still not a fight. What the aggressor gets is still
         // nothing; the single exchange is the answer from above, which used
         // to be absent and was the defect - a swing that cost the person
         // swinging it nothing whatsoever.
-        expect(result.exchanges.filter(x => x.attackerId === result.aggressor.id ))
+        // Read off the COMBATANT, not off the priced row. `CombatantPower` has
+        // no id and never had one, so `result.aggressor.id` was undefined and
+        // this filter matched nothing whatever the engine did - the assertion
+        // was passing vacuously.
+        expect(result.exchanges.filter(x => x.attackerId === aggressor.id))
             .toHaveLength(0);
     });
 });

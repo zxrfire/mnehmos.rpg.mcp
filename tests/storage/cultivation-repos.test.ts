@@ -58,7 +58,18 @@ function sampleAchievement(overrides: Partial<Achievement> = {}): Achievement {
 
 function sampleInsight(achievement = sampleAchievement()): Insight {
     return formInsight(
-        { domain: 'element', subject: 'water', opening: 'three centuries of water, given in a night' },
+        {
+            domain: 'element',
+            subject: 'water',
+            // REQUIRED, and it was missing. `InsightCandidate.access` is what
+            // makes "absent, not harder" structural: nothing can be comprehended
+            // that the cultivator was never near. `formInsight` reads it
+            // defensively so a candidate without one still produced an insight,
+            // with a poorer account and no record of what put it in reach - which
+            // is precisely the state the field exists to prevent.
+            access: { kind: 'phenomenon', label: 'the thing in the Forbidden Yin' },
+            opening: 'three centuries of water, given in a night'
+        },
         2,
         achievement
     );
@@ -266,7 +277,7 @@ describe('CultivatorRepository', () => {
         repo = new CultivatorRepository(db);
     });
 
-    afterEach(() => db.close());
+    afterEach(() => { db.close(); });
 
     it('round-trips a full cultivator without losing fields', () => {
         const input = sampleCultivator();
@@ -650,7 +661,7 @@ describe('CultivatorRepository.roster', () => {
         sects = new SectRepository(db);
     });
 
-    afterEach(() => db.close());
+    afterEach(() => { db.close(); });
 
     it('is empty on an empty world', () => {
         expect(repo.roster()).toEqual([]);
@@ -685,6 +696,9 @@ describe('CultivatorRepository.roster', () => {
             location: 'Azure Cloud Sect outer courtyard',
             sectId: sect.id,
             sectName: 'Azure Cloud Sect',
+            // Off the `sect_members` join. It used to be a mirrored column on
+            // the cultivator row; the value a listing shows is the same and
+            // there is one fewer place for it to drift from.
             sectRank: 'Core Disciple',
             age: 19.5,
             alive: true,
@@ -821,7 +835,7 @@ describe('RunRepository', () => {
         cultivators.create(sampleCultivator());
     });
 
-    afterEach(() => db.close());
+    afterEach(() => { db.close(); });
 
     it('round-trips a run and binds it to the cultivator', () => {
         const run = runs.startRun({ id: 'run-1', cultivatorId: 'cult-1', seed: 'seed-abc', startedAt: NOW });
@@ -916,7 +930,7 @@ describe('TechniqueRepository', () => {
         cultivators.create(sampleCultivator());
     });
 
-    afterEach(() => db.close());
+    afterEach(() => { db.close(); });
 
     it('round-trips a technique through the catalog', () => {
         const tech = sampleTechnique();
@@ -1027,7 +1041,7 @@ describe('SectRepository', () => {
         cultivators.create(sampleCultivator());
     });
 
-    afterEach(() => db.close());
+    afterEach(() => { db.close(); });
 
     it('round-trips a sect', () => {
         const sect = sampleSect();
@@ -1046,16 +1060,19 @@ describe('SectRepository', () => {
         expect(sects.stipendForCultivator('cult-1')).toBe(0);
     });
 
-    it('enrols, promotes, and mirrors rank onto the cultivator', () => {
+    it('enrols and promotes, and the rung stays on the roll', () => {
         const sect = sects.upsert(sampleSect());
 
         const membership = sects.addMember(sect.id, 'cult-1')!;
         expect(membership.rankIndex).toBe(0);
         expect(membership.rankTitle).toBe('Outer Disciple');
 
+        // The HOUSE is mirrored onto the cultivator row; the RUNG is not, and
+        // must not be. There is one read for a rung and two stores behind it,
+        // and a string on this row was a third copy that drifted from both.
         let cultivator = cultivators.getById('cult-1')!;
         expect(cultivator.sectId).toBe(sect.id);
-        expect(cultivator.sectRank).toBe('Outer Disciple');
+        expect(sects.getMembership('cult-1')!.rankTitle).toBe('Outer Disciple');
         expect(sects.stipendForCultivator('cult-1')).toBe(5);
 
         const promoted = sects.setRank(sect.id, 'cult-1', 2)!;
@@ -1071,7 +1088,6 @@ describe('SectRepository', () => {
         expect(sects.removeMember(sect.id, 'cult-1')).toBe(true);
         cultivator = cultivators.getById('cult-1')!;
         expect(cultivator.sectId).toBeNull();
-        expect(cultivator.sectRank).toBeNull();
         expect(sects.getMembership('cult-1')).toBeNull();
     });
 
@@ -1131,7 +1147,7 @@ describe('cross-repo persistence', () => {
         const loaded = cultivators.getById('cult-1') as Cultivator;
         expect(loaded.runId).toBe('run-1');
         expect(loaded.sectId).toBe(sect.id);
-        expect(loaded.sectRank).toBe('Inner Disciple');
+        expect(sects.getMembership('cult-1')!.rankTitle).toBe('Inner Disciple');
         expect(loaded.knownTechniques).toEqual([tech.id]);
         expect(loaded.injuries).toHaveLength(1);
 

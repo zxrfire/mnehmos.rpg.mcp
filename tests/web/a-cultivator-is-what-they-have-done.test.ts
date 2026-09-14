@@ -75,6 +75,9 @@ async function whereSomebodyWouldBeMissed(): Promise<{ locationId: string; victi
 
     const byPlace = new Map<string, string[]>();
     for (const npc of missed) {
+        // Somebody the world holds nowhere in particular is nowhere to go and do
+        // this, so they are not a place.
+        if (npc.locationId === null) continue;
         byPlace.set(npc.locationId, [...(byPlace.get(npc.locationId) ?? []), npc.name]);
     }
     const [locationId, names] = [...byPlace].sort(
@@ -610,7 +613,13 @@ describe('and the world\'s own killers are on the ledger too', () => {
         // And the reading answers about them, off the same rows and the same
         // function the player is read with. A world in which only the player
         // has a reputation is a world in which nobody else has done anything.
-        const killers = [...new Set(fromAFight.map(r => r.subjectId))];
+        // A ledger row can name nobody to answer for it, and nobody has no
+        // record to read. Proved non-empty so the two assertions below cannot
+        // pass on an empty list.
+        const killers = [...new Set(fromAFight.map(r => r.subjectId))]
+            .filter((id): id is string => id !== null);
+        expect(killers.length, 'no fight row names anybody to answer for it')
+            .toBeGreaterThan(0);
         const readings = killers.map(id =>
             whatTheirRecordMakesThem({ personId: id, ledger: rows }));
         expect(readings.some(r => r.alignment === 'demonic')).toBe(true);

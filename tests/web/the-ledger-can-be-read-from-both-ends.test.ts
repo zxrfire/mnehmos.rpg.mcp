@@ -28,7 +28,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld } from './harness';
 import { howFarOff } from '../../src/web/facts';
-import { SEVERITY_IN_WORDS, whichWayItPoints } from '../../src/engine/social/grudges';
+import {
+    SEVERITY_IN_WORDS,
+    whichWayItPoints,
+    type ObligationRecord
+} from '../../src/engine/social/grudges';
 import {
     theLedgerAsLines,
     whatStandsBetweenYouAndEverybody
@@ -205,16 +209,25 @@ describe('which way a row points', () => {
      * in the same one.
      */
     it('sorts a debt and a favour into opposite buckets for the same person', () => {
-        const base = {
-            cause: 'a_real_favour', severity: 'slight', incurredOnDay: 0,
+        // Typed off the record rather than cast onto it: `cause` used to say
+        // `a_real_favour`, which is an ask weight and has never been an
+        // obligation cause, and `settlement` was missing entirely. Both were
+        // hidden behind the cast. Which bucket a row lands in is decided by
+        // `kind`, so the cause here is the catalog's own catch-all.
+        const base: Omit<ObligationRecord, 'id' | 'kind' | 'holderId' | 'subjectId'> = {
+            cause: 'other', severity: 'slight', incurredOnDay: 0,
             triggeringEventId: null, description: 'x', participants: [], tags: [],
-            terms: null, dueOnDay: null, status: 'open'
+            terms: null, dueOnDay: null, status: 'open', settlement: null,
+            // First-hand, held by the person it happened to, and seen rather
+            // than heard. None of these were on the fixture at all.
+            inheritance: [], generation: 0, originHolderId: 'me',
+            fromBelief: false, recordedOnDay: 0
         };
         const stands = whatStandsBetweenYouAndEverybody({
             rows: [
                 { ...base, id: 'd1', kind: 'debt', holderId: 'me', subjectId: 'them' },
                 { ...base, id: 'f1', kind: 'favor', holderId: 'me', subjectId: 'them' }
-            ] as Parameters<typeof whatStandsBetweenYouAndEverybody>[0]['rows'],
+            ],
             meId: 'me',
             nameOf: id => id
         });

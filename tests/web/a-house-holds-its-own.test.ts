@@ -61,7 +61,7 @@ async function anOfficerWhoCanReachTheReserves(seed: string) {
     await harness.game.act('I look around');
     harness.repos.sects.addMember(A_HOUSE.id, cultivator.id, A_HOUSE.ranks.length - 1);
     harness.repos.cultivators.update(cultivator.id, {
-        realmOrdinal: 30, sectId: A_HOUSE.id, sectName: A_HOUSE.name
+        realmOrdinal: 30, sectId: A_HOUSE.id
     });
     return { harness, id: cultivator.id };
 }
@@ -96,7 +96,7 @@ describe('paying in, which is the same pot', () => {
         await harness.game.act('I look around');
         harness.repos.sects.addMember(A_HOUSE.id, cultivator.id, 0);
         harness.repos.cultivators.update(cultivator.id, {
-            realmOrdinal: 10, sectId: A_HOUSE.id, sectName: A_HOUSE.name, spiritStones: 5_000
+            realmOrdinal: 10, sectId: A_HOUSE.id, spiritStones: 5_000
         });
 
         const before = treasuryOf(harness.game, A_HOUSE.id);

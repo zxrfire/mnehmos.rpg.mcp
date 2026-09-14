@@ -124,7 +124,7 @@ export const WOUND_TYPES: readonly WoundType[] = [
         severities: ['serious', 'crippling'],
         permanent: true,
         treatment:
-            'A Limb Rebirth Pill, immortal grade, which is the only thing in either province that grows a part back. Nobody sells one for stones. A foundation-repairing pill is for a structure that did not set at a wall and does nothing here - it is a different medicine for a different injury, and every physician says so before refusing to take the case.',
+            'Structural repair medicine, at whichever rung reaches the body carrying it, or the chaos-grade dose that reaches any rank and chooses the injury itself. There are single digits of each in the two provinces and no counter has ever held one. A physician names the family and refuses the case in the same breath, because naming it is the whole of what they can do about it.',
         presentation:
             'Somebody short a piece of themselves, at whatever rung, who has had long enough to stop noticing and is exactly as capable as they were at everything they rebuilt around it. New acquaintances ask once.'
     },

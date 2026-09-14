@@ -74,8 +74,8 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**59 verbs.** 17 of them take nothing from the player,
-27 spend in-world time and can therefore kill, and
+**60 verbs.** 17 of them take nothing from the player,
+28 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
 A verb the deterministic parser cannot reach is playable only where a provider is
@@ -114,6 +114,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`learn_technique`](#learn_technique) | `target` | time | yes | - | - |
 | [`teach`](#teach) | `target` `topic` | time | yes | - | - |
 | [`acquisition`](#acquisition) | `target` | nothing | yes | yes | - |
+| [`derive`](#derive) | `target` | time | yes | - | - |
 | [`ceiling`](#ceiling) | - | nothing | yes | yes | - |
 | [`teacher`](#teacher) | - | nothing | yes | yes | - |
 | [`destinations`](#destinations) | - | nothing | yes | yes | - |
@@ -400,6 +401,14 @@ Takes `target`, `topic`.
 how a manual could go further, priced by every route there is at once: finding the next volume, being taught it, or writing it yourself. "target" names the art. Passes no time and costs nothing, which is the point of it - the comparison is the decision, so it must not itself cost a decade. Use it for "how do I get past this book".
 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves through `case 'acquisition'` in [`GameService.execute`](../src/web/turn-engine.ts) and `GameService.guidance` · the deterministic parser reaches it · passes no time.
+
+Takes `target`.
+
+### `derive`
+
+WRITE THE NEXT STAGE OF A MANUAL YOURSELF, so the book carries one rung further than anybody has written it. "target" names the art and may be left out, in which case the engine takes the one that has stopped carrying them. NOT acquisition, which is the free comparison of all three routes and passes no time; this is doing one of them. NOT learn_technique, which takes up somebody else's book. Only open to somebody who has made that manual's road their own - a leaning reads and cannot write - and it costs decades: twelve years at the bottom of the ladder and centuries near the top, spent through the same skip a seclusion runs through. It costs no stones and no standing, and there is nothing to buy.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'derive'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it · spends in-world time.
 
 Takes `target`.
 

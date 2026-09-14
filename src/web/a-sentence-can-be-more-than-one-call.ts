@@ -944,6 +944,10 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     consume_pill: 'taking the pill',
     learn_technique: 'taking up the art',
     teach: 'handing the art on',
+    // Not "deriving", which is the enum member with an -ing on it and is a word
+    // nobody says out loud about their own manuscript. What the step is, asked
+    // of somebody about to spend decades on it, is the writing.
+    derive: 'writing what comes next',
     treat: 'having the wound seen to',
     gather: 'the gathering',
     refine: 'the refining',

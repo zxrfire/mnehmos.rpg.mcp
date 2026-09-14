@@ -67,8 +67,10 @@ describe('realm ladder', () => {
 
     it('taxes realm boundaries heavily in progress cost', () => {
         for (const ordinal of ALL_ORDINALS.filter(isRealmBoundary)) {
-            const here = progressRequiredForOrdinal(ordinal);
-            const below = progressRequiredForOrdinal(ordinal - 1);
+            // Every boundary is at or below the last crossing - `isRealmBoundary`
+            // refuses the Lid and the summit - so the ladder holds both figures.
+            const here = progressRequiredForOrdinal(ordinal)!;
+            const below = progressRequiredForOrdinal(ordinal - 1)!;
             expect(here).toBeGreaterThan(below * 2);
         }
     });

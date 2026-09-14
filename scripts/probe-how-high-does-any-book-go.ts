@@ -27,9 +27,9 @@ for (const s of SECTS as readonly any[]) {
     }
 }
 
-const roads = TECHNIQUES.filter(t => t.class === 'cultivation');
+const roads = TECHNIQUES.slice();
 
-console.log(`cultivation-class arts: ${roads.length} of ${TECHNIQUES.length}\n`);
+console.log(`arts that raise a rank: ${roads.length} of ${TECHNIQUES.length}\n`);
 console.log(
     'cap'.padStart(4),
     'req'.padStart(4),

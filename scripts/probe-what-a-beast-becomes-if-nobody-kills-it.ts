@@ -23,8 +23,10 @@ import {
     whatTheYearsDidToTheOneHere
 } from '../src/engine/world/a-beast-climbs-by-sitting-where-it-is.js';
 import {
-    standUpTheOneOnThisGround
+    standUpTheOneOnThisGround,
+    theSpeciesItIs
 } from '../src/engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
+import type { WorldState } from '../src/engine/world/world-state.js';
 import { BEASTS, BEAST_CHANGE_ORDINAL } from '../src/data/cultivation/beasts.js';
 import { hasACore } from '../src/engine/world/hunting-a-spirit-beast.js';
 import { seedWorld } from '../src/engine/world/seeding.js';
@@ -124,7 +126,27 @@ async function whatItCosts(): Promise<void> {
         console.log(`  ${String(howMany).padStart(3)} beast rows  ${Math.round(ms)}ms for `
             + `${years} years  (${(ms / years).toFixed(1)}ms/year, `
             + `${state.npcs.filter(n => n.status === 'alive').length} alive at the end)`);
+        if (howMany > 0) howManyOfThemDied(state, howMany, years);
     }
+}
+
+/**
+ * The lid, measured off the same walk rather than off a second one.
+ *
+ * The ruling this answers is that there is no cap on the climb and mortality
+ * is the whole of it, so the figure that matters is what share of them are
+ * still standing at the end of a span and what the dead left behind.
+ */
+function howManyOfThemDied(state: WorldState, stood: number, years: number): void {
+    const rows = state.npcs.filter(n => theSpeciesItIs(n) !== null);
+    const dead = rows.filter(n => n.status !== 'alive');
+    const bodies = state.objects.filter(o => o.tags.includes('off_a_body_nobody_claimed'));
+    const onTheGround = state.statuses.filter(s => s.kind === 'a_body_on_the_ground');
+    const top = rows.reduce((best, n) => Math.max(best, n.cultivation.realmOrdinal), 0);
+    console.log(`       of ${stood} stood up, ${dead.length} dead in ${years} years `
+        + `(${(100 * dead.length / Math.max(1, rows.length)).toFixed(0)}%), `
+        + `${bodies.length} piece(s) of body lying about, ${onTheGround.length} body status(es) `
+        + `written, deepest survivor at ${top}`);
 }
 
 howManyStandUp();

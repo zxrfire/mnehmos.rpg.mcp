@@ -74,7 +74,9 @@ function printLife(state: WorldState, npc: NpcRecord): void {
 async function main(): Promise<void> {
     const catalog = await loadCultivationCatalog();
     const seeded = seedWorld({ seed: SEED, catalog });
-    const state = advanceWorldYears(seeded.state, YEARS, { pressure: { eventsPerYear: 1.2 } }).state;
+    // `pressure` carried an `eventsPerYear` that PressureOptions never had, so
+    // every run this probe has published was at the default event rate.
+    const state = advanceWorldYears(seeded.state, YEARS).state;
 
     line(`seed ${SEED}, ${YEARS} years, ${state.npcs.length} people, ${state.history.facts.length} rows`);
 

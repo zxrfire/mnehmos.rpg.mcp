@@ -87,7 +87,7 @@
  */
 
 import { CASH_PER_STONE, OCCUPATIONS } from '../../data/cultivation/mortal-world.js';
-import { getTechnique, TECHNIQUES } from '../../data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere, TECHNIQUES } from '../../data/cultivation/techniques.js';
 import { realmForOrdinal } from '../cultivation/realms.js';
 import {
     COMMON_HOUSE_COUNT,
@@ -100,7 +100,7 @@ import {
 interface CatalogRow {
     id: string;
     name: string;
-    class?: string;
+    category: string;
     cap?: number | null;
     requiredOrdinal: number;
     element?: string | null;
@@ -176,13 +176,13 @@ export function copyistMonthlyCash(requiredOrdinal: number): number | null {
  * Whether a stall would carry this book at all.
  *
  * Both halves of the line `items.md` draws; see the banner for why each is
- * required. Anything that is not a cultivation manual - a combat art, a dao
- * art, anything the catalog gives no cap - is not a road and is not this
- * module's business.
+ * required. An art the catalog gives no cap is not this module's business: a
+ * price is built out of how many months of copying the span is worth, and a
+ * span needs two ends.
  */
 export function isSoldAtAStall(techniqueId: string): boolean {
-    const row = getTechnique(techniqueId) as CatalogRow | undefined;
-    if (!row || row.class !== 'cultivation' || row.cap == null) return false;
+    const row = getTechnique(techniqueId);
+    if (row === undefined || row.cap == null) return false;
     if (Number(row.cap) > COMMON_MANUAL_CAP) return false;
     return housesTeaching(techniqueId) >= COMMON_HOUSE_COUNT;
 }
@@ -227,9 +227,9 @@ export function manualsAStallCarries(): Array<Manual & { cash: number }> {
  * Built once at module load. The catalog does not change inside a process, and
  * `housesTeaching` walks every house's shelf for every question it is asked.
  */
-const STALL_STOCK: Array<Manual & { cash: number }> = (TECHNIQUES as unknown as CatalogRow[])
-    .filter(row => row.class === 'cultivation' && row.cap != null)
-    .map(row => {
+const STALL_STOCK: Array<Manual & { cash: number }> = TECHNIQUES
+    .filter(row => stopsSomewhere(row))
+    .map((row: CatalogRow) => {
         const cash = stallPriceCash(row.id);
         return cash === null ? null : {
             id: row.id,

@@ -13,13 +13,13 @@
  * measures the real distribution so the replacement is read off the world.
  */
 import { SECTS } from '../src/data/cultivation/sects.js';
-import { getTechnique } from '../src/data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere } from '../src/data/cultivation/techniques.js';
 
 const shelves = new Map<string, number>();
 for (const s of SECTS as any[]) {
     for (const id of (s.teaches ?? []) as string[]) {
         const t: any = getTechnique(id);
-        if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+        if (!stopsSomewhere(t)) continue;
         shelves.set(id, (shelves.get(id) ?? 0) + 1);
     }
 }

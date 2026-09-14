@@ -2,7 +2,7 @@ import { closeDb, getDb } from '../../src/storage/index.js';
 import { SpatialRepository } from '../../src/storage/repos/spatial.repo.js';
 import { CharacterRepository } from '../../src/storage/repos/character.repo.js';
 import { RoomNode } from '../../src/schema/spatial.js';
-import { Character } from '../../src/schema/character.js';
+import { Character, CharacterSchema } from '../../src/schema/character.js';
 
 const mockCtx = { sessionId: 'test-session' };
 
@@ -105,8 +105,6 @@ describe('PHASE-1: Spatial Graph System', () => {
         it('preserves immutable baseDescription', () => {
             const room = createTestRoom();
             spatialRepo.create(room);
-
-            const originalDescription = room.baseDescription;
 
             // Attempt to update description (should succeed since we allow it)
             spatialRepo.update(room.id, {
@@ -695,7 +693,9 @@ function createTestRoom(overrides?: Partial<RoomNode>): RoomNode {
 }
 
 function createTestCharacter(overrides?: Partial<Character>): Character {
-    return {
+    // Parsed rather than asserted: the fixture states the fields these tests
+    // care about, and the schema fills the sixteen that carry defaults.
+    return CharacterSchema.parse({
         id: crypto.randomUUID(),
         name: 'Test Character',
         stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
@@ -709,5 +709,5 @@ function createTestCharacter(overrides?: Partial<Character>): Character {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         ...overrides
-    };
+    });
 }

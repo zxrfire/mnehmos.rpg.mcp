@@ -85,7 +85,9 @@ describe('a cultivator can ask what their own record weighs, and the wall asks t
 
         // And "what is stopping me" does not invent a gate that is not there.
         const ceiling = await game.act('what is stopping me');
-        const said = [ceiling.narration, ...(ceiling.structure ?? [])].join('\n');
+        // `ActResult` has no `structure` - the mechanical channel arrives on
+        // `toolCalls` - so what this read has always been is the prose.
+        const said = ceiling.narration;
         expect(said).not.toMatch(/unfinished/i);
     }, 180_000);
 
@@ -115,7 +117,8 @@ describe('a cultivator can ask what their own record weighs, and the wall asks t
         // THE REACHABILITY CLAIM. A sentence a player would type, answered with
         // the same fact the wall is about to charge them for.
         const ceiling = await game.act('what is stopping me');
-        const said = [ceiling.narration, ...(ceiling.structure ?? [])].join('\n');
+        // Same as above: the prose is the whole of what this read ever held.
+        const said = ceiling.narration;
         expect(said).toMatch(/unfinished/i);
         // And the read says the count without publishing the causes.
         expect(said).not.toMatch(/robbery|humiliation|slander/i);

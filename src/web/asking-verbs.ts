@@ -163,6 +163,15 @@ import {
     whatIsBeingPutDown
 } from './what-a-holder-would-take-for-it.js';
 import {
+    cashRefusalReason as repairCashRefusalReason,
+    getStructuralRepairMedicine,
+    repairWeightInStones
+} from '../engine/cultivation/what-structural-repair-medicine-can-reach.js';
+import {
+    everyRepairHolding,
+    repairMedicineHeldBy
+} from '../engine/world/who-holds-the-structural-repair-medicine.js';
+import {
     type RequestKind,
     namesAKindRatherThanAThing,
     requestPutToSomebody
@@ -178,6 +187,7 @@ import {
     factsForWhatTheyAreAfter
 } from './what-somebody-is-after.js';
 import { A_SEASON_ON_THE_ROAD } from '../engine/world/who-is-on-the-road-with-you.js';
+import { whereYouStandOnYourHousesRoll } from './walking-up-to-a-house.js';
 import type { GameService } from './turn-engine.js';
 
 /**
@@ -294,7 +304,10 @@ export const askingVerbs = {
         // The unpressed reading, taken for its verdict and thrown away. Nothing
         // is written by it: `askedAbout` is pure, and the record-writing half of
         // `askAround` is not reached until the demand has actually resolved.
-        const subject = resolveAnything(this.repos, topic, cultivator, scope);
+        const subject = resolveAnything(
+            this.repos, topic, cultivator, scope,
+            whereYouStandOnYourHousesRoll(this, cultivator)
+        );
         // The same reading `askAround` takes, and it has to be the same one: a
         // demand for somebody's own name that was refused at limit one here
         // would be refused for a reason that does not exist, while the polite
@@ -1956,11 +1969,68 @@ ${done.lines.join(' ')}`;
         const theirFaction = party.party?.factionId ?? null;
         const onShelf = heldByTheirHouse(world, theirFaction, thing.id);
 
+        // ── AND A REPAIR DOSE SAYS WHAT MOVES ONE, OFF ITS OWN TERMS ─────
+        //
+        // The offer ladder says which rung the HOLDER is on. It cannot say what
+        // this particular thing is bought with, and for three of the four the
+        // answer is not money at any figure - which a player has no way to work
+        // out from a bar and an offer. Read off the row: a court-auction dose
+        // and a sent-down one are both past money for different reasons and
+        // open to different things, and the row already states both.
+        const doseAsked = getStructuralRepairMedicine(thing.id);
+        const whatMovesADose = doseAsked === null
+            ? null
+            : repairCashRefusalReason(doseAsked)
+                ?? 'No counter has ever held one. It moves privately between houses, at about '
+                   + `${repairWeightInStones(doseAsked).toLocaleString('en-US')} spirit stones, `
+                   + 'and the houses that can pay that are a list somebody could write down.';
+
+        // ── A DOSE THE WORLD KEEPS AS A NUMBER RATHER THAN AS A THING ────
+        //
+        // `repairStorageModel` splits the four grades on the line `items.md`
+        // already draws: the dear two are rows with a provenance, the cheap two
+        // are a count in a house's `resources`, because a house keeping two of
+        // the cheap one is keeping a number and not two stories. So
+        // `heldByTheirHouse` - which reads rows - is right to find nothing, and
+        // the refusal it leads to was about to say nothing on the register holds
+        // one while the register held five.
+        //
+        // There is no row to bargain for and that is the honest answer. What
+        // this adds is the rest of it: they DO have one, it is stock, and stock
+        // is sold on the holder's terms rather than bartered out of a person.
+        const stockHere = doseAsked === null || !world || theirFaction === null
+            ? null
+            : repairMedicineHeldBy(world, theirFaction)
+                .find(row => row.medicineId === doseAsked.id && row.storage === 'count')
+                ?? null;
+        if (!onShelf && stockHere) {
+            return refused('engine.repairStorageModel', 'request', factsForRefusal(
+                `${thing.name}: stock, not a thing anybody would part with as a favour.`,
+                `The house has ${stockHere.count} of them and not one of them is a particular `
+                + `one. ${party.name} has nothing to hand over on their own account: a grade the `
+                + `hall refines to order is sold on the hall's terms and by whoever is authorised `
+                + `to close a sale of that size. ${whatMovesADose ?? ''}`,
+                `${doseAsked?.id}: storage=count, ${stockHere.count} against `
+                + `${theirFaction}.resources. No tracked row exists for this grade by design - `
+                + 'see `repairStorageModel`. Nothing spent, no time passed.'
+            ));
+        }
+
         // NOT HOLDING ONE, AND WHO IS
         if (!onShelf) {
-            const elsewhere = (world?.objects ?? [])
+            const onRows = (world?.objects ?? [])
                 .filter(o => thisRowIs(o, thing.id) && o.data?.spent !== true && o.ownerName)
-                .map(o => String(o.ownerName))
+                .map(o => String(o.ownerName));
+            // AND THE COUNTED TIER, which no row read can see. Without this the
+            // two cheap grades reported an empty world while five houses held
+            // eight doses between them.
+            const onCounts = doseAsked === null || !world
+                ? []
+                : everyRepairHolding(world)
+                    .filter(row => row.medicineId === doseAsked.id && row.storage === 'count')
+                    .map(row => world.factions.find(f => f.id === row.factionId)?.name
+                        ?? row.factionId);
+            const elsewhere = [...onRows, ...onCounts]
                 .filter((name, at, all) => all.indexOf(name) === at)
                 .slice(0, 4);
 
@@ -1975,7 +2045,8 @@ ${done.lines.join(' ')}`;
                       + 'and a worse one: what would move this is finding one rather than '
                       + 'affording it.'),
                 `No unspent ${thing.id} row against ${theirFaction ?? 'no house'}. `
-                + `${elsewhere.length} holder(s) elsewhere in state.objects.`
+                + `${onRows.length} holder(s) elsewhere in state.objects, `
+                + `${onCounts.length} holding a count.`
             ));
         }
 
@@ -2016,6 +2087,11 @@ ${done.lines.join(' ')}`;
         const structure = [
             `${thing.name}: carries to rung ${thing.carriesTo}, ${thing.tracked.significance}, `
             + `past the cash line. Held by ${onShelf.ownerName ?? theirFaction}.`,
+            ...(doseAsked === null
+                ? []
+                : [`Repair dose ${doseAsked.id}: terms ${doseAsked.terms}, reaches up to rung `
+                    + `${doseAsked.reachesUpToOrdinal}, weight `
+                    + `${repairWeightInStones(doseAsked)} stones.`]),
             `Their hold: ${need?.effect ?? 'no need bound up in it'}; claim can wait = `
             + `${holding.theirClaimCanWait}; theirs to give = ${holding.theirsToGive}.`,
             `On the table: ${answer.theBestPutDown ?? 'nothing singular'} at rung `
@@ -2085,6 +2161,7 @@ ${done.lines.join(' ')}`;
                     ...(theyWillTake === 'a service' && doneForThem === null
                         ? [whatWouldPutYouOnTheServiceRung(party.name)]
                         : []),
+                    ...(whatMovesADose === null ? [] : [whatMovesADose]),
                     ...(need?.goal
                         ? [`What they are carrying of their own: ${need.goal.text}`]
                         : [])
@@ -2223,6 +2300,11 @@ ${done.lines.join(' ')}`;
         } else {
             lines.push(`${party.name} does not take it.`);
         }
+        // Said on the way out rather than only when the price is asked, because
+        // the sentence a player types is usually the offer and not the question,
+        // and being told what would have worked is the difference between a
+        // closed door and a route.
+        if (!took && whatMovesADose !== null) lines.push(whatMovesADose);
         lines.push(...spent.facts.lines);
 
         const facts = factsForToolResult(

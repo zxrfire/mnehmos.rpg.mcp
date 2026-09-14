@@ -106,8 +106,7 @@ describe('played, by somebody who is somebody\'s', () => {
         const id = created.cultivator.id;
         harness.repos.cultivators.update(id, {
             realmOrdinal: 22,
-            sectId: SOMEBODY_ELSES.id,
-            sectName: SOMEBODY_ELSES.name
+            sectId: SOMEBODY_ELSES.id
         });
         harness.repos.techniques.upsert(
             (TECHNIQUES as readonly { id: string }[]).find(t => t.id === THE_SWORD) as never

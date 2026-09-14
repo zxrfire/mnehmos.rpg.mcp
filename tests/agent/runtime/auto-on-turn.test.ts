@@ -19,13 +19,6 @@ import { randomUUID } from 'crypto';
 process.env.NODE_ENV = 'test';
 const ctx = { sessionId: 'test-session-' + randomUUID() };
 
-function extractAgentManageJson(result: { content: Array<{ type: string; text: string }> }) {
-    const text = result.content[0].text;
-    const match = text.match(/<!-- AGENT_MANAGE_JSON\n([\s\S]*?)\nAGENT_MANAGE_JSON -->/);
-    if (match) return JSON.parse(match[1]);
-    try { return JSON.parse(text); } catch { return { __unparsed: text }; }
-}
-
 function extractAdvanceData(result: { content: Array<{ type: string; text: string }> }) {
     const text = result.content[0].text;
     // combat_manage uses COMBAT_MANAGE embedded tag; the consolidated layer parses
@@ -66,7 +59,6 @@ function createCharacter(name: string): string {
 
 describe('combat_manage advance - agent auto-invoke hook', () => {
     let scriptedText = '';
-    let invokedWith: { model?: string; messages?: unknown[] } = {};
 
     beforeEach(() => {
         closeDb();
@@ -77,8 +69,7 @@ describe('combat_manage advance - agent auto-invoke hook', () => {
         const factory = new ProviderFactory();
         const fakeProvider: LLMProvider = {
             name: 'openai',
-            call: async (opts): Promise<ProviderCallResult> => {
-                invokedWith = { model: opts.model, messages: opts.messages };
+            call: async (): Promise<ProviderCallResult> => {
                 if (scriptedText === '__TIMEOUT__') {
                     throw new ProviderError('timed out', 'timeout');
                 }

@@ -29,7 +29,10 @@ function world(): WorldState {
 
 const renewal = (day: number, over: Partial<PendingFact> = {}): PendingFact => makeFact({
     day,
-    kind: 'assessment',
+    // `assessment` is a scheduled-effect kind, not a fact kind. The row this
+    // fixture describes is a grant coming up for renewal, and `grant_renewed`
+    // is what the history layer calls it.
+    kind: 'grant_renewed',
     scale: 'local',
     summary: "The Ashen Forge Clan's grant on its vein comes up for renewal.",
     factionIds: ['ashen-forge'],
@@ -41,7 +44,9 @@ const renewal = (day: number, over: Partial<PendingFact> = {}): PendingFact => m
 
 function advanced(years = 300, seed = 'recur-world'): WorldState {
     const seeded = seedWorld({ seed, catalog: fixtureCatalog(), presentYear: 1000, population: 250 });
-    return advanceWorldYears(seeded.state, years, { pressure: { eventsPerYear: 2 } }).state;
+    // `PressureOptions` takes `intensity` and `maxEvents` and has never taken
+    // an `eventsPerYear`. This asked for one and got the world's own rate.
+    return advanceWorldYears(seeded.state, years).state;
 }
 
 describe('what counts as the same fact', () => {
@@ -186,7 +191,9 @@ describe('the ledger stays walkable', () => {
      * could never meet. `reserveFactSlot` gives the passes their fact id without
      * the row, so the row is appended once with what actually happened in it.
      * Measured, eight worlds, ten horizons from 200 to 1,000 years,
-     * `fixtureCatalog`, `eventsPerYear: 2`:
+     * `fixtureCatalog`, at the world's default pressure rate. The run was
+     * recorded as `eventsPerYear: 2`, but no such option has ever existed on
+     * `PressureOptions` and the harness passing it was passing nothing:
      *
      *     gathering duplicates    2 -> 0  (`recur-world-e`, 500y and past it)
      *     every other world       0 -> 0, row counts unchanged

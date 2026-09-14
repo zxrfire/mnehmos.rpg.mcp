@@ -56,7 +56,10 @@ import {
 } from '../../../src/engine/cultivation/injuries.js';
 import { assessPower, resolveExchange } from '../../../src/engine/cultivation/combat.js';
 import { computeCultivationRate } from '../../../src/engine/cultivation/cultivation.js';
-import { understandingEffects } from '../../../src/engine/cultivation/understanding.js';
+import {
+    understandingEffects,
+    type RelevanceContext
+} from '../../../src/engine/cultivation/understanding.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { MAX_ORDINAL, REALM_TIERS } from '../../../src/engine/cultivation/realms.js';
 import { DEVIATION_CHECK_DAYS, simulateTimeSkip, type TimeSkipContext } from '../../../src/engine/cultivation/time-skip.js';
@@ -224,7 +227,7 @@ describe('very, VERY annoying', () => {
         // same rung - the only difference is the attacker's open channels.
         const base = {
             id: 'a', name: 'A', realmOrdinal: 20, spiritRoot: 'single_fire' as const,
-            attributes: { might: 2, insight: 2, fortune: 2, charisma: 2 },
+            attributes: { might: 2, insight: 2, fortune: 2, charm: 2 },
             hp: 100, maxHp: 100, qi: 100, maxQi: 100, battlesSurvived: 0
         };
         const ctx = { ambient: 'normal' as const };
@@ -234,6 +237,7 @@ describe('very, VERY annoying', () => {
 
         const strike = (attacker: typeof whole) => resolveExchange(attacker, target, 100, {
             rng: forStream('accuracy-guard', 'exchange', 1),
+            ambient: 'normal',
             turn: 1
         }).damage;
 
@@ -247,7 +251,7 @@ describe('very, VERY annoying', () => {
         // damage roll as well would be the double-price `assessPower` forbids.
         const base = {
             id: 'a', name: 'A', realmOrdinal: 20, spiritRoot: 'single_fire' as const,
-            attributes: { might: 2, insight: 2, fortune: 2, charisma: 2 },
+            attributes: { might: 2, insight: 2, fortune: 2, charm: 2 },
             hp: 100, maxHp: 100, qi: 100, maxQi: 100, battlesSurvived: 0
         };
         const maimed = makeInjuries(1, 'crippling').map(i => ({ ...i, woundType: 'severed-meridian' }));
@@ -311,12 +315,12 @@ describe('comprehension is untouched by any of it', () => {
         // red build rather than a quiet design change: a wounded cultivator
         // still thinks clearly.
         const insights = makeCultivator({}).insights ?? [];
-        const ctx = { rootElements: ['fire'], techniqueElement: null, techniqueSubject: null };
+        const ctx: RelevanceContext = { rootElements: ['fire'], techniqueElement: null, techniqueSubject: null };
         expect(understandingEffects(insights, ctx)).toEqual(understandingEffects(insights, ctx));
     });
 
     it('leaves the dao side of the rate breakdown identical when wounds are added', () => {
-        const ctx = { rootElements: ['fire'], techniqueElement: null, techniqueSubject: null };
+        const ctx: RelevanceContext = { rootElements: ['fire'], techniqueElement: null, techniqueSubject: null };
         const whole = makeCultivator({ injuries: [] });
         const hurt = makeCultivator({ injuries: makeInjuries(CRIPPLED, 'crippling') });
 

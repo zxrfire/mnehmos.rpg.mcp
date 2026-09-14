@@ -34,6 +34,8 @@ import { awarenessOfSite, faceOf, nameableSites, resolveSite } from './trials.js
 import { getMembersOf } from '../data/cultivation/members.js';
 import { A_HOUSE_TYPE_NOUN_ALONE_OR_PLURAL } from './what-a-house-is-called.js';
 import { getSect } from '../data/cultivation/sects.js';
+import type { WhereTheyStandOnARoll }
+    from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import { howMany } from '../utils/a-count-agrees-with-what-it-counts.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import {
@@ -41,6 +43,9 @@ import {
     readTheRollFor
 } from '../engine/world/reading-a-lineage-off-a-name.js';
 import type { WorldState } from '../engine/world/world-state.js';
+import {
+    theNamesThisOneAnswersTo
+} from '../engine/world/a-beast-with-a-core-is-somebody-in-particular.js';
 
 export type EntityKind =
     | 'cultivator'
@@ -300,16 +305,44 @@ export const MY_OWN_HOUSE = new RegExp(
  */
 export const STANDS_IN_FOR_A_THING = /^(?:it|them|they|him|her|he|she|that|this|those|these|one|its)$/i;
 
-function best<T>(query: string, items: readonly T[], nameOf: (item: T) => string): T | null {
+/**
+ * The best candidate for what was typed, or nothing.
+ *
+ * ── A THING MAY ANSWER TO MORE THAN ONE NAME, AND PREFER ONE ────────────
+ *
+ * `nameOf` may return several. The first is the name the thing is CALLED and
+ * the rest are names it also answers to, and an equal score on the first beats
+ * an equal score on any of the rest - so two rows that both answer to one word
+ * go to the one whose own name it is. That is the whole of the preference the
+ * design owner asked for on a beast that took a person's name: *it might answer
+ * to its old name but it prefers this one.* Nothing else changes - a single
+ * name behaves exactly as it did.
+ */
+function best<T>(
+    query: string,
+    items: readonly T[],
+    nameOf: (item: T) => string | readonly string[]
+): T | null {
     if (STANDS_IN_FOR_A_THING.test(query.trim())) return null;
 
     let winner: T | null = null;
     let winningScore = 0;
+    let winningIsItsOwnName = false;
     for (const item of items) {
-        const score = matchScore(query, nameOf(item));
-        if (score > winningScore) {
-            winner = item;
-            winningScore = score;
+        const names = nameOf(item);
+        const all = typeof names === 'string' ? [names] : names;
+        for (let at = 0; at < all.length; at++) {
+            const score = matchScore(query, all[at]!);
+            const itsOwnName = at === 0;
+            // Strictly greater keeps the FIRST item at a tie, which is the
+            // behaviour every caller had. The second clause is the only
+            // widening: a tie is broken towards the row this word actually
+            // names, in either direction through the list.
+            if (score > winningScore || (score === winningScore && itsOwnName && !winningIsItsOwnName)) {
+                winner = item;
+                winningScore = score;
+                winningIsItsOwnName = itsOwnName;
+            }
         }
     }
     return winningScore >= MATCH_THRESHOLD ? winner : null;
@@ -437,6 +470,27 @@ function describeParties(label: string, named: string[], hidden: number): string
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
+ * What a roster row answers to, its own name first.
+ *
+ * DERIVED FROM THE ROW'S TAGS, so there is no second name store and nothing to
+ * keep in step: a beast that stood up at the change took a person's name, and
+ * the species it still is comes off the `beast:` tag it has carried since it
+ * was met. A player who was told `Thunder Hawk` forty years ago holds a
+ * knowledge row saying `Thunder Hawk`, and that word has to keep reaching this
+ * individual.
+ *
+ * The order is this file's and not the engine's. `theNamesThisOneAnswersTo`
+ * puts the species first, because that is the name the knowledge rows carry;
+ * resolution wants the name they are ADDRESSED by first, which is what `best`
+ * breaks a tie towards.
+ */
+function everyNameThisRowAnswersTo(row: RosterEntry): readonly string[] {
+    if (!row.tags || row.tags.length === 0) return [row.name];
+    const answers = theNamesThisOneAnswersTo({ name: row.name, tags: [...row.tags] });
+    return [row.name, ...answers.filter(name => name !== row.name)];
+}
+
+/**
  * A person: a real `cultivators` row, matched by name.
  *
  * The whole world is in one table, so this finds NPCs, rivals and the dead
@@ -467,7 +521,7 @@ export function resolveCultivator(
         return scope.gate.isAwareOf(scope.holderId, 'cultivator', entry.id);
     });
 
-    const match = best(query, rows, row => row.name);
+    const match = best(query, rows, everyNameThisRowAnswersTo);
     if (!match) return null;
 
     // Every name inside these facts is redacted independently. Being able to
@@ -1067,7 +1121,8 @@ export function resolvePlace(query: string | undefined): ResolvedEntity | null {
  */
 function resolveTheAskerThemselves(
     query: string,
-    self: Cultivator
+    self: Cultivator,
+    onTheRoll: WhereTheyStandOnARoll | null
 ): ResolvedEntity | null {
     const text = query.trim().toLowerCase().replace(/^(?:at|on|over)\s+/, '');
     if (!SELF_AS_A_SUBJECT.test(text)) return null;
@@ -1096,9 +1151,14 @@ function resolveTheAskerThemselves(
             ? 'No method is being practised, which is why nothing has been accumulating.'
             : `Practising ${self.knownTechniques.length} `
               + `method${self.knownTechniques.length === 1 ? '' : 's'}.`,
-        self.sectId === null
+        // ON A ROLL IS NOT ON A RUNG. Somebody born on a house's roll has the
+        // house and no roll row, and that is what the second branch says. The
+        // rung comes in from `whereSomebodyStandsOnAHousesRoll` rather than off
+        // a string mirrored onto this row, which said nothing wherever nothing
+        // had set it - so "at no rank in it" was printed at people holding one.
+        self.sectId === null && onTheRoll === null
             ? 'On no house\'s roll. Nothing is owed and nothing is asked.'
-            : `On a roll${self.sectRank ? `, addressed as ${self.sectRank}` : ', at no rank in it'}.`
+            : `On a roll${onTheRoll ? `, addressed as ${onTheRoll.rungName}` : ', at no rank in it'}.`
     ];
 
     // AND WHAT THIS BODY IS, WHICH THEY HAVE ALWAYS KNOWN
@@ -1146,7 +1206,9 @@ export function resolveAnything(
     repos: CultivationRepos,
     query: string,
     self: Cultivator,
-    scope?: KnowledgeScope
+    scope?: KnowledgeScope,
+    /** The asker's own rung on their house's roll, from the one read. */
+    onTheRoll: WhereTheyStandOnARoll | null = null
 ): ResolvedEntity | null {
     return (
         // First, and it can only ever win on a sentence that is about the
@@ -1155,7 +1217,7 @@ export function resolveAnything(
         // Ahead of the roster rather than behind it because a cultivator called
         // "Self" is not a reason for a player to be unable to look at their own
         // hands.
-        resolveTheAskerThemselves(query, self) ??
+        resolveTheAskerThemselves(query, self, onTheRoll) ??
         resolveCultivator(repos, query, self.id, scope, self.realmOrdinal) ??
         // After a person's own name, so somebody actually called Abbot is
         // still themselves, and before the house, so a rung whose title

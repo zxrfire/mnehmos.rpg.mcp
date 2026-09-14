@@ -21,13 +21,12 @@ describe('narrative_manage consolidated tool', () => {
             seed: '12345',
             width: 100,
             height: 100,
-            tileData: '{}',
             createdAt: now,
             updatedAt: now
         });
     });
 
-    const ctx = { worldId: '', partyId: '', encounterContext: null };
+    const ctx = { sessionId: 'test-session' };
 
     describe('tool definition', () => {
         it('should have correct name and description', () => {
@@ -512,7 +511,6 @@ describe('narrative_manage consolidated tool', () => {
                 seed: '99999',
                 width: 100,
                 height: 100,
-                tileData: '{}',
                 createdAt: now,
                 updatedAt: now
             });

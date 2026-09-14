@@ -134,7 +134,7 @@ function aWrongDoneTo(
  * test that picks people any other way is arranging a situation the verb will
  * not agree it is in.
  */
-async function whoIsHere(game: any, cultivator: { id: string; location: string }) {
+async function whoIsHere(game: any, cultivator: { id: string; location: string | null }) {
     const world = (await game.loadWorld())! as WorldState;
     const here = game.present(cultivator) as { id: string; name: string }[];
     const where = worldLocationFor(world, cultivator.location)?.id ?? null;

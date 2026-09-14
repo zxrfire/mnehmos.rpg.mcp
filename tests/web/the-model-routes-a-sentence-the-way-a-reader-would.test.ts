@@ -64,7 +64,7 @@ describe('the model routes a sentence the way a reader would', () => {
             console.log(`no provider at ${BASE_URL}; model routing not exercised`);
             return;
         }
-        const provider = new OllamaProvider({ baseUrl: BASE_URL, model: MODEL });
+        const provider = new OllamaProvider({ baseUrl: BASE_URL, defaultModel: MODEL });
         const missed: string[] = [];
 
         for (const row of EXPECTED) {

@@ -47,8 +47,10 @@ function answer(over: Partial<Parameters<typeof whatTheyDoAboutBeingWronged>[0]>
         theirOrdinal: CORE_FORMATION,
         yourOrdinal: CORE_FORMATION,
         alignment: 'neutral',
+        // No `yourName`: the wronged party is named and the one who did it is
+        // the reader, which is why the engine dropped the field. This fixture
+        // was still passing it.
         theirName: 'Bai Rong',
-        yourName: 'Shen Yue',
         ...over
     });
 }

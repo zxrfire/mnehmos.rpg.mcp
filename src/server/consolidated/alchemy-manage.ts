@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import { theseDaysPassedInTheWorldToo } from '../state/cultivation-world.js';
+import { theseDaysPassedInTheWorldToo, worldForRun } from '../state/cultivation-world.js';
 import type { SessionContext } from '../types.js';
 import { createActionRouter, ActionDefinition, McpResponse } from '../../utils/action-router.js';
 import { RichFormatter } from '../utils/formatter.js';
@@ -546,6 +546,11 @@ export async function handleConsumePill(
     // its one rule - the catalog row decides what happens - and never learns
     // that a spread exists.
     const dosed: Pill = { ...pill, potency: pill.potency * outcome.potencyMultiplier };
+    // WHICH ONE A MEDICINE THAT NAMES NOTHING CLOSES. Its own stream, so it
+    // does not move when the outcome draw or the toxicity draw does - a turn
+    // replays the same way and one draw is not readable off another.
+    const whichRng = forStream(run.seed, 'pill_mends_which', run.turn, pill.id);
+    const worldHere = await worldForRun(run).catch(() => null);
     const effect = resolvePillEffect(
         cultivator, dosed, day,
         readNumberFlag(repos.db, cultivator.id, FLAG_BREAKTHROUGH_PILLS_TAKEN, 0),
@@ -554,10 +559,22 @@ export async function handleConsumePill(
         // and that sentence quotes a counter, so it has to quote THIS counter.
         await whatThisGroundAddsToAPrice(run, cultivator, 'medicine'),
         {
-            gate: new KnowledgeGate(repos.db),
+            // WITH THE WORLD, for the reason `turn-engine` gives where it
+            // builds its own: nothing writes a knowledge row for one of the
+            // world's own people, so a gate with no supplier answers off
+            // stored rows alone and says no about every NPC alive. The player
+            // has no world row and would be answered correctly either way,
+            // which is what made this invisible - it is a trap set for the
+            // next caller rather than a defect anybody could play into.
+            //
+            // Read once and handed over, because the supplier is sync and the
+            // world is loaded across an await. Null is a run with no world,
+            // which is a quiet world and not an error.
+            gate: new KnowledgeGate(repos.db, () => worldHere),
             holderId: cultivator.id,
             realmOrdinal: cultivator.realmOrdinal
-        }
+        },
+        count => whichRng.int(0, Math.max(0, count - 1))
     );
 
     // ── Toxicity: the medicine keeps its own ledger. ──
@@ -837,7 +854,14 @@ function resolvePillEffect(
     /** What the ground here adds to medicine, for the cure this pill did not reach. */
     groundMultiplier: number,
     /** Who is reading the receipt, so a cure is named only as far as they hold it. */
-    asking: WhoIsAsking
+    asking: WhoIsAsking,
+    /**
+     * Picks one of `count`, for the medicine that was not made for anything in
+     * particular. A sampler rather than an rng, the way `whereASendingGoes`
+     * takes one: the caller owns the seeding and this owns the choosing, so a
+     * turn replays the same way from its seed.
+     */
+    drawOneOf: (count: number) => number = () => 0
 ): PillApplication {
     const base: PillApplication = {
         summary: '',
@@ -985,25 +1009,57 @@ function resolvePillEffect(
         // `pill.mends` and nothing else: the wound row and the pill row have to
         // agree before anything happens.
         case 'mends_what_will_not_close': {
+            // ── ONE EFFECT, TWO WAYS OF CHOOSING, AND THE ROW SAYS WHICH ──
+            //
+            // A medicine that NAMES its wound reaches that wound and no other:
+            // somebody made it for one injury and it is worth what it is worth
+            // because of that. A medicine that names NONE was not made for
+            // anything - it is chaos grade, the one grade in `GRADE_SPREAD`
+            // whose effect is drawn at the moment of use rather than settled
+            // when it was made - and it closes ONE of whatever this body is
+            // carrying that nothing closes.
+            //
+            // Which one is not announced and is not chosen. Somebody carrying a
+            // single such injury is therefore certain of the outcome and
+            // somebody carrying four is not, which is a real difference between
+            // the two kinds of medicine rather than a difficulty setting.
             const mends = new Set(pill.mends ?? []);
-            const count = Math.max(1, Math.round(pill.potency));
-            const reached = cultivator.injuries
-                .filter(injury => !injury.treated)
+            const untreated = cultivator.injuries.filter(injury => !injury.treated);
+            const madeForIt = mends.size > 0;
+            // Worst first, and oldest where they tie, which is the triage
+            // `treatWorstInjury` already does for the graded path. The drawn
+            // medicine does not sort - it does not know what it is looking at.
+            const named = untreated
                 .filter(injury => mends.has(currentWoundKey(injury.woundType) ?? ''))
-                // Worst first, and oldest where they tie, which is the triage
-                // `treatWorstInjury` already does for the graded path.
                 .sort((a, b) =>
                     INJURY_SEVERITY_ORDER.indexOf(b.severity) - INJURY_SEVERITY_ORDER.indexOf(a.severity)
-                    || a.sustainedOnTurn - b.sustainedOnTurn)
-                .slice(0, count);
+                    || a.sustainedOnTurn - b.sustainedOnTurn);
+            const anyThatWillNotClose = untreated
+                .filter(injury => isPermanentWound(currentWoundKey(injury.woundType)))
+                .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+            const count = Math.max(1, Math.round(pill.potency));
+            const reached = madeForIt
+                ? named.slice(0, count)
+                : anyThatWillNotClose.length === 0
+                    ? []
+                    : [anyThatWillNotClose[
+                        Math.min(
+                            anyThatWillNotClose.length - 1,
+                            Math.max(0, drawOneOf(anyThatWillNotClose.length))
+                        )
+                    ]];
 
             if (reached.length === 0) {
                 return {
                     ...base,
-                    summary:
-                        `Nothing here for it to answer. ${pill.name} reaches `
-                        + `${[...mends].map(key => getWoundType(key)?.name ?? key).join(', ')} `
-                        + 'and nothing else. The pill is gone and it did nothing.'
+                    summary: madeForIt
+                        ? `Nothing here for it to answer. ${pill.name} reaches `
+                          + `${[...mends].map(key => getWoundType(key)?.name ?? key).join(', ')} `
+                          + 'and nothing else. The pill is gone and it did nothing.'
+                        : `Nothing here for it to answer. ${pill.name} closes one of the things `
+                          + 'about a body that nothing closes, and this body is carrying none of '
+                          + 'them. The pill is gone and it did nothing.'
                 };
             }
             return {

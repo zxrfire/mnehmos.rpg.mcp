@@ -33,7 +33,7 @@ already in that file. Nothing here adds a rule.
 | &nbsp;&nbsp;[The three things a decree cannot say](#the-three-things-a-decree-cannot-say) | a decree is attempted and its limits are being tested |
 | &nbsp;&nbsp;[The word at the top three rungs](#the-word-at-the-top-three-rungs) | somebody at one of the last three rungs states a thing about the world |
 | [How it composes with the two axes that already exist](#how-it-composes-with-the-two-axes-that-already-exist) | comparing an ancient art to a modern one, or a manual to a fighting art |
-| &nbsp;&nbsp;[`class` - and this one is an invariant, not a guard](#class---and-this-one-is-an-invariant-not-a-guard) | somebody expects their cultivation manual to escalate in kind, or a manual is compared to a fighting art |
+| &nbsp;&nbsp;[What an art is aimed at is read off its reach, and off nothing else](#what-an-art-is-aimed-at-is-read-off-its-reach-and-off-nothing-else) | somebody expects their cultivation manual to escalate in kind, or a manual is compared to a fighting art |
 | &nbsp;&nbsp;[`era` - and this one is the guard that matters](#era---and-this-one-is-the-guard-that-matters) | an ancient art and a modern one of the same height are set against each other |
 | &nbsp;&nbsp;[Ancient is a paradigm, not a date](#ancient-is-a-paradigm-not-a-date) | anybody asks where an art was written, or why nothing above the Lid looks like what is taught down here |
 | &nbsp;&nbsp;[A modern immortal art is possible, ill-suited, and would belong down here](#a-modern-immortal-art-is-possible-ill-suited-and-would-belong-down-here) | an art written above the Lid turns up down here, or somebody asks whether immortals write elemental arts |
@@ -206,19 +206,27 @@ over someone whose death has already been decided, it argues*.
 
 <!-- tier: 2 trigger="comparing an ancient art to a modern one, or a manual to a fighting art" -->
 
-This ladder does not replace `class` or `era`. It cuts across both.
+This ladder does not replace what practising an art does, or `era`. It cuts across both.
 
-### `class` - and this one is an invariant, not a guard
+### What an art is aimed at is read off its reach, and off nothing else
 
 <!-- tier: 2 trigger="somebody expects their cultivation manual to escalate in kind, or a manual is compared to a fighting art" -->
 
-**A cultivation manual addresses the practitioner, at every rung, for ever.** What you
-practise to rank up never escalates in kind; only what you *use* does. The catalog already
-said this, in the note on the one gathering canon that sits at the very top of the ladder
-and still lands on exactly one person - the person practising it.
+**There is one kind of art here, and every art carries its practitioner up a few rungs.**
+Every art also has whatever fighting style and abilities it has. Both halves are true of
+every row in the catalog.
 
-So the address ladder is a property of dao arts alone, and the highest book in the world
-is still a book about a breath.
+Two axes tried to say otherwise and both are gone: a stored `class` field, 'cultivation'
+against 'dao', which went when comprehension was redefined as the dao; and after it a
+derived predicate doing the same job from the category, which split the catalog 46 / 111
+on a question the first move had already abolished.
+
+So there is no class of art that *addresses its practitioner because of what it is*. What
+an art is aimed at comes from its reach - a stroke that lands on ground is aimed at the
+ground, a stroke that lands on people is aimed at people - and is capped by the rung it
+opens at. This says nothing against the gathering canon at the very top of the ladder that
+still lands on exactly one person: reaching a rung on the address ladder does not oblige an
+art to use it, and the highest book in the world is still a book about a breath.
 
 ### `era` - and this one is the guard that matters
 

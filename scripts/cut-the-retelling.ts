@@ -11,16 +11,6 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-/** Windows holds a file open while another process reads it; retry rather than fail. */
-function writeWhenFree(path: string, text: string): boolean {
-    for (let attempt = 0; attempt < 40; attempt++) {
-        try { writeFileSync(path, text, 'utf-8'); return true; } catch { /* held */ }
-        const until = Date.now() + 2000;
-        while (Date.now() < until) { /* spin briefly */ }
-    }
-    return false;
-}
-
 const file = process.argv[2];
 const dry = process.argv.includes('--dry');
 const min = process.argv.includes('--min')

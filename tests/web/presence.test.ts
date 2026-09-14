@@ -22,7 +22,7 @@ import { npcsAt } from '../../src/engine/world/world-state';
 import { worldLocationFor } from '../../src/web/entities';
 import { SECTS } from '../../src/data/cultivation/sects';
 import { KnowledgeGate } from '../../src/web/knowledge';
-import { worldForRun, resetCultivationWorlds } from '../../src/server/state/cultivation-world';
+import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGame, engineCalls, refusedCall, planned } from './harness';
 
 function inWorld(seed: string) {

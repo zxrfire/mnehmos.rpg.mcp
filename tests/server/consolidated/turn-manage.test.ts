@@ -8,8 +8,10 @@ import { getDb, closeDb } from '../../../src/storage/index.js';
 import { WorldRepository } from '../../../src/storage/repos/world.repo.js';
 import { NationRepository } from '../../../src/storage/repos/nation.repo.js';
 import { RegionRepository } from '../../../src/storage/repos/region.repo.js';
+import { RegionSchema } from '../../../src/schema/region.js';
 import { DiplomacyRepository } from '../../../src/storage/repos/diplomacy.repo.js';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
 
 process.env.NODE_ENV = 'test';
 
@@ -51,7 +53,6 @@ describe('turn_manage consolidated tool', () => {
             seed: '12345',
             width: 100,
             height: 100,
-            tileData: '{}',
             createdAt: now,
             updatedAt: now
         });
@@ -59,7 +60,10 @@ describe('turn_manage consolidated tool', () => {
         // Create test region
         const regionRepo = new RegionRepository(db);
         testRegionId = randomUUID();
-        regionRepo.create({
+        // RegionRepository.create takes a parsed Region, controlLevel among
+        // them. Building the fixture through the schema is what fills that
+        // default in.
+        regionRepo.create(RegionSchema.parse({
             id: testRegionId,
             worldId: testWorldId,
             name: 'Contested Territory',
@@ -69,7 +73,7 @@ describe('turn_manage consolidated tool', () => {
             color: '#90EE90',
             createdAt: now,
             updatedAt: now
-        });
+        } satisfies z.input<typeof RegionSchema>));
 
         // Create test nations
         const nationRepo = new NationRepository(db);
@@ -213,7 +217,6 @@ describe('turn_manage consolidated tool', () => {
                 seed: '99999',
                 width: 50,
                 height: 50,
-                tileData: '{}',
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             });

@@ -34,13 +34,41 @@ import {
     HELPLESS_REALM_GAP,
     resolveConfrontation,
     type CombatantInput,
-    type ConfrontationIntent,
     type ConfrontationResult
 } from '../../../src/engine/cultivation/combat.js';
+import {
+    AN_ORDINARY_SWING,
+    A_BLOW_MEANT_TO_END_IT,
+    A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY,
+    type HowTheBlowWasThrown
+} from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
 import { maxHpForOrdinal } from '../../../src/engine/cultivation/realms.js';
 
-const GOALS: Array<ConfrontationIntent['goal']> = ['kill', 'subdue', 'humiliate', 'drive_off'];
+/** Meant to move somebody rather than to open them. The bottom of the range. */
+const A_SHOVE: HowTheBlowWasThrown = { with: 'open_hand', at: 'chest', force: 'light' };
+
+/**
+ * THE BREADTH THIS SWEEP NEEDS, ON THE AXIS THAT STILL EXISTS.
+ *
+ * This was `['kill', 'subdue', 'humiliate', 'drive_off']` - the old
+ * `ConfrontationIntent.goal`, which the engine no longer has. The breadth was
+ * never about the four words: the fragment-assembly this file was written
+ * against was reachable from every ending a confrontation can reach, and the
+ * report only ever saw one of them.
+ *
+ * What decides the ending now is the swing, so the sweep is over swings, and
+ * these four are chosen to land in different bands of `theWorstItCouldDo`: a
+ * bruise, a beating from bare hands, a beating with whatever is carried, and a
+ * death. That is a wider sweep than the four goals were, because since the
+ * refactor all four of them resolved to the same swing.
+ */
+const SWINGS: ReadonlyArray<{ label: string; thrown: HowTheBlowWasThrown }> = [
+    { label: 'a shove', thrown: A_SHOVE },
+    { label: 'a bout', thrown: A_BOUT_BETWEEN_PEOPLE_WHO_EXPECT_TO_WALK_AWAY },
+    { label: 'an ordinary swing', thrown: AN_ORDINARY_SWING },
+    { label: 'a blow meant to end it', thrown: A_BLOW_MEANT_TO_END_IT }
+];
 
 /** Sentences that are only ever true of a fight both parties took part in. */
 const MUTUAL_CLAIMS = [
@@ -68,13 +96,13 @@ function fighter(id: string, ordinal: number, overrides: Partial<CombatantInput>
         technique: null,
         weapon: null,
         ...overrides
-    } as CombatantInput;
+    };
 }
 
 function fight(
     aggressorOrdinal: number,
     defenderOrdinal: number,
-    goal: ConfrontationIntent['goal'],
+    thrown: HowTheBlowWasThrown,
     seed: string,
     /** What the defender is like, where the test is about their decision. */
     over: { bearing?: CombatantInput['bearing'] } = {}
@@ -87,28 +115,28 @@ function fight(
             rng: new CultivationRNG(seed),
             ambient: 'normal',
             turn: 1,
-            intent: { goal, willWithdraw: true }
+            intent: { thrown, willWithdraw: true }
         })
     };
 }
 
 describe('a side that took nothing is not described as worse off', () => {
-    it('holds across every goal and every gap, in both directions', () => {
+    it('holds across every swing and every gap, in both directions', () => {
         // The whole matrix rather than the one case that was played, because
-        // the fragment-assembly this replaces was reachable from four goals
+        // the fragment-assembly this replaces was reachable from every ending
         // and the report only ever saw one of them.
         const offences: string[] = [];
-        for (const goal of GOALS) {
+        for (const { label, thrown } of SWINGS) {
             for (const [ao, dof] of [[45, 29], [29, 45], [29, 29], [20, 17], [17, 20], [45, 45], [0, 0]]) {
                 for (let seed = 0; seed < 12; seed++) {
-                    const { result, a, d } = fight(ao, dof, goal, `matrix-${goal}-${ao}-${dof}-${seed}`);
+                    const { result, a, d } = fight(ao, dof, thrown, `matrix-${label}-${ao}-${dof}-${seed}`);
                     const aggressorHurt = result.hp[a.id] < a.hp;
                     const defenderHurt = result.hp[d.id] < d.hp;
                     const bothHurt = aggressorHurt && defenderHurt;
                     for (const claim of MUTUAL_CLAIMS) {
                         if (result.narrationHint.includes(claim) && !bothHurt) {
                             offences.push(
-                                `[${goal} ${ao}v${dof} seed ${seed}] "${claim}" but hp went ` +
+                                `[${label} ${ao}v${dof} seed ${seed}] "${claim}" but hp went ` +
                                 `${a.hp}->${result.hp[a.id]} and ${d.hp}->${result.hp[d.id]}`
                             );
                         }
@@ -122,12 +150,12 @@ describe('a side that took nothing is not described as worse off', () => {
 
 describe('a resolution that settled something does not say nothing was settled', () => {
     it('a one-sided resolution names a winner, so it is settled', () => {
-        for (const goal of GOALS) {
-            const { result } = fight(45, 29, goal, `settled-${goal}`);
+        for (const { label, thrown } of SWINGS) {
+            const { result } = fight(45, 29, thrown, `settled-${label}`);
             expect(result.exchanges).toHaveLength(0);
             expect(result.winnerId).toBe('aggressor');
             for (const claim of UNSETTLED_CLAIMS) {
-                expect(result.narrationHint, `goal ${goal}`).not.toContain(claim);
+                expect(result.narrationHint, `swing ${label}`).not.toContain(claim);
             }
         }
     });
@@ -136,14 +164,14 @@ describe('a resolution that settled something does not say nothing was settled',
         // The second half of the report: under a narrator the opponent gained
         // an injury while the text said nothing had happened. Whatever the
         // resolution applied, the sentence has to carry it.
-        for (const goal of GOALS) {
-            const { result, d } = fight(45, 29, goal, `consequence-${goal}`);
+        for (const { label, thrown } of SWINGS) {
+            const { result, d } = fight(45, 29, thrown, `consequence-${label}`);
             const wounds = result.injuries[d.id];
             const hpLeft = result.hp[d.id];
             expect(hpLeft).toBeLessThan(d.hp);
             expect(result.narrationHint).toContain(`${hpLeft}`);
             if (wounds.length > 0) {
-                expect(result.narrationHint, `goal ${goal} applied a wound and did not say so`)
+                expect(result.narrationHint, `${label} applied a wound and did not say so`)
                     .toContain(wounds[0].severity);
             }
         }
@@ -172,7 +200,7 @@ describe('the far-above direction', () => {
      * stronger party now does something, and the default is to answer once.
      */
     it('lets the swing land on the swinger, and still is not a fight', () => {
-        const { result, a, d } = fight(29, 45, 'drive_off', 'control');
+        const { result, a, d } = fight(29, 45, AN_ORDINARY_SWING, 'control');
         expect(result.narrationHint).toContain('cannot reach');
         // Not a contest, and not a win for anybody who was contesting.
         expect(['no_contest', 'lethal']).toContain(result.outcome);
@@ -190,7 +218,7 @@ describe('the far-above direction', () => {
      * genre's oldest turning point.
      */
     it('leaves them standing when the person above them is amused', () => {
-        const { result, a } = fight(29, 45, 'drive_off', 'amused', {
+        const { result, a } = fight(29, 45, AN_ORDINARY_SWING, 'amused', {
             bearing: { push: 0, room: 0, openHanded: 1 }
         });
         expect(result.theirDecision).toBe('indulges');
@@ -199,7 +227,7 @@ describe('the far-above direction', () => {
     });
 
     it('finishes it when the person above them is the sort who does', () => {
-        const { result, a } = fight(29, 45, 'drive_off', 'finisher', {
+        const { result, a } = fight(29, 45, AN_ORDINARY_SWING, 'finisher', {
             bearing: { push: 1, room: 0, openHanded: 0 }
         });
         expect(result.theirDecision).toBe('kills');
@@ -211,8 +239,8 @@ describe('the far-above direction', () => {
         // built off `HELPLESS_REALM_GAP` rather than off a written-in number
         // that would drift from it.
         expect(HELPLESS_REALM_GAP).toBe(2);
-        const up = fight(21, 21 + HELPLESS_REALM_GAP * 4, 'drive_off', 'gap-up');
-        const down = fight(21 + HELPLESS_REALM_GAP * 4, 21, 'drive_off', 'gap-down');
+        const up = fight(21, 21 + HELPLESS_REALM_GAP * 4, AN_ORDINARY_SWING, 'gap-up');
+        const down = fight(21 + HELPLESS_REALM_GAP * 4, 21, AN_ORDINARY_SWING, 'gap-down');
         expect(up.result.outcome).toBe('no_contest');
         expect(down.result.exchanges).toHaveLength(0);
         expect(down.result.winnerId).toBe('aggressor');
@@ -241,7 +269,7 @@ describe('a one-blow withdrawal is not a mutual one', () => {
                 rng: new CultivationRNG(`oneblow-${seed}`),
                 ambient: 'normal',
                 turn: 1,
-                intent: { goal: 'drive_off', willWithdraw: true }
+                intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true }
             });
             if (result.outcome !== 'withdrawal') continue;
             if (result.hp[a.id] !== a.hp) continue;

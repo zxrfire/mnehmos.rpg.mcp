@@ -936,6 +936,12 @@ export interface StateSummaryInput {
     ambient: AmbientQi;
     /** Resolved server-side. The classifier must never be shown a database id. */
     sectName?: string | null;
+    /**
+     * The rung on that house's roll, in the house's own word for it, or null
+     * where they hold none. Resolved server-side through the one read; there is
+     * no rung on the cultivator row to take it from any more.
+     */
+    sectRung?: string | null;
     /** Display names of the arts this cultivator actually knows. */
     knownTechniques?: readonly string[];
     /**
@@ -1279,7 +1285,7 @@ export function composeStateSummary(input: StateSummaryInput): string {
         `Age ${Math.floor(cultivator.age)} of a ${lifespan}-year ceiling; ${cultivator.yearsAtCurrentRealm.toFixed(1)} years at this realm`,
         `HP ${cultivator.hp}/${cultivator.maxHp}, satiety ${cultivator.satiety}/100, ${cultivator.spiritStones} spirit stones`,
         `Untreated meridian injuries: ${untreated}`,
-        `Sect: ${input.sectName ?? 'unaffiliated'}${input.sectName && cultivator.sectRank ? ` (${cultivator.sectRank})` : ''}`,
+        `Sect: ${input.sectName ?? 'unaffiliated'}${input.sectName && input.sectRung ? ` (${input.sectRung})` : ''}`,
         `Known techniques: ${arts.length ? arts.join(', ') : 'none'}`,
         `Location: ${placeName(cultivator)}`,
         `Ambient qi: ${ambient}`,

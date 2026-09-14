@@ -13,14 +13,14 @@
 import { SECTS } from '../src/data/cultivation/sects.js';
 import { APEX_INSTITUTIONS, tierOf } from '../src/data/cultivation/governance-and-water-rights.js';
 import { WITHDRAWN_POWERS } from '../src/data/cultivation/sects.js';
-import { getTechnique } from '../src/data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere } from '../src/data/cultivation/techniques.js';
 import { THE_DEEPEST_ROADS } from '../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 
 const shelfTop = (teaches: readonly string[]): number => {
     let best = 0;
     for (const id of teaches) {
-        const t = getTechnique(id) as { class?: string; cap?: number | null } | undefined;
-        if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+        const t = getTechnique(id);
+        if (t === undefined || !stopsSomewhere(t)) continue;
         best = Math.max(best, Number(t.cap));
     }
     return best;

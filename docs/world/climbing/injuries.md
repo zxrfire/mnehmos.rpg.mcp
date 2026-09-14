@@ -62,10 +62,11 @@ this is damage to the body itself, and it answers a question the other two never
 body make another one? A covering does - fur, feathers, a scute, a plate - on the regrowth
 ladder and no faster, which is why a creature asked for a tuft of its own fur is being asked
 for years. A part does not. An arm, an eye, a fang, the marrow of a bone: nothing the body does
-puts one back, at any rung on the ladder. **That is the one permanent wound in the catalog with
-a medicine**, and it is a Limb Rebirth Pill, immortal grade, past the cash line and made in
-almost no quantity. Every other permanent row says in its own `treatment` that nothing answers
-it, and means it.
+puts one back, at any rung on the ladder. What answers it is what answers every permanent wound:
+**structural repair medicine, by rank** - a Second Pour, a Core-Knitting, a Soul-Seating or an
+Unbroken Pattern Pill, whichever reaches the body carrying it - and above that ladder the chaos
+rung, which reaches any rank and picks which injury it closes rather than letting the taker
+pick. There are single digits of each in the world.
 
 The useful shorthand is **body against cultivation**. A channel wound and a flesh wound are
 both damage to the body. A foundation or a core is damage to the cultivation itself. Both are

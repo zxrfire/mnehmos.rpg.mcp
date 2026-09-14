@@ -150,7 +150,7 @@ describe('an attempt nothing resolved says so', () => {
                 // Each intent's OWN denial, not a shared one: the collision only
                 // works when the fact names what that act would have moved.
                 expect(result.narration, `"${intent}" fell through and said nothing`)
-                    .toContain(whatDidNotHappen(intent, 'Mo Qianshu'));
+                    .toContain(whatDidNotHappen(intent));
             }
         }
     }, 600_000);

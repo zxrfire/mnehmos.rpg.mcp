@@ -36,8 +36,9 @@ import {
     expect } from 'vitest';
 
 import { resolveMelee,
-    type SideMemberInput,
+    type SideMember,
     type CombatantInput } from '../../src/engine/cultivation/combat.js';
+import { A_HUNT_MEANT_TO_TAKE_THE_BODY } from '../../src/engine/cultivation/how-a-blow-was-thrown.js';
 import { forStream } from '../../src/engine/cultivation/rng.js';
 import { ARTIFACTS,
     artifactsOwnedBy } from '../../src/data/cultivation/artifacts.js';
@@ -51,7 +52,32 @@ import { WHY_NOBODY_MOVES } from '../../src/data/cultivation/standoff.js';
 
 const SEEDS = 120;
 
-function body(id: string, ordinal: number, artifactOrdinal?: number): SideMemberInput {
+/**
+ * THE SWING EVERY WAR IN HERE IS FOUGHT WITH.
+ *
+ * This file used to pass a `goal` of `kill`, which stopped being a field on
+ * `ConfrontationIntent` when the ending stopped being something an aggressor
+ * chooses - see `how-a-blow-was-thrown.ts`. Nothing failed, because an unknown
+ * key is not an error at runtime: `intent.thrown` was simply `undefined` and
+ * every war in here has silently been fought with `AN_ORDINARY_SWING` since
+ * the refactor, which is a committed blow with whatever is in hand and CANNOT
+ * reach `a_death`.
+ *
+ * A hunt's bare form is the honest replacement: whatever they are carrying,
+ * wherever the fight offers, with nothing kept back. `A_BLOW_MEANT_TO_END_IT`
+ * is the wrong constant here even though it also kills - its own header says it
+ * is for the moment a fight stops being the fight that was started, not for the
+ * blow that opens one.
+ *
+ * NOTHING MEASURED BELOW MOVES EITHER WAY. The swing is read in exactly two
+ * places: the fate label a fallen combatant is given, and the walkover branch,
+ * where it decides whether the side that could not reach is left at zero HP or
+ * at a fifth. This file asserts on `winningSideId`, which no swing touches, and
+ * on the HP of the side that WON, which the walkover branch never writes.
+ */
+const A_WAR_BETWEEN_HOUSES = A_HUNT_MEANT_TO_TAKE_THE_BODY;
+
+function body(id: string, ordinal: number, artifactOrdinal?: number): SideMember {
     const combatant: CombatantInput = {
         id,
         name: id,
@@ -83,10 +109,10 @@ function body(id: string, ordinal: number, artifactOrdinal?: number): SideMember
  *    question the house comes, and it comes with its strongest member whether
  *    or not it has anything asleep under a mountain.
  */
-function reinforcementsFor(apexId: string, suborned: readonly string[] = []): SideMemberInput[] {
+function reinforcementsFor(apexId: string, suborned: readonly string[] = []): SideMember[] {
     const houseIds = idsForFaction(apexId);
 
-    const arriving: SideMemberInput[] = COURTS
+    const arriving: SideMember[] = COURTS
         .filter(c => houseIds.includes(c.apexId) && !suborned.includes(c.id))
         .map(c => body(c.id, c.powerOrdinal));
 
@@ -119,13 +145,13 @@ function reinforcementsFor(apexId: string, suborned: readonly string[] = []): Si
     return arriving.sort((a, b) => b.combatant.realmOrdinal - a.combatant.realmOrdinal);
 }
 
-function houseOf(apexId: string, mobilised: boolean): SideMemberInput[] {
+function houseOf(apexId: string, mobilised: boolean): SideMember[] {
     const apex = APEX_INSTITUTIONS.find(a => a.id === apexId)!;
     const objects = artifactsOwnedBy(apex.id);
 
     // Read lastRealm.count rather than assuming one. The assumption was wrong
     // about the Pavilion and the error decided the whole region.
-    const people: SideMemberInput[] = [];
+    const people: SideMember[] = [];
     for (let i = 0; i < Math.max(1, apex.lastRealm.count); i++) {
         people.push(body(
             i === 0 ? `${apex.id}-head` : `${apex.id}-last-realm-${i}`,
@@ -152,14 +178,14 @@ function winRate(attackerId: string, defenderId: string, mobilised: boolean): nu
     for (let seed = 0; seed < SEEDS; seed++) {
         const result = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: houseOf(attackerId, mobilised), intent: { goal: 'kill' } },
-                { id: 'b', name: defenderId, members: houseOf(defenderId, mobilised), intent: { goal: 'kill' } }
+                { id: 'a', name: attackerId, members: houseOf(attackerId, mobilised), intent: { thrown: A_WAR_BETWEEN_HOUSES } },
+                { id: 'b', name: defenderId, members: houseOf(defenderId, mobilised), intent: { thrown: A_WAR_BETWEEN_HOUSES } }
             ],
             {
                 rng: forStream('standoff', `${attackerId}-${defenderId}-${mobilised}`, seed),
                 ambient: 'normal',
                 turn: seed,
-                intent: { goal: 'kill' }
+                intent: { thrown: A_WAR_BETWEEN_HOUSES }
             }
         );
         if (result.winningSideId === 'a') wins++;
@@ -178,15 +204,15 @@ function allianceWinRate(targetId: string): number {
                     id: 'a',
                     name: 'the other two',
                     members: allies.flatMap(a => houseOf(a.id, true)),
-                    intent: { goal: 'kill' }
+                    intent: { thrown: A_WAR_BETWEEN_HOUSES }
                 },
-                { id: 'b', name: targetId, members: houseOf(targetId, true), intent: { goal: 'kill' } }
+                { id: 'b', name: targetId, members: houseOf(targetId, true), intent: { thrown: A_WAR_BETWEEN_HOUSES } }
             ],
             {
                 rng: forStream('standoff-alliance', targetId, seed),
                 ambient: 'normal',
                 turn: seed,
-                intent: { goal: 'kill' }
+                intent: { thrown: A_WAR_BETWEEN_HOUSES }
             }
         );
         if (result.winningSideId === 'a') wins++;
@@ -208,12 +234,12 @@ function winRateWithDefection(attackerId: string, defenderId: string): number {
     for (let seed = 0; seed < SEEDS; seed++) {
         const result = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: attackers, intent: { goal: 'kill' } },
-                { id: 'b', name: defenderId, members: defenders, intent: { goal: 'kill' } }
+                { id: 'a', name: attackerId, members: attackers, intent: { thrown: A_WAR_BETWEEN_HOUSES } },
+                { id: 'b', name: defenderId, members: defenders, intent: { thrown: A_WAR_BETWEEN_HOUSES } }
             ],
             {
                 rng: forStream('standoff', `${attackerId}-${defenderId}-defect`, seed),
-                ambient: 'normal', turn: seed, intent: { goal: 'kill' }
+                ambient: 'normal', turn: seed, intent: { thrown: A_WAR_BETWEEN_HOUSES }
             }
         );
         if (result.winningSideId === 'a') wins++;
@@ -235,12 +261,12 @@ function survivesTheThirdHouse(attackerId: string, victimId: string, thirdId: st
     for (let seed = 0; seed < SEEDS; seed++) {
         const first = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: houseOf(attackerId, true), intent: { goal: 'kill' } },
-                { id: 'v', name: victimId, members: houseOf(victimId, true), intent: { goal: 'kill' } }
+                { id: 'a', name: attackerId, members: houseOf(attackerId, true), intent: { thrown: A_WAR_BETWEEN_HOUSES } },
+                { id: 'v', name: victimId, members: houseOf(victimId, true), intent: { thrown: A_WAR_BETWEEN_HOUSES } }
             ],
             {
                 rng: forStream('standoff', `${attackerId}-${victimId}-third`, seed),
-                ambient: 'normal', turn: seed, intent: { goal: 'kill' }
+                ambient: 'normal', turn: seed, intent: { thrown: A_WAR_BETWEEN_HOUSES }
             }
         );
         if (first.winningSideId !== 'a') continue;
@@ -253,12 +279,12 @@ function survivesTheThirdHouse(attackerId: string, victimId: string, thirdId: st
 
         const second = resolveMelee(
             [
-                { id: 'a', name: attackerId, members: survivors, intent: { goal: 'kill' } },
-                { id: 't', name: thirdId, members: houseOf(thirdId, true), intent: { goal: 'kill' } }
+                { id: 'a', name: attackerId, members: survivors, intent: { thrown: A_WAR_BETWEEN_HOUSES } },
+                { id: 't', name: thirdId, members: houseOf(thirdId, true), intent: { thrown: A_WAR_BETWEEN_HOUSES } }
             ],
             {
                 rng: forStream('standoff', `${attackerId}-${thirdId}-after`, seed),
-                ambient: 'normal', turn: seed, intent: { goal: 'kill' }
+                ambient: 'normal', turn: seed, intent: { thrown: A_WAR_BETWEEN_HOUSES }
             }
         );
         if (second.winningSideId === 'a') survived++;
@@ -422,12 +448,12 @@ describe('the standoff at the top of the world', () => {
         for (let seed = 0; seed < SEEDS; seed++) {
             const result = resolveMelee(
                 [
-                    { id: 'a', name: 'stripped apex head', members: [bare], intent: { goal: 'kill' } },
-                    { id: 'b', name: 'a nobody at the same rung', members: [peer], intent: { goal: 'kill' } }
+                    { id: 'a', name: 'stripped apex head', members: [bare], intent: { thrown: A_WAR_BETWEEN_HOUSES } },
+                    { id: 'b', name: 'a nobody at the same rung', members: [peer], intent: { thrown: A_WAR_BETWEEN_HOUSES } }
                 ],
                 {
                     rng: forStream('standoff', 'stripped', seed),
-                    ambient: 'normal', turn: seed, intent: { goal: 'kill' }
+                    ambient: 'normal', turn: seed, intent: { thrown: A_WAR_BETWEEN_HOUSES }
                 }
             );
             if (result.winningSideId === 'a') wins++;

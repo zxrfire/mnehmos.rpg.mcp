@@ -1,37 +1,34 @@
 /**
- * THE ONE PERMANENT WOUND THAT HAS AN ANSWER, AND THE ONES THAT STILL DO NOT.
+ * THE ONE MEDICINE FOR A PERMANENT INJURY THAT A PLAYER CAN ACTUALLY TAKE.
  *
- * The ruling behind this file, on whether giving away a piece of yourself
+ * The ruling behind `severed-flesh`, on whether giving away a piece of yourself
  * should be permanent: people cannot grow arms back, that needs medicine,
- * expensive medicine, and permanent wounds occur at any band. So `wounds.ts`
- * gained `severed-flesh` - a part taken out of a body, permanent at every rung
- * on the ladder - and the catalog gained the one thing that reaches it.
+ * expensive medicine, and permanent wounds occur at any band.
  *
- * ── WHY IT IS NOT `treat_injury`, AND WHY THAT MATTERS HERE ──────────────
+ * WHAT THIS FILE USED TO PIN, AND WHAT OVERTURNED IT. It pinned a Limb Rebirth
+ * Pill - a bespoke row naming `severed-flesh` and reaching nothing else -
+ * written because `repairRefusalReason` said structural repair medicine answers
+ * a structure that did not SET at a realm wall and refuses everything else. The
+ * design owner overruled that premise: a repair dose answers every permanent
+ * injury AT ITS RANK, and a second module doing the first one's job was the
+ * defect rather than the fix. The pill is gone.
  *
- * `treatWorstInjury` skips permanent wounds, and it has to: it picks by
- * SEVERITY, so a medicine that reached a permanent wound on a severity band
- * would reach a parted meridian and a rooted heart demon along with a missing
- * arm, and all three of those rows say in their own `treatment` that nothing
- * answers them. `regrow_flesh` matches the pill's `mends` list against the
- * wound key instead, so the pill row and the wound row have to agree before
- * anything happens.
+ * WHAT IT PINS NOW IS THE RUNG ABOVE THAT LADDER, and that is why the file is
+ * not deleted along with the pill. The four repair doses are institutional
+ * objects that houses spend on their own people; no verb anywhere puts one in a
+ * player's hand. The chaos rung IS reachable - it sits in a pouch, it is
+ * refined from a recovered formula, and it is swallowed through this handler.
+ * The design owner kept it deliberately, *"that one then has a point worth
+ * keeping"*, because it reaches any rank and the price of that is that it picks
+ * which injury it closes rather than the taker picking.
  *
- * ── AND IT IS NOT THE MEDICINE THAT MENDS A BROKEN CULTIVATOR ────────────
+ * So: somebody carrying one thing that does not close is certain of the
+ * outcome, and the graded treat-injury ladder still cannot touch any of it at
+ * any grade.
  *
- * `structural-repair-medicine.ts` answers a structure that did not SET at a
- * realm wall - a foundation, a core, an infant soul. `repairRefusalReason`
- * turns away anything else in as many words. A body short an arm has a
- * structure that set perfectly well, so that subsystem was the wrong shelf and
- * a new medicine was made rather than that one stretched.
- *
- * What is asserted: the pill closes the wound it names, it is spent and does
- * nothing against a wound it does not name, and the graded ladder still cannot
- * touch a maiming.
- *
- * Red-checked: dropping `mends` off the pill fails the first; letting
- * `regrow_flesh` fall through to `treatWorstInjury` fails the second and the
- * third.
+ * Red-checked: letting the drawn medicine fall through to `treatWorstInjury`
+ * fails the first and the third; giving the chaos row a `mends` list fails the
+ * second.
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -41,7 +38,7 @@ import { handleCultivationManage } from '../../src/server/consolidated/cultivati
 import { closeDb, getDb } from '../../src/storage/index.js';
 import { addToPouch, ensureCultivationDb } from '../../src/server/consolidated/cultivation-support.js';
 import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js';
-import { pillThatMends } from '../../src/data/cultivation/pills.js';
+import { getPillsByEffect } from '../../src/data/cultivation/pills.js';
 
 const ctx = { sessionId: 'test' };
 
@@ -55,10 +52,13 @@ const alchemy = async (args: Record<string, unknown>) => payload(await handleAlc
 const cultivation = async (args: Record<string, unknown>) =>
     payload(await handleCultivationManage(args, ctx));
 
-/** Read out of the catalog, never typed here. The wound names its own answer. */
-const MEDICINE = pillThatMends('severed-flesh')!;
-/** The graded ladder's top rung, which must still refuse a maiming. */
-const SEVERED_MERIDIAN_RESTORATION = 'pill-severed-meridian-restoration';
+/**
+ * The chaos rung, read off the effect rather than named here. There is exactly
+ * one, and `a-medicine-made-for-nothing-in-particular.test.ts` is the ratchet.
+ */
+const MEDICINE = getPillsByEffect('mends_what_will_not_close')[0]!;
+/** The graded ladder's top rung, which must still refuse a permanent wound. */
+const THE_GRADED_LADDERS_TOP_RUNG = 'pill-returning-spring';
 
 describe('a part of the body, taken off and grown back', () => {
     beforeEach(() => {
@@ -92,7 +92,7 @@ describe('a part of the body, taken off and grown back', () => {
         return id;
     }
 
-    it('closes the wound it names, on a body at the bottom of the ladder', async () => {
+    it('closes the one thing that does not close, on a body at the bottom of the ladder', async () => {
         const id = await aMaimedNovice('severed-flesh');
         const result = await alchemy({ action: 'consume_pill', pillId: MEDICINE.id, cultivatorId: id });
         expect(result.error).toBeUndefined();
@@ -103,27 +103,25 @@ describe('a part of the body, taken off and grown back', () => {
         expect(maiming.treated, 'the part was narrated back and never written back').toBe(true);
     });
 
-    it('is spent and does nothing against a wound it does not name', async () => {
-        // A parted meridian is authored as having no answer anywhere, and this
-        // pill must not quietly become one. Agency: the attempt is allowed and
-        // it costs.
+    it('names no wound, so the one it closes is whichever one is there', async () => {
+        // Made for nothing in particular, so there is no `mends` list to match
+        // against: it closes ONE of whatever this body is carrying that does
+        // not close. Being the only one is what makes the taker certain.
+        expect(MEDICINE.mends ?? [], 'the chaos rung was given a wound to name').toEqual([]);
         const id = await aMaimedNovice('severed-meridian');
         const result = await alchemy({ action: 'consume_pill', pillId: MEDICINE.id, cultivatorId: id });
         expect(result.error).toBeUndefined();
         expect(result.consumed).toBe(true);
         const stored = new CultivatorRepository(getDb()).getById(id)!;
-        expect(stored.injuries.find(i => i.woundType === 'severed-meridian')!.treated).toBe(false);
-        // And it says what it does answer, rather than "nothing to treat" to
-        // somebody visibly carrying a maiming.
-        expect(String(result.applied)).toMatch(/Severed flesh/i);
+        expect(stored.injuries.find(i => i.woundType === 'severed-meridian')!.treated).toBe(true);
     });
 
     it('is not reachable from the graded treat-injury ladder, at any grade', async () => {
         const id = await aMaimedNovice('severed-flesh');
-        addToPouch(ensureCultivationDb().db, id, SEVERED_MERIDIAN_RESTORATION, 'pill', 1);
+        addToPouch(ensureCultivationDb().db, id, THE_GRADED_LADDERS_TOP_RUNG, 'pill', 1);
         const result = await alchemy({
             action: 'consume_pill',
-            pillId: SEVERED_MERIDIAN_RESTORATION,
+            pillId: THE_GRADED_LADDERS_TOP_RUNG,
             cultivatorId: id
         });
         expect(result.error).toBeUndefined();

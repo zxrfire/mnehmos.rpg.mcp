@@ -131,7 +131,9 @@ describe('every sentence offered is a sentence the parser understands', () => {
     // remembers to come back here.
     const everySentence = () => {
         const seen = new Map<string, string>();
-        for (const state of [
+        // Annotated rather than inferred: without it `ambient: 'thin'` widens
+        // to `string` and the whole array stops being a `StandingHere`.
+        const states: StandingHere[] = [
             WELL,
             { ...WELL, satiety: 0, starvationTurns: 2, turnsUntilStarvation: 3, spiritStones: 0 },
             { ...WELL, practisesAMethod: false, inASect: false, ambient: 'thin' },
@@ -156,7 +158,8 @@ describe('every sentence offered is a sentence the parser understands', () => {
                 groundThatTeachesARoad: 1
             },
             { ...WELL, brokenSeclusion: { daysRemaining: 900, canWithdraw: true } }
-        ]) {
+        ];
+        for (const state of states) {
             for (const a of whatIsWorthDoingStandingHere(state)) seen.set(a.say, a.routesTo);
         }
         return [...seen];
@@ -489,10 +492,11 @@ describe('the read is bounded, ordered and never empty', () => {
     it('is never a dump', () => {
         // A wall of text is how a player learns to stop reading. Every state
         // has to fit on a screen next to the thing that caused it.
-        for (const state of [
+        const states: StandingHere[] = [
             WELL,
             { ...WELL, satiety: 0, starvationTurns: 3, turnsUntilStarvation: 1, spiritStones: 0, treatableWounds: 3, woundsPastMortalCare: 2, sellableGoods: 4, practisesAMethod: false, methodExhausted: false, inASect: false, ambient: 'thin', peopleAboveHere: 6, battered: true }
-        ]) {
+        ];
+        for (const state of states) {
             expect(whatIsWorthDoingStandingHere(state).length).toBeLessThanOrEqual(8);
         }
     });
@@ -506,7 +510,7 @@ describe('the read is bounded, ordered and never empty', () => {
     });
 
     it('puts what is killing them first', () => {
-        const dying = {
+        const dying: StandingHere = {
             ...WELL, satiety: 0, starvationTurns: 3, turnsUntilStarvation: 1,
             spiritStones: 0, ambient: 'thin', peopleAboveHere: 2
         };

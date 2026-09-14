@@ -37,7 +37,7 @@ function shelfCapOf(sect: any): number {
     let cap = 0;
     for (const id of (sect.teaches ?? []) as string[]) {
         const t: any = getTechnique(id);
-        if (!t || t.class !== 'cultivation') continue;
+        if (!t) continue;
         cap = Math.max(cap, Number(t.cap ?? 0));
     }
     return cap;

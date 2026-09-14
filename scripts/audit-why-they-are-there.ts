@@ -36,7 +36,7 @@ import { manualCeilingOf, BOOKLESS_CEILING } from '../src/engine/world/manuals.j
 import { assessPromotions, seatsAtRank, abundanceOf } from '../src/engine/world/promotion-inside-a-house.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 import { whatTheyCallARogue } from '../src/data/cultivation/rogues.js';
-import { getTechnique } from '../src/data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere } from '../src/data/cultivation/techniques.js';
 import type { NpcRecord } from '../src/engine/world/npc-state.js';
 import type { WorldState } from '../src/engine/world/world-state.js';
 
@@ -72,8 +72,8 @@ function account(state: WorldState, npc: NpcRecord, blocked: Map<string, string>
             + ' and then stops, because everything above it needs a method somebody wrote down.');
     } else {
         const best = npc.cultivation.techniqueIds
-            .map(id => getTechnique(id) as { name?: string; cap?: number | null; class?: string } | undefined)
-            .filter(t => t && t.class === 'cultivation' && t.cap != null)
+            .map(id => getTechnique(id))
+            .filter(t => stopsSomewhere(t))
             .sort((a, b) => Number(b!.cap) - Number(a!.cap))[0];
         out.push(`  practising ${best?.name ?? 'something'}, which carries to ${cap}`);
         if (ord >= cap) {

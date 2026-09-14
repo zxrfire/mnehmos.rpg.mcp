@@ -36,13 +36,13 @@ import { parseIntent } from '../../src/web/actions';
 import { makeGameInWorld, type Harness } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
 
-function ledger(db: ReturnType<typeof makeGame>['db'], id: string): number {
+function ledger(db: Harness['db'], id: string): number {
     const row = db.prepare(
         'SELECT contribution FROM sect_members WHERE cultivator_id = ?'
     ).get(id) as { contribution: number } | undefined;
     return row?.contribution ?? 0;
 }
-function stones(db: ReturnType<typeof makeGame>['db'], id: string): number {
+function stones(db: Harness['db'], id: string): number {
     return Number((db.prepare('SELECT spirit_stones FROM cultivators WHERE id = ?')
         .get(id) as { spirit_stones: number }).spirit_stones);
 }

@@ -37,6 +37,7 @@ import {
     type CombatantInput
 } from '../../../src/engine/cultivation/combat.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
 /** Rated far enough under what it will meet that breaking is not a roll. */
 const DOOMED: CarriedObject = { id: 'obj-notched-sabre', name: 'a notched sabre', power: 2 };
@@ -82,7 +83,7 @@ function fight(seed: string) {
             rng: forStream(seed, 'melee', 1),
             ambient: 'normal',
             turn: 1,
-            intent: { goal: 'kill' }
+            intent: { thrown: AN_ORDINARY_SWING }
         }
     );
 }

@@ -48,7 +48,9 @@ async function aMemberReadingTheBoard() {
     });
     const { cultivator } = await game.newRun('Aspirant');
     repos.sects.addMember(A_HOUSE, cultivator.id, 0);
-    const world = await game.loadWorld();
+    const loaded = await game.loadWorld();
+    expect(loaded, 'the run opened without a world').toBeTruthy();
+    const world = loaded!;
     const deps = {
         repos, world,
         knowledge: { knows: () => true, isAwareOf: () => true, learn: () => undefined }

@@ -42,7 +42,8 @@ import {
 } from '../../src/engine/cultivation/what-goes-wrong-at-a-realm-boundary.js';
 import { REALM_TIERS } from '../../src/engine/cultivation/realms.js';
 import { WOUND_TYPES } from '../../src/data/cultivation/wounds.js';
-import type { Injury } from '../../src/schema/cultivation.js';
+import { PILLS } from '../../src/data/cultivation/pills.js';
+import { InjurySchema, type Injury } from '../../src/schema/cultivation.js';
 
 const GRAND_ASCENSION = REALM_TIERS.find(t => t.key === 'grand_ascension')!;
 const DEITY_TRANSFORMATION = REALM_TIERS.find(t => t.key === 'deity_transformation')!;
@@ -121,18 +122,104 @@ describe('the two ceilings, enforced rather than described', () => {
         }
     });
 
-    it('refuses a wound that is not structural at all', () => {
+    /**
+     * THE AXIS MOVED FROM THE NAMED BREAK TO THE RANK, AND THIS IS WHERE IT
+     * SHOWS.
+     *
+     * This asserted that a dose refuses anything outside `BROKEN_STATUSES`, and
+     * `incomplete-cultivation` was in the list of things it must turn away. The
+     * design owner ruled that a dose repairs EVERY permanent injury at its rank,
+     * so that row is now on the other side of this test rather than gone from
+     * it: the premise was overturned, not the assertion weakened.
+     *
+     * What did not move is the thing the test was really protecting: one of
+     * eleven objects in the world is not spent on a wound that closes by itself.
+     */
+    it('refuses a wound that closes on its own, and answers one that does not', () => {
         const earth = STRUCTURAL_REPAIR_MEDICINES.find(m => m.grade === 'earth')!;
-        for (const key of ['heart-demon', 'torn-meridians', 'incomplete-cultivation', null]) {
-            expect(mendsThisBreak(earth, key, 17)).toBe(false);
+        for (const key of ['heart-demon', 'torn-meridians', null]) {
+            expect(mendsThisBreak(earth, key, 17), `${key} is not permanent`).toBe(false);
         }
+        // Permanent, inside this grade's reach, and not on its `mends` list -
+        // which used to be the refusal and is now the ruling.
+        expect(WOUND_TYPES.find(w => w.key === 'incomplete-cultivation')?.permanent).toBe(true);
+        expect(earth.mends).not.toContain('incomplete-cultivation');
+        expect(mendsThisBreak(earth, 'incomplete-cultivation', 17)).toBe(true);
+        // And the rank is still the limit: the same wound on a bigger body is
+        // past what this grade reaches.
+        expect(mendsThisBreak(earth, 'incomplete-cultivation', earth.reachesUpToOrdinal + 1))
+            .toBe(false);
+    });
+
+    /**
+     * A RULING, NOT AN INFERENCE, AND THE LITERAL READING WAS THE OTHER THING.
+     *
+     * "Repairs all permanent injuries at that rank" taken literally had a
+     * medicine that dissolves and re-lays a cultivation base closing a rooted
+     * heart demon. Asked directly, the design owner: *"no a repair dose does not
+     * reach wounds"* of the mind. So the axis is rank and the bound is
+     * `woundNature` - `cleanse_deviation` is the line that exists for the mind.
+     */
+    it('works on a body and not on a mind, whatever the rank says', () => {
+        const mental = WOUND_TYPES.filter(w => w.permanent && w.nature !== 'physical');
+        expect(mental.length, 'no permanent wound of the mind to check the bound against')
+            .toBeGreaterThan(0);
+        for (const medicine of STRUCTURAL_REPAIR_MEDICINES) {
+            for (const wound of mental) {
+                expect(
+                    mendsThisBreak(medicine, wound.key, 0),
+                    `${medicine.id} reached ${wound.key}`
+                ).toBe(false);
+            }
+        }
+        // And a physical one at the same rung still answers, or the bound is
+        // just a broken predicate wearing a ruling.
+        const physical = WOUND_TYPES.find(w =>
+            w.permanent && w.nature === 'physical' && w.key !== 'burnt-span')!;
+        expect(cheapestMedicineFor(physical.key, 0)).not.toBeNull();
+    });
+
+    /**
+     * AND IT DOES NOT HAND BACK YEARS, WHICH IS THE SECOND RULING AND THE
+     * SECOND TIME THE ROW WAS ALREADY RIGHT.
+     *
+     * `burnt-span` is physical and permanent, so the rank rule reached it and
+     * should not have. The design owner: *"it doesn't hand back burnt lifespan,
+     * that's what that immortal pill is for."* The row has said so since it was
+     * written - *"Nothing below the Lid returns spent years. The rung above
+     * returns them, which is exactly the trap"* - and nothing was reading it.
+     */
+    it('does not return a spent span, at any rung', () => {
+        const span = WOUND_TYPES.find(w => w.key === 'burnt-span')!;
+        expect([span.permanent, span.nature], 'burnt-span stopped being a permanent physical wound')
+            .toEqual([true, 'physical']);
+        for (const medicine of STRUCTURAL_REPAIR_MEDICINES) {
+            expect(mendsThisBreak(medicine, span.key, 0), `${medicine.id} returned a spent span`)
+                .toBe(false);
+        }
+        expect(cheapestMedicineFor(span.key, 0)).toBeNull();
+        // What does answer it is the other line, and it is not empty.
+        expect(PILLS.some(p => p.effect === 'extend_lifespan')).toBe(true);
     });
 
     it('mends the break it is for, and drops the wound rather than treating it', () => {
         const earth = STRUCTURAL_REPAIR_MEDICINES.find(m => m.grade === 'earth')!;
+        // Built through the schema rather than asserted into shape. The cast
+        // that used to stand here was hiding a source of 'breakthrough', which
+        // is not one an injury can have - the enum reads `failed_breakthrough`
+        // - along with a missing id and turn. Nothing caught it because
+        // `applyStructuralRepair` reads only `woundType`.
         const injuries: Injury[] = [
-            { severity: 'crippling', source: 'breakthrough', treated: false, description: 'x', woundType: 'cracked-core' } as Injury,
-            { severity: 'minor', source: 'combat', treated: false, description: 'y', woundType: 'torn-meridians' } as Injury
+            InjurySchema.parse({
+                id: '00000000-0000-4000-8000-000000000001',
+                severity: 'crippling', source: 'failed_breakthrough', sustainedOnTurn: 0,
+                treated: false, description: 'x', woundType: 'cracked-core'
+            }),
+            InjurySchema.parse({
+                id: '00000000-0000-4000-8000-000000000002',
+                severity: 'minor', source: 'combat', sustainedOnTurn: 0,
+                treated: false, description: 'y', woundType: 'torn-meridians'
+            })
         ];
         const after = applyStructuralRepair(injuries, earth, 'cracked-core', 17);
         expect(after.map(i => i.woundType)).toEqual(['torn-meridians']);

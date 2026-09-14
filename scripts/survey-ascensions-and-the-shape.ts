@@ -19,7 +19,6 @@ import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
 import { REALM_TIERS, realmForOrdinal, FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL } from '../src/engine/cultivation/realms.js';
-import { ageInYears } from '../src/engine/world/npc-state.js';
 
 const YEARS = Number(process.argv[2] ?? 5000);
 const POP = Number(process.argv[3] ?? 400);

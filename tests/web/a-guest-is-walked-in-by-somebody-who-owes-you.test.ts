@@ -51,7 +51,7 @@ async function withOneRow(
         kind: row.kind,
         holderId: put(row.holderId),
         subjectId: put(row.subjectId),
-        cause: 'debt_unpaid',
+        cause: 'other',
         severity: 'serious',
         onDay: 0,
         description: 'A thing done that has not been made good.'

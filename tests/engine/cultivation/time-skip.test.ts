@@ -195,7 +195,7 @@ describe('progress and advancement', () => {
 
     it('does not advance a rank when auto-breakthrough is off, however much progress banks up', () => {
         const result = simulateTimeSkip(
-            makeCultivator({ cultivationProgress: progressRequiredForOrdinal(0) * 10 }),
+            makeCultivator({ cultivationProgress: progressRequiredForOrdinal(0)! * 10 }),
             TEN_YEARS,
             sealed()
         );
@@ -486,7 +486,7 @@ describe('qi deviation during a skip', () => {
         // the bottleneck and refusing to attempt it is not a safe strategy.
         const hoarder = makeCultivator({
             spiritRoot: 'single_fire',
-            cultivationProgress: progressRequiredForOrdinal(0) * 5,
+            cultivationProgress: progressRequiredForOrdinal(0)! * 5,
             maxHp: 500,
             hp: 500
         });
@@ -673,7 +673,7 @@ describe('injuriesSustained', () => {
         let fatal = null;
         for (let i = 0; i < 400 && fatal === null; i++) {
             const result = simulateTimeSkip(
-                makeCultivator({ realmOrdinal: 12, cultivationProgress: progressRequiredForOrdinal(12) }),
+                makeCultivator({ realmOrdinal: 12, cultivationProgress: progressRequiredForOrdinal(12)! }),
                 TEN_YEARS,
                 ctx({ seed: `fatal-${i}`, randomEvents: false, toll: { candidates: [] } })
             );
@@ -746,7 +746,7 @@ describe('the price of advancement, during a long seclusion', () => {
     function atBoundary(overrides: Partial<Cultivator> = {}) {
         return makeCultivator({
             realmOrdinal: 12,
-            cultivationProgress: progressRequiredForOrdinal(12),
+            cultivationProgress: progressRequiredForOrdinal(12)!,
             ...overrides
         });
     }

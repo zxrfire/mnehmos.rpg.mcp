@@ -10,7 +10,6 @@ import { describe, it, expect } from 'vitest';
 import {
     CultivatorSchema,
     SATIETY_MAX,
-    STARTING_SPIRIT_STONES,
     stagnationYearsForOrdinal,
     type Cultivator
 } from '../../src/schema/cultivation';
@@ -34,7 +33,7 @@ const LOCAL_SECT = SECTS
         (sect.admissionOrdinal === best.admissionOrdinal && sect.id < best.id) ? sect : best);
 import { GameError } from '../../src/web/game';
 import { derivedView } from '../../src/web/view';
-import { STARTING_AGE, STARTING_LOCATION, PROVISION_COST_STONES } from '../../src/web/game';
+import { STARTING_AGE, PROVISION_COST_STONES } from '../../src/web/game';
 import { makeGame, injuryCount, planned, engineCalls, refusedCall } from './harness';
 import { drawBirth } from '../../src/engine/birth/birth';
 import { ACTIONS_PER_FULL_SATIETY } from '../../src/engine/cultivation/survival';
@@ -399,7 +398,7 @@ describe('interact', () => {
         expect(refusal).not.toBeNull();
         // Inspector, not prose - and a sentence rather than a field dump, which
         // is the standard the whole channel now holds.
-        expect(refusal.summary).toMatch(/matched nobody/);
+        expect(refusal!.summary).toMatch(/matched nobody/);
     });
 
     it('reports real facts about a real party, and refuses to resolve the outcome', async () => {
@@ -417,9 +416,9 @@ describe('interact', () => {
         // The attempt is recorded; the outcome is explicitly not.
         const outcome = calls.find(c => c.name === 'engine.resolveInteraction');
         expect(outcome).toBeDefined();
-        expect(outcome.ok).toBe(false);
-        expect(outcome.summary).toMatch(/outcome not resolvable yet/i);
-        expect(outcome.action).toBe('negotiate');
+        expect(outcome!.ok).toBe(false);
+        expect(outcome!.summary).toMatch(/outcome not resolvable yet/i);
+        expect(outcome!.action).toBe('negotiate');
     });
 
     it('is an attempt, never an accomplishment: no state moves', async () => {
@@ -456,7 +455,7 @@ describe('investigate', () => {
         const result = await game.act('I examine the Sword of Infinite Nonsense.');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/Unresolved subject/);  // inspector, not prose
+        expect(refusal!.summary).toMatch(/Unresolved subject/);  // inspector, not prose
     });
 
     it('costs a turn and nothing else', async () => {
@@ -550,7 +549,7 @@ describe('gather and refine', () => {
         expect(planned(result).action).toBe('refine');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/Pouch: empty/);  // inspector, not prose
+        expect(refusal!.summary).toMatch(/Pouch: empty/);  // inspector, not prose
     });
 
     it('routes a real formula through alchemy_manage rather than reimplementing it', async () => {
@@ -576,7 +575,7 @@ describe('train_technique', () => {
         expect(planned(result).action).toBe('train_technique');
         const refusal = refusedCall(result);
         expect(refusal).not.toBeNull();
-        expect(refusal.summary).toMatch(/Unresolved or unlearned technique/);  // inspector, not prose
+        expect(refusal!.summary).toMatch(/Unresolved or unlearned technique/);  // inspector, not prose
     });
 
     it('routes a known art through technique_manage.practise', async () => {
@@ -635,12 +634,12 @@ describe('admin roster', () => {
             INSERT INTO cultivators (
                 id, run_id, name, kind, spirit_root, attributes, realm_ordinal,
                 cultivation_progress, hp, max_hp, qi, max_qi, satiety, starvation_turns,
-                age, years_at_current_realm, spirit_stones, sect_id, sect_rank, location,
+                age, years_at_current_realm, spirit_stones, sect_id, location,
                 feuds, known_techniques, alive, death_cause, died_on_turn, created_at, updated_at
             ) VALUES (
                 'npc-1', NULL, 'Elder Ru', 'npc', 'single_fire',
                 '{"might":2,"insight":3,"fortune":1,"charm":2}', 20,
-                0, 100, 100, 50, 50, 100, 0, 300, 3, 4000, NULL, NULL, 'The Jade Gorge',
+                0, 100, 100, 50, 50, 100, 0, 300, 3, 4000, NULL, 'The Jade Gorge',
                 '[]', '[]', 0, 'stagnation_aging', 12, @now, @now
             )
         `).run({ now });

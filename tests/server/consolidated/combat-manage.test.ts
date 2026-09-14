@@ -186,7 +186,15 @@ describe('combat_manage', () => {
             const art = available.compatible.find((t: any) => t.qiCost > 0 && t.category === 'attack')
                 ?? available.compatible[0];
             expect(art).toBeDefined();
-            await technique({ action: 'learn', techniqueId: art.id, cultivatorId: id });
+            // `provenance` because the stall line reaches the cheap end of the
+            // catalog now that every art carries a cap: eight books are stall
+            // stock, six of them fighting arts, and `learn` without a copy or a
+            // provenance is refused with a price. Saying how the art was come by
+            // is the arrange step; this test is about the strike.
+            await technique({
+                action: 'learn', techniqueId: art.id, cultivatorId: id,
+                provenance: 'taught_by_a_person'
+            });
 
             const repo = new CultivatorRepository(db);
             repo.update(id, { qi: 400, maxQi: 400 } as never);
@@ -233,7 +241,10 @@ describe('combat_manage', () => {
             const created = await newCultivator();
             const id = created.cultivator.id;
             const available = await technique({ action: 'list_available', cultivatorId: id });
-            await technique({ action: 'learn', techniqueId: available.compatible[0].id, cultivatorId: id });
+            await technique({
+                action: 'learn', techniqueId: available.compatible[0].id, cultivatorId: id,
+                provenance: 'taught_by_a_person'
+            });
             new CultivatorRepository(db).update(id, { qi: 400, maxQi: 400 } as never);
 
             const result = await combat({

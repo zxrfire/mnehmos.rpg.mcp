@@ -67,7 +67,13 @@ function peakOrdinal(
         ).perDay;
         if (rate <= 0) return best;
         const subj = { realmOrdinal: ordinal, cultivationProgress: progress, spiritRoot: root, insights, alive: true as const };
-        const need = Math.max(0, progressRequiredForOrdinal(ordinal) - canAttemptBreakthrough(subj).progressSubstituted - progress);
+        // Above the Lid the ladder prices nothing in this currency, so there
+        // is no rung left to walk and the peak is whatever was reached. This
+        // read the figure straight and arithmetic'd on a null, which made
+        // `need` NaN and carried the NaN through the clocks.
+        const required = progressRequiredForOrdinal(ordinal);
+        if (required === null) return best;
+        const need = Math.max(0, required - canAttemptBreakthrough(subj).progressSubstituted - progress);
         const years = Math.max(1 / DAYS_PER_YEAR, need / (rate * DAYS_PER_YEAR));
         if (yearsAtRank + years >= stagnationYearsForOrdinal(ordinal)) return best;
         if (age + years >= lifespanForOrdinal(ordinal)) return best;

@@ -13,8 +13,7 @@ import {
     requireRegion
 } from '../data/cultivation/regions.js';
 import { getSectsTeaching } from '../data/cultivation/sects.js';
-import { capOf, carriesTo, classOf } from '../data/cultivation/techniques.js';
-import { pillThatMends } from '../data/cultivation/pills.js';
+import { capOf, carriesTo } from '../data/cultivation/techniques.js';
 import { isPermanentWound } from '../data/cultivation/wounds.js';
 import { canAttemptBreakthrough } from '../engine/cultivation/breakthrough.js';
 import { techniqueCeiling } from '../engine/cultivation/cultivation.js';
@@ -87,6 +86,7 @@ import {
     whatThisThingWants
 } from './ground-that-teaches-a-road.js';
 import { loosePlaceKey } from './knowledge.js';
+import { theRungTheyHold } from './walking-up-to-a-house.js';
 import { wholeWorkVolumes } from './manual-volumes.js';
 import { stagesHeldBy, stagesWrittenSince } from './stages.js';
 import { MEAL_COST_STONES } from './turn-constants.js';
@@ -108,10 +108,7 @@ import { readAdmission } from '../data/cultivation/inheritance-trials.js';
 import { canHurtYou } from './action-set.js';
 import { parseIntent } from './actions.js';
 import { theFightStillStands } from './fight-answers.js';
-import {
-    aMedicineThisHolderCouldName,
-    whatWouldCloseThisWound
-} from './what-would-close-this-wound.js';
+import { whatWouldCloseThisWound } from './what-would-close-this-wound.js';
 import {
     LEAVES_THE_GROUND,
     type Sighting,
@@ -833,7 +830,7 @@ export const situatedReads = {
         const who = howAPlayerStands(
             world,
             underfoot ?? worldLocationFor(world, cultivator.location),
-            cultivator,
+            { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) },
             this.housesGladToSeeThem(cultivator)
         );
         const all = groundThatTeachesARoad(world, who, underfoot?.id ?? null);
@@ -995,23 +992,31 @@ export const situatedReads = {
             //
             // It was unconditional, and that is the line the maiming trope
             // actually broke on. Somebody at the bottom of the ladder, the day
-            // they lost an arm, was told by name that a Limb Rebirth Pill grows
-            // one back. Nobody refuses a verdict they were never given, so the
-            // whole shape - told nothing can be done, refusing it, being told
+            // they lost an arm, was told by name what would grow one back.
+            // Nobody refuses a verdict they were never given, so the whole
+            // shape - told nothing can be done, refusing it, being told
             // otherwise by somebody far enough up - had no first move.
+            // AND IT IS THE SAME READ AS THE LINE ABOVE, ASKED ABOUT THE OTHER
+            // HALF OF THE BODY. It used to walk `pillThatMends` itself, which
+            // made this and `whatWouldCloseThisWound` two answers to one
+            // question - and they disagreed about what medicine exists, because
+            // that read knew only the graded treat-injury line. One function
+            // now, asked with the permanent wounds instead of the mendable
+            // ones, and the gating comes with it.
             theOneMedicineThatWouldReachIt: (() => {
-                const medicine = cultivator.injuries
-                    .filter(injury => !injury.treated)
-                    .map(injury => pillThatMends(injury.woundType))
-                    .find(pill => pill !== null) ?? null;
-                if (medicine === null) return null;
-                return aMedicineThisHolderCouldName(medicine, {
-                    gate: this.knowledge,
-                    holderId: cultivator.id,
-                    realmOrdinal: cultivator.realmOrdinal
-                })
-                    ? medicine.name
-                    : null;
+                const stays = whatWouldCloseThisWound(
+                    hurt.filter(injury => isPermanentWound(injury.woundType)),
+                    cultivator.realmOrdinal,
+                    cultivator.spiritStones,
+                    standingOf(cultivator).regionId,
+                    this.groundPriceMultiplier(cultivator, 'medicine'),
+                    {
+                        gate: this.knowledge,
+                        holderId: cultivator.id,
+                        realmOrdinal: cultivator.realmOrdinal
+                    }
+                );
+                return stays !== null && stays.heardOf ? stays.name : null;
             })(),
             woundsOfTheBody: woundsOfNature(hurt, 'physical').length,
             woundsOfTheMind: woundsOfNature(hurt, 'mental').length,
@@ -1348,7 +1353,7 @@ export const situatedReads = {
                 world,
                 groundUnderfoot(world, cultivator.location, loosePlaceKey)
                     ?? worldLocationFor(world, cultivator.location),
-                cultivator
+                { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) }
             ),
             id: cultivator.id
         });
@@ -1378,7 +1383,7 @@ export const situatedReads = {
         const who = howAPlayerStands(
             world,
             underfoot ?? worldLocationFor(world, cultivator.location),
-            cultivator,
+            { ...cultivator, onTheRollAt: theRungTheyHold(this, cultivator) },
             this.housesGladToSeeThem(cultivator)
         );
         const all = groundThatTeachesARoad(world, who, underfoot?.id ?? null);
@@ -1519,11 +1524,9 @@ export const situatedReads = {
         const cap = catalog.cap ?? capOf(catalog as never);
         lines.push(
             `${catalog.name} opens at ${rankName(catalog.requiredOrdinal)}`
-            + (classOf(catalog) === 'cultivation'
-                ? cap === null
-                    ? ' and carries a cultivator the whole way.'
-                    : ` and carries a cultivator as far as ${rankName(cap)}.`
-                : '. It carries nobody anywhere; it is an art, not a road.')
+            + (cap === null
+                ? ' and carries a cultivator the whole way.'
+                : ` and carries a cultivator as far as ${rankName(cap)}.`)
         );
         if (catalog.requiredOrdinal > cultivator.realmOrdinal) {
             lines.push(

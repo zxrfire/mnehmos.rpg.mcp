@@ -3,14 +3,14 @@ import { FogOfWar } from '../../../src/engine/strategy/fog-of-war.js';
 describe('FogOfWar', () => {
     let fow: FogOfWar;
     let mockDiplomacyRepo: any;
-    let mockRegionRepo: any;
 
     beforeEach(() => {
         mockDiplomacyRepo = {
             getRelation: vi.fn()
         };
-        mockRegionRepo = {};
-        fow = new FogOfWar(mockDiplomacyRepo, mockRegionRepo);
+        // `FogOfWar` takes the diplomacy repo and nothing else; a second
+        // argument was being passed and discarded.
+        fow = new FogOfWar(mockDiplomacyRepo);
     });
 
     it('hides details for non-allied nations', () => {

@@ -47,7 +47,9 @@ import {
 } from '../../src/engine/cultivation/injuries';
 import { isBleedingOut } from '../../src/engine/cultivation/survival';
 import { WOUND_TYPES, isPermanentWound } from '../../src/data/cultivation/wounds';
-import { pillThatMends } from '../../src/data/cultivation/pills';
+import {
+    cheapestMedicineFor
+} from '../../src/engine/cultivation/what-structural-repair-medicine-can-reach';
 import { linesFor, whatIsWorthDoingStandingHere } from '../../src/web/what-is-worth-doing-standing-here';
 
 /** A wound the world has no medicine for, off the catalog rather than invented. */
@@ -191,7 +193,11 @@ describe('the read', () => {
      * the one occasion looking would work.
      */
     it('names the medicine where the wound that stays has one', () => {
-        const medicine = pillThatMends('severed-flesh')!;
+        // Off the catalog rather than typed here, and off the OTHER catalog
+        // since the design owner ruled that structural repair medicine answers
+        // every permanent injury by rank. What is pinned is unchanged: where
+        // something reaches the wound, the line names it.
+        const medicine = cheapestMedicineFor('severed-flesh', 0)!;
         const said = linesFor(standing({
             carriesAWoundNothingCloses: true,
             theOneMedicineThatWouldReachIt: medicine.name

@@ -1,16 +1,33 @@
 /**
  * A rank is written by the roll, and by nothing else.
  *
- * `cultivators.sect_id` and `cultivators.sect_rank` MIRROR the `sect_members`
- * row, so the cultivator's own record answers "who do you answer to" without a
- * join. `SectRepository` maintains that mirror at all three of its writers and
- * is careful about it.
+ * ── WHAT THIS USED TO PROTECT, AND WHY IT NO LONGER HAS TO ───────────────
  *
- * `CultivatorRepository.update` also wrote both columns, and it is a
- * read-merge-write over a caller's snapshot. So a caller holding a `Cultivator`
- * fetched BEFORE a promotion, updating something unrelated - a location, a
- * purse - wrote the old rank back over the new one, and nothing anywhere said
- * so. Two writers for one fact, and only one of them knew it was a mirror.
+ * `cultivators.sect_rank` was a string MIRRORED off the `sect_members` row, so
+ * the cultivator's own record could answer "what rung do you hold" without a
+ * join. `CultivatorRepository.update` is a read-merge-write over a caller's
+ * snapshot, so a caller holding a `Cultivator` fetched BEFORE a promotion and
+ * updating something unrelated - a location, a purse - wrote the old rank back
+ * over the new one. Two writers for one fact, and only one of them knew it was
+ * a mirror. That was patched by having the merge leave the mirror alone.
+ *
+ * THE MIRROR IS NOW GONE, which is the fix rather than the patch. A rung has
+ * two stores and no third: `sect_members.rank_index` for a cultivator the
+ * database holds, and `NpcRecord.factionRankIndex` for somebody the world
+ * holds. `whereSomebodyStandsOnAHousesRoll` is the one read. A stale snapshot
+ * can no longer carry a rank back with it because there is no rank on the row
+ * to carry - which is what the first test here asserts directly, and it is a
+ * stronger claim than the old one: not "the write is careful" but "there is
+ * nothing here to write".
+ *
+ * `sect_id` is NOT the same fact and stays. Somebody born on a house's roll
+ * carries one with no `sect_members` row at all, which is this world's "on the
+ * roll, at no rung" - so the pair of them still has to agree about the house,
+ * and the last test here is the one that survived unchanged in meaning.
+ *
+ * RED-CHECKED. Putting `sect_rank TEXT` back in the `cultivators` DDL fails the
+ * first test; making `setRank` write the title anywhere but `sect_members`
+ * fails the second.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -38,20 +55,26 @@ function aHouse(): string {
         name: 'Test House',
         alignment: 'righteous',
         powerOrdinal: 20,
-        ranks: ['Outer Disciple', 'Inner Disciple', 'Core Disciple', 'Elder'],
-        admissionOrdinal: 0,
-        stipend: [1, 2, 5, 10],
-        description: 'A house.'
-    } as Parameters<SectRepository['upsert']>[0]);
+        ranks: ['Outer Disciple', 'Inner Disciple', 'Core Disciple'],
+        admissionOrdinal: 1,
+        stipend: [1, 2, 3],
+        description: 'A house that exists to be joined.'
+    } as unknown as Parameters<SectRepository['upsert']>[0]);
     return 'sect-test';
 }
 
 function aCultivator(): Cultivator {
     return cultivators.create({
-        id: 'cult-rank',
-        name: 'Shen Ke',
+        id: 'who-1',
+        name: 'Shen Yi',
+        // These three were `player` / `commoner` / `orthodox` and every one of
+        // them had stopped being a member of its enum. The literal is behind a
+        // cast, so nothing typechecked it and the whole file was red on this
+        // tree before any of the work above was done.
         kind: 'pc',
         spiritRoot: 'single_fire',
+        origin: 'market_town',
+        traditionId: 'tradition-drawn',
         sex: 'male',
         physique: null,
         attributes: { might: 2, insight: 2, resolve: 2, presence: 2, fortune: 2, charm: 2 },
@@ -63,30 +86,43 @@ function aCultivator(): Cultivator {
     } as unknown as Parameters<CultivatorRepository['create']>[0]);
 }
 
-/** What the mirror on the cultivator row says. */
-function mirrored(id: string): { sectId: string | null; rank: string | null } {
-    const row = db
-        .prepare('SELECT sect_id AS sectId, sect_rank AS rank FROM cultivators WHERE id = ?')
-        .get(id) as { sectId: string | null; rank: string | null };
-    return row;
+/** What the cultivator row says about the house. It says nothing about a rung. */
+function mirrored(id: string): { sectId: string | null } {
+    return db
+        .prepare('SELECT sect_id AS sectId FROM cultivators WHERE id = ?')
+        .get(id) as { sectId: string | null };
 }
 
-describe('the roll is the only writer of a rank', () => {
-    it('mirrors what the membership says when somebody joins', () => {
+/** Every column the `cultivators` table has, as the schema built it. */
+function columnsOfCultivators(): string[] {
+    return (db.prepare('PRAGMA table_info(cultivators)').all() as { name: string }[])
+        .map(row => row.name);
+}
+
+describe('the roll is the only place a rank lives', () => {
+    it('and the cultivator row has no column that could hold one', () => {
+        // The ratchet. Everything below is about behaviour; this is about there
+        // being nowhere for the behaviour to go wrong.
+        expect(columnsOfCultivators()).toContain('sect_id');
+        expect(columnsOfCultivators()).not.toContain('sect_rank');
+    });
+
+    it('a join writes the house on the row and the rung on the roll', () => {
         const house = aHouse();
         const who = aCultivator();
         sects.addMember(house, who.id, 0);
         expect(mirrored(who.id).sectId).toBe(house);
-        expect(mirrored(who.id).rank).toBe('Outer Disciple');
+        expect(sects.getMembership(who.id)?.rankIndex).toBe(0);
+        expect(sects.getMembership(who.id)?.rankTitle).toBe('Outer Disciple');
     });
 
-    it('and follows a promotion', () => {
+    it('and a promotion moves the roll, which is the only thing to move', () => {
         const house = aHouse();
         const who = aCultivator();
         sects.addMember(house, who.id, 0);
         sects.setRank(house, who.id, 1);
         expect(sects.getMembership(who.id)?.rankIndex).toBe(1);
-        expect(mirrored(who.id).rank).toBe('Inner Disciple');
+        expect(sects.getMembership(who.id)?.rankTitle).toBe('Inner Disciple');
     });
 
     it('SURVIVES AN UNRELATED UPDATE MADE FROM A STALE SNAPSHOT', () => {
@@ -94,24 +130,21 @@ describe('the roll is the only writer of a rank', () => {
         const who = aCultivator();
         sects.addMember(house, who.id, 0);
 
-        // The caller reads the person. This snapshot carries the OLD rank.
+        // The caller reads the person. This snapshot is from before the raise.
         const snapshot = cultivators.getById(who.id)!;
-        expect(snapshot.sectRank).toBe('Outer Disciple');
+        expect(snapshot.sectId).toBe(house);
 
         // The house raises them. The caller does not know.
         sects.setRank(house, who.id, 1);
-        expect(mirrored(who.id).rank).toBe('Inner Disciple');
 
         // And now the caller writes something entirely unrelated. This is the
         // ordinary shape of every verb in the game: read a person, change one
         // thing about them, write them back.
         cultivators.update(who.id, { location: 'somewhere else' });
 
-        // The promotion must still stand. Before this fix the stale snapshot's
-        // rank was written back over it and the disciple was quietly demoted.
+        // The promotion still stands, and now by construction rather than by a
+        // careful merge: the snapshot never held a rank.
         expect(sects.getMembership(who.id)?.rankIndex).toBe(1);
-        expect(mirrored(who.id).rank).toBe('Inner Disciple');
-        expect(cultivators.getById(who.id)!.sectRank).toBe('Inner Disciple');
     });
 
     it('and an unrelated update cannot put somebody in a house either', () => {
@@ -124,34 +157,30 @@ describe('the roll is the only writer of a rank', () => {
         expect(sects.getMembership(who.id)).toBeNull();
     });
 
-    it('and leaving clears it, because the roll said so', () => {
+    it('and leaving clears the house and empties the roll', () => {
         const house = aHouse();
         const who = aCultivator();
         sects.addMember(house, who.id, 0);
         sects.removeMember(house, who.id);
         expect(mirrored(who.id).sectId).toBeNull();
-        expect(mirrored(who.id).rank).toBeNull();
+        expect(sects.getMembership(who.id)).toBeNull();
     });
 });
 
-describe('and the two halves of the mirror never disagree', () => {
-    it('a rank without a house is not a state anybody should be in', () => {
+describe('and walking out of the house you were born into', () => {
+    it('leaves nothing behind that names a rung', () => {
         // `sect-manage.ts` has one deliberate exception to "the roll writes the
         // rank": somebody BORN into a house has no `sect_members` row to
         // remove, so walking out is written on the cultivator directly. It sets
-        // `sectId: null` and says nothing about the rank, and `update` merges
-        // over a fresh read - so the title survives the house.
+        // `sectId: null`. That used to leave a rank title stranded on the row,
+        // and the game would describe an Outer Disciple of nowhere.
         const house = aHouse();
         const who = aCultivator();
-        db.prepare('UPDATE cultivators SET sect_id = ?, sect_rank = ? WHERE id = ?')
-            .run(house, 'Outer Disciple', who.id);
+        db.prepare('UPDATE cultivators SET sect_id = ? WHERE id = ?').run(house, who.id);
 
         cultivators.update(who.id, { sectId: null });
 
-        const after = mirrored(who.id);
-        expect(after.sectId).toBeNull();
-        // A title with no house behind it is a person the game will describe as
-        // an Outer Disciple of nowhere.
-        expect(after.rank).toBeNull();
+        expect(mirrored(who.id).sectId).toBeNull();
+        expect(sects.getMembership(who.id)).toBeNull();
     });
 });

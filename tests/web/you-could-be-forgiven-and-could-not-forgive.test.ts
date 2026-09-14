@@ -154,7 +154,7 @@ describe('letting somebody off closes the row', () => {
             kind: 'favor',
             holderId: cultivator.id,
             subjectId: them.id,
-            cause: 'help_given',
+            cause: 'sheltered',
             severity: 'slight',
             onDay: 0,
             description: 'Shen Yuan stood between Wei Ciyi and a man with a stick.'

@@ -6,13 +6,17 @@ import type {
     InsightDomain,
     ManualQuality,
     Technique,
-    TechniqueClass,
+    TechniqueAddress,
     TechniqueFuel,
     TechniqueGrade,
     TechniqueCategory,
     Element
 } from '../../schema/cultivation.js';
-import { isOnRoad } from '../../schema/cultivation.js';
+import {
+    addressCeilingForOrdinal,
+    addressRank,
+    isOnRoad
+} from '../../schema/cultivation.js';
 import {
     FALSE_IMMORTAL_ORDINAL,
     LAST_CROSSING_ORDINAL,
@@ -35,8 +39,8 @@ export type TechniqueProvenance = 'taught' | 'ruin' | 'grave' | 'derived';
 
 /**
  * Which age an art was written in. See `era` on `TechniqueEntry` for why this
- * is independent of `class` and of `provenance`, and `docs/world/history/ancient.md`
- * for what the distinction is for.
+ * is independent of `provenance`, and `docs/world/history/ancient.md` for what
+ * the distinction is for.
  */
 export type TechniqueEra = 'modern' | 'ancient';
 
@@ -118,8 +122,8 @@ export interface TechniqueEntry extends Technique {
      */
     fragmentOf: string | null;
     /**
-     * Which age the art was written in, and it is a SECOND AND INDEPENDENT AXIS
-     * from `class`.
+     * Which age the art was written in. Independent of everything else on the
+     * row: an ancient art is not a stronger art, it is an older one.
      */
     era: TechniqueEra;
 }
@@ -502,35 +506,34 @@ export function compareGrades(a: TechniqueGrade, b: TechniqueGrade): number {
 // CATALOG
 // ─────────────────────────────────────────────────────────────────────────
 
-// THE TWO KINDS OF ART, AND THE CEILING ON ONE OF THEM
+// WHAT PRACTISING AN ART DOES, AND WHERE IT STOPS
+//
+// THERE IS ONE KIND OF ART. Every art carries its practitioner a few rungs, and
+// every art has whatever fighting style and abilities it has. Both halves are
+// true of every row.
+//
+// The catalog reached that in two moves. A `class` axis beside `category` -
+// 'cultivation' against 'dao' - went when comprehension was redefined as the
+// dao. What outlived it was `advancesRank`, a category test plus a named set of
+// five ids, and it split the catalog 46 / 111 on exactly the question the first
+// move abolished.
+//
+// Measured over the 157 rows when the gate came off: 22 carry one rung, 30 two,
+// 24 three, 50 four, and the rest between five and thirteen. Three authored caps
+// reach further than their own geometry - 12, 20 and 40 rungs - and those stay,
+// because a manual that reaches past its own band is a thing the catalog is
+// entitled to say (`isWideSpan`). Eight rows open so high that the top of the
+// ladder is inside their own realm band, and those stop nowhere. The long tail
+// is the realm bands being wide at the top; it is not a figure anybody picked.
 
 /**
- * Arts that raise a rank despite not being filed under `cultivation`.
+ * The rung an art stops at, or null when it stops at nothing.
+ *
+ * No gate in front of it. Realm geometry decides how far a book reaches from
+ * where it opens, and that is true of the last sword form as much as of a
+ * breathing canon.
  */
-const CULTIVATION_CLASS_TECHNIQUE_IDS: ReadonlySet<string> = new Set([
-    // Forbidden methods that ARE progression: they raise a rank, by means the
-    // orthodox road does not use and at prices it will not pay.
-    'nine-abyss-demon-transformation',
-    'ten-thousand-corpse-heart',
-    'lifespan-devouring-heaven-theft',
-    'meridian-devouring-art',
-    // An ancient road you practise rather than use. It is filed `cultivation`
-    // by category too, so this entry is belt and braces - but the set is what
-    // `classOf` reads first and a road this unusual should be named in it.
-    'paired-breath-canon'
-]);
-
-/** Which of the two kinds an art is. One rule, plus a named override set. */
-export function classOf(t: Pick<Technique, 'id' | 'category'>): TechniqueClass {
-    if (CULTIVATION_CLASS_TECHNIQUE_IDS.has(t.id)) return 'cultivation';
-    return t.category === 'cultivation' ? 'cultivation' : 'dao';
-}
-
-/**
- * The rung a manual stops at, or null when it stops at nothing.
- */
-export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>): number | null {
-    if (classOf(t) !== 'cultivation') return null;
+export function capOf(t: Pick<Technique, 'requiredOrdinal'>): number | null {
     // Delegated rather than restated. Realm geometry is the engine's and the
     // data layer owns which books exist; two copies of how a cap relates to a
     // realm is one copy too many, and `realmsSpannedBy` depends on there being
@@ -541,16 +544,133 @@ export function capOf(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal'>)
 /**
  * Whether a manual reaches further than its own realm geometry would give it.
  */
-export function isWideSpan(t: Pick<Technique, 'id' | 'category' | 'requiredOrdinal' | 'cap'>): boolean {
-    if (classOf(t) !== 'cultivation' || t.cap === null) return false;
+export function isWideSpan(t: Pick<Technique, 'requiredOrdinal' | 'cap'>): boolean {
+    if (t.cap === null) return false;
     const ordinary = capOf(t);
     return ordinary !== null && t.cap > ordinary;
 }
 
+/**
+ * Whether the catalog states a rung this art stops at.
+ *
+ * Named `isARoad` while the catalog had two kinds of art in it, and the word was
+ * carrying the split: a road raised a rank, an art did not. With one kind left
+ * the only thing the predicate still tests is `cap`, and "road" would have gone
+ * on describing 149 rows while its negation named the eight that carry somebody
+ * FURTHEST - the ruin and grave arts whose own realm band contains the top of
+ * the ladder. A name that inverts in its negation is worse than no name, so it
+ * says what it tests.
+ */
+export function stopsSomewhere(
+    t: Pick<Technique, 'cap'> | null | undefined
+): boolean {
+    return t != null && t.cap != null;
+}
+
+// WHAT AN ART IS AIMED AT
+//
+// Here rather than in `schema/cultivation.ts`, where the ladder itself lives:
+// the ceiling is the ladder's and which arts exist is the catalog's.
+
+/**
+ * What an art addresses when it has not said. Deliberately NOT the ceiling for
+ * the rung: a row that says nothing is a row nobody has thought about, and
+ * defaulting those to the top of what their rung allows would declare the ladder
+ * already climbed. Read this way the catalog tops out at `place`.
+ *
+ * `several` IS STILL A BODY ART - three bodies is three bodies. Only `field`,
+ * which lands on a place rather than a person, crosses onto the second rung; had
+ * `several` implied `place`, every bandit art with a broad stroke would be
+ * claiming a rung it has no business at.
+ */
+export function defaultAddressFor(
+    t: Pick<Technique, 'reach'>
+): TechniqueAddress {
+    // REACH ALONE, AND NOTHING ELSE MAY BE ADDED IN FRONT OF IT.
+    //
+    // This read `if (advancesRank(t)) return 'body'` - a manual you practise
+    // addresses you - and that clause was the one thing in the collapse of the
+    // two kinds of art that could have gone wrong silently. Every art advances
+    // now, so the clause would have forced all 157 rows to `body` and left the
+    // 111 the predicate used to hold out - every attack, defence, movement and
+    // support art - unable to address anybody but their own practitioner. It
+    // typechecks perfectly and nothing else in the engine would have said a
+    // word. `an-art-addresses-by-its-reach-alone.test.ts` is the ratchet.
+    return t.reach === 'field' ? 'place' : 'body';
+}
+
+/** What this art addresses: its own answer where it has one, otherwise the default. */
+export function addressOf(
+    t: Pick<Technique, 'reach' | 'addresses'>
+): TechniqueAddress {
+    return t.addresses ?? defaultAddressFor(t);
+}
+
+/**
+ * Whether an art's declared address is legal for its rung. Asserted by the
+ * catalog suite rather than by a Zod refinement, for the same reason the grade
+ * bands are: it is a statement about content, and content is where a violation
+ * should be reported.
+ */
+export function addressIsLegal(
+    t: Pick<Technique, 'reach' | 'addresses' | 'requiredOrdinal'>
+): boolean {
+    // One check for every row. The `advancesRank` branch that used to sit above
+    // this demanded `body` of anything that raised a rank, which is now every
+    // art in the catalog; see `defaultAddressFor`.
+    return addressRank(addressOf(t)) <= addressRank(addressCeilingForOrdinal(t.requiredOrdinal));
+}
+
 // HOW WELL EACH BOOK IS WRITTEN
 
-/** What a row that is not named below is. The identity element. */
+/**
+ * What a row that is not named below is. The identity element.
+ *
+ * Exactly one row takes it on purpose. `continuance-decree` has no copy
+ * anywhere (`NO_SURVIVING_COPY_TECHNIQUE_IDS`), and quality is a property of a
+ * copy: authoring one would be a claim about a book nobody can open, and
+ * nothing will ever read it because there is nothing to pick up.
+ */
 export const DEFAULT_MANUAL_QUALITY: ManualQuality = 'sound';
+
+// WHAT DECIDES A ROW
+//
+// The 46 cultivation canons below were authored one at a time; the 111 working
+// arts under them were reading `sound` by silence rather than by decision, back
+// when a predicate split the catalog into books you practised and arts you used.
+// Every art carries its practitioner a few rungs now, so all 157 are manuals and
+// the same rule has to reach all of them. It is the one the tiers already state:
+// quality is a fact about the COPY - who set it down, whether they came back,
+// how many hands have worked it since, and whether anybody is keeping it.
+//
+//   crude     the entry says the copy is cheap, block-printed, or written by
+//             people who do not have the art. At or below Core Formation only,
+//             for the reason given at the Core Formation break below.
+//   sound     a living teacher, or an intact text nobody is keeping. The
+//             majority, and it has to stay the majority to mean anything.
+//   refined   the catalog says somebody KEEPS it: a house's own road, a
+//             countable number of copies, a refusal to lend it, generations of
+//             annotation, or the only one of its kind.
+//   pristine  the copy is in the hand of somebody who stood where it ends, or
+//             every house that has read it agrees there is nothing to fix.
+//   corrupt   two routes, both already in use above: the copy is SHORT of
+//             something the catalog names, or the book does not tell its reader
+//             what it will cost them.
+//
+// A PRICE THE BOOK STATES IS NOT CORRUPTION, however large. `paired-breath-canon`
+// charges both readers everything - a deviation is both of your deviations, and
+// it ends when one of you does - and is `sound`, because the canon is explicit
+// and does not soften it. What makes `crimson-tithe-palm` corrupt is not the
+// lifespan it spends; it is that the manual does not mention it until the last
+// page.
+//
+// AND CORRUPT IS NOT A VERDICT ON THE ART. `corpse-lantern-soul-forging` burns a
+// dead cultivator's residue as a weapon and righteous sects execute for holding
+// it, and it is a `sound` book: transmitted, complete, honest with its reader.
+// The forbidden arts that are corrupt are corrupt for what they do to their own
+// practitioner. The two halves of the lotus rite are the demonstration - the
+// half that draws is `sound` and the half that is drawn from is `corrupt`, and
+// the difference is which of the two the book is spending.
 
 export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // Qi Condensation. The one band where the same rungs are sold at a stall and
@@ -642,7 +762,187 @@ export const MANUAL_QUALITY: Readonly<Record<string, ManualQuality>> = {
     // who had stood on both sides of it, and nobody has copied it since. ──
     'single-road-treatise': 'pristine',
     'first-and-last-breath-canon': 'pristine',
-    'unwritten-span-scripture': 'pristine'
+    'unwritten-span-scripture': 'pristine',
+
+    // ═══ THE WORKING ARTS ═══
+    // Same rule, same five causes. What changes is what the rows are made of:
+    // a house's deep road is the sort of thing generations annotate, and a
+    // sword form somebody sells is not, so `refined` is rarer down here and
+    // `sound` is commoner. That asymmetry is the content, not a gap in it.
+
+    // ── Qi Condensation. The whole spread, for the reason given at the top of
+    // this table: the same rungs are sold at a stall and taught in a courtyard.
+    // The stall side is the first thing every sect hands out and the arts
+    // invented by people who were not cultivators when they invented them. ──
+    'cross-meridian-strike': 'crude',
+    'green-sprout-lash': 'crude',
+    'scarlet-ember-palm': 'crude',
+    // The manual oversells itself, which is the `lesser-qi-gathering-manual`
+    // case: six is a good day and the title says a hundred.
+    'hundred-cut-flying-blade': 'crude',
+    'swallow-skimming-step': 'crude',
+    'green-mercy-mending-palm': 'crude',
+    // Copied from a fragment by somebody who could not use it and sold to
+    // somebody who could. `degradedCopy` written out as a row.
+    'drumming-thunder-clap': 'corrupt',
+    // The half that is drawn from. It spends the body it is cultivated in and
+    // returns the holder nothing, and nobody has ever begun it willingly.
+    'lotus-nurturing-canon': 'corrupt',
+    // One of the very few ice manuals anybody at this grade will ever see,
+    // which is the `rime-heart-stillness-canon` case one ladder down.
+    'bitter-frost-needle': 'refined',
+    'iron-thread-finger': 'sound',
+    'gutter-rain-palm': 'sound',
+    'loam-crusher-fist': 'sound',
+    'ashfall-crescent': 'sound',
+    'iron-shirt-tempering': 'sound',
+    'stone-hide-mantle': 'sound',
+    'bark-armor-circulation': 'sound',
+    'reed-crossing-qinggong': 'sound',
+    'windborne-willow-step': 'sound',
+    'warm-current-qi-transfer': 'sound',
+    'clear-spring-detoxification': 'sound',
+    'frost-setting-bud': 'sound',
+    'nine-night-opening': 'sound',
+    'twin-lotus-cultivation-method': 'sound',
+
+    // ── Foundation and Core. No stall copies among the working arts: not one
+    // of these entries says its copy is cheap or amateur, and `crude` takes a
+    // sentence rather than a band. ──
+    // Two complete copies are known to exist, which is the `clear-terrace`
+    // case: a countable number, and somebody is counting.
+    'glacial-tomb-slash': 'refined',
+    // A house's own instrument in each case - the surveyors a courier route
+    // depends on, the register a name is held in at whatever price the house
+    // set that year, and the art healers eat off.
+    'earth-shrinking-art': 'refined',
+    'name-holding-recitation': 'refined',
+    'meridian-knitting-needle-art': 'refined',
+    // The manual does not mention that the tithe comes off the user's own
+    // lifespan until the last page.
+    'crimson-tithe-palm': 'corrupt',
+    // Honest about the mechanism and dishonest about everything around it. Its
+    // own practitioners are spending something they were not told about.
+    'crimson-bound-union-rite': 'corrupt',
+    // The half that draws. It costs its reader nothing and says so, and what it
+    // spends is somebody else - which is the other book's quality, not this
+    // one's.
+    'lotus-plucking-rite': 'sound',
+    'nine-rivers-sword-chant': 'sound',
+    'white-tiger-rend': 'sound',
+    'cinder-lotus-blossom': 'sound',
+    'tectonic-seal-palm': 'sound',
+    'bramble-crown-spear': 'sound',
+    'formless-severing-intent': 'sound',
+    'arcstep-thunder-lance': 'sound',
+    'cold-set-petal-cut': 'sound',
+    'golden-bell-shroud': 'sound',
+    'still-water-mirror-guard': 'sound',
+    'cold-jade-carapace': 'sound',
+    'immovable-ground-stance': 'sound',
+    'standing-bed-array': 'sound',
+    'shadow-splitting-gait': 'sound',
+    'gale-riding-sword-flight': 'sound',
+    'emberstep-mirage': 'sound',
+    'hundred-herb-restoration-art': 'sound',
+    'bloodwarm-battle-chant': 'sound',
+    'thread-reading-stance': 'sound',
+    'heavenly-mechanism-sight': 'sound',
+
+    // ── Nascent Soul and above. No `crude` past here, by the rule already
+    // stated. Kept rather than sold is what buys `refined`: a coast that will
+    // not teach it to outsiders, a manual a house holds and does not lend. ──
+    'samsara-tide-crush': 'refined',
+    'spring-returning-life-art': 'refined',
+    'void-piercing-sword-domain': 'sound',
+    'sunfeather-conflagration': 'sound',
+    'hollow-mountain-decree': 'sound',
+    'severed-name-finger': 'sound',
+    'hundred-bloom-opening': 'sound',
+    'unyielding-mountain-body': 'sound',
+    'burning-heart-cinder-ward': 'sound',
+    'thousand-li-cloud-tread': 'sound',
+    'frostmirror-displacement': 'sound',
+    'soul-anchoring-invocation': 'sound',
+    'unclosing-bloom': 'sound',
+    'binding-word-seal': 'sound',
+    'quiet-cut-severing-stroke': 'sound',
+    'corpse-lantern-soul-forging': 'sound',
+    // The sects held this one and cannot read their own copies now. That is the
+    // reader falling short of the demand, which `readManual` already prices;
+    // the copy itself is intact.
+    'worldroot-strangling-vine': 'sound',
+    'star-quenching-blade-domain': 'sound',
+    'abyssal-gate-torrent': 'sound',
+    'nine-heaven-scourging-bolt': 'sound',
+    'first-sun-cinder-art': 'sound',
+    'orchid-domain': 'sound',
+    'void-hollow-body': 'sound',
+    'thunder-scale-aegis': 'sound',
+    'lightning-gate-transposition': 'sound',
+    'void-fold-pilgrimage': 'sound',
+    'jade-pool-lifespring-art': 'sound',
+    // It costs the healer a portion of their own foundation permanently and
+    // says so plainly. A stated price is not corruption.
+    'severed-fate-mending-art': 'sound',
+    'standing-air-quenching-art': 'sound',
+    // One syllable, spoken, and the four who could agree on its pronunciation
+    // are no longer available to ask. A text that can no longer be read
+    // correctly is short of something.
+    'open-sky-calamity-word': 'corrupt',
+    'dragonbone-severing-decree': 'sound',
+    'kalpa-fire-that-eats-heaven': 'sound',
+    'undying-kalpa-body': 'sound',
+    'immovable-heaven-pillar': 'sound',
+    'one-thought-ten-thousand-li': 'sound',
+    'rebirth-in-the-lotus-furnace': 'sound',
+    'turning-year-stillness-art': 'sound',
+    'name-erasing-art': 'sound',
+    'karmic-severing-art': 'sound',
+    'hour-reversing-art': 'sound',
+    'boundary-loosening-art': 'sound',
+
+    // ── The fragments of the destroyed Dao houses. Every one of the six says
+    // in its own description what did not survive: the closing procedure, the
+    // method for drawing the nail back out, the pages about what it costs, the
+    // choice of where the gate puts you down. `FRAGMENT_TECHNIQUE_ORIGINS` is
+    // the same set, and this is what being a fragment is worth. ──
+    'karmic-thread-reading-art': 'corrupt',
+    'nameless-witness-stance': 'corrupt',
+    'unpayable-tally-brand': 'corrupt',
+    'earth-anchoring-nail-art': 'corrupt',
+    'gate-that-was-closed': 'corrupt',
+    'debt-karmic-reclamation-art': 'corrupt',
+
+    // ── The ancient roads, and the two decrees at the top of them. Written for
+    // a richer age, intact, and taught by nobody - which is `sound` rather than
+    // anything else, because `paired-breath-canon` above is the same set and is
+    // already authored that way. Each states what it is worse at and what it
+    // takes out of the user, and states it in the open. The decrees are the
+    // hardest case this table makes and the answer is the same: the most
+    // dangerous sentence anybody ever wrote down is an ordinary book. ──
+    'hundred-pace-step': 'sound',
+    'shut-hour-sealing-field': 'sound',
+    'thousand-spear-summoning': 'sound',
+    'vessel-borrowing-palm': 'sound',
+    'sixteen-thread-command': 'sound',
+    'hollow-second-body': 'sound',
+    'heavenly-road-decree': 'sound',
+    'heavenly-witness-decree': 'sound',
+
+    // ── Above the Lid. `unwritten-span-scripture` above is one of the three
+    // sets of writings an ascended founder sent down, and it is `pristine`; its
+    // two siblings are the same thing and get the same tier. The three faces
+    // the False Immortal cut where he was lecturing are his own hand at the
+    // rung the art ends at, which is the whole of what `pristine` claims - and
+    // what the stone loses against being shown is `opacity`, which those three
+    // rows already carry at the highest figures in the catalog. Charging it
+    // twice, on a second axis, would be the same fact kept in two places. ──
+    'one-step-beyond-heaven': 'pristine',
+    'fifteenth-breath-return-art': 'pristine',
+    'void-seam-holding-art': 'pristine',
+    'half-immortal-body': 'pristine',
+    'first-arrival-sword-art': 'pristine'
 };
 
 /**
@@ -675,10 +975,9 @@ function roadsFromCategory(category: string): string[] {
  * reason in place of the generic note.
  */
 function art(
-    t: Omit<Technique, 'mastery' | 'class' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects' | 'requiresPeople' | 'runsOn'>
+    t: Omit<Technique, 'mastery' | 'cap' | 'quality' | 'rootGrades' | 'domain' | 'domainDegree' | 'volumes' | 'derivable' | 'opening' | 'subjects' | 'requiresPeople' | 'runsOn'>
         & {
             opacity?: Opacity;
-            class?: TechniqueClass;
             cap?: number | null;
             rootGrades?: readonly string[];
             domain?: InsightDomain | null;
@@ -716,10 +1015,9 @@ function art(
         sourceNote: survivingCopy ? SOURCE_NOTES[provenance] : NO_SURVIVING_COPY_NOTES[t.id],
         fragmentOf: FRAGMENT_TECHNIQUE_ORIGINS[t.id] ?? null,
         // Resolved here rather than repeated on every entry, exactly as
-        // provenance is: the split between the two kinds of art, and the
-        // ceiling on one of them, read as one block instead of a hundred
-        // scattered flags that a new entry could forget.
-        class: t.class ?? classOf(t),
+        // provenance is. An entry that states a cap is stating that it reaches
+        // further than its own band would give it; everything else takes the
+        // geometry.
         cap: t.cap !== undefined ? t.cap : capOf(t),
         // The second axis. Resolved from `MANUAL_QUALITY` rather than repeated
         // on the entries, exactly as provenance and derivability are, so the
@@ -3646,7 +3944,7 @@ export function teachersOf(techniqueId: string): readonly LivingTransmission[] {
  */
 export function teachableEndOf(techniqueId: string): number | null {
     const art = getTechnique(techniqueId);
-    if (!art || art.class !== 'cultivation') return null;
+    if (!art) return null;
     return art.cap === null
         ? LAST_CROSSING_ORDINAL
         : Math.min(art.cap, LAST_CROSSING_ORDINAL);

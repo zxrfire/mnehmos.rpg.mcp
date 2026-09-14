@@ -87,6 +87,8 @@ import {
     type ImmortalGrade
 } from '../data/cultivation/immortal-items.js';
 import { PILLS } from '../data/cultivation/pills.js';
+import { STRUCTURAL_REPAIR_MEDICINES } from '../data/cultivation/structural-repair-medicine.js';
+import { significanceOfDose } from '../engine/world/who-holds-the-structural-repair-medicine.js';
 import { TECHNIQUES } from '../data/cultivation/techniques.js';
 import { pillBandOrdinal } from '../engine/cultivation/breakthrough.js';
 import { REALM_TIERS, type RealmKey } from '../engine/cultivation/realms.js';
@@ -158,6 +160,40 @@ export function theThingAskedFor(named: string, pillId: string | null): TheThing
         const bare = name.replace(/^the\s+/i, '').toLowerCase();
         return bare === what || bare.includes(what) || what.includes(bare);
     };
+
+    // ── A DOSE OF REPAIR MEDICINE, WHICH IS THE FIFTH CATALOG ────────────
+    //
+    // Held by houses, seeded as rows in the one possessions table, priced by
+    // the same engine as everything else - and unreachable by a sentence,
+    // because this read asked four catalogs and not this one. So a player could
+    // stand in front of the Kiln's serving officers and have no way to ask what
+    // they would take for the pill on their shelf.
+    //
+    // `pricedAtOrdinal` is the unit, not `reachesUpToOrdinal`. The field asks
+    // how high the thing carries whoever ends up with it, and a dose carries
+    // nobody up the ladder: it puts somebody back on the rung they were stopped
+    // at. `pricedAtOrdinal` is that rung - the first ordinal at which this grade
+    // is the cheapest thing that answers - and it is the same figure
+    // `repairWeightInStones` prices off, so the barter bar and the stone weight
+    // cannot disagree about which of the four is the heavier ask.
+    const dose = STRUCTURAL_REPAIR_MEDICINES.find(row => alike(row.name));
+    if (dose) {
+        return {
+            id: dose.id,
+            name: dose.name,
+            carriesTo: dose.pricedAtOrdinal,
+            tracked: {
+                significance: significanceOfDose(dose),
+                forOrdinal: dose.pricedAtOrdinal
+            },
+            // NEVER A COUNTER, AT ANY OF THE FOUR GRADES. The cheap two have a
+            // cash weight and it is a private arrangement between houses rather
+            // than a price on a board, and the dear two are not bought with
+            // money at all. Sending a player to a counter for any of them would
+            // be sending them to one that has never held one.
+            pastTheCashLine: true
+        };
+    }
 
     // Something from above, priced off what its own grade permits. The grade is
     // said in front of the name - "a higher Heaven-Ascending Golden Pill" - so
@@ -252,16 +288,19 @@ export function heldByTheirHouse(
 /**
  * Whether this row is the thing with that id.
  *
- * Three conventions, because the one possessions table stores three kinds of
+ * Four conventions, because the one possessions table stores four kinds of
  * thing and each names its catalog row differently: an artifact keeps the
- * catalog id as its OWN id, a pill carries `data.pillId`, and a manual carries
- * `data.techniqueId` behind `manualIdOf`. This used to be `kind === 'pill'`
- * and nothing else, which is why asking after anything but a pill found no
- * holder even where the register listed one.
+ * catalog id as its OWN id, a pill carries `data.pillId`, a manual carries
+ * `data.techniqueId` behind `manualIdOf`, and a repair dose carries
+ * `data.medicineId` because its own id records which house's shelf it was
+ * seeded onto. This used to be `kind === 'pill'` and nothing else, which is why
+ * asking after anything but a pill found no holder even where the register
+ * listed one; the dose line was the same defect one catalog further along.
  */
 export function thisRowIs(row: ObjectRecord, thingId: string): boolean {
     return row.id === thingId
         || row.data?.pillId === thingId
+        || row.data?.medicineId === thingId
         || manualIdOf(row) === thingId;
 }
 
@@ -348,6 +387,7 @@ export type TheOfferNamed =
     | { medium: 'stones'; what: string; stones: number }
     | { medium: 'an_art'; what: string; id: string; name: string }
     | { medium: 'a_medicine'; what: string; id: string; name: string }
+    | { medium: 'a_repair_dose'; what: string; id: string; name: string }
     | { medium: 'from_above'; what: string; id: string; name: string; promotes: boolean }
     | { medium: 'a_thing'; what: string; id: string; name: string }
     | { medium: 'a_herb'; what: string; id: string; name: string }
@@ -383,6 +423,15 @@ export function whatTheOfferNames(named: string): TheOfferNamed {
 
     const pill = PILLS.find(p => answersTo(p.name, what));
     if (pill) return { medium: 'a_medicine', what, id: pill.id, name: pill.name };
+
+    // A DOSE, AND IT USED TO FALL PAST EVERY BRANCH HERE. The open medium at
+    // the bottom catches whatever no catalog answers for and prices it at the
+    // offerer's own rung - which is the truthful answer for an oath and the
+    // quiet kind of wrong for a thing with a row in the world. Worse, the open
+    // medium is deliberately not gated, so a Soul-Seating Pill named by
+    // somebody who has never seen one was an offer that cost nothing to make.
+    const dose = STRUCTURAL_REPAIR_MEDICINES.find(m => answersTo(m.name, what));
+    if (dose) return { medium: 'a_repair_dose', what, id: dose.id, name: dose.name };
 
     // Matched on the name without its article, because the grade is said in
     // front of it - "a higher Heaven-Ascending Golden Pill" is how anybody
@@ -471,6 +520,13 @@ export function whatIsBeingPutDown(
     if (offer.medium === 'a_medicine') {
         const pill = PILLS.find(p => p.id === offer.id)!;
         return { what: pill.name, carriesThemTo: pillBandOrdinal(pill.grade), singular: true };
+    }
+
+    // The same unit `theThingAskedFor` reads for one, so a dose is worth the
+    // same whichever side of the table it is on.
+    if (offer.medium === 'a_repair_dose') {
+        const dose = STRUCTURAL_REPAIR_MEDICINES.find(m => m.id === offer.id)!;
+        return { what: dose.name, carriesThemTo: dose.pricedAtOrdinal, singular: true };
     }
 
     // ── A THING THAT CAME DOWN, PRICED THE WAY EVERY OTHER THING IS ──────
@@ -673,6 +729,9 @@ export function heldByYou(named: string, carrying: WhatYouAreCarrying): TheOffer
     // The pouch stores an immortal medicine as `<id>:<grade>` - the convention
     // `theUnearnedStepIn` reads - because the catalog holds one row and three
     // grades on it. Any grade of one is one of them.
+    // A repair dose lands here too and is only ever found in the tracked half:
+    // it is never written into a pouch, because there is no counted tier for a
+    // thing there are eleven of. `thisRowIs` is what reaches it.
     const counted = carrying.pouch.find(
         lot => lot.quantity > 0
             && (lot.itemId === offer.id || lot.itemId.startsWith(`${offer.id}:`))

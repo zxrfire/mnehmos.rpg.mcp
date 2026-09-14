@@ -31,7 +31,6 @@ import {
     WHEN_ONE_WAKES,
     LOST_RECORDS,
     getHeldInstrument,
-    instrumentHeldBy,
     bluffs,
     unmaintainedSeals
 } from '../../src/data/cultivation/sealed-ancestors.js';

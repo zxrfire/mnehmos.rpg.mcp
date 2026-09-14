@@ -56,7 +56,6 @@ import {
     contentsBandFor,
     provenContents,
     describeOutside,
-    type Gate,
     type Site
 } from '../../src/data/cultivation/inheritance-trials.js';
 

@@ -12,6 +12,11 @@ import {
     type Relationship
 } from '../../engine/social/index.js';
 import { SECTS, getSect, getSectAdmission } from '../../data/cultivation/sects.js';
+import {
+    rankIndexOnAHousesRoll,
+    theRollAlone,
+    whereSomebodyStandsOnAHousesRoll
+} from '../../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import { getTechnique } from '../../data/cultivation/techniques.js';
 import { getArtifact } from '../../data/cultivation/artifacts.js';
 import type { PouchItemKind } from '../../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
@@ -1419,7 +1424,11 @@ export function describeCultivator(
         standing: {
             spiritStones: cultivator.spiritStones,
             sectId: cultivator.sectId,
-            sectRank: cultivator.sectRank,
+            // The rung off the roll. It used to be a string mirrored onto the
+            // cultivator row, which said nothing wherever nothing set it.
+            sectRank: whereSomebodyStandsOnAHousesRoll(
+                theRollAlone(repos.sects), cultivator.id
+            )?.rungName ?? null,
             location: cultivator.location,
             feuds: cultivator.feuds
         },
@@ -1619,11 +1628,12 @@ export function discoveryContextFor(
             ordinal: cultivator.realmOrdinal,
             regionCatalogId: standingRegion,
             factionId: cultivator.sectId,
-            // A rank INDEX, from the house's own ladder, because
-            // `standingRequired` is an index and `sectRank` is the title.
-            factionRankIndex: house && cultivator.sectRank
-                ? house.ranks.indexOf(cultivator.sectRank)
-                : -1
+            // A rank INDEX, because `standingRequired` is one. Off the roll
+            // through the one read, rather than by searching the house's
+            // ladder for a mirrored title.
+            factionRankIndex: rankIndexOnAHousesRoll(
+                theRollAlone(repos.sects), cultivator.id, house?.ranks.length ?? 0
+            )
         };
 
         for (const ground of daoGroundsIn(standingRegion)) {

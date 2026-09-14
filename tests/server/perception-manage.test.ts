@@ -11,6 +11,7 @@ import {
 } from '../../src/server/consolidated/perception-manage.js';
 import { getDb, closeDb } from '../../src/storage/index.js';
 import { CharacterRepository } from '../../src/storage/repos/character.repo.js';
+import { CharacterSchema } from '../../src/schema/character.js';
 import { ConcentrationRepository } from '../../src/storage/repos/concentration.repo.js';
 import { SpatialRepository } from '../../src/storage/repos/spatial.repo.js';
 import { PerceptionAssessmentRepository } from '../../src/storage/repos/perception-assessment.repo.js';
@@ -22,12 +23,15 @@ const ctx = { sessionId: 'test' };
 function makeCharacter(repo: CharacterRepository, name: string, level = 1): string {
     const id = randomUUID();
     const now = new Date().toISOString();
-    repo.create({
+    // Parsed, because `create` is declared as taking a character with every
+    // schema default already filled while what a caller states is the handful
+    // of fields it cares about. `create` parses again on the way in.
+    repo.create(CharacterSchema.parse({
         id, name, characterType: 'pc', level,
         hp: 30, maxHp: 30, ac: 12,
         stats: { str: 10, dex: 10, con: 12, int: 14, wis: 14, cha: 10 },
         createdAt: now, updatedAt: now,
-    });
+    }));
     return id;
 }
 
@@ -36,16 +40,6 @@ function bindToSubsystem(db: ReturnType<typeof getDb>, characterId: string) {
         INSERT OR IGNORE INTO subsystem_bindings (character_id, subsystem_id, bound_at)
         VALUES (?, ?, ?)
     `).run(characterId, CONSTRAINT_PERCEPTION_SUBSYSTEM_ID, new Date().toISOString());
-}
-
-function makeWorld(db: ReturnType<typeof getDb>): string {
-    const id = randomUUID();
-    const now = new Date().toISOString();
-    db.prepare(`
-        INSERT INTO worlds (id, name, seed, width, height, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, 'Pyr', 'seed', 100, 100, now, now);
-    return id;
 }
 
 function makeRoom(
@@ -232,6 +226,10 @@ describe('perception_manage consolidated tool', () => {
                 activeSpell: 'Bless',
                 spellLevel: 1,
                 startedAt: 1,
+                // The schema's own default, stated because `create` is declared
+                // as taking a row with the defaults already applied. Nothing
+                // here saves against it; this test only reads the spell name.
+                saveDCBase: 10,
             });
 
             const roomId = makeRoom(spatialRepo);

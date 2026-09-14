@@ -395,6 +395,18 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             decision, so it must not itself cost a decade. Use it for "how do I get past this
             book".`
     },
+    derive: {
+        takes: ['target'],
+        says: `WRITE THE NEXT STAGE OF A MANUAL YOURSELF, so the book carries one rung further
+            than anybody has written it. "target" names the art and may be left out, in which
+            case the engine takes the one that has stopped carrying them. NOT acquisition,
+            which is the free comparison of all three routes and passes no time; this is doing
+            one of them. NOT learn_technique, which takes up somebody else's book. Only open to
+            somebody who has made that manual's road their own - a leaning reads and cannot
+            write - and it costs decades: twelve years at the bottom of the ladder and
+            centuries near the top, spent through the same skip a seclusion runs through. It
+            costs no stones and no standing, and there is nothing to buy.`
+    },
     ceiling: {
         takes: [],
         says: `why nothing is accumulating, with the binding gate named: the manual, the

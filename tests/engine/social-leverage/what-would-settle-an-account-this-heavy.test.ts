@@ -89,10 +89,16 @@ describe('the bargain', () => {
 });
 
 describe('walking out of it', () => {
-    const binding = createOath({
-        holderId: 'the_son', subjectId: 'house_a', cause: 'marriage_pact',
-        severity: 'grave', onDay: 200, description: 'Bound.'
-    });
+    // `whatWalkingOutOfItCosts` takes a binding whose subject is named, where
+    // `createOath` widens the column to nullable for accounts with no name on
+    // them. Restated here rather than asserted, since this one has a name.
+    const binding: ObligationRecord & { subjectId: string } = {
+        ...createOath({
+            holderId: 'the_son', subjectId: 'house_a', cause: 'marriage_pact',
+            severity: 'grave', onDay: 200, description: 'Bound.'
+        }),
+        subjectId: 'house_a'
+    };
 
     it('reopens the original at its original date and its original weight', () => {
         const closed = graveBetweenHouses();

@@ -12,17 +12,18 @@ import {
 } from '../../../src/engine/perception/attentional-capacity.js';
 import { getDb, closeDb } from '../../../src/storage/index.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
+import { CharacterSchema } from '../../../src/schema/character.js';
 import { randomUUID } from 'crypto';
 
 function makeCharacter(repo: CharacterRepository, level: number): string {
     const id = randomUUID();
     const now = new Date().toISOString();
-    repo.create({
+    repo.create(CharacterSchema.parse({
         id, name: 'X', characterType: 'pc', level,
         hp: 10, maxHp: 10, ac: 10,
         stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
         createdAt: now, updatedAt: now,
-    });
+    }));
     return id;
 }
 

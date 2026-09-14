@@ -79,10 +79,13 @@ canon cover identical rungs, so both open at ordinal 0, so both are necessarily 
 Calling the good one `earth` would require moving its `requiredOrdinal` to 13 - a lie about
 what it covers - and repricing a gathering primer at Foundation qi costs.
 
-So cultivation manuals carry a **second, independent axis**: `quality`, in
+So every manual - and every art is one, since they all carry a practitioner some rungs -
+carries a **second, independent axis**: `quality`, in
 `MANUAL_QUALITY` in `techniques.ts`, five tiers named for their cause -
 `corrupt / crude / sound / refined / pristine`. The spread across the catalog is produced
-by four sentences rather than by taste, and the banner above the table states them. Two
+by sentences the entries already say about themselves rather than by taste, and the banner
+above the table states which sentence buys which tier. Every row is authored except the
+one art no copy of exists anywhere, because quality is a property of a copy. Two
 rules to hold onto when adding an entry:
 
 - **Quality must never track grade.** `moonlit-well-absorption-art` is mortal and refined;

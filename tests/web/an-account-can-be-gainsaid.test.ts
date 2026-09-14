@@ -91,7 +91,7 @@ function openLedger(
  * itself uses, so picking them any other way arranges a situation the verb
  * will not agree it is in.
  */
-function whoIsHere(game: any, cultivator: { id: string; location: string }) {
+function whoIsHere(game: any, cultivator: { id: string; location: string | null }) {
     return game.present(cultivator) as { id: string; name: string }[];
 }
 

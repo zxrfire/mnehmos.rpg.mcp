@@ -128,7 +128,10 @@ describe('a tracked thing keeps its row and the row says it ended', () => {
     it('ruins the craft rather than deleting it', async () => {
         const harness = await makeGameInWorld({ seed: 'break-a-boat', worldSeed: WORLD });
         const { cultivator } = await harness.game.newRun('Wright');
-        const world = await harness.game.loadWorld();
+        const loaded = await harness.game.loadWorld();
+        expect(loaded, 'the run opened without a world').toBeTruthy();
+        const world = loaded!;
+        expect(cultivator.location, 'the run opened with nobody standing anywhere').toBeTruthy();
         const recipe = getConveyanceRecipe('build-spirit-boat')!;
         const boat = mintCraft(recipe, {
             id: 'obj-craft-own-boat',
@@ -139,14 +142,15 @@ describe('a tracked thing keeps its row and the row says it ended', () => {
             wrightName: cultivator.name,
             bestHandOrdinal: 30,
             onDay: Math.floor(world.currentDay),
-            mooredAt: cultivator.location
+            mooredAt: cultivator.location!
         })!;
         world.objects.push(boat);
 
         await harness.game.act('I smash the spirit boat');
 
-        const after = (await harness.game.loadWorld()).objects
-            .find(object => object.id === 'obj-craft-own-boat');
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the breaking').toBeTruthy();
+        const after = reloaded!.objects.find(object => object.id === 'obj-craft-own-boat');
         // The row survives. `items.md` is emphatic that a thing which stops
         // existing must still be answerable for, and `ruin` is what says so.
         expect(after).toBeDefined();

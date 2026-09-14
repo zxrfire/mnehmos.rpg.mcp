@@ -87,7 +87,7 @@ const SEALER_ORDINAL = REALM_TIERS[SEALING_TIER + 1].ordinalStart;
 
 function aThing(id: string, power: number) {
     return makeObject({
-        id, name: `a thing called ${id}`, kind: 'weapon', significance: 'significant',
+        id, name: `a thing called ${id}`, kind: 'artifact', significance: 'significant',
         power, ownerId: HOUSE.id, ownerName: HOUSE.name
     });
 }
@@ -119,7 +119,7 @@ describe('what a house can take back', () => {
 
     it('cannot reach what the house never handed over', () => {
         const bought = transferPossession(
-            makeObject({ id: 'bought', name: 'theirs', kind: 'weapon', ownerId: 'them', ownerName: 'Them' }),
+            makeObject({ id: 'bought', name: 'theirs', kind: 'artifact', ownerId: 'them', ownerName: 'Them' }),
             { onDay: 1, toHolderId: 'them', toHolderName: 'Them', how: 'bought', transfersOwnership: true }
         );
         const stolen = transferPossession(aThing('stolen', 9), {

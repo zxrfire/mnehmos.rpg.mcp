@@ -32,7 +32,8 @@ import {
 } from '../../../src/engine/social/accounts-with-no-name';
 import { createObligation } from '../../../src/engine/social/grudges';
 import {
-    theAccountsAFightOpens
+    theAccountsAFightOpens,
+    type WhatFollows
 } from '../../../src/engine/social-leverage/going-further-than-an-agreed-bout-allowed';
 
 const KILLER: Party = {
@@ -40,13 +41,24 @@ const KILLER: Party = {
     houseId: null, houseName: null, alignment: null, ranked: false
 };
 
-/** Somebody with a brother and a sister who were not there. */
+/**
+ * Somebody with a brother and a sister who were not there.
+ *
+ * `clan` IS THIS LEDGER'S WORD FOR BLOOD, and these rows used to say
+ * `sibling`, which `InheritanceRelation` has never had. It only ever reached
+ * the tag because `what-a-deed-leaves.ts` interpolates the relation straight
+ * into `carried:${relation}` without reading it, so the fixture was handing the
+ * engine a value no caller in `src/` can produce and the assertion below was
+ * pinning the fixture's own typo. `the-wrongs-a-world-opens-holding.ts` holds
+ * the real mapping and files every blood tie - kin and spouse alike - under
+ * `clan`.
+ */
 const DEAD: Party = {
     id: 'the-dead', name: 'The dead man',
     houseId: null, houseName: null, alignment: null, ranked: false,
     kin: [
-        { id: 'brother', relation: 'sibling' },
-        { id: 'sister', relation: 'sibling' }
+        { id: 'brother', relation: 'clan' },
+        { id: 'sister', relation: 'clan' }
     ]
 };
 
@@ -78,7 +90,7 @@ describe('kin who cannot name it still hold it', () => {
         expect(hasANameOnIt({ subjectId: theirs[0].subjectId })).toBe(false);
         expect(theirs[0].subjectId).toBe(NO_NAME_ON_IT);
         expect(theirs[0].tags).toContain(NO_NAME_TAG);
-        expect(theirs[0].tags).toContain('carried:sibling');
+        expect(theirs[0].tags).toContain('carried:clan');
     });
 
     it('holds it at the same weight as a relative who can name it', () => {
@@ -188,20 +200,32 @@ describe('and it gives its holder something to do about it', () => {
  * they just cannot aim it.
  */
 describe('a killing reaches kin who cannot name who did it', () => {
-    const followed = {
-        howFar: 'past what was agreed' as const,
+    // Typed rather than inferred, which is what caught the three defects below.
+    // `howFar` was the sentence `'past what was agreed'`, which is not one of
+    // the three `HowFarPastIt` values - this fight killed somebody, so it is
+    // `killed`. `as: 'sibling'` is not an `InheritanceRelation` (see `DEAD`
+    // above). And `ownHouseCost` was absent entirely. Between them this fixture
+    // was a `WhatFollows` the engine cannot produce; it passed because
+    // `theAccountsAFightOpens` reads only `against`, `heldBy` and the parties.
+    const followed: WhatFollows = {
+        howFar: 'killed',
         against: {
-            kind: 'grudge' as const,
-            cause: 'killed_kin' as const,
-            severity: 'grave' as const,
+            kind: 'grudge',
+            cause: 'killed_kin',
+            severity: 'grave',
             description: 'He went further than the terms allowed.',
             tags: ['bout']
         },
         heldBy: [
-            { id: 'brother', as: 'sibling' as const },
-            { id: 'the-house', as: 'house' as const }
+            { id: 'brother', as: 'clan' },
+            { id: 'the-house', as: 'house' }
         ],
         brokenPromise: false,
+        // Zero because nothing here exercises it, not because a killing past
+        // agreed terms is free: `theAccountsAFightOpens` never reads this field
+        // and `src/web/combat-verbs.ts` is the only thing that does. The real
+        // curve is pinned in `going-further-than-an-agreed-bout-allowed.test.ts`.
+        ownHouseCost: 0,
         note: ''
     };
     const parties = {

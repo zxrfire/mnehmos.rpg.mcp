@@ -210,14 +210,17 @@ function headTitleOfHouse(view: HouseView): string {
 /**
  * Whether somebody stands above this house who could simply replace its head.
  */
+/**
+ * A patron is a body, so the question is whether there is one, not which
+ * vocabulary the house's backing is filed under.
+ *
+ * This listed three governance values, one of which - `deference` - was the
+ * word for a house that holds from NOBODY, and it was answering yes for the
+ * one house in the world whose whole character is that there is nobody to
+ * appeal to and nobody who could replace its head.
+ */
 function houseHasPatron(sectId: string): boolean {
-    const parentage = getParentage(sectId);
-    if (!parentage) return false;
-    return (
-        parentage.governance === 'federated' ||
-        parentage.governance === 'administered' ||
-        parentage.governance === 'deference'
-    );
+    return getParentage(sectId)?.parentFactionId != null;
 }
 
 function loadHouse(

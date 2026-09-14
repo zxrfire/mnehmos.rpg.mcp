@@ -37,14 +37,21 @@ describe('the catalog half is real before anything is gated on it', () => {
         expect(housesTeaching(PAVILION_ART)).toBe(1);
     });
 
-    it('and isCommonlyHeld disagrees, which is why this module does not use it', () => {
-        // Reported, not fixed. `isCommonlyHeld` returns true for anything that
-        // is not a cultivation road with a cap, so every fighting art in the
-        // catalog reads as nobody's - including a signature one house teaches.
-        // A house's signature is exactly what trust.md's strongest check is
-        // about, so gating on that predicate would make the check answer
-        // "nobody's art" for the case it exists to serve.
-        expect(isCommonlyHeld(PAVILION_ART)).toBe(true);
+    it('and isCommonlyHeld now agrees, which the collapse of the two kinds of art fixed', () => {
+        // THE DEFECT THIS RECORDED, AND WHAT CLOSED IT. `isCommonlyHeld` opens
+        // `if (t.cap == null) return true`, and while only cultivation manuals
+        // carried a cap that first line answered "anybody's" for every fighting
+        // art in the catalog - a house's signature sword included, which is
+        // exactly the case trust.md's strongest check exists to serve. The note
+        // here said "reported, not fixed" and this module routed around it.
+        //
+        // Every art carries a cap now, so the Pavilion's signature falls
+        // through to the real test - taught by one house, below
+        // COMMON_HOUSE_COUNT - and comes back scarce. The two reads agree.
+        // Whether this module should now USE the predicate is a separate
+        // question and nobody has answered it; what is gone is the reason it
+        // could not.
+        expect(isCommonlyHeld(PAVILION_ART)).toBe(false);
         expect(housesTeaching(PAVILION_ART)).toBeLessThan(COMMON_HOUSE_COUNT);
     });
 });

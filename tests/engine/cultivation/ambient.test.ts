@@ -79,7 +79,9 @@ describe('rollAmbientQi', () => {
 
     it('reproduces the declared distribution over a uniform sweep', () => {
         const counts: Record<AmbientQi, number> = {
-            thin: 0, normal: 0, dense: 0, spirit_tide: 0
+            // `sealed_vein` is the fifth band and was missing here, so a sweep
+            // that ever rolled one would have tallied into an absent key.
+            thin: 0, normal: 0, dense: 0, spirit_tide: 0, sealed_vein: 0
         };
         const N = 100_000;
         for (let i = 0; i < N; i++) counts[rollAmbientQi(i / N)]++;

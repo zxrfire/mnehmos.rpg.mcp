@@ -574,8 +574,20 @@ export const CultivatorSchema = z.object({
 
     // Wealth and standing.
     spiritStones: z.number().int().min(0).default(STARTING_SPIRIT_STONES),
+    /**
+     * WHOSE ROLL THEY ARE ON, and nothing about which rung of it.
+     *
+     * There is no `sectRank` beside this and there must not be one again. It
+     * was a string mirrored off `sect_members`, which made it a third copy of a
+     * rung the roll and the world row already held: it said nothing where
+     * nothing set the mirror, and said the joining rung wherever the world had
+     * since moved somebody. `whereSomebodyStandsOnAHousesRoll` is the one read.
+     *
+     * The house is a different fact and genuinely lives here: somebody born on
+     * a house's roll carries a `sectId` with no `sect_members` row at all,
+     * which is this world's "on the roll, at no rung".
+     */
     sectId: z.string().nullable().default(null),
-    sectRank: z.string().nullable().default(null),
     /**
      * Where the cultivator currently is, as a free-text place name. Deliberately
      * not an enum: this world's geography is narrative, invented by the agent as
@@ -935,16 +947,13 @@ export const APPROACH_PIERCING_AUDIENCES: readonly ApproachAudience[] = ['peers'
 // TECHNIQUES (ARTS). The cultivation replacement for spells, tiered against the
 // realm ladder.
 
-/**
- * The two kinds of art. One is what you PRACTISE to rank up, the other is what
- * you USE to fight; `category` says what an art does mechanically, `class` says
- * which of the two kinds it is, and only one of them carries a ceiling.
- */
-export const TechniqueClassSchema = z.enum([
-    'cultivation', // a manual you practise to raise your rank. Carries a `cap`
-    'dao'          // an art you use. No cap: what you can DO is not what you ARE
-]);
-export type TechniqueClass = z.infer<typeof TechniqueClassSchema>;
+// THERE IS ONE KIND OF ART. Every entry here is a cultivation technique, and
+// `category` says what one does. Two axes tried to say otherwise and both are
+// gone: a stored `class` sorting the catalog into arts you practise and arts
+// you use, and after it a derived `advancesRank` doing the same job from the
+// category. Every art carries its practitioner a few rungs and every art has
+// whatever fighting style it has. The one question that survives is how far -
+// `cap`, in `data/cultivation/techniques.ts`.
 
 export const TechniqueCategorySchema = z.enum([
     'attack',      // offensive arts
@@ -1082,45 +1091,9 @@ export function addressCeilingForOrdinal(ordinal: number): TechniqueAddress {
     return ceiling;
 }
 
-/**
- * What an art addresses when it has not said. Deliberately NOT the ceiling for
- * the rung: a row that says nothing is a row nobody has thought about, and
- * defaulting those to the top of what their rung allows would declare the ladder
- * already climbed. Read this way the catalog tops out at `place`.
- *
- * `several` IS STILL A BODY ART - three bodies is three bodies. Only `field`,
- * which lands on a place rather than a person, crosses onto the second rung; had
- * `several` implied `place`, every bandit art with a broad stroke would be
- * claiming a rung it has no business at.
- */
-export function defaultAddressFor(
-    t: Pick<Technique, 'class' | 'reach'>
-): TechniqueAddress {
-    // The invariant, not a default: a manual you practise addresses you.
-    if (t.class === 'cultivation') return 'body';
-    return t.reach === 'field' ? 'place' : 'body';
-}
-
-/** What this art addresses: its own answer where it has one, otherwise the default. */
-export function addressOf(
-    t: Pick<Technique, 'class' | 'reach' | 'addresses'>
-): TechniqueAddress {
-    return t.addresses ?? defaultAddressFor(t);
-}
-
-/**
- * Whether an art's declared address is legal for its rung and kind. Asserted by
- * the catalog suite rather than by a Zod refinement, for the same reason the
- * grade bands are: it is a statement about content, and content is where a
- * violation should be reported.
- */
-export function addressIsLegal(
-    t: Pick<Technique, 'class' | 'reach' | 'addresses' | 'requiredOrdinal'>
-): boolean {
-    const address = addressOf(t);
-    if (t.class === 'cultivation') return address === 'body';
-    return addressRank(address) <= addressRank(addressCeilingForOrdinal(t.requiredOrdinal));
-}
+// `defaultAddressFor`, `addressOf` and `addressIsLegal` live in
+// `data/cultivation/techniques.ts`, because which arts exist is catalog
+// knowledge. They read `reach` and nothing else.
 
 /**
  * Why the top rung is not the rung below it with more behind it - the failure the
@@ -1234,8 +1207,8 @@ export const TechniqueSchema = z.object({
     reach: TechniqueReachSchema.optional(),
     /**
      * What the art is aimed at, on the ladder that escalates in kind. Absent means
-     * `defaultAddressFor` reads `class` and `reach`. Declared only where an entry
-     * genuinely reaches higher, and never higher than
+     * `defaultAddressFor` reads `reach`, and reads nothing else.
+     * Declared only where an entry genuinely reaches higher, and never higher than
      * `addressCeilingForOrdinal` allows for its rung.
      */
     addresses: TechniqueAddressSchema.optional(),
@@ -1244,12 +1217,11 @@ export const TechniqueSchema = z.object({
      * A manual worth teaching long past its band says so with `span`.
      */
     regard: RegardProfileSchema.optional(),
-    /** Which kind of art this is. Resolved by the catalog's authoring helper. */
-    class: TechniqueClassSchema.default('dao'),
     /**
      * THE CEILING. The rung past which this manual cannot take anybody, however
-     * long they practise. Only ever set on `class: 'cultivation'`; null means
-     * uncapped, which is vanishingly rare.
+     * long they practise. Set on every art, because every art carries somebody;
+     * null means uncapped, which is eight rows that open above the last realm
+     * boundary on the ladder.
      *
      * This is what makes the faction catalog's `reliableOrdinal` true BY
      * CONSTRUCTION. A low-tier house teaches a low-tier manual, so it

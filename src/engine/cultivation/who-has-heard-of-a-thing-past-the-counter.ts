@@ -43,6 +43,9 @@
  */
 
 import { PILLS } from '../../data/cultivation/pills.js';
+import {
+    getStructuralRepairMedicine
+} from '../../data/cultivation/structural-repair-medicine.js';
 import type { Pill } from '../../schema/cultivation.js';
 import { pillBandOrdinal } from './breakthrough.js';
 import { pillTradeTier } from './buying-and-bartering-pills.js';
@@ -77,15 +80,19 @@ export function aThingOnOpenSale(pill: Pill): boolean {
  * The rung a catalog thing is pitched at, or null where the catalogs do not
  * name one.
  *
- * PILLS TODAY AND NOT PILLS BY DESIGN. The claim this answers - that a thing
- * exists - is the same claim for an art, an artifact or a material, and each of
- * those has a rung in its own row. What they do not yet have is a reason for
- * anybody to be refused the name, so nothing here reaches for them; when one
- * does, it is another lookup in this function rather than another kind.
+ * TWO CATALOGS NOW, AND THE SECOND ARRIVED THE WAY THIS FILE SAID IT WOULD:
+ * *"when one does, it is another lookup in this function rather than another
+ * kind."* Structural repair medicine became the road for a permanent injury, so
+ * a wound read names one, so somebody has to be able to not have heard of it.
+ * The height is the row's own `pricedAtOrdinal` - the first rung at which that
+ * grade is the cheapest thing that answers - which is the repair table's way of
+ * saying what `pillBandOrdinal` says for a pill.
  */
 export function theHeightAThingIsPitchedAt(thingId: string): number | null {
     const pill = PILLS.find(row => row.id === thingId);
-    return pill ? pillBandOrdinal(pill.grade) : null;
+    if (pill) return pillBandOrdinal(pill.grade);
+    const repair = getStructuralRepairMedicine(thingId);
+    return repair ? repair.pricedAtOrdinal : null;
 }
 
 /** Where somebody stands relative to a thing they may or may not have heard of. */
@@ -122,13 +129,14 @@ export interface WhereTheyStandToIt {
  */
 export function whoWouldHaveHeardOfIt(input: WhereTheyStandToIt): KnowingStage {
     const pill = PILLS.find(row => row.id === input.thingId);
-    if (!pill) return 'unaware';
     // Sold openly, so there is nothing to have been told. Above the ladder
     // rather than on it: a villager who has never left the county can name what
-    // is on the counter behind them.
-    if (aThingOnOpenSale(pill)) return 'named';
+    // is on the counter behind them. No repair medicine is ever on a counter,
+    // so the question is only asked of a pill.
+    if (pill && aThingOnOpenSale(pill)) return 'named';
 
-    const band = pillBandOrdinal(pill.grade);
+    const band = theHeightAThingIsPitchedAt(input.thingId);
+    if (band === null) return 'unaware';
     if (withinWorkingKnowledge(input.ordinal, band)) return 'named';
     const house = input.house;
     if (house !== null

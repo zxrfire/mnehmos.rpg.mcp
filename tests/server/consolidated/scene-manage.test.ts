@@ -2,9 +2,11 @@ import { handleSceneManage, SceneManageTool } from '../../../src/server/consolid
 import { getDb, closeDb } from '../../../src/storage/index.js';
 import { WorldRepository } from '../../../src/storage/repos/world.repo.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
+import { CharacterSchema } from '../../../src/schema/character.js';
 import { SceneRepository } from '../../../src/storage/repos/scene.repo.js';
 import { buildSceneSlice } from '../../../src/agent/prompt/slices/scene.js';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
 
 describe('scene_manage consolidated tool', () => {
     let worldId: string;
@@ -27,14 +29,17 @@ describe('scene_manage consolidated tool', () => {
             seed: 'pd-606',
             width: 100,
             height: 100,
-            tileData: '{}',
             createdAt: now,
             updatedAt: now
         });
 
         const mkChar = (name: string, cls: string) => {
             const id = randomUUID();
-            charRepo.create({
+            // CharacterRepository.create takes a parsed Character - every
+            // defaulted field filled in. Building the fixture through the
+            // schema is what supplies them, and it rejects a bad field here
+            // rather than silently dropping it on the way to the row.
+            charRepo.create(CharacterSchema.parse({
                 id,
                 name,
                 race: 'Human',
@@ -47,7 +52,7 @@ describe('scene_manage consolidated tool', () => {
                 stats: { str: 10, dex: 10, con: 10, int: 14, wis: 14, cha: 10 },
                 createdAt: now,
                 updatedAt: now
-            });
+            } satisfies z.input<typeof CharacterSchema>));
             return id;
         };
 
@@ -56,7 +61,7 @@ describe('scene_manage consolidated tool', () => {
         bohdanId = mkChar('Bohdan Cerny', 'Mason');
     });
 
-    const ctx = { worldId: '', partyId: '', encounterContext: null };
+    const ctx = { sessionId: 'test-session' };
 
     describe('tool definition', () => {
         it('exposes the canonical name', () => {
@@ -185,7 +190,7 @@ describe('scene_manage consolidated tool', () => {
                 narration: 'should not match shortId',
                 participants: [longId],
                 createdAt: now
-            } as any);
+            });
 
             const found = repo.findLatestForParticipant(shortId, worldId);
             expect(found).toBeNull();

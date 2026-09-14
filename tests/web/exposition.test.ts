@@ -149,12 +149,12 @@ describe('resolved entities describe behaviour, not schema', () => {
             INSERT INTO cultivators (
                 id, run_id, name, kind, spirit_root, attributes, realm_ordinal,
                 cultivation_progress, hp, max_hp, qi, max_qi, satiety, starvation_turns,
-                age, years_at_current_realm, spirit_stones, sect_id, sect_rank, location,
+                age, years_at_current_realm, spirit_stones, sect_id, location,
                 feuds, known_techniques, alive, death_cause, died_on_turn, created_at, updated_at
             ) VALUES (
                 'npc-tall', NULL, 'The Tall One', 'npc', 'single_metal',
                 '{"might":3,"insight":3,"fortune":2,"charm":3}', 30,
-                0, 300, 300, 90, 90, 100, 0, 700, 5, 40000, NULL, NULL, 'Burnt Earth',
+                0, 300, 300, 90, 90, 100, 0, 700, 5, 40000, NULL, 'Burnt Earth',
                 '[]', '[]', 1, NULL, NULL, @now, @now
             )
         `).run({ now });

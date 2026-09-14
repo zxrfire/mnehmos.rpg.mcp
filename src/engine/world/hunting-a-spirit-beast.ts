@@ -13,6 +13,7 @@ import {
     type BeastMaterial
 } from '../../data/cultivation/beasts.js';
 import type { HerbBiome } from '../../data/cultivation/herbs.js';
+import { asItStandsNow } from './a-beast-climbs-by-sitting-where-it-is.js';
 import { MAX_ORDINAL, rankName } from '../cultivation/realms.js';
 import { gradeOfWhatABodyYields } from '../cultivation/a-cultivators-body-is-material.js';
 import type { TechniqueGrade } from '../../schema/cultivation.js';
@@ -105,15 +106,55 @@ export interface WhatIsOnThisGround {
     above: readonly Beast[];
     /** The worst of `above`, priced by the ordinary resolver. Null if clear. */
     worst: Regard | null;
+    /**
+     * The ones in particular here that the hunter could reach. Never drawn.
+     *
+     * Said rather than offered, which is the whole of the core line applied to
+     * the draw: below it a hunt turns up whatever is standing there, and at or
+     * above it there is one animal on this ledge and finding it is the work.
+     * See {@link daysToFindTheOneHere}.
+     */
+    worthGoingAfter: readonly Beast[];
 }
 
+/**
+ * What the world already holds in particular on this piece of ground.
+ *
+ * Absent everywhere the caller has no world, which is every read this module
+ * answered before individuals existed: the catalog's own rung is then the
+ * answer, and it is the right one, because a row is written on contact and an
+ * unmet one is standing exactly where the catalog put it.
+ */
+export interface WhatTheWorldHoldsHere {
+    /** Where the individual of each species has got to, by species id. */
+    standingAt?: ReadonlyMap<string, number>;
+    /**
+     * Species whose one individual on this ground is dead.
+     *
+     * Every cored row is `groupSize: 1` and its id is a function of the species
+     * and the ground, so the one that was here WAS the species here. Offering
+     * the ground as though it still held one is the world saying two things.
+     */
+    gone?: ReadonlySet<string>;
+}
+
+/**
+ * What is standing on this ground, and what a hunt turns up by walking around.
+ *
+ * Every row this returns is read at the rung the thing is actually on, so a
+ * hawk that has sat on a vein for nine hundred years is priced at what it
+ * became rather than at what it was minted as.
+ */
 export function whatIsOnThisGround(
     ground: GroundForBeasts,
     hunterOrdinal: number,
-    sample: number
+    sample: number,
+    world: WhatTheWorldHoldsHere = {}
 ): WhatIsOnThisGround {
-    const here = beastsOnThisGround(ground);
     const rung = clampOrdinal(hunterOrdinal);
+    const here = beastsOnThisGround(ground)
+        .filter(b => !world.gone?.has(b.id))
+        .map(b => asItStandsNow(b, world.standingAt?.get(b.id) ?? b.ordinal));
 
     const reachable = here.filter(b => b.ordinal <= rung);
     const above = here.filter(b => b.ordinal > rung);
@@ -122,13 +163,77 @@ export function whatIsOnThisGround(
     // twenty rungs past is not an encounter, it is a thing walked past. Where
     // nothing survives the narrowing the reachable set comes back, because
     // ground with only hares on it still has hares on it.
-    const offered = narrowToOffered(reachable, rung);
+    const offered = narrowToOffered(reachable.filter(b => !hasACore(b)), rung);
 
     return {
         met: drawByFrequency(offered, sample) ?? null,
         above,
-        worst: above.length > 0 ? steepestGap(above, rung) : null
+        worst: above.length > 0 ? steepestGap(above, rung) : null,
+        worthGoingAfter: reachable.filter(hasACore)
     };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND WHAT IT COSTS TO REACH ONE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The multiple of an ordinary hunt that one in particular costs.
+ *
+ * The ordinary hunt is ten days of walking to find whatever is standing there,
+ * and most of that is already the finding - `HUNTING_DAYS` says so. This is the
+ * same work against a single animal that holds one ledge, has held it for
+ * centuries, and is alive because nothing has found it.
+ */
+export const A_PARTICULAR_ONE_IS_NOT_MET_BY_WALKING = 6;
+
+/**
+ * What each rung it has climbed past its kind adds to the finding.
+ *
+ * The rungs are the years. A thing standing four rungs above where the catalog
+ * puts its kind has sat on that ground for centuries without being found, and
+ * the reason nobody has found it is the thing being priced here.
+ */
+export const WHAT_EACH_RUNG_OF_SITTING_ADDS = 0.5;
+
+/**
+ * What a species is like to look for, off the one axis the catalog authors.
+ *
+ * `ability.kind` is the species axis and is already scaled by band through
+ * {@link abilityAt}, so nothing new says what a species can do. Three of the
+ * seven bear on being found at all; the rest do not, and a table that moved
+ * every one of them would be inventing a stealth stat beside the ability.
+ */
+export const WHAT_ITS_ABILITY_DOES_FOR_NOT_BEING_FOUND:
+    Readonly<Record<BeastAbility['kind'], number>> = Object.freeze({
+        concealment: 2,
+        perception: 1.5,
+        movement: 1.5,
+        defence: 1,
+        breath: 1,
+        endurance: 1,
+        strength: 1
+    });
+
+/**
+ * Days of walking to find the one in particular on this ground.
+ *
+ * `standingAt` is the rung the individual is actually on. The species row's own
+ * ordinal is where its kind is usually found, and the difference between the
+ * two is how long this one has been sitting here unfound.
+ */
+export function daysToFindTheOneHere(
+    species: Beast,
+    standingAt: number,
+    ordinaryHunt: number
+): number {
+    const climbed = Math.max(0, clampOrdinal(standingAt) - clampOrdinal(species.ordinal));
+    return Math.ceil(
+        ordinaryHunt
+        * A_PARTICULAR_ONE_IS_NOT_MET_BY_WALKING
+        * (1 + climbed * WHAT_EACH_RUNG_OF_SITTING_ADDS)
+        * WHAT_ITS_ABILITY_DOES_FOR_NOT_BEING_FOUND[species.ability.kind]
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────

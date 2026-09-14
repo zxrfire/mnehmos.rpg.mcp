@@ -22,8 +22,16 @@
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
 import { advanceWorldYears } from '../src/engine/world/driver.js';
-import { FALSE_IMMORTAL_ORDINAL, TRUE_IMMORTAL_ORDINAL, realmForOrdinal, REALM_TIERS } from '../src/engine/cultivation/realms.js';
-import { ageInYears, yearsToLifespanEnd } from '../src/engine/world/npc-state.js';
+import { FALSE_IMMORTAL_ORDINAL, realmForOrdinal, REALM_TIERS } from '../src/engine/cultivation/realms.js';
+import { DAYS_PER_YEAR } from '../src/engine/cultivation/cultivation.js';
+import type { NpcRecord } from '../src/engine/world/npc-state.js';
+
+/**
+ * Years left on a lifespan, restored here because `npc-state` stopped exporting
+ * it. Same arithmetic the module used, so the survey's numbers do not move.
+ */
+const yearsToLifespanEnd = (npc: NpcRecord, onDay: number): number =>
+    (npc.cultivation.lifespanEndsOnDay - onDay) / DAYS_PER_YEAR;
 
 const YEARS = Number(process.argv[2] ?? 6000);
 const POP = Number(process.argv[3] ?? 400);
@@ -45,7 +53,6 @@ interface Summiteer {
 for (const seed of SEEDS) {
     let state = seedWorld({ seed, catalog, population: POP }).state as any;
     const tracked = new Map<string, Summiteer>();
-    const factsAt = new Map<string, number>();
 
     const objectsOf = (s: any, id: string) =>
         (s.objects as any[]).filter(o => o.possessorId === id || o.ownerId === id).length;

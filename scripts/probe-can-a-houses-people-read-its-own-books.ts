@@ -22,11 +22,10 @@
  */
 import { seedWorld } from '../src/engine/world/seeding.js';
 import { loadCultivationCatalog } from '../src/engine/world/catalog.js';
-import { suitsRoot, shelfOf } from '../src/engine/world/manuals.js';
+import { suitsRoot } from '../src/engine/world/manuals.js';
 import { SPIRIT_ROOTS, conflictsWithRoot, getSpiritRoot } from '../src/engine/cultivation/spirit-roots.js';
 import { houseRoadOf, reachableCeiling, roadRefuses } from '../src/engine/world/what-root-a-seeded-house-member-has.js';
 import { TECHNIQUES } from '../src/data/cultivation/techniques.js';
-import type { NpcRecord } from '../src/engine/world/npc-state.js';
 
 const catalog = await loadCultivationCatalog();
 const seeds = ['a', 'b', 'c', 'd', 'e'];

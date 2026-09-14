@@ -46,6 +46,7 @@ import {
 import {
     buildItemsRegister,
     renderItemsSection,
+    renderTrackedCraftSection,
     type RegisterItems
 } from './register-items.js';
 import {
@@ -88,7 +89,6 @@ import {
     TECHNIQUES,
     GRADE_ORDER,
     carriesTo,
-    classOf,
     getTechnique,
     compareGrades,
     opacityOf,
@@ -119,6 +119,7 @@ import {
 import {
     relationshipsOf,
     type Warmth,
+    type RelationStance,
     type ResolvedRelationship
 } from '../data/cultivation/faction-relationships.js';
 import {
@@ -442,11 +443,13 @@ export interface RegisterTechnique {
     /** False where no copy exists anywhere in the world. */
     survivingCopy: boolean;
     /**
-     * Which age wrote it, and a SECOND AND INDEPENDENT AXIS from `class`.
+     * Which age wrote it. The only axis this section bands on.
+     *
+     * It used to be one of two, beside whether a technique was a thing you
+     * practised or a thing you used. Every technique is now both, so the other
+     * axis would separate nobody.
      */
     era: string;
-    /** 'cultivation' or 'dao'. The other axis of the same split. */
-    artClass: string;
     /**
      * Where the world's supply of the material stops, on mastery's [0,1].
      */
@@ -590,11 +593,42 @@ export interface RegisterHoldsFrom {
 }
 
 /**
+ * The six conduct words, and the one that says nobody recorded any conduct.
+ *
+ * `unrecorded` IS NOT A SEVENTH TEMPERATURE. It does not sit on the scale, it
+ * takes no colour, and nothing that counts the ends of the scale counts it -
+ * the same treatment `unplaced` gets in the direction column, and for the same
+ * reason. It is the register's word rather than the catalog's, because an
+ * authored tie always has somebody's word for how each side behaves; only a
+ * row derived from two bodies holding one object has none.
+ */
+export type RegisterWarmth = Warmth | 'unrecorded';
+
+/**
  * One relationship, seen from the entry it is printed on.
  */
 export interface RegisterRelationship extends Omit<
-    ResolvedRelationship, 'since' | 'howTheyPutIt' | 'andSoTheyDo'
+    ResolvedRelationship, 'since' | 'howTheyPutIt' | 'andSoTheyDo' | 'stance' | 'warmth' | 'theirWarmth'
 > {
+    /**
+     * WHERE THE OTHER BODY STANDS, AND A FOURTH ANSWER THE CATALOG HAS NO WORD
+     * FOR. An authored tie is written from one end, so it always knows; a
+     * contention is read off two bodies holding one thing and usually does
+     * not. `unplaced` is that - not level, not above, not below, nothing
+     * placing them. It is the register's word and not the catalog's, because
+     * an authored row cannot be in that state.
+     */
+    stance: RelationStance | 'unplaced';
+    /**
+     * HOW EACH SIDE CONDUCTS ITSELF, AND A SEVENTH ANSWER THAT IS NOT CONDUCT.
+     * Same shape as the stance above, one column over: a derived row has no
+     * warmth because nobody wrote one, and it was stamped `distant`, which
+     * says "no ill will and no contact; nobody maintains this one". That is a
+     * specific claim about two houses and it says somebody looked. The
+     * absence of a record says only that nobody wrote one down.
+     */
+    warmth: RegisterWarmth;
+    theirWarmth: RegisterWarmth;
     /**
      * The three partisan fields, WIDENED TO NULL, and the null is the point.
      */
@@ -628,6 +662,13 @@ export interface RegisterDeepRoad extends DeepRoadHolding {
      * The highest rung anybody can be TAUGHT to on this road.
      */
     teachableEnd: number | null;
+    /**
+     * The lowest rung the road can be taken up from. Not a ceiling and not
+     * related to one: the block already carries three numbers about how far
+     * this road goes and carried none about where it starts.
+     */
+    opensAt: number;
+    opensAtRank: string;
 }
 
 /**
@@ -1390,7 +1431,6 @@ function buildTechniques(): RegisterTechnique[] {
             survivingCopy: t.survivingCopy,
             description: t.description,
             era: String(t.era ?? 'modern'),
-            artClass: String(t.class ?? classOf(t)),
             worldSupplyCeiling:
                 ANCIENT_ARTS.find(a => a.techniqueId === t.id)?.worldSupplyCeiling ?? null,
             taughtBy: teachersOf(t.id),
@@ -1688,9 +1728,13 @@ function buildRelationships(factionId: string): RegisterRelationship[] {
             id: `contention-${factionId}-and-${c.otherId}`,
             otherId: c.otherId,
             otherName: c.otherName,
-            // Level, because a contention on its own says nothing about the
-            // ladder. Where the ladder is known, the tie above carries it.
-            stance: 'alongside' as const,
+            // Read off the hierarchy, and `unplaced` where the hierarchy says
+            // nothing. This used to be a flat `alongside` on the argument that
+            // a contention says nothing about the ladder - which is the reason
+            // to say nothing, not the reason to say level. "Stands level with"
+            // is a positive claim of equal standing, and it was printing an
+            // unbacked house as the peer of an institution above the map.
+            stance: ladderStanceBetween(factionId, c.otherId) ?? 'unplaced',
             kind: 'contested_claim' as const,
             source: 'the contested claims' as const,
             // EMPTY, BECAUSE THE BLOCK UNDERNEATH IS THE ANSWER. Joining one
@@ -1707,12 +1751,15 @@ function buildRelationships(factionId: string): RegisterRelationship[] {
             // paragraph stamped a hundred and fifty times. NOBODY_WROTE_IT
             // carries the words.
             since: null,
-            // No warmth is recorded because nothing recorded a relationship.
-            // `distant` is the scale's word for exactly that - no ill will and
-            // no contact, nobody maintains this one - and it is the honest
-            // answer rather than a neutral placeholder.
-            warmth: 'distant' as const,
-            theirWarmth: 'distant' as const,
+            // NOBODY RECORDED ANY CONDUCT, WHICH IS NOT THE SAME AS RECORDING
+            // THAT THERE IS NONE. These rows were stamped `distant` on the
+            // argument that it is the scale's word for no ill will and no
+            // contact - and that is a claim about how two houses behave, made
+            // out of a table that holds nothing about them. The design owner
+            // ruled on it beside the `alongside` default, which was the same
+            // defect one column over.
+            warmth: 'unrecorded' as const,
+            theirWarmth: 'unrecorded' as const,
             howTheyPutIt: null,
             andSoTheyDo: null,
             grievance: null,
@@ -1721,6 +1768,74 @@ function buildRelationships(factionId: string): RegisterRelationship[] {
         }));
 
     return [...tied, ...untied];
+}
+
+/** Every body this one holds from, all the way up, under every id each answers to. */
+function holdsFromChain(factionId: string): string[] {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    let current: string | null = factionId;
+    while (current !== null && !seen.has(current)) {
+        seen.add(current);
+        const parent: string | null = idsForFaction(current)
+            .map(id => getParentage(id))
+            .find(Boolean)?.parentFactionId ?? null;
+        if (parent === null) break;
+        out.push(...idsForFaction(parent));
+        current = parent;
+    }
+    return out;
+}
+
+/** Whether one body is the other, under any of the ids either answers to. */
+function isSameBody(a: string, b: string): boolean {
+    const ids = new Set(idsForFaction(a));
+    return idsForFaction(b).some(id => ids.has(id));
+}
+
+function isApex(factionId: string): boolean {
+    return idsForFaction(factionId).some(id => getApexInstitution(id) !== undefined);
+}
+
+/**
+ * Where the world places two bodies nobody wrote a tie between.
+ *
+ * NULL IS AN ANSWER, AND IT IS THE COMMON ONE - 274 of the 318 derived rows on
+ * the sheet. Two houses with a hand on one object are contending; that is all
+ * a contention establishes, and a register that answers "level" to a question
+ * nothing answered has asserted equal standing it never had. The design owner,
+ * on an unbacked river house printed as the peer of the body that administers
+ * the vein system: no unbacked sects stand level with an apex.
+ *
+ * The three things that do place a pair:
+ *
+ * - A GRANT. Anything in the chain of bodies one holds from is above it, and
+ *   the chain rather than the immediate parent, so a house under a court is
+ *   under the apex over that court as well.
+ * - AN APEX. There is nobody above one, by construction, so an apex is above
+ *   any body that is not one and two apexes are each other's only peers.
+ * - ONE ROOF. Two bodies holding from the same body are level with each other:
+ *   neither backs the other and both answer to the one thing, which is what
+ *   this sheet's `alongside` has always meant.
+ */
+function ladderStanceBetween(factionId: string, otherId: string): RelationStance | null {
+    const mine = new Set(idsForFaction(factionId));
+    const theirs = new Set(idsForFaction(otherId));
+
+    if (holdsFromChain(otherId).some(id => mine.has(id))) return 'below';
+    if (holdsFromChain(factionId).some(id => theirs.has(id))) return 'above';
+
+    const mineApex = isApex(factionId);
+    const theirsApex = isApex(otherId);
+    if (mineApex && theirsApex) return 'alongside';
+    if (theirsApex) return 'above';
+    if (mineApex) return 'below';
+
+    const myParent = idsForFaction(factionId).map(id => getParentage(id)).find(Boolean)?.parentFactionId ?? null;
+    const theirParent = idsForFaction(otherId).map(id => getParentage(id)).find(Boolean)?.parentFactionId ?? null;
+    if (myParent !== null && theirParent !== null && isSameBody(myParent, theirParent)) return 'alongside';
+
+    return null;
 }
 
 /**
@@ -1740,6 +1855,8 @@ function buildDeepRoad(factionId: string): RegisterDeepRoad | null {
         carriesTo: reach,
         carriesToRank: rankName(reach),
         teachableEnd: teachableEndOf(holding.techniqueId),
+        opensAt: art?.requiredOrdinal ?? 0,
+        opensAtRank: rankName(art?.requiredOrdinal ?? 0),
         // Against the teachable end rather than against the cap. The book may
         // run past the highest rung anybody can be walked to, and a teacher
         // standing at that rung has finished the road whatever the paper says
@@ -1953,10 +2070,16 @@ function kindNoun(d: SectDossier): string {
         case 'administration': return 'administration';
         case 'contracted': return 'contractor';
         case 'unaffiliated': return 'unbacked house';
-        // NOT "dao house". `outside` means holds no vein by nature, which is
-        // true of the seven houses and of Lantern Hall, which is not one - and
-        // calling it one printed a family and an adoption door onto a sect with
-        // an ordinary gate and a literacy test.
+        // The seven family houses, and only those. This used to be the default
+        // arm under `outside`, which also held Lantern Hall - a sect with an
+        // ordinary gate and a literacy test - and printed a family and an
+        // adoption door onto it. The Hall is `unaffiliated` now and is caught
+        // by the arm above.
+        // Every body carrying it also carries a house block and is answered
+        // above as a dao house; the arm is here because leaving a value of
+        // this field unhandled is exactly how Lantern Hall came to be printed
+        // as a family.
+        case 'bloodline': return 'bloodline house';
         default: return 'house';
     }
 }
@@ -1993,11 +2116,12 @@ function identityLine(d: SectDossier): string {
             ? 'holding its ground outright and paying nobody, because nothing that could be sent could take it'
             : h && h.governance === 'unbacked'
                 ? 'holding no vein from anybody and paying for that continuously'
-            : h && h.relation === 'outside'
-                // Not poverty and not independence: a body that sells a service
+            : h && h.relation === 'bloodline'
+                // Not poverty and not independence: a family that does a trade
                 // has no use for a vein and is outside the pyramid rather than
-                // at the bottom of it.
-                ? 'holding no vein by nature, because what it sells is not ground'
+                // at the bottom of it. There is no grant to renew, so there is
+                // nothing anybody above could decline to renew.
+                ? 'holding no vein at all, because what the family does is not held in ground'
                 : 'holding what it holds outright, on no grant from anyone';
 
     // The ladder, because its shape is identity: six rungs with names for each
@@ -4133,6 +4257,13 @@ text-transform:uppercase;padding:1px 6px;border:1px solid currentColor;border-ra
 
    NEVER COLOUR ALONE. The word is printed inside every mark that carries a
    hue, so cold and wary do not have to be told apart by eye. */
+/* THERE IS NO .warm-unrecorded RULE AND THAT IS THE DESIGN, the same as the
+   missing .reldir.unplaced above. Six words are a scale and carry hues;
+   "nobody wrote one down" is the absence of a reading and takes the plain
+   inherited ink, so a reader scanning colours cannot mistake it for a cool
+   relationship. Do not complete the set. The legend's own entry is marked off
+   the scale rather than coloured. */
+.wk--off{color:var(--faint)}
 .warm-warm{color:var(--datum);background:var(--datum-soft)}
 .warm-civil{color:var(--datum)}
 .warm-distant{color:var(--strong)}
@@ -4219,6 +4350,10 @@ color:var(--faint);white-space:nowrap}
 .reldir.above{color:var(--rel-up);border-color:var(--rel-up);background:var(--rel-up-soft)}
 .reldir.below{color:var(--rel-down);border-color:var(--rel-down);background:var(--rel-down-soft)}
 .reldir.alongside{color:var(--rel-level);border-color:var(--rel-level);background:var(--rel-level-soft)}
+/* THERE IS NO .unplaced RULE AND THAT IS THE DESIGN. The three hues each say
+   where a body sits; a pair nothing places gets the plain border and the faint
+   ink the badge already defaults to, because a fourth colour would make the
+   absence of a standing look like a standing. Do not complete the set. */
 /* The key, as three sample cards rather than three loose badges. It shows the
    RULE as well as the badge, because the rule is the mark a reader decodes
    scanning from a distance and the badge was the only thing the old key
@@ -4300,9 +4435,13 @@ function factionLink(
 
 function tagChips(tags: readonly string[]): string {
     if (!tags.length) return '';
+    // A chip is separated by a gap on the page and by nothing at all in the
+    // text, so a row of them flattened to "shardfrom:heaven conversing
+    // primordial canonvolume:1catalogued". `rsep` is out of flow and cannot
+    // become an extra item in the flex row.
     return `<span class="tags">${tags
         .map(t => `<span class="chip">${esc(t.replace(/-/g, ' '))}</span>`)
-        .join('')}</span>`;
+        .join('<span class="rsep"> &middot; </span>')}</span>`;
 }
 
 /** Who is actually carrying it, as one short phrase. */
@@ -4382,40 +4521,34 @@ function taughtByLine(t: RegisterTechnique): string {
 }
 
 /**
- * Every art, banded by grade, strongest band first.
+ * Every technique, banded by grade inside the age that wrote it.
+ *
+ * THERE WERE FOUR OF THESE AND THE SECOND AXIS IS GONE. The grid used to cross
+ * era with which of two kinds a technique was - one you practise to climb,
+ * one you use to fight. Every technique is now both, so that column would put
+ * the whole catalog on one side of itself. Era stays because it is a genuinely
+ * separate fact: the ancient half is a different bargain, not an older
+ * version of the same one.
  */
-/**
- * The arts, split on the era axis before the grade one.
- */
-const QUADRANTS: { era: string; artClass: string; head: string; note: string }[] = [
+const ERAS: { era: string; head: string; note: string }[] = [
         {
-            era: 'modern', artClass: 'cultivation',
-            head: 'Modern &middot; cultivation',
-            note: 'The elemental ladder every house teaches. This is what a curriculum IS, and what an admission gate is for.'
+            era: 'modern',
+            head: 'Modern',
+            note: 'The elemental ladder every house teaches. This is what a curriculum IS, and what an admission gate is for. Fire, ice, lightning, and at the top of the ladder something a province still names - each of them carries its practitioner up a few rungs and each of them is also a way of fighting, which is what a technique is.'
         },
         {
-            era: 'modern', artClass: 'dao',
-            head: 'Modern &middot; dao',
-            note: 'Fire, ice, lightning, and at the top of the ladder something a province still names. Elemental, and it scales.'
-        },
-        {
-            era: 'ancient', artClass: 'cultivation',
-            head: 'Ancient &middot; cultivation',
-            note: 'A road with a different bargain: lifespan, or blood, for something the elemental line has no way of asking for. The cost is paid by the user, in their own body or their own span, and on some of them it compounds - which is why an era worked it out and walked away rather than being forbidden.'
-        },
-        {
-            era: 'ancient', artClass: 'dao',
-            head: 'Ancient &middot; dao',
-            note: 'Categorical rather than elemental: spears somebody else can carry, a piece of ground taken out of the world, a second body. Not stronger than the modern line - the comparison does not resolve - and never a strict upgrade, or the abandonment would make no sense.'
+            era: 'ancient',
+            head: 'Ancient',
+            note: 'A road with a different bargain: lifespan, or blood, for something the elemental line has no way of asking for. The cost is paid by the user, in their own body or their own span, and on some of them it compounds - which is why an era worked it out and walked away rather than being forbidden. Categorical rather than elemental, too: spears somebody else can carry, a piece of ground taken out of the world, a second body. Not stronger than the modern line - the comparison does not resolve - and never a strict upgrade, or the abandonment would make no sense.'
         }
 ];
 
 /**
- * The same four quadrants, one SECTION each, and each one starts folded.
+ * One SECTION per age, and each one starts folded.
  */
-function techniqueQuadrantSections(list: RegisterTechnique[]): string {
-    return QUADRANTS.map(q => {
-        const rows = list.filter(t => t.era === q.era && t.artClass === q.artClass);
+function techniqueEraSections(list: RegisterTechnique[]): string {
+    return ERAS.map(q => {
+        const rows = list.filter(t => t.era === q.era);
         const capped = rows.filter(t => t.worldSupplyCeiling !== null);
         const untaught = rows.filter(t => !t.taughtBy.length).length;
         return `<section class="startfolded">
@@ -4428,11 +4561,10 @@ function techniqueQuadrantSections(list: RegisterTechnique[]): string {
             : ''}
   ${rows.length
             ? techniqueTables(rows)
-            // AN EMPTY QUADRANT IS PRINTED, NOT HIDDEN. The design states all
-            // four are real; the catalog currently fills three. Dropping the
-            // head would leave a reader unable to tell "no such thing exists"
-            // from "this table forgot", and the gap is falsifiable on the page.
-            : '<p class="note"><strong>Nothing in the catalog occupies this quadrant yet.</strong> It is printed empty rather than left out: a missing head reads as an oversight, and this is a real absence.</p>'}
+            // AN EMPTY AGE IS PRINTED, NOT HIDDEN. Dropping the head would
+            // leave a reader unable to tell "no such thing exists" from "this
+            // table forgot", and the gap is falsifiable on the page.
+            : '<p class="note"><strong>Nothing in the catalog was written in this age yet.</strong> It is printed empty rather than left out: a missing head reads as an oversight, and this is a real absence.</p>'}
 </section>
 `;
     }).join('');
@@ -4460,7 +4592,11 @@ function techniqueTables(list: RegisterTechnique[]): string {
         // wants them while the band is shut; the ordering belongs to the quadrant,
         // because it is identical in all seventeen of these tables. A caption
         // repeating all three says nothing the surrounding chrome has not.
-        const HEADS = ['Ord', 'Art', 'Kind', 'Reach', 'Channel', 'Ceiling', 'Taught by', 'What it does'];
+        // THE FIRST COLUMN IS A BAR AND IS NOW HEADED AS ONE. `Ord` said only
+        // that the cell held an ordinal, and the section note under it went
+        // further and said it was not a bar - which is the opposite of what
+        // the engine does with the number. See the note.
+        const HEADS = ['Learn at', 'Art', 'Kind', 'Reach', 'Channel', 'Ceiling', 'Taught by', 'What it does'];
         const CLASS = ['pw', 'nm', 'm', 'm', 'm', 'm', 'q', 'q'];
         const cells = rows.map(t => [
             String(t.requiredOrdinal),
@@ -4628,14 +4764,19 @@ function archiveTable(): string {
 
     return `<div class="scroll"><table class="arts">
     <caption>Ancient copies in houses that cannot work them &middot; ${rows.length}</caption>
-    <thead><tr><th>House</th><th>The book</th><th>Material</th><th>How they came by it</th><th>Would they part with it</th></tr></thead>
+    <thead><tr><th>House</th><th>The book</th><th class="pw">Learn at</th><th>Material</th><th>How they came by it</th><th>Would they part with it</th></tr></thead>
     <tbody>${rows.map(r => {
         const shown = r.stock === 'remnant'
             ? ARCHIVE_STOCK.never_had_any
             : ARCHIVE_STOCK[r.stock] ?? { label: r.stock, gloss: '' };
+        // The rung it can be taken up from, beside a book nobody here can
+        // work: a reader comparing it against the house's own figure can see
+        // for themselves which of the two reasons applies.
+        const opensAt = getTechnique(r.techniqueId)?.requiredOrdinal ?? null;
         return '<tr>'
             + `<td class="nm">${esc(nameOf(r.factionId))}</td>`
             + `<td class="nm">${esc(techniqueNameOf(r.techniqueId))}</td>`
+            + `<td class="pw">${opensAt === null ? '<span class="dim">-</span>' : opensAt}</td>`
             + `<td class="m">${esc(shown.label)}</td>`
             + `<td class="q">${esc(r.provenanceNote)}</td>`
             + `<td class="q">${esc(r.willingToPartWithIt)}</td></tr>`;
@@ -4835,6 +4976,7 @@ function howTheyAreSeenBlock(houseId: string): string {
         ['Why nobody can be sure which is which', seen.andWhyNobodyCanBeSure]
     ];
     return '<div class="grp"><h4>How they are seen <span>6</span>'
+        + '<span class="rsep"> &middot; </span>'
         + '<span class="gap">famous, and impossible to place</span></h4>'
         + '<p class="note">Admission is public: somebody watched each of these people walk up the mountain, and '
         + 'the province can name every one of them. What it cannot do is join that list to the working names it '
@@ -4849,12 +4991,19 @@ function howTheyAreSeenBlock(houseId: string): string {
  */
 function deepRoadBlock(r: RegisterDeepRoad): string {
     const teachers = r.teachers.map(t =>
-        `<div class="who"><span class="wn">${esc(t.who)}</span>`
-        + `<span class="wo">${t.realmOrdinal}</span>`
-        + `<span class="wr">${esc(rankName(t.realmOrdinal))}</span>`
+        `<div class="who"><span class="wn">${esc(t.who)}</span><span class="rsep"> &middot; </span>`
+        + `<span class="wo">${t.realmOrdinal}</span><span class="rsep"> &middot; </span>`
+        + `<span class="wr">${esc(rankName(t.realmOrdinal))}</span><span class="rsep"> &middot; </span>`
         + `<span class="wd">${esc(t.availability)}</span></div>`).join('');
 
     const rows: string[] = [
+        // WHERE IT STARTS, WHICH THIS BLOCK DID NOT SAY. It carried the cap,
+        // the teachable end and how far this house's teachers can take
+        // somebody - three answers to how far the road goes - and nothing
+        // about the rung it can be taken up from, which is the number a reader
+        // standing at the bottom of the ladder actually needs.
+        `<dt>Opens at</dt><dd><b>${r.opensAt}</b> &middot; ${esc(r.opensAtRank)}. `
+            + 'The lowest rung it can be taken up from; a teacher standing over somebody below it refuses.</dd>',
         `<dt>Copies in the house</dt><dd><b>${r.copies}</b>.</dd>`,
         `<dt>Why that many</dt>${chunkedDd(r.whyThatManyCopies)}`,
         `<dt>How a reader gets one</dt>${chunkedDd((r.access === 'lent' ? 'Lent, and it goes back. ' : 'Read where it sits; it does not leave the room. ') + r.accessTerms)}`,
@@ -4888,6 +5037,7 @@ function deepRoadBlock(r: RegisterDeepRoad): string {
     // teachable end, which is the one place it means what it says.
     const headEnd = r.teachableEnd ?? r.cap;
     return `<div class="grp deeproad"><h4>The road to the top of the ladder <span>1</span>`
+        + '<span class="rsep"> &middot; </span>'
         + `<span class="gap">${esc(r.roadName)}${headEnd === null ? '' : ` &middot; teachable to ${headEnd}`} &middot; ${r.copies} cop${r.copies === 1 ? 'y' : 'ies'} &middot; ${r.teachers.length} who can teach it</span></h4>`
         + `<dl class="hist">${rows.join('')}</dl>`
         + `<h4>Who can carry somebody up it <span>${r.teachers.length}</span></h4>`
@@ -4908,34 +5058,35 @@ const WARMTH_GLOSS: Record<Warmth, string> = {
     hostile: 'acted against, or would be if the cost fell'
 };
 
-const STANCE_HEADS: Record<RegisterRelationship['stance'], { label: string; gloss: string; badge: string }> = {
-    above: {
-        label: 'Who backs it',
-        gloss: 'the bodies it answers to, and how warm that is from each end',
-        badge: 'backs it'
-    },
-    alongside: {
-        label: 'Who stands level with it',
-        gloss: 'neither above nor below - rivals, claimants, and bodies under the same roof',
-        badge: 'level'
-    },
-    below: {
-        label: 'Who it backs',
-        gloss: 'the bodies that answer to it, and how it treats them',
-        badge: 'it backs'
-    }
-};
+/**
+ * The word for a row nobody wrote, and what it means, kept OUT of the scale.
+ *
+ * Deliberately not an entry in `WARMTH_GLOSS`: that record is the scale, the
+ * legend is built from it, and putting this in there would print the absence
+ * of a reading as the seventh reading.
+ */
+const UNRECORDED_GLOSS = 'nothing recorded either way; the row is read off what both of them hold';
 
 type RelStance = RegisterRelationship['stance'];
 
 /**
  * One relationship card, and the only place a direction is written down.
+ *
+ * THE BADGE SAYS WHERE, NOT WHO BACKS WHOM. It used to read "backs it" and "it
+ * backs", which is true of a grant and false of everything else that puts one
+ * body over another - an apex is above a house it has never granted anything
+ * to. The ladder words are the ones the rest of the sheet already uses.
  */
 function relCard(stance: RelStance, who: string, body: string): string {
     return `<div class="rel rel--${esc(stance)}">`
         + `<div class="relh">`
         + `<span class="relwho">${who}</span>`
-        + `<span class="reldir ${esc(stance)}">${esc(STANCE_HEADS[stance].badge)}</span>`
+        // A PRINTED SEPARATOR, NOT A GAP. Both spans are inline and the badge
+        // has padding and no margin, so with nothing between them the sheet
+        // read "Clear River Alliancelevel" everywhere it was copied out, read
+        // aloud, or seen without the stylesheet.
+        + '<span class="rsep"> &middot; </span>'
+        + `<span class="reldir ${esc(stance)}">${esc(STANCE_WORD[stance])}</span>`
         + `</div>`
         + body
         + `</div>`;
@@ -5020,6 +5171,9 @@ const TIE_PHRASE: Record<string, { fromBelow: string; fromAbove: string; level: 
 function tiePhrase(r: RegisterRelationship): string {
     const entry = TIE_PHRASE[r.kind];
     if (!entry) return 'a tie the catalog records and this sheet has no phrasing for';
+    // `unplaced` takes the level phrasing, which is the one written from
+    // neither end - "a second hand on the same thing" says what is between
+    // them without saying which of them is over the other.
     return r.stance === 'above'
         ? entry.fromBelow
         : r.stance === 'below'
@@ -5033,6 +5187,10 @@ function tiePhrase(r: RegisterRelationship): string {
 function standingSentence(r: RegisterRelationship, name: string): string {
     if (r.stance === 'above') return `${r.otherName} stands above ${name}`;
     if (r.stance === 'below') return `${name} stands above ${r.otherName}`;
+    // NOTHING PLACES THEM, SAID AS NOTHING PLACING THEM. The sheet asserted
+    // "stands level with" here on every derived row, which is a claim of equal
+    // standing made out of a shared claim on one object.
+    if (r.stance === 'unplaced') return `Nothing places ${r.otherName} above or below ${name}`;
     return `${r.otherName} stands level with ${name}`;
 }
 
@@ -5040,6 +5198,23 @@ function standingSentence(r: RegisterRelationship, name: string): string {
  * How each side feels, as a sentence, with the meaning of the word beside it.
  */
 function warmthSentence(r: RegisterRelationship, name: string): string {
+    // NOTHING WRITTEN, SAID AS NOTHING WRITTEN. "X is distant toward them (no
+    // ill will and no contact)" reads as a finding about how two houses
+    // behave; on a derived row there is no finding, and the sentence that
+    // replaces it says whose omission it is rather than inventing a conduct.
+    // The gloss belongs in the legend and not here. Said on the row it is the
+    // same clause on three hundred rows, and the sentence in front of it has
+    // already said the whole of it.
+    if (r.warmth === 'unrecorded' && r.theirWarmth === 'unrecorded') {
+        return 'Nothing is recorded of what either of them does about the other.';
+    }
+    if (r.warmth === 'unrecorded' || r.theirWarmth === 'unrecorded') {
+        const known = r.warmth === 'unrecorded' ? r.theirWarmth as Warmth : r.warmth as Warmth;
+        const knownIsMine = r.warmth !== 'unrecorded';
+        return `${knownIsMine ? esc(name) : esc(r.otherName)} is <b>${esc(known)}</b> toward `
+            + `${knownIsMine ? 'them' : esc(name)} (${esc(WARMTH_GLOSS[known])}), and nothing is `
+            + 'recorded of what the other does about it.';
+    }
     const mine = `${esc(name)} is <b>${esc(r.warmth)}</b> toward them (${esc(WARMTH_GLOSS[r.warmth])})`;
     // The gloss and then stop. Explaining after a mismatch that warmth is
     // stored at each end and a tie stored once is true, worth saying, and a
@@ -5064,24 +5239,48 @@ function warmthSentence(r: RegisterRelationship, name: string): string {
 const STANCE_MARK: Record<RelStance, string> = {
     above: '&#9650;',      // pointing up: this body stands over the house
     alongside: '&#9679;',  // level
-    below: '&#9660;'       // pointing down: this body answers to the house
+    below: '&#9660;',      // pointing down: this body answers to the house
+    unplaced: '&#9675;'    // hollow: nothing puts them on the ladder at all
 };
 
 const STANCE_WORD: Record<RelStance, string> = {
     above: 'stands over it',
     alongside: 'level with it',
-    below: 'answers to it'
+    below: 'answers to it',
+    // NOT A FOURTH POSITION ON THE LADDER. It is the absence of one, and it is
+    // the honest reading of two bodies that have a hand on the same thing and
+    // nothing else between them.
+    unplaced: 'not placed against it'
 };
+
+/** The stances in the order they are read, with the unplaced last. */
+const STANCE_ORDER: readonly RelStance[] = ['above', 'alongside', 'below', 'unplaced'];
 
 /**
  * The two ends of the warmth scale, found by position rather than by name.
  */
 const WARMTH_SCALE: readonly Warmth[] = ['warm', 'civil', 'distant', 'wary', 'cold', 'hostile'];
-const warmthRank = (w: Warmth): number => Math.max(0, WARMTH_SCALE.indexOf(w));
+/**
+ * Position on the scale, or null for a word that is not on it.
+ *
+ * THE OLD SHAPE PUT AN UNKNOWN WORD AT THE WARM END. It was
+ * `Math.max(0, indexOf(w))`, so anything the scale did not contain scored 0 -
+ * the index of `warm` - and `isClose` would have counted every row nobody
+ * wrote as a house glad of the other and willing to spend on it unasked. The
+ * clamp was there to keep the arithmetic safe and it was answering a question
+ * instead.
+ */
+const warmthRank = (w: RegisterWarmth): number | null => {
+    const at = WARMTH_SCALE.indexOf(w as Warmth);
+    return at < 0 ? null : at;
+};
 /** Glad of them, and will spend on them unasked. The warm end, which is narrow. */
-const isClose = (w: Warmth): boolean => warmthRank(w) === 0;
+const isClose = (w: RegisterWarmth): boolean => warmthRank(w) === 0;
 /** Warmth deliberately withheld, or acted against. The cold end, which is two words. */
-const isAtOdds = (w: Warmth): boolean => warmthRank(w) >= WARMTH_SCALE.length - 2;
+const isAtOdds = (w: RegisterWarmth): boolean => {
+    const at = warmthRank(w);
+    return at !== null && at >= WARMTH_SCALE.length - 2;
+};
 
 /**
  * How a house's position in the world looks at a glance, and nothing else.
@@ -5097,8 +5296,13 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
     const above = rels.filter(r => r.stance === 'above').length;
     const below = rels.filter(r => r.stance === 'below').length;
     const level = rels.filter(r => r.stance === 'alongside').length;
+    const unplaced = rels.filter(r => r.stance === 'unplaced').length;
     const close = rels.filter(r => isClose(r.warmth)).length;
     const odds = rels.filter(r => isAtOdds(r.warmth)).length;
+    // Counted rather than left to be inferred from the ladder counts beside
+    // it. They are different questions: a pair the apex rule places can still
+    // have nothing written about how either of them behaves.
+    const unwritten = rels.filter(r => r.warmth === 'unrecorded').length;
     const contesting = rels.filter(r => r.contestedOver.length > 0).length;
 
     // THE LADDER FIRST, THEN THE THREE THE OWNER ASKED FOR. Separated by a
@@ -5108,18 +5312,20 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
     const ladder = [
         above ? `${above} over it` : '',
         level ? `${level} level` : '',
-        below ? `${below} under it` : ''
+        below ? `${below} under it` : '',
+        unplaced ? `${unplaced} unplaced` : ''
     ].filter(Boolean).join(', ');
     const feeling = [
         close ? `close to ${close}` : '',
         odds ? `at odds with ${odds}` : '',
-        contesting ? `contesting with ${contesting}` : ''
+        contesting ? `contesting with ${contesting}` : '',
+        unwritten ? `nothing recorded on ${unwritten}` : ''
     ].filter(Boolean).join(', ');
     const counts = [ladder, feeling].filter(Boolean).join(' - ');
 
     // Sorted the way the counts are read, so the strip and the sentence above
     // it are in the same order and one confirms the other.
-    const order: RelStance[] = ['above', 'alongside', 'below'];
+    const order = STANCE_ORDER;
     const chips = [...rels]
         .sort((a, b) => order.indexOf(a.stance) - order.indexOf(b.stance)
             || a.otherName.localeCompare(b.otherName))
@@ -5142,7 +5348,10 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
                 : '';
             return `<li class="relchip relchip--${esc(r.stance)}${contesting ? ' relchip--contesting' : ''}"`
                 + ` data-goto="${esc(tieAnchor(selfAnchor, r.anchor, r.otherName))}"`
-                + ` title="${esc(`${r.otherName} ${STANCE_WORD[r.stance]}. ${name} is ${r.warmth} toward them: ${WARMTH_GLOSS[r.warmth]}.${over} What they make of ${name} is on their own entry.`)}">`
+                + ` title="${esc(`${r.otherName} ${STANCE_WORD[r.stance]}. ${r.warmth === 'unrecorded'
+                    ? `Nothing is recorded of what ${name} does about them: ${UNRECORDED_GLOSS}.`
+                    : `${name} is ${r.warmth} toward them: ${WARMTH_GLOSS[r.warmth]}.`}${over} `
+                    + `What they make of ${name} is on their own entry.`)}">`
                 + `<span class="relchip__mark" aria-hidden="true">${STANCE_MARK[r.stance]}</span>`
                 + `<span class="relchip__who">${esc(r.otherName)}</span>`
                 + '<span class="nsep"> &middot; </span>'
@@ -5173,13 +5382,19 @@ function relSummaryStrip(rels: RegisterRelationship[], name: string, selfAnchor:
     // and a reader who opens a house is nowhere near it. The design owner read
     // `&#9679; Azure Cloud Pavilion &middot; wary &rarr; cold` and asked what it
     // meant, which is the whole argument.
+    // Built from the same table the chips are, and only for the directions
+    // this house actually has - a key is a legend for what is in front of the
+    // reader, not a list of every value the field can take. The separators are
+    // `rsep`, which is out of flow and so cannot disturb the row: flattened,
+    // the three chips ran together as "stands over itlevel with itanswers to
+    // itthe warmth word is".
     const key = '<p class="dirkey">'
-        + `<span class="relchip relchip--above"><span class="relchip__mark">${STANCE_MARK.above}</span>`
-        + '<span class="relchip__who">stands over it</span></span>'
-        + `<span class="relchip relchip--alongside"><span class="relchip__mark">${STANCE_MARK.alongside}</span>`
-        + '<span class="relchip__who">level with it</span></span>'
-        + `<span class="relchip relchip--below"><span class="relchip__mark">${STANCE_MARK.below}</span>`
-        + '<span class="relchip__who">answers to it</span></span>'
+        + STANCE_ORDER
+            .filter(s => rels.some(r => r.stance === s))
+            .map(s => `<span class="relchip relchip--${esc(s)}"><span class="relchip__mark">${STANCE_MARK[s]}</span>`
+                + `<span class="relchip__who">${esc(STANCE_WORD[s])}</span></span>`)
+            .join('<span class="rsep"> &middot; </span>')
+        + '<span class="rsep">. </span>'
         + `<span class="dirkey__arrow">the warmth word is ${esc(name)}'s own view outward; what they make of it is on their entries</span></p>`;
 
     return foldablePart('Who it knows', counts,
@@ -5211,8 +5426,9 @@ interface TiePair {
     /** Null on a derived contention - see {@link NOBODY_WROTE_IT}. */
     since: string | null;
     /** How A regards B, and how B regards A. */
-    aWarmth: Warmth;
-    bWarmth: Warmth;
+    /** Widened for the same reason the row's own fields are - see RegisterWarmth. */
+    aWarmth: RegisterWarmth;
+    bWarmth: RegisterWarmth;
     aPutsIt: string | null;
     aDoes: string | null;
     aGrievance: string | null;
@@ -5282,7 +5498,7 @@ function buildTiePairs(
                 bPutsIt: null,
                 bDoes: null,
                 bGrievance: null,
-                lateral: r.stance === 'alongside',
+                lateral: r.stance === 'alongside' || r.stance === 'unplaced',
                 rel: r
             });
         }
@@ -5312,7 +5528,7 @@ function tiesByBody(pairs: readonly TiePair[]): Map<string, { pair: TiePair; can
     // then what is level with it, then what answers to it. Relative to the
     // house whose list this is, which is not the stored direction on half of
     // them - the record is filed from one end and read from both.
-    const order: RelStance[] = ['above', 'alongside', 'below'];
+    const order = STANCE_ORDER;
     for (const [anchor, list] of out) {
         list.sort((x, y) => order.indexOf(stanceFrom(x.pair, anchor))
             - order.indexOf(stanceFrom(y.pair, anchor))
@@ -5324,7 +5540,12 @@ function tiesByBody(pairs: readonly TiePair[]): Map<string, { pair: TiePair; can
 /** Where the other party stands, from the point of view of one end. */
 function stanceFrom(p: TiePair, anchor: string): RelStance {
     if (p.aAnchor === anchor) return p.stance;
-    return p.stance === 'above' ? 'below' : p.stance === 'below' ? 'above' : 'alongside';
+    return mirrorStance(p.stance);
+}
+
+/** The same standing, read from the other end. Unplaced is unplaced from both. */
+function mirrorStance(stance: RelStance): RelStance {
+    return stance === 'above' ? 'below' : stance === 'below' ? 'above' : stance;
 }
 
 /** The party at the other end of a tie from the body whose page this is. */
@@ -5356,6 +5577,7 @@ function tieFacts(
     const above = at('above');
     const level = at('alongside');
     const below = at('below');
+    const unplaced = at('unplaced');
     // THIS HOUSE'S OWN WARMTH, NOT THE OTHER END'S. This read the far side and
     // reported "hostile to it" - how many bodies are hostile TOWARD this house
     // - on a card that is otherwise entirely this house's view outward. Two
@@ -5371,17 +5593,27 @@ function tieFacts(
         above ? nfact('over it', String(above)) : '',
         level ? nfact('level with it', String(level)) : '',
         below ? nfact('under it', String(below)) : '',
+        unplaced ? nfact('not placed against it', String(unplaced)) : '',
         close ? nfact('close to', String(close)) : '',
         odds ? nfact('at odds with', String(odds), 'ex') : '',
         contesting ? nfact('contesting with', String(contesting), 'ex') : ''
     ];
 }
 
-/** The warmth scale, said once, where the grid is read rather than per tie. */
+/**
+ * The warmth scale, said once, where the grid is read rather than per tie.
+ *
+ * `unrecorded` is appended AFTER the scale and outside it, with no colour
+ * class, because it is not a seventh reading - it is the row saying nobody
+ * took one. Printed inside the six it would read as the coolest of them.
+ */
 function warmthLegend(): string {
     return `<div class="warmkey">${(Object.keys(WARMTH_GLOSS) as Warmth[])
         .map(w => `<span class="wk warm-${esc(w)}"><b>${esc(w)}</b> ${esc(WARMTH_GLOSS[w])}</span>`)
-        .join('')}</div>`;
+        .join('<span class="rsep"> &middot; </span>')}`
+        + '<span class="rsep"> &middot; </span>'
+        + `<span class="wk wk--off"><b>unrecorded</b> ${esc(UNRECORDED_GLOSS)}. `
+        + 'Not a seventh word on the scale above: it is what a row says when nobody wrote one.</span></div>';
 }
 
 /**
@@ -5434,9 +5666,7 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
     const secondName = mirrored ? p.aName : p.bName;
     const firstWarmth = mirrored ? p.bWarmth : p.aWarmth;
     const secondWarmth = mirrored ? p.aWarmth : p.bWarmth;
-    const stance: RelStance = mirrored
-        ? (p.stance === 'above' ? 'below' : p.stance === 'below' ? 'above' : 'alongside')
-        : p.stance;
+    const stance: RelStance = mirrored ? mirrorStance(p.stance) : p.stance;
 
     // Whose entry this is, and whose it is about. `mirrored` already worked out
     // that the reader is standing on B; these two names it.
@@ -5480,7 +5710,17 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
         // warmths as `cold / civil` and a reader had to work out per row which
         // direction they were looking at. There is only one direction on this
         // entry now, so the word needs no side to be read against.
-        + `<span class="warmtag warm-${esc(myWarmth)}">${esc(myWarmth)}</span></span>`
+        // NOT A WARMTAG WHERE THERE IS NO WARMTH. The tag is a bordered,
+        // upper-cased mark that reads as a reading; on a row nobody wrote,
+        // what goes in its place says so in plain words and takes no border
+        // and no colour, the way the unplaced direction badge does.
+        + (myWarmth === 'unrecorded'
+            ? '<span class="dim">nothing recorded</span>'
+            : `<span class="warmtag warm-${esc(myWarmth)}">${esc(myWarmth)}</span>`)
+        // The head closes on a separator, the way every other card head on the
+        // sheet does. Without it the warmth word ran into the first fact:
+        // "Azure Cloud Pavilion &middot; waryon the ladder level with it".
+        + '<span class="rsep"> &middot; </span></span>'
         + nfacts([
             // The value already contains the verb - "stands over it" - so the
             // label must not repeat it. Labelled `stands` this read
@@ -5491,11 +5731,19 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
                 ? nfact('contesting', contested.length === 1 ? 'a claim' : `${contested.length} claims`, 'ex')
                 : ''
         ])
-        + `<span class="ngo">open</span>
+        + `<span class="rsep"> &middot; </span><span class="ngo">open</span>
     </summary>
     <div class="nbody">
-      ${relCard(p.stance, jumpTo(theirAnchor, theirName),
-            `<p class="relsay">${esc(standingSentence(p.rel, p.aName))}${p.stance === 'alongside'
+      ${relCard(stance, jumpTo(theirAnchor, theirName),
+            // `, as X` suits a tie: the standing and the thing are one
+            // sentence because the tie is why the standing is what it is. A
+            // derived row is two separate facts - where the ladder puts them,
+            // and what they both have a hand on - and running them together
+            // produced "Earth Vein Tower stands above Clear River Alliance, as
+            // a second hand on the same thing", which reads as the contention
+            // being the reason for the standing. It is not; the grant is.
+            `<p class="relsay">${esc(standingSentence(p.rel, p.aName))}${p.since === null
+                || p.stance === 'alongside' || p.stance === 'unplaced'
                 ? `. Between them: ${esc(tiePhrase(p.rel))}. `
                 : `, as ${esc(tiePhrase(p.rel))}. `}`
             + `${warmthSentence(p.rel, p.aName)}</p>`
@@ -5522,7 +5770,15 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
             // was a second link to the target the card's own heading already
             // links to. What is left is the fact: their word for this, which is
             // allowed to differ from ours and frequently does.
-            + `<p class="tieother">${esc(theirName)} answers <span class="warmtag warm-${esc(theirWarmth)}">${esc(theirWarmth)}</span></p>`)}
+            // AND NOTHING WHERE THERE IS NO SECOND ACCOUNT. This line exists
+            // to say that the other side has its own word for this and that
+            // it is allowed to differ. On a row nobody wrote there is no
+            // second word to point at, and the sentence above has already
+            // said so once - the same rule the `since` and the partisan
+            // fields above follow on a derived row.
+            + (theirWarmth === 'unrecorded'
+                ? ''
+                : `<p class="tieother">${esc(theirName)} answers <span class="warmtag warm-${esc(theirWarmth)}">${esc(theirWarmth)}</span></p>`))}
       <p class="prov">read from ${esc(p.source)}</p>
     </div>
   </details>`;
@@ -5597,18 +5853,26 @@ function curriculumBlock(c: RegisterCurriculum): string {
     // what is worth crossing a province for is at the top.
     const ordered = [...c.arts].sort((a, b) => Number(b.onlyHere) - Number(a.onlyHere));
     return `<div class="grp arts"><h4>Arts <span>${c.arts.length}</span>`
+        + '<span class="rsep"> &middot; </span>'
         + (c.exclusiveCount
             ? `<span class="gap">${c.exclusiveCount} taught nowhere else</span>`
             : '<span class="gap">nothing here is theirs alone</span>')
-        + (c.signature ? `<span class="gap">known for ${esc(c.signature.name)}</span>` : '')
+        + '<span class="rsep"> &middot; </span>'
+        + (c.signature ? `<span class="gap">known for ${esc(c.signature.name)}</span><span class="rsep"> &middot; </span>` : '')
+        // The number against each art is the lowest rung it can be taken up
+        // from, and it was printed here as a bare figure beside a bare rank
+        // name with nothing saying which question either answered. It is not
+        // how far the house can carry somebody - that is the teachable end,
+        // stated in the teaching block - and the two are routinely different.
+        + '<span class="gap">the rung against each one is the lowest it can be learned at</span>'
         + '</h4>'
-        + ordered.map(a => `<div class="who${a.onlyHere ? ' sole' : ''}"><span class="wn">${esc(a.name)}</span>`
-            + `<span class="wo">${a.requiredOrdinal}</span>`
+        + ordered.map(a => `<div class="who${a.onlyHere ? ' sole' : ''}"><span class="wn">${esc(a.name)}</span><span class="rsep"> &middot; </span>`
+            + `<span class="wo">${a.requiredOrdinal}</span><span class="rsep"> &middot; </span>`
             + `<span class="wr">${esc(a.grade)} &middot; ${esc(a.category)}`
             + `${a.element ? ' &middot; ' + esc(a.element) : ''}`
             + `${a.reach === 'single' ? '' : ' &middot; ' + esc(a.reach)}`
-            + `${c.signature && c.signature.id === a.id ? ' &middot; signature' : ''}</span>`
-            + `<span class="wd">${esc(rankName(a.requiredOrdinal))}`
+            + `${c.signature && c.signature.id === a.id ? ' &middot; signature' : ''}</span><span class="rsep"> &middot; </span>`
+            + `<span class="wd">learn at ${esc(rankName(a.requiredOrdinal))}`
             + (a.onlyHere
                 ? ' &middot; <b>nobody else teaches this</b>'
                 : ` &middot; on ${a.housesTeachingIt} teach lists`)
@@ -5639,7 +5903,12 @@ function wayInBlock(w: RegisterWayIn): string {
     ${w.preferredRoots.length ? `<dt>Roots wanted</dt><dd>${w.preferredRoots.map(r => esc(r.replace(/_/g, ' '))).join(', ')}</dd>` : ''}
     ${stats ? `<dt>Minimums</dt><dd>${esc(stats)}</dd>` : ''}
     <dt>The ladder</dt><dd class="ladder">${w.ladder.map(r =>
-        `<span><b>${esc(r.rank)}</b> ${r.stipend.toLocaleString()}</span>`).join('')}
+        `<span><b>${esc(r.rank)}</b> ${r.stipend.toLocaleString()}</span>`)
+        // Each rung is its own cell on the page and its own phrase in the
+        // text. Joined on nothing, the ladder came out as one run of words -
+        // "Register Hand 9Namekeeper 28Holder 88" - wherever the grid was not
+        // doing the separating.
+        .join('<span class="rsep"> &middot; </span>')}
       <span class="dim">rung and what it pays per cycle</span></dd>
   </dl></div>`;
 }
@@ -5673,7 +5942,11 @@ function ambitionBlock(a: RegisterAmbition): string {
         ? a.contestedWith.map(o =>
             `<span class="side"><b>${o.linkId
                 ? `<span class="jump" data-goto="faction-${esc(o.linkId)}">${esc(o.name)}</span>`
-                : esc(o.name)}</b> <span class="dim">${o.ordinal}</span> &middot; ${esc(o.wants)}</span>`).join('')
+                : esc(o.name)}</b> <span class="dim">${o.ordinal}</span> &middot; ${esc(o.wants)}</span>`)
+            // One claimant per line on the page, and one sentence end between
+            // them in the text. Joined on nothing, the last word of one body's
+            // ambition ran into the next body's name.
+            .join('<span class="rsep">. </span>')
         : '<span class="dim">nobody else has a hand on it</span>';
 
     return `<div class="ambit"><dl>
@@ -6119,7 +6392,7 @@ function dossier(d: SectDossier): string {
             + d.people.active.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span><span class="rsep"> &middot; </span>`
                 + `<span class="wo">${p.ordinal}</span><span class="rsep"> &middot; </span>`
-                + `<span class="wr">${esc(p.rank)} · ${esc(p.role)}</span>`
+                + `<span class="wr">${esc(p.rank)} · ${esc(p.role)}</span><span class="rsep"> &middot; </span>`
                 + `<span class="wd">${esc(p.wants)}`
                 // Both names, and the register is the only place they appear
                 // together. Being seen to go in is public; which of the working
@@ -6178,10 +6451,10 @@ function dossier(d: SectDossier): string {
                 : `${d.ordinal - sl.ordinal} under the house`;
 
         claims.push(`<div class="grp sealed"><h4>Sealed ancestors &middot; ${kind} <span>1</span>`
-            + `<span class="gap">${esc(against)}</span></h4>`
-            + `<div class="who"><span class="wn">${esc(sl.name)}</span>`
-            + `<span class="wo">${sl.ordinal}</span>`
-            + `<span class="wr">${esc(sl.sealGrade)} seal · ${sl.dormantYears.toLocaleString()} yr · ${sl.publiclyKnown ? 'known' : 'hidden'}</span>`
+            + `<span class="rsep"> &middot; </span><span class="gap">${esc(against)}</span></h4>`
+            + `<div class="who"><span class="wn">${esc(sl.name)}</span><span class="rsep"> &middot; </span>`
+            + `<span class="wo">${sl.ordinal}</span><span class="rsep"> &middot; </span>`
+            + `<span class="wr">${esc(sl.sealGrade)} seal · ${sl.dormantYears.toLocaleString()} yr · ${sl.publiclyKnown ? 'known' : 'hidden'}</span><span class="rsep"> &middot; </span>`
             + `<span class="wd">${esc(sl.wakeCondition)}</span></div>`
             + sealedDetail(sl, d.people.sealedOnTheRoll)
             + '</div>');
@@ -6191,8 +6464,8 @@ function dossier(d: SectDossier): string {
         claims.push(`<div class="grp ascended"><h4>Ascended <span>${d.people.ascended.length}</span></h4>`
             + d.people.ascended.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span><span class="rsep"> &middot; </span>`
-                + `<span class="wo">${p.ordinal ?? '-'}</span>`
-                + `<span class="wr">${p.yearsAgo.toLocaleString()} yr ago</span>`
+                + `<span class="wo">${p.ordinal ?? '-'}</span><span class="rsep"> &middot; </span>`
+                + `<span class="wr">${p.yearsAgo.toLocaleString()} yr ago</span><span class="rsep"> &middot; </span>`
                 + `<span class="wd">${esc(p.rememberedFor)}</span></div>`).join('')
             + '</div>');
     }
@@ -6201,8 +6474,8 @@ function dossier(d: SectDossier): string {
         claims.push(`<div class="grp terminal"><h4>Dead and lost <span>${d.people.terminal.length}</span></h4>`
             + d.people.terminal.map(p =>
                 `<div class="who"><span class="wn">${esc(p.name)}</span><span class="rsep"> &middot; </span>`
-                + `<span class="wo">${p.ordinal ?? '-'}</span>`
-                + `<span class="wr">${esc(p.fate)} · ${p.yearsAgo.toLocaleString()} yr ago</span>`
+                + `<span class="wo">${p.ordinal ?? '-'}</span><span class="rsep"> &middot; </span>`
+                + `<span class="wr">${esc(p.fate)} · ${p.yearsAgo.toLocaleString()} yr ago</span><span class="rsep"> &middot; </span>`
                 + `<span class="wd">${esc(p.rememberedFor)}</span></div>`).join('')
             + '</div>');
     }
@@ -6535,12 +6808,45 @@ function houseStructure(
         : '';
 
     const groups = byGovernance([...dossiers], inTree).map(g => `<div class="govgrp">
-    <h3 class="govhead">${esc(g.governance)} <span>${g.members.length}</span></h3>
+    <h3 class="govhead">${esc(GOVERNANCE_HEAD[g.governance] ?? g.governance)} <span>${g.members.length}</span></h3>
+    ${GOVERNANCE_GLOSS[g.governance] ? `<p class="note">${GOVERNANCE_GLOSS[g.governance]}</p>` : ''}
     <div class="govlist">${g.members.map(d => houseCard(d, view)).join('')}</div>
   </div>`).join('');
 
     return tree + groups;
 }
+
+/**
+ * What each governance group is called on the sheet.
+ *
+ * The stored value is one word because it is a field; a heading is read by
+ * somebody who has not got the field in front of them. Anything not named here
+ * prints its own word, which is what the whole set did before.
+ */
+const GOVERNANCE_HEAD: Record<string, string> = {
+    bloodline: 'bloodline houses',
+    unbacked: 'unbacked houses',
+    unassailable: 'unassailable'
+};
+
+/**
+ * The one sentence a group heading needs and cannot carry.
+ *
+ * ONLY WHERE THE WORD IS NOT ENOUGH. `federated` and `administered` are
+ * explained at length on the page above these groups; the two that moved get a
+ * line here, because a reader who remembers the old headings will otherwise
+ * assume a house went somewhere.
+ */
+const GOVERNANCE_GLOSS: Record<string, string> = {
+    bloodline:
+        'A family that does a trade. Intake is kinship, the house is named for the family, '
+        + 'and there is no vein, no grant and nothing above it to renew one.',
+    unbacked:
+        'Holds from nobody and pays for that continuously. Each of these states its own reason '
+        + 'on its entry, and they are not the same reason: too poor to be worth taking, too far, '
+        + 'useful to everybody and aligned with nobody, offered a patron and refused, '
+        + 'or held by a belief about what would happen to whoever tried.'
+};
 
 /**
  * Governance groups, strongest group first, strongest faction first inside.
@@ -6634,8 +6940,14 @@ function separateLabelFromBody(html: string): string {
             const attrsOut = cls
                 ? attrs.replace(/class="([^"]*)"/, `class="$1 labelled"`)
                 : `${attrs} class="labelled"`;
+            // The space between the label and the body is what made them two
+            // words; the grid puts them in two columns and the space would be
+            // a stray gap, so it is replaced rather than dropped. `rsep` is out
+            // of flow and cannot become a grid item. Without it the flattened
+            // text read "Adoption only.There is no admission day".
             return `${open}${attrsOut}${gt}`
                 + `<b class="lbl">${label.replace(/[.:]\s*$/, '')}</b>`
+                + '<span class="rsep"> </span>'
                 + `<span class="lbd">${rest.replace(/^\s+/, '')}</span>`
                 + close;
         }
@@ -6645,7 +6957,7 @@ function separateLabelFromBody(html: string): string {
         /(<dd\b[^>]*>)\s*<(b|strong)>([^<]*)<\/\2>([\s\S]*?)(<\/dd>)/g,
         (whole, open: string, _tag: string, label: string, rest: string, close: string) => {
             if (!isLabel(label, rest)) return whole;
-            return `${open}<b class="lbl--stacked">${label}</b>${rest.replace(/^\s+/, '')}${close}`;
+            return `${open}<b class="lbl--stacked">${label}</b><span class="rsep"> </span>${rest.replace(/^\s+/, '')}${close}`;
         }
     );
 
@@ -7086,7 +7398,7 @@ export function renderRegisterHtml(
 <section>
   <div class="sh"><h2>What each house makes of the others</h2><span class="r">${tieCount} ties</span></div>
   <p class="note"><strong>Open a house, and every line under it is that house's own view outward: the other body, and the one word this house would use about it.</strong> What that other body makes of this one is on its entry and not on this one. Those two words are allowed to differ and frequently do, and reading them one direction at a time is the point - printed as a pair they read as a mutual temperature belonging to neither party, when what the catalog actually holds is two separate statements, each made by somebody.</p>
-  <p class="note"><strong>Standing and warmth are different questions.</strong> <em>Stands</em> is the ladder - over it, level with it, under it - and says nothing about how anybody feels. <em>Contesting</em> is a third fact again: it means the two of them have a hand on the same object, which is true or false regardless of the warmth, and two houses can contest a claim while remaining perfectly civil about it.</p>
+  <p class="note"><strong>Standing and warmth are different questions.</strong> <em>Stands</em> is the ladder - over it, level with it, under it - and says nothing about how anybody feels. A fourth answer, <em>not placed against it</em>, is the ladder saying nothing: a grant, an apex, or one roof over both is what puts two bodies in order, and where none of the three applies, nothing does. Level is a claim of equal standing and is only made where the world supports it. <em>Contesting</em> is a third fact again: it means the two of them have a hand on the same object, which is true or false regardless of the warmth, and two houses can contest a claim while remaining perfectly civil about it. And the warmth column has its own version of the fourth answer: <em>unrecorded</em> is the catalog holding no conduct for a pair, which is not the same as holding that there is none between them.</p>
   <p class="note"><em>Nobody wrote a date on it</em> means the year is not recorded and the tie is remembered by both houses rather than by a document.</p>
   ${contentionLegend(tiePairs)}
   ${warmthLegend()}
@@ -7181,6 +7493,8 @@ ${immortalObjectHolders(reg, blocks)}
 
 ${renderRepairMedicineHolders()}
 
+${renderTrackedCraftSection()}
+
 <!-- WHY THIS IS ON THE LEDGER AND NOT ON THE ARTS TAB, WHERE IT WAS.
      Every row here names a house and says what that house is holding, how it
      came by it and whether it would part with it. That is the ledger's
@@ -7239,7 +7553,7 @@ ${renderHoldingsSection(reg.dossiers)}
       // makes both, separately. Asserting that an art above the object ceiling
       // is an ordinary row would be describing a row this table does not have.
       const top = reg.techniques.reduce((n, t) => Math.max(n, t.requiredOrdinal), 0);
-      return `<p class="note"><strong>No object below the Lid is rated above ${OBJECT_CEILING_BELOW_THE_LID}${MANUALS_MAY_EXCEED_THE_LID ? ', and no such rule binds a manual' : ''}.</strong> A weapon rated at a rung lets its holder strike at that rung, so an object above ${OBJECT_CEILING_BELOW_THE_LID} would let a mortal injure a True Immortal and cannot exist on this side.${MANUALS_MAY_EXCEED_THE_LID ? ` A manual is paper, so an art may be written for any rung at all - studying one to full mastery leaves you exactly as strong as you were, which is why nothing has to stop it. The highest art in this catalog is written for ${top}, ${top > OBJECT_CEILING_BELOW_THE_LID ? 'which is above that ceiling' : `so the permission is currently unused: nothing here is written above ${OBJECT_CEILING_BELOW_THE_LID}`}.` : ''} The <em>Ord</em> column is the rung the art was written for and not a bar to reading it - there is no rule against practising something above you, and the catalog contains arts nobody alive can use properly.</p>`;
+      return `<p class="note"><strong>No object below the Lid is rated above ${OBJECT_CEILING_BELOW_THE_LID}${MANUALS_MAY_EXCEED_THE_LID ? ', and no such rule binds a manual' : ''}.</strong> A weapon rated at a rung lets its holder strike at that rung, so an object above ${OBJECT_CEILING_BELOW_THE_LID} would let a mortal injure a True Immortal and cannot exist on this side.${MANUALS_MAY_EXCEED_THE_LID ? ` A manual is paper, so an art may be written for any rung at all - studying one to full mastery leaves you exactly as strong as you were, which is why nothing has to stop it. The highest art in this catalog is written for ${top}, ${top > OBJECT_CEILING_BELOW_THE_LID ? 'which is above that ceiling' : `so the permission is currently unused: nothing here is written above ${OBJECT_CEILING_BELOW_THE_LID}`}.` : ''} <strong>The <em>Learn at</em> column is the lowest rung the art can be taken up from</strong>, and the engine holds it: a teacher standing over somebody below it refuses, and a manual below the reader's rung opens and one above it does not. Carrying the paper is a separate question from opening it - a copy can be bought, looted or inherited at any rung, and several in this catalog are held by houses with nobody who can use them.</p>`;
   })()}
   ${(() => {
       const wide = reg.techniques.filter(t => t.reach !== 'single');
@@ -7265,7 +7579,7 @@ ${renderHoldingsSection(reg.dossiers)}
      own. A reader looking for "the heaven-grade ancient dao arts" reaches
      them in two clicks from a folded page instead of scrolling a table of
      everything. -->
-${techniqueQuadrantSections(reg.techniques)}
+${techniqueEraSections(reg.techniques)}
 <!-- WHAT EACH HOUSE TEACHES LEFT THIS TAB. It is a fact about a house, and it
      is filed under the house now, on the Teaching tab, in the structure every
      faction-scoped page shares. What stays here is the world's own belief

@@ -7,9 +7,12 @@ import { handleSessionManage, SessionManageTool } from '../../../src/server/cons
 import { getDb, closeDb } from '../../../src/storage/index.js';
 import { WorldRepository } from '../../../src/storage/repos/world.repo.js';
 import { PartyRepository } from '../../../src/storage/repos/party.repo.js';
+import { PartySchema } from '../../../src/schema/party.js';
 import { CharacterRepository } from '../../../src/storage/repos/character.repo.js';
+import { CharacterSchema } from '../../../src/schema/character.js';
 import { QuestRepository } from '../../../src/storage/repos/quest.repo.js';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
 
 process.env.NODE_ENV = 'test';
 
@@ -50,7 +53,6 @@ describe('session_manage consolidated tool', () => {
             seed: '12345',
             width: 100,
             height: 100,
-            tileData: '{}',
             createdAt: now,
             updatedAt: now
         });
@@ -58,7 +60,11 @@ describe('session_manage consolidated tool', () => {
         // Create test character
         const charRepo = new CharacterRepository(db);
         testCharacterId = randomUUID();
-        charRepo.create({
+        // CharacterRepository.create takes a parsed Character - every
+        // defaulted field filled in. Building the fixture through the schema
+        // is what supplies them, and it rejects a bad field here rather than
+        // silently dropping it on the way to the row.
+        charRepo.create(CharacterSchema.parse({
             id: testCharacterId,
             name: 'Test Hero',
             race: 'Human',
@@ -71,17 +77,20 @@ describe('session_manage consolidated tool', () => {
             stats: { str: 16, dex: 14, con: 14, int: 10, wis: 12, cha: 10 },
             createdAt: now,
             updatedAt: now
-        } as any);
+        } satisfies z.input<typeof CharacterSchema>));
 
         // Create test party with member
         const partyRepo = new PartyRepository(db);
         testPartyId = randomUUID();
-        partyRepo.create({
+        // PartyRepository.create takes a parsed Party - status and formation
+        // among them. Building the fixture through the schema is what fills
+        // those defaults in.
+        partyRepo.create(PartySchema.parse({
             id: testPartyId,
             name: 'Test Party',
             createdAt: now,
             updatedAt: now
-        });
+        } satisfies z.input<typeof PartySchema>));
         partyRepo.addMember({
             id: randomUUID(),
             partyId: testPartyId,

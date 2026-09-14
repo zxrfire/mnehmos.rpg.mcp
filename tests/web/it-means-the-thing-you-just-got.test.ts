@@ -27,7 +27,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { makeGame } from './harness';
+import { makeGame, refusedCall } from './harness';
 
 describe('a pronoun reaches the thing the last turn handed over', () => {
     it('studies the manual it just bought', async () => {
@@ -43,7 +43,10 @@ describe('a pronoun reaches the thing the last turn handed over', () => {
         expect(named, stall.narration.slice(0, 300)).toBeTruthy();
 
         const bought = await game.act(`I buy the ${named}`);
-        expect(bought.outcome, bought.narration.slice(0, 200)).not.toBe('refused');
+        // Off the tool calls, which is where a refusal is actually recorded.
+        // This read `bought.outcome`, a field no turn has ever carried, so the
+        // line was comparing undefined against a string and passing on that.
+        expect(refusedCall(bought), bought.narration.slice(0, 200)).toBeNull();
 
         // AND NOW THE PRONOUN.
         const studied = await game.act('I study it');

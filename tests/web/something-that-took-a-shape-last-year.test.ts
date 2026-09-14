@@ -254,7 +254,7 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
             // what makes it somebody is the change, so the floor holds.
             const low = await game.act('ADMIN spawn_encounter species=seam ordinal=4');
             expect(low.narration).not.toMatch(/Qi Condensation/i);
-        }, 60_000);
+        });
     }, 60_000);
 
     it('refuses a species that never took a shape, and names the ones that did', async () => {
@@ -269,7 +269,7 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
             const refused = await game.act('ADMIN spawn_encounter species=thunder-hawk');
             expect(refused.narration).toMatch(/It is an animal/);
             expect(refused.narration).toMatch(/The Reader at Burnt Earth/);
-        }, 60_000);
+        });
     }, 60_000);
 
     it('emits both axes, and no row was written to say it is ignorant', async () => {
@@ -296,7 +296,7 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
             expect(rows).toHaveLength(1);
             expect(rows[0].claim_key).toMatch(/^exists:cultivator:/);
             expect(rows.filter(r => r.claim_key.startsWith('exists:sect:'))).toEqual([]);
-        }, 60_000);
+        });
     }, 60_000);
 
     it('can be spoken to by the name the game printed', async () => {
@@ -344,6 +344,6 @@ describe('ADMIN stands one up, in the room the player is standing in', () => {
             expect(spawned.narration).toMatch(/Has never heard (the name|any of the names)/);
             // The depth half, off the rung rather than off a field.
             expect(spawned.narration).toMatch(/Reads the ground here completely/);
-        }, 60_000);
+        });
     }, 60_000);
 });

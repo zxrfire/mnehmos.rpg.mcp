@@ -22,7 +22,9 @@ const ids = (list: readonly unknown[]) => list.map(a => (a as { id: string }).id
 async function standingOverSomebody() {
     const h = await makeGameInWorld({ seed: 'strip', worldSeed: 'world-strip-1' });
     const { cultivator } = await h.game.newRun('Stander');
-    const run = h.game.state().run;
+    // The stored run and not the wire view of it: `affordancesFor` takes the
+    // row, and `state().run` is what is printed of it after the seed is cut.
+    const { run } = h.game.currentRun();
     const here = h.game.present(cultivator);
     return { ...h, cultivator, run, here };
 }

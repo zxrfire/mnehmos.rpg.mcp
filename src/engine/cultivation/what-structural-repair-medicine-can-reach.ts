@@ -15,14 +15,24 @@ import { lifespanForOrdinal, realmForOrdinal, REALM_TIERS, MAX_ORDINAL } from '.
 import { netEarningsPerYear } from './origin.js';
 import {
     BROKEN_STATUSES,
-    brokenStatusKeyOf,
     REPAIRED_IN_THE_CRUCIBLE,
     brokenStatusFor,
     clearBrokenStatus
 } from './what-goes-wrong-at-a-realm-boundary.js';
+import { currentWoundKey, isPermanentWound, woundNature } from '../../data/cultivation/wounds.js';
+import { PILLS } from '../../data/cultivation/pills.js';
 import type { Injury } from '../../schema/cultivation.js';
 
 // THE CEILINGS
+
+/**
+ * The one permanent wound that is off this road for a reason other than rank.
+ *
+ * A spent span is not a structure. Named once here rather than matched inline,
+ * because it is a ruling and a bare string in a condition is a ruling nobody
+ * can find.
+ */
+const A_SPAN_ALREADY_SPENT = 'burnt-span';
 
 /**
  * The last rung anything at all repairs at.
@@ -58,48 +68,78 @@ export function mendsThisBreak(
 
 /**
  * Why it will not work, in words a physician would use, or null where it will.
+ *
+ * ── THE AXIS IS THE RANK, AND IT USED TO BE THE NAMED BREAK ─────────────
+ *
+ * This refused anything that was not one of `BROKEN_STATUSES` - *"This mends a
+ * structure that did not set"* - and then refused again on `mends` if the grade
+ * was made for a different one. So a body short an arm, or carrying a channel
+ * parted rather than torn, was turned away by a medicine that dissolves and
+ * re-lays what a cultivator is made of, and an agent reading that reasonably
+ * concluded the world had no answer and wrote a new pill.
+ *
+ * The design owner overruled the premise rather than the reading: **a dose
+ * repairs every permanent injury at its rank.** One axis, and it is the one the
+ * catalog already carries - `reachesUpToOrdinal`, which is what separates a
+ * Second Pour from an Unbroken Pattern. So the grade buys HEIGHT and nothing
+ * else, and the `mends` column is now what each grade was MADE for rather than
+ * the limit of what it finds.
+ *
+ * ── AND THE BOUNDS ON THAT ARE RULINGS, NOT INFERENCES ──────────────────
+ *
+ * Both were put to the design owner because the literal reading of "every
+ * permanent injury" reached further than the catalog's own rows said it should,
+ * and in each case the row was right and nothing was reading it.
+ *
+ *   NOT A MIND. *"No a repair dose does not reach wounds"* of the mind. A
+ *   medicine that takes a cultivation base apart and lays it again does not
+ *   close a rooted heart demon; `cleanse_deviation` is the line for that.
+ *
+ *   NOT SPENT YEARS. *"It doesn't hand back burnt lifespan, that's what that
+ *   immortal pill is for."* The `burnt-span` row has said so all along - *"Nothing
+ *   below the Lid returns spent years. The rung above returns them, which is
+ *   exactly the trap"* - and `extend_lifespan` is the line, with the Immortal
+ *   Longevity Pill at the end of it.
+ *
+ * So the axis is rank, and what is off it is the mind and the span.
+ *
+ * The two ceilings are untouched and are still the whole design: nothing
+ * refined below the Lid reaches past Deity Transformation, and nothing at all
+ * reaches the crossing into Tribulation Transcendence.
+ *
+ * What still gets refused is a wound that mends on its own. An ordinary tear
+ * closes with time or with the graded treat-injury line, and spending one of
+ * eleven objects in the world on one is the waste this sentence exists to
+ * prevent.
  */
 export function repairRefusalReason(
     medicine: StructuralRepairMedicine,
     woundKey: string | null,
     atOrdinal: number
 ): string | null {
-    // Resolved once and used throughout, so a saved row carrying a retired key
-    // is recognised as a break AND matched against `mends`. Refusing one on a
-    // stale string would tell somebody carrying a real structural wound that
-    // nothing is wrong with them, and matching `mends` on it would refuse the
-    // dose that is made for exactly their break.
-    const key = brokenStatusKeyOf(woundKey);
-    if (key === null) {
-        return 'This mends a structure that did not set. What is wrong here is not a structure, so there is nothing for it to reach for - it would be swallowed, it would be gone, and the wound would be exactly where it was.';
+    // The CURRENT key, so a saved row carrying a retired name is still
+    // recognised as the wound it is. Refusing one on a stale string would tell
+    // somebody carrying a real wound that nothing is wrong with them.
+    const key = currentWoundKey(woundKey);
+    if (key === null || !isPermanentWound(key)) {
+        return 'This is for what does not close on its own. What is wrong here does - with time, or with medicine a counter sells - so there is nothing for it to reach for: it would be swallowed, it would be gone, and the wound would mend on the schedule it was already going to mend on.';
+    }
+    if (woundNature(key) !== 'physical') {
+        return 'This works on a body. What is wrong here is not in the body, and a medicine that takes a cultivation base apart and lays it again does not find it - the base is sound. What is asked for here is a mind, and that is a different line of medicine entirely.';
+    }
+    if (key === A_SPAN_ALREADY_SPENT) {
+        return 'This lays a structure again. It does not hand back years, and nothing below the Lid does - what returns a spent span is the rung above, which is exactly the trap, or the one medicine at the end of the lifespan line. Swallowing this would mend a body that is not what is wrong.';
     }
     if (atOrdinal > NOTHING_REPAIRS_ABOVE_ORDINAL) {
         return 'Nothing reaches this rung and nothing ever will. Getting into the last realm is your own effort - helpers are allowed at that crossing and medicine is not - so the thing that would answer this is barred at precisely the wall that needs it. That is a rule rather than a shortage, and no amount of money, standing or luck moves it.';
     }
-    // Reach before fit, deliberately. "Nothing made here goes that high" is a
-    // more useful sentence than "wrong box", and it is the one that closes the
-    // conversation instead of sending somebody looking for a better shelf.
     if (atOrdinal > medicine.reachesUpToOrdinal) {
         if (medicine.madeBelowTheLid && atOrdinal > ordinaryGradeCeiling()) {
             return 'Nothing refined on this side of the Lid reaches a break above Deity Transformation. Not this, not a better one, not one made anywhere: the ceiling is on the refining rather than on the price, and every hall in the two provinces has established it independently and stopped trying.';
         }
         return 'Below its grade. It sets, it holds for a while, and it does not take - and the taker is out one dose and a year, which is the more common of the two disasters.';
     }
-    if (!medicine.mends.includes(key) && !reachesFromBelow(medicine, key)) {
-        return 'Wrong grade. This is made for a different structure and it will not find this one, which is the ordinary way a house wastes one: the box was right, the break was not.';
-    }
     return null;
-}
-
-/**
- * Whether a higher-graded medicine reaches a break a lower one is named for.
- */
-function reachesFromBelow(medicine: StructuralRepairMedicine, woundKey: string): boolean {
-    for (const other of STRUCTURAL_REPAIR_MEDICINES) {
-        if (!other.mends.includes(woundKey)) continue;
-        if (medicine.reachesUpToOrdinal > other.reachesUpToOrdinal) return true;
-    }
-    return false;
 }
 
 /**
@@ -312,6 +352,88 @@ export function readRepairMedicine(medicine: StructuralRepairMedicine): RepairMe
         shareOfAGrandAscensionLifetime: shareOfALifetimeAt(medicine, grandAscensionStart),
         lowestRealmThatCouldPay: lowestRealmThatCouldPay(medicine)
     };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE LADDER, AND WHY ITS TOP RUNG IS NOT IN THE ARRAY ABOVE
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * One rung of the road a permanent injury is answered on.
+ *
+ * FIVE RUNGS, MORTAL THROUGH CHAOS, and the design owner asked for the chaos
+ * one on this list. It is READ rather than stored as a fifth array row, and the
+ * reasons are checkable rather than aesthetic:
+ *
+ *   IT IS A PILL, AND PILLS ARE REACHABLE. The chaos rung sits in a pouch, is
+ *   refined from a recovered formula, and is swallowed through
+ *   `alchemy-manage`'s resolver on its own seeded draw. `STRUCTURAL_REPAIR_
+ *   MEDICINES` has no player-facing path at all - `applyStructuralRepair` has
+ *   no caller outside its own tests, because those four are institutional
+ *   objects that houses spend on their own people. Moving the chaos rung into
+ *   that array would delete the one permanent-injury medicine a player can
+ *   actually take.
+ *
+ *   THE TWO ROWS CARRY DIFFERENT FACTS. A repair row carries `madeBelowTheLid`,
+ *   a per-century refining rate, terms instead of a price, faction holdings and
+ *   a sent-down ledger that has to reconcile. The chaos rung has a formula
+ *   anybody at the right rung can attempt and no holdings anywhere, and
+ *   inventing a provenance and a rate for it would be authoring content to fit
+ *   a shape rather than recording a fact.
+ *
+ *   AND ITS `mends` IS EMPTY ON PURPOSE. The repair schema requires at least
+ *   one named wound; the chaos rung names none, because nobody made it for
+ *   anything. That is the row saying something, and relaxing the schema to
+ *   admit it would weaken the invariant for the other four.
+ *
+ * So the ladder is a reading over two catalogs, which is the one place the five
+ * rungs are stated, and nothing keeps a second copy of either.
+ */
+export interface RepairRung {
+    id: string;
+    name: string;
+    grade: string;
+    /** The last rung it repairs at, or null for the one that reaches any rank. */
+    reachesUpToOrdinal: number | null;
+    /** What it was made for. Empty for the rung that was made for nothing. */
+    mends: readonly string[];
+    /**
+     * Whether the taker gets to say which injury it closes. False for the chaos
+     * rung, which is the price of reaching past the rank ladder at all.
+     */
+    choosesTheWound: boolean;
+}
+
+/**
+ * The whole road, lowest rung first.
+ *
+ * The four institutional doses by rank, then the one that reaches any rank and
+ * does not let you choose. Read off both catalogs so a content edit in either
+ * moves it and nothing here authors a rung.
+ */
+export function theRungsThatRepairAPermanentInjury(): RepairRung[] {
+    const byRank: RepairRung[] = [...STRUCTURAL_REPAIR_MEDICINES]
+        .sort((a, b) => a.reachesUpToOrdinal - b.reachesUpToOrdinal)
+        .map(m => ({
+            id: m.id,
+            name: m.name,
+            grade: m.grade,
+            reachesUpToOrdinal: m.reachesUpToOrdinal,
+            mends: m.mends,
+            choosesTheWound: true
+        }));
+    const drawn = PILLS.filter(p => p.effect === 'mends_what_will_not_close');
+    for (const pill of drawn) {
+        byRank.push({
+            id: pill.id,
+            name: pill.name,
+            grade: pill.grade,
+            reachesUpToOrdinal: null,
+            mends: pill.mends ?? [],
+            choosesTheWound: (pill.mends ?? []).length > 0
+        });
+    }
+    return byRank;
 }
 
 /** The whole table as readings, cheapest first. */

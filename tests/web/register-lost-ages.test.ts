@@ -17,38 +17,58 @@ import { IMMORTAL_ITEMS } from '../../src/data/cultivation/immortal-items';
 
 const HTML = renderRegister();
 
-describe('the arts split on era, not labelled with it', () => {
-    it('prints all four quadrants as their own heads', () => {
-        // `era` and `class` are independent axes. "Ancient cultivation" and
-        // "ancient dao" are different KINDS of thing - a road with a different
-        // bargain against spears somebody else can carry - and sharing a row
-        // would invite a reader to average them into "old stuff".
-        for (const head of [
-            'Modern &middot; cultivation',
-            'Modern &middot; dao',
-            'Ancient &middot; cultivation',
-            'Ancient &middot; dao'
-        ]) {
+describe('the techniques split on era, not labelled with it', () => {
+    it('prints each age as its own head', () => {
+        // Which age wrote a technique is an independent fact and the two ages
+        // are different bargains, so sharing a row would invite a reader to
+        // average them into "old stuff".
+        //
+        // THE GRID USED TO HAVE FOUR HEADS. Its second axis crossed era with
+        // which of two kinds a technique was - one you practise to climb, one
+        // you use to fight. Every technique is now both, so that column would
+        // have put the whole catalog on one side of itself.
+        for (const head of ['<h2>Modern</h2>', '<h2>Ancient</h2>']) {
             expect(HTML, head).toContain(head);
+        }
+        for (const retired of [
+            'Modern &middot; dao', 'Ancient &middot; dao',
+            'Modern &middot; cultivation', 'Ancient &middot; cultivation',
+            'arts that raise a rank'
+        ]) {
+            expect(HTML, retired).not.toContain(retired);
         }
     });
 
     it('prints an empty quadrant rather than dropping it', () => {
-        // The design says all four are occupied and the catalog fills three:
-        // every ancient art is class `dao`. A missing head would read as an
-        // oversight, so the absence is stated. This assertion flips to the
-        // other branch by itself the moment a row lands.
+        // A missing head would read as an oversight, so an absence is stated
+        // rather than left out. This assertion flips to the other branch by
+        // itself as rows land: the ancient half was empty on one side until
+        // two ancient arts that raise a rank were filed there.
         const anyEmpty = ['modern', 'ancient'].some(era =>
-            ['cultivation', 'dao'].some(cls =>
-                !buildRegister().techniques.some(t => t.era === era && t.artClass === cls)));
-        if (anyEmpty) expect(HTML).toContain('occupies this quadrant yet');
+            !buildRegister().techniques.some(t => t.era === era));
+        if (anyEmpty) expect(HTML).toContain('written in this age yet');
     });
 
-    it('carries the era and class on every row it built', () => {
+    it('carries the era on every row it built', () => {
         for (const t of buildRegister().techniques) {
             expect(['modern', 'ancient'], t.name).toContain(t.era);
-            expect(['cultivation', 'dao'], t.name).toContain(t.artClass);
         }
+    });
+
+    /**
+     * The axis that is left has to separate somebody.
+     *
+     * A band whose axis puts every row on one side is a band with no axis, and
+     * that is what happened to the one this section used to cross era with:
+     * it asked which of two kinds a technique was, and every technique became
+     * both. Kept as a count rather than as a list of names, because which
+     * technique belongs to which age is authored content and a second copy of
+     * it here goes stale.
+     */
+    it('bands on an axis that actually separates the techniques', () => {
+        const arts = buildRegister().techniques;
+        expect(arts.filter(t => t.era === 'modern').length).toBeGreaterThan(0);
+        expect(arts.filter(t => t.era === 'ancient').length).toBeGreaterThan(0);
     });
 });
 

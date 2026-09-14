@@ -132,7 +132,7 @@ async function loreReach() {
 
     sub('the legends, which are what actually travels');
     for (const legend of lu.legends.slice(0, 4)) {
-        line(`  "${legend.calledBy}" - ${String(legend.claim ?? '').replace(/\s+/g, ' ').slice(0, 96)}...`);
+        line(`  "${legend.calledBy}" - ${legend.version.replace(/\s+/g, ' ').slice(0, 96)}...`);
     }
     const legendFloor = mentionableFor({ ordinal: 6, factionId: null } as any)
         .filter(m => m.catalog === 'wanderers' && m.id !== lu.id).length;
@@ -447,13 +447,14 @@ function immortalityOdds() {
 async function disasters() {
     rule('6. DISASTERS - the map scars rather than growing');
 
+    // A location dates itself on `origin.fromDay`; `foundedOnDay` is a faction
+    // and lineage field and nothing on the record has ever read it here.
     let place = makeLocation({
         id: 'loc-test-vale',
         name: 'Nine Reed Vale',
-        kind: 'village',
-        foundedOnDay: 0
+        kind: 'settlement'
     });
-    line(`  origin: ${place.name}, a ${place.origin.kind}, founded day 0`);
+    line(`  origin: ${place.name}, a ${place.origin.kind}, founded day ${place.origin.fromDay ?? 0}`);
 
     sub('a tribulation goes wrong overhead');
     const struck = applyLocationChange(place, {

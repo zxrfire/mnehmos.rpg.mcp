@@ -17,7 +17,21 @@ import {
     theDriverThatCouldNotNest
 } from '../../scripts/packaged-better-sqlite3-driver.mjs';
 
-type Conn = Database.Database & { transaction: unknown };
+/** What both drivers are, as this file installs and calls them. */
+type WrapInATransaction = (fn: () => void) => () => void;
+
+/**
+ * A connection whose `transaction` this file is about to REPLACE.
+ *
+ * `Omit` rather than an intersection. Intersecting the real `Database` with
+ * `{ transaction: ... }` does not loosen `transaction` at all - an intersection
+ * keeps both members, so the property stayed better-sqlite3's `Transaction<F>`
+ * and every swap below was assignable only because the driver module has no
+ * declarations and arrives as `any`. Dropping the property first is what
+ * actually says "this one is ours to set", and naming its shape here is what
+ * lets the call sites call it without each restating the signature.
+ */
+type Conn = Omit<Database.Database, 'transaction'> & { transaction: WrapInATransaction };
 
 function aLedger(): Conn {
     const db = new Database(':memory:') as Conn;
@@ -34,11 +48,11 @@ function noteCount(db: Conn): number {
  * repo method which opens its own.
  */
 function joiningAHouse(db: Conn, andThenThrow: boolean): void {
-    const inner = (db.transaction as (fn: () => void) => () => void)(() => {
+    const inner = db.transaction(() => {
         db.prepare('INSERT INTO ledger (note) VALUES (?)').run('the membership row');
         if (andThenThrow) throw new Error('the stipend clock could not be written');
     });
-    const outer = (db.transaction as (fn: () => void) => () => void)(() => {
+    const outer = db.transaction(() => {
         db.prepare('INSERT INTO ledger (note) VALUES (?)').run('the run turn');
         inner();
     });

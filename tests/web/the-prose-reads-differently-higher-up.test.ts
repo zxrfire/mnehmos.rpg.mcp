@@ -57,13 +57,20 @@ import {
     theVoiceDoc
 } from '../../src/web/prompt';
 import { MAX_ORDINAL, realmForOrdinal } from '../../src/engine/cultivation/realms';
+import type { EngineFacts } from '../../src/web/facts';
+import type { AmbientQi } from '../../src/schema/cultivation';
 import { makeGame, ScriptedProvider } from './harness';
 
 const LADDER_PATH = 'docs/world/writing/what-changes-as-the-ladder-is-climbed.md';
 
 /** Facts thin enough that nothing but the register block can satisfy an assertion. */
-const FACTS = { lines: ['Nothing in particular happened.'], prose: '' } as never;
-const SCENE = { place: 'the ford', ambient: 'thin' } as never;
+const FACTS: EngineFacts = {
+    headline: 'Nothing in particular happened.',
+    lines: ['Nothing in particular happened.'],
+    structure: [],
+    prose: ''
+};
+const SCENE: { place: string; ambient: AmbientQi } = { place: 'the ford', ambient: 'thin' };
 
 /** Every user message the provider was sent for prose, in order. */
 function narrationsSentTo(provider: ScriptedProvider): string[] {

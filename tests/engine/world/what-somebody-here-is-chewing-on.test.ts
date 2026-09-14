@@ -141,7 +141,8 @@ describe('what somebody standing here would be heard on', () => {
     it('is silent for the ordinary case at every rung on the ladder', () => {
         for (let ordinal = 0; ordinal <= MAX_ORDINAL; ordinal++) {
             const midway = {
-                ordinal, age: yearsAt(ordinal, 0.3), rank: 'Inner Disciple', chosen: false
+                ordinal, age: yearsAt(ordinal, 0.3), rank: 'Inner Disciple', chosen: false,
+                carriesForSomebodyElse: null
             };
             expect(plainly(midway), `ordinal ${ordinal}`).toBeNull();
         }
@@ -254,7 +255,8 @@ describe('what somebody standing here would be heard on', () => {
         // of those on their mind, because it is the only one that gets worse on
         // its own while they stand there.
         const both = {
-            ordinal: 5, age: yearsAt(5, 0.9), rank: 'Outer Disciple', chosen: true
+            ordinal: 5, age: yearsAt(5, 0.9), rank: 'Outer Disciple', chosen: true,
+            carriesForSomebodyElse: null
         };
         expect(plainly(both)).toMatch(/still standing at the same wall/);
     });

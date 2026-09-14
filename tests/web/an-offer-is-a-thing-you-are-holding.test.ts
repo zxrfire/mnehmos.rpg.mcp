@@ -241,7 +241,7 @@ describe('played', () => {
         const said = await game.act(
             `offer ${who} a higher Heaven-Ascending Golden Pill for The Hidden Edge`
         );
-        const heard = said.error ?? said.narration ?? '';
+        const heard = said.narration ?? '';
         expect(heard).toMatch(/hands are empty of it/i);
         // And the trade did not happen by any other route.
         expect(heard).not.toMatch(/takes what you offered/i);
@@ -268,7 +268,7 @@ describe('played', () => {
         const who = here[0]!.name;
 
         const said = await game.act(`offer ${who} my protection for The Hidden Edge`);
-        const heard = said.error ?? said.narration ?? '';
+        const heard = said.narration ?? '';
         expect(heard).not.toMatch(/hands are empty of it/i);
     }, 200_000);
 });

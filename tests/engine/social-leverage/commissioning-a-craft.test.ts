@@ -604,25 +604,29 @@ describe('the player taking a commission', () => {
         const owedAFavour = howOftenThePlayerAgrees({
             nearness: 'house',
             ledgerFor: (askerId, makerId) => [
-                createObligation(createFavor({
+                createFavor({
                     holderId: askerId,
                     subjectId: makerId,
+                    cause: 'saved_life',
                     severity: 'grave',
-                    incurredOnDay: 500,
+                    onDay: 500,
+                    description: 'pulled them out of the water',
                     triggeringEventId: 'ev-favour'
-                }))
+                })
             ]
         });
         const holdingAGrudge = howOftenThePlayerAgrees({
             nearness: 'house',
             ledgerFor: (askerId, makerId) => [
-                createObligation(createGrudge({
+                createGrudge({
                     holderId: makerId,
                     subjectId: askerId,
+                    cause: 'other',
                     severity: 'grave',
-                    incurredOnDay: 500,
+                    onDay: 500,
+                    description: 'what happened at the ford',
                     triggeringEventId: 'ev-grudge'
-                }))
+                })
             ]
         });
         expect(owedAFavour).toBeGreaterThan(plain);

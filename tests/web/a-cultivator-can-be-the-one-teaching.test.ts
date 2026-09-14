@@ -103,6 +103,12 @@ async function holdingNothing() {
  */
 async function holdingIt(years: number) {
     const harness = await holdingNothing();
+    // BOUGHT BEFORE IT CAN BE LEARNED. Every art gained a cap when the two
+    // kinds of technique collapsed into one, so a cheap art several houses
+    // teach is stall stock by the market module's own definition and `learn`
+    // answers a copyless player with a price. The purchase is PLAYED, which is
+    // what this file exists to do.
+    await harness.game.act(`I buy a copy of ${AN_ART_A_BEGINNER_CAN_HOLD}`);
     await harness.game.act(`I learn ${AN_ART_A_BEGINNER_CAN_HOLD}`);
     if (years > 0) {
         await harness.game.act(`I practise ${AN_ART_A_BEGINNER_CAN_HOLD} for ${years} years`);
@@ -154,16 +160,30 @@ describe('a cultivator carrying nothing', () => {
 });
 
 describe('a cultivator holding an art at part mastery', () => {
-    it('is refused, and the refusal names the parts', async () => {
+    it('may still pass on a book off a stall, because scarcity is what is hard', async () => {
+        // WHAT THIS USED TO ASSERT, AND WHY IT MOVED. It read "is refused, and
+        // the refusal names the parts", and it held that a master at zero
+        // mastery of the Swallow-Skimming Step could not pass it on.
+        //
+        // `couldWriteOutACopy` opens with "a book on every stall is a book
+        // anybody can write out", gated on the art having a cap. Only
+        // cultivation manuals had one, so that opening line never fired for a
+        // movement art and the mastery bar answered instead. Every technique
+        // carries its practitioner up a few rungs since the two kinds
+        // collapsed into one, so the Step - cap 13, taught by four houses,
+        // eight spirit stones at a stall - is now caught by the line that was
+        // always written about exactly this case. What makes a copy hard to
+        // come by is scarcity, not penmanship, and nothing is scarce about it.
+        //
+        // The mastery bar is not gone. It is what answers for an art no stall
+        // carries, which is the sibling test below.
         const at = await holdingIt(0);
         expect(at.mastery, 'the played route no longer puts the art on the sheet').toBe(0);
 
         const turn = await at.game.act('I teach her what I know');
         expect(gotTheBlankLook(turn)).toBe(false);
         expect(everythingSaid(turn)).toContain(AN_ART_A_BEGINNER_CAN_HOLD);
-        // The gate is `couldWriteOutACopy`, and its refusal is about how much of
-        // it you hold rather than about whether you were allowed.
-        expect(everythingSaid(turn).toLowerCase()).toMatch(/parts in a hundred|well enough/);
+        expect(everythingSaid(turn).toLowerCase()).not.toMatch(/parts in a hundred/);
     });
 });
 
@@ -198,6 +218,7 @@ describe('a cultivator holding the whole of an art', () => {
         // The same arrangement with the pack left empty. Measured: the skip
         // hands control back at 50 days of 60 with starvation begun.
         const at = await holdingNothing();
+        await at.game.act(`I buy a copy of ${AN_ART_A_BEGINNER_CAN_HOLD}`);
         await at.game.act(`I learn ${AN_ART_A_BEGINNER_CAN_HOLD}`);
         await at.game.act(`I practise ${AN_ART_A_BEGINNER_CAN_HOLD} for 3 years`);
 
@@ -334,6 +355,7 @@ describe('teaching somebody who is already yours', () => {
         // Far enough up that somebody in the square is a disciple's distance
         // below, which is the bar `whetherYouMayTake` reads off the band table.
         await harness.game.act('ADMIN set_realm ordinal=12');
+        await harness.game.act(`I buy a copy of ${AN_ART_A_BEGINNER_CAN_HOLD}`);
         await harness.game.act(`I learn ${AN_ART_A_BEGINNER_CAN_HOLD}`);
         await harness.game.act(`I practise ${AN_ART_A_BEGINNER_CAN_HOLD} for 3 years`);
         await harness.game.act('I buy a year of provisions');

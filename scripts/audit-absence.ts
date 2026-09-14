@@ -90,7 +90,7 @@ interface Run {
     accounts: KnowledgeRecord[];
 }
 
-function seclude(base: WorldState, absenteeId: string, absenteeName: string, years: number): Run {
+function seclude(base: WorldState, absenteeId: string, years: number): Run {
     const state = cloneWorld(base);
     const npc = state.npcs.find(n => n.id === absenteeId)!;
 
@@ -393,7 +393,7 @@ async function main(): Promise<void> {
     line(`  at ${pick.npc.locationId ?? 'nowhere in particular'}, house ${pick.npc.factionId ?? 'none'} rank ${pick.npc.factionRankIndex}.`);
 
     for (const years of DURATIONS) {
-        report(seclude(base, pick.npc.id, pick.npc.name, years));
+        report(seclude(base, pick.npc.id, years));
     }
 
     // ── SUPPLY ───────────────────────────────────────────────────────────
@@ -469,7 +469,7 @@ async function main(): Promise<void> {
             line('      nobody in this world holds an incoming tie.');
         } else {
             for (const years of DURATIONS) {
-                const run = seclude(mark.state, who.npc.id, who.npc.name, years);
+                const run = seclude(mark.state, who.npc.id, years);
                 const back = homecoming(run.state, run.absence, run.state.currentDay);
                 const settled = (k: string) =>
                     run.absence.ties.filter(t => t.settledAs === k).length;

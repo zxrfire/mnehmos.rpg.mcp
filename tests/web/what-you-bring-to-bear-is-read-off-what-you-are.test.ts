@@ -34,9 +34,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
 import { engineCalls, makeGameInWorld } from './harness';
+import type { ActResult } from '../../src/web/turn-wire-shapes';
 
 /** The resolver's own one-line account, which names what was on the table. */
-function whatTheAttemptCarried(result: { toolCalls: { name: string; summary: string }[] }): string {
+function whatTheAttemptCarried(result: ActResult): string {
     const call = engineCalls(result).find(row => row.name === 'engine.resolveAttempt');
     expect(call, engineCalls(result).map(row => row.name).join(', ')).toBeDefined();
     return call!.summary;

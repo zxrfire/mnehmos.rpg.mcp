@@ -8,14 +8,14 @@
  * quietly stops producing anybody above the last reachable cap.
  */
 import { SECTS } from '../src/data/cultivation/sects.js';
-import { getTechnique } from '../src/data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere } from '../src/data/cultivation/techniques.js';
 
 let gapped = 0, walkable = 0, empty = 0;
 const rows: string[] = [];
 for (const s of SECTS as any[]) {
     const shelf = ((s.teaches ?? []) as string[])
         .map(id => getTechnique(id) as any)
-        .filter(t => t && t.class === 'cultivation' && t.cap != null)
+        .filter(t => stopsSomewhere(t))
         .map(t => ({ name: t.name, cap: Number(t.cap), need: Number(t.requiredOrdinal ?? 0) }))
         .sort((a, b) => a.cap - b.cap);
     if (shelf.length === 0) { empty++; continue; }
@@ -45,7 +45,7 @@ const need = new Map<string, string[]>();
 for (const s of S2 as any[]) {
     const shelf = ((s.teaches ?? []) as string[])
         .map(id => getTechnique(id) as any)
-        .filter(t => t && t.class === 'cultivation' && t.cap != null)
+        .filter(t => stopsSomewhere(t))
         .map(t => ({ cap: Number(t.cap), need: Number(t.requiredOrdinal ?? 0), el: t.element ?? 'none' }))
         .sort((a, b) => a.cap - b.cap);
     if (shelf.length === 0) continue;

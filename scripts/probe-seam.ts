@@ -4,10 +4,10 @@
  * keep every requiredOrdinal where it is, then ask whether the WORLD chain
  * (not any one shelf) still joins up.
  */
-import { TECHNIQUES } from '../src/data/cultivation/techniques.js';
-import { REALM_TIERS, MAX_ORDINAL, progressRequiredForOrdinal } from '../src/engine/cultivation/realms.js';
+import { TECHNIQUES, stopsSomewhere } from '../src/data/cultivation/techniques.js';
+import { REALM_TIERS, progressRequiredForOrdinal } from '../src/engine/cultivation/realms.js';
 
-const MANUALS = TECHNIQUES.filter(t => t.class === 'cultivation' && t.cap != null)
+const MANUALS = TECHNIQUES.filter(t => stopsSomewhere(t))
   .map(t => ({ id: t.id, req: t.requiredOrdinal, cap: Number(t.cap) }));
 
 const realmEndOf = (n: number) => REALM_TIERS.find(r => n >= r.ordinalStart && n <= r.ordinalEnd)!.ordinalEnd;

@@ -11,7 +11,7 @@ describe('Event Tools', () => {
         // Mock McpServer
         registeredTools = new Map();
         server = {
-            tool: (name: string, desc: string, schema: any, handler: Function) => {
+            tool: (name: string, _desc: string, _schema: any, handler: Function) => {
                 registeredTools.set(name, handler);
             },
             server: {
@@ -53,7 +53,8 @@ describe('Event Tools', () => {
         // we can check if the old subscription is gone by publishing.
 
         // Actually, let's spy on pubsub.subscribe
-        const subscribeSpy = vi.spyOn(pubsub, 'subscribe');
+        // Installing the spy is the point; nothing reads it back.
+        vi.spyOn(pubsub, 'subscribe');
 
         // 2. Subscribe again (should trigger cleanup of first)
         await subscribe!({ topics: ['combat'] });

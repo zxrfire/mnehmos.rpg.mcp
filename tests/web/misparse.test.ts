@@ -47,7 +47,6 @@ import {
 import { makeGame, planned, engineCalls, refusedCall, cultivatorRow, injuryCount } from './harness';
 import { withoutTheOverride } from '../../src/web/game';
 import { SECTS, sectThreat } from '../../src/data/cultivation/sects';
-import { OFFER_INTENTS } from '../../src/web/actions';
 import { abodeLocationId } from '../../src/engine/world/immortal-world';
 import {
     DESCENT_TRIBULATION_STRIKES
@@ -512,6 +511,9 @@ describe('every verb is reachable from plain English', () => {
         learn_technique: 'I learn the Azure Ripple Art',
         consume_pill: 'I swallow a healing pill',
         acquisition: 'how do I get further',
+        // The route that verb prices and nothing could walk. Said as the act,
+        // which is what tells it apart from the question above it.
+        derive: 'I write the next stage myself',
         // The three the drive harness measured as dead, each with the phrasing
         // that was being EATEN by another verb rather than merely refused:
         // "am I stuck" reached a senior's opinion of the player, "who could
@@ -1448,6 +1450,10 @@ describe('the inheritance grounds, through the whole service', () => {
         expect(target, 'no nameable talent-gated trial holds a reachable art').toBeDefined();
 
         const site = target!;
+        // `find` does not carry its predicate's narrowing out with the result,
+        // and only a trial's interior holds a prize. Proved here the same way
+        // the gate below is, rather than asserted.
+        if (site.kind !== 'trial') throw new Error('site kind moved');
         const gate = site.interior.gates[0];
         if (gate.kind !== 'age_and_talent') throw new Error('gate kind moved');
 

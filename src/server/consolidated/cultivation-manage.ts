@@ -82,6 +82,10 @@ import {
     handleWork
 } from './cultivation-mortal.js';
 import {
+    theRollAlone,
+    whereSomebodyStandsOnAHousesRoll
+} from '../../engine/world/where-somebody-stands-on-a-houses-roll.js';
+import {
     DEFAULT_LOCATION,
     FLAG_PENDING_PILL,
     describeGround,
@@ -507,7 +511,11 @@ export async function handleList(args: z.infer<typeof ListSchema>): Promise<obje
             age: round2(c.age),
             location: c.location,
             sectId: c.sectId,
-            sectRank: c.sectRank,
+            // Off the roll, which is where the rung lives. A mirrored string
+            // on the cultivator row used to answer this and disagreed with it.
+            sectRank: whereSomebodyStandsOnAHousesRoll(
+                theRollAlone(repos.sects), c.id
+            )?.rungName ?? null,
             alive: c.alive,
             deathCause: c.deathCause
         }))
@@ -606,6 +614,15 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
         // `activityForVerb` defaults to it for the same reason.
         : focus === 'idle' ? 'labour' : 'seclusion';
 
+    // THE WORLD, READ ONCE AND SHARED WITH THE GATE.
+    //
+    // Both gates below were built bare, one of them on the line above a world
+    // this function had already awaited. A gate with no supplier answers off
+    // stored rows alone, and nothing writes a knowledge row for one of the
+    // world's own people - so it says "never heard of them" about everybody
+    // alive. The played cultivator has no world row and is answered correctly
+    // either way, which is what kept it invisible.
+    const worldHere = await worldForRun(run).catch(() => null);
     let arrivals: ReturnType<typeof encountersFor> | null = null;
     let lived = days;
     let arrivingCultivator = cultivator;
@@ -614,7 +631,7 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
             arrivals = encountersFor(
                 {
                     repos,
-                    knowledge: new KnowledgeGate(repos.db),
+                    knowledge: new KnowledgeGate(repos.db, () => worldHere),
                     world: await worldForRun(run)
                 },
                 {
@@ -693,7 +710,8 @@ export async function handleCultivate(args: z.infer<typeof CultivateSchema>): Pr
     if (arrivals) {
         const reached = cutTo(arrivals, startDay, result.simulatedDays);
         arrivalsRecorded = recordEncounters(
-            new KnowledgeGate(repos.db), after, startDay + result.simulatedDays, reached, repos
+            new KnowledgeGate(repos.db, () => worldHere), after,
+            startDay + result.simulatedDays, reached, repos
         );
     }
 
@@ -1144,7 +1162,14 @@ export async function handleStatus(args: z.infer<typeof StatusSchema>): Promise<
         location: cultivator.location,
         ambient,
         cultivationPerDay: round4(rate.perDay),
-        sect: cultivator.sectId ? { id: cultivator.sectId, rank: cultivator.sectRank } : null,
+        sect: cultivator.sectId
+            ? {
+                id: cultivator.sectId,
+                rank: whereSomebodyStandsOnAHousesRoll(
+                    theRollAlone(repos.sects), cultivator.id
+                )?.rungName ?? null
+            }
+            : null,
         knownTechniques: cultivator.knownTechniques.length,
         pouch: listPouch(repos.db, cultivator.id).length,
         pendingBreakthroughPill: pending,

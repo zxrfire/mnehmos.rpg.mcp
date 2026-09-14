@@ -3,7 +3,7 @@ import { initDB } from '../../src/storage/db';
 import { migrate } from '../../src/storage/migrations';
 import { CharacterRepository } from '../../src/storage/repos/character.repo';
 import { AgentRepository } from '../../src/storage/repos/agent.repo';
-import { Character } from '../../src/schema/character';
+import { Character, CharacterSchema } from '../../src/schema/character';
 import { FIXED_TIMESTAMP } from '../fixtures.js';
 
 const TEST_DB_PATH = 'test-agent-repo.db';
@@ -15,8 +15,14 @@ function cleanup() {
     }
 }
 
+/**
+ * Only the fields an agent row needs a character to have. The other sixteen -
+ * `xp`, `conditions`, `race`, `currency`, the proficiency arrays - carry schema
+ * defaults, so they are absent from what a caller states and present in what
+ * the repository stores. Parsing here fills them exactly as `create` would.
+ */
 function makeCharacter(id: string): Character {
-    return {
+    return CharacterSchema.parse({
         id,
         name: `Char-${id}`,
         stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
@@ -27,7 +33,7 @@ function makeCharacter(id: string): Character {
         characterType: 'pc',
         createdAt: FIXED_TIMESTAMP,
         updatedAt: FIXED_TIMESTAMP
-    };
+    });
 }
 
 describe('AgentRepository', () => {

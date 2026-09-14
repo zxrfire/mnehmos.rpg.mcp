@@ -60,8 +60,9 @@ async function anElderOfAHouseWithAWall() {
     const sect = repos.sects.getById(A_HOUSE)!;
     repos.sects.setRank(A_HOUSE, cultivator.id, sect.ranks.length - 2);
     db.prepare('UPDATE cultivators SET realm_ordinal = 40 WHERE id = ?').run(cultivator.id);
-    const world = await game.loadWorld();
-    return { game, repos, db, world, sect, cultivatorId: cultivator.id };
+    const loaded = await game.loadWorld();
+    expect(loaded, 'the run opened without a world').toBeTruthy();
+    return { game, repos, db, world: loaded!, sect, cultivatorId: cultivator.id };
 }
 
 describe('a house has somewhere its work is posted', () => {

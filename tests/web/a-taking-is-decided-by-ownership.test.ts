@@ -256,9 +256,10 @@ async function aRunInThePinnedWorld(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: WORLD });
     const { cultivator } = await harness.game.newRun('Shen Wu');
     await harness.game.act('I look around');
-    const world = await harness.game.loadWorld();
+    const loaded = await harness.game.loadWorld();
+    expect(loaded, 'the run opened without a world').toBeTruthy();
     const here = harness.game.state().cultivator.location ?? '';
-    return { harness, cultivator, world, here };
+    return { harness, cultivator, world: loaded!, here };
 }
 
 describe('played: yours', () => {
@@ -275,8 +276,9 @@ describe('played: yours', () => {
         expect(text).toContain('already yours');
         expect(harness.game.state().run.elapsedDays).toBe(daysBefore);
 
-        const after = (await harness.game.loadWorld()).objects
-            .find(row => row.id === 'obj-own-sword')!;
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the turn').toBeTruthy();
+        const after = reloaded!.objects.find(row => row.id === 'obj-own-sword')!;
         expect(after.possessorId).toBe(cultivator.id);
         // Nothing happened, so nothing was written down about it happening.
         expect(after.provenance).toHaveLength(0);
@@ -291,8 +293,9 @@ describe('played: nobody\'s', () => {
 
         await harness.game.act('I pick up the plain iron sword');
 
-        const after = (await harness.game.loadWorld()).objects
-            .find(row => row.id === 'obj-apple-sword')!;
+        const reloaded = await harness.game.loadWorld();
+        expect(reloaded, 'the world went missing across the turn').toBeTruthy();
+        const after = reloaded!.objects.find(row => row.id === 'obj-apple-sword')!;
         expect(after.possessorId).toBe(cultivator.id);
         // A find, not a theft, and the two have opposite signs on every
         // consequence. The provenance says which it was.
@@ -324,7 +327,7 @@ describe('played: theirs', () => {
         }));
 
         const turn = await harness.game.act('I help myself to the plain iron sword');
-        const calls = JSON.stringify(turn.inspector ?? turn);
+        const calls = JSON.stringify(turn);
 
         // The taking became the EXISTING theft: the party was resolved off the
         // world rather than off the sentence, which named nobody at all.

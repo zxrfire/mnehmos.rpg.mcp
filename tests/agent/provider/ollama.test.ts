@@ -300,7 +300,7 @@ describe('thinking is off unless somebody asks for it', () => {
         const mock = recordingFetch([{ body: chatReply('It rains on the terraces.') }]);
         const provider = new OllamaProvider({ fetchImpl: mock.fn });
 
-        await provider.call({ messages: [{ role: 'user', content: 'hello' }] });
+        await provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'hello' }] });
 
         expect(mock.bodies).toHaveLength(1);
         expect(mock.bodies[0].think).toBe(false);
@@ -310,7 +310,7 @@ describe('thinking is off unless somebody asks for it', () => {
         const mock = recordingFetch([{ body: chatReply('It rains on the terraces.') }]);
         const provider = new OllamaProvider({ think: true, fetchImpl: mock.fn });
 
-        await provider.call({ messages: [{ role: 'user', content: 'hello' }] });
+        await provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'hello' }] });
 
         expect(mock.bodies[0].think).toBe(true);
     });
@@ -326,14 +326,14 @@ describe('thinking is off unless somebody asks for it', () => {
         ]);
         const provider = new OllamaProvider({ fetchImpl: mock.fn });
 
-        const first = await provider.call({ messages: [{ role: 'user', content: 'hello' }] });
+        const first = await provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'hello' }] });
         expect(first.text).toBe('It rains on the terraces.');
         expect(mock.bodies).toHaveLength(2);
         expect(mock.bodies[0].think).toBe(false);
         expect(mock.bodies[1]).not.toHaveProperty('think');
 
         // And the second call costs no refusal, because the model is known.
-        await provider.call({ messages: [{ role: 'user', content: 'again' }] });
+        await provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'again' }] });
         expect(mock.bodies).toHaveLength(3);
         expect(mock.bodies[2]).not.toHaveProperty('think');
     });
@@ -346,7 +346,7 @@ describe('thinking is off unless somebody asks for it', () => {
         ]);
         const provider = new OllamaProvider({ fetchImpl: mock.fn });
 
-        await expect(provider.call({ messages: [{ role: 'user', content: 'hello' }] }))
+        await expect(provider.call({ model: 'llama3.1', messages: [{ role: 'user', content: 'hello' }] }))
             .rejects.toBeInstanceOf(ProviderError);
         expect(mock.bodies).toHaveLength(1);
     });

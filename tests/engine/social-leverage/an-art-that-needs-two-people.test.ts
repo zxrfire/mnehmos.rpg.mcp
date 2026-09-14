@@ -19,9 +19,9 @@ import {
     DAO_PARTNER_INSIGHT_CHANCE,
     DAO_PARTNER_RUNGS_DRAWN_ON,
     cultivateWithADaoPartner,
-    useAFurnaceTechnique,
-    worksBetween
+    useAFurnaceTechnique
 } from '../../../src/engine/social-leverage/an-art-that-needs-two-people';
+import type { DaoAssessment } from '../../../src/engine/cultivation/dao.js';
 
 /**
  * One rite, said the short way.
@@ -226,7 +226,7 @@ describe('cultivateWithADaoPartner', () => {
         personId: string,
         sex: 'male' | 'female',
         reachesTo: number,
-        dao: typeof walking | typeof noRoad = walking
+        dao: DaoAssessment = walking
     ) => ({ personId, sex, reachesTo, dao });
     const ALL_THREE = {
         sharedTechniqueId: 'twin-lotus-cultivation-method',

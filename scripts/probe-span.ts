@@ -1,7 +1,7 @@
 /** How much ladder does one manual actually cover? */
-import { TECHNIQUES } from '../src/data/cultivation/techniques.js';
+import { TECHNIQUES, stopsSomewhere } from '../src/data/cultivation/techniques.js';
 const roads = (TECHNIQUES as any[])
-    .filter(t => t.class === 'cultivation' && t.cap != null)
+    .filter(t => stopsSomewhere(t))
     .map(t => ({ name: t.name, need: Number(t.requiredOrdinal ?? 0), cap: Number(t.cap), grade: t.grade }))
     .sort((a, b) => (a.cap - a.need) - (b.cap - b.need));
 console.log('span  from  to   grade      manual');

@@ -197,7 +197,7 @@ export const PRICES: readonly Price[] = [
     // ── food and lodging: the mortal end of the scale ─────────────────
     { id: 'price-millet', name: 'Bowl of millet', category: 'food', cash: 1, unit: 'each', note: 'The floor of the whole economy. A day of eating badly is three of these.', gives: { kind: 'a_meal' } },
     { id: 'price-meal', name: 'Hot meal at an inn', category: 'food', cash: 6, unit: 'each', note: 'Fish and rice in the Jade Gorge; flatbread and sour broth in the Silent Cliffs, at half again the price.', gives: { kind: 'a_meal' } },
-    { id: 'price-month-rations', name: 'A month of rations', category: 'food', cash: 120, unit: 'month', note: 'What travelling actually costs, and the number that makes the Grain Abstinence Pill worth nine thousand stones.', gives: { kind: 'rations' } },
+    { id: 'price-month-rations', name: 'A month of rations', category: 'food', cash: 120, unit: 'month', note: 'What travelling actually costs, and the number the abstinence pill is priced against: a year of not needing this costs what six years of buying it does, because what is bought is the errand rather than the food.', gives: { kind: 'rations' } },
     { id: 'price-inn-night', name: 'Night at an inn', category: 'lodging', cash: 12, unit: 'night', note: 'A floor, a blanket and no privacy. A private room is four times that and exists in perhaps six buildings per town.', gives: { kind: 'spent_at_the_counter', what: 'a floor, a blanket, and morning' } },
     { id: 'price-month-lodging', name: 'A month\'s lodging', category: 'lodging', cash: 300, unit: 'month', note: 'A room in a market town, which is roughly one and a half months of a porter\'s wage.', gives: { kind: 'spent_at_the_counter', what: 'a room, paid up, and a door that shuts' } },
 

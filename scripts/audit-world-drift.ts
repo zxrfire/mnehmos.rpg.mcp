@@ -87,7 +87,6 @@ async function main(): Promise<void> {
         elapsed = era.years;
 
         const events = advanced.events.length;
-        const factions = worldShape(state).liveFactions;
         totalEvents += events;
         const shape = worldShape(state);
         shapes.push(shape);

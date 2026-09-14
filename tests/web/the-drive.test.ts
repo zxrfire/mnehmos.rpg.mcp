@@ -175,7 +175,10 @@ const MASTER: SomebodyAbove = {
     knows: 'the opening three stages of the Azure Ripple Art',
     mayNotSay: 'anything of the inner shelf, on the sect head\'s standing order',
     costsThem: 'a month of their own seclusion for every disciple taken',
-    here: true
+    here: true,
+    // Nothing said about how far they could carry anybody. Null is the shape's
+    // own "the world holds no record of that", not a stand-in for zero.
+    carriesYouTo: null
 };
 
 /** The same person, before the player has ever met them. */
@@ -294,7 +297,11 @@ const HOME: Destination = {
     travelDays: null,
     localCeilingOrdinal: 38,
     hereNow: true,
-    sameProvince: true
+    sameProvince: true,
+    // No crowding written down for either place: null is what the read prints
+    // when the world holds no record of the ground, which is this fixture.
+    occupants: null,
+    supportedDraw: null
 };
 
 const NEIGHBOUR: Destination = {
@@ -305,7 +312,9 @@ const NEIGHBOUR: Destination = {
     travelDays: 12,
     localCeilingOrdinal: 20,
     hereNow: false,
-    sameProvince: false
+    sameProvince: false,
+    occupants: null,
+    supportedDraw: null
 };
 
 describe('where this cultivator could go', () => {
@@ -510,10 +519,10 @@ describe('the three questions reach the three reads', () => {
         const { game } = makeGame();
         await game.newRun('Shi Wanjun');
         for (const text of ['what is my ceiling', 'who can teach me', 'where can I go']) {
-            const before = (await game.act('status')).state.elapsedDays;
+            const before = (await game.act('status')).state.run.elapsedDays;
             const result = await game.act(text);
             expect(planned(result).action).not.toBe('unclear');
-            expect(result.state.elapsedDays).toBe(before);
+            expect(result.state.run.elapsedDays).toBe(before);
         }
     });
 });

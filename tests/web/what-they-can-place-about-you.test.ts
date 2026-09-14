@@ -29,6 +29,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { parseIntent } from '../../src/web/actions';
 import { engineCalls, makeGameInWorld } from './harness';
+import type { ActResult } from '../../src/web/turn-wire-shapes';
 import {
     theFragmentIsOnlyTheDeclaration,
     whatYouAreNotShowing
@@ -36,7 +37,7 @@ import {
 import { whatTheyCanPlaceAbout } from '../../src/engine/social/what-they-can-place-about-you';
 
 /** What the gap in standing was worth, out of the resolver's own sentence. */
-function whatTheGapWasWorth(result: { toolCalls: { name: string; summary: string }[] }): number {
+function whatTheGapWasWorth(result: ActResult): number {
     const call = engineCalls(result).find(row => row.name === 'engine.resolveAttempt');
     expect(call, engineCalls(result).map(row => row.name).join(', ')).toBeDefined();
     const found = /the gap in standing between them (added|cost) (\d+) points/.exec(call!.summary);

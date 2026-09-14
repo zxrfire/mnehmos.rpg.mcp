@@ -54,6 +54,7 @@ import {
     type CombatantInput
 } from '../../../src/engine/cultivation/combat.js';
 import { forStream } from '../../../src/engine/cultivation/rng.js';
+import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 
 function body(ordinal: number, id: string): CombatantInput {
     const hp = Math.max(10, 20 + ordinal * 12);
@@ -75,7 +76,7 @@ function stalemateRate(n: number, ordinalA: number, ordinalB: number, seeds = 20
     for (let s = 0; s < seeds; s++) {
         const result = resolveMelee([side('a', n, ordinalA), side('b', n, ordinalB)], {
             rng: forStream(`melee-${s}`, 'melee', 1),
-            ambient: 'normal', turn: 1, intent: { goal: 'kill' }
+            ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING }
         });
         if (result.winningSideId === null) stale++;
     }
@@ -87,7 +88,7 @@ function aggressorWinRate(n: number, ordinalA: number, ordinalB: number, seeds =
     for (let s = 0; s < seeds; s++) {
         const result = resolveMelee([side('a', n, ordinalA), side('b', n, ordinalB)], {
             rng: forStream(`melee-${s}`, 'melee', 1),
-            ambient: 'normal', turn: 1, intent: { goal: 'kill' }
+            ambient: 'normal', turn: 1, intent: { thrown: AN_ORDINARY_SWING }
         });
         if (result.winningSideId === 'a') wins++;
     }

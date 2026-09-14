@@ -119,6 +119,7 @@ function worldWithSomethingWorthSaying(): WorldState {
 function carter(id: string, ordinal: number): RosterEntry {
     return {
         id, name: `Teller ${id}`, kind: 'npc', spiritRoot: 'single_water',
+        sex: 'female', physique: null,
         realmOrdinal: ordinal, location: 'Six Li', sectId: null, sectName: null,
         sectRank: null, age: 40, alive: true, existenceState: 'alive',
         soulState: 'intact', identityContinuity: 1, deathCause: null,
@@ -127,9 +128,11 @@ function carter(id: string, ordinal: number): RosterEntry {
 }
 
 async function player(): Promise<{ cultivator: Cultivator; run: Run }> {
-    const { game } = makeGame({ seed: 'news-test' });
+    const { game, repos } = makeGame({ seed: 'news-test' });
     const { cultivator } = await game.newRun('Listener');
-    return { cultivator, run: game.state().run as Run };
+    // The STORED run, not the wire view of it: `askAround` takes a `Run` and
+    // draws off its seed, and `RunView` carries none.
+    return { cultivator, run: repos.runs.getById(game.state().run.id)! };
 }
 
 describe('what the square says', () => {

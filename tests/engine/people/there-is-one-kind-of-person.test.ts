@@ -108,7 +108,7 @@ describe('everybody drawing on one piece of ground', () => {
     it('leaves the dead out of it, from either store', () => {
         const drawing = everybodyDrawingHere({
             inTheWorld: [
-                aWorldPerson({ id: 'npc-gone', ordinal: 40, status: 'dead' }),
+                aWorldPerson({ id: 'npc-gone', ordinal: 40, status: 'physically_dead' }),
                 aWorldPerson({ id: 'npc-here', ordinal: 8 })
             ],
             onRunSheets: [

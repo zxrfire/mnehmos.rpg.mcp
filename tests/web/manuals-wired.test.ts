@@ -116,15 +116,21 @@ describe('where the manual stops, said before the decade is spent', () => {
             .toMatch(/(?:It carries|They carry) a cultivator (?:as far as|the whole way)/);
     });
 
-    it('says plainly that an art is not a road', async () => {
+    it('says where every art on offer stops, and never that one carries nobody', async () => {
+        // WHAT THIS USED TO ASSERT. "says plainly that an art is not a road",
+        // matching the sentence *it is an art, not a road* in the listing. The
+        // design owner has since collapsed the two kinds of technique into one:
+        // every technique carries its practitioner up a few rungs. There is no
+        // art that carries nobody, so the sentence was deleted rather than
+        // reworded, and this checks it has not crept back - a listing that says
+        // it of a book the same listing gives a ceiling for is the catalog
+        // contradicting itself in one paragraph.
         const { game } = makeGame({ seed: 'cap-shown-2' });
         await game.newRun('Wen Shu');
         const listed = await game.act('what arts can I learn');
-        // The rule, not the sentence: a thing that carries nobody is named as
-        // such where it is listed. The listing gathers rows under the sentence
-        // they share, so it is plural whenever more than one art is on offer.
+        expect(listed.narration).not.toMatch(/art, not a road|arts, not roads/);
         expect(listed.narration)
-            .toMatch(/(?:it is an art, not a road|they are arts, not roads)/);
+            .toMatch(/(?:It carries|They carry) a cultivator (?:as far as|the whole way)/);
     });
 });
 

@@ -70,7 +70,8 @@ function places(): LocationRecord[] {
             id: 'loc-town', name: 'Iron Ridge', kind: 'settlement', parentId: 'loc-province'
         }),
         makeLocation({
-            id: 'loc-prefecture', name: 'The Six Li Cut', kind: 'wilderness', parentId: 'loc-town'
+            // `wilderness` is not a `LocationKind`; the world calls it `wilds`.
+            id: 'loc-prefecture', name: 'The Six Li Cut', kind: 'wilds', parentId: 'loc-town'
         }),
         makeLocation({
             id: 'loc-elsewhere', name: 'Willow Village', kind: 'settlement', parentId: 'loc-province'
@@ -482,7 +483,7 @@ describe('passage: the season and somebody deciding are reported apart', () => {
         return makeLocation({
             id: 'loc-pass',
             name: 'The Cold Peak Pass',
-            kind: 'wilderness',
+            kind: 'wilds',
             parentId: 'loc-province',
             // Open seven months of the year, from day 0.
             cycle: { periodDays: 360, openDays: 210, phaseDay: 0 }

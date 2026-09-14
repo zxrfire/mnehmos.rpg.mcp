@@ -226,7 +226,13 @@ describe('engine gaps', () => {
             const gap = getEngineGap(effect);
             expect(gap, `${effect} is not declared as a gap`).toBeDefined();
             expect(gap!.missing.length).toBeGreaterThan(100);
-            expect(gap!.blockedBy.length).toBeGreaterThan(80);
+            // `blockedBy` is optional on the record and required here: a gap
+            // that does not say what stands in the way is half a declaration.
+            // Proven present before it is measured, rather than measured
+            // through a `?.` that would pass a missing one.
+            const blockedBy = gap!.blockedBy;
+            expect(blockedBy, `${effect} does not say what blocks it`).toBeTruthy();
+            expect(blockedBy!.length).toBeGreaterThan(80);
             expect(gap!.note.length).toBeGreaterThan(80);
         }
         expect(ENGINE_GAPS.length).toBe(effects.size);

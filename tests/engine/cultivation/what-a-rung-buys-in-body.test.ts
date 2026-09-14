@@ -45,6 +45,7 @@ import {
     type CombatantInput
 } from '../../../src/engine/cultivation/combat.js';
 import { CultivationRNG } from '../../../src/engine/cultivation/rng.js';
+import { AN_ORDINARY_SWING } from '../../../src/engine/cultivation/how-a-blow-was-thrown.js';
 import {
     GRADE_ORDINAL_BANDS,
     GRADE_QI_BANDS,
@@ -225,7 +226,7 @@ function peer(id: string, ordinal: number, maxHp: number): CombatantInput {
         injuries: [],
         technique: null,
         weapon: null
-    } as CombatantInput;
+    };
 }
 
 function peerFight(ordinal: number, pool: number) {
@@ -236,7 +237,7 @@ function peerFight(ordinal: number, pool: number) {
             rng: new CultivationRNG('what-a-rung-buys-in-body'),
             ambient: 'normal',
             turn: 1,
-            intent: { goal: 'drive_off', willWithdraw: true }
+            intent: { thrown: AN_ORDINARY_SWING, willWithdraw: true }
         }
     );
     const dealt = r.exchanges.filter(e => e.attackerId === 'a').reduce((s, e) => s + e.result.damage, 0);

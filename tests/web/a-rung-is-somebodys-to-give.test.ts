@@ -53,6 +53,7 @@ import { makeGameInWorld } from './harness';
 import { KnowledgeGate } from '../../src/web/knowledge';
 import { positionIn } from '../../src/web/standing';
 import { portfoliosIn } from '../../src/engine/social-leverage/authority-for-an-order';
+import type { LocationRecord } from '../../src/engine/world/locations';
 import { rosterFor } from '../../src/web/encounters';
 import { whoCouldRaiseYou } from '../../src/engine/social-leverage/a-rung-nobody-earned';
 import { createFavor } from '../../src/engine/social/grudges';
@@ -89,7 +90,9 @@ async function inFrontOfTheHouse(seed: string) {
 
     const world = await svc.loadWorld() as {
         npcs?: Array<{ id: string; locationId?: string }>;
-        locations?: Array<{ id: string; name: string }>;
+        // The rows the engine actually holds. Written out narrower here once,
+        // which made `portfoliosIn` look as though it took a pair of strings.
+        locations?: readonly LocationRecord[];
     };
     const me = (svc.repos as unknown as { cultivators: { getById(id: string): never } })
         .cultivators.getById(cultivator.id);
@@ -215,7 +218,7 @@ describe('a rung is somebody\'s to give', () => {
         writeOneObligation(db as never, createFavor({
             holderId: cultivator.id,
             subjectId: holder.id,
-            cause: 'life_saved',
+            cause: 'saved_life',
             severity: 'grave',
             onDay: 0,
             description: 'arranged: the elder owes them'

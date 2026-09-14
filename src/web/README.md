@@ -2376,6 +2376,33 @@ the design owner's own example answered by *the thought does not resolve*. The l
 is live stays in that answer beside the question; being asked what you meant and being told
 what would work are different useful things.
 
+## A pill is in the pouch. A dose is in the hand.
+
+`consume_pill` reads `listPouch`, and for four rows in the world that is the wrong place
+to look. A structural repair dose is an `ObjectRecord` in `state.objects`, because there
+is no counted tier for a thing there are eleven of - so `applyStructuralRepair` had no
+caller anywhere outside its own tests and a player who bartered a house out of one was
+carrying an object no sentence could spend.
+
+`swallow` carries it and no verb was added. All four are called pills, so `PILL_NOUNS`
+already routed the sentence; what was missing was the second place to look.
+[`swallowing-a-dose-you-are-holding.ts`](swallowing-a-dose-you-are-holding.ts) is that
+read, and it decides nothing: `repairRefusalReason` is the whole rule and what comes back
+is applied or reported as it stands. Two things follow and both are load-bearing:
+
+- **The refusal comes before the swallowing.** A dose that reaches nothing is one of
+  eleven objects spent for nothing, so the player is told what the grade was refined for
+  while it is still in their hand. `anyway` still puts it down, because whether to waste
+  your own property is not the engine's question.
+- **The row stays.** Marked spent through `markDoseSwallowed`, which is the same thing
+  `spendRepairDose` writes when a house spends one on somebody. Where a dose went has to
+  be answerable afterwards whichever door the swallowing came through.
+
+And the two cheap grades are a COUNT on a house rather than a row - `repairStorageModel`
+draws that line - so any read that scans `state.objects` alone sees an empty world for
+them. `whatWouldItTake` asks `everyRepairHolding` as well, which is why its refusal can
+name a holder of all four grades instead of telling a player the problem is finding one.
+
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
@@ -2384,6 +2411,7 @@ what would work are different useful things.
 - [`house-property-theft.ts`](house-property-theft.ts) - taking a thing your own house owns, and why possession moves while ownership does not
 - [`a-room-hands-down-what-it-decided.ts`](a-room-hands-down-what-it-decided.ts) - the seven sentences carried out, each through the instrument that already does that job, who the house sends for the four carried out on a person, and which of them it reads out in public
 - [`a-room-hands-one-down-to-you.ts`](a-room-hands-one-down-to-you.ts) - the same room sitting on the one being played: the day gate, who decides it over your head, and who on the roll owes you enough to speak
+- [`a-house-does-not-wait-for-you-to-spend-a-day.ts`](a-house-does-not-wait-for-you-to-spend-a-day.ts) - the other side of that day gate: a player who only takes free actions spends no day, so the house sends for them rather than waiting for one. A free action still costs nothing; being fetched costs a day, and the world spends it
 - [`object-theft.ts`](object-theft.ts) - taking one named thing off somebody who is not your own house, and why a moored craft was out of reach of every possession query in the engine
 - [`craft-verbs.ts`](craft-verbs.ts) - the joint between the player's sentence and the bill of materials, and where a launched craft becomes a row
 - [`making-a-thing-at-your-own-bench.ts`](making-a-thing-at-your-own-bench.ts) - the other half of `craft`: the artifact recipe, your own hands, and the thing that comes off it

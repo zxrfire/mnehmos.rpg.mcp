@@ -48,11 +48,14 @@ interface LedgerRow {
     holder_id: string;
     subject_id: string;
     triggering_event_id: string | null;
+    /** JSON array, as it sits in the column. Read with `JSON.parse` below. */
+    tags: string;
 }
 
 function ledger(db: Awaited<ReturnType<typeof makeGameInWorld>>['db']): LedgerRow[] {
     return db.prepare(
-        'SELECT kind, cause, severity, holder_id, subject_id, triggering_event_id FROM obligations'
+        'SELECT kind, cause, severity, holder_id, subject_id, triggering_event_id, tags '
+        + 'FROM obligations'
     ).all() as LedgerRow[];
 }
 

@@ -30,7 +30,7 @@ import {
     intakeRouteOf,
     type SectEntry
 } from '../../data/cultivation/sects.js';
-import { getTechnique, classOf, capOf } from '../../data/cultivation/techniques.js';
+import { getTechnique, capOf } from '../../data/cultivation/techniques.js';
 import { getProductionTier } from '../../data/cultivation/faction-character.js';
 import { favourStanceOf } from '../../data/cultivation/a-favour-skips-the-admission-bar.js';
 import { doorsOf, housesWithTwoDoors } from '../birth/spending-a-word-to-place-a-child.js';
@@ -96,7 +96,7 @@ interface ShelfEntry {
     requiredOrdinal: number;
 }
 
-/** Everything on a house's teach list, in one shape, roads and arts together. */
+/** Everything on a house's teach list, in one shape. */
 function shelfEntriesOf(house: SectEntry): ShelfEntry[] {
     const out: ShelfEntry[] = [];
     for (const id of house.teaches) {
@@ -105,7 +105,7 @@ function shelfEntriesOf(house: SectEntry): ShelfEntry[] {
         out.push({
             id: t.id,
             name: t.name,
-            cap: classOf(t) === 'cultivation' ? (t.cap ?? capOf(t)) : null,
+            cap: t.cap ?? capOf(t),
             requiredOrdinal: t.requiredOrdinal
         });
     }
@@ -114,7 +114,7 @@ function shelfEntriesOf(house: SectEntry): ShelfEntry[] {
 
 /**
  * The deepest rung anything on this house's shelf carries somebody to, or null
- * where it teaches no road at all.
+ * where it teaches nothing at all.
  */
 export function shelfTopOf(factionId: string): number | null {
     const house = getSect(factionId);

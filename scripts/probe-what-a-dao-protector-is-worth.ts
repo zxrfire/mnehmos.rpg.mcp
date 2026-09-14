@@ -49,7 +49,9 @@ function asSubject(npc: NpcRecord) {
 async function main(): Promise<void> {
     const catalog = await loadCultivationCatalog();
     const seeded = seedWorld({ seed: 'protector-probe', catalog });
-    const state = advanceWorldYears(seeded.state, 200, { pressure: { eventsPerYear: 1.2 } }).state;
+    // `pressure` carried an `eventsPerYear` that PressureOptions never had, so
+    // every run this probe has published was at the default event rate.
+    const state = advanceWorldYears(seeded.state, 200).state;
     const alive = state.npcs.filter(n => n.status === 'alive');
     const byId = new Map(state.npcs.map(n => [n.id, n]));
 

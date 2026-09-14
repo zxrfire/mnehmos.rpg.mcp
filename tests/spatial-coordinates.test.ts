@@ -10,9 +10,7 @@ import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { closeDb, getDb } from '../src/storage/index.js';
 import { SpatialRepository } from '../src/storage/repos/spatial.repo.js';
-import { RoomNode, NodeNetwork, TravelTerrain } from '../src/schema/spatial.js';
-
-const mockCtx = { sessionId: 'test-session' };
+import { RoomNode, NodeNetwork } from '../src/schema/spatial.js';
 
 describe('Spatial Coordinate System', () => {
     let db: Database.Database;
@@ -248,7 +246,9 @@ describe('Spatial Coordinate System', () => {
                 centerY: 30
             });
 
-            const waypoint1 = createRoom({
+            // Three rooms on one road, checked by the shape of their local
+            // coordinates rather than by id.
+            createRoom({
                 name: 'Northern Crossroads',
                 networkId: road.id,
                 localX: 0,
@@ -256,7 +256,7 @@ describe('Spatial Coordinate System', () => {
                 biomeContext: 'forest'
             });
 
-            const waypoint2 = createRoom({
+            createRoom({
                 name: 'Midway Inn',
                 networkId: road.id,
                 localX: 0,
@@ -264,7 +264,7 @@ describe('Spatial Coordinate System', () => {
                 biomeContext: 'urban'
             });
 
-            const waypoint3 = createRoom({
+            createRoom({
                 name: 'Southern Bridge',
                 networkId: road.id,
                 localX: 0,
@@ -432,7 +432,9 @@ describe('Spatial Coordinate System', () => {
         });
 
         it('5.2: Can find networks in bounding box (area search)', () => {
-            const north = createNodeNetwork({
+            // The three inside the box are asserted by COUNT, not by id, so
+            // only the one outside it needs holding onto.
+            createNodeNetwork({
                 name: 'Northern City',
                 type: 'cluster',
                 worldId: 'world-1',
@@ -440,7 +442,7 @@ describe('Spatial Coordinate System', () => {
                 centerY: 48
             });
 
-            const center = createNodeNetwork({
+            createNodeNetwork({
                 name: 'Central City',
                 type: 'cluster',
                 worldId: 'world-1',
@@ -448,7 +450,7 @@ describe('Spatial Coordinate System', () => {
                 centerY: 50
             });
 
-            const south = createNodeNetwork({
+            createNodeNetwork({
                 name: 'Southern City',
                 type: 'cluster',
                 worldId: 'world-1',
@@ -478,7 +480,8 @@ describe('Spatial Coordinate System', () => {
                 centerY: 45
             });
 
-            const center = createNodeNetwork({
+            // Both exist to be further away than `north`; neither is named again.
+            createNodeNetwork({
                 name: 'Central Keep',
                 type: 'cluster',
                 worldId: 'world-1',
@@ -486,7 +489,7 @@ describe('Spatial Coordinate System', () => {
                 centerY: 50
             });
 
-            const south = createNodeNetwork({
+            createNodeNetwork({
                 name: 'Southern Watch',
                 type: 'cluster',
                 worldId: 'world-1',

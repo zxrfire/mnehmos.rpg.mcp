@@ -27,7 +27,6 @@ import {
 import {
     TECHNIQUES,
     capOf,
-    classOf,
     findTechniquesForOrdinal,
     getTechnique,
     gradeRank
@@ -48,7 +47,7 @@ import {
     type CultivationRepos
 } from './cultivation-support.js';
 import { describeDeath } from '../../engine/cultivation/survival.js';
-import { COMMON_MANUAL_CAP, isCommonlyHeld } from '../../engine/world/manuals.js';
+import { isCommonlyHeld } from '../../engine/world/manuals.js';
 import {
     isSoldAtAStall,
     manualsAStallCarries,
@@ -298,7 +297,6 @@ function projectTechnique(
         rootMatch: matched ? 'matched' : conflicts ? 'conflicting' : 'neutral',
         matchedBonus: matched ? root.matchedTechniqueBonus : 1,
         // WHERE THE MANUAL STOPS
-        class: classOf(technique),
         carriesToOrdinal: capFor(technique),
         carriesToRank: capFor(technique) === null
             ? null
@@ -307,9 +305,8 @@ function projectTechnique(
     };
 }
 
-/** The rung this art carries a cultivator to, or null when it carries nobody. */
+/** The rung this art carries a cultivator to, or null when it stops nowhere. */
 function capFor(technique: Technique): number | null {
-    if (classOf(technique) !== 'cultivation') return null;
     return technique.cap !== undefined ? technique.cap : capOf(technique);
 }
 
@@ -511,12 +508,22 @@ export async function handleLearn(args: z.infer<typeof LearnSchema>): Promise<ob
     }
 
     // AND BELOW IT, A BOOK IS STILL AN OBJECT SOMEBODY SOLD YOU
-    const writtenTo = technique.cap ?? capOf(technique);
-    const belowTheStallLine =
-        classOf(technique) === 'cultivation'
-        && writtenTo !== null
-        && writtenTo <= COMMON_MANUAL_CAP;
-    if (belowTheStallLine
+    //
+    // THE GATE IS THE STALL, NOT THE CAP. This read `advancesRank(technique)
+    // && writtenTo <= COMMON_MANUAL_CAP`, and when every technique started
+    // carrying its practitioner up a few rungs the cap half stopped selecting
+    // anything: every art that opens in the first realm band caps at 13, so the
+    // set went from about twenty primers to those plus every cheap fighting art
+    // in the catalog. Measured by playing: a fresh cultivator with no house
+    // could no longer `learn` the first art `list_available` offered them,
+    // because the engine asked them to go and buy a copy of a punch.
+    //
+    // How far an art carries somebody was never what this block was about. It
+    // is about the market - a book you could have bought is a book you have to
+    // have bought - so it asks the module that owns that question. An art no
+    // stall carries is learned by being shown it, which is what
+    // `transmissionModeOf` has always said about anything `taught`.
+    if (isSoldAtAStall(technique.id)
         && args.provenance === undefined
         && !asAGuest
         && !holdsACopyOf(repos.db, cultivator.id, technique.id)) {

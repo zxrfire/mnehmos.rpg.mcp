@@ -28,7 +28,6 @@ import {
     countedHolding,
     requireConveyance
 } from '../../../src/data/cultivation/what-a-house-moves-its-people-on.js';
-import { getSendingReason } from '../../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.js';
 import {
     ALLIED_STANDING,
     IMPOSSIBLE_TIERS,
@@ -59,7 +58,6 @@ import { summonable } from '../../../src/engine/encounters/duties.js';
 import { ALLIED_STANDING as GATHERINGS_ALLIED } from '../../../src/engine/world/gatherings.js';
 import { makeLocation } from '../../../src/engine/world/locations.js';
 import { regardFor } from '../../../src/engine/cultivation/regard.js';
-import { forStream } from '../../../src/engine/cultivation/rng.js';
 import { REGARD_BANDS } from '../../../src/schema/cultivation.js';
 
 function house(patch: Partial<HouseAsItStands> = {}): HouseAsItStands {

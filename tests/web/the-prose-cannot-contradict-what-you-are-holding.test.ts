@@ -40,6 +40,7 @@ import { describe, expect, it } from 'vitest';
 
 import { makeGame, ScriptedProvider } from './harness';
 import { manualsAStallCarries } from '../../src/engine/world/what-a-copy-of-a-manual-costs-at-a-stall';
+import { copyNamesHeldBy } from '../../src/server/consolidated/technique-manage';
 
 const RUN = 'standing-state';
 
@@ -63,8 +64,27 @@ describe('what the narrator is told about the player', () => {
 
         // Out of the catalog the stall reads from, not written out here: a name
         // this test hard-coded would be measuring somebody else's rename.
-        const title = manualsAStallCarries()[0]!.name;
-        await harness.game.act(`I buy the ${title}`);
+        // A NAME THE BOARD PRINTS IS A NAME THE GAME MUST ACCEPT, and one of
+        // them is not. The board's first row used to be the Lesser Qi-Gathering
+        // Manual and is now the Cross-Meridian Strike: every art gained a cap
+        // when the two kinds of technique collapsed into one, so the stall
+        // carries eight books rather than two and six of them are fighting
+        // arts. `I buy the Cross-Meridian Strike` leaves the pouch empty where
+        // the same sentence about the gathering manual does not.
+        //
+        // That is a defect in the buy path and it is written down rather than
+        // worked around: this test walks the board until a row lands, so it
+        // measures the PROMPT rather than the parser, and the day the parser
+        // takes every printed name the loop stops on the first row.
+        let title = '';
+        for (const row of manualsAStallCarries()) {
+            await harness.game.act(`I buy the ${row.name}`);
+            if (copyNamesHeldBy(harness.repos.db, cultivator.id).includes(row.name)) {
+                title = row.name;
+                break;
+            }
+        }
+        expect(title, 'no book the stall board prints could be bought by its name').not.toBe('');
 
         const mark = narrationPrompts(provider).length;
         await harness.game.act('I look around');

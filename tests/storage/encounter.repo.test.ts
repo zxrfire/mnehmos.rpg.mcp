@@ -46,6 +46,10 @@ describe('EncounterRepository', () => {
             centerX: 0,
             centerY: 0,
             color: '#000',
+            // The schema's default, stated because `Region` is the parsed shape
+            // where every default is present. Nothing here reads it back; the
+            // region exists only to give the encounters a place to be.
+            controlLevel: 0,
             createdAt: FIXED_TIMESTAMP,
             updatedAt: FIXED_TIMESTAMP,
         };

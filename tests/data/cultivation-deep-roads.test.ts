@@ -64,7 +64,6 @@ describe('the deepest roads - the catalog', () => {
     it('keeps every one of them at the height it claims', () => {
         for (const road of THE_DEEPEST_ROADS) {
             const art = getTechnique(road.techniqueId)!;
-            expect(art.class, road.techniqueId).toBe('cultivation');
             expect(art.grade, road.techniqueId).toBe('chaos');
             expect(art.requiredOrdinal, road.techniqueId).toBe(41);
         }
@@ -227,7 +226,7 @@ describe('the deepest roads - the shelves they sit on', () => {
         const pavilion = getSect('sect-azure-cloud-pavilion')!;
         const ceiling = pavilion.teaches
             .map(id => getTechnique(id))
-            .filter(t => t?.class === 'cultivation')
+            .filter(t => t !== undefined)
             .reduce((n, t) => Math.max(n, t!.cap ?? t!.requiredOrdinal), 0);
         expect(ceiling, 'the Pavilion still cannot teach past the middle').toBeGreaterThan(40);
     });

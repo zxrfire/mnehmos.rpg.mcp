@@ -42,6 +42,8 @@ import {
 import type { AdmissionReading } from '../data/cultivation/inheritance-trials.js';
 import { aggregateInjuryPenalties, untreatedInjuryCount } from '../engine/cultivation/injuries.js';
 import { getSect } from '../data/cultivation/sects.js';
+import type { WhereTheyStandOnARoll }
+    from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
 import type { ClaimVerdict } from '../engine/world/recognising-whose-art-you-just-watched.js';
 import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import { PLACE } from '../data/cultivation/place-names.js';
@@ -434,8 +436,18 @@ function bodyLine(cultivator: Cultivator): string | null {
 
 /**
  * The player's own condition, as they experience it.
+ *
+ * `onTheRoll` is handed in rather than read off the cultivator row, because the
+ * rung is not on that row and must not be put back on it: it is the roll's and
+ * the world row's between them, and `whereSomebodyStandsOnAHousesRoll` is the
+ * one read. Null is a state and not a gap - somebody born on a house's roll is
+ * on it at no rung, and this says so.
  */
-export function standingLines(cultivator: Cultivator, ambient: AmbientQi): SaidToBoth[] {
+export function standingLines(
+    cultivator: Cultivator,
+    ambient: AmbientQi,
+    onTheRoll: WhereTheyStandOnARoll | null = null
+): SaidToBoth[] {
     const untreated = untreatedInjuryCount(cultivator.injuries);
     const root = getSpiritRoot(cultivator.spiritRoot);
     return [
@@ -473,10 +485,10 @@ export function standingLines(cultivator: Cultivator, ambient: AmbientQi): SaidT
         },
         { text: timeHeldAtThisRealm(cultivator.yearsAtCurrentRealm) },
         // WHOSE ROLL THEY ARE ON.
-        cultivator.sectId
+        cultivator.sectId || onTheRoll
             ? {
-                text: `On the roll of ${sectNameFor(cultivator.sectId)}`
-                    + `${cultivator.sectRank ? `, ranked ${cultivator.sectRank}` : ''}.`
+                text: `On the roll of ${onTheRoll?.factionName ?? sectNameFor(cultivator.sectId!)}`
+                    + `${onTheRoll ? `, ranked ${onTheRoll.rungName}` : ''}.`
             }
             : {
                 text: 'Serves no house. Nothing is owed to them and nothing is asked of them.',
@@ -2055,12 +2067,14 @@ export function factsForStatus(
     ambient: AmbientQi,
     progressRequired: number | null,
     ready: boolean,
+    /** The rung they hold on their house's roll, or null at none. */
+    onTheRoll: WhereTheyStandOnARoll | null,
     /**
      * Why nothing is accumulating, when nothing is.
      */
     ceiling: string | null = null
 ): EngineFacts {
-    const said = standingLines(cultivator, ambient);
+    const said = standingLines(cultivator, ambient, onTheRoll);
     if (progressRequired === null) {
         // No figure, because there is no rung above this one priced in qi - handing
         // the narrator a number here would be handing it a lie. But saying only

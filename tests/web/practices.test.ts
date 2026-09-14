@@ -43,12 +43,12 @@ function placePerson(
         INSERT INTO cultivators (
             id, run_id, name, kind, spirit_root, attributes, realm_ordinal,
             cultivation_progress, hp, max_hp, qi, max_qi, satiety, starvation_turns,
-            age, years_at_current_realm, spirit_stones, sect_id, sect_rank, location,
+            age, years_at_current_realm, spirit_stones, sect_id, location,
             feuds, known_techniques, alive, death_cause, died_on_turn, created_at, updated_at
         ) VALUES (
             @id, NULL, @name, 'npc', 'single_water',
             '{"might":2,"insight":2,"fortune":1,"charm":2}', @ordinal,
-            0, 60, 60, 30, 30, 100, 0, 40, 2, 200, @sectId, NULL, @where,
+            0, 60, 60, 30, 30, 100, 0, 40, 2, 200, @sectId, @where,
             '[]', '[]', 1, NULL, NULL, @now, @now
         )
     `).run({ id, name, ordinal, sectId, where, now });

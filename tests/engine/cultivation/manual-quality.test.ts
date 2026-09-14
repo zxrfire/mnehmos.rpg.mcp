@@ -22,7 +22,12 @@ import {
     computeCultivationRate
 } from '../../../src/engine/cultivation/cultivation.js';
 import { computeBreakthroughOdds } from '../../../src/engine/cultivation/breakthrough.js';
-import { TECHNIQUES, MANUAL_QUALITY } from '../../../src/data/cultivation/techniques.js';
+import {
+    TECHNIQUES,
+    MANUAL_QUALITY,
+    DEFAULT_MANUAL_QUALITY,
+    NO_SURVIVING_COPY_TECHNIQUE_IDS
+} from '../../../src/data/cultivation/techniques.js';
 import { ORIGIN_TIERS } from '../../../src/engine/cultivation/origin.js';
 import { ManualQualitySchema, type InnateAttributes } from '../../../src/schema/cultivation.js';
 
@@ -136,7 +141,17 @@ describe('what the reader takes out of it', () => {
             ...reader(MEDIOCRE),
             insights: [{
                 id: 'i1', subject: 'metal', domain: 'element', degree: 3,
-                formedOnDay: 0, sourceNote: 'test'
+                // `formedOnDay` and `sourceNote` were the flat pair that came
+                // before an insight had to name the event that produced it.
+                // Neither field exists, so this row was one the engine could
+                // not have minted.
+                provenance: {
+                    achievementId: 'a1',
+                    achievementKind: 'profound_principle',
+                    onDay: 0,
+                    deepenedBy: [],
+                    account: 'Comprehended metal.'
+                }
             }]
         }, { techniqueElement: 'metal' });
         expect(seen.fromSeen).toBeGreaterThan(0);
@@ -205,13 +220,98 @@ describe('telling two books apart', () => {
 });
 
 describe('the catalog', () => {
-    const manuals = TECHNIQUES.filter(t => t.class === 'cultivation');
+    const manuals = TECHNIQUES.slice();
 
-    it('authors a quality on every cultivation manual', () => {
+    it('gives every row a legal quality, and names no row that does not exist', () => {
         for (const m of manuals) {
-            expect(MANUAL_QUALITY[m.id], `${m.id} is not in MANUAL_QUALITY`).toBeDefined();
-            expect(ManualQualitySchema.safeParse(m.quality).success).toBe(true);
+            expect(ManualQualitySchema.safeParse(m.quality).success, m.id).toBe(true);
         }
+        for (const id of Object.keys(MANUAL_QUALITY)) {
+            expect(manuals.some(m => m.id === id), `${id} is authored and is not in the catalog`)
+                .toBe(true);
+        }
+    });
+
+    it('authors every row that has a copy, and only the row that has none defaults', () => {
+        // THE GAP THIS REPLACES, and the measurement that closed it. This block
+        // asserted `authored.length === 46` and recorded why: "manual" used to
+        // mean the 46 rows a retired predicate let through, so the other 111
+        // took `DEFAULT_MANUAL_QUALITY` by silence rather than by decision. They
+        // all read `sound`, so nothing was wrong; what was missing was the
+        // spread - a crude sword form and a refined one priced identically.
+        //
+        // Closed under the ruling that every art carries its practitioner a few
+        // rungs, so all 157 are books somebody practises. Authored 46 -> 156,
+        // and the distribution moved corrupt 6->17, crude 3->9, sound 126->97,
+        // refined 16->23, pristine 6->11.
+        //
+        // The single exception is argued rather than forgotten: quality is a
+        // property of a COPY, and `continuance-decree` has none anywhere in the
+        // world. Authoring one would be a claim about a book nobody can open.
+        const defaulted = manuals.filter(m => MANUAL_QUALITY[m.id] === undefined);
+        expect(defaulted.map(m => m.id).sort())
+            .toEqual([...NO_SURVIVING_COPY_TECHNIQUE_IDS].sort());
+        for (const m of defaulted) {
+            expect(m.quality, `${m.id} is defaulted and is not the identity`)
+                .toBe(DEFAULT_MANUAL_QUALITY);
+        }
+    });
+
+    it('keeps `sound` the honest majority and spends the two ends sparingly', () => {
+        // The identity element earns its name by being what an ordinary book
+        // is. A pass that leaves ten rows at `sound` has turned a default into
+        // a verdict, and the spread then reads as noise rather than as content.
+        // The ends are strong claims - a manual that will hurt the person
+        // practising it, and a masterwork - and each one in the table is
+        // traceable to a sentence the entry already says about itself.
+        const count = (q: string) => manuals.filter(m => m.quality === q).length;
+        for (const q of MANUAL_QUALITY_ORDER) {
+            expect(count(q), `nothing in the catalog is ${q}`).toBeGreaterThan(0);
+        }
+        expect(count('sound')).toBeGreaterThan(manuals.length / 2);
+        expect(count('corrupt') + count('pristine')).toBeLessThan(manuals.length / 4);
+    });
+
+    it('prices two arts of the same grade and rung differently when the copies differ', () => {
+        // What the spread is FOR, and the claim the old gap made untestable. The
+        // two ice arts of Core Formation cover the same rung at the same grade;
+        // one is an ordinary taught form and one exists in two complete copies,
+        // which is the sentence that buys `refined`. Measured on a prodigy
+        // reader: rate x1.000 against x1.350, crossing odds at ordinal 20 of
+        // 23.9% against 27.4%, technique factor 0.9000 against 0.9900.
+        const plain = manuals.find(m => m.id === 'cold-jade-carapace')!;
+        const kept = manuals.find(m => m.id === 'glacial-tomb-slash')!;
+        expect(kept.grade).toBe(plain.grade);
+        expect(kept.requiredOrdinal).toBe(plain.requiredOrdinal);
+        expect(manualQualityRank(kept.quality))
+            .toBeGreaterThan(manualQualityRank(plain.quality));
+
+        const a = readManual(plain, reader(PRODIGY));
+        const b = readManual(kept, reader(PRODIGY));
+        expect(b.rateMultiplier).toBeGreaterThan(a.rateMultiplier);
+        expect(b.breakthroughModifier).toBeGreaterThan(a.breakthroughModifier);
+        expect(b.powerMultiplier).toBeGreaterThan(a.powerMultiplier);
+
+        // And a reader who cannot work the better one cannot see that it is
+        // better either, which is the whole point of `canTellApart`: the
+        // mediocre reader is choosing between two identical-looking books.
+        expect(canTellApart(plain, kept, reader(PRODIGY))).toBe(true);
+        expect(canTellApart(plain, kept, reader(MEDIOCRE))).toBe(false);
+    });
+
+    it('does not read `corrupt` as a verdict on what the art does to other people', () => {
+        // 天道无情, applied to this table. A manual that burns a dead
+        // cultivator's residue as a weapon is a `sound` book - transmitted,
+        // complete, honest with whoever opens it - and the half of the lotus
+        // rite that spends the body it is cultivated in is `corrupt`, because
+        // that is the one the book is spending. The engine prices the copy. It
+        // does not grade the art.
+        const lantern = manuals.find(m => m.id === 'corpse-lantern-soul-forging')!;
+        expect(lantern.quality).toBe('sound');
+        const drawn = manuals.find(m => m.id === 'lotus-nurturing-canon')!;
+        const draws = manuals.find(m => m.id === 'lotus-plucking-rite')!;
+        expect(manualQualityRank(drawn.quality))
+            .toBeLessThan(manualQualityRank(draws.quality));
     });
 
     it('does not let quality collapse onto grade', () => {

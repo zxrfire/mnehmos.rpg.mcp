@@ -140,7 +140,7 @@ describe('the wall', () => {
     it('carries nothing where there is no wall', () => {
         for (const ground of ['hamlet', 'site', 'unplaceable'] as const) {
             expect(BILLS_A_WALL_CARRIES[ground]).toBe(0);
-            expect(billsOnTheWall({ ...WALL, ground })).toEqual([]);
+            expect(billsOnTheWall({ ...WALL, field: field(), ground })).toEqual([]);
         }
     });
 

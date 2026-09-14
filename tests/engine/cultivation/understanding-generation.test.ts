@@ -344,7 +344,7 @@ describe('NPCs acquire understanding the same way', () => {
 
 describe('understanding changes what a skip does', () => {
     it('lets an insight carry a cultivator across a bottleneck during a skip', () => {
-        const required = progressRequiredForOrdinal(12);
+        const required = progressRequiredForOrdinal(12)!;
         const shared = {
             spiritRoot: 'single_fire' as const,
             realmOrdinal: 12,

@@ -35,7 +35,7 @@ import { MEMBERS } from '../src/data/cultivation/members.js';
 import { THE_DEEPEST_ROADS } from '../src/data/cultivation/roads-to-the-top-of-the-ladder.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 
-const ROADS = TECHNIQUES.filter(t => t.class === 'cultivation');
+const ROADS = TECHNIQUES.slice();
 const ordinalOfMember = new Map(MEMBERS.map(m => [m.id, m.realmOrdinal]));
 
 // ── 1. WHO STANDS AT 43 AND ABOVE, AND DO THEY TEACH? ───────────────────
@@ -160,5 +160,5 @@ const reachable = ROADS
     .map(a => { const b = bestTeacherFor(a.id); return b ? (carriesTo(b.ordinal, a.id) ?? b.ordinal) : -1; });
 const highestTaught = Math.max(...reachable);
 console.log(`\nHIGHEST RUNG ANYBODY IN THE WORLD CAN BE TAUGHT TO: ${highestTaught} (${rankName(highestTaught)})`);
-const at44 = ROADS.filter((a, i) => reachable[i] >= 44).map(a => a.id);
+const at44 = ROADS.filter((_a, i) => reachable[i] >= 44).map(a => a.id);
 console.log(`arts that can be taught to 44: ${at44.length}${at44.length ? '  ' + at44.join(', ') : ''}`);

@@ -359,7 +359,12 @@ describe('effects are relevant or they are nothing', () => {
 
 describe('substitution at a bottleneck', () => {
     const ORDINAL = 12;
+    // The ladder holds no figure at or above the false-immortal line, so this
+    // reads `number | null`. Ordinal 12 is a long way below it and every test
+    // below multiplies this figure - proved here rather than assumed, so a
+    // moved ORDINAL fails loudly instead of quietly comparing against zero.
     const REQUIRED = progressRequiredForOrdinal(ORDINAL);
+    if (REQUIRED === null) throw new Error(`ordinal ${ORDINAL} is off the progress ladder`);
 
     it('lets deeper understanding cross where more accumulation cannot', () => {
         // The entire point of the subsystem, stated as one comparison.

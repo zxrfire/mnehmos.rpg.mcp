@@ -67,7 +67,7 @@ function seatIn(provinceId: string, id: string): LocationRecord {
     return makeLocation({ id, name: id, kind: 'sect_seat', parentId: provinceId });
 }
 
-function houseAt(id: string, seatLocationId: string, ordinal: number): FactionRecord {
+function houseAt(id: string, seatLocationId: string): FactionRecord {
     return makeFaction({ id, name: `house ${id}`, seatLocationId, foundedOnDay: 0 });
 }
 
@@ -101,10 +101,10 @@ function board(opts: { elsewhereRuin?: boolean } = {}): Board {
             : [])
     ];
     const houses = [
-        houseAt('f-a', 'loc-seat-a', 20),
-        houseAt('f-b', 'loc-seat-b', 20),
-        houseAt('f-c', 'loc-seat-c', 20),
-        houseAt('f-far', 'loc-seat-far', 20)
+        houseAt('f-a', 'loc-seat-a'),
+        houseAt('f-b', 'loc-seat-b'),
+        houseAt('f-c', 'loc-seat-c'),
+        houseAt('f-far', 'loc-seat-far')
     ];
     const takes = whatItTakesToHold(ruin);
     return {

@@ -44,8 +44,9 @@ import { WANDERERS, getWanderer } from '../../src/data/cultivation/wanderers.js'
 import { SPIRIT_ROOTS } from '../../src/engine/cultivation/spirit-roots.js';
 import { DiceEngine } from '../../src/math/dice.js';
 
+// `TECHNIQUES` and `CONTENT_MAX_ORDINAL` come in with the block above; this
+// file imported the same module twice and named both of them in each.
 import {
-    TECHNIQUES,
     GRADE_ORDINAL_BANDS,
     GRADE_QI_BANDS,
     GRADE_ORDER,
@@ -55,7 +56,6 @@ import {
     findTechniquesForOrdinal,
     findBestTechniquesForOrdinal,
     gradeForOrdinal,
-    CONTENT_MAX_ORDINAL,
     getTechniquesByProvenance,
     getRecoveredTechniques,
     RUIN_ONLY_TECHNIQUE_IDS,
@@ -527,18 +527,34 @@ describe('pills', () => {
         expect(getStartingPill().id).toBe(MINOR_HEALING_PILL_ID);
     });
 
-    it('prices the Grain Abstinence Pill as a real goal, not a purchase', () => {
+    /**
+     * THIS ASSERTED THE OPPOSITE, AND THE RULING INVERTED IT.
+     *
+     * It pinned the abstinence pill as *a real goal, not a purchase* - a
+     * heaven-grade dig at 9,000 stones, orders of magnitude past the 30 a run
+     * opens with. That pill is gone with the rest of the ladder above mortal,
+     * because `SATIETY_BURN_BY_REALM` already charges 1/600 of a mortal's
+     * hunger at the rung heaven grade is pitched at and 0 above Nascent Soul,
+     * so the dear rungs sold nothing. The design owner, from the fiction:
+     * *"the abstinence pill lets low ranking cultivators not need supplies.
+     * That's it, it's not very useful."*
+     *
+     * So what is pinned is the inversion: it is a purchase, it is at the bottom,
+     * and it serves the one band where hunger still binds.
+     */
+    it('keeps the abstinence pill a purchase at the bottom, where hunger still binds', () => {
         const pill = getPill(GRAIN_ABSTINENCE_PILL_ID);
         expect(pill).toBeDefined();
         expect(pill?.effect).toBe('grain_abstinence');
-        // Removes hunger for years at a time.
+        expect(pill?.grade).toBe('mortal');
+        // A year on the road without having to carry or find food.
         expect(pill!.potency).toBeGreaterThanOrEqual(365);
-        // The most expensive thing at its grade, and orders of magnitude beyond
+        // In the band a beginner shops in, rather than orders of magnitude past
         // the 30 spirit stones a run begins with.
-        for (const other of PILLS.filter(p => p.grade === pill!.grade)) {
-            expect(pill!.value).toBeGreaterThanOrEqual(other.value);
-        }
-        expect(pill!.value).toBeGreaterThan(30 * 100);
+        expect(pill!.value).toBeLessThanOrEqual(PILL_VALUE_BANDS.mortal.max);
+        // And it is the whole of the line. Nothing above mortal.
+        expect(PILLS.filter(p => p.effect === 'grain_abstinence').map(p => p.grade))
+            .toEqual(['mortal']);
     });
 
     it('findCheapestPillFor picks the cheapest sufficient option', () => {
@@ -1056,9 +1072,16 @@ describe('the Late Age: provenance and the exploration loop', () => {
         expect(getRecoveredRecipes().length).toBe(RECOVERED_RECIPE_IDS.size);
     });
 
-    it('makes the Grain Abstinence formula a dig rather than a purchase', () => {
+    /**
+     * ALSO INVERTED, AND BY THE SAME RULING. The formula that was a dig made a
+     * heaven-grade pill that no longer exists. What is left is something a
+     * village alchemist makes for somebody who has to walk somewhere, so it is
+     * in circulation rather than recovered off a wall - which is what `known`
+     * means and is the honest provenance for it.
+     */
+    it('leaves the abstinence formula in circulation rather than buried', () => {
         const recipe = getRecipesForPill(GRAIN_ABSTINENCE_PILL_ID)[0];
-        expect(recipe.provenance).toBe('recovered');
+        expect(recipe.provenance).toBe('known');
     });
 
     it('keeps ruins and graves a major weighted category across the ladder', () => {

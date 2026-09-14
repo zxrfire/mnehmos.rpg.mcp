@@ -330,12 +330,14 @@ describe('what gets found is not all the same thing', () => {
 
     it('makes the entrant and the beneficiary different people wherever it is not a gamble', () => {
         for (const site of SITES) {
-            const isGamble = site.access.admits === 'anyone_who_survives_it';
-            if (isGamble) continue;
+            // Read off a local, so the discriminant narrows the union rather
+            // than being tested through an alias that does not carry it.
+            const access = site.access;
+            if (access.admits === 'anyone_who_survives_it') continue;
             // Both non-gamble shapes have to say who goes instead, or for whom.
-            const text = site.access.admits === 'nobody_above_the_line'
-                ? site.access.soWhoGoesInstead
-                : site.access.whoTheyGoFor;
+            const text = access.admits === 'nobody_above_the_line'
+                ? access.soWhoGoesInstead
+                : access.whoTheyGoFor;
             expect(text.length, `${site.id} does not say who it is for`).toBeGreaterThan(40);
         }
     });

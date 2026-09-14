@@ -23,7 +23,7 @@
  */
 
 import { makeGame } from '../tests/web/harness.js';
-import { forbidZone, applyLocationChange, locationHistory, unexplainedChanges } from '../src/engine/world/locations.js';
+import { forbidZone, locationHistory, unexplainedChanges } from '../src/engine/world/locations.js';
 import { rankName } from '../src/engine/cultivation/realms.js';
 
 const line = (s = '') => console.log(s);
@@ -48,7 +48,7 @@ async function say(game: Game, text: string): Promise<string> {
 async function main(): Promise<void> {
     rule('THE AFTERMATH - two people at forty-one fought here, and you were not one of them');
 
-    const { game, repos } = makeGame({ seed: 'aftermath', worldEnabled: true });
+    const { game } = makeGame({ seed: 'aftermath', worldEnabled: true });
     await (game as any).newRun('Nobody');
 
     const me = cur(game);
@@ -79,7 +79,10 @@ async function main(): Promise<void> {
         onDay: 100,
         summary: 'the ground stopped holding qi, in a single afternoon, for eleven li',
         survivalOrdinal: 25,
-        operationalOrdinal: 33
+        operationalOrdinal: 33,
+        // Required and never passed, so every run of this has scarred the ground
+        // without adding a hazard to it. Stated rather than left absent.
+        hazards: []
     });
 
     line(`\n  after: ${scarred.name} (${scarred.kind}), qi density ${scarred.qiDensity}`);

@@ -16,7 +16,6 @@ import {
 } from '../../../src/engine/cultivation/realms.js';
 import {
     MAX_BREAKTHROUGH_CHANCE,
-    MAX_PILL_BONUS,
     MAX_PILL_MULTIPLIER,
     maxChanceFor,
     MIN_BREAKTHROUGH_CHANCE,
@@ -50,16 +49,21 @@ const ROOTS: SpiritRootKey[] = [
 
 /** A cultivator standing at `ordinal` with exactly enough progress to attempt. */
 function ready(ordinal: number, overrides = {}) {
+    // Above the Lid the ladder holds no figure, and there is nothing to be
+    // ready for. Every caller here passes a climbable rung, so a null is a
+    // broken fixture rather than a case to fall back from.
+    const required = progressRequiredForOrdinal(ordinal);
+    if (required === null) throw new Error(`ordinal ${ordinal} is above the last crossing`);
     return makeCultivator({
         realmOrdinal: ordinal,
-        cultivationProgress: progressRequiredForOrdinal(ordinal),
+        cultivationProgress: required,
         ...overrides
     });
 }
 
 describe('eligibility', () => {
     it('requires the full progress cost of the current ordinal', () => {
-        const required = progressRequiredForOrdinal(0);
+        const required = progressRequiredForOrdinal(0)!;
         expect(
             canAttemptBreakthrough(makeCultivator({ cultivationProgress: required - 0.0001 }))
                 .eligible
@@ -239,7 +243,10 @@ describe('odds', () => {
 describe('attempting', () => {
     function runMany(ordinal: number, count: number, ambient: AmbientQi = 'normal') {
         const outcomes: Record<BreakthroughOutcome, number> = {
-            success: 0, failure_stable: 0, failure_injured: 0, failure_deviation: 0, death: 0
+            success: 0, failure_stable: 0, failure_injured: 0, failure_deviation: 0, death: 0,
+            // The sixth outcome. It was missing here, so any attempt that
+            // reached it counted into an absent key and tallied NaN.
+            false_immortal: 0
         };
         const results = [];
         for (let i = 0; i < count; i++) {
@@ -279,7 +286,7 @@ describe('attempting', () => {
     });
 
     it('consumes progress in proportion to how badly the attempt went', () => {
-        const required = progressRequiredForOrdinal(5);
+        const required = progressRequiredForOrdinal(5)!;
         const { results } = runMany(5, 800);
         const byOutcome = new Map<BreakthroughOutcome, number>();
         for (const r of results) byOutcome.set(r.outcome, r.progressConsumed);
@@ -629,7 +636,7 @@ describe('scar tempering', () => {
     it('pays a capped bonus for wounds that were closed', () => {
         const scarred = makeCultivator({
             realmOrdinal: 5,
-            cultivationProgress: progressRequiredForOrdinal(5),
+            cultivationProgress: progressRequiredForOrdinal(5)!,
             injuries: makeInjuries(3, 'serious').map(i => ({ ...i, treated: true }))
         });
         const untouched = ready(5);
@@ -643,7 +650,7 @@ describe('scar tempering', () => {
     it('never lets an OPEN wound pay anything - the ratchet is untouched', () => {
         const open = makeCultivator({
             realmOrdinal: 5,
-            cultivationProgress: progressRequiredForOrdinal(5),
+            cultivationProgress: progressRequiredForOrdinal(5)!,
             injuries: makeInjuries(3, 'serious')
         });
         const odds = computeBreakthroughOdds(open, { ambient: 'normal' });
@@ -656,13 +663,13 @@ describe('scar tempering', () => {
         const veteran = makeCultivator({
             realmOrdinal: 5,
             spiritRoot: 'muddled_five_element',
-            cultivationProgress: progressRequiredForOrdinal(5),
+            cultivationProgress: progressRequiredForOrdinal(5)!,
             injuries: makeInjuries(40, 'crippling').map(i => ({ ...i, treated: true }))
         });
         const prodigy = makeCultivator({
             realmOrdinal: 5,
             spiritRoot: 'single_fire',
-            cultivationProgress: progressRequiredForOrdinal(5)
+            cultivationProgress: progressRequiredForOrdinal(5)!
         });
         const temperingDelta = computeBreakthroughOdds(veteran, { ambient: 'normal' })
             .modifiers.find(m => m.source.startsWith('tempering:'))!.delta;

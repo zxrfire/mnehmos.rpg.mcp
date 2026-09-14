@@ -21,7 +21,7 @@ import { tierOf } from '../src/data/cultivation/governance-and-water-rights.js';
 const roadsOf = (teaches: readonly string[]) =>
     teaches
         .map(id => getTechnique(id))
-        .filter((t): t is NonNullable<typeof t> => !!t && t.class === 'cultivation');
+        .filter((t): t is NonNullable<typeof t> => !!t);
 
 const holders = new Map<string, string[]>();
 for (const s of SECTS as readonly any[]) {
@@ -68,7 +68,7 @@ for (const { s, roads, top } of rows) {
 console.log('\nHOW MANY HOUSES HOLD A ROAD, BY WHAT THE ROAD CARRIES');
 console.log('  cap  roads  houses-per-road (min..max)  mean');
 const byCap = new Map<number, number[]>();
-for (const t of TECHNIQUES.filter(t => t.class === 'cultivation')) {
+for (const t of TECHNIQUES.slice()) {
     const n = (holders.get(t.id) ?? []).length;
     const cap = t.cap ?? 99;
     byCap.set(cap, [...(byCap.get(cap) ?? []), n]);
@@ -85,7 +85,7 @@ for (const cap of [...byCap.keys()].sort((a, b) => a - b)) {
 }
 
 console.log('\nROADS NO HOUSE TEACHES AT ALL');
-for (const t of TECHNIQUES.filter(t => t.class === 'cultivation')) {
+for (const t of TECHNIQUES.slice()) {
     if ((holders.get(t.id) ?? []).length === 0) {
         console.log(`  ${t.id.padEnd(40)} cap ${String(t.cap ?? 'null').padStart(4)}  ${t.provenance}`);
     }
@@ -108,7 +108,7 @@ let previous = Infinity;
 const breaks: string[] = [];
 for (const cap of [...byCap.keys()].sort((a, b) => a - b)) {
     const taught = TECHNIQUES
-        .filter(t => t.class === 'cultivation' && (t.cap ?? 99) === cap)
+        .filter(t => (t.cap ?? 99) === cap)
         .map(t => ({ id: t.id, n: (holders.get(t.id) ?? []).length }))
         .filter(x => x.n > 0);
     if (taught.length === 0) continue;

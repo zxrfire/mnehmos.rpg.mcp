@@ -23,6 +23,9 @@ import type { AmbientQi, Cultivator, Run } from '../schema/cultivation.js';
 import type { CrowdingRead } from './how-crowded-this-ground-is.js';
 import type { Affordance } from './what-is-worth-doing-standing-here.js';
 import { getSect } from '../data/cultivation/sects.js';
+import { theRungsOfTheHouse }
+    from '../engine/world/where-somebody-stands-on-a-houses-roll.js';
+import type { WorldState } from '../engine/world/world-state.js';
 import {
     MAX_ORDINAL,
     fullLadder,
@@ -237,6 +240,15 @@ export interface DerivedView {
      */
     sectName: string | null;
     /**
+     * The rung on that house's roll, in the house's own word for it, or null
+     * where they hold none. DERIVED, and resolved server-side through
+     * `whereSomebodyStandsOnAHousesRoll`: the sheet used to print a string
+     * mirrored onto the cultivator row, which said nothing wherever nothing had
+     * set the mirror and said the joining rung after the world had moved
+     * somebody.
+     */
+    sectRung: string | null;
+    /**
      * Why the engine will not permit an attempt right now, in plain English, or
      * null when it will.
      */
@@ -333,6 +345,7 @@ export interface DerivedContext {
     /** Where they are standing, which the toll reads as a modifier. */
     ambient?: AmbientQi;
     sectName?: string | null;
+    sectRung?: string | null;
     nameTaken?: boolean;
     ground?: CrowdingRead | null;
     standingHere?: Affordance[];
@@ -373,6 +386,7 @@ export function derivedView(cultivator: Cultivator, context: DerivedContext = {}
         injuryRatePenalty: aggregateInjuryPenalties(cultivator.injuries).cultivationPenalty,
         dao: daoView(cultivator),
         sectName: context.sectName ?? null,
+        sectRung: context.sectRung ?? null,
         foundationQuality: cultivator.foundationQuality,
         nameTaken: context.nameTaken ?? false,
         ground: context.ground ?? null,
@@ -542,13 +556,20 @@ function factionNameFor(factionId: string | null): string | null {
 /**
  * The title a faction gives that rung, rather than the rung's number.
  *
- * Falls back to the index only when the catalog has no ladder for the id, so a
- * missing entry reads as missing rather than silently as rank zero.
+ * THE HOUSE'S OWN WORD, which is why the world is passed in. This asked the
+ * catalog alone, so a house the world invented - a splinter carries its own
+ * `ranks` - had every one of its people listed as "rank 3". The index is still
+ * the last resort, so a house with no ladder anywhere reads as missing rather
+ * than silently as rank zero.
  */
-function factionRankTitle(factionId: string | null, index: number): string | null {
+function factionRankTitle(
+    world: WorldState | null,
+    factionId: string | null,
+    index: number
+): string | null {
     if (!factionId || index < 0) return null;
-    const ranks = getSect(factionId)?.ranks;
-    if (!ranks || ranks.length === 0) return `rank ${index}`;
+    const ranks = theRungsOfTheHouse(world, factionId);
+    if (ranks.length === 0) return `rank ${index}`;
     return ranks[Math.min(index, ranks.length - 1)] ?? `rank ${index}`;
 }
 
@@ -561,7 +582,12 @@ function feudsFrom(npc: NpcRecord): string[] {
         .map(r => r.targetName);
 }
 
-export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowView {
+export function worldRosterRow(
+    npc: NpcRecord,
+    presentDay: number,
+    /** The world this row came out of, so the rung is named in its own words. */
+    world: WorldState | null = null
+): RosterRowView {
     const ordinal = npc.cultivation.realmOrdinal;
     const age = Math.max(0, Math.floor((presentDay - npc.identity.bornOnDay) / 365));
 
@@ -598,7 +624,7 @@ export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowVie
         // The faction's OWN title for the rank, not the index into its ladder.
         // The roster was printing raw integers beside the player's real title,
         // so one column held `5` and `Barrow Hand` and meant the same thing.
-        sectRank: factionRankTitle(npc.factionId, npc.factionRankIndex),
+        sectRank: factionRankTitle(world, npc.factionId, npc.factionRankIndex),
         age,
         alive: npc.status === 'alive',
         deathCause: npc.status === 'alive' ? null : npc.status,
@@ -616,7 +642,11 @@ export function worldRosterRow(npc: NpcRecord, presentDay: number): RosterRowVie
         // original person a thing still is.
         existenceState: npc.status,
         soulState: npc.soulState,
-        identityContinuity: npc.identityContinuity
+        identityContinuity: npc.identityContinuity,
+        // Carried rather than read here. `beast:<species>` is the only fact
+        // that says a row with a person's name was an animal when the player
+        // met it, and the name read that needs it lives in the engine.
+        tags: npc.tags
     };
 }
 

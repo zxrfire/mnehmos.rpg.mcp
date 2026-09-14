@@ -432,7 +432,31 @@ export function spendRepairDose(
     }
 
     const rowId = holding.doseIds[0];
-    const index = state.objects.findIndex(o => o.id === rowId);
+    const marked = markDoseSwallowed(state, rowId, onWhomId, onWhomName, woundKey, onDay);
+    if (!marked) return null;
+    return { medicineId: medicine.id, doseId: rowId, onWhomId, onDay };
+}
+
+/**
+ * One tracked dose goes down somebody's throat. Written here and nowhere else.
+ *
+ * THE ROW STAYS - see {@link spendRepairDose}, which is the house's road to
+ * this and was the only one until a player could hold a dose of their own. A
+ * player swallowing one they are carrying spends it by exactly the same marks,
+ * because "who spent this, on whom, on what day" is the fact that outlives the
+ * object and it must not depend on which door the swallowing came through.
+ *
+ * Returns the row as it now stands, or null where the world has no such row.
+ */
+export function markDoseSwallowed(
+    state: WorldState,
+    doseRowId: string,
+    onWhomId: string,
+    onWhomName: string,
+    woundKey: string,
+    onDay: number
+): ObjectRecord | null {
+    const index = state.objects.findIndex(o => o.id === doseRowId);
     if (index < 0) return null;
     const moved = transferPossession(state.objects[index], {
         onDay,
@@ -447,5 +471,5 @@ export function spendRepairDose(
         tags: [...moved.tags, 'spent'],
         data: { ...moved.data, spent: true, spentBy: onWhomId, spentOnDay: onDay, spentOn: woundKey }
     };
-    return { medicineId: medicine.id, doseId: rowId, onWhomId, onDay };
+    return state.objects[index];
 }

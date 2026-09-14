@@ -28,7 +28,7 @@ import {
     whatGivingItCosts,
     whatItCouldPartWith
 } from '../src/engine/world/what-it-costs-to-give-away-a-piece-of-yourself.js';
-import { BEASTS, type Beast } from '../src/data/cultivation/beasts.js';
+import { BEASTS } from '../src/data/cultivation/beasts.js';
 
 const SEEDS = process.argv.slice(2).length > 0
     ? process.argv.slice(2)

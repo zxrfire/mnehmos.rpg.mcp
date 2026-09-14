@@ -49,7 +49,9 @@ async function main(): Promise<void> {
     const catalog = await loadCultivationCatalog();
     const seeded = seedWorld({ seed: SEED, catalog });
     let state = seeded.state;
-    const out = advanceWorldYears(state, YEARS, { pressure: { eventsPerYear: 1.2 } });
+    // `pressure` carried an `eventsPerYear` that PressureOptions never had, so
+    // every run this probe has published was at the default event rate.
+    const out = advanceWorldYears(state, YEARS);
     state = out.state;
 
     line(`seed ${SEED}, advanced ${YEARS} years`);

@@ -23,7 +23,7 @@ import { CultivatorRepository } from '../../src/storage/repos/cultivator.repo.js
 import { ensureCultivationDb } from '../../src/server/consolidated/cultivation-support.js';
 import { KnowledgeGate } from '../../src/web/knowledge.js';
 import { SECTS, getSect } from '../../src/data/cultivation/sects.js';
-import { getTechnique } from '../../src/data/cultivation/techniques.js';
+import { getTechnique, stopsSomewhere } from '../../src/data/cultivation/techniques.js';
 import {
     guestPlaceAt,
     housesThatWouldTakeAGuest,
@@ -81,7 +81,7 @@ function aHouseThatWouldTeachABeginner(): { id: string; roadId: string } {
         if (!place) continue;
         const road = place.opens.find(o => {
             const t = getTechnique(o.techniqueId);
-            return t !== undefined && t.class === 'cultivation' && t.cap != null;
+            return stopsSomewhere(t);
         });
         if (road) return { id: house.id, roadId: road.techniqueId };
     }
@@ -174,7 +174,7 @@ describe('the shallow end is not a back door', () => {
             if (!takesGuests(house.id)) continue;
             for (const kept of whatAHouseKeepsBack(house.id)) {
                 const t = getTechnique(kept.techniqueId);
-                if (!t || t.class !== 'cultivation' || t.cap == null) continue;
+                if (!stopsSomewhere(t) || t?.cap == null) continue;
                 // Mortal and earth grade only. Above that `daoGate` refuses
                 // first and for a better reason - "the pages are perfectly
                 // legible and the meaning does not arrive" - and a test that

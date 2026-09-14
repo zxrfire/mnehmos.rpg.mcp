@@ -32,6 +32,7 @@ import { activeWorld } from '../../src/server/state/cultivation-world';
 import { worldLocationFor } from '../../src/web/entities';
 import { whatGroundThisIs } from '../../src/engine/world/what-ground-a-place-is';
 import { HERBS, findOfferedHerbs } from '../../src/data/cultivation/herbs';
+import type { WhatIsUnderfoot } from '../../src/data/cultivation/herbs';
 
 /** The sentence the table routes to `gather`, in a player's own words. */
 const GO_PICK = 'I go out and pick herbs';
@@ -73,13 +74,13 @@ async function gatherOnce(seed: string): Promise<OneGather> {
         .join(' ');
 
     const ordinal = cultivator.realmOrdinal;
-    const offered = (where: readonly string[] | null) =>
-        findOfferedHerbs(ordinal, where ?? undefined).map(h => h.name);
+    const offered = (where: WhatIsUnderfoot) =>
+        findOfferedHerbs(ordinal, where).map(h => h.name);
 
     return {
         named: HERBS.map(h => h.name).find(name => summary.includes(name)) ?? null,
-        onThisGround: offered(underfoot),
-        anywhere: offered(null)
+        onThisGround: offered(underfoot ?? undefined),
+        anywhere: offered(undefined)
     };
 }
 

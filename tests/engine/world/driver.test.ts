@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { fixtureCatalog } from './fixtures.js';
 import { seedWorld } from '../../../src/engine/world/seeding.js';
 import {
-    advanceWorldForPlay,
     advanceWorldYears,
     worldShape
 } from '../../../src/engine/world/driver.js';
@@ -112,7 +111,9 @@ describe('pressure: the world changes on its own', () => {
         expect(scheduled.length).toBe(opened.length);
         if (opened.length > 0) expect(state.schedule.length).toBeGreaterThan(before);
         for (const war of scheduled) {
-            expect(war.dueOnDay).toBeGreaterThan(war.data.openedOnDay ?? 0);
+            // `ScheduledEffect.data` is a loose record, so the day comes back
+            // as string | number | boolean and has to be read as a number.
+            expect(war.dueOnDay).toBeGreaterThan(Number(war.data.openedOnDay ?? 0));
             expect(war.fired).toBe(false);
         }
     });

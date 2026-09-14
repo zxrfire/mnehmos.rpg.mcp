@@ -16,20 +16,49 @@
  *
  * It was LATENT rather than new: until `ctx.understanding` was populated the
  * candidate set was always empty and nothing downstream of it ran. So these
- * tests populate it, and the fixture is deliberately extreme - ordinal 28,
- * spirit-tide ground, five hundred years - because the meditative-state chance
- * is about 1.8% per 360-day check and a shorter run comprehends nothing at all.
+ * tests populate it, and the fixture is deliberately extreme - ordinal 28, rich
+ * ground, five hundred years - because the meditative-state chance is about
+ * 1.8% per 360-day check and a shorter run comprehends nothing at all.
  * A determinism test over an empty candidate set passes against broken code,
  * which is precisely how this survived as long as it did.
+ *
+ * ── AND IT WAS ONE DRAW FROM BEING VACUOUS AGAIN ─────────────────────────
+ *
+ * The context used to be written `as Parameters<typeof simulateTimeSkip>[2]`,
+ * which hid two things: it named `ambient: 'spirit_tide'`, a field the context
+ * lost when the qi of a place became a fact about the PLACE, and it passed no
+ * `locationId` at all although one is required. When the tests were first
+ * typechecked and a real `locationId` went in, two tests went red and three
+ * stayed green while asserting nothing.
+ *
+ * MEASURED, five hundred years at ordinal 28 with the full access below,
+ * counting insights gained per roll identity:
+ *
+ *   no locationId (what this file actually ran on)   every key 1, `player` 2
+ *   locationId + `locationDensity: 1`                every key 0, `player` 1
+ *
+ * So the whole file rests on a SINGLE draw landing, and `comprehension()`
+ * returns `''` when it does not. Three of the assertions here are `toBe`
+ * comparisons, and `'' === ''` is green - which is the same shape as the
+ * original defect, arrived at from the other side. The guard test below used
+ * to prove the draws run for ONE roll identity, and the keys the other tests
+ * compare were never covered by it. It now proves it for every key this file
+ * uses, so a stream that reshuffles cannot quietly empty the file again.
+ *
+ * The richest ground returning FEWER comprehensions than an ordinary one is
+ * not a claim this file makes - at roughly one draw per run the count is too
+ * coarse to say anything, and it is recorded here only as the reason the
+ * density is left to the location rather than forced to the ceiling.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import { simulateTimeSkip } from '../../../src/engine/cultivation/time-skip.js';
+import type { DiscoveryContext } from '../../../src/engine/cultivation/understanding.js';
 import { makeCultivator } from './fixtures.js';
 
 /** Enough access that the candidate set is non-empty and the draws actually run. */
-const UNDERSTANDING = {
+const UNDERSTANDING: Omit<DiscoveryContext, 'survived'> = {
     readableManuals: [
         { element: 'water', subject: 'the tides', label: 'a water canon' },
         { element: 'metal', subject: 'the sword', label: 'a sword manual' },
@@ -53,13 +82,18 @@ function live(rowId: string, rollIdentity?: string) {
         FIVE_HUNDRED_YEARS,
         {
             seed: 'one-seed-one-life',
-            ambient: 'spirit_tide',
+            // `ambient` left the context when the qi of a place became a fact
+            // about the place; it named `spirit_tide` here and was ignored.
+            // `locationDensity` is deliberately NOT stated: the site's implied
+            // density is the path this file has always run on, and forcing it
+            // to the 0..1 ceiling is what emptied the draws. See the header.
+            locationId: 'a-plain-room',
             grainAbstinence: true,
             randomEvents: false,
             autoBreakthrough: false,
             understanding: UNDERSTANDING,
             ...(rollIdentity === undefined ? {} : { rollIdentity })
-        } as Parameters<typeof simulateTimeSkip>[2]
+        }
     );
 }
 
@@ -74,7 +108,23 @@ describe('a seed is a life, whatever the row id happens to be', () => {
     it('the draws it protects are actually running, or this guard proves nothing', () => {
         // Asserted FIRST and deliberately: every other test in this file is
         // vacuously true against broken code if the candidate set is empty.
-        expect(live('row-A', 'player').insightsGained.length).toBeGreaterThan(0);
+        //
+        // EVERY KEY, not just one. The single-key version of this guard sat
+        // green while three of the assertions below compared '' to '' - the
+        // keys they use were never the key it checked. See the header.
+        for (const [rowId, rollIdentity] of [
+            ['row-A', 'player'], ['row-A', 'first'], ['row-A', 'second'], ['row-A', 'k'],
+            ['row-B', 'k'], ['row-A', undefined], ['row-B', undefined],
+            ['catalog-npc', undefined],
+            ['6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'player'],
+            ['f81d4fae-7dec-11d0-a765-00a0c91e6bf6', 'player']
+        ] as const) {
+            expect(
+                live(rowId, rollIdentity).insightsGained.length,
+                `${rowId} / ${rollIdentity ?? 'no roll identity'} comprehended nothing, so `
+                + 'every assertion in this file that compares it is comparing empty strings'
+            ).toBeGreaterThan(0);
+        }
     });
 
     it('two rows with different random ids comprehend the same things', () => {

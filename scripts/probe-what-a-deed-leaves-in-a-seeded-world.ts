@@ -140,7 +140,7 @@ for (let s = 0; s < SEEDS; s++) {
 
     const result = advanceWorldForPlay(state, {
         days: YEARS * DAY,
-        access: simpleAccess({ locationId: standingAt?.id ?? null, factionId: null }),
+        access: simpleAccess({ actorId: observer.id, locationId: standingAt?.id ?? null, factionId: null }),
         observer,
         stopOnInterrupt: false
     });
@@ -234,12 +234,14 @@ for (let s = 0; s < SEEDS; s++) {
         if (ofAge && high) total.diedOfAgeHigh++;
         if (!ofAge && high) total.diedOtherwiseHigh++;
     }
-    const digest = result.digest ?? buildPlayerDigest(state, {
-        access: simpleAccess({ locationId: standingAt?.id ?? null, factionId: null }),
-        observer,
-        fromDay: startDay,
-        toDay: state.currentDay
-    });
+    // `buildPlayerDigest` takes its facts, access and span positionally; the
+    // observer is not one of its arguments and never was.
+    const digest = result.digest ?? buildPlayerDigest(
+        state.history.facts,
+        simpleAccess({ actorId: observer.id, locationId: standingAt?.id ?? null, factionId: null }),
+        startDay,
+        state.currentDay
+    );
     // `lines`, not `items`. Reading the wrong field gave 0 across every seed on
     // the first pass and looked exactly like a finding - AGENTS.md, *read state,
     // not prose*, and the harness is wrong far more often than the engine.

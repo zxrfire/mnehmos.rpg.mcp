@@ -52,7 +52,7 @@ function report(label: string, state: WorldState): void {
     line(`    alive at ordinal 0           ${alive.filter(p => p.cultivation.realmOrdinal === 0).length}`);
     line(`    alive at >= ${BEAST_CORE_ORDINAL}                ${atOrAbove(BEAST_CORE_ORDINAL)}`);
     line(`    alive at >= ${BEAST_CHANGE_ORDINAL}                ${atOrAbove(BEAST_CHANGE_ORDINAL)}`);
-    line(`  facts                          ${state.facts?.length ?? 0}`);
+    line(`  facts                          ${state.history.facts.length}`);
     line(`  objects                        ${(state as any).objects?.length ?? 0}`);
     line();
     line('  IF EVERY PIECE OF GROUND HELD EVERY SPECIES IT COULD (the naive shape):');

@@ -52,7 +52,6 @@ interface CultivatorRow {
     years_at_current_realm: number;
     spirit_stones: number;
     sect_id: string | null;
-    sect_rank: string | null;
     location: string | null;
     feuds: string;
     known_techniques: string;
@@ -158,6 +157,12 @@ export interface RosterEntry {
     location: string | null;
     sectId: string | null;
     sectName: string | null;
+    /**
+     * The rung, DERIVED from the roll rather than kept beside it. A listing has
+     * no world open, so this is the roll's own title and nothing else; a caller
+     * with a world at hand asks `whereSomebodyStandsOnAHousesRoll`, which is
+     * the one answer and reads the world row first.
+     */
     sectRank: string | null;
     age: number;
     alive: boolean;
@@ -173,6 +178,16 @@ export interface RosterEntry {
     spiritStones: number;
     untreatedInjuries: number;
     feuds: string[];
+    /**
+     * The world row's own tags, carried through unread.
+     *
+     * `beast:<species>` is what a name read derives the species half of a
+     * renamed individual's names from, and a projection that dropped it left
+     * the resolver scoring against `name` alone - so a player who typed the
+     * name they were told reached nobody. Absent for a `cultivators` row, which
+     * has no tags at all.
+     */
+    tags?: readonly string[];
 }
 
 interface RosterRow {
@@ -247,7 +262,7 @@ export class CultivatorRepository {
                 realm_ordinal, cultivation_progress, foundation_quality, immortal_status,
                 hp, max_hp, qi, max_qi, satiety, starvation_turns, bleeding_turns,
                 age, years_at_current_realm,
-                spirit_stones, sect_id, sect_rank, location, feuds, known_techniques,
+                spirit_stones, sect_id, location, feuds, known_techniques,
                 insights, qi_seal, achievements, battles_survived, battles_won,
                 existence_state, soul_state, identity_continuity, body_id,
                 alive, death_cause, died_on_turn,
@@ -257,7 +272,7 @@ export class CultivatorRepository {
                 @realmOrdinal, @cultivationProgress, @foundationQuality, @immortalStatus,
                 @hp, @maxHp, @qi, @maxQi, @satiety, @starvationTurns, @bleedingTurns,
                 @age, @yearsAtCurrentRealm,
-                @spiritStones, @sectId, @sectRank, @location, @feuds, @knownTechniques,
+                @spiritStones, @sectId, @location, @feuds, @knownTechniques,
                 @insights, @qiSeal, @achievements, @battlesSurvived, @battlesWon,
                 @existenceState, @soulState, @identityContinuity, @bodyId,
                 @alive, @deathCause, @diedOnTurn,
@@ -276,7 +291,7 @@ export class CultivatorRepository {
                 satiety = @satiety, starvation_turns = @starvationTurns,
                 bleeding_turns = @bleedingTurns,
                 age = @age, years_at_current_realm = @yearsAtCurrentRealm,
-                spirit_stones = @spiritStones, sect_id = @sectId, sect_rank = @sectRank,
+                spirit_stones = @spiritStones, sect_id = @sectId,
                 location = @location, feuds = @feuds, known_techniques = @knownTechniques,
                 insights = @insights, qi_seal = @qiSeal, achievements = @achievements,
                 battles_survived = @battlesSurvived, battles_won = @battlesWon,
@@ -344,7 +359,7 @@ export class CultivatorRepository {
         this.rosterStmt = db.prepare(`
             SELECT
                 c.id, c.name, c.kind, c.spirit_root, c.sex, c.physique, c.realm_ordinal, c.location,
-                c.sect_id, s.name AS sect_name, c.sect_rank,
+                c.sect_id, s.name AS sect_name, m.rank_title AS sect_rank,
                 c.age, c.alive, c.existence_state, c.soul_state, c.identity_continuity,
                 c.death_cause, c.spirit_stones, c.feuds,
                 (
@@ -353,6 +368,11 @@ export class CultivatorRepository {
                 ) AS untreated_injuries
             FROM cultivators c
             LEFT JOIN sects s ON s.id = c.sect_id
+            -- THE RUNG COMES OFF THE ROLL. It used to be a mirrored string on
+            -- the cultivator row, which is a second copy of what this join
+            -- already holds. Left, so somebody on a roll at no rung and
+            -- somebody on no roll both still list.
+            LEFT JOIN sect_members m ON m.cultivator_id = c.id
             ORDER BY c.alive DESC, c.realm_ordinal DESC, c.name ASC
         `);
     }
@@ -470,18 +490,11 @@ export class CultivatorRepository {
             updatedAt: new Date().toISOString()
         });
 
-        // A RANK WITHOUT A HOUSE IS NOT A STATE ANYBODY IS IN. `sect_id` and
-        // `sect_rank` mirror the roll and `SectRepository` maintains both
-        // together; the one caller that writes them directly is somebody
-        // walking out of the house they were BORN into, who has no roll row to
-        // remove. It nulls the house and says nothing about the title, and the
-        // merge is over a fresh read - so the title outlived the house and the
-        // game would describe an Outer Disciple of nowhere.
-        //
-        // Held here rather than at that caller because it is a fact about the
-        // pair, not about leaving: whoever writes one has written the other.
-        if (merged.sectId === null) merged.sectRank = null;
-
+        // `sect_id` is still a mirror of the roll and `SectRepository` still
+        // maintains it, so a stale snapshot written back can no longer carry a
+        // rung with it - there is no rung on this row to carry. The rank half
+        // of this hazard is gone with the column; the house half is covered by
+        // `a-rank-has-one-writer.test.ts`.
         this.updateStmt.run(this.toParams(merged));
         return merged;
     }
@@ -809,7 +822,6 @@ export class CultivatorRepository {
             yearsAtCurrentRealm: c.yearsAtCurrentRealm,
             spiritStones: c.spiritStones,
             sectId: c.sectId ?? null,
-            sectRank: c.sectRank ?? null,
             location: c.location ?? null,
             feuds: JSON.stringify(c.feuds),
             insights: JSON.stringify(c.insights),
@@ -879,7 +891,6 @@ export class CultivatorRepository {
             injuries,
             spiritStones: row.spirit_stones,
             sectId: row.sect_id,
-            sectRank: row.sect_rank,
             location: row.location,
             feuds: JSON.parse(row.feuds),
             knownTechniques: JSON.parse(row.known_techniques),

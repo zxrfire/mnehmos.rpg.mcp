@@ -21,17 +21,31 @@ import {
     describeWhatIsLive,
     describeWhoIsHere
 } from '../../src/web/prompt';
-import type { Company } from '../../src/web/facts';
+import type { Company, SomebodyInTheSquare } from '../../src/web/facts';
 import { makeGameInWorld } from './harness';
 
 const WORLD = 'probe-world';
+
+/**
+ * A face in the square with nothing behind it but a name, a height and an age.
+ *
+ * `at`, `looksUp`, `playsToTheRoom`, `withNames` and `like` take the shape's
+ * own "the world holds no row for this person" values. These fixtures are
+ * testing what the square PRINTS, so anything the world would have supplied is
+ * deliberately absent rather than invented.
+ */
+function aFace(
+    who: Pick<SomebodyInTheSquare, 'name' | 'ordinal' | 'sex' | 'age' | 'rank'>
+): SomebodyInTheSquare {
+    return { at: null, looksUp: false, playsToTheRoom: 0, withNames: [], like: null, ...who };
+}
 
 describe('who is standing here', () => {
     it('names the people the cultivator can name', () => {
         const company: Company = {
             named: [
-                { name: 'Han Cikuan', ordinal: 9, sex: 'male', age: 61, rank: 'Sword Elder' },
-                { name: 'He Cihe', ordinal: 3, sex: 'female', age: 22, rank: null }
+                aFace({ name: 'Han Cikuan', ordinal: 9, sex: 'male', age: 61, rank: 'Sword Elder' }),
+                aFace({ name: 'He Cihe', ordinal: 3, sex: 'female', age: 22, rank: null })
             ],
             strangers: [],
             total: 2
@@ -54,7 +68,9 @@ describe('who is standing here', () => {
      */
     it('shows what a description reads, and says a description may be written', () => {
         const lines = describeWhoIsHere({
-            named: [{ name: 'Han Cikuan', ordinal: 9, sex: 'male', age: 61, rank: 'Sword Elder' }],
+            named: [
+                aFace({ name: 'Han Cikuan', ordinal: 9, sex: 'male', age: 61, rank: 'Sword Elder' })
+            ],
             strangers: [],
             total: 1
         }, 6).join(String.fromCharCode(10));
@@ -86,7 +102,7 @@ describe('who is standing here', () => {
     });
 
     it('states what it cut rather than reading complete', () => {
-        const many = Array.from({ length: 20 }, (_, i) => ({
+        const many = Array.from({ length: 20 }, (_, i) => aFace({
             name: `Person ${i}`, ordinal: 5, sex: 'female', age: 30, rank: null
         }));
         const lines = describeWhoIsHere({ named: many, strangers: [], total: 20 }, 6).join('\n');

@@ -15,8 +15,35 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { makeGameInWorld } from './harness.js';
+import { beastsOnThisGround, hasACore }
+    from '../../src/engine/world/hunting-a-spirit-beast.js';
+import { isOnAVein, isSealedOn, whatGroundThisIs }
+    from '../../src/engine/world/what-ground-a-place-is.js';
+import type { WorldState } from '../../src/engine/world/world-state.js';
+import type { LocationRecord } from '../../src/engine/world/locations.js';
+import type { BeastDisposition } from '../../src/data/cultivation/beasts.js';
 
 const WORLD = 'kill-answer';
+
+/**
+ * A cored species that is really standing on this piece of ground.
+ *
+ * ASKED OF THE ENGINE RATHER THAN NAMED. Going out after one in particular
+ * reaches it where it lives and is refused where it does not, so a fixture that
+ * names a glacier animal and stands the player on a mountain is arranging a
+ * situation the game cannot produce. The Glacier Lynx was doing exactly that.
+ */
+function aCoredOneOn(
+    world: WorldState, place: LocationRecord, leaning: BeastDisposition
+): string | null {
+    const grounds = whatGroundThisIs(world, place);
+    const here = beastsOnThisGround({
+        sealed: isSealedOn(place, world.currentDay),
+        onAVein: isOnAVein(world, place, grounds),
+        grounds: grounds ?? undefined
+    }).filter(b => hasACore(b) && b.disposition === leaning);
+    return here[0]?.name ?? null;
+}
 
 beforeAll(() => {
     process.env.ADMIN_MODE = 'true';
@@ -39,13 +66,21 @@ async function standingOnAHousesGround(seed: string) {
     const say = (s: string) => game.act(s) as Promise<Said>;
     await say('ADMIN set_realm ordinal=34');
 
-    const world = (game as unknown as { atHand: { locations: { id: string; name: string;
-        kind: string; controllingFactionId: string | null }[] } }).atHand;
-    const seat = world.locations.find(
-        l => l.kind === 'sect_seat' && l.controllingFactionId !== null
-    )!;
+    const world = (game as unknown as { atHand: WorldState }).atHand;
+    // A seat whose ground carries both signs, so the pair of cases below is
+    // one arrangement rather than two that happen to share a fixture.
+    const seat = world.locations.find(l =>
+        l.kind === 'sect_seat' && l.controllingFactionId !== null
+        && aCoredOneOn(world, l, 'righteous') !== null
+        && aCoredOneOn(world, l, 'demonic') !== null)
+        ?? world.locations.find(
+            l => l.kind === 'sect_seat' && l.controllingFactionId !== null)!;
     await say(`ADMIN move ${seat.name}`);
-    return { game, db, say, seat };
+    return {
+        game, db, say, seat,
+        righteous: aCoredOneOn(world, seat, 'righteous'),
+        demonic: aCoredOneOn(world, seat, 'demonic')
+    };
 }
 
 function obligationsAbout(db: unknown, subjectId: string): {
@@ -59,8 +94,9 @@ function obligationsAbout(db: unknown, subjectId: string): {
 
 describe('who answers for a beast you killed', () => {
     it('opens an account against you when the ground had somebody on it', async () => {
-        const { say, db } = await standingOnAHousesGround('answer-a');
-        const said = await say('I hunt the Grave Hound');
+        const { say, db, righteous } = await standingOnAHousesGround('answer-a');
+        expect(righteous, 'no righteous cored species stands on that seat').not.toBeNull();
+        const said = await say(`I hunt the ${righteous}`);
 
         // The engine's own line, and it names the two halves the module
         // decides: how many parties can put a name to it, and what the house
@@ -84,14 +120,14 @@ describe('who answers for a beast you killed', () => {
         await game.newRun('Hunter');
         const say = (s: string) => game.act(s) as Promise<Said>;
         await say('ADMIN set_realm ordinal=34');
-        const world = (game as unknown as { atHand: { locations: { id: string; name: string;
-            kind: string; controllingFactionId: string | null }[] } }).atHand;
+        const world = (game as unknown as { atHand: WorldState }).atHand;
         const open = world.locations.find(
             l => l.kind === 'settlement' && l.controllingFactionId === null
+                && aCoredOneOn(world, l, 'righteous') !== null
         );
         if (!open) return;
         await say(`ADMIN move ${open.name}`);
-        const said = await say('I hunt the Grave Hound');
+        const said = await say(`I hunt the ${aCoredOneOn(world, open, 'righteous')}`);
         expect(said.narration ?? '').not.toMatch(/can say whose doing it was/);
     }, 300_000);
 
@@ -101,9 +137,11 @@ describe('who answers for a beast you killed', () => {
         // second code path: killing the thing that had been taking from a
         // district is a kindness done to the district, priced by the machinery
         // that prices every other kindness.
-        const { say } = await standingOnAHousesGround('answer-c');
-        const righteous = await say('I hunt the Grave Hound');
-        const demonic = await say('I hunt the Glacier Lynx');
+        const ground = await standingOnAHousesGround('answer-c');
+        expect(ground.righteous, 'no righteous cored species on that seat').not.toBeNull();
+        expect(ground.demonic, 'no demonic cored species on that seat').not.toBeNull();
+        const righteous = await ground.say(`I hunt the ${ground.righteous}`);
+        const demonic = await ground.say(`I hunt the ${ground.demonic}`);
 
         expect(righteous.narration ?? '').toMatch(/the name on it is the person who did it/);
         expect(demonic.narration ?? '').toMatch(/is owed something/);
@@ -115,9 +153,10 @@ describe('who answers for a beast you killed', () => {
         // house was owed something for an event that was in no ledger anybody
         // reads - so nobody could repeat it, no digest carried it, and a
         // stranger asking about this cultivator found nothing.
-        const { say } = await standingOnAHousesGround('answer-d');
+        const { say, righteous } = await standingOnAHousesGround('answer-d');
+        expect(righteous, 'no righteous cored species stands on that seat').not.toBeNull();
         const before = await say('what do people say about me');
-        await say('I hunt the Grave Hound');
+        await say(`I hunt the ${righteous}`);
         const after = await say('what do people say about me');
         expect(after.narration ?? '').not.toBe(before.narration ?? '');
     }, 300_000);

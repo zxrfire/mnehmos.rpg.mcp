@@ -27,9 +27,37 @@ import {
     type EncounterOccurrence,
     type EncounterPlace
 } from '../../../src/engine/encounters/index.js';
-import { encounterThreatRegard } from '../../../src/data/cultivation/encounters.js';
+import {
+    encounterThreatRegard,
+    type EncounterEntry
+} from '../../../src/data/cultivation/encounters.js';
 
 const road: EncounterPlace = { id: 'r', name: 'the low road', kind: 'wilds', danger: 0.45 };
+
+/**
+ * An entry carrying one threat column and nothing else.
+ *
+ * `encounterThreatRegard` reads exactly two fields - `threatOrdinal` and the
+ * optional `regard` profile - so the rest is filler. No `regard` is set on
+ * purpose: the claim asserted against this is about the generic band, and an
+ * entry's own span would be a second opinion about the same gap.
+ */
+function entryWithThreat(threatOrdinal: number): EncounterEntry {
+    return {
+        id: 'enc-threat-under-test',
+        name: 'Threat under test',
+        kind: 'bandits',
+        simEventKind: 'encounter',
+        weight: 1,
+        minOrdinal: 0,
+        maxOrdinal: 40,
+        interrupts: false,
+        threatOrdinal,
+        summaryTemplate: 'A threat stands at {place}.',
+        tokens: ['place'],
+        tags: []
+    };
+}
 
 function who(ordinal: number) {
     return { id: 'c1', realmOrdinal: ordinal, fortune: 1, maxHp: 60, hp: 60, spiritStones: 40 };
@@ -139,7 +167,7 @@ describe('what a driver is told', () => {
             expect(o.confrontation!.avoidable).toBe(true);
             // And the regard band agrees, which is the point: one rule.
             const band = encounterThreatRegard(
-                { ...(o as never), threatOrdinal: o.confrontation!.threatOrdinal } as never, 6
+                entryWithThreat(o.confrontation!.threatOrdinal), 6
             );
             expect(band === null || band.gap <= -4).toBe(true);
         }

@@ -104,11 +104,11 @@ describe('Fortune buys nothing causal', () => {
                 turn: 1
             };
             const lucky = attemptBreakthrough(
-                withFortune(3, { realmOrdinal: ordinal, cultivationProgress: progressRequiredForOrdinal(ordinal) }),
+                withFortune(3, { realmOrdinal: ordinal, cultivationProgress: progressRequiredForOrdinal(ordinal)! }),
                 { ...ctx, rng: forStream(`lethal-${i}`, 'breakthrough', ordinal) }
             );
             const cursed = attemptBreakthrough(
-                withFortune(0, { realmOrdinal: ordinal, cultivationProgress: progressRequiredForOrdinal(ordinal) }),
+                withFortune(0, { realmOrdinal: ordinal, cultivationProgress: progressRequiredForOrdinal(ordinal)! }),
                 { ...ctx, rng: forStream(`lethal-${i}`, 'breakthrough', ordinal) }
             );
             expect(JSON.stringify(lucky)).toBe(JSON.stringify(cursed));

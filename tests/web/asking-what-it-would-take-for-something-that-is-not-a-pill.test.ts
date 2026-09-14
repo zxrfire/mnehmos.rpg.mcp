@@ -96,7 +96,7 @@ describe('played, asking a person for something that is not a pill', () => {
         expect(askingWhatItWouldTake(said)?.kind).toBe('terms');
 
         const answer = await game.act(said);
-        const heard = answer.error ?? answer.narration ?? '';
+        const heard = answer.narration ?? '';
         expect(heard).not.toMatch(/Nothing by that name/i);
         expect(heard).not.toMatch(/Nothing in the world is called/i);
         // It is priced, and the answer is about the object rather than about

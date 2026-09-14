@@ -253,15 +253,45 @@ export async function handleWork(
         });
     }
 
-    // Board, advanced against the wage
+    // Board, advanced against the wage.
+    //
+    // ── THE SPAN IS PROVISIONED FOR THE YEAR ASKED FOR AND WORKED FOR
+    //    WHATEVER PART OF IT SOMEBODY LETS YOU WORK ────────────────────────
+    //
+    // `work` is composed on top of the seclusion pass, and that pass takes its
+    // food up front because a cave has none. A job is not a cave: a porter buys
+    // his dinner in the town he is portering in. The composition was charging
+    // the whole cave's worth on day one, and an arrival cuts the span - so a
+    // year of portering bought a year of dry rations, opened one, worked ninety
+    // days and threw the other seven away.
+    //
+    // Measured, five seeds, a year of portering from 30 stones, before this:
+    //
+    //   work-paid   90 days   paid  7   board 16   left 21   (-9)
+    //   p1         135 days   paid 10   board 16   left 24   (-6)
+    //   p3         135 days   paid 10   board 16   left 24   (-6)
+    //   p2         240 days   paid 19   board 16   left 33   (+3)
+    //   work-seed  270 days   paid 21   board 16   left 35   (+5)
+    //
+    // The board is the same 16 in every row and the wage is not, which is the
+    // whole of it: the wage is prorated to `simulatedDays` and the board was
+    // prorated to nothing. The rate was never wrong - a porter's 240 cash is
+    // 2.4 stones a month against 1.2 stones a month of food actually eaten.
+    //
+    // So `boardAsked` floats the span and `boardCost` below charges for the
+    // rations the span actually opened. Nothing is forgiven and nothing is
+    // given away: `rationsRemaining` is food that was never bought.
     const rationsNeeded = Math.max(0, Math.ceil(days / ACTIONS_PER_FULL_SATIETY));
     const requested = args.rations ?? 0;
     const rations = Math.max(requested, rationsNeeded);
-    const boardCost = rations * RATION_COST_STONES;
+    const boardAsked = rations * RATION_COST_STONES;
+    const stonesAtEntry = cultivator.spiritStones;
     // Only the part the purse genuinely cannot cover. Somebody with stones
     // pays for their own food and takes no advance at all.
-    const advance = Math.max(0, boardCost - cultivator.spiritStones);
-    if (advance > 0) repos.cultivators.applyDeltas(cultivator.id, { spiritStones: advance });
+    const advanceAsked = Math.max(0, boardAsked - stonesAtEntry);
+    if (advanceAsked > 0) {
+        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: advanceAsked });
+    }
 
     // ── The span. One pass, and the engine owns every outcome in it. ──
     const spanResult = await cultivate({
@@ -279,6 +309,29 @@ export async function handleWork(
 
     const simulatedDays = Number(spanResult.simulatedDays ?? 0);
     const died = spanResult.died === true;
+
+    // ── WHAT THE SPAN ACTUALLY ATE ──────────────────────────────────────
+    //
+    // The skip's own end state, which is the only thing that knows: it opens a
+    // ration when the belly empties and not before, and it burns at the rate
+    // the RUNG sets, so a Foundation cultivator on the same span eats a
+    // twenty-fourth of what `rationsNeeded` bought. Re-deriving it from days
+    // here would be a second copy of `consumeFood` and it would drift.
+    const rationsUnopened = Math.min(
+        rations,
+        Math.max(0, Math.floor(Number(spanResult.rationsRemaining ?? 0)))
+    );
+    const rationsOpened = rations - rationsUnopened;
+    const boardCost = rationsOpened * RATION_COST_STONES;
+    const advance = Math.max(0, boardCost - stonesAtEntry);
+    // The purse was charged for the whole float and the float was oversized.
+    // Give back the board that was never eaten, less the part of the advance
+    // that is no longer owed - which leaves exactly the purse a span provisioned
+    // for what it ate would have produced.
+    const boardPutBack = (boardAsked - boardCost) - (advanceAsked - advance);
+    if (boardPutBack > 0) {
+        repos.cultivators.applyDeltas(cultivator.id, { spiritStones: boardPutBack });
+    }
 
     // Paid for the days the engine says were worked, never for the days asked for.
     // Cash is the mortal currency; stones are the cultivator's, and the conversion
@@ -310,8 +363,10 @@ export async function handleWork(
         cashEarned,
         spiritStonesEarned: paid,
         // What the food cost, said out loud. A wage quoted without its board is
-        // the thing that made this action look profitable when it was not.
-        rationsBought: rations,
+        // the thing that made this action look profitable when it was not - and
+        // a board quoted for a year nobody worked is how it became the opposite.
+        rationsBought: rationsOpened,
+        rationsProvisioned: rations,
         boardCostStones: boardCost,
         boardAdvancedStones: advance,
         grossSpiritStones: stonesEarned,

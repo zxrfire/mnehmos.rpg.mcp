@@ -57,7 +57,15 @@ describe('a control character is never what was meant', () => {
         for (const dir of ['src', 'tests', 'scripts', 'docs']) {
             for (const path of sourceFilesUnder(dir)) {
                 const text = readFileSync(path, 'utf-8');
+                // Counted as we go rather than recomputed per hit. The line
+                // number was being interpolated from a name that was never
+                // declared, so the one moment this test had something to say -
+                // a hit - was the moment it threw a ReferenceError instead of
+                // reporting one. Nothing found it because nothing had found a
+                // control character since.
+                let line = 1;
                 for (let i = 0; i < text.length; i++) {
+                    if (text[i] === '\n') line++;
                     const why = NEVER_MEANT[text.charCodeAt(i)];
                     if (why === undefined) continue;
                     found.push(`${path}:${line} - ${why}`);

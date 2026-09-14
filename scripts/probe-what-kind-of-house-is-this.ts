@@ -10,12 +10,12 @@
  *
  * Run: npx tsx scripts/probe-what-kind-of-house-is-this.ts
  */
-import { SECTS, SECT_ADMISSION } from '../src/data/cultivation/sects.js';
+import { SECTS } from '../src/data/cultivation/sects.js';
 import { getTechnique } from '../src/data/cultivation/techniques.js';
 import { tierOf } from '../src/data/cultivation/governance-and-water-rights.js';
 
 const roads = (teaches: readonly string[]) =>
-    teaches.map(id => getTechnique(id)).filter((t): t is any => !!t && t.class === 'cultivation');
+    teaches.map(id => getTechnique(id)).filter((t): t is any => !!t);
 
 console.log('rec adm ranks tier align      roads elem  power  specialities            house');
 console.log('-'.repeat(120));
@@ -46,7 +46,7 @@ for (const s of SECTS as readonly any[]) {
     for (const t of roads(s.teaches ?? [])) holders.set(t.id, (holders.get(t.id) ?? 0) + 1);
 }
 const { TECHNIQUES } = await import('../src/data/cultivation/techniques.js');
-for (const t of TECHNIQUES.filter(x => x.class === 'cultivation')) {
+for (const t of TECHNIQUES.slice()) {
     const k = t.element ?? '(elementless)';
     byElement.set(k, [...(byElement.get(k) ?? []), { id: t.id, cap: t.cap, houses: holders.get(t.id) ?? 0 }]);
 }

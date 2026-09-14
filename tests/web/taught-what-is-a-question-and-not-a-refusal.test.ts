@@ -85,7 +85,11 @@ function somebodyWithSeveralOnOffer(
     harness: Harness
 ): { name: string; offers: string[] } | null {
     const game = harness.game as unknown as {
-        currentRun(): { cultivator: { name: string; realmOrdinal: number; knownTechniques: string[] } };
+        currentRun(): {
+            cultivator: {
+                id: string; name: string; realmOrdinal: number; knownTechniques: string[];
+            };
+        };
         present(c: unknown): { id: string; name: string; factionId?: string | null }[];
         whatTheyAreCarrying(id: string): string[];
     };
@@ -95,6 +99,7 @@ function somebodyWithSeveralOnOffer(
         const would = whatTheyWouldTeachYou(
             { id: row.id, name: row.name, ordinal: 10, factionId: row.factionId ?? null, holds },
             {
+                id: cultivator.id,
                 name: cultivator.name,
                 ordinal: cultivator.realmOrdinal,
                 factionId: null,
@@ -135,7 +140,7 @@ describe('a category word is not a name', () => {
 
 describe('willing is not the same set as known', () => {
     it('never volunteers the top of a house shelf, and gates the rest on rank', () => {
-        const house = (SECTS as { id: string }[]).find(s => {
+        const house = SECTS.find(s => {
             const shelf = manualsOf(s.id);
             return shelf.length >= 2
                 && betrayalOfSelling({ factionId: s.id }, shelf[shelf.length - 1]!.id, s.id) === 3
@@ -153,7 +158,7 @@ describe('willing is not the same set as known', () => {
             id: 'elder', name: 'Elder', ordinal: 45,
             factionId: house!.id, holds: [top, working.id]
         };
-        const nobody = { name: 'Asker', ordinal: 0, holds: [] as string[] };
+        const nobody = { id: 'asker', name: 'Asker', ordinal: 0, holds: [] as string[] };
 
         const toAStranger = whatTheyWouldTeachYou(elder, { ...nobody, factionId: null });
         const toTheNewest = whatTheyWouldTeachYou(
@@ -164,8 +169,16 @@ describe('willing is not the same set as known', () => {
         );
 
         expect(toAStranger).toEqual([]);
-        expect(toTheNewest).toEqual([]);
-        expect(toTheTop.map(a => a.id)).toEqual([working.id]);
+        // THE NEWEST USED TO BE OFFERED NOTHING, and that was an artefact of
+        // what a shelf contained rather than of the rank rule. A house's shelf
+        // held only the books that raised a rank; every technique raises one
+        // since the two kinds collapsed into one, so the shallow end of a
+        // house's own catalog is now on it and the newest rank can be handed
+        // the shallowest thing on it. The rule being tested is unchanged and is
+        // asserted directly: rank reaches UP the shelf, and the top is nobody's
+        // to be given.
+        for (const art of toTheNewest) expect(art.id).not.toBe(top);
+        expect(toTheTop.map(a => a.id)).toContain(working.id);
         // Two arts known, one offered at best, and the canon offered to nobody.
         expect(toTheTop.map(a => a.id)).not.toContain(top);
     });
@@ -176,7 +189,7 @@ describe('willing is not the same set as known', () => {
      * different things, and the one that can be moved says so.
      */
     it('refuses as a refusal when they hold roads and would offer none', () => {
-        const house = (SECTS as { id: string }[]).find(s => {
+        const house = SECTS.find(s => {
             const shelf = manualsOf(s.id);
             return shelf.length >= 2
                 && betrayalOfSelling({ factionId: s.id }, shelf[shelf.length - 1]!.id, s.id) === 3;
@@ -185,13 +198,13 @@ describe('willing is not the same set as known', () => {
 
         const willNot = whatItWouldCostThem({
             kind: 'teaching',
-            asking: { name: 'Asker', ordinal: 0, factionId: null, holds: [] },
+            asking: { id: 'asker', name: 'Asker', ordinal: 0, factionId: null, holds: [] },
             asked: { id: 'e', name: 'Elder', ordinal: 45, factionId: house.id, holds: [top] },
             namedButUnresolved: ''
         });
         const cannot = whatItWouldCostThem({
             kind: 'teaching',
-            asking: { name: 'Asker', ordinal: 0, factionId: null, holds: [] },
+            asking: { id: 'asker', name: 'Asker', ordinal: 0, factionId: null, holds: [] },
             asked: { id: 'e', name: 'Elder', ordinal: 45, factionId: house.id, holds: [] },
             namedButUnresolved: ''
         });
@@ -208,11 +221,11 @@ describe('willing is not the same set as known', () => {
 
     /** One candidate is not a choice, so it is taken rather than asked about. */
     it('does not ask about one', () => {
-        const free = (TECHNIQUES as { id: string }[])
+        const free = TECHNIQUES
             .filter(t => noHouseCanCallItTheirs(t.id)).map(t => t.id);
         const one = whatItWouldCostThem({
             kind: 'teaching',
-            asking: { name: 'Asker', ordinal: 0, factionId: null, holds: [] },
+            asking: { id: 'asker', name: 'Asker', ordinal: 0, factionId: null, holds: [] },
             asked: { id: 'x', name: 'Them', ordinal: 20, factionId: null, holds: [free[0]!] },
             namedButUnresolved: ''
         });
@@ -223,10 +236,12 @@ describe('willing is not the same set as known', () => {
 
 describe('the question, and the price on it', () => {
     it('puts the arts back in a fixed order and carries what they want', () => {
-        const free = (TECHNIQUES as { id: string }[])
+        const free = TECHNIQUES
             .filter(t => noHouseCanCallItTheirs(t.id)).slice(0, 2).map(t => t.id);
         const asked = { id: 'x', name: 'Han Ronglu', ordinal: 20, factionId: null, holds: free };
-        const asking = { name: 'Asker', ordinal: 0, factionId: null, holds: [] as string[] };
+        const asking = {
+            id: 'asker', name: 'Asker', ordinal: 0, factionId: null, holds: [] as string[]
+        };
 
         const plain = whatItWouldCostThem({ kind: 'teaching', asking, asked, namedButUnresolved: '' });
         expect(plain.refusal, 'an underspecified ask is no longer a refusal').toBeNull();

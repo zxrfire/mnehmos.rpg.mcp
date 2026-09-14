@@ -10,18 +10,15 @@
  * Run: node --loader ts-node/esm scripts/probe-what-one-house-a-new-life-can-name.ts
  */
 import { SECTS, getSect, intakeRouteOf } from '../src/data/cultivation/sects.js';
-import { commonlyNamedHouse, housesWithinEarshot } from '../src/engine/birth/birth.js';
+import { catalogBirthWorld, commonlyNamedHouses, housesWithinEarshot } from '../src/engine/birth/birth.js';
 import { ORIGIN_TIERS } from '../src/engine/cultivation/origin.js';
 import { prefectureForFaction, provinceForFaction } from '../src/data/cultivation/regions.js';
 import { publishedDoorOf } from '../src/engine/encounters/what-a-house-will-teach-somebody-it-has-not-taken.js';
 
-const houses = SECTS.map(s => ({
-    id: s.id,
-    name: s.name,
-    admissionOrdinal: s.admissionOrdinal,
-    powerOrdinal: s.powerOrdinal,
-    recruits: s.recruits
-}));
+// The houses as the catalogs describe them, rather than a five-field stand-in
+// for them. Same rows off `SECTS`, in the same order, with the six columns a
+// `BirthHouse` has had all along.
+const houses = catalogBirthWorld().houses;
 
 // ── 1. HOW MANY DOORS ACTUALLY STAND OPEN AT THE BOTTOM ──────────────────
 const open = SECTS.filter(s => s.recruits && s.admissionOrdinal <= 2)
@@ -38,7 +35,12 @@ for (const s of open) {
 }
 
 // ── 2. WHAT A LIFE WITH NO STANDING IS TOLD ──────────────────────────────
-const common = commonlyNamedHouse(houses);
+// `commonlyNamedHouse`, singular, is gone. A life with no region falls to the
+// fallback branch of `commonlyNamedHouses`, which is the old rule exactly - the
+// world's floor among recruiters, in id order - and the head of that list is
+// what the singular call used to return.
+const namedToAnUnplacedLife = commonlyNamedHouses(houses, null);
+const common = namedToAnUnplacedLife.length > 0 ? namedToAnUnplacedLife[0] : null;
 console.log(`\nTHE ONE NAME EVERY UNPLACED LIFE GETS: ${common?.name ?? '(none)'}`);
 console.log(
     '  `commonlyNamedHouse` = lowest admissionOrdinal among recruiters, tie-broken by id.\n'
