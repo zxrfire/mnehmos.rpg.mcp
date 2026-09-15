@@ -12,6 +12,16 @@
  * house handed out swords and kept its paper.
  *
  * Rates over lived worlds. No seed is pinned to a count.
+ *
+ * ── AND BURNING IS ASKED OF THE CORPUS, NOT OF EACH WORLD ────────────────
+ *
+ * The burn assertion used to run per world, which is the thing the line above
+ * forbids. Measured over 16 pinned worlds at 200 years: 163 slips in every
+ * world, 46 to 94 of them held, and 0 to 10 burned - 65 burned in all, a mean
+ * of 4.1, and ONE world of the 16 burned none. So a per-world `> 0` was a
+ * one-in-sixteen coin flip per seed, and it came up red on a state change that
+ * had nothing to do with paper. Holding stays per world, because the thinnest
+ * of the 16 still held 46. Burning is summed across the seeds.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -23,7 +33,7 @@ import { cutATalisman } from '../../../src/engine/world/a-talisman-is-one-act-so
 import { transferPossession, type ObjectRecord } from '../../../src/engine/world/possessions';
 import type { WorldState } from '../../../src/engine/world/world-state';
 
-const SEEDS = ['walk-a', 'walk-b'];
+const SEEDS = ['walk-a', 'walk-b', 'walk-c'];
 const YEARS = 200;
 let cached: WorldState[] | null = null;
 
@@ -49,10 +59,15 @@ describe('a slip reaches a hand', () => {
     });
 
     it('and is burned by somebody, which it never was', async () => {
+        let burned = 0;
+        const said: string[] = [];
         for (const state of await worldsLived()) {
-            const burned = slipsIn(state).filter(o => o.data?.spent === true);
-            expect(burned.length).toBeGreaterThan(0);
+            const here = slipsIn(state).filter(o => o.data?.spent === true).length;
+            burned += here;
+            said.push(String(here));
         }
+        expect(burned, `nothing was burned in any of them: ${said.join(', ')}`)
+            .toBeGreaterThan(0);
     });
 
     it('but not most of them, because most people do not die in a war', async () => {
