@@ -113,6 +113,15 @@ const NOT_THE_REGISTER_S_BUSINESS: Readonly<Record<string, string>> = {
  * not touched a register module, run the script: a register module that
  * legitimately stopped importing a catalog raises the first number by one
  * through nobody's fault. Lower it, and say here which import went and why.
+ *
+ * NEITHER NUMBER MOVED WHEN THE HOUSEHOLDS SECTION LANDED, AND THAT IS THE
+ * INTERESTING PART. 27 authored marriages sat in `members.ts` with no section
+ * on the sheet, and this ratchet was blind to them twice: the module was
+ * already opened for the roster, and `AUTHORED_MARRIAGES` is written as
+ * `Object.freeze([...])`, which the row-array pattern did not match. The
+ * pattern now matches it. Measured at the time: the same 68 rows either way,
+ * because the section names the export - so the widening cost nothing and the
+ * next frozen catalog cannot hide the same way.
  */
 const NEVER_OPENED = 21;
 const NOT_NAMED = 68;

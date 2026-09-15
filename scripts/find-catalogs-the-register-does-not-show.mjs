@@ -102,8 +102,17 @@ export function findCatalogsTheRegisterNeverOpens() {
  * An array literal whose first element is an object or a factory call. A list
  * of ids, a threshold and a block of stated design all fail it, which is the
  * conservative direction: what is counted is what a reader would browse.
+ *
+ * `Object.freeze([...])` COUNTS, and it did not until a catalog wrote one. 27
+ * authored marriages landed as `AUTHORED_MARRIAGES = Object.freeze([...])`, the
+ * register showed none of them, and this reading was blind to it twice over -
+ * `members.ts` was already opened for the roster, so the module count could not
+ * see it either. Widening the pattern the day the section was written costs
+ * nothing (measured: the same 68 rows, and that is the only frozen row-array in
+ * the catalogs) and closes the hole for the next one.
  */
-const ROW_ARRAY = /^export const ([A-Z][A-Z0-9_]*)\s*(?::[^=]*)?=\s*\[\s*(?:\/\/[^\n]*\n\s*)*([^\s\]])/gm;
+const ROW_ARRAY =
+    /^export const ([A-Z][A-Z0-9_]*)\s*(?::[^=]*)?=\s*(?:Object\.freeze\(\s*)?\[\s*(?:\/\/[^\n]*\n\s*)*([^\s\]])/gm;
 
 /** Row-catalogs no register module names. */
 export function findRowCatalogsTheRegisterDoesNotName() {

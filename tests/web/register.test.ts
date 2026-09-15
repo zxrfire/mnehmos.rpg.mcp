@@ -22,7 +22,12 @@
 import { describe, it, expect } from 'vitest';
 import { buildRegister, renderRegisterHtml, type WorldRegister } from '../../src/web/register';
 import { ARTIFACTS, artifactsOwnedBy } from '../../src/data/cultivation/artifacts';
-import { MEMBERS } from '../../src/data/cultivation/members';
+import {
+    AUTHORED_MARRIAGES,
+    MEMBERS,
+    getMember,
+    getMembersOf
+} from '../../src/data/cultivation/members';
 import {
     APEX_INSTITUTIONS,
     COURTS,
@@ -1561,7 +1566,9 @@ describe('the key', () => {
             'can field now', 'could field once', 'the gap', 'what it costs',
             'produces', 'counts in', 'actually good at', 'face value',
             // What a house can actually do, and what a court divides up.
-            'teaches', 'what it apportions'
+            'teaches', 'what it apportions',
+            // The households listing, and its own word for an absence.
+            'married in', 'no household stated'
         ]) {
             expect(
                 terms.some(t => t.includes(term)),
@@ -1625,6 +1632,131 @@ describe('what a faction is reaching for', () => {
         const silent = reg.dossiers.filter(d => !d.ambition && SECTS.some(s => s.id === d.id));
         expect(silent.length).toBe(SECTS.length - withAmbition.length);
         for (const d of silent) expect(flat).toContain(d.name);
+    });
+});
+
+/**
+ * The households the catalog states, and the four things the sheet has to get
+ * right about them.
+ *
+ * WHY THIS EXISTS. 27 marriages between catalog figures were authored into
+ * `members.ts` and the register did not show one of them. The sibling ratchet -
+ * `tests/docs/the-register-shows-what-the-catalogs-hold.test.ts` - could not
+ * have caught it: it counts catalog MODULES nothing opens and row-arrays
+ * nothing names, `members.ts` was already opened for other reasons, and
+ * `AUTHORED_MARRIAGES` is written as `Object.freeze([...])`, which its
+ * row-array pattern does not match. So the gap was invisible in both
+ * directions, which is exactly the failure that ratchet was written for.
+ *
+ * WHAT WAS MEASURED WHILE WRITING THE SECTION, because two of the four rules
+ * below exist because of it:
+ *
+ *   households stated                 27
+ *   of them across a house line        0   every pair is inside one house
+ *   entries that already said so       3   the catalog's own header says four
+ *   at their house's highest rank      3   the header names one exception
+ *
+ * The section may say the second and third figures; it may not hardcode any of
+ * them, and the assertions below are the ones that keep that true.
+ */
+describe('the households the catalog states', () => {
+    const marriedIds = new Set(AUTHORED_MARRIAGES.flatMap(m => [m.oneId, m.otherId]));
+
+    /** The section, sliced off the built page by its own heading. */
+    function householdsHtml(): string {
+        const at = html.indexOf('<h2>The households the catalog states</h2>');
+        expect(at, 'the households section is not on the sheet').toBeGreaterThan(-1);
+        return html.slice(html.lastIndexOf('<section', at), html.indexOf('</section>', at));
+    }
+
+    it('shows every marriage the catalog states, with both people and the reading', () => {
+        // The reachability assertion, and the one the whole section exists for.
+        // A note is the catalog's account of WHY the pair was read as a pair,
+        // and a listing that dropped it would be a list of names a reader has
+        // no way to disagree with.
+        const section = text(householdsHtml());
+        expect(reg.households.length).toBe(AUTHORED_MARRIAGES.length);
+        for (const marriage of AUTHORED_MARRIAGES) {
+            expect(section).toContain(getMember(marriage.oneId)!.name);
+            expect(section).toContain(getMember(marriage.otherId)!.name);
+            expect(section).toContain(marriage.note);
+        }
+    });
+
+    it('answers whether a household is a tie between two houses', () => {
+        // A marriage inside one house and a marriage between two are different
+        // facts, and the second would be a row the Ties tab should hold. Every
+        // one of these is the first kind, so the sheet says so rather than
+        // leaving a reader to count 27 house names and notice.
+        for (const h of reg.households) {
+            expect(h.acrossHouses).toBe(h.one.houseId !== h.other.houseId);
+            expect(h.one.houseId).toBe(getMember(h.one.id)!.factionId);
+            expect(h.other.houseId).toBe(getMember(h.other.id)!.factionId);
+        }
+        expect(text(householdsHtml())).toContain('across a house line');
+    });
+
+    it('marks the ones the roster had already claimed, and marks nobody else', () => {
+        // Read off each entry rather than listed in the view. A register that
+        // kept its own list of which entries say "Married in" is a second copy
+        // of the roster, and the copy is what survives the roster being
+        // reworded.
+        const claimed = [...marriedIds]
+            .filter(id => /^Married in\b/.test(getMember(id)!.detail))
+            .sort();
+        const marked = reg.households
+            .flatMap(h => [h.one, h.other])
+            .filter(s => s.marriedIn)
+            .map(s => s.id)
+            .sort();
+        expect(marked).toEqual(claimed);
+        expect(marked.length, 'nothing is marked, so this test is guarding nothing')
+            .toBeGreaterThan(0);
+        expect(text(householdsHtml())).toContain('married in');
+    });
+
+    it('names a second house only where somebody married in from one', () => {
+        // The one fact here that reaches another house, and the sheet joins it
+        // to what the two houses are to each other - which is the register
+        // doing its job: the Keeper of the Ninefold Register married in from a
+        // house her own carries a standing feud with, and nothing in either
+        // catalog says so on its own.
+        for (const spouse of reg.households.flatMap(h => [h.one, h.other])) {
+            if (spouse.cameFrom === null) continue;
+            expect(spouse.marriedIn, 'a house of origin on somebody who did not marry in').toBe(true);
+            expect(spouse.cameFrom.id).not.toBe(spouse.houseId);
+            expect(getMember(spouse.id)!.detail).toContain(spouse.cameFrom.name);
+        }
+    });
+
+    it('names nobody the catalog has not married', () => {
+        // THE GUARD AGAINST THIS BECOMING A FAMILY TREE. Children are drawn
+        // when a world opens and are deliberately not written beside these
+        // people, so that a life can begin as one of their children - a section
+        // that started joining kin would close that door and would look like an
+        // improvement while doing it.
+        const section = text(householdsHtml());
+        const intruders = MEMBERS
+            .filter(m => !marriedIds.has(m.id))
+            .filter(m => new RegExp(`\\b${m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(section))
+            .map(m => m.name);
+        expect(intruders, 'the section names somebody who is not half of a stated marriage').toEqual([]);
+    });
+
+    it('says which houses it holds no household for rather than leaving them out', () => {
+        // An absence in a listing reads as a rule about the house. It is not
+        // one: nobody wrote a marriage down, and the sheet carries the same
+        // `unrecorded` discipline here as it does in the warmth column.
+        const expected = SECTS
+            .filter(s => getMembersOf(s.id).length > 0)
+            .filter(s => !reg.households.some(h => h.one.houseId === s.id || h.other.houseId === s.id))
+            .map(s => s.id)
+            .sort();
+        expect(reg.housesWithNoHouseholdStated.map(x => x.id).sort()).toEqual(expected);
+        expect(expected.length, 'every house has one, so this test is guarding nothing')
+            .toBeGreaterThan(0);
+        const section = text(householdsHtml());
+        for (const id of expected) expect(section).toContain(SECTS.find(s => s.id === id)!.name);
     });
 });
 

@@ -531,6 +531,34 @@ export const GLOSSARY: readonly GlossaryGroup[] = [
         ]
     },
 
+    // ── who is married to whom ─────────────────────────────────────────
+    {
+        group: 'Households',
+        intro:
+            'A household on this sheet is a marriage the catalog states between two people it names, '
+            + 'and it is the same in every world: who somebody is married to is a fact about them '
+            + 'rather than about a world, so it is written beside their rank. Children are neither '
+            + 'stated nor implied - whether a couple has any is drawn when a world opens, which is '
+            + 'what leaves room for a life to begin as one of these people\'s children.',
+        entries: [
+            {
+                term: 'Married in',
+                meaning:
+                    'The person\'s own roster entry says they came into this house by marriage. It is a '
+                    + 'fact about where they came from and not a tie between the two houses: the house '
+                    + 'they left holds no claim on them, and nothing in the standing between the two '
+                    + 'moves for it.'
+            },
+            {
+                term: 'No household stated',
+                meaning:
+                    'The catalog names people in the house and states no marriage between any of them. '
+                    + 'It records that nobody wrote one down, and never that the house does not marry - '
+                    + 'a rule against marrying would be a line on the house rather than a gap in a list.'
+            }
+        ]
+    },
+
     // ── the top of the world ───────────────────────────────────────────
     {
         group: 'The apex',

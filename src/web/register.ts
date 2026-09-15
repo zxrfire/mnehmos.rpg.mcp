@@ -57,7 +57,7 @@ import {
     type RegisterHoldings
 } from './register-what-each-house-holds.js';
 import { WANDERERS } from '../data/cultivation/wanderers.js';
-import { MEMBERS } from '../data/cultivation/members.js';
+import { AUTHORED_MARRIAGES, MEMBERS, getMember, getMembersOf } from '../data/cultivation/members.js';
 import { rollOf } from '../data/cultivation/faction-roll.js';
 import {
     HOW_A_HOUSE_IS_SEEN,
@@ -737,6 +737,74 @@ export interface RegisterAmbition {
     movedOn: string;
 }
 
+/**
+ * One half of a household the catalog states.
+ */
+export interface RegisterSpouse {
+    id: string;
+    name: string;
+    rank: string;
+    ordinal: number;
+    /** The house they stand in, which is the half of a household that can differ. */
+    houseId: string;
+    houseName: string;
+    houseAnchor: string | null;
+    /**
+     * Their own roster entry opens by saying they married in, which is the
+     * catalog claiming the marriage before any pair was written down. READ OFF
+     * THE ENTRY RATHER THAN LISTED HERE: a register that kept its own list of
+     * which three those are would be a second copy of the roster, and the day
+     * an entry is reworded the sheet would go on claiming what it no longer
+     * says.
+     */
+    marriedIn: boolean;
+    /**
+     * The house their entry names them as coming from, matched against the
+     * sect catalog rather than parsed out of the sentence. Null where the
+     * entry says they married in and does not say from where.
+     */
+    cameFrom: {
+        id: string;
+        name: string;
+        anchor: string | null;
+        /**
+         * What the house they are in says about the house they left, where the
+         * catalog places the two at all. Null is the ordinary answer and means
+         * nothing places them - not that the two are on good terms.
+         */
+        andTheHouseTheyAreInIs: string | null;
+    } | null;
+    /**
+     * Holds the highest rank on their own house's ladder. Derived from the
+     * ladder rather than from a title, so a house that renames its top rung
+     * does not have to be found here.
+     */
+    highestRankInTheHouse: boolean;
+}
+
+/**
+ * A marriage the catalog states, with both people and their house resolved.
+ *
+ * NO CHILDREN, AND THE ABSENCE IS THE RULING RATHER THAN A GAP. Who somebody
+ * is married to is written beside them and is the same in every world; whether
+ * they have children is drawn per seed, so that a life can open as one of these
+ * people's children. `the-marriages-a-world-opens-holding.ts` states it and the
+ * sheet must not read as a family tree.
+ */
+export interface RegisterHousehold {
+    one: RegisterSpouse;
+    other: RegisterSpouse;
+    /**
+     * Whether the two of them stand in two different houses, which would make
+     * the household a tie between two bodies rather than a fact inside one.
+     * None of them are, and the count is printed rather than the question
+     * dropped: it is the first thing a reader of the Ties tab would ask.
+     */
+    acrossHouses: boolean;
+    /** What the two entries say that the pair was read off. */
+    note: string;
+}
+
 /** One body answering directly to an apex, however the catalog files it. */
 export interface RegisterSubordinate {
     id: string;
@@ -1103,6 +1171,24 @@ export interface WorldRegister {
     };
     /** The object at the centre of the one storyline this produces. */
     theMemento: { key: string; heading: string; text: string }[];
+    /**
+     * Every marriage the catalog states, in the order it states them.
+     */
+    households: RegisterHousehold[];
+    /**
+     * Houses the catalog names people in and states no household for.
+     *
+     * Printed because "no row" and "no marriage" look identical in a listing
+     * that only shows the rows, and they are different claims: the sheet holds
+     * nothing about these houses either way, and says so rather than letting a
+     * reader read an absence as a rule.
+     */
+    housesWithNoHouseholdStated: {
+        id: string;
+        name: string;
+        anchor: string | null;
+        named: number;
+    }[];
     /** Every art, with every house that teaches it. Grade descending. */
     techniques: RegisterTechnique[];
     /** Every house with a teach list, and what is on it. */
@@ -1771,6 +1857,78 @@ function buildRelationships(factionId: string): RegisterRelationship[] {
 }
 
 /** Every body this one holds from, all the way up, under every id each answers to. */
+/**
+ * What one house's own catalog row says about another, in the warmth word the
+ * Ties tab already uses. Null where the catalog places nothing between them.
+ */
+function warmthToward(factionId: string, otherId: string): string | null {
+    const others = new Set(idsForFaction(otherId));
+    return relationshipsOf(factionId, idsForFaction(factionId))
+        .find(r => others.has(r.otherId))?.warmth ?? null;
+}
+
+/**
+ * The marriages the catalog states, joined to the people and to the houses.
+ *
+ * THE TWO DERIVED MARKS ARE READ OFF THE CATALOG AND NOT LISTED HERE. Which
+ * entries already claimed a marriage comes from the entries; who holds a
+ * house's top rung comes from the house's ladder. A view that kept either as
+ * its own list would be a second copy, and the copy is the one that goes stale.
+ */
+function buildHouseholds(anchorFor: (id: string) => string | null): RegisterHousehold[] {
+    const spouse = (id: string): RegisterSpouse | null => {
+        const member = getMember(id);
+        if (!member) return null;
+        const house = getSect(member.factionId);
+        // The entry's own sentence, and only its opening: a detail that
+        // mentions somebody else marrying in is not this person marrying in.
+        const marriedIn = /^Married in\b/.test(member.detail);
+        // Matched against the sect catalog rather than read out of the
+        // sentence, which is the same lookup-against-a-closed-set the rest of
+        // this sheet does. Two of the three name a house; one does not.
+        const from = marriedIn
+            ? SECTS.find(s => s.id !== member.factionId && member.detail.includes(s.name))
+            : undefined;
+        return {
+            id: member.id,
+            name: member.name,
+            rank: member.rank,
+            ordinal: member.realmOrdinal,
+            houseId: member.factionId,
+            houseName: nameOf(member.factionId),
+            houseAnchor: anchorFor(member.factionId),
+            marriedIn,
+            cameFrom: from
+                ? {
+                    id: from.id,
+                    name: from.name,
+                    anchor: anchorFor(from.id),
+                    andTheHouseTheyAreInIs: warmthToward(member.factionId, from.id)
+                }
+                : null,
+            highestRankInTheHouse: house !== undefined
+                && member.rankIndex === house.ranks.length - 1
+        };
+    };
+
+    const out: RegisterHousehold[] = [];
+    for (const marriage of AUTHORED_MARRIAGES) {
+        const one = spouse(marriage.oneId);
+        const other = spouse(marriage.otherId);
+        // A row naming somebody the roster does not hold is dropped rather than
+        // half rendered. The catalog test owns that failure; printing half a
+        // household here would report it as a person with no spouse.
+        if (!one || !other) continue;
+        out.push({
+            one,
+            other,
+            acrossHouses: one.houseId !== other.houseId,
+            note: marriage.note
+        });
+    }
+    return out;
+}
+
 function holdsFromChain(factionId: string): string[] {
     const out: string[] = [];
     const seen = new Set<string>();
@@ -3440,6 +3598,21 @@ export function buildRegister(): WorldRegister {
         if (a.ownerLinkId === null && a.ownerId !== null) a.ownerLinkId = entryFor(a.ownerId);
     }
 
+    const households = buildHouseholds(anchorFor);
+    // A house is on this list because the catalog names people in it and
+    // states no household between any of them. A house with nobody named
+    // could not have a stated household and is not evidence of anything.
+    const housed = new Set(households.flatMap(h => [h.one.houseId, h.other.houseId]));
+    const housesWithNoHouseholdStated = SECTS
+        .filter(s => !housed.has(s.id) && getMembersOf(s.id).length > 0)
+        .map(s => ({
+            id: s.id,
+            name: s.name,
+            anchor: anchorFor(s.id),
+            named: getMembersOf(s.id).length
+        }))
+        .sort((a, b) => b.named - a.named || a.name.localeCompare(b.name));
+
     const trackedItems = buildItemsRegister();
     const courts = buildCourts();
     // Courts get the same treatment for the same reason. A court with no
@@ -3505,6 +3678,8 @@ export function buildRegister(): WorldRegister {
         courts,
         noPlaceForTheirOwn: noPlaceRows,
         theFavour: favourRows,
+        households,
+        housesWithNoHouseholdStated,
         // Headings derived from the record's own keys, so a field added to the
         // catalog turns up here instead of being silently dropped.
         washingOut: Object.entries(WASHING_OUT).map(([key, text]) => ({
@@ -5785,6 +5960,87 @@ function tieCard(p: TiePair, opts: { emitId?: boolean; from?: string | null } = 
 }
 
 /** Who it answers to, on what terms, and what leaving would cost. */
+/** One half of a household, as a cell: who they are and the two marks. */
+function spouseCell(s: RegisterSpouse, sharedHouse: boolean): string {
+    return `<td class="nm">${esc(s.name)}`
+        + `<span class="rsep"> &middot; </span><span class="dim">${s.ordinal} ${esc(s.rank)}</span>`
+        + (sharedHouse ? '' : `<span class="rsep"> &middot; </span>${jumpTo(s.houseAnchor, s.houseName)}`)
+        + (s.marriedIn ? ' <span class="chip">married in</span>' : '')
+        // WHAT THE LADDER SAYS, NOT WHAT THE TITLE SOUNDS LIKE. The catalog
+        // tries to keep a pair off the top of a house, and a reader checking
+        // that needs the rung rather than a word like Keeper or Warden, three
+        // of which turn out to be the highest rank their house has.
+        + (s.highestRankInTheHouse ? ' <span class="chip">the house\'s highest rank</span>' : '')
+        + '</td>';
+}
+
+/**
+ * The households the catalog states.
+ *
+ * ON THE FACTIONS TAB RATHER THAN ON TIES, and the listing is the argument: not
+ * one of these is a tie between two bodies. Both halves of every household
+ * stand in the same house, so there is nothing here for the tie apparatus to
+ * hold, and the section sits beside the other two that are about what happens
+ * to the people inside a house rather than between houses.
+ */
+function householdsSection(reg: WorldRegister): string {
+    const rows = reg.households;
+    if (!rows.length) return '';
+
+    const across = rows.filter(h => h.acrossHouses).length;
+    const houses = new Set(rows.flatMap(h => [h.one.houseId, h.other.houseId])).size;
+    const claimed = rows.flatMap(h => [h.one, h.other]).filter(s => s.marriedIn);
+    const none = reg.housesWithNoHouseholdStated;
+
+    const origin = (s: RegisterSpouse): string => {
+        if (!s.cameFrom) {
+            return 'The entry says they married in and does not say from where, so the house '
+                + 'they left is not on this sheet.';
+        }
+        return s.cameFrom.andTheHouseTheyAreInIs === null
+            ? `Came from ${esc(s.cameFrom.name)}. The catalog places nothing between that house `
+                + `and ${esc(s.houseName)}, which is an absence of a record rather than an easy peace.`
+            : `Came from ${esc(s.cameFrom.name)}. ${esc(s.houseName)}'s own word for that house `
+                + `is ${esc(s.cameFrom.andTheHouseTheyAreInIs)}, and the household sits on this side of it.`;
+    };
+
+    return `<section class="startfolded">
+  <div class="sh"><h2>The households the catalog states</h2><span class="r">${rows.length} households &middot; ${houses} of ${reg.counts.factions} houses &middot; ${across === 0 ? 'none across a house line' : `${across} across a house line`}</span></div>
+  <p class="note"><strong>Every marriage the catalog states, and it states the same ones in every world.</strong> Who somebody is married to is a fact about them, so it is written beside their rank and their house rather than drawn when a world opens. The last column is what the two entries were read as saying: the reading is arguable, and it is printed so that it can be argued with rather than guessed at.</p>
+  <p class="note"><strong>${across === 0 ? 'Not one of them crosses a house line.' : `${across} of them cross a house line.`}</strong> Both halves of ${across === 0 ? 'every' : 'nearly every'} household stand in the same house, so ${across === 0 ? 'none of these is' : 'most of these are not'} a tie between two bodies and nothing on the Ties tab is built out of one. The only thing here that reaches a second house is where somebody came from, and that is a fact about a person.</p>
+  <p class="note"><strong>Two people, and no children.</strong> A household here is a marriage and stops at one. Whether a couple has children is drawn when a world opens rather than written down beside them, so that a life can begin as the child of somebody the catalog named - a fixed roster of children would take that seat away. Nothing on this page is a family tree.</p>
+  <div class="scroll"><table class="itemtbl">
+  <colgroup><col style="width:18%"><col style="width:19%"><col style="width:19%"><col style="width:44%"></colgroup>
+  <caption>Every household the catalog states &middot; in the order it states them</caption>
+  <thead><tr><th>House</th><th>One</th><th>The other</th><th>What the pair was read off</th></tr></thead>
+  <tbody>${rows.map(h => '<tr>'
+      + `<td class="nm">${h.acrossHouses
+          ? `${jumpTo(h.one.houseAnchor, h.one.houseName)}<span class="rsep"> &middot; </span>${jumpTo(h.other.houseAnchor, h.other.houseName)}`
+          : jumpTo(h.one.houseAnchor, h.one.houseName)}</td>`
+      + spouseCell(h.one, !h.acrossHouses)
+      + spouseCell(h.other, !h.acrossHouses)
+      + `<td class="q">${esc(h.note)}</td></tr>`).join('')}
+  </tbody></table></div>
+  <p class="note"><strong>Married in</strong>, and the roster said so first: ${count(claimed.length)} of these entries open by stating the marriage and never say to whom, which is what left them half written. Where they came from is the one fact on this page that reaches a second house, and it reaches it in one direction only - nobody is owed anything by the house they left.</p>
+  ${claimed.length
+      ? `<dl class="dispute">${claimed.map(s => `<dt>${esc(s.name)}, ${esc(s.houseName)}</dt><dd>${origin(s)}</dd>`).join('')}</dl>`
+      : ''}
+  ${none.length
+      ? `<p class="note"><strong>No household stated</strong> for ${count(none.length)} further houses the catalog names people in. That is the sheet holding nothing either way: a house that does not marry would say so on its own entry, and an absence from a list says only that nobody wrote one down.</p>`
+        // A TABLE RATHER THAN A RUN OF LINKS IN A PARAGRAPH, and the reason is
+        // mechanical: the chunk limit measures a paragraph's visible text and
+        // would cut a list of eleven names into halves at whatever word fell on
+        // the boundary. The sibling listing two sections up has the same shape.
+        + '<div class="scroll"><table>'
+        + '<caption>Houses with named people and no household stated &middot; most named first</caption>'
+        + '<thead><tr><th>House</th><th class="pw">Named</th></tr></thead><tbody>'
+        + none.map(x => `<tr><td class="nm">${jumpTo(x.anchor, x.name)}</td>`
+            + `<td class="pw">${x.named}</td></tr>`).join('')
+        + '</tbody></table></div>'
+      : ''}
+</section>`;
+}
+
 function holdsFromBlock(h: RegisterHoldsFrom): string {
     const parent = h.parentName === null
         ? '<span class="dim">nobody - it holds what it holds outright</span>'
@@ -7377,6 +7633,12 @@ export function renderRegisterHtml(
   <p class="note">The object at the centre of the one storyline any of this produces, on the Court's side only, because it is the only one of the three whose child has nothing else to go on.</p>
   <dl class="dispute">${reg.theMemento.map(x => `<dt>${esc(x.heading)}</dt><dd>${esc(x.text)}</dd>`).join('')}</dl>
 </section>
+
+<!-- Directly under the section about what happens to a house member's child,
+     because the two answer halves of one question and the order matters: the
+     catalog states who is married and deliberately states no children, so a
+     reader who meets the households first would take the silence for a gap. -->
+${householdsSection(reg)}
 
 </div>
 
