@@ -17,6 +17,18 @@
  *      much is loud, and neither is a refusal.
  *   4. FLIGHT BELONGS TO SWORD SCHOOLS. Ruled by the design owner. An
  *      exclusivity rule is exactly the decision AGENTS.md says needs a test.
+ *   5. WHAT A CHEST BURNS, AND WHAT DOES NOT BURN AT ALL. The design owner:
+ *      spirit boats are fuelled by spirit stones, and a house sends as often as
+ *      its treasury allows. Nothing in the engine consumed anything before
+ *      this - no `fuel`, no charge, no stones on the row - while `prompt.ts`
+ *      had been telling the narrator stones were fuel the whole time, so the
+ *      prose was promising a mechanic that did not exist. The figure is
+ *      `STONES_BURNED_PER_HEAD_PER_DAY`, the sea's own, unchanged: a hull over
+ *      dead ground is buying the same absent vein a hull over water buys. What
+ *      is asserted here is the three things that do NOT burn - a beast eats, a
+ *      carriage is standing on a vein, and an art is somebody's own qi - because
+ *      those are what a later reader will want to "fix" into a ladder of
+ *      expense.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -28,8 +40,11 @@ import {
     couldArriveUnremarked,
     couldFlyOnTheirOwnBlade,
     daysByConveyance,
+    burnsStonesUnderWay,
+    headDaysUnderWay,
     priceJourney,
     realmsAboveTheTrackedFloor,
+    whatTheChestBurns,
     unsuitedFor,
     walkingDaysPerDay,
     whatArrivingOnThisSays,
@@ -40,7 +55,10 @@ import {
     requireConveyance
 } from '../../../src/data/cultivation/what-a-house-moves-its-people-on.js';
 import { SEA_LANES } from '../../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.js';
-import { CUSTOMARY_PROVISIONING_MARGIN } from '../../../src/engine/world/what-a-sea-crossing-costs.js';
+import {
+    CUSTOMARY_PROVISIONING_MARGIN,
+    STONES_BURNED_PER_HEAD_PER_DAY
+} from '../../../src/engine/world/what-a-sea-crossing-costs.js';
 import { OBJECT_CEILING_BELOW_THE_LID } from '../../../src/engine/cultivation/realms.js';
 import { refiningOrdinalFor } from '../../../src/engine/cultivation/who-can-refine-a-grade-of-medicine.js';
 import { getTechnique, isSwordArt, SWORD_ARTS } from '../../../src/data/cultivation/techniques.js';
@@ -345,5 +363,98 @@ describe('the catalog and the engine agree', () => {
             expect(priced.daysOneWay).toBeGreaterThan(0);
             expect(priced.arrivalReads.length).toBeGreaterThan(40);
         }
+    });
+});
+
+describe('what a journey burns', () => {
+    it('charges nothing to anything with ground under it', () => {
+        for (const c of CONVEYANCES.filter(c => !c.crossesGroundThatCannotBeWalked)) {
+            expect(burnsStonesUnderWay(c)).toBe(false);
+            expect(priceJourney({ walkingDays: 20, conveyance: c, heads: 4 }).stonesBurned)
+                .toBe(0);
+        }
+        // The row that would otherwise read as the top of a ladder of expense.
+        expect(burnsStonesUnderWay(CARRIAGE_HEAVEN)).toBe(false);
+    });
+
+    it('charges nothing to somebody holding themselves up on their own art', () => {
+        expect(FLIGHT.crossesGroundThatCannotBeWalked).toBe(true);
+        expect(FLIGHT.holding).toBe('personal');
+        expect(burnsStonesUnderWay(FLIGHT)).toBe(false);
+        expect(priceJourney({ walkingDays: 20, conveyance: FLIGHT, heads: 1 }).stonesBurned)
+            .toBe(0);
+    });
+
+    it('charges a hull the same stone the sea charges, per head per day', () => {
+        expect(burnsStonesUnderWay(BOAT)).toBe(true);
+        const journey = priceJourney({ walkingDays: 30, conveyance: BOAT, heads: 8 });
+        expect(journey.stonesBurned).toBe(Math.ceil(
+            headDaysUnderWay(journey.daysOneWay, 8, journey.trips)
+            * STONES_BURNED_PER_HEAD_PER_DAY
+        ));
+        expect(journey.stonesBurned).toBeGreaterThan(0);
+    });
+
+    it('costs more for more people and more for more loads', () => {
+        const few = priceJourney({ walkingDays: 30, conveyance: BOAT, heads: 4 });
+        const many = priceJourney({ walkingDays: 30, conveyance: BOAT, heads: BOAT.heads });
+        expect(many.stonesBurned).toBeGreaterThan(few.stonesBurned);
+
+        // Past what it holds, the craft goes back for the rest and the empty
+        // leg burns too - but the first load is not charged again for it.
+        const twoLoads = priceJourney({
+            walkingDays: 30, conveyance: BOAT, heads: BOAT.heads + 1
+        });
+        expect(twoLoads.trips).toBe(2);
+        expect(twoLoads.stonesBurned).toBeGreaterThan(many.stonesBurned);
+        expect(twoLoads.stonesBurned).toBeLessThan(many.stonesBurned * 2);
+    });
+
+    it('costs less on a better craft, because grade is days rather than a rate', () => {
+        // The same hull rated higher covers the road in fewer days and is
+        // therefore under way for fewer of them. No running-cost table decides
+        // this and none could disagree with the speed table.
+        const plain = priceJourney({ walkingDays: 40, conveyance: BOAT, heads: 10 });
+        const rated = priceJourney({
+            walkingDays: 40, conveyance: BOAT, heads: 10, power: OBJECT_CEILING_BELOW_THE_LID
+        });
+        expect(rated.daysOneWay).toBeLessThan(plain.daysOneWay);
+        expect(rated.stonesBurned).toBeLessThan(plain.stonesBurned);
+    });
+
+    it('prices a craft out of reach of a purse that cannot cover the burn', () => {
+        const available = CONVEYANCES.map(c => ({ conveyance: c, power: null }));
+        const crossing = { walkingDays: 30, heads: 12 };
+        const rich = bestForThisRoad(
+            available, crossing.walkingDays, crossing.heads, true, 100_000);
+        expect(rich).not.toBeNull();
+        expect(rich!.conveyance.id).toBe(BOAT.id);
+
+        // An empty chest cannot run the hull. It is NOT stranded: the other
+        // row that crosses dead ground is somebody's own art, which burns
+        // their qi and not a purse - so a sword house too poor for a chest
+        // still gets over the water one head at a time, slowly, which is
+        // exactly what the sword-flight row already says of itself.
+        const broke = bestForThisRoad(
+            available, crossing.walkingDays, crossing.heads, true, 0);
+        expect(broke).not.toBeNull();
+        expect(broke!.conveyance.id).toBe(FLIGHT.id);
+        expect(broke!.conveyance.id).not.toBe(BOAT.id);
+        expect(priceJourney({
+            walkingDays: crossing.walkingDays,
+            conveyance: broke!.conveyance,
+            heads: crossing.heads
+        }).trips).toBe(crossing.heads);
+        // And with no purse in hand nothing is priced out, which is what every
+        // caller that has never held one keeps getting.
+        expect(bestForThisRoad(available, crossing.walkingDays, crossing.heads, true))
+            .not.toBeNull();
+    });
+
+    it('leaves a walking party alone however empty the purse is', () => {
+        const available = CONVEYANCES.map(c => ({ conveyance: c, power: null }));
+        const chosen = bestForThisRoad(available, 20, 6, false, 0);
+        expect(chosen).not.toBeNull();
+        expect(burnsStonesUnderWay(chosen!.conveyance)).toBe(false);
     });
 });

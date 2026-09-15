@@ -1,11 +1,20 @@
 /**
- * What a party arrives on, what that does to the days, and what anybody watching
- * the gate reads off it.
+ * What a party arrives on, what that does to the days, what it burns getting
+ * there, and what anybody watching the gate reads off it.
+ *
+ * THE BURN IS THE SEA'S RULE APPLIED ON LAND. `src/web/prompt.ts` has told the
+ * narrator for a long time that spirit stones are "money, fuel, and the only way
+ * to cultivate somewhere the ambient qi will not support you", and the engine
+ * had the third of those and neither of the first two: no craft in the world
+ * consumed anything, so a house's boat was free to run and a house with no purse
+ * sailed as often as an apex. See `burnsStonesUnderWay` for why the figure is
+ * the one `what-a-sea-crossing-costs.ts` already states rather than a new one.
  */
 
 import type { TechniqueGrade } from '../../schema/cultivation.js';
 import { REALM_TIERS, OBJECT_CEILING_BELOW_THE_LID } from '../cultivation/realms.js';
 import { refiningOrdinalFor } from '../cultivation/who-can-refine-a-grade-of-medicine.js';
+import { STONES_BURNED_PER_HEAD_PER_DAY } from './what-a-sea-crossing-costs.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE SHAPE
@@ -106,6 +115,77 @@ export function daysByConveyance(
     const days = Math.max(0, Math.ceil(walkingDays));
     if (days === 0) return 0;
     return Math.max(1, Math.ceil(days / walkingDaysPerDay(conveyance, power)));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WHAT IT BURNS
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Whether this thing has to buy the ground it is not standing on.
+ *
+ * ── THE RULE IS THE SEA'S RULE, NOT A SECOND ONE ─────────────────────────
+ *
+ * `what-a-sea-crossing-costs.ts` states it where it is the whole of the
+ * situation rather than the exception to it: there is no vein under open water,
+ * so every day out there is bought out of a chest at a rate that does not care
+ * what realm anybody is. A hull over open water and a hull over a burnt scar or
+ * a face nothing climbs are the same hull doing the same thing, and
+ * `crossesGroundThatCannotBeWalked` is already the column that says so.
+ *
+ * So there is no fuel figure here and no per-craft constant. What a chest burns
+ * is `STONES_BURNED_PER_HEAD_PER_DAY`, unchanged, for the same reason.
+ *
+ * ── AND THE THREE THINGS THAT DO NOT BURN ────────────────────────────────
+ *
+ *   a beast in the traces   it eats. `drawnByBeast` is the fodder economy and
+ *                           it is why the cheapest real conveyance in the world
+ *                           costs a hunt rather than a purse.
+ *   ground under it         a carriage is standing on a vein like everybody
+ *                           else, however finely it is made. A heaven-grade
+ *                           carriage burns nothing, which is the row that stops
+ *                           this reading as a ladder of expense.
+ *   somebody's own art      `holding: 'personal'` is a person holding
+ *                           themselves up out of their own cultivation. They
+ *                           pay, and they do not pay in stones.
+ */
+export function burnsStonesUnderWay(conveyance: Conveyance): boolean {
+    return conveyance.crossesGroundThatCannotBeWalked && conveyance.holding !== 'personal';
+}
+
+/**
+ * Head-days a journey spends with nothing underneath it.
+ *
+ * Everybody crosses once, so the loaded legs are `heads` for `daysOneWay`. A
+ * party bigger than the craft needs the craft to come back for the rest, and an
+ * empty leg still burns for whoever is aboard to run it - one. Hence
+ * `heads + trips - 1` rather than `heads * trips`, which would charge the first
+ * load again for every load after it.
+ *
+ * GRADE IS ALREADY IN THIS and is not a second term. A better craft covers the
+ * road in fewer days, so it is under way for less of them and a crossing costs
+ * less on it - which comes out of `walkingDaysPerDay` rather than out of a
+ * table of running costs that would have to agree with it.
+ */
+export function headDaysUnderWay(daysOneWay: number, heads: number, trips: number): number {
+    return Math.max(0, daysOneWay) * (Math.max(1, heads) + Math.max(1, trips) - 1);
+}
+
+/**
+ * What the chest pays for this journey, in spirit stones. Zero on anything
+ * standing on ground.
+ */
+export function whatTheChestBurns(input: {
+    conveyance: Conveyance;
+    daysOneWay: number;
+    heads: number;
+    trips: number;
+}): number {
+    if (!burnsStonesUnderWay(input.conveyance)) return 0;
+    return Math.ceil(
+        headDaysUnderWay(input.daysOneWay, input.heads, input.trips)
+        * STONES_BURNED_PER_HEAD_PER_DAY
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -311,6 +391,14 @@ export interface JourneyCost {
     daysForEverybody: number;
     /** Days saved against walking. The figure that makes a rung legible. */
     daysSavedAgainstWalking: number;
+    /**
+     * Spirit stones this journey burns, and zero for anything on ground.
+     *
+     * Reported rather than charged. Nothing in this module holds a purse, and
+     * who pays is a question about a house or a person - see
+     * `whatTheChestBurns`.
+     */
+    stonesBurned: number;
     /** Null where the choice was a reasonable one. */
     wrongToolNote: string | null;
     /** What a watcher at the far gate reads off the arrival. */
@@ -335,6 +423,9 @@ export function priceJourney(input: JourneyInput): JourneyCost {
         trips,
         daysForEverybody,
         daysSavedAgainstWalking: Math.max(0, Math.ceil(input.walkingDays) - daysOneWay),
+        stonesBurned: whatTheChestBurns({
+            conveyance: input.conveyance, daysOneWay, heads, trips
+        }),
         wrongToolNote: unsuitedFor(
             input.conveyance,
             input.walkingDays,
@@ -352,9 +443,28 @@ export function bestForThisRoad(
     available: readonly { conveyance: Conveyance; power: number | null }[],
     walkingDays: number,
     heads: number,
-    crossesGroundThatCannotBeWalked = false
+    crossesGroundThatCannotBeWalked = false,
+    /**
+     * What the chest has, where the caller holds one. A craft whose burn this
+     * will not cover is not an option, which is the whole of what makes a poor
+     * house walk and a rich one sail - stated here rather than in every caller,
+     * because a second answer to what somebody can afford to take would
+     * disagree with this one the first time either moved.
+     *
+     * Omitted, and nothing is priced out. A caller with no purse in hand gets
+     * the answer it has always got.
+     */
+    purse: number | null = null
 ): { conveyance: Conveyance; power: number | null } | null {
-    const usable = available.filter(
+    const affordable = purse === null
+        ? available
+        : available.filter(a => whatTheChestBurns({
+            conveyance: a.conveyance,
+            daysOneWay: daysByConveyance(walkingDays, a.conveyance, a.power),
+            heads,
+            trips: Math.ceil(Math.max(1, heads) / Math.max(1, a.conveyance.heads))
+        }) <= purse);
+    const usable = affordable.filter(
         a => !crossesGroundThatCannotBeWalked || a.conveyance.crossesGroundThatCannotBeWalked
     );
     if (usable.length === 0) return null;
