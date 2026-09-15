@@ -19,6 +19,34 @@
  * parents - including the player, whose household this engine had only just
  * learned to give them at all.
  *
+ * ═════════════════════════════════════════════════════════════════════════
+ * A MARRIAGE IS STATED AND THE CHILDREN ARE NOT, AND THAT IS ON PURPOSE
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * Marriages between catalog figures are authored in `members.ts` - the same in
+ * every world, because who somebody is married to is a fact about them. Who
+ * their children are is drawn per seed by the families pass, and the two
+ * sitting side by side reads like an unfinished job. It is not.
+ *
+ * The design owner, asked whether parenthood should get the same treatment:
+ *
+ *   > "it should be the same, marriages are seeded, but whether they have
+ *   > children is random"
+ *   > "cuz if their children are fixed, you couldn't spawn as someone
+ *   > important's kid"
+ *
+ * So the reason is about PLAY rather than about data. A stated child list
+ * would close the one door this whole layer exists to open: a life beginning
+ * in a household the catalog wrote. Measured over three thousand births, 24
+ * open as the child of an authored figure, and every one of those is a seat
+ * that a fixed roster would have taken away.
+ *
+ * It is the same split as the one next door, one rung down. A marriage is a
+ * fact about the people in it; a child is a fact about a world - which is why
+ * a grudge between catalog figures is not authored either.
+ *
+ * DO NOT "FINISH" THIS by writing children into the catalog.
+ *
  * The design owner: **"seed this"**. A fresh world is not a newly created one.
  *
  * ═════════════════════════════════════════════════════════════════════════
