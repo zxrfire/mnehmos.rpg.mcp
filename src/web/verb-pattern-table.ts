@@ -905,6 +905,37 @@ export function withoutTheHousesNamed(text: string): string {
 }
 
 /**
+ * A house whose OWN NAME is a counter, being read across rather than walked to.
+ *
+ * Stripping the names stops a name supplying an intent, and it took a genuine
+ * sentence with it. The Silver Island Market IS a market, so `I browse the
+ * Silver Island Market` lost the only market noun it had and reached nothing,
+ * while `where is the Silver Island Market` correctly travelled.
+ *
+ * Both readings are real, and the VERB is the whole of what tells them apart: a
+ * name may not supply an intent, and once a verb has supplied one, a body whose
+ * name says it keeps a counter is a legitimate thing to read across. `browse`
+ * was on no list in this file. Measured over the catalog: `i browse the Silver
+ * Island Market` and `i peruse the Silver Island Market` reached nothing, while
+ * `i shop at` and `i browse the stalls at` the same house both reached the
+ * board, and `where is`, `how far is` and `i go to` all travelled.
+ *
+ * Deliberately NOT `haggle`, `look over` or `look through`: those three already
+ * reach somewhere - a bargain put to a party, and a look at a place - and
+ * taking a working sentence off a working row is relabelling, not fixing.
+ *
+ * The noun list is read off the NAME rather than off the sentence, so the
+ * Clear River Alliance - the other house named for an intent - is untouched by
+ * it, and a market written into the catalog tomorrow is browsable that day.
+ */
+const READING_ACROSS_A_COUNTER = 'browse|peruse';
+
+function theCounterIsTheHouseNamed(text: string): boolean {
+    const name = theHouseNameSaid(text);
+    return name !== undefined && /\b(?:market|bazaar|stalls?|exchange)\b/i.test(name);
+}
+
+/**
  * Asking what your standing entitles you to on your house's ground.
  */
 export const GROUND_TIME_QUESTION = new RegExp([
@@ -1749,6 +1780,63 @@ export const WHAT_A_HOUSE_TEACHES = new RegExp(
         String.raw`\bwhat (?:is|are) on (?:their|its|the) (?:shelf|shelves|teaching list|curriculum)\b`,
         String.raw`\bwhat (?:roads?|arts?|methods?|techniques?)\b[^.?]*\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?]*\b(?:teach|teaches|teaching|offer|offers|hand|hands)\b`,
         String.raw`\bhow (?:high|far) (?:does|do|would)\b[^.?]*\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?]*\b(?:carry|take|teach|get me)\b`
+    ].join('|'),
+    'i'
+);
+
+/**
+ * Asking whether a NAMED house would have you, which is the question before the
+ * one that crosses a province to find out.
+ *
+ * ── THE ADJACENCY THAT BLOCKED IT WAS IN A REGULAR EXPRESSION ────────────
+ *
+ * The joining branch reads `would (?:take|have) me`, which needs the two words
+ * next to each other, and `WHO_WOULD_TAKE_SOMEBODY_LIKE_ME` lists the four
+ * things that may go between them - anyone, anybody, any of them, they. A
+ * house's NAME is none of those, so `would the X take me` reached nothing for
+ * all 38 houses while `would they take me` reached the listing.
+ *
+ * Nothing in the answer needs the asker to be standing anywhere. The bar is
+ * `admissionOrdinal`, `getSectAdmission` and the house's own shelf read against
+ * the asker's rung and root, and the listing already answers exactly this
+ * question for every house at once, from wherever they are. The gate that IS
+ * real is knowledge, and the read keeps it: a name nobody has said in front of
+ * you resolves to nobody.
+ *
+ * ── AND IT IS A READ, BECAUSE THE JOINING BRANCH ENROLS ──────────────────
+ *
+ * `{ action: 'sect', target: <house> }` resolves the name and calls `handleJoin`.
+ * Sending a question there would make the asking permanent, whichever way the
+ * gate fell. So this is `look`, it is free, and `would-that-house-take-you.ts`
+ * states the bar and never the answer.
+ *
+ * ── ORDERING ────────────────────────────────────────────────────────────
+ *
+ * Below `WHAT_A_HOUSE_TEACHES` on purpose: "how high would the X take me" is a
+ * question about the shelf and its `carry|take|teach|get me` arm has had it
+ * since it was written. The branch is gated on a catalog NAME being said, so
+ * "would they take me" and "would the sect take me" never reach it and the
+ * listing keeps them.
+ */
+export const WOULD_THAT_HOUSE_TAKE_ME = new RegExp(
+    [
+        String.raw`\b(?:would|will|could|can|do|does)\b[^.?!]{0,40}\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b`
+        + String.raw`[^.?!]{0,24}\b(?:take|takes|have|has|admit|admits|accept|accepts)\s+`
+        + String.raw`(?:me\b|us\b|(?:a\s+|an\s+)?(?:nobody|somebody|someone|anybody|anyone|person|rogue|stranger|cultivator)\s+like\s+(?:me|us)\b)`,
+        // The same question with the house in front of the verb, which is how
+        // it is said when the house has already been named once.
+        String.raw`\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?!]{0,24}\b(?:would|will)\s+`
+        + String.raw`(?:take|have|admit|accept)\s+(?:me|us)\b`,
+        // Whether the bar is cleared, said as a bar rather than as a taking.
+        String.raw`\b(?:do|does|would|could|can)\s+i\s+(?:meet|clear|make|pass|reach)\b`
+        + String.raw`[^.?!]{0,30}\b(?:bar|standard|standards|requirements?|admission)\b`,
+        String.raw`\bam\s+i\s+(?:good|strong|high|far|advanced)\s+enough\s+for\b`,
+        // What the bar IS, about a house other than your own. The leadership
+        // read owns the possessive forms - "how high is OUR bar" is a power a
+        // seat holds - and runs long before this table.
+        String.raw`\bwhat\s+(?:rung|rank|realm|standing)\b[^.?!]{0,30}`
+        + String.raw`\b(?:${A_HOUSE_BEING_ASKED_ABOUT})\b[^.?!]{0,24}`
+        + String.raw`\b(?:admit|admits|admitting|take|takes|want|wants|ask|asks)\b`
     ].join('|'),
     'i'
 );
@@ -5140,6 +5228,10 @@ function planIntent(input: string): PlannedAction {
         // called Market. The verb is still read off the sentence as typed.
         || (usedAsVerb(text, 'browse|shop|buy|sell|barter|haggle|price|visit|check|see|show|find|go to|look at|look over|head to|walk to')
             && /\b(?:market|marketplace|bazaar|stalls?|prices?|shops?|traders?)\b/.test(bare))
+        // And the counter that is a house, read across rather than walked to.
+        // See {@link theCounterIsTheHouseNamed} for why the name may supply the
+        // noun here and nowhere else.
+        || (usedAsVerb(text, READING_ACROSS_A_COUNTER) && theCounterIsTheHouseNamed(text))
         // WHO, rather than WHAT
         || WHO_HERE_IS_SELLING.test(text)
         // OFFERING, which is how a player asks it when somebody is standing in
@@ -5700,6 +5792,17 @@ function planIntent(input: string): PlannedAction {
         };
     }
 
+    // WHETHER A HOUSE WOULD HAVE YOU. Below the shelf read, because "how high
+    // would the X take me" is a question about the shelf; and gated on a
+    // catalog NAME, because a sentence naming no house is the listing's.
+    // See {@link WOULD_THAT_HOUSE_TAKE_ME}.
+    if (WOULD_THAT_HOUSE_TAKE_ME.test(text)) {
+        const house = theHouseNameSaid(text);
+        if (house) {
+            return { action: 'look', intent: 'would_they_take_me', target: house };
+        }
+    }
+
     // WHAT A HOUSE HAS. Before the who-is-above read, so that "what does the
     // Azure Cloud Pavilion have" is not answered with a list of its ancestors.
     if (WHAT_A_HOUSE_HAS.test(text)) {
@@ -6040,6 +6143,36 @@ function planIntent(input: string): PlannedAction {
     const readOffThem = whatALookIsBeingAskedTo(input);
     if (readOffThem) {
         return { action: 'investigate', target: readOffThem };
+    }
+
+    // ── A WORD BETWEEN THE ASKING AND THE HERE ──────────────────────────
+    //
+    // `who(?:'s| is| are)? (?:here|around)` down at the roster branch wants the
+    // two halves next to each other, and the commonest way of saying it puts a
+    // participle in that space. Measured against the parser:
+    //
+    //     who else is here        ->  look/company
+    //     who is nearby           ->  look/company
+    //     who is standing here    ->  UNCLEAR
+    //     who is in this square   ->  UNCLEAR
+    //     who is sitting here     ->  investigate, target "sitting here"
+    //     who is loitering here   ->  investigate, target "loitering here"
+    //
+    // The same defect as the joining branch's `would (?:take|have) me`, one verb
+    // over: the gap between two words was the gate. The design owner named this
+    // sentence as the DELIBERATE ASK a player makes for the roster.
+    //
+    // IT SITS ABOVE `whatIsBeingAskedAbout` BECAUSE THAT IS WHAT TOOK FOUR OF
+    // THEM, and took them confidently - a search of the terrain for a thing
+    // called "sitting here", which is worse than the blank look the other two
+    // got. Everything it catches here is a question about the people in the
+    // square and none of it is a thing that could be found by name.
+    //
+    // The nouns are the square somebody is standing in and nothing wider: "who
+    // is in charge here" is the HOLDER read and runs above both of these.
+    if (/\bwho(?:'s| is| are)?\s+(?:else\s+)?(?:standing|stood|sitting|sat|waiting|hanging|loitering)?\s*(?:here|around|about|nearby|in (?:this|the) (?:square|room|yard|village|town|place))\b/
+        .test(text)) {
+        return { action: 'look', intent: 'company' };
     }
 
     // ASKING ABOUT A NAMED THING

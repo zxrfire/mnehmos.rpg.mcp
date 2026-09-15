@@ -53,9 +53,11 @@ import { standingOf } from '../server/consolidated/cultivation-mortal.js';
 import { daoHeartFor, listPouch } from '../server/consolidated/cultivation-support.js';
 import { copyNamesHeldBy } from '../server/consolidated/technique-manage.js';
 import {
+    handleList,
     requiredContributionForRank,
     requiredOrdinalForRank
 } from '../server/consolidated/sect-manage.js';
+import { theDoorIsShutTo } from '../data/cultivation/the-three-floors-a-house-admits-at.js';
 import { holdsACopyOf } from '../server/consolidated/technique-manage.js';
 import { stillStands } from './choosing-what-to-do-when-a-seclusion-is-broken.js';
 import type { ADatedThing } from './what-there-is-to-wait-for.js';
@@ -123,6 +125,10 @@ import {
 import { noHouseStandsHighest, whoStandsBehindThem } from './who-stands-behind-them.js';
 import { whatAHouseHasToItsName } from './what-a-house-has-to-its-name.js';
 import { whatAHouseTeaches } from './what-a-house-teaches.js';
+import {
+    type RootAtTheDoor,
+    whatTheirDoorAsks
+} from './would-that-house-take-you.js';
 import { theBuiltGroundUnder } from './what-is-built-where-you-are-standing.js';
 import { positionIn } from './standing.js';
 import { type Destination, whereCouldTheyGo } from './where-this-cultivator-could-go.js';
@@ -176,6 +182,25 @@ function ordinalOfWorldPerson(game: GameService, personId: string): number {
  */
 function theShelfOf(factionId: string): readonly string[] {
     return getSect(factionId)?.teaches ?? [];
+}
+
+/**
+ * The half of a `sect_manage.list` row that is about its DOOR.
+ *
+ * Named here rather than re-derived: the handler already computes every one of
+ * these against the asker, and a second assembly of the bar in this file would
+ * be the second copy AGENTS.md names - it would drift the first time somebody
+ * adds a floor to the catalog.
+ */
+interface HouseAtItsDoor {
+    id: string;
+    admissionOrdinal: number;
+    recruits?: boolean;
+    admissible?: boolean | null;
+    wouldEnterAtRank?: string | null;
+    rootAtTheDoor?: RootAtTheDoor | null;
+    guestDoorOpen?: boolean | null;
+    admission?: { requirement?: string } | null;
 }
 
 export const situatedReads = {
@@ -1768,6 +1793,69 @@ export const situatedReads = {
                 : `${house.name}, and what is on its shelf.`,
             read.lines
         );
+        facts.structure.push(read.structure);
+        return this.freeAction(run, 'look', facts);
+    },
+
+    /**
+     * WHETHER A NAMED HOUSE WOULD HAVE YOU, ASKED BEFORE CROSSING A PROVINCE.
+     *
+     * Every number in the answer comes out of `sect_manage.list`, which already
+     * derives all of it per house - so this reads the row for the one house
+     * named rather than assembling the bar a second time. See
+     * `would-that-house-take-you.ts` for why the sentence had no route, why it
+     * may not go to the join path, and why "needs adjacency" was an assumption.
+     */
+    async wouldThatHouseTakeYou(
+        this: GameService,
+        run: Run,
+        cultivator: Cultivator,
+        named: string | undefined
+    ): Promise<Execution> {
+        // NAMING NOBODY IS THE LISTING'S QUESTION AND NOT THIS ONE. The pattern
+        // only routes here when a catalog name is said, so this is a guard on
+        // whatever reaches it next rather than a live path.
+        const house = named === undefined || named.trim().length < 3
+            ? null
+            : this.factionMeant(named, cultivator);
+        if (!house) {
+            return this.noPartyNamed(
+                'look', named ?? '', cultivator,
+                'You have no house of that name.',
+                'You go to weigh up what their door asks and cannot say whose door it is.'
+            );
+        }
+
+        const listing = await handleList({
+            action: 'list',
+            cultivatorId: cultivator.id,
+            admissibleOnly: false
+        });
+        const row = (listing as { sects?: HouseAtItsDoor[] }).sects
+            ?.find(entry => entry.id === house.id);
+        if (!row) {
+            return this.freeAction(run, 'look', factsForRefusal(
+                `${house.name} keeps no door.`,
+                `${house.name} is not a body that takes people on at all. Whatever else it is, `
+                + 'presenting yourself at it to be enrolled would be a misreading of what it is.',
+                `No sect row for ${house.id}: the catalog holds it as a body without an intake. `
+                + 'Read only, nothing spent.'
+            ));
+        }
+
+        const read = whatTheirDoorAsks({
+            houseName: house.name,
+            admitsFrom: row.admissionOrdinal,
+            standsAt: cultivator.realmOrdinal,
+            recruits: row.recruits ?? true,
+            clearsTheBar: row.admissible ?? null,
+            wouldEnterAtRank: row.wouldEnterAtRank ?? null,
+            rootAtTheDoor: row.rootAtTheDoor ?? null,
+            requirement: row.admission?.requirement ?? null,
+            guestDoorOpen: row.guestDoorOpen === true,
+            shutToThem: theDoorIsShutTo(house.id, cultivator.sex)
+        });
+        const facts = factsForToolResult(`${house.name}, and what its door asks.`, read.lines);
         facts.structure.push(read.structure);
         return this.freeAction(run, 'look', facts);
     },

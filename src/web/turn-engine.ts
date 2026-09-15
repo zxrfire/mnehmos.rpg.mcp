@@ -4521,6 +4521,15 @@ ${noticedWaiting}`;
                     return this.whatThatHouseTeaches(run, cultivator, action.target);
                 }
 
+                // WHETHER A HOUSE WOULD HAVE YOU, ASKED BEFORE CROSSING A
+                // PROVINCE TO FIND OUT. A READ, and never the join path: that
+                // one resolves the name and enrols, so answering a question
+                // with it would make the asking permanent.
+                if (action.intent === 'would_they_take_me') {
+                    this.atHand = this.atHand ?? await this.loadWorld();
+                    return await this.wouldThatHouseTakeYou(run, cultivator, action.target);
+                }
+
                 // WHO IS ABOVE A HOUSE, WHICH IS ASKED BEFORE MOVING ON ONE.
                 if (action.intent === 'who_is_above_them') {
                     this.atHand = this.atHand ?? await this.loadWorld();
