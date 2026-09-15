@@ -42,7 +42,10 @@
  * Read top to bottom it is the ladder:
  *
  *   final    the ancestor, who was the beast. One person, and still alive -
- *            a Millennial Tortoise carries the years to be.
+ *            a Millennial Tortoise carries the years to be. STATED rather than
+ *            hoped: `theCatalogStatesTheyAreStanding` on his row, because this
+ *            line was false in three to five worlds in twenty-four before it
+ *            was. The four rows under it are read as a ladder DOWN FROM him.
  *   grown    the ones who came of the ancestor and an outsider, one step down.
  *   grown    and the ones who came of two of THOSE, because two carriers hold
  *            the line. This is the pair of rows that make the family what it is.
@@ -84,11 +87,12 @@
  */
 
 import type { AbilityTier } from '../../engine/world/hunting-a-spirit-beast.js';
+import type { WhatACatalogStates } from '../../engine/world/npc-state.js';
 import type { Sex } from '../../engine/birth/what-sex-somebody-is-and-what-it-is-for.js';
 import { BEAST_CHANGE_ORDINAL } from './beasts.js';
 import { PLACE } from './place-names.js';
 
-export interface SomebodyInTheLine {
+export interface SomebodyInTheLine extends WhatACatalogStates {
     /** Given name. The surname is the family's and is the same for all of them. */
     given: string;
     sex: Sex;
@@ -150,6 +154,14 @@ export const THE_LINE_AT_OLD_RIVER: TheLineThatCameDown = Object.freeze({
             // is the definition rather than a rating: below this the thing that
             // came out of the water could not have spoken to anybody.
             ordinal: BEAST_CHANGE_ORDINAL + 2,
+            // The header's first line of the ladder - one person, and still
+            // alive - stated so the world's own passes are bound by it rather
+            // than agreeing with it four worlds in five. It is the only thing
+            // in this file the world is not free to decide, and it is stated
+            // because the four rows under it are read as a ladder DOWN FROM
+            // him: with him gone the family is a claim with nobody in it who
+            // remembers being the thing the claim is about.
+            theCatalogStatesTheyAreStanding: true,
             ageYears: 640,
             note:
                 'Keeps the mill race clear, badly, and has kept it clear for four hundred '

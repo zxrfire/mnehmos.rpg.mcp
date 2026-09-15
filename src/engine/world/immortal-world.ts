@@ -45,8 +45,8 @@ import { storeMemory } from './memory.js';
 import {
     addGoal,
     createNpc,
-    markDead,
     setRealm,
+    theWorldEnds,
     upsertRelationship,
     type NpcRecord
 } from './npc-state.js';
@@ -1678,6 +1678,9 @@ export function advanceImmortalLayer(
                 ? 'Ground calibrated for immortals, which is a phrase worth taking seriously.'
                 : 'Politics that has been running uninterrupted for a very long time, and they lost at it.';
 
+            // Asked before the peril is reported, not after: a peril logged
+            // `fatal: true` that nobody died of is the world saying two things.
+            if (!killAbove(state, resident, day, note)) continue;
             out.perils.push({
                 residentId: resident.id,
                 residentName: resident.name,
@@ -1687,7 +1690,6 @@ export function advanceImmortalLayer(
                 fatal: true,
                 note
             });
-            killAbove(state, resident, day, note);
             out.deaths.push(resident.id);
         }
 
@@ -1699,10 +1701,12 @@ export function advanceImmortalLayer(
 }
 
 /**
- * Somebody stops being up there.
+ * Somebody stops being up there. False when they are not the world's to end.
  */
-function killAbove(state: WorldState, resident: NpcRecord, onDay: number, note: string): void {
-    Object.assign(state, upsertNpc(state, markDead(resident, onDay, note)));
+function killAbove(state: WorldState, resident: NpcRecord, onDay: number, note: string): boolean {
+    const dead = theWorldEnds(resident, onDay, note);
+    if (!dead) return false;
+    Object.assign(state, upsertNpc(state, dead));
     appendWorldFact(state, makeFact({
         day: onDay,
         kind: 'death',
@@ -1722,6 +1726,7 @@ function killAbove(state: WorldState, resident: NpcRecord, onDay: number, note: 
         record.diedAboveOnDay = onDay;
         record.endNoteAbove = note;
     }
+    return true;
 }
 
 /**

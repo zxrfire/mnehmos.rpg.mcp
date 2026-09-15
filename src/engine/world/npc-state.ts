@@ -581,6 +581,71 @@ export function somebodyTheCatalogWrote(npc: Pick<NpcRecord, 'id' | 'tags'>): bo
     return npc.tags.some(t => t.startsWith('catalog:')) || npc.id.startsWith('npc-line-');
 }
 
+/**
+ * What a catalog row may STATE about somebody, as opposed to describe.
+ *
+ * A catalog mostly describes: a name, an age, a rung, one concrete thing at
+ * human scale. The world then does what it does with the person. A statement is
+ * different in kind - it is a fact the writing is resting on, and the world's
+ * own passes may not produce a world in which it is false.
+ *
+ * Any catalog whose rows describe people extends this, and any seeder that
+ * instantiates such a row spreads {@link whatACatalogStatesAsTags} into the
+ * record's tags. That is the whole of the general mechanism: a second subject,
+ * in this catalog or another, is a field on a row and no new code.
+ */
+export interface WhatACatalogStates {
+    /**
+     * This person is standing, and it is load-bearing.
+     *
+     * MEASURED, which is why it exists. The Old River line's ancestor is
+     * described in his own catalog's header as the one person in the family
+     * still alive, and across 24 pinned worlds run 200 years he was
+     * `physically_dead` in 3 and `missing` in 2 - roughly one world in five
+     * contradicting a fact the catalog states outright. Both were random draws
+     * over pools he qualified for: the disappearance pass takes anybody at
+     * ordinal 13 or above, the killing pass takes anybody below the Lid.
+     *
+     * It is a claim about THE WORLD'S OWN PASSES and never about a player. See
+     * {@link theWorldEnds}.
+     *
+     * ── AND IT SAYS MORE THAN A CATALOG CAN ─────────────────────────────
+     *
+     * A catalog states a PRESENT fact - this person is standing - and this flag
+     * means the world does not end them, full stop and with no horizon. The
+     * engine has no way to express "alive as of world open" as distinct from
+     * "alive", so the two collapse into one another here. That is a known gap
+     * and not an argued decision: a subject who is stated-standing now but may
+     * die in three centuries needs a second field, and whoever wants one should
+     * add it then rather than discover that this one never meant what they
+     * assumed. It is deliberately not built today - one subject, one claim.
+     *
+     * The lifespan pass is inside the guard for the same reason it is worth
+     * naming: a guard that stops a killing and shrugs at old age is not a guard,
+     * it is a delay.
+     */
+    theCatalogStatesTheyAreStanding?: boolean;
+}
+
+/** The tag a seeder puts on a row whose catalog states it is standing. */
+export const CATALOG_STATES_STANDING_TAG = 'catalog-states:standing';
+
+/** The tags that carry a catalog's statements onto the world row. */
+export function whatACatalogStatesAsTags(row: WhatACatalogStates): string[] {
+    return row.theCatalogStatesTheyAreStanding ? [CATALOG_STATES_STANDING_TAG] : [];
+}
+
+/**
+ * Somebody a catalog states is standing.
+ *
+ * The narrower sibling of {@link somebodyTheCatalogWrote}: that one asks whether
+ * a catalog wrote this person at all, this one asks whether what it wrote about
+ * them is a fact the world has to leave true.
+ */
+export function theCatalogStatesTheyAreStanding(npc: Pick<NpcRecord, 'tags'>): boolean {
+    return npc.tags.includes(CATALOG_STATES_STANDING_TAG);
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // CREATION
 // ─────────────────────────────────────────────────────────────────────────
@@ -1064,6 +1129,10 @@ export function recordFact(npc: NpcRecord, factId: string, onDay: number): NpcRe
 
 /**
  * The body is gone.
+ *
+ * The primitive, and it asks no questions: somebody did this, or something
+ * resolved that way, and the record is where it comes to rest. A pass of the
+ * WORLD'S OWN does not call it directly - see {@link theWorldEnds}.
  */
 export function markDead(npc: NpcRecord, onDay: number, endNote: string): NpcRecord {
     return {
@@ -1091,6 +1160,59 @@ export function markMissing(npc: NpcRecord, onDay: number, endNote = ''): NpcRec
         endNote: endNote || npc.endNote,
         updatedOnDay: onDay
     };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AND THE WORLD DOING IT OF ITS OWN ACCORD
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Whether the world's own passes may end this person.
+ *
+ * Two rows they may not, and they are the same rule from two directions: a fact
+ * somebody else is authoritative about is not the world's to contradict.
+ *
+ *   THE PLAYER      their death belongs to the survival layer, on the sheet
+ *                   that holds their years. {@link isTheWorldsToMove}.
+ *   A STATED FACT   a catalog says this person is standing, and the writing
+ *                   rests on it. {@link theCatalogStatesTheyAreStanding}.
+ *
+ * NEITHER IS AN EXEMPTION FROM BEING MOVED. Both are in every pool, climb, are
+ * talked to, marry, are robbed and are wounded; nothing filters them out of
+ * `theWorldsPeople` and nothing should. The claim is only that a random draw
+ * over a population does not get to END them.
+ *
+ * AND NEITHER IS A GUARD ON THE PLAYER. A player who kills somebody standing in
+ * front of them has killed them, stated or not - the player's own paths call
+ * {@link markDead} directly and always will.
+ */
+export function theWorldMayEnd(npc: Pick<NpcRecord, 'tags'>): boolean {
+    return isTheWorldsToMove(npc) && !theCatalogStatesTheyAreStanding(npc);
+}
+
+/**
+ * The world ending somebody in one of its own passes. Null when it may not.
+ *
+ * THE ONE SEAM, and the return type is the point of it. Eight sites in
+ * `the-world-changing-on-its-own.ts` alone end somebody, and a guard written out
+ * by hand at each is a guard the ninth pass does not have. A `NpcRecord | null`
+ * cannot be written back onto the roster without the caller having said what
+ * happens when the answer is no, so the compiler asks the question the next
+ * author would otherwise not be asked.
+ *
+ * The caller's answer is nearly always to abandon the event - a draw that came
+ * up with somebody it may not have is a draw that produced nothing, exactly like
+ * an empty candidate pool. It must never be to emit the fact anyway: a world
+ * that announces a death it did not perform is worse than the contradiction this
+ * exists to prevent.
+ */
+export function theWorldEnds(npc: NpcRecord, onDay: number, endNote: string): NpcRecord | null {
+    return theWorldMayEnd(npc) ? markDead(npc, onDay, endNote) : null;
+}
+
+/** The world losing somebody in one of its own passes. Null when it may not. */
+export function theWorldLoses(npc: NpcRecord, onDay: number, endNote = ''): NpcRecord | null {
+    return theWorldMayEnd(npc) ? markMissing(npc, onDay, endNote) : null;
 }
 
 export interface ExistenceTransition {

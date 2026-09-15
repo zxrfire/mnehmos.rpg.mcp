@@ -27,7 +27,7 @@ import {
     inheritGoals,
     isTheWorldsToMove,
     legacyGoals,
-    markDead,
+    theWorldEnds,
     upsertRelationship,
     type NpcGoal,
     type NpcRecord,
@@ -358,11 +358,16 @@ export function advanceTime(
         if (npc.cultivation.lifespanEndsOnDay > target) continue;
         const onDay = Math.max(fromDay, npc.cultivation.lifespanEndsOnDay);
         const rank = rankName(npc.cultivation.realmOrdinal);
-        const dead = markDead(
+        const dead = theWorldEnds(
             npc,
             onDay,
             `Lifespan exhausted at ${rank}. Died of old age.`
         );
+        // A guard that stops a murder and shrugs at time is not a guard, it is
+        // a delay: old age is the one pass certain to fire eventually, and it is
+        // also the pass the Old River catalog has spoken about most directly -
+        // the span is the whole of what it says the ancestor carries.
+        if (!dead) continue;
         state.npcs[i] = dead;
         appendWorldFact(state, makeFact({
             day: onDay,

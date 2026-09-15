@@ -66,7 +66,9 @@ import { isBelowTheLid } from './layers.js';
 import { makeFact, type HistoricalFact } from './history.js';
 import { appendWorldFact } from './who-was-there-when-it-happened.js';
 import { applyLocationChange, forbidZone, type LocationRecord } from './locations.js';
-import { createNpc, markDead, markMissing, setRealm, type NpcRecord } from './npc-state.js';
+import {
+    createNpc, setRealm, theWorldEnds, theWorldLoses, type NpcRecord
+} from './npc-state.js';
 import { settleNpcDeath, type DeathHandoff } from './time.js';
 import { indexById, type FactionRecord, type WorldState } from './world-state.js';
 
@@ -649,10 +651,13 @@ function applyDepart(
     cause: string | null,
     depth: number
 ): CascadeStep {
-    replaceNpc(state, markMissing(
+    // They walked out either way. What the world may not do is stop being able
+    // to account for somebody a catalog states is standing.
+    const gone = theWorldLoses(
         woken, precipitant.day,
         'Walked out of the opened hall and did not stop.'
-    ));
+    );
+    if (gone) replaceNpc(state, gone);
     const summary = `${woken.name} was woken by the ${house.name} and left. `
         + 'The house spent the only thing it had and got nothing.';
     const fact = emit(state, {
@@ -772,7 +777,15 @@ function applyExpend(
             // is where those ties are thickest.
             const at = indexById(state.npcs, npc.id);
             const fresh = at >= 0 ? state.npcs[at] : npc;
-            replaceNpc(state, markDead(fresh, day, `Was at ${target.name}.`));
+            const dead = theWorldEnds(fresh, day, `Was at ${target.name}.`);
+            // Not the world's to end, so they are one of the people who were
+            // there and walked away from it - the same branch as being above
+            // the bar, reached for a different reason.
+            if (!dead) {
+                strongestSurvivor = Math.max(strongestSurvivor, npc.cultivation.realmOrdinal);
+                continue;
+            }
+            replaceNpc(state, dead);
             deaths.push(settleNpcDeath(state, at >= 0 ? state.npcs[at] : fresh, day));
             killedIds.push(npc.id);
         } else {
@@ -808,8 +821,13 @@ function applyExpend(
     }
 
     // ── The asset ────────────────────────────────────────────────────────
-    replaceNpc(state, markDead(woken, day, `Was spent on ${target.name}.`));
-    deaths.push(settleNpcDeath(state, woken, day));
+    // The house spent them whatever happens next; whether it killed them is the
+    // half that is not the world's to settle.
+    const spent = theWorldEnds(woken, day, `Was spent on ${target.name}.`);
+    if (spent) {
+        replaceNpc(state, spent);
+        deaths.push(settleNpcDeath(state, woken, day));
+    }
 
     const summary =
         `${woken.name}, ${rankName(ordinal)}, was spent on ${target.name}. `

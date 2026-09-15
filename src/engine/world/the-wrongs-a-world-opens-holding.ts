@@ -49,7 +49,7 @@ import { forStream } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { isBelowTheLid } from './layers.js';
 import { settleNpcDeath } from './time.js';
-import { markDead, type NpcRecord } from './npc-state.js';
+import { theWorldEnds, theWorldMayEnd, type NpcRecord } from './npc-state.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
 import type { Party } from '../social-leverage/what-a-deed-leaves.js';
 import type { InheritanceRelation } from '../social/grudges.js';
@@ -197,6 +197,12 @@ export function seedTheWrongsStillOpen(
             const victimAt = at.get(victim.id);
             if (victimAt === undefined) continue;
             if (state.npcs[victimAt].status !== 'alive') continue;
+            // ASKED AT THE DRAW AND NOT AT THE GRAVE. Everything below writes
+            // the deed, the account and the heirs before anybody is marked, so
+            // a refusal down there would leave a killing in the record with
+            // nobody dead in it. A draw that came up with somebody the world
+            // may not end is a draw that produced nothing.
+            if (!theWorldMayEnd(state.npcs[victimAt])) continue;
 
             const doer = whoDidIt(state, inProvince, victim, rng);
             if (!doer) continue;
@@ -259,8 +265,10 @@ export function seedTheWrongsStillOpen(
             // holding it for the whole life of the world, because nothing looks
             // at a dead row again.
             settleNpcDeath(state, state.npcs[victimAt], day);
-            state.npcs[victimAt] = markDead(
+            const dead = theWorldEnds(
                 state.npcs[victimAt], day, `Killed by ${doer.name}.`);
+            if (!dead) continue;
+            state.npcs[victimAt] = dead;
             killings++;
             madeHere++;
         }
