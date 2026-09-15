@@ -21,6 +21,9 @@
  *     parent   0        child    0
  *     master   0        disciple 0
  *
+ * (`spouse` stayed at nought for a long time after this pass landed, and is the
+ * one line of that table no longer true - see WHAT THIS DELIBERATELY LEAVES.)
+ *
  * Every one of those 133 rows is written by the same seven lines in
  * `seedFactions` - the five people nearest the top of each house. Nobody in a
  * fresh world has a brother, a mother, a teacher or a household.
@@ -119,13 +122,17 @@
  * WHAT THIS DELIBERATELY LEAVES
  * ═════════════════════════════════════════════════════════════════════════
  *
- * SPOUSES. `applyHouseholds` owns them and draws on `forStream(seed,
- * 'households', year)`. Running it at creation would spend the same stream at
- * the same years the driver is about to spend it at, so the first years of play
- * would re-roll draws already made against a roster that had moved. A household
- * a seeded parent is IN is honoured - `bindNewbornToHousehold` reads the spouse
- * tie and gives the child two parents when there is one - so this pass gains
- * that for free the moment marriages exist. It does not manufacture them.
+ * SPOUSES, WHICH NOW EXIST AND ARE STILL NOT THIS PASS'S. This file used to say
+ * that `applyHouseholds` owns them and only runs as the world is simulated
+ * forward, so a fresh world held none - and it predicted its own sequel: *"a
+ * household a seeded parent is IN is honoured, so this pass gains that for free
+ * the moment marriages exist."* It does.
+ * `the-marriages-a-world-opens-holding.ts` runs immediately BEFORE this one and
+ * writes them for cultivators, and `bindNewbornToHousehold` reads the spouse tie
+ * and gives the child two parents. Not one line here changed for it. What must
+ * not change is which pass decides: this one may not manufacture a household,
+ * and `takes a second parent off a marriage and never invents one` is the
+ * ratchet.
  *
  * MASTERS AND DISCIPLES. `applyTeachingLines` is not a per-year roll at all: it
  * pairs whoever is currently unmatched against whoever can carry them, so it
@@ -274,6 +281,15 @@ export function seedTheFamiliesStandingInAPlace(
                 if (j === undefined) continue;
                 const record = state.npcs[j];
                 if (record.relationships.some(r => r.targetId === current.id)) continue;
+                // AND NOT INTO A HOUSEHOLD THAT ALREADY HOLDS SOMEBODY THIS
+                // PERSON IS MARRIED TO. Marriages are seeded before this pass,
+                // so two cultivators can be a household before either is
+                // anybody's child - and attaching both to one parent makes a
+                // married couple siblings. Measured the first time marriages
+                // existed: a pair came back holding `kin` at the spouse's own
+                // standing, because `bind` upserts and 0.85 outranks 0.5.
+                if (record.relationships.some(r =>
+                    r.kind === 'child' && spoken.has(r.targetId))) continue;
                 candidates.push(record);
             }
             const eligible = couldParent(candidates, childAge, presentDay);

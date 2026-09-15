@@ -95,6 +95,9 @@ import {
     type FamiliesSeeded
 } from './the-families-a-world-opens-holding.js';
 import {
+    seedTheMarriagesStandingInAPlace
+} from './the-marriages-a-world-opens-holding.js';
+import {
     seedTheWrongsStillOpen,
     type WrongsSeeded
 } from './the-wrongs-a-world-opens-holding.js';
@@ -262,6 +265,12 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // this ran, a fresh world held 133 ties, all of them `ally` or `rival`, and
     // the six kinds `whoTheyCarryFor` reads were all at zero: nobody on turn one
     // had a brother for anything to be done to.
+    // Marriages FIRST, because a child gets a second parent off
+    // `bindNewbornToHousehold` reading a spouse tie - so the households have to
+    // exist before the generation below them is bound. Only cultivators marry
+    // here; see `the-marriages-a-world-opens-holding.ts` for why a mortal
+    // household is below the resolution this engine works at.
+    seedTheMarriagesStandingInAPlace(state, presentDay);
     const families = seedTheFamiliesStandingInAPlace(state, presentDay);
     // And the wrongs, AFTER the families, because a wrong nobody carries for is
     // a wrong nobody can be told about.

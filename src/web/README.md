@@ -946,6 +946,100 @@ hamlet itself is empty the draw widens once to the places sharing its parent, fo
 a single name, because the ruling says the area you grew up in. Neither floor ever
 hands over somebody from a realm above; the widening is sideways.
 
+**And a face carries where the world has them standing**, which the opening says
+beside the name - *"even they aren't there, you know where to find them"*. It is a
+read of `npc.locationId` and is deliberately absent from the knowledge row's
+`statement`: a statement is written once and quoted back verbatim years later, so a
+location inside one is a second copy that goes stale the first time the person walks
+anywhere. Measured over 80 lives on 20 pinned worlds, a life knows one to five
+people - never nobody - and every face was standing in the birthplace.
+
+**And the household comes first.** Across those same 80 lives the player held ZERO
+rows in any tie store: `bindNewbornToHousehold`, `applyTeachingLines` and
+`applyPassedOver` write kin, master and rival ties for world people, and the player
+was not one of them. The ruling was kin and only kin - *"the player needs to find a
+master, that doesn't change. but kin yes. rival no. how can you have a rival as a
+mortal? you don't"* - so
+[`the-family-a-life-opens-with.ts`](the-family-a-life-opens-with.ts) picks a parent
+out of the people standing where the birth happened and calls
+`bindNewbornToHousehold` unchanged. Nothing here is a second notion of family: how
+many children a parent has, whether there is a second parent and which of their
+children are siblings are all that function's.
+
+Two things about which half lands where. The kin's half - the parent's `child` row,
+the siblings' `kin` rows - is written onto their world records and persists, and
+that is the half most readers use: `rescuersFor` explicitly reads the rescuer's row
+toward the subject, so a sealed player now has a parent who would come. The
+player's own half lands only where the world already holds a row for them, and in
+`newRun` it does not - `seedTheFacesFromHome` runs before `refreshThePlayerRow`.
+That costs one reader: `whoTheyCarryFor` decides whose killing somebody may open an
+account for by reading the hearer's OWN rows, so a player whose parent is killed
+does not yet carry for them.
+
+Measured over 40 pinned worlds: 2 lives with no family at all, 19 with one, 16 with
+two, 3 with three; all 60 kin alive, placed, and standing somewhere the move verb
+takes, and all 60 ties still there after the world is dropped and reloaded. A parent
+who already keeps a household is preferred over an adult living alone, which is why
+a sibling is ordinary rather than rare.
+
+**Two parents needs a cultivating family, and the origin table says which those
+are.** A spouse tie is only ever written between two cultivators, so a mortal parent
+can never supply a second one - and nine births in ten are a thin county farm, whose
+parents are mortals and are complete as they stand. Where the origin's own
+`familyHouse.standingFrom` reaches Foundation Establishment the draw looks at
+cultivators first, because a settlement holds far more townsmen than cultivators and
+a uniform draw gave six `established_clan` births a Qi Condensation townsman for a
+parent six times out of six. Measured after: over 30 ordinary `thin_county` lives
+the kin distribution did not move by one life; over 12 lives forced into cultivating
+births, 3 drew a cultivator parent and one drew a married pair - the first life in
+this engine's history to open with two.
+
+**A mortal household is a mention; a cultivator one is a record.** The design
+owner: *"if your parents are mortals they're just mentioned once and you never
+really see them again. that's how xianxia works too. so that wouldn't be a
+defect. its only a defect if your parents are immortals and don't have
+entities."* So below `FOUNDATION_ORDINAL` the household is NAMED and nothing is
+written - no tie on the parent, none on the siblings, none on the player, and no
+whereabouts, because *"we don't track mortals, so we don't have a choice"* and a
+mortal bound to a row is a promise nothing can keep. The name is still a real
+villager standing in the birthplace: any name this game prints is a name it has
+to accept, and no entity behind them means no tie and no location claim rather
+than a name from nowhere. Above the line nothing changed - a cultivator parent is
+a record, in a place, findable, and `requires a world record of a cultivator kin`
+is the ratchet. **The world's own mortal families are untouched and must stay
+so**: `the-families-a-world-opens-holding.ts` exists because `whoTheyCarryFor`
+reached 0 of 595 people without it. And there is no homecoming - `I go home` is
+travel to an ordinary place.
+
+**The player's kin are deliberately not in the knowledge table.** Once a
+household is bound onto the player's world row the tie IS the awareness:
+`ofAPerson` returns the top stage for anybody the holder holds a tie to, so
+`learnIfNew` finds them already known and writes nothing. Measured at one row per
+kin before the roster row was written first and ZERO across twenty lives after.
+Nothing is missing - the opening reads the faces it was handed, and `isAwareOf`
+and `canPointAt` answer off the tie. The long form is on `whatTheWorldSays` in
+`knowledge.ts`, where somebody hunting the rows will land.
+
+**A parent who is dead is said; a sibling who is dead is still dropped.**
+`bindNewbornToHousehold` filtered both on `isHere`, so a widowed household produced
+a child with one parent and no record there had ever been another. The second
+parent now only has to be below the Lid, and the opening says the ending instead of
+the address - *"Xiao Hanning. Family. Did the raising. Dead these 40 years."* A
+dead person's row keeps the place they died in, which is why the ending is read
+first: naming the square would send a player to look for somebody who will not be
+in it. Siblings are still filtered on `isHere` and a brother who died before the
+run opens never reaches the life. Measured: 1 of 40. That one is a gap written
+down, not an argued decision.
+
+**Whether a life opens having lost a parent is a question about the world, not
+about this read.** A fresh world holds three to five dead people and not one of
+them is a cultivator - the only deaths a new world contains are the killings
+`the-wrongs-a-world-opens-holding.ts` writes, and those fall on mortals - and only
+cultivators marry, so there is nobody to be widowed by. The opening above was
+produced by killing one of a seeded couple by hand. The path has a producer in
+`the-marriages-a-world-opens-holding.test.ts`; whether prior ages should leave dead
+cultivators standing anywhere belongs to whoever owns `seedPriorAges`.
+
 ## Target resolution
 
 `interact`, `investigate`, `move`, `refine`, `gather` and `train_technique` all take a

@@ -83,6 +83,60 @@ export interface AFaceFromBeforeTheRun {
     readonly name: string;
     /** How they come to be known, in the knowledge table's own register. */
     readonly sourceNote: string;
+    /**
+     * Where the world has them standing, read as the run opens. Null where it
+     * holds no place for them, which is said rather than papered over.
+     */
+    readonly whereTheyAre: { readonly name: string } | null;
+    /**
+     * The household tie the world records, where there is one. A parent is not
+     * one of the faces that was always at the well, and the two are said apart
+     * for that reason.
+     */
+    readonly tie: string | null;
+    /** Null while they are alive. There is no address for somebody who is not. */
+    readonly diedYearsAgo: number | null;
+    /**
+     * True where the life names them and claims nothing else - a mortal
+     * household. Said with no whereabouts at all, which is not the same as
+     * saying nobody knows where they are: nothing was ever claimed.
+     */
+    readonly aMentionOnly?: boolean;
+}
+
+/**
+ * Where to go looking for somebody, said as a fact about them and not as a
+ * route.
+ *
+ * The design owner, on a quarter of runs opening in a square with fewer than
+ * three people in it: *"even they aren't there, you know where to find them"*.
+ * A name with no place attached is the half of an acquaintance that cannot be
+ * acted on, and turn one is exactly when a player has nothing else to go on.
+ *
+ * One person for both channels, because none of these three says "you" or
+ * "them" at all - the subject is the person being placed, not the holder.
+ */
+function whereToFindThem(face: AFaceFromBeforeTheRun, home: string): string {
+    // A MENTION SAYS NOTHING ABOUT WHERE, and says nothing rather than saying
+    // that nobody knows. Mortals are not tracked, so a place named here would
+    // be true on the day it was printed and unmaintained ever after.
+    if (face.aMentionOnly === true) return '';
+    // The ending rather than the address, and said before the place is read at
+    // all: a dead person's row keeps the location they died in, so asking where
+    // first would send the player to a square to look for somebody who is not
+    // going to be in it.
+    if (face.diedYearsAgo !== null) {
+        return face.diedYearsAgo < 1
+            ? 'Dead, and not a year ago.'
+            : `Dead these ${face.diedYearsAgo} years.`;
+    }
+    if (face.whereTheyAre === null) return 'Nobody could say where they are standing now.';
+    // Terse where it is the place the recap opened by naming. Three or four
+    // faces are usual and nearly all of them are standing here, so the long
+    // form - "which is where you are standing" - was one clause repeated down
+    // the block and read as a roster rather than as a life.
+    if (face.whereTheyAre.name === home) return `Still in ${home}.`;
+    return `In ${face.whereTheyAre.name} now.`;
 }
 
 /** One statement of the life so far, drawn once and rendered for two audiences. */
@@ -149,8 +203,9 @@ export interface TheLifeSoFar {
 
 /**
  * What this person has behind them, ordered the way a life is: where they come
- * from, whose they are, what that left them holding, what they have been told,
- * and who they can already put a name to.
+ * from, whose they are, what that left them holding, who they can already put a
+ * name to and where each of those people is, and what they have been told about
+ * anywhere.
  *
  * @param faces Drawn and seeded by `who-a-life-like-this-grew-up-knowing.ts`.
  *   Passed in rather than read here, because this module knows no world.
@@ -232,6 +287,49 @@ export function theLifeBehindTheFirstTurn(
             + whatTheStonesBuy
     });
 
+    // THE PEOPLE BEFORE THE PLACES, because the question a life answers first
+    // is who is in it. The two blocks were the other way round, and the count
+    // line below - "what 16 years got you: 3 names" - was then the first answer
+    // on the screen while holding nothing but places and houses. The design
+    // owner read exactly that and said not one of them was a person.
+    //
+    // FAMILY BEFORE THE STREET, and said apart from it. A parent came back in
+    // the same list as the woman at the well because a face was a face; the
+    // household tie is on the row and it reads as family once it is used.
+    const family = faces.filter(one => one.tie !== null);
+    const theStreet = faces.filter(one => one.tie === null);
+    const sayThem = (said: readonly AFaceFromBeforeTheRun[]): void => {
+        for (const one of said) {
+            lines.push({
+                text: `${one.name}. ${one.sourceNote} ${whereToFindThem(one, birth.place.name)}`
+                    .trimEnd()
+            });
+        }
+    };
+
+    if (family.length > 0) {
+        // The heading promises only what the lines under it deliver. A mortal
+        // household says no whereabouts at all, so a heading offering one would
+        // be the engine announcing a column it then leaves blank.
+        lines.push({
+            text: family.every(one => one.aMentionOnly === true)
+                ? 'The household:'
+                : 'The household, and where each of them is now:'
+        });
+        sayThem(family);
+    }
+    if (theStreet.length > 0) {
+        lines.push({
+            text:
+                'People they can already put a name to, and where each of them is. Knowing '
+                + 'somebody is not the same as being owed anything by them:',
+            toThePlayer:
+                'People you can already put a name to, and where each of them is. Knowing '
+                + 'somebody is not the same as being owed anything by them:'
+        });
+        sayThem(theStreet);
+    }
+
     const told = birth.knowledge.slice(0, NAMES_WORTH_SAYING_AT_THE_START);
     if (told.length === 0) {
         lines.push({
@@ -247,7 +345,12 @@ export function theLifeBehindTheFirstTurn(
         // full" beside a sheet reading eight is one screen disagreeing with
         // itself.
         const rest = birth.knowledge.length - told.length;
-        const howMany = `${birth.knowledge.length} name${birth.knowledge.length === 1 ? '' : 's'}`;
+        // OF PLACES AND HOUSES, and the words are load-bearing. `birth.knowledge`
+        // holds no people at all - the faces a childhood leaves are drawn off the
+        // world and are the block above - so a bare "3 names" read as the whole
+        // of what sixteen years came to, and every one of them was a place.
+        const howMany = `${birth.knowledge.length} name${birth.knowledge.length === 1 ? '' : 's'}`
+            + ' of places and houses';
         lines.push({
             text: `What ${age} years got them: ${howMany}`
                 + (rest > 0
@@ -267,24 +370,6 @@ export function theLifeBehindTheFirstTurn(
                     ? `${said} ${row.sourceNote}`
                     : `${row.name}. ${said} ${row.sourceNote}`
             });
-        }
-    }
-
-    // The same defect as "3 names known", one table over: the opening offered
-    // "I ask Han Ronglu to teach me" over a run that had never named him,
-    // because the faces a childhood leaves live in a different table from
-    // `birth.knowledge` and this said only the latter.
-    if (faces.length > 0) {
-        lines.push({
-            text:
-                'People they can already put a name to. Knowing somebody is not the same as '
-                + 'being owed anything by them:',
-            toThePlayer:
-                'People you can already put a name to. Knowing somebody is not the same as '
-                + 'being owed anything by them:'
-        });
-        for (const face of faces) {
-            lines.push({ text: `${face.name}. ${face.sourceNote}` });
         }
     }
 

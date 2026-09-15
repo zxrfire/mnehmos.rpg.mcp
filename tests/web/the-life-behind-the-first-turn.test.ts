@@ -59,8 +59,22 @@ const birth = (over: Partial<{
 /** What the narrator is handed: everything, including what nobody will say. */
 const said = (over = {}) => theLifeBehindTheFirstTurn(birth(over), 16).forTheNarrator.join(' ');
 
+/** A face, standing wherever the caller says. Home by default, as most are. */
+const face = (name: string, sourceNote: string, where: string | null = 'Three Walls') => ({
+    name,
+    sourceNote,
+    tie: null as string | null,
+    diedYearsAgo: null as number | null,
+    whereTheyAre: where === null ? null : { name: where }
+});
+
+/** The same, with the household tie the world records on it. */
+const kin = (name: string, tie: 'parent' | 'kin', sourceNote: string) => ({
+    ...face(name, sourceNote), tie
+});
+
 /** What the ENGINE files where the player reads it. */
-const told = (over = {}, faces: { name: string; sourceNote: string }[] = []) =>
+const told = (over = {}, faces: ReturnType<typeof face>[] = []) =>
     theLifeBehindTheFirstTurn(birth(over), 16, faces).toldToThePlayer.join(' ');
 
 describe('the life behind the first turn', () => {
@@ -183,8 +197,8 @@ describe('the life behind the first turn', () => {
      */
     it('names the people a childhood left behind, and how they are known', () => {
         const faces = [
-            { name: 'Han Ronglu', sourceNote: 'Grew up on the same road.' },
-            { name: 'Mo Wanming', sourceNote: 'One of the faces that was always at the well.' }
+            face('Han Ronglu', 'Grew up on the same road.'),
+            face('Mo Wanming', 'One of the faces that was always at the well.')
         ];
         const life = told({}, faces);
         expect(life).toContain('Han Ronglu');
@@ -195,6 +209,94 @@ describe('the life behind the first turn', () => {
         // favour, and an opening that implied one would be handing over the
         // thing the player is supposed to go and earn.
         expect(life).toMatch(/not the same as being owed anything by them/);
+    });
+
+    /**
+     * AND WHERE TO GO LOOKING. The design owner, shown that a quarter of runs
+     * open in a square holding fewer than three people: *"even they aren't
+     * there, you know where to find them"*. A name and a note with no place is
+     * the half of an acquaintance a player cannot act on.
+     */
+    it('says where each of them is, in the three ways the world can answer', () => {
+        const life = told({}, [
+            face('Han Ronglu', 'Grew up on the same road.'),
+            face('Mo Wanming', 'One of the faces that was always at the well.', 'Plum Village'),
+            face('Bai Shuyi', 'Worked the same ground in the same seasons.', null)
+        ]);
+        // Standing in the square the recap opened by naming, said tersely
+        // because it is usually true of everybody on the list at once.
+        expect(life).toContain('Grew up on the same road. Still in Three Walls.');
+        // Somewhere else, named so the player can set out for it.
+        expect(life).toContain('One of the faces that was always at the well. In Plum Village now.');
+        // And no place invented where the world holds none.
+        expect(life).toMatch(/Bai Shuyi\..*Nobody could say where they are standing now\./);
+    });
+
+    /**
+     * AND A PARENT IS NOT ONE OF THE FACES THAT WAS ALWAYS AT THE WELL.
+     *
+     * The design owner, on the three tie kinds the world writes for everybody
+     * but the player: *"the player needs to find a master, that doesn't change.
+     * but kin yes. rival no."* So a household arrives, and it has to read as one:
+     * a mother in the same list as the neighbours is the defect this splits.
+     */
+    it('says the household apart from the street', () => {
+        const life = told({}, [
+            kin('Wei Anlu', 'parent', 'Family. Did the raising.'),
+            kin('Wei Xiaoyu', 'kin', 'Family. Grew up under the same roof.'),
+            face('Han Ronglu', 'Grew up on the same road.')
+        ]);
+        expect(life).toContain('The household, and where each of them is now:');
+        expect(life).toContain('Wei Anlu. Family. Did the raising. Still in Three Walls.');
+        // The household comes first and the street keeps its own heading, so
+        // neither list is read as the other.
+        expect(life.indexOf('The household')).toBeLessThan(life.indexOf('Han Ronglu'));
+        expect(life.indexOf('Wei Xiaoyu'))
+            .toBeLessThan(life.indexOf('People you can already put a name to'));
+        // And the acquaintance disclaimer stays on the acquaintances. A family
+        // is exactly the thing that IS owed something, so saying otherwise over
+        // a parent would be false.
+        expect(life.indexOf('not the same as being owed anything by them'))
+            .toBeGreaterThan(life.indexOf('Wei Anlu'));
+    });
+
+    /**
+     * AND A PARENT WHO IS DEAD HAS NO ADDRESS.
+     *
+     * A dead person's world row keeps the place they died in, so reading the
+     * location first would send a player to a square to look for somebody who
+     * is not going to be in it. Reachable through a widowed cultivating
+     * household - `bindNewbornToHousehold` takes the second parent off a spouse
+     * tie whether or not that spouse is still standing, which is the only way a
+     * life is told it lost one.
+     */
+    it('says the ending rather than the address for a parent who has died', () => {
+        const dead = { ...kin('Wei Anlu', 'parent', 'Family. Did the raising.'), diedYearsAgo: 40 };
+        const life = told({}, [dead]);
+        expect(life).toContain('Wei Anlu. Family. Did the raising. Dead these 40 years.');
+        expect(life).not.toContain('Wei Anlu. Family. Did the raising. Still in');
+    });
+
+    it('says nothing about a household when the world gave this life none', () => {
+        const life = told({}, [face('Han Ronglu', 'Grew up on the same road.')]);
+        expect(life).not.toContain('The household');
+        expect(life).toContain('Han Ronglu');
+    });
+
+    /**
+     * THE COUNT LINE SAYS WHAT IT COUNTS. `birth.knowledge` holds places and
+     * houses and never a person, so a bare "3 names" under a heading asking
+     * what sixteen years came to reads as the whole of a life - which is how
+     * an opening naming three places and three people was read as naming
+     * nobody.
+     */
+    it('counts places and houses as places and houses, with the people above it', () => {
+        const life = told({}, [face('Han Ronglu', 'Grew up on the same road.')]);
+        expect(life).toMatch(/1 name of places and houses/);
+        // Both indices read, so a block that stopped being printed at all
+        // cannot pass this by coming back as -1.
+        expect(life.indexOf('Han Ronglu')).toBeGreaterThan(-1);
+        expect(life.indexOf('Han Ronglu')).toBeLessThan(life.indexOf('years got you'));
     });
 
     it('says nothing about people when a childhood left nobody', () => {
@@ -217,7 +319,7 @@ describe('the life behind the first turn', () => {
                 id: 'sect-azure-dew', name: 'Azure Dew Sect',
                 powerOrdinal: 21, admissionOrdinal: 2, recruits: true, regionId: 'r'
             }
-        }), 16, [{ name: 'Han Ronglu', sourceNote: 'Grew up on the same road.' }]);
+        }), 16, [face('Han Ronglu', 'Grew up on the same road.')]);
         expect(both.toldToThePlayer.length).toBeLessThanOrEqual(both.forTheNarrator.length);
         expect(both.toldToThePlayer.length).toBeGreaterThan(0);
     });

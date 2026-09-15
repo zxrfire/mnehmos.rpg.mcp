@@ -62,6 +62,15 @@ describe('a run does not open with nobody', () => {
         expect((bout.narration ?? '').length).toBeGreaterThan(0);
     }, 120_000);
 
+    /**
+     * NARROWED WHEN THE HOUSEHOLD ARRIVED, and the reasoning is unchanged for
+     * the rows it was written about. A face from the same street is an
+     * acquaintance and the record says outright that it is nothing more,
+     * because a record implying an obligation would hand over a favour before
+     * anybody asked. Kin are the one thing that IS owed something, so the same
+     * sentence over a parent would be false - they say the tie instead, and
+     * still buy no standing and no membership, which is what this was for.
+     */
     it('grants acquaintance and nothing else', async () => {
         const { db, game } = makeGame({ seed: 'probe-a', worldEnabled: true });
         const { cultivator } = await game.newRun('Probe');
@@ -69,12 +78,12 @@ describe('a run does not open with nobody', () => {
             .awareness(cultivator.id)
             .filter(row => row.kind === 'cultivator');
         for (const row of rows) {
-            // The statement says outright what it is not. A record that implied
-            // an obligation would be handing over a favour before anybody asked.
-            expect(row.statement).toContain('not the same as being owed');
+            expect(row.statement.includes('is family')
+                || row.statement.includes('not the same as being owed'),
+            `${row.name} is neither family nor plainly not owed: ${row.statement}`).toBe(true);
             expect(row.sourceKind).toBe('witnessed');
         }
-        // No membership and no standing came with it.
+        // No membership and no standing came with either kind.
         expect(cultivator.sectId).toBeNull();
         expect(cultivator.realmOrdinal).toBe(0);
     }, 120_000);
@@ -167,6 +176,52 @@ describe('who a childhood actually puts in front of you', () => {
             expect(new Set(notes).size, `${seed} dealt the same note twice: ${notes.join(' | ')}`)
                 .toBe(notes.length);
         }
+    });
+
+    /**
+     * WHERE TO GO LOOKING, which is the half a name on its own cannot supply.
+     * The design owner, shown that a quarter of runs open in a square holding
+     * fewer than three people: *"even they aren't there, you know where to find
+     * them"*.
+     *
+     * A READ, NOT A COPY. It is deliberately absent from `statement`, which is
+     * written once to the knowledge table and quoted back verbatim years later:
+     * a location inside one is a second copy of `npc.locationId` that goes stale
+     * the first time the person walks anywhere.
+     */
+    it('says where the world has each of them standing', () => {
+        const world = village([0, 1, 2]);
+        const faces = facesFromHome({ world, cultivator: player, origin: 'thin_county', seed: 's' });
+        expect(faces.length).toBeGreaterThan(0);
+        for (const one of faces) {
+            expect(one.whereTheyAre).toEqual({ id: 'home', name: 'Autumn Gate' });
+            expect(one.statement).not.toContain('Autumn Gate');
+        }
+    });
+
+    it('names the next holding over when that is where the face came from', () => {
+        // The birthplace itself is out of reach, so the draw falls through to
+        // the places that share its parent - and the whole worth of that face
+        // is that the player is told which one.
+        const world = village([40, 44]);
+        world.locations.push(makeLocation({
+            id: 'valley', name: 'The Long Valley', kind: 'region', qiDensity: 0.4
+        }));
+        world.locations.push(makeLocation({
+            id: 'next', name: 'Stone Ford', kind: 'settlement', qiDensity: 0.4
+        }));
+        for (const record of world.locations) {
+            if (record.id === 'home' || record.id === 'next') record.parentId = 'valley';
+        }
+        world.npcs.push(setRealm(createNpc(world.seed, {
+            id: 'neighbour', name: 'Villager Next Door',
+            bornOnDay: 0, onDay: world.currentDay,
+            locationId: 'next', occupation: 'disciple'
+        }), 1, world.currentDay));
+
+        const faces = facesFromHome({ world, cultivator: player, origin: 'thin_county', seed: 's' });
+        expect(faces.map(one => one.name)).toEqual(['Villager Next Door']);
+        expect(faces[0].whereTheyAre).toEqual({ id: 'next', name: 'Stone Ford' });
     });
 
     it('never leaves a life with nobody, at any band in the table', () => {

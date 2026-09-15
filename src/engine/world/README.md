@@ -1477,12 +1477,33 @@ Every one of those 133 rows comes from seven lines in `seedFactions`. The six ki
 turn one the `tell` verb, the inherited grudge, the unnamed account, the absence layer and
 every house-acts-for-its-own path reached a population of nought.
 
-Two passes fix it, both at creation, and neither invents a mechanism:
+Three passes fix it, all at creation, and none invents a mechanism:
 
 | | What it does | The rate, and the unit it is stated in |
 |---|---|---|
+| `the-marriages-a-world-opens-holding.ts` | Cultivating households, through `formHouseholds` - the pairing rule extracted out of `applyHouseholds` so both callers run it rather than agree with it | `NEVER_KEEPS_A_HOUSEHOLD` against the yearly rate accumulated over somebody's adult years. Realised: **38-47% of cultivators married**, in marriages a median 43-70 years old and a longest of 230-338 |
 | `the-families-a-world-opens-holding.ts` | Households out of people standing in the same settlement, through `couldParent` and `bindNewbornToHousehold` unchanged, so a seeded tie is byte-identical to one a birth writes | `BORN_TO_SOMEBODY_STANDING_HERE` is the chance for somebody who HAS an eligible parent beside them. Realised: **34-41% of the living hold a blood tie**, in households of two to four |
 | `the-wrongs-a-world-opens-holding.ts` | Open killings, priced by `whatADeedLeaves` and written by `aDeedEntersTheWorld` - the same pricer and the same writer a played killing uses | `OPEN_KILLINGS_PER_PROVINCE` = 1. Realised: **4-6 a world, under 2% of the living bereaved**, and about **one run in six** opens in a room with one of those families in it |
+
+**Marriages are cultivators only, at both ends.** The design owner: *"your parents can be
+mortal and don't bother. but if they're cultivators, seed this relationship."* A village of
+farmers pairing off is below the resolution this engine works at; two cultivators married to
+each other is a cultivating household, and `FOUNDATION_ORDINAL` already carries the line -
+*"below it a character is a mortal with a party trick, above it they are a cultivator."* A
+cultivator married to a mortal is not recorded from either side: a tie written from one end
+only would have `whoTheyCarryFor` answering that an elder carries for a farmer who has never
+heard of them, and a widow who cannot be widowed because nothing tracked the other half.
+
+**Three defects marriages exposed in machinery that had never seen one**, all through the
+SECOND parent, which `bindNewbornToHousehold` takes off a spouse tie rather than drawing:
+a spouse born after the child came back as their parent (`couldParent` checks the age of the
+one it draws and nothing checked the one it inherits); an `ally` between two house members was
+overwritten with `parent`; and a married couple who were both attached to one household became
+each other's `kin` at the spouse's own standing, because `bind` upserts and 0.85 outranks 0.5.
+The age bar is now `couldHaveBeenAParentTo`, split out of `couldParent` so a widowed household
+can ask it without also asking whether the parent is alive; `nothingElseBetween` is the
+backstop; and the families pass refuses a household that already holds somebody this person is
+married to.
 
 **Do not read the families off `state.lineages`.** `seedLineages` writes 440-446 parent/child
 edges at creation by chaining a shared surname, and nine tenths of its pairs have never stood

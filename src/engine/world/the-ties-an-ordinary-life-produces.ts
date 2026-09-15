@@ -192,18 +192,111 @@ export interface Household {
 }
 
 /**
+ * Old enough, and not already carrying a household's worth of children.
+ *
+ * The half of {@link couldParent} that is about the person rather than about
+ * whether they are still standing - extracted because the SECOND parent is
+ * taken off a marriage rather than drawn, and a spouse who has died is still a
+ * parent while a spouse younger than the child is not one.
+ */
+export function couldHaveBeenAParentTo(
+    candidate: NpcRecord,
+    childAge: number,
+    day: number
+): boolean {
+    return ageInYears(candidate, day) >= childAge + HOUSEHOLD_MIN_AGE
+        && candidate.relationships.filter(r => r.kind === 'child').length < SIBLINGS_PER_HOUSEHOLD;
+}
+
+/**
+ * The other children already in a household, whoever else is in it.
+ *
+ * WHO IS IN A HOUSEHOLD IS A READ, AND THE WRITE IS A SEPARATE QUESTION.
+ * Extracted so a caller that only wants to NAME a household gets the same
+ * answer as the one that binds it - `the-family-a-life-opens-with.ts` mentions
+ * a mortal household without writing a row for it, and a second walk of the
+ * parents' children there would be a second opinion about who somebody's
+ * family is.
+ */
+export function theOtherChildrenOf(
+    state: WorldState,
+    at: Map<string, number>,
+    parents: readonly NpcRecord[],
+    childId: string
+): NpcRecord[] {
+    const out = new Map<string, NpcRecord>();
+    for (const parent of parents) {
+        for (const tie of parent.relationships) {
+            if (tie.kind !== 'child' || tie.targetId === childId) continue;
+            const j = at.get(tie.targetId);
+            if (j === undefined || !isHere(state.npcs[j])) continue;
+            out.set(tie.targetId, state.npcs[j]);
+        }
+    }
+    return [...out.values()].sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+/**
  * Somebody already in this world who could be a parent to a newborn here.
  */
 export function couldParent(candidates: readonly NpcRecord[], childAge: number, day: number): NpcRecord[] {
-    return candidates.filter(n =>
-        isHere(n) &&
-        ageInYears(n, day) >= childAge + HOUSEHOLD_MIN_AGE &&
-        n.relationships.filter(r => r.kind === 'child').length < SIBLINGS_PER_HOUSEHOLD
-    );
+    return candidates.filter(n => isHere(n) && couldHaveBeenAParentTo(n, childAge, day));
+}
+
+/**
+ * Whether these two already have something between them that a household must
+ * not write over.
+ *
+ * `bind` upserts on the target id, so every tie this pass writes can overwrite
+ * one somebody else wrote. That was guarded at the call site while the only
+ * pair this pass touched was one it had chosen - and marriages broke it three
+ * ways at once, all of them through the second parent and the siblings that
+ * come with them: an `ally` between two house members became `parent`, and a
+ * married couple who were both children of one household became each other's
+ * `kin` at the spouse's own standing. A tie of the kind being written is fine;
+ * anything else is somebody else's.
+ */
+function nothingElseBetween(
+    state: WorldState,
+    at: Map<string, number>,
+    child: NpcRecord,
+    otherId: string,
+    childWouldHold: RelationshipKind,
+    theyWouldHold: RelationshipKind
+): boolean {
+    const forward = child.relationships.find(r => r.targetId === otherId);
+    if (forward && forward.kind !== childWouldHold) return false;
+    const j = at.get(otherId);
+    if (j === undefined) return true;
+    const back = state.npcs[j].relationships.find(r => r.targetId === child.id);
+    return back === undefined || back.kind === theyWouldHold;
 }
 
 /**
  * Write the household a birth actually creates.
+ *
+ * ONE PARENT IS DRAWN AND THE OTHER IS INHERITED, AND THAT ASYMMETRY IS WHERE
+ * THE BUGS ARE. The caller picks the first parent and has already put them
+ * through `couldParent`. The second is whoever that person is married to, and
+ * for as long as nobody in any world was married it was taken on trust. The
+ * first world to open holding marriages broke three things at once, all of them
+ * on the inherited side:
+ *
+ *   a spouse born AFTER the child came back as their parent - `couldParent`
+ *   checks the age of the one it draws and nothing checked the one it inherits
+ *
+ *   an `ally` between two house members was overwritten with `parent`, because
+ *   `bind` upserts on the target id and the caller's guard covered only the
+ *   pair it had chosen
+ *
+ *   a married couple attached to one household became each other's `kin` at
+ *   0.85, because `bind` keeps the higher standing and a spouse's outranks a
+ *   sibling's
+ *
+ * So every condition the drawn parent is held to, the inherited one is held to
+ * here: {@link couldHaveBeenAParentTo} for the age and the household size, and
+ * {@link nothingElseBetween} for anything already written between them. If you
+ * add a rule about who may be a parent, it goes in both places or in neither.
  */
 export function bindNewbornToHousehold(
     state: WorldState,
@@ -224,20 +317,43 @@ export function bindNewbornToHousehold(
     // A household, when there is one. The second parent is not invented: it is
     // whoever this person is already married to, and if they are not married
     // the child has one parent, which is common and is not a gap.
+    //
+    // A PARENT WHO HAS DIED IS STILL A PARENT. This asked `isHere`, which is
+    // alive AND below the Lid, so a widowed household produced a child with one
+    // parent and no record that there had been another - the one case where the
+    // world holds the fact and the person it is about cannot be told it. The
+    // Lid half is kept: somebody who went up is not in this world to be a
+    // parent in it, which is `above.ts`'s to decide and not this pass's.
+    //
+    // AND OLD ENOUGH, which the chosen parent is checked for by `couldParent`
+    // and the second one never was - harmless while nobody was married, and
+    // measured the moment somebody was: a spouse born after the child came back
+    // as their parent. The other two conditions are asked here rather than
+    // taken from `couldParent` because that one also asks whether they are
+    // still alive, which is the half a widowed household must not ask.
+    const childAge = ageInYears(child, day);
     const spouseTie = parent.relationships.find(r => r.kind === 'spouse');
     if (spouseTie) {
         const j = at.get(spouseTie.targetId);
         const spouse = j === undefined ? null : state.npcs[j];
-        if (spouse && isHere(spouse)) parents.push(spouse);
+        if (spouse
+            && isBelowTheLid(spouse)
+            && couldHaveBeenAParentTo(spouse, childAge, day)
+            && nothingElseBetween(state, at, child, spouse.id, 'parent', 'child')) {
+            parents.push(spouse);
+        }
     }
 
     const siblingIds = new Set<string>();
-    for (const p of parents) {
-        for (const tie of p.relationships) {
-            if (tie.kind !== 'child' || tie.targetId === child.id) continue;
-            const j = at.get(tie.targetId);
-            if (j !== undefined && isHere(state.npcs[j])) siblingIds.add(tie.targetId);
-        }
+    for (const sibling of theOtherChildrenOf(state, at, parents, child.id)) {
+        // Two children of one household are siblings unless they are already
+        // something to each other - which, since marriages exist, includes
+        // being married. A `kin` row written over that is an incest the pass
+        // invented out of an upsert. Asked here rather than in the membership
+        // read, because it is a rule about WRITING: who is in the household
+        // does not change because a row is in the way.
+        if (!nothingElseBetween(state, at, child, sibling.id, 'kin', 'kin')) continue;
+        siblingIds.add(sibling.id);
     }
 
     let updated = child;
@@ -277,22 +393,37 @@ export function bindNewbornToHousehold(
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Two unattached adults standing in the same place.
+ * What a caller brings to the pairing rule, and nothing else.
+ *
+ * EXTRACTED SO TWO CALLERS REACH ONE STATE. `applyHouseholds` is the yearly
+ * roll; `the-marriages-a-world-opens-holding.ts` is the same rule asked of a
+ * world that has been going on without anybody. Who may be paired with whom,
+ * in what order, at what standing and under what note live here and are not
+ * restated at either call site - a seeded marriage is byte-identical to a
+ * lived one, which is the requirement the families pass already states.
  */
-export function applyHouseholds(
-    state: WorldState,
-    year: number,
-    day: number,
-    roster: Roster = rosterOf(state)
-): number {
-    const rng = forStream(state.seed, 'households', year);
-    const { at, living } = roster;
+export interface HouseholdPairing {
+    /** Everybody this caller is willing to pair. Filtering is the caller's. */
+    candidates: readonly NpcRecord[];
+    /** Whether this person ever forms one at all. The caller's own rate. */
+    wouldPair: (one: NpcRecord) => boolean;
+    /** Anything else about the pair the caller cares about. Blood is refused here. */
+    couldPair?: (one: NpcRecord, other: NpcRecord) => boolean;
+    /** The day the household began, which is what the tie is dated from. */
+    beganOn: (one: NpcRecord, other: NpcRecord) => number;
+}
 
+/**
+ * Two unattached adults standing in the same place, bound into a household.
+ */
+export function formHouseholds(
+    state: WorldState,
+    at: Map<string, number>,
+    input: HouseholdPairing
+): number {
     const byPlace = new Map<string, NpcRecord[]>();
-    for (const npc of living) {
+    for (const npc of input.candidates) {
         if (npc.locationId === null) continue;
-        if (ageInYears(npc, day) < HOUSEHOLD_MIN_AGE) continue;
-        if (npc.relationships.some(r => r.kind === 'spouse')) continue;
         const list = byPlace.get(npc.locationId);
         if (list) list.push(npc); else byPlace.set(npc.locationId, [npc]);
     }
@@ -305,7 +436,11 @@ export function applyHouseholds(
         for (let i = 0; i < free.length; i++) {
             const one = free[i];
             if (spoken.has(one.id)) continue;
-            if (!rng.chance(HOUSEHOLD_PER_YEAR)) continue;
+            // Asked here rather than before the loop, and the order is
+            // load-bearing: the yearly caller's rate is a draw off a per-year
+            // stream, so moving this line moves every marriage in every world
+            // already seeded.
+            if (!input.wouldPair(one)) continue;
             for (let j = i + 1; j < free.length; j++) {
                 const other = free[j];
                 if (spoken.has(other.id)) continue;
@@ -314,9 +449,11 @@ export function applyHouseholds(
                 // one half can exist without the other after an inheritance.
                 if (one.relationships.some(r => r.targetId === other.id && BLOOD_KINDS.has(r.kind))) continue;
                 if (other.relationships.some(r => r.targetId === one.id && BLOOD_KINDS.has(r.kind))) continue;
+                if (input.couldPair && !input.couldPair(one, other)) continue;
 
-                bind(state, at, one.id, other, 'spouse', SPOUSE_STANDING, 'Their household.', day);
-                bind(state, at, other.id, one, 'spouse', SPOUSE_STANDING, 'Their household.', day);
+                const began = input.beganOn(one, other);
+                bind(state, at, one.id, other, 'spouse', SPOUSE_STANDING, 'Their household.', began);
+                bind(state, at, other.id, one, 'spouse', SPOUSE_STANDING, 'Their household.', began);
                 spoken.add(one.id);
                 spoken.add(other.id);
                 made++;
@@ -325,6 +462,28 @@ export function applyHouseholds(
         }
     }
     return made;
+}
+
+/**
+ * The yearly roll: two unattached adults who have now been in one place a year.
+ */
+export function applyHouseholds(
+    state: WorldState,
+    year: number,
+    day: number,
+    roster: Roster = rosterOf(state)
+): number {
+    const rng = forStream(state.seed, 'households', year);
+    const { at, living } = roster;
+
+    return formHouseholds(state, at, {
+        candidates: living.filter(npc =>
+            npc.locationId !== null
+            && ageInYears(npc, day) >= HOUSEHOLD_MIN_AGE
+            && !npc.relationships.some(r => r.kind === 'spouse')),
+        wouldPair: () => rng.chance(HOUSEHOLD_PER_YEAR),
+        beganOn: () => day
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────

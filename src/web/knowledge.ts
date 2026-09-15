@@ -246,9 +246,22 @@ export class KnowledgeGate {
      * What the world itself says about a holder it holds a row for.
      *
      * `unaware` with no world, with no world loaded, and for every holder the
-     * world does not have - which is the player and everybody an operator
-     * spawned. Built once per world handle: the reading walks the ledger, and
-     * a long-lived world's ledger is long.
+     * world does not have - which used to include the player and no longer
+     * does: `newRun` writes their roster row before the household is bound, so
+     * the player is a holder this read answers about like anybody else. Built
+     * once per world handle: the reading walks the ledger, and a long-lived
+     * world's ledger is long.
+     *
+     * THAT IS WHY THE PLAYER'S KIN ARE NOT IN THE KNOWLEDGE TABLE, and anybody
+     * who comes looking for the missing rows should stop here. `ofAPerson`
+     * returns the top stage for anybody the holder holds a tie to, so once a
+     * household is bound onto the player's row the tie IS the awareness -
+     * `learnIfNew` finds them already known and writes nothing. Measured: one
+     * row per kin before the row was written first, and ZERO across twenty
+     * lives after. Nothing is missing. The opening reads the faces it was
+     * handed rather than the table, `isAwareOf` and `canPointAt` answer true
+     * off the tie, and a fact derived from another fact is the shape AGENTS.md
+     * asks for - it cannot drift and no call site can forget it.
      */
     private whatTheWorldSays(
         holderId: string, kind: KnownEntityKind, id: string

@@ -170,15 +170,32 @@ describe('the families a world opens holding', () => {
             [...before.values()].filter(v => v.note === 'Was the other candidate.').length);
     }, 120000);
 
-    it('gives nobody two parents where nobody is married', async () => {
+    /**
+     * REWRITTEN WHEN MARRIAGES WERE SEEDED, and the rule it protects has not
+     * moved. It used to read *"gives nobody two parents where nobody is
+     * married"* and assert at most one parent each, on the strength of
+     * `applyHouseholds` being the only writer of a spouse tie and never running
+     * at creation. `the-marriages-a-world-opens-holding.ts` now runs before this
+     * pass, so a second parent is an ordinary outcome and the old assertion was
+     * pinning the absence rather than the rule.
+     *
+     * The rule was, and is: THIS PASS MAY NOT INVENT A HOUSEHOLD. It takes the
+     * second parent off a spouse tie somebody else wrote, so anybody holding two
+     * parents must have two parents who are married to each other. A pair that
+     * are not is this pass having decided a household for itself.
+     */
+    it('takes a second parent off a marriage and never invents one', async () => {
         const state = await world('fam-d');
+        const at = new Map(state.npcs.map(npc => [npc.id, npc]));
         for (const npc of livingIn(state)) {
             const parents = npc.relationships.filter(r => r.kind === 'parent');
-            // `bindNewbornToHousehold` adds the second parent only off a spouse
-            // tie, and `applyHouseholds` - the only writer of one - does not run
-            // at creation. Two here would mean this pass had invented a
-            // household, which is the thing it is not allowed to do.
-            expect(parents.length).toBeLessThanOrEqual(1);
+            expect(parents.length, `${npc.name} has ${parents.length} parents`)
+                .toBeLessThanOrEqual(2);
+            if (parents.length < 2) continue;
+            const [one, other] = parents;
+            const married = at.get(one.targetId)!.relationships.some(r =>
+                r.kind === 'spouse' && r.targetId === other.targetId);
+            expect(married, `${npc.name}'s two parents are not married to each other`).toBe(true);
         }
     }, 120000);
 

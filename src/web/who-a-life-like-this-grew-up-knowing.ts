@@ -48,12 +48,14 @@
 
 import type { Cultivator } from '../schema/cultivation.js';
 import { forStream } from '../engine/cultivation/rng.js';
+import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import { getOrigin, type OriginTierKey } from '../engine/cultivation/origin.js';
-import { realmForOrdinal } from '../engine/cultivation/realms.js';
+import { FOUNDATION_ORDINAL, realmForOrdinal } from '../engine/cultivation/realms.js';
 import { isBelowTheLid } from '../engine/world/layers.js';
 import { npcsAt, type WorldState } from '../engine/world/world-state.js';
 import type { LocationRecord } from '../engine/world/locations.js';
-import type { NpcRecord } from '../engine/world/npc-state.js';
+import type { NpcRecord, RelationshipKind } from '../engine/world/npc-state.js';
+import { theFamilyThisLifeOpensWith } from './the-family-a-life-opens-with.js';
 import { worldLocationFor } from './entities.js';
 
 /**
@@ -167,6 +169,23 @@ const HOW_YOU_KNOW_THEM: readonly string[] = [
     'The two families have been in each other\'s way for as long as either remembers.'
 ];
 
+/**
+ * What a household tie is, said to the person holding it.
+ *
+ * THE KIND COMES FROM THE MACHINERY AND THE WORDS DO NOT, and that is not a
+ * second opinion about family. `bindNewbornToHousehold` writes its own notes -
+ * `Raised them.`, `Same household.` - about the holder, in the third person,
+ * for a record nothing used to read aloud. This channel is read aloud TO the
+ * holder, so `Raised them.` under a parent's name would tell a player that
+ * somebody raised somebody else. That is what
+ * `an-account-of-your-own-life-is-addressed-to-you` is about, and the register
+ * every other note in this file is written in: no subject at all.
+ */
+const WHAT_A_HOUSEHOLD_TIE_IS: Readonly<Record<string, string>> = Object.freeze({
+    parent: 'Family. Did the raising.',
+    kin: 'Family. Grew up under the same roof.'
+});
+
 /** One person a life like this starts already able to name. */
 export interface FaceFromHome {
     id: string;
@@ -175,6 +194,41 @@ export interface FaceFromHome {
     realmOrdinal: number;
     sourceNote: string;
     statement: string;
+    /**
+     * The household tie the world records, or null for somebody who is only a
+     * face from the same street. What makes a parent read as a parent rather
+     * than as another neighbour.
+     */
+    tie: RelationshipKind | null;
+    /**
+     * Where the world has them standing, read on the day the run opens.
+     *
+     * Deliberately NOT folded into `statement`. A statement is written once to
+     * the knowledge table and quoted back verbatim years later, so a location
+     * inside one is a second copy of `npc.locationId` that goes stale the first
+     * time the person walks anywhere. Where somebody is is a read, and every
+     * caller that wants it does the read.
+     *
+     * Null where the world holds no place for them at all, which the opening
+     * says rather than invents around.
+     */
+    whereTheyAre: { id: string; name: string } | null;
+    /**
+     * Null while they are alive.
+     *
+     * A place is where to go and find somebody, and for somebody who is dead
+     * there is nowhere to go - so the opening says the ending instead of the
+     * address. Reachable through a widowed household: `bindNewbornToHousehold`
+     * takes the second parent off a spouse tie whether or not that spouse is
+     * still standing, which is how a life is told it lost one.
+     */
+    diedYearsAgo: number | null;
+    /**
+     * True where this face is a name and no claim - a mortal household. The
+     * opening says who they are and stops, because nothing tracks a mortal and
+     * a whereabouts nobody maintains is a lie with a delay on it.
+     */
+    aMentionOnly: boolean;
 }
 
 export interface HomeFacesInput {
@@ -226,6 +280,24 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
 
     const atHome = eligible(npcsAt(world, here.id));
 
+    // THE HOUSEHOLD FIRST, because a sixteen-year-old has one and until now the
+    // player alone did not. Bound through `bindNewbornToHousehold`, the world's
+    // own answer to who a newborn is to whom; only KIN, on the design owner's
+    // ruling - a master is the road the game is about and a rival is earned.
+    //
+    // Outside the `wanted` budget rather than inside it. That table is keyed on
+    // `placement.reach`, which is how far a FAMILY'S word carries, so it counts
+    // people the family's name reached and never the family.
+    const house = getOrigin(origin).familyHouse;
+    const kin = theFamilyThisLifeOpensWith({
+        world,
+        cultivator,
+        candidates: atHome,
+        seed,
+        bornToCultivators: house !== null && house.standingFrom >= FOUNDATION_ORDINAL
+    });
+    const kinIds = new Set(kin.map(one => one.npc.id));
+
     // AND IF THE HAMLET ITSELF IS EMPTY, THE AREA AROUND IT.
     //
     // The ruling says "the area you are in", not "the building you were born
@@ -238,9 +310,10 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     // Deliberately ONE face rather than `wanted`. The next holding over is a
     // name; it is not a childhood, and handing over three of them would be
     // paying out the full draw for the accident of where the seeder put people.
+    const notKin = (npcs: readonly NpcRecord[]) => npcs.filter(npc => !kinIds.has(npc.id));
     const draw = atHome.length > 0
-        ? atHome.slice(0, wanted)
-        : eligible(theSamePartOfTheWorld(world, here)).slice(0, 1);
+        ? notKin(atHome).slice(0, wanted)
+        : notKin(eligible(theSamePartOfTheWorld(world, here))).slice(0, 1);
 
     // Dealt, not rolled. An independent draw per face put the same note under
     // two different names, which reads as a broken template rather than as two
@@ -254,7 +327,13 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
         const j = rng.int(0, i);
         [notes[i], notes[j]] = [notes[j], notes[i]];
     }
-    return draw.map((npc, at) => toFace(npc, notes[at % notes.length]));
+    const placeOf = new Map(world.locations.map(l => [l.id, l]));
+    const day = world.currentDay;
+    return [
+        ...kin.map(one => toFace(
+            one.npc, WHAT_A_HOUSEHOLD_TIE_IS[one.kind], placeOf, one.kind, day, one.aMentionOnly)),
+        ...draw.map((npc, at) => toFace(npc, notes[at % notes.length], placeOf, null, day))
+    ];
 }
 
 /**
@@ -273,18 +352,39 @@ function theSamePartOfTheWorld(world: WorldState, here: LocationRecord): NpcReco
     return world.npcs.filter(npc => npc.locationId !== null && around.has(npc.locationId));
 }
 
-function toFace(npc: NpcRecord, sourceNote: string): FaceFromHome {
+function toFace(
+    npc: NpcRecord,
+    sourceNote: string,
+    placeOf: ReadonlyMap<string, LocationRecord>,
+    tie: RelationshipKind | null,
+    onDay: number,
+    aMentionOnly = false
+): FaceFromHome {
+    const standing = aMentionOnly || npc.locationId === null
+        ? undefined
+        : placeOf.get(npc.locationId);
     return {
         id: npc.id,
         name: npc.name,
         realmOrdinal: npc.cultivation.realmOrdinal,
         sourceNote,
-        // What the holder ends up carrying. A face and a name, and the explicit
-        // statement that it is nothing more than that - because it is not, and
-        // a record that implied otherwise would be granting a favour nobody has
-        // asked for yet.
-        statement:
-            `${npc.name} is from home. Knowing them is not the same as being owed anything by them.`
+        tie,
+        aMentionOnly,
+        diedYearsAgo: npc.status === 'alive'
+            ? null
+            : Math.max(0, Math.floor((onDay - (npc.diedOnDay ?? onDay)) / DAYS_PER_YEAR)),
+        whereTheyAre: standing ? { id: standing.id, name: standing.name } : null,
+        // What the holder ends up carrying. For a neighbour: a face and a name,
+        // and the explicit statement that it is nothing more than that, because
+        // it is not. For kin the disclaimer would be false - a household is
+        // exactly the thing that is owed something - so it says the tie instead
+        // and still promises nothing about what anybody will do.
+        statement: tie === null
+            ? `${npc.name} is from home. Knowing them is not the same as being owed anything `
+              + 'by them.'
+            : tie === 'parent'
+                ? `${npc.name} is family, and did the raising.`
+                : `${npc.name} is family, and grew up under the same roof.`
     };
 }
 
