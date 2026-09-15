@@ -74,7 +74,7 @@ Three columns below carry the failure modes this repository keeps hitting:
 
 <!-- BEGIN GENERATED: summary -->
 
-**60 verbs.** 17 of them take nothing from the player,
+**61 verbs.** 17 of them take nothing from the player,
 28 spend in-world time and can therefore kill, and
 every one of them is reachable by a sentence with no model running.
 
@@ -110,6 +110,7 @@ where that verb takes nothing - see `theVerbsOwnName`.
 | [`inventory`](#inventory) | - | nothing | yes | yes | - |
 | [`consume_pill`](#consume_pill) | `target` | time | yes | - | - |
 | [`destroy`](#destroy) | `target` | varies | yes | - | - |
+| [`stow`](#stow) | `intent` `target` | varies | yes | - | [3](#stow) |
 | [`list_techniques`](#list_techniques) | - | nothing | yes | yes | - |
 | [`learn_technique`](#learn_technique) | `target` | time | yes | - | - |
 | [`teach`](#teach) | `target` `topic` | time | yes | - | - |
@@ -373,6 +374,16 @@ break something they are holding, or a thing of theirs standing where they are, 
 Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'destroy'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
 
 Takes `target`.
+
+### `stow`
+
+leave a thing in the room the player's house gave them, take one back, or look at what is in there. "intent" is which of the three and "target" names the thing. The room comes with the rung: what it holds is read off the house's own stipend at that rung, so promotion is the only thing that makes it bigger. It wants the house's ground underfoot - a room does not reach across a province - and what is left in it survives travelling away and survives a reload. A cultivator on nobody's roll has no room and is told so plainly. Passes no time.
+
+Declared in [`ACTION_NAMES`](../src/web/action-set.ts) · resolves at `case 'stow'` in [`GameService.execute`](../src/web/turn-engine.ts) · the deterministic parser reaches it.
+
+Takes `intent`, `target`.
+
+Intents: `leave`, `collect`, `look`.
 
 ### `list_techniques`
 

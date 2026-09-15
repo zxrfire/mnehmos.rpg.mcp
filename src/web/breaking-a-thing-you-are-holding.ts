@@ -42,6 +42,7 @@ import { getHerb } from '../data/cultivation/herbs.js';
 import { getArtifact } from '../data/cultivation/artifacts.js';
 import { getTechnique } from '../data/cultivation/techniques.js';
 import { matchScore } from './entities.js';
+import type { PouchItemKind } from '../engine/world/what-a-body-can-carry-and-what-a-ring-holds.js';
 import type Database from 'better-sqlite3';
 
 /**
@@ -70,9 +71,11 @@ export const WHAT_CAN_BE_UNMADE =
 /** How close a name has to be before it is the thing they meant. */
 const CLOSE_ENOUGH = 60;
 
-interface CountedHolding {
+export interface CountedHolding {
     itemId: string;
     name: string;
+    kind: PouchItemKind;
+    quantity: number;
     significance: ObjectSignificance;
 }
 
@@ -81,14 +84,19 @@ interface CountedHolding {
  *
  * Read off the pouch and joined to whichever catalog owns the row, because a
  * pouch row is an id and a quantity and a player types a name.
+ *
+ * TAKES A HOLDER, NOT A CULTIVATOR, because `cultivator_pouch` does: a
+ * residence, a corpse and a set of quarters are holders on the same footing,
+ * and a second copy of this join written over one of them would disagree with
+ * this one the first time a catalog moved.
  */
-function countedHoldings(db: Database.Database, cultivatorId: string): CountedHolding[] {
+export function countedHoldings(db: Database.Database, holderId: string): CountedHolding[] {
     const rows = db
         .prepare(
-            'SELECT item_id, item_kind FROM cultivator_pouch '
+            'SELECT item_id, item_kind, quantity FROM cultivator_pouch '
             + 'WHERE holder_id = ? AND quantity > 0'
         )
-        .all(cultivatorId) as { item_id: string; item_kind: string }[];
+        .all(holderId) as { item_id: string; item_kind: string; quantity: number }[];
     const held: CountedHolding[] = [];
     for (const row of rows) {
         if (row.item_kind === 'pill') {
@@ -97,6 +105,8 @@ function countedHoldings(db: Database.Database, cultivatorId: string): CountedHo
                 held.push({
                     itemId: row.item_id,
                     name: pill.name,
+                    kind: 'pill',
+                    quantity: row.quantity,
                     significance: howMuchAGradeIsWorthTracking(pill.grade)
                 });
             }
@@ -108,6 +118,8 @@ function countedHoldings(db: Database.Database, cultivatorId: string): CountedHo
                 held.push({
                     itemId: row.item_id,
                     name: herb.name,
+                    kind: 'herb',
+                    quantity: row.quantity,
                     significance: howMuchAGradeIsWorthTracking(herb.grade)
                 });
             }
@@ -119,6 +131,8 @@ function countedHoldings(db: Database.Database, cultivatorId: string): CountedHo
                 held.push({
                     itemId: row.item_id,
                     name: art.name,
+                    kind: 'manual',
+                    quantity: row.quantity,
                     significance: howMuchAGradeIsWorthTracking(art.grade)
                 });
             }
@@ -129,6 +143,8 @@ function countedHoldings(db: Database.Database, cultivatorId: string): CountedHo
             held.push({
                 itemId: row.item_id,
                 name: object.name,
+                kind: 'artifact',
+                quantity: row.quantity,
                 significance: object.significance
             });
         }
@@ -136,7 +152,7 @@ function countedHoldings(db: Database.Database, cultivatorId: string): CountedHo
     return held;
 }
 
-function whichHoldingTheyNamed(
+export function whichHoldingTheyNamed(
     held: readonly CountedHolding[],
     said: string
 ): CountedHolding | null {

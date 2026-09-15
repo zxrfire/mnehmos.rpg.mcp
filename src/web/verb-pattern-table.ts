@@ -682,6 +682,74 @@ export function theThingWithoutItsOwner(said: string): string {
 export const POCKET_PICKING =
     /\b(?:pickpocket\w*|(?:pick|picks|picking|picked|lift|lifts|lifting|lifted|cut|cuts|cutting)(?!\s+up\b)\b[^.!?]{0,40}?\b(?:pocket|pockets|purse|purses|sleeve|sleeves))\b/;
 
+// ─────────────────────────────────────────────────────────────────────────
+// THE ROOM A HOUSE GAVE YOU
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The room, said the way somebody who lives in it says it.
+ *
+ * POSSESSED, ALWAYS. A compound is full of rooms this verb has nothing to do
+ * with - the meditation cells, the vein chamber, the discipline hall - so the
+ * sentence has to claim the room before anything routes here.
+ */
+const A_ROOM_OF_YOUR_OWN =
+    /\b(?:my|our)\s+(?:own\s+)?(?:room|rooms|quarters|bunk|dorm|dormitory|lodgings)\b/;
+
+/** Coming out of it rather than going into it. */
+const OUT_OF_A_ROOM_OF_YOUR_OWN =
+    /\b(?:from|out of|outta|back from)\s+(?:my|our)\s+(?:own\s+)?(?:room|rooms|quarters|bunk|dorm|dormitory|lodgings)\b/;
+
+const LEAVING_IT_IN_THE_ROOM =
+    'put|puts|putting|leave|leaves|leaving|left|stow|stows|stowing|stowed|'
+    + 'store|stores|storing|stored|stash|stashes|stashing|stashed|'
+    + 'drop|drops|dropping|dropped|deposit|deposits|depositing|keep|keeps|keeping';
+
+const PICKING_IT_BACK_UP =
+    'take|takes|taking|took|fetch|fetches|fetching|fetched|get|gets|getting|got|'
+    + 'collect|collects|collecting|collected|retrieve|retrieves|retrieving|retrieved|'
+    + 'grab|grabs|grabbing|grabbed|pick up|picks up|picking up|picked up|'
+    + 'bring|brings|bringing|brought';
+
+/**
+ * Going home, however it was said.
+ *
+ * `home` was reachable by exactly one phrasing - `I head home` - and became a
+ * journey to a place called "home", which is not a world row, so it refused.
+ * `I go home` and `I return home` did not parse at all. Being homeless is an
+ * ordinary condition here and it should read as a fact, which needs the
+ * sentence to arrive at `move` first.
+ */
+const GOING_HOME =
+    /\b(?:go|goes|going|went|walk|walks|ride|rides|return|returns|returning|returned|head|heads|make|makes|get|gets|travel|travels)\s+(?:back\s+|on\s+|straight\s+)?home\b/;
+
+/** Asking what is in there, which is the same room read from the doorway. */
+const WHAT_IS_IN_THAT_ROOM =
+    /\b(?:what|check|look at|look in|look over|see|inspect|show me|how much room|anything)\b/;
+
+/**
+ * What a sentence puts into a room, or takes out of one.
+ *
+ * Its own reader rather than `extractSubject`, which runs to the end of the
+ * sentence and would hand `stow` the string "sword in my room". The room is
+ * the destination and never the thing.
+ */
+function whatIsGoingInOrOutOfTheRoom(input: string): string | undefined {
+    const said = new RegExp(
+        String.raw`\b(?:${LEAVING_IT_IN_THE_ROOM}|${PICKING_IT_BACK_UP})\s+`
+        + String.raw`(?:the|a|an|my|some|one|that|this)?\s*`
+        + String.raw`(.{2,60}?)\s+`
+        + String.raw`(?:in|into|inside|from|out of|outta|back in|back into|away in|down in|up from)\s+`
+        + String.raw`(?:my|our)\b`,
+        'i'
+    ).exec(input);
+    // `back`, `away` and `down` belong to the verb and not to the thing: "take
+    // the healing pill back out of my quarters" named a pill, not a `healing
+    // pill back`, and the catalog would have matched nothing.
+    const thing = said ? cleanPlace(said[1].replace(/\s+(?:back|away|down|up|out)$/i, '')) : undefined;
+    return thing && thing.length >= 2 ? thing : undefined;
+}
+
 // A TAKING, WHICH IS NOT YET A THEFT
 
 /**
@@ -2382,7 +2450,7 @@ const MOVE_INTENT_PATTERNS: ReadonlyArray<[string, RegExp]> = [
     //
     // `go to sleep` keeps its veto, and it is why `go` was narrow here in the
     // first place - so the compass words are named rather than a bare `go`.
-    ['travel', /\b(?:travel|go to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b|\b(?:go|goes|walk|walks|ride|rides|march|marches|strike out|press|head)\s+(?:north|south|east|west|northeast|northwest|southeast|southwest|upriver|downriver|inland|uphill|downhill|upstream|downstream)\b|\b(?:climb|climbs|ascend|ascends)\s+(?:the|that|this)\s+(?:mountain|hill|peak|slope|ridge|cliff|steps|stair|stairs|path)\b/]
+    ['travel', /\b(?:travel|go to(?! sleep\b)|head (?:to|for|out|north|south|east|west|upriver|downriver|inland|back|on|home)|walk to|journey|set out|set off|press on|carry on to|depart|move to|leave for|make (?:my|his|her) way)\b|\b(?:go|goes|walk|walks|ride|rides|march|marches|strike out|press|head)\s+(?:north|south|east|west|northeast|northwest|southeast|southwest|upriver|downriver|inland|uphill|downhill|upstream|downstream)\b|\b(?:climb|climbs|ascend|ascends)\s+(?:the|that|this)\s+(?:mountain|hill|peak|slope|ridge|cliff|steps|stair|stairs|path)\b|\b(?:go|goes|going|went|walk|walks|ride|rides|return|returns|returning|returned|head|heads|make|makes|get|gets)\s+(?:back\s+|on\s+|straight\s+)?home\b/]
 ];
 
 // THE THREE WAYS OF COVERING GROUND THAT ARE NOT WALKING
@@ -3938,6 +4006,30 @@ function planIntent(input: string): PlannedAction {
         return family;
     }
 
+    // THE ROOM A HOUSE GAVE YOU, WHICH IS NEITHER A SWING NOR A THEFT
+    //
+    // HIGH, AND IT HAS TO BE. Measured: "I put my sword in my room" routed to
+    // `attack` - the sentence names a blade, and every branch reading one is
+    // above the taking row. "I take my sword from my room" routed to a taking
+    // and put the question of whose it was to the world, because `take` is on
+    // `A_TAKING_VERB` and `my sword` is on `A_TAKING_SAYS_WHOSE`.
+    //
+    // Safe this high because all three arms need a POSSESSED room noun AND
+    // their own verb, and the two that move something need a thing named
+    // between the verb and the room. "I cultivate in my room" and "I go to my
+    // room" fall straight through, which is what they should do.
+    if (A_ROOM_OF_YOUR_OWN.test(text)) {
+        const thing = whatIsGoingInOrOutOfTheRoom(input);
+        if (OUT_OF_A_ROOM_OF_YOUR_OWN.test(text)
+            || (thing !== undefined && usedAsVerb(text, PICKING_IT_BACK_UP))) {
+            return { action: 'stow', intent: 'collect', ...(thing ? { target: thing } : {}) };
+        }
+        if (thing !== undefined && usedAsVerb(text, LEAVING_IT_IN_THE_ROOM)) {
+            return { action: 'stow', intent: 'leave', target: thing };
+        }
+        if (WHAT_IS_IN_THAT_ROOM.test(text)) return { action: 'stow', intent: 'look' };
+    }
+
     // REACHING INTO A CROSSING, WHICH IS READ BEFORE STANDING OVER ONE
     //
     // The two share every noun, and this one needs a possessor as well, so it
@@ -5399,7 +5491,14 @@ function planIntent(input: string): PlannedAction {
 
         return {
             action: 'move',
-            target: destination ?? extractSubject(input, MOVE_SUBJECT_VERBS),
+            // HOME IS ONE WORD WHATEVER WAS SAID AROUND IT. The three
+            // phrasings arrived as "home", "back home" and nothing at all, and
+            // the third refused for having named no destination. The place
+            // `home` reaches is settled in `move`, which is where the roll and
+            // the abode are.
+            target: GOING_HOME.test(text)
+                ? 'home'
+                : destination ?? extractSubject(input, MOVE_SUBJECT_VERBS),
             intent: moveIntent
         };
     }

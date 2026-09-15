@@ -372,6 +372,14 @@ export const HOW_A_PLAYER_SAYS_EACH_VERB: Readonly<Record<Exclude<ActionName, 'u
         'I throw the furnace down and let it shatter',
         'I burn the manual'
     ],
+    stow: [
+        'I put my sword in my room',
+        'I leave the pills in my quarters',
+        'I stow the manual in my room',
+        'I fetch my sword from my room',
+        'I take the healing pill back out of my quarters',
+        'what is in my room'
+    ],
     list_techniques: [
         'what arts do I know',
         'which methods am I practising',

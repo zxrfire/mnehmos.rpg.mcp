@@ -2451,6 +2451,19 @@ somewhere-that-is-theirs.ts
                  `whereTheyKeepTheirThings` hands out the residence's id as a
                  `cultivator_pouch` holder key, which is why an NPC's residence
                  holds things on exactly the same footing as a player's
+the-room-a-house-gives-you.ts
+                 a member of a house has quarters at its seat, and the rung
+                 decides how good they are. `promotion-inside-a-house.ts`
+                 prices a seat on stipends and QUARTERS and nothing gave
+                 anybody one; measured on a seeded world, 37 dormitories and 38
+                 residences already stood, every one named for a rank and none
+                 assigned. Which room is derived off the compound, how much it
+                 holds is the house's own stipend ratio against a chest, and
+                 where it is kept is a `cultivator_pouch` holder key - the same
+                 trick `somewhere-that-is-theirs.ts` plays for a residence. The
+                 key is the PERSON and the HOUSE, never the room, so promotion
+                 moves the room and strands nothing; `removeMember` empties it
+                 back onto the person, so storage is never a trap
 war-melee.ts     the live caller: a war between two houses, which is a group
                  fight and nothing else. Ruled by the design owner - *this can
                  be easily simulated as a group fight, not bespoke* - so it
@@ -2815,6 +2828,63 @@ Two readings over columns that already existed. Neither stores anything.
   in, one `ObligationRecord` each, severity off what the province has left and what the
   ground was worth. Measured at day 0: available on 41 of 456 house-and-open-ruin pairs,
   a median of 18 accounts each. A monopoly is meant to be rare and expensive.
+
+### A door admits a count, and the count is what a house has to allocate
+
+Two independent questions about a piece of ground, and four cells rather than a list:
+
+|  | **counted** | **uncounted** |
+|---|---|---|
+| **held** | the holding house doles the places out per house | open on the holder's terms |
+| **unheld** | N places and nobody to assign them - settled at the door | anybody who turns up goes in |
+
+**Measured before any of it existed**, three pinned worlds at two hundred years
+([`probe-what-cell-of-the-door-table-every-ruin-is-in.ts`](../../../scripts/probe-what-cell-of-the-door-table-every-ruin-is-in.ts)):
+**42, 35 and 39 ruins; 0 held; 0 admitting a count.** Every door in the world was the
+everyone-walks-in cell, so a place at a find was never scarce, never allocated, and never
+worth anything to be given.
+
+- **`a-door-with-a-count-on-it.ts`** - which cell a door is in. **What counts at a door is
+  a formation on a season**: ground that shuts and opens itself lets through what its
+  opening lets through, and `LocationRecord.cycle` is the world's own record of having
+  one. Ground somebody has to break into, and ground built to stand open, have nothing at
+  the door doing arithmetic. **A holder does not make slots** - that is why the two
+  questions multiply. How many is the ways in still standing (`wingsOf`) times the party an
+  opening takes (`whatItTakesToHold`, off `sending-to-open-an-inheritance`). The holder's
+  three shapes for uncounted ground route `howThisGroundIsKept` and the levy: a bequest is
+  left open, a season is open in season, and ground the holder broke open is ground the
+  holder charges at - priced off `WHAT_ONE_POST_TAKES_IN_A_YEAR`, never a second toll.
+- **`how-a-house-doles-out-the-places-it-holds.ts`** - how many places your house gets from
+  theirs is a statement about what they think of you. Weight off standing both ways and off
+  what you paid, largest remainder so the deal sums to the count exactly, and **a house
+  that is given nothing is TOLD so** rather than dropped from the list. The same call with
+  `whatEachPlaceIs: 'a_tour'` staffs a posting.
+- **`who-goes-to-a-door-and-who-is-passed-over.ts`** - the internal selection **is**
+  `runCompetition`'s own board (`rankAField`), not a second ranking beside it. Everybody
+  below the count is passed over and does something about it: a goal naming the person who
+  took the place, and a tie moving against them that `whyTheyStoodUp` reads at the next
+  gathering. `secondmentsFor` emits the shape `whoCountsTowardThisHouse` counts, and keeps
+  that function's caveat - nobody is seconded twice at once.
+- **`what-a-contest-is-worth-to-the-people-in-it.ts`** - a house holds a competition for
+  the sake of training its own disciples, and before this nobody was any better for having
+  been at one. Days of progress, credited by moving `accumulatingSinceDay` back, and paid
+  by **how far up the board somebody was pushed** rather than by where they finished:
+  winning is already paid in prestige, and a strong disciple walking through a weak field
+  has learned nothing. A deep field therefore teaches more than a shallow one, which is why
+  a house invites anybody at all.
+- **`a-year-at-the-doors.ts`** - the yearly pass, one call. It routes `shutAPublicRuin`
+  rather than rebuilding it. **That module had no caller outside its own test**, which is
+  the whole of why nothing in the world was ever held.
+
+**And `sealed` on a cycled door was a stale column outvoting a live schedule.** Every
+seeded cycled ruin carries `sealed: true`, so `shutAPublicRuin` refused the one kind of
+ground a house most wants to stand at: measured on a pinned world at two hundred years,
+all 79 asks against its seven counted doors came back `nothing_here_is_open`. It now asks
+`convergenceOf`, which is the rule this directory already states.
+
+With the pass on the yearly line for a century after year 200, three seeds: 7 to 10 doors
+shut, 12 to 30 places dealt, 2 to 12 conclaves, 11 to 41 people passed over and **11 to 41
+who did something about it - one each, never zero.**
 
 ### And what is behind the door is the top of the craft ladder
 

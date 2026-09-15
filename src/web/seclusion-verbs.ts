@@ -31,6 +31,7 @@ import { howFarOff, regionOf, type TellerStanding } from '../engine/world/what-p
 import { asItReachesWhereTheyAre } from '../engine/encounters/arrivals.js';
 import type { ArrivableFact } from '../engine/encounters/types.js';
 import { abodeLocationId } from '../engine/world/immortal-world.js';
+import { theQuartersOf } from '../engine/world/the-room-a-house-gives-you.js';
 import { getLocation, type WorldState } from '../engine/world/world-state.js';
 import { houseFlagKey, type HouseLedger } from '../server/consolidated/sect-leadership.js';
 import { positionIn } from './standing.js';
@@ -168,11 +169,21 @@ function whoWouldReach(
         inAHouse: held !== null,
         tier: held?.tier ?? null,
         ownFollowing: Math.max(0, ledger?.ownFollowing ?? 0),
-        // The only dwelling this engine gives a person is an abode above the
-        // Lid. Below it, buildings are a house's and not anybody's, so this is
-        // false for nearly everybody and says so rather than guessing.
+        // A DOOR TO KNOCK ON, AND THERE ARE NOW TWO OF THEM. This said the
+        // only dwelling in the engine was an abode above the Lid and that
+        // below it buildings were a house's and not anybody's, which was true
+        // when it was written and is the thing `the-room-a-house-gives-you.ts`
+        // closed: a member of a house has quarters at its seat. A rogue still
+        // has neither, which is the ruling rather than a gap.
         hasASeat: world !== null
-            && getLocation(world, abodeLocationId(cultivator.id)) !== null
+            && (getLocation(world, abodeLocationId(cultivator.id)) !== null
+                || (held !== null && theQuartersOf(world, {
+                    factionId: held.sectId,
+                    personId: cultivator.id,
+                    rankIndex: held.rankIndex,
+                    stipendAtRung: 0,
+                    stipendAtEntry: 0
+                }) !== null))
     };
 }
 

@@ -893,7 +893,8 @@ const PLAINLY_WITH_AN_OBJECT: Partial<Record<ActionName, string>> = {
     // 护法. Not "guarding", which is the word the fight layer already owns for
     // a posture inside a round, rather than a span spent standing over
     // somebody else's crossing.
-    guard: 'standing over the crossing of'
+    guard: 'standing over the crossing of',
+    stow: 'putting away'
 };
 
 export function whatThisStepIsCalled(step: PlanStep): string {
@@ -978,7 +979,11 @@ const PLAINLY: Partial<Record<ActionName, string>> = {
     // Not "destroying", which is the enum member with an -ing on it. What the
     // step is, asked of somebody about to take it, is whether they mean to end
     // the thing - and the word that carries the finality is `for good`.
-    destroy: 'breaking it for good'
+    destroy: 'breaking it for good',
+    // Not "stowing", which is the enum member with an -ing on it. The step is
+    // leaving a thing behind in the room the house gave you, and `behind` is
+    // the word that says it does not come with you.
+    stow: 'leaving it behind in your room'
 };
 
 function plainNameOf(action: ActionName): string {

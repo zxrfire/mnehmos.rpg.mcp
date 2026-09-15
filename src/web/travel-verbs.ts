@@ -99,6 +99,10 @@ import {
     type AHouseYouCouldWalkTo
 } from './walking-up-to-a-house.js';
 import { whatTheDoorHereSays } from './walking-up-to-a-door-that-closes.js';
+import { theQuartersThisCultivatorHas } from './leaving-a-thing-in-your-own-room.js';
+import { abodeLocationId } from '../engine/world/immortal-world.js';
+import { getLocation, getNpc, type WorldState } from '../engine/world/world-state.js';
+import { layerOf, type LayerKey } from '../engine/world/layers.js';
 import { factsForMove, factsForRefusal, factsForToolResult, placeName } from './facts.js';
 import { refused, skipCalls, tollCalls, worldCalls } from './tool-result-prose.js';
 import { SHORT_ACTION_DAYS, TRAVEL_FOCUS } from './turn-constants.js';
@@ -434,6 +438,60 @@ function destinationNamed(target: string | undefined): string | undefined {
     return A_DIRECTION_RATHER_THAN_A_DESTINATION.test(said) ? undefined : target;
 }
 
+/**
+ * The words that mean the place you live rather than a place on the map.
+ *
+ * `home` was the one of the three `A_DIRECTION_RATHER_THAN_A_DESTINATION`
+ * deliberately left out, with a note saying it could be resolved against
+ * somewhere the player has actually been and belonged with whoever built that.
+ * This is that.
+ */
+const HOME_RATHER_THAN_A_PLACE_NAME =
+    /^(?:back\s+)?(?:home|my\s+(?:own\s+)?(?:room|rooms|quarters|place)|our\s+quarters)$/i;
+
+/**
+ * Where home is, in the order somebody would answer it.
+ *
+ * THREE ANSWERS AND THE THIRD IS NOT A FAILURE. An abode above the Lid, the
+ * quarters a house gives you, or nothing - and being homeless is the ordinary
+ * condition of a rogue in this setting, so it is stated as a fact rather than
+ * dressed as a misread sentence.
+ *
+ * WHAT IT RETURNS IS A PLACE NAME, not a route. `move` already knows how to
+ * send somebody of the house to their house's seat and everybody else to the
+ * town below it, so home resolves to a NAME and goes back through the same
+ * door every other destination goes through. Bypassing that would be a second
+ * opinion about where a road ends.
+ */
+export type WhereHomeIs =
+    | { kind: 'abode'; name: string; layer: LayerKey }
+    | { kind: 'quarters'; name: string; houseName: string; roomName: string }
+    | { kind: 'nowhere' };
+
+export function whereHomeIs(
+    game: GameService,
+    world: WorldState | null,
+    cultivator: Cultivator
+): WhereHomeIs {
+    if (world) {
+        const abode = getLocation(world, abodeLocationId(cultivator.id));
+        if (abode) return { kind: 'abode', name: abode.name, layer: layerOf(abode) };
+
+        const mine = theQuartersThisCultivatorHas(game, world, cultivator);
+        if (mine) {
+            return {
+                kind: 'quarters',
+                // The HOUSE's name, because that is the string `move` resolves
+                // to a seat, and a member of the house rides home to the seat.
+                name: mine.houseName,
+                houseName: mine.houseName,
+                roomName: mine.quarters.name
+            };
+        }
+    }
+    return { kind: 'nowhere' };
+}
+
 export const travelVerbs = {
     /**
      * Going somewhere, however it was meant.
@@ -446,7 +504,40 @@ export const travelVerbs = {
         target: string | undefined,
         intent: string
     ): Promise<Execution> {
-        const named = resolvePlace(destinationNamed(target));
+        // ── AND HOME IS A PLACE, ONCE THERE IS SOMEWHERE THAT IS YOURS ────
+        //
+        // Resolved to a NAME and then dropped back into the ordinary road
+        // below, so the abode and the house's seat are reached the same way
+        // anywhere else is. The one case that does not become a name is the
+        // abode on the other side of the Lid, which is not walked to.
+        let said = target;
+        if (HOME_RATHER_THAN_A_PLACE_NAME.test((target ?? '').trim())) {
+            this.atHand = this.atHand ?? await this.loadWorld();
+            const home = whereHomeIs(this, this.atHand, cultivator);
+            if (home.kind === 'nowhere') {
+                return refused('engine.noHome', 'move', factsForRefusal(
+                    'You have no home.',
+                    'There is nowhere in this world that is yours. No house quarters you and '
+                    + 'you have cut no ground of your own, so there is no door to walk back '
+                    + 'to and nothing waiting behind one.',
+                    'move/home: no abode and no membership, so no quarters. Location '
+                    + 'unchanged, no time passed.'
+                ));
+            }
+            if (home.kind === 'abode'
+                && this.atHand
+                && layerOf(getNpc(this.atHand, cultivator.id)) !== home.layer) {
+                return refused('engine.homeIsNotOnThisLayer', 'move', factsForRefusal(
+                    `${home.name} is not on this side of the Lid.`,
+                    `${home.name} is yours and it is above the Lid. It is not somewhere a road `
+                    + 'goes; getting to it is the crossing, and the crossing is its own act.',
+                    `move/home: abode on the ${home.layer} layer, body below it. Location `
+                    + 'unchanged, no time passed.'
+                ));
+            }
+            said = home.name;
+        }
+        const named = resolvePlace(destinationNamed(said));
         // ── A HOUSE IS SOMEWHERE YOU CAN GO, AND WHERE YOU GO IS ITS TOWN ──
         //
         // Measured on three pinned worlds, day 0, 38 seated houses each: `I

@@ -85,6 +85,11 @@ export const ACTION_NAMES = [
      */
     'destroy',
     /**
+     * Leaving a thing in the room a house gave you, and taking it back. The
+     * pouch is what a body carries; this is what a rung lets you put down.
+     */
+    'stow',
+    /**
      * The arts that could be learned, and the learning of one.
      */
     'list_techniques',
@@ -460,6 +465,10 @@ export const TARGETED_ACTIONS: readonly ActionName[] = [
     // they own standing here. A thing nobody is holding reaches nothing, which
     // is what keeps the verb honest about the village it cannot burn.
     'destroy',
+    // WHAT IS BEING PUT DOWN OR PICKED UP, resolved against the pouch going in
+    // and against the room's own rows coming out - so the two directions read
+    // the two ends of one move and neither can name a thing that is not there.
+    'stow',
     // The manual being asked about, by name. Resolved against what this
     // cultivator HOLDS: the question is how THEIR book goes further.
     'acquisition',
@@ -640,6 +649,12 @@ export const INTENT_ACTIONS: readonly ActionName[] = [
      */
     'recall',
     /**
+     * `stow` picks which end of one move: into the room, out of it, or neither
+     * and just look. All three are free, so an unrecognised label falling
+     * through to the look costs nothing and tells the player what is in there.
+     */
+    'stow',
+    /**
      * `request` carries the site rule with one difference worth stating: what the
      * label selects is not which routine runs but WHAT IS BEING ASKED FOR, which is
      * the one thing about an approach the engine is required to read. `asking.md`
@@ -770,6 +785,11 @@ export const HOW_EACH_VERB_CAN_END_BADLY: Readonly<Record<ActionName, readonly H
      * body cost - the act is a moment and the consequence is a record.
      */
     destroy: [],
+    /**
+     * Crossing your own floor is not a span of days, and the journey that put
+     * you at the gate already cost what it cost.
+     */
+    stow: [],
     gather: ['a_span_of_days'],
     /**
      * The only verb on the strip that carries both, and it is the honest shape

@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { Sect, SectSchema } from '../../schema/cultivation.js';
+import { whereAHouseLetsYouKeepThings } from '../../engine/world/the-room-a-house-gives-you.js';
 
 interface SectRow {
     id: string;
@@ -58,6 +59,8 @@ export class SectRepository {
     private readonly addContributionStmt: Database.Statement;
     private readonly mirrorOnCultivatorStmt: Database.Statement;
     private readonly clearOnCultivatorStmt: Database.Statement;
+    private readonly handBackTheirThingsStmt: Database.Statement;
+    private readonly emptyTheirQuartersStmt: Database.Statement;
 
     constructor(private db: Database.Database) {
         this.upsertStmt = db.prepare(`
@@ -95,6 +98,38 @@ export class SectRepository {
         this.removeMemberStmt = db.prepare(`
             DELETE FROM sect_members WHERE sect_id = ? AND cultivator_id = ?
         `);
+
+        // ── WHAT WAS IN THE ROOM COMES BACK TO THE PERSON ────────────────
+        //
+        // The design owner, on losing your place: an outer disciple just hands
+        // you your stuff. Expelled or walked out, the house does not keep what
+        // is yours, and nobody makes a speech about it.
+        //
+        // HERE RATHER THAN AT A CALL SITE. Four places above this layer remove
+        // a member, and a handback one of them forgot would leave somebody's
+        // possessions under a key no verb can reach once the membership row is
+        // gone - the orphan this has to be impossible rather than careful about.
+        //
+        // AND IT REACHES THEM WHEREVER THEY ARE. The alternative is holding
+        // the goods at the house for a collection somebody off in another
+        // province can no longer make, which is the same orphan wearing a
+        // politer word. Onto the body, and an over-full pouch is then an
+        // ordinary problem the carry read already reports.
+        //
+        // Merged rather than moved, because `holder_id` is half the primary
+        // key: a plain UPDATE collides the moment somebody is carrying a pill
+        // they also left three of at home.
+        this.handBackTheirThingsStmt = db.prepare(`
+            INSERT INTO cultivator_pouch (holder_id, item_id, item_kind, quantity, updated_at)
+            SELECT @cultivatorId, item_id, item_kind, quantity, datetime('now')
+            FROM cultivator_pouch WHERE holder_id = @quartersId
+            ON CONFLICT(holder_id, item_id) DO UPDATE SET
+                quantity = cultivator_pouch.quantity + excluded.quantity,
+                updated_at = excluded.updated_at
+        `);
+        this.emptyTheirQuartersStmt = db.prepare(
+            'DELETE FROM cultivator_pouch WHERE holder_id = ?'
+        );
 
         // Written in the same transaction as the delete. A house remembers who
         // used to be in it, and without that a returning member was a stranger
@@ -224,7 +259,12 @@ export class SectRepository {
             // promotion.
             this.recordDepartureStmt.run({ sectId, cultivatorId });
             const changed = this.removeMemberStmt.run(sectId, cultivatorId).changes > 0;
-            if (changed) this.clearOnCultivatorStmt.run(cultivatorId);
+            if (changed) {
+                this.clearOnCultivatorStmt.run(cultivatorId);
+                const quartersId = whereAHouseLetsYouKeepThings(sectId, cultivatorId);
+                this.handBackTheirThingsStmt.run({ cultivatorId, quartersId });
+                this.emptyTheirQuartersStmt.run(quartersId);
+            }
             return changed;
         });
         return expel();

@@ -580,6 +580,18 @@ const PHRASINGS: Record<Exclude<ActionName, 'unclear'>, readonly string[]> = {
         'I smash the stall',
         'I set fire to the inn'
     ],
+    // All three doors of the one verb, because an intent is a door the
+    // ACTION_NAMES walk cannot see. Every one of them carries a POSSESSED room
+    // noun, which is the anchor that keeps the branch off "I take the north
+    // road" and off every other room in a compound.
+    stow: [
+        'I put my sword in my room',
+        'I leave the pills in my quarters',
+        'I stow the manual in my room',
+        'I fetch my sword from my room',
+        'I take the healing pill back out of my quarters',
+        'what is in my room'
+    ],
     tell: [
         'I tell him that Cao Antao killed his brother',
         'I let He Peiyi know who killed his brother',
@@ -848,6 +860,25 @@ describe('every intent DECLARED is a door somebody can find', () => {
         // `forgiven` had exactly one caller and it was an NPC forgiving the
         // PLAYER - and the sentence for the other direction was answered with a
         // listing of what was open.
+        // THE THREE DOORS OF THE ROOM A HOUSE GIVES YOU. Phrasings rather than
+        // recorded gaps, which is the only legal direction for that list. Each
+        // needs a possessed room noun and its own verb, and the two that move
+        // something need a thing named between the two.
+        'stow/leave': [
+            'I put my sword in my room',
+            'I leave the pills in my quarters',
+            'I stow the manual in my room'
+        ],
+        'stow/collect': [
+            'I fetch my sword from my room',
+            'I take my sword from my room',
+            'I take the healing pill back out of my quarters'
+        ],
+        'stow/look': [
+            'what is in my room',
+            'what is in my quarters',
+            'I check my room'
+        ],
         'oath/release': [
             'i forgive his debt',
             'i write off what he owes',
@@ -1181,7 +1212,18 @@ describe('every verb is priced as well as reachable', () => {
         // cultivator an account of themselves. A misread sentence supplies
         // neither, and a stranger who has said nothing about who they are
         // cannot be challenged at all.
-        'challenge'
+        'challenge',
+        // And the room a house gives you, which is the intent-shaped case
+        // rather than `give`'s. Three doors, all of them free of the clock, and
+        // the default when nothing is named is the LOOK - the cheapest of the
+        // three, which is the protection this state is documented as wanting.
+        //
+        // It is not on the read-only list because it writes rows, and four
+        // guards read that list as a claim that a verb writes nothing. What
+        // makes it safe is that both ends of the move are the player's own and
+        // nothing about it is permanent: a thing put in the wrong place is
+        // taken out again on the next turn for nothing.
+        'stow'
     ];
 
     it('puts every verb on a list, or names it as priced at execution', () => {
@@ -1231,7 +1273,14 @@ describe('every verb is priced as well as reachable', () => {
         // name that only they can close. What makes it safe here is two
         // structural gates rather than one - a person standing in the square
         // who can be named, and an account they have actually given.
-        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(15);
+        //
+        // 15 -> 16 for `stow`, and it is the FIRST member that is not
+        // permanent. Three intents, all free of the clock, default `look`: the
+        // intent-shaped case this state was documented for. What keeps it off
+        // the read-only list is that it writes rows, and what keeps it safe is
+        // that both holders are the player's own and the move undoes itself on
+        // request.
+        expect(PRICED_AT_EXECUTION.length).toBeLessThanOrEqual(16);
         expect(new Set(PRICED_AT_EXECUTION).size).toBe(PRICED_AT_EXECUTION.length);
     });
 

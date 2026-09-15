@@ -361,6 +361,17 @@ export const WHAT_EACH_VERB_IS_FOR: Readonly<Record<ActionName, VerbSurfaceEntry
             pouch and the people standing there talk about it; a heaven-grade thing keeps its
             row, ruined, and the news travels. Passes no time.`
     },
+    stow: {
+        takes: ['intent', 'target'],
+        intents: ['leave', 'collect', 'look'],
+        says: `leave a thing in the room the player's house gave them, take one back, or look
+            at what is in there. "intent" is which of the three and "target" names the thing.
+            The room comes with the rung: what it holds is read off the house's own stipend at
+            that rung, so promotion is the only thing that makes it bigger. It wants the
+            house's ground underfoot - a room does not reach across a province - and what is
+            left in it survives travelling away and survives a reload. A cultivator on nobody's
+            roll has no room and is told so plainly. Passes no time.`
+    },
     list_techniques: {
         takes: [],
         says: `the arts this cultivator could actually be taught, filtered by realm, spirit

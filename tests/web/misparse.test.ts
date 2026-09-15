@@ -142,6 +142,9 @@ describe('the fallback is inert', () => {
         // above silently stops covering it.
         const inert: ActionName[] = [
             'look', 'status', 'investigate', 'assess', 'market', 'unclear',
+            // Crossing your own floor is a moment, and the journey that put you
+            // at the gate already cost what it cost.
+            'stow',
             /**
              * `interact` is NOT inert and is here because this list is the
              * "classified one way or the other" register rather than a claim
@@ -558,7 +561,12 @@ describe('every verb is reachable from plain English', () => {
         // is a denial of the HEARER's own account, which is what keeps it off
         // both tellings - one puts a deed on a third person, the other is an
         // account of the speaker.
-        challenge: 'I tell him he is not of that sect'
+        challenge: 'I tell him he is not of that sect',
+        // The room a house gives you. The phrasing carries `put` and a
+        // POSSESSED room noun, which is the pair that keeps it off the swing
+        // read - "I put my sword in my room" reached `attack` before it, on
+        // the blade alone.
+        stow: 'I put my sword in my room'
     };
 
     for (const [action, phrasing] of Object.entries(PHRASINGS)) {

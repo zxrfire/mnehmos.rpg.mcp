@@ -2497,6 +2497,40 @@ draws that line - so any read that scans `state.objects` alone sees an empty wor
 them. `whatWouldItTake` asks `everyRepairHolding` as well, which is why its refusal can
 name a holder of all four grades instead of telling a player the problem is finding one.
 
+## The pouch is what a body carries. A room is what a rung lets you put down.
+
+`stow` is the doorway to the quarters a house gives its own, and the rule behind it is
+[`the-room-a-house-gives-you.ts`](../engine/world/the-room-a-house-gives-you.ts). Nothing
+here decides anything: it reads the roll, asks the compound which room that rung gets, and
+moves rows between two holders of one store.
+
+**The doorway was the whole of what was missing, and it was missing twice over.**
+`whereTheyKeepTheirThings` had handed out a `cultivator_pouch` holder key for a residence
+since the residence layer was written and had **no caller in `src/web` or `src/server`**,
+so no sentence a player could type ever put anything down anywhere. And below the Lid
+nobody had a residence at all - measured on a seeded world, 37 dormitories and 38
+residences already stood, every one named for a rank, and not one assigned to anybody.
+
+Three things follow:
+
+- **The room does not come to you.** Both directions want the house's ground underfoot,
+  because the alternative is a pouch with a longer reach than a body. Travelling away is
+  what the room is FOR: the rows sit in SQLite under a key derived from the house and the
+  person, so a decade on the road and a restart both leave them where they were put.
+- **The key is the person and the house, never the room.** Promotion changes which room is
+  yours and moves the pack with you; a key on the room would strand everything in the old
+  one at the moment the house raised you.
+- **Losing your place hands it back.** `SectRepository.removeMember` empties the quarters
+  onto the person inside the transaction that removes the membership row, expelled or
+  walked out alike, so leaving a thing in a room is never a trap.
+
+And `home` resolves here rather than in the parser. `move` takes the word and asks for the
+abode first, the quarters second, and says plainly that there is nowhere third - being
+homeless is the ordinary condition of a rogue and it must read as a fact rather than as a
+sentence the engine could not parse. What it hands back is a place NAME, so the journey
+goes through the same door every other destination goes through: a member of the house
+rides to the seat, which `move` already knew how to do.
+
 ## Related
 
 - [`../../context.md`](../../context.md) - the authority rule this package enforces
