@@ -894,7 +894,12 @@ const PLAINLY_WITH_AN_OBJECT: Partial<Record<ActionName, string>> = {
     // a posture inside a round, rather than a span spent standing over
     // somebody else's crossing.
     guard: 'standing over the crossing of',
-    stow: 'putting away'
+    // "the putting away of", not "putting away", so the object joins the way
+    // it does for every neighbour here - `the gathering of`, `the refining
+    // of`. Without the joining word the question reads "putting away the
+    // thing", which is the one shape `the-question-names-both-acts-in-english`
+    // forbids: a name ending in a noun with the object butted against it.
+    stow: 'the putting away of'
 };
 
 export function whatThisStepIsCalled(step: PlanStep): string {

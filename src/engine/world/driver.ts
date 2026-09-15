@@ -264,8 +264,6 @@ export function advanceWorldForPlay(
         //
         // Anybody a priced deed names is kept: a man whose brother still
         // carries the account is not one of the corpses this is for.
-        theWorldForgetsTheMortalDead(state);
-
         remaining -= time.daysAdvanced;
         if (time.interrupted) {
             interrupted = true;
@@ -276,6 +274,20 @@ export function advanceWorldForPlay(
         if (time.daysAdvanced <= 0) break;
     }
 
+    // AND THE WORLD FORGETS ITS MORTAL DEAD - ONCE, AFTER THE SLICES.
+    //
+    // Not inside the loop. Run per slice it broke fact linkage: 370 promotion
+    // facts at sixty years whose living actors no longer carried them, caught
+    // by `what-a-world-must-never-contain`. The hazard was named when the
+    // sweep was written - `reserveFactSlot` stores an ARRAY POSITION and the
+    // ledger index maps id to position, and both are only safe across a shrink
+    // where nothing holds one over it. A slice does.
+    //
+    // Once per advance is where nothing is holding a position, and it is also
+    // the honest place: a run of years is what the caller asked about, and
+    // forgetting is not a thing that happens to somebody in a particular
+    // spring.
+    theWorldForgetsTheMortalDead(state);
     const last = timeSlices[timeSlices.length - 1];
     const time: TimeAdvanceResult = last ?? advanceTime(state, 0, { inPlace: true });
     const events = state.history.facts.filter(f => !factsBefore.has(f.id));

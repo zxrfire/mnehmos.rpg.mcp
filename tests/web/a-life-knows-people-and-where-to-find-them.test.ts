@@ -207,7 +207,13 @@ describe('a life knows people, and where to find them', () => {
             // player's row being written for the first time. Dropping the
             // process cache is what makes the next read a real one.
             resetCultivationWorlds();
+            // `loadWorld` is nullable by signature and never null here - the
+            // run opened in a world. Asserted rather than asserted-away with a
+            // `!`, so a future change that stops loading one fails with a
+            // sentence instead of a property access on null.
             const world = await game.loadWorld();
+            expect(world, 'the run opened in no world at all').not.toBeNull();
+            if (!world) return;
             const held = world.npcs.filter(npc => npc.relationships.some(tie =>
                 tie.targetId === cultivator.id));
 
@@ -277,7 +283,13 @@ describe('a life knows people, and where to find them', () => {
             const { cultivator } = await game.newRun('Aspirant');
 
             resetCultivationWorlds();
+            // `loadWorld` is nullable by signature and never null here - the
+            // run opened in a world. Asserted rather than asserted-away with a
+            // `!`, so a future change that stops loading one fails with a
+            // sentence instead of a property access on null.
             const world = await game.loadWorld();
+            expect(world, 'the run opened in no world at all').not.toBeNull();
+            if (!world) return;
             const me = world.npcs.find(npc => npc.id === cultivator.id) ?? null;
             expect(me, `${worldSeed}: the world holds no row for the player at all`).not.toBeNull();
 
@@ -332,6 +344,8 @@ describe('a life knows people, and where to find them', () => {
 
         resetCultivationWorlds();
         const world = await game.loadWorld();
+        expect(world, 'the run opened in no world at all').not.toBeNull();
+        if (!world) return;
         const me = world.npcs.find(npc => npc.id === cultivator.id) ?? null;
         expect(me, 'the world holds no row for the player').not.toBeNull();
 

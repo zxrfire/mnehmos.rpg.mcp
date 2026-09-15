@@ -368,7 +368,7 @@ other.
 
 <!-- BEGIN GENERATED: catalog -->
 
-**71 catalog files, 12 of which name a doc.**
+**72 catalog files, 12 of which name a doc.**
 These are `.ts` files and no search of `docs/` reaches them. Where the
 "Also in" column is empty, this file is the only written record of what
 it describes.
@@ -444,6 +444,7 @@ it describes.
 | [`what-an-indenture-is-and-what-happens-when-it-ends.ts`](../../src/data/cultivation/what-an-indenture-is-and-what-happens-when-it-ends.ts) | What an indenture is, what the years are for, and what a person walks out into on the day the term is served. | 175 | - |
 | [`what-each-house-makes-and-what-crosses-the-water.ts`](../../src/data/cultivation/what-each-house-makes-and-what-crosses-the-water.ts) | What each house makes, and what crosses the water because it makes it. | 506 | - |
 | [`what-two-houses-both-have-a-hand-on.ts`](../../src/data/cultivation/what-two-houses-both-have-a-hand-on.ts) | What two houses both have a hand on, and therefore what they are contending over whether or not anybody wrote it down. | 294 | - |
+| [`who-an-authored-figure-is-married-to.ts`](../../src/data/cultivation/who-an-authored-figure-is-married-to.ts) | Who the catalog's own people are married to. | 239 | - |
 | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | Why a house puts a party on the road. A sending is a party, a destination, a REASON, a cost in time, a rung band it is survivable at, and a thing that happens to the house if it goes wrong. | 527 | - |
 | [`wounds.ts`](../../src/data/cultivation/wounds.ts) | The wound table - every way a person in this world can be hurt, as data. | 407 | [`injuries.md`](climbing/injuries.md) |
 
@@ -457,8 +458,8 @@ it describes.
 
 <!-- BEGIN GENERATED: design-constants -->
 
-**275 design constants in the catalog. 25 are read by nothing at all,
-and 136 more are read only by a test.**
+**275 design constants in the catalog. 24 are read by nothing at all,
+and 137 more are read only by a test.**
 
 A constant nothing reads is still design - it is often the best statement of a rule
 anywhere in the repo - but the game does not act on it, and nobody looking at the
@@ -487,11 +488,11 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `THE_OLD_ARE_THE_PRACTITIONERS` | [`lost-ages.ts`](../../src/data/cultivation/lost-ages.ts) | **nothing** | - |
 | `THE_QUIET_MARCHES` | [`regions/quiet-marches.ts`](../../src/data/cultivation/regions/quiet-marches.ts) | **nothing** | - |
 | `THE_ROOT_CAULDRON` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | **nothing** | - |
-| `THE_THREE_WAYS_GROUND_IS_CLOSED` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | - |
 | `THE_WHITE_STAIR` | [`regions/white-stair.ts`](../../src/data/cultivation/regions/white-stair.ts) | **nothing** | - |
 | `THE_WIDE_FIELD` | [`regions/wide-field.ts`](../../src/data/cultivation/regions/wide-field.ts) | **nothing** | - |
 | `WHY_A_HOUSE_GOES_OUT_AFTER_BEASTS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | **nothing** | - |
 | `WHY_A_PHRASE_AND_NOT_A_NAME` | [`institutions-that-hold-deposits-for-the-dead.ts`](../../src/data/cultivation/institutions-that-hold-deposits-for-the-dead.ts) | **nothing** | - |
+| `THE_THREE_WAYS_GROUND_IS_CLOSED` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | **nothing** | 1 |
 | `ARTIFACT_MARGIN` | [`the-top-of-the-world.ts`](../../src/data/cultivation/the-top-of-the-world.ts) | **nothing** | 2 |
 | `FOSTERAGE_TERMS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | **nothing** | 2 |
 | `FOUNDERS` | [`named-figures.ts`](../../src/data/cultivation/named-figures.ts) | **nothing** | 2 |
@@ -724,13 +725,13 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `CONVEYANCES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 10 | 14 |
 | `CONVEYANCE_RECIPES` | [`what-a-house-moves-its-people-on.ts`](../../src/data/cultivation/what-a-house-moves-its-people-on.ts) | 10 | 15 |
 | `FACTION_PARENTAGE` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 10 | 37 |
-| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 12 | 13 |
+| `SENDING_REASONS` | [`why-a-house-puts-a-party-on-the-road.ts`](../../src/data/cultivation/why-a-house-puts-a-party-on-the-road.ts) | 12 | 14 |
 | `BEAST_MATERIALS` | [`beasts.ts`](../../src/data/cultivation/beasts.ts) | 12 | 21 |
 | `SITES` | [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) | 13 | 48 |
 | `PRICES` | [`mortal-world.ts`](../../src/data/cultivation/mortal-world.ts) | 15 | 31 |
 | `SECT_ADMISSION` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 16 | 17 |
 | `STRUCTURAL_REPAIR_HOLDINGS` | [`structural-repair-medicine.ts`](../../src/data/cultivation/structural-repair-medicine.ts) | 17 | 6 |
-| `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 18 | 76 |
+| `MEMBERS` | [`members.ts`](../../src/data/cultivation/members.ts) | 18 | 78 |
 | `HERBS` | [`herbs.ts`](../../src/data/cultivation/herbs.ts) | 19 | 33 |
 | `IMMORTAL_ITEMS` | [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) | 20 | 22 |
 | `ARTIFACTS` | [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) | 20 | 41 |
@@ -739,9 +740,9 @@ you are about to write may already be here, fully argued, and simply unplugged.*
 | `COURTS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 27 | 93 |
 | `APEX_INSTITUTIONS` | [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) | 29 | 126 |
 | `PILLS` | [`pills.ts`](../../src/data/cultivation/pills.ts) | 41 | 63 |
-| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 46 | 170 |
-| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 73 | 364 |
-| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 87 | 83 |
+| `TECHNIQUES` | [`techniques.ts`](../../src/data/cultivation/techniques.ts) | 46 | 173 |
+| `SECTS` | [`sects.ts`](../../src/data/cultivation/sects.ts) | 73 | 366 |
+| `PLACE` | [`place-names.ts`](../../src/data/cultivation/place-names.ts) | 92 | 84 |
 
 <!-- END GENERATED: design-constants -->
 
