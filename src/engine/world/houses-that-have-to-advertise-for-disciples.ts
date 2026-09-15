@@ -23,6 +23,10 @@
 
 import { forStream } from '../cultivation/rng.js';
 import { realmForOrdinal } from '../cultivation/realms.js';
+// A house's calendar is a function of the seed, the house and the year, the same
+// way an intake's season is - so it is derived where the seed and the day already
+// are rather than passed in by a caller that would have to be edited to carry it.
+import { whatThisHouseHasOnPaper } from './a-competition-anybody-may-enter.js';
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE FIELD
@@ -115,6 +119,13 @@ export type PostingGround =
 
 /**
  * How many bills a wall here carries at once.
+ *
+ * STANDING BUSINESS ONLY, which used to be the same thing as "everything on the
+ * wall" and stopped being when the wall grew an appointment. An intake gets this
+ * budget, the asks get it again, and a dated open-competition notice gets
+ * {@link A_DATED_PAPER_TAKES_ONE_NAIL} on top - see `noticesOnTheWall` for the
+ * measurement that ruled out sharing. A hamlet at zero still carries nothing at
+ * all, because zero slots is a place with no wall rather than a small one.
  */
 export const BILLS_A_WALL_CARRIES: Record<PostingGround, number> = {
     city: 3,
@@ -131,6 +142,18 @@ export const BILLS_A_WALL_CARRIES: Record<PostingGround, number> = {
  * How long a bill stays up before the wall is a different wall.
  */
 export const A_BILL_STAYS_UP_FOR_DAYS = 90;
+
+/**
+ * Nails a wall keeps for paper with a day on it, beyond its standing budget.
+ *
+ * ONE, and one is the whole argument: a wall carrying three competition notices
+ * is a wall that has stopped being about anything else. What this buys is that a
+ * dated notice never displaces the standing business a rogue reads a wall for,
+ * and what it costs is that a wall with something pending holds one more sheet
+ * than it did. A place with no wall at all - `BILLS_A_WALL_CARRIES` at zero -
+ * gets none of it, which `noticesOnTheWall` enforces by returning early.
+ */
+export const A_DATED_PAPER_TAKES_ONE_NAIL = 1;
 
 // ─────────────────────────────────────────────────────────────────────────
 // THE BILL
@@ -326,7 +349,15 @@ export type TheAsk =
     /** Work it would rather hire than send its own on. */
     | { kind: 'work'; what: string; days: number; hands: number }
     /** Ground it answers for, and what is happening on it. */
-    | { kind: 'warning'; what: string };
+    | { kind: 'warning'; what: string }
+    /**
+     * A competition it is holding that anybody may enter, of any house or none.
+     *
+     * THE ONE ASK THAT IS AN APPOINTMENT, which is why `Notice.onDay` stops
+     * being null the moment one of these is on a wall. The day comes off
+     * `whatThisHouseHasOnPaper` and never off the day the paper was read.
+     */
+    | { kind: 'open_competition'; onDay: number };
 
 export interface HouseWithSomethingToSay {
     id: string;
@@ -380,11 +411,20 @@ export const WHAT_A_NOTICE_DOES_NOT_BUY: Record<TheAsk['kind'], string> = {
         + 'afterwards, and the board inside the compound is still shut to them.',
     warning:
         'It asks nothing of anybody. A house that holds ground says what is happening on it, '
-        + 'and what somebody does about that is their own business.'
+        + 'and what somebody does about that is their own business.',
+    open_competition:
+        'Standing up is not a place on the roll and winning is not either. What an open '
+        + 'competition hands out is a placing, said out loud in front of everybody, and what '
+        + 'that is worth afterwards is whatever the people who heard it make of it.'
 };
 
 /** How the paper words one ask. */
-function whatThePaperSays(house: HouseWithSomethingToSay, ask: TheAsk): string {
+function whatThePaperSays(
+    house: HouseWithSomethingToSay,
+    ask: TheAsk,
+    /** The day the wall is being read, for the one ask that is an appointment. */
+    onDay: number
+): string {
     switch (ask.kind) {
         case 'missing':
             return `${house.name} is asking after ${ask.who}, of their own, not seen for `
@@ -395,6 +435,16 @@ function whatThePaperSays(house: HouseWithSomethingToSay, ask: TheAsk): string {
         case 'warning':
             return `${house.name} answers for ground in this province and has put up a warning. `
                 + ask.what;
+        case 'open_competition':
+            // ANNOUNCED BY NAME AND BY AFFILIATION, INCLUDING NONE, which is the
+            // whole of what an open competition is for and is therefore what the
+            // paper states. `how-an-entrant-is-announced.ts` is the reading that
+            // does it when somebody actually stands up.
+            return `${house.name} is holding an open competition at its own gate in `
+                + `${Math.max(0, ask.onDay - onDay)} days. Anybody may enter, of any house or `
+                + 'none, and everybody who stands up is called out by their name and by who '
+                + 'they answer to. The boards are run one to a realm, so you stand against '
+                + 'people at your own height.';
     }
 }
 
@@ -423,10 +473,12 @@ export function noticesOnTheWall(input: WallInput & {
         bill
     }));
 
+    const reaching = input.speaking
+        .filter(house => house.postsInPublic && reachesThisGround(house, input.placeProvinceId));
+
     // One paper per ask, so a house with two things to say takes two nails and
     // competes with itself for them like anybody else.
-    const pool = input.speaking
-        .filter(house => house.postsInPublic && reachesThisGround(house, input.placeProvinceId))
+    const pool = reaching
         .flatMap(house => house.asks.map(ask => ({ house, ask })))
         .sort((a, b) => a.house.id.localeCompare(b.house.id)
             || a.ask.kind.localeCompare(b.ask.kind));
@@ -463,12 +515,84 @@ export function noticesOnTheWall(input: WallInput & {
             houseId: house.id,
             houseName: house.name,
             placeName: input.placeName,
-            saying: whatThePaperSays(house, ask),
+            saying: whatThePaperSays(house, ask, input.onDay),
             andWhatItIsNot: WHAT_A_NOTICE_DOES_NOT_BUY[ask.kind],
-            // NO DATE. Not an omission: none of these three is an appointment.
-            // An ask that grows one states it from the fact that produced it,
-            // never from the day it was read.
-            onDay: null,
+            // A DATE ONLY WHERE THE PAPER GENUINELY HAS ONE. Three of the four
+            // asks are not appointments and carry none; the open competition
+            // states the day off the fact that produced it, never off the day it
+            // was read, which is what keeps a wall read twice a month apart
+            // naming one day a month closer rather than two different days.
+            onDay: ask.kind === 'open_competition' ? ask.onDay : null,
+            bill: null
+        });
+    }
+
+    // ── AND THE DATED PAPER, ON ONE NAIL OF ITS OWN ──────────────────────
+    //
+    // MEASURED, AND THE MEASUREMENT IS WHY THIS IS AN EXTRA NAIL RATHER THAN A
+    // SHARED ONE. Three arrangements were tried:
+    //
+    //   in the ask pool        the pool emits one of each kind before a second
+    //                          of any, so a fourth kind made the kinds
+    //                          outnumber the three nails and WHICH one was
+    //                          dropped became a property of the seeded draw.
+    //                          `a-house-puts-on-a-wall-what-it-wants-from-
+    //                          strangers` went red on a wall that had stopped
+    //                          posting work - the exact defect that module was
+    //                          written against.
+    //   a budget of its own    fixed that and broke the other invariant beside
+    //                          it: non-intake paper at most
+    //                          `BILLS_A_WALL_CARRIES[ground]`, which is what
+    //                          keeps a village wall from reading like a city.
+    //   leftover nails only    the conservative option, and it measured DEAD.
+    //                          Swept over every city on the shipped map across
+    //                          three years: zero competitions ever reached a
+    //                          wall, because a real province has enough houses
+    //                          wanting hands and holding ground to fill every
+    //                          nail on every day. A test fixture with three
+    //                          kinds and three nails is not the tight case - the
+    //                          shipped world is tighter.
+    //
+    // So there is no arrangement that adds a fourth kind without either
+    // enlarging the wall or taking a nail off the three, and the two invariants
+    // are not worth the same: one protects how much paper a wall holds, and the
+    // other protects a rogue seeing anything at all besides an intake. ONE extra
+    // nail, for at most one dated paper, is the smallest thing that keeps the
+    // second - and it is defensible on its own terms rather than as a
+    // concession, because `BILLS_A_WALL_CARRIES` budgets STANDING business,
+    // which is why `A_BILL_STAYS_UP_FOR_DAYS` sits beside it. A competition
+    // notice goes up and comes down inside `A_NOTICE_GOES_UP_DAYS` and is gone.
+    //
+    // AND IT IS DERIVED HERE RATHER THAN PASSED IN, which is what routes it.
+    // `alsoAsking` exists for asks only a world can answer - a missing disciple
+    // is a fact about today's roll - and a house's calendar is not one of those:
+    // it is a function of the seed, the house and the year, exactly as an
+    // intake's season is. Deriving it where the seed and the day already are
+    // means every caller of `readTheWall` carries it without one of them being
+    // edited. A caller that DOES hold better facts can still supply one through
+    // `alsoAsking`, where it takes an ordinary nail; the ask has one shape and
+    // two doors.
+    const dated = reaching
+        .flatMap(house => {
+            const holding = whatThisHouseHasOnPaper(input.seed, house, input.onDay);
+            return holding === null ? [] : [{ house, onDay: holding.onDay }];
+        })
+        // Soonest first, and only one. A wall carrying three competition
+        // notices is a wall that has stopped being about anything else, and the
+        // nearest is the one somebody standing here could still get to.
+        .sort((a, b) => a.onDay - b.onDay || a.house.id.localeCompare(b.house.id))
+        .slice(0, A_DATED_PAPER_TAKES_ONE_NAIL);
+
+    for (const { house, onDay } of dated) {
+        const ask: TheAsk = { kind: 'open_competition', onDay };
+        out.push({
+            kind: ask.kind,
+            houseId: house.id,
+            houseName: house.name,
+            placeName: input.placeName,
+            saying: whatThePaperSays(house, ask, input.onDay),
+            andWhatItIsNot: WHAT_A_NOTICE_DOES_NOT_BUY[ask.kind],
+            onDay,
             bill: null
         });
     }

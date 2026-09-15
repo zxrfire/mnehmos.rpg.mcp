@@ -19,6 +19,16 @@
  * closed one, and the house at the top of a board gets least out of holding it,
  * which is why it invites anybody.
  *
+ * THOSE TWO SENTENCES DESCRIBED SOMETHING THAT DID NOT EXIST, for as long as the
+ * only board in the world was `gatherings.ts`'s - a circle of allied houses,
+ * closed by construction, every attendee drawn from `chosenOf`. A header
+ * describing a consequence of an absent mechanism is this repo's dominant defect
+ * in its purest form, and it is recorded here rather than quietly deleted
+ * because the reasoning was right and only the mechanism was missing.
+ * `a-competition-anybody-may-enter.ts` is now the open half; it puts the date on
+ * a wall and nothing enters it yet, so the first sentence is a claim about a
+ * thing that exists and the second is still waiting on entrants.
+ *
  * Pure. A board in, days out. The caller moves the clock.
  */
 

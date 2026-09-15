@@ -1201,6 +1201,32 @@ There is no single predetermined timeline. A different faction winning produces 
 territory, different resources, different people rising, and different conflicts - and the
 divergence is irreversible.
 
+### And the world's own passes do not end everybody they can reach
+
+A pass of the world's own calls `theWorldEnds` / `theWorldLoses`, never `markDead` /
+`markMissing`. They return `NpcRecord | null`, and null means this row is not the world's
+to end - so the caller has to say what happens instead before it can write anything back.
+That is the whole guard: the world ends people through one seam rather than at the dozen
+sites that currently want to.
+
+Two rows it refuses, and they are one rule from two directions. **The player**, whose death
+belongs to the survival layer and to the sheet holding their years. **Somebody a catalog
+STATES is standing** - `theCatalogStatesTheyAreStanding`, declared as a field on the catalog
+row and carried onto the record as a tag at seed time. A catalog mostly describes and the
+world does as it likes with the result; a statement is a fact the writing rests on, and a
+world in which it is false is a world that contradicts its own sources.
+
+Neither is an exemption from being MOVED. Both are in every pool, climb, are talked to,
+robbed and wounded; nothing filters them out of `theWorldsPeople` and nothing should. And
+neither binds the player: `markDead` stays the unguarded primitive and every path in
+`src/web/` keeps calling it, so somebody a player kills is dead, stated or not.
+
+Measured across 24 pinned worlds at 200 years: the Old River line's ancestor, whose catalog
+header rests on his being the one person in the family still alive, came out ended in 3 to 5
+of them depending on which world pass got him - and the pass that did it changed when an
+unrelated fix altered how events were spread. That is why the guard is a seam and not a
+check at the sites somebody had listed.
+
 ### `advanceTime(state, days)`
 
 Moves the world clock and returns what changed. It does **not** simulate anybody. It does
@@ -2967,6 +2993,48 @@ worth anything to be given.
   winning is already paid in prestige, and a strong disciple walking through a weak field
   has learned nothing. A deep field therefore teaches more than a shallow one, which is why
   a house invites anybody at all.
+
+### The open competition, and the half of it that is built
+
+`gatherings.ts` is the **closed** competition and is complete: houses that would sit down
+with each other, delegations drawn from `chosenOf`, one board per realm. The **open** one -
+a house that opens its own gate to anybody, of any house or none - is the design owner's
+and was never built. What was measured before starting: `Gathering`, `applyGatherings` and
+every conclave reader had **zero references anywhere in `src/web/` or `src/server/`**. The
+whole subsystem ran headless, and the only channel any of it ever reached a player through
+was `what-people-are-saying.ts`, in the past tense with no date. **A competition nobody can
+hear about before it falls is not a competition.**
+
+- **`a-competition-anybody-may-enter.ts`** - the calendar, and the first slice. A house
+  opens its gate about every `AN_OPEN_COMPETITION_EVERY_YEARS`, the day is a function of
+  the seed, the house and the **year**, and the paper goes up within
+  `A_NOTICE_GOES_UP_DAYS` of it falling. It is a fourth `TheAsk` rather than a channel of
+  its own precisely because the discovery layer is already four deep and wired -
+  `noticesOnTheWall`, `readTheWall`, `billsOnTheWall`, `whatThereIsToWaitFor` - and a
+  second announcement channel beside four working ones would be this directory's dominant
+  defect committed on purpose.
+- **`how-an-entrant-is-announced.ts`** - name, then who they answer to, **including
+  nobody**, in one shape both ways. Derived over the placing rather than stored, and it is
+  what makes a rogue cultivator's placing worth anything. Routed into `runCompetition`'s
+  board line.
+
+**The wall had no room and the measurement is why it has one nail more.** A fourth kind in
+the ask pool made the kinds outnumber the nails, and which one was dropped became a
+property of the seeded draw - a wall that had stopped posting work, the exact defect
+`houses-that-have-to-advertise-for-disciples.ts` was written against. Given only leftover
+nails instead, it measured **dead: zero competitions reached any city wall on the shipped
+map across three years**, because a real province has enough houses wanting hands to fill
+every nail every day. So `A_DATED_PAPER_TAKES_ONE_NAIL` is an extra nail rather than a
+shared one, and `BILLS_A_WALL_CARRIES` now means standing business only.
+
+**And the rate is a province's figure, not a house's.** Four cities, three years: at every
+three years a competition was pending on **70%** of days, which is furniture; at every
+seven, **36%**, and all four cities carried one inside a player's first year.
+
+**What is not built yet, so nobody mistakes the absence for a decision:** nothing enters
+one. There is no player verb, no entrant, no result. And *which* house opens its gate is a
+calendar rather than a reason - the reason is `whatAContestIsWorthToThePeopleInIt` read
+over the house's own roll, and it needs a world this layer is deliberately not handed.
 - **`a-year-at-the-doors.ts`** - the yearly pass, one call. It routes `shutAPublicRuin`
   rather than rebuilding it. **That module had no caller outside its own test**, which is
   the whole of why nothing in the world was ever held.

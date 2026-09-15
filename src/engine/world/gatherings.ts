@@ -34,9 +34,9 @@ import {
     addGoal,
     bodyStandingOn,
     carryingWounds,
-    markDead,
     maxBodyOf,
     relationshipWith,
+    theWorldEnds,
     upsertRelationship,
     woundsCarriedBy,
     type NpcRecord,
@@ -58,6 +58,7 @@ import { settleNpcDeath } from './time.js';
 import {
     whatAContestIsWorthToThePeopleInIt
 } from './what-a-contest-is-worth-to-the-people-in-it.js';
+import { theBoardAsItIsCalledOut } from './how-an-entrant-is-announced.js';
 import { getLocation, indexById, type FactionRecord, type WorldState } from './world-state.js';
 import { isRuined, isSomethingYouWouldSwing, ruin } from './possessions.js';
 
@@ -946,8 +947,17 @@ function whoDidNotGetUp(
         state.npcs[at] = got.npc;
 
         const other = person.id === a.id ? b : a;
-        state.npcs[at] = markDead(state.npcs[at]!, day,
+        const ended = theWorldEnds(state.npcs[at]!, day,
             `Went down at a friendly bout with ${other.name}, and did not get up.`);
+        // Somebody the world may not end goes down and is carried out, which is
+        // the same ending the two branches above take when a bystander gets a
+        // hand in. The bout happened; the body is the part that is not the
+        // world's to produce.
+        if (!ended) {
+            state.npcs[at] = floored(got.npc, day);
+            continue;
+        }
+        state.npcs[at] = ended;
         // The same handoff every other death in the world gets: heirs, goals,
         // and what they were carrying. A gathering does not get its own.
         settleNpcDeath(state, state.npcs[at]!, day);
@@ -1070,10 +1080,18 @@ function runCompetition(
 
     // Everybody who was ranked against everybody they were ranked against. The
     // person immediately above you is the one you remember.
+    //
+    // THE GUARD IS "THE SAME HOUSE", AND TWO PEOPLE WITH NO HOUSE ARE NOT IN
+    // ONE. Written as a bare equality it folded every unaffiliated entrant into
+    // a single phantom house, so two rogues who placed next to each other wrote
+    // no tie at all - the one pair on the board with the most reason to
+    // remember each other, and the engine reading `null === null` as
+    // housemates. Dormant while every attendee came from `chosenOf` and every
+    // one of those has a house; live the moment a board is open to anybody.
     for (let i = 1; i < scored.length && i < MAX_INTRODUCTIONS; i++) {
         const below = scored[i].npc;
         const above = scored[i - 1].npc;
-        if (below.factionId === above.factionId) continue;
+        if (below.factionId !== null && below.factionId === above.factionId) continue;
         write(state, below, above, -0.2, `Placed ${i + 1} behind them.`, factId, day, ties);
         write(state, above, below, 0.1, 'Came up right behind and will again.', factId, day, ties);
     }
@@ -1111,12 +1129,23 @@ function runCompetition(
         const rows = boards.get(p.bracket);
         if (rows) rows.push(p); else boards.set(p.bracket, [p]);
     }
+    // AND EACH ONE IS CALLED OUT BY NAME AND BY WHO THEY ANSWER TO. A placing
+    // said as a bare name is a scoreboard; a placing said with the house on it
+    // is how a reputation is made in public in this genre, and it is the only
+    // way an entrant with no house means anything - see
+    // `how-an-entrant-is-announced.ts` for why both are said in one shape.
+    const houseNameOf = (factionId: string | null): string | null =>
+        factionId === null ? null : state.factions.find(f => f.id === factionId)?.name ?? null;
     const board = [...boards.entries()]
         // A bracket nobody could have lost to is not a result. It is still a
         // placing on the record; it is just not worth saying out loud.
         .filter(([, rows]) => rows.length > 1)
         .map(([realm, rows]) => `${REALM_TIERS.find(t => t.key === realm)?.name ?? realm}: `
-            + rows.slice(0, 3).map(p => `${p.place}. ${p.name}`).join(', '))
+            + theBoardAsItIsCalledOut(rows.slice(0, 3).map(p => ({
+                place: p.place,
+                name: p.name,
+                houseName: houseNameOf(p.factionId)
+            }))))
         .join('. ');
     return {
         summary: `${circle.host.name} ranked ${placings.length} chosen of `

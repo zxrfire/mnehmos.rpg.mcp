@@ -36,6 +36,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     A_BILL_STAYS_UP_FOR_DAYS,
+    A_DATED_PAPER_TAKES_ONE_NAIL,
     BILLS_A_WALL_CARRIES,
     billsOnTheWall,
     noticesOnTheWall,
@@ -119,10 +120,29 @@ describe('recruitment is one kind of notice, not the only one', () => {
         expect(billsOnTheWall({ ...WALL, field: field() })).toEqual(alone);
     });
 
+    /**
+     * THE CLOSED SET GREW, AND THE GUARANTEE DID NOT MOVE.
+     *
+     * `open_competition` was added as a fourth ask - a house holding a
+     * competition anybody may enter, which is the only forward-looking dated
+     * thing on a wall. Putting it in the ask pool cost this assertion
+     * immediately and correctly: the pool emits one of each kind before a second
+     * of any, so four kinds against three nails made WHICH kind was dropped a
+     * property of the seeded draw, and a wall that had stopped posting work is
+     * the exact defect this module was written against.
+     *
+     * The fix was a budget of its own rather than a fourth competitor for the
+     * same three nails - the shape the intakes already have. So the three
+     * ordinary kinds keep the guarantee they had, and the list below is longer
+     * because the wall genuinely carries a fourth kind now, not because the
+     * guarantee was relaxed to accommodate it.
+     */
     it('carries the other three kinds beside them', () => {
         const kinds = new Set(wall().map(n => n.kind));
         expect(kinds.has('work')).toBe(true);
-        expect([...kinds].every(k => ['intake', 'work', 'warning', 'missing'].includes(k))).toBe(true);
+        expect([...kinds].every(
+            k => ['intake', 'work', 'warning', 'missing', 'open_competition'].includes(k)
+        )).toBe(true);
     });
 });
 
@@ -158,12 +178,34 @@ describe('a house that would never admit you still wants something from you', ()
         expect(ids).not.toContain('house-5');
     });
 
+    /**
+     * THE BOUND WAS RESTATED, NOT RELAXED. It used to read "non-intake paper is
+     * at most `BILLS_A_WALL_CARRIES[ground]`", which was the same sentence as
+     * "standing business is at most that" for as long as everything on a wall
+     * was standing business. An open-competition notice is an appointment: it
+     * goes up inside `A_NOTICE_GOES_UP_DAYS` of falling and is gone afterwards,
+     * and it takes `A_DATED_PAPER_TAKES_ONE_NAIL` on top rather than one of the
+     * three - which was measured rather than chosen, since making it share meant
+     * either a wall that had stopped posting work or, when it was given only
+     * leftover nails, a feature that reached ZERO city walls on the shipped map
+     * across three years. See `noticesOnTheWall`.
+     *
+     * So the claim this test exists for - a village wall does not read like a
+     * city one - is asserted unchanged, and the ceiling is stated against the
+     * two budgets it is now made of.
+     */
     it('carries less paper in a village than in a city, and none in a hamlet', () => {
         const city = wall({ ground: 'city' }).filter(n => n.kind !== 'intake').length;
         const village = wall({ ground: 'village' }).filter(n => n.kind !== 'intake').length;
         expect(city).toBeGreaterThan(village);
         expect(wall({ ground: 'hamlet' })).toEqual([]);
-        expect(city).toBeLessThanOrEqual(BILLS_A_WALL_CARRIES.city);
+
+        const standing = (ground: 'city' | 'village') => wall({ ground })
+            .filter(n => n.kind !== 'intake' && n.kind !== 'open_competition').length;
+        expect(standing('city')).toBeLessThanOrEqual(BILLS_A_WALL_CARRIES.city);
+        expect(standing('village')).toBeLessThanOrEqual(BILLS_A_WALL_CARRIES.village);
+        expect(city).toBeLessThanOrEqual(
+            BILLS_A_WALL_CARRIES.city + A_DATED_PAPER_TAKES_ONE_NAIL);
     });
 });
 
