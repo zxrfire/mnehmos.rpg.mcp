@@ -48,35 +48,37 @@
  * pins one without the other is pinning a coincidence.
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * THIS IS RED, AND IT IS RED ABOUT SOMETHING REAL
+ * TWICE RED, AND EACH TIME ONE STEP FURTHER ALONG THE ROUTE
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * `I go to Earth Vein Tower grounds` does not walk to Earth Vein Tower grounds.
- * It is read as a question about dao-ground allocation and answered *"Ground
- * like that is allocated by houses to their own, in days, by standing. You
- * belong to none..."*, and the player is left standing in the province.
+ * FIRST, AT THE JOURNEY. `I go to Earth Vein Tower grounds` was read as a
+ * question about dao-ground allocation and answered with a paragraph about how
+ * houses allocate ground, leaving the player standing in the province.
+ * `asksAfterGroundTime` wants a chamber word, a house word and something being
+ * asked, and a house NAMED for a vein supplied the chamber word itself - so
+ * `I travel to` arrived and `I go to` did not. Fixed in 83fc2f09 by asking that
+ * gate's question of the sentence with the proper names taken out.
  *
- * Isolated to one line. `asksAfterGroundTime` in `verb-pattern-table.ts` fires
- * when a sentence holds one of `chamber|vein|cave|ground|room`, names a house,
- * and holds one of `go to|use|ask for|...`. A house called **Earth Vein** Tower
- * puts `vein` in the sentence as part of its own NAME, so every one of the three
- * conditions is met by a sentence that is plainly a journey. Played, on
- * `in-front-of-somebody-world`:
+ * THEN, AT THE ASK, which is where it has been red since. The request reached
+ * the right person and came back priced - the engine's own log said *"The Keeper
+ * who holds the count is carrying 0 arts"* - and the sentence the player reads
+ * opened *"They hear you out"*, in a square holding five wardens. A refusal's
+ * `prose` is the whole of what a player with no model gets; the name was in the
+ * headline, which is a summary channel nobody is shown. It names them now.
  *
- *     "I go to Earth Vein Tower grounds"      -> look / ground_time, no journey
- *     "I travel to Earth Vein Tower grounds"  -> move / travel, arrives
- *     "I go to Azure Dew Sect grounds"        -> move / travel
+ * AND THE ANSWER ITSELF IS CORRECT, which is worth writing down because it
+ * looks like a content hole. The gate the world hands this route is Deeproot
+ * Court, and a posting is not a sect: measured on `in-front-of-somebody-world`,
+ * 435 of 451 living people hold at least one art, every house in the world has
+ * all of its members holding one, and Deeproot Court alone holds 0 of 5 -
+ * by design, because it teaches nothing and takes nobody. So what this route
+ * ends in is a priced refusal from somebody real, which is the shape this file
+ * asks for.
  *
- * So the route is walkable and the sentence the game invites is not, which is
- * exactly what this file exists to catch: `where can I go` prints the gate, and
- * `I go to <the thing it printed>` is what a player types next.
- *
- * NOT PAPERED OVER. The obvious repairs - choose a gate whose name parses, or
- * type `I travel to` instead - both make the test pass by asking a different
- * question than the one it exists to ask. The gate is already chosen by reading
- * the world (whichever one this cultivator can name has somebody worth asking on
- * it); the world moved that onto Earth Vein Tower and the defect was underneath
- * all along.
+ * NOT PAPERED OVER. The obvious repairs - choose a gate whose name parses, pick
+ * a house that teaches, or type `I travel to` instead - all make the test pass
+ * by asking a different question than the one it exists to ask. The gate is
+ * chosen by reading the world, and both defects were underneath it all along.
  */
 
 import { describe, it, expect } from 'vitest';

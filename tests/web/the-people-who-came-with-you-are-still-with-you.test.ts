@@ -20,6 +20,22 @@
  * you is read off each companion's own `out_with_a_party` activity, which is the
  * fact the world already keeps.
  *
+ * ── WHAT THEY CAUGHT, AND IT WAS A CLOCK ────────────────────────────────
+ *
+ * Two of the three went red and stayed red, on a defect neither of them names:
+ * the party's term was written on `Run.elapsedDays` and every reader of it runs
+ * on `WorldState.currentDay`. A world opens at day 365,000 and a run at day 0,
+ * so a party the player raised was 364,600 days overdue the moment it existed;
+ * `bringHomeWhoeverIsDue` sent everybody home and cleared the activity on the
+ * world advance inside that same turn, and the player walked to Ren's Stair
+ * alone with the companions' rows still standing at Bronze Bell Cliff.
+ *
+ * It is the failure this repo keeps finding: the party was built correctly and
+ * the thing it was routed through could not reach it. The verbs now take the
+ * world's day and no caller states one - `theDayAPartyIsOn` in
+ * `travel-verbs.ts` is the single answer, and a term in days is what a caller
+ * passes.
+ *
  * RED-CHECKED. With the `theyArrivedWithYou` call removed from `move`, the
  * arrival assertion fails on the companion still standing at the place they
  * started from; with `whoIsWithYouOnTheRoad` returning `[]` in `fold`, the fold
@@ -124,7 +140,7 @@ function standWhereTwoOthersAre(game: any, cultivator: any): any {
  * and a fixture that needs a 2.8% summons roll to land is a fixture that goes
  * flaky.
  */
-function twoOfThemOnTheRoad(game: any, starting: any, onDay = 0, untilDay = 400) {
+function twoOfThemOnTheRoad(game: any, starting: any, forDays = 400) {
     const cultivator = standWhereTwoOthersAre(game, starting);
     const here = placeRow(game, cultivator.location);
     expect(here, 'the player is standing nowhere the world holds').not.toBeNull();
@@ -137,7 +153,7 @@ function twoOfThemOnTheRoad(game: any, starting: any, onDay = 0, untilDay = 400)
     const names = game.putThemOnTheRoadWithYou(
         cultivator,
         locals.map((npc: any) => ({ id: npc.id, name: npc.name })),
-        { note: 'Out on the road together.', onDay, untilDay }
+        { note: 'Out on the road together.', forDays }
     );
     expect(names.length).toBe(2);
     // The cultivator row as it now stands, because the helper may have moved
@@ -237,6 +253,11 @@ describe('the people who came with you', () => {
         expect(takingOut.length, 'the house has nobody junior enough to send')
             .toBeGreaterThan(0);
 
+        // The day they leave on, off the world's clock, which is the clock an
+        // activity's term is written on. Read BEFORE the turn, because accepting
+        // spends the term.
+        const leftOn = Math.floor(game.atHand.currentDay);
+
         rememberSummons(repos, senior.id, {
             duty: { ...duty, takingOut, cohort: takingOut.length },
             entryId: candidate.entry.id,
@@ -254,7 +275,7 @@ describe('the people who came with you', () => {
         // back through the same function the travel verbs use, on the day they
         // were put on the road rather than today - the term may already have
         // been spent by the span, which is the seam this test's header names.
-        const onTheRoad = whoIsOnTheRoadWith(game.atHand.npcs, senior.id, 0);
+        const onTheRoad = whoIsOnTheRoadWith(game.atHand.npcs, senior.id, leftOn);
         expect(onTheRoad.map(npc => npc.id).sort())
             .toEqual(takingOut.map(member => member.id).sort());
     }, 300_000);

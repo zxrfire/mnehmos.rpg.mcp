@@ -771,7 +771,7 @@ export const travelVerbs = {
 
         // AND THE PEOPLE WHO CAME WITH YOU. A road has no capacity: everybody
         // walks, and a party on foot costs what one person costs.
-        const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
+        const came = this.theyArrivedWithYou(applied.cultivator, arrivedAt);
         if (came) {
             facts.lines.push(came.line);
             facts.required = [...(facts.required ?? []), came.line];
@@ -1073,7 +1073,30 @@ export const travelVerbs = {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Put named people on the road with this cultivator.
+     * The day a party's term is written and read on, which is the WORLD's.
+     *
+     * `NpcActivity.sinceDay` and `untilDay` are world-clock fields: the world's
+     * own sendings write them off `WorldState.currentDay`, and the two passes
+     * that read them - `bringHomeWhoeverIsDue` and `whatTheKeeperNotices` -
+     * are handed a world day. A term written on `Run.elapsedDays` is therefore
+     * a term that ended before the run began.
+     *
+     * MEASURED: a fresh world opens at `currentDay` 365,000 and a run starts at
+     * `elapsedDays` 0, so a party raised by the player was 364,600 days overdue
+     * the moment it was written. The next world advance - inside the same turn -
+     * brought everybody home and cleared the activity, and the player arrived
+     * alone. Both played party tests were red on it.
+     *
+     * So no caller states a day. Every party method below takes the world's,
+     * which is the only clock its readers use.
+     */
+    theDayAPartyIsOn(this: GameService): number | null {
+        const world = this.atHand;
+        return world ? Math.floor(world.currentDay) : null;
+    },
+
+    /**
+     * Put named people on the road with this cultivator, for a term in days.
      *
      * The one producer today is the escort duty: a house asks a senior to take
      * juniors out, `Duty.takingOut` names them, and saying yes is what puts
@@ -1089,16 +1112,17 @@ export const travelVerbs = {
         this: GameService,
         cultivator: Cultivator,
         party: readonly { id: string; name: string }[],
-        input: { note: string; onDay: number; untilDay: number }
+        input: { note: string; forDays: number }
     ): string[] {
         const world = this.atHand;
-        if (!world || party.length === 0) return [];
+        const today = this.theDayAPartyIsOn();
+        if (!world || today === null || party.length === 0) return [];
         const changed = takeThemWithYou(world.npcs, {
             party,
             leaderId: cultivator.id,
             note: input.note,
-            onDay: input.onDay,
-            untilDay: input.untilDay
+            onDay: today,
+            untilDay: today + Math.max(1, Math.trunc(input.forDays))
         });
         if (changed.length === 0) return [];
         for (const row of changed) {
@@ -1112,11 +1136,11 @@ export const travelVerbs = {
     /** Everybody on the road with this cultivator today. */
     whoIsWithYouOnTheRoad(
         this: GameService,
-        cultivator: Cultivator,
-        run: Run
+        cultivator: Cultivator
     ): readonly NpcRecord[] {
-        if (!this.atHand) return [];
-        return whoIsOnTheRoadWith(this.atHand.npcs, cultivator.id, Math.floor(run.elapsedDays));
+        const today = this.theDayAPartyIsOn();
+        if (!this.atHand || today === null) return [];
+        return whoIsOnTheRoadWith(this.atHand.npcs, cultivator.id, today);
     },
 
     /**
@@ -1128,12 +1152,11 @@ export const travelVerbs = {
      */
     thePartyWithYou(
         this: GameService,
-        cultivator: Cultivator,
-        run: Run
+        cultivator: Cultivator
     ): { line: string; structure: string } | null {
-        return whatThePartyIs(
-            this.whoIsWithYouOnTheRoad(cultivator, run), Math.floor(run.elapsedDays)
-        );
+        const today = this.theDayAPartyIsOn();
+        if (today === null) return null;
+        return whatThePartyIs(this.whoIsWithYouOnTheRoad(cultivator), today);
     },
 
     /**
@@ -1146,16 +1169,16 @@ export const travelVerbs = {
      */
     whereTheyAlreadyAre(
         this: GameService,
-        personId: string,
-        today: number
+        personId: string
     ): {
         outWith: { withIds: readonly string[]; untilDay: number | null; note: string } | null;
         otherwiseAt: string | null;
         bringsAlong: { id: string; name: string }[];
     } {
         const npcs = this.atHand?.npcs ?? [];
-        const npc = npcs.find(row => row.id === personId);
-        if (!npc) return { outWith: null, otherwiseAt: null, bringsAlong: [] };
+        const today = this.theDayAPartyIsOn();
+        const npc = today === null ? undefined : npcs.find(row => row.id === personId);
+        if (!npc || today === null) return { outWith: null, otherwiseAt: null, bringsAlong: [] };
         const out = whoTheyAreOutWith(npc, today);
         const doing = npc.activity;
         return {
@@ -1197,15 +1220,14 @@ export const travelVerbs = {
     theyArrivedWithYou(
         this: GameService,
         cultivator: Cultivator,
-        run: Run,
         arrivedAt: string
     ): { names: string[]; line: string; structure: string } | null {
         const world = this.atHand;
-        if (!world) return null;
+        const today = this.theDayAPartyIsOn();
+        if (!world || today === null) return null;
         const place = worldLocationFor(world, arrivedAt);
         if (!place) return null;
 
-        const today = Math.floor(run.elapsedDays);
         const moved = theyComeWithYou(world.npcs, {
             leaderId: cultivator.id,
             arrivedAt: place.id,
@@ -1271,7 +1293,7 @@ export const travelVerbs = {
         // EVERYBODY WHO IS GOING, and `priceJourney` turns that into trips
         // against the conveyance's own capacity. Read before the journey,
         // because a party is what decides which conveyance is the right one.
-        const withYou = this.whoIsWithYouOnTheRoad(cultivator, run);
+        const withYou = this.whoIsWithYouOnTheRoad(cultivator);
         const heads = 1 + withYou.length;
 
         const chosen = (asked && available.some(a => a.conveyance.id === asked.id)
@@ -1325,7 +1347,7 @@ export const travelVerbs = {
         }
         lines.push(...applied.tollLines, ...world.lines);
 
-        const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
+        const came = this.theyArrivedWithYou(applied.cultivator, arrivedAt);
         if (came) lines.push(came.line);
 
         lines.push(...atTheGate);
@@ -1395,7 +1417,7 @@ export const travelVerbs = {
         // one of those is right is a design question (`OPEN-QUESTIONS.md`),
         // and stepping out of the world in front of the juniors you were told
         // to escort is not a thing to do to somebody by default.
-        const withYou = this.whoIsWithYouOnTheRoad(cultivator, run);
+        const withYou = this.whoIsWithYouOnTheRoad(cultivator);
         if (withYou.length > 0) {
             return refused('engine.priceFold', 'fold', factsForRefusal(
                 'A fold takes one body.',
@@ -1612,7 +1634,7 @@ export const travelVerbs = {
         // arrives together and waits for the person the crossing was hardest
         // on*. Nothing here decides either; this only stops asserting that the
         // player is travelling alone.
-        const withYou = this.whoIsWithYouOnTheRoad(cultivator, run);
+        const withYou = this.whoIsWithYouOnTheRoad(cultivator);
         const quote = quotePassageAtACounter(route, {
             heads: 1 + withYou.length,
             worstPassengerOrdinal: theSlowestOfThem(cultivator.realmOrdinal, withYou),
@@ -1667,7 +1689,7 @@ export const travelVerbs = {
             ...world.lines
         ];
 
-        const came = this.theyArrivedWithYou(applied.cultivator, applied.run, arrivedAt);
+        const came = this.theyArrivedWithYou(applied.cultivator, arrivedAt);
         if (came) lines.push(came.line);
 
         lines.push(...atTheGate);

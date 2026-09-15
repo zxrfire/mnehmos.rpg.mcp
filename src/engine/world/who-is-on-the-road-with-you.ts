@@ -73,6 +73,12 @@ export const A_SEASON_ON_THE_ROAD = 90;
  * is over - so the day this pass stops naming somebody is the day the world
  * sends them home. Two readings of when a term ends is exactly the drift this
  * module exists to avoid.
+ *
+ * `today` IS A WORLD DAY, like every other day on an `NpcActivity`. A caller
+ * handing it `Run.elapsedDays` is asking about a party 365,000 days before the
+ * one the world is running, and the world will have ended that term before the
+ * turn is out. `theDayAPartyIsOn` in `travel-verbs.ts` is the played side's
+ * single answer to which day this is, and carries the measurement.
  */
 export function whoIsOnTheRoadWith(
     npcs: readonly NpcRecord[],

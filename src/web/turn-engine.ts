@@ -4145,7 +4145,7 @@ ${noticedWaiting}`;
                 // sheet says it. Off the reading, so there is no second answer
                 // to who is here - `look` finds the same people because they
                 // are standing in the same place.
-                const alongside = this.thePartyWithYou(cultivator, run);
+                const alongside = this.thePartyWithYou(cultivator);
                 if (alongside !== null) {
                     sheet.facts.lines.push(alongside.line);
                     sheet.facts.prose = `${sheet.facts.prose}\n\n${alongside.line}`;
@@ -14991,8 +14991,7 @@ ${fit.line}`;
         const alongside = this.putThemOnTheRoadWithYou(cultivator, duty.takingOut, {
             note: `Out for ${duty.factionName ?? 'the house'} on ${called}, `
                 + `with ${cultivator.name}.`,
-            onDay: today,
-            untilDay: today + duty.days
+            forDays: duty.days
         });
 
         // Only what is left of it. See `daysServedOn`.
@@ -16033,13 +16032,17 @@ ${fit.line}`;
         // people as it finds those. Nothing stores a roster; the term written
         // here IS the party.
         if (kind === 'company') {
-            const today = Math.floor(run.elapsedDays);
-            const until = today + Math.max(1, Math.trunc(along.forDays));
+            // The term is days, and the day it is counted from is the world's -
+            // see `theDayAPartyIsOn`, which is the only thing here that names a
+            // day at all.
+            const forDays = Math.max(1, Math.trunc(along.forDays));
+            const leftOn = this.theDayAPartyIsOn();
+            const until = leftOn === null ? null : leftOn + forDays;
             // AND WHOEVER HAD ALREADY SAID YES TO THEM. Read off the mustering
             // activity by `whereTheyAlreadyAre` - the world puts a person
             // raising a party in front of the player on purpose, and until this
             // no sentence reached one.
-            const theirs = this.whereTheyAlreadyAre(party.id, today).bringsAlong;
+            const theirs = this.whereTheyAlreadyAre(party.id).bringsAlong;
             const came = this.putThemOnTheRoadWithYou(
                 cultivator,
                 [{ id: party.id, name: party.name }, ...theirs],
@@ -16047,8 +16050,7 @@ ${fit.line}`;
                     note: along.bound === null
                         ? `On the road with ${cultivator.name}.`
                         : `On the road with ${cultivator.name}, bound for ${along.bound}.`,
-                    onDay: today,
-                    untilDay: until
+                    forDays
                 }
             );
             // A person the world holds no row for cannot be put on a road. The
@@ -16069,9 +16071,13 @@ ${fit.line}`;
                 });
                 return { lines, calls };
             }
+            // A SPAN AND NOT A DATE. The term is kept on the world's clock,
+            // which is five figures deep in a run's first year; what somebody
+            // agreeing to come would actually say is how long for.
             lines.push(
                 `${came.length === 1 ? party.name : came.join(', ')} `
-                + `${came.length === 1 ? 'comes' : 'come'} with you until day ${until}`
+                + `${came.length === 1 ? 'comes' : 'come'} with you for `
+                + `${forDays} day${forDays === 1 ? '' : 's'}`
                 + `${along.bound === null ? '' : `, bound for ${along.bound}`}`
                 + `. ${came.length === 1 ? 'They are' : 'They are'} where you are from here, and `
                 + 'on the day the term runs out they go back to where they set out from.'
@@ -16080,7 +16086,7 @@ ${fit.line}`;
                 name: 'world.takeThemWithYou',
                 action: 'request',
                 summary:
-                    `${came.length} out with ${cultivator.name} from day ${today} to day `
+                    `${came.length} out with ${cultivator.name} from world day ${leftOn} to day `
                     + `${until} - ${came.join(', ')}`
                     + `${theirs.length === 0
                         ? ''

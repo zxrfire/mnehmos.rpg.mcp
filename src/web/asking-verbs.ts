@@ -1268,7 +1268,7 @@ ${unnamed}`;
             theyWant: wanted?.goal.text ?? null,
             ...(shape === 'company'
                 ? {
-                    where: this.whereTheyAlreadyAre(party.id, Math.floor(run.elapsedDays)),
+                    where: this.whereTheyAlreadyAre(party.id),
                     bound,
                     forDays: term
                 }

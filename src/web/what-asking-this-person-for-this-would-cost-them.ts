@@ -406,11 +406,17 @@ function costOfTeaching(
             techniqueId: null,
             refusal: {
                 headline: `${asked.name} has nothing to teach you.`,
+                // NAMED, BECAUSE A HEADLINE IS NOT SHOWN TO ANYBODY. This said
+                // "They hear you out", and a refusal's `prose` is the whole of
+                // what a player without a model reads - so the one answer in
+                // this file that never said WHO refused was the one played in a
+                // square holding five wardens, where "they" points at nobody.
+                // The engine's own log named them the whole time.
                 prose:
-                    `They hear you out. Whatever they practise, they practise on their own and it `
-                    + `is not written anywhere you could be walked through - or you are already `
-                    + `carrying it. Being taught needs somebody holding a road they can hand on, `
-                    + `and standing above you is not the same fact as holding one.`,
+                    `${asked.name} hears you out. Whatever they practise, they practise on their `
+                    + `own and it is not written anywhere you could be walked through - or you are `
+                    + `already carrying it. Being taught needs somebody holding a road they can `
+                    + `hand on, and standing above you is not the same fact as holding one.`,
                 structure:
                     `Refused before the resolver, so no day was spent: ${asked.name} is `
                     + `carrying ${asked.holds.length} art`
