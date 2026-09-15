@@ -123,11 +123,47 @@ describe('the engine stops and does not answer', () => {
         expect(fork.question).not.toMatch(/worst position|defenceless|helpless|cannot defend/i);
     }, 120000);
 
+    /**
+     * WHAT THIS USED TO ASSERT, AND WHY THE ASSERTION MOVED.
+     *
+     * It required the literal string `somebody standing at ...`, which is only
+     * ONE of the two answers the rule has. `howTheyAreReferredTo` says a name
+     * when the player already holds a knowledge record for the person and their
+     * rung otherwise, and on this seed the world moved somebody the run was born
+     * knowing into the square outside the cave - so the branch under test was
+     * the other one and the fixture read a correct answer as a leak.
+     *
+     * What is asserted now is the rule rather than the branch: a name appears
+     * only where the knowledge table says it was earned, checked against the
+     * same gate the referring function reads. Both halves fail loudly - an
+     * unearned name, and an earned one withheld.
+     */
     it('says who is close without handing over a name that was not earned', async () => {
-        const { fork } = await sitUntilSomebodyComes(A_ROAD_OUT);
-        // The discovery rule: a rung is something anybody can feel through a
-        // cave wall; a name is not.
-        expect(fork.them).toMatch(/^somebody standing at /);
+        const { game, fork } = await sitUntilSomebodyComes(A_ROAD_OUT);
+        const who = (game as unknown as {
+            crossroads: { whoIsClose: { id: string; name: string; known: boolean } | null } | null
+        }).crossroads!.whoIsClose;
+
+        if (who === null) {
+            expect(fork.them).toBe('whoever it is');
+            return;
+        }
+
+        const earned = (game as unknown as {
+            knowledge: { isAwareOf(holder: string, kind: string, id: string): boolean };
+        }).knowledge.isAwareOf(game.state().cultivator.id, 'cultivator', who.id);
+        expect(who.known, 'the referring function and the knowledge gate disagree')
+            .toBe(earned);
+
+        if (earned) {
+            expect(fork.them, 'a name the player has met is theirs to be told')
+                .toBe(who.name);
+        } else {
+            // The discovery rule: a rung is something anybody can feel through a
+            // cave wall; a name is not.
+            expect(fork.them).toMatch(/^somebody standing at |^somebody$/);
+            expect(fork.them, 'a name nobody earned').not.toContain(who.name);
+        }
     }, 120000);
 
     it('surfaces the one answer that needs words, ahead of everything else', async () => {

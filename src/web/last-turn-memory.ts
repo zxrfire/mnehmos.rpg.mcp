@@ -536,6 +536,28 @@ const AN_ORDINAL: ReadonlyArray<[RegExp, number]> = [
 const THE_LAST_ONE = /\b(?:the\s+)?(?:last|final)\s+one\b/i;
 
 /**
+ * What a sentence says it is waiting FOR, or nothing.
+ *
+ * `wait` takes a span or a named thing, and a reference that nobody could bind
+ * is taken off the plan before the verb runs - which is right, and costs this
+ * one verb the only thing that told it apart from waiting a while. So the words
+ * are read once, here, rather than in the case statement.
+ *
+ * DELIBERATELY NOT A PARSER. It returns what follows the word, trimmed of the
+ * leading article and the trailing punctuation, and hands it to the thing that
+ * already knows what is posted on the wall. If nobody is waiting until
+ * anything it returns undefined and a bare wait stays a bare wait.
+ */
+export function whatTheyWouldWaitFor(said: string | undefined): string | undefined {
+    const found = /\buntil\s+(.+)$/i.exec((said ?? '').trim());
+    if (!found) return undefined;
+    const rest = found[1]
+        .replace(/[.!?,;]+$/, '')
+        .trim();
+    return rest.length === 0 ? undefined : rest;
+}
+
+/**
  * Whether this field is a reference rather than a name.
  */
 export function standsForSomethingNamedLastTurn(value: string | undefined): boolean {
@@ -815,22 +837,6 @@ export function resolvingAgainstTheLastTurn(
                 // let the reference RESOLVE when there is something to resolve
                 // it against.
                 //
-                // ── EXCEPT WHERE THE PHRASE STILL NAMES A KIND ───────────
-                //
-                // The reasoning above holds for a phrase that carries no
-                // content of its own - "that one", "the cheaper one", "the
-                // second one" - which is silence the moment it fails to bind.
-                // It does not hold for `A_THING_BY_ITS_KIND`: "the intake"
-                // names a KIND OF THING, and a verb that knows about intakes
-                // can answer it off the world even when the turn before this
-                // one cannot.
-                //
-                // Measured: two recruiting notices posted at Wind Turn and
-                // `I wait until the intake`. Dropping the field turned an
-                // ambiguity the wait verb answers by NAMING BOTH HOUSES AND
-                // BOTH DATES into a bare wait of one day - a refusal that
-                // spends nothing became a day spent on nothing.
-                if (A_THING_BY_ITS_KIND.test(value!.trim())) continue;
                 // And the player is told, by the line `unsettled` carries.
                 if (record.named.length > 1 && !unsettled.includes(value!)) unsettled.push(value!);
                 changed = { ...changed };

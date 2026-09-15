@@ -133,11 +133,90 @@ function aWrongDoneTo(
  * `present` is the roster the engine itself uses to decide who is here, so a
  * test that picks people any other way is arranging a situation the verb will
  * not agree it is in.
+ *
+ * ── AND THE SQUARE IS READ RATHER THAN ASSUMED ───────────────────────────
+ *
+ * The helper used to take whatever the birth draw opened beside, and the tests
+ * below took two or three parties out of it. That is a coincidence of the draw,
+ * and it broke when the world moved: measured across 480 (world, birth) pairs
+ * at the population `createWorld` uses, the opening square holds nobody at all
+ * in 0.6% of them, one other body in 10% and fewer than three in 25%. Measured
+ * on `tells-world` after the move, the day each run opens:
+ *
+ *     tells-1  Nine Peaks           3 present, 3 nameable
+ *     tells-2  Clear River Ford     2 present, 2 nameable
+ *     tells-3  Orchid Terrace       6 present, 3 nameable
+ *     tells-4  Sweet Spring Island  2 present, 2 nameable
+ *     tells-5  Six Li               5 present, 3 nameable
+ *     tells-7  Three Walls         13 present, 3 nameable
+ *     rate-1   Clear River Ford     2 present, 2 nameable
+ *
+ * So each caller says how many parties it needs and the square is only changed
+ * where the draw is short of them - which is once, for the three-party test.
+ *
+ * TWO THINGS THAT LOOK LIKE FIXTURE DETAIL AND ARE NOT, both found by getting
+ * them wrong:
+ *
+ *   A REGION IS NOT A SQUARE. The first cut took the smallest place holding
+ *   enough people and landed on The Drowned Sea, a `region` row. `npcsAt`
+ *   treats a region as a CONTAINER nobody stands in - the finding
+ *   `getting-in-front-of-somebody-worth-asking` opens with - so the deed went
+ *   onto ground the teller could not be said to have been on.
+ *
+ *   AND A TELLER CAN ONLY POINT AT A WRONG DONE TO SOMEBODY THEY CAN NAME.
+ *   `couldPointAtIt` takes an actor, a witness, or a knowledge row for the
+ *   party who was not the doer. A run knows two or three people and they are
+ *   standing where it opened, so a square chosen anywhere else is a square full
+ *   of strangers and every telling in it comes back "news only carries as far
+ *   as you can point at what was done" - correctly. Where this helper moves
+ *   somebody it therefore writes the names too, with `learnIfNew`, the same row
+ *   hearing one in a square would write. That is the third arranged
+ *   precondition in a file whose header already explains why the first two are
+ *   arranged, and it never fires for the rate tier below, which is about the
+ *   split between present and nameable and asks for two.
  */
-async function whoIsHere(game: any, cultivator: { id: string; location: string | null }) {
+async function whoIsHere(
+    game: any,
+    cultivator: { id: string; location: string | null },
+    atLeast = 2
+) {
     const world = (await game.loadWorld())! as WorldState;
-    const here = game.present(cultivator) as { id: string; name: string }[];
-    const where = worldLocationFor(world, cultivator.location)?.id ?? null;
+    let standing = cultivator;
+    if ((game.present(standing) as unknown[]).length < atLeast) {
+        const heads = new Map<string, number>();
+        for (const npc of world.npcs) {
+            if (npc.status !== 'alive' || npc.locationId === null) continue;
+            heads.set(npc.locationId, (heads.get(npc.locationId) ?? 0) + 1);
+        }
+        const opened = worldLocationFor(world, cultivator.location);
+        const kind = opened?.kind ?? 'settlement';
+        // The smallest square that holds enough, ordered by id so the choice
+        // does not depend on what order `locations` came back in.
+        const chosen = world.locations
+            .filter(row => row.kind === kind && (heads.get(row.id) ?? 0) >= atLeast)
+            .sort((a, b) =>
+                (heads.get(a.id)! - heads.get(b.id)!) || (a.id < b.id ? -1 : 1))[0];
+        expect(chosen, `this world holds no ${kind} with ${atLeast} people in it`)
+            .toBeDefined();
+        game.repos.cultivators.update(cultivator.id, { location: chosen.name });
+        standing = game.repos.cultivators.getById(cultivator.id)!;
+        for (const person of game.present(standing) as { id: string; name: string }[]) {
+            game.knowledge.learnIfNew({
+                holderId: cultivator.id,
+                kind: 'cultivator',
+                id: person.id,
+                name: person.name,
+                onDay: 0,
+                sourceKind: 'told',
+                sourceNote: 'Somebody said who they were.',
+                stance: 'knows',
+                statement: `${person.name} exists.`,
+                confidence: 1
+            });
+        }
+    }
+    const here = game.present(standing) as { id: string; name: string }[];
+    const where = worldLocationFor(world, standing.location)?.id ?? null;
     return { world, here, where };
 }
 
@@ -165,7 +244,8 @@ describe('telling somebody that a wrong was done to them', () => {
         await game.act('I look around');
 
         const { world, here, where } = await whoIsHere(game, cultivator);
-        expect(here.length, 'this world puts people where a run opens').toBeGreaterThan(1);
+        expect(here.length, 'the square holds a hearer and somebody to have wronged them')
+            .toBeGreaterThan(1);
         const [hearer, doer] = here;
 
         aWrongDoneTo(world, where, doer, hearer);
@@ -199,7 +279,7 @@ describe('telling somebody that a wrong was done to them', () => {
         const { cultivator } = await game.newRun('Prober');
         await game.act('I look around');
 
-        const { world, here, where } = await whoIsHere(game, cultivator);
+        const { world, here, where } = await whoIsHere(game, cultivator, 3);
         expect(here.length, 'three people to be three parties').toBeGreaterThan(2);
         const [hearer, doer, brother] = here;
         giveThemKin(world, hearer.id, brother);
@@ -475,10 +555,17 @@ describe('the phrasings a telling is said in', () => {
  * words near them.
  *
  * MEASURED, world seed `tells-world`, the day a run opens: 5 people present, 3
- * of them nameable by this cultivator, 3 accounts opened. Exact rather than
- * sampled - the deeds are written, the sentences are typed, the rows are
- * counted - so it cannot flake, and it goes red the moment either half of the
- * verb stops firing or the discovery gate stops holding.
+ * of them nameable by this cultivator, 3 accounts opened. RE-MEASURED after the
+ * world layer moved: 2 present, 2 nameable, 2 accounts. The square emptied and
+ * the claim did not, which is why nothing below counts anybody - the floor is
+ * that somebody is reachable and the ceiling is the exact nameable set, and
+ * both are read off this run rather than written down here.
+ *
+ * Exact rather than sampled - the deeds are written, the sentences are typed,
+ * the rows are counted - so it cannot flake, and it goes red the moment either
+ * half of the verb stops firing or the discovery gate stops holding. This is
+ * also the one tier `whoIsHere` must never move: it is about what a run OPENS
+ * beside, and it asks for two, which every seed measured above has.
  */
 describe('who a telling can land on, standing where a run opens', () => {
     it('lands on exactly the people this cultivator can name', async () => {

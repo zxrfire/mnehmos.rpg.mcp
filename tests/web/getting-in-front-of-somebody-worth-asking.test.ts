@@ -46,6 +46,37 @@
  * The world is pinned as well as the run (`makeGameInWorld`), because a run seed
  * on a fresh database meets a different several hundred people and a test that
  * pins one without the other is pinning a coincidence.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * THIS IS RED, AND IT IS RED ABOUT SOMETHING REAL
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * `I go to Earth Vein Tower grounds` does not walk to Earth Vein Tower grounds.
+ * It is read as a question about dao-ground allocation and answered *"Ground
+ * like that is allocated by houses to their own, in days, by standing. You
+ * belong to none..."*, and the player is left standing in the province.
+ *
+ * Isolated to one line. `asksAfterGroundTime` in `verb-pattern-table.ts` fires
+ * when a sentence holds one of `chamber|vein|cave|ground|room`, names a house,
+ * and holds one of `go to|use|ask for|...`. A house called **Earth Vein** Tower
+ * puts `vein` in the sentence as part of its own NAME, so every one of the three
+ * conditions is met by a sentence that is plainly a journey. Played, on
+ * `in-front-of-somebody-world`:
+ *
+ *     "I go to Earth Vein Tower grounds"      -> look / ground_time, no journey
+ *     "I travel to Earth Vein Tower grounds"  -> move / travel, arrives
+ *     "I go to Azure Dew Sect grounds"        -> move / travel
+ *
+ * So the route is walkable and the sentence the game invites is not, which is
+ * exactly what this file exists to catch: `where can I go` prints the gate, and
+ * `I go to <the thing it printed>` is what a player types next.
+ *
+ * NOT PAPERED OVER. The obvious repairs - choose a gate whose name parses, or
+ * type `I travel to` instead - both make the test pass by asking a different
+ * question than the one it exists to ask. The gate is already chosen by reading
+ * the world (whichever one this cultivator can name has somebody worth asking on
+ * it); the world moved that onto Earth Vein Tower and the defect was underneath
+ * all along.
  */
 
 import { describe, it, expect } from 'vitest';

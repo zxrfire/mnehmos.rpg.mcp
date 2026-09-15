@@ -70,6 +70,52 @@ function somewhereElse(game: any, location: string | null): string {
 }
 
 /**
+ * Somewhere this world says two other people are standing.
+ *
+ * WHAT THIS REPLACES, AND WHY IT IS NOT A WEAKER FIXTURE. The helper below used
+ * to take whoever the birth draw opened beside and require two of them. That is
+ * a coincidence, and it broke when the world moved: measured across 480 (world,
+ * birth) pairs at the population `createWorld` actually uses, the opening square
+ * holds nobody at all in 0.6% of them, exactly one other body in 10%, and fewer
+ * than three in 25%. `world-road-party-move` drew one of the single-body ones
+ * and this file went red on the draw rather than on the party.
+ *
+ * So the square is read off the world and the cultivator is stood in it. Where
+ * a run happens to open is not what anything below asserts; who is still with
+ * you when you arrive is.
+ */
+function standWhereTwoOthersAre(game: any, cultivator: any): any {
+    const world = game.atHand;
+    const heads = new Map<string, number>();
+    for (const npc of world.npcs) {
+        if (npc.status !== 'alive' || npc.id === cultivator.id) continue;
+        if (npc.locationId === null) continue;
+        heads.set(npc.locationId, (heads.get(npc.locationId) ?? 0) + 1);
+    }
+    // The square they are already in, when it will do - a test that moves when
+    // it does not have to is a test measuring a different situation than the
+    // one a player meets.
+    const standing = placeRow(game, cultivator.location);
+    if (standing && (heads.get(standing.id) ?? 0) >= 2) return cultivator;
+
+    // Otherwise the smallest square that holds two, by id so the choice does
+    // not depend on the order `locations` came back in - and of the same KIND
+    // as the one a run opens in, because a `region` row is a container nobody
+    // stands in rather than a square, and putting the player on one arranges a
+    // situation no player is ever in.
+    const kind = standing?.kind ?? 'settlement';
+    const chosen = (world.locations ?? [])
+        .filter((row: { id: string; kind: string }) =>
+            row.kind === kind && (heads.get(row.id) ?? 0) >= 2)
+        .sort((a: { id: string }, b: { id: string }) =>
+            (heads.get(a.id)! - heads.get(b.id)!) || (a.id < b.id ? -1 : 1))[0];
+    expect(chosen, 'this world holds no square with two people standing in it')
+        .toBeDefined();
+    game.repos.cultivators.update(cultivator.id, { location: chosen.name });
+    return game.repos.cultivators.getById(cultivator.id)!;
+}
+
+/**
  * Two people from the world, standing where the player is, put on the road with
  * them.
  *
@@ -78,7 +124,8 @@ function somewhereElse(game: any, location: string | null): string {
  * and a fixture that needs a 2.8% summons roll to land is a fixture that goes
  * flaky.
  */
-function twoOfThemOnTheRoad(game: any, cultivator: any, onDay = 0, untilDay = 400) {
+function twoOfThemOnTheRoad(game: any, starting: any, onDay = 0, untilDay = 400) {
+    const cultivator = standWhereTwoOthersAre(game, starting);
     const here = placeRow(game, cultivator.location);
     expect(here, 'the player is standing nowhere the world holds').not.toBeNull();
     const locals = game.atHand.npcs
@@ -93,7 +140,10 @@ function twoOfThemOnTheRoad(game: any, cultivator: any, onDay = 0, untilDay = 40
         { note: 'Out on the road together.', onDay, untilDay }
     );
     expect(names.length).toBe(2);
-    return { here, party: locals, names };
+    // The cultivator row as it now stands, because the helper may have moved
+    // them and a caller reading the pre-move one would travel from the wrong
+    // square.
+    return { here, party: locals, names, cultivator };
 }
 
 describe('the people who came with you', () => {
@@ -101,8 +151,8 @@ describe('the people who came with you', () => {
         const { game } = await makeGameInWorld({
             seed: 'road-party-move', worldSeed: 'world-road-party-move'
         });
-        const { cultivator } = await game.newRun('Wen Shu');
-        const { here, party, names } = twoOfThemOnTheRoad(game as any, cultivator);
+        const { cultivator: born } = await game.newRun('Wen Shu');
+        const { here, party, names, cultivator } = twoOfThemOnTheRoad(game as any, born);
 
         const going = somewhereElse(game as any, cultivator.location);
         const turn = await game.act(`I travel to ${going}`);
@@ -126,8 +176,8 @@ describe('the people who came with you', () => {
         const { game } = await makeGameInWorld({
             seed: 'road-party-fold', worldSeed: 'world-road-party-fold'
         });
-        const { cultivator } = await game.newRun('Wen Shu');
-        const { here, party } = twoOfThemOnTheRoad(game as any, cultivator);
+        const { cultivator: born } = await game.newRun('Wen Shu');
+        const { here, party, cultivator } = twoOfThemOnTheRoad(game as any, born);
 
         const going = somewhereElse(game as any, cultivator.location);
         const turn = await game.act(`I fold space to ${going}`);

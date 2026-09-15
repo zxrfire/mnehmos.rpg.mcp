@@ -811,6 +811,15 @@ export function whatATakingNames(text: string, input: string): string | null {
 }
 
 /**
+ * Every proper house name in a sentence, for taking them out of it.
+ *
+ * `A_HOUSE_NAME_IS_SAID` answers whether one is there and is deliberately not
+ * global; this is the same alternation with the flag, so a gate can ask its
+ * question of what is left after the names are removed.
+ */
+const EVERY_HOUSE_NAME_SAID = new RegExp(A_HOUSE_NAME_IS_SAID.source, 'gi');
+
+/**
  * Asking what your standing entitles you to on your house's ground.
  */
 export const GROUND_TIME_QUESTION = new RegExp([
@@ -818,10 +827,31 @@ export const GROUND_TIME_QUESTION = new RegExp([
     /\bwhere (?:can|do|should) i cultivate\b[^.?!]*\b(?:sect|house|here|in the)\b/
 ].map(r => r.source).join('|'));
 
-/** The two-noun form: a chamber word, a house word, and something being asked. */
+/**
+ * The two-noun form: a chamber word, a house word, and something being asked.
+ *
+ * AND THE CHAMBER WORD MAY NOT COME OUT OF THE HOUSE'S OWN NAME.
+ *
+ * `I go to Earth Vein Tower grounds` satisfied all three tests from one noun
+ * phrase: the house is named, `go to` is asking, and the chamber word was
+ * **Vein**, which is part of what the house is called. So the sentence was read
+ * as a question about cultivation allocation and answered *"Ground like that is
+ * allocated by houses to their own"* - and a player who had just been told in
+ * `where can I go` that the Tower's grounds were somewhere they could go could
+ * not then go there.
+ *
+ * `I go to Azure Dew Sect grounds` travels, and only because `\bground\b` does
+ * not match "grounds". One house in the catalog is named for a vein and that
+ * was the whole of the difference.
+ *
+ * Stripping the proper names first leaves the question the gate is actually
+ * for. `I go to the sect cultivation chamber` has no proper name to remove and
+ * is unaffected, which is the case `what-rank-buys-on-the-ground` pins.
+ */
 export function asksAfterGroundTime(text: string): boolean {
     if (GROUND_TIME_QUESTION.test(text)) return true;
-    return /\b(?:chamber|vein|cave|ground|room)\b/.test(text)
+    const withoutTheirNames = text.replace(EVERY_HOUSE_NAME_SAID, ' ');
+    return /\b(?:chamber|vein|cave|ground|room)\b/.test(withoutTheirNames)
         && A_HOUSE_IS_NAMED.test(text)
         && /\b(?:go to|use|ask for|request|time on|cultivate in|cultivate at|sit in|where|what|how much|am i allowed|can i)\b/.test(text);
 }

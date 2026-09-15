@@ -41,6 +41,41 @@ function said(result: unknown): string {
     return String((result as { narration?: string }).narration ?? '');
 }
 
+/** How this file addresses a house, which is how a player would. */
+function asked(house: { name: string }): string {
+    return house.name.replace(/^The /, '');
+}
+
+/**
+ * Whether the question can be put about this house at all.
+ *
+ * ── A GAP, WRITTEN DOWN AND NOT CLOSED ───────────────────────────────────
+ *
+ * 16 of the 38 houses in the catalog cannot be asked this question. Measured by
+ * running `parseIntent('what does the <name> have')` over every row of `SECTS`:
+ * NINE reach no intent at all - Clearwater Ward, Six Li Patrol, Fallen Grain
+ * Caravan, Sand Well Caravan, Hollow Bell Wanderers, Still Blade Peak, Flowing
+ * Light Tower, Bone Lantern Cult, The Severed - and SEVEN are taken by another
+ * verb: six by `counters` (Lantern Hall, Thousand Treasure Pavilion, Jade
+ * Register Hall, Vermilion Seal Terrace, Shrinking Earth Pavilion, Ninefold
+ * Karma Palace) and Earth Vein Tower by `ground_time`, which reads the word
+ * `Vein` out of the house's own name.
+ *
+ * That is the defect `the-nouns-a-house-ends-with.test.ts` exists for, one
+ * catalog growth later, and it is not this file's to fix: `what does the X
+ * have` is about the GATE over a vault, and a house whose name the question
+ * cannot carry never reaches the gate to be tested against it.
+ *
+ * So the house is filtered here rather than pinned - the first one this
+ * cultivator has heard of used to be taken, and on `holds-low` that is the Six
+ * Li Patrol, which falls straight through to "Ning Xuchen does not know it".
+ */
+function theQuestionReaches(house: { name: string }): boolean {
+    const plan = parseIntent(`what does the ${asked(house)} have`) as
+        { intent?: string; target?: string };
+    return plan.intent === 'what_they_hold' && plan.target === asked(house);
+}
+
 /** A house this cultivator has actually heard of, asked rather than named. */
 async function somebodyAndAHouseTheyKnow(seed: string) {
     const harness = await makeGameInWorld({ seed, worldSeed: seed });
@@ -50,8 +85,32 @@ async function somebodyAndAHouseTheyKnow(seed: string) {
         (harness.game as unknown as { knowledge: {
             isAwareOf(who: string, kind: string, id: string): boolean;
         } }).knowledge.isAwareOf(cultivator.id, 'sect', id);
-    const known = SECTS.find(sect => knows(sect.id));
-    expect(known, 'this cultivator has heard of nobody').toBeTruthy();
+    const heardOf = SECTS.filter(sect => knows(sect.id));
+    expect(heardOf.length, 'this cultivator has heard of nobody').toBeGreaterThan(0);
+
+    // The ones they were born knowing, first. `holds-low` was born knowing two
+    // houses and both of them are on the list above - the Six Li Patrol and the
+    // Fallen Grain Caravan - so where that happens the name is taught, which is
+    // the same one row hearing it in a square would write. What is being tested
+    // is the band gate over a vault, not which houses a birth happens to name.
+    const known = heardOf.find(theQuestionReaches)
+        ?? SECTS.filter(theQuestionReaches)[0];
+    expect(known, 'no house in the catalog can be asked this question').toBeTruthy();
+    if (!heardOf.includes(known!)) {
+        (harness.game as unknown as { knowledge: { learnIfNew(row: unknown): unknown } })
+            .knowledge.learnIfNew({
+                holderId: cultivator.id,
+                kind: 'sect',
+                id: known!.id,
+                name: known!.name,
+                onDay: 0,
+                sourceKind: 'told',
+                sourceNote: 'Somebody said the name.',
+                stance: 'knows',
+                statement: `${known!.name} exists.`,
+                confidence: 1
+            });
+    }
     return { harness, id: cultivator.id, house: known! };
 }
 
@@ -124,9 +183,7 @@ describe('played', () => {
         const { harness, id, house } = await somebodyAndAHouseTheyKnow('holds-low');
         harness.repos.cultivators.update(id, { realmOrdinal: 4 });
 
-        const answer = await harness.game.act(
-            `what does the ${house.name.replace(/^The /, '')} have`
-        );
+        const answer = await harness.game.act(`what does the ${asked(house)} have`);
         const heard = said(answer);
         expect(heard).toMatch(/would have to be somebody they deal with/i);
         expect(heard).not.toMatch(/spirit stones against its name/i);
@@ -138,9 +195,7 @@ describe('played', () => {
         const { harness, id, house } = await somebodyAndAHouseTheyKnow('holds-high');
         harness.repos.cultivators.update(id, { realmOrdinal: 35 });
 
-        const answer = await harness.game.act(
-            `what does the ${house.name.replace(/^The /, '')} have`
-        );
+        const answer = await harness.game.act(`what does the ${asked(house)} have`);
         const heard = said(answer);
         expect(heard).toMatch(/spirit stones against its name|holding nothing at all in stones/i);
         expect(heard).toMatch(/On its shelves|nothing on its shelves/i);

@@ -117,8 +117,31 @@ describe('a newborn is born somewhere somebody can stand', () => {
                 + 'newborns on a map node nobody can stand on.'
             ).toBeLessThanOrEqual(counts[i - 1]);
         }
-        // And it has to actually drain, not merely stop growing.
-        expect(counts[counts.length - 1]).toBeLessThan(counts[0] / 2);
+        // AND IT HAS TO ACTUALLY DRAIN - WHERE THERE IS ANYTHING TO DRAIN.
+        //
+        // This asserted `last < first / 2` outright, which went red the moment
+        // the seeded cohort stopped being placed on containers at all: the
+        // first mark reads zero now, and nothing is less than half of zero. The
+        // claim was never about the slope. It is that a container is not a
+        // place anybody stands, and an empty first mark satisfies that more
+        // completely than a falling one does.
+        //
+        // So the decline is demanded only when there was a population to
+        // decline from, and the end state is demanded always. Both halves fail
+        // for the reason they are named for: a world that starts full and stays
+        // full trips the first, and a world that puts anybody back on a
+        // container trips the second.
+        if (counts[0] > 0) {
+            expect(
+                counts[counts.length - 1],
+                `the seeded cohort on containers did not drain: ${counts.join(' -> ')}`
+            ).toBeLessThan(counts[0] / 2);
+        }
+        expect(
+            counts[counts.length - 1],
+            `somebody is still standing on a region container at year ${marks[marks.length - 1]}: `
+            + counts.join(' -> ')
+        ).toBe(0);
     }, 600_000);
 });
 

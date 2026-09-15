@@ -944,6 +944,7 @@ import {
     theSentenceCarriesOn,
     theSentenceIsNothingButAPointer,
     whichOfTheNamedThings,
+    whatTheyWouldWaitFor,
     withoutSayingTheSameThingTwice,
     type AFollowUpAboutTheAnswer,
     type ThingNamed,
@@ -2083,6 +2084,25 @@ export class GameService {
         // no record as an ordinal and nothing else, so every person in the world
         // was a permanent stranger and the four verbs that need somebody to be
         // pointed at could not find one.
+        // THE ROSTER ROW FIRST, BECAUSE THE TIES NEED SOMEWHERE TO LAND.
+        //
+        // A life is born into a household now, and those ties are written on the
+        // world's own rows - the same store `bindNewbornToHousehold` writes for
+        // everybody. The player's half of each tie only lands if the world
+        // already holds a row for them, and this call is what puts one there.
+        //
+        // Ordered after the faces, the halves went missing, and the reader that
+        // noticed was `whoTheyCarryFor`: it decides whose killing somebody may
+        // open an account for by reading the HEARER's own ties, so a player
+        // whose parent was killed could not tell a soul. `rescuersFor` reads the
+        // other end and worked either way, which is why this hid.
+        //
+        // It is a move rather than a new call. `refreshThePlayerRow` writes the
+        // player's half whenever the world holds a row and flushes the world the
+        // first time it has to create one, so creating a row any earlier would
+        // have stopped the kin ties reaching disk at all.
+        this.refreshThePlayerRow(created.cultivator);
+
         const faces = await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
 
         // AND THE GROUND. The same ruling, applied to geography: somebody who grew
@@ -2094,9 +2114,19 @@ export class GameService {
         // just brought into being.
         this.seedTheGroundAroundHome(created.cultivator);
 
-        // And the roster, so the world can put them on a list from the first
-        // day rather than from the first turn. See the banner in `act`.
-        this.refreshThePlayerRow(created.cultivator);
+        // AND THE WORLD IS COMMITTED AFTER THE TIES, NOT BEFORE THEM.
+        //
+        // The household is written onto the world's own rows during the face
+        // seeding above, and `refreshThePlayerRow` only commits when it has to
+        // CREATE a row - so with the row already made a few lines up, the first
+        // write was the last one, and the kin sat in memory and were gone by the
+        // next read. Measured as `nobody in the world holds this family`.
+        //
+        // Said explicitly here rather than by arranging for some other call to
+        // do it as a side effect, which is what made the first ordering wrong in
+        // both directions: put the row later and the ties have nowhere to land,
+        // put it earlier and nothing flushes them.
+        this.theWorldMoved();
 
         const awareness = this.knowledge.awareness(created.cultivator.id);
 
@@ -3994,9 +4024,24 @@ export class GameService {
                 // that said 24. The date was already computed; the only thing
                 // missing was somebody asking for it.
                 let waitingDays = action.days ?? SHORT_ACTION_DAYS;
-                if ((action.target ?? '').trim().length > 0) {
+                // AND "UNTIL" IS THE HALF THE FIELD DOES NOT CARRY.
+                //
+                // A reference nobody could bind comes OFF the plan - see the
+                // note on `unsettled` below - so `i wait until the intake`,
+                // with two intakes posted, reached here as a bare wait and
+                // spent a day. The verb could not tell it from "I wait a
+                // while", because by then the only difference was in words
+                // nobody had looked at.
+                //
+                // The player's own sentence still has it. What is asked of the
+                // wall is not the dropped reference - that was a question about
+                // the turn before this one - but what is posted HERE, which is
+                // the general question this verb answers and the reason the
+                // field was allowed to come off in the first place.
+                const saidUntil = action.target ?? whatTheyWouldWaitFor(rawInput);
+                if ((saidUntil ?? '').trim().length > 0) {
                     const landed = this.whenTheNamedThingFalls(
-                        cultivator, run, action.target as string
+                        cultivator, run, saidUntil as string
                     );
                     if (landed.settled === null) return landed.refusal;
                     waitingDays = landed.settled.inDays;
@@ -17611,6 +17656,33 @@ ${fit.line}`;
                 statement: face.statement,
                 confidence: 1
             });
+            // AND WHERE THEY ARE IS A PLACE THE PLAYER NOW KNOWS OF.
+            //
+            // The opening says "In <place> now" for anybody who is not still at
+            // home, which is the whole point of naming them - you know where to
+            // find them. A place the game names and then will not let you walk
+            // to is the defect `asksAfterGroundTime` produced for the Earth Vein
+            // Tower, arriving by a different door: measured across twenty
+            // worlds, only about half the settlements a face could be drawn
+            // from pass the gate the move verb points at.
+            //
+            // Learning it here closes that by construction rather than by
+            // filtering the draw, which would have shrunk the world a life is
+            // allowed to know people in. Nobody is told anything they were not
+            // already told - the place is in the sentence above it.
+            if (face.whereTheyAre) {
+                this.knowledge.learnIfNew({
+                    holderId: cultivator.id,
+                    kind: 'place',
+                    id: face.whereTheyAre.id,
+                    name: face.whereTheyAre.name,
+                    onDay: 0,
+                    sourceKind: 'witnessed',
+                    sourceNote: `Where ${face.name} is.`,
+                    stance: 'knows',
+                    confidence: 1
+                });
+            }
         }
         return faces;
     }

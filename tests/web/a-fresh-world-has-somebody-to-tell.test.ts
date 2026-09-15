@@ -28,14 +28,17 @@
  *
  * **THE WORLD NOW HOLDS IT.** A fresh world has open killings in it, priced by
  * `whatADeedLeaves` and written by `aDeedEntersTheWorld`, done to people whose
- * families are standing in the same town - and about one run in six opens with
- * one of those families in the room. Measured over six worlds against all
- * seventeen settlements a birth can open in: 16 of 102. That is the first test
- * below, and nothing in it is arranged.
+ * families are standing in the same town - and about one run in fifteen opens
+ * with one of those families in the room. Measured over six worlds against all
+ * seventeen settlements a birth could open in: 16 of 102. RE-MEASURED after the
+ * world layer moved, over twelve worlds and thirty birth draws each: 23 of 360,
+ * with ten of the twelve worlds holding at least one. The rate halved and the
+ * claim held. That is the first two tests below, and nothing in either is
+ * arranged.
  *
  * **AND THE PLAYER CANNOT FIND OUT ABOUT IT.** Measured, standing in Three Walls,
- * in the town where the killing happened, next to the dead man's father, on the
- * pinned pair below - every discovery verb the game has returns nothing:
+ * in the town where the killing happened, next to the dead man's father - every
+ * discovery verb the game has returns nothing:
  *
  *     "I look around"                    the ground, the qi, who is here
  *     "what news is there"               apex faction history, generations back
@@ -68,6 +71,10 @@
 import { describe, expect, it } from 'vitest';
 import { makeGameInWorld } from './harness';
 import { worldLocationFor } from '../../src/web/entities';
+import { seedWorld } from '../../src/engine/world/seeding';
+import { loadCultivationCatalog } from '../../src/engine/world/catalog';
+import { drawBirth } from '../../src/engine/birth/birth';
+import { WORLD_POPULATION } from '../../src/server/state/cultivation-world';
 import type { WorldState } from '../../src/engine/world/world-state';
 import type { NpcRecord } from '../../src/engine/world/npc-state';
 import type { HistoricalFact } from '../../src/engine/world/history';
@@ -76,11 +83,109 @@ import type { HistoricalFact } from '../../src/engine/world/history';
 const BLOOD = new Set(['kin', 'spouse', 'parent', 'child']);
 
 /**
- * The world and the birth that put one of this world's bereaved households in
- * the room a run opens in. Both halves pinned - see the header for the rate.
+ * ═════════════════════════════════════════════════════════════════════════
+ * THE PAIR IS SWEPT FOR, NOT PINNED
+ * ═════════════════════════════════════════════════════════════════════════
+ *
+ * This file used to name one world and one birth - `wants-telling-world` and
+ * `sweep-10` - found by sweeping and then written down. That is the coincidence
+ * the header's own rate warns about from the other side: at about one opening
+ * in fifteen, ANY pinned pair is one world change away from being one of the
+ * fourteen, and this one duly stopped being an opening when the world moved.
+ *
+ * Re-measured after it moved, over 12 worlds and 30 birth draws each, at the
+ * population `createWorld` actually uses:
+ *
+ *     23 of 360 (world, birth) pairs      6.4%     was 16 of 102, 15.7%
+ *     10 of 12 worlds hold at least one   83%
+ *
+ * So the claim is now tested in the shape it was always making - a FRESH WORLD
+ * has somebody to tell, in most worlds - and the played tests take whichever
+ * pair the same sweep finds first. `seedWorld` needs no database and the whole
+ * sweep costs about four seconds, which is what makes reading affordable where
+ * pinning was not.
  */
-const WORLD = 'wants-telling-world';
-const BIRTH = 'sweep-10';
+const WORLDS = [
+    'wants-telling-world',
+    ...Array.from({ length: 11 }, (_, i) => `telling-world-${i}`)
+];
+const BIRTHS = Array.from({ length: 30 }, (_, i) => `sweep-${i}`);
+
+interface Sweep {
+    pairs: number;
+    hits: number;
+    worldsWithOne: number;
+    /** The first pair that opens beside a priced loss. */
+    first: { worldSeed: string; seed: string } | null;
+}
+
+/**
+ * Whether a run opening at this place would open beside somebody with a priced
+ * loss, a living killer in the same square, and a bystander who has lost
+ * nobody - which is every precondition the three tests below need.
+ *
+ * The same reads `whatIsStandingHere` does, against the seeded world rather
+ * than against a service, so the sweep costs no database and no run.
+ */
+function opensBesideALoss(state: WorldState, placeName: string): boolean {
+    const row = state.locations.find(
+        l => l.name.toLowerCase() === placeName.trim().toLowerCase());
+    if (!row) return false;
+    const here = state.npcs.filter(n => n.status === 'alive' && n.locationId === row.id);
+    const dead = new Set(state.npcs.filter(n => n.status !== 'alive').map(n => n.id));
+    const priced = state.history.facts.filter(f => f.data && 'deedWeight' in f.data);
+
+    for (const hearer of here) {
+        const loss = hearer.relationships.find(
+            r => BLOOD.has(r.kind) && dead.has(r.targetId));
+        if (!loss) continue;
+        const fact = priced.find(f => f.actors.some(a => a.id === loss.targetId));
+        const killer = fact?.actors.find(a => a.id !== loss.targetId);
+        if (!killer) continue;
+        if (state.npcs.find(n => n.id === killer.id)?.status !== 'alive') continue;
+        if (!here.some(p => p.id === killer.id)) continue;
+        if (!here.some(p =>
+            !p.relationships.some(r => BLOOD.has(r.kind) && dead.has(r.targetId)))) continue;
+        return true;
+    }
+    return false;
+}
+
+let swept: Sweep | null = null;
+
+/** Run once per file; the three tests below all read the same sweep. */
+async function theSweep(): Promise<Sweep> {
+    if (swept) return swept;
+    const catalog = await loadCultivationCatalog();
+    const places = new Map(BIRTHS.map(seed => [seed, drawBirth(seed).place.name]));
+    let pairs = 0;
+    let hits = 0;
+    let worldsWithOne = 0;
+    let first: Sweep['first'] = null;
+    for (const worldSeed of WORLDS) {
+        const state = seedWorld({
+            seed: worldSeed, catalog, population: WORLD_POPULATION
+        }).state;
+        let here = 0;
+        for (const [seed, place] of places) {
+            pairs++;
+            if (!opensBesideALoss(state, place)) continue;
+            hits++;
+            here++;
+            first ??= { worldSeed, seed };
+        }
+        if (here > 0) worldsWithOne++;
+    }
+    swept = { pairs, hits, worldsWithOne, first };
+    return swept;
+}
+
+/** The world and the birth the sweep found, for the played tests. */
+async function aWorldWithSomebodyToTell() {
+    const { first } = await theSweep();
+    expect(first, 'no world in the sweep opens a run beside a priced loss').not.toBeNull();
+    return first!;
+}
 
 interface LedgerRow {
     holder_id: string;
@@ -149,15 +254,40 @@ async function whatIsStandingHere(game: unknown, cultivator: unknown): Promise<S
 
 describe('a fresh world has somebody to tell', () => {
     /**
+     * THE DENSITY, WHICH IS WHAT THIS FILE'S TITLE CLAIMS.
+     *
+     * A world, not a seed. One pair working proves nothing about a fresh world
+     * and was what this file used to rest on; what is asserted here is that most
+     * worlds put one of their own bereaved households in front of a run inside a
+     * handful of births, and that the pooled rate is not a rounding error.
+     *
+     * Floors at roughly half the measured figures, so an ordinary drift in the
+     * seeder does not fail this and a collapse does. Measured over 12 worlds and
+     * 30 births each: 10 of 12 worlds, 23 of 360 pairs.
+     */
+    it('is a property of fresh worlds rather than of one seed', async () => {
+        const { pairs, hits, worldsWithOne } = await theSweep();
+        expect(pairs).toBe(WORLDS.length * BIRTHS.length);
+        expect(
+            worldsWithOne,
+            `only ${worldsWithOne} of ${WORLDS.length} worlds opens a run beside a `
+            + 'priced loss; measured at 10 of 12'
+        ).toBeGreaterThanOrEqual(Math.ceil(WORLDS.length / 2));
+        expect(
+            hits / pairs,
+            `${hits} of ${pairs} openings; measured at 23 of 360`
+        ).toBeGreaterThan(0.03);
+    }, 180000);
+
+    /**
      * The half that is now yes, with nothing arranged at all.
      *
      * A world is created from a seed, a run opens in it, and the person standing
      * in the room has lost somebody to a killing the world priced and wrote down.
      */
     it('opens a run standing next to somebody who lost a relative to a priced wrong', async () => {
-        const { game } = await makeGameInWorld({
-            seed: BIRTH, worldSeed: WORLD, worldEnabled: true
-        });
+        const { worldSeed, seed } = await aWorldWithSomebodyToTell();
+        const { game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
         const s = await whatIsStandingHere(game, cultivator);
 
@@ -197,9 +327,8 @@ describe('a fresh world has somebody to tell', () => {
      * write, and nothing else about the situation is touched.
      */
     it('the telling opens the account, at the weight the world priced it', async () => {
-        const { db, game } = await makeGameInWorld({
-            seed: BIRTH, worldSeed: WORLD, worldEnabled: true
-        });
+        const { worldSeed, seed } = await aWorldWithSomebodyToTell();
+        const { db, game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
         const s = await whatIsStandingHere(game, cultivator);
 
@@ -246,9 +375,8 @@ describe('a fresh world has somebody to tell', () => {
      * anybody in earshot would be the same defect from the opposite side.
      */
     it('reaches nothing when the person told has lost nobody', async () => {
-        const { db, game } = await makeGameInWorld({
-            seed: BIRTH, worldSeed: WORLD, worldEnabled: true
-        });
+        const { worldSeed, seed } = await aWorldWithSomebodyToTell();
+        const { db, game } = await makeGameInWorld({ seed, worldSeed, worldEnabled: true });
         const { cultivator } = await game.newRun('Prober');
         const s = await whatIsStandingHere(game, cultivator);
 

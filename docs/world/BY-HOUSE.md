@@ -166,7 +166,7 @@ session somebody wrote down design that was already in the catalog.
 
 `sect-frostmirror-court` · its entry: [`sects.ts:1441`](../../src/data/cultivation/sects.ts)
 
-**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 3 · [`immortal-items.ts`](../../src/data/cultivation/immortal-items.ts) 3
+**Read:** [`sects.ts`](../../src/data/cultivation/sects.ts) 11 · [`members.ts`](../../src/data/cultivation/members.ts) 8 · [`artifacts.ts`](../../src/data/cultivation/artifacts.ts) 6 · [`faction-history.ts`](../../src/data/cultivation/faction-history.ts) 5 · [`governance-and-water-rights.ts`](../../src/data/cultivation/governance-and-water-rights.ts) 4 · [`inheritance-trials.ts`](../../src/data/cultivation/inheritance-trials.ts) 4 · [`the-ancestors-a-house-still-names.ts`](../../src/data/cultivation/the-ancestors-a-house-still-names.ts) 4 · [`contingencies.ts`](../../src/data/cultivation/contingencies.ts) 3
   …and 16 more files.
 
 **Constants most about it:** `ARTERIALS`, `CONTINGENCIES`, `FAVOUR_STANCES`, `LIVING_TRANSMISSIONS`, `ORIGIN_ACCOUNTS`, `SEALED_FIGURE_NAMES`

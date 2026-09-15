@@ -204,11 +204,22 @@ describe('an act aimed at a set, played', () => {
      * somebody. A house is split by construction, so the same mechanism is
      * measured on the shape that can show it today.
      *
-     * `w-b`, Willow Village, Clearwater Ward: eleven members, three of them
-     * here. The player is taught the three who are here and TWO of the eight
-     * who are not, so the other six are in neither half of the answer - which
-     * is the whole claim, since the world's own figure is eleven and the report
-     * must say five.
+     * ── WHICH HOUSE, AND WHY IT IS NO LONGER NAMED ───────────────────────
+     *
+     * It named Clearwater Ward and stood in whatever square `p-b` opened in.
+     * The header already carried one repair of that shape - the count of who
+     * was standing here went from pinned to read - and the pin underneath it
+     * was the same mistake one level down: Clearwater Ward having somebody in
+     * the opening square was a coincidence of two seeds, and the world moved.
+     * Measured on `w-b`/`p-b` after it moved: the run opens in Pine Spring with
+     * ONE other person in it, and no house in the world has a member there at
+     * all.
+     *
+     * So the house AND the square are read together - some house, somewhere,
+     * with somebody standing in the same place as the player and more than four
+     * of its people elsewhere - and the player is stood there. That is a
+     * precondition; the claim is unchanged and is about what the report may
+     * say.
      */
     it('names the members it did not reach, and only the ones the player knows', async () => {
         const { db, game } = await makeGameInWorld({ seed: 'p-b', worldSeed: 'w-b' });
@@ -218,7 +229,37 @@ describe('an act aimed at a set, played', () => {
 
         const service = game as any;
         const world = await game.loadWorld();
-        const house = world!.factions.find((row: any) => row.id === 'sect-clearwater-ward')!;
+
+        // A house split across a square boundary, chosen by id so the choice
+        // does not depend on what order the catalog came back in. Squares only,
+        // never a `region` row: `npcsAt` treats one as a container nobody
+        // stands in, so standing the player on one arranges a situation no
+        // player is ever in.
+        const squares = new Set(world!.locations
+            .filter((row: any) => row.kind !== 'region')
+            .map((row: any) => row.id));
+        const split = world!.factions
+            .map((row: any) => {
+                const members = npcsInFaction(world!, row.id);
+                const byPlace = new Map<string, number>();
+                for (const one of members) {
+                    if (one.locationId === null || !squares.has(one.locationId)) continue;
+                    byPlace.set(one.locationId, (byPlace.get(one.locationId) ?? 0) + 1);
+                }
+                const square = [...byPlace.entries()]
+                    .filter(([, n]) => members.length - n > 4)
+                    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
+                return square ? { house: row, locationId: square[0] } : null;
+            })
+            .filter((row: unknown) => row !== null)
+            .sort((a: any, b: any) => a.house.id < b.house.id ? -1 : 1)[0] as
+            { house: any; locationId: string } | undefined;
+        expect(split, 'no house in this world is split across a square boundary')
+            .toBeDefined();
+        const house = split!.house;
+        const square = world!.locations.find((row: any) => row.id === split!.locationId)!;
+        game.repos.cultivators.update(cultivator.id, { location: square.name });
+
         const members = npcsInFaction(world!, house.id);
         const here = new Set(service.present(service.currentRun().cultivator)
             .map((row: any) => row.id));

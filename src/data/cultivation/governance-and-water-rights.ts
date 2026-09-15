@@ -2215,7 +2215,7 @@ export const FACTION_PARENTAGE: Record<string, Parentage> = {
         veinWorth: 'a working vein',
         levy: null,
         trade: {
-            makes: 'Fire work off the vent: quenched blades, furnace stock and the ash the caldera makes, sold through anybody who will not ask.',
+            makes: 'Fire work off the vent: quenched blades, furnace stock and the cinder the caldera throws, sold through anybody who will not ask.',
             grade: 'earth',
             devotion: 'a hall'
         },

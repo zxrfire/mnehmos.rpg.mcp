@@ -20,6 +20,7 @@ import {
 import type { Blocked, Promotion } from './promotion-inside-a-house.js';
 import { recordMasterTaken } from './recording-where-somebody-stands-in-a-house.js';
 import {
+    isTheWorldsToMove,
     upsertRelationship,
     type NpcRecord,
     type RelationshipKind
@@ -468,6 +469,23 @@ export function applyTeachingLines(
         // above them to be worth the whole guidance term.
         const students = members
             .filter(n => {
+                // FINDING A MASTER IS THE PLAYER'S OWN ROAD AND THE WORLD DOES
+                // NOT WALK IT FOR THEM.
+                //
+                // Every other pass that decides something for a cultivator asks
+                // `isTheWorldsToMove` first - see the note on the child a house
+                // will not keep, which calls a world pass making that decision
+                // *the exact shape the agency rule forbids*. This one never
+                // did, so from the day a player joined a house the yearly pass
+                // could bind them a master and write the life event, without
+                // the player having asked anybody for anything.
+                //
+                // The design owner: *"the player needs to find a master, that
+                // doesn't change"* - said while ruling that a life is born
+                // holding kin and the people it grew up around, and nothing
+                // else. A master handed over at a review is the road the game
+                // is about, taken away in a pass nobody watched.
+                if (!isTheWorldsToMove(n)) return false;
                 if (n.relationships.filter(r => r.kind === 'master').length >= MASTERS_AT_ONCE) {
                     return false;
                 }

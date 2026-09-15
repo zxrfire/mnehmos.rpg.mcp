@@ -241,19 +241,215 @@ describe('a request outranks the roster question', () => {
  * question's own output is also the rule the parser is held to - any name the
  * game prints is a name the game must accept.
  */
-async function anybodyNameable(harness: Harness): Promise<string | null> {
+async function everybodyNameable(harness: Harness): Promise<string[]> {
     const said = await harness.game.act('who can teach me') as { narration?: string };
+    const names: string[] = [];
     for (const line of (said.narration ?? '').split(String.fromCharCode(10))) {
         const hit = /^(.+?) stands at .*? above you/.exec(line.trim());
-        if (hit) return hit[1];
+        if (hit) names.push(hit[1]);
     }
-    return null;
+    return names;
+}
+
+async function anybodyNameable(harness: Harness): Promise<string | null> {
+    return (await everybodyNameable(harness))[0] ?? null;
 }
 
 /** The person's row id, for reading the tables back. */
 function idOf(harness: Harness, name: string): string | null {
     const row = harness.repos.cultivators.roster().find(r => r.name === name);
     return row?.id ?? null;
+}
+
+/**
+ * Squares holding somebody this cultivator has HEARD OF who stands above them.
+ *
+ * Both halves are load-bearing and the second one is the half that was missed.
+ * `whoWouldTeach` gates every name on `isAwareOf` - "you have never met any of
+ * them. You have no name to ask for, which is the whole of what is stopping
+ * you" - so a square full of strangers a realm up prints a count and an
+ * altitude and no name at all, and the roster question is exactly as useless
+ * there as in an empty one.
+ *
+ * Ordered by head count and then by id, so which is tried first is a property
+ * of the world rather than of the order `locations` came back in, and so the
+ * arranged square stays a modest one rather than the busiest place on the map.
+ */
+async function squaresWithSomebodyKnownAndAbove(harness: Harness): Promise<string[]> {
+    const world = await (harness.game as unknown as {
+        loadWorld(): Promise<{
+            locations: { id: string; name: string; kind: string }[];
+            npcs: { id: string; locationId: string | null; status: string;
+                cultivation: { realmOrdinal: number } }[];
+        } | null>;
+    }).loadWorld();
+    if (!world) return [];
+    const me = harness.game.currentRun().cultivator;
+    const heardOf = (harness.game as unknown as {
+        knowledge: { awareIds(holder: string, kind: string): Set<string> };
+    }).knowledge.awareIds(me.id, 'cultivator');
+
+    const above = new Map<string, number>();
+    for (const npc of world.npcs) {
+        if (npc.status !== 'alive' || npc.locationId === null) continue;
+        if (npc.cultivation.realmOrdinal <= me.realmOrdinal) continue;
+        if (!heardOf.has(npc.id)) continue;
+        above.set(npc.locationId, (above.get(npc.locationId) ?? 0) + 1);
+    }
+    // Of the kind a run opens in. A `region` row is a container nobody stands
+    // in - `npcsAt` says so - so standing the player on one arranges a
+    // situation no player is ever in.
+    const kind = world.locations.find(row =>
+        row.name.toLowerCase() === (me.location ?? '').trim().toLowerCase())?.kind
+        ?? 'settlement';
+    return world.locations
+        .filter(row => row.kind === kind && (above.get(row.id) ?? 0) > 0)
+        .sort((a, b) => (above.get(a.id)! - above.get(b.id)!) || (a.id < b.id ? -1 : 1))
+        .map(row => row.name);
+}
+
+/**
+ * Stand where there is somebody worth asking, and hand back their name.
+ *
+ * ── WHAT THE PLAYED TESTS USED TO ASSUME ─────────────────────────────────
+ *
+ * That the square the birth draw opened in had somebody above the player in it.
+ * That is a coincidence of two seeds and it broke when the world moved:
+ * measured across 480 (world, birth) pairs at the population `createWorld`
+ * uses, the opening square holds nobody at all in 0.6% of them, one other body
+ * in 10% and fewer than three in 25%. `ask-2` drew an empty one - "Nobody you
+ * know of stands above Qi Condensation Layer 1, and nobody in The Furnace Flank
+ * is carrying themselves like somebody who does" - so `anybodyNameable` handed
+ * back null, three tests in this file asked `null` for a favour, and the
+ * failures read as defects in the asking.
+ *
+ * The square is now read off the world and set when the one they opened in will
+ * not do. Moving is a precondition; nothing about the ask is arranged, and the
+ * name still comes back out of what the roster question PRINTED, which is the
+ * rule this file holds the parser to.
+ */
+async function somebodyWorthAsking(harness: Harness): Promise<string> {
+    const already = await anybodyNameable(harness);
+    if (already !== null) return already;
+
+    const me = harness.game.currentRun().cultivator.id;
+    for (const place of (await squaresWithSomebodyKnownAndAbove(harness)).slice(0, 8)) {
+        harness.repos.cultivators.update(me, { location: place });
+        const found = await anybodyNameable(harness);
+        if (found !== null) return found;
+    }
+
+    // ── AND WHERE THE RUN WAS BORN KNOWING NOBODY ABOVE IT ───────────────
+    //
+    // Measured on `ask-world-1`: `ask-1` opens knowing two people, both above
+    // it; `ask-5` three; `ask-8` four. `ask-2` opens knowing ONE person and
+    // they are not above it, in a square with nobody in it at all - so there is
+    // no square anywhere in that world where the roster question can name
+    // somebody for that run, and no amount of walking fixes it.
+    //
+    // That is the birth draw, not the verb, so the name is arranged: one
+    // `learnIfNew` row, the same row hearing it in a square would write, for
+    // the most ordinary person the world stands above this cultivator. Nothing
+    // about the asking is touched, and the unarranged case is still played -
+    // `does not answer a request with the roster` reaches its person with
+    // nothing arranged at all.
+    const world = await (harness.game as unknown as {
+        loadWorld(): Promise<{
+            locations: { id: string; name: string; kind: string }[];
+            npcs: { id: string; name: string; locationId: string | null; status: string;
+                cultivation: { realmOrdinal: number } }[];
+        } | null>;
+    }).loadWorld();
+    const mine = harness.game.currentRun().cultivator.realmOrdinal;
+    const squares = new Map((world?.locations ?? [])
+        .filter(row => row.kind === 'settlement').map(row => [row.id, row.name]));
+    const teacher = (world?.npcs ?? [])
+        .filter(npc => npc.status === 'alive'
+            && npc.cultivation.realmOrdinal > mine
+            && npc.locationId !== null && squares.has(npc.locationId))
+        .sort((a, b) =>
+            a.cultivation.realmOrdinal - b.cultivation.realmOrdinal
+            || (a.id < b.id ? -1 : 1))[0];
+    expect(teacher, 'this world stands nobody above the player in any settlement')
+        .toBeDefined();
+
+    (harness.game as unknown as { knowledge: { learnIfNew(row: unknown): unknown } })
+        .knowledge.learnIfNew({
+            holderId: me,
+            kind: 'cultivator',
+            id: teacher.id,
+            name: teacher.name,
+            onDay: 0,
+            sourceKind: 'told',
+            sourceNote: 'Somebody said who they were.',
+            stance: 'knows',
+            statement: `${teacher.name} exists.`,
+            confidence: 1
+        });
+    harness.repos.cultivators.update(me, { location: squares.get(teacher.locationId!)! });
+    const found = await anybodyNameable(harness);
+    expect(found, 'the roster question will not name somebody it has been told about')
+        .not.toBeNull();
+    return found!;
+}
+
+/**
+ * Somebody the roster question names, and one art they would actually teach.
+ *
+ * ── WHY THE ART HAS TO BE NAMED, AND WHY IT IS SEARCHED FOR ──────────────
+ *
+ * An unqualified "teach me" does not reach the resolver at all. Played against
+ * `ask-world-1`, two of the three answers it gets are refusals BEFORE the roll:
+ *
+ *     "What Duan Huibo would teach: Five-Breath Circulation Scripture, Iron
+ *      Shirt Tempering. Duan Huibo wants to know which of them."
+ *     "They hear you out and they will not ... none of it is theirs to hand to
+ *      somebody standing where you are - a road stays inside the house that
+ *      owns it."
+ *
+ * Both are correct and neither is an attempt, so nothing is rolled and nothing
+ * is marked. A test measuring what an attempt LEAVES therefore has to put one,
+ * and that means naming a road this person would hand over - which is read out
+ * of the first sentence above rather than guessed.
+ *
+ * The phrasing is read twice over on purpose. It used to be scraped as
+ * `carrying that you are not: <art>`, which is the wording this file's own
+ * header records being replaced by `would teach` - the list a refusal names is
+ * now what somebody would VOLUNTEER rather than everything they hold - so the
+ * scrape had been reading a sentence the game stopped printing.
+ */
+async function somebodyAndWhatTheyWouldTeach(
+    harness: Harness
+): Promise<{ who: string; art: string }> {
+    const me = harness.game.currentRun().cultivator.id;
+    const squares = [
+        harness.game.currentRun().cultivator.location ?? '',
+        ...(await squaresWithSomebodyKnownAndAbove(harness)).slice(0, 6)
+    ];
+    for (const place of squares) {
+        if (place.length === 0) continue;
+        // Fed as well as moved: each candidate costs a fourteen-day ask and
+        // this cultivator eats nothing, so a search would otherwise starve them
+        // before it found one. Provisioning is a precondition; nothing about
+        // the answer is arranged.
+        harness.repos.cultivators.update(me, { location: place, satiety: 100 });
+        for (const who of await everybodyNameable(harness)) {
+            harness.repos.cultivators.update(me, { satiety: 100 });
+            const said = await harness.game.act(`I ask ${who} to teach me`) as {
+                narration?: string;
+            };
+            const would = /would teach: ([^,.]+)/.exec(said.narration ?? '');
+            const shelf = /carrying that you are not: ([^,.]+)/.exec(said.narration ?? '');
+            const holds = /holds ([A-Z][^.]*?)\./.exec(said.narration ?? '');
+            const art = would?.[1] ?? shelf?.[1] ?? holds?.[1] ?? null;
+            if (art !== null) {
+                harness.repos.cultivators.update(me, { satiety: 100 });
+                return { who, art: art.trim() };
+            }
+        }
+    }
+    throw new Error('nobody the roster question names anywhere in this world would '
+        + 'teach anything');
 }
 
 describe('a request reaches the person, played', () => {
@@ -265,17 +461,16 @@ describe('a request reaches the person, played', () => {
     it('does not answer a request with the roster', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-1', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = await anybodyNameable(harness);
-        expect(who, 'the pinned world put nobody nameable in the square').not.toBeNull();
+        const who = await somebodyWorthAsking(harness);
 
-        const said = await harness.game.act(`I ask ${who!} to teach me`) as {
+        const said = await harness.game.act(`I ask ${who} to teach me`) as {
             narration?: string;
         };
         const text = said.narration ?? '';
         // The roster read's own closing sentence, which is what used to come
         // back. Its absence is the whole assertion.
         expect(text).not.toContain('You have no name to ask for');
-        expect(text).toContain(who!);
+        expect(text).toContain(who);
     });
 
     /**
@@ -285,7 +480,7 @@ describe('a request reaches the person, played', () => {
     it('says what was asked for', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-2', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
 
         const said = await harness.game.act(
             `I beg ${who} to take me as a disciple`
@@ -306,7 +501,7 @@ describe('a request reaches the person, played', () => {
     it('names what would work, whatever the answer was', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-3', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
 
         const said = await harness.game.act(
             `I ask ${who} to teach me the Nine Heavens Sword Nobody Wrote`
@@ -388,7 +583,7 @@ describe('a request reaches the person, played', () => {
     it('puts the art on the sheet when somebody agrees', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-4', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
 
         // The odds start at the floor for a nobody asking a stranger for a real
         // favour, which is the design and not a bug - so this asks until the
@@ -415,11 +610,21 @@ describe('a request reaches the person, played', () => {
      * Nothing persisted any of them while `factsForAttempt` told the player
      * "it is on somebody's ledger now" - the narrator asserting an outcome the
      * database never took.
+     *
+     * ── AND THE ASK HAS TO BE ONE THAT REACHES THE RESOLVER ──────────────
+     *
+     * It used to say "teach me" and nothing else, which stopped reaching the
+     * roll when the world moved: on `ask-5` the person the roster question
+     * names now answers *"none of it is theirs to hand to somebody standing
+     * where you are - a road stays inside the house that owns it"*, which is
+     * correct, is not an attempt, and therefore leaves no marks. Six of those
+     * read as `the asking left no record` and were nothing of the kind. The art
+     * is named now, read off the answer the game printed.
      */
     it('writes down what the asking left behind', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-5', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const { who, art } = await somebodyAndWhatTheyWouldTeach(harness);
         const whoId = idOf(harness, who);
 
         for (let i = 0; i < 6; i++) {
@@ -435,7 +640,7 @@ describe('a request reaches the person, played', () => {
             // no record* and is nothing of the kind. Provisioning is a
             // precondition; nothing about the outcome is arranged here.
             harness.repos.cultivators.update(live.cultivator.id, { satiety: 100 });
-            await harness.game.act(`I ask ${who} to teach me`);
+            await harness.game.act(`I ask ${who} to teach me the ${art}`);
         }
         const self = harness.game.currentRun().cultivator.id;
         const rows = harness.db.prepare(
@@ -537,7 +742,7 @@ describe('the courtesy that asks for nothing', () => {
     it('leaves no grudge when nobody asked for anything', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-6', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
         const self = harness.game.currentRun().cultivator.id;
 
         for (let i = 0; i < 8; i++) {
@@ -564,7 +769,7 @@ describe('the courtesy that asks for nothing', () => {
     it('leaves one grudge for being refused, not one a day', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-7', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
         const self = harness.game.currentRun().cultivator.id;
 
         for (let i = 0; i < 6; i++) {
@@ -588,20 +793,13 @@ describe('the courtesy that asks for nothing', () => {
     it('does not say the same thing twice', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-8', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
 
-        // Named, so the request RESOLVES rather than stopping at the
-        // coherence refusal. "Name one" repeating is fine and is a different
-        // thing: it costs nothing, no day passes, and the same malformed
-        // sentence deserves the same answer. What must not repeat is the
-        // answer to a request that was actually put and actually cost days.
-        const opening = await harness.game.act(`I ask ${who} to teach me`) as {
-            narration?: string;
-        };
-        const shelf = /carrying that you are not: ([^,.]+)/.exec(opening.narration ?? '');
-        const holds = /holds ([A-Z][^.]*?)\./.exec(opening.narration ?? '');
-        const art = shelf?.[1] ?? holds?.[1] ?? null;
-        expect(art, 'nobody here holds anything teachable in this world').not.toBeNull();
+        // Named, so the request RESOLVES rather than stopping at the coherence
+        // refusal. "Name one" repeating is fine and is a different thing: it
+        // costs nothing, no day passes, and the same malformed sentence
+        // deserves the same answer. What must not repeat is the answer to a
+        // request that was actually put and actually cost days.
+        const { who, art } = await somebodyAndWhatTheyWouldTeach(harness);
 
         const said: string[] = [];
         for (let i = 0; i < 3; i++) {
@@ -744,7 +942,7 @@ describe('a request says its own arithmetic', () => {
     it('files no field names on any surface it owns', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-9', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
 
         const mine = /^(engine\.resolveAttempt|engine\.priceTheAsk|social\.|knowledge\.learn|technique_manage\.learn|engine\.takeAMaster)/;
         const offenders: string[] = [];
@@ -780,7 +978,7 @@ describe('a request says its own arithmetic', () => {
     it('tells the player how often a thing like this comes off', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-10', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
 
         const first = await harness.game.act(`I buy ${who} a drink`) as { narration?: string };
         expect(first.narration ?? '').toMatch(/comes off (?:about one time in |\d+ times in a hundred)/);
@@ -798,7 +996,7 @@ describe('a request says its own arithmetic', () => {
     it('weighs a request at the odds the attempt would use', async () => {
         const harness = await makeGameInWorld({ seed: 'ask-11', worldSeed: 'ask-world-1' });
         await harness.game.newRun('Asker');
-        const who = (await anybodyNameable(harness))!;
+        const who = await somebodyWorthAsking(harness);
         const before = harness.game.currentRun().run.elapsedDays;
 
         const weighed = await harness.game.act(`could I ask ${who} to teach me`) as {
