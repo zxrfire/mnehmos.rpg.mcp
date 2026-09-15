@@ -32,6 +32,30 @@
  * house actually has. A player told "six per cent of it is gone" while half the
  * pot went has been told the wrong thing, so the treasury's own movement goes
  * on the mechanical channel beside it.
+ *
+ * ── AND WHAT A HOUSE SPENDS ON ITSELF IS NOT WHAT A THIEF TOOK ───────────
+ *
+ * `takes the stones out of the house that lost them` used to read the pot
+ * before the turn and after it and assert the difference WAS the thief's gain.
+ * That is the right claim and it was being measured against the wrong pair of
+ * numbers: a season of siphoning is a season the world lives through, and the
+ * house pays for its own season out of the same pot.
+ *
+ * Measured on this fixture, seed `siphon-drains` in `world-siphon-drains`.
+ * Azure Cloud Pavilion opens holding 40,310. Three months of careful siphoning
+ * gains the thief 4,923 and leaves the treasury at 11,466 - a fall of 28,844,
+ * which read as the house losing nearly six times what the thief took. A
+ * control run in the SAME world that commits no crime and only spends days
+ * (one gather, seven of them) leaves the treasury at 16,389, because any first
+ * turn steps a whole world-year and the house pays its bills inside it. 16,389
+ * is exactly the figure the siphon's own take was made against, and 16,389 less
+ * 4,923 is 11,466. Nothing was conjured and nothing went missing.
+ *
+ * So the claim is asserted where it is separable: what the treasury movement
+ * moved IS what the thief gained, and what the world holds afterwards IS what
+ * that movement left - read out of a world reloaded from SQLite, because a
+ * figure written onto the cached handle and never flushed is the one failure a
+ * read of the handle cannot see.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -42,6 +66,7 @@ import {
     putIntoTheHouse,
     takeFromTheHouse
 } from '../../src/engine/world/a-house-holds-its-own';
+import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { makeGameInWorld } from './harness';
 
 /** A house that takes people on, so somebody can be seated high enough to steal. */
@@ -51,6 +76,24 @@ function treasuryOf(game: unknown, factionId: string): number {
     const world = (game as { atHand: { factions: {
         id: string; resources: Record<string, number>;
     }[] } | null }).atHand;
+    const house = world?.factions.find(row => row.id === factionId);
+    return Number(house?.resources.spirit_stones ?? 0);
+}
+
+/**
+ * The same figure, out of the world's own store rather than the live handle.
+ *
+ * Dropping the cache forces the reload out of SQLite. A number written onto the
+ * handle and never flushed reads correctly from `treasuryOf` and is gone the
+ * moment anything else opens the world, which is the failure this file exists
+ * to catch one layer down.
+ */
+async function treasuryInTheStore(
+    harness: Awaited<ReturnType<typeof makeGameInWorld>>,
+    factionId: string
+): Promise<number> {
+    resetCultivationWorlds();
+    const world = await harness.game.loadWorld();
     const house = world?.factions.find(row => row.id === factionId);
     return Number(house?.resources.spirit_stones ?? 0);
 }
@@ -157,8 +200,9 @@ describe('paying in, which is the same pot', () => {
 
 describe('played, robbing your own house', () => {
     /**
-     * THE WHOLE OF IT: the pot goes down by what the thief went up by. Before
-     * this the first number never moved.
+     * THE WHOLE OF IT: the pot goes down by what the thief went up by, and the
+     * pot the world is left holding is the one the crime was taken out of.
+     * Before this the first number never moved.
      */
     it('takes the stones out of the house that lost them', async () => {
         const { harness, id } = await anOfficerWhoCanReachTheReserves('siphon-drains');
@@ -177,15 +221,39 @@ describe('played, robbing your own house', () => {
         // test hoping rather than setting up. It read as flaky for a long time
         // because the player's id is minted at random and the discovery roll
         // reads it, so the same sentence was a different crime every run.
-        await harness.game.act('I siphon carefully from the sect treasury for 3 months');
+        const answer = await harness.game.act(
+            'I siphon carefully from the sect treasury for 3 months'
+        ) as { toolCalls?: { name: string; summary: string }[] };
 
-        const after = {
-            house: treasuryOf(harness.game, A_HOUSE.id),
-            thief: harness.repos.cultivators.getById(id)!.spiritStones
-        };
-        const gained = after.thief - before.thief;
+        const gained = harness.repos.cultivators.getById(id)!.spiritStones - before.thief;
         expect(gained, 'nothing was taken at all').toBeGreaterThan(0);
-        expect(before.house - after.house).toBe(gained);
+
+        // The movement itself, off the channel that reports it. The season the
+        // house also paid for is not in these numbers and is not supposed to
+        // be: what is being asserted is that the stones the thief is holding
+        // came out of this pot and that the pot now holds the difference.
+        const account = (answer.toolCalls ?? [])
+            .find(call => call.name === 'world.takeFromTheHouse')?.summary ?? '';
+        const movement = /siphoned: (\d+) out of (\d+), leaving (\d+)/.exec(account);
+        expect(movement, `no treasury moved at all: "${account}"`).not.toBeNull();
+        const moved = Number(movement![1]);
+        const tookItFrom = Number(movement![2]);
+        const leaving = Number(movement![3]);
+
+        expect(moved, 'the house lost something other than what the thief gained')
+            .toBe(gained);
+        expect(tookItFrom - leaving, 'the movement does not account for itself')
+            .toBe(gained);
+        expect(treasuryOf(harness.game, A_HOUSE.id), 'the world is not holding what the '
+            + 'movement left it holding').toBe(leaving);
+        expect(await treasuryInTheStore(harness, A_HOUSE.id), 'the hole is in the handle and '
+            + 'not in the store: nothing was flushed').toBe(leaving);
+
+        // AND THE SEASON THE HOUSE PAID FOR OUT OF THE SAME POT. Not a second
+        // claim about the crime - it is why the pot before the turn is not the
+        // pot the crime was taken from, which is what this test used to assert.
+        expect(tookItFrom, 'the house ended the season richer than it started it, with no '
+            + 'income in the world that could do that').toBeLessThanOrEqual(before.house);
     }, 200_000);
 
     /**

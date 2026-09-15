@@ -45,6 +45,8 @@ import { parseIntent } from '../../src/web/actions';
 import { npcsAt } from '../../src/engine/world/world-state';
 import { resetCultivationWorlds } from '../../src/server/state/cultivation-world';
 import { manualsAStallCarries } from '../../src/engine/world/what-a-copy-of-a-manual-costs-at-a-stall';
+import { readWhatIsOnOfferHere } from '../../src/web/who-here-is-offering-something';
+import type { AnOfferStandingHere } from '../../src/engine/world/what-somebody-standing-here-would-part-with';
 
 /**
  * A square with people in it, and a purse that cannot be the reason anything
@@ -58,6 +60,14 @@ async function inASquareWithAStall(seed: string): Promise<{
     db: Database.Database;
     game: Harness['game'];
     people: string[];
+    /**
+     * What is standing on offer here, asked of the engine's own read.
+     *
+     * Not a reconstruction of it: a helper that rebuilt which of the square's
+     * people are selling what would be a second copy of the deal and would
+     * disagree with the real one.
+     */
+    onOffer: AnOfferStandingHere[];
 }> {
     resetCultivationWorlds();
     const { db, game } = await makeGameInWorld({ seed, worldSeed: `world-${seed}` });
@@ -72,7 +82,12 @@ async function inASquareWithAStall(seed: string): Promise<{
 
     db.prepare('UPDATE cultivators SET location = ?, spirit_stones = 500 WHERE id = ?')
         .run(square.place.name, cultivator.id);
-    return { db, game, people: square.people.map(person => person.name) };
+    return {
+        db,
+        game,
+        people: square.people.map(person => person.name),
+        onOffer: readWhatIsOnOfferHere(game.state().cultivator, world).offers
+    };
 }
 
 /** A title the stall actually carries, read out of the catalog rather than typed. */
@@ -154,24 +169,38 @@ describe('a haggle is not a day', () => {
      * "Yes, no, or tell you to add" - and the add is the one that has to carry
      * a number, because a refusal with no route out of it is the blank look
      * this engine keeps having to be talked out of.
+     *
+     * A stall rate does not move and correctly says so, so what is pinned here
+     * is the half that does: somebody's own thing, at their own figure.
+     *
+     * ── HOW THE SELLER IS REACHED, AND WHY NOT THE WAY IT WAS ───────────
+     *
+     * This used to walk the square asking every person in it *how much does X
+     * want for what they are carrying* until somebody named a shortfall.
+     * Measured on this fixture: the square holds 23 people and exactly one of
+     * them, Duan Ankuan, has anything standing on offer, so 22 of those asks
+     * reach nobody selling anything - and the first one that misses settles the
+     * exchange on a stall book at a quoted rate, which every turn after it then
+     * correctly answers with *the rate is the rate*. The walk could not arrive.
+     *
+     * Naming the thing is what a player does after a board read prints it, and
+     * the title is read out of the engine's own account of what is standing
+     * here rather than typed. Played against Duan Ankuan's Iron Shirt Tempering
+     * at 7 stones, one stone offered: *6 spirit stones more closes it*.
      */
     it('tells a short offer what would close it', async () => {
-        const { game, people } = await inASquareWithAStall('haggle-says-what-closes-it');
+        const { game, onOffer } = await inASquareWithAStall('haggle-says-what-closes-it');
+        const [standing] = onOffer;
+        expect(standing, 'nobody in the pinned square is offering anything at all')
+            .toBeDefined();
+        expect(standing.askStones, 'the thing on offer is free, so nothing can be short of it')
+            .toBeGreaterThan(1);
 
-        // Somebody standing here who is actually selling, found by asking the
-        // square rather than by naming a person the world may not have put
-        // there. A stall rate does not move and correctly says so; what is
-        // being pinned here is the half that does.
-        let closed = '';
-        for (const who of people) {
-            const asked = await game.act(`how much does ${who} want for what they are carrying`);
-            const offered = await game.act('I offer one stone');
-            if (/more closes it/.test(read(offered))) { closed = read(offered); break; }
-            void asked;
-        }
-        expect(closed, 'nobody in the square would name a shortfall').toMatch(
-            /\d+ spirit stones? more closes it/
-        );
+        await game.act(`how much for the ${standing.name}`);
+        const offered = await game.act('I offer one stone');
+
+        expect(read(offered), 'a short offer was not told what would close it')
+            .toContain(`${standing.askStones - 1} spirit stones more closes it`);
     }, 300_000);
 
     /**
