@@ -20,6 +20,19 @@
  * tie at the next gathering and decides whether the bout between them is a test
  * or not - so the motive is wired rather than recorded.
  *
+ * ── AND ONLY ONE OF THE FOUR DOORS HAS NO GOING ANYWAY ───────────────────
+ *
+ * That obstacle used to be written unconditionally, and it is true of exactly
+ * the cell the door table calls `doled_out`. At the other three nothing at the
+ * door hands out a place: the ground has no count on it, or nobody holds it, so
+ * the roster is the house's list and not the door's and a person left off it can
+ * walk up to the same hole in the hillside. Writing "there is no going anyway"
+ * there told the person the one thing that would have stopped them, and it was
+ * false - which is the whole of why the trope of somebody going anyway and
+ * coming out while the roster does not was not reachable. `whoDecidesWhoGoesIn`
+ * is the reading, off the same table, so the two cases are told apart rather
+ * than a fifth rule being written about rosters.
+ *
  * ── THE SAME MECHANISM STAFFS A POSTING ──────────────────────────────────
  *
  * A place at a door is one opening; a tour at a posting is the same allocation
@@ -32,6 +45,7 @@
  */
 
 import type { Secondment } from '../../data/cultivation/faction-roll.js';
+import type { WhoDecidesWhoGoesIn } from './a-door-with-a-count-on-it.js';
 import type { CultivationRNG } from '../cultivation/rng.js';
 import { realmForOrdinal, type RealmKey } from '../cultivation/realms.js';
 import { rankAField, creditWhatTheyLearned, type GatheringPlacing } from './gatherings.js';
@@ -76,6 +90,12 @@ export interface WhatTheConclaveDecided {
     factionId: string;
     /** The door, or the posting. */
     forWhat: string;
+    /**
+     * Whether anything at the far end hands the places out. A posting does -
+     * a tour is a term somebody is given - so it takes the same answer a
+     * counted door takes.
+     */
+    whoDecides: WhoDecidesWhoGoesIn;
     places: number;
     going: readonly Going[];
     passedOver: readonly PassedOver[];
@@ -96,6 +116,8 @@ export function holdAConclaveForThePlaces(input: {
     factionId: string;
     /** The door or posting these places are at. Named in the goal. */
     forWhat: string;
+    /** `whoDecidesWhoGoesIn` off the door's cell. A posting hands them out. */
+    whoDecides: WhoDecidesWhoGoesIn;
     places: number;
     wanting: readonly NpcRecord[];
     day: number;
@@ -149,6 +171,7 @@ export function holdAConclaveForThePlaces(input: {
     return {
         factionId: input.factionId,
         forWhat: input.forWhat,
+        whoDecides: input.whoDecides,
         places,
         going,
         passedOver,
@@ -204,7 +227,10 @@ export function whatBeingPassedOverDoes(
                 targetId: person.tookItId,
                 obstacles: [
                     `${person.tookItName} placed ${person.place - 1} places higher.`,
-                    'There is no going anyway. The house hands the places out.'
+                    decided.whoDecides === 'a_house_hands_them_out'
+                        ? 'There is no going anyway. The house hands the places out.'
+                        : 'Nothing at the door hands out a place. The house chose who it '
+                            + 'sends, and the door did not.'
                 ],
                 note: `Passed over at ${decided.forWhat}, placed ${person.place}.`
             }, day);

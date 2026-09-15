@@ -87,6 +87,22 @@ export type HowADoorIsKept =
     | 'anybody_who_turns_up';
 
 /**
+ * Whether a house is handing the places out at this door.
+ *
+ * The one thing the four cells say that a person left off a roster needs to
+ * know, and the reason it is read here rather than decided by whoever is
+ * writing a sentence: only `doled_out` has a house with a count in its hand.
+ * At the other three the door hands out nothing - either nobody holds it, or
+ * the holder holds ground with no count on it - so a roster is a house's list
+ * and not the door's, and turning up anyway is not a thing anybody has to beat.
+ */
+export type WhoDecidesWhoGoesIn = 'a_house_hands_them_out' | 'nobody_hands_them_out';
+
+export function whoDecidesWhoGoesIn(cell: HowADoorIsKept): WhoDecidesWhoGoesIn {
+    return cell === 'doled_out' ? 'a_house_hands_them_out' : 'nobody_hands_them_out';
+}
+
+/**
  * What a holder does with uncounted ground, and it is the same three shapes the
  * world already has for how ground is kept.
  *

@@ -26,6 +26,16 @@
  *                                      is what `whyTheyStoodUp` reads at the
  *                                      next gathering. The consequence is wired,
  *                                      not recorded.
+ *   the obstacle reads the door        "there is no going anyway" is true of
+ *                                      exactly one of the door table's four
+ *                                      cells. It was written unconditionally,
+ *                                      which told everybody left off every
+ *                                      roster the one thing that would have
+ *                                      stopped them - and it is false at a door
+ *                                      with no count on it, where the roster is
+ *                                      the house's list and not the door's. That
+ *                                      is the trope of somebody going anyway
+ *                                      being reachable at all.
  *   a person is seconded once          the caveat `whoCountsTowardThisHouse`
  *                                      states: two secondments for one person
  *                                      counts them 0.9 twice and the
@@ -45,6 +55,11 @@ import {
 } from '../../../src/engine/world/nobody-is-invincible.js';
 import { createWorld, type WorldState } from '../../../src/engine/world/world-state.js';
 import {
+    whoDecidesWhoGoesIn,
+    type HowADoorIsKept,
+    type WhoDecidesWhoGoesIn
+} from '../../../src/engine/world/a-door-with-a-count-on-it.js';
+import {
     WHAT_BEING_PASSED_OVER_COSTS,
     holdAConclaveForThePlaces,
     secondmentsFor,
@@ -52,6 +67,11 @@ import {
 } from '../../../src/engine/world/who-goes-to-a-door-and-who-is-passed-over.js';
 
 const DOOR = 'Cold Spring';
+
+/** The three cells of the door table where nobody is handing a place out. */
+const UNCOUNTED: readonly HowADoorIsKept[] = [
+    'open_on_the_holders_terms', 'settled_with_fists', 'anybody_who_turns_up'
+];
 
 function build(count: number): { state: WorldState; wanting: NpcRecord[] } {
     const state = createWorld({ seed: 'conclave-test', skipPriorAges: true, regionCount: 0 });
@@ -74,12 +94,17 @@ function build(count: number): { state: WorldState; wanting: NpcRecord[] } {
     return { state, wanting };
 }
 
-function conclave(places: number, count: number) {
+function conclave(
+    places: number,
+    count: number,
+    whoDecides: WhoDecidesWhoGoesIn = 'a_house_hands_them_out'
+) {
     const { state, wanting } = build(count);
     const decided = holdAConclaveForThePlaces({
         state,
         factionId: 'house-a',
         forWhat: DOOR,
+        whoDecides,
         places,
         wanting,
         day: state.currentDay,
@@ -142,6 +167,25 @@ describe('who goes to a door and who is passed over', () => {
             const tie = npc.relationships.find(r => r.targetId === person.tookItId);
             expect(tie).toBeDefined();
             expect(tie!.standing).toBeLessThan(0);
+        }
+    });
+
+    it('does not tell somebody there is no going anyway at a door with no count', () => {
+        // The three cells that are not `doled_out`. Nothing at any of them
+        // hands out a place, so the roster is the house's and a person left
+        // off it has a hole in a hillside to walk up to.
+        for (const cell of UNCOUNTED) {
+            expect(whoDecidesWhoGoesIn(cell)).toBe('nobody_hands_them_out');
+            const { state, decided } = conclave(3, 8, whoDecidesWhoGoesIn(cell));
+            whatBeingPassedOverDoes(state, decided!, state.currentDay);
+            for (const person of decided!.passedOver) {
+                const npc = state.npcs.find(n => n.id === person.npcId)!;
+                const goal = npc.goals.find(
+                    g => g.status === 'active' && g.targetId === person.tookItId)!;
+                const said = goal.obstacles.join(' ');
+                expect(said).not.toContain('no going anyway');
+                expect(said).toContain('Nothing at the door hands out a place');
+            }
         }
     });
 

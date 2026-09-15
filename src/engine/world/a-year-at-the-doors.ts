@@ -30,6 +30,7 @@ import {
     isGroundWithADoor,
     whatADoorAdmits,
     whatADoorSomebodyPaysAtTakesInAYear,
+    whoDecidesWhoGoesIn,
     type WhatADoorAdmits
 } from './a-door-with-a-count-on-it.js';
 import { ALLIED_STANDING } from './gatherings.js';
@@ -321,6 +322,7 @@ export function applyDoorsAndTheirPlaces(
                 state,
                 factionId: dealt.houseId,
                 forWhat: door.name,
+                whoDecides: whoDecidesWhoGoesIn(row.admits.cell),
                 places: dealt.places,
                 wanting,
                 day,
