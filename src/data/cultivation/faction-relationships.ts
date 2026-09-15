@@ -116,7 +116,7 @@ export type FactionRelationship = z.infer<typeof FactionRelationshipSchema>;
 export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
     // THE TWO BODIES NOBODY JOINS
     {
-        id: 'rel-the-root-sill-and-the-kiln',
+        id: 'rel-the-deeproot-and-the-kiln',
         aId: 'sect-deeproot-court',
         bId: 'court-kiln',
         aStandsTo: 'alongside',
@@ -144,7 +144,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         }
     },
     {
-        id: 'rel-the-root-sill-and-the-survey-that-reposted-it',
+        id: 'rel-the-deeproot-and-the-survey-that-reposted-it',
         aId: 'apex-earth-vein-tower',
         bId: 'sect-deeproot-court',
         aStandsTo: 'above',
@@ -172,7 +172,7 @@ export const FACTION_RELATIONSHIPS: readonly FactionRelationship[] = [
         }
     },
     {
-        id: 'rel-the-root-sill-and-the-schedule-that-took-it-in',
+        id: 'rel-the-deeproot-and-the-schedule-that-took-it-in',
         aId: 'apex-myriad-course-hall',
         bId: 'sect-deeproot-court',
         aStandsTo: 'above',
