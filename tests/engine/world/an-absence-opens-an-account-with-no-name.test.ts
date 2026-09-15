@@ -272,6 +272,30 @@ describe('the rate people give up at, and the accounts it leaves', () => {
      * 2,027 people who eventually stopped - about 36 absences and 101 nameless
      * accounts per world-century. 571 died still waiting and 119 were still
      * waiting at the end, which is the other two thirds of the design.
+     *
+     * ── THE GIVE-UPS WERE COUNTED OFF A SNAPSHOT THE WORLD PRUNES ───────
+     *
+     * `expect(nameless).toBe(gaveUp)` broke when
+     * `theWorldForgetsTheMortalDead` landed: 936 nameless rows against 588
+     * give-ups. The rows did not go up - the give-ups went DOWN, and the
+     * assertion is one row per giving-up, so either side moving breaks it.
+     *
+     * The cause is that the two halves were read off different things. The rows
+     * came out of the advance, and cannot be touched afterwards. The give-ups
+     * were counted off `state.absences[].ties[]` at the END, and a waiting
+     * relative who gives up and then dies as a mortal has their tie snapshot
+     * removed with the rest of them - the world has no way to speak of the
+     * person who was waiting, so it does not hold the record of their waiting
+     * either. Measured, and it is entirely the ties: 376 absences for 376
+     * missing people, and NOT ONE absence was dropped for want of an absentee,
+     * because `missing` is not `physically_dead` and the sweep does not touch
+     * it.
+     *
+     * So the give-ups are now read where the rows are read, off the pass:
+     * `absenceConsequences` carries every `stopped_waiting` the advance
+     * produced. Both sides of the equality then come out of the same run, which
+     * is what the assertion was always claiming. Measured after the change: 936
+     * and 936.
      */
     it('is live on a seeded world, where it used to be structurally zero', async () => {
         const { seedWorld } = await import('../../../src/engine/world/seeding.js');
@@ -286,10 +310,9 @@ describe('the rate people give up at, and the accounts it leaves', () => {
             const out = advanceWorldYears(state, 300);
             absences += state.absences.length;
             nameless += out.accounts.filter(row => !hasANameOnIt({ subjectId: row.subjectId })).length;
-            gaveUp += state.absences.reduce(
-                (n, a) => n + a.ties.filter(t => t.settledAs === 'stopped_waiting').length,
-                0
-            );
+            // Off the pass, where the rows are, and not off the surviving
+            // snapshots - see the header.
+            gaveUp += out.absenceConsequences.filter(c => c.kind === 'stopped_waiting').length;
             // Every person the world cannot account for has exactly one, which
             // is the sweep doing its job rather than a sample.
             const missing = state.npcs.filter(n => n.status === 'missing').length;
