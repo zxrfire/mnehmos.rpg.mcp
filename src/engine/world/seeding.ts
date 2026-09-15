@@ -105,6 +105,7 @@ import {
     indexById,
     createWorld,
     makeFaction,
+    theWorldForgetsTheMortalDead,
     type FactionRecord,
     type ScheduledEffect,
     type WorldState
@@ -435,6 +436,15 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // so ten people on a house's own ground, from an outer disciple to the
     // Grand Sword Elder, all read the same way. See
     // `what-somebody-is-at-when-you-walk-up.ts`.
+
+    // AND THE WORLD DOES NOT OPEN HOLDING A DEAD FARMER.
+    //
+    // The same sweep the yearly pass runs, run once here, so that "this world
+    // holds no mortal who died" is true from day zero rather than true from the
+    // first year anybody simulates. On an unperturbed seed it takes nothing:
+    // the only deaths a fresh world contains are the wrongs, and those now fall
+    // on people it keeps.
+    theWorldForgetsTheMortalDead(state);
 
     return {
         state,

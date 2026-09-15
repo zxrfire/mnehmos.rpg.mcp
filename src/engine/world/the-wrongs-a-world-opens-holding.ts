@@ -1,12 +1,34 @@
 /**
  * The wrongs a world is already holding on the day it opens.
+ *
+ * ── THE VICTIM IS A MORTAL, AND THAT IS NOT AN OVERSIGHT ─────────────────
+ *
+ * `theWorldForgetsTheMortalDead` deletes a mortal who dies, so the obvious
+ * reading is that this pass should be drawing its victims from cultivators
+ * instead. Measured on a seeded world of 616 people, it cannot be:
+ *
+ *     living cultivators below the Lid                        128
+ *     of them NOT written by a catalog                          2
+ *     of those with a blood tie, unranked, with a legal killer  0
+ *
+ * The procedural population tops out at ordinal 14. Every cultivator in a
+ * seeded world who has a family is a catalog figure, and this pass refuses to
+ * write an unsettled murder onto an authored person in either role - see
+ * {@link whoDidIt}. Restricting the draw to cultivators produced ZERO killings
+ * in every world swept, which is the fresh world losing the only wrong it has.
+ *
+ * So the ruling lands on the other side, and it is the ruling's own reason
+ * rather than an exception to it: the engine drops the farmers it *was never
+ * able to say anything about*, and a man whose brother still carries the
+ * account for his killing is not one of them. `theWorldHasNoWayToSpeakOf`
+ * keeps anybody a priced deed names.
  */
 
 import { forStream } from '../cultivation/rng.js';
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
 import { isBelowTheLid } from './layers.js';
 import { settleNpcDeath } from './time.js';
-import { markDead, type NpcRecord } from './npc-state.js';
+import { markDead, somebodyTheCatalogWrote, type NpcRecord } from './npc-state.js';
 import { aDeedEntersTheWorld } from './a-deed-enters-the-world-as-a-fact.js';
 import type { Party } from '../social-leverage/what-a-deed-leaves.js';
 import type { InheritanceRelation } from '../social/grudges.js';
@@ -55,13 +77,6 @@ const AS_THE_LEDGER_PUTS_IT: Readonly<Record<string, InheritanceRelation>> = Obj
 
 function isHere(npc: NpcRecord): boolean {
     return npc.status === 'alive' && isBelowTheLid(npc);
-}
-
-/**
- * Somebody the catalog wrote, on either side of a deed.
- */
-function isCurated(npc: NpcRecord): boolean {
-    return npc.tags.some(t => t.startsWith('catalog:')) || npc.id.startsWith('npc-line-');
 }
 
 function partyFor(state: WorldState, npc: NpcRecord, withKin: boolean): Party {
@@ -141,7 +156,7 @@ export function seedTheWrongsStillOpen(
         const candidates = inProvince
             .filter(n =>
                 !heads.has(n.id)
-                && !isCurated(n)
+                && !somebodyTheCatalogWrote(n)
                 && n.relationships.some(r => BLOOD.has(r.kind)))
             .sort((a, b) => (a.id < b.id ? -1 : 1));
         if (candidates.length === 0) continue;
@@ -273,7 +288,7 @@ function whoDidIt(
             // an authored figure should be allowed to have done something before
             // the world opened is a question for the person who wrote them, not for
             // this pass.
-            && !isCurated(n)
+            && !somebodyTheCatalogWrote(n)
             && n.cultivation.realmOrdinal > victim.cultivation.realmOrdinal)
         .sort((a, b) => (a.id < b.id ? -1 : 1));
     if (able.length === 0) return null;

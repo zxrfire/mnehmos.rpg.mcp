@@ -41,6 +41,7 @@
  */
 
 import { DAYS_PER_YEAR } from '../cultivation/cultivation.js';
+import { FOUNDATION_ORDINAL } from '../cultivation/realms.js';
 import {
     createLedger,
     dayOfYear,
@@ -49,6 +50,7 @@ import {
     placeName,
     seedPriorAges,
     yearOfDay,
+    type HistoricalFact,
     type HistoryLedger,
     type PriorAgesOptions
 } from './history.js';
@@ -61,7 +63,11 @@ import {
 } from './locations.js';
 import { createMemoryStore, type MemoryStore } from './memory.js';
 import { DEFAULT_LAYER, type AscensionRecord, type LayerKey } from './layers.js';
-import type { NpcRecord } from './npc-state.js';
+import {
+    isTheWorldsToMove,
+    somebodyTheCatalogWrote,
+    type NpcRecord
+} from './npc-state.js';
 import type { LineageRecord } from './lineage.js';
 import type { WorldRun } from './legacy.js';
 import type { OpportunityWindow } from './opportunities.js';
@@ -609,6 +615,306 @@ export function pendingEffects(
     return state.schedule
         .filter(e => !e.fired && e.dueOnDay > fromDay && e.dueOnDay <= toDay)
         .sort((a, b) => a.dueOnDay - b.dueOnDay || (a.id < b.id ? -1 : 1));
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// THE MORTAL DEAD ARE NOT KEPT
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Whether this row is one the world has no way to speak of any more.
+ *
+ * The design owner, generalising the mortal ruling to death: *"if sibling dies
+ * as a mortal, drop. if dies as a cultivator, mark as dead in entities. this is
+ * true for everyone"*, and on being shown the pile it makes - *"nobody
+ * remembers them"*.
+ *
+ * Four terms, and each excludes a population that is NOT what the ruling is
+ * about:
+ *
+ *   `physically_dead`   death, and only death. `missing` is the engine saying
+ *                       it does not know, which is the ordinary condition of
+ *                       somebody who walked into a mountain - and an absence is
+ *                       a live question `when-somebody-does-not-come-back.ts`
+ *                       is still asking. Status and not `diedOnDay`: 110 rows
+ *                       in the measured world below carry no `diedOnDay`
+ *                       because they are missing rather than dead, so a
+ *                       predicate reading that field would disagree with every
+ *                       predicate reading this one.
+ *   below foundation    the same line the kin and marriage passes use, and it
+ *                       is not chosen here: `realms.ts` says below it a
+ *                       character is a mortal with a party trick and above it
+ *                       they are a cultivator.
+ *   the world's to move the player's own row is a run, not a farmer.
+ *   nobody wrote them   see {@link somebodyTheCatalogWrote}.
+ *
+ * And one term that is a question about the world rather than about the row,
+ * so it is supplied by the caller: `remembered`. See {@link
+ * theWorldForgetsTheMortalDead}.
+ */
+function theWorldHasNoWayToSpeakOf(npc: NpcRecord, remembered: ReadonlySet<string>): boolean {
+    return npc.status === 'physically_dead'
+        && npc.cultivation.realmOrdinal < FOUNDATION_ORDINAL
+        && isTheWorldsToMove(npc)
+        && !somebodyTheCatalogWrote(npc)
+        && !remembered.has(npc.id);
+}
+
+/**
+ * Everybody a priced deed names.
+ *
+ * The one exception to the drop, and it is the ruling's own reason rather than
+ * a softening of it: what is being deleted is *the corpses of farmers the
+ * engine was never able to say anything about*, and a man whose brother still
+ * carries the account for his killing is not one of them. A priced deed IS an
+ * account - `aDeedEntersTheWorld` stamps `deedWeight` on every fact it writes,
+ * and `what-a-telling-lands-on.ts` reads the same field to decide what a person
+ * can be told - so this asks the field rather than holding a second opinion
+ * about which wrongs count.
+ *
+ * Measured over two hundred years of one seeded world: 928 rows swept, 9 kept
+ * by this. It is the exception being small that makes it an exception.
+ */
+function whoIsStillCarriedFor(facts: readonly HistoricalFact[]): Set<string> {
+    const remembered = new Set<string>();
+    for (const fact of facts) {
+        if (!('deedWeight' in fact.data)) continue;
+        for (const actor of fact.actors) remembered.add(actor.id);
+    }
+    return remembered;
+}
+
+/** What one sweep took out. Reporting only; nothing in the simulation reads it. */
+export interface WhatTheWorldForgot {
+    people: number;
+    facts: number;
+    lineages: number;
+    absences: number;
+    memories: number;
+}
+
+const NOTHING_WAS_FORGOTTEN: WhatTheWorldForgot =
+    Object.freeze({ people: 0, facts: 0, lineages: 0, absences: 0, memories: 0 });
+
+/** Any id-shaped column whose value is somebody nobody remembers reads null. */
+function withoutTheForgotten(
+    data: Record<string, string | number | boolean | null>,
+    gone: ReadonlySet<string>
+): Record<string, string | number | boolean | null> {
+    let out = data;
+    for (const [key, value] of Object.entries(data)) {
+        if (typeof value !== 'string' || !gone.has(value)) continue;
+        if (out === data) out = { ...data };
+        out[key] = null;
+    }
+    return out;
+}
+
+/**
+ * Take the mortal dead out of the world, and the memory of them with it.
+ *
+ * ── WHY A SWEEP AND NOT A DELETE AT THE DEATH SITE ───────────────────────
+ *
+ * `markDead` has six call sites and the yearly pass holds NPC positions as
+ * indexes across hundreds of lines (`state.npcs[at] = ...`). Splicing a row out
+ * from under that shifts every index above it, so the deletion happens once,
+ * between passes, when nothing is holding a position. It also means the
+ * estate, the goals and the accounts a death hands on have all already been
+ * settled against a row that was still there - which is the order
+ * `settleNpcDeath` requires and the wrongs seeder had to be taught once
+ * already.
+ *
+ * ── WHAT GOES WITH THEM ──────────────────────────────────────────────────
+ *
+ * Everything, because the ruling is not tidiness - it is that this world has no
+ * way to speak of a farmer who died and so does not hold one. Measured on a
+ * seeded world at two hundred years, 1,007 dead mortals were named 24,000
+ * times: 10,413 as a witness to somebody else's event, 3,762 as an actor in
+ * one, 2,345 as somebody's living relative, and the rest across lineages,
+ * objects, absences and goals.
+ *
+ * A fact goes when everybody it names is forgotten. One that also names
+ * somebody the world keeps stays, with the forgotten struck off its actors;
+ * its `summary` is prose already written and may still contain the name, the
+ * way a summary may still name a village that burned down. No priced deed is
+ * ever dropped by construction, because everybody one names is kept - see
+ * {@link whoIsStillCarriedFor}.
+ *
+ * Mutates in place. Every other sweep at this layer does, the caller holds one
+ * world handle, and the arrays are REPLACED rather than spliced so the row
+ * index cache in {@link indexById} rebuilds instead of going stale.
+ */
+export function theWorldForgetsTheMortalDead(state: WorldState): WhatTheWorldForgot {
+    const remembered = whoIsStillCarriedFor(state.history.facts);
+    const gone = new Set<string>();
+    for (const npc of state.npcs) {
+        if (theWorldHasNoWayToSpeakOf(npc, remembered)) gone.add(npc.id);
+    }
+    if (gone.size === 0) return NOTHING_WAS_FORGOTTEN;
+
+    const kept = (id: string): boolean => !gone.has(id);
+    const nulled = (id: string | null): string | null =>
+        id !== null && gone.has(id) ? null : id;
+
+    // The facts first: the ids of the ones that go have to be struck off
+    // everything that cites them, and every later table does that strike.
+    const dropped = new Set<string>();
+    for (const fact of state.history.facts) {
+        if (fact.actors.length > 0 && fact.actors.every(a => gone.has(a.id))) {
+            dropped.add(fact.id);
+        }
+    }
+    const isDropped = (id: string): boolean => dropped.has(id);
+    const stillOnRecord = (id: string): boolean => !dropped.has(id);
+
+    state.history.facts = state.history.facts
+        .filter(fact => stillOnRecord(fact.id))
+        .map(fact => ({
+            ...fact,
+            actors: fact.actors.filter(actor => kept(actor.id)),
+            witnessIds: fact.witnessIds.filter(kept),
+            causes: fact.causes.filter(stillOnRecord),
+            data: withoutTheForgotten(fact.data, gone),
+            consequences: fact.consequences === null ? null : {
+                ...fact.consequences,
+                beneficiaries: fact.consequences.beneficiaries.filter(a => kept(a.id)),
+                losers: fact.consequences.losers.filter(a => kept(a.id)),
+                relationshipChanges: fact.consequences.relationshipChanges
+                    .filter(change => kept(change.aId) && kept(change.bId))
+            }
+        }));
+
+    const forgottenMemories = new Set(
+        state.memories.records.filter(m => gone.has(m.ownerId)).map(m => m.id));
+    state.memories.records = state.memories.records
+        .filter(m => !forgottenMemories.has(m.id))
+        .map(m => ({
+            ...m,
+            actorIds: m.actorIds.filter(kept),
+            sourceFactIds: m.sourceFactIds.filter(stillOnRecord),
+            compressedFromIds: m.compressedFromIds.filter(id => !forgottenMemories.has(id))
+        }));
+
+    state.npcs = state.npcs
+        .filter(npc => kept(npc.id))
+        .map(npc => ({
+            ...npc,
+            bodyId: nulled(npc.bodyId),
+            relationships: npc.relationships
+                .filter(tie => kept(tie.targetId))
+                .map(tie => ({
+                    ...tie,
+                    inheritedFromId: nulled(tie.inheritedFromId),
+                    factIds: tie.factIds.filter(stillOnRecord)
+                })),
+            // A goal handed on by somebody nobody remembers, or aimed at one, is
+            // a memory of them wearing a goal. `settleNpcDeath` is what put it
+            // here, and it goes back out the same door the person did.
+            goals: npc.goals.filter(goal =>
+                kept(goal.originHolderId)
+                && (goal.inheritedFromId === null || kept(goal.inheritedFromId))
+                && (goal.targetId === null || kept(goal.targetId))),
+            activity: npc.activity === null
+                ? null
+                : { ...npc.activity, withIds: npc.activity.withIds.filter(kept) },
+            historyFactIds: npc.historyFactIds.filter(stillOnRecord),
+            memoryIds: npc.memoryIds.filter(id => !forgottenMemories.has(id))
+        }));
+
+    const lineagesBefore = state.lineages.length;
+    state.lineages = state.lineages
+        .map(line => {
+            const memberIds = line.memberIds.filter(kept);
+            return {
+                ...line,
+                memberIds,
+                // The earliest member the world still holds. A line whose
+                // founder is forgotten still has people in it, and they are
+                // still a family; what is gone is how far back it can be traced.
+                founderId: kept(line.founderId) ? line.founderId : (memberIds[0] ?? line.founderId),
+                edges: line.edges.filter(e => kept(e.parentId) && kept(e.childId)),
+                inheritedEnemyIds: line.inheritedEnemyIds.filter(kept)
+            };
+        })
+        .filter(line => line.memberIds.length > 0);
+
+    state.objects = state.objects.map(object => ({
+        ...object,
+        possessorId: nulled(object.possessorId),
+        ownerId: nulled(object.ownerId),
+        // Null is a real answer here and often the correct one: nobody's.
+        ownerName: object.ownerId !== null && gone.has(object.ownerId) ? '' : object.ownerName,
+        claims: object.claims
+            .filter(claim => kept(claim.claimantId))
+            .map(claim => ({
+                ...claim,
+                acknowledgedByIds: claim.acknowledgedByIds.filter(kept),
+                evidenceFactIds: claim.evidenceFactIds.filter(stillOnRecord)
+            })),
+        // The NAME columns are checked too, and that is not belt and braces:
+        // `currentHolderName` falls back to the possessor's id when no link in
+        // the chain names them, so a name column legitimately holds an id.
+        provenance: object.provenance
+            .filter(link =>
+                (link.holderId === null || kept(link.holderId))
+                && (link.previousHolderId === null || kept(link.previousHolderId))
+                && kept(link.holderName)
+                && (link.previousHolderName === null || kept(link.previousHolderName)))
+            .map(link => ({
+                ...link,
+                factId: link.factId !== null && isDropped(link.factId) ? null : link.factId
+            })),
+        knownOwnershipBy: object.knownOwnershipBy.filter(kept),
+        data: withoutTheForgotten(object.data, gone)
+    }));
+
+    const absencesBefore = (state.absences ?? []).length;
+    state.absences = (state.absences ?? [])
+        .filter(absence => kept(absence.absenteeId))
+        .map(absence => ({
+            ...absence,
+            witnessIds: absence.witnessIds.filter(kept),
+            toldIds: absence.toldIds.filter(kept),
+            ties: absence.ties.filter(tie => kept(tie.holderId))
+        }));
+
+    state.opportunities = state.opportunities.map(window => ({
+        ...window,
+        claimedById: nulled(window.claimedById),
+        knownToIds: window.knownToIds.filter(kept),
+        data: withoutTheForgotten(window.data, gone)
+    }));
+
+    state.locations = state.locations.map(location => ({
+        ...location,
+        data: withoutTheForgotten(location.data, gone),
+        changes: location.changes.map(change => ({
+            ...change,
+            causeFactId: change.causeFactId !== null && isDropped(change.causeFactId)
+                ? null
+                : change.causeFactId
+        }))
+    }));
+
+    // An effect that was about somebody and is now about nobody would fire on
+    // an empty cast. One that never named anybody is about a place and stays.
+    state.schedule = state.schedule
+        .filter(effect => effect.actorIds.length === 0 || effect.actorIds.some(kept))
+        .map(effect => ({
+            ...effect,
+            actorIds: effect.actorIds.filter(kept),
+            data: withoutTheForgotten(effect.data, gone)
+        }));
+
+    state.ascensions = state.ascensions.filter(a => kept(a.residentId));
+
+    return {
+        people: gone.size,
+        facts: dropped.size,
+        lineages: lineagesBefore - state.lineages.length,
+        absences: absencesBefore - state.absences.length,
+        memories: forgottenMemories.size
+    };
 }
 
 /**

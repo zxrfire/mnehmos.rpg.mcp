@@ -62,6 +62,7 @@ import {
 } from './when-somebody-does-not-come-back.js';
 import type { KnowledgeRecord } from '../social/knowledge.js';
 import type { ObligationInput } from '../social/grudges.js';
+import { theWorldForgetsTheMortalDead } from './world-state.js';
 import type { WorldState } from './world-state.js';
 
 export interface AdvanceForPlayOptions {
@@ -173,7 +174,15 @@ export function advanceWorldForPlay(
     opts: AdvanceForPlayOptions
 ): PlayAdvanceResult {
     const fromDay = state.currentDay;
-    const factsBefore = state.history.facts.length;
+    // BY ID, BECAUSE THE LEDGER CAN NOW GET SHORTER.
+    //
+    // This was a length, and the year's events were whatever sat past that
+    // index at the end. `theWorldForgetsTheMortalDead` removes facts as well as
+    // rows - 1,850 of 4,670 at two hundred years named nobody but people the
+    // world cannot speak of - so a positional window silently returns the wrong
+    // slice and the digest under-reports the year it just simulated. Nothing
+    // would have thrown.
+    const factsBefore = new Set(state.history.facts.map(f => f.id));
     const requested = Math.max(0, Math.floor(opts.days));
 
     // ── Why this is a loop and not two calls ─────────────────────────────
@@ -248,6 +257,15 @@ export function advanceWorldForPlay(
             absenceOpens.push(...pass.opens);
         }
 
+        // AND THE WORLD DOES NOT KEEP A FARMER WHO DIED. After the deaths, the
+        // politics and the absences of this slice, and between passes rather
+        // than inside one - the ledger index self-heals on a shrink, but only
+        // where a shrink and an append cannot cancel out within a single pass.
+        //
+        // Anybody a priced deed names is kept: a man whose brother still
+        // carries the account is not one of the corpses this is for.
+        theWorldForgetsTheMortalDead(state);
+
         remaining -= time.daysAdvanced;
         if (time.interrupted) {
             interrupted = true;
@@ -260,7 +278,7 @@ export function advanceWorldForPlay(
 
     const last = timeSlices[timeSlices.length - 1];
     const time: TimeAdvanceResult = last ?? advanceTime(state, 0, { inPlace: true });
-    const events = state.history.facts.slice(factsBefore);
+    const events = state.history.facts.filter(f => !factsBefore.has(f.id));
     const deaths = timeSlices.flatMap(t => t.deathHandoffs)
         .concat(pressureEvents.flatMap(e => e.deaths));
     // The war dead, and now the people who stopped waiting. Both are rows the

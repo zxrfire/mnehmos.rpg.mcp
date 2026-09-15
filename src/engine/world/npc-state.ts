@@ -563,6 +563,24 @@ export function isTheWorldsToMove(npc: Pick<NpcRecord, 'tags'>): boolean {
     return !npc.tags.includes(PLAYER_ROW_TAG);
 }
 
+/**
+ * Somebody a catalog wrote, rather than somebody the seeder produced.
+ *
+ * Two populations, one predicate: `seedNamedFigures` tags its people
+ * `catalog:<kind>`, and `seedTheLineThatCameDown` mints the ancestors a house
+ * keeps the names of under `npc-line-`. Both are authored, and the rule about
+ * them is the one `the-wrongs-a-world-opens-holding.ts` already states in its
+ * own words - a seeder does not argue with the writing. It lives here because
+ * a second reader now needs it: {@link
+ * world-state.theWorldForgetsTheMortalDead} deletes the mortal dead, and a
+ * catalog figure who dies at a mortal rung is a name the catalog still holds,
+ * so deleting their row would put back the two-ids-for-one-person defect
+ * `a-catalog-person-and-their-world-row.ts` exists to close.
+ */
+export function somebodyTheCatalogWrote(npc: Pick<NpcRecord, 'id' | 'tags'>): boolean {
+    return npc.tags.some(t => t.startsWith('catalog:')) || npc.id.startsWith('npc-line-');
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // CREATION
 // ─────────────────────────────────────────────────────────────────────────
