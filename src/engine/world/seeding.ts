@@ -1655,7 +1655,12 @@ function seedNamedFigures(
             ...(whoAHouseWillTake(faction.id) !== null
                 ? { sex: whoAHouseWillTake(faction.id)! }
                 : {}),
-            tags: ['catalog:member', `faction:${faction.id}`]
+            tags: [
+                'catalog:member', `faction:${faction.id}`,
+                // What this catalog STATES rides onto the row here, the same
+                // way the line at Old River carries its own statement.
+                ...whatACatalogStatesAsTags(member)
+            ]
         });
 
         npc = setRealm(npc, ordinal, presentDay - years(rng.int(0, 12)));

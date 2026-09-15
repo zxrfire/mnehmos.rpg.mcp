@@ -623,6 +623,29 @@ export interface WhatACatalogStates {
      * The lifespan pass is inside the guard for the same reason it is worth
      * naming: a guard that stops a killing and shrugs at old age is not a guard,
      * it is a delay.
+     *
+     * ── WHAT IS NOT ONE OF THESE ────────────────────────────────────────
+     *
+     * The field is opt-in and is meant to stay rare, and the way to keep it
+     * rare is to show where it does NOT go. Three from the same catalogs, none
+     * of which may carry it:
+     *
+     *   NOT STATED       `false-immortals.ts` on one figure: "whether he is
+     *                    still alive is therefore not answerable ... this
+     *                    catalog does not resolve it." A catalog declining to
+     *                    say is the opposite of a catalog saying.
+     *   A FEAR, NOT A    `faction-character.ts` carries "that Meng Da is still
+     *   FACT             alive somewhere in the workings" as what a house is
+     *                    afraid of. Somebody believing it is not the world
+     *                    holding it.
+     *   A ROLE, NOT A    `faction-history.ts` on the Mist: "its strongest is
+     *   PERSON           alive, in post, and is the reason the figure moved."
+     *                    That reads off the roster, so a death cannot falsify
+     *                    it - the sentence re-reads and stays true of whoever
+     *                    is strongest next.
+     *
+     * The test to apply: would a death make a sentence somewhere FALSE, or just
+     * out of date? Only the first is a statement.
      */
     theCatalogStatesTheyAreStanding?: boolean;
 }

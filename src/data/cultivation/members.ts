@@ -79,7 +79,14 @@ export const MemberSchema = z.object({
     outlierReason: z.enum(['inherited', 'remnant', 'arrived', 'last_of_age']).nullable(),
     goodCompany: z.boolean(),
     rivalry: RivalrySchema.nullable(),
-    teaching: TeachingSchema.nullable()
+    teaching: TeachingSchema.nullable(),
+    /**
+     * Stated rather than described: this person is standing, and the world's
+     * own passes may not end them. `WhatACatalogStates` in `npc-state.ts` owns
+     * what that means and what it deliberately does not mean; `seedNamedFigures`
+     * carries it onto the row as a tag.
+     */
+    theCatalogStatesTheyAreStanding: z.boolean().optional()
 });
 export type Member = z.infer<typeof MemberSchema>;
 
@@ -3179,6 +3186,17 @@ const AUTHORED_MEMBERS: readonly Member[] = [
         wants: 'to be asked about something other than her sister, once',
         fears: 'that the Pavilion has confused holding the position with being the position, and that she is the confusion',
         detail: 'The younger sister, and the whole of the Pavilion above Nascent Soul. Sits in the inner hall with the Edge and has not left the peaks in ninety years.',
+        // HER BEING ALIVE IS A STATED CAUSE, not a piece of colour.
+        // `crossings.ts` makes her the exception in a rule about the whole
+        // world: an immortal answers because somebody down here is
+        // specifically theirs, and a living sister is the only category of tie
+        // that reliably outweighs the distance. Everything measurable
+        // downstream rests on it - the Azure Cloud Pavilion answering every
+        // nine to fourteen years, the highest answer rate and the lowest grade
+        // in the world being one fact rather than two. A world that kills her
+        // does not lose a line of prose; it goes on reporting the rate with the
+        // stated cause of it quietly false, and nothing anywhere would notice.
+        theCatalogStatesTheyAreStanding: true,
         outlier: true,
         outlierReason: 'last_of_age',
         goodCompany: false,
