@@ -538,7 +538,8 @@ import { challengeVerb } from './challenging-an-account.js';
 import {
     couldPointAtIt,
     factsForTelling,
-    whatATellingLandsOn
+    whatATellingLandsOn,
+    whoTheyCarryFor
 } from './what-a-telling-lands-on.js';
 import { facesFromHome } from './who-a-life-like-this-grew-up-knowing.js';
 import type { OriginTierKey } from '../engine/cultivation/origin.js';
@@ -17694,7 +17695,14 @@ ${fit.line}`;
             // filtering the draw, which would have shrunk the world a life is
             // allowed to know people in. Nobody is told anything they were not
             // already told - the place is in the sentence above it.
-            if (face.whereTheyAre) {
+            //
+            // AND NOT FOR SOMEBODY WHO IS DEAD. Their row keeps the place they
+            // died in, so this was writing `Where <name> is.` about a corpse
+            // and teaching the player a settlement the opening never named -
+            // the opening says the ending instead of the address for exactly
+            // these people. Reachable before the street draw admitted the
+            // killed, through a household that had lost a parent.
+            if (face.whereTheyAre && face.diedYearsAgo === null) {
                 this.knowledge.learnIfNew({
                     holderId: cultivator.id,
                     kind: 'place',
@@ -17724,6 +17732,23 @@ ${fit.line}`;
         const couldSayWhoDidIt = (id: string): boolean =>
             this.knowledge.isAwareOf(cultivator.id, 'cultivator', id)
             && this.knowledge.canPointAt(cultivator.id, 'cultivator', id);
+
+        // ── AND WHAT EACH ONE ENTITLES THEM TO, OFF THE TIER THAT EXISTS ─
+        //
+        // The design owner, on why a killed neighbour belongs here at all:
+        // *"why can't it be an acquaintance you made? grudges already have
+        // tiers"*. So the grading is not invented: `whoTheyCarryFor` is the
+        // engine's own answer to whose killing somebody may open an account
+        // about, read off the ties the world wrote, and it is the same call
+        // `whatATellingLandsOn` makes before it will write a row. Asked here
+        // rather than copied, so the opening cannot promise something the
+        // telling layer would then refuse.
+        //
+        // AFTER `facesFromHome`, which is when the household's ties are on the
+        // player's row: the family is bound inside that call.
+        const carriesFor = new Set(
+            whoTheyCarryFor(cultivator.id, getNpc(world, cultivator.id)).ids);
+
         return faces.map(face => ({
             ...face,
             killedBy: face.killedBy === null
@@ -17731,7 +17756,8 @@ ${fit.line}`;
                 : {
                     byName: couldSayWhoDidIt(face.killedBy.killerId)
                         ? face.killedBy.killerName
-                        : null
+                        : null,
+                    yoursToCarry: carriesFor.has(face.id)
                 }
         }));
     }

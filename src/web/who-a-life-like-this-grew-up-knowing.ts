@@ -52,7 +52,7 @@ import { DAYS_PER_YEAR } from '../engine/cultivation/cultivation.js';
 import { getOrigin, type OriginTierKey } from '../engine/cultivation/origin.js';
 import { FOUNDATION_ORDINAL, realmForOrdinal } from '../engine/cultivation/realms.js';
 import { isBelowTheLid } from '../engine/world/layers.js';
-import { npcsAt, type WorldState } from '../engine/world/world-state.js';
+import type { WorldState } from '../engine/world/world-state.js';
 import type { LocationRecord } from '../engine/world/locations.js';
 import type { NpcRecord, RelationshipKind } from '../engine/world/npc-state.js';
 import { theFamilyThisLifeOpensWith } from './the-family-a-life-opens-with.js';
@@ -198,6 +198,17 @@ const WHAT_A_HOUSEHOLD_TIE_IS: Readonly<Record<string, string>> = Object.freeze(
 export interface AKillingBehindAFace {
     killerId: string;
     killerName: string;
+    /**
+     * Whether the world priced the deed, which is the only sense in which a
+     * killing here is OPEN.
+     *
+     * Nothing in the world marks a wrong settled, so there is no better
+     * question to ask. A priced deed is what `whoIsStillCarriedFor` keeps the
+     * victim's row for and what `whatATellingLandsOn` looks for before it will
+     * let anybody open an account, so this is the same field both of those read
+     * rather than a third opinion about which killings count.
+     */
+    anAccountWasOpened: boolean;
 }
 
 /** One person a life like this starts already able to name. */
@@ -288,9 +299,23 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
     const wanted = bandFor(FACES_A_CHILDHOOD_LEAVES, reach, f => f.faces);
     const rungs = bandFor(A_CHILDHOOD_REACHES, reach, r => r.rungs);
 
+    // A FACE NEED NOT STILL BE STANDING. This asked `status === 'alive'` and
+    // nothing else, so the only dead person who could ever reach the opening was
+    // a parent - the household inherits a spouse whether or not that spouse is
+    // still standing, and the street had no such door. Measured before the
+    // change: of 30,000 births on 120 worlds, 1,819 opened in a settlement where
+    // an open killing's victim was standing and 4 heard about it.
+    //
+    // `couldParent` asks `isHere` for itself, so admitting the killed here does
+    // not put a corpse in the household draw.
+    const stillStandingOrKilledInTheseYears = (npc: NpcRecord): boolean =>
+        npc.status === 'alive'
+        || aChildhoodCouldStillHaveHadThemInIt(
+            npc, whoEndedThem(world, npc), world.currentDay, cultivator.age);
+
     const eligible = (npcs: readonly NpcRecord[]): NpcRecord[] => npcs
         .filter(npc => npc.id !== cultivator.id)
-        .filter(npc => npc.status === 'alive' && isBelowTheLid(npc))
+        .filter(npc => isBelowTheLid(npc) && stillStandingOrKilledInTheseYears(npc))
         .filter(npc => aChildhoodCouldHaveContained(
             cultivator.realmOrdinal, npc.cultivation.realmOrdinal, rungs))
         // Nearest in standing first, then by id. The neighbour before the
@@ -301,7 +326,14 @@ export function facesFromHome(input: HomeFacesInput): FaceFromHome[] {
             - Math.abs(b.cultivation.realmOrdinal - cultivator.realmOrdinal)
             || (a.id < b.id ? -1 : 1));
 
-    const atHome = eligible(npcsAt(world, here.id));
+    // NOT `npcsAt`, AND THAT IS THE WHOLE OF WHY THE STREET HAD NO DOOR. That
+    // read answers who is STANDING somewhere and filters the dead out before
+    // anything here sees them, which is right for a square and wrong for a
+    // childhood: the question is who this life grew up around, and a killing
+    // inside those years does not unmake that. Everything the reader below
+    // needs is in `stillStandingOrKilledInTheseYears`, where it can be argued
+    // with; reading the roster directly is what lets it be asked at all.
+    const atHome = eligible(world.npcs.filter(npc => npc.locationId === here.id));
 
     // THE HOUSEHOLD FIRST, because a sixteen-year-old has one and until now the
     // player alone did not. Bound through `bindNewbornToHousehold`, the world's
@@ -388,9 +420,46 @@ function whoEndedThem(world: WorldState, npc: NpcRecord): AKillingBehindAFace | 
         if (!onTheirRecord.has(fact.id)) continue;
         if (!fact.actors.some(who => who.id === npc.id && who.role === 'victim')) continue;
         const killer = fact.actors.find(who => who.role === 'killer');
-        if (killer) return { killerId: killer.id, killerName: killer.name };
+        if (killer) {
+            return {
+                killerId: killer.id,
+                killerName: killer.name,
+                anAccountWasOpened: 'deedWeight' in fact.data
+            };
+        }
     }
     return null;
+}
+
+/**
+ * Somebody the street draw may still hand over, though they are not standing.
+ *
+ * THE DESIGN OWNER, ON WHY THIS IS NOT ONLY KIN: *"why can't it be an
+ * acquaintance you made? grudges already have tiers"*. A childhood that had a
+ * killing in it is the case the wrongs were described as producing - *a dead
+ * friend or family* - and the friend half was unreachable while this filter
+ * asked only whether somebody was alive.
+ *
+ * TWO CONDITIONS, AND NEITHER IS A NUMBER CHOSEN HERE.
+ *
+ *   THE ACCOUNT IS OPEN. A priced deed, which is the same field the telling
+ *   layer and the mortal sweep read. A killing nobody ever opened an account
+ *   for is a fact about the world and not a wrong this life is carrying.
+ *
+ *   IT HAPPENED INSIDE THIS LIFE'S OWN YEARS. Nobody grew up around somebody
+ *   who was already dead, so the bound is the age the run opens at. The wrongs
+ *   pass dates its killings across a span wider than a childhood, so this is
+ *   load-bearing rather than a formality: about half of them fall before a
+ *   sixteen-year-old was born.
+ */
+function aChildhoodCouldStillHaveHadThemInIt(
+    npc: NpcRecord,
+    killing: AKillingBehindAFace | null,
+    onDay: number,
+    age: number
+): boolean {
+    if (killing === null || !killing.anAccountWasOpened) return false;
+    return onDay - (npc.diedOnDay ?? 0) <= age * DAYS_PER_YEAR;
 }
 
 /**

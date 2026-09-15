@@ -106,13 +106,37 @@ export interface AFaceFromBeforeTheRun {
      * not typecheck. A name in this engine is earned; the caller has to have
      * asked whether this one was.
      */
-    readonly killedBy?: { readonly byName: string | null } | null;
+    readonly killedBy?: {
+        readonly byName: string | null;
+        /**
+         * Whether this life may open an account about it.
+         *
+         * The engine's own tier, not a second notion of closeness invented
+         * here: `whoTheyCarryFor` answers whose killing somebody may carry, off
+         * the ties the world wrote, and the caller asks it. A neighbour is a
+         * name and a killing; kin is that and something the player can act on.
+         */
+        readonly yoursToCarry: boolean;
+    } | null;
     /**
      * True where the life names them and claims nothing else - a mortal
      * household. Said with no whereabouts at all, which is not the same as
      * saying nobody knows where they are: nothing was ever claimed.
      */
     readonly aMentionOnly?: boolean;
+}
+
+/**
+ * Somebody a heading cannot promise a whereabouts for.
+ *
+ * A heading promises only what the lines under it deliver, and there are two
+ * ways a line has nothing to deliver: a mortal household, which claims nothing
+ * because nothing tracks a mortal, and somebody who is dead, for whom there is
+ * no address at all. "Nobody could say where they are standing now" is not one
+ * of these - it answers the question.
+ */
+function noWhereaboutsToGive(face: AFaceFromBeforeTheRun): boolean {
+    return face.aMentionOnly === true || face.diedYearsAgo !== null;
 }
 
 /**
@@ -144,11 +168,18 @@ function whereToFindThem(face: AFaceFromBeforeTheRun, home: string): string {
         const when = face.diedYearsAgo < 1 ? 'not a year ago' : `${face.diedYearsAgo} years ago`;
         // A stranger is the better sentence and it is also the commoner one.
         // The wrongs pass draws a killer from a whole province and a childhood
-        // reaches one settlement, so the name is usually not one this life has
+        // reaches one settlement, so the name is often not one this life has
         // ever been given - which is a motive rather than a hole in the record.
-        return face.killedBy.byName === null
-            ? `Killed ${when}, and nobody has put a name to who did it.`
-            : `Killed by ${face.killedBy.byName}, ${when}.`;
+        const said = face.killedBy.byName === null
+            ? `Killed ${when}, and nobody has put a name to who did it`
+            : `Killed by ${face.killedBy.byName}, ${when}`;
+        // AND WHAT IT ENTITLES THEM TO, WHICH IS THE ENGINE'S TIER AND NOT A
+        // SECOND ONE. Somebody the world lets you carry for can take the
+        // account to a house; a face from the same street cannot, and the
+        // difference is `whoTheyCarryFor`'s to state. Said only where it is
+        // true, because the absence is what makes a neighbour's killing read
+        // as a neighbour's.
+        return face.killedBy.yoursToCarry ? `${said}. The account is yours to carry.` : `${said}.`;
     }
     // A MENTION SAYS NOTHING ABOUT WHERE, and says nothing rather than saying
     // that nobody knows. Mortals are not tracked, so a place named here would
@@ -341,24 +372,28 @@ export function theLifeBehindTheFirstTurn(
     };
 
     if (family.length > 0) {
-        // The heading promises only what the lines under it deliver. A mortal
-        // household says no whereabouts at all, so a heading offering one would
-        // be the engine announcing a column it then leaves blank.
         lines.push({
-            text: family.every(one => one.aMentionOnly === true)
+            text: family.some(noWhereaboutsToGive)
                 ? 'The household:'
                 : 'The household, and where each of them is now:'
         });
         sayThem(family);
     }
     if (theStreet.length > 0) {
+        const knowing =
+            'Knowing somebody is not the same as being owed anything by them:';
+        // THE SAME RULE AS THE HOUSEHOLD'S, AND IT IS NOW REACHABLE FROM BOTH
+        // BLOCKS. This heading could once only be true, because the street draw
+        // took the living and nobody else. It takes somebody killed inside this
+        // life's own years as well, and a dead person has no whereabouts at all
+        // - so the clause goes when anybody under it cannot answer it.
         lines.push({
-            text:
-                'People they can already put a name to, and where each of them is. Knowing '
-                + 'somebody is not the same as being owed anything by them:',
-            toThePlayer:
-                'People you can already put a name to, and where each of them is. Knowing '
-                + 'somebody is not the same as being owed anything by them:'
+            text: theStreet.some(noWhereaboutsToGive)
+                ? `People they can already put a name to. ${knowing}`
+                : `People they can already put a name to, and where each of them is. ${knowing}`,
+            toThePlayer: theStreet.some(noWhereaboutsToGive)
+                ? `People you can already put a name to. ${knowing}`
+                : `People you can already put a name to, and where each of them is. ${knowing}`
         });
         sayThem(theStreet);
     }
