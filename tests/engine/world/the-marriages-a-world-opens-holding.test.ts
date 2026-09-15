@@ -109,7 +109,9 @@ const spouses = (state: WorldState) =>
 // ─────────────────────────────────────────────────────────────────────────
 
 /** A place holding people at the ordinals and ages given. */
-function town(people: readonly { ordinal: number; age: number; dead?: boolean }[]): WorldState {
+function town(
+    people: readonly { ordinal: number; age: number; dead?: boolean; diedYearsAgo?: number }[]
+): WorldState {
     const state = createWorld({ seed: 'wed', skipPriorAges: true, regionCount: 0 });
     state.currentDay = 400 * DAYS_PER_YEAR;
     state.locations.push(makeLocation({
@@ -125,7 +127,13 @@ function town(people: readonly { ordinal: number; age: number; dead?: boolean }[
             occupation: 'disciple'
         });
         npc = setRealm(npc, one.ordinal, state.currentDay);
-        if (one.dead) npc = markDead(npc, state.currentDay - 20 * DAYS_PER_YEAR, 'Old age.');
+        if (one.dead) {
+            npc = markDead(
+                npc,
+                state.currentDay - (one.diedYearsAgo ?? 20) * DAYS_PER_YEAR,
+                'Old age.'
+            );
+        }
         state.npcs.push(npc);
     });
     return state;
@@ -211,8 +219,14 @@ describe('the marriages a world opens holding', () => {
      * alone could not be told.
      */
     it('gives a widowed household child both parents, one of them dead', () => {
+        // DIED TEN YEARS AGO, AND THE CHILD IS SIXTEEN. This fixture used the
+        // helper's default of twenty, which put the death four years before the
+        // birth - a household the engine now refuses outright and should always
+        // have refused. The claim was right and the arrangement was impossible;
+        // see `refuses a second parent who died before the child was born`.
         const state = town([
-            { ordinal: 20, age: 300 }, { ordinal: 18, age: 280, dead: true }
+            { ordinal: 20, age: 300 },
+            { ordinal: 18, age: 280, dead: true, diedYearsAgo: 10 }
         ]);
         seedTheMarriagesStandingInAPlace(state, state.currentDay);
 
@@ -259,6 +273,44 @@ describe('the marriages a world opens holding', () => {
             .map(one => one.id);
         expect(inIt, 'the dead cultivator is not in the household').toContain('npc-1');
         expect(inIt, 'the dead mortal is still in the household').not.toContain('npc-2');
+    });
+
+    /**
+     * NOBODY IS RAISED BY SOMEBODY WHO DIED BEFORE THEY WERE BORN.
+     *
+     * The fourth instance of the asymmetry the banner on
+     * `bindNewbornToHousehold` names, and the one that reached a player.
+     * `couldHaveBeenAParentTo` checked the candidate's AGE and never their
+     * death, which is safe for the parent that is DRAWN - `couldParent` asks
+     * `isHere` first, so a corpse never reaches it - and not safe at all for
+     * the one that is INHERITED off a spouse tie, which reaches the predicate
+     * directly.
+     *
+     * Played, on `probe-w19`: a sixteen-year-old opened being told *"Ye Puxian.
+     * Family. Did the raising. Killed 25 years ago."* - dead nine years before
+     * the player existed. Two of four such households in a thirty-thousand
+     * birth sweep were like that.
+     *
+     * `missing` and `unknown` are deliberately NOT refused: somebody
+     * unaccounted for may well have fathered a child before they vanished, and
+     * the world says so with a status rather than a death day.
+     */
+    it('refuses a second parent who died before the child was born', () => {
+        const state = town([{ ordinal: 20, age: 300 }, { ordinal: 20, age: 280, dead: true }]);
+        // `town` kills at twenty years ago; the child is sixteen, so the spouse
+        // was four years in the ground when they were born.
+        seedTheMarriagesStandingInAPlace(state, state.currentDay);
+
+        const child = createNpc(state.seed, {
+            id: 'child', name: 'The Child',
+            bornOnDay: state.currentDay - 16 * DAYS_PER_YEAR,
+            onDay: state.currentDay, locationId: 'home', occupation: 'disciple'
+        });
+        state.npcs.push(child);
+        const household = bindNewbornToHousehold(state, child, 'npc-0', state.currentDay);
+
+        expect(household.parentIds, 'a corpse was credited with the raising')
+            .toEqual(['npc-0']);
     });
 
     it('is the same world on the same seed', () => {

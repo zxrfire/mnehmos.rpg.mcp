@@ -1032,13 +1032,23 @@ run opens never reaches the life. Measured: 1 of 40. That one is a gap written
 down, not an argued decision.
 
 **Whether a life opens having lost a parent is a question about the world, not
-about this read.** A fresh world holds three to five dead people and not one of
-them is a cultivator - the only deaths a new world contains are the killings
-`the-wrongs-a-world-opens-holding.ts` writes, and those fall on mortals - and only
-cultivators marry, so there is nobody to be widowed by. The opening above was
-produced by killing one of a seeded couple by hand. The path has a producer in
-`the-marriages-a-world-opens-holding.test.ts`; whether prior ages should leave dead
-cultivators standing anywhere belongs to whoever owns `seedPriorAges`.
+about this read.** It used to have one answer: a fresh world held three to five dead
+people, not one of them a cultivator, because the only deaths a new world contained
+were the killings `the-wrongs-a-world-opens-holding.ts` writes and those fell on
+mortals - so there was nobody to be widowed by, and the opening above was produced
+by killing one of a seeded couple by hand. That pass may now name somebody the
+catalog wrote, and the catalog now states who its own people are married to, so a
+fresh world does produce widows: measured over six seeds, five of the marriages in
+`members.ts` lost a half to an opening killing in one world or another. Whether prior ages should leave dead
+cultivators standing anywhere still belongs to whoever owns `seedPriorAges`.
+
+**And a parent the catalog wrote is a record at any rung.** The mention rule is about
+whether the world can still speak of the person, not about the rung, and
+`theWorldForgetsTheMortalDead` keeps everybody a catalog names. Measured over 3,000
+births on three pinned worlds: 24 lives open as the child of an authored figure - the
+Duan line at Old River Village, and the Cold Sword Sect's Sword Hand and Standing
+Sword, who are married to each other in every world - and all 24 read as a name and
+nothing else before this.
 
 ## Target resolution
 
