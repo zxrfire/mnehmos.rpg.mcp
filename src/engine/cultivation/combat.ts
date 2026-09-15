@@ -119,31 +119,43 @@ export const MAX_BODY_FACTOR = 1.8;
 export const MAX_SOUL_FACTOR = 1.6;
 export const MAX_COMPREHENSION_FACTOR = 1.7;
 /**
- * This one saturates, and the open question is the shape rather than the number.
+ * What an art is worth when the wielder has done everything a person can do.
  *
- * Four independent axes multiply into one line - mastery (x0.6 to x1.2), the
- * root match (x1 to x2.5), how well the book is written (x0.85 to x1.22) and
- * the road already walked (x1 to x1.35) - against a ceiling only 1.58x the
- * x1.2 an ordinary mastered art starts from. The product clears it long before
- * any single term does.
+ * The technique line is the one place a hard ceiling could not work, and the
+ * reason is arithmetic rather than taste. Four axes multiply into it: mastery
+ * (x0.6 to x1.2), the root match (x1 to x2.5), how well the book is written
+ * (x0.85 to x1.22) and the road already walked (x1 to x1.35). The three a
+ * person EARNS come to x1.976 on their own, which is already past x1.9 - so at
+ * a hard x1.9 there was no room left for the root at all, and every cultivator
+ * who had done everything right sat flat against it.
  *
- * Measured, single root on a matched art: the line reads 1.900 at 58% mastery
- * and 1.900 at 100%; 1.900 on a crude copy and 1.900 on the author's own hand;
- * 1.900 with no comprehension and 1.900 with a full Dao of the art's own road.
- * 45.9% of cultivators draw a root paying x2.0 or better (mutated saturates at
- * 27% mastery), so for the cultivator who did everything right three designed
- * axes are worth exactly nothing, including the largest non-realm term in the
- * game.
+ * Measured before the change, single root on a matched art: 1.900 at 58%
+ * mastery and 1.900 at 100%; 1.900 on a crude copy and 1.900 on the author's
+ * own hand; 1.900 with no comprehension and 1.900 with a full Dao of the art's
+ * own road. Three designed axes worth exactly nothing, the largest non-realm
+ * term in the game among them, for 45.9% of cultivators.
  *
- * Raising the number is not obviously the answer: 1.9 is already the highest of
- * these ceilings, and x2.4 buys about 0.4 of a rung at ordinal 20 while adding
- * 26% to what one cultivator's own lines can stack. The alternatives are making
- * the terms not all multiply, or deciding that saturating is what a ceiling is
- * for. That is a call about how the game should feel and it is open. What is
- * closed is the silence: the breakdown says when the line is against the
- * ceiling, so the axes that stopped counting are visible rather than implied.
+ * So this number stayed where it is and stopped being a wall. Up to here the
+ * line counts in full and nothing about it has moved. Above here it keeps
+ * counting and counts for less, toward {@link MAX_TECHNIQUE_FACTOR}.
  */
-export const MAX_TECHNIQUE_FACTOR = 1.9;
+export const TECHNIQUE_FULL_WEIGHT = 1.9;
+/**
+ * Hard bound on the technique line. An asymptote rather than a step.
+ *
+ * Read off the existing arithmetic rather than picked: x2.4 is what a mastered
+ * art of a single root's own element already computed to before any book or any
+ * road. Everything past that - a better copy, a comprehended road, a mutated
+ * root - is the part that compresses. The largest raw the four terms can
+ * produce is x4.94 and it lands at x2.3989, so nothing in the game takes this
+ * value; it is a bound for arbitrary input rather than a rung anybody stands on.
+ *
+ * It is higher than the x1.9 it replaces and the cultivator who saturated now
+ * sits LOWER than a raised hard cap would have put them - x2.22 against x2.40,
+ * with the last 8% still responding to every axis. See
+ * `comprehension-makes-an-art-work.test.ts` for the before-and-after table.
+ */
+export const MAX_TECHNIQUE_FACTOR = 2.4;
 export const MAX_ARTIFACT_FACTOR = 1.8;
 export const MAX_EXPERIENCE_FACTOR = 1.4;
 
@@ -346,6 +358,32 @@ export function brokenCombatPowerForOrdinal(ordinal: number): number {
     return combatPowerForOrdinal(ordinal) * BROKEN_STATUS_POWER;
 }
 
+/**
+ * The technique line, with everything past full weight compressed rather than cut.
+ *
+ * Every other composite line takes {@link clampFactor}, and a hard stop is right
+ * for them: none of their terms can reach the ceiling on its own. The technique
+ * line has four terms whose product passes it routinely, so a hard stop there
+ * did not bound one runaway line - it deleted whichever axes happened to be
+ * counted last, which was all three of the earned ones. See
+ * {@link TECHNIQUE_FULL_WEIGHT}.
+ *
+ * Exponential above the knee, so the curve has slope 1 on both sides of it and
+ * nothing jumps as a cultivator crosses. Below the knee this is the identity,
+ * which is why the change reaches nobody who was not already saturated.
+ *
+ * The floor is the old one and is deliberately still read off
+ * `TECHNIQUE_FULL_WEIGHT`: raising the bound must not quietly deepen how bad a
+ * half-learned art on a bad copy is allowed to be.
+ */
+export function techniqueWeight(raw: number): number {
+    const floor = 1 / TECHNIQUE_FULL_WEIGHT;
+    if (!Number.isFinite(raw)) return floor;
+    if (raw <= TECHNIQUE_FULL_WEIGHT) return Math.max(floor, raw);
+    const span = MAX_TECHNIQUE_FACTOR - TECHNIQUE_FULL_WEIGHT;
+    return TECHNIQUE_FULL_WEIGHT + span * (1 - Math.exp(-(raw - TECHNIQUE_FULL_WEIGHT) / span));
+}
+
 function clampFactor(raw: number, max: number): number {
     return Math.max(1 / max, Math.min(max, raw));
 }
@@ -498,22 +536,26 @@ export function assessPower(combatant: CombatantInput, ctx: PowerContext): Comba
         ? 0.85
         : (0.6 + 0.6 * mastery) * (matched ? root.matchedTechniqueBonus : 1)
             * reading.powerMultiplier * wielding;
-    // THE LINE SAYS WHEN IT IS AT THE CEILING. It itemises four contributions
-    // and the clamp can make the last three worth nothing at once - see
-    // `MAX_TECHNIQUE_FACTOR`. Listing them under a number none of them moved is
-    // the breakdown claiming an arithmetic it did not do, and it is what made
-    // the saturation invisible for as long as it was.
-    const atCeiling = techniqueRaw > MAX_TECHNIQUE_FACTOR;
+    const techniqueFactor = techniqueWeight(techniqueRaw);
+    // AND THE LINE SAYS WHEN IT IS BEING COMPRESSED. It itemises four
+    // contributions, and above `TECHNIQUE_FULL_WEIGHT` they stop arriving at
+    // face value. Listing them under a number they did not all reach is the
+    // breakdown claiming an arithmetic it did not do, and it is what kept the
+    // old hard ceiling invisible for as long as it was.
+    const compressed = techniqueRaw > TECHNIQUE_FULL_WEIGHT;
     factors.push({
         source: 'technique',
-        factor: clampFactor(techniqueRaw, MAX_TECHNIQUE_FACTOR),
+        factor: techniqueFactor,
         note: technique === null
             ? 'Fighting bare, with no art at all'
             : `${technique.name} at ${(mastery * 100).toFixed(0)}% mastery`
                 + `${matched ? ', element matched to the root' : ''}`
                 + `${reading.powerMultiplier === 1 ? '' : `; ${reading.label.toLowerCase()}`}`
                 + `${wielding === 1 ? '' : `; ${road.name ?? `a leaning toward ${road.subject}`} opens it`}`
-                + `${atCeiling ? '; at the ceiling a technique line is allowed, so not all of that reaches the number' : ''}`
+                + `${compressed
+                    ? `; above x${TECHNIQUE_FULL_WEIGHT} a technique line counts for less, `
+                      + `so a raw x${techniqueRaw.toFixed(2)} carries as x${techniqueFactor.toFixed(2)}`
+                    : ''}`
     });
 
     // ARTIFACTS

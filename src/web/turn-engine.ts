@@ -204,6 +204,7 @@ import { whatOneCopyIsWorth } from './who-here-is-offering-something.js';
 import { capOf } from '../data/cultivation/techniques.js';
 import { DAYS_PER_YEAR, NO_MANUAL_CEILING, carryingCapacityFor, techniqueCeiling } from '../engine/cultivation/cultivation.js';
 import { getSpiritRoot } from '../engine/cultivation/spirit-roots.js';
+import { practiceMatchBonus } from '../engine/cultivation/understanding.js';
 import { getMembersOf } from '../data/cultivation/members.js';
 import {
     getSectsTeaching
@@ -1094,6 +1095,7 @@ import {
 } from '../engine/social-leverage/a-service-is-something-done.js';
 import { craftVerbs } from './craft-verbs.js';
 import { destroyVerbs } from './breaking-a-thing-you-are-holding.js';
+import { stowVerbs, type StowIntent } from './leaving-a-thing-in-your-own-room.js';
 import { investigateVerb } from './investigate-verb.js';
 import { askingVerbs } from './asking-verbs.js';
 // Whose the thing is, asked of the world before anything calls a taking a theft.
@@ -2101,6 +2103,21 @@ export class GameService {
         // player's half whenever the world holds a row and flushes the world the
         // first time it has to create one, so creating a row any earlier would
         // have stopped the kin ties reaching disk at all.
+        // AND THE WORLD HAS TO BE IN HAND BEFORE THE ROW CAN BE WRITTEN.
+        //
+        // `refreshThePlayerRow` returns on a null `atHand`, and the call that
+        // used to load the world is the face seeding below - so moving the row
+        // write above it made the write a no-op on a cold process, and the
+        // player's half of every tie went missing again exactly as before. It
+        // passed in the suite because a harness world is already in hand.
+        //
+        // Caught by reading the path rather than by a test, and there is a
+        // test now: `leaves the player holding their own half, which is the
+        // half a telling reads`. Every household assertion before it walked the
+        // KIN's rows, and that half lands under either ordering - so four of
+        // them stayed green while the player's own half was missing. If you
+        // reorder these two lines, that is the one that goes red.
+        this.atHand = this.atHand ?? await this.loadWorld();
         this.refreshThePlayerRow(created.cultivator);
 
         const faces = await this.seedTheFacesFromHome(created.cultivator, birth.origin, seed);
@@ -4289,6 +4306,11 @@ ${noticedWaiting}`;
 
             case 'destroy':
                 return this.destroy(run, cultivator, action.target);
+
+            case 'stow':
+                return this.stow(
+                    run, cultivator, action.intent as StowIntent | undefined, action.target
+                );
 
             case 'list_techniques':
                 return this.listTechniques(run, cultivator, action.target);
@@ -15639,7 +15661,7 @@ ${fit.line}`;
             const matched =
                 catalog.element !== null && root.elements.includes(catalog.element);
             const bonus =
-                1 + known.mastery * 0.5 * (matched ? root.matchedTechniqueBonus / 2 : 1);
+                1 + known.mastery * 0.5 * practiceMatchBonus(root, matched);
             if (bonus >= techniqueBonus) {
                 techniqueBonus = bonus;
                 // Read off the same book the bonus came from, so the three
@@ -18887,12 +18909,13 @@ ${fit.line}`;
 }
 
 // THE VERB FAMILIES ARE MERGED ONTO THE CLASS HERE
-export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, DerivationVerbs, ServiceVerbs, ChallengeVerb {}
+export interface GameService extends TravelVerbs, CombatVerbs, CraftVerbs, DestroyVerbs, StowVerbs, InvestigateVerb, AskingVerbs, SituatedReads, SeclusionVerbs, CrossingVerb, MatchVerbs, SiteVerbs, InstitutionVerbs, DaoPartnerVerbs, TakingVerbs, GuardVerbs, TeachingVerbs, DerivationVerbs, ServiceVerbs, ChallengeVerb {}
 type ChallengeVerb = typeof challengeVerb;
 type TravelVerbs = typeof travelVerbs;
 type CombatVerbs = typeof combatVerbs;
 type CraftVerbs = typeof craftVerbs;
 type DestroyVerbs = typeof destroyVerbs;
+type StowVerbs = typeof stowVerbs;
 type InvestigateVerb = typeof investigateVerb;
 type AskingVerbs = typeof askingVerbs;
 type SituatedReads = typeof situatedReads;
@@ -18907,4 +18930,4 @@ type GuardVerbs = typeof guardVerbs;
 type TeachingVerbs = typeof teachingVerbs;
 type DerivationVerbs = typeof derivationVerbs;
 type ServiceVerbs = typeof serviceVerbs;
-Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, derivationVerbs, serviceVerbs, challengeVerb);
+Object.assign(GameService.prototype, travelVerbs, combatVerbs, craftVerbs, destroyVerbs, stowVerbs, investigateVerb, askingVerbs, situatedReads, seclusionVerbs, crossingVerb, matchVerbs, siteVerbs, institutionVerbs, daoPartnerVerbs, takingVerbs, guardVerbs, teachingVerbs, derivationVerbs, serviceVerbs, challengeVerb);

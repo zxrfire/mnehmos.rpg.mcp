@@ -14,7 +14,7 @@ import {
     type VisionSeed,
     isOnRoad
 } from '../../schema/cultivation.js';
-import { getSpiritRoot } from './spirit-roots.js';
+import { getSpiritRoot, type SpiritRoot } from './spirit-roots.js';
 import { progressRequiredForOrdinal } from './realms.js';
 import type { HowARoadCameWithinReach } from './what-a-road-in-reach-costs-to-walk.js';
 import { forStream, type CultivationRNG } from './rng.js';
@@ -192,6 +192,32 @@ export function understandingEffects(
         breakthroughModifier: Math.min(breakthrough, MAX_BREAKTHROUGH_BONUS),
         contributing
     };
+}
+
+/**
+ * What a matched root is worth to PRACTISING an art, as against to throwing one.
+ *
+ * Half of what it is worth in a fight, which is the rule the three practice
+ * sites already meant and none of them expressed. They each wrote
+ * `matchedTechniqueBonus / 2`, which halves the whole factor rather than the
+ * ADVANTAGE in it, and that inverted the term: x2.0 became x1.0, so matching
+ * your root was worth nothing to a single root, and every root below x2.0 was
+ * PENALISED for the match. Measured on mastery-per-day, matched against
+ * unmatched: single x1.00, dual x0.65, triple x0.60, quad x0.55, muddled x0.50,
+ * mutated x1.25. A muddled root mastered a fire art at half the rate of a
+ * lightning art it could not channel at all, and 54.1% of cultivators were
+ * slowed by drawing an art that suited them.
+ *
+ * Halving the advantage instead is monotone in the root, never below 1, and
+ * exactly half the combat bonus by construction: x1.50 / x1.15 / x1.10 / x1.05
+ * / x1.00 / x1.75.
+ *
+ * One function because it is one rule. Three copies of it is how the three
+ * disagreed with the combat line without anybody noticing.
+ */
+export function practiceMatchBonus(root: SpiritRoot, matched: boolean): number {
+    if (!matched) return 1;
+    return 1 + (root.matchedTechniqueBonus - 1) / 2;
 }
 
 /**

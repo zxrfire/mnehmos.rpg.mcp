@@ -20,6 +20,7 @@ import {
     evaluateDeathConditions,
     forStream,
     getSpiritRoot,
+    practiceMatchBonus,
     rankName,
     resolveDeviation,
     rollDeviation
@@ -739,7 +740,7 @@ export async function handlePractise(args: z.infer<typeof PractiseSchema>): Prom
         MASTERY_BASE_PER_DAY *
         insightFactor(cultivator.attributes.insight) *
         gradeFactor(technique.grade) *
-        (matched ? root.matchedTechniqueBonus / 2 : 1) *
+        practiceMatchBonus(root, matched) *
         (conflicts ? CONFLICT_MASTERY_FACTOR : 1);
 
     // Saturates at the supply rather than at full mastery. The days are still

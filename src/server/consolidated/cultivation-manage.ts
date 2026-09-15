@@ -47,6 +47,7 @@ import {
     maxQiForOrdinal,
     progressRequiredForOrdinal,
     openingPosition,
+    practiceMatchBonus,
     rankName,
     rollAttributes,
     rollOrigin,
@@ -297,7 +298,7 @@ function cultivationOptionsFor(
             // Mastery is the multiplier's spine: a manual you half understand
             // is half a manual.
             techniqueBonus =
-                1 + known.mastery * 0.5 * (matched ? root.matchedTechniqueBonus / 2 : 1);
+                1 + known.mastery * 0.5 * practiceMatchBonus(root, matched);
         }
     }
 
