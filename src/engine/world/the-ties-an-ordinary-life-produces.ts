@@ -479,6 +479,32 @@ export function bindHousehold(
 }
 
 /**
+ * Write both halves of one tie of blood that is not a household.
+ *
+ * Exported for the reason {@link bindHousehold} is: `the-kin-a-world-opens-
+ * holding.ts` writes the ties the catalog STATES, where there is nobody to draw
+ * and no household to form, and it must still land on the rows every reader
+ * already knows how to read.
+ *
+ * AT {@link SIBLING_STANDING}, WHATEVER THE DEGREE. This engine has one `kin`
+ * kind and one number for it, and a second constant saying how much nearer a
+ * sister stands than a cousin would be a mechanic invented to carry three rows.
+ * The degree is in the note, which is where a reader gets it.
+ */
+export function bindKin(
+    state: WorldState,
+    at: Map<string, number>,
+    one: NpcRecord,
+    other: NpcRecord,
+    otherIsToOne: string,
+    oneIsToOther: string,
+    since: number
+): void {
+    bind(state, at, one.id, other, 'kin', SIBLING_STANDING, otherIsToOne, since);
+    bind(state, at, other.id, one, 'kin', SIBLING_STANDING, oneIsToOther, since);
+}
+
+/**
  * Two unattached adults standing in the same place, bound into a household.
  */
 export function formHouseholds(

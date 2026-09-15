@@ -4198,6 +4198,126 @@ export const AUTHORED_MARRIAGES: readonly AuthoredMarriage[] = Object.freeze([
 ]);
 
 // ─────────────────────────────────────────────────────────────────────────
+// KIN
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * WHO THE CATALOG'S OWN PEOPLE ARE RELATED TO.
+ *
+ * {@link AUTHORED_MARRIAGES}, one degree out. A tie between two people the
+ * catalog already wrote is a fact about them, so it is written here beside them
+ * and is the same in every world.
+ *
+ * WHETHER THEY ALSO HAVE DRAWN CHILDREN STAYS A FACT ABOUT A WORLD, and the
+ * two do not conflict. The design owner on the earlier half: *"cuz if their
+ * children are fixed, you couldn't spawn as someone important's kid."* Measured
+ * over three thousand births, 24 open as the child of an authored figure, and
+ * nothing in that draw reads a `kin` row - `couldHaveBeenAParentTo` counts
+ * `child` ties and ages and nothing else. Naming somebody's sister takes no
+ * seat away.
+ *
+ * DO NOT "FINISH" THIS by writing children into the catalog.
+ *
+ * ── WHAT THE PROSE WAS CARRYING ──────────────────────────────────────────
+ *
+ * Three ties were asserted in entries and stated by no row. Ru Anwei's `detail`
+ * opens *"The younger sister"* and her `wants` is to be asked about something
+ * other than her sister. Ru Anxi is *"the one people mistake for her cousin"*.
+ * Hou Baiyu wants his uncle to stop introducing him to people as his uncle.
+ * Every one of those sentences is about a second person and the engine could
+ * not name one of them.
+ *
+ * ── WHICH OF THE TWO SISTERS IS ELDER IS NOT A CHOICE ────────────────────
+ *
+ * The catalog settles it three times in three files. `named-figures.ts` on Ru
+ * Anjing: she *"left her younger sister holding the hall"*. Nothing here
+ * decided it, and it is not open.
+ *
+ * ── AND ONE END IS SOMEWHERE NO WORLD CAN REACH ──────────────────────────
+ *
+ * Ru Anjing is `figure-ru-anjing` in `named-figures.ts`, not a {@link Member}:
+ * she crossed the Lid three hundred and eighty years ago, and `seedNamedFigures`
+ * instantiates `MEMBERS` and nobody else. The tie is stated anyway - who
+ * somebody's sister is does not stop being a fact about them because the engine
+ * has nowhere to put her - and `the-kin-a-world-opens-holding.ts` counts it
+ * under a rule about the Lid rather than dropping it quietly. A row dropped in
+ * silence is how a thing ends up asserted in prose and absent from the data,
+ * which is the defect this list exists to close.
+ *
+ * ── WHAT IS NOT HERE ─────────────────────────────────────────────────────
+ *
+ * THE LINE AT OLD RIVER, nine Duan in one file, where who is whose parent and
+ * whose cousin is the one thing the file declines to say. Same reason its
+ * marriage stays unwritten.
+ *
+ * SHU WANPING, *"descended from Shu Lianniang"*, who is a name on a hall's
+ * shelf and has no row anywhere. A descent of six generations is not a tie
+ * between two people and there is no second person to tie her to.
+ *
+ * AND THE SIBLINGS NOBODY NAMED - a brother at Iron Ridge, a sister at a
+ * market, a brother in the sealed sorting yard. Each is a real fact about the
+ * person who fears meeting them and about nobody else the catalog holds.
+ */
+
+/**
+ * The word for the tie read from the other end.
+ *
+ * Every read in this engine runs both ways; a relation word is a read, and a
+ * `kin` row is written on both people.
+ */
+export const KIN_THE_OTHER_WAY_ROUND = Object.freeze({
+    'younger sister': 'elder sister',
+    cousin: 'cousin',
+    nephew: 'uncle'
+} as const);
+
+export const AuthoredKinSchema = z.object({
+    /**
+     * The junior end - the younger sibling, the cousin who is mistaken for the
+     * other, the nephew. Load-bearing: the tie is dated from the day both of
+     * them existed, and the test reads the world's derived ages against it.
+     */
+    oneId: z.string().min(1),
+    /** The senior end. */
+    otherId: z.string().min(1),
+    /** What `one` is to `other`. {@link KIN_THE_OTHER_WAY_ROUND} reads it back. */
+    tie: z.enum(['younger sister', 'cousin', 'nephew']),
+    /** What the entries already say that this was read off. */
+    note: z.string().min(20)
+});
+export type AuthoredKin = z.infer<typeof AuthoredKinSchema>;
+
+/**
+ * Every tie of blood the catalog states between two of its own people.
+ */
+export const AUTHORED_KIN: readonly AuthoredKin[] = Object.freeze([
+    {
+        oneId: 'member-ru-anwei',
+        otherId: 'figure-ru-anjing',
+        tie: 'younger sister',
+        note: 'Her detail opens "The younger sister" and her wants is to be asked about '
+            + 'something other than her sister. named-figures.ts names her: Ru Anjing, who '
+            + 'left her younger sister holding the hall.'
+    },
+    {
+        oneId: 'member-ru-anxi',
+        otherId: 'member-ru-anwei',
+        tie: 'cousin',
+        note: 'She is "the one people mistake for her cousin", and crossings.ts says who the '
+            + 'mistake is for: the objects arrive, Ru Anwei is asked politely about her health, '
+            + 'and Ru Anxi is asked the same questions by people who have got the wrong one.'
+    },
+    {
+        oneId: 'member-hou-baiyu',
+        otherId: 'member-shi-weiran',
+        tie: 'nephew',
+        note: 'His wants and his rivalry both name an uncle who is a Sword Elder of his own '
+            + 'house and is a man on circuit. The Pavilion has two Sword Elders and one of them '
+            + 'is a man, so this end is elimination rather than anything Shi Weiran\'s own entry says.'
+    }
+]);
+
+// ─────────────────────────────────────────────────────────────────────────
 // INDICES + LOOKUPS
 // ─────────────────────────────────────────────────────────────────────────
 

@@ -1477,11 +1477,12 @@ Every one of those 133 rows comes from seven lines in `seedFactions`. The six ki
 turn one the `tell` verb, the inherited grudge, the unnamed account, the absence layer and
 every house-acts-for-its-own path reached a population of nought.
 
-Three passes fix it, all at creation, and none invents a mechanism:
+Four passes fix it, all at creation, and none invents a mechanism:
 
 | | What it does | The rate, and the unit it is stated in |
 |---|---|---|
 | `the-marriages-a-world-opens-holding.ts` | The households the catalog STATES, plus cultivating ones drawn through `formHouseholds` - the pairing rule extracted out of `applyHouseholds` so both callers run it rather than agree with it | `AUTHORED_MARRIAGES` in `members.ts`, and `NEVER_KEEPS_A_HOUSEHOLD` against the yearly rate for everybody else. Realised: **34-35% of cultivators married**, in marriages a median 43-70 years old and a longest of 230-338 |
+| `the-kin-a-world-opens-holding.ts` | The ties of blood the catalog STATES, through `bindKin` so a stated cousin is byte-identical to a drawn sibling. Runs after the marriages and BEFORE the families, so `nothingElseBetween` sees a stated cousin and declines to make her a drawn daughter | `AUTHORED_KIN` in `members.ts`. Realised: **+4 kin rows and -1 `ally` row per world**, measured both arms in one tree over seeds `wed-a..d` - the same displaced row every time, and one stated tie counted as unwritable because its other end is above the Lid |
 | `the-families-a-world-opens-holding.ts` | Households out of people standing in the same settlement, through `couldParent` and `bindNewbornToHousehold` unchanged, so a seeded tie is byte-identical to one a birth writes | `BORN_TO_SOMEBODY_STANDING_HERE` is the chance for somebody who HAS an eligible parent beside them. Realised: **34-41% of the living hold a blood tie**, in households of two to four |
 | `the-wrongs-a-world-opens-holding.ts` | Open killings, priced by `whatADeedLeaves` and written by `aDeedEntersTheWorld` - the same pricer and the same writer a played killing uses | `OPEN_KILLINGS_PER_PROVINCE` = 1. Realised: **5-6 a world, under 2% of the living bereaved**, and about **one run in six** opens in a room with one of those families in it |
 
@@ -2423,15 +2424,22 @@ declarations the world holds nothing for. Which is which:
   collecting house's rating does not move, because the world charges tribute to the payer
   and credits it to nobody.
 
-**And nothing is dated after the world's own clock.** `applyPressure` takes its year index
-as `yearOfDay(fromDay) + 1`, so the sending line's nominal day is always past the end of a
-one-year span and `withinSpan` always clamps it to the last day - every party in the world
-left on the final day and came back after it. `whenTheErrandHappened` is the rule: a pass
-reports on a year, so an errand whose term fits inside the span HAPPENED inside it and the
-party left `term` days before the day being reported on. One whose term does not fit is
-still out, `newsOfAPartyStillOut` says so with `truth: 'unresolved'`, and nothing about it
-is resolved. Across nine horizons on one seed - 100, 200, 300 and 497 to 502 years - the
-count of facts dated past the clock went from one or two, worst +150 days, to zero.
+**And nothing is dated after the world's own clock.** `applyPressure` used to take its year
+index as `yearOfDay(fromDay) + 1`, one year AHEAD of the span it was handed, so the sending
+line's nominal day was always past the end of a one-year span and `withinSpan` always
+clamped it to the last day - every party in the world left on the final day and came back
+after it. `whenTheErrandHappened` is the rule: a pass reports on a year, so an errand whose
+term fits inside the year HAPPENED inside it and the party left `term` days before the day
+being reported on. One whose term does not fit is still out, `newsOfAPartyStillOut` says so
+with `truth: 'unresolved'`, and nothing about it is resolved. Across nine horizons on one
+seed - 100, 200, 300 and 497 to 502 years - the count of facts dated past the clock went
+from one or two, worst +150 days, to zero.
+
+The year index is now `ceil(fromDay / 365)` to `ceil(toDay / 365) - 1`: a year belongs to
+the span holding its FIRST day, which partitions the year starts between adjacent spans and
+so is additive by construction. The errand's `notBefore` is the YEAR's first day rather than
+the caller's `fromDay` for the same reason - a bound that is a property of how a span was
+chopped up makes every date it touches one too.
 
 The gap this leaves, written down rather than licensed: **an errand longer than one span
 is never resolved at all.** On the yearly slices `advanceWorldForPlay` runs that is the

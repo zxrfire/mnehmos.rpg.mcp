@@ -57,7 +57,15 @@ import {
     type RegisterHoldings
 } from './register-what-each-house-holds.js';
 import { WANDERERS } from '../data/cultivation/wanderers.js';
-import { AUTHORED_MARRIAGES, MEMBERS, getMember, getMembersOf } from '../data/cultivation/members.js';
+import {
+    AUTHORED_KIN,
+    AUTHORED_MARRIAGES,
+    KIN_THE_OTHER_WAY_ROUND,
+    MEMBERS,
+    getMember,
+    getMembersOf
+} from '../data/cultivation/members.js';
+import { getNamedFigure } from '../data/cultivation/named-figures.js';
 import { rollOf } from '../data/cultivation/faction-roll.js';
 import {
     HOW_A_HOUSE_IS_SEEN,
@@ -237,6 +245,22 @@ export interface RegisterArtifact {
     inVault: boolean;
     /** The rung the possessor stands on, where the catalogs record one. */
     possessorOrdinal: number | null;
+    /**
+     * Which catalog named the holder.
+     *
+     * `figure` is somebody `named-figures.ts` holds and the world never
+     * instantiates - an object held by a person who crossed the Lid, which is a
+     * real and interesting kind of ownership rather than a fault. Null where
+     * nothing names them, which is the only case the sheet has to apologise for.
+     */
+    possessorFrom: 'house' | 'member' | 'figure' | null;
+    /**
+     * The holder is somebody who crossed the Lid, so no rung of this ladder
+     * describes where they stand. Read off the figure's kind rather than
+     * assumed of every figure: `named-figures.ts` also holds the sealed, the
+     * founders and the merely historical, and none of those went up.
+     */
+    possessorAboveTheLid: boolean;
     tags: string[];
     description: string;
 }
@@ -815,6 +839,47 @@ export interface RegisterHousehold {
     note: string;
 }
 
+/** One end of a stated tie of blood, wherever the catalog keeps them. */
+export interface RegisterKinPerson {
+    id: string;
+    name: string;
+    /** Which catalog names them. `figure` is somebody no world instantiates. */
+    from: 'member' | 'figure';
+    houseName: string | null;
+    houseAnchor: string | null;
+    /** The house's own word for their rung, where they stand on a ladder. */
+    rank: string | null;
+    ordinal: number | null;
+    /** Holds the top rung of their own house's ladder. */
+    highestRankInTheHouse: boolean;
+}
+
+/**
+ * A tie of blood the catalog states, with both people resolved.
+ *
+ * STILL NOT A FAMILY TREE. The households listing states the rule and this is
+ * the other listing it promised: who somebody's sister is, is a fact about
+ * them, and whether they have children stays drawn per seed so a life can open
+ * as one of these people's child. Nothing here descends a generation.
+ */
+export interface RegisterKin {
+    one: RegisterKinPerson;
+    other: RegisterKinPerson;
+    /** What `one` is to `other`. */
+    oneIs: string;
+    /** And the same tie read from the other end. */
+    otherIs: string;
+    sameHouse: boolean;
+    /**
+     * No world holds a row for one of the two, so no world can carry the tie.
+     * The catalog states it regardless - a fact about somebody does not stop
+     * being one because the engine has nowhere to put the other person.
+     */
+    theWorldCannotCarryIt: boolean;
+    /** What the entries say that the pair was read off. */
+    note: string;
+}
+
 /** One body answering directly to an apex, however the catalog files it. */
 export interface RegisterSubordinate {
     id: string;
@@ -1199,6 +1264,13 @@ export interface WorldRegister {
         anchor: string | null;
         named: number;
     }[];
+    /**
+     * Every tie of blood the catalog states, in the order it states them.
+     *
+     * Its own listing rather than more columns on the households table, which
+     * is what that table's own note said the next kind of stated tie would get.
+     */
+    kin: RegisterKin[];
     /** Every art, with every house that teaches it. Grade descending. */
     techniques: RegisterTechnique[];
     /** Every house with a teach list, and what is on it. */
@@ -1226,6 +1298,29 @@ export interface WorldRegister {
 
 function nameOf(id: string): string {
     return getSect(id)?.name ?? getApexInstitution(id)?.name ?? getCourt(id)?.name ?? id;
+}
+
+/**
+ * Whoever an id names, across every catalog that can hold one.
+ *
+ * `nameOf` KNOWS HOUSES AND THE PEOPLE CATALOG IS NOT ONE. Three artifacts point
+ * `possessorId` at a `named-figures.ts` row rather than at a house or a roster
+ * member, the lookup missed, and the fallback printed the id: a reader of the
+ * published sheet saw `figure-ru-anjing` in the holder column. That is the
+ * raw-id leak the register bans, and the fix is the shape `nameOfAnyBody` in
+ * `situated-reads.ts` already uses for houses - ask every catalog that could
+ * name the thing, rather than one of them and then the id.
+ *
+ * NULL RATHER THAN THE ID, so a caller has to decide what a reader sees. An id
+ * is never it.
+ */
+function whoeverThisIdNames(id: string): string | null {
+    return MEMBERS.find(m => m.id === id)?.name
+        ?? getNamedFigure(id)?.name
+        ?? getSect(id)?.name
+        ?? getApexInstitution(id)?.name
+        ?? getCourt(id)?.name
+        ?? null;
 }
 
 /**
@@ -1257,6 +1352,8 @@ function buildArtifacts(): RegisterArtifact[] {
     return ARTIFACTS.map(a => {
         const inVault = a.possessorId !== null && a.possessorId === a.ownerId;
         const member = a.possessorId ? MEMBERS.find(m => m.id === a.possessorId) : undefined;
+        const figure = a.possessorId ? getNamedFigure(a.possessorId) : undefined;
+        const resolved = a.possessorId === null ? null : whoeverThisIdNames(a.possessorId);
 
         return {
             id: a.id,
@@ -1267,14 +1364,21 @@ function buildArtifacts(): RegisterArtifact[] {
             ownerName: a.ownerName,
             ownerLinkId: null as string | null,
             possessorId: a.possessorId,
+            // NEVER THE ID. Where nothing names them the sheet says nothing
+            // does, which is a sentence; the id is not one.
             possessorName: a.possessorId === null
                 ? ''
                 : inVault
-                    ? a.ownerName || nameOf(a.possessorId)
-                    : member?.name ?? nameOf(a.possessorId),
+                    ? a.ownerName || resolved || 'nobody this sheet can name'
+                    : resolved ?? 'nobody this sheet can name',
             inVault,
             possessorOrdinal: member?.realmOrdinal
                 ?? (inVault && a.ownerId ? ordinalOf(a.ownerId) || null : null),
+            possessorFrom: a.possessorId === null ? null
+                : member ? 'member'
+                    : figure ? 'figure'
+                        : resolved ? 'house' : null,
+            possessorAboveTheLid: figure?.kind === 'immortal_ancestor',
             tags: [...a.tags],
             description: a.description
         };
@@ -1934,6 +2038,72 @@ function buildHouseholds(anchorFor: (id: string) => string | null): RegisterHous
             other,
             acrossHouses: one.houseId !== other.houseId,
             note: marriage.note
+        });
+    }
+    return out;
+}
+
+/**
+ * The ties of blood the catalog states, joined to the people and the houses.
+ *
+ * TWO CATALOGS, BECAUSE A SISTER CAN BE SOMEWHERE THE ROSTER DOES NOT REACH.
+ * `AUTHORED_KIN` names Ru Anjing, who is in `named-figures.ts` rather than in
+ * `MEMBERS` because she crossed the Lid, and a row naming her is not a broken
+ * row. HALF A ROW IS DROPPED, WHOLE ROWS ARE NOT: the households builder drops
+ * a pair the roster cannot resolve because printing one spouse reports a person
+ * with no marriage. Here the second person resolves perfectly well - in the
+ * other catalog - and dropping the row would delete the one tie the writing
+ * leans on hardest.
+ */
+function buildKin(anchorFor: (id: string) => string | null): RegisterKin[] {
+    const person = (id: string): RegisterKinPerson | null => {
+        const member = getMember(id);
+        if (member) {
+            const house = getSect(member.factionId);
+            return {
+                id: member.id,
+                name: member.name,
+                from: 'member',
+                houseName: nameOf(member.factionId),
+                houseAnchor: anchorFor(member.factionId),
+                rank: member.rank,
+                ordinal: member.realmOrdinal,
+                highestRankInTheHouse: house !== undefined
+                    && member.rankIndex === house.ranks.length - 1
+            };
+        }
+        const figure = getNamedFigure(id);
+        if (!figure) return null;
+        return {
+            id: figure.id,
+            name: figure.name,
+            from: 'figure',
+            houseName: figure.factionId === null ? null : nameOf(figure.factionId),
+            houseAnchor: figure.factionId === null ? null : anchorFor(figure.factionId),
+            // No ladder describes somebody who crossed, and the register must
+            // not invent a rung for one. See `whatTheyWere` on the figure.
+            rank: figure.alsoCalled,
+            ordinal: null,
+            highestRankInTheHouse: false
+        };
+    };
+
+    const out: RegisterKin[] = [];
+    for (const kin of AUTHORED_KIN) {
+        const one = person(kin.oneId);
+        const other = person(kin.otherId);
+        if (!one || !other) continue;
+        out.push({
+            one,
+            other,
+            oneIs: kin.tie,
+            otherIs: KIN_THE_OTHER_WAY_ROUND[kin.tie],
+            sameHouse: one.houseName !== null && one.houseName === other.houseName,
+            // The rule and not a note about one person: nobody `named-figures.ts`
+            // holds is instantiated into a world, so a tie with one of them on
+            // the end is stated and unwritable, and the next one authored is too.
+            theWorldCannotCarryIt: one.from === 'figure' || other.from === 'figure',
+            note: kin.note
         });
     }
     return out;
@@ -3609,6 +3779,7 @@ export function buildRegister(): WorldRegister {
     }
 
     const households = buildHouseholds(anchorFor);
+    const kin = buildKin(anchorFor);
     // A house is on this list because the catalog names people in it and
     // states no household between any of them. A house with nobody named
     // could not have a stated household and is not evidence of anything.
@@ -3690,6 +3861,7 @@ export function buildRegister(): WorldRegister {
         theFavour: favourRows,
         households,
         housesWithNoHouseholdStated,
+        kin,
         // Headings derived from the record's own keys, so a field added to the
         // catalog turns up here instead of being silently dropped.
         washingOut: Object.entries(WASHING_OUT).map(([key, text]) => ({
@@ -4633,9 +4805,12 @@ function tagChips(tags: readonly string[]): string {
 function heldByLine(a: RegisterArtifact): string {
     if (!a.possessorId) return 'nobody';
     const ord = a.possessorOrdinal === null ? '' : ` ${a.possessorOrdinal}`;
-    return a.inVault
-        ? `${a.possessorName} (vault)`
-        : `${a.possessorName}${ord}`;
+    if (a.inVault) return `${a.possessorName} (vault)`;
+    // A HOLDER WHO IS NOT HERE IS SAID TO BE NOT HERE. `named-figures.ts` holds
+    // people who crossed the Lid, and no rung of this ladder describes one - so
+    // the cell that would print an empty ordinal prints where they went instead.
+    if (a.possessorAboveTheLid) return `${a.possessorName} (above the Lid)`;
+    return `${a.possessorName}${ord}`;
 }
 
 /**
@@ -6026,7 +6201,7 @@ function householdsSection(reg: WorldRegister): string {
   <p class="note"><strong>This is the whole list and not a sample of one.</strong> Every household below joins two people the catalog names, and that is demography rather than a gap: measured on a fresh world, all but one of the living cultivators in it are people this catalog names, so the pass that draws a pairing has essentially nobody else to reach. A reader should not take the ${rows.length} as the top of a larger population.</p>
   <p class="note"><strong>${across === 0 ? 'Not one of them crosses a house line.' : `${across} of them cross a house line.`}</strong> Both halves of ${across === 0 ? 'every' : 'nearly every'} household stand in the same house, so ${across === 0 ? 'none of these is' : 'most of these are not'} a tie between two bodies and nothing on the Ties tab is built out of one. The only thing here that reaches a second house is where somebody came from, and that is a fact about a person.</p>
   <p class="note"><strong>A stated tie takes a slot a drawn one would have filled.</strong> Ties between people inside a house are drawn when a world opens, and a marriage the catalog already states is not drawn again - so each row here is one fewer rival-or-ally row somewhere, in every world. ${atTheTop.length ? `It is visible on the ${count(atTheTop.length)} ${atTheTop.length === 1 ? 'person' : 'people'} below who married in and also sit at the top of the house they married into: what their own housemates hold toward them is short by exactly one, every time.` : ''}</p>
-  <p class="note"><strong>Marriage is the only tie the catalog states between two named people, and a household here stops at two.</strong> Whether a couple has children is drawn when a world opens rather than written down beside them, so that a life can begin as the child of somebody the catalog named - a fixed roster of children would take that seat away. Nothing on this page is a family tree. Another kind of stated tie would arrive as its own listing beside this one rather than as more columns on it.</p>
+  <p class="note"><strong>Marriage is the only tie the catalog states between two named people, and a household here stops at two.</strong> Whether a couple has children is drawn when a world opens rather than written down beside them, so that a life can begin as the child of somebody the catalog named - a fixed roster of children would take that seat away. Nothing on this page is a family tree. Another kind of stated tie arrives as its own listing beside this one rather than as more columns on it, and one has: the kin the catalog states is the next section, and it descends no generations either.</p>
   <div class="scroll"><table class="itemtbl">
   <colgroup><col style="width:18%"><col style="width:19%"><col style="width:19%"><col style="width:44%"></colgroup>
   <caption>Every household the catalog states &middot; in the order it states them</caption>
@@ -6056,6 +6231,55 @@ function householdsSection(reg: WorldRegister): string {
             + `<td class="pw">${x.named}</td></tr>`).join('')
         + '</tbody></table></div>'
       : ''}
+</section>`;
+}
+
+/**
+ * The ties of blood the catalog states.
+ *
+ * ITS OWN LISTING, WHICH IS WHAT THE HOUSEHOLDS NOTE PROMISED. Widening the
+ * marriages table would have made that table a family tree by the third column,
+ * and the note under it says in as many words that another kind of stated tie
+ * arrives beside it rather than inside it.
+ */
+function kinSection(reg: WorldRegister): string {
+    const rows = reg.kin;
+    if (!rows.length) return '';
+
+    const unwritable = rows.filter(k => k.theWorldCannotCarryIt);
+    const displacing = rows.filter(k =>
+        k.sameHouse && (k.one.highestRankInTheHouse || k.other.highestRankInTheHouse));
+
+    const who = (p: RegisterKinPerson): string => esc(p.name)
+        + (p.rank ? `<span class="rsep"> &middot; </span><span class="dim">${esc(p.rank)}</span>` : '')
+        + (p.ordinal === null ? '' : `<span class="rsep"> &middot; </span>${p.ordinal}`)
+        + (p.from === 'figure' ? ' <span class="chip">above the Lid</span>' : '')
+        + (p.highestRankInTheHouse ? ' <span class="chip">the house\'s highest rank</span>' : '');
+
+    return `<section class="startfolded">
+  <div class="sh"><h2>The kin the catalog states</h2><span class="r">${rows.length} ties &middot; ${unwritable.length} of them no world can carry</span></div>
+  <p class="note"><strong>Who somebody's sister is, is a fact about them, in the same way a marriage is.</strong> These are written beside the people rather than drawn when a world opens, so every world gets the same answer. The last column is what the entries were read as saying: the reading is arguable and it is printed so that it can be argued with rather than guessed at. One of the three says outright that it was settled by elimination, because two people in that house could have been the uncle and only one of them is a man.</p>
+  <p class="note"><strong>And still not a family tree.</strong> Nothing here descends a generation. Whether any of these people have children is drawn when a world opens, so a life can still begin as the child of somebody the catalog named - a fixed roster of children would take that seat away, and naming a cousin does not.</p>
+  ${unwritable.length
+      ? `<p class="note"><strong>${count(unwritable.length)} of them ${unwritable.length === 1 ? 'is a tie no world holds' : 'are ties no world holds'}, and the catalog states ${unwritable.length === 1 ? 'it' : 'them'} anyway.</strong> A world instantiates the roster and nobody else, so a tie with one of the named figures on the end has nowhere to be written: ${unwritable.map(k => `${esc(k.one.name)} and ${esc(k.other.name)}`).join('; ')}. That is a rule about the Lid rather than a fact about any one person, and it is the reason the row is here rather than deleted - who somebody's sister is does not stop being true because the engine cannot hold her, and a row dropped in silence is how a thing ends up asserted in the prose and absent from the data.</p>`
+      : ''}
+  ${displacing.length
+      ? `<p class="note"><strong>A stated tie takes a slot a drawn one would have filled</strong>, exactly as a marriage does. ${count(displacing.length)} of these ${displacing.length === 1 ? 'joins two people in one house where one of them holds its top rung' : 'join two people in one house where one holds its top rung'}, and the people just under a house's head are dealt a rival-or-ally row toward them when a world opens - so the blood row lands on top of one. Measured on four pinned worlds: exactly one derived row replaced, the same one every time, and what it said was <em>Serves under.</em> The rung it was read off has not moved and can be read off the roster; the blood cannot be read off anything, which is why it wins the slot.</p>`
+      : ''}
+  <div class="scroll"><table class="itemtbl">
+  <colgroup><col style="width:16%"><col style="width:18%"><col style="width:18%"><col style="width:10%"><col style="width:38%"></colgroup>
+  <caption>Every tie of blood the catalog states &middot; in the order it states them</caption>
+  <thead><tr><th>House</th><th>One</th><th>The other</th><th>Is their</th><th>What the pair was read off</th></tr></thead>
+  <tbody>${rows.map(k => '<tr>'
+      + `<td class="nm">${k.one.houseAnchor && k.one.houseName
+          ? jumpTo(k.one.houseAnchor, k.one.houseName)
+          : esc(k.one.houseName ?? 'nobody')}</td>`
+      + `<td class="m">${who(k.one)}</td>`
+      + `<td class="m">${who(k.other)}</td>`
+      + `<td class="m">${esc(k.otherIs)}</td>`
+      + `<td class="q">${esc(k.note)}</td></tr>`).join('')}
+  </tbody></table></div>
+  <p class="note">Read the fourth column as <em>the second person is the first one's</em>: ${rows.map(k => `${esc(k.other.name)} is ${esc(k.one.name)}'s ${esc(k.otherIs)}`).join(', ')}.</p>
 </section>`;
 }
 
@@ -7667,6 +7891,10 @@ ${renderWhatHappensToABodySections()}
      reader who meets the households first would take the silence for a gap. -->
 ${householdsSection(reg)}
 
+<!-- And the other kind of stated tie, which the note above promised would
+     arrive as its own listing rather than as more columns on that table. -->
+${kinSection(reg)}
+
 <!-- THE DOOR AND THE ERRANDS. What floor a person actually comes in at, and
      what a house puts people on the road for. Both are facts about a body
      rather than about a pair, which is why they are here and not on Ties. -->
@@ -7793,7 +8021,9 @@ ${renderItemsSection()}
       : '<p class="note">The two provenances interleave in this table, so the sheet draws no line in it: there is no rung a forge below the Lid has not passed.</p>'}
   <p class="note"><strong>Nothing on this side is rated over ${OBJECT_CEILING_BELOW_THE_LID}, whoever made it.</strong> A harder limit than the provenance break above and a different one: an object rated at a rung lets whoever is holding it strike at that rung, so one rated a step higher would put a mortal in a position to injure a True Immortal. That is why the top of this table stops where it does rather than trailing off - the ceiling on making is a fact about forges, and this is a fact about what the ladder will carry.${MANUALS_MAY_EXCEED_THE_LID ? ' A manual is paper and is under no such rule; the arts are on their own sheet for that reason.' : ''}</p>
   ${artifactTable(reg.artifacts, reg.artifactCeiling)}
-  <p class="note">Owner and holder are separate columns because they are separate facts. ${reg.artifacts.filter(a => a.inVault).length} of the objects above sit in a vault their owner also is, ${reg.artifacts.filter(a => a.possessorId !== null && !a.inVault).length} are being carried by somebody - and where a holder is named the rung beside them is theirs rather than the object's, so the two numbers on that line can be read against each other. An owner marked <span class="chip">no entry</span> is an id this sheet could not resolve to a faction, which is a fault in the catalog rather than a kind of ownership.</p>
+  <p class="note">Owner and holder are separate columns because they are separate facts. ${reg.artifacts.filter(a => a.inVault).length} of the objects above sit in a vault their owner also is, ${reg.artifacts.filter(a => a.possessorId !== null && !a.inVault).length} are being carried by somebody - and where a holder is named the rung beside them is theirs rather than the object's, so the two numbers on that line can be read against each other. An owner marked <span class="chip">no entry</span> is a body this sheet holds no dossier for - the name resolves, the entry does not - which is a gap in the sheet rather than a kind of ownership.${reg.artifacts.filter(a => a.possessorAboveTheLid).length
+      ? ` <strong>And ${count(reg.artifacts.filter(a => a.possessorAboveTheLid).length)} of them are held by somebody who crossed the Lid</strong>, marked <em>above the Lid</em> in the holder column instead of a rung. Those are not faults either: an object in the hands of a person rather than a house is an ownership this catalog states on purpose, and no rung of this ladder describes where the holder is standing.`
+      : ''}</p>
 </section>
 
 ${immortalObjectHolders(reg, blocks)}

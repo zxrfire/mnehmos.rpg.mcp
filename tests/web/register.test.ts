@@ -23,11 +23,14 @@ import { describe, it, expect } from 'vitest';
 import { buildRegister, renderRegisterHtml, type WorldRegister } from '../../src/web/register';
 import { ARTIFACTS, artifactsOwnedBy } from '../../src/data/cultivation/artifacts';
 import {
+    AUTHORED_KIN,
     AUTHORED_MARRIAGES,
+    KIN_THE_OTHER_WAY_ROUND,
     MEMBERS,
     getMember,
     getMembersOf
 } from '../../src/data/cultivation/members';
+import { NAMED_FIGURES, getNamedFigure } from '../../src/data/cultivation/named-figures';
 import {
     APEX_INSTITUTIONS,
     COURTS,
@@ -85,6 +88,20 @@ const flat = text(html);
  * This view drops the summaries so a split field reads contiguously again.
  */
 const flatProse = text(html.replace(/<summary[^>]*>[\s\S]*?<\/summary>/g, ''));
+
+/**
+ * One `<section>` of the page, sliced off by its own heading.
+ *
+ * Shared because two listings now have to be asked the same question, and a
+ * second copy of the slice is a second opinion about where a section ends.
+ */
+function sectionByHeading(heading: string): string {
+    const at = html.indexOf(`<h2>${heading}</h2>`);
+    expect(at, `${heading} is not on the sheet`).toBeGreaterThan(-1);
+    return html.slice(html.lastIndexOf('<section', at), html.indexOf('</section>', at));
+}
+
+const kinHtml = (): string => sectionByHeading('The kin the catalog states');
 
 /**
  * Just the artifact table, by its own caption.
@@ -1675,12 +1692,7 @@ describe('what a faction is reaching for', () => {
 describe('the households the catalog states', () => {
     const marriedIds = new Set(AUTHORED_MARRIAGES.flatMap(m => [m.oneId, m.otherId]));
 
-    /** The section, sliced off the built page by its own heading. */
-    function householdsHtml(): string {
-        const at = html.indexOf('<h2>The households the catalog states</h2>');
-        expect(at, 'the households section is not on the sheet').toBeGreaterThan(-1);
-        return html.slice(html.lastIndexOf('<section', at), html.indexOf('</section>', at));
-    }
+    const householdsHtml = (): string => sectionByHeading('The households the catalog states');
 
     it('shows every marriage the catalog states, with both people and the reading', () => {
         // The reachability assertion, and the one the whole section exists for.
@@ -1773,18 +1785,37 @@ describe('the households the catalog states', () => {
         }
     });
 
-    it('names nobody the catalog has not married', () => {
-        // THE GUARD AGAINST THIS BECOMING A FAMILY TREE. Children are drawn
-        // when a world opens and are deliberately not written beside these
-        // people, so that a life can begin as one of their children - a section
-        // that started joining kin would close that door and would look like an
+    it('names only spouses here, and only stated kin in the kin listing', () => {
+        // THE GUARD AGAINST EITHER LISTING BECOMING A FAMILY TREE, and it is
+        // now two listings rather than one. Children are drawn when a world
+        // opens and are deliberately not written beside these people, so that a
+        // life can begin as one of their children - a section that started
+        // joining generations would close that door and would look like an
         // improvement while doing it.
-        const section = text(householdsHtml());
-        const intruders = MEMBERS
+        //
+        // WHY THE CLAIM MOVED. It used to say the households section names
+        // nobody the catalog has not married, which was the right rule while
+        // marriage was the only stated tie. It is not any more: `AUTHORED_KIN`
+        // states three ties of blood and they have their own listing. The old
+        // wording would have passed a kin section full of invented cousins,
+        // because it never looked at one. So the rule is stated once per
+        // listing: each names the people its own catalog joins, and nobody else.
+        const inHouseholds = text(householdsHtml());
+        const strays = MEMBERS
             .filter(m => !marriedIds.has(m.id))
-            .filter(m => new RegExp(`\\b${m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(section))
+            .filter(m => new RegExp(`\\b${m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(inHouseholds))
             .map(m => m.name);
-        expect(intruders, 'the section names somebody who is not half of a stated marriage').toEqual([]);
+        expect(strays, 'the households listing names somebody who is not half of a stated marriage')
+            .toEqual([]);
+
+        const kinIds = new Set(AUTHORED_KIN.flatMap(k => [k.oneId, k.otherId]));
+        const inKin = text(kinHtml());
+        const kinStrays = MEMBERS
+            .filter(m => !kinIds.has(m.id))
+            .filter(m => new RegExp(`\\b${m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(inKin))
+            .map(m => m.name);
+        expect(kinStrays, 'the kin listing names somebody the catalog states no tie of blood for')
+            .toEqual([]);
     });
 
     it('says which houses it holds no household for rather than leaving them out', () => {
@@ -1801,6 +1832,192 @@ describe('the households the catalog states', () => {
             .toBeGreaterThan(0);
         const section = text(householdsHtml());
         for (const id of expected) expect(section).toContain(SECTS.find(s => s.id === id)!.name);
+    });
+});
+
+/**
+ * The kin the catalog states.
+ *
+ * WHY THIS EXISTS. Three ties of blood were asserted in the writing and stated
+ * by no row anywhere: Ru Anwei's entry opens *"The younger sister"*, Ru Anxi is
+ * *"the one people mistake for her cousin"*, and Hou Baiyu wants his uncle to
+ * stop introducing him as his uncle. `AUTHORED_KIN` states them and the sheet
+ * has to show them, for the same reason the households section exists - a table
+ * of rows nobody can find on the published sheet is content nobody knows the
+ * world has, and the sibling ratchet in
+ * `tests/docs/the-register-shows-what-the-catalogs-hold.test.ts` went red the
+ * moment the catalog grew the list.
+ *
+ * THE TWO THINGS ONLY THIS LISTING CAN SAY, and neither is derivable from the
+ * rows alone:
+ *
+ *   - ONE TIE IS STATED AND UNWRITABLE. Ru Anjing crossed the Lid and lives in
+ *     `named-figures.ts`; a world instantiates the roster and nobody else, so
+ *     no world holds a row for her and none can carry the tie. The catalog
+ *     states it regardless, and a sheet that quietly omitted her would undo
+ *     that decision at the last step. The reason printed is a rule about the
+ *     Lid, so the next such tie lands in the same sentence.
+ *   - A STATED TIE DISPLACES A DRAWN ONE, exactly as a marriage does. Measured
+ *     on four pinned worlds, seeds `wed-a..d`, both arms in one tree: +4 kin
+ *     rows per world (two ties, both halves) and -1 `ally` row, the same row
+ *     every time - Ru Anxi's *"Serves under."* toward Ru Anwei. The rank order
+ *     that row was read off has not moved; the blood cannot be read off
+ *     anything, which is why it takes the slot.
+ */
+describe('the kin the catalog states', () => {
+    it('shows every tie the catalog states, with both people and the reading', () => {
+        const section = text(kinHtml());
+        expect(reg.kin.length).toBe(AUTHORED_KIN.length);
+        for (const kin of AUTHORED_KIN) {
+            const one = getMember(kin.oneId) ?? getNamedFigure(kin.oneId);
+            const other = getMember(kin.otherId) ?? getNamedFigure(kin.otherId);
+            expect(one, `${kin.oneId} is in no catalog the register reads`).toBeDefined();
+            expect(other, `${kin.otherId} is in no catalog the register reads`).toBeDefined();
+            expect(section).toContain(one!.name);
+            expect(section).toContain(other!.name);
+            expect(section).toContain(kin.note);
+        }
+    });
+
+    it('reads the tie from both ends rather than from one', () => {
+        // The reciprocal is a read and this repo builds every read both ways.
+        // A listing that printed only "Ru Anwei is the younger sister" leaves a
+        // reader to work out what that makes the other person, and the word for
+        // it is the one thing a kin row is for.
+        for (const k of reg.kin) {
+            expect(k.otherIs).toBe(KIN_THE_OTHER_WAY_ROUND[k.oneIs as keyof typeof KIN_THE_OTHER_WAY_ROUND]);
+        }
+        const section = text(kinHtml());
+        for (const k of reg.kin) expect(section).toContain(`${k.other.name} is ${k.one.name}'s ${k.otherIs}`);
+    });
+
+    it('shows the tie no world can carry, and says why as a rule', () => {
+        // The half of the ruling that is easiest to lose: the catalog states a
+        // tie whose other end is somebody the engine never instantiates, and a
+        // sheet that dropped the row would put the writing back where it was -
+        // asserted in prose, absent from the data.
+        const unwritable = reg.kin.filter(k => k.theWorldCannotCarryIt);
+        expect(unwritable.length, 'no stated tie reaches outside the roster, so this '
+            + 'test guards nothing - if the catalog legitimately lost that case, drop '
+            + 'the clause from the section in the same change').toBeGreaterThan(0);
+
+        // Read off which catalog names them rather than off a list of ids: a
+        // second list of who is above the Lid is a second copy, and it is the
+        // copy that goes stale when somebody authors the next one.
+        for (const k of unwritable) {
+            expect(k.one.from === 'figure' || k.other.from === 'figure').toBe(true);
+        }
+        const section = text(kinHtml());
+        expect(section.toLowerCase(), 'the sheet does not say why the tie cannot be written')
+            .toContain('a world instantiates the roster and nobody else');
+        for (const k of unwritable) {
+            const figure = k.one.from === 'figure' ? k.one : k.other;
+            expect(section).toContain(figure.name);
+        }
+    });
+
+    it('says that a stated tie takes the place of a drawn one', () => {
+        // Same claim the households section makes, and the sheet has to make it
+        // here too: a reader comparing this listing against the Ties tab is
+        // otherwise looking at two pages that do not add up with no explanation.
+        const section = text(kinHtml());
+        expect(section, 'the sheet does not say a stated tie displaces a drawn one')
+            .toContain('takes a slot a drawn one would have filled');
+        const displacing = reg.kin.filter(k =>
+            k.sameHouse && (k.one.highestRankInTheHouse || k.other.highestRankInTheHouse));
+        expect(displacing.length, 'no stated tie joins somebody to the top of their own '
+            + 'house, so the sentence guards nothing').toBeGreaterThan(0);
+    });
+
+    it('descends no generations', () => {
+        // THE GUARD THE HOUSEHOLDS LISTING ALREADY CARRIES, applied here. A kin
+        // listing is exactly where a family tree would grow, and a tree would
+        // close the door this whole layer exists to keep open: a life that
+        // opens as the child of somebody the catalog named.
+        //
+        // ASSERTED ON THE ROWS RATHER THAN ON THE PROSE, deliberately. A word
+        // blacklist over the section's text fails on the sentence that says the
+        // listing descends no generations, which is the sentence it is there to
+        // protect - and it would pass a table of parents and children rendered
+        // under a word nobody thought to ban.
+        const descent = ['parent', 'child', 'daughter', 'son', 'mother', 'father', 'grandchild'];
+        for (const k of reg.kin) {
+            for (const word of [k.oneIs, k.otherIs]) {
+                expect(descent, `the kin listing states a tie of descent: ${word}`)
+                    .not.toContain(word.toLowerCase());
+            }
+        }
+        expect(text(kinHtml()), 'the listing does not say that children stay drawn')
+            .toContain('drawn when a world opens');
+    });
+});
+
+/**
+ * No cell on the sheet prints an id.
+ *
+ * WHY THIS IS A SWEEP AND NOT THREE NAMES. `buildArtifacts` resolved a holder
+ * against `MEMBERS` alone and fell back to the id, so three objects whose
+ * `possessorId` points at a `named-figures.ts` row printed `figure-ru-anjing`
+ * and `figure-tao-jingwei` in the holder column of the published sheet. A test
+ * naming those three would go green the day somebody adds a fourth such row and
+ * still be wrong, so the claim pinned is the one the register actually makes: a
+ * reader is never shown an id.
+ */
+describe('the sheet never prints an id', () => {
+    /** The shape of every id in these catalogs: a lowercase kebab with a prefix. */
+    const LOOKS_LIKE_AN_ID = /\b(?:figure|member|sect|apex|court|house|artifact|hollow-court)-[a-z0-9]+(?:-[a-z0-9]+)+\b/;
+
+    it('names the holder and the owner of every artifact', () => {
+        for (const a of reg.artifacts) {
+            expect(a.possessorName, `${a.name} prints an id as its holder`)
+                .not.toMatch(LOOKS_LIKE_AN_ID);
+            expect(a.ownerName, `${a.name} prints an id as its owner`)
+                .not.toMatch(LOOKS_LIKE_AN_ID);
+            // And the resolution is real rather than a blank: an object the
+            // catalog says somebody holds has to name whoever that is.
+            if (a.possessorId !== null) {
+                expect(a.possessorName.length, `${a.name} has a holder and names nobody`)
+                    .toBeGreaterThan(0);
+                expect(a.possessorFrom, `${a.name}'s holder is in no catalog`).not.toBeNull();
+            }
+        }
+    });
+
+    it('reaches the people catalogs and not only the roster', () => {
+        // The measurement that produced the defect, kept as an assertion: some
+        // artifact holders are people the roster does not hold, and if that
+        // stops being true this test is guarding nothing and should be read
+        // again rather than deleted.
+        const figures = reg.artifacts.filter(a => a.possessorFrom === 'figure');
+        expect(figures.length, 'no artifact is held by a named figure any more')
+            .toBeGreaterThan(0);
+        for (const a of figures) {
+            const figure = NAMED_FIGURES.find(f => f.id === a.possessorId)!;
+            expect(a.possessorName).toBe(figure.name);
+            // Above the Lid is read off the figure's kind, not off being a
+            // figure: the sealed, the founders and the merely historical are in
+            // the same catalog and none of them went up.
+            expect(a.possessorAboveTheLid).toBe(figure.kind === 'immortal_ancestor');
+        }
+        const above = reg.artifacts.filter(a => a.possessorAboveTheLid);
+        expect(above.length).toBeGreaterThan(0);
+        const table = text(artifactTableHtml());
+        for (const a of above) expect(table).toContain(`${a.possessorName} (above the Lid)`);
+    });
+
+    it('says what an unlinked owner is, and does not call it a catalog fault', () => {
+        // The note under the table used to say a `no entry` owner is an id the
+        // sheet could not resolve to a faction and therefore a fault in the
+        // catalog. Measured: every owner id in `artifacts.ts` resolves to a
+        // house, so nothing on the sheet is that, and the sentence described a
+        // state nothing reaches while explaining away a chip that means
+        // something else - the sheet holds no dossier for that body.
+        const unresolved = reg.artifacts
+            .filter(a => a.ownerId !== null && a.ownerName === a.ownerId)
+            .map(a => a.ownerId);
+        expect(unresolved, 'an owner id that resolves to no name').toEqual([]);
+        expect(flatProse).not.toContain('which is a fault in the catalog rather than a kind of ownership');
+        expect(flatProse).toContain('a gap in the sheet rather than a kind of ownership');
     });
 });
 

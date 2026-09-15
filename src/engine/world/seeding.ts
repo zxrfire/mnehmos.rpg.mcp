@@ -64,7 +64,9 @@ import {
     whatTheTownsBringIn,
     type LocationRecord
 } from './locations.js';
-import { addGoal, createNpc, setRealm, upsertRelationship, type NpcRecord } from './npc-state.js';
+import {
+    addGoal, createNpc, setRealm, upsertRelationship, whatACatalogStatesAsTags, type NpcRecord
+} from './npc-state.js';
 import { addLineageEdge, createLineageRecord, type LineageRecord } from './lineage.js';
 import { makeOpportunity, years, type OpportunityWindow } from './opportunities.js';
 import { dayOfYear, makeFact, appendFact } from './history.js';
@@ -97,6 +99,7 @@ import {
 import {
     seedTheMarriagesStandingInAPlace
 } from './the-marriages-a-world-opens-holding.js';
+import { seedTheKinTheCatalogStates } from './the-kin-a-world-opens-holding.js';
 import {
     seedTheWrongsStillOpen,
     type WrongsSeeded
@@ -272,6 +275,11 @@ export function seedWorld(opts: SeedWorldOptions): SeededWorld {
     // here; see `the-marriages-a-world-opens-holding.ts` for why a mortal
     // household is below the resolution this engine works at.
     seedTheMarriagesStandingInAPlace(state, presentDay);
+    // And the blood the catalog states, BEFORE the families: a stated cousin has
+    // to be standing there for `nothingElseBetween` to decline to make her a
+    // drawn daughter. See `the-kin-a-world-opens-holding.ts` for why stating
+    // these takes no seat away from a life that opens as somebody's child.
+    seedTheKinTheCatalogStates(state);
     const families = seedTheFamiliesStandingInAPlace(state, presentDay);
     // And the wrongs, AFTER the families, because a wrong nobody carries for is
     // a wrong nobody can be told about.
@@ -1560,7 +1568,9 @@ function seedTheLineThatCameDown(
                 ? null
                 : { speciesId: line.speciesId, tier: person.tier },
             description: person.note,
-            tags: [`region:${region.id}`]
+            // What the catalog STATES rides onto the row here. Everything else
+            // about these people is described and then left to the world.
+            tags: [`region:${region.id}`, ...whatACatalogStatesAsTags(person)]
         });
 
         const ordinal = person.ordinal ?? deriveLife(
